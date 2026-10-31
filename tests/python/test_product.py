@@ -927,6 +927,27 @@ class AndroidControlTests(Isolated):
         with self.assertRaises(StudioError):
             dispatch("testing.lint", {"path": str(scenario)})
 
+    def test_a_failed_scenario_is_retried_and_a_late_pass_reported_flaky(self):
+        # The first key press fails, every later one works.
+        self.tool("adb", self.ADB.replace("command=' '.join(a[2:])\n",
+                                          "command=' '.join(a[2:])\n"
+                                          "if 'keyevent' in command:\n"
+                                          "    marker=root/'failed-once'\n"
+                                          "    if not marker.exists(): marker.write_text('1'); print('device offline'); sys.exit(1)\n"))
+        scenario = self.root / "scenario.json"
+        scenario.write_text(json.dumps({"name": "Back", "steps": [{"action": "key", "key": "KEYCODE_BACK"}]}))
+        report = self.root / "report"
+        job = dispatch("testing.run", {"path": str(scenario), "directory": str(report), "devices": ["emulator-5554"], "retries": 1})
+        done = jobs.wait(job["id"], 60 * PATIENCE)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        value = json.loads((report / "report.json").read_text())
+        self.assertEqual((value["passed"], value["flaky"], value["retries"]), (True, ["emulator-5554"], 1))
+        result = value["results"][0]
+        self.assertTrue(result["flaky"])
+        self.assertEqual([attempt["passed"] for attempt in result["attempts"]], [False, True])
+        self.assertEqual(result["attempts"][0]["failed_step"], 0)
+        self.assertIn("<flakyFailure", (report / "junit.xml").read_text())
+
     def test_unicode_text_names_what_it_needs_when_it_cannot_work(self):
         with self.assertRaises(StudioError) as missing:
             dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "é"})

@@ -17,6 +17,9 @@ operations and their JSON results.
     coordinates. Scenarios gain the steps `tap`, `swipe` and `text` for that.
   - `testing.lint` checks a scenario against the current screen or a saved hierarchy without acting: selectors that
     match nothing, several elements or a disabled one, points off the screen and malformed keys.
+  - `testing.run` takes `retries`, or a scenario its own `retries`: a failed scenario runs again on that device.
+    Each result lists its `attempts`, a pass after a failure is `flaky`, the report lists the flaky devices, and
+    `junit.xml` writes the earlier failures as `flakyFailure` or `rerunFailure`.
 
 ## 1.1.0
 

@@ -214,7 +214,7 @@ fn step_schema() -> Value {
 pub fn check_scenario(scenario: &Value) -> Result<()> {
     validate(
         scenario,
-        &json!({"type":"object","additionalProperties":false,"required":["name","steps"],"properties":{"name":{"type":"string","minLength":1,"maxLength":150},"steps":{"type":"array","minItems":1,"maxItems":500,"items":step_schema()}}}),
+        &json!({"type":"object","additionalProperties":false,"required":["name","steps"],"properties":{"name":{"type":"string","minLength":1,"maxLength":150},"retries":{"type":"integer","minimum":0,"maximum":5},"steps":{"type":"array","minItems":1,"maxItems":500,"items":step_schema()}}}),
         "scenario",
     )?;
     for step in scenario["steps"].as_array().unwrap() {
@@ -268,7 +268,7 @@ pub fn run(a: &Value) -> Result {
         ));
     }
     private_dir(&output)?;
-    let spec = json!({"scenario":scenario,"devices":devices,"directory":output,"parallelism":a["parallelism"].as_u64().unwrap_or(2)});
+    let spec = json!({"scenario":scenario,"devices":devices,"directory":output,"parallelism":a["parallelism"].as_u64().unwrap_or(2),"retries":a["retries"].as_u64().unwrap_or(0)});
     atomic_json(&output.join("run.json"), &spec)?;
     jobs::submit(
         &format!("Native UI · {}", s(&scenario, "name")),
@@ -417,13 +417,31 @@ pub fn worker(file: &str) -> Result<()> {
     let spec = read_json(&path(file, false, true)?, None)?;
     let directory = path(s(&spec, "directory"), true, true)?;
     let devices = strings(&spec["devices"]);
+    let scenario = &spec["scenario"];
+    let retries = scenario["retries"]
+        .as_u64()
+        .unwrap_or(n(&spec, "retries"))
+        .min(5);
     let mut results = Vec::new();
     let parallel = n(&spec, "parallelism").clamp(1, 8) as usize;
     for chunk in devices.chunks(parallel) {
         thread::scope(|scope| {
             let handles: Vec<_> = chunk
                 .iter()
-                .map(|device| scope.spawn(|| run_device(device, &spec["scenario"], &directory)))
+                .map(|device| {
+                    let directory = &directory;
+                    scope.spawn(move || {
+                        let tag = digest(device.as_bytes())[..12].to_string();
+                        with_retries(retries, |attempt| {
+                            let tag = if attempt == 1 {
+                                tag.clone()
+                            } else {
+                                format!("{tag}-a{attempt}")
+                            };
+                            run_device(device, scenario, directory, &tag)
+                        })
+                    })
+                })
                 .collect();
             for handle in handles {
                 results.push(handle.join().unwrap_or_else(|_|json!({"passed":false,"error":{"code":"worker_panic","message":"Scenario worker failed"}})));
@@ -431,35 +449,22 @@ pub fn worker(file: &str) -> Result<()> {
         });
         atomic_json(
             &directory.join("report.json"),
-            &json!({"name":spec["scenario"]["name"],"created":now(),"results":results,"complete":false}),
+            &json!({"name":scenario["name"],"created":now(),"results":results,"complete":false}),
         )?;
     }
     let passed = results.iter().all(|r| b(r, "passed"));
-    let mut xml = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><testsuite name=\"{}\" tests=\"{}\" failures=\"{}\">",
-        xml_escape(s(&spec["scenario"], "name")),
-        results.len(),
-        results.iter().filter(|r| !b(r, "passed")).count()
-    );
-    for result in &results {
-        xml.push_str(&format!(
-            "<testcase name=\"{}\" time=\"{}\">",
-            xml_escape(s(result, "device")),
-            result["duration_seconds"]
-        ));
-        if !b(result, "passed") {
-            xml.push_str(&format!(
-                "<failure message=\"Native UI scenario failed\">{}</failure>",
-                xml_escape(&result.to_string())
-            ));
-        }
-        xml.push_str("</testcase>");
-    }
-    xml.push_str("</testsuite>\n");
-    atomic_write(&directory.join("junit.xml"), xml.as_bytes())?;
+    let flaky: Vec<&Value> = results
+        .iter()
+        .filter(|r| b(r, "flaky"))
+        .map(|r| &r["device"])
+        .collect();
+    atomic_write(
+        &directory.join("junit.xml"),
+        junit(s(scenario, "name"), &results).as_bytes(),
+    )?;
     atomic_json(
         &directory.join("report.json"),
-        &json!({"name":spec["scenario"]["name"],"created":now(),"passed":passed,"complete":true,"results":results}),
+        &json!({"name":scenario["name"],"created":now(),"passed":passed,"complete":true,"retries":retries,"flaky":flaky,"results":results}),
     )?;
     if !passed {
         return Err(Error::new(
@@ -468,6 +473,71 @@ pub fn worker(file: &str) -> Result<()> {
         ));
     }
     Ok(())
+}
+/// Runs a scenario until it passes or `retries` more attempts have failed.
+/// The last attempt's result is the result; `attempts` lists every one, and
+/// `flaky` marks a pass after a failure.
+fn with_retries(retries: u64, mut attempt: impl FnMut(u64) -> Value) -> Value {
+    let mut attempts = Vec::new();
+    let mut number = 1;
+    loop {
+        let mut result = attempt(number);
+        let failed_step = result["steps"]
+            .as_array()
+            .and_then(|steps| steps.iter().find(|step| !b(step, "passed")))
+            .map(|step| step["index"].clone());
+        attempts.push(json!({"attempt":number,"passed":result["passed"],"duration_seconds":result["duration_seconds"],
+                             "error":result["error"],"failed_step":failed_step}));
+        if b(&result, "passed") || number > retries {
+            result["flaky"] = json!(b(&result, "passed") && number > 1);
+            result["attempts"] = json!(attempts);
+            return result;
+        }
+        number += 1;
+    }
+}
+/// JUnit XML of a run: one test case per device and scenario. Failed attempts
+/// before a pass are flakyFailure elements, before a final failure
+/// rerunFailure elements, as Maven Surefire writes them.
+fn junit(name: &str, results: &[Value]) -> String {
+    let mut xml = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?><testsuite name=\"{}\" tests=\"{}\" failures=\"{}\">",
+        xml_escape(name),
+        results.len(),
+        results.iter().filter(|r| !b(r, "passed")).count()
+    );
+    for result in results {
+        let classname = match s(result, "scenario") {
+            "" => String::new(),
+            scenario => format!(" classname=\"{}\"", xml_escape(scenario)),
+        };
+        xml.push_str(&format!(
+            "<testcase{classname} name=\"{}\" time=\"{}\">",
+            xml_escape(s(result, "device")),
+            result["duration_seconds"]
+        ));
+        let attempts = result["attempts"].as_array().cloned().unwrap_or_default();
+        let earlier = attempts.len().saturating_sub(1);
+        let element = if b(result, "passed") {
+            "flakyFailure"
+        } else {
+            xml.push_str(&format!(
+                "<failure message=\"Native UI scenario failed\">{}</failure>",
+                xml_escape(&result.to_string())
+            ));
+            "rerunFailure"
+        };
+        for attempt in &attempts[..earlier] {
+            xml.push_str(&format!(
+                "<{element} message=\"{}\">{}</{element}>",
+                xml_escape(s(&attempt["error"], "message")),
+                xml_escape(&attempt.to_string())
+            ));
+        }
+        xml.push_str("</testcase>");
+    }
+    xml.push_str("</testsuite>\n");
+    xml
 }
 /// The apps a scenario launches, stops or clears: a crash of one of them
 /// fails the run.
@@ -500,7 +570,7 @@ fn app_crash(events: &[Value], apps: &[String]) -> Option<Error> {
         .details(event.clone()),
     )
 }
-fn run_device(device: &str, scenario: &Value, directory: &Path) -> Value {
+fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Value {
     let started = Instant::now();
     // The emulator shares this computer's clock; a second of margin.
     let since = now() - 1.0;
@@ -552,23 +622,16 @@ fn run_device(device: &str, scenario: &Value, directory: &Path) -> Value {
                                 .details(done))
                         }
                     }
-                    "screenshot" => screenshot(
-                        device,
-                        &directory.join(format!(
-                            "{}-{index:03}.png",
-                            &digest(device.as_bytes())[..12]
-                        )),
-                    ),
+                    "screenshot" => {
+                        screenshot(device, &directory.join(format!("{tag}-{index:03}.png")))
+                    }
                     _ => Err(Error::new("invalid_step", "Unknown scenario action")),
                 }
             })();
             let passed = result.is_ok();
             steps.push(json!({"index":index,"action":step["action"],"label":step["label"],"duration_seconds":begin.elapsed().as_secs_f64(),"passed":passed,"result":match &result{Ok(v)=>v.clone(),Err(e)=>json!({"error":e.value()})}}));
             if let Err(error) = result {
-                let capture = screenshot(
-                    device,
-                    &directory.join(format!("{}-failure.png", &digest(device.as_bytes())[..12])),
-                );
+                let capture = screenshot(device, &directory.join(format!("{tag}-failure.png")));
                 steps.last_mut().unwrap()["failure_capture"] =
                     capture.unwrap_or_else(|e| json!({"error":e.value()}));
                 return Err(error);
@@ -671,6 +734,53 @@ mod tests {
                 (9, "invalid_key", "error"),
             ]
         );
+    }
+    #[test]
+    fn a_scenario_is_retried_and_a_late_pass_is_flaky() {
+        let outcome = |passes: &'static [bool]| {
+            move |attempt: u64| {
+                let passed = passes[attempt as usize - 1];
+                json!({"device":"emulator-5554","passed":passed,"duration_seconds":1.0,
+                       "steps":[{"index":0,"passed":true},{"index":1,"passed":passed}],
+                       "error":if passed {Value::Null} else {json!({"code":"element_timeout","message":"Element did not become present"})}})
+            }
+        };
+        let first = with_retries(2, outcome(&[true]));
+        assert_eq!(
+            (&first["flaky"], first["attempts"].as_array().unwrap().len()),
+            (&json!(false), 1)
+        );
+        let late = with_retries(2, outcome(&[false, true]));
+        assert_eq!(
+            (&late["passed"], &late["flaky"]),
+            (&json!(true), &json!(true))
+        );
+        assert_eq!(late["attempts"][0]["failed_step"], 1);
+        assert_eq!(late["attempts"][1]["passed"], true);
+        let never = with_retries(2, outcome(&[false, false, false]));
+        assert_eq!(
+            (&never["passed"], &never["flaky"]),
+            (&json!(false), &json!(false))
+        );
+        assert_eq!(never["attempts"].as_array().unwrap().len(), 3);
+        // Without retries a failure is final.
+        assert_eq!(
+            with_retries(0, outcome(&[false, true]))["attempts"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        let xml = junit("Login", &[first, late, never]);
+        assert!(xml.contains("tests=\"3\" failures=\"1\""));
+        assert_eq!(
+            xml.matches("<flakyFailure message=\"Element did not become present\">")
+                .count(),
+            1
+        );
+        assert_eq!(xml.matches("<rerunFailure").count(), 2);
+        assert_eq!(xml.matches("<failure ").count(), 1);
+        roxmltree::Document::parse(&xml).unwrap();
     }
     #[test]
     fn selectors_handle_escaping_ambiguity_and_index() {

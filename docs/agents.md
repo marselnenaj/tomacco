@@ -543,6 +543,12 @@ parse answers `valid:false` with the error.
 tomaccoctl call testing.lint '{"path":"/absolute/add-counter.json","device":"emulator-5554"}'
 ```
 
+`retries` runs a failed scenario again on that device, up to five times; a scenario's own `retries` field takes precedence. Each
+device's result in `report.json` then lists its `attempts` (whether each passed, its error and the index of the step that failed), and
+`flaky:true` marks a pass after a failure; the report's `flaky` lists those devices. In `junit.xml` the earlier failures are
+`flakyFailure` elements of a passed test case, or `rerunFailure` elements of a failed one, as Maven Surefire writes them. A retry hides
+nothing: read the attempts of a flaky scenario.
+
 `testing.results` reads JUnit XML into one summary: `totals` (`tests`, `passed`, `failed`, `errors`, `skipped`, `time`), each suite with
 its device for instrumented tests, and each failure with its class, name, message and stack. Given a project it finds Gradle's unit test
 results (`build/test-results`) and instrumented test results (`build/outputs/androidTest-results`); a directory or a single file works too,

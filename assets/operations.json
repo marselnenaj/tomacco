@@ -4162,7 +4162,7 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run a JSON native Android scenario across devices with device locks, JUnit, JSON reports and failure screenshots.",
+    "description": "Run a JSON native Android scenario across devices with device locks, JUnit, JSON reports and failure screenshots. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4192,6 +4192,13 @@
           "minimum": 10,
           "maximum": 86400,
           "default": 3600
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "default": 0,
+          "description": "Run a failed scenario again up to this many times per device; a scenario's own retries field takes precedence. A pass after a failure is flaky in report.json, with every attempt listed."
         }
       },
       "required": [
