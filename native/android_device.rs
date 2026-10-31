@@ -680,9 +680,226 @@ pub fn each_worker(request: &str) -> Result<()> {
     Ok(())
 }
 
+/// The services `adb mdns services` lists: name, type and address.
+fn mdns_services(output: &str) -> Vec<Value> {
+    output
+        .lines()
+        .filter_map(|line| {
+            let parts: Vec<&str> = line.split('\t').map(str::trim).collect();
+            let [name, kind, address] = parts[..] else {
+                return None;
+            };
+            (kind.starts_with("_adb") && address.contains(':'))
+                .then(|| json!({"name":name,"type":kind.trim_end_matches('.'),"address":address}))
+        })
+        .collect()
+}
+
+/// `adb pair` answers with exit status 0 also when pairing failed.
+fn paired(output: &str) -> Option<String> {
+    let line = output
+        .lines()
+        .find(|l| l.trim_start().starts_with("Successfully paired"))?;
+    Some(
+        line.split("[guid=")
+            .nth(1)
+            .map(|g| g.trim_end_matches(']').trim().to_string())
+            .unwrap_or_default(),
+    )
+}
+
+fn mdns_listing() -> Result<Vec<Value>> {
+    let reply = tc::run(
+        &argv(&[&tc::find("adb")?, "mdns", "services"]),
+        10,
+        None,
+        false,
+    )?;
+    if reply["exit_code"].as_i64().unwrap_or(0) != 0 {
+        return Err(Error::new(
+            "mdns_unavailable",
+            format!(
+                "adb cannot discover devices on the network: {}",
+                format!("{} {}", s(&reply, "stdout"), s(&reply, "stderr")).trim()
+            ),
+        )
+        .remedy(
+            "Update the Android platform tools, or pair with the code through android.connect",
+        ));
+    }
+    Ok(mdns_services(s(&reply, "stdout")))
+}
+
+/// A word of random letters and digits.
+fn random_word(length: usize) -> String {
+    const ALPHABET: &[u8] = b"abcdefghijkmnpqrstuvwxyz23456789";
+    let mut out = String::new();
+    while out.len() < length {
+        for byte in uuid::Uuid::new_v4().into_bytes() {
+            if out.len() < length {
+                out.push(ALPHABET[byte as usize % ALPHABET.len()] as char);
+            }
+        }
+    }
+    out
+}
+
+/// Wireless debugging pairing by QR code (Android 11 and newer). `qr` makes
+/// a service name and password and the code the phone scans; `wait` waits
+/// for the phone to offer that service, pairs and connects; `services`
+/// lists what adb finds on the network, for pairing by code.
+pub fn pair(a: &Value) -> Result {
+    match s(a, "action") {
+        "services" => Ok(json!({"services":mdns_listing()?})),
+        "wait" => pair_wait(a),
+        _ => {
+            let service = format!("tomacco-{}", random_word(8));
+            let password = random_word(10);
+            let text = format!("WIFI:T:ADB;S:{service};P:{password};;");
+            let code = crate::qr::encode(&text).ok_or_else(|| {
+                Error::new("qr_too_long", "The pairing text does not fit a QR code")
+            })?;
+            let mut value = json!({
+                "service": service,
+                "password": password,
+                "qr_text": text,
+                "qr": {"size": code.size, "rows": code.rows()},
+                "svg": code.svg(),
+                "next": "On the phone open Developer options > Wireless debugging > Pair device with QR code and scan it, then call android.pair with action wait, service and password",
+            });
+            if !s(a, "path").is_empty() {
+                let target = output_path(s(a, "path"))?;
+                let extension = target
+                    .extension()
+                    .map(|x| x.to_string_lossy().to_lowercase())
+                    .unwrap_or_default();
+                let bytes = match extension.as_str() {
+                    "svg" => code.svg().into_bytes(),
+                    "png" => {
+                        let (grey, width) = code.pixels(8);
+                        let rgb: Vec<u8> = grey.iter().flat_map(|&g| [g, g, g]).collect();
+                        crate::ios_emulator::virtual_screen::png(&rgb, width, width, 3)?
+                    }
+                    _ => {
+                        return Err(Error::new(
+                            "invalid_path",
+                            "Name a file ending in .png or .svg for the QR code",
+                        ));
+                    }
+                };
+                if let Some(parent) = target.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                atomic_write(&target, &bytes)?;
+                value["path"] = json!(target);
+            }
+            Ok(value)
+        }
+    }
+}
+
+fn pair_wait(a: &Value) -> Result {
+    let service = identifier(
+        s(a, "service"),
+        "service name",
+        Some("[A-Za-z0-9][A-Za-z0-9_-]{0,62}"),
+    )?;
+    let password = identifier(
+        s(a, "password"),
+        "pairing password",
+        Some("[A-Za-z0-9]{6,32}"),
+    )?;
+    let deadline =
+        std::time::Instant::now() + std::time::Duration::from_secs(n(a, "timeout").max(1));
+    let adb = tc::find("adb")?;
+    let pairing = loop {
+        if let Some(found) = mdns_listing()?
+            .into_iter()
+            .find(|v| s(v, "name") == service && s(v, "type").starts_with("_adb-tls-pairing"))
+        {
+            break found;
+        }
+        if std::time::Instant::now() >= deadline {
+            return Err(Error::new(
+                "pairing_timeout",
+                "The phone did not offer this pairing code in time",
+            )
+            .remedy("On the phone, on the same network, open Developer options > Wireless debugging > Pair device with QR code and scan the code; call wait again while it shows, or pair with the code through android.connect"));
+        }
+        check_cancelled()?;
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    };
+    let address = s(&pairing, "address").to_string();
+    let reply = tc::run(&argv(&[&adb, "pair", &address, password]), 30, None, false)?;
+    let output = format!("{}\n{}", s(&reply, "stdout"), s(&reply, "stderr"));
+    let guid = paired(&output).ok_or_else(|| {
+        Error::new(
+            "pairing_failed",
+            format!("adb could not pair: {}", output.trim()),
+        )
+        .remedy("Show a new QR code with android.pair and scan it again")
+    })?;
+    // The phone then offers its connection service; adb often connects by
+    // itself, otherwise connect to the address it offers.
+    let host = address
+        .rsplit_once(':')
+        .map(|(h, _)| h)
+        .unwrap_or("")
+        .to_string();
+    let until = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    let mut device = Value::Null;
+    while std::time::Instant::now() < until {
+        let services = mdns_listing().unwrap_or_default();
+        if let Some(connect) = services.iter().find(|v| {
+            s(v, "type").starts_with("_adb-tls-connect")
+                && ((!guid.is_empty() && s(v, "name") == guid)
+                    || s(v, "address").rsplit_once(':').map(|(h, _)| h) == Some(host.as_str()))
+        }) {
+            let target = s(connect, "address").to_string();
+            let reply = tc::run(&argv(&[&adb, "connect", &target]), 15, None, false)?;
+            let text = format!("{} {}", s(&reply, "stdout"), s(&reply, "stderr")).to_lowercase();
+            if text.contains("connected to") {
+                device = json!(target);
+                break;
+            }
+        }
+        check_cancelled()?;
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+    Ok(json!({
+        "paired": true,
+        "address": address,
+        "guid": guid,
+        "connected": !device.is_null(),
+        "device": device,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mdns_services_and_pairing_replies_are_read() {
+        let listing = "List of discovered mdns services\nadb-R5CT-AbCd\t_adb-tls-connect._tcp\t192.168.1.20:37099\ntomacco-abc\t_adb-tls-pairing._tcp.\t192.168.1.20:41235\nnoise line\n";
+        let services = mdns_services(listing);
+        assert_eq!(services.len(), 2);
+        assert_eq!(
+            services[1],
+            json!({"name":"tomacco-abc","type":"_adb-tls-pairing._tcp","address":"192.168.1.20:41235"})
+        );
+        assert_eq!(
+            paired("Successfully paired to 192.168.1.20:41235 [guid=adb-R5CT-AbCd]\n").as_deref(),
+            Some("adb-R5CT-AbCd")
+        );
+        assert_eq!(
+            paired("Failed: Wrong password or connection was dropped."),
+            None
+        );
+        let word = random_word(10);
+        assert_eq!(word.len(), 10);
+        assert!(word.bytes().all(|c| c.is_ascii_alphanumeric()));
+    }
 
     #[test]
     fn health_reads_battery_storage_and_uptime() {

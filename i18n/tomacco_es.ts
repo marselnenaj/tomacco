@@ -304,6 +304,74 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <source>Remove nickname</source>
         <translation>Quitar el apodo</translation>
     </message>
+    <message>
+        <source>Paired and connected · %1</source>
+        <translation>Vinculado y conectado · %1</translation>
+    </message>
+    <message>
+        <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
+        <translation>Vinculado. Para conectar, introduce la dirección IP y el puerto que aparecen en Depuración inalámbrica.</translation>
+    </message>
+    <message>
+        <source>adb could not pair</source>
+        <translation>adb no pudo vincular</translation>
+    </message>
+    <message>
+        <source>adb could not connect</source>
+        <translation>adb no pudo conectar</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi</source>
+        <translation>Vincular por Wi-Fi</translation>
+    </message>
+    <message>
+        <source>QR code</source>
+        <translation>Código QR</translation>
+    </message>
+    <message>
+        <source>Pairing code</source>
+        <translation>Código de vinculación</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
+        <translation>En el teléfono, abre Opciones para desarrolladores › Depuración inalámbrica › Vincular dispositivo con código QR y escanea este código. El teléfono y este ordenador deben estar en la misma red; Android 11 o posterior.</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
+        <translation>En el teléfono, abre Opciones para desarrolladores › Depuración inalámbrica › Vincular dispositivo con código de vinculación e introduce la dirección y el código que muestra.</translation>
+    </message>
+    <message>
+        <source>QR code for wireless debugging</source>
+        <translation>Código QR para la depuración inalámbrica</translation>
+    </message>
+    <message>
+        <source>Creating a code…</source>
+        <translation>Creando un código…</translation>
+    </message>
+    <message>
+        <source>Pairing address</source>
+        <translation>Dirección de vinculación</translation>
+    </message>
+    <message>
+        <source>Waiting for the phone…</source>
+        <translation>Esperando al teléfono…</translation>
+    </message>
+    <message>
+        <source>Pairing…</source>
+        <translation>Vinculando…</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Conectando…</translation>
+    </message>
+    <message>
+        <source>New code</source>
+        <translation>Nuevo código</translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation>Vincular</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -4013,6 +4081,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     <message>
         <source>Name or pin a device</source>
         <translation>Nombrar o fijar un dispositivo</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi by QR code</source>
+        <translation>Vincular por Wi-Fi con código QR</translation>
     </message>
 </context>
 <context>

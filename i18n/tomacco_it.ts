@@ -304,6 +304,74 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <source>Remove nickname</source>
         <translation>Rimuovi il soprannome</translation>
     </message>
+    <message>
+        <source>Paired and connected · %1</source>
+        <translation>Accoppiato e connesso · %1</translation>
+    </message>
+    <message>
+        <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
+        <translation>Accoppiato. Per connetterti, inserisci l'indirizzo IP e la porta mostrati in Debug wireless.</translation>
+    </message>
+    <message>
+        <source>adb could not pair</source>
+        <translation>adb non è riuscito ad accoppiare</translation>
+    </message>
+    <message>
+        <source>adb could not connect</source>
+        <translation>adb non è riuscito a connettersi</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi</source>
+        <translation>Accoppia tramite Wi-Fi</translation>
+    </message>
+    <message>
+        <source>QR code</source>
+        <translation>Codice QR</translation>
+    </message>
+    <message>
+        <source>Pairing code</source>
+        <translation>Codice di accoppiamento</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
+        <translation>Sul telefono, apri Opzioni sviluppatore › Debug wireless › Accoppia dispositivo con codice QR e scansiona questo codice. Il telefono e questo computer devono essere sulla stessa rete; Android 11 o successivo.</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
+        <translation>Sul telefono, apri Opzioni sviluppatore › Debug wireless › Accoppia dispositivo con codice di accoppiamento, poi inserisci l'indirizzo e il codice mostrati.</translation>
+    </message>
+    <message>
+        <source>QR code for wireless debugging</source>
+        <translation>Codice QR per il debug wireless</translation>
+    </message>
+    <message>
+        <source>Creating a code…</source>
+        <translation>Creazione di un codice…</translation>
+    </message>
+    <message>
+        <source>Pairing address</source>
+        <translation>Indirizzo di accoppiamento</translation>
+    </message>
+    <message>
+        <source>Waiting for the phone…</source>
+        <translation>In attesa del telefono…</translation>
+    </message>
+    <message>
+        <source>Pairing…</source>
+        <translation>Accoppiamento…</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Connessione…</translation>
+    </message>
+    <message>
+        <source>New code</source>
+        <translation>Nuovo codice</translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation>Accoppia</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -4013,6 +4081,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     <message>
         <source>Name or pin a device</source>
         <translation>Assegna un nome o fissa un dispositivo</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi by QR code</source>
+        <translation>Accoppia tramite Wi-Fi con codice QR</translation>
     </message>
 </context>
 <context>

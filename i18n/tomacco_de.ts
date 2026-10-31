@@ -304,6 +304,74 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Remove nickname</source>
         <translation>Spitznamen entfernen</translation>
     </message>
+    <message>
+        <source>Paired and connected · %1</source>
+        <translation>Gekoppelt und verbunden · %1</translation>
+    </message>
+    <message>
+        <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
+        <translation>Gekoppelt. Gib zum Verbinden die IP-Adresse und den Port ein, die unter Drahtloses Debugging stehen.</translation>
+    </message>
+    <message>
+        <source>adb could not pair</source>
+        <translation>adb konnte nicht koppeln</translation>
+    </message>
+    <message>
+        <source>adb could not connect</source>
+        <translation>adb konnte sich nicht verbinden</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi</source>
+        <translation>Über WLAN koppeln</translation>
+    </message>
+    <message>
+        <source>QR code</source>
+        <translation>QR-Code</translation>
+    </message>
+    <message>
+        <source>Pairing code</source>
+        <translation>Kopplungscode</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
+        <translation>Öffne auf dem Smartphone Entwickleroptionen › Drahtloses Debugging › Gerät über QR-Code koppeln und scanne diesen Code. Smartphone und Computer müssen im selben Netzwerk sein; ab Android 11.</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
+        <translation>Öffne auf dem Smartphone Entwickleroptionen › Drahtloses Debugging › Gerät mit Kopplungscode koppeln und gib die angezeigte Adresse und den Code ein.</translation>
+    </message>
+    <message>
+        <source>QR code for wireless debugging</source>
+        <translation>QR-Code für drahtloses Debugging</translation>
+    </message>
+    <message>
+        <source>Creating a code…</source>
+        <translation>Code wird erstellt …</translation>
+    </message>
+    <message>
+        <source>Pairing address</source>
+        <translation>Kopplungsadresse</translation>
+    </message>
+    <message>
+        <source>Waiting for the phone…</source>
+        <translation>Warte auf das Smartphone …</translation>
+    </message>
+    <message>
+        <source>Pairing…</source>
+        <translation>Wird gekoppelt …</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Wird verbunden …</translation>
+    </message>
+    <message>
+        <source>New code</source>
+        <translation>Neuer Code</translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation>Koppeln</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -4013,6 +4081,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Name or pin a device</source>
         <translation>Gerät benennen oder anheften</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi by QR code</source>
+        <translation>Über WLAN per QR-Code koppeln</translation>
     </message>
 </context>
 <context>

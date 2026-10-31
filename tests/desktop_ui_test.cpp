@@ -642,6 +642,56 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(!labels().contains("avd:Label_Test"),patient(10000));
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void wireless_pairing_shows_a_qr_code_and_falls_back_to_the_pairing_code() {
+        // A stand-in adb: the phone offers the code's service once the test says it scanned it.
+        const auto fake=directory.filePath("pair-adb");
+        {QFile script(fake);QVERIFY(script.open(QIODevice::WriteOnly));
+         script.write(QString("#!/bin/sh\nd='%1'\ncase \"$1\" in\n"
+             " mdns) echo 'List of discovered mdns services'; [ -f \"$d/scanned\" ] && printf '%s\\t_adb-tls-pairing._tcp.\\t192.168.1.20:41235\\n' \"$(cat \"$d/scanned\")\"; [ -f \"$d/paired\" ] && printf 'adb-R5CT-AbCd\\t_adb-tls-connect._tcp.\\t192.168.1.20:37099\\n';;\n"
+             " pair) touch \"$d/paired\"; echo \"Successfully paired to $2 [guid=adb-R5CT-AbCd]\";;\n"
+             " connect) echo \"connected to $2\";;\n"
+             " devices) echo 'List of devices attached';;\nesac\nexit 0\n").arg(directory.path()).toUtf8());
+         script.close();QVERIFY(script.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ExeOwner));}
+        const auto settingsFile=directory.filePath("state/settings.json");
+        auto restore=qScopeGuard([&]{QFile file(settingsFile);if(file.open(QIODevice::ReadOnly)){auto value=QJsonDocument::fromJson(file.readAll()).object();file.close();auto tools=value.value("executables").toObject();tools.remove("adb");value["executables"]=tools;if(file.open(QIODevice::WriteOnly|QIODevice::Truncate))file.write(QJsonDocument(value).toJson());}
+            QFile::remove(directory.filePath("scanned"));QFile::remove(directory.filePath("paired"));});
+        {QSignalSpy replies(control.get(),&Control::apiFinished);
+         const int id=control->request("settings.configure",{{"executables",QVariantMap{{"adb",fake}}}});
+         QTRY_VERIFY_WITH_TIMEOUT(std::any_of(replies.begin(),replies.end(),[&](const QList<QVariant> &r){return r.value(0).toInt()==id;}),patient(10000));}
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        auto *library=object("androidDeviceLibrary");QVERIFY(library);
+        auto *button=item("pairWifiButton");QVERIFY(button);QVERIFY(button->isVisible());
+        QVERIFY(QMetaObject::invokeMethod(button,"clicked"));
+        auto *dialog=object("pairWifiDialog");QVERIFY(dialog);QTRY_VERIFY(dialog->property("visible").toBool());
+        // The code comes from android.pair and is drawn from its modules.
+        QTRY_VERIFY2_WITH_TIMEOUT(library->property("pairState").toString()=="waiting",qPrintable(library->property("pairMessage").toString()),patient(10000));
+        const auto pairing=mapOf(library->property("pairing"));
+        QVERIFY(pairing.value("qr_text").toString().startsWith("WIFI:T:ADB;S:tomacco-"));
+        QCOMPARE(object("pairQrCanvas")->property("rows").toList().size(),pairing.value("qr").toMap().value("size").toInt());
+        QVERIFY(item("pairQrCode")->isVisible());
+        capture("pair-qr");
+        {QFile scanned(directory.filePath("scanned"));QVERIFY(scanned.open(QIODevice::WriteOnly));scanned.write(pairing.value("service").toByteArray());}
+        QTRY_COMPARE_WITH_TIMEOUT(library->property("pairState").toString(),QString("done"),patient(20000));
+        QCOMPARE(library->property("pairMessage").toString(),QString("Paired and connected · 192.168.1.20:37099"));
+        QVERIFY(item("pairNewCode")->isVisible());
+        // The pairing code: address and six digits, then the phone's connection service.
+        QFile::remove(directory.filePath("paired"));
+        QVERIFY(QMetaObject::invokeMethod(item("pairModeCode"),"clicked"));
+        QTRY_COMPARE(library->property("pairMode").toString(),QString("code"));
+        auto *address=item("pairAddressField");auto *code=item("pairCodeField");auto *pair=item("pairWithCode");
+        QVERIFY(address);QVERIFY(code);QVERIFY(pair);
+        // The one pairing service adb found fills in the address.
+        QTRY_COMPARE_WITH_TIMEOUT(address->property("text").toString(),QString("192.168.1.20:41235"),patient(10000));
+        QVERIFY(!pair->isEnabled());
+        code->setProperty("text","12345");QVERIFY(!pair->isEnabled());
+        code->setProperty("text","123456");QVERIFY(pair->isEnabled());
+        QVERIFY(QMetaObject::invokeMethod(pair,"clicked"));
+        QTRY_COMPARE_WITH_TIMEOUT(library->property("pairState").toString(),QString("done"),patient(20000));
+        QCOMPARE(library->property("pairMessage").toString(),QString("Paired and connected · 192.168.1.20:37099"));
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(library->property("pairState").toString(),QString());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void iphone_setup_and_category_selection() {
         open("devices");
         auto *apple=item("devices-apple");QVERIFY(apple);

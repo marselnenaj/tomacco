@@ -204,6 +204,14 @@ a pinned device. Both are stored through `device.label`, so agents see them in
 `device.list` too. An emulator keeps its nickname by its AVD name, also while it is
 off and when its serial changes.
 
+### Pairing over Wi-Fi
+
+**Connect via Wi-Fi** under Devices shows a QR code for the phone's **Developer options ›
+Wireless debugging › Pair device with QR code** and pairs and connects as soon as the
+phone has scanned it. **Pairing code** is the other way: enter the address and six-digit
+code the phone shows; when adb finds a single pairing address on the network it is
+filled in. Both go through `android.pair` and `android.connect`.
+
 ## Touches and coordinates
 
 **Touches and coordinates** in the tool strip beside the live device

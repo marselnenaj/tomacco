@@ -34,6 +34,7 @@ mod preview;
 mod product;
 mod profiling;
 mod projects;
+mod qr;
 mod redact;
 mod releases;
 mod remote;

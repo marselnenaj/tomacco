@@ -334,11 +334,11 @@ Rectangle {
                         onChosen:id=>panel.chooseDevicePlatform(id)
                     }
                     Item {Layout.fillWidth:true}
-                    StudioButton {visible:panel.selectedPlatform==="android";text:qsTr("Connect via Wi-Fi");quiet:true;onClicked:panel.showAction("android.connect")}
+                    StudioButton {objectName:"pairWifiButton";visible:panel.selectedPlatform==="android";text:qsTr("Connect via Wi-Fi");quiet:true;onClicked:androidLibrary.openPairing()}
                     StudioButton {visible:panel.selectedPlatform==="ios";text:qsTr("Set up iPhone");quiet:true;onClicked:panel.iosSetupRequested()}
                     StudioButton {text:qsTr("Find devices");iconName:"refresh";onClicked:panel.request("device.list",{})}
                 }
-                AndroidDevices {Layout.fillWidth:true;Layout.fillHeight:true;visible:panel.selectedPlatform==="android";workspace:panel}
+                AndroidDevices {id:androidLibrary;Layout.fillWidth:true;Layout.fillHeight:true;visible:panel.selectedPlatform==="android";workspace:panel}
                 IosResearch {id:iosResearch;Layout.fillWidth:true;visible:panel.selectedPlatform==="ios";workspace:panel;guestSolo:panel.guestSolo;onGuestCloseRequested:panel.guestCloseRequested();onGuestDockRequested:panel.guestDockRequested()}
                 ListView {
                     id:deviceList;Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:160

@@ -60,6 +60,7 @@ var titles = {
     "android.app_files": QT_TRANSLATE_NOOP("Operations", "App data files"),
     "android.each": QT_TRANSLATE_NOOP("Operations", "Run on every Android device"),
     "android.connect": QT_TRANSLATE_NOOP("Operations", "Android over Wi-Fi"),
+    "android.pair": QT_TRANSLATE_NOOP("Operations", "Pair over Wi-Fi by QR code"),
     "android.calibrate": QT_TRANSLATE_NOOP("Operations", "Read model from device"),
     "android.sdk_packages": QT_TRANSLATE_NOOP("Operations", "SDK packages"),
     "android.sdk_install": QT_TRANSLATE_NOOP("Operations", "Install SDK packages"),

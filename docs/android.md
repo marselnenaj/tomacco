@@ -442,9 +442,31 @@ tomaccoctl call android.each '{"steps":[{"operation":"device.install","arguments
 
 ## Phones
 
-Enable USB debugging and authorize the computer. For wireless debugging, use
-`android.connect` with the device's address and pairing code. Everything else works
-the same as on the emulator.
+Enable USB debugging and authorize the computer. Everything else works the same as on
+the emulator.
+
+### Wireless debugging
+
+Android 11 and newer pair over Wi-Fi by QR code. `android.pair` makes a one-time code
+for the phone's **Developer options › Wireless debugging › Pair device with QR code**;
+`wait` then pairs and connects as soon as the phone offers it on the local network
+(adb's mDNS discovery). Nothing is stored; the password lives only in the code.
+
+```sh
+tomaccoctl call android.pair '{"path":"/absolute/pair.png"}'
+tomaccoctl call android.pair '{"action":"wait","service":"tomacco-…","password":"…","timeout":60}'
+```
+
+- `qr` returns `qr_text`, the modules as `qr.rows` and an SVG; with `path` it also writes
+  a PNG or SVG file to show the person.
+- `wait` answers `pairing_timeout` while the phone has not scanned the code; call it again.
+  Its result names the `device` to use, or `connected:false` when the phone offered no
+  connection service in time.
+- With a pairing code instead, `services` lists what adb finds, such as the address
+  the phone shows under **Pair device with pairing code**; pass it with the code to
+  `android.connect`, then connect to the address under **Wireless debugging**.
+- The code is checked by decoding it with zbar. Pairing and connecting were tested with
+  a stand-in adb only; no phone was paired over Wi-Fi.
 
 ## Swift on Android
 

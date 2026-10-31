@@ -304,6 +304,74 @@ Le modèle détermine l'écran et le cadre. Android provient de l'image système
         <source>Remove nickname</source>
         <translation>Supprimer le surnom</translation>
     </message>
+    <message>
+        <source>Paired and connected · %1</source>
+        <translation>Associé et connecté · %1</translation>
+    </message>
+    <message>
+        <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
+        <translation>Associé. Pour vous connecter, saisissez l'adresse IP et le port affichés sous Débogage sans fil.</translation>
+    </message>
+    <message>
+        <source>adb could not pair</source>
+        <translation>adb n'a pas pu associer l'appareil</translation>
+    </message>
+    <message>
+        <source>adb could not connect</source>
+        <translation>adb n'a pas pu se connecter</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi</source>
+        <translation>Associer via le Wi-Fi</translation>
+    </message>
+    <message>
+        <source>QR code</source>
+        <translation>Code QR</translation>
+    </message>
+    <message>
+        <source>Pairing code</source>
+        <translation>Code d'association</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
+        <translation>Sur le téléphone, ouvrez Options pour les développeurs › Débogage sans fil › Associer l'appareil avec un code QR et scannez ce code. Le téléphone et cet ordinateur doivent être sur le même réseau ; Android 11 ou version ultérieure.</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
+        <translation>Sur le téléphone, ouvrez Options pour les développeurs › Débogage sans fil › Associer l'appareil avec un code d'association, puis saisissez l'adresse et le code affichés.</translation>
+    </message>
+    <message>
+        <source>QR code for wireless debugging</source>
+        <translation>Code QR pour le débogage sans fil</translation>
+    </message>
+    <message>
+        <source>Creating a code…</source>
+        <translation>Création d'un code…</translation>
+    </message>
+    <message>
+        <source>Pairing address</source>
+        <translation>Adresse d'association</translation>
+    </message>
+    <message>
+        <source>Waiting for the phone…</source>
+        <translation>En attente du téléphone…</translation>
+    </message>
+    <message>
+        <source>Pairing…</source>
+        <translation>Association…</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Connexion…</translation>
+    </message>
+    <message>
+        <source>New code</source>
+        <translation>Nouveau code</translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation>Associer</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -4013,6 +4081,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
     <message>
         <source>Name or pin a device</source>
         <translation>Nommer ou épingler un appareil</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi by QR code</source>
+        <translation>Associer via le Wi-Fi par code QR</translation>
     </message>
 </context>
 <context>

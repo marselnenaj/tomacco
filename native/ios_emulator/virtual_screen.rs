@@ -155,7 +155,7 @@ fn crc32(parts: &[&[u8]]) -> u32 {
 }
 
 /// An 8-bit PNG of tight rows: RGB with 3 channels, RGBA with 4.
-fn png(pixels: &[u8], width: usize, height: usize, channels: usize) -> Result<Vec<u8>> {
+pub(crate) fn png(pixels: &[u8], width: usize, height: usize, channels: usize) -> Result<Vec<u8>> {
     use flate2::{Compression, write::ZlibEncoder};
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::fast());
     for row in pixels.chunks_exact(width * channels).take(height) {

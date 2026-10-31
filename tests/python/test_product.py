@@ -4,6 +4,7 @@ import fcntl
 import json
 import os
 import shlex
+import shutil
 import socket
 import sqlite3
 import subprocess
@@ -970,6 +971,54 @@ class AndroidControlTests(Isolated):
             with self.assertRaises(StudioError) as refused:
                 dispatch("device.label", arguments)
             self.assertEqual(refused.exception.code, "invalid_argument", arguments)
+
+    def test_wireless_pairing_by_qr_code_pairs_and_connects_once_the_phone_scanned_it(self):
+        code = dispatch("android.pair", {"path": str(self.root / "pair.png")})
+        self.assertRegex(code["qr_text"], r"^WIFI:T:ADB;S:tomacco-[a-z0-9]{8};P:[a-z0-9]{10};;$")
+        self.assertEqual(code["qr_text"], f"WIFI:T:ADB;S:{code['service']};P:{code['password']};;")
+        self.assertEqual(len(code["qr"]["rows"]), code["qr"]["size"])
+        self.assertTrue(code["svg"].startswith("<svg"))
+        self.assertEqual((self.root / "pair.png").read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
+        zbar = shutil.which("zbarimg")
+        if zbar:
+            decoded = subprocess.run([zbar, "-q", "--raw", str(self.root / "pair.png")], capture_output=True, text=True)
+            self.assertEqual(decoded.stdout.strip(), code["qr_text"])
+        with self.assertRaises(StudioError) as named:
+            dispatch("android.pair", {"path": str(self.root / "pair.jpg")})
+        self.assertEqual(named.exception.code, "invalid_path")
+        # The phone offers the service once it scanned the code, then its connection service.
+        service, password = code["service"], code["password"]
+        self.tool("adb", "import json,os,sys\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+                         "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
+                         "scanned=(root/'scanned').exists()\npaired=(root/'paired').exists()\n"
+                         "if a==['mdns','services']:\n"
+                         "    print('List of discovered mdns services')\n"
+                         f"    if scanned: print('{service}\\t_adb-tls-pairing._tcp.\\t192.168.1.20:41235')\n"
+                         "    if paired: print('adb-R5CT-AbCd\\t_adb-tls-connect._tcp.\\t192.168.1.20:37099')\n"
+                         f"elif a[:1]==['pair']:\n    ok=a[1:]==['192.168.1.20:41235','{password}']\n    (root/'paired').touch() if ok else None\n"
+                         "    print('Successfully paired to 192.168.1.20:41235 [guid=adb-R5CT-AbCd]' if ok else 'Failed: Wrong password or connection was dropped.')\n"
+                         "elif a[:1]==['connect']: print('connected to '+a[1])\n")
+        with self.assertRaises(StudioError) as early:
+            dispatch("android.pair", {"action": "wait", "service": service, "password": password, "timeout": 1})
+        self.assertEqual(early.exception.code, "pairing_timeout")
+        (self.root / "scanned").touch()
+        self.assertEqual([s["name"] for s in dispatch("android.pair", {"action": "services"})["services"]], [service])
+        value = dispatch("android.pair", {"action": "wait", "service": service, "password": password, "timeout": 5})
+        self.assertEqual(value, {"paired": True, "address": "192.168.1.20:41235", "guid": "adb-R5CT-AbCd", "connected": True, "device": "192.168.1.20:37099"})
+        calls = [json.loads(line) for line in (self.root / "adb-calls.jsonl").read_text().splitlines()]
+        self.assertIn(["connect", "192.168.1.20:37099"], calls)
+        (self.root / "paired").unlink()
+        with self.assertRaises(StudioError) as wrong:
+            dispatch("android.pair", {"action": "wait", "service": service, "password": "wrongpass1", "timeout": 2})
+        self.assertEqual(wrong.exception.code, "pairing_failed")
+        for arguments in ({"action": "wait", "service": "a;b", "password": password}, {"action": "wait", "service": service, "password": "x"}):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.pair", arguments)
+            self.assertEqual(refused.exception.code, "invalid_argument")
+        self.tool("adb", "import sys\nprint('unknown command mdns', file=sys.stderr); sys.exit(1)\n")
+        with self.assertRaises(StudioError) as old:
+            dispatch("android.pair", {"action": "services"})
+        self.assertEqual(old.exception.code, "mdns_unavailable")
 
     def test_device_settings_apply_only_what_is_asked_and_read_everything_back(self):
         state = {"ro.build.version.sdk": "36\n", "uimode night": "Night mode: yes\n", "get system font_scale": "1.3\n",

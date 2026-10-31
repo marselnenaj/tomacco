@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 194 operations.
+`tomaccoctl` now has one typed API of 195 operations.
 
 ### Added
 
@@ -15,6 +15,10 @@ operations and their JSON results.
 - `device.label` names a device and pins it as a favourite. `device.list` shows the nickname as `name`, marks
   pinned devices and lists them first; the desktop's device list and the Omarchy panel show both. An emulator
   keeps its nickname by its AVD name.
+- `android.pair` pairs an Android 11+ phone for wireless debugging by QR code: it returns the code for **Pair device
+  with QR code** (also as PNG or SVG), then pairs and connects once the phone offers it through adb's mDNS discovery.
+  **Connect via Wi-Fi** in the desktop shows the code, with the pairing code as the other way. Tested with a stand-in
+  adb; the code decodes with zbar.
 
 ## 1.1.0
 

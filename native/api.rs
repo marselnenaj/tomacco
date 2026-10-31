@@ -170,6 +170,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "android.app_files" => crate::android_device::app_files(&a),
         "android.each" => crate::android_device::each(&a),
         "android.display" => crate::android_device::display(&a),
+        "android.pair" => crate::android_device::pair(&a),
         "android.package_inspect" => crate::android_package::inspect(&a),
         name if name.starts_with("play.") => play_store::handle(name, &a),
         name if name.starts_with("runtime.") => crate::runtime::handle(name, &a),
