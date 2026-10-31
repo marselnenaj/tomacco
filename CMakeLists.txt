@@ -80,7 +80,7 @@ set(TOMACCO_QML_RESOURCES
 qt_add_resources(tomacco resources PREFIX / FILES ${TOMACCO_QML_RESOURCES})
 # Interface translations. English is the source language: its file only
 # carries plural forms. Each other language has one file with every text.
-set(TOMACCO_TS_FILE i18n/tomacco_de.ts i18n/tomacco_fr.ts)
+set(TOMACCO_TS_FILE i18n/tomacco_de.ts i18n/tomacco_fr.ts i18n/tomacco_es.ts)
 set(TOMACCO_PLURALS_TS_FILE i18n/tomacco_en.ts)
 if(TARGET Qt6::lrelease AND NOT TOMACCO_USE_TS2QM)
     # lupdate reads the target's C++ and QML/JS sources; the other resources hold no UI text.

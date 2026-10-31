@@ -31,7 +31,7 @@ device, tap through the interface, inspect the result and try again.
 The agent and the **native Qt desktop** use the same **188 typed operations**
 through MCP or the `tomaccoctl` JSON CLI. You can watch the live device, take over
 with touch and gestures, and share the same builds, logs and debugging session.
-The desktop supports English, German and French.
+The desktop supports English, German, French and Spanish.
 
 Tomacco is made for **Omarchy**, with panel and window-manager integration. It
 also works on other Linux desktops without those integrations. The virtual iOS

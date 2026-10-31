@@ -54,7 +54,7 @@ void Backend::reloadModels() {
 }
 QString Backend::s_uiLanguage=QStringLiteral("en");
 // The interface languages, by ISO 639 code; each but English has i18n/tomacco_CODE.ts.
-static const QStringList interfaceLanguages{QStringLiteral("en"),QStringLiteral("de"),QStringLiteral("fr")};
+static const QStringList interfaceLanguages{QStringLiteral("en"),QStringLiteral("de"),QStringLiteral("fr"),QStringLiteral("es")};
 static const QStringList languageChoices=QStringList{QStringLiteral("system")}+interfaceLanguages;
 static QString resolveLanguage(const QString &choice) {
     if(interfaceLanguages.contains(choice)) return choice;

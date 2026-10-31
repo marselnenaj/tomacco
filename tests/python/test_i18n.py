@@ -21,7 +21,7 @@ CPP_CONTEXTS = {"backend.cpp": "Backend", "control.cpp": "Control", "nativeview.
 # Every translated interface language, by the code in its file name.
 LANGUAGES = sorted(Path(p).stem.split("_", 1)[1] for p in glob.glob(str(ROOT / "i18n/tomacco_*.ts")) if not p.endswith("_en.ts"))
 # The number of plural forms Qt uses for each language (numerus.cpp).
-PLURAL_FORMS = {"de": 2, "fr": 2}
+PLURAL_FORMS = {"de": 2, "fr": 2, "es": 2}
 
 
 def unquote(literal: str) -> str:

@@ -890,10 +890,10 @@ Rectangle {
                 Text {text:qsTr("Language");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 StudioComboBox {
                     id:languagePicker;objectName:"languagePicker";Layout.fillWidth:true
-                    readonly property var codes:["system","en","de","fr"]
+                    readonly property var codes:["system","en","de","fr","es"]
                     readonly property string choice:Studio.language
                     // Each language names itself, the same in every language.
-                    model:[qsTr("System"),"English","Deutsch","Français"]
+                    model:[qsTr("System"),"English","Deutsch","Français","Español"]
                     function sync() {currentIndex=Math.max(0,codes.indexOf(choice))}
                     onChoiceChanged:sync()
                     onModelChanged:Qt.callLater(sync)

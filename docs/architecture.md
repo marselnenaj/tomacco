@@ -28,7 +28,7 @@ Qt desktop (qml/, src/)     tomaccoctl CLI     stdio MCP (native/mcp.rs)
 | `native/` | The Rust control plane, `tomaccoctl`. `api.rs` dispatches, `jobs.rs` runs durable jobs, `mcp.rs` serves MCP, one module per platform area. |
 | `native/ios_emulator/` | Control of the virtual iOS device: the one-step phone, its guest channel, its frames. |
 | `src/`, `qml/` | The desktop: C++/Qt backend and native display, QML interface. |
-| `i18n/` | German and French translations of the desktop. English is the source language. |
+| `i18n/` | German, French and Spanish translations of the desktop. English is the source language. |
 | `tools/` | Python recipes that long jobs run: engine and guest-tool builds, boot and stop of the virtual phone, measurements. |
 | `integrations/ios-emulator/` | Guest programs in C, and the ordered patch series applied to the pinned QEMU fork, renderer and shader translator. |
 | `integrations/omarchy/` | The Omarchy panel and desktop integration. |

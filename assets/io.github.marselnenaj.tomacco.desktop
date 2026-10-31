@@ -4,9 +4,11 @@ Name=Tomacco
 GenericName=Mobile Development Workspace
 GenericName[de]=Mobile-Entwicklungsumgebung
 GenericName[fr]=Environnement de développement mobile
+GenericName[es]=Entorno de desarrollo móvil
 Comment=Build, run and test native Android and iOS apps
 Comment[de]=Native Android- und iOS-Apps bauen, starten und testen
 Comment[fr]=Compiler, lancer et tester des apps Android et iOS natives
+Comment[es]=Compilar, ejecutar y probar apps nativas de Android e iOS
 Exec=tomacco
 Icon=io.github.marselnenaj.tomacco
 Terminal=false
@@ -14,6 +16,7 @@ Categories=Development;IDE;
 Keywords=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;
 Keywords[de]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Smartphone;
 Keywords[fr]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Émulateur;MCP;Agent;Smartphone;
+Keywords[es]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulador;MCP;Agente;Móvil;
 StartupNotify=true
 StartupWMClass=io.github.marselnenaj.tomacco
 Actions=Project;Devices;Jobs;
@@ -22,16 +25,19 @@ Actions=Project;Devices;Jobs;
 Name=Project
 Name[de]=Projekt
 Name[fr]=Projet
+Name[es]=Proyecto
 Exec=tomacco --workspace project
 
 [Desktop Action Devices]
 Name=Devices
 Name[de]=Geräte
 Name[fr]=Appareils
+Name[es]=Dispositivos
 Exec=tomacco --workspace devices
 
 [Desktop Action Jobs]
 Name=Builds and jobs
 Name[de]=Builds und Aufträge
 Name[fr]=Builds et tâches
+Name[es]=Compilaciones y tareas
 Exec=tomacco --workspace jobs

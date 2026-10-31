@@ -50,7 +50,7 @@ Tests that need a toolchain, an engine or a device skip and say what they need.
 - A claim in the documentation states what was measured or run. An accepted
   request is not a result.
 - A new user-visible string goes through `qsTr` in English with its translation in
-  every `i18n/tomacco_*.ts` file (German and French); `tests/python/test_i18n.py`
+  every `i18n/tomacco_*.ts` file (German, French and Spanish); `tests/python/test_i18n.py`
   checks that none is missing.
 - Engine patches go in `integrations/ios-emulator` and are listed in order in
   `tools/build_ios_paravirt.py`.

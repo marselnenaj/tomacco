@@ -75,7 +75,8 @@ TOMACCOCTL="$PWD/build/tomaccoctl" TOMACCO_HOME=/path/to/isolated-state python3 
 
 ## Translations
 
-The desktop speaks English, German and French. The translations are in `i18n/tomacco_de.ts` and `i18n/tomacco_fr.ts`;
+The desktop speaks English, German, French and Spanish. The translations are in `i18n/tomacco_de.ts`, `i18n/tomacco_fr.ts`
+and `i18n/tomacco_es.ts`;
 `i18n/tomacco_en.ts` holds only the English plural forms. With Qt's Linguist tools (`qt6-tools`), this refreshes
 them after text changes; without those tools, the build compiles them with `tools/ts2qm.py`.
 
