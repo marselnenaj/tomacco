@@ -99,6 +99,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "job.get" => jobs::get(s(&a, "job_id")).map(redacted),
         "job.logs" => jobs::logs(&a).map(redacted),
         "job.wait" => jobs::wait(s(&a, "job_id"), n(&a, "seconds")).map(redacted),
+        "job.events" => jobs::events(s(&a, "job_id"), n(&a, "after"), n(&a, "limit")).map(redacted),
         "job.cancel" => jobs::cancel(s(&a, "job_id")),
         "job.send" => jobs::send(s(&a, "job_id"), s(&a, "command")),
         "storage.prune" => crate::storage::handle(&a),

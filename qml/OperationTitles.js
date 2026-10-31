@@ -30,6 +30,7 @@ var titles = {
     "job.get": QT_TRANSLATE_NOOP("Operations", "Job status"),
     "job.logs": QT_TRANSLATE_NOOP("Operations", "Live logs"),
     "job.wait": QT_TRANSLATE_NOOP("Operations", "Wait for job"),
+    "job.events": QT_TRANSLATE_NOOP("Operations", "Job timeline"),
     "job.cancel": QT_TRANSLATE_NOOP("Operations", "Cancel job"),
     "job.send": QT_TRANSLATE_NOOP("Operations", "Hot Reload"),
     "storage.prune": QT_TRANSLATE_NOOP("Operations", "Clean up old jobs and reports"),

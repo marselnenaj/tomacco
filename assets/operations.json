@@ -742,6 +742,40 @@
     }
   },
   {
+    "name": "job.events",
+    "title": "Job timeline",
+    "description": "A job's state changes (queued, running and how it ended, with exit code and error), phase changes (such as waiting, queued, building, ready) with their reason, retries and cancellation requests, each with a time in seconds since 1970, in order. Pass next_after as after to read only newer events. Jobs from before events were recorded get their creation and end from the job record, marked synthesized.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "description": ""
+        },
+        "after": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Return only events with a larger id"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 200
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "job.cancel",
     "title": "Cancel job",
     "description": "Cancel a job and terminate its child process group.",

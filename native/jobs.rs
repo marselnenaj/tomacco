@@ -65,8 +65,19 @@ fn remove_temporary_directories(spec: &Value) -> Vec<Value> {
     errors
 }
 /// The jobs schema this version reads and writes (PRAGMA user_version).
-const SCHEMA_VERSION: i64 = 1;
+/// Version 2 adds the `events` table and the triggers that fill it.
+const SCHEMA_VERSION: i64 = 2;
 const SCHEMA: &str = "CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY,label TEXT NOT NULL,state TEXT NOT NULL,created REAL NOT NULL,updated REAL NOT NULL,spec TEXT NOT NULL,pid INTEGER,token TEXT,exit_code INTEGER,result TEXT,cancel INTEGER DEFAULT 0); CREATE TABLE IF NOT EXISTS inputs (id INTEGER PRIMARY KEY,job TEXT NOT NULL,text TEXT NOT NULL); CREATE INDEX IF NOT EXISTS jobs_created ON jobs(created DESC); CREATE INDEX IF NOT EXISTS inputs_job ON inputs(job);";
+/// A job's timeline. Triggers record every state change, phase change and
+/// cancellation request, whichever code path or Tomacco version writes the
+/// row, and drop a job's events with the job. JSON is read only when it is
+/// valid (CASE evaluates lazily), so a malformed result never fails a write.
+const EVENTS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY,job TEXT NOT NULL,time REAL NOT NULL,kind TEXT NOT NULL,value TEXT NOT NULL,detail TEXT); CREATE INDEX IF NOT EXISTS events_job ON events(job,id); \
+CREATE TRIGGER IF NOT EXISTS job_event_created AFTER INSERT ON jobs BEGIN INSERT INTO events(job,time,kind,value) VALUES(NEW.id,NEW.created,'state',NEW.state); END; \
+CREATE TRIGGER IF NOT EXISTS job_event_state AFTER UPDATE OF state ON jobs WHEN NEW.state IS NOT OLD.state BEGIN INSERT INTO events(job,time,kind,value,detail) VALUES(NEW.id,(julianday('now')-2440587.5)*86400.0,'state',NEW.state,json_object('exit_code',NEW.exit_code,'error',CASE WHEN json_valid(NEW.result) THEN json_extract(NEW.result,'$.error') END)); END; \
+CREATE TRIGGER IF NOT EXISTS job_event_phase AFTER UPDATE OF result ON jobs WHEN (CASE WHEN json_valid(NEW.result) THEN json_extract(NEW.result,'$.phase') END) IS NOT NULL AND (CASE WHEN json_valid(NEW.result) THEN json_extract(NEW.result,'$.phase') END) IS NOT (CASE WHEN json_valid(OLD.result) THEN json_extract(OLD.result,'$.phase') END) BEGIN INSERT INTO events(job,time,kind,value,detail) VALUES(NEW.id,(julianday('now')-2440587.5)*86400.0,'phase',json_extract(NEW.result,'$.phase'),json_object('reason',json_extract(NEW.result,'$.reason'))); END; \
+CREATE TRIGGER IF NOT EXISTS job_event_cancel AFTER UPDATE OF cancel ON jobs WHEN NEW.cancel=1 AND COALESCE(OLD.cancel,0)=0 BEGIN INSERT INTO events(job,time,kind,value) VALUES(NEW.id,(julianday('now')-2440587.5)*86400.0,'cancel_requested',''); END; \
+CREATE TRIGGER IF NOT EXISTS job_event_deleted AFTER DELETE ON jobs BEGIN DELETE FROM events WHERE job=OLD.id; END;";
 /// How long a single statement waits for a lock another connection holds.
 const BUSY_TIMEOUT: Duration = Duration::from_secs(15);
 /// How long read-only requests keep asking a contended database again.
@@ -128,7 +139,7 @@ fn initialise(root: &Path, db: &Connection) -> Result<()> {
     // journal_mode cannot change inside a transaction.
     db.execute_batch("PRAGMA journal_mode=WAL;")?;
     db.execute_batch(&format!(
-        "BEGIN IMMEDIATE; {SCHEMA} PRAGMA user_version={SCHEMA_VERSION}; COMMIT;"
+        "BEGIN IMMEDIATE; {SCHEMA} {EVENTS_SCHEMA} PRAGMA user_version={SCHEMA_VERSION}; COMMIT;"
     ))
     .inspect_err(|_| {
         let _ = db.execute_batch("ROLLBACK;");
@@ -583,6 +594,65 @@ pub fn wait(id: &str, seconds: u64) -> Result {
         }
         thread::sleep(Duration::from_millis(100));
     }
+}
+
+/// A job's recorded state transitions, phase changes and cancellation
+/// requests in order, from event `after` on. Jobs created before Tomacco
+/// recorded events get their creation and, once ended, their end from the
+/// job record, marked `synthesized`.
+pub fn events(id: &str, after: u64, limit: u64) -> Result {
+    identifier(id, "job ID", Some("[0-9a-f]{32}"))?;
+    let db = database()?;
+    retrying(Instant::now() + READ_RETRY, || {
+        timeline(&db, id, after, limit)
+    })
+}
+fn timeline(db: &Connection, id: &str, after: u64, limit: u64) -> Result {
+    // Reading the job first records a dead worker's end as an event.
+    let job = read(db, id)?;
+    let mut events = db
+        .prepare(
+            "SELECT id,time,kind,value,detail FROM events WHERE job=? AND id>? ORDER BY id LIMIT ?",
+        )?
+        .query_map(params![id, after as i64, limit as i64], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, f64>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, String>(3)?,
+                r.get::<_, Option<String>>(4)?,
+            ))
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?
+        .into_iter()
+        .map(|(event, time, kind, value, detail)| {
+            let mut entry = json!({"id":event,"time":time,"kind":kind,"value":value});
+            let detail: Value = detail
+                .and_then(|text| serde_json::from_str(&text).ok())
+                .unwrap_or(Value::Null);
+            if let Some(fields) = detail.as_object() {
+                for (key, value) in fields.iter().filter(|(_, v)| !v.is_null()) {
+                    entry[key] = value.clone();
+                }
+            }
+            entry
+        })
+        .collect::<Vec<_>>();
+    let recorded: i64 = db.query_row("SELECT count(*) FROM events WHERE job=?", [id], |r| {
+        r.get(0)
+    })?;
+    let next_after = events.last().map_or(after, |e| n(e, "id"));
+    if recorded == 0 && after == 0 {
+        events.push(json!({"id":0,"time":job["created"],"kind":"state","value":"queued","synthesized":true}));
+        if TERMINAL.contains(&s(&job, "state")) {
+            events.push(json!({"id":0,"time":job["updated"],"kind":"state","value":job["state"],"exit_code":job["exit_code"],"synthesized":true}));
+        }
+    }
+    Ok(json!({
+        "id":id,"label":job["label"],"state":job["state"],"phase":job["phase"],
+        "created":job["created"],"updated":job["updated"],
+        "events":events,"next_after":next_after,"recorded":recorded>0,
+    }))
 }
 
 struct ManagedChild(Child);
@@ -1190,6 +1260,99 @@ mod database_tests {
         assert_eq!(s(&read(&db, &parent).unwrap(), "state"), "failed");
         assert!(cancel_flag(&db, &child));
         assert_eq!(s(&read(&db, &child).unwrap(), "state"), "running");
+    }
+
+    #[test]
+    fn every_state_and_phase_change_is_recorded_as_an_event_in_order() {
+        let root = tempfile::tempdir().unwrap();
+        let db = open(root.path()).unwrap();
+        let id = "1".repeat(32);
+        insert(&db, &id, "queued", 0.0);
+        let _worker = lease(root.path(), &id);
+        let set = |sql: &str| {
+            db.execute(sql, [&id]).unwrap();
+        };
+        set("UPDATE jobs SET state='running' WHERE id=?");
+        set(r#"UPDATE jobs SET result='{"phase":"waiting"}' WHERE id=?"#);
+        set(r#"UPDATE jobs SET result='{"phase":"waiting"}' WHERE id=?"#);
+        set(r#"UPDATE jobs SET result='{"phase":"building"}' WHERE id=?"#);
+        // A malformed result is no event, and no error.
+        set("UPDATE jobs SET result='not json' WHERE id=?");
+        cancel_tree(&db, &id).unwrap();
+        set(
+            r#"UPDATE jobs SET state='cancelled',exit_code=-1,result='{"error":"stopped"}' WHERE id=?"#,
+        );
+        let value = timeline(&db, &id, 0, 100).unwrap();
+        let kinds: Vec<String> = value["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| format!("{}:{}", s(e, "kind"), s(e, "value")))
+            .collect();
+        assert_eq!(
+            kinds,
+            [
+                "state:queued",
+                "state:running",
+                "phase:waiting",
+                "phase:building",
+                "cancel_requested:",
+                "state:cancelled"
+            ]
+        );
+        let events = value["events"].as_array().unwrap();
+        assert_eq!(events[5]["exit_code"], -1);
+        assert_eq!(s(&events[5], "error"), "stopped");
+        assert!(
+            events
+                .windows(2)
+                .all(|w| w[0]["time"].as_f64() <= w[1]["time"].as_f64())
+        );
+        assert!(b(&value, "recorded"));
+        // Paging continues after the last event seen.
+        let first = timeline(&db, &id, 0, 2).unwrap();
+        assert_eq!(first["events"].as_array().unwrap().len(), 2);
+        let rest = timeline(&db, &id, n(&first, "next_after"), 100).unwrap();
+        assert_eq!(rest["events"].as_array().unwrap().len(), 4);
+        let none = timeline(&db, &id, n(&rest, "next_after"), 100).unwrap();
+        assert_eq!(none["events"], json!([]));
+        assert_eq!(none["next_after"], rest["next_after"]);
+        // Removing a job removes its events.
+        set("DELETE FROM jobs WHERE id=?");
+        let left: i64 = db
+            .query_row("SELECT count(*) FROM events", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(left, 0);
+    }
+
+    #[test]
+    fn a_job_from_before_events_gets_its_timeline_from_its_record() {
+        let root = tempfile::tempdir().unwrap();
+        let id = "2".repeat(32);
+        {
+            let old = Connection::open(root.path().join("jobs.sqlite3")).unwrap();
+            old.execute_batch(&format!(
+                "PRAGMA journal_mode=WAL; {SCHEMA} PRAGMA user_version=1;"
+            ))
+            .unwrap();
+            insert(&old, &id, "succeeded", 5.0);
+        }
+        let db = open(root.path()).unwrap();
+        let version: i64 = db
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(version, SCHEMA_VERSION);
+        let value = timeline(&db, &id, 0, 100).unwrap();
+        assert!(!b(&value, "recorded"));
+        let events = value["events"].as_array().unwrap();
+        assert_eq!(events.len(), 2);
+        assert!(events.iter().all(|e| b(e, "synthesized")));
+        assert_eq!(s(&events[1], "value"), "succeeded");
+        // New changes to it are recorded from now on.
+        db.execute("UPDATE jobs SET state='failed' WHERE id=?", [&id])
+            .unwrap();
+        let value = timeline(&db, &id, 0, 100).unwrap();
+        assert_eq!(value["events"].as_array().unwrap().len(), 1);
     }
 
     #[test]
