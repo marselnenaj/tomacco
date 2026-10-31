@@ -57,6 +57,10 @@ object on stdout, `{"ok":true,"result":...}` or
 standard output has protocol messages only. Opening or inspecting a project never runs its build
 scripts.
 
+When standard output is a terminal, the JSON is indented for reading. Through a pipe or into a file it
+is one line, exactly as before. `--pretty` indents it anywhere, and `--compact` keeps one line at a
+terminal.
+
 Use `TOMACCO_HOME=/absolute/test-state` to isolate job, toolchain, profile and emulator state. The
 desktop's **All tools** tab shows every operation and its schema.
 

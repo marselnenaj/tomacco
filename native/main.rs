@@ -37,7 +37,7 @@ fn main() {
     let code = match run(&args, &options) {
         Ok(code) => code,
         Err(error) => {
-            let _ = writeln!(std::io::stdout(), "{}", api::envelope(Err(error)));
+            print_envelope(Err(error), &options);
             1
         }
     };
@@ -47,11 +47,13 @@ fn main() {
 /// internal `_worker` commands and `setup`, which has its own, keep theirs.
 #[derive(Debug, Default, PartialEq)]
 struct Options {
-    names: bool,
+    flags: Vec<&'static str>,
     unknown: Vec<String>,
 }
 impl Options {
-    const FLAGS: &[&str] = &["--names"];
+    const FLAGS: &[&str] = &["--names", "--pretty", "--compact"];
+    /// What every command that prints an envelope takes.
+    const OUTPUT: &[&str] = &["--pretty", "--compact"];
     fn parse(args: Vec<String>) -> (Vec<String>, Options) {
         let mut options = Options::default();
         if args
@@ -62,21 +64,33 @@ impl Options {
         }
         let mut rest = Vec::new();
         for arg in args {
-            match arg.as_str() {
-                "--names" => options.names = true,
-                "--help" | "--version" => rest.push(arg),
-                flag if flag.starts_with("--") => options.unknown.push(arg),
-                _ => rest.push(arg),
+            if let Some(flag) = Self::FLAGS.iter().find(|f| **f == arg) {
+                options.flags.push(flag);
+            } else if arg.starts_with("--") && arg != "--help" && arg != "--version" {
+                options.unknown.push(arg);
+            } else {
+                rest.push(arg);
             }
         }
         (rest, options)
     }
+    fn given(&self, flag: &str) -> bool {
+        self.flags.contains(&flag)
+    }
     /// Refuses a flag this command does not take, naming the closest one.
     fn check(&self, allowed: &[&str]) -> Result<()> {
-        let Some(flag) = self.unknown.first().map(String::as_str).or(Self::FLAGS
+        let allowed: Vec<&str> = allowed.iter().chain(Self::OUTPUT).copied().collect();
+        if self.given("--pretty") && self.given("--compact") {
+            return Err(Error::new(
+                "invalid_request",
+                "--pretty and --compact exclude each other",
+            ));
+        }
+        let Some(flag) = self.unknown.first().map(String::as_str).or(self
+            .flags
             .iter()
             .copied()
-            .find(|f| !allowed.contains(f) && self.given(f)))
+            .find(|f| !allowed.contains(f)))
         else {
             return Ok(());
         };
@@ -86,12 +100,29 @@ impl Options {
         };
         Err(Error::new("invalid_request", format!("Unknown option: {flag}")).remedy(remedy))
     }
-    fn given(&self, flag: &str) -> bool {
-        match flag {
-            "--names" => self.names,
-            _ => false,
-        }
+    /// Indented JSON for a person: asked for with --pretty, or by default
+    /// when standard output is a terminal. Anything else, a pipe or a file,
+    /// gets one line, byte for byte what scripts have always read.
+    fn pretty(&self, terminal: bool) -> bool {
+        self.given("--pretty") || (terminal && !self.given("--compact"))
     }
+}
+fn render(value: &Value, pretty: bool) -> String {
+    if pretty {
+        serde_json::to_string_pretty(value).expect("JSON values serialize")
+    } else {
+        value.to_string()
+    }
+}
+fn print_envelope(result: Result, options: &Options) {
+    use std::io::IsTerminal;
+    let pretty = options.pretty(std::io::stdout().is_terminal());
+    // A reader that stopped early (`tomaccoctl schema | head`) is no reason to panic.
+    let _ = writeln!(
+        std::io::stdout(),
+        "{}",
+        render(&api::envelope(result), pretty)
+    );
 }
 /// What a public command prints: one JSON envelope, or plain text.
 #[derive(Debug)]
@@ -103,13 +134,13 @@ enum Reply {
 /// `--names` the names alone, one per line, for scripts and completion.
 fn schema(args: &[String], options: &Options) -> Result<Reply> {
     options.check(&["--names"])?;
-    if args.len() > 1 || (options.names && !args.is_empty()) {
+    if args.len() > 1 || (options.given("--names") && !args.is_empty()) {
         return Err(Error::new(
             "invalid_request",
             "Expected one operation name, or --names",
         ));
     }
-    if options.names {
+    if options.given("--names") {
         return Ok(Reply::Text(
             api::names().map(|name| format!("{name}\n")).collect(),
         ));
@@ -162,6 +193,11 @@ Usage:
                     (Model Context Protocol; no network port).
   tomaccoctl --version, -V
   tomaccoctl --help, -h
+
+Options of call, schema and doctor:
+  --pretty          Indent the JSON. This is the default when standard output
+                    is a terminal; a pipe or a file gets one line.
+  --compact         One line of JSON, even at a terminal.
 
 Examples:
   tomaccoctl call workspace.list
@@ -317,8 +353,7 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         ),
     };
     let status = if result.is_ok() { 0 } else { 1 };
-    // A reader that stopped early (`tomaccoctl schema | head`) is no reason to panic.
-    let _ = writeln!(std::io::stdout(), "{}", api::envelope(result));
+    print_envelope(result, options);
     Ok(status)
 }
 
@@ -332,7 +367,7 @@ mod tests {
     fn flags_are_taken_from_anywhere_but_internal_commands_keep_theirs() {
         let (args, options) = line(&["--names", "schema"]);
         assert_eq!(args, ["schema"]);
-        assert!(options.names);
+        assert!(options.given("--names"));
         let (args, options) = line(&["schema", "--nmaes"]);
         assert_eq!(args, ["schema"]);
         let error = options.check(&["--names"]).unwrap_err();
@@ -349,6 +384,29 @@ mod tests {
         assert_eq!(options, Options::default());
         let (args, _) = line(&["setup", "--yes"]);
         assert_eq!(args, ["setup", "--yes"]);
+    }
+    #[test]
+    fn json_is_indented_at_a_terminal_or_when_asked_and_one_line_otherwise() {
+        let value = api::envelope(Ok(json!({"a":[1,2]})));
+        let (_, plain) = line(&["call", "doctor"]);
+        // Through a pipe the output stays exactly what scripts read before.
+        assert!(!plain.pretty(false));
+        assert_eq!(
+            render(&value, plain.pretty(false)),
+            r#"{"ok":true,"result":{"a":[1,2]}}"#
+        );
+        assert!(plain.pretty(true));
+        assert_eq!(
+            render(&value, true),
+            "{\n  \"ok\": true,\n  \"result\": {\n    \"a\": [\n      1,\n      2\n    ]\n  }\n}"
+        );
+        let (_, pretty) = line(&["call", "doctor", "--pretty"]);
+        assert!(pretty.pretty(false));
+        let (_, compact) = line(&["--compact", "schema"]);
+        assert!(!compact.pretty(true));
+        assert!(compact.check(&[]).is_ok());
+        let (_, both) = line(&["schema", "--pretty", "--compact"]);
+        assert!(both.check(&[]).is_err());
     }
     #[test]
     fn schema_prints_every_operation_one_operation_or_the_names() {
