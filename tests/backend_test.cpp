@@ -45,6 +45,23 @@ private slots:
         QVERIFY(backend.projectFolder(root.filePath("missing")).isEmpty());
         QVERIFY(backend.projectFolder(QString()).isEmpty());
     }
+    void onlyJobLogFilesOpenAsJobLogs() {
+        QTemporaryDir root; QVERIFY(root.isValid());
+        QVERIFY(QDir(root.path()).mkpath("jobs"));
+        const auto id=QString(32,'a');
+        const auto log=root.filePath("jobs/"+id+".log");
+        write(log,"Building\n");
+        write(root.filePath("jobs/notes.log"),"x");
+        write(root.filePath(id+".log"),"x");
+        QVERIFY(QFile::link(log,root.filePath("jobs/"+QString(32,'b')+".log")));
+        Backend backend(QString(),nullptr,false);
+        QCOMPARE(backend.jobLogPath(log),QFileInfo(log).canonicalFilePath());
+        QVERIFY(backend.jobLogPath(root.filePath("jobs/notes.log")).isEmpty());
+        QVERIFY(backend.jobLogPath(root.filePath(id+".log")).isEmpty());
+        QVERIFY(backend.jobLogPath(root.filePath("jobs/"+QString(32,'b')+".log")).isEmpty());
+        QVERIFY(backend.jobLogPath(root.filePath("jobs/"+QString(32,'c')+".log")).isEmpty());
+        QVERIFY(backend.jobLogPath(QString()).isEmpty());
+    }
     void dataDirectoryIsTheVariableOrTheDefault() {
         QTemporaryDir home;
         QVERIFY(home.isValid());

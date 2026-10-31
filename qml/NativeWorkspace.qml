@@ -402,7 +402,7 @@ Rectangle {
             if(op==="workspace.list")view.saved=r
             if(op==="ios.doctor")view.iosStatus=r
             if(op==="ios.prepare" || op==="ios.wda_prepare") {if(r.id){workspace.selectJob(r);view.notice=qsTr("Setup started · progress under Builds & jobs")}else view.notice=qsTr("Apple sign-in opened in the local terminal");view.failed=false}
-            if(op==="project.run") {view.launchPending=false;view.launchJob=r.id;view.launchRecord=r;workspace.selectJob(r);view.notice=r.reused?qsTr("Reused the running session"):qsTr("Building and starting your app…");if(workspace.project.kinds.indexOf("flutter")>=0 && (!view.live.session || view.live.device!==view.launchTarget.device))view.request("runtime.start",view.launchTarget)}
+            if(op==="project.run") {workspace.rememberJob(r,op,JSON.parse(c.signature));view.launchPending=false;view.launchJob=r.id;view.launchRecord=r;workspace.selectJob(r);view.notice=r.reused?qsTr("Reused the running session"):qsTr("Building and starting your app…");if(workspace.project.kinds.indexOf("flutter")>=0 && (!view.live.session || view.live.device!==view.launchTarget.device))view.request("runtime.start",view.launchTarget)}
             if(op==="job.list") {
                 workspace.jobs=r
                 let active=r.find(x=>x.plan && ["queued","running"].indexOf(x.state)>=0 && (x.plan.exclusive===view.projectPath || x.plan.cwd===view.projectPath))
@@ -417,7 +417,7 @@ Rectangle {
                 else {view.notice=qsTr("App launch: %1. Details under Builds & jobs.").arg(workspace.jobStateLabel(r));view.failed=true}
             }
             if(op==="workspace.context") {workspace.openProject(r.project.path);view.platform=r.workspace.platform || "android";view.target=r.workspace.device || ""}
-            if(op==="device.install"){if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
+            if(op==="device.install"){workspace.rememberJob(r,op,JSON.parse(c.signature));if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
             if(op==="runtime.capture"){view.notice=(Studio.copyImage(r.path)?qsTr("Screenshot saved and copied · %1"):qsTr("Capture saved · %1")).arg(r.path);view.failed=false}
         }
     }

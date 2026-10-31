@@ -62,6 +62,10 @@ public:
     Q_INVOKABLE QString documentPath(const QString &name) const;
     // Opens that document in the desktop's viewer; false when it is missing.
     Q_INVOKABLE bool openDocument(const QString &name);
+    // A job's log file as job.list names it (DATA/jobs/<id>.log), or an empty
+    // string for anything else; openJobLog opens it in the desktop's viewer.
+    Q_INVOKABLE QString jobLogPath(const QString &path) const;
+    Q_INVOKABLE bool openJobLog(const QString &path);
     // Persists the choice and installs its translators. The application's
     // QML engine retranslates on languageChanged (see main.cpp).
     Q_INVOKABLE void setLanguage(const QString &choice);

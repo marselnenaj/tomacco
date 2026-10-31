@@ -307,6 +307,10 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Unknown</source>
         <translation>Unbekannt</translation>
     </message>
+    <message>
+        <source>This job has no log file yet.</source>
+        <translation>Dieser Auftrag hat noch keine Protokolldatei.</translation>
+    </message>
 </context>
 <context>
     <name>Colors</name>
@@ -4357,6 +4361,52 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>No line of this log matches.</source>
         <translation>Keine Zeile dieses Protokolls passt.</translation>
+    </message>
+    <message>
+        <source>%1 s</source>
+        <translation>%1 s</translation>
+    </message>
+    <message>
+        <source>%1 min %2 s</source>
+        <translation>%1 min %2 s</translation>
+    </message>
+    <message>
+        <source>%1 h %2 min</source>
+        <translation>%1 h %2 min</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <source>Nothing running.</source>
+        <translation>Nichts läuft.</translation>
+    </message>
+    <message>
+        <source>No failed job.</source>
+        <translation>Kein fehlgeschlagener Auftrag.</translation>
+    </message>
+    <message>
+        <source>Open log file</source>
+        <translation>Protokolldatei öffnen</translation>
+    </message>
+    <message>
+        <source>Run again</source>
+        <translation>Erneut ausführen</translation>
+    </message>
+    <message>
+        <source>Run again · only for jobs this window started</source>
+        <translation>Erneut ausführen · nur für Aufträge, die dieses Fenster gestartet hat</translation>
+    </message>
+    <message>
+        <source>Running</source>
+        <comment>jobs filter</comment>
+        <translation>Laufend</translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <comment>jobs filter</comment>
+        <translation>Fehler</translation>
     </message>
 </context>
 <context>

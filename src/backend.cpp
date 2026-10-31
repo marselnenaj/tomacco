@@ -295,6 +295,17 @@ bool Backend::relaunch() {
     if(program.endsWith(QLatin1String(" (deleted)"))) program.chop(10);
     return QProcess::startDetached(program,QCoreApplication::arguments().mid(1));
 }
+QString Backend::jobLogPath(const QString &path) const {
+    static const QRegularExpression name(QStringLiteral("^[0-9a-f]{32}\\.log$"));
+    const QFileInfo file(path);
+    if(path.isEmpty() || !file.isFile() || file.isSymLink() || !name.match(file.fileName()).hasMatch() || file.dir().dirName()!=QLatin1String("jobs")) return {};
+    return file.canonicalFilePath();
+}
+bool Backend::openJobLog(const QString &path) {
+    const auto log=jobLogPath(path);
+    if(log.isEmpty()) { emit message(tr("This job has no log file yet.")); return false; }
+    return QDesktopServices::openUrl(QUrl::fromLocalFile(log));
+}
 void Backend::openExternal(const QUrl &url) { if(url.scheme()=="http" || url.scheme()=="https") QDesktopServices::openUrl(url); }
 void Backend::openScreenshots() { QDesktopServices::openUrl(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)+"/Tomacco")); }
 void Backend::testResult(const QVariantMap &result) { const auto data=QJsonDocument(QJsonObject::fromVariantMap(result)).toJson(QJsonDocument::Compact); fprintf(stdout,"TOMACCO_TEST %s\n",data.constData()); fflush(stdout); }

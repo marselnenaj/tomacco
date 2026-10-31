@@ -2534,6 +2534,59 @@ for line in sys.stdin:
         workspace->setProperty("selectedJob",QString());workspace->setProperty("logText",QString());workspace->setProperty("jobs",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void jobs_history_shows_duration_and_project_filters_and_runs_again() {
+        // Each job shows its state, how long it ran and its project; the list narrows to running or
+        // failed jobs; a job this window started can be started again, one from elsewhere cannot.
+        open("jobs");window->resize(1380,970);QTest::qWait(50);
+        const double now=QDateTime::currentSecsSinceEpoch();
+        const auto project=directory.filePath("project");
+        const QVariantMap running{{"id","history-running"},{"label","Build Android · debug"},{"state","running"},{"created",now-75},{"updated",now},{"plan",QVariantMap{{"exclusive",project}}}};
+        const QVariantMap failed{{"id","history-failed"},{"label","Lint"},{"state","failed"},{"created",now-900},{"updated",now-780},{"plan",QVariantMap{{"exclusive",project}}},{"log_path","/nonexistent/history-failed.log"}};
+        const QVariantMap done{{"id","history-done"},{"label","Install app"},{"state","succeeded"},{"created",now-4000},{"updated",now-3990},{"plan",QVariantMap{{"exclusive",""}}}};
+        workspace->setProperty("jobs",QVariantList{running,failed,done});
+        QTRY_VERIFY(item("jobRow-history-failed"));
+        const auto duration=[&](const QVariantMap &job){QVariant out;QMetaObject::invokeMethod(workspace,"jobDuration",Q_RETURN_ARG(QVariant,out),Q_ARG(QVariant,job));return out.toString();};
+        QCOMPARE(duration(failed),QString("2 min 0 s"));QCOMPARE(duration(done),QString("10 s"));
+        QTRY_VERIFY(duration(running).startsWith("1 min"));
+        auto *row=item("jobRow-history-failed");
+        QCOMPARE(row->property("project").toString(),QString("project"));
+        QCOMPARE(item("jobRow-history-done")->property("project").toString(),QString());
+        // Filters.
+        const auto shown=[&]{return workspace->property("shownJobs").value<QJSValue>().property("length").toInt();};
+        QCOMPARE(shown(),3);
+        auto *failedFilter=item("jobFilter-failed");QVERIFY(failedFilter);
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,failedFilter->mapToScene(QPointF(failedFilter->width()/2,failedFilter->height()/2)).toPoint());
+        QTRY_COMPARE(shown(),1);QTRY_VERIFY(!item("jobRow-history-done") || !item("jobRow-history-done")->isVisible());
+        workspace->setProperty("jobFilter",QString("running"));QCOMPARE(shown(),1);
+        QCOMPARE(workspace->property("shownJobs").value<QJSValue>().property(0).property("id").toString(),QString("history-running"));
+        workspace->setProperty("jobFilter",QString("all"));QCOMPARE(shown(),3);
+        // A job from another client cannot be run again; a running one neither.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"selectJob",Q_ARG(QVariant,failed)));
+        auto *rerun=item("jobRerun");QVERIFY(rerun);QTRY_VERIFY(rerun->isVisible());
+        QVERIFY(!rerun->isEnabled());QVERIFY(item("jobLogFile")->isEnabled());
+        // A job this window started is remembered with its request, also across a restart.
+        workspace->setProperty("pending",QVariantMap{{"-71",QVariantMap{{"operation","job.get"},{"quiet",true},{"signature",QString(R"({"job_id":"00000000000000000000000000000000"})")}}}});
+        QVariantMap started=failed;started["id"]="history-mine";
+        control->apiFinished(-71,"job.get",QVariantMap{{"ok",true},{"result",started}});
+        QCOMPARE(workspace->property("selectedJob").toString(),QString("history-mine"));
+        QVERIFY(QSettings().value("jobs/origins").toString().contains("history-mine"));
+        QTRY_VERIFY(rerun->isEnabled());
+        workspace->setProperty("pending",QVariantMap{});
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,rerun->mapToScene(QPointF(rerun->width()/2,rerun->height()/2)).toPoint());
+        const auto pending=mapOf(workspace->property("pending"));
+        QCOMPARE(pending.size(),1);
+        QCOMPARE(pending.first().toMap().value("operation").toString(),QString("job.get"));
+        QCOMPARE(pending.first().toMap().value("signature").toString(),QString(R"({"job_id":"00000000000000000000000000000000"})"));
+        QVariantMap mineRunning=started;mineRunning["state"]="running";
+        workspace->setProperty("activeJob",mineRunning);QVERIFY(!rerun->isEnabled());
+        QVERIFY(item("jobCancel")->isEnabled());
+        // The (failing) request ends; nothing is left behind for the other scenarios.
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty(),patient(10000));
+        QSettings().remove("jobs/origins");workspace->setProperty("jobOrigins",QVariantMap{});
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        workspace->setProperty("status",QString());workspace->setProperty("failed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void cleanupTestCase() {
         engine.reset();control.reset();backend.reset();
     }

@@ -115,8 +115,19 @@ layout lab.
 
 ## Builds and jobs
 
-**Builds & jobs** (Ctrl+3, *Builds & Aufträge*) lists the jobs of every client
-and shows the chosen job's log. Above the log, **Filter the log**
+**Builds & jobs** (Ctrl+3, *Builds & Aufträge*) lists the jobs of every client,
+newest first, with their state, how long they ran or have been running, and the
+project they work in. **All**, **Running** and **Failed** (*Alle*, *Laufend*,
+*Fehler*) above the list narrow it; Failed includes jobs that timed out. The
+chosen job's log fills the rest. Beside its name, **Open log file**
+(*Protokolldatei öffnen*) opens the log in the desktop's text viewer,
+**Run again** (*Erneut ausführen*) starts the same request once more and
+**Cancel** (*Abbrechen*) stops a job that runs. Run again works for jobs this
+window started (builds, tests, lint, Run app, installs and tool forms); it
+remembers the last 40 such requests across restarts. Jobs that agents or
+`tomaccoctl` started carry no request the desktop could repeat.
+
+Above the log, **Filter the log**
 (*Protokoll filtern*) keeps the lines that contain a text, ignoring case, and
 **Warnings** or **Errors** (*Warnungen*, *Fehler*) keep the lines at that level:
 Warnings shows warnings and errors. The level is guessed from words such as
