@@ -4,6 +4,12 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Changed
+
+- The Arch PKGBUILD and .SRCINFO build 1.1.0 from its source tarball.
+
 ## 1.1.0
 
 `tomaccoctl` now has one typed API of 193 operations.

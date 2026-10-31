@@ -218,3 +218,36 @@ class Catalogue(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ArchPackageTests(unittest.TestCase):
+    """packaging/arch: the PKGBUILD and the .SRCINFO the AUR reads from it."""
+
+    @staticmethod
+    def pkgbuild():
+        text = (ROOT / "packaging/arch/PKGBUILD").read_text()
+        return dict(re.findall(r"(?m)^(\w+)=\(?'?\"?([^'\"()\n]*)", text))
+
+    def test_srcinfo_matches_the_pkgbuild(self):
+        fields = self.pkgbuild()
+        info = (ROOT / "packaging/arch/.SRCINFO").read_text()
+        version = fields["pkgver"]
+        self.assertIn(f"\tpkgver = {version}\n", info)
+        self.assertIn(f"\tpkgrel = {fields['pkgrel']}\n", info)
+        self.assertIn(f"\tsha256sums = {fields['sha256sums']}\n", info)
+        self.assertIn(f"\tsource = https://github.com/marselnenaj/tomacco/releases/download/v{version}/"
+                      f"tomacco-{version}-source.tar.gz\n", info)
+        self.assertRegex(fields["sha256sums"], r"^[0-9a-f]{64}$")
+        self.assertRegex(fields["_commit"], r"^[0-9a-f]{40}$")
+
+    def test_the_package_is_not_newer_than_the_source(self):
+        # A PKGBUILD names a released version: never one the tree has not reached.
+        cmake = re.search(r"project\(\s*Tomacco\s+VERSION\s+([0-9.]+)", (ROOT / "CMakeLists.txt").read_text()).group(1)
+        version = lambda text: tuple(int(part) for part in text.split("."))
+        self.assertLessEqual(version(self.pkgbuild()["pkgver"]), version(cmake))
+
+    @unittest.skipUnless(shutil.which("makepkg"), "makepkg is not installed")
+    def test_srcinfo_is_what_makepkg_prints(self):
+        done = subprocess.run(["makepkg", "--printsrcinfo"], cwd=ROOT / "packaging/arch", capture_output=True, text=True, timeout=60)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(done.stdout, (ROOT / "packaging/arch/.SRCINFO").read_text())
