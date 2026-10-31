@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 189 operations.
+`tomaccoctl` now has one typed API of 190 operations.
 
 ### Added
 
@@ -54,6 +54,9 @@ operations and their JSON results.
   - `testing.results` summarises JUnit XML from Gradle unit and instrumented tests or
     `testing.run`: totals, suites and failures with their stacks, leaving out results
     older than the test job.
+- **Bug reports.** `tomaccoctl report` and `diagnostics.bundle` write a local `.tar.gz` with the
+  version, host, `doctor`, settings and recent failed jobs with their log ends, secrets masked.
+  Nothing is sent.
 - **Jobs.** `job.events` returns a job's state and phase changes and cancellation requests with
   their times, recorded by the job database for every job from now on.
 - **Downloads.** The Android command-line tools download in `tomaccoctl setup` and the iPhone runner

@@ -940,6 +940,53 @@
     }
   },
   {
+    "name": "diagnostics.bundle",
+    "title": "Write a bug report bundle",
+    "description": "Write one .tar.gz for a bug report on this computer; nothing is sent anywhere. It holds the version, a host summary (OS, kernel, CPUs, memory, KVM, desktop session), doctor, the settings, and for the most recent failed, timed-out or cancelled jobs their record, timeline and the end of their log. Recognised secrets are masked, job environments keep only variable names, and the home directory is shown as ~. Masking recognises known shapes only: the person should read the bundle before sharing it. Returns the path, size, SHA-256 and the files it holds.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute .tar.gz file to write; by default a new file under diagnostics/ in the data directory"
+        },
+        "jobs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50,
+          "default": 10,
+          "description": "How many recent jobs that did not succeed to include"
+        },
+        "log_kb": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024,
+          "default": 64,
+          "description": "How much of the end of each job's log to include"
+        },
+        "doctor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the doctor report"
+        },
+        "anonymize_home": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the home directory as ~"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "device.list",
     "title": "Find devices",
     "description": "Discover connected Android and iOS devices. Diagnostics distinguish missing tools from no device.",

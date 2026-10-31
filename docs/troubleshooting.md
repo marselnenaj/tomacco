@@ -99,6 +99,12 @@ tomaccoctl doctor
 
 ## Changing settings by mistake, or tests that collide
 
+To report a bug, `tomaccoctl report` (the `diagnostics.bundle` operation) writes one `.tar.gz` with the
+version, a host summary, `doctor`, your settings and the records, timelines and log ends of recent jobs
+that failed, timed out or were cancelled. Nothing is sent. Recognised secrets are masked, job environments
+keep only variable names and your home directory is shown as `~`, but the masking knows only common
+shapes of secrets: read the files before you attach them.
+
 Set `TOMACCO_HOME=/absolute/test-state` to isolate job, toolchain, profile and emulator state. Your normal data is in `~/.local/share/tomacco`,
 and desktop preferences are in Qt's normal settings path.
 

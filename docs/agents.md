@@ -157,6 +157,18 @@ tomaccoctl call storage.prune '{"older_than_days":14}'
 tomaccoctl call storage.prune '{"older_than_days":14,"apply":true}'
 ```
 
+### Bug reports
+
+For a bug report, `diagnostics.bundle` (or `tomaccoctl report [FILE]`) writes one `.tar.gz`: version, host,
+`doctor`, settings, and the record, timeline and log end of the most recent jobs that did not succeed
+(`jobs`, 10 by default; `log_kb`, 64 by default). It sends nothing. Secrets of known shapes are masked, job
+environments keep only their variable names and the home directory becomes `~`. Tell the user where it is
+and that they should read it before sharing it.
+
+```sh
+tomaccoctl report /absolute/tomacco-report.tar.gz
+```
+
 ## Android
 
 Full guide: [Android](android.md). Check prerequisites with `doctor`, `android.sdk_packages` and `android.avds`.

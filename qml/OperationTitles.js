@@ -34,6 +34,7 @@ var titles = {
     "job.cancel": QT_TRANSLATE_NOOP("Operations", "Cancel job"),
     "job.send": QT_TRANSLATE_NOOP("Operations", "Hot Reload"),
     "storage.prune": QT_TRANSLATE_NOOP("Operations", "Clean up old jobs and reports"),
+    "diagnostics.bundle": QT_TRANSLATE_NOOP("Operations", "Write a bug report bundle"),
     "device.list": QT_TRANSLATE_NOOP("Operations", "Find devices"),
     "device.info": QT_TRANSLATE_NOOP("Operations", "Device information"),
     "device.install": QT_TRANSLATE_NOOP("Operations", "Install app"),
