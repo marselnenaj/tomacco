@@ -1386,5 +1386,248 @@
       "bottom": 24,
       "left": 32
     }
+  },
+  {
+    "id": "galaxy-z-fold8-ultra",
+    "name": "Galaxy Z Fold8 Ultra",
+    "display": "6.5″ / 8.0″",
+    "width": 360,
+    "height": 840,
+    "pixels": "1080 × 2520",
+    "dpr": 3,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 34,
+    "bezel": 8,
+    "colors": [
+      "#4a4458",
+      "#3a3b3f",
+      "#ece6d8",
+      "#3f4a42"
+    ],
+    "colorNames": [
+      "Violet Shadow",
+      "Graphite",
+      "Cream",
+      "Green Shadow"
+    ],
+    "source": "https://www.samsung.com/nz/smartphones/galaxy-z-fold8-ultra/specs/",
+    "verifiedAt": "2026-10-31",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Book foldable. Cover 6.5″ (1080 × 2520), inner 8.0″ (2256 × 2504) from Samsung's specifications. Logical sizes at a density of 3; Samsung publishes none. Punch-hole positions unverified; colour swatches approximate. Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    },
+    "openWidth": 752,
+    "openHeight": 835,
+    "openPixels": "2256 × 2504",
+    "openCutout": "punch-right",
+    "openSafePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "openSafeLandscape": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    }
+  },
+  {
+    "id": "galaxy-z-fold8",
+    "name": "Galaxy Z Fold8",
+    "display": "5.5″ / 7.6″",
+    "width": 416,
+    "height": 657,
+    "pixels": "1248 × 1972",
+    "dpr": 3,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 34,
+    "bezel": 8,
+    "colors": [
+      "#c9c2e0",
+      "#3a3b3f",
+      "#ece6d8",
+      "#c8d8b0"
+    ],
+    "colorNames": [
+      "Lavender",
+      "Graphite",
+      "Cream",
+      "Pistachio"
+    ],
+    "source": "https://www.samsung.com/nz/smartphones/galaxy-z-fold8/specs/",
+    "verifiedAt": "2026-10-31",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Short, wide book foldable. Cover 5.5″ (1248 × 1972), inner 7.6″ (2448 × 1848, wider than tall) from Samsung's specifications. Logical sizes at a density of 3; Samsung publishes none. Punch-hole positions unverified; colour swatches approximate. Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    },
+    "openWidth": 816,
+    "openHeight": 616,
+    "openPixels": "2448 × 1848",
+    "openCutout": "punch-right",
+    "openSafePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "openSafeLandscape": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    }
+  },
+  {
+    "id": "galaxy-z-flip8",
+    "name": "Galaxy Z Flip8",
+    "display": "6.85″",
+    "width": 360,
+    "height": 840,
+    "pixels": "1080 × 2520",
+    "dpr": 3,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 34,
+    "bezel": 8,
+    "colors": [
+      "#f2c9d0",
+      "#3a3b3f",
+      "#ece6d8",
+      "#cfe8dc"
+    ],
+    "colorNames": [
+      "Pink",
+      "Graphite",
+      "Cream",
+      "Mint"
+    ],
+    "source": "https://www.samsung.com/nz/smartphones/galaxy-z-flip8/specs/",
+    "verifiedAt": "2026-10-31",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "The unfolded main display: 17.41 cm (6.85″) in Samsung's specification table, 6.7-inch on Samsung's support pages. The 4.1″ cover display (1048 × 948) is not modelled. Logical size at a density of 3; Samsung publishes none. Punch hole as on earlier Flips, unverified; colour swatches approximate. Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    }
+  },
+  {
+    "id": "galaxy-tab-s12-plus",
+    "name": "Galaxy Tab S12+",
+    "display": "12.6″",
+    "width": 876,
+    "height": 1400,
+    "pixels": "1752 × 2800",
+    "dpr": 2,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "none",
+    "radius": 20,
+    "bezel": 14,
+    "colors": [
+      "#5c5f63",
+      "#d7d8da"
+    ],
+    "colorNames": [
+      "Gray",
+      "Silver"
+    ],
+    "source": "https://www.samsung.com/in/tablets/galaxy-tab-s12/buy/",
+    "verifiedAt": "2026-10-31",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Tablet. Panel resolution from Samsung's specifications; logical size at a density of 2, which Samsung does not publish. Front camera in the bezel, no cutout (unverified). Colour swatches approximate. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 24,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 24,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    }
+  },
+  {
+    "id": "galaxy-tab-s12-ultra",
+    "name": "Galaxy Tab S12 Ultra",
+    "display": "14.6″",
+    "width": 924,
+    "height": 1480,
+    "pixels": "1848 × 2960",
+    "dpr": 2,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "none",
+    "radius": 20,
+    "bezel": 12,
+    "colors": [
+      "#5c5f63",
+      "#d7d8da"
+    ],
+    "colorNames": [
+      "Gray",
+      "Silver"
+    ],
+    "source": "https://www.samsung.com/in/tablets/galaxy-tab-s12/buy/",
+    "verifiedAt": "2026-10-31",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Tablet. Panel resolution from Samsung's specifications; logical size at a density of 2, which Samsung does not publish. Reported to keep the earlier Ultra's camera notch on the long edge; the frame draws none. Colour swatches approximate. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 24,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 24,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    }
   }
 ]

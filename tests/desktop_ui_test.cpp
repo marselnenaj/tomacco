@@ -367,10 +367,12 @@ private slots:
             inputs.clear();QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,display->mapToScene(display->contentRect().center()).toPoint());
             QTRY_COMPARE_WITH_TIMEOUT(inputs.size(),2,patient(3000));
             QVERIFY(qAbs(inputs[0]["x"].toDouble()-.5)<.005);QVERIFY(qAbs(inputs[0]["y"].toDouble()-.5)<.005);
-            // Rounded corners and camera holes are hardware, not app touch areas.
-            auto *camera=item("nativeCameraCutout");QVERIFY(camera);
-            QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,camera->mapToScene(QPointF(camera->width()/2,camera->height()/2)).toPoint());
-            QTest::qWait(30);QCOMPARE(inputs.size(),2);
+            // Rounded corners and camera holes are hardware, not app touch areas (a tablet has no hole).
+            if(profile.value("cutout").toString()!="none") {
+                auto *camera=item("nativeCameraCutout");QVERIFY(camera);
+                QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,camera->mapToScene(QPointF(camera->width()/2,camera->height()/2)).toPoint());
+                QTest::qWait(30);QCOMPARE(inputs.size(),2);
+            }
             QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,display->mapToScene(QPointF(1,1)).toPoint());QTest::qWait(30);QCOMPARE(inputs.size(),2);
             capture("frame-"+profile["id"].toString());
             start(profile,QSize(size.height(),size.width()),"emulator-frame",true);
@@ -573,7 +575,8 @@ private slots:
         auto *button=item("createAndroidEmulator");QVERIFY(button);
         QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,button->mapToScene(QPointF(button->width()/2,button->height()/2)).toPoint());
         auto *dialog=object("createAndroidDialog");QVERIFY(dialog);QTRY_VERIFY(dialog->property("visible").toBool());
-        auto *picker=object("androidModelPicker");QVERIFY(picker);QCOMPARE(picker->property("count").toInt(),6);
+        auto *picker=object("androidModelPicker");QVERIFY(picker);int android=0;for(const auto &p:backend->models())android+=p.toMap()["platform"]=="android";
+        QCOMPARE(picker->property("count").toInt(),android);
         auto *name=item("androidAvdName");QVERIFY(name);QCOMPARE(name->property("text").toString(),QString("Tomacco-pixel-11"));
         capture("android-model-create");QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));

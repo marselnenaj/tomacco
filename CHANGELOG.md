@@ -104,6 +104,8 @@ operations and their JSON results.
   - `preview.audit` finds a page wider than the viewport, text under the camera cutout
     or system bars, and controls under 44 pt (iOS) or 48 dp (Android), each with a
     selector that matches the element alone. `window.__tomaccoViewport` gains `platform`.
+  - Profiles for the Galaxy Z Fold8 Ultra, Z Fold8 and Z Flip8 and the Galaxy Tab S12+
+    and Tab S12 Ultra.
   - `preview.errors` reports one page load's console errors, uncaught exceptions,
     unhandled rejections and failed requests as structured results.
   - Network throttling and offline for the lab's page: Fast 3G, Slow 3G, offline or

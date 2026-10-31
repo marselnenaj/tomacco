@@ -493,6 +493,13 @@ appear in their declared platform; platform-neutral imports get an additional
 - [Pixel 11 Pro](https://store.google.com/product/pixel_11_pro_specs)
 - [Pixel 11 Pro Fold](https://store.google.com/product/pixel_11_pro_fold_specs)
 - Galaxy S26 / S26 Ultra: source URLs are stored in their catalogue records.
+- [Galaxy Z Fold8 Ultra](https://www.samsung.com/nz/smartphones/galaxy-z-fold8-ultra/specs/),
+  [Galaxy Z Fold8](https://www.samsung.com/nz/smartphones/galaxy-z-fold8/specs/) and
+  [Galaxy Z Flip8](https://www.samsung.com/nz/smartphones/galaxy-z-flip8/specs/), checked on 2026-10-31.
+  Their logical sizes assume a density of 3, which Samsung does not publish; the Flip8 profile is its
+  unfolded main display.
+- [Galaxy Tab S12+ and Tab S12 Ultra](https://www.samsung.com/in/tablets/galaxy-tab-s12/buy/), checked on
+  2026-10-31, at an assumed density of 2. The frame draws no camera notch.
 
 `assets/models.json` holds all profiles. Qt renders the app and device frames;
 Qt WebEngine renders the page. Page content has no bridge to native commands.

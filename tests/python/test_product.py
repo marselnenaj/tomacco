@@ -23,6 +23,10 @@ from native_client import ROOT, StudioError, binary, catalog, dispatch, jobs, pr
 from host_patience import PATIENCE
 
 
+# The built-in catalogue grows with new devices; tests count from the file.
+BUILTIN_PROFILES = len(json.loads((ROOT / "assets/models.json").read_text()))
+
+
 class Isolated(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="tomacco-native-test-")
@@ -253,8 +257,8 @@ class CatalogueTests(Isolated):
 
     def test_builtins_and_full_round_trip(self):
         profiles = catalog.builtin()
-        self.assertEqual(len(profiles), 13)
-        self.assertEqual(len({p["id"] for p in profiles}), 13)
+        self.assertEqual(len(profiles), BUILTIN_PROFILES)
+        self.assertEqual(len({p["id"] for p in profiles}), BUILTIN_PROFILES)
         for p in profiles:
             self.assertTrue(p["source"].startswith("https://"))
             value = {**p, "id": "custom-" + p["id"]}
@@ -269,7 +273,7 @@ class CatalogueTests(Isolated):
             catalog.export_profile(value["id"], str(dest))
             self.assertEqual(json.loads(dest.read_text()), value)
             catalog.remove(value["id"])
-        self.assertEqual(len(catalog.profiles()), 13)
+        self.assertEqual(len(catalog.profiles()), BUILTIN_PROFILES)
         self.assertTrue(all(p["platform"] == "ios" for p in dispatch("catalog.list", {"platform": "ios"})))
 
     def test_import_atomicity_builtin_protection_and_bad_geometry(self):
@@ -282,7 +286,7 @@ class CatalogueTests(Isolated):
             source = self.root / "bad.json"
             source.write_text(json.dumps([base, invalid]))
             with self.assertRaises(StudioError): catalog.import_profiles(str(source))
-            self.assertEqual(len(catalog.profiles()), 13)
+            self.assertEqual(len(catalog.profiles()), BUILTIN_PROFILES)
         source.write_text(json.dumps(catalog.builtin()[0]))
         with self.assertRaises(StudioError): catalog.import_profiles(str(source), True)
         with self.assertRaises(StudioError): catalog.remove(catalog.builtin()[0]["id"])
@@ -297,7 +301,7 @@ class CatalogueTests(Isolated):
             paths.append(p)
         with ThreadPoolExecutor(max_workers=6) as pool:
             list(pool.map(lambda p: catalog.import_profiles(str(p)), paths))
-        self.assertEqual(len(catalog.profiles()), 25)
+        self.assertEqual(len(catalog.profiles()), BUILTIN_PROFILES + 12)
 
 
 class JobTests(Isolated):

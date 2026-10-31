@@ -339,6 +339,30 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
 <context>
     <name>Colors</name>
     <message>
+        <source>Cream</source>
+        <translation>Creme</translation>
+    </message>
+    <message>
+        <source>Graphite</source>
+        <translation>Graphit</translation>
+    </message>
+    <message>
+        <source>Gray</source>
+        <translation>Grau</translation>
+    </message>
+    <message>
+        <source>Green Shadow</source>
+        <translation>Grünschatten</translation>
+    </message>
+    <message>
+        <source>Mint</source>
+        <translation>Mint</translation>
+    </message>
+    <message>
+        <source>Violet Shadow</source>
+        <translation>Violettschatten</translation>
+    </message>
+    <message>
         <source>Black</source>
         <translation>Schwarz</translation>
     </message>
