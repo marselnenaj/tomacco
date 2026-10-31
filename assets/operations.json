@@ -4209,6 +4209,55 @@
     }
   },
   {
+    "name": "testing.record",
+    "title": "Record UI test",
+    "description": "Record a UI test on an Android device. Between start and stop, the taps, swipes, text and keys sent to the device through android.input, runtime.input (the desktop's live display included) and testing.action become testing.run scenario steps. A tap becomes a click on the element under it, named by resource ID, description or text (with index when that is shared), when the UI hierarchy read just before the tap names one; otherwise a tap at pixel coordinates. Reading the hierarchy makes each tap slower while recording. stop writes the scenario to path; status counts the steps; discard throws the recording away. Input a scenario cannot express, such as a rotation, is listed under skipped.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "start",
+            "status",
+            "stop",
+            "discard"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "The scenario's name, set at start"
+        },
+        "path": {
+          "type": "string",
+          "description": "Absolute path of the scenario JSON that stop writes"
+        },
+        "overwrite": {
+          "type": "boolean",
+          "default": false,
+          "description": "Let stop replace an existing file at path"
+        }
+      },
+      "required": [
+        "device",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "testing.visual_diff",
     "title": "Compare with baseline image",
     "description": "Compare a PNG screenshot with a baseline PNG pixel by pixel. Reports changed_fraction, changed_bounds and passed (changed_fraction <= threshold); writes a diff image with changes in red when diff is given. update_baseline keeps the actual image as the new baseline instead of comparing.",

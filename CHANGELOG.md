@@ -4,6 +4,18 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+`tomaccoctl` now has one typed API of 194 operations.
+
+### Added
+
+- **Testing.**
+  - `testing.record` records a UI test on an Android device: taps, swipes, text and keys sent through
+    `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`
+    steps. A tap becomes a click on the element under it when the UI hierarchy names it, otherwise a tap at
+    coordinates. Scenarios gain the steps `tap`, `swipe` and `text` for that.
+
 ## 1.1.0
 
 `tomaccoctl` now has one typed API of 193 operations.

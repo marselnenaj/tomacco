@@ -108,6 +108,7 @@ var titles = {
     "testing.find": QT_TRANSLATE_NOOP("Operations", "Find Android element"),
     "testing.action": QT_TRANSLATE_NOOP("Operations", "Operate Android element"),
     "testing.run": QT_TRANSLATE_NOOP("Operations", "Run native tests"),
+    "testing.record": QT_TRANSLATE_NOOP("Operations", "Record UI test"),
     "testing.visual_diff": QT_TRANSLATE_NOOP("Operations", "Compare with baseline image"),
     "testing.accessibility": QT_TRANSLATE_NOOP("Operations", "Check Android accessibility"),
     "testing.crashes": QT_TRANSLATE_NOOP("Operations", "Find Android crashes"),

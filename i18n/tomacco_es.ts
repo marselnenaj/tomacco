@@ -3739,6 +3739,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Ejecutar pruebas nativas</translation>
     </message>
     <message>
+        <source>Record UI test</source>
+        <translation>Grabar prueba de interfaz</translation>
+    </message>
+    <message>
         <source>Set up Android text input</source>
         <translation>Configurar la entrada de texto de Android</translation>
     </message>

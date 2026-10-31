@@ -513,6 +513,24 @@ Native debugging is qualified on API 36 x86_64. ARM64 is built but not run on a 
 
 `testing.setup` installs a small instrumentation companion for Unicode, emoji and whole-field replacement, without changing the user's keyboard. `testing.run`
 runs JSON scenarios on a bounded parallel device matrix, returning JUnit results and capturing failures; `examples/native-navigation.json` shows the format.
+Besides the selector steps, a scenario can `tap` or `swipe` at pixel coordinates (`x`, `y`, `end_x`, `end_y`, `duration` in
+milliseconds) and type `text` into the focused field.
+
+`testing.record` writes such a scenario from what you do. Between `start` and `stop`, the taps, swipes, text and keys sent to that
+Android device through `android.input`, `runtime.input` (also from the desktop's live display) and `testing.action` become steps. Before
+each tap it reads the UI hierarchy and names the element under the finger by resource ID, description or text, adding `index` when the
+name is shared; without a name there it records a `tap` at pixel coordinates. Reading the hierarchy makes a tap take longer while
+recording. A rotation or another input a scenario cannot express is listed under `skipped`. `status` counts the steps, `discard` throws
+the recording away.
+
+```sh
+tomaccoctl call testing.record '{"device":"emulator-5554","action":"start","name":"Add a counter"}'
+# tap and type in the desktop or with android.input / runtime.input
+tomaccoctl call testing.record '{"device":"emulator-5554","action":"stop","path":"/absolute/add-counter.json"}'
+```
+
+Read the scenario before you keep it: coordinate steps depend on the screen size, and a recorded step waits only when it is a click
+on a named element, which waits for that element.
 
 `testing.results` reads JUnit XML into one summary: `totals` (`tests`, `passed`, `failed`, `errors`, `skipped`, `time`), each suite with
 its device for instrumented tests, and each failure with its class, name, message and stack. Given a project it finds Gradle's unit test

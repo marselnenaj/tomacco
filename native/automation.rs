@@ -13,7 +13,7 @@ pub fn selector_schema() -> Value {
     "text":{"type":"string"},"text_contains":{"type":"string"},"resource_id":{"type":"string"},"description":{"type":"string"},"class":{"type":"string"},"package":{"type":"string"},
     "clickable":{"type":"boolean"},"enabled":{"type":"boolean"},"checked":{"type":"boolean"},"selected":{"type":"boolean"},"index":{"type":"integer","minimum":0,"maximum":10000}}})
 }
-fn select(xml: &str, selector: &Value) -> Result<Vec<Value>> {
+pub fn select(xml: &str, selector: &Value) -> Result<Vec<Value>> {
     validate(selector, &selector_schema(), "selector")?;
     if selector
         .as_object()
@@ -207,12 +207,13 @@ pub fn action(a: &Value) -> Result {
 }
 fn step_schema() -> Value {
     json!({"type":"object","additionalProperties":false,"required":["action"],"properties":{
-    "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot"]},"selector":selector_schema(),"state":{"type":"string","enum":["present","absent"]},"text":{"type":"string"},"key":{"type":"string"},"bundle_id":{"type":"string"},"label":{"type":"string","maxLength":150},"timeout":{"type":"integer","minimum":0,"maximum":60}}})
+    "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot","tap","swipe","text"]},"selector":selector_schema(),
+    "x":{"type":"integer","minimum":0,"maximum":16384},"y":{"type":"integer","minimum":0,"maximum":16384},"end_x":{"type":"integer","minimum":0,"maximum":16384},"end_y":{"type":"integer","minimum":0,"maximum":16384},"duration":{"type":"integer","minimum":1,"maximum":10000},"state":{"type":"string","enum":["present","absent"]},"text":{"type":"string"},"key":{"type":"string"},"bundle_id":{"type":"string"},"label":{"type":"string","maxLength":150},"timeout":{"type":"integer","minimum":0,"maximum":60}}})
 }
-pub fn run(a: &Value) -> Result {
-    let scenario = read_json(&path(s(a, "path"), false, true)?, None)?;
+/// A scenario's shape and each step's required fields.
+pub fn check_scenario(scenario: &Value) -> Result<()> {
     validate(
-        &scenario,
+        scenario,
         &json!({"type":"object","additionalProperties":false,"required":["name","steps"],"properties":{"name":{"type":"string","minLength":1,"maxLength":150},"steps":{"type":"array","minItems":1,"maxItems":500,"items":step_schema()}}}),
         "scenario",
     )?;
@@ -227,9 +228,30 @@ pub fn run(a: &Value) -> Result {
             "launch" | "stop" | "clear" => {
                 identifier(s(step, "bundle_id"), "application ID", None)?;
             }
+            "tap" | "swipe" => {
+                let keys: &[&str] = if s(step, "action") == "tap" {
+                    &["x", "y"]
+                } else {
+                    &["x", "y", "end_x", "end_y"]
+                };
+                if let Some(key) = keys.iter().find(|key| step.get(**key).is_none()) {
+                    return Err(Error::new(
+                        "invalid_argument",
+                        format!("A {} step requires {key}", s(step, "action")),
+                    ));
+                }
+            }
+            "text" if step.get("text").is_none() => {
+                return Err(Error::new("invalid_argument", "A text step requires text"));
+            }
             _ => (),
         }
     }
+    Ok(())
+}
+pub fn run(a: &Value) -> Result {
+    let scenario = read_json(&path(s(a, "path"), false, true)?, None)?;
+    check_scenario(&scenario)?;
     let devices = strings(&a["devices"]);
     let unique: std::collections::HashSet<_> = devices.iter().collect();
     if unique.len() != devices.len() {
@@ -375,6 +397,18 @@ fn run_device(device: &str, scenario: &Value, directory: &Path) -> Value {
                         "android.input",
                         &json!({"device":device,"action":"keyevent","key":s(step,"key")}),
                     ),
+                    "tap" => devices::handle(
+                        "android.input",
+                        &json!({"device":device,"action":"tap","x":step["x"],"y":step["y"]}),
+                    ),
+                    "swipe" => devices::handle(
+                        "android.input",
+                        &json!({"device":device,"action":"swipe","x":step["x"],"y":step["y"],"end_x":step["end_x"],"end_y":step["end_y"],"duration":step["duration"].as_u64().unwrap_or(300)}),
+                    ),
+                    "text" => devices::handle(
+                        "android.input",
+                        &json!({"device":device,"action":"text","text":s(step,"text")}),
+                    ),
                     "launch" | "stop" | "clear" => {
                         let job = devices::handle(
                             "device.app",
@@ -450,6 +484,25 @@ mod tests {
         let error = app_crash(&[other, anr], &apps).unwrap();
         assert_eq!(error.code, "app_crashed");
         assert!(error.message.contains("stopped responding"));
+    }
+    #[test]
+    fn coordinate_and_text_steps_need_their_fields() {
+        let scenario = |step: Value| json!({"name":"x","steps":[step]});
+        for step in [
+            json!({"action":"tap","x":10,"y":20}),
+            json!({"action":"swipe","x":10,"y":20,"end_x":10,"end_y":900,"duration":300}),
+            json!({"action":"text","text":"hello"}),
+        ] {
+            check_scenario(&scenario(step)).unwrap();
+        }
+        for step in [
+            json!({"action":"tap","x":10}),
+            json!({"action":"swipe","x":10,"y":20,"end_x":10}),
+            json!({"action":"text"}),
+            json!({"action":"tap","x":-1,"y":20}),
+        ] {
+            assert!(check_scenario(&scenario(step.clone())).is_err(), "{step}");
+        }
     }
     #[test]
     fn selectors_handle_escaping_ambiguity_and_index() {
