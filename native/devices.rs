@@ -525,10 +525,9 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 "text" => {
                     let text = s(a, "text");
                     if !text.is_ascii() || text.contains("%s") {
-                        return Err(Error::new(
-                            "text_unsupported",
-                            "adb input text supports ASCII; use a test framework or IME for Unicode",
-                        ));
+                        // adb input text types ASCII only and reads %s as a space.
+                        identifier(device, "Android serial", None)?;
+                        return crate::runtime::android::paste(device, text);
                     }
                     args.push(text.replace(' ', "%s"));
                 }

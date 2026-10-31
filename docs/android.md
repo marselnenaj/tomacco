@@ -93,8 +93,14 @@ For agents, the same device is reached by `runtime.input`, `runtime.capture` and
 `runtime.hierarchy`; see [display sessions](agents.md#display-sessions). Without a
 display session, use `device.capture`, `device.logs`, `android.hierarchy`,
 `android.input`, `android.record`, `android.mirror`, `android.ports`,
-`android.permission`, `android.deep_link` and `android.performance`. Text through
-`android.input` is ASCII only.
+`android.permission`, `android.deep_link` and `android.performance`.
+
+`android.input` types ASCII text with `adb shell input text`. Other text, such as
+`Grüße` or emoji, cannot go that way, so Tomacco pastes it: it starts the configured
+scrcpy 4.1 server briefly without video, sets the device clipboard and presses paste
+into the focused field. This needs scrcpy configured and Android 7 (API 24) or newer,
+replaces what was on the device clipboard, and answers `text_unsupported` with a
+remedy when it cannot work.
 
 ## Sound
 

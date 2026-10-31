@@ -718,6 +718,83 @@ for line in sys.stdin:
             with self.assertRaises(StudioError): dispatch(operation, args)
 
 
+class AndroidControlTests(Isolated):
+    """Android device control through a fake adb that records each call and
+    answers from adb-replies.json: the first key found in the command wins."""
+    ADB = ("import json,os,sys,time\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+           "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
+           "replies=json.loads((root/'adb-replies.json').read_text()) if (root/'adb-replies.json').exists() else {}\n"
+           "command=' '.join(a[2:])\n"
+           "for key,reply in replies.items():\n"
+           "    if key in command: print(reply,end=''); sys.exit(0)\n"
+           "if 'app_process' in command: time.sleep(30)\n")
+
+    def setUp(self):
+        super().setUp()
+        self.tool("adb", self.ADB)
+
+    def replies(self, **values):
+        (self.root / "adb-replies.json").write_text(json.dumps(values))
+
+    def calls(self):
+        path = self.root / "adb-calls.jsonl"
+        return [json.loads(line)[2:] for line in path.read_text().splitlines()] if path.exists() else []
+
+    def shell_calls(self):
+        return [shlex.split(call[1]) for call in self.calls() if call[:1] == ["shell"]]
+
+    def test_unicode_text_is_pasted_through_a_control_only_scrcpy_server(self):
+        self.tool("scrcpy")
+        (self.root / "scrcpy-server").write_bytes(b"jar")
+        listener = socket.create_server(("127.0.0.1", 0))
+        self.addCleanup(listener.close)
+        received = {}
+
+        def serve():
+            connection, _ = listener.accept()
+            with connection:
+                connection.sendall(b"\0")
+                header = b""
+                while len(header) < 14: header += connection.recv(14 - len(header))
+                length = int.from_bytes(header[10:14], "big")
+                text = b""
+                while len(text) < length: text += connection.recv(length - len(text))
+                received.update(kind=header[0], paste=header[9], text=text.decode())
+                connection.sendall(b"\1" + header[1:9])
+                connection.recv(1)
+        server = threading.Thread(target=serve, daemon=True)
+        server.start()
+        self.replies(**{"forward tcp:0": f"{listener.getsockname()[1]}\n", "ro.build.version.sdk": "36\n"})
+        value = dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "Grüße 👋 %s"})
+        server.join(5)
+        self.assertEqual(value["method"], "clipboard")
+        self.assertEqual(received, {"kind": 9, "paste": 1, "text": "Grüße 👋 %s"})
+        calls = self.calls()
+        push = next(call for call in calls if call[:1] == ["push"])
+        self.assertEqual(push[1], str((self.root / "scrcpy-server").resolve()))
+        server_args = next(args for args in self.shell_calls() if "app_process" in args)
+        for option in ("video=false", "audio=false", "control=true", "tunnel_forward=true"):
+            self.assertIn(option, server_args)
+        self.assertTrue(any(call[:2] == ["forward", "--remove"] for call in calls))
+        self.assertIn(["rm", "-f", push[2]], self.shell_calls())
+        # ASCII keeps adb's own text input.
+        dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "plain text"})
+        self.assertEqual(self.shell_calls()[-1], ["input", "text", "plain%stext"])
+
+    def test_unicode_text_names_what_it_needs_when_it_cannot_work(self):
+        with self.assertRaises(StudioError) as missing:
+            dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "é"})
+        self.assertEqual(missing.exception.code, "text_unsupported")
+        self.assertIn("scrcpy", str(missing.exception))
+        self.tool("scrcpy")
+        (self.root / "scrcpy-server").write_bytes(b"jar")
+        self.replies(**{"ro.build.version.sdk": "23\n"})
+        with self.assertRaises(StudioError) as old:
+            dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "é"})
+        self.assertEqual(old.exception.code, "text_unsupported")
+        self.assertFalse(any(call[:1] == ["push"] for call in self.calls()))
+
+
 class ProtocolTests(Isolated):
     def test_cli_schema_errors_and_file_arguments(self):
         schema = json.loads(subprocess.check_output([binary(), "schema"]))["result"]

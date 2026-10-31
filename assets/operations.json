@@ -1076,7 +1076,7 @@
   {
     "name": "android.input",
     "title": "Tap / swipe / input",
-    "description": "Control real Android UI through adb, using device pixel coordinates.",
+    "description": "Control real Android UI through adb, using device pixel coordinates. ASCII text is typed; other text is pasted through the device clipboard with the configured scrcpy 4.1 server on Android 7 and newer.",
     "inputSchema": {
       "type": "object",
       "properties": {
