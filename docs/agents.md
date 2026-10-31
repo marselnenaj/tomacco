@@ -473,6 +473,10 @@ order are not checked.
 tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
 ```
 
+What has been run: `testing.visual_diff`, `testing.accessibility` (on the Settings app), `testing.crashes` (with a crash from
+`am crash`) and the crash list of `testing.run` on an API 36 x86_64 emulator, and `testing.results` on a `testing.run` report. ANRs,
+native crashes and Gradle's own result files have been read only from sample text in the unit tests.
+
 `profile.capture` records Android Perfetto traces. Configure the official `trace_processor`, then use `profile.analyze` and `profile.compare`. Metrics that are
 not available are null, not zero. A count of frames with jank tags is not the same as visible drops.
 
