@@ -966,7 +966,15 @@ fn emulator(a: &Value) -> Result {
         }
         "network" => {
             console(device, &["network", "speed", s(a, "network_speed")])?;
-            console(device, &["network", "delay", s(a, "network_delay")])?;
+            // The console's own gprs latency preset applies UMTS values on the
+            // tested emulator, so every preset goes as its range in milliseconds.
+            let delay = match s(a, "network_delay") {
+                "gprs" => "150:550",
+                "edge" => "80:400",
+                "umts" => "35:200",
+                _ => "0:0",
+            };
+            console(device, &["network", "delay", delay])?;
             let state = console(device, &["network", "status"])?;
             Ok(
                 json!({"device":device,"action":action,"speed":s(a,"network_speed"),"delay":s(a,"network_delay"),"network":console_fields(&state)}),

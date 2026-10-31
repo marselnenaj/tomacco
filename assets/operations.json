@@ -1828,7 +1828,7 @@
         },
         "network_delay": {
           "type": "string",
-          "description": "Network latency preset, for network; none means no added latency",
+          "description": "Network latency, for network: gprs 150-550 ms, edge 80-400 ms, umts 35-200 ms, none adds no latency",
           "enum": [
             "gprs",
             "edge",

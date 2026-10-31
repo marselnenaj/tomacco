@@ -875,7 +875,7 @@ class AndroidControlTests(Isolated):
         self.assertEqual(consoles, [["avd", "snapshot", "list"], ["avd", "snapshot", "save", "before-login"],
                                     ["avd", "snapshot", "load", "before-login"], ["avd", "snapshot", "del", "before-login"],
                                     ["power", "capacity", "15"], ["power", "ac", "off"], ["power", "status", "discharging"], ["power", "display"],
-                                    ["network", "speed", "edge"], ["network", "delay", "gprs"], ["network", "status"],
+                                    ["network", "speed", "edge"], ["network", "delay", "150:550"], ["network", "status"],
                                     ["geo", "fix", "16.37", "48.21"]])
         for arguments in ({"action": "battery", "battery_level": 101}, {"action": "network", "network_speed": "warp"},
                           {"action": "snapshot-save", "name": "../x"}):

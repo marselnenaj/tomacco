@@ -206,9 +206,11 @@ tomaccoctl call android.emulator '{"device":"emulator-5554","action":"network","
 - `battery` sets the charge in percent and whether the charger is connected, and
   returns what the emulator then reports.
 - `network` takes the emulator's presets: speeds `gsm`, `hscsd`, `gprs`, `edge`,
-  `umts`, `hsdpa`, `lte`, `evdo`, `5g` and `full`, latencies `gprs`, `edge`, `umts`
-  and `none`. `full` and `none` remove the limits. For airplane mode, which also works
-  on phones, use `android.settings`.
+  `umts`, `hsdpa`, `lte`, `evdo`, `5g` and `full`, and latencies `gprs` (150 to 550 ms),
+  `edge` (80 to 400 ms), `umts` (35 to 200 ms) and `none`. `full` and `none` remove the
+  limits. Latencies are sent as these ranges because the emulator's own `gprs` name
+  applied the UMTS range on the tested emulator. For airplane mode, which also works on
+  phones, use `android.settings`.
 - The console answers some refusals with `KO` while adb still succeeds, for example a
   snapshot load in an emulator started with `-read-only`. Tomacco reports those as
   `emulator_refused` with the console's reason.
