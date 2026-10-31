@@ -47,6 +47,7 @@ mod test_results;
 mod toolchain;
 mod update;
 mod visual;
+mod watch;
 mod workspaces;
 use core::*;
 use serde_json::{Value, json};
@@ -434,6 +435,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             debugger::worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing session ID"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_watch") => {
+            watch::worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing watch specification"))?,
             )?;
             return Ok(0);
         }

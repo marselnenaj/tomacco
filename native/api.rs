@@ -112,6 +112,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "project.plan" => projects::plan(&a),
         "project.execute" => projects::execute(&a),
         "project.run" => projects::run(&a),
+        "project.watch" => crate::watch::watch(&a),
         "project.dependency_updates" => crate::dependencies::updates(&a),
         "testing.find" => automation::find(&a),
         "testing.action" => crate::recorder::testing_action(

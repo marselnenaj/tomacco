@@ -3251,6 +3251,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Bauen &amp; auf Gerät starten</translation>
     </message>
     <message>
+        <source>Watch and rerun app</source>
+        <translation>App beobachten und neu starten</translation>
+    </message>
+    <message>
         <source>Build iOS graphics compiler plugin</source>
         <translation>iOS-Grafik-Compiler-Plugin bauen</translation>
     </message>

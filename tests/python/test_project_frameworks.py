@@ -221,5 +221,78 @@ class DependencyUpdateTests(Isolated):
         self.assertEqual(refused.exception.code, "action_unsupported")
 
 
+class WatchTests(Isolated):
+    def test_a_source_change_rebuilds_and_relaunches_and_build_output_does_not(self):
+        import time
+        from host_patience import PATIENCE
+        builds = self.root / "builds.log"
+        self.tool("adb", "import json,sys\nargs=sys.argv[1:]\nprint('priority=0\\ndev.example.app/.MainActivity' if 'resolve-activity' in args[-1] else json.dumps(args))\n")
+        root = self.root / "App"
+        for relative, text in (("settings.gradle", "include ':app'\n"),
+                               ("app/build.gradle", "apply plugin: 'com.android.application'\nandroid { namespace 'dev.example.app'\n"
+                                                    "defaultConfig { applicationId 'dev.example.app' } }\n"),
+                               ("app/src/main/java/Main.kt", "fun main() {}\n"),
+                               ("gradlew", f"#!/bin/sh\necho \"$@\" >> {str(builds)!r}\n")):
+            (root / relative).parent.mkdir(parents=True, exist_ok=True)
+            (root / relative).write_text(text)
+        (root / "gradlew").chmod(0o755)
+        with self.assertRaises(StudioError):
+            dispatch("project.watch", {"path": str(root), "platform": "android", "device": "emulator-5554", "ignore": ["a/b"]})
+        job = dispatch("project.watch", {"path": str(root), "platform": "android", "device": "emulator-5554", "debounce_ms": 200})
+
+        def log_has(text):
+            deadline = time.monotonic() + 30 * PATIENCE
+            while text not in jobs.logs(job["id"])["text"]:
+                self.assertLess(time.monotonic(), deadline, jobs.logs(job["id"])["text"])
+                time.sleep(.1)
+        log_has("cycle 0: built, installed and launched")
+        (root / "app/build/outputs").mkdir(parents=True)
+        (root / "app/build/outputs/app.apk").write_text("apk")
+        (root / "app/src/main/java/Main.kt").write_text("fun main() { println(1) }\n")
+        log_has("cycle 1: 1 file changed (app/src/main/java/Main.kt): built, installed and launched")
+        self.assertEqual(builds.read_text().splitlines(), ["--console=plain :app:installDebug"] * 2)
+        self.assertNotIn("cycle 2", jobs.logs(job["id"])["text"])
+        children = [j for j in jobs.listing(50) if j["id"] != job["id"]]
+        self.assertTrue(children and all(j["state"] == "succeeded" for j in children))
+        jobs.cancel(job["id"])
+        self.assertEqual(jobs.wait(job["id"], 10 * PATIENCE)["state"], "cancelled")
+
+    def test_a_flutter_change_is_hot_reloaded_in_one_session(self):
+        import time
+        from host_patience import PATIENCE
+        commands = self.root / "commands.log"
+        self.tool("flutter", f"""import json,sys
+print(json.dumps([{{'event':'app.start','params':{{'appId':'fixture-app'}}}}]),flush=True)
+print(json.dumps([{{'event':'app.started','params':{{'appId':'fixture-app'}}}}]),flush=True)
+for line in sys.stdin:
+    value=json.loads(line)[0]
+    open({str(commands)!r},'a').write(value['method']+'\\n')
+    print(json.dumps([{{'id':value['id'],'result':{{'code':0}}}}]),flush=True)
+""")
+        root = self.root / "FlutterApp"
+        (root / "lib").mkdir(parents=True)
+        (root / "android").mkdir()
+        (root / "pubspec.yaml").write_text("flutter:\n")
+        (root / "lib/main.dart").write_text("void main() {}\n")
+        job = dispatch("project.watch", {"path": str(root), "platform": "android", "device": "emulator-5554", "debounce_ms": 200})
+
+        def wait_for(check, what):
+            deadline = time.monotonic() + 30 * PATIENCE
+            while not check():
+                self.assertLess(time.monotonic(), deadline, (what, jobs.logs(job["id"])["text"]))
+                time.sleep(.1)
+        wait_for(lambda: "cycle 0: started Flutter session" in jobs.logs(job["id"])["text"], "session")
+        session = jobs.logs(job["id"])["text"].split("started Flutter session ")[1].split()[0]
+        wait_for(lambda: jobs.get(session).get("phase") == "ready", "ready")
+        (root / "lib/main.dart").write_text("void main() { print(1); }\n")
+        wait_for(lambda: f"cycle 1: 1 file changed (lib/main.dart): Hot Reload sent to Flutter session {session}"
+                 in jobs.logs(job["id"])["text"], "reload")
+        wait_for(lambda: commands.exists() and commands.read_text() == "app.restart\n", "restart")
+        jobs.cancel(job["id"])
+        jobs.wait(job["id"], 10 * PATIENCE)
+        # The session the watch started ends with it.
+        self.assertEqual(jobs.wait(session, 10 * PATIENCE)["state"], "cancelled")
+
+
 if __name__ == "__main__":
     unittest.main()

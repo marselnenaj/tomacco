@@ -3247,6 +3247,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Compiler et lancer sur l'appareil</translation>
     </message>
     <message>
+        <source>Watch and rerun app</source>
+        <translation>Surveiller et relancer l'app</translation>
+    </message>
+    <message>
         <source>Build iOS graphics compiler plugin</source>
         <translation>Compiler le plugin de compilateur graphique iOS</translation>
     </message>

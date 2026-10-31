@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 195 operations.
+`tomaccoctl` now has one typed API of 196 operations.
 
 ### Added
 
@@ -23,6 +23,9 @@ operations and their JSON results.
   - `testing.run` takes a directory of scenarios as `path`, and with `shard:true` splits them across the devices,
     each scenario once on the next free device, into one report and one `junit.xml`. Without it every device runs
     every scenario.
+- **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
+  unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
+  ignored. A Flutter project keeps one session and gets Hot Reload on each change.
 - **Session log and replay.** With `TOMACCO_SESSION_LOG` set to a file, every operation called through `tomaccoctl call`
   or `tomaccoctl mcp` is appended to it as a JSON line: arguments with recognised secrets masked, outcome, a short
   result summary and the duration. `tomaccoctl replay FILE [--dry-run]` calls the logged operations that change

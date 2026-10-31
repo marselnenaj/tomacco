@@ -234,6 +234,19 @@ with `"action":"instrumented-test"`. `project.inspect` reports a Gradle app's ap
 and SDK levels under `android`, read from its files. `project.dependency_updates` reports which of a
 Gradle build's dependencies and plugins have newer versions, as a read-only job.
 
+`project.watch` takes the arguments of `project.run` and keeps the app current while you edit: a job that runs the app once,
+then polls the project's files and, after they have stayed unchanged for `debounce_ms` (800 by default), calls `project.run`
+again and waits for it. Build output, dependencies and tool state (`build`, `.gradle`, `.dart_tool`, `node_modules`, `Pods`,
+`.git` and similar) are not watched; `ignore` adds directory names. A Flutter project gets one Flutter session and Hot Reload on
+each change instead, and a new session when that one has ended. Each cycle writes one line to the job's log, such as
+`cycle 3: 1 file changed (app/src/main/java/Main.kt): built, installed and launched in 41.2 s (job ID)`. Cancel the job to stop;
+the run it started is cancelled with it.
+
+```sh
+tomaccoctl call project.watch '{"path":"/absolute/NewApp","platform":"android","device":"emulator-5554"}'
+tomaccoctl call job.logs '{"job_id":"WATCH_JOB_ID"}'
+```
+
 Then look: `device.capture` for evidence, `android.hierarchy` for the UI tree, and assert the app's state
 after each action. Prefer `testing.find` and `testing.action` over coordinates when the app exposes
 accessible controls.
