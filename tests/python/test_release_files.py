@@ -251,3 +251,12 @@ class ArchPackageTests(unittest.TestCase):
         done = subprocess.run(["makepkg", "--printsrcinfo"], cwd=ROOT / "packaging/arch", capture_output=True, text=True, timeout=60)
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertEqual(done.stdout, (ROOT / "packaging/arch/.SRCINFO").read_text())
+
+
+class ReproduciblePackageTests(unittest.TestCase):
+    def test_the_package_records_no_builder_and_no_build_time(self):
+        cmake = (ROOT / "CMakeLists.txt").read_text()
+        self.assertIn("set(CPACK_ARCHIVE_UID 0)", cmake)
+        self.assertIn("set(CPACK_ARCHIVE_GID 0)", cmake)
+        release = (ROOT / "tools/make_release.py").read_text()
+        self.assertIn('"SOURCE_DATE_EPOCH"', release)

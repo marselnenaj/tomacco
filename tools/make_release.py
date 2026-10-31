@@ -36,6 +36,8 @@ class Commands:
     def __init__(self, root, dry_run=False):
         self.root = root
         self.dry_run = dry_run
+        # Variables added to the environment of `run`.
+        self.environment = {}
 
     def read(self, argv):
         done = subprocess.run(argv, cwd=self.root, capture_output=True, check=False)
@@ -48,7 +50,7 @@ class Commands:
             print("Would run:", shlex.join(argv))
             return
         print("+", shlex.join(argv), flush=True)
-        if subprocess.run(argv, cwd=self.root, check=False).returncode:
+        if subprocess.run(argv, cwd=self.root, check=False, env={**os.environ, **self.environment}).returncode:
             raise Refused(f"{shlex.join(argv)} failed")
 
 
@@ -237,6 +239,10 @@ def make(options, commands, root, environment):
         raise Refused(f"{DIST}/ is not empty: everything in it would be published")
     prefix = constant(root, "PACKAGE_PREFIX")
     portable = None if options.no_portable else portable_name(prefix, version)
+    # Reproducible packages: CPack and Qt's rcc take their time stamps from
+    # the release commit instead of the moment of the build.
+    commands.environment.setdefault(
+        "SOURCE_DATE_EPOCH", commands.read(["git", "log", "-1", "--format=%ct", "HEAD"]).decode().strip())
     if options.with_qt_sources:
         if not portable:
             raise Refused("--with-qt-sources mirrors the source of the Qt in the portable package; leave out --no-portable")

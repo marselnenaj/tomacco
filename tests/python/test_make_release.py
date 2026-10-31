@@ -37,6 +37,8 @@ class Fake(make_release.Commands):
             return b"abc\n" if argv[2] == "HEAD" else self.tagged
         if argv[:2] == ["openssl", "pkey"]:
             return b"prefix" + RAW
+        if argv[:2] == ["git", "log"]:
+            return b"1700000000\n"
         return b""
 
     def run(self, argv):
@@ -182,6 +184,20 @@ class MakeRelease(unittest.TestCase):
         for module in modules:
             self.assertTrue(any(f"{module}-everywhere-src-6.12.0" in url for _, url in sources), module)
         self.assertTrue(all(url.startswith("https://download.qt.io/") for _, url in sources))
+
+    def test_the_builds_take_their_time_from_the_release_commit(self):
+        code, commands, errors, _ = self.make("--key", str(self.key))
+        self.assertEqual(code, 0, errors)
+        self.assertEqual(commands.environment, {"SOURCE_DATE_EPOCH": "1700000000"})
+        self.assertIn(["git", "log", "-1", "--format=%ct", "HEAD"], commands.reads)
+        # A real run hands it to every command it starts.
+        real = make_release.Commands(self.root)
+        real.environment = {"SOURCE_DATE_EPOCH": "1700000000"}
+        with unittest.mock.patch.object(make_release.subprocess, "run") as run:
+            run.return_value.returncode = 0
+            with contextlib.redirect_stdout(io.StringIO()):
+                real.run(["cmake", "--build", "build-product"])
+        self.assertEqual(run.call_args.kwargs["env"]["SOURCE_DATE_EPOCH"], "1700000000")
 
     def test_no_portable_leaves_the_portable_package_out(self):
         code, commands, errors, _ = self.make("--key", str(self.key), "--no-portable")
