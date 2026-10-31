@@ -33,13 +33,17 @@ Any MCP stdio client gets the same tools. The resources `tomacco://catalog`, `to
 ## The contract
 
 **Do not guess operation names or arguments.** `tomaccoctl schema` prints every operation with its
-JSON Schema: arguments, defaults, enums and bounds. Unknown arguments are refused before dispatch.
+JSON Schema: arguments, defaults, enums and bounds. `tomaccoctl schema OPERATION` prints only that
+operation, as `result`, and `tomaccoctl schema --names` prints just the names, one per line, as plain
+text. Unknown arguments are refused before dispatch.
 A mistyped operation name or argument key gets a `remedy` naming the closest match, such as
 `Did you mean project.run?` or `Did you mean arguments.path?`. With no close match, the remedy for an
 unknown key lists the keys that are accepted.
 
 ```sh
 tomaccoctl schema
+tomaccoctl schema project.run
+tomaccoctl schema --names
 tomaccoctl doctor
 tomaccoctl call device.list '{}'
 tomaccoctl call project.inspect '{"path":"/absolute/project"}'

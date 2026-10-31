@@ -19,8 +19,9 @@ pub fn names() -> impl Iterator<Item = &'static str> {
         .iter()
         .map(|op| s(op, "name"))
 }
-pub fn arguments(name: &str, args: &Value) -> Result {
-    let op = manifest()
+/// One operation's schema; an unknown name is answered with the closest one.
+pub fn operation(name: &str) -> Result<&'static Value> {
+    manifest()
         .as_array()
         .unwrap()
         .iter()
@@ -33,7 +34,10 @@ pub fn arguments(name: &str, args: &Value) -> Result {
                 None => "Use tomaccoctl schema to discover operations".to_string(),
             };
             Error::new("operation_not_found", format!("Unknown operation: {name}")).remedy(remedy)
-        })?;
+        })
+}
+pub fn arguments(name: &str, args: &Value) -> Result {
+    let op = operation(name)?;
     validate(args, &op["inputSchema"], "arguments")?;
     let mut args = args.clone();
     for (key, spec) in op["inputSchema"]["properties"].as_object().unwrap() {

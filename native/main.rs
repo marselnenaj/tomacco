@@ -33,7 +33,8 @@ use core::*;
 use serde_json::{Value, json};
 use std::io::{Read, Write};
 fn main() {
-    let code = match run() {
+    let (args, options) = Options::parse(std::env::args().skip(1).collect());
+    let code = match run(&args, &options) {
         Ok(code) => code,
         Err(error) => {
             let _ = writeln!(std::io::stdout(), "{}", api::envelope(Err(error)));
@@ -41,6 +42,82 @@ fn main() {
         }
     };
     std::process::exit(code);
+}
+/// The flags of the public commands, wherever they stand on the line. The
+/// internal `_worker` commands and `setup`, which has its own, keep theirs.
+#[derive(Debug, Default, PartialEq)]
+struct Options {
+    names: bool,
+    unknown: Vec<String>,
+}
+impl Options {
+    const FLAGS: &[&str] = &["--names"];
+    fn parse(args: Vec<String>) -> (Vec<String>, Options) {
+        let mut options = Options::default();
+        if args
+            .first()
+            .is_some_and(|a| a.starts_with('_') || a == "setup")
+        {
+            return (args, options);
+        }
+        let mut rest = Vec::new();
+        for arg in args {
+            match arg.as_str() {
+                "--names" => options.names = true,
+                "--help" | "--version" => rest.push(arg),
+                flag if flag.starts_with("--") => options.unknown.push(arg),
+                _ => rest.push(arg),
+            }
+        }
+        (rest, options)
+    }
+    /// Refuses a flag this command does not take, naming the closest one.
+    fn check(&self, allowed: &[&str]) -> Result<()> {
+        let Some(flag) = self.unknown.first().map(String::as_str).or(Self::FLAGS
+            .iter()
+            .copied()
+            .find(|f| !allowed.contains(f) && self.given(f)))
+        else {
+            return Ok(());
+        };
+        let remedy = match closest(flag, allowed.iter().copied()) {
+            Some(near) => format!("Did you mean {near}?"),
+            None => "Run tomaccoctl --help for the commands and their flags".to_string(),
+        };
+        Err(Error::new("invalid_request", format!("Unknown option: {flag}")).remedy(remedy))
+    }
+    fn given(&self, flag: &str) -> bool {
+        match flag {
+            "--names" => self.names,
+            _ => false,
+        }
+    }
+}
+/// What a public command prints: one JSON envelope, or plain text.
+#[derive(Debug)]
+enum Reply {
+    Envelope(Result),
+    Text(String),
+}
+/// `tomaccoctl schema`: every operation, one operation by name, or with
+/// `--names` the names alone, one per line, for scripts and completion.
+fn schema(args: &[String], options: &Options) -> Result<Reply> {
+    options.check(&["--names"])?;
+    if args.len() > 1 || (options.names && !args.is_empty()) {
+        return Err(Error::new(
+            "invalid_request",
+            "Expected one operation name, or --names",
+        ));
+    }
+    if options.names {
+        return Ok(Reply::Text(
+            api::names().map(|name| format!("{name}\n")).collect(),
+        ));
+    }
+    Ok(Reply::Envelope(match args.first() {
+        Some(name) => api::operation(name).cloned(),
+        None => Ok(json!({"version":VERSION,"operations":api::manifest()})),
+    }))
 }
 /// The arguments of `tomaccoctl call`: inline JSON, `@FILE`, or `@-` for
 /// standard input. Callers pass secrets' paths and whole source files; argv
@@ -73,7 +150,10 @@ Usage:
                     Run one operation; arguments inline, from a file or from
                     standard input. Prints one JSON envelope (ok, result or
                     error) and exits 0 on success, 1 on failure.
-  tomaccoctl schema  Print every operation with its argument schema (JSON).
+  tomaccoctl schema [OPERATION | --names]
+                    Print every operation with its argument schema (JSON),
+                    only the named one, or with --names just the names, one
+                    per line.
   tomaccoctl setup [--yes]
                     Check this machine in plain text and offer to install the
                     Android SDK and connect your coding agents.
@@ -95,8 +175,7 @@ Documentation: docs/agents.md. License: GPL-2.0-or-later."
     )
 }
 
-fn run() -> Result<i32> {
-    let args: Vec<_> = std::env::args().skip(1).collect();
+fn run(args: &[String], options: &Options) -> Result<i32> {
     match args.first().map(String::as_str) {
         Some("--version") | Some("-V") => {
             println!(
@@ -205,9 +284,18 @@ fn run() -> Result<i32> {
         _ => (),
     }
     let result = match args[0].as_str() {
-        "schema" => Ok(json!({"version":VERSION,"operations":api::manifest()})),
-        "doctor" => api::dispatch("doctor", &json!({})),
+        "schema" => match schema(&args[1..], options)? {
+            Reply::Envelope(result) => result,
+            Reply::Text(text) => {
+                let _ = write!(std::io::stdout(), "{text}");
+                return Ok(0);
+            }
+        },
+        "doctor" => options
+            .check(&[])
+            .and_then(|()| api::dispatch("doctor", &json!({}))),
         "call" => {
+            options.check(&[])?;
             let op = args
                 .get(1)
                 .ok_or_else(|| Error::new("invalid_request", "Missing operation name"))?;
@@ -237,6 +325,60 @@ fn run() -> Result<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn line(args: &[&str]) -> (Vec<String>, Options) {
+        Options::parse(args.iter().map(|a| a.to_string()).collect())
+    }
+    #[test]
+    fn flags_are_taken_from_anywhere_but_internal_commands_keep_theirs() {
+        let (args, options) = line(&["--names", "schema"]);
+        assert_eq!(args, ["schema"]);
+        assert!(options.names);
+        let (args, options) = line(&["schema", "--nmaes"]);
+        assert_eq!(args, ["schema"]);
+        let error = options.check(&["--names"]).unwrap_err();
+        assert_eq!(error.message, "Unknown option: --nmaes");
+        assert_eq!(error.remedy, "Did you mean --names?");
+        // A flag that exists, given to a command that does not take it.
+        let (_, options) = line(&["call", "doctor", "--names"]);
+        assert_eq!(
+            options.check(&[]).unwrap_err().message,
+            "Unknown option: --names"
+        );
+        let (args, options) = line(&["_worker", "--names"]);
+        assert_eq!(args, ["_worker", "--names"]);
+        assert_eq!(options, Options::default());
+        let (args, _) = line(&["setup", "--yes"]);
+        assert_eq!(args, ["setup", "--yes"]);
+    }
+    #[test]
+    fn schema_prints_every_operation_one_operation_or_the_names() {
+        let reply = |args: &[&str]| {
+            let (args, options) = line(args);
+            schema(&args[1..], &options)
+        };
+        let Reply::Envelope(Ok(all)) = reply(&["schema"]).unwrap() else {
+            panic!("the whole schema is JSON")
+        };
+        assert_eq!(&all["operations"], api::manifest());
+        let Reply::Envelope(Ok(one)) = reply(&["schema", "job.wait"]).unwrap() else {
+            panic!("one operation is JSON")
+        };
+        assert_eq!(one["name"], "job.wait");
+        assert!(one["inputSchema"]["properties"]["seconds"].is_object());
+        let Reply::Envelope(Err(error)) = reply(&["schema", "job.wiat"]).unwrap() else {
+            panic!("an unknown operation is an error")
+        };
+        assert!(error.remedy.starts_with("Did you mean job.wait?"));
+        let Reply::Text(names) = reply(&["schema", "--names"]).unwrap() else {
+            panic!("names are plain text")
+        };
+        let names: Vec<&str> = names.lines().collect();
+        assert_eq!(names.len(), api::manifest().as_array().unwrap().len());
+        assert_eq!(names[0], "doctor");
+        assert!(names.contains(&"ios.virtual.start"));
+        assert!(reply(&["schema", "job.wait", "job.get"]).is_err());
+        assert!(reply(&["schema", "job.wait", "--names"]).is_err());
+    }
     #[test]
     fn call_arguments_come_inline_from_a_file_or_from_standard_input() {
         assert_eq!(
