@@ -107,6 +107,15 @@ the size itself. `--capture` and `--smoke-test` keep the default size.
 | Save the current source file | Ctrl+S |
 | Save a screenshot of the live device and copy it to the clipboard | Ctrl+Shift+S |
 
+Tab moves through the title bar, the rail, the device bar and the page, in that
+order; the control with keyboard focus has a two-pixel ring. The lists of jobs,
+agent tools and project files take the keyboard too: Tab into the list, the
+arrow keys move, Enter or Space opens the entry. Every control the keyboard
+reaches on the main screens has an accessible name, icon buttons included,
+whose tip (with its shortcut) becomes the description. The desktop UI test checks
+these names with Qt's accessibility switched on; the desktop has not yet been
+tried with a screen reader such as Orca.
+
 Screenshots of the live device, from the camera button, the palette, Ctrl+Shift+S or
 the device window's rail (Ctrl+Shift+S there too), are saved in `~/Pictures/Tomacco`
 (or the configured Pictures directory) and put on the clipboard as an image.

@@ -944,6 +944,22 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
         <translation>Dieser Ordner enthält mehr als 2.000 Einträge. Nutze die Suche für gezielte Ergebnisse.</translation>
     </message>
+    <message>
+        <source>Source of %1</source>
+        <translation>Quelltext von %1</translation>
+    </message>
+    <message>
+        <source>Source editor</source>
+        <translation>Quelltext-Editor</translation>
+    </message>
+    <message>
+        <source>Search results</source>
+        <translation>Suchergebnisse</translation>
+    </message>
+    <message>
+        <source>Project files</source>
+        <translation>Projektdateien</translation>
+    </message>
 </context>
 <context>
     <name>IosGuestView</name>
@@ -3940,6 +3956,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Google Play needs an authorized service account. Apple needs a Mac with Xcode and your signing keys.</source>
         <translation>Google Play braucht ein berechtigtes Dienstkonto. Apple braucht einen Mac mit Xcode und deine Signierschlüssel.</translation>
     </message>
+    <message>
+        <source>Build number</source>
+        <translation>Build-Nummer</translation>
+    </message>
 </context>
 <context>
     <name>StudioDialog</name>
@@ -4513,6 +4533,22 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Failed</source>
         <comment>jobs filter</comment>
         <translation>Fehler</translation>
+    </message>
+    <message>
+        <source>Jobs</source>
+        <translation>Aufträge</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation>Werkzeuge</translation>
+    </message>
+    <message>
+        <source>Log of %1</source>
+        <translation>Protokoll von %1</translation>
+    </message>
+    <message>
+        <source>Job log</source>
+        <translation>Auftragsprotokoll</translation>
     </message>
 </context>
 <context>

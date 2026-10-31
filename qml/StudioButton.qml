@@ -82,7 +82,8 @@ Button {
             : control.selected ? (control.marker ? "transparent" : Theme.selected)
             : control.down || control.hovered ? Theme.hover
             : "transparent"
-        border.width: 1
+        // A keyboard focus ring wide enough to see on every fill.
+        border.width: control.visualFocus ? 2 : 1
         border.color: control.visualFocus ? Theme.accentInk
             : control.inverted || control.accent || control.selected || control.quiet ? "transparent"
             : control.enabled ? Theme.border : Theme.subtle
@@ -95,5 +96,8 @@ Button {
     ToolTip.visible: hovered && tip.length > 0
     ToolTip.text: tip
     ToolTip.delay: 550
-    Accessible.name: tip.length > 0 ? tip : displayText || text
+    // The full label, also for an icon button; the tip, often with its
+    // shortcut, is the description. A button with only a tip is named by it.
+    Accessible.name: text || tip
+    Accessible.description: tip !== Accessible.name ? tip : ""
 }

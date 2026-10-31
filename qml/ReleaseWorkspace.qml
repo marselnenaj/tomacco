@@ -36,7 +36,7 @@ StudioScrollView {
         title: qsTr("Version & build number")
         RowLayout { Layout.fillWidth: true; spacing: Theme.gapXs
             StudioTextField { id: version; placeholderText: "1.0.0"; Layout.preferredWidth: 120 }
-            StudioSpinBox { id: buildNumber; from: 1; to: 2100000000; value: 1; editable: true; Layout.preferredWidth: 140 }
+            StudioSpinBox { id: buildNumber; from: 1; to: 2100000000; value: 1; editable: true; Layout.preferredWidth: 140; Accessible.name: qsTr("Build number") }
             StudioButton { text: qsTr("Set in the open project"); enabled: !!workspace.project.path && version.text.length>0; onClicked: view.call("release.version",{path:workspace.project.path,version:version.text,build_number:buildNumber.value}) }
         }
     }

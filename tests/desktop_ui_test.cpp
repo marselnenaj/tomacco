@@ -2667,7 +2667,7 @@ for line in sys.stdin:
         auto *toggle=item("nativeTouchToggle");QVERIFY(toggle);QTRY_VERIFY(toggle->isVisible());
         QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,toggle->mapToScene(QPointF(toggle->width()/2,toggle->height()/2)).toPoint());
         QTRY_VERIFY(view->property("showTouches").toBool());QTRY_VERIFY(overlay->isVisible());
-        QCOMPARE(accessibleName(toggle),QString("Hide touches and pointer coordinates"));
+        QCOMPARE(accessibleName(toggle),QString("Touches and coordinates"));
         // A quarter across and three quarters down the picture.
         const auto rect=display->contentRect();
         const auto at=display->mapToScene(QPointF(rect.x()+rect.width()*.25,rect.y()+rect.height()*.75)).toPoint();
@@ -2732,6 +2732,76 @@ for line in sys.stdin:
         QCOMPARE(view->property("settingsTransfer").toString(),path+" is not a Tomacco settings file.");
         view->setProperty("showTouches",false);view->setProperty("notifyJobs",true);view->setProperty("showDeviceFrame",true);
         view->setProperty("settingsTransfer",QString());view->setProperty("settingsTransferFailed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void main_screens_name_every_control_and_keep_a_keyboard_order() {
+        // With assistive technology on, every control the keyboard reaches on the main screens has
+        // a name, icon buttons included; Tab walks title bar, rail and device bar in that order with
+        // a visible ring; the jobs list works with the keyboard.
+        QAccessible::setActive(true);
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        const double now=QDateTime::currentSecsSinceEpoch();
+        const QVariantMap first{{"id","a11y-running"},{"label","Build Android · debug"},{"state","running"},{"created",now-30},{"updated",now}};
+        const QVariantMap second{{"id","a11y-failed"},{"label","Lint"},{"state","failed"},{"created",now-300},{"updated",now-280}};
+        workspace->setProperty("jobs",QVariantList{first,second});
+        // The workspace's own job.list replies would replace the jobs shown; they are let through first.
+        const auto showJobs=[&]{
+            QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty(),patient(10000));
+            workspace->setProperty("jobs",QVariantList{first,second});QTest::qWait(60);
+        };
+        for(const auto *tab:{"runtime","project","devices","jobs","tools","files","debug","testing","profiling","release"}) {
+            open(QString::fromLatin1(tab));showJobs();
+            int checked=0;
+            std::function<void(QQuickItem *)> walk=[&](QQuickItem *it){
+                if(!it->isVisible())return;
+                const bool focusable=it->activeFocusOnTab() || (it->property("focusPolicy").isValid() && (it->property("focusPolicy").toInt()&Qt::TabFocus));
+                const bool iconButton=it->property("iconOnly").toBool();
+                if(focusable || iconButton) {
+                    ++checked;
+                    QVERIFY2(!accessibleName(it).trimmed().isEmpty(),qPrintable(QString("%1: %2 \"%3\" has no accessible name").arg(tab,QString::fromLatin1(it->metaObject()->className()),it->objectName())));
+                }
+                for(auto *child:it->childItems())walk(child);
+            };
+            walk(window->contentItem());
+            if(QTest::currentTestFailed())break;
+            QVERIFY2(checked>5,tab);
+        }
+        // Icon buttons are named by their label; the tip, with its shortcut, describes them.
+        open("runtime");showJobs();
+        auto *settings=item("settingsButton");QVERIFY(settings);
+        QCOMPARE(accessibleName(settings),QString("Settings"));
+        QCOMPARE(QAccessible::queryAccessibleInterface(settings)->text(QAccessible::Description),QString("Appearance and language · Ctrl+,"));
+        QCOMPARE(accessibleName(item("nav-jobs")),QString("Builds & jobs"));
+        // The keyboard order.
+        item("projectButton")->forceActiveFocus(Qt::TabFocusReason);
+        QStringList order;
+        for(int i=0;i<60;++i) {
+            QTest::keyClick(window,Qt::Key_Tab);
+            auto *focused=window->activeFocusItem();
+            const auto name=focused?focused->objectName():QString();
+            if(name=="projectButton")break;
+            order<<name;
+            if(name=="settingsButton") {
+                auto *ring=focused->property("background").value<QQuickItem *>();QVERIFY(ring);
+                QCOMPARE(QQmlProperty(ring,"border.width").read().toInt(),2);
+            }
+        }
+        QStringList wanted{"commandButton","activityButton","settingsButton","aboutButton","nav-runtime","nav-files","nav-jobs","nav-devices","nav-project","nav-debug","nav-testing","nav-profiling","nav-release","nav-tools","targetPicker"};
+        int at=-1;
+        for(const auto &name:wanted){const int next=order.indexOf(name);QVERIFY2(next>at,qPrintable(name+" out of order in "+order.join(", ")));at=next;}
+        // Without focus the ring is gone.
+        settings->setFocus(false);
+        QCOMPARE(QQmlProperty(settings->property("background").value<QQuickItem *>(),"border.width").read().toInt(),1);
+        // The jobs list: Tab into it, arrows move, Enter opens.
+        open("jobs");showJobs();
+        auto *list=item("jobList");QVERIFY(list);QTRY_COMPARE(list->property("count").toInt(),2);
+        QVERIFY(list->activeFocusOnTab());
+        list->forceActiveFocus(Qt::TabFocusReason);QTRY_VERIFY(list->hasActiveFocus());
+        QTest::keyClick(window,Qt::Key_Down);QTest::keyClick(window,Qt::Key_Return);
+        QTRY_COMPARE(workspace->property("selectedJob").toString(),QString("a11y-failed"));
+        QCOMPARE(accessibleName(item("jobRow-a11y-failed")).left(14),QString("Lint, Failed, "));
+        QAccessible::setActive(false);
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void cleanupTestCase() {

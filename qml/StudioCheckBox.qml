@@ -16,7 +16,7 @@ CheckBox {
         radius: Theme.radiusSmall
         color: control.checked ? Theme.accent : Theme.inset
         border.color: control.visualFocus ? Theme.accentInk : control.checked ? Theme.accent : Theme.faint
-        border.width: 1
+        border.width: control.visualFocus ? 2 : 1
         StudioIcon { anchors.centerIn: parent; width: Theme.gapMd; height: Theme.gapMd; name: "check"; visible: control.checked; color: Theme.accentText }
     }
     contentItem: Text {

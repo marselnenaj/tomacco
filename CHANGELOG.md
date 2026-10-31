@@ -49,6 +49,8 @@ operations and their JSON results.
     screen fractions, for writing UI tests.
   - Settings can be exported to a JSON file and imported on another computer, without
     paths, window sizes or history.
+  - Keyboard and accessibility: named icon buttons and list rows, a wider focus ring,
+    and keyboard navigation in the jobs, tools and file lists.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.

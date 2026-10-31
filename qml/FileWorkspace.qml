@@ -105,7 +105,13 @@ Item {
                 }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
                 ListView {
+                    id: entryList; objectName: "fileList"
                     Layout.fillWidth: true; Layout.fillHeight: true; clip: true
+                    // Tab reaches the tree; arrows move, Enter or Space opens.
+                    activeFocusOnTab: true
+                    Keys.onReturnPressed: if(currentItem)currentItem.clicked()
+                    Keys.onSpacePressed: if(currentItem)currentItem.clicked()
+                    Accessible.role: Accessible.List; Accessible.name: view.searching?qsTr("Search results"):qsTr("Project files")
                     model: view.searching ? view.matches : view.entries
                     delegate: ItemDelegate {
                         id: entryRow
@@ -115,8 +121,10 @@ Item {
                         leftPadding: view.searching?Theme.gapMd:Theme.gapMd+modelData.depth*Theme.gapMd
                         rightPadding: Theme.gapSm
                         highlighted: modelData.file===view.current
+                        Accessible.name: view.searching?modelData.file+":"+modelData.line:modelData.name
                         background: Rectangle {
                             color: entryRow.highlighted?Theme.selected:entryRow.hovered?Theme.hover:"transparent"
+                            border.width: entryRow.ListView.isCurrentItem && entryList.activeFocus?2:0; border.color: Theme.accentInk
                             Rectangle { visible: entryRow.highlighted; width: 2; height: parent.height; color: Theme.accent }
                         }
                         contentItem: Column {
@@ -179,6 +187,7 @@ Item {
                     selectionColor: Theme.accent; selectedTextColor: Theme.accentText
                     wrapMode: TextEdit.NoWrap; readOnly: view.current.length===0
                     background: Rectangle { color: Theme.background }
+                    Accessible.name: view.current ? qsTr("Source of %1").arg(view.current) : qsTr("Source editor")
                     onTextChanged: {if(view.updating||!view.current)return;let d=Object.assign({},view.documents),doc=d[view.current];doc.text=text;doc.dirty=text!==doc.saved;d[view.current]=doc;view.documents=d}
                     Keys.onPressed: function(event) { if(event.key===Qt.Key_Tab && !(event.modifiers&Qt.ControlModifier)) {editor.insert(editor.cursorPosition,"    ");event.accepted=true} }
                 }

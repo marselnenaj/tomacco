@@ -399,6 +399,11 @@ Rectangle {
                     id: jobList
                     objectName: "jobList"
                     Layout.fillWidth: true; Layout.fillHeight: true; model: panel.shownJobs; clip: true
+                    // Tab reaches the list; arrows move, Enter or Space opens the job.
+                    activeFocusOnTab: true
+                    Keys.onReturnPressed: if(currentItem)currentItem.clicked()
+                    Keys.onSpacePressed: if(currentItem)currentItem.clicked()
+                    Accessible.role: Accessible.List; Accessible.name: qsTr("Jobs")
                     Text { anchors.centerIn: parent; width: parent.width-Theme.gapXl; visible: jobList.count===0; text: panel.jobFilter==="running"?qsTr("Nothing running."):qsTr("No failed job."); color: Theme.muted; font.pixelSize: Theme.fontSmall; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter }
                     delegate: ItemDelegate {
                         id: jobRow
@@ -408,7 +413,7 @@ Rectangle {
                         padding: 0; leftPadding: Theme.gapLg; rightPadding: Theme.gapMd
                         background: Rectangle {
                             color: panel.selectedJob===jobRow.modelData.id?Theme.selected:jobRow.hovered?Theme.hover:"transparent"
-                            border.width: jobRow.visualFocus?1:0; border.color: Theme.accentInk
+                            border.width: jobRow.ListView.isCurrentItem && jobList.activeFocus?2:0; border.color: Theme.accentInk
                             Rectangle { visible: panel.selectedJob===jobRow.modelData.id; width: 2; height: parent.height; color: Theme.accent }
                             Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.subtle }
                         }
@@ -455,7 +460,7 @@ Rectangle {
                         Text { objectName: "logMatches"; visible: panel.logFiltered && panel.width>=760; text: qsTr("%n line(s)","",panel.logLines.length); color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro }
                         StudioButton { objectName: "logCopy"; text: panel.logFiltered?qsTr("Copy these lines"):qsTr("Copy log"); displayText: panel.width<1000?"":text; tip: text; iconName: "copy"; quiet: true; enabled: panel.shownLog.length>0; onClicked: Studio.copy(panel.shownLog) }
                     }
-                    StudioCodeView { objectName: "jobLog"; Layout.fillWidth: true; Layout.fillHeight: true; clip: true; text: panel.shownLog; placeholderText: panel.logFiltered && panel.logText.length ? qsTr("No line of this log matches.") : qsTr("Choose a job to read its log.") }
+                    StudioCodeView { objectName: "jobLog"; Layout.fillWidth: true; Layout.fillHeight: true; clip: true; text: panel.shownLog; accessibleName: panel.activeJob.label ? qsTr("Log of %1").arg(panel.activeJob.label) : qsTr("Job log"); placeholderText: panel.logFiltered && panel.logText.length ? qsTr("No line of this log matches.") : qsTr("Choose a job to read its log.") }
                     Repeater {
                         model: panel.activeJob.result && panel.activeJob.result.artifacts ? panel.activeJob.result.artifacts : []
                         RowLayout {
@@ -487,7 +492,12 @@ Rectangle {
                     StudioTextField { id: actionFilter; Layout.fillWidth: true; Layout.margins: Theme.gapSm; placeholderText: qsTr("Search tools…") }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
                     ListView {
+                        id: toolList; objectName: "toolList"
                         Layout.fillWidth: true; Layout.fillHeight: true; clip: true
+                        activeFocusOnTab: true
+                        Keys.onReturnPressed: if(currentItem)currentItem.clicked()
+                        Keys.onSpacePressed: if(currentItem)currentItem.clicked()
+                        Accessible.role: Accessible.List; Accessible.name: qsTr("Tools")
                         model: Agent.operations.filter(x=>(OperationTitles.title(x)+" "+x.title+" "+x.name).toLowerCase().indexOf(actionFilter.text.toLowerCase())>=0)
                         delegate: ItemDelegate {
                             id: toolRow
@@ -495,8 +505,10 @@ Rectangle {
                             width: ListView.view.width; height: Theme.rowHeight
                             padding: 0; leftPadding: Theme.gapLg; rightPadding: Theme.gapMd
                             readonly property bool current: !!panel.selectedOperation && panel.selectedOperation.name===modelData.name
+                            Accessible.name: OperationTitles.title(modelData)
                             background: Rectangle {
                                 color: toolRow.current?Theme.selected:toolRow.hovered?Theme.hover:"transparent"
+                                border.width: toolRow.ListView.isCurrentItem && toolList.activeFocus?2:0; border.color: Theme.accentInk
                                 Rectangle { visible: toolRow.current; width: 2; height: parent.height; color: Theme.accent }
                             }
                             contentItem: Text { text: OperationTitles.title(toolRow.modelData); color: toolRow.current?Theme.text:Theme.muted; font.pixelSize: Theme.fontBody; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
@@ -535,7 +547,7 @@ Rectangle {
                         }
                     }
                     StudioButton { text: qsTr("Run"); iconName: "play"; accent: true; visible: panel.selectedOperation!==null; onClicked: panel.submitForm() }
-                    StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 80; clip: true; placeholderText: qsTr("The result shows up here."); text: panel.resultText }
+                    StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 80; clip: true; placeholderText: qsTr("The result shows up here."); accessibleName: qsTr("Result"); text: panel.resultText }
                 }
             }
             DebugWorkspace { id: debugPage; workspace: panel }
