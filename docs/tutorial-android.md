@@ -139,5 +139,6 @@ the job records. The project is an ordinary Gradle project; open it with
 ## Where next
 
 - [Recipes](recipes.md): short sequences for the next things to try.
+- [Agent patterns](agent-patterns.md): how an agent plans, waits and recovers with the same calls.
 - [Android](android.md): the live view, debugging, settings for tests and profiling.
 - [Troubleshooting](troubleshooting.md) when a step fails: read the error's `message` and `remedy` first.

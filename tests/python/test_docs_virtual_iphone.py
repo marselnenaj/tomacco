@@ -49,7 +49,8 @@ GUIDES = ("README.md", "docs/README.md", "docs/getting-started.md", "docs/deskto
           "docs/research-engines.md",
           "docs/virtual-ios/README.md", "docs/virtual-ios/setup.md", "docs/virtual-ios/usage.md",
           "docs/virtual-ios/troubleshooting.md", "docs/virtual-ios/how-it-works.md", "examples/README.md",
-          "docs/recipes.md", "docs/faq.md", "docs/tutorial-android.md")
+          "docs/recipes.md", "docs/faq.md", "docs/tutorial-android.md",
+          "docs/agent-patterns.md")
 # A dotted name in a guide that looks like an operation and is a result's path instead.
 RESULT_PATHS = {"workspace.ios_research.guest.detach_pending"}
 OPERATION_AREAS = {entry["name"].split(".")[0] for entry in operation_entries() if "." in entry["name"]}
@@ -326,6 +327,21 @@ class TutorialTests(DocumentTest):
         self.assert_says(self.GUIDE, text(self.GUIDE), "steps 2 to 8 below took 103 seconds",
                          "Those downloads were not timed.")
         self.assertTrue((ROOT / "docs/images/tutorial-android-counter.png").is_file())
+
+
+class AgentPatternTests(DocumentTest):
+    GUIDE = "docs/agent-patterns.md"
+
+    def test_the_destructive_list_and_counts_follow_the_schema(self):
+        guide = text(self.GUIDE)
+        entries = operation_entries()
+        destructive = [entry["name"] for entry in entries if entry["annotations"].get("destructiveHint")]
+        read_only = [entry["name"] for entry in entries if entry["annotations"].get("readOnlyHint")]
+        self.assert_says(self.GUIDE, guide, f"Of the {len(entries)} operations",
+                         f"{len(read_only)} are read-only and {len(destructive)} are destructive")
+        listed = section(self.GUIDE, "## Safe and destructive operations").split("The destructive ones are", 1)[1]
+        listed = set(re.findall(r"`([a-z_.]+)`", listed.split("The [reference]", 1)[0]))
+        self.assertEqual(listed, set(destructive), f"{self.GUIDE}: the destructive list differs from the schema")
 
 
 class AgentGuideTests(DocumentTest):

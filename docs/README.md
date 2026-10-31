@@ -13,6 +13,7 @@ operations, so a person and a coding agent can do the same things.
 | Have my coding agent set everything up | [Agent setup](agent-setup.md) |
 | Connect a coding agent over MCP or the JSON CLI | [Agents](agents.md) |
 | Copy a short sequence: build and run, screenshot and UI test, iOS build, virtual iPhone deploy | [Recipes](recipes.md) |
+| Write an agent or a script: planning, waiting on jobs, errors, destructive calls, recovery | [Agent patterns](agent-patterns.md) |
 | Look up one operation: its arguments, defaults, annotations and an example call | [Operation reference](reference/README.md) |
 | Use the desktop app: device window, shortcuts, Omarchy panel, layout lab | [Desktop](desktop.md) |
 | Build and run an Android app, Swift on Android included | [Android](android.md) |

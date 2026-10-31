@@ -14,6 +14,9 @@ operations and their JSON results.
 - A tutorial, [Your first Android app](docs/tutorial-android.md): from an installed Tomacco to the Compose starter on
   the emulator, a screenshot, a checked tap and a passing UI test, in 103 seconds on a host with the SDK and Gradle
   cache already present.
+- A guide for agent authors, [Agent patterns](docs/agent-patterns.md): planning with `capabilities`, waiting on jobs
+  with progress, acting on an error's `remedy`, safe and destructive operations by their annotations, and recovering
+  from failures, with real results.
 
 ## 1.1.0
 

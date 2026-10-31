@@ -2,6 +2,7 @@
 
 How a coding agent, or a script, drives Tomacco. The JSON CLI, the MCP server and the desktop all
 call the same typed operations, so an agent can do everything the desktop can.
+[Agent patterns](agent-patterns.md) shows how to plan, wait and recover with this contract.
 
 `tomaccoctl` is a compiled Rust program. Run it directly, not through `python3`. Neither the CLI,
 MCP nor the build workers need Python; repository tests, the installer and the optional iOS
