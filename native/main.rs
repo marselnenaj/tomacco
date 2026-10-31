@@ -8,6 +8,7 @@ mod apple_dev;
 mod automation;
 mod catalog;
 mod completions;
+mod contact_sheet;
 mod core;
 mod crashes;
 mod dap;

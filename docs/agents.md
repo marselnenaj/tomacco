@@ -535,7 +535,9 @@ The layout lab is a separate Chromium surface, not a device. Start a session wit
 - `preview.configure` selects a profile, orientation, fold, chrome, safe-area metadata, guides and zoom.
 - `preview.ready` waits for the document, fonts and Flutter's first frame. A `wait_for` expression can wait for your own readiness.
 - `preview.inspect`, `preview.click`, `preview.fill`, `preview.evaluate`, `preview.console` and `preview.capture` interact with the page.
-- `preview.matrix` captures several profiles and orientations and restores the session.
+- `preview.matrix` captures several profiles and orientations and restores the session. Besides one PNG per
+  capture and `matrix.json`, it writes `contact-sheet.png`: every capture side by side at one scale, labelled with
+  the model and its orientation. `contact_sheet:false` leaves it out.
 - `preview.audit` reports overflow, missing names and small targets. It is not an accessibility certificate or Safari emulation.
 - `catalog.export`, `catalog.import` and `catalog.remove` manage custom profiles, which are data only. `android.calibrate` reads a device's real size and density.
 

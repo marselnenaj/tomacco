@@ -96,6 +96,9 @@ operations and their JSON results.
     paths, window sizes or history.
   - Keyboard and accessibility: named icon buttons and list rows, a wider focus ring,
     and keyboard navigation in the jobs, tools and file lists.
+- **Web layout lab.**
+  - `preview.matrix` also writes `contact-sheet.png`, all captures side by side at one
+    scale and labelled with model and orientation.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.

@@ -3195,7 +3195,7 @@
   {
     "name": "preview.matrix",
     "title": "Capture device matrix",
-    "description": "Capture and audit a page across multiple profiles and orientations, saving PNGs and a JSON report.",
+    "description": "Capture and audit a page across multiple profiles and orientations, saving PNGs, a labelled contact sheet of all captures and a JSON report.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3246,6 +3246,11 @@
         "folded_views": {
           "type": "boolean",
           "default": true
+        },
+        "contact_sheet": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also write contact-sheet.png: every capture side by side at one scale, labelled with model and orientation"
         }
       },
       "required": [
