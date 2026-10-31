@@ -193,6 +193,47 @@ fn launch_command(device: &str, id: &str) -> Result<Vec<String>> {
         })?;
     sh(device, &["am", "start", "-W", "-n", component])
 }
+fn sdk_level(device: &str) -> Result<u64> {
+    let result = run(sh(device, &["getprop", "ro.build.version.sdk"])?)?;
+    Ok(s(&result, "stdout").trim().parse().unwrap_or(0))
+}
+/// The app's user ID from `cmd package list packages -U`, matched exactly.
+fn package_uid(listing: &str, id: &str) -> Option<String> {
+    listing.lines().find_map(|line| {
+        let mut parts = line.split_whitespace();
+        let package = parts.next()?.strip_prefix("package:")?;
+        let uid = parts.find_map(|part| part.strip_prefix("uid:"))?;
+        (package == id && !uid.is_empty() && uid.bytes().all(|c| c.is_ascii_digit()))
+            .then(|| uid.to_string())
+    })
+}
+/// logcat arguments for one app. From Android 12 its user ID selects the app's
+/// processes, across restarts and before launch; older logcat filters by the
+/// PID of the running process.
+fn app_log_filter(device: &str, id: &str) -> Result<Vec<String>> {
+    bundle(id)?;
+    if sdk_level(device)? >= 31 {
+        let result = run(sh(
+            device,
+            &["cmd", "package", "list", "packages", "-U", id],
+        )?)?;
+        let uid = package_uid(s(&result, "stdout"), id).ok_or_else(|| {
+            Error::new("app_not_installed", format!("{id} is not installed"))
+                .remedy("Install the app with device.install or project.run")
+        })?;
+        return Ok(vec![format!("--uid={uid}")]);
+    }
+    let result = run(sh(device, &["pidof", "-s", id])?)?;
+    let pid = s(&result, "stdout").trim();
+    if pid.is_empty() || !pid.bytes().all(|c| c.is_ascii_digit()) {
+        return Err(Error::new(
+            "app_not_running",
+            "Launch the app before requesting process logs",
+        )
+        .remedy("Below Android 12, logs follow the running process"));
+    }
+    Ok(argv(&["--pid", pid]))
+}
 fn screenshot(a: &Value) -> Result {
     let device = identifier(s(a, "device"), "device ID", None)?;
     let target = output_path(s(a, "path"))?;
@@ -491,16 +532,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 let mut args = adb(device)?;
                 args.extend(argv(&["logcat", "-v", "threadtime"]));
                 if !id.is_empty() {
-                    bundle(id)?;
-                    let result = run(sh(device, &["pidof", "-s", id])?)?;
-                    let pid = s(&result, "stdout").trim();
-                    if pid.is_empty() || !pid.bytes().all(|c| c.is_ascii_digit()) {
-                        return Err(Error::new(
-                            "app_not_running",
-                            "Launch the app before requesting process logs",
-                        ));
-                    }
-                    args.extend(argv(&["--pid", pid]));
+                    args.extend(app_log_filter(device, id)?);
                 }
                 if !filter.is_empty() {
                     identifier(filter, "logcat filter", Some(r"[A-Za-z0-9_.*:-]+"))?;
@@ -1039,4 +1071,25 @@ fn avd_configuration_lock(directory: &std::path::Path) -> Result<Lock> {
         ));
     }
     Ok(lock)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn package_uid_matches_the_exact_package_only() {
+        let listing =
+            "package:dev.example.app.helper uid:10200\npackage:dev.example.app uid:10199\n";
+        assert_eq!(
+            package_uid(listing, "dev.example.app").as_deref(),
+            Some("10199")
+        );
+        assert_eq!(package_uid(listing, "dev.example"), None);
+        assert_eq!(
+            package_uid("package:dev.example.app uid:x1", "dev.example.app"),
+            None
+        );
+        assert_eq!(package_uid("", "dev.example.app"), None);
+    }
 }

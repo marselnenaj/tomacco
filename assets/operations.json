@@ -1028,7 +1028,7 @@
   {
     "name": "device.logs",
     "title": "Device logs",
-    "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag.",
+    "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running.",
     "inputSchema": {
       "type": "object",
       "properties": {

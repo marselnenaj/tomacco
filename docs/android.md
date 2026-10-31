@@ -102,6 +102,15 @@ into the focused field. This needs scrcpy configured and Android 7 (API 24) or n
 replaces what was on the device clipboard, and answers `text_unsupported` with a
 remedy when it cannot work.
 
+`device.logs` with `bundle_id` keeps only that app's lines. On Android 12 (API 31)
+and newer it filters by the app's user ID, so the capture can start before the app
+and continues across restarts. On older Android it follows the process ID of the
+running app, so launch the app first.
+
+```sh
+tomaccoctl call device.logs '{"platform":"android","device":"emulator-5554","bundle_id":"dev.example.newapp","duration":30}'
+```
+
 ## Sound
 
 On Android 11 and newer, output sound is forwarded to the computer by default when

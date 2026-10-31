@@ -795,6 +795,24 @@ class AndroidControlTests(Isolated):
         self.assertFalse(any(call[:1] == ["push"] for call in self.calls()))
 
 
+    def test_app_logs_follow_the_user_id_from_android_12_and_the_pid_before(self):
+        self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": "package:dev.test.app.extra uid:10201\npackage:dev.test.app uid:10200\n"})
+        job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1})
+        self.assertEqual(job["plan"]["steps"][0]["argv"][-3:], ["-v", "threadtime", "--uid=10200"])
+        jobs.wait(job["id"], 5)
+        self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": ""})
+        with self.assertRaises(StudioError) as missing:
+            dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app"})
+        self.assertEqual(missing.exception.code, "app_not_installed")
+        self.replies(**{"ro.build.version.sdk": "29\n", "pidof": "4242\n"})
+        job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1, "filter": "*:E"})
+        self.assertEqual(job["plan"]["steps"][0]["argv"][-3:], ["--pid", "4242", "*:E"])
+        jobs.wait(job["id"], 5)
+        self.replies(**{"ro.build.version.sdk": "29\n"})
+        with self.assertRaises(StudioError) as stopped:
+            dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app"})
+        self.assertEqual(stopped.exception.code, "app_not_running")
+
 class ProtocolTests(Isolated):
     def test_cli_schema_errors_and_file_arguments(self):
         schema = json.loads(subprocess.check_output([binary(), "schema"]))["result"]
