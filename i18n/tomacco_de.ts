@@ -307,6 +307,34 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Unknown</source>
         <translation>Unbekannt</translation>
     </message>
+    <message>
+        <source>This job has no log file yet.</source>
+        <translation>Dieser Auftrag hat noch keine Protokolldatei.</translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <translation>Öffnen</translation>
+    </message>
+    <message>
+        <source>%1 cannot be written.</source>
+        <translation>%1 kann nicht geschrieben werden.</translation>
+    </message>
+    <message>
+        <source>%1 cannot be read.</source>
+        <translation>%1 kann nicht gelesen werden.</translation>
+    </message>
+    <message>
+        <source>%1 is too large for a settings file.</source>
+        <translation>%1 ist für eine Einstellungsdatei zu groß.</translation>
+    </message>
+    <message>
+        <source>%1 is not a Tomacco settings file.</source>
+        <translation>%1 ist keine Tomacco-Einstellungsdatei.</translation>
+    </message>
+    <message>
+        <source>%1 comes from a newer Tomacco; update this one first.</source>
+        <translation>%1 stammt von einem neueren Tomacco; aktualisiere zuerst dieses.</translation>
+    </message>
 </context>
 <context>
     <name>Colors</name>
@@ -915,6 +943,22 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
         <translation>Dieser Ordner enthält mehr als 2.000 Einträge. Nutze die Suche für gezielte Ergebnisse.</translation>
+    </message>
+    <message>
+        <source>Source of %1</source>
+        <translation>Quelltext von %1</translation>
+    </message>
+    <message>
+        <source>Source editor</source>
+        <translation>Quelltext-Editor</translation>
+    </message>
+    <message>
+        <source>Search results</source>
+        <translation>Suchergebnisse</translation>
+    </message>
+    <message>
+        <source>Project files</source>
+        <translation>Projektdateien</translation>
     </message>
 </context>
 <context>
@@ -3005,6 +3049,88 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Open a project</source>
         <translation>Projekt öffnen</translation>
     </message>
+    <message>
+        <source>Completed after %1</source>
+        <translation>Fertig nach %1</translation>
+    </message>
+    <message>
+        <source>Failed after %1</source>
+        <translation>Fehlgeschlagen nach %1</translation>
+    </message>
+    <message>
+        <source>Timed out after %1</source>
+        <translation>Zeitüberschreitung nach %1</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Benachrichtigungen</translation>
+    </message>
+    <message>
+        <source>When a job ends in the background</source>
+        <translation>Wenn ein Auftrag im Hintergrund endet</translation>
+    </message>
+    <message>
+        <source>Touches and coordinates</source>
+        <translation>Berührungen und Koordinaten</translation>
+    </message>
+    <message>
+        <source>Hide touches and pointer coordinates</source>
+        <translation>Berührungen und Zeigerkoordinaten ausblenden</translation>
+    </message>
+    <message>
+        <source>Show touches and pointer coordinates, for writing UI tests</source>
+        <translation>Berührungen und Zeigerkoordinaten zeigen, zum Schreiben von UI-Tests</translation>
+    </message>
+    <message>
+        <source>Show touches and pointer coordinates</source>
+        <translation>Berührungen und Zeigerkoordinaten zeigen</translation>
+    </message>
+    <message>
+        <source>Another computer</source>
+        <translation>Anderer Computer</translation>
+    </message>
+    <message>
+        <source>Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
+        <translation>Erscheinungsbild, Sprache, Benachrichtigungen, Updates und die Einstellungen der Geräteansicht, als JSON-Datei. Pfade, Fenstergrößen und Verlauf bleiben auf diesem Computer.</translation>
+    </message>
+    <message>
+        <source>Export settings…</source>
+        <translation>Einstellungen exportieren…</translation>
+    </message>
+    <message>
+        <source>Import settings…</source>
+        <translation>Einstellungen importieren…</translation>
+    </message>
+    <message>
+        <source>Export settings</source>
+        <translation>Einstellungen exportieren</translation>
+    </message>
+    <message>
+        <source>Import settings</source>
+        <translation>Einstellungen importieren</translation>
+    </message>
+    <message>
+        <source>Tomacco settings (*.json)</source>
+        <translation>Tomacco-Einstellungen (*.json)</translation>
+    </message>
+    <message>
+        <source>Settings saved to %1</source>
+        <translation>Einstellungen gespeichert in %1</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n setting(s) imported</source>
+        <translation>
+            <numerusform>%n Einstellung importiert</numerusform>
+            <numerusform>%n Einstellungen importiert</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n ignored</source>
+        <translation>
+            <numerusform>%n ignoriert</numerusform>
+            <numerusform>%n ignoriert</numerusform>
+        </translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -3890,6 +4016,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Google Play needs an authorized service account. Apple needs a Mac with Xcode and your signing keys.</source>
         <translation>Google Play braucht ein berechtigtes Dienstkonto. Apple braucht einen Mac mit Xcode und deine Signierschlüssel.</translation>
     </message>
+    <message>
+        <source>Build number</source>
+        <translation>Build-Nummer</translation>
+    </message>
 </context>
 <context>
     <name>StudioDialog</name>
@@ -4382,6 +4512,103 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>The result shows up here.</source>
         <translation>Das Ergebnis erscheint hier.</translation>
+    </message>
+    <message>
+        <source>Filter the log</source>
+        <translation>Protokoll filtern</translation>
+    </message>
+    <message>
+        <source>All lines</source>
+        <translation>Alle Zeilen</translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation>Warnungen</translation>
+    </message>
+    <message>
+        <source>Errors</source>
+        <translation>Fehler</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n line(s)</source>
+        <translation>
+            <numerusform>%n Zeile</numerusform>
+            <numerusform>%n Zeilen</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Copy these lines</source>
+        <translation>Diese Zeilen kopieren</translation>
+    </message>
+    <message>
+        <source>Copy log</source>
+        <translation>Protokoll kopieren</translation>
+    </message>
+    <message>
+        <source>No line of this log matches.</source>
+        <translation>Keine Zeile dieses Protokolls passt.</translation>
+    </message>
+    <message>
+        <source>%1 s</source>
+        <translation>%1 s</translation>
+    </message>
+    <message>
+        <source>%1 min %2 s</source>
+        <translation>%1 min %2 s</translation>
+    </message>
+    <message>
+        <source>%1 h %2 min</source>
+        <translation>%1 h %2 min</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <source>Nothing running.</source>
+        <translation>Nichts läuft.</translation>
+    </message>
+    <message>
+        <source>No failed job.</source>
+        <translation>Kein fehlgeschlagener Auftrag.</translation>
+    </message>
+    <message>
+        <source>Open log file</source>
+        <translation>Protokolldatei öffnen</translation>
+    </message>
+    <message>
+        <source>Run again</source>
+        <translation>Erneut ausführen</translation>
+    </message>
+    <message>
+        <source>Run again · only for jobs this window started</source>
+        <translation>Erneut ausführen · nur für Aufträge, die dieses Fenster gestartet hat</translation>
+    </message>
+    <message>
+        <source>Running</source>
+        <comment>jobs filter</comment>
+        <translation>Laufend</translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <comment>jobs filter</comment>
+        <translation>Fehler</translation>
+    </message>
+    <message>
+        <source>Jobs</source>
+        <translation>Aufträge</translation>
+    </message>
+    <message>
+        <source>Tools</source>
+        <translation>Werkzeuge</translation>
+    </message>
+    <message>
+        <source>Log of %1</source>
+        <translation>Protokoll von %1</translation>
+    </message>
+    <message>
+        <source>Job log</source>
+        <translation>Auftragsprotokoll</translation>
     </message>
 </context>
 <context>

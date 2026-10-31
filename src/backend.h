@@ -1,4 +1,5 @@
 #pragma once
+#include <QHash>
 #include <QObject>
 #include <QSettings>
 #include <QTcpServer>
@@ -62,6 +63,10 @@ public:
     Q_INVOKABLE QString documentPath(const QString &name) const;
     // Opens that document in the desktop's viewer; false when it is missing.
     Q_INVOKABLE bool openDocument(const QString &name);
+    // A job's log file as job.list names it (DATA/jobs/<id>.log), or an empty
+    // string for anything else; openJobLog opens it in the desktop's viewer.
+    Q_INVOKABLE QString jobLogPath(const QString &path) const;
+    Q_INVOKABLE bool openJobLog(const QString &path);
     // Persists the choice and installs its translators. The application's
     // QML engine retranslates on languageChanged (see main.cpp).
     Q_INVOKABLE void setLanguage(const QString &choice);
@@ -75,6 +80,14 @@ public:
     // The data directory the control plane uses: TOMACCO_HOME, then the default.
     static QString dataDirectory();
     void setInitialUrl(const QString &value) { m_initial=value; }
+    // Writes the portable preferences (theme, language, notifications, device
+    // view choices; no paths, window sizes, history or credentials) and the
+    // extra values given (updates/mode) to a JSON file. An empty string on
+    // success, otherwise the reason.
+    Q_INVOKABLE QString exportSettings(const QString &path,const QVariantMap &extra={});
+    // Reads such a file and applies the values it may carry, each checked;
+    // anything else is ignored. Returns {ok, error, applied, ignored, extra}.
+    Q_INVOKABLE QVariantMap importSettings(const QString &path);
     Q_INVOKABLE QVariant setting(const QString &key, const QVariant &fallback={});
     Q_INVOKABLE void saveSetting(const QString &key, const QVariant &value);
     Q_INVOKABLE QUrl normalizeUrl(const QString &input);
@@ -86,6 +99,11 @@ public:
     // Puts the image saved at this path on the clipboard; false when it cannot be read.
     Q_INVOKABLE bool copyImage(const QString &path);
     Q_INVOKABLE void openExternal(const QUrl &url);
+    // Shows a desktop notification (org.freedesktop.Notifications) with an
+    // Open action; tag comes back with notificationActivated when it is
+    // clicked. False when no notification service is reachable. An offscreen
+    // run has no desktop to notify: it only emits notificationSent.
+    Q_INVOKABLE bool notify(const QString &title,const QString &body,const QString &tag);
     // Starts this program again from its path, for the new version an update installed there.
     Q_INVOKABLE bool relaunch();
     Q_INVOKABLE void openScreenshots();
@@ -98,12 +116,19 @@ signals:
     void languageChanged();
     void appearanceChanged();
     void recentProjectsChanged();
+    void notificationSent(const QString &title,const QString &body,const QString &tag);
+    void notificationActivated(const QString &tag);
+private slots:
+    // The notification service's ActionInvoked signal.
+    void notificationAction(uint id,const QString &action);
 private:
     static QString s_uiLanguage;
     // A probe result is the tool's output or one of these states, which are
     // translated when read so a language change also reaches them.
     static QString probeLabel(const QString &value);
     void acceptConnections();
+    QHash<uint,QString> m_notifications;
+    bool m_notificationsConnected=false;
     void probe(const QString &name, const QStringList &args, QString *destination);
     QSettings m_settings;
     QVariantList m_models;

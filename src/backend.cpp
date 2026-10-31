@@ -1,6 +1,12 @@
 #include "backend.h"
 #include <QClipboard>
 #include <QDateTime>
+#ifdef TOMACCO_HAVE_DBUS
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
+#endif
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
@@ -122,6 +128,66 @@ QString Backend::probeLabel(const QString &value) {
     if(value==QLatin1String("@probe:failed")) return tr("Check failed");
     if(value==QLatin1String("@probe:unknown")) return tr("Unknown");
     return value;
+}
+// The preferences that move to another machine, each with its check. Paths,
+// window sizes, recent projects, job history and research settings belong to
+// this machine and stay; Tomacco keeps no credentials in its settings.
+static const QString settingsFormat=QStringLiteral("tomacco-desktop-settings");
+static bool portableSetting(const QString &key,const QJsonValue &value,QVariant *out) {
+    static const QStringList switches{QStringLiteral("Notifications/jobs"),QStringLiteral("NativeDisplay/showDeviceFrame"),QStringLiteral("NativeDisplay/showActivity"),
+        QStringLiteral("NativeDisplay/showTouches"),QStringLiteral("NativeAudio/forwardAudio")};
+    static const QRegularExpression identifier(QStringLiteral("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"));
+    if(switches.contains(key)) { if(!value.isBool()) return false; *out=value.toBool(); return true; }
+    const auto text=value.toString();
+    if(!value.isString()) return false;
+    if(key==QLatin1String("appearance") && QStringList{"system","dark","light"}.contains(text)) { *out=text; return true; }
+    if(key==QLatin1String("language") && languageChoices.contains(text)) { *out=text; return true; }
+    if((key==QLatin1String("NativeIphone/runnerBundle") || key==QLatin1String("device")) && identifier.match(text).hasMatch()) { *out=text; return true; }
+    if(key==QLatin1String("updates/mode") && QStringList{"off","notify","auto"}.contains(text)) { *out=text; return true; }
+    return false;
+}
+QString Backend::exportSettings(const QString &path,const QVariantMap &extra) {
+    QJsonObject values;
+    QVariant checked;
+    for(const auto &key:{"appearance","language","device","Notifications/jobs","NativeDisplay/showDeviceFrame","NativeDisplay/showActivity","NativeDisplay/showTouches","NativeAudio/forwardAudio","NativeIphone/runnerBundle"}) {
+        if(!m_settings.contains(key)) continue;
+        auto value=m_settings.value(key);
+        // QSettings keeps switches as the text "true" or "false".
+        const auto json=value.toString()==QLatin1String("true") || value.toString()==QLatin1String("false") ? QJsonValue(value.toString()==QLatin1String("true")) : QJsonValue::fromVariant(value);
+        if(portableSetting(key,json,&checked)) values.insert(key,json);
+    }
+    for(auto it=extra.cbegin();it!=extra.cend();++it)
+        if(portableSetting(it.key(),QJsonValue::fromVariant(it.value()),&checked)) values.insert(it.key(),QJsonValue::fromVariant(it.value()));
+    const QJsonObject document{{"format",settingsFormat},{"version",1},{"application",QStringLiteral("Tomacco")},{"settings",values}};
+    QFile file(path);
+    if(path.isEmpty() || !file.open(QIODevice::WriteOnly|QIODevice::Truncate)) return tr("%1 cannot be written.").arg(path);
+    file.write(QJsonDocument(document).toJson(QJsonDocument::Indented));
+    return file.error()==QFile::NoError ? QString() : tr("%1 cannot be written.").arg(path);
+}
+QVariantMap Backend::importSettings(const QString &path) {
+    const auto fail=[](const QString &reason){return QVariantMap{{"ok",false},{"error",reason}};};
+    QFile file(path);
+    if(path.isEmpty() || !file.open(QIODevice::ReadOnly)) return fail(tr("%1 cannot be read.").arg(path));
+    if(file.size()>256*1024) return fail(tr("%1 is too large for a settings file.").arg(path));
+    QJsonParseError error;
+    const auto document=QJsonDocument::fromJson(file.readAll(),&error).object();
+    if(error.error!=QJsonParseError::NoError || document.value("format").toString()!=settingsFormat || !document.value("settings").isObject())
+        return fail(tr("%1 is not a Tomacco settings file.").arg(path));
+    if(document.value("version").toInt()!=1) return fail(tr("%1 comes from a newer Tomacco; update this one first.").arg(path));
+    int applied=0,ignored=0;
+    QVariantMap extra;
+    const auto values=document.value("settings").toObject();
+    for(auto it=values.begin();it!=values.end();++it) {
+        QVariant value;
+        if(!portableSetting(it.key(),it.value(),&value)) { ++ignored; continue; }
+        ++applied;
+        if(it.key()==QLatin1String("updates/mode")) extra.insert(it.key(),value);
+        else if(it.key()==QLatin1String("language")) setLanguage(value.toString());
+        else if(it.key()==QLatin1String("appearance")) setAppearance(value.toString());
+        else m_settings.setValue(it.key(),value);
+    }
+    m_settings.sync();
+    return {{"ok",true},{"error",QString()},{"applied",applied},{"ignored",ignored},{"extra",extra}};
 }
 QVariant Backend::setting(const QString &key,const QVariant &fallback) { return m_settings.value(key,fallback); }
 void Backend::saveSetting(const QString &key,const QVariant &value) { m_settings.setValue(key,value); }
@@ -294,6 +360,50 @@ bool Backend::relaunch() {
     // How the kernel names a running program whose file an update replaced.
     if(program.endsWith(QLatin1String(" (deleted)"))) program.chop(10);
     return QProcess::startDetached(program,QCoreApplication::arguments().mid(1));
+}
+QString Backend::jobLogPath(const QString &path) const {
+    static const QRegularExpression name(QStringLiteral("^[0-9a-f]{32}\\.log$"));
+    const QFileInfo file(path);
+    if(path.isEmpty() || !file.isFile() || file.isSymLink() || !name.match(file.fileName()).hasMatch() || file.dir().dirName()!=QLatin1String("jobs")) return {};
+    return file.canonicalFilePath();
+}
+bool Backend::openJobLog(const QString &path) {
+    const auto log=jobLogPath(path);
+    if(log.isEmpty()) { emit message(tr("This job has no log file yet.")); return false; }
+    return QDesktopServices::openUrl(QUrl::fromLocalFile(log));
+}
+bool Backend::notify(const QString &title,const QString &body,const QString &tag) {
+    emit notificationSent(title,body,tag);
+    if(qGuiApp && QGuiApplication::platformName()==QLatin1String("offscreen")) return false;
+#ifdef TOMACCO_HAVE_DBUS
+    auto bus=QDBusConnection::sessionBus();
+    if(!bus.isConnected()) return false;
+    const auto service=QStringLiteral("org.freedesktop.Notifications"),path=QStringLiteral("/org/freedesktop/Notifications");
+    if(!m_notificationsConnected)
+        m_notificationsConnected=bus.connect(service,path,service,QStringLiteral("ActionInvoked"),this,SLOT(notificationAction(uint,QString)));
+    auto call=QDBusMessage::createMethodCall(service,path,service,QStringLiteral("Notify"));
+    const QVariantMap hints{{QStringLiteral("desktop-entry"),QStringLiteral("io.github.marselnenaj.tomacco")}};
+    call<<QCoreApplication::applicationName()<<uint(0)<<QStringLiteral("io.github.marselnenaj.tomacco")<<title<<body
+        <<QStringList{QStringLiteral("default"),tr("Open")}<<hints<<int(-1);
+    auto *watcher=new QDBusPendingCallWatcher(bus.asyncCall(call),this);
+    connect(watcher,&QDBusPendingCallWatcher::finished,this,[this,tag](QDBusPendingCallWatcher *done){
+        QDBusPendingReply<uint> reply=*done;
+        if(reply.isValid()) {
+            m_notifications.insert(reply.value(),tag);
+            // Only the recent ones can still be clicked.
+            while(m_notifications.size()>32) m_notifications.erase(m_notifications.begin());
+        }
+        done->deleteLater();
+    });
+    return true;
+#else
+    Q_UNUSED(title) Q_UNUSED(body) Q_UNUSED(tag)
+    return false;
+#endif
+}
+void Backend::notificationAction(uint id,const QString &action) {
+    const auto tag=m_notifications.take(id);
+    if(!tag.isEmpty() && action==QLatin1String("default")) emit notificationActivated(tag);
 }
 void Backend::openExternal(const QUrl &url) { if(url.scheme()=="http" || url.scheme()=="https") QDesktopServices::openUrl(url); }
 void Backend::openScreenshots() { QDesktopServices::openUrl(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)+"/Tomacco")); }

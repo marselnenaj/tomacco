@@ -27,6 +27,7 @@
 #include <QtMath>
 #include <QUrl>
 #include <QtTest>
+#include <QAccessible>
 #include <QtWebEngineQuick/qtwebenginequickglobal.h>
 #include <QThread>
 #include <algorithm>
@@ -55,6 +56,8 @@ static int patient(int milliseconds) { return milliseconds*patience(); }
 
 // The navigation rail and its border, which an open panel leaves beside it.
 static constexpr int Theme_railPlusBorder=60;
+// Half a checkbox's indicator: a click there toggles it.
+static constexpr int Theme_iconHalf=8;
 
 class DesktopUiTest : public QObject {
     Q_OBJECT
@@ -89,6 +92,11 @@ class DesktopUiTest : public QObject {
         QTest::mouseMove(window,QPoint(window->width()-8,8));
         QTest::qWait(150);
         QVERIFY(window->grabWindow().save(out+"/"+name+".png"));
+    }
+    // What assistive technology reads for an item.
+    static QString accessibleName(QQuickItem *item) {
+        auto *face=QAccessible::queryAccessibleInterface(item);
+        return face?face->text(QAccessible::Name):QString();
     }
     // A var property holds a JS value or, once set from C++ or from a reply, a plain map.
     static QVariantMap mapOf(const QVariant &value) {
@@ -2497,6 +2505,304 @@ for line in sys.stdin:
         if(!qEnvironmentVariable("TOMACCO_UI_CAPTURES").isEmpty())QVERIFY(other->grabWindow().save(qEnvironmentVariable("TOMACCO_UI_CAPTURES")+"/missing-control-program.png"));
         other->close();
         QVERIFY2(errors.isEmpty(),qPrintable(errors.join('\n')));
+    }
+    void job_log_filters_by_text_and_level_and_copies_the_lines() {
+        // The reader narrows a job's log to a text and a level, and copies just those lines.
+        open("jobs");window->resize(1380,970);QTest::qWait(50);
+        const double now=QDateTime::currentSecsSinceEpoch();
+        workspace->setProperty("jobs",QVariantList{QVariantMap{{"id","log-filter-job"},{"label","Build Android · debug"},{"state","failed"},{"created",now-40},{"updated",now}}});
+        workspace->setProperty("selectedJob",QString("log-filter-job"));
+        workspace->setProperty("logText",QString("Resolving dependencies\nwarning: 'foo' is deprecated\nerror: build failed in app.dart\nE/AndroidRuntime: FATAL EXCEPTION: main\n10-31 12:00:00.000  1234  1234 W Choreographer: Skipped 30 frames\nBUILD done\n"));
+        auto *search=item("logSearch");QVERIFY(search);QTRY_VERIFY(search->isVisible());
+        // The bar takes its place above the log once the layout has run.
+        QTRY_VERIFY(qobject_cast<QQuickItem *>(object("jobLog"))->y()>=item("logFilterBar")->y()+item("logFilterBar")->height());
+        const auto shown=[&]{return workspace->property("shownLog").toString();};
+        QCOMPARE(shown().count('\n'),6);
+        search->forceActiveFocus();type("BUILD");
+        QTRY_COMPARE(shown(),QString("error: build failed in app.dart\nBUILD done"));
+        QCOMPARE(item("logMatches")->property("text").toString(),QString("2 lines"));
+        // Errors only, then warnings and errors, within the text.
+        workspace->setProperty("logQuery",QString());
+        auto *errors=item("logLevel-error");QVERIFY(errors);
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,errors->mapToScene(QPointF(errors->width()/2,errors->height()/2)).toPoint());
+        QTRY_COMPARE(shown(),QString("error: build failed in app.dart\nE/AndroidRuntime: FATAL EXCEPTION: main"));
+        workspace->setProperty("logLevel",QString("warning"));
+        QCOMPARE(shown(),QString("warning: 'foo' is deprecated\nerror: build failed in app.dart\nE/AndroidRuntime: FATAL EXCEPTION: main\n10-31 12:00:00.000  1234  1234 W Choreographer: Skipped 30 frames"));
+        // Copy takes exactly the lines shown.
+        QGuiApplication::clipboard()->clear();
+        auto *copy=item("logCopy");QVERIFY(copy);QCOMPARE(copy->property("text").toString(),QString("Copy these lines"));
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,copy->mapToScene(QPointF(copy->width()/2,copy->height()/2)).toPoint());
+        QTRY_COMPARE(QGuiApplication::clipboard()->text(),shown());
+        // Nothing matching says so instead of looking empty.
+        workspace->setProperty("logQuery",QString("no such text"));
+        QCOMPARE(shown(),QString());
+        QCOMPARE(object("jobLog")->property("placeholderText").toString(),QString("No line of this log matches."));
+        workspace->setProperty("logQuery",QString());workspace->setProperty("logLevel",QString("all"));
+        QCOMPARE(copy->property("text").toString(),QString("Copy log"));
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("logText",QString());workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void jobs_history_shows_duration_and_project_filters_and_runs_again() {
+        // Each job shows its state, how long it ran and its project; the list narrows to running or
+        // failed jobs; a job this window started can be started again, one from elsewhere cannot.
+        open("jobs");window->resize(1380,970);QTest::qWait(50);
+        const double now=QDateTime::currentSecsSinceEpoch();
+        const auto project=directory.filePath("project");
+        const QVariantMap running{{"id","history-running"},{"label","Build Android · debug"},{"state","running"},{"created",now-75},{"updated",now},{"plan",QVariantMap{{"exclusive",project}}}};
+        const QVariantMap failed{{"id","history-failed"},{"label","Lint"},{"state","failed"},{"created",now-900},{"updated",now-780},{"plan",QVariantMap{{"exclusive",project}}},{"log_path","/nonexistent/history-failed.log"}};
+        const QVariantMap done{{"id","history-done"},{"label","Install app"},{"state","succeeded"},{"created",now-4000},{"updated",now-3990},{"plan",QVariantMap{{"exclusive",""}}}};
+        workspace->setProperty("jobs",QVariantList{running,failed,done});
+        QTRY_VERIFY(item("jobRow-history-failed"));
+        const auto duration=[&](const QVariantMap &job){QVariant out;QMetaObject::invokeMethod(workspace,"jobDuration",Q_RETURN_ARG(QVariant,out),Q_ARG(QVariant,job));return out.toString();};
+        QCOMPARE(duration(failed),QString("2 min 0 s"));QCOMPARE(duration(done),QString("10 s"));
+        QTRY_VERIFY(duration(running).startsWith("1 min"));
+        auto *row=item("jobRow-history-failed");
+        QCOMPARE(row->property("project").toString(),QString("project"));
+        QCOMPARE(item("jobRow-history-done")->property("project").toString(),QString());
+        // Filters.
+        const auto shown=[&]{return workspace->property("shownJobs").value<QJSValue>().property("length").toInt();};
+        QCOMPARE(shown(),3);
+        auto *failedFilter=item("jobFilter-failed");QVERIFY(failedFilter);
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,failedFilter->mapToScene(QPointF(failedFilter->width()/2,failedFilter->height()/2)).toPoint());
+        QTRY_COMPARE(shown(),1);QTRY_VERIFY(!item("jobRow-history-done") || !item("jobRow-history-done")->isVisible());
+        workspace->setProperty("jobFilter",QString("running"));QCOMPARE(shown(),1);
+        QCOMPARE(workspace->property("shownJobs").value<QJSValue>().property(0).property("id").toString(),QString("history-running"));
+        workspace->setProperty("jobFilter",QString("all"));QCOMPARE(shown(),3);
+        // A job from another client cannot be run again; a running one neither.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"selectJob",Q_ARG(QVariant,failed)));
+        auto *rerun=item("jobRerun");QVERIFY(rerun);QTRY_VERIFY(rerun->isVisible());
+        QVERIFY(!rerun->isEnabled());QVERIFY(item("jobLogFile")->isEnabled());
+        // A job this window started is remembered with its request, also across a restart.
+        workspace->setProperty("pending",QVariantMap{{"-71",QVariantMap{{"operation","job.get"},{"quiet",true},{"signature",QString(R"({"job_id":"00000000000000000000000000000000"})")}}}});
+        QVariantMap started=failed;started["id"]="history-mine";
+        control->apiFinished(-71,"job.get",QVariantMap{{"ok",true},{"result",started}});
+        QCOMPARE(workspace->property("selectedJob").toString(),QString("history-mine"));
+        QVERIFY(QSettings().value("jobs/origins").toString().contains("history-mine"));
+        QTRY_VERIFY(rerun->isEnabled());
+        workspace->setProperty("pending",QVariantMap{});
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,rerun->mapToScene(QPointF(rerun->width()/2,rerun->height()/2)).toPoint());
+        const auto pending=mapOf(workspace->property("pending"));
+        QCOMPARE(pending.size(),1);
+        QCOMPARE(pending.first().toMap().value("operation").toString(),QString("job.get"));
+        QCOMPARE(pending.first().toMap().value("signature").toString(),QString(R"({"job_id":"00000000000000000000000000000000"})"));
+        QVariantMap mineRunning=started;mineRunning["state"]="running";
+        workspace->setProperty("activeJob",mineRunning);QVERIFY(!rerun->isEnabled());
+        QVERIFY(item("jobCancel")->isEnabled());
+        // The (failing) request ends; nothing is left behind for the other scenarios.
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty(),patient(10000));
+        QSettings().remove("jobs/origins");workspace->setProperty("jobOrigins",QVariantMap{});
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        workspace->setProperty("status",QString());workspace->setProperty("failed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void a_job_that_ends_in_the_background_is_notified() {
+        // A job that ran a while and ends while no window of the app is active becomes a desktop
+        // notification (here only the signal: the offscreen test platform sends none); clicking it
+        // opens the job. Short, cancelled and foreground jobs stay quiet, and the setting turns it off.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        QSignalSpy sent(backend.get(),&Backend::notificationSent);
+        view->setProperty("appActive",false);
+        const double now=QDateTime::currentSecsSinceEpoch();
+        const auto job=[&](const char *id,const char *state,double ran){return QVariantMap{{"id",id},{"label",QString("Job ")+id},{"state",state},{"created",now-ran},{"updated",now}};};
+        workspace->setProperty("jobs",QVariantList{job("notify-long","running",60),job("notify-short","running",3),job("notify-cancel","running",60),job("notify-timeout","queued",120)});
+        QCOMPARE(sent.size(),0);
+        workspace->setProperty("jobs",QVariantList{job("notify-long","succeeded",60),job("notify-short","failed",3),job("notify-cancel","cancelled",60),job("notify-timeout","timed_out",120)});
+        QCOMPARE(sent.size(),2);
+        QCOMPARE(sent.at(0).at(0).toString(),QString("Job notify-long"));
+        QCOMPARE(sent.at(0).at(1).toString(),QString("Completed after 1 min 0 s"));
+        QCOMPARE(sent.at(0).at(2).toString(),QString("notify-long"));
+        QCOMPARE(sent.at(1).at(1).toString(),QString("Timed out after 2 min 0 s"));
+        // A job seen only once it has ended was not watched running: no notification.
+        workspace->setProperty("jobs",QVariantList{job("notify-long","succeeded",60),job("notify-new","failed",60)});
+        QCOMPARE(sent.size(),2);
+        // In the foreground nothing is sent.
+        view->setProperty("appActive",true);
+        workspace->setProperty("jobs",QVariantList{job("notify-fg","running",60)});workspace->setProperty("jobs",QVariantList{job("notify-fg","failed",60)});
+        QCOMPARE(sent.size(),2);
+        // The setting turns it off, and is stored.
+        view->setProperty("appActive",false);
+        auto *dialog=object("settingsDialog");QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *toggle=item("jobNotificationsToggle");QVERIFY(toggle);QVERIFY(toggle->property("checked").toBool());
+        QTRY_VERIFY(toggle->height()>0);
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,toggle->mapToScene(QPointF(Theme_iconHalf,toggle->height()/2)).toPoint());
+        QTRY_VERIFY(!view->property("notifyJobs").toBool());
+        QTRY_COMPARE(QSettings().value("Notifications/jobs").toString(),QString("false"));
+        QVERIFY(QMetaObject::invokeMethod(dialog,"close"));QTRY_VERIFY(!dialog->property("visible").toBool());
+        workspace->setProperty("jobs",QVariantList{job("notify-off","running",60)});workspace->setProperty("jobs",QVariantList{job("notify-off","failed",60)});
+        QCOMPARE(sent.size(),2);
+        view->setProperty("notifyJobs",true);
+        workspace->setProperty("jobs",QVariantList{job("notify-on","running",60)});workspace->setProperty("jobs",QVariantList{job("notify-on","failed",60)});
+        QCOMPARE(sent.size(),3);QCOMPARE(sent.at(2).at(1).toString(),QString("Failed after 1 min 0 s"));
+        // Clicking the notification opens the job.
+        emit backend->notificationActivated("notify-on");
+        QTRY_COMPARE(workspace->property("section").toString(),QString("jobs"));
+        QVERIFY(workspace->property("opened").toBool());
+        QCOMPARE(workspace->property("selectedJob").toString(),QString("notify-on"));
+        view->setProperty("appActive",true);
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void touches_and_coordinates_show_on_the_live_device() {
+        // Switched on, the device view marks a press and names the pointer's device pixel and
+        // fraction; the press still reaches the device. Off, nothing is drawn.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *display=qobject_cast<NativeView *>(object("nativeDisplay"));QVERIFY(display);
+        view->setProperty("autoAttach",false);view->setProperty("showDeviceFrame",false);view->setProperty("showTouches",false);
+        QLocalServer video,controlSocket;
+        QVERIFY(video.listen(directory.filePath("touch-video")));QVERIFY(controlSocket.listen(directory.filePath("touch-input")));
+        QImage image(QSize(1000,2000),QImage::Format_RGB32);image.fill(QColor("#295c83"));
+        QByteArray bytes;{QBuffer output(&bytes);output.open(QIODevice::WriteOnly);image.save(&output,"JPEG");}
+        QByteArray packet(4,0);qToBigEndian(quint32(bytes.size()),packet.data());packet+=bytes;
+        QVector<QJsonObject> inputs;
+        connect(&video,&QLocalServer::newConnection,this,[&]{auto *socket=video.nextPendingConnection();socket->write(packet);connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        connect(&controlSocket,&QLocalServer::newConnection,this,[&]{auto *socket=controlSocket.nextPendingConnection();connect(socket,&QLocalSocket::readyRead,socket,[&,socket]{if(!socket->canReadLine())return;inputs.push_back(QJsonDocument::fromJson(socket->readLine()).object()["arguments"].toObject());socket->write("{\"ok\":true}\n");});connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        view->setProperty("targets",QVariantList{QVariantMap{{"id","emulator-touch"},{"name","Touch test"},{"platform","android"},{"kind","emulator"}}});
+        const QVariantMap session{{"session","touch-session"},{"platform","android"},{"device","emulator-touch"},{"codec","mjpeg"},{"video_socket",video.fullServerName()},{"control_socket",controlSocket.fullServerName()}};
+        QVERIFY(QMetaObject::invokeMethod(view,"attach",Q_ARG(QVariant,session)));
+        QTRY_COMPARE_WITH_TIMEOUT(display->sourceSize(),QSize(1000,2000),patient(3000));
+        auto *overlay=item("nativeTouchOverlay");QVERIFY(overlay);QVERIFY(!overlay->isVisible());
+        auto *toggle=item("nativeTouchToggle");QVERIFY(toggle);QTRY_VERIFY(toggle->isVisible());
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,toggle->mapToScene(QPointF(toggle->width()/2,toggle->height()/2)).toPoint());
+        QTRY_VERIFY(view->property("showTouches").toBool());QTRY_VERIFY(overlay->isVisible());
+        QCOMPARE(accessibleName(toggle),QString("Touches and coordinates"));
+        // A quarter across and three quarters down the picture.
+        const auto rect=display->contentRect();
+        const auto at=display->mapToScene(QPointF(rect.x()+rect.width()*.25,rect.y()+rect.height()*.75)).toPoint();
+        auto *coordinates=item("nativeTouchCoordinates");QVERIFY(coordinates);
+        QTest::mouseMove(window,at);
+        QTRY_VERIFY(coordinates->isVisible());
+        const auto label=[&]{return item("nativeTouchCoordinatesText")->property("text").toString();};
+        const auto numbers=[&]{QStringList parts=label().split(QRegularExpression("[ ,·]+"),Qt::SkipEmptyParts);return parts;};
+        QTRY_COMPARE(numbers().size(),4);
+        QVERIFY2(qAbs(numbers()[0].toInt()-250)<=2 && qAbs(numbers()[1].toInt()-1500)<=2,qPrintable(label()));
+        QVERIFY2(qAbs(numbers()[2].toDouble()-.25)<.003 && qAbs(numbers()[3].toDouble()-.75)<.003,qPrintable(label()));
+        // A press shows the mark where the finger is and still goes to the device.
+        auto *mark=item("nativeTouchMark");QVERIFY(mark);QVERIFY(!mark->isVisible());
+        inputs.clear();
+        QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,at);
+        QTRY_VERIFY(mark->isVisible());
+        const auto centre=mark->mapToScene(QPointF(mark->width()/2,mark->height()/2));
+        QVERIFY(qAbs(centre.x()-at.x())<=1.5 && qAbs(centre.y()-at.y())<=1.5);
+        QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,at);
+        QTRY_COMPARE_WITH_TIMEOUT(inputs.size(),2,patient(3000));
+        QCOMPARE(inputs[0]["phase"].toString(),QString("down"));
+        QVERIFY(qAbs(inputs[0]["x"].toDouble()-.25)<.005);QVERIFY(qAbs(inputs[0]["y"].toDouble()-.75)<.005);
+        QTRY_VERIFY(!mark->isVisible());
+        // The choice is stored; switched off nothing is drawn and taps still work.
+        QTRY_COMPARE(QSettings().value("NativeDisplay/showTouches").toString(),QString("true"));
+        view->setProperty("showTouches",false);QVERIFY(!overlay->isVisible());
+        inputs.clear();QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,at);
+        QTRY_COMPARE_WITH_TIMEOUT(inputs.size(),2,patient(3000));
+        QTest::mouseMove(window,QPoint(window->width()-8,8));
+        view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});view->setProperty("showDeviceFrame",true);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void settings_export_and_import_through_a_file() {
+        // Settings offers both; an import takes effect at once in the open window.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *dialog=object("settingsDialog");QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("visible").toBool());
+        QVERIFY(item("exportSettingsButton"));QVERIFY(item("importSettingsButton"));
+        QVERIFY(QMetaObject::invokeMethod(dialog,"close"));QTRY_VERIFY(!dialog->property("visible").toBool());
+        QTemporaryDir files;QVERIFY(files.isValid());
+        const auto path=files.filePath("tomacco-settings.json");
+        view->setProperty("showTouches",true);view->setProperty("notifyJobs",false);view->setProperty("showDeviceFrame",false);
+        // Exported at once, before the views have stored the change themselves.
+        QVERIFY(QMetaObject::invokeMethod(view,"exportSettingsTo",Q_ARG(QVariant,path)));
+        QVERIFY(!view->property("settingsTransferFailed").toBool());
+        QCOMPARE(view->property("settingsTransfer").toString(),"Settings saved to "+path);
+        QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
+        const auto values=QJsonDocument::fromJson(file.readAll()).object().value("settings").toObject();file.close();
+        QCOMPARE(values.value("NativeDisplay/showTouches"),QJsonValue(true));QCOMPARE(values.value("Notifications/jobs"),QJsonValue(false));
+        QVERIFY(!values.contains("window/width"));QVERIFY(!values.contains("recentProjects"));
+        // Changed meanwhile; the import brings the exported choices back into the running views.
+        view->setProperty("showTouches",false);view->setProperty("notifyJobs",true);view->setProperty("showDeviceFrame",true);
+        QVERIFY(QMetaObject::invokeMethod(view,"importSettingsFrom",Q_ARG(QVariant,path)));
+        QVERIFY2(!view->property("settingsTransferFailed").toBool(),qPrintable(view->property("settingsTransfer").toString()));
+        QVERIFY(view->property("settingsTransfer").toString().endsWith("settings imported"));
+        QVERIFY(view->property("showTouches").toBool());QVERIFY(!view->property("notifyJobs").toBool());QVERIFY(!view->property("showDeviceFrame").toBool());
+        // A broken file is refused with the reason.
+        QVERIFY(file.open(QIODevice::WriteOnly|QIODevice::Truncate));file.write("{}");file.close();
+        QVERIFY(QMetaObject::invokeMethod(view,"importSettingsFrom",Q_ARG(QVariant,path)));
+        QVERIFY(view->property("settingsTransferFailed").toBool());
+        QCOMPARE(view->property("settingsTransfer").toString(),path+" is not a Tomacco settings file.");
+        view->setProperty("showTouches",false);view->setProperty("notifyJobs",true);view->setProperty("showDeviceFrame",true);
+        view->setProperty("settingsTransfer",QString());view->setProperty("settingsTransferFailed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void main_screens_name_every_control_and_keep_a_keyboard_order() {
+        // With assistive technology on, every control the keyboard reaches on the main screens has
+        // a name, icon buttons included; Tab walks title bar, rail and device bar in that order with
+        // a visible ring; the jobs list works with the keyboard.
+        QAccessible::setActive(true);
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        const double now=QDateTime::currentSecsSinceEpoch();
+        const QVariantMap first{{"id","a11y-running"},{"label","Build Android · debug"},{"state","running"},{"created",now-30},{"updated",now}};
+        const QVariantMap second{{"id","a11y-failed"},{"label","Lint"},{"state","failed"},{"created",now-300},{"updated",now-280}};
+        workspace->setProperty("jobs",QVariantList{first,second});
+        // The workspace's own job.list replies would replace the jobs shown; they are let through first.
+        const auto showJobs=[&]{
+            QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty(),patient(10000));
+            workspace->setProperty("jobs",QVariantList{first,second});QTest::qWait(60);
+        };
+        for(const auto *tab:{"runtime","project","devices","jobs","tools","files","debug","testing","profiling","release"}) {
+            open(QString::fromLatin1(tab));showJobs();
+            int checked=0;
+            std::function<void(QQuickItem *)> walk=[&](QQuickItem *it){
+                if(!it->isVisible())return;
+                const bool focusable=it->activeFocusOnTab() || (it->property("focusPolicy").isValid() && (it->property("focusPolicy").toInt()&Qt::TabFocus));
+                const bool iconButton=it->property("iconOnly").toBool();
+                if(focusable || iconButton) {
+                    ++checked;
+                    QVERIFY2(!accessibleName(it).trimmed().isEmpty(),qPrintable(QString("%1: %2 \"%3\" has no accessible name").arg(tab,QString::fromLatin1(it->metaObject()->className()),it->objectName())));
+                }
+                for(auto *child:it->childItems())walk(child);
+            };
+            walk(window->contentItem());
+            if(QTest::currentTestFailed())break;
+            QVERIFY2(checked>5,tab);
+        }
+        // Icon buttons are named by their label; the tip, with its shortcut, describes them.
+        open("runtime");showJobs();
+        auto *settings=item("settingsButton");QVERIFY(settings);
+        QCOMPARE(accessibleName(settings),QString("Settings"));
+        QCOMPARE(QAccessible::queryAccessibleInterface(settings)->text(QAccessible::Description),QString("Appearance and language · Ctrl+,"));
+        QCOMPARE(accessibleName(item("nav-jobs")),QString("Builds & jobs"));
+        // The keyboard order.
+        item("projectButton")->forceActiveFocus(Qt::TabFocusReason);
+        QStringList order;
+        for(int i=0;i<60;++i) {
+            QTest::keyClick(window,Qt::Key_Tab);
+            auto *focused=window->activeFocusItem();
+            const auto name=focused?focused->objectName():QString();
+            if(name=="projectButton")break;
+            order<<name;
+            if(name=="settingsButton") {
+                auto *ring=focused->property("background").value<QQuickItem *>();QVERIFY(ring);
+                QCOMPARE(QQmlProperty(ring,"border.width").read().toInt(),2);
+            }
+        }
+        QStringList wanted{"commandButton","activityButton","settingsButton","aboutButton","nav-runtime","nav-files","nav-jobs","nav-devices","nav-project","nav-debug","nav-testing","nav-profiling","nav-release","nav-tools","targetPicker"};
+        int at=-1;
+        for(const auto &name:wanted){const int next=order.indexOf(name);QVERIFY2(next>at,qPrintable(name+" out of order in "+order.join(", ")));at=next;}
+        // Without focus the ring is gone.
+        settings->setFocus(false);
+        QCOMPARE(QQmlProperty(settings->property("background").value<QQuickItem *>(),"border.width").read().toInt(),1);
+        // The jobs list: Tab into it, arrows move, Enter opens.
+        open("jobs");showJobs();
+        auto *list=item("jobList");QVERIFY(list);QTRY_COMPARE(list->property("count").toInt(),2);
+        QVERIFY(list->activeFocusOnTab());
+        list->forceActiveFocus(Qt::TabFocusReason);QTRY_VERIFY(list->hasActiveFocus());
+        QTest::keyClick(window,Qt::Key_Down);QTest::keyClick(window,Qt::Key_Return);
+        QTRY_COMPARE(workspace->property("selectedJob").toString(),QString("a11y-failed"));
+        QCOMPARE(accessibleName(item("jobRow-a11y-failed")).left(14),QString("Lint, Failed, "));
+        QAccessible::setActive(false);
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void cleanupTestCase() {
         engine.reset();control.reset();backend.reset();

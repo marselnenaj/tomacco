@@ -9,6 +9,8 @@ StudioScrollView {
     property alias text: area.text
     property alias placeholderText: area.placeholderText
     property alias textColor: area.color
+    // What assistive technology calls the text; the placeholder unless set.
+    property string accessibleName: area.placeholderText
     TextArea {
         id: area
         objectName: view.objectName ? view.objectName+"-text" : ""
@@ -26,5 +28,6 @@ StudioScrollView {
         topPadding: Theme.gapSm
         bottomPadding: Theme.gapSm
         background: Rectangle { color: Theme.inset; radius: Theme.radiusSmall }
+        Accessible.name: view.accessibleName
     }
 }

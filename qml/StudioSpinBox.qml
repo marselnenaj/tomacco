@@ -24,6 +24,7 @@ SpinBox {
         validator: control.validator
         inputMethodHints: control.inputMethodHints
         clip: true
+        Accessible.name: control.Accessible.name
     }
     down.indicator: Item {
         x: 0; height: control.height; implicitWidth: Theme.controlHeight
@@ -37,5 +38,6 @@ SpinBox {
         radius: Theme.radiusSmall
         color: Theme.inset
         border.color: control.activeFocus ? Theme.accentInk : Theme.border
+        border.width: control.visualFocus ? 2 : 1
     }
 }

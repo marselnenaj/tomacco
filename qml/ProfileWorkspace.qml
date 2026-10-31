@@ -29,7 +29,7 @@ StudioScrollView {
         Flow {
             Layout.fillWidth: true; spacing: Theme.gapSm
             Label { text: qsTr("Duration (seconds)"); color: Theme.muted; height: Theme.controlHeight; verticalAlignment: Text.AlignVCenter }
-            StudioSpinBox { id: seconds; from: 1; to: 600; value: 10; editable: true }
+            StudioSpinBox { id: seconds; from: 1; to: 600; value: 10; editable: true; Accessible.name: qsTr("Duration (seconds)") }
             StudioButton { text: qsTr("Record"); iconName: "play"; accent: true; enabled: workspace.selectedDevice.length>0 && application.text.length>0 && trace.text.length>0; onClicked: view.call("profile.capture",{device:workspace.selectedDevice,bundle_id:application.text,path:trace.text,seconds:seconds.value}) }
             StudioButton { text: qsTr("Analyze"); enabled: application.text.length>0 && trace.text.length>0 && reportFile.text.length>0; onClicked: view.call("profile.analyze",{bundle_id:application.text,path:trace.text,report:reportFile.text}) }
         }
@@ -54,7 +54,7 @@ StudioScrollView {
             StudioCheckBox { id: cpu; text: "CPU"; checked: true }
             StudioCheckBox { id: memory; text: qsTr("Memory") }
             StudioCheckBox { id: frames; text: qsTr("Frame time") }
-            StudioSpinBox { id: budget; from: 0; to: 1000; value: 10; editable: true }
+            StudioSpinBox { id: budget; from: 0; to: 1000; value: 10; editable: true; Accessible.name: qsTr("% maximum increase") }
             Label { text: qsTr("% maximum increase"); color: Theme.muted; height: Theme.controlHeight; verticalAlignment: Text.AlignVCenter }
             StudioButton { text: qsTr("Compare"); enabled: baseline.text.length>0 && reportFile.text.length>0 && (cpu.checked||memory.checked||frames.checked); onClicked: { let b={};if(cpu.checked)b.cpu_ms={increase_percent:budget.value};if(memory.checked)b.rss_peak_bytes={increase_percent:budget.value};if(frames.checked)b.frame_avg_ms={increase_percent:budget.value};view.call("profile.compare",{baseline:baseline.text,current:reportFile.text,budgets:b}) } }
         }

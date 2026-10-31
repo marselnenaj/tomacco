@@ -54,5 +54,29 @@
             <numerusform>%n jobs running</numerusform>
         </translation>
     </message>
+    <message numerus="yes">
+        <source>%n setting(s) imported</source>
+        <translation>
+            <numerusform>%n setting imported</numerusform>
+            <numerusform>%n settings imported</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n ignored</source>
+        <translation>
+            <numerusform>%n ignored</numerusform>
+            <numerusform>%n ignored</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
+    <name>Workspace</name>
+    <message numerus="yes">
+        <source>%n line(s)</source>
+        <translation>
+            <numerusform>%n line</numerusform>
+            <numerusform>%n lines</numerusform>
+        </translation>
+    </message>
 </context>
 </TS>

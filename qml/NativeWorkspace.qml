@@ -186,8 +186,72 @@ Rectangle {
     Timer {interval:300000;running:view.pendingWanted;onTriggered:view.givePendingUp(qsTr("The device did not become ready in time."))}
     property real detachedZoom: 0
     onDetachedChanged: if(detached && detachedZoom<=0)deviceWindow.setZoom(Math.min(1,deviceWindow.fitZoom))
-    Settings {category:"NativeDisplay";property alias showDeviceFrame:view.showDeviceFrame;property alias detachedZoom:view.detachedZoom}
+    Settings {category:"NativeDisplay";property alias showDeviceFrame:view.showDeviceFrame;property alias detachedZoom:view.detachedZoom;property alias showTouches:view.showTouches}
+    // A mark where the pointer touches the device and the pointer's position in
+    // the device's pixels and as fractions (what tomaccoctl's touch input takes).
+    property bool showTouches: false
     Settings {category:"NativeAudio";property alias forwardAudio:view.forwardAudio}
+    // Settings moved to or from another computer (Backend::exportSettings).
+    property string settingsTransfer: ""
+    property bool settingsTransferFailed: false
+    function exportSettingsTo(path) {
+        // The views' own values, which their Settings store a moment later.
+        let extra={"Notifications/jobs":notifyJobs,"NativeDisplay/showDeviceFrame":showDeviceFrame,"NativeDisplay/showActivity":showActivity,
+            "NativeDisplay/showTouches":showTouches,"NativeAudio/forwardAudio":forwardAudio}
+        if(runnerBundle)extra["NativeIphone/runnerBundle"]=runnerBundle
+        // The update choice is tomaccoctl's; it goes along unless a build or the environment fixes it.
+        if(updates.status.mode && !updates.forced)extra["updates/mode"]=updates.mode
+        const error=Studio.exportSettings(path,extra)
+        settingsTransferFailed=!!error
+        settingsTransfer=error || qsTr("Settings saved to %1").arg(path)
+    }
+    function importSettingsFrom(path) {
+        const result=Studio.importSettings(path)
+        settingsTransferFailed=!result.ok
+        if(!result.ok){settingsTransfer=result.error;return}
+        // The views keep their own copies of these; they take the imported values at once.
+        const flag=(key,current)=>String(Studio.setting(key,current))==="true"
+        notifyJobs=flag("Notifications/jobs",notifyJobs)
+        showDeviceFrame=flag("NativeDisplay/showDeviceFrame",showDeviceFrame)
+        showActivity=flag("NativeDisplay/showActivity",showActivity)
+        showTouches=flag("NativeDisplay/showTouches",showTouches)
+        forwardAudio=flag("NativeAudio/forwardAudio",forwardAudio)
+        runnerBundle=String(Studio.setting("NativeIphone/runnerBundle",runnerBundle))
+        const mode=result.extra["updates/mode"]
+        if(mode && !updates.forced && mode!==updates.mode)updates.setMode(mode)
+        settingsTransfer=qsTr("%n setting(s) imported","",result.applied)+(result.ignored?" · "+qsTr("%n ignored","",result.ignored):"")
+    }
+    // A build, test or app start that ends while no Tomacco window is active is
+    // reported on the desktop, unless turned off in the settings. Jobs shorter
+    // than notifyAfterSeconds are left out; cancelled ones too, someone ended them.
+    property bool notifyJobs: true
+    Settings {category:"Notifications";property alias jobs:view.notifyJobs}
+    property bool appActive: Qt.application.state===Qt.ApplicationActive
+    readonly property int notifyAfterSeconds: 10
+    property var seenJobStates: ({})
+    function noteJobs(rows) {
+        let states={}
+        for(const job of rows) {
+            states[job.id]=job.state
+            const before=seenJobStates[job.id]
+            if(!before || ["queued","running"].indexOf(before)<0 || ["succeeded","failed","timed_out"].indexOf(job.state)<0) continue
+            if(!notifyJobs || appActive || (job.updated || 0)-(job.created || 0)<notifyAfterSeconds) continue
+            const outcome=job.state==="succeeded"?qsTr("Completed after %1"):job.state==="failed"?qsTr("Failed after %1"):qsTr("Timed out after %1")
+            Studio.notify(job.label,outcome.arg(workspace.jobDuration(job)),job.id)
+        }
+        seenJobStates=states
+    }
+    Connections {target:view.workspace;function onJobsChanged() {view.noteJobs(view.workspace.jobs)}}
+    // Clicking the notification brings the window back with the job's log.
+    Connections {
+        target:Studio
+        function onNotificationActivated(tag) {
+            const job=view.workspace.jobs.find(x=>x.id===tag)
+            view.showMainWindow()
+            if(job)view.workspace.selectJob(job)
+            view.workspace.showTab("jobs")
+        }
+    }
     readonly property string projectPath: workspace.project.path || ""
     function targetRows() {return targets.filter(x=>x.platform===platform && (platform!=="ios" || x.kind===appleTarget))}
     readonly property var visibleTargets: targetRows()
@@ -402,7 +466,7 @@ Rectangle {
             if(op==="workspace.list")view.saved=r
             if(op==="ios.doctor")view.iosStatus=r
             if(op==="ios.prepare" || op==="ios.wda_prepare") {if(r.id){workspace.selectJob(r);view.notice=qsTr("Setup started · progress under Builds & jobs")}else view.notice=qsTr("Apple sign-in opened in the local terminal");view.failed=false}
-            if(op==="project.run") {view.launchPending=false;view.launchJob=r.id;view.launchRecord=r;workspace.selectJob(r);view.notice=r.reused?qsTr("Reused the running session"):qsTr("Building and starting your app…");if(workspace.project.kinds.indexOf("flutter")>=0 && (!view.live.session || view.live.device!==view.launchTarget.device))view.request("runtime.start",view.launchTarget)}
+            if(op==="project.run") {workspace.rememberJob(r,op,JSON.parse(c.signature));view.launchPending=false;view.launchJob=r.id;view.launchRecord=r;workspace.selectJob(r);view.notice=r.reused?qsTr("Reused the running session"):qsTr("Building and starting your app…");if(workspace.project.kinds.indexOf("flutter")>=0 && (!view.live.session || view.live.device!==view.launchTarget.device))view.request("runtime.start",view.launchTarget)}
             if(op==="job.list") {
                 workspace.jobs=r
                 let active=r.find(x=>x.plan && ["queued","running"].indexOf(x.state)>=0 && (x.plan.exclusive===view.projectPath || x.plan.cwd===view.projectPath))
@@ -417,7 +481,7 @@ Rectangle {
                 else {view.notice=qsTr("App launch: %1. Details under Builds & jobs.").arg(workspace.jobStateLabel(r));view.failed=true}
             }
             if(op==="workspace.context") {workspace.openProject(r.project.path);view.platform=r.workspace.platform || "android";view.target=r.workspace.device || ""}
-            if(op==="device.install"){if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
+            if(op==="device.install"){workspace.rememberJob(r,op,JSON.parse(c.signature));if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
             if(op==="runtime.capture"){view.notice=(Studio.copyImage(r.path)?qsTr("Screenshot saved and copied · %1"):qsTr("Capture saved · %1")).arg(r.path);view.failed=false}
         }
     }
@@ -453,6 +517,7 @@ Rectangle {
         {id:"copy-context",title:qsTr("Copy context"),detail:qsTr("Command"),icon:"copy",key:"",run:()=>view.copyContext()},
         {id:"appearance",title:Theme.isDark?qsTr("Switch to light appearance"):qsTr("Switch to dark appearance"),detail:qsTr("Command"),icon:Theme.isDark?"sun":"moon",key:"",run:()=>Studio.setAppearance(Theme.isDark?"light":"dark")},
         {id:"settings",title:qsTr("Settings"),detail:qsTr("Command"),icon:"settings",key:qsTr("Ctrl")+"+,",run:()=>settingsDialog.open()},
+        {id:"touches",title:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates"),detail:qsTr("Command"),icon:"testing",key:"",run:()=>{view.showTouches=!view.showTouches}},
         {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
         {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()}
@@ -646,6 +711,52 @@ Rectangle {
                                 }
                             }
                             NativeView {id:display;parent:nativeFrame.screen;objectName:"nativeDisplay";anchors.fill:parent;session:view.live;onInputError:message=>{view.notice=message;view.failed=true}}
+                            // Touches and coordinates, for writing UI tests. Only passive
+                            // handlers: every press still reaches the display below.
+                            Item {
+                                id:touchOverlay;objectName:"nativeTouchOverlay"
+                                parent:nativeFrame.screen;anchors.fill:parent;z:2
+                                visible:view.showTouches && display.state==="live" && !view.pending
+                                readonly property rect area:display.contentRect
+                                // The device pixel and fraction under a point of this item.
+                                function at(px,py) {
+                                    const r=area,w=display.sourceSize.width,h=display.sourceSize.height
+                                    const fx=Math.max(0,Math.min(1,(px-r.x)/r.width)),fy=Math.max(0,Math.min(1,(py-r.y)/r.height))
+                                    return {x:Math.min(w-1,Math.floor(fx*w)),y:Math.min(h-1,Math.floor(fy*h)),fx:fx,fy:fy}
+                                }
+                                readonly property bool pointing:hover.hovered || touchPoint.active
+                                readonly property point pointer:touchPoint.active?touchPoint.point.position:hover.point.position
+                                readonly property var spot:at(pointer.x,pointer.y)
+                                readonly property string label:spot.x+", "+spot.y+"  ·  "+spot.fx.toFixed(3)+", "+spot.fy.toFixed(3)
+                                HoverHandler {id:hover}
+                                PointHandler {
+                                    id:touchPoint;acceptedButtons:Qt.LeftButton
+                                    onActiveChanged:if(active)touchMark.show();else touchMark.release()
+                                }
+                                Rectangle {
+                                    id:touchMark;objectName:"nativeTouchMark"
+                                    // Scaled with the device, so it stays finger-sized on screen.
+                                    readonly property real size:34/Math.max(.01,nativeFrame.scale)
+                                    width:size;height:size;radius:size/2;visible:opacity>0;opacity:0
+                                    x:touchOverlay.pointer.x-width/2;y:touchOverlay.pointer.y-height/2
+                                    color:"#40ffffff";border.color:"#b0ffffff";border.width:1.5/Math.max(.01,nativeFrame.scale)
+                                    function show(){fade.stop();opacity=1}
+                                    function release(){fade.restart()}
+                                    NumberAnimation {id:fade;target:touchMark;property:"opacity";to:0;duration:Theme.reducedMotion?0:420}
+                                }
+                                Rectangle {
+                                    objectName:"nativeTouchCoordinates"
+                                    visible:touchOverlay.pointing
+                                    readonly property real unit:1/Math.max(.01,nativeFrame.scale)
+                                    scale:unit;transformOrigin:Item.TopLeft
+                                    width:coordinateText.implicitWidth+Theme.gapSm*2;height:coordinateText.implicitHeight+Theme.gapXs*2
+                                    // Beside the pointer, kept inside the screen.
+                                    x:Math.max(0,Math.min(touchOverlay.width-width*unit,touchOverlay.pointer.x+Theme.gapMd*unit))
+                                    y:Math.max(0,Math.min(touchOverlay.height-height*unit,touchOverlay.pointer.y+Theme.gapMd*unit))
+                                    radius:Theme.radiusSmall;color:Theme.ink;opacity:.88
+                                    Text {id:coordinateText;objectName:"nativeTouchCoordinatesText";anchors.centerIn:parent;text:touchOverlay.label;color:Theme.paper;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
+                                }
+                            }
                         }
                         // On a wide stage the room beside the phone says what it is and what is happening.
                         ColumnLayout {
@@ -714,6 +825,7 @@ Rectangle {
                             Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:display.state==="live"}
                             StudioButton {objectName:"nativeAudioToggle";text:view.audioPending?qsTr("Sound…"):view.liveAudio.error?qsTr("Sound error"):qsTr("Sound");displayText:"";iconName:view.liveAudio.enabled?"volume":"muted";selected:view.liveAudio.enabled;quiet:true;visible:view.live.platform==="android" && !!view.live.session;enabled:!view.audioPending && view.live.status==="connected";tip:view.liveAudio.error || (view.liveAudio.enabled?qsTr("Stop forwarding sound; restore output on the device"):qsTr("Play the app's sound on this computer"));onClicked:view.requestAudio(!view.liveAudio.enabled)}
                             StudioButton {objectName:"nativeAudioLog";iconName:"jobs";quiet:true;danger:true;visible:!!view.liveAudio.error && !!view.liveAudio.job_id;tip:qsTr("View the sound forwarding error");onClicked:workspace.request("job.get",{job_id:view.liveAudio.job_id})}
+                            StudioButton {objectName:"nativeTouchToggle";text:qsTr("Touches and coordinates");displayText:"";iconName:"testing";selected:view.showTouches;quiet:true;visible:display.state==="live";tip:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates, for writing UI tests");onClicked:view.showTouches=!view.showTouches}
                             StudioButton {objectName:"nativeFrameToggle";text:qsTr("Frame");displayText:"";iconName:"frame";selected:view.showDeviceFrame;quiet:true;visible:view.hasFrame;tip:view.frameMatch.source==="display-match"?qsTr("Reference frame recognized from the display size; the frame geometry is approximated"):qsTr("Show the device frame; Android provides the real status bar");onClicked:view.showDeviceFrame=!view.showDeviceFrame}
                             StudioButton {text:qsTr("Color");displayText:"";iconName:"color";quiet:true;visible:view.hasFrame && view.showDeviceFrame && view.frameProfile.colors.length>1;tip:view.frameProfile.colorNames?ColorNames.name(view.frameProfile.colorNames[view.frameFinish]):qsTr("Case color");onClicked:view.frameFinish=(view.frameFinish+1)%view.frameProfile.colors.length}
                             Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:!!view.live.session}
@@ -761,8 +873,9 @@ Rectangle {
     CommandPalette {id:commandPalette;workspace:view.workspace;navigation:view.navigation;commands:view.commands;onNavigate:section=>view.navigate(section)}
     FolderDialog {id:projectFolder;title:qsTr("Open project");onAccepted:workspace.openProject(decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,"")))}
     StudioDialog {
-        id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,460);modal:true;standardButtons:Dialog.Close
-        contentItem:ColumnLayout {spacing:Theme.gapLg
+        id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,460);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
+        onOpened:view.settingsTransfer=""
+        contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapLg
             ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
                 Text {text:qsTr("Appearance");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 // System follows the desktop's dark or light preference at once.
@@ -790,9 +903,25 @@ Rectangle {
                     Accessible.name:qsTr("Language")
                 }
             }
+            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+                Text {text:qsTr("Notifications");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                StudioCheckBox {objectName:"jobNotificationsToggle";Layout.fillWidth:true;text:qsTr("When a job ends in the background");checked:view.notifyJobs;onToggled:view.notifyJobs=checked}
+            }
             UpdateSection {Layout.fillWidth:true;model:updates}
-        }
+            // Moving to another computer: the preferences as a JSON file.
+            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+                Text {text:qsTr("Another computer");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                Text {Layout.fillWidth:true;text:qsTr("Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+                Flow {Layout.fillWidth:true;spacing:Theme.gapSm
+                    StudioButton {objectName:"exportSettingsButton";text:qsTr("Export settings…");quiet:true;onClicked:settingsExport.open()}
+                    StudioButton {objectName:"importSettingsButton";text:qsTr("Import settings…");quiet:true;onClicked:settingsImport.open()}
+                }
+                Text {objectName:"settingsTransferResult";Layout.fillWidth:true;visible:!!text;text:view.settingsTransfer;color:view.settingsTransferFailed?Theme.danger:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            }
+        }}
     }
+    FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
+    FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     StudioDialog {
         id:shortcutsDialog;objectName:"shortcutsDialog";title:qsTr("Keyboard shortcuts");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,520);height:Math.min(view.height-Theme.gapXxxl,implicitHeight);modal:true;standardButtons:Dialog.Close
         contentItem:StudioScrollView {

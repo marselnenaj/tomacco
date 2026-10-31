@@ -85,6 +85,17 @@ operations and their JSON results.
   - Recent projects on the start screen and in the command palette.
   - The window reopens at its last size.
   - The Omarchy panel can open a job's log (V key, `log` command).
+  - A job's log can be filtered by text and by level, and the lines shown copied.
+  - Builds & jobs shows each job's duration and project, filters running or failed
+    jobs, opens the log file and runs again a job the desktop started.
+  - A desktop notification when a job ends while the window is in the background;
+    it can be turned off in Settings.
+  - The live device view can mark touches and show the pointer's device pixel and
+    screen fractions, for writing UI tests.
+  - Settings can be exported to a JSON file and imported on another computer, without
+    paths, window sizes or history.
+  - Keyboard and accessibility: named icon buttons and list rows, a wider focus ring,
+    and keyboard navigation in the jobs, tools and file lists.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.

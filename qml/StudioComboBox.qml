@@ -30,7 +30,7 @@ ComboBox {
         radius: Theme.radiusSmall
         color: control.hovered && control.enabled ? Theme.hover : "transparent"
         border.color: control.visualFocus ? Theme.accentInk : control.enabled ? Theme.border : Theme.subtle
-        border.width: 1
+        border.width: control.visualFocus ? 2 : 1
     }
     delegate: ItemDelegate {
         required property int index

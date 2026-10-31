@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import "."
 import "OperationTitles.js" as OperationTitles
+import "LogFilter.js" as LogFilter
 
 Rectangle {
     id: panel
@@ -36,9 +37,51 @@ Rectangle {
     readonly property var projectJob: jobs.find(x=>x.plan && ["queued","running"].indexOf(x.state)>=0 && (x.plan.exclusive===project.path || x.plan.cwd===project.path)) || ({})
     function jobStateLabel(job) {return ({waiting:qsTr("Waiting for project"),building:qsTr("Building"),streaming:qsTr("Streaming sound"),ready:qsTr("App running"),session:qsTr("App session running"),stopping:qsTr("Stopping")})[job.phase] || ({queued:qsTr("Waiting"),running:qsTr("Running"),succeeded:qsTr("Completed"),failed:qsTr("Failed"),cancelled:qsTr("Ended"),timed_out:qsTr("Timed out")})[job.state] || job.state}
     property var activeJob: ({})
+    // The jobs list shows all jobs, the running ones or the ones that failed.
+    property string jobFilter: "all"
+    readonly property var shownJobs: jobs.filter(x=>jobFilter==="all" || (jobFilter==="running"?["queued","running"].indexOf(x.state)>=0:["failed","timed_out"].indexOf(x.state)>=0))
+    property real now: Date.now()/1000
+    Timer { interval: 1000; repeat: true; triggeredOnStart: true; running: panel.opened && panel.section==="jobs"; onTriggered: panel.now=Date.now()/1000 }
+    function jobDuration(job) {
+        const end=["queued","running"].indexOf(job.state)>=0 ? now : (job.updated || now)
+        const s=Math.max(0,Math.round(end-(job.created || end)))
+        if(s<60) return qsTr("%1 s").arg(s)
+        if(s<3600) return qsTr("%1 min %2 s").arg(Math.floor(s/60)).arg(s%60)
+        return qsTr("%1 h %2 min").arg(Math.floor(s/3600)).arg(Math.floor(s%3600/60))
+    }
+    // The project a job works in: the folder it holds exclusively, by name.
+    function jobProject(job) {
+        const folder=job.plan && job.plan.exclusive ? String(job.plan.exclusive) : ""
+        return folder.replace(/\/+$/,"").split("/").pop()
+    }
+    // How this window started a job, so it can start the same work again. Jobs
+    // of other clients carry no such record and cannot be run again from here.
+    property var jobOrigins: { try { return JSON.parse(Studio.setting("jobs/origins","{}")) || {} } catch(e) { return {} } }
+    function rememberJob(job,operation,args) {
+        if(!job || !job.id || job.reused) return
+        let origins=Object.assign({},jobOrigins)
+        origins[job.id]={operation:operation,args:args || {},at:Date.now()/1000}
+        const keep=Object.keys(origins).sort((a,b)=>origins[b].at-origins[a].at).slice(0,40)
+        let kept={}
+        for(const id of keep) kept[id]=origins[id]
+        jobOrigins=kept
+        Studio.saveSetting("jobs/origins",JSON.stringify(kept))
+    }
+    function canRerun(job) { return !!job && !!job.id && !!jobOrigins[job.id] && ["queued","running"].indexOf(job.state)<0 }
+    function rerunJob(job) {
+        if(!canRerun(job)) return -1
+        const origin=jobOrigins[job.id]
+        return request(origin.operation,origin.args)
+    }
     property string selectedJob: ""
     property int logOffset: 0
     property string logText: ""
+    // What the reader filters the log by: text and the lowest level shown.
+    property string logQuery: ""
+    property string logLevel: "all"
+    readonly property bool logFiltered: logQuery.length>0 || logLevel!=="all"
+    readonly property var logLines: logFiltered ? LogFilter.filter(logText,logQuery,logLevel) : []
+    readonly property string shownLog: logFiltered ? logLines.join("\n") : logText
     property string resultText: ""
     property string status: qsTr("Open a project, connect a device and start a build.")
     // The progress banner shows while a request's own status text is on screen.
@@ -170,6 +213,7 @@ Rectangle {
                 panel.devices=value.devices
                 if(!context.quiet && !value.devices.length) panel.status=value.diagnostics.length ? value.diagnostics.map(x=>x.message).join(" · ") : qsTr("No devices connected. Enable USB debugging or trust on the device.")
             } else if(value && value.id && value.state) {
+                panel.rememberJob(value,operation,JSON.parse(context.signature))
                 panel.selectJob(value)
                 panel.status=value.reused?qsTr("Reused running job · %1").arg(value.label):qsTr("Job started · %1").arg(value.label)
             } else if(!context.quiet) panel.status=qsTr("Completed")
@@ -342,31 +386,53 @@ Rectangle {
               RowLayout {
                 anchors.fill: parent; visible: panel.jobs.length>0
                 spacing: 0
-                ListView {
+                ColumnLayout {
+                  Layout.preferredWidth: panel.width<760?216:296; Layout.fillHeight: true; spacing: 0
+                  StudioSegmented {
+                    objectName: "jobFilter"; Layout.fillWidth: true; Layout.margins: Theme.gapSm
+                    current: panel.jobFilter
+                    model: [{id:"all",label:qsTr("All"),objectName:"jobFilter-all"},{id:"running",label:qsTr("Running","jobs filter"),objectName:"jobFilter-running"},{id:"failed",label:qsTr("Failed","jobs filter"),objectName:"jobFilter-failed"}]
+                    onChosen: id=>panel.jobFilter=id
+                  }
+                  Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
+                  ListView {
                     id: jobList
                     objectName: "jobList"
-                    Layout.preferredWidth: panel.width<760?216:296; Layout.fillHeight: true; model: panel.jobs; clip: true
+                    Layout.fillWidth: true; Layout.fillHeight: true; model: panel.shownJobs; clip: true
+                    // Tab reaches the list; arrows move, Enter or Space opens the job.
+                    activeFocusOnTab: true
+                    Keys.onReturnPressed: if(currentItem)currentItem.clicked()
+                    Keys.onSpacePressed: if(currentItem)currentItem.clicked()
+                    Accessible.role: Accessible.List; Accessible.name: qsTr("Jobs")
+                    Text { anchors.centerIn: parent; width: parent.width-Theme.gapXl; visible: jobList.count===0; text: panel.jobFilter==="running"?qsTr("Nothing running."):qsTr("No failed job."); color: Theme.muted; font.pixelSize: Theme.fontSmall; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter }
                     delegate: ItemDelegate {
                         id: jobRow
                         required property var modelData
-                        width: ListView.view.width; height: Theme.rowHeight+Theme.gapLg+Theme.gapXs
+                        objectName: "jobRow-"+modelData.id
+                        width: ListView.view.width; height: Theme.rowHeight*2+Theme.gapXs
                         padding: 0; leftPadding: Theme.gapLg; rightPadding: Theme.gapMd
                         background: Rectangle {
                             color: panel.selectedJob===jobRow.modelData.id?Theme.selected:jobRow.hovered?Theme.hover:"transparent"
+                            border.width: jobRow.ListView.isCurrentItem && jobList.activeFocus?2:0; border.color: Theme.accentInk
                             Rectangle { visible: panel.selectedJob===jobRow.modelData.id; width: 2; height: parent.height; color: Theme.accent }
                             Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.subtle }
                         }
+                        readonly property string project: panel.jobProject(modelData)
                         contentItem: ColumnLayout {
                             spacing: Theme.gapXxs
                             Text { Layout.fillWidth: true; text: jobRow.modelData.label; color: Theme.text; font.pixelSize: Theme.fontBody; elide: Text.ElideRight }
                             StudioStatus {
+                                Layout.fillWidth: true
                                 tone: ({queued:"busy",running:"busy",succeeded:"ok",failed:"failed",timed_out:"failed"})[jobRow.modelData.state] || "idle"
-                                text: panel.jobStateLabel(jobRow.modelData)
+                                text: panel.jobStateLabel(jobRow.modelData)+" · "+panel.jobDuration(jobRow.modelData)
                             }
+                            Text { objectName: "jobProject"; Layout.fillWidth: true; visible: !!jobRow.project; text: jobRow.project; color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro; elide: Text.ElideMiddle }
                         }
+                        Accessible.name: modelData.label+", "+panel.jobStateLabel(modelData)+", "+panel.jobDuration(modelData)+(project?", "+project:"")
                         onClicked: panel.selectJob(modelData)
                     }
                     ScrollBar.vertical: StudioScrollBar {}
+                  }
                 }
                 Rectangle { Layout.fillHeight: true; Layout.preferredWidth: 1; color: Theme.subtle }
                 ColumnLayout {
@@ -376,10 +442,25 @@ Rectangle {
                         Text { Layout.fillWidth: true; text: panel.activeJob.label || ""; color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.Medium; elide: Text.ElideRight }
                         StudioButton { text: "Hot Reload"; quiet: true; iconName: "refresh"; visible: panel.activeJob.state==="running" && panel.activeJob.interactive===true && ["ready","session"].indexOf(panel.activeJob.phase)>=0; onClicked: panel.request("job.send",{job_id:panel.selectedJob,command:"reload"}) }
                         StudioButton { text: "Details"; quiet: true; enabled: panel.selectedJob.length>0; onClicked: { panel.request("job.get",{job_id:panel.selectedJob}); panel.currentIndex=3 } }
-                        StudioButton { text: qsTr("Cancel"); iconName: "stop"; enabled: panel.activeJob.state==="running" || panel.activeJob.state==="queued"; onClicked: panel.request("job.cancel",{job_id:panel.selectedJob}) }
+                        StudioButton { objectName: "jobLogFile"; text: qsTr("Open log file"); displayText: ""; iconName: "external"; quiet: true; tip: text; enabled: !!panel.activeJob.log_path; onClicked: Studio.openJobLog(panel.activeJob.log_path) }
+                        StudioButton { objectName: "jobRerun"; text: qsTr("Run again"); displayText: panel.width<1000?"":text; tip: panel.canRerun(panel.activeJob)?text:qsTr("Run again · only for jobs this window started"); iconName: "play"; quiet: true; enabled: panel.canRerun(panel.activeJob); onClicked: panel.rerunJob(panel.activeJob) }
+                        StudioButton { objectName: "jobCancel"; text: qsTr("Cancel"); displayText: panel.width<1000?"":text; tip: text; iconName: "stop"; enabled: panel.activeJob.state==="running" || panel.activeJob.state==="queued"; onClicked: panel.request("job.cancel",{job_id:panel.selectedJob}) }
                     }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
-                    StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; clip: true; text: panel.logText; placeholderText: qsTr("Choose a job to read its log.") }
+                    RowLayout {
+                        objectName: "logFilterBar"
+                        Layout.fillWidth: true; Layout.margins: Theme.gapSm; Layout.leftMargin: Theme.gapMd; spacing: Theme.gapXs
+                        visible: panel.selectedJob.length>0
+                        StudioTextField { id: logSearch; objectName: "logSearch"; Layout.fillWidth: true; implicitWidth: 80; placeholderText: qsTr("Filter the log"); text: panel.logQuery; onTextEdited: panel.logQuery=text }
+                        StudioSegmented {
+                            objectName: "logLevel"; current: panel.logLevel
+                            model: [{id:"all",label:qsTr("All lines")},{id:"warning",label:qsTr("Warnings"),objectName:"logLevel-warning"},{id:"error",label:qsTr("Errors"),objectName:"logLevel-error"}]
+                            onChosen: id=>panel.logLevel=id
+                        }
+                        Text { objectName: "logMatches"; visible: panel.logFiltered && panel.width>=760; text: qsTr("%n line(s)","",panel.logLines.length); color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro }
+                        StudioButton { objectName: "logCopy"; text: panel.logFiltered?qsTr("Copy these lines"):qsTr("Copy log"); displayText: panel.width<1000?"":text; tip: text; iconName: "copy"; quiet: true; enabled: panel.shownLog.length>0; onClicked: Studio.copy(panel.shownLog) }
+                    }
+                    StudioCodeView { objectName: "jobLog"; Layout.fillWidth: true; Layout.fillHeight: true; clip: true; text: panel.shownLog; accessibleName: panel.activeJob.label ? qsTr("Log of %1").arg(panel.activeJob.label) : qsTr("Job log"); placeholderText: panel.logFiltered && panel.logText.length ? qsTr("No line of this log matches.") : qsTr("Choose a job to read its log.") }
                     Repeater {
                         model: panel.activeJob.result && panel.activeJob.result.artifacts ? panel.activeJob.result.artifacts : []
                         RowLayout {
@@ -411,7 +492,12 @@ Rectangle {
                     StudioTextField { id: actionFilter; Layout.fillWidth: true; Layout.margins: Theme.gapSm; placeholderText: qsTr("Search tools…") }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
                     ListView {
+                        id: toolList; objectName: "toolList"
                         Layout.fillWidth: true; Layout.fillHeight: true; clip: true
+                        activeFocusOnTab: true
+                        Keys.onReturnPressed: if(currentItem)currentItem.clicked()
+                        Keys.onSpacePressed: if(currentItem)currentItem.clicked()
+                        Accessible.role: Accessible.List; Accessible.name: qsTr("Tools")
                         model: Agent.operations.filter(x=>(OperationTitles.title(x)+" "+x.title+" "+x.name).toLowerCase().indexOf(actionFilter.text.toLowerCase())>=0)
                         delegate: ItemDelegate {
                             id: toolRow
@@ -419,8 +505,10 @@ Rectangle {
                             width: ListView.view.width; height: Theme.rowHeight
                             padding: 0; leftPadding: Theme.gapLg; rightPadding: Theme.gapMd
                             readonly property bool current: !!panel.selectedOperation && panel.selectedOperation.name===modelData.name
+                            Accessible.name: OperationTitles.title(modelData)
                             background: Rectangle {
                                 color: toolRow.current?Theme.selected:toolRow.hovered?Theme.hover:"transparent"
+                                border.width: toolRow.ListView.isCurrentItem && toolList.activeFocus?2:0; border.color: Theme.accentInk
                                 Rectangle { visible: toolRow.current; width: 2; height: parent.height; color: Theme.accent }
                             }
                             contentItem: Text { text: OperationTitles.title(toolRow.modelData); color: toolRow.current?Theme.text:Theme.muted; font.pixelSize: Theme.fontBody; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
@@ -459,7 +547,7 @@ Rectangle {
                         }
                     }
                     StudioButton { text: qsTr("Run"); iconName: "play"; accent: true; visible: panel.selectedOperation!==null; onClicked: panel.submitForm() }
-                    StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 80; clip: true; placeholderText: qsTr("The result shows up here."); text: panel.resultText }
+                    StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 80; clip: true; placeholderText: qsTr("The result shows up here."); accessibleName: qsTr("Result"); text: panel.resultText }
                 }
             }
             DebugWorkspace { id: debugPage; workspace: panel }

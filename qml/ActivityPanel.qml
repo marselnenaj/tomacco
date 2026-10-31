@@ -168,12 +168,14 @@ Rectangle {
                     required property var modelData
                     objectName: "activityJob-"+modelData.id
                     Layout.fillWidth: true
+                    focusPolicy: Qt.StrongFocus
+                    Accessible.name: modelData.label+", "+panel.workspace.jobStateLabel(modelData)
                     padding: 0
                     leftPadding: Theme.gapLg
                     rightPadding: Theme.gapSm
                     topPadding: Theme.gapXs+Theme.gapXxs
                     bottomPadding: Theme.gapXs+Theme.gapXxs
-                    background: Rectangle {color:runningRow.hovered?Theme.hover:"transparent"}
+                    background: Rectangle {color:runningRow.hovered?Theme.hover:"transparent";border.width:runningRow.visualFocus?2:0;border.color:Theme.accentInk}
                     contentItem: RowLayout {
                         spacing: Theme.gapSm
                         ColumnLayout {
@@ -259,12 +261,14 @@ Rectangle {
                     id: finishedRow
                     required property var modelData
                     Layout.fillWidth: true
+                    focusPolicy: Qt.StrongFocus
+                    Accessible.name: modelData.label+", "+panel.workspace.jobStateLabel(modelData)
                     padding: 0
                     leftPadding: Theme.gapLg
                     rightPadding: Theme.gapLg
                     topPadding: Theme.gapXs
                     bottomPadding: Theme.gapXs
-                    background: Rectangle {color:finishedRow.hovered?Theme.hover:"transparent"}
+                    background: Rectangle {color:finishedRow.hovered?Theme.hover:"transparent";border.width:finishedRow.visualFocus?2:0;border.color:Theme.accentInk}
                     contentItem: RowLayout {
                         spacing: Theme.gapSm
                         StudioStatus {tone:panel.toneOf(finishedRow.modelData)}

@@ -21,7 +21,7 @@ TextField {
         radius: Theme.radiusSmall
         color: control.enabled ? Theme.inset : "transparent"
         border.color: control.activeFocus ? Theme.accentInk : control.hovered && control.enabled ? Theme.faint : control.enabled ? Theme.border : Theme.subtle
-        border.width: 1
+        border.width: control.activeFocus ? 2 : 1
     }
     Accessible.name: placeholderText
 }

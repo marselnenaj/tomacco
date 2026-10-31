@@ -61,6 +61,28 @@ start after installing, the previous one is restored by itself.
 An installation made by `install.py` can be updated. A source checkout, a system package or a directory you cannot write is left alone, and the section says so. Installing needs Python 3.9
 or newer, for the installer. [Privacy](privacy.md) says what the checks send.
 
+## Moving settings to another computer
+
+**Export settings…** and **Import settings…** under **Another computer** in
+**Settings** (*Einstellungen exportieren…*, *Einstellungen importieren…*) save
+and read a JSON file with the desktop's preferences: appearance, language,
+job notifications, the update choice, the device view's frame, activity panel,
+touches and sound forwarding, the WebDriverAgent bundle ID and the web
+preview's last device. Paths, window sizes, recent projects, job history and the
+iOS research settings belong to this computer and are left out; Tomacco keeps
+no passwords or tokens in its settings. An import checks every value, ignores
+what it does not know and says how many settings it took. The update choice is
+not exported or imported where a build or `TOMACCO_UPDATES` fixes it.
+
+```json
+{
+  "format": "tomacco-desktop-settings",
+  "version": 1,
+  "application": "Tomacco",
+  "settings": {"appearance": "dark", "language": "de", "Notifications/jobs": true}
+}
+```
+
 ## Navigation and shortcuts
 
 A rail on the left holds every view, with names and keys in a wide window and
@@ -84,6 +106,15 @@ the size itself. `--capture` and `--smoke-test` keep the default size.
 | Debugger / UI tests / performance / release / agents | Ctrl+6 … Ctrl+9, Ctrl+0 |
 | Save the current source file | Ctrl+S |
 | Save a screenshot of the live device and copy it to the clipboard | Ctrl+Shift+S |
+
+Tab moves through the title bar, the rail, the device bar and the page, in that
+order; the control with keyboard focus has a two-pixel ring. The lists of jobs,
+agent tools and project files take the keyboard too: Tab into the list, the
+arrow keys move, Enter or Space opens the entry. Every control the keyboard
+reaches on the main screens has an accessible name, icon buttons included,
+whose tip (with its shortcut) becomes the description. The desktop UI test checks
+these names with Qt's accessibility switched on; the desktop has not yet been
+tried with a screen reader such as Orca.
 
 Screenshots of the live device, from the camera button, the palette, Ctrl+Shift+S or
 the device window's rail (Ctrl+Shift+S there too), are saved in `~/Pictures/Tomacco`
@@ -113,6 +144,43 @@ apps and the iPhone executes them. Apple's Simulator remains an optional Mac
 connection. The **Web preview** button (*Web-Vorschau*) opens the separate Chromium
 layout lab.
 
+## Builds and jobs
+
+**Builds & jobs** (Ctrl+3, *Builds & Aufträge*) lists the jobs of every client,
+newest first, with their state, how long they ran or have been running, and the
+project they work in. **All**, **Running** and **Failed** (*Alle*, *Laufend*,
+*Fehler*) above the list narrow it; Failed includes jobs that timed out. The
+chosen job's log fills the rest. Beside its name, **Open log file**
+(*Protokolldatei öffnen*) opens the log in the desktop's text viewer,
+**Run again** (*Erneut ausführen*) starts the same request once more and
+**Cancel** (*Abbrechen*) stops a job that runs. Run again works for jobs this
+window started (builds, tests, lint, Run app, installs and tool forms); it
+remembers the last 40 such requests across restarts. Jobs that agents or
+`tomaccoctl` started carry no request the desktop could repeat.
+
+Above the log, **Filter the log**
+(*Protokoll filtern*) keeps the lines that contain a text, ignoring case, and
+**Warnings** or **Errors** (*Warnungen*, *Fehler*) keep the lines at that level:
+Warnings shows warnings and errors. The level is guessed from words such as
+`error`, `failed`, `exception` and `warning`, and from Android's logcat letters
+(`E/Tag`, ` W Tag:`). **Copy these lines** (*Diese Zeilen kopieren*) copies
+exactly the lines shown; without a filter the button copies the whole log.
+
+### Notifications
+
+A job that ran for at least 10 seconds and ends while no Tomacco window is
+active, such as a build, a test run or an app start, shows a desktop
+notification: **Completed after**, **Failed after** or **Timed out after** and
+the duration (*Fertig nach*, *Fehlgeschlagen nach*, *Zeitüberschreitung nach*).
+Its **Open** action (*Öffnen*) brings the window back with that job's log.
+Cancelled jobs, and jobs that end while you are in the window, stay quiet.
+Turn it off under **Notifications** in **Settings** (Ctrl+,): **When a job ends
+in the background** (*Wenn ein Auftrag im Hintergrund endet*). The desktop sends
+the notification to the desktop's notification service over D-Bus
+(`org.freedesktop.Notifications`); a build without Qt D-Bus sends none. On
+Omarchy the panel can notify about builds too; turn one of them off if you get
+both.
+
 ## Installing an app by dropping it
 
 Drag an app from the file manager onto the device view to install it on the
@@ -124,6 +192,18 @@ window, an `.app` bundle is added to the profile through
 `ios.virtual.configure` and, while the phone runs, installed at once
 (`deploy`). A file the device cannot take is refused with the reason; files that
 are no app are ignored. The detached device window accepts drops too.
+
+## Touches and coordinates
+
+**Touches and coordinates** in the tool strip beside the live device
+(*Berührungen und Koordinaten*, also in the command palette) helps when writing
+UI tests. While it is on, a ring marks where the pointer presses the device and
+follows the finger until it lifts, and a label beside the pointer names the
+device pixel under it and the same point as fractions of the screen, for
+example `250, 1500  ·  0.250, 0.750`. `runtime.input` takes the fractions as its
+coordinates. Presses still reach the device as before. The choice is
+stored. It applies to the Android and iPhone picture, docked or in its own
+window; the virtual iOS device has its own touch mark and no coordinates.
 
 ## Device window
 
