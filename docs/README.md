@@ -13,6 +13,7 @@ operations, so a person and a coding agent can do the same things.
 | Connect a coding agent over MCP or the JSON CLI | [Agents](agents.md) |
 | Use the desktop app: device window, shortcuts, Omarchy panel, layout lab | [Desktop](desktop.md) |
 | Build and run an Android app, Swift on Android included | [Android](android.md) |
+| Build, run and test a ready-made example app | [Examples](../examples/README.md) |
 | Run an app on an iPhone over USB, or use a Mac | [iPhone](iphone.md) |
 | Know what the experimental virtual iOS device is and what it needs | [Virtual iOS device](virtual-ios/README.md) |
 | Find the two Apple restore images and prepare their disk-image inputs | [Virtual iOS: image preparation](virtual-ios/setup.md#obtain-the-apple-images) |
