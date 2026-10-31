@@ -48,6 +48,7 @@ operations and their JSON results.
 
 ### Changed
 
+- `doctor` checks all tools at once instead of eight at a time, and a `call` parses only its own operation's schema, not all 173.
 - `ios.virtual.start` refuses up front, before deleting or copying anything, when the
   disk lacks room for the copy.
 - The panel `ios.virtual.status` reports comes from the running guest's boot, not from

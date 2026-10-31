@@ -513,64 +513,87 @@ pub fn run(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool) -> Re
     }
     Ok(json!({"exit_code":code,"stdout":stdout,"stderr":stderr}))
 }
-pub fn doctor() -> Result {
-    let cancelled = cancellation();
-    let mut results = Vec::new();
-    for chunk in TOOLS.chunks(8) {
-        thread::scope(|scope| {
-            let handles: Vec<_> = chunk
-                .iter()
-                .map(|&(name, args, remedy)| {
-                    let cancelled = cancelled.clone();
-                    scope.spawn(move || {
-                        with_cancellation(cancelled, || {
-                            let p = find_optional(name)?;
-                            let mut value =
-                                json!({"name":name,"path":p,"available":false,"remedy":remedy});
-                            if let Some(p) = p {
-                                let mut argv = vec![p];
-                                argv.extend(args.iter().map(|s| s.to_string()));
-                                match run(&argv, 10, None, false) {
-                                    Ok(result) => {
-                                        let text = if s(&result, "stdout").is_empty() {
-                                            s(&result, "stderr")
-                                        } else {
-                                            s(&result, "stdout")
-                                        };
-                                        value["available"] = json!(
-                                            result["exit_code"] == 0
-                                                || (name == "zipalign"
-                                                    && text.contains("Zip alignment utility"))
-                                        );
-                                        value["version"] = json!(
-                                            text.trim().chars().take(2000).collect::<String>()
-                                        );
-                                        value["exit_code"] = result["exit_code"].clone();
-                                    }
-                                    Err(e) => value["error"] = e.value(),
-                                }
-                            }
-                            Ok::<_, Error>(value)
-                        })
-                    })
-                })
-                .collect();
-            for handle in handles {
-                results.push(
-                    handle.join().unwrap_or_else(|_| {
-                        Err(Error::new("tool_failed", "Doctor worker panicked"))
-                    }),
+/// Runs `count` independent checks on up to `workers` threads, a slow one
+/// never holding back the rest, and returns their results in order.
+fn in_parallel<T: Send>(
+    count: usize,
+    workers: usize,
+    check: impl Fn(usize) -> T + Sync,
+) -> Vec<Option<T>> {
+    use std::sync::{
+        Mutex,
+        atomic::{AtomicUsize, Ordering},
+    };
+    let next = AtomicUsize::new(0);
+    let results: Mutex<Vec<Option<T>>> = Mutex::new((0..count).map(|_| None).collect());
+    thread::scope(|scope| {
+        for _ in 0..workers.clamp(1, count.max(1)) {
+            scope.spawn(|| {
+                loop {
+                    let index = next.fetch_add(1, Ordering::Relaxed);
+                    if index >= count {
+                        break;
+                    }
+                    // A check that panics leaves None, as a lost result.
+                    let value =
+                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| check(index)));
+                    results.lock().unwrap_or_else(|e| e.into_inner())[index] = value.ok();
+                }
+            });
+        }
+    });
+    results.into_inner().unwrap_or_else(|e| e.into_inner())
+}
+fn tool_status(name: &str, args: &[&str], remedy: &str) -> Result {
+    let p = find_optional(name)?;
+    let mut value = json!({"name":name,"path":p,"available":false,"remedy":remedy});
+    if let Some(p) = p {
+        let mut argv = vec![p];
+        argv.extend(args.iter().map(|s| s.to_string()));
+        match run(&argv, 10, None, false) {
+            Ok(result) => {
+                let text = if s(&result, "stdout").is_empty() {
+                    s(&result, "stderr")
+                } else {
+                    s(&result, "stdout")
+                };
+                value["available"] = json!(
+                    result["exit_code"] == 0
+                        || (name == "zipalign" && text.contains("Zip alignment utility"))
                 );
+                value["version"] = json!(text.trim().chars().take(2000).collect::<String>());
+                value["exit_code"] = result["exit_code"].clone();
             }
-        });
+            Err(e) => value["error"] = e.value(),
+        }
     }
-    let tools: Vec<Value> = results.into_iter().collect::<Result<_>>()?;
-    let ios = if let Some(p) = find_optional("xtool")? {
+    Ok(value)
+}
+fn ios_sdk_status() -> Result {
+    Ok(if let Some(p) = find_optional("xtool")? {
         run(&argv(&[&p, "sdk", "status"]), 15, None, true)
             .unwrap_or_else(|e| json!({"error":e.value()}))
     } else {
         Value::Null
-    };
+    })
+}
+pub fn doctor() -> Result {
+    let cancelled = cancellation();
+    // Every tool's version check, and xtool's SDK status, at once: each one
+    // only waits for its own process. Up to 16 at a time.
+    let mut results = in_parallel(TOOLS.len() + 1, 16, |index| {
+        with_cancellation(cancelled.clone(), || match TOOLS.get(index) {
+            Some(&(name, args, remedy)) => tool_status(name, args, remedy),
+            None => ios_sdk_status(),
+        })
+    })
+    .into_iter()
+    .map(|result| {
+        result.unwrap_or_else(|| Err(Error::new("tool_failed", "Doctor worker panicked")))
+    })
+    .collect::<Result<Vec<Value>>>()?;
+    let ios = results.pop().unwrap_or(Value::Null);
+    let tools = results;
     let kvm = fs::OpenOptions::new()
         .read(true)
         .write(true)
@@ -579,4 +602,38 @@ pub fn doctor() -> Result {
     Ok(
         json!({"tools":tools,"android_sdk":android_sdk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"android_ndk":android_ndk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"ios_sdk":ios,"kvm":{"exists":Path::new("/dev/kvm").exists(),"accessible":kvm},"settings":settings()?,"data_directory":home()?,"ios_runtime":"Apple Simulator requires macOS; Linux builds use xtool and a real device"}),
     )
+}
+
+#[cfg(test)]
+mod doctor_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn checks_run_side_by_side_and_keep_their_order() {
+        let started = Instant::now();
+        // One slow check among quick ones: with chunks, everything after it
+        // would wait; here the total is about the slowest one.
+        let results = in_parallel(12, 4, |index| {
+            thread::sleep(Duration::from_millis(if index == 0 { 300 } else { 50 }));
+            index * 10
+        });
+        let elapsed = started.elapsed();
+        assert_eq!(
+            results,
+            (0..12).map(|index| Some(index * 10)).collect::<Vec<_>>()
+        );
+        // 11 quick checks on the three other workers: about 200 ms, beside the slow 300.
+        assert!(elapsed < Duration::from_millis(1000), "{elapsed:?}");
+        assert!(in_parallel(0, 4, |index| index).is_empty());
+    }
+
+    #[test]
+    fn a_check_that_panics_loses_only_its_own_result() {
+        let results = in_parallel(3, 2, |index| {
+            assert_ne!(index, 1, "fixture panic");
+            index
+        });
+        assert_eq!(results, [Some(0), None, Some(2)]);
+    }
 }
