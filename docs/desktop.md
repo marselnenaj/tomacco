@@ -97,6 +97,18 @@ apps and the iPhone executes them. Apple's Simulator remains an optional Mac
 connection. The **Web preview** button (*Web-Vorschau*) opens the separate Chromium
 layout lab.
 
+## Installing an app by dropping it
+
+Drag an app from the file manager onto the device view to install it on the
+device shown there, or on the chosen one when none is live. Android devices
+take one or more `.apk` files (split APKs install together), an iPhone over USB
+one signed `.ipa`; both go through `device.install` and show up as a job under
+**Builds & jobs**. On the virtual iOS device's picture, docked or in its own
+window, an `.app` bundle is added to the profile through
+`ios.virtual.configure` and, while the phone runs, installed at once
+(`deploy`). A file the device cannot take is refused with the reason; files that
+are no app are ignored. The detached device window accepts drops too.
+
 ## Device window
 
 The **Own window** button in the tool strip beside the device (*Eigenes Fenster*) moves the

@@ -20,6 +20,7 @@
 #include <QJsonDocument>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QMimeData>
 #include <QtEndian>
 #include <QtMath>
 #include <QUrl>
@@ -1847,6 +1848,18 @@ for line in sys.stdin:
             capture("ios-virtual-apps-"+QString::number(size.width()));
             flick->setProperty("contentY",0);
         }
+        // An .app dropped on the device's picture is added the same way, and deployed at once while the phone runs.
+        auto *guest=object("iosGuestView");QVERIFY(guest);
+        phone({},research,QVariantMap{},QVariant());
+        QCOMPARE(guest->property("appKinds").toStringList(),QStringList{"app"});
+        QVERIFY(QMetaObject::invokeMethod(view,"dropApplication",Q_ARG(QVariant,QString("/fixture/Dropped.app"))));
+        configures=sent("ios.virtual.configure");QCOMPARE(configures.size(),1);
+        QCOMPARE(configures.last().second.value("add_application").toString(),QString("/fixture/Dropped.app"));
+        QVERIFY(configures.last().second.value("deploy").toBool());
+        QCOMPARE(guest->property("appNotice").toString(),QString("Checking Dropped.app…"));
+        accept(configures.last().first,status({},research,QVariantMap{},QVariant()));
+        QCOMPARE(guest->property("appNotice").toString(),QString("Dropped.app added · installing on the running device"));
+        guest->setProperty("appNotice",QString());
         // Leave nothing behind; the real control plane's late refusals of the fixture paths find nothing waiting.
         view->setProperty("virtualAppPath",QString());view->setProperty("virtualAppNotice",QString());view->setProperty("virtualAppBusy",false);
         view->setProperty("virtualPhone",QVariantMap{{"configured",false}});
@@ -1957,6 +1970,72 @@ for line in sys.stdin:
         // The awaited device itself is connected, with the app's own audio setting.
         QCOMPARE(shownPlatform,QString("android"));QCOMPARE(shownTarget,QString("emulator-await"));
         QCOMPARE(starts.size(),1);QVERIFY(starts[0].toMap().value("signature").toString().contains("emulator-await"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void apps_dropped_on_the_device_install_there() {
+        // Files dragged onto the device view: APKs install on an Android device, one IPA on an iPhone, through
+        // device.install. Other app files are explained; files that are no app pass on.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"close"));
+        window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *area=item("nativeAppDrop");QVERIFY(area);
+        auto *overlay=visualItem(area,"appDropOverlay");QVERIFY(overlay);
+        const auto platform=view->property("platform"),target=view->property("target"),appleTarget=view->property("appleTarget");
+        view->setProperty("requests",QVariantMap{});view->setProperty("live",QVariantMap{});
+        view->setProperty("targets",QVariantList{
+            QVariantMap{{"id","drop-pixel"},{"name","Drop Pixel"},{"platform","android"},{"kind","device"},{"state","device"}},
+            QVariantMap{{"id","drop-iphone"},{"name","Drop iPhone"},{"platform","ios"},{"kind","device"},{"state","connected"}}});
+        view->setProperty("platform","android");view->setProperty("target","drop-pixel");
+        QTemporaryDir files;QVERIFY(files.isValid());
+        for(const auto *name:{"base.apk","split.apk","App.ipa","notes.txt"}){QFile file(files.filePath(name));QVERIFY(file.open(QIODevice::WriteOnly));}
+        const auto url=[&](const char *name){return QUrl::fromLocalFile(files.filePath(name));};
+        const QPoint at=area->mapToScene(QPointF(area->width()/2,area->height()/2)).toPoint();
+        QMimeData data;
+        // Enters with these files and reports whether the view took the drag.
+        const auto enter=[&](const QList<QUrl> &urls){
+            data.setUrls(urls);
+            QDragEnterEvent event(at,Qt::CopyAction,&data,Qt::LeftButton,Qt::NoModifier);
+            QCoreApplication::sendEvent(window,&event);
+            return event.isAccepted();
+        };
+        const auto drop=[&]{QDropEvent event(at,Qt::CopyAction,&data,Qt::LeftButton,Qt::NoModifier);QCoreApplication::sendEvent(window,&event);};
+        const auto leave=[&]{QDragLeaveEvent event;QCoreApplication::sendEvent(window,&event);};
+        const auto installs=[&]{
+            QStringList found;const auto all=mapOf(view->property("requests"));
+            for(const auto &entry:all)if(entry.toMap().value("op").toString()=="device.install")found.append(entry.toMap().value("signature").toString());
+            return found;
+        };
+        // Split APKs install together on the Android device.
+        QVERIFY(enter({url("base.apk"),url("split.apk")}));
+        QVERIFY(overlay->isVisible());QVERIFY(area->property("fits").toBool());
+        drop();
+        QVERIFY(!overlay->isVisible());
+        auto sent=installs();QCOMPARE(sent.size(),1);
+        auto arguments=QJsonDocument::fromJson(sent[0].toUtf8()).toVariant().toMap();
+        QCOMPARE(arguments.value("platform").toString(),QString("android"));QCOMPARE(arguments.value("device").toString(),QString("drop-pixel"));
+        QCOMPARE(arguments.value("paths").toStringList(),(QStringList{files.filePath("base.apk"),files.filePath("split.apk")}));
+        QVERIFY(view->property("notice").toString().startsWith("Installing base.apk, split.apk on "));QVERIFY(!view->property("failed").toBool());
+        // An IPA is no Android app: said so, nothing is sent.
+        view->setProperty("requests",QVariantMap{});
+        QVERIFY(enter({url("App.ipa")}));QVERIFY(!area->property("fits").toBool());
+        drop();
+        QVERIFY(installs().isEmpty());
+        QCOMPARE(view->property("notice").toString(),QString("Android devices install .apk files."));QVERIFY(view->property("failed").toBool());
+        // A file that is no app is not taken here.
+        QVERIFY(!enter({url("notes.txt")}));QVERIFY(!overlay->isVisible());leave();
+        // An iPhone over USB takes one signed IPA.
+        view->setProperty("platform","ios");view->setProperty("appleTarget","device");view->setProperty("target","drop-iphone");
+        QVERIFY(enter({url("App.ipa")}));QVERIFY(area->property("fits").toBool());
+        drop();
+        sent=installs();QCOMPARE(sent.size(),1);
+        arguments=QJsonDocument::fromJson(sent[0].toUtf8()).toVariant().toMap();
+        QCOMPARE(arguments.value("platform").toString(),QString("ios"));QCOMPARE(arguments.value("device").toString(),QString("drop-iphone"));
+        QCOMPARE(arguments.value("paths").toStringList(),QStringList{files.filePath("App.ipa")});
+        QVERIFY(enter({url("base.apk")}));QVERIFY(!area->property("fits").toBool());leave();
+        // Leave nothing behind for the scenarios that follow.
+        view->setProperty("requests",QVariantMap{});view->setProperty("targets",QVariantList{});
+        view->setProperty("platform",platform);view->setProperty("appleTarget",appleTarget);view->setProperty("target",target);
+        view->setProperty("notice",QString());view->setProperty("failed",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void german_interface_switches_live() {

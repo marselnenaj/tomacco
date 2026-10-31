@@ -70,6 +70,13 @@ ColumnLayout {
     property bool solo: false
     signal closeRequested()
     signal dockRequested()
+    // App bundles dragged onto the picture: the kinds the owner takes (an
+    // .app for the virtual iOS device), why others do not fit, and what
+    // became of the last one.
+    property var appKinds: []
+    property string appRefusal: ""
+    property string appNotice: ""
+    signal appDropped(string path)
     readonly property bool windowVisible: guestWindow.visible
     readonly property bool watching: (observing && visible) || (detached && running)
     onRunningChanged: {
@@ -473,6 +480,14 @@ ColumnLayout {
             text:qsTr("The iOS device is running in its own window")
         }
     }
+    AppDropArea {
+        objectName:"iosGuestAppDrop"
+        parent:view.detached?guestWindow.host:dockSlot
+        anchors.fill:parent;z:3
+        kinds:view.appKinds;targetName:qsTr("Virtual iOS device");refusal:view.appRefusal
+        onAppsDropped:paths=>view.appDropped(paths[0])
+        onRefused:reason=>view.appNotice=reason
+    }
     Rectangle {
         id:screenBox
         parent:view.detached?guestWindow.host:dockSlot
@@ -716,5 +731,5 @@ ColumnLayout {
             }
         }
     }
-    Label {visible:!!view.inputNotice || !!view.notice;Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:12;text:view.inputNotice || view.notice}
+    Label {visible:!!view.inputNotice || !!view.appNotice || !!view.notice;Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:12;text:view.inputNotice || view.appNotice || view.notice}
 }

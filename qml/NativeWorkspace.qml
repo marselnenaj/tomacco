@@ -7,6 +7,7 @@ import Tomacco.Native 1.0
 import "."
 import "NativeProfiles.js" as NativeProfiles
 import "ColorNames.js" as ColorNames
+import "AppFiles.js" as AppFiles
 
 Rectangle {
     id: view
@@ -199,6 +200,12 @@ Rectangle {
         onBackRequested:view.input({action:"key",key:"back"})
         onRotateRequested:view.input({action:"rotate",orientation:display.sourceSize.width>display.sourceSize.height?"portrait":"landscape_left"})
         onScreenshotRequested:view.capture()
+        AppDropArea {
+            parent:deviceWindow.host;anchors.fill:parent;z:2;enabled:view.detached
+            kinds:view.installKinds;targetName:view.deviceName;refusal:view.installRefusal
+            onAppsDropped:paths=>view.installApps(paths)
+            onRefused:reason=>{view.notice=reason;view.failed=true}
+        }
     }
     function choosePlatform(value) {
         if(platform===value)return
@@ -260,6 +267,21 @@ Rectangle {
     }
     function stop() {pendingLaunch=null;autoAttach=false;if(live.session)request("runtime.stop",{session:live.session});live=({});display.session=({})}
     function input(args) {display.sendInput(args)}
+    // Apps dropped on the device view install on the device it shows, or on
+    // the chosen one, through device.install: APKs on Android, one signed
+    // IPA on an iPhone over USB.
+    readonly property var installTarget: live.session && display.state==="live" ? ({platform:live.platform,device:live.device,kind:live.remote?"simulator":"device"})
+        : hasTarget ? ({platform:platform,device:target,kind:platform==="ios"?appleTarget:"device"}) : null
+    readonly property var installKinds: !installTarget ? [] : installTarget.platform==="android" ? ["apk"] : installTarget.kind==="device" ? ["ipa"] : []
+    readonly property string installRefusal: !installTarget ? qsTr("Choose a device first, then drop the app on it.")
+        : installTarget.platform==="android" ? qsTr("Android devices install .apk files.")
+        : installTarget.kind==="device" ? qsTr("An iPhone installs one signed .ipa file.")
+        : qsTr("Apps for the Mac's simulator are installed with Apple's tools.")
+    function installApps(paths) {
+        if(!AppFiles.installable(paths,installKinds)){notice=installRefusal;failed=true;return}
+        request("device.install",{platform:installTarget.platform,device:installTarget.device,paths:paths})
+        notice=qsTr("Installing %1 on %2…").arg(paths.map(AppFiles.name).join(", ")).arg(deviceName || installTarget.device);failed=false
+    }
     function capture() {if(live.session)request("runtime.capture",{session:live.session,path:Studio.screenshotPath(live.device)})}
     function build(action) {
         if(!projectPath)return
@@ -368,6 +390,7 @@ Rectangle {
                 else {view.notice=qsTr("App launch: %1. Details under Builds & jobs.").arg(workspace.jobStateLabel(r));view.failed=true}
             }
             if(op==="workspace.context") {workspace.openProject(r.project.path);view.platform=r.workspace.platform || "android";view.target=r.workspace.device || ""}
+            if(op==="device.install"){if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
             if(op==="runtime.capture"){view.notice=qsTr("Capture saved · %1").arg(r.path);view.failed=false}
         }
     }
@@ -610,6 +633,12 @@ Rectangle {
                             x:Theme.gapXl;anchors.bottom:parent.bottom;anchors.bottomMargin:Theme.gapLg;width:spare-Theme.gapXxxl;spacing:Theme.gapXs
                             StudioStatus {tone:"busy";mono:true;text:view.runningJobs.length?view.workspace.jobStateLabel(view.runningJobs[0]):""}
                             StudioHeading {Layout.fillWidth:true;text:view.runningJobs.length?view.runningJobs[0].label:"";size:Theme.fontDisplay;maximumLineCount:3;elide:Text.ElideRight}
+                        }
+                        AppDropArea {
+                            objectName:"nativeAppDrop";anchors.fill:parent;z:2;enabled:!view.detached
+                            kinds:view.installKinds;targetName:view.deviceName;refusal:view.installRefusal
+                            onAppsDropped:paths=>view.installApps(paths)
+                            onRefused:reason=>{view.notice=reason;view.failed=true}
                         }
                         StudioEmptyState {
                             objectName:"nativeDetachedNotice";actionName:"nativeDockButton"

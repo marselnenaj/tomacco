@@ -1050,6 +1050,30 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
 <context>
     <name>IosResearch</name>
     <message>
+        <source>Another app change is still running.</source>
+        <translation>Eine andere App-Änderung läuft noch.</translation>
+    </message>
+    <message>
+        <source>Checking %1…</source>
+        <translation>%1 wird geprüft…</translation>
+    </message>
+    <message>
+        <source>%1 added · installing on the running device</source>
+        <translation>%1 hinzugefügt · wird auf dem laufenden Gerät installiert</translation>
+    </message>
+    <message>
+        <source>%1 added · the next start installs it</source>
+        <translation>%1 hinzugefügt · der nächste Start installiert sie</translation>
+    </message>
+    <message>
+        <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
+        <translation>Das virtuelle iOS-Gerät nimmt ein .app-Bundle für arm64-iOS an.</translation>
+    </message>
+    <message>
+        <source>Set up the virtual iOS device's profile before adding apps.</source>
+        <translation>Richte das Profil des virtuellen iOS-Geräts ein, bevor du Apps hinzufügst.</translation>
+    </message>
+    <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
         <translation>%1 Lesezugriffe · %2 Schreibzugriffe · %3 abgewiesen</translation>
     </message>
@@ -2165,6 +2189,30 @@ xtool setup</translation>
 </context>
 <context>
     <name>NativeWorkspace</name>
+    <message>
+        <source>Choose a device first, then drop the app on it.</source>
+        <translation>Wähle zuerst ein Gerät und lege die App dann darauf ab.</translation>
+    </message>
+    <message>
+        <source>Android devices install .apk files.</source>
+        <translation>Android-Geräte installieren .apk-Dateien.</translation>
+    </message>
+    <message>
+        <source>An iPhone installs one signed .ipa file.</source>
+        <translation>Ein iPhone installiert eine signierte .ipa-Datei.</translation>
+    </message>
+    <message>
+        <source>Apps for the Mac's simulator are installed with Apple's tools.</source>
+        <translation>Apps für den Simulator auf dem Mac werden mit Apples Werkzeugen installiert.</translation>
+    </message>
+    <message>
+        <source>Installing %1 on %2…</source>
+        <translation>%1 wird auf %2 installiert…</translation>
+    </message>
+    <message>
+        <source>Installing · progress under Builds &amp; jobs</source>
+        <translation>Installation läuft · Fortschritt unter Builds &amp; Aufträge</translation>
+    </message>
     <message numerus="yes">
         <source>%n tool(s) available to agents through the CLI and MCP</source>
         <translation>
@@ -4452,6 +4500,13 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     <message>
         <source>Roll back</source>
         <translation>Zurücknehmen</translation>
+    </message>
+</context>
+<context>
+    <name>AppDropArea</name>
+    <message>
+        <source>Drop to install on %1</source>
+        <translation>Zum Installieren auf %1 ablegen</translation>
     </message>
 </context>
 </TS>

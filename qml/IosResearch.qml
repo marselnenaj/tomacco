@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtCore
 import "."
+import "AppFiles.js" as AppFiles
 
 Rectangle {
     id: view
@@ -164,9 +165,18 @@ Rectangle {
         return qsTr("Time zone %1 not applied · %2").arg(zone.zone || "").arg(zone.outcome)
     }
     function configureApplications(args) {
-        if(virtualAppBusy)return
+        if(virtualAppBusy)return null
         virtualAppBusy=true;virtualAppNotice=""
-        requests[call("ios.virtual.configure",args)].application=true
+        let id=call("ios.virtual.configure",args)
+        requests[id].application=true
+        return id
+    }
+    // An .app dropped on the device's picture: added to the profile, and onto the phone at once when it runs.
+    function dropApplication(path) {
+        if(virtualAppBusy){nativeGuestView.appNotice=qsTr("Another app change is still running.");return}
+        let args={add_application:path};if(virtualRunning)args.deploy=true
+        requests[configureApplications(args)].dropped=AppFiles.name(path)
+        nativeGuestView.appNotice=qsTr("Checking %1…").arg(AppFiles.name(path))
     }
     function addApplication(path) {
         path=(path || "").trim()
@@ -289,6 +299,9 @@ Rectangle {
             // reason and remedy; an accepted one comes back as the new status.
             if(operation==="ios.virtual.configure" && context.application) {
                 view.virtualAppBusy=false
+                if(context.dropped)nativeGuestView.appNotice=!response.ok?response.error.message
+                    :context.arguments.deploy?qsTr("%1 added · installing on the running device").arg(context.dropped)
+                    :qsTr("%1 added · the next start installs it").arg(context.dropped)
                 if(!response.ok) {view.virtualAppNotice=response.error.message+(response.error.remedy?" · "+response.error.remedy:"");return}
                 view.virtualAppNotice=""
                 if(context.arguments.add_application)view.virtualAppPath=""
@@ -426,6 +439,9 @@ Rectangle {
                     observing:dialog.visible && view.paravirtualMode && !view.cancelling
                     onPendingChanged:if(!pending)view.stopAfterPreview()
                     solo:view.guestSolo
+                    appKinds:view.virtualPhone.configured===true?["app"]:[]
+                    appRefusal:view.virtualPhone.configured===true?qsTr("The virtual iOS device takes one .app bundle built for arm64 iOS."):qsTr("Set up the virtual iOS device's profile before adding apps.")
+                    onAppDropped:path=>view.dropApplication(path)
                     onRunningChanged:if(running && view.wantDetached)detached=true
                     onDetachedChanged:if(!detached)view.wantDetached=false
                     onCloseRequested:view.guestCloseRequested()
