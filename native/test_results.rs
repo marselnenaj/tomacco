@@ -271,7 +271,7 @@ mod tests {
         }
         let found = files(root.path()).unwrap();
         assert_eq!(found.len(), 2);
-        assert_eq!(files(&unit).unwrap(), [unit.clone()]);
+        assert_eq!(files(&unit).unwrap(), std::slice::from_ref(&unit));
         let report = root.path().join("summary.json");
         let value = results(&json!({"path":root.path(),"report":report})).unwrap();
         assert_eq!(value["files"], 2);

@@ -227,7 +227,7 @@ fn usage(root: &Path) -> Value {
             )
         })
         .collect();
-    entries.sort_by(|a, b| b.1.cmp(&a.1));
+    entries.sort_by_key(|e| std::cmp::Reverse(e.1));
     let total: u64 = entries.iter().map(|e| e.1).sum();
     json!({"path":root,"bytes":total,"entries":entries.into_iter().map(|(name,bytes)| json!({"name":name,"bytes":bytes})).collect::<Vec<_>>()})
 }
