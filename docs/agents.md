@@ -38,6 +38,8 @@ The server also offers three prompts, short recipes a client can show as command
 | `run-android-app` | `path` | Inspect the project, find or start an Android device, `project.run` it, wait for the job and capture the screen. |
 | `run-virtual-iphone` | `path` | Check the virtual iOS device, find or build the xtool app, deploy it to a running phone or configure and start one, then look at the screen. |
 
+- Every tool states all four MCP annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint`
+  and `openWorldHint`. They come from each operation's `annotations` in `tomaccoctl schema`.
 - MCP requests can run at the same time.
 - `notifications/cancelled` stops that request. Cancelling `job.wait` leaves its job running; use
   `job.cancel` to cancel a build and its descendants.

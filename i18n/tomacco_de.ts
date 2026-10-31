@@ -3683,6 +3683,14 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Testergebnisse lesen</translation>
     </message>
     <message>
+        <source>Install Android test helper</source>
+        <translation>Android-Testhelfer installieren</translation>
+    </message>
+    <message>
+        <source>Check Android test helper</source>
+        <translation>Android-Testhelfer prüfen</translation>
+    </message>
+    <message>
         <source>Find Android crashes</source>
         <translation>Android-Abstürze finden</translation>
     </message>

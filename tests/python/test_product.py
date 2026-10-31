@@ -1184,6 +1184,8 @@ class ProtocolTests(Isolated):
         self.assertEqual([r["id"] for r in replies[1:]], [1, 2, 3, 4, 5])
         self.assertEqual(replies[1]["result"]["protocolVersion"], "2025-11-25")
         self.assertEqual(len(replies[2]["result"]["tools"]), len(json.loads((ROOT / "assets/operations.json").read_text())))
+        for tool in replies[2]["result"]["tools"]:
+            self.assertEqual(sorted(tool["annotations"]), ["destructiveHint", "idempotentHint", "openWorldHint", "readOnlyHint"], tool["name"])
         self.assertFalse(replies[3]["result"]["isError"])
         self.assertTrue(replies[4]["result"]["isError"])
         self.assertIn("contents", replies[5]["result"])

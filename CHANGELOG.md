@@ -21,6 +21,9 @@ operations and their JSON results.
 - **Update and uninstall.** `tomaccoctl update [--check]` and `tomaccoctl uninstall`.
   The installer now keeps a copy of itself for uninstall and rollback.
 - **MCP prompts.** `setup`, `run-android-app` and `run-virtual-iphone`.
+- **MCP tool annotations.** Every operation now states `destructiveHint` and `idempotentHint` as well
+  as `readOnlyHint` and `openWorldHint`; before, MCP clients read 104 operations as destructive by
+  default. `testing.setup` and `testing.instrumentation` have titles.
 - **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
   `tomacco://docs/NAME`, as Markdown of the installed version.
 - **Android.**
