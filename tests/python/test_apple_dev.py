@@ -540,5 +540,38 @@ class SwiftUIRouteTests(Isolated):
         self.assertIn("arm64", json.dumps(result["virtual_device"]["error"]))
 
 
+FAKE_GO_IOS = """#!/bin/sh
+echo "$@" >> "$TOMACCO_TEST_ROOT/go-ios.log"
+case "$1 $2" in
+  "crash ls") echo 'time="x" level=info msg="listing"' >&2
+              echo '{"files":["MyApp-2026-10-31-120000.ips"],"length":1}' ;;
+  "crash cp") printf '{}' > "$4/MyApp-2026-10-31-120000.ips" ;;
+esac
+"""
+
+
+class IphoneCrashReportTests(Isolated):
+    """ios.crash_reports drives go-ios crash ls and cp; a fake stands in for
+    the phone, so this checks the plumbing, not go-ios itself."""
+
+    def test_reports_are_listed_and_copied_with_paths(self):
+        fake = script(self.root / "go-ios", FAKE_GO_IOS)
+        dispatch("settings.configure", {"executables": {"go-ios": str(fake)}})
+        udid = "00008110-000A1B2C3D4E5F60"
+        listed = dispatch("ios.crash_reports", {"device": udid, "pattern": "MyApp*"})
+        self.assertEqual(listed["reports"], ["MyApp-2026-10-31-120000.ips"])
+        self.assertEqual(listed["copied"], [])
+        target = self.root / "crashes"
+        copied = dispatch("ios.crash_reports", {"device": udid, "pattern": "MyApp*", "directory": str(target)})
+        self.assertEqual(copied["copied"][0]["path"], str(target / "MyApp-2026-10-31-120000.ips"))
+        self.assertEqual(copied["copied"][0]["bytes"], 2)
+        log = (self.root / "go-ios.log").read_text().splitlines()
+        self.assertEqual(log[0], f"crash ls MyApp* --udid={udid}")
+        self.assertEqual(log[-1], f"crash cp MyApp* {target} --udid={udid}")
+        for pattern in ("../x", "-rf", "a b"):
+            with self.assertRaises(StudioError):
+                dispatch("ios.crash_reports", {"device": udid, "pattern": pattern})
+
+
 if __name__ == "__main__":
     unittest.main()

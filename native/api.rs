@@ -87,7 +87,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         | "ios.store_ship"
         | "project.import_xcode"
         | "project.app" => crate::apple_dev::handle(name, &a),
-        "ios.doctor" | "ios.prepare" | "ios.wda_prepare" | "ios.apps" => {
+        "ios.doctor" | "ios.prepare" | "ios.wda_prepare" | "ios.apps" | "ios.crash_reports" => {
             crate::iphone_setup::handle(name, &a)
         }
         "ios.emulator.inspect" => crate::ios_emulator::inspect(&a),

@@ -5199,6 +5199,38 @@
     }
   },
   {
+    "name": "ios.crash_reports",
+    "title": "iPhone crash reports",
+    "description": "List the crash reports of the USB-connected iPhone whose names match pattern (a glob; iOS names a report <process>-<date>.ips, so MyApp* selects one app's), with go-ios crash ls; with directory, also copy them there with go-ios crash cp and return copied: each new or changed file's name, path, bytes and sha256, ready for ios.crash_symbolicate. go-ios moves pending reports into the readable area first; reports are not deleted from the phone.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pattern": {
+          "type": "string",
+          "default": "*",
+          "description": "Report name glob, for example MyApp*"
+        },
+        "directory": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute host directory to copy the matching reports into; created if missing. Empty: only list them."
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "ios.emulator.inspect",
     "description": "Inspect a local Darwin/SPTM restore-shell or Inferno kernel-probe engine and matching firmware. Prepared images are confined and hash-verified. Neither backend runs graphical iOS apps.",
     "inputSchema": {

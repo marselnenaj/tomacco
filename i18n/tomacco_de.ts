@@ -3289,6 +3289,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Flutter-App für iOS erstellen</translation>
     </message>
     <message>
+        <source>iPhone crash reports</source>
+        <translation>Absturzberichte des iPhones</translation>
+    </message>
+    <message>
         <source>Read crash report</source>
         <translation>Absturzbericht lesen</translation>
     </message>

@@ -190,6 +190,7 @@ omarchy-apple-dev, which nothing fetches until `ios.toolkit_install` is called. 
 ```sh
 tomaccoctl call ios.toolkit_install '{}'
 tomaccoctl call project.import_xcode '{"project":"/absolute/MyApp.xcodeproj"}'
+tomaccoctl call ios.crash_reports '{"device":"ACTUAL_UDID","pattern":"MyApp*","directory":"/absolute/crashes"}'
 tomaccoctl call ios.crash_symbolicate '{"report":"/absolute/crash.ips","binaries":["/absolute/MyApp.app/MyApp"]}'
 tomaccoctl call ios.toolkit_install '{"toolchain":true,"xcode_xip":"/absolute/Xcode.xip"}'
 tomaccoctl call ios.store_ship '{"path":"/absolute/MyiOSApp"}'

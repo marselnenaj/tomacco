@@ -208,6 +208,18 @@ match by `LC_UUID`, not by name.
 tomaccoctl call ios.crash_symbolicate '{"report":"/absolute/crash.ips","binaries":["/absolute/MyApp.app/MyApp"]}'
 ```
 
+To get the reports off a USB-connected iPhone, `ios.crash_reports` lists them with go-ios and, given a
+directory, copies them there. iOS names a report after its process and date, so `MyApp*` selects one
+app's. `copied` lists each file's `path` and `sha256`. This needs only go-ios, not the checkout above.
+
+```sh
+tomaccoctl call ios.crash_reports '{"device":"ACTUAL_UDID","pattern":"MyApp*"}'
+tomaccoctl call ios.crash_reports '{"device":"ACTUAL_UDID","pattern":"MyApp*","directory":"/absolute/crashes"}'
+```
+
+`ios.crash_reports` has unit tests only: no iPhone was connected while it was written, so its reading of
+go-ios's output has not met a real phone.
+
 **Flutter (untested in Tomacco).** Install Flutter yourself first. `ios.flutter_setup` is needed
 once per Flutter version: it downloads about 7 GB from Google's servers, runs prebuilt
 tools from there, and replaces `gen_snapshot_arm64` in your Flutter install, keeping the

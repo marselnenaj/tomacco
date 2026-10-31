@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 177 operations.
+`tomaccoctl` now has one typed API of 178 operations.
 
 ### Added
 
@@ -32,6 +32,9 @@ operations and their JSON results.
     minimum iOS, entitlements, the signing certificate and a summary of the embedded
     provisioning profile, with warnings such as an expired profile. Unit-tested only, on
     synthetic files.
+  - `ios.crash_reports` lists a USB-connected iPhone's crash reports with go-ios and copies
+    them to a directory, returning paths for `ios.crash_symbolicate`. Unit-tested only; no
+    phone was connected.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.
