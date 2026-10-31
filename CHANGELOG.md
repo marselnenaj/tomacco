@@ -56,6 +56,9 @@ operations and their JSON results.
     older than the test job.
 - **Jobs.** `job.events` returns a job's state and phase changes and cancellation requests with
   their times, recorded by the job database for every job from now on.
+- **Downloads.** The Android command-line tools download in `tomaccoctl setup` and the iPhone runner
+  download of `ios.wda_prepare` continue where they stopped when run again, and the file is used
+  only after its checksum matches; a mismatching file is deleted.
 - **Jobs.** `android.sdk_install`, `ios.wda_prepare` and `android.connect` take an optional `retry`
   (count and backoff); a job lists its attempts in its result.
 - **Jobs.** At most two builds run at once by default; more wait as `queued` with a `queued_reason`.

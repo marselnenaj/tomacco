@@ -14,6 +14,7 @@ mod dap;
 mod debugger;
 mod desktop;
 mod devices;
+mod download;
 mod files;
 mod instrumentation;
 mod ios_emulator;

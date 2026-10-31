@@ -417,29 +417,20 @@ fn install_command_line_tools(sdk: &Path) -> Result<()> {
     })?;
     identifier(&file, "archive name", Some(r"[A-Za-z0-9_.-]+"))?;
     identifier(&sha1, "checksum", Some(r"[0-9a-f]{40}"))?;
-    let archive = temporary.path().join(&file);
+    // An interrupted download continues on the next run; the archive is
+    // used only once it matches Google's checksum.
+    let archive = crate::download::directory()?.join(&file);
     let archive_text = archive.to_string_lossy().into_owned();
     let url = format!("{REPOSITORY}{file}");
-    run_visible(
-        "curl",
-        &[
-            "-fL",
-            "--retry",
-            "3",
-            "--progress-bar",
-            "-o",
-            &archive_text,
-            &url,
-        ],
-    )?;
-    let output = Command::new("sha1sum").arg(&archive).output()?;
-    let digest = String::from_utf8_lossy(&output.stdout);
-    if digest.split_whitespace().next() != Some(sha1.as_str()) {
-        return Err(Error::new(
-            "setup_failed",
-            "The download does not match Google's checksum",
-        ));
-    }
+    crate::download::fetch(&crate::download::Request {
+        url: &url,
+        destination: &archive,
+        checksum: crate::download::Checksum::Sha1(sha1),
+        max_bytes: 2 * 1024 * 1024 * 1024,
+        progress: true,
+        allow_http: false,
+        curl: "curl",
+    })?;
     let unpacked = temporary.path().join("unpacked");
     let unpacked_text = unpacked.to_string_lossy().into_owned();
     run_visible("unzip", &["-q", &archive_text, "-d", &unpacked_text])?;
@@ -449,6 +440,7 @@ fn install_command_line_tools(sdk: &Path) -> Result<()> {
         std::fs::remove_dir_all(&target)?;
     }
     std::fs::rename(unpacked.join("cmdline-tools"), &target)?;
+    let _ = std::fs::remove_file(&archive);
     Ok(())
 }
 
