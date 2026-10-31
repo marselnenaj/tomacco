@@ -141,7 +141,8 @@ tomaccoctl call android.settings '{"device":"emulator-5554","dark_mode":"off","f
 `android.display` locks the orientation or overrides display size and density, and `reset` undoes
 both.
 
-`android.notifications` lists the notifications shown, for asserting that the app posted one.
+`android.notifications` lists the notifications shown, for asserting that the app posted one, and
+`android.app_files` lists or pulls a debuggable app's private files.
 
 `android.package_inspect` reads what a built APK or AAB declares, without a device: package,
 version, SDK levels, permissions, ABIs and signing certificate digests.

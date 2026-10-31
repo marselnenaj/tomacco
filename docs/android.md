@@ -136,7 +136,7 @@ For agents, the same device is reached by `runtime.input`, `runtime.capture` and
 display session, use `device.capture`, `device.logs`, `android.hierarchy`,
 `android.input`, `android.record`, `android.mirror`, `android.ports`,
 `android.permission`, `android.deep_link`, `android.performance`, `android.settings`,
-`android.display`, `android.notifications` and `android.emulator`.
+`android.display`, `android.notifications`, `android.app_files` and `android.emulator`.
 
 `android.input` types ASCII text with `adb shell input text`. Other text, such as
 `Grüße` or emoji, cannot go that way, so Tomacco pastes it: it starts the configured
@@ -220,6 +220,26 @@ tomaccoctl call android.notifications '{"device":"emulator-5554","action":"snooz
   `dumpsys notification --noredact`.
 - Listing, open, close and snooze were checked on the API 36 x86_64 emulator with a
   notification posted by `cmd notification post`.
+
+### App data files
+
+`android.app_files` lists or pulls the private files of a debuggable app, such as
+its databases and shared preferences, through `run-as`. Android allows that only for
+debuggable builds, so a release build answers `app_not_debuggable`. Paths are relative
+to the app's data directory.
+
+```sh
+tomaccoctl call android.app_files '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
+tomaccoctl call android.app_files '{"device":"emulator-5554","bundle_id":"dev.example.newapp","action":"pull","path":"databases","output":"/absolute/out/databases.tar"}'
+```
+
+- `list` returns each file's path, size and modification time.
+- `pull` returns a job that writes the files as one `.tar` archive; unpack it with
+  `tar -xf`.
+- To force-stop the app or clear its data, use `device.app` with `stop` or
+  `clear-data`.
+- Listing, pulling and the refusal for a non-debuggable app were checked on the API 36
+  x86_64 emulator with a debug build.
 
 ## Sound
 

@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 176 operations.
+`tomaccoctl` now has one typed API of 177 operations.
 
 ### Added
 
@@ -35,6 +35,8 @@ operations and their JSON results.
     density, then reads them back; `reset` undoes them.
   - `android.notifications` lists the notifications shown, opens or closes the shade
     and snoozes one by its key.
+  - `android.app_files` lists or pulls the private files of a debuggable app through
+    `run-as`.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.

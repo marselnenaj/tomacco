@@ -3037,6 +3037,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Android per WLAN</translation>
     </message>
     <message>
+        <source>App data files</source>
+        <translation>App-Datendateien</translation>
+    </message>
+    <message>
         <source>App permission</source>
         <translation>App-Berechtigung</translation>
     </message>

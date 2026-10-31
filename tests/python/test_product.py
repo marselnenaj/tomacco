@@ -765,13 +765,14 @@ for line in sys.stdin:
 
 class AndroidControlTests(Isolated):
     """Android device control through a fake adb that records each call and
-    answers from adb-replies.json: the first key found in the command wins."""
+    answers from adb-replies.json: the first key found in the command wins, and
+    a reply that starts with FAIL: exits 1."""
     ADB = ("import json,os,sys,time\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
            "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
            "replies=json.loads((root/'adb-replies.json').read_text()) if (root/'adb-replies.json').exists() else {}\n"
            "command=' '.join(a[2:])\n"
            "for key,reply in replies.items():\n"
-           "    if key in command: print(reply,end=''); sys.exit(0)\n"
+           "    if key in command: print(reply.removeprefix('FAIL:'),end=''); sys.exit(1 if reply.startswith('FAIL:') else 0)\n"
            "if 'app_process' in command: time.sleep(30)\n")
 
     def setUp(self):
@@ -958,6 +959,29 @@ class AndroidControlTests(Isolated):
         self.assertEqual(len(notifications(action="snooze", key="-1|android|19|null|1000")["notifications"]), 1)
         for arguments in ({"action": "snooze"}, {"action": "snooze", "key": "not-a-key"}, {"bundle_id": "x;y"}):
             with self.assertRaises(StudioError): notifications(**arguments)
+
+    def test_a_debuggable_apps_files_are_listed_and_pulled_as_a_tar_archive(self):
+        files = lambda **a: dispatch("android.app_files", {"device": "emulator-5554", "bundle_id": "dev.test.app", **a})
+        self.replies(**{"stat -c": "6 1793474273 ./files/a b.txt\n120 1793474000 ./shared_prefs/settings.xml\n", "tar -cf": "x" * 2048})
+        self.assertEqual(files()["files"], [{"path": "files/a b.txt", "size": 6, "modified": 1793474273},
+                                            {"path": "shared_prefs/settings.xml", "size": 120, "modified": 1793474000}])
+        self.assertIn(["run-as", "dev.test.app", "find", ".", "-type", "f", "-exec", "stat", "-c", "%s %Y %n", "{}", "+"], self.shell_calls())
+        target = self.root / "out/files.tar"
+        job = files(action="pull", path="files", output=str(target))
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        self.assertEqual(target.read_text(), "x" * 2048)
+        self.assertEqual(job["plan"]["steps"][0]["argv"][-2:], ["exec-out", "run-as dev.test.app tar -cf - files 2>/dev/null"])
+        with self.assertRaises(StudioError) as named:
+            files(action="pull", output=str(self.root / "files.zip"))
+        self.assertEqual(named.exception.code, "invalid_path")
+        for path in ("/data/data/dev.other", "../dev.other", "a;reboot"):
+            with self.assertRaises(StudioError): files(path=path)
+        self.replies(**{"ls -d": "FAIL:ls: nosuch: No such file or directory\n"})
+        with self.assertRaises(StudioError) as missing: files(path="nosuch")
+        self.assertEqual(missing.exception.code, "path_not_found")
+        self.replies(**{"run-as": "FAIL:run-as: package not debuggable: dev.test.app\n"})
+        with self.assertRaises(StudioError) as refused: files()
+        self.assertEqual(refused.exception.code, "app_not_debuggable")
 
     def test_emulator_snapshots_battery_network_and_location_go_through_the_console(self):
         self.replies(**{"avd snapshot list": "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001\nOK\n",

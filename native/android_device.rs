@@ -1,4 +1,5 @@
-//! Android device state for tests: display overrides and notifications.
+//! Android device state for tests: display overrides, notifications and
+//! the private files of debuggable apps.
 use crate::{core::*, devices, toolchain as tc};
 use serde_json::{Value, json};
 
@@ -271,6 +272,102 @@ pub fn notification(a: &Value) -> Result {
     Ok(json!({"device":device,"action":action,"notifications":list}))
 }
 
+/// A path inside an app's data directory, relative to it.
+fn app_path(value: &str) -> Result<&str> {
+    let value = if value.is_empty() { "." } else { value };
+    if value.starts_with('/') || value.split('/').any(|part| part == "..") {
+        return Err(Error::new(
+            "invalid_path",
+            "Give a path inside the app's data directory, relative to it",
+        ));
+    }
+    identifier(value, "app path", Some(r"[A-Za-z0-9_.@+=,/ -]{1,400}"))
+}
+
+/// `SIZE MTIME PATH` lines of `stat -c '%s %Y %n'`.
+fn file_list(output: &str) -> Vec<Value> {
+    output
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.splitn(3, ' ');
+            let size = parts.next()?.parse::<u64>().ok()?;
+            let modified = parts.next()?.parse::<u64>().ok()?;
+            let name = parts.next()?;
+            Some(json!({"path":name.strip_prefix("./").unwrap_or(name),"size":size,"modified":modified}))
+        })
+        .collect()
+}
+
+/// Lists or pulls files from a debuggable app's private data directory
+/// through run-as, which Android allows only for debuggable builds.
+pub fn app_files(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "device ID", None)?;
+    let id = identifier(
+        s(a, "bundle_id"),
+        "application ID",
+        Some(r"[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)+"),
+    )?;
+    let remote = app_path(s(a, "path"))?;
+    let output = if s(a, "action") == "pull" {
+        let target = output_path(s(a, "output"))?;
+        if target.extension().is_none_or(|x| x != "tar") {
+            return Err(Error::new(
+                "invalid_path",
+                "The pulled files are written as one .tar archive; name the output FILE.tar",
+            ));
+        }
+        Some(target)
+    } else {
+        None
+    };
+    // run-as is Android's own gate: debuggable builds of installed apps only.
+    run(device, &["run-as", id, "true"]).map_err(|e| {
+        Error::new(
+            "app_not_debuggable",
+            format!("Android refused run-as for {id}"),
+        )
+        .remedy("Install a debuggable build of the app, such as a debug build from project.run")
+        .details(e.value())
+    })?;
+    run(device, &["run-as", id, "ls", "-d", remote]).map_err(|e| {
+        Error::new(
+            "path_not_found",
+            format!("{remote} does not exist in the data directory of {id}"),
+        )
+        .details(e.value())
+    })?;
+    let Some(target) = output else {
+        let listing = stdout(
+            device,
+            &[
+                "run-as", id, "find", remote, "-type", "f", "-exec", "stat", "-c", "%s %Y %n",
+                "{}", "+",
+            ],
+        )?;
+        return Ok(
+            json!({"device":device,"bundle_id":id,"path":remote,"files":file_list(&listing)}),
+        );
+    };
+    std::fs::create_dir_all(target.parent().unwrap())?;
+    // exec-out passes stderr into the archive and loses the exit status, so
+    // the path was checked above and tar's messages are dropped.
+    let mut command = devices::adb(device)?;
+    command.extend([
+        "exec-out".into(),
+        format!(
+            "run-as {} tar -cf - {} 2>/dev/null",
+            shell_quote(id),
+            shell_quote(remote)
+        ),
+    ]);
+    devices::submit(
+        &format!("Pull files of {id}"),
+        json!([{"argv":command,"output":target,"minimum_bytes":1024}]),
+        600,
+        json!({}),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -313,6 +410,32 @@ mod tests {
         assert_eq!(
             list[1]["flags"],
             json!(["ONGOING_EVENT", "CAN_COLORIZE", "SILENT"])
+        );
+    }
+
+    #[test]
+    fn app_paths_stay_inside_the_data_directory_and_listings_are_read() {
+        assert_eq!(app_path("").unwrap(), ".");
+        assert_eq!(
+            app_path("files/db name.sqlite").unwrap(),
+            "files/db name.sqlite"
+        );
+        for bad in [
+            "/data/data/x",
+            "../other",
+            "files/../../x",
+            "a;b",
+            "a$(x)",
+            "a\nb",
+        ] {
+            assert!(app_path(bad).is_err(), "{bad}");
+        }
+        assert_eq!(
+            file_list("3 1793474139 ./files/a b.txt\nnoise\n12 1 ./shared_prefs/p.xml\n"),
+            vec![
+                json!({"path":"files/a b.txt","size":3,"modified":1793474139}),
+                json!({"path":"shared_prefs/p.xml","size":12,"modified":1})
+            ]
         );
     }
 }
