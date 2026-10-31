@@ -495,6 +495,100 @@ class RepeatedInstallationTests(unittest.TestCase):
         self.assertTrue(0 < organization < main.find("Backend::storedLanguage()"))
 
 
+def fake_package(root, runtime, version="1.0.0"):
+    """A release tarball's tree as CMake installs it, with fake binaries and,
+    for a portable package, the given runtime files (path -> (content, executable))."""
+    import shutil
+    from install import DOCUMENTS, PACKAGE_PATHS
+    top = root / f"tomacco-{version}-Linux-x86_64{'-portable' if runtime else ''}"
+    (top / "bin").mkdir(parents=True)
+    shutil.copy2(ROOT / "install.py", top / "install.py")
+    (top / "bin/tomacco").write_bytes(b"\x7fELF desktop")
+    (top / "bin/tomaccoctl").write_bytes(b"\x7fELF control plane " + version.encode())
+    (top / "share/tomacco").mkdir(parents=True)
+    (top / "share/tomacco/VERSION").write_text(version + "\n")
+    for source, packaged in PACKAGE_PATHS.items():
+        if (ROOT / source).is_dir():
+            shutil.copytree(ROOT / source, top / packaged)
+        else:
+            (top / packaged).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / source, top / packaged)
+    (top / "share/doc/tomacco").mkdir(parents=True)
+    for name in DOCUMENTS.values():
+        (top / "share/doc/tomacco" / name).write_text(name)
+    for relative, (content, executable) in runtime.items():
+        path = top / "lib/tomacco/runtime" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        path.chmod(0o755 if executable else 0o644)
+    return top
+
+
+class PortablePackageTests(unittest.TestCase):
+    """install.py installs a portable package's bundled Qt and FFmpeg beside the
+    program, and removes them again when a regular package replaces it."""
+
+    RUNTIME = {"lib/libQt6Core.so.6": (b"\x7fELF qt", False), "lib/libavcodec.so.63": (b"\x7fELF ffmpeg", False),
+               "plugins/platforms/libqxcb.so": (b"\x7fELF xcb", False), "libexec/QtWebEngineProcess": (b"\x7fELF helper", True),
+               "libexec/qt.conf": (b"[Paths]\nPrefix=..\n", False), "qml/QtQuick/qmldir": (b"module QtQuick\n", False)}
+
+    @staticmethod
+    def install(package, home, *arguments):
+        import subprocess
+        import sys
+        result = subprocess.run([sys.executable, str(package / "install.py"), "--user-home", str(home), "--no-window-rule", *arguments],
+                                capture_output=True, text=True, timeout=120)
+        if result.returncode:
+            raise AssertionError(result.stderr)
+        return json.loads(result.stdout)
+
+    def test_a_portable_package_installs_its_runtime_and_a_regular_one_removes_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            home = root / "home"
+            library = home / ".local/lib/tomacco"
+            self.install(fake_package(root / "a", self.RUNTIME), home)
+            for relative, (content, executable) in self.RUNTIME.items():
+                installed = library / "runtime" / relative
+                self.assertEqual(installed.read_bytes(), content, relative)
+                self.assertEqual(installed.stat().st_mode & 0o777, 0o755 if executable else 0o644, relative)
+            self.assertEqual((library / "qt.conf").read_text(), "[Paths]\nPrefix=runtime\n")
+            launcher = (home / ".local/bin/tomacco").read_text()
+            self.assertIn("unset QT_PLUGIN_PATH QML_IMPORT_PATH QML2_IMPORT_PATH", launcher)
+            self.assertNotIn("unset", (home / ".local/bin/tomaccoctl").read_text())
+
+            # A newer portable package without one of the files: the stale copy goes,
+            # unless the user changed it since.
+            newer = dict(self.RUNTIME)
+            del newer["lib/libavcodec.so.63"]
+            del newer["qml/QtQuick/qmldir"]
+            (library / "runtime/qml/QtQuick/qmldir").write_text("my change")
+            self.install(fake_package(root / "b", newer, "1.0.1"), home)
+            self.assertFalse((library / "runtime/lib/libavcodec.so.63").exists())
+            self.assertEqual((library / "runtime/qml/QtQuick/qmldir").read_text(), "my change")
+            self.assertTrue((library / "runtime/lib/libQt6Core.so.6").is_file())
+
+            # A regular package leaves no qt.conf pointing at a Qt it does not use.
+            (library / "runtime/qml/QtQuick/qmldir").unlink()
+            self.install(fake_package(root / "c", {}, "1.0.2"), home)
+            self.assertFalse((library / "runtime").exists())
+            self.assertFalse((library / "qt.conf").exists())
+            self.assertNotIn("unset", (home / ".local/bin/tomacco").read_text())
+            self.assertEqual((library / "tomaccoctl").read_bytes(), b"\x7fELF control plane 1.0.2")
+
+    def test_uninstalling_a_portable_installation_removes_the_runtime(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            home = root / "home"
+            self.install(fake_package(root / "a", self.RUNTIME), home)
+            result = self.install(home / ".local/lib/tomacco", home, "--uninstall")
+            self.assertEqual(result["kept"], [])
+            self.assertFalse((home / ".local/lib/tomacco").exists())
+            # The uninstallation is journalled: rolling it back brings the runtime back.
+            self.install(root / "a/tomacco-1.0.0-Linux-x86_64-portable", home, "--rollback", Path(result["backups"]).name)
+            self.assertEqual((home / ".local/lib/tomacco/runtime/libexec/QtWebEngineProcess").read_bytes(), b"\x7fELF helper")
+
+
 class PanelAndDocumentationTests(unittest.TestCase):
     """The Omarchy panel needs Quickshell to run, so what it promises is checked in its source."""
 
