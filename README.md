@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0--or--later-6cb6ff" alt="License: GPL-2.0-or-later"></a>
-  <img src="https://img.shields.io/badge/version-1.0.0-7dffd0" alt="Version 1.0.0">
+  <img src="https://img.shields.io/badge/version-1.1.0-7dffd0" alt="Version 1.1.0">
   <img src="https://img.shields.io/badge/iOS_runtime-experimental-b58cff" alt="iOS runtime: experimental">
   <img src="https://img.shields.io/badge/made_for-Omarchy-b58cff" alt="Made for Omarchy">
 </p>
@@ -48,6 +48,12 @@ see [requirements and limits](#the-virtual-ios-device).
 | **iPhone over USB** | Build with xtool, sign, install and view through WebDriverAgent; physical-device execution not qualified | [iPhone guide](docs/iphone.md) |
 | **Mac over SSH** | Use Xcode builds, XCTest, the Simulator and App Store validation; not qualified | [Mac route](docs/iphone.md#the-mac-route) |
 
+New in 1.1: a portable package for other distributions, French, Spanish and Italian in the
+desktop, screenshot comparison, accessibility audits and crash reports for Android tests, a
+Jetpack Compose starter, React Native, Expo, Capacitor and Kotlin Multiplatform apps on Android,
+`capabilities` for agents, and `tomaccoctl update`, `report` and `help`. Several of these were
+tested with stand-ins only; the [release notes](docs/RELEASE_NOTES.md) say which.
+
 <img src="assets/readme/desktop.png" alt="Tomacco's native desktop showing the project workspace." width="100%">
 
 <p align="center"><sub>The desktop workspace. A real capture, with no device connected.</sub></p>
@@ -69,10 +75,11 @@ The first line checks and installs the latest signed release for your user. On A
 Omarchy it also offers to install the system packages. The second shows what your computer
 can do and offers to install the Android SDK and connect your coding agents.
 
-Arch Linux and Omarchy are the tested platforms. For Debian, Ubuntu and Fedora, see
-[which package to use](docs/getting-started.md#debian-ubuntu-and-fedora): releases can also offer a
-portable package that bundles Qt and FFmpeg. To read the script
-before running it, or to build from source, see [installation options](docs/getting-started.md#1-install).
+Arch Linux and Omarchy are the tested platforms. For Debian, Ubuntu and Fedora, 1.1.0 has a
+portable package that bundles Qt and FFmpeg and needs glibc 2.35 or newer; the installer picks it
+where the regular package cannot start. See [which package to use](docs/getting-started.md#debian-ubuntu-and-fedora).
+To read the script before running it, or to build from source, see
+[installation options](docs/getting-started.md#1-install).
 
 Then open a project:
 
@@ -80,7 +87,8 @@ Then open a project:
 tomacco --project /path/to/app
 ```
 
-For a first app, follow [the Android walkthrough](docs/getting-started.md#route-c-a-new-android-app).
+For a first app, follow [Your first Android app](docs/tutorial-android.md): a Compose starter on
+the emulator with a screenshot and a UI test.
 For a tour of the interface, see [the desktop guide](docs/desktop.md). For upgrades,
 rollback and uninstall, see [installing](docs/building.md#installing).
 
@@ -122,7 +130,9 @@ tomaccoctl call job.wait '{"job_id":"JOB_ID","seconds":30}'
 ```
 
 The [agent guide](docs/agents.md) covers the full workflows, argument validation,
-device input, debugging and visual checks.
+device input, debugging and visual checks. [Agent patterns](docs/agent-patterns.md) shows how to
+plan with `capabilities`, wait on jobs, act on errors and treat destructive operations, and the
+[operation reference](docs/reference/README.md) lists every operation.
 
 <details>
 <summary>How the agent, desktop and devices fit together</summary>
@@ -195,8 +205,10 @@ Every guest processor is emulated, so performance is far below a physical phone.
 
 ## Status and limits
 
-Tomacco 1.0.0 was tested on one workstation: x86_64 Arch Linux with Omarchy,
-Qt 6.11.2 and Rust 1.99. Other machines have not been qualified.
+Tomacco 1.1.0 was developed and tested on one workstation: x86_64 Arch Linux with Omarchy,
+Qt 6.12 and Rust 1.99. The portable package passed its checks in clean Debian 12, Ubuntu 22.04,
+Ubuntu 24.04 and Fedora 44 containers but has not been run on a real desktop of those
+distributions. Other machines have not been qualified.
 
 **Physical iPhone execution is not qualified.** Build, signing, pairing and runner
 paths have contract tests, but execution on a real iPhone has not been verified.
@@ -224,8 +236,8 @@ The [documentation index](docs/README.md) lists every guide. Common starting poi
 
 | I want to… | Guide |
 | --- | --- |
-| Install Tomacco and run a first app | [Getting started](docs/getting-started.md) |
-| Connect an agent or automate a workflow | [Agents](docs/agents.md) |
+| Install Tomacco and run a first app | [Getting started](docs/getting-started.md) · [Your first Android app](docs/tutorial-android.md) |
+| Connect an agent or automate a workflow | [Agents](docs/agents.md) · [Agent patterns](docs/agent-patterns.md) · [Operation reference](docs/reference/README.md) |
 | Use the workspace and live device view | [Desktop](docs/desktop.md) |
 | Develop for Android or an iPhone | [Android](docs/android.md) · [iPhone](docs/iphone.md) |
 | Set up the experimental iOS runtime | [Virtual iOS](docs/virtual-ios/README.md) |

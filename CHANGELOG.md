@@ -20,6 +20,11 @@ operations and their JSON results.
 - The issue form links troubleshooting and asks for an optional `tomaccoctl report` bundle; the pull request
   checklist follows CONTRIBUTING, and CONTRIBUTING says how the documentation is tested.
 
+### Changed
+
+- The README and the documentation index describe 1.1.0: the portable package, the five desktop languages, what
+  is new, and the new tutorial, agent patterns and reference.
+
 ## 1.1.0
 
 `tomaccoctl` now has one typed API of 193 operations.
