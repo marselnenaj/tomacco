@@ -218,11 +218,13 @@ replaces what was on the device clipboard, and answers `text_unsupported` with a
 remedy when it cannot work.
 
 `android.screen` saves the screen as a PNG at once, without a job, for previews
-that refresh; `device.capture` keeps evidence with a job.
+that refresh; `device.capture` keeps evidence with a job. Checked on the API 36 x86_64
+emulator.
 
 `android.record` records the screen as a job, for up to 180 seconds; `job.send` with
 `command` `stop` ends it early, and the video is still pulled to `path`. The stop
-interrupts `screenrecord` on the device, which then finishes the file.
+interrupts `screenrecord` on the device, which then finishes the file. On the API 36
+x86_64 emulator a recording stopped after 6 seconds gave a playable H.264 MP4.
 
 ```sh
 tomaccoctl call android.record '{"device":"emulator-5554","path":"/absolute/clip.mp4","seconds":180}'
@@ -243,7 +245,7 @@ glance in one read-only call: Android version, SDK level and security patch, bat
 level, state, health and temperature, free and total storage on `/data`, screen size
 and density in pixels and dp (an override from `android.display` counts), and uptime in
 seconds. A part the device does not report, such as the battery of a device without
-one, is `null`.
+one, is `null`. Read on the API 36 x86_64 emulator.
 
 ```sh
 tomaccoctl call device.info '{"platform":"android","device":"emulator-5554"}'
@@ -252,7 +254,7 @@ tomaccoctl call device.info '{"platform":"android","device":"emulator-5554"}'
 `device.label` gives a device a nickname or pins it. `device.list` then shows the
 nickname as `name`, keeps the earlier name as `original_name`, sets `pinned` and lists
 pinned devices first. An emulator is named by its AVD, so the nickname stays when its
-serial changes; `avd:NAME` names one that is off. An empty nickname or `pinned:false`
+serial changes (checked on the API 36 x86_64 emulator); `avd:NAME` names one that is off. An empty nickname or `pinned:false`
 removes the label, and a call with neither only reads.
 
 ```sh
