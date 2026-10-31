@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 175 operations.
+`tomaccoctl` now has one typed API of 176 operations.
 
 ### Added
 
@@ -41,6 +41,8 @@ operations and their JSON results.
   - `ios.virtual.apps` lists the phone's apps in one place: each listed app's version from
     its bundle on the host, whether the current run has it installed, the one the start
     opens, and installed apps the profile no longer lists. Unit-tested only.
+  - `ios.virtual.crash_reports` keeps an app's crash reports from the running phone as files
+    on the host, with paths for `ios.crash_symbolicate`. Unit-tested only.
 - **Desktop.**
   - Drop an `.apk`, `.ipa` or `.app` on the device view to install it, or drop a
     project folder on the window to open it.

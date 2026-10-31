@@ -1,6 +1,6 @@
 //! Direct Linux iOS restore-shell execution and separate kernel research probes.
 pub mod control;
-mod crash_reports;
+pub mod crash_reports;
 pub mod guest_control;
 pub mod guest_tools;
 mod metrics;

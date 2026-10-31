@@ -4,7 +4,7 @@ guest is booted."""
 import json
 
 from test_product import Isolated
-from native_client import dispatch
+from native_client import StudioError, dispatch
 
 
 class VirtualIphoneStatusRecordTests(Isolated):
@@ -94,3 +94,15 @@ class VirtualIphoneAppsTests(Isolated):
         self.assertIn("does not exist", rows["io.example.gone"]["bundle_error"])
         self.assertFalse(rows["io.example.removed"]["listed"])
         self.assertFalse(reply["guest_running"])
+
+    def test_crash_reports_need_a_running_phone_and_a_report_name(self):
+        directory = self.profile("crashes", {})
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        with self.assertRaises(StudioError) as refused:
+            dispatch("ios.virtual.crash_reports", {"process": "MyApp", "directory": str(self.root / "out")})
+        self.assertEqual(refused.exception.code, "ios_virtual_not_running")
+        self.assertFalse((self.root / "out").exists(), "nothing is created for a phone that is off")
+        for name in ("../etc", ".hidden", "-x", "a b"):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("ios.virtual.crash_reports", {"process": name})
+            self.assertEqual(refused.exception.code, "invalid_argument", name)

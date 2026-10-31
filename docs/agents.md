@@ -258,7 +258,8 @@ logs), `setup`, `setup_finish`, `restart_ui`, `flush`, `effects`, `screen_state`
 `keyboard_layout`. `tomaccoctl schema` has each argument. Some that need more words:
 
 - `crash_reports` takes any report-name prefix, so a developer's app's reports are read like iOS's, and tomaccoctl projects
-  `crash_report_identities` from the report's own process name. A run's reports reach the next run's disk only when that run became
+  `crash_report_identities` from the report's own process name. `ios.virtual.crash_reports {process, directory}` saves the same
+  reports as files on the host and lists their paths for `ios.crash_symbolicate`. A run's reports reach the next run's disk only when that run became
   the base, so read them during the run.
 - `logs quiet` reads tomacco-quiet's record: the services it unloaded, its locationd guard's questions and the processes it ended.
 - `time_zone Area/City` sets the guest's zone through iOS's own tzlink service, and answers `previous_link` and `link`.

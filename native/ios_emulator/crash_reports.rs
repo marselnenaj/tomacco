@@ -137,6 +137,110 @@ pub(super) fn project(response: &Value) -> Value {
     result
 }
 
+/// Writes each complete report of a guest's `crash_reports` reply to
+/// `directory/<owner>/<name>` (owner `mobile` or `root`, the CrashReporter
+/// directory it came from) and lists every report with its path, size and
+/// SHA-256 and the identity parsed from its bytes. A report whose content is
+/// incomplete, or whose name or owner is not a plain report name, is listed
+/// with the reason and no path; nothing outside `directory` is written.
+pub(super) fn save(response: &Value, directory: &Path) -> Result {
+    let identities = project(response);
+    let mut rows = Vec::new();
+    for (index, report) in response["reports"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        let name = report["name"].as_str().unwrap_or_default();
+        let owner = report["owner"].as_str().unwrap_or_default();
+        let identity = identities["identities"]
+            .get(index)
+            .cloned()
+            .unwrap_or(Value::Null);
+        let mut row = json!({"owner":report["owner"],"name":report["name"],"path":null,
+            "bytes":report["observed_file_bytes"],"sha256":null,"saved":false,"reason":null,
+            "content_complete":report["content_complete"] == true,
+            "pid":identity["pid"],"process":identity.get("process").cloned().unwrap_or(Value::Null),
+            "capture_time":identity.get("capture_time").cloned().unwrap_or(Value::Null),
+            "incident_id":identity.get("incident_id").cloned().unwrap_or(Value::Null)});
+        let content = report["content_base64"]
+            .as_str()
+            .and_then(|text| STANDARD.decode(text).ok());
+        let reason = if !crash_report_filter_valid(name)
+            || !(name.ends_with(".ips") || name.ends_with(".crash"))
+        {
+            Some("unsupported-name")
+        } else if !["mobile", "root"].contains(&owner) {
+            Some("unsupported-owner")
+        } else if report["content_complete"] != true {
+            Some("incomplete-content")
+        } else if content.as_ref().map(Vec::len)
+            != report["content_bytes"].as_u64().map(|n| n as usize)
+        {
+            Some("content-size-mismatch")
+        } else {
+            None
+        };
+        if let (None, Some(bytes)) = (reason, content) {
+            let target = directory.join(owner).join(name);
+            atomic_write(&target, &bytes)?;
+            row["path"] = json!(target);
+            row["bytes"] = json!(bytes.len());
+            row["sha256"] = json!(digest(&bytes));
+            row["saved"] = json!(true);
+        } else {
+            row["reason"] = json!(reason.unwrap_or("missing-content"));
+        }
+        rows.push(row);
+    }
+    Ok(
+        json!({"directory":directory,"process":response["process"],"reports":rows,
+        "collection_complete":response["collection_complete"] == true,
+        "absence_proves_no_crash":false}),
+    )
+}
+
+/// The running virtual iPhone's crash reports whose names start with
+/// `process`, read through the guest service and kept as files on the host,
+/// ready for ios.crash_symbolicate.
+pub fn collect(a: &Value) -> Result {
+    let process = s(a, "process");
+    if !crash_report_filter_valid(process) {
+        return Err(Error::new(
+            "invalid_argument",
+            "process is a report name prefix: 1 to 255 ASCII letters, digits, '.', '_' or '-', not starting with '.' or '-'",
+        ));
+    }
+    let directory = if s(a, "directory").is_empty() {
+        home()?
+            .join("ios-virtual-crash-reports")
+            .join(uuid::Uuid::new_v4().simple().to_string())
+    } else {
+        path(s(a, "directory"), false, false)?
+    };
+    if directory.exists() && !directory.is_dir() {
+        return Err(Error::new(
+            "invalid_path",
+            "directory names a file; name a directory for the reports",
+        ));
+    }
+    let (job, _) = super::virtual_phone::running_guest()?;
+    let reply = super::guest_control::call(&json!({"job_id":job,"operation":"crash_reports",
+        "argument":process,"timeout_seconds":60}))?;
+    if reply["response"]["ok"] != true {
+        return Err(Error::new(
+            "ios_guest_crash_reports_failed",
+            "The guest could not read its crash reports",
+        )
+        .details(json!({"response":reply["response"]})));
+    }
+    private_dir(&directory)?;
+    let mut result = save(&reply["response"], &directory)?;
+    result["job_id"] = json!(job);
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -337,5 +441,80 @@ mod tests {
         assert_eq!(row["identities"][1]["state"], "unsupported-report-format");
         assert_eq!(row["identities"][2]["state"], "content-limit");
         assert_eq!(row["identities"][2]["pid"], Value::Null);
+    }
+
+    #[test]
+    fn complete_reports_are_saved_by_owner_and_others_are_listed_with_the_reason() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut first = report(json!({"pid":551,"procName":"Preferences","captureTime":"t1"}));
+        first["owner"] = json!("mobile");
+        let mut partial = first.clone();
+        partial["owner"] = json!("root");
+        partial["content_complete"] = json!(false);
+        let mut escape = first.clone();
+        escape["name"] = json!("../Preferences-x.ips");
+        let mut stranger = first.clone();
+        stranger["owner"] = json!("../../etc");
+        let mut short = first.clone();
+        short["content_bytes"] = json!(3);
+        let reply = save(
+            &json!({"ok":true,"process":"Preferences","collection_complete":false,
+                "reports":[first.clone(),partial,escape,stranger,short]}),
+            directory.path(),
+        )
+        .unwrap();
+        let rows = reply["reports"].as_array().unwrap();
+        let target = directory
+            .path()
+            .join("mobile/Preferences-2026-10-13-071227.ips");
+        assert_eq!(rows[0]["saved"], true);
+        assert_eq!(rows[0]["path"], json!(target));
+        assert_eq!(rows[0]["pid"], 551);
+        assert_eq!(rows[0]["capture_time"], "t1");
+        let bytes = fs::read(&target).unwrap();
+        assert_eq!(
+            STANDARD.encode(&bytes),
+            first["content_base64"].as_str().unwrap()
+        );
+        assert_eq!(rows[0]["sha256"], digest(&bytes));
+        assert_eq!(rows[1]["reason"], "incomplete-content");
+        assert_eq!(rows[2]["reason"], "unsupported-name");
+        assert_eq!(rows[3]["reason"], "unsupported-owner");
+        assert_eq!(rows[4]["reason"], "content-size-mismatch");
+        for row in &rows[1..] {
+            assert_eq!(row["path"], Value::Null);
+            assert_eq!(row["saved"], false);
+        }
+        assert_eq!(reply["collection_complete"], false);
+        assert_eq!(reply["absence_proves_no_crash"], false);
+        // Only the one report was written, in its owner's directory.
+        let written: Vec<_> = walk(directory.path());
+        assert_eq!(written, vec![target]);
+    }
+
+    fn walk(directory: &Path) -> Vec<PathBuf> {
+        let mut found = Vec::new();
+        for entry in fs::read_dir(directory).unwrap().flatten() {
+            if entry.path().is_dir() {
+                found.extend(walk(&entry.path()));
+            } else {
+                found.push(entry.path());
+            }
+        }
+        found
+    }
+
+    #[test]
+    fn an_empty_reply_saves_nothing_and_says_absence_proves_nothing() {
+        let directory = tempfile::tempdir().unwrap();
+        let reply = save(
+            &json!({"ok":true,"process":"MyApp","collection_complete":true,"reports":[]}),
+            directory.path(),
+        )
+        .unwrap();
+        assert_eq!(reply["reports"], json!([]));
+        assert_eq!(reply["collection_complete"], true);
+        assert_eq!(reply["absence_proves_no_crash"], false);
+        assert!(walk(directory.path()).is_empty());
     }
 }

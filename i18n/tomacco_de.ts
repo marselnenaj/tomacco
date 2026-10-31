@@ -3657,6 +3657,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Apps des virtuellen iOS-Geräts</translation>
     </message>
     <message>
+        <source>Save crash reports of virtual iOS device</source>
+        <translation>Absturzberichte des virtuellen iOS-Geräts sichern</translation>
+    </message>
+    <message>
         <source>Record virtual iOS device screen</source>
         <translation>Bildschirm des virtuellen iOS-Geräts aufnehmen</translation>
     </message>

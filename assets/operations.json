@@ -7169,6 +7169,35 @@
     }
   },
   {
+    "name": "ios.virtual.crash_reports",
+    "title": "Save crash reports of virtual iOS device",
+    "description": "Read the running virtual iPhone's crash reports whose file names start with process (an app's executable name, or any report name prefix) through the guest service, as ios.emulator.guest crash_reports does, and keep each complete one as a file on the host at directory/<owner>/<name> (owner mobile or root). reports lists every match: owner, name, path, bytes, sha256, saved, and the pid, process, capture_time and incident_id parsed from its bytes; a report the guest could not read whole, or with a name or owner that is not a plain report name, has saved false, no path and the reason. Pass a saved path to ios.crash_symbolicate. The guest returns at most three reports per directory and 512 KiB of content in all, by descending file name, which is not crash time; collection_complete false means some were left out, and an empty list never proves that nothing crashed. Reports are never removed from the guest. Without directory, a new directory in Tomacco's data directory is used. Refused with ios_virtual_not_running when the phone is off.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "process": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "description": "Report name prefix, usually the app's executable name"
+        },
+        "directory": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute host directory for the reports; created if missing. Empty: a new directory in Tomacco's data directory."
+        }
+      },
+      "required": [
+        "process"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.virtual.screenshot",
     "title": "Screenshot of virtual iOS device",
     "description": "Save the running virtual iPhone's current screen as a PNG at path, from the same frame ios.emulator.control frame with transport file gives a viewer. frame none (default) keeps the picture as it is; rounded cuts the screen's corners round with the radius of the model the phone runs as (square for the Home-button phone) and makes outside them transparent; device also puts a plain black bezel around it, a drawing with rounded outer corners and no buttons, not a picture of the phone. The corner radius is the circular arc of the device catalogue's value, not Apple's continuous curve. MCP returns a PNG of up to 4 MiB inline. Refused with ios_virtual_not_running when the phone is off.",
