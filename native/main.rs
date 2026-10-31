@@ -17,6 +17,8 @@ mod dependencies;
 mod describe;
 mod desktop;
 mod devices;
+mod diagnostics;
+mod download;
 mod files;
 mod gradle_model;
 mod instrumentation;
@@ -260,6 +262,10 @@ Usage:
                     Check this machine in plain text and offer to install the
                     Android SDK and connect your coding agents.
   tomaccoctl doctor  Check the toolchains and devices this machine can use.
+  tomaccoctl report [FILE.tar.gz]
+                    Write a bug-report bundle (version, host, doctor,
+                    settings, recent failed jobs and their log ends) with
+                    secrets masked. Nothing is sent; read it before sharing.
   tomaccoctl mcp     Serve the same operations to a coding agent over stdio
                     (Model Context Protocol; no network port).
   tomaccoctl completions bash|zsh|fish
@@ -274,7 +280,7 @@ Usage:
   tomaccoctl --version, -V
   tomaccoctl --help, -h
 
-Options of call, schema and doctor:
+Options of call, schema, doctor and report:
   --pretty          Indent the JSON. This is the default when standard output
                     is a terminal; a pipe or a file gets one line.
   --compact         One line of JSON, even at a terminal.
@@ -458,6 +464,18 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         "doctor" => options
             .check(&[])
             .and_then(|()| api::dispatch("doctor", &json!({}))),
+        "report" => options.check(&[]).and_then(|()| match &args[1..] {
+            [] => api::dispatch("diagnostics.bundle", &json!({})),
+            [path] => {
+                // A relative file is named from the current directory.
+                let path = std::env::current_dir()?.join(path);
+                api::dispatch("diagnostics.bundle", &json!({ "path": path }))
+            }
+            _ => Err(Error::new(
+                "invalid_request",
+                "Name at most one output file",
+            )),
+        }),
         "call" => {
             options.check(&["--wait"])?;
             let op = args

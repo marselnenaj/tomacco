@@ -484,34 +484,19 @@ pub fn worker(file: &str) -> Result<()> {
     let dir = file.parent().unwrap();
     let a = read_json(&file, None)?;
     let result = (|| -> Result {
-        let archive = dir.join("WebDriverAgentRunner.zip");
-        tc::run(
-            &vec![
-                tc::find("curl")?,
-                "--fail".into(),
-                "--location".into(),
-                "--proto".into(),
-                "=https".into(),
-                "--proto-redir".into(),
-                "=https".into(),
-                "--max-time".into(),
-                "120".into(),
-                "--max-filesize".into(),
-                "20971520".into(),
-                "--output".into(),
-                archive.to_string_lossy().into_owned(),
-                WDA_URL.into(),
-            ],
-            130,
-            None,
-            true,
-        )?;
-        if digest(&fs::read(&archive)?) != WDA_SHA256 {
-            return Err(Error::new(
-                "checksum_mismatch",
-                "WebDriverAgent checksum differs from the pinned official release",
-            ));
-        }
+        // Kept between runs: an interrupted download continues, and a
+        // verified one is reused. It is used only once it matches the pin.
+        let archive =
+            crate::download::directory()?.join(format!("WebDriverAgentRunner-{WDA_VERSION}.zip"));
+        crate::download::fetch(&crate::download::Request {
+            url: WDA_URL,
+            destination: &archive,
+            checksum: crate::download::Checksum::Sha256(WDA_SHA256.into()),
+            max_bytes: 20 * 1024 * 1024,
+            progress: false,
+            allow_http: false,
+            curl: &tc::find("curl")?,
+        })?;
         let extracted = dir.join("runner");
         private_dir(&extracted)?;
         tc::run(

@@ -346,7 +346,7 @@
   {
     "name": "settings.configure",
     "title": "Set up toolchain",
-    "description": "Configure SDK, JDK and executable paths without installing or running them, and how updates behave.",
+    "description": "Configure SDK, JDK and executable paths without installing or running them, how updates behave, and how many heavy jobs run at once.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -389,6 +389,26 @@
             "token_file": {
               "type": "string",
               "description": "Owner-only file with a GitHub token, for a private repository; empty removes it"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "jobs": {
+          "type": "object",
+          "description": "How many heavy jobs run at once; more wait as queued with a reason. 0 means no limit",
+          "properties": {
+            "max_builds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64,
+              "description": "Builds and deploys (project.execute, project.run except Flutter sessions, ios.flutter_build); 2 by default"
+            },
+            "max_emulators": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64,
+              "description": "Android emulators started with android.avd_start, for as long as they run; no limit by default"
             }
           },
           "required": [],
@@ -943,7 +963,7 @@
   {
     "name": "job.list",
     "title": "Jobs",
-    "description": "List durable jobs including status and artifacts.",
+    "description": "List durable jobs including status and artifacts, newest first. Filter by state, by the operation that started the job (a prefix such as project. or android.sdk_install; jobs from before this was recorded have none), by project directory and by creation time. For the next page pass the id of the last job as before.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -952,6 +972,43 @@
           "minimum": 1,
           "maximum": 200,
           "default": 30
+        },
+        "state": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled",
+              "timed_out"
+            ]
+          },
+          "description": "Only jobs in one of these states"
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Only jobs started by an operation whose name starts with this"
+        },
+        "project": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute directory: only jobs that lock it or run in it or below it"
+        },
+        "since": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Only jobs created at or after this time, in seconds since 1970"
+        },
+        "before": {
+          "type": "string",
+          "description": "A job ID: only jobs created before it, for the next page"
         }
       },
       "required": [],
@@ -1040,6 +1097,42 @@
           "minimum": 0,
           "maximum": 60,
           "default": 30
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "job.events",
+    "title": "Job timeline",
+    "description": "A job's state changes (queued, running and how it ended, with exit code and error), phase changes (such as waiting, queued, building, ready) with their reason, retries and cancellation requests, each with a time in seconds since 1970, in order. Pass next_after as after to read only newer events. Jobs from before events were recorded get their creation and end from the job record, marked synthesized.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "description": ""
+        },
+        "after": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Return only events with a larger id"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 200
         }
       },
       "required": [
@@ -1160,6 +1253,53 @@
       "readOnlyHint": false,
       "destructiveHint": true,
       "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "diagnostics.bundle",
+    "title": "Write a bug report bundle",
+    "description": "Write one .tar.gz for a bug report on this computer; nothing is sent anywhere. It holds the version, a host summary (OS, kernel, CPUs, memory, KVM, desktop session), doctor, the settings, and for the most recent failed, timed-out or cancelled jobs their record, timeline and the end of their log. Recognised secrets are masked, job environments keep only variable names, and the home directory is shown as ~. Masking recognises known shapes only: the person should read the bundle before sharing it. Returns the path, size, SHA-256 and the files it holds.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute .tar.gz file to write; by default a new file under diagnostics/ in the data directory"
+        },
+        "jobs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50,
+          "default": 10,
+          "description": "How many recent jobs that did not succeed to include"
+        },
+        "log_kb": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024,
+          "default": 64,
+          "description": "How much of the end of each job's log to include"
+        },
+        "doctor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the doctor report"
+        },
+        "anonymize_home": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the home directory as ~"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
       "openWorldHint": false
     }
   },
@@ -2105,6 +2245,27 @@
           "type": "string",
           "description": "",
           "default": ""
+        },
+        "retry": {
+          "type": "object",
+          "description": "Try again after a failure: count more attempts (at most 5), waiting backoff_seconds, doubled each time up to 600. Only adb connect is repeated, never pairing; the result says how many attempts it took.",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "backoff_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600,
+              "default": 5
+            }
+          },
+          "required": [
+            "count"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -2191,6 +2352,27 @@
         "accept_licenses": {
           "type": "boolean",
           "default": false
+        },
+        "retry": {
+          "type": "object",
+          "description": "Try again after a failure: count more attempts (at most 5), waiting backoff_seconds, doubled each time up to 600. A cancelled or timed-out job is not repeated; the job's result lists its attempts.",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "backoff_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600,
+              "default": 5
+            }
+          },
+          "required": [
+            "count"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -6242,6 +6424,27 @@
         "device": {
           "type": "string",
           "default": ""
+        },
+        "retry": {
+          "type": "object",
+          "description": "Try again after a failure: count more attempts (at most 5), waiting backoff_seconds, doubled each time up to 600. A cancelled or timed-out job is not repeated; the job's result lists its attempts.",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "backoff_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600,
+              "default": 5
+            }
+          },
+          "required": [
+            "count"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [],

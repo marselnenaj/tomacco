@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 190 operations.
+`tomaccoctl` now has one typed API of 192 operations.
 
 ### Added
 
@@ -92,6 +92,20 @@ operations and their JSON results.
   - `project.dependency_updates` compares a Gradle build's catalog and build-file versions with
     Google Maven, Maven Central and Gradle Plugin Portal metadata, read-only, as a job with
     `report.json`; it answers `offline` at once without a network.
+- **Bug reports.** `tomaccoctl report` and `diagnostics.bundle` write a local `.tar.gz` with the
+  version, host, `doctor`, settings and recent failed jobs with their log ends, secrets masked.
+  Nothing is sent.
+- **Jobs.** `job.events` returns a job's state and phase changes and cancellation requests with
+  their times, recorded by the job database for every job from now on.
+- **Downloads.** The Android command-line tools download in `tomaccoctl setup` and the iPhone runner
+  download of `ios.wda_prepare` continue where they stopped when run again, and the file is used
+  only after its checksum matches; a mismatching file is deleted.
+- **Jobs.** `android.sdk_install`, `ios.wda_prepare` and `android.connect` take an optional `retry`
+  (count and backoff); a job lists its attempts in its result.
+- **Jobs.** At most two builds run at once by default; more wait as `queued` with a `queued_reason`.
+  `settings.configure` `jobs` sets the cap for builds and for Android emulators.
+- **Jobs.** `job.list` filters by state, operation, project and creation time, and pages with
+  `before`. Each new job records the operation that started it.
 - **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
   logs and old test reports in the data directory. A dry run by default.
 - **iPhone.**

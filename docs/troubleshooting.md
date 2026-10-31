@@ -41,6 +41,8 @@ tomaccoctl doctor
 | `invalid_argument` | The arguments do not match the schema. Unknown keys are refused. | Check `tomaccoctl schema`. For instance, `job.wait` `seconds` is at most 60. |
 | `operation_not_found` | No such operation. | Check `tomaccoctl schema`. Do not guess names. |
 | A job says `running` | This is a valid result, not success. | Repeat `job.wait` until it is `succeeded`, `failed`, `cancelled` or `timed_out`. |
+| `download_failed` while setting up the Android command-line tools or the iPhone runner | The connection broke or stalled. The part already downloaded is kept in `downloads/` in the data directory. | Run it again: the download continues with a range request, and the file is used only after its checksum matches. Parts untouched for a week are deleted. |
+| A job stays `queued` with `queued_reason` | As many builds or emulators as the limit allows already run; the reason names their jobs. | Wait, cancel one of them, or raise the limit with `settings.configure` `{"jobs":{"max_builds":3}}`. `0` removes it. |
 | `invalid_path`: "The destination is a symbolic link" | A screenshot, recording, trace, report or export would be written through a link. | Name the file itself, or remove the link. A folder in the path may be a link. |
 | `workspace_busy` | Other work holds this project. The error has the active job. | Wait for it or `job.cancel` it. Use separate directories for independent work. |
 | `job_not_found` | The id is wrong, or from another `TOMACCO_HOME`. | Use the same data directory. `job.list` shows what exists. |
@@ -96,6 +98,12 @@ tomaccoctl doctor
 | A native app does not run in the lab | The lab is Chromium and runs web pages only. | Use the native workspace. |
 
 ## Changing settings by mistake, or tests that collide
+
+To report a bug, `tomaccoctl report` (the `diagnostics.bundle` operation) writes one `.tar.gz` with the
+version, a host summary, `doctor`, your settings and the records, timelines and log ends of recent jobs
+that failed, timed out or were cancelled. Nothing is sent. Recognised secrets are masked, job environments
+keep only variable names and your home directory is shown as `~`, but the masking knows only common
+shapes of secrets: read the files before you attach them.
 
 Set `TOMACCO_HOME=/absolute/test-state` to isolate job, toolchain, profile and emulator state. Your normal data is in `~/.local/share/tomacco`,
 and desktop preferences are in Qt's normal settings path.

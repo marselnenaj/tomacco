@@ -3691,6 +3691,14 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Leer resultados de pruebas</translation>
     </message>
     <message>
+        <source>Write a bug report bundle</source>
+        <translation>Crear un paquete de informe de errores</translation>
+    </message>
+    <message>
+        <source>Job timeline</source>
+        <translation>Cronología del trabajo</translation>
+    </message>
+    <message>
         <source>What this computer can do</source>
         <translation>Lo que puede hacer este ordenador</translation>
     </message>

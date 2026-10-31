@@ -10,6 +10,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("help", "Describe an operation"),
     ("setup", "Check and set up this machine"),
     ("doctor", "Check toolchains and devices"),
+    ("report", "Write a redacted bug-report bundle"),
     ("mcp", "Serve operations over MCP stdio"),
     ("update", "Check for and install a new release"),
     ("uninstall", "Remove this installation"),

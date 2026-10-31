@@ -3691,6 +3691,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Alte Jobs und Berichte aufräumen</translation>
     </message>
     <message>
+        <source>Write a bug report bundle</source>
+        <translation>Paket für einen Fehlerbericht schreiben</translation>
+    </message>
+    <message>
         <source>Read test results</source>
         <translation>Testergebnisse lesen</translation>
     </message>
@@ -3889,6 +3893,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Wait for job</source>
         <translation>Auftrag abwarten</translation>
+    </message>
+    <message>
+        <source>Job timeline</source>
+        <translation>Zeitverlauf des Jobs</translation>
     </message>
     <message>
         <source>Wait for rendering</source>

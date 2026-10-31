@@ -150,6 +150,28 @@ is. Interrupting `--wait` leaves the job running.
   active request reuses its job, and different work in the same project answers `workspace_busy` with
   the active job. A Flutter run holds the lock until it exits. Keep independent projects in separate
   directories. Commands you run outside Tomacco are not covered.
+- **Retries.** `android.sdk_install`, `ios.wda_prepare` and `android.connect` take
+  `retry: {"count":N,"backoff_seconds":S}`: after a failure they try again up to `N` more times (at
+  most 5), waiting `S` seconds (5 by default), doubled each time up to 600. A job repeats all its
+  steps, never after being cancelled or timing out, lists each attempt under `result.attempts` and
+  has a `retry` event per new attempt. `android.connect` repeats only `adb connect`, never pairing,
+  and returns `attempts`. Other operations do not take `retry`, because repeating them is not known
+  to be safe.
+- **Heavy jobs wait their turn.** At most two builds run at once: `project.execute`, `project.run`
+  (except a Flutter session) and `ios.flutter_build`. Others stay `queued`, with `phase:"queued"`
+  and a `queued_reason` naming the jobs that hold the slots, and start when one ends. Emulators that
+  `android.avd_start` starts can be capped as well, for as long as they run; they have no cap by
+  default. `settings.configure {"jobs":{"max_builds":N,"max_emulators":N}}` changes the caps, and `0`
+  removes one. A queued job can be cancelled, and its timeout starts only when it runs.
+- **Finding jobs.** `job.list` returns the newest jobs first and takes `state` (a list), `operation`
+  (a prefix of the operation that started the job, such as `project.`), `project` (an absolute
+  directory the job locks or runs in), `since` (seconds since 1970) and `limit`. For the next page,
+  pass the id of the last job as `before`. Jobs started by earlier versions have no recorded
+  operation, so an `operation` filter leaves them out.
+- **Timeline.** `job.events` lists a job's state changes, phase changes and cancellation requests in
+  order, each with a `time` in seconds since 1970; a state that ended carries `exit_code` and
+  `error`. Pass the returned `next_after` as `after` to read only what is new. Jobs created by an
+  earlier version have only their creation and end, marked `synthesized`.
 
 ### Cleaning up
 
@@ -163,6 +185,18 @@ in a project are never removed.
 ```sh
 tomaccoctl call storage.prune '{"older_than_days":14}'
 tomaccoctl call storage.prune '{"older_than_days":14,"apply":true}'
+```
+
+### Bug reports
+
+For a bug report, `diagnostics.bundle` (or `tomaccoctl report [FILE]`) writes one `.tar.gz`: version, host,
+`doctor`, settings, and the record, timeline and log end of the most recent jobs that did not succeed
+(`jobs`, 10 by default; `log_kb`, 64 by default). It sends nothing. Secrets of known shapes are masked, job
+environments keep only their variable names and the home directory becomes `~`. Tell the user where it is
+and that they should read it before sharing it.
+
+```sh
+tomaccoctl report /absolute/tomacco-report.tar.gz
 ```
 
 ## Android

@@ -32,6 +32,9 @@ tomaccoctl \- the Tomacco control plane for building, running and testing mobile
 .br
 .B tomaccoctl uninstall
 .br
+.B tomaccoctl report
+.RI [ FILE.tar.gz ]
+.br
 .B tomaccoctl
 .BR \-\-version | \-V
 .br
@@ -118,6 +121,11 @@ only checks.
 .B uninstall
 Remove this installation. It keeps your data and the files you changed,
 and prints how to undo it.
+.TP
+.BR report " [" \fIFILE.tar.gz\fR ]
+Write a bug-report bundle: version, host, doctor, settings, and recent
+failed jobs with the ends of their logs, with secrets masked. Nothing is
+sent; read it before you share it.
 .SH OPTIONS
 These options can stand anywhere on the command line of
 .BR call ,

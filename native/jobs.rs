@@ -65,8 +65,19 @@ fn remove_temporary_directories(spec: &Value) -> Vec<Value> {
     errors
 }
 /// The jobs schema this version reads and writes (PRAGMA user_version).
-const SCHEMA_VERSION: i64 = 1;
+/// Version 2 adds the `events` table and the triggers that fill it.
+const SCHEMA_VERSION: i64 = 2;
 const SCHEMA: &str = "CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY,label TEXT NOT NULL,state TEXT NOT NULL,created REAL NOT NULL,updated REAL NOT NULL,spec TEXT NOT NULL,pid INTEGER,token TEXT,exit_code INTEGER,result TEXT,cancel INTEGER DEFAULT 0); CREATE TABLE IF NOT EXISTS inputs (id INTEGER PRIMARY KEY,job TEXT NOT NULL,text TEXT NOT NULL); CREATE INDEX IF NOT EXISTS jobs_created ON jobs(created DESC); CREATE INDEX IF NOT EXISTS inputs_job ON inputs(job);";
+/// A job's timeline. Triggers record every state change, phase change and
+/// cancellation request, whichever code path or Tomacco version writes the
+/// row, and drop a job's events with the job. JSON is read only when it is
+/// valid (CASE evaluates lazily), so a malformed result never fails a write.
+const EVENTS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY,job TEXT NOT NULL,time REAL NOT NULL,kind TEXT NOT NULL,value TEXT NOT NULL,detail TEXT); CREATE INDEX IF NOT EXISTS events_job ON events(job,id); \
+CREATE TRIGGER IF NOT EXISTS job_event_created AFTER INSERT ON jobs BEGIN INSERT INTO events(job,time,kind,value) VALUES(NEW.id,NEW.created,'state',NEW.state); END; \
+CREATE TRIGGER IF NOT EXISTS job_event_state AFTER UPDATE OF state ON jobs WHEN NEW.state IS NOT OLD.state BEGIN INSERT INTO events(job,time,kind,value,detail) VALUES(NEW.id,MAX((julianday('now')-2440587.5)*86400.0,NEW.created),'state',NEW.state,json_object('exit_code',NEW.exit_code,'error',CASE WHEN json_valid(NEW.result) THEN json_extract(NEW.result,'$.error') END)); END; \
+CREATE TRIGGER IF NOT EXISTS job_event_phase AFTER UPDATE OF result ON jobs WHEN (CASE WHEN json_valid(NEW.result) THEN json_extract(NEW.result,'$.phase') END) IS NOT NULL AND (CASE WHEN json_valid(NEW.result) THEN json_extract(NEW.result,'$.phase') END) IS NOT (CASE WHEN json_valid(OLD.result) THEN json_extract(OLD.result,'$.phase') END) BEGIN INSERT INTO events(job,time,kind,value,detail) VALUES(NEW.id,MAX((julianday('now')-2440587.5)*86400.0,NEW.created),'phase',json_extract(NEW.result,'$.phase'),json_object('reason',json_extract(NEW.result,'$.reason'))); END; \
+CREATE TRIGGER IF NOT EXISTS job_event_cancel AFTER UPDATE OF cancel ON jobs WHEN NEW.cancel=1 AND COALESCE(OLD.cancel,0)=0 BEGIN INSERT INTO events(job,time,kind,value) VALUES(NEW.id,MAX((julianday('now')-2440587.5)*86400.0,NEW.created),'cancel_requested',''); END; \
+CREATE TRIGGER IF NOT EXISTS job_event_deleted AFTER DELETE ON jobs BEGIN DELETE FROM events WHERE job=OLD.id; END;";
 /// How long a single statement waits for a lock another connection holds.
 const BUSY_TIMEOUT: Duration = Duration::from_secs(15);
 /// How long read-only requests keep asking a contended database again.
@@ -128,7 +139,7 @@ fn initialise(root: &Path, db: &Connection) -> Result<()> {
     // journal_mode cannot change inside a transaction.
     db.execute_batch("PRAGMA journal_mode=WAL;")?;
     db.execute_batch(&format!(
-        "BEGIN IMMEDIATE; {SCHEMA} PRAGMA user_version={SCHEMA_VERSION}; COMMIT;"
+        "BEGIN IMMEDIATE; {SCHEMA} {EVENTS_SCHEMA} PRAGMA user_version={SCHEMA_VERSION}; COMMIT;"
     ))
     .inspect_err(|_| {
         let _ = db.execute_batch("ROLLBACK;");
@@ -290,6 +301,9 @@ fn public(db: &Connection, mut row: Row) -> Result {
         Value::Null
     };
     row.value["phase"] = row.value["result"]["phase"].clone();
+    if s(&row.value, "state") == "queued" && !s(&row.value["result"], "reason").is_empty() {
+        row.value["queued_reason"] = row.value["result"]["reason"].clone();
+    }
     row.value["interactive"] = json!(
         row.value["plan"]["steps"]
             .as_array()
@@ -348,21 +362,134 @@ pub fn active(except: &str) -> Result<Vec<Value>> {
     Ok(found)
 }
 pub fn listing(limit: u64) -> Result {
+    list(&json!({ "limit": limit }))
+}
+/// The newest jobs first, narrowed by `state`, `operation` (a prefix of the
+/// operation that started the job), `project` (a directory the job works in
+/// or locks), `since` (created at or after, seconds since 1970) and `before`
+/// (the next page: jobs created before that job).
+pub fn list(a: &Value) -> Result {
     let db = database()?;
-    retrying(Instant::now() + READ_RETRY, || {
-        let rows = db
-            .prepare("SELECT * FROM jobs ORDER BY created DESC LIMIT ?")?
-            .query_map([limit as i64], row)?
-            .collect::<std::result::Result<Vec<_>, _>>()?;
-        Ok(json!(
-            rows.into_iter()
-                .map(|r| public(&db, r))
-                .collect::<Result<Vec<_>>>()?
-        ))
+    retrying(Instant::now() + READ_RETRY, || query(&db, a))
+}
+fn like_prefix(value: &str) -> String {
+    let mut escaped = String::new();
+    for c in value.chars() {
+        if matches!(c, '\\' | '%' | '_') {
+            escaped.push('\\');
+        }
+        escaped.push(c);
+    }
+    escaped + "%"
+}
+fn query(db: &Connection, a: &Value) -> Result {
+    let mut clauses = Vec::new();
+    let mut values: Vec<rusqlite::types::Value> = Vec::new();
+    let states = strings(&a["state"]);
+    if !states.is_empty() {
+        clauses.push(format!("state IN ({})", vec!["?"; states.len()].join(",")));
+        values.extend(states.iter().cloned().map(Into::into));
+    }
+    if !s(a, "operation").is_empty() {
+        clauses.push("json_extract(spec,'$.operation') LIKE ? ESCAPE '\\'".into());
+        values.push(like_prefix(s(a, "operation")).into());
+    }
+    if !s(a, "project").is_empty() {
+        let project = expand(s(a, "project"));
+        if !project.is_absolute() {
+            return Err(Error::new(
+                "invalid_argument",
+                "project must be an absolute path",
+            ));
+        }
+        let project = project.to_string_lossy().trim_end_matches('/').to_string();
+        clauses.push("(json_extract(spec,'$.exclusive')=? OR json_extract(spec,'$.cwd')=? OR json_extract(spec,'$.cwd') LIKE ? ESCAPE '\\')".into());
+        values.push(project.clone().into());
+        values.push(project.clone().into());
+        values.push(like_prefix(&format!("{project}/")).into());
+    }
+    if let Some(since) = a["since"].as_f64() {
+        clauses.push("created>=?".into());
+        values.push(since.into());
+    }
+    if !s(a, "before").is_empty() {
+        let before = get_row(db, s(a, "before"))?;
+        let created = before.value["created"].as_f64().unwrap_or(0.0);
+        clauses.push("(created<? OR (created=? AND id<?))".into());
+        values.push(created.into());
+        values.push(created.into());
+        values.push(s(a, "before").to_string().into());
+    }
+    let filter = if clauses.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", clauses.join(" AND "))
+    };
+    values.push((a["limit"].as_u64().unwrap_or(30) as i64).into());
+    let rows = db
+        .prepare(&format!(
+            "SELECT * FROM jobs {filter} ORDER BY created DESC, id DESC LIMIT ?"
+        ))?
+        .query_map(rusqlite::params_from_iter(values), row)?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    let mut jobs = Vec::new();
+    for row in rows {
+        let job = public(db, row)?;
+        // A job whose worker died is recorded as failed while it is read.
+        if states.is_empty() || states.iter().any(|state| state == s(&job, "state")) {
+            jobs.push(job);
+        }
+    }
+    Ok(json!(jobs))
+}
+thread_local! {
+    static REQUEST: std::cell::RefCell<Option<(String, Value)>> = const { std::cell::RefCell::new(None) };
+}
+/// The operation this thread is answering, for the jobs it submits, and the
+/// `retry` its caller asked for (only operations whose schema has `retry`,
+/// where repeating the job is safe, accept one). Nested operations restore
+/// the outer one when they end.
+pub struct Request(Option<(String, Value)>);
+impl Request {
+    pub fn enter(operation: &str, retry: &Value) -> Self {
+        Request(REQUEST.with(|r| r.replace(Some((operation.to_string(), retry.clone())))))
+    }
+}
+impl Drop for Request {
+    fn drop(&mut self) {
+        let previous = self.0.take();
+        REQUEST.with(|r| *r.borrow_mut() = previous);
+    }
+}
+fn requested_operation() -> Option<String> {
+    REQUEST.with(|r| r.borrow().as_ref().map(|(operation, _)| operation.clone()))
+}
+fn requested_retry() -> Option<Value> {
+    REQUEST.with(|r| {
+        r.borrow()
+            .as_ref()
+            .map(|(_, retry)| retry.clone())
+            .filter(|retry| n(retry, "count") > 0)
+            .map(|retry| {
+                json!({
+                    "count": n(&retry, "count").min(RETRY_LIMIT),
+                    "backoff_seconds": retry["backoff_seconds"].as_u64().unwrap_or(5).clamp(1, RETRY_PAUSE_LIMIT),
+                })
+            })
     })
 }
 pub fn submit(label: &str, mut spec: Value) -> Result {
     check_cancelled()?;
+    if spec.get("operation").is_none() {
+        if let Some(operation) = requested_operation() {
+            spec["operation"] = json!(operation);
+        }
+    }
+    if spec.get("retry").is_none() {
+        if let Some(retry) = requested_retry() {
+            spec["retry"] = retry;
+        }
+    }
     if let Ok(parent) = std::env::var("TOMACCO_PARENT_JOB") {
         if !parent.is_empty() {
             identifier(&parent, "parent job", Some("[a-f0-9]{32}"))?;
@@ -585,6 +712,65 @@ pub fn wait(id: &str, seconds: u64) -> Result {
     }
 }
 
+/// A job's recorded state transitions, phase changes and cancellation
+/// requests in order, from event `after` on. Jobs created before Tomacco
+/// recorded events get their creation and, once ended, their end from the
+/// job record, marked `synthesized`.
+pub fn events(id: &str, after: u64, limit: u64) -> Result {
+    identifier(id, "job ID", Some("[0-9a-f]{32}"))?;
+    let db = database()?;
+    retrying(Instant::now() + READ_RETRY, || {
+        timeline(&db, id, after, limit)
+    })
+}
+fn timeline(db: &Connection, id: &str, after: u64, limit: u64) -> Result {
+    // Reading the job first records a dead worker's end as an event.
+    let job = read(db, id)?;
+    let mut events = db
+        .prepare(
+            "SELECT id,time,kind,value,detail FROM events WHERE job=? AND id>? ORDER BY id LIMIT ?",
+        )?
+        .query_map(params![id, after as i64, limit as i64], |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, f64>(1)?,
+                r.get::<_, String>(2)?,
+                r.get::<_, String>(3)?,
+                r.get::<_, Option<String>>(4)?,
+            ))
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?
+        .into_iter()
+        .map(|(event, time, kind, value, detail)| {
+            let mut entry = json!({"id":event,"time":time,"kind":kind,"value":value});
+            let detail: Value = detail
+                .and_then(|text| serde_json::from_str(&text).ok())
+                .unwrap_or(Value::Null);
+            if let Some(fields) = detail.as_object() {
+                for (key, value) in fields.iter().filter(|(_, v)| !v.is_null()) {
+                    entry[key] = value.clone();
+                }
+            }
+            entry
+        })
+        .collect::<Vec<_>>();
+    let recorded: i64 = db.query_row("SELECT count(*) FROM events WHERE job=?", [id], |r| {
+        r.get(0)
+    })?;
+    let next_after = events.last().map_or(after, |e| n(e, "id"));
+    if recorded == 0 && after == 0 {
+        events.push(json!({"id":0,"time":job["created"],"kind":"state","value":"queued","synthesized":true}));
+        if TERMINAL.contains(&s(&job, "state")) {
+            events.push(json!({"id":0,"time":job["updated"],"kind":"state","value":job["state"],"exit_code":job["exit_code"],"synthesized":true}));
+        }
+    }
+    Ok(json!({
+        "id":id,"label":job["label"],"state":job["state"],"phase":job["phase"],
+        "created":job["created"],"updated":job["updated"],
+        "events":events,"next_after":next_after,"recorded":recorded>0,
+    }))
+}
+
 struct ManagedChild(Child);
 impl Drop for ManagedChild {
     fn drop(&mut self) {
@@ -598,6 +784,92 @@ struct PartialOutput {
 impl Drop for PartialOutput {
     fn drop(&mut self) {
         let _ = fs::remove_file(&self.temporary);
+    }
+}
+/// Jobs that take a share of the machine name a `resource` in their spec.
+/// Settings `jobs.KEY` caps how many of them run at once (0: no cap); the
+/// rest wait in `queued` with the reason.
+pub const RESOURCES: &[(&str, &str, u64)] =
+    &[("build", "max_builds", 2), ("emulator", "max_emulators", 0)];
+pub fn resource_limit(settings: &Value, resource: &str) -> Option<(&'static str, u64)> {
+    RESOURCES
+        .iter()
+        .find(|(name, _, _)| *name == resource)
+        .map(|(_, key, default)| (*key, settings["jobs"][*key].as_u64().unwrap_or(*default)))
+}
+/// One of `limit` slots of `resource`, if one is free. The kernel releases
+/// it with the worker, however the worker ends.
+fn free_slot(root: &Path, resource: &str, limit: u64) -> Result<Option<Lock>> {
+    for index in 0..limit {
+        let lock = Lock::open(
+            &root
+                .join("locks")
+                .join(format!("slot-{resource}-{index}.lock")),
+        )?;
+        if lock.acquire(true)? {
+            return Ok(Some(lock));
+        }
+    }
+    Ok(None)
+}
+enum Admission {
+    Admitted(Option<Lock>),
+    Stopped,
+}
+/// Waits, still `queued`, until the job's resource has a free slot. The
+/// reason names the jobs holding the slots and is published when it changes.
+fn admit(
+    db: &Connection,
+    root: &Path,
+    id: &str,
+    spec: &Value,
+    limit: impl Fn() -> Option<(&'static str, u64)>,
+) -> Result<Admission> {
+    let resource = s(spec, "resource");
+    let mut published = String::new();
+    loop {
+        let Some((key, limit)) = limit().filter(|(_, limit)| *limit > 0) else {
+            return Ok(Admission::Admitted(None));
+        };
+        if let Some(slot) = free_slot(root, resource, limit)? {
+            return Ok(Admission::Admitted(Some(slot)));
+        }
+        let row = retrying(Instant::now() + WORKER_RETRY, || get_row(db, id))?;
+        let parent_stopped = !s(spec, "parent_job").is_empty() && {
+            let parent = retrying(Instant::now() + WORKER_RETRY, || {
+                get_row(db, s(spec, "parent_job"))
+            })?;
+            parent.cancel || TERMINAL.contains(&s(&parent.value, "state"))
+        };
+        if row.cancel || parent_stopped {
+            return Ok(Admission::Stopped);
+        }
+        let holders = db
+            .prepare("SELECT id FROM jobs WHERE state='running' AND json_extract(spec,'$.resource')=? ORDER BY created")?
+            .query_map([resource], |r| r.get::<_, String>(0))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        let reason = format!(
+            "Waiting for a {resource} slot: {limit} of {limit} in use{}. settings.configure jobs.{key} changes the limit",
+            if holders.is_empty() {
+                String::new()
+            } else {
+                format!(" by {}", holders.join(", "))
+            }
+        );
+        if reason != published {
+            retrying(Instant::now() + WORKER_RETRY, || {
+                Ok(db.execute(
+                    "UPDATE jobs SET result=?,updated=? WHERE id=? AND state='queued'",
+                    params![
+                        json!({"phase":"queued","reason":reason}).to_string(),
+                        now(),
+                        id
+                    ],
+                )?)
+            })?;
+            published = reason;
+        }
+        thread::sleep(Duration::from_millis(250));
     }
 }
 pub fn worker(id: &str) -> Result<()> {
@@ -620,6 +892,33 @@ pub fn worker(id: &str) -> Result<()> {
         return Ok(());
     }
     let spec: Value = serde_json::from_str(s(&row.value, "plan"))?;
+    let _slot = if s(&spec, "resource").is_empty() {
+        None
+    } else {
+        let root = home()?;
+        match admit(&db, &root, id, &spec, || {
+            resource_limit(
+                &toolchain::settings().unwrap_or_default(),
+                s(&spec, "resource"),
+            )
+        })? {
+            Admission::Admitted(slot) => slot,
+            Admission::Stopped => {
+                let errors = remove_temporary_directories(&spec);
+                let mut result = json!({"artifacts":[],"error":"Cancelled while queued"});
+                if !errors.is_empty() {
+                    result["cleanup_errors"] = json!(errors);
+                }
+                retrying(Instant::now() + WORKER_RETRY, || {
+                    Ok(db.execute(
+                        "UPDATE jobs SET state='cancelled',exit_code=-1,result=?,updated=? WHERE id=? AND state='queued'",
+                        params![result.to_string(), now(), id],
+                    )?)
+                })?;
+                return Ok(());
+            }
+        }
+    };
     let pid = std::process::id();
     if retrying(Instant::now() + WORKER_RETRY, || {
         Ok(db.execute(
@@ -695,6 +994,22 @@ pub fn worker(id: &str) -> Result<()> {
         Ok(db.execute("DELETE FROM inputs WHERE job=?", [id])?)
     })?;
     Ok(())
+}
+/// The most retries a job may ask for, and the longest pause before one.
+const RETRY_LIMIT: u64 = 5;
+const RETRY_PAUSE_LIMIT: u64 = 600;
+/// The pause before attempt `attempt + 1` after attempt `attempt` failed,
+/// doubling from `backoff_seconds`, or None when no retry is left.
+pub fn retry_delay(retry: &Value, attempt: u64) -> Option<u64> {
+    if !retry.is_object() || attempt > n(retry, "count").min(RETRY_LIMIT) {
+        return None;
+    }
+    let backoff = retry["backoff_seconds"].as_u64().unwrap_or(5);
+    Some(
+        backoff
+            .saturating_mul(1 << (attempt - 1).min(16))
+            .min(RETRY_PAUSE_LIMIT),
+    )
 }
 fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i32, Value)> {
     let log_dir = home()?.join("jobs");
@@ -781,221 +1096,269 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
     } else {
         None
     };
-    for step in spec["steps"]
-        .as_array()
-        .ok_or_else(|| Error::new("invalid_job", "Missing steps"))?
-    {
-        if state != "succeeded" {
-            break;
-        }
-        if let Some(value) = interrupt(&log)? {
-            state = value.into();
-            break;
-        }
-        writeln!(log, "\n$ {}", step["argv"])?;
-        publish_phase(
-            if s(step, "phase") == "streaming" {
-                "streaming"
-            } else {
-                "building"
-            },
-            "",
-        )?;
-        let machine = s(step, "protocol") == "flutter-machine";
-        let mut event_file = File::open(log_dir.join(format!("{id}.log")))?;
-        event_file.seek(SeekFrom::End(0))?;
-        let mut event_buffer = String::new();
-        let mut app_id = String::new();
-        let mut phase = String::from("building");
-        let output = if !s(step, "output").is_empty() {
-            let target = PathBuf::from(s(step, "output"));
-            fs::create_dir_all(target.parent().unwrap())?;
-            Some(PartialOutput {
-                temporary: target.with_file_name(format!(
-                    "{}.{}.part",
-                    target.file_name().unwrap_or_default().to_string_lossy(),
-                    id
-                )),
-                target,
-            })
-        } else {
-            None
-        };
-        let args = strings(&step["argv"]);
-        let mut command = Command::new(
-            args.first()
-                .ok_or_else(|| Error::new("invalid_job", "Missing command"))?,
-        );
-        command
-            .args(&args[1..])
-            .current_dir(step["cwd"].as_str().unwrap_or(s(spec, "cwd")))
-            .process_group(0)
-            .env("TOMACCO_PARENT_JOB", id);
-        if let Some(env) = spec["env"].as_object() {
-            for (key, value) in env {
-                command.env(
-                    key,
-                    value.as_str().ok_or_else(|| {
-                        Error::new("invalid_job", "Environment values must be strings")
-                    })?,
-                );
+    let mut attempts = Vec::new();
+    let mut attempt = 1;
+    loop {
+        let attempt_started = now();
+        for step in spec["steps"]
+            .as_array()
+            .ok_or_else(|| Error::new("invalid_job", "Missing steps"))?
+        {
+            if state != "succeeded" {
+                break;
             }
-        }
-        command
-            .stdin(if step.get("input").is_some() || b(step, "interactive") {
-                Stdio::piped()
-            } else {
-                Stdio::null()
-            })
-            .stdout(if let Some(ref output) = output {
-                Stdio::from(File::create(&output.temporary)?)
-            } else {
-                Stdio::from(log.try_clone()?)
-            })
-            .stderr(Stdio::from(log.try_clone()?));
-        toolchain::parent_bound(&mut command);
-        let mut proc = ManagedChild(command.spawn()?);
-        if let Some(input) = step["input"].as_str() {
-            if let Some(mut stdin) = proc.0.stdin.take() {
-                let text = input.to_string();
-                thread::spawn(move || {
-                    let _ = stdin.write_all(text.as_bytes());
-                });
+            if let Some(value) = interrupt(&log)? {
+                state = value.into();
+                break;
             }
-        }
-        let capture_deadline = step["duration"]
-            .as_f64()
-            .filter(|n| n.is_finite() && *n >= 0.0 && *n <= 86400.0)
-            .map(|n| Instant::now() + Duration::from_secs_f64(n));
-        let mut captured = false;
-        loop {
-            if machine {
-                let mut bytes = Vec::new();
-                std::io::Read::by_ref(&mut event_file)
-                    .take(256 * 1024)
-                    .read_to_end(&mut bytes)?;
-                event_buffer.push_str(&String::from_utf8_lossy(&bytes));
-                while let Some(end) = event_buffer.find('\n') {
-                    let line: String = event_buffer.drain(..=end).collect();
-                    if let Ok(Value::Array(events)) = serde_json::from_str::<Value>(line.trim()) {
-                        for event in events {
-                            match s(&event, "event") {
-                                "app.start" => {
-                                    app_id = s(&event["params"], "appId").into();
-                                    publish_phase(&phase, &app_id)?;
+            writeln!(log, "\n$ {}", step["argv"])?;
+            publish_phase(
+                if s(step, "phase") == "streaming" {
+                    "streaming"
+                } else {
+                    "building"
+                },
+                "",
+            )?;
+            let machine = s(step, "protocol") == "flutter-machine";
+            let mut event_file = File::open(log_dir.join(format!("{id}.log")))?;
+            event_file.seek(SeekFrom::End(0))?;
+            let mut event_buffer = String::new();
+            let mut app_id = String::new();
+            let mut phase = String::from("building");
+            let output = if !s(step, "output").is_empty() {
+                let target = PathBuf::from(s(step, "output"));
+                fs::create_dir_all(target.parent().unwrap())?;
+                Some(PartialOutput {
+                    temporary: target.with_file_name(format!(
+                        "{}.{}.part",
+                        target.file_name().unwrap_or_default().to_string_lossy(),
+                        id
+                    )),
+                    target,
+                })
+            } else {
+                None
+            };
+            let args = strings(&step["argv"]);
+            let mut command = Command::new(
+                args.first()
+                    .ok_or_else(|| Error::new("invalid_job", "Missing command"))?,
+            );
+            command
+                .args(&args[1..])
+                .current_dir(step["cwd"].as_str().unwrap_or(s(spec, "cwd")))
+                .process_group(0)
+                .env("TOMACCO_PARENT_JOB", id);
+            if let Some(env) = spec["env"].as_object() {
+                for (key, value) in env {
+                    command.env(
+                        key,
+                        value.as_str().ok_or_else(|| {
+                            Error::new("invalid_job", "Environment values must be strings")
+                        })?,
+                    );
+                }
+            }
+            command
+                .stdin(if step.get("input").is_some() || b(step, "interactive") {
+                    Stdio::piped()
+                } else {
+                    Stdio::null()
+                })
+                .stdout(if let Some(ref output) = output {
+                    Stdio::from(File::create(&output.temporary)?)
+                } else {
+                    Stdio::from(log.try_clone()?)
+                })
+                .stderr(Stdio::from(log.try_clone()?));
+            toolchain::parent_bound(&mut command);
+            let mut proc = ManagedChild(command.spawn()?);
+            if let Some(input) = step["input"].as_str() {
+                if let Some(mut stdin) = proc.0.stdin.take() {
+                    let text = input.to_string();
+                    thread::spawn(move || {
+                        let _ = stdin.write_all(text.as_bytes());
+                    });
+                }
+            }
+            let capture_deadline = step["duration"]
+                .as_f64()
+                .filter(|n| n.is_finite() && *n >= 0.0 && *n <= 86400.0)
+                .map(|n| Instant::now() + Duration::from_secs_f64(n));
+            let mut captured = false;
+            loop {
+                if machine {
+                    let mut bytes = Vec::new();
+                    std::io::Read::by_ref(&mut event_file)
+                        .take(256 * 1024)
+                        .read_to_end(&mut bytes)?;
+                    event_buffer.push_str(&String::from_utf8_lossy(&bytes));
+                    while let Some(end) = event_buffer.find('\n') {
+                        let line: String = event_buffer.drain(..=end).collect();
+                        if let Ok(Value::Array(events)) = serde_json::from_str::<Value>(line.trim())
+                        {
+                            for event in events {
+                                match s(&event, "event") {
+                                    "app.start" => {
+                                        app_id = s(&event["params"], "appId").into();
+                                        publish_phase(&phase, &app_id)?;
+                                    }
+                                    "app.started" => {
+                                        phase = "ready".into();
+                                        publish_phase(&phase, &app_id)?;
+                                    }
+                                    "app.stop" => {
+                                        phase = "stopping".into();
+                                        publish_phase(&phase, &app_id)?;
+                                    }
+                                    _ => (),
                                 }
-                                "app.started" => {
-                                    phase = "ready".into();
-                                    publish_phase(&phase, &app_id)?;
-                                }
-                                "app.stop" => {
-                                    phase = "stopping".into();
-                                    publish_phase(&phase, &app_id)?;
-                                }
-                                _ => (),
                             }
                         }
                     }
+                    if event_buffer.len() > 256 * 1024 {
+                        event_buffer.clear();
+                    }
                 }
-                if event_buffer.len() > 256 * 1024 {
-                    event_buffer.clear();
+                if let Some(exit) = proc.0.try_wait()? {
+                    code = exit.code().unwrap_or(-1);
+                    break;
                 }
-            }
-            if let Some(exit) = proc.0.try_wait()? {
-                code = exit.code().unwrap_or(-1);
-                break;
-            }
-            if b(step, "interactive") {
-                // A contended poll is skipped; the inputs stay queued for the next.
-                let inputs = match (|| -> Result<Vec<(i64, String)>> {
-                    Ok(db
-                        .prepare("SELECT id,text FROM inputs WHERE job=? ORDER BY id")?
-                        .query_map([id], |r| Ok((r.get(0)?, r.get(1)?)))?
-                        .collect::<std::result::Result<Vec<_>, _>>()?)
-                })() {
-                    Err(error) if error.is_database_busy() => Vec::new(),
-                    other => other?,
-                };
-                for (input, text) in inputs {
-                    if let Some(stdin) = proc.0.stdin.as_mut() {
-                        let message = if machine {
-                            if app_id.is_empty() {
-                                continue;
-                            }
-                            match text.as_str() {
+                if b(step, "interactive") {
+                    // A contended poll is skipped; the inputs stay queued for the next.
+                    let inputs = match (|| -> Result<Vec<(i64, String)>> {
+                        Ok(db
+                            .prepare("SELECT id,text FROM inputs WHERE job=? ORDER BY id")?
+                            .query_map([id], |r| Ok((r.get(0)?, r.get(1)?)))?
+                            .collect::<std::result::Result<Vec<_>, _>>()?)
+                    })() {
+                        Err(error) if error.is_database_busy() => Vec::new(),
+                        other => other?,
+                    };
+                    for (input, text) in inputs {
+                        if let Some(stdin) = proc.0.stdin.as_mut() {
+                            let message = if machine {
+                                if app_id.is_empty() {
+                                    continue;
+                                }
+                                match text.as_str() {
                                 "r" | "R" => json!([{"id":input,"method":"app.restart","params":{"appId":app_id,"fullRestart":text=="R","pause":false}}]).to_string(),
                                 "q" => json!([{"id":input,"method":"app.stop","params":{"appId":app_id}}]).to_string(),
                                 _ => return Err(Error::new("invalid_input","Unknown Flutter command")),
                             }
-                        } else {
-                            text
-                        };
-                        let _ = writeln!(stdin, "{message}");
-                        let _ = stdin.flush();
+                            } else {
+                                text
+                            };
+                            let _ = writeln!(stdin, "{message}");
+                            let _ = stdin.flush();
+                        }
+                        retrying(Instant::now() + WORKER_RETRY, || {
+                            Ok(db.execute("DELETE FROM inputs WHERE id=?", [input])?)
+                        })?;
                     }
-                    retrying(Instant::now() + WORKER_RETRY, || {
-                        Ok(db.execute("DELETE FROM inputs WHERE id=?", [input])?)
-                    })?;
                 }
+                if let Some(value) = interrupt(&log)? {
+                    state = value.into();
+                    cancel_tree(db, id)?;
+                    if value == "failed" {
+                        result["error"] =
+                            json!("Log exceeded 32 MiB; use shorter captures or filters");
+                    }
+                    toolchain::stop(&mut proc.0);
+                    code = proc.0.wait()?.code().unwrap_or(-1);
+                    break;
+                }
+                if capture_deadline.is_some_and(|end| Instant::now() >= end) {
+                    toolchain::stop(&mut proc.0);
+                    captured = true;
+                    break;
+                }
+                thread::sleep(Duration::from_millis(50));
             }
-            if let Some(value) = interrupt(&log)? {
-                state = value.into();
-                cancel_tree(db, id)?;
-                if value == "failed" {
-                    result["error"] = json!("Log exceeded 32 MiB; use shorter captures or filters");
-                }
-                toolchain::stop(&mut proc.0);
-                code = proc.0.wait()?.code().unwrap_or(-1);
+            if captured {
+                code = 0;
+            }
+            if state == "succeeded" && code != 0 {
+                state = "failed".into();
+            }
+            drop(proc);
+            if state != "succeeded" {
                 break;
             }
-            if capture_deadline.is_some_and(|end| Instant::now() >= end) {
-                toolchain::stop(&mut proc.0);
-                captured = true;
-                break;
-            }
-            thread::sleep(Duration::from_millis(50));
-        }
-        if captured {
-            code = 0;
-        }
-        if state == "succeeded" && code != 0 {
-            state = "failed".into();
-        }
-        drop(proc);
-        if state != "succeeded" {
-            break;
-        }
-        if let Some(output) = output {
-            if fs::metadata(&output.temporary)?.len() < n(step, "minimum_bytes") {
-                return Err(Error::new(
-                    "invalid_artifact",
-                    "Captured artifact is empty or too small",
-                ));
-            }
-            if !s(step, "magic_hex").is_empty() {
-                let signature = s(step, "magic_hex");
-                if signature.len() > 64 || !signature.len().is_multiple_of(2) {
-                    return Err(Error::new("invalid_job", "Invalid artifact signature"));
-                }
-                let expected = (0..signature.len())
-                    .step_by(2)
-                    .map(|i| u8::from_str_radix(&signature[i..i + 2], 16))
-                    .collect::<std::result::Result<Vec<_>, _>>()
-                    .map_err(|_| Error::new("invalid_job", "Invalid artifact signature"))?;
-                let mut prefix = vec![0; expected.len()];
-                std::io::Read::read_exact(&mut File::open(&output.temporary)?, &mut prefix)?;
-                if prefix != expected {
+            if let Some(output) = output {
+                if fs::metadata(&output.temporary)?.len() < n(step, "minimum_bytes") {
                     return Err(Error::new(
                         "invalid_artifact",
-                        "Captured data does not match the expected file format",
+                        "Captured artifact is empty or too small",
                     ));
                 }
+                if !s(step, "magic_hex").is_empty() {
+                    let signature = s(step, "magic_hex");
+                    if signature.len() > 64 || !signature.len().is_multiple_of(2) {
+                        return Err(Error::new("invalid_job", "Invalid artifact signature"));
+                    }
+                    let expected = (0..signature.len())
+                        .step_by(2)
+                        .map(|i| u8::from_str_radix(&signature[i..i + 2], 16))
+                        .collect::<std::result::Result<Vec<_>, _>>()
+                        .map_err(|_| Error::new("invalid_job", "Invalid artifact signature"))?;
+                    let mut prefix = vec![0; expected.len()];
+                    std::io::Read::read_exact(&mut File::open(&output.temporary)?, &mut prefix)?;
+                    if prefix != expected {
+                        return Err(Error::new(
+                            "invalid_artifact",
+                            "Captured data does not match the expected file format",
+                        ));
+                    }
+                }
+                File::open(&output.temporary)?.sync_all()?;
+                fs::rename(&output.temporary, &output.target)?;
+                output_paths.insert(output.target.clone());
             }
-            File::open(&output.temporary)?.sync_all()?;
-            fs::rename(&output.temporary, &output.target)?;
-            output_paths.insert(output.target.clone());
+            output_paths.extend(strings(&step["artifacts"]).into_iter().map(PathBuf::from));
         }
-        output_paths.extend(strings(&step["artifacts"]).into_iter().map(PathBuf::from));
+        attempts.push(json!({"attempt":attempt,"state":state,"exit_code":code,"started":attempt_started,"ended":now()}));
+        let Some(delay) = retry_delay(&spec["retry"], attempt).filter(|_| state == "failed") else {
+            break;
+        };
+        writeln!(
+            log,
+            "\n[failed] exit={code}; attempt {} of {} in {delay} s",
+            attempt + 1,
+            1 + n(&spec["retry"], "count")
+        )?;
+        retrying(Instant::now() + WORKER_RETRY, || {
+            Ok(db.execute(
+                "INSERT INTO events(job,time,kind,value,detail) VALUES(?,?,'retry',?,?)",
+                params![
+                    id,
+                    now(),
+                    (attempt + 1).to_string(),
+                    json!({"exit_code":code,"delay_seconds":delay}).to_string()
+                ],
+            )?)
+        })?;
+        let resume = Instant::now() + Duration::from_secs(delay);
+        let mut stopped = None;
+        while Instant::now() < resume {
+            stopped = interrupt(&log)?;
+            if stopped.is_some() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
+        if let Some(value) = stopped {
+            state = value.into();
+            break;
+        }
+        state = "succeeded".into();
+        code = 0;
+        output_paths.clear();
+        attempt += 1;
+    }
+    if spec["retry"].is_object() {
+        result["attempts"] = json!(attempts);
     }
     writeln!(log, "\n[{state}] exit={code}")?;
     if state == "succeeded" {
@@ -1190,6 +1553,303 @@ mod database_tests {
         assert_eq!(s(&read(&db, &parent).unwrap(), "state"), "failed");
         assert!(cancel_flag(&db, &child));
         assert_eq!(s(&read(&db, &child).unwrap(), "state"), "running");
+    }
+
+    #[test]
+    fn every_state_and_phase_change_is_recorded_as_an_event_in_order() {
+        let root = tempfile::tempdir().unwrap();
+        let db = open(root.path()).unwrap();
+        let id = "1".repeat(32);
+        insert(&db, &id, "queued", 0.0);
+        let _worker = lease(root.path(), &id);
+        let set = |sql: &str| {
+            db.execute(sql, [&id]).unwrap();
+        };
+        set("UPDATE jobs SET state='running' WHERE id=?");
+        set(r#"UPDATE jobs SET result='{"phase":"waiting"}' WHERE id=?"#);
+        set(r#"UPDATE jobs SET result='{"phase":"waiting"}' WHERE id=?"#);
+        set(r#"UPDATE jobs SET result='{"phase":"building"}' WHERE id=?"#);
+        // A malformed result is no event, and no error.
+        set("UPDATE jobs SET result='not json' WHERE id=?");
+        cancel_tree(&db, &id).unwrap();
+        set(
+            r#"UPDATE jobs SET state='cancelled',exit_code=-1,result='{"error":"stopped"}' WHERE id=?"#,
+        );
+        let value = timeline(&db, &id, 0, 100).unwrap();
+        let kinds: Vec<String> = value["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| format!("{}:{}", s(e, "kind"), s(e, "value")))
+            .collect();
+        assert_eq!(
+            kinds,
+            [
+                "state:queued",
+                "state:running",
+                "phase:waiting",
+                "phase:building",
+                "cancel_requested:",
+                "state:cancelled"
+            ]
+        );
+        let events = value["events"].as_array().unwrap();
+        assert_eq!(events[5]["exit_code"], -1);
+        assert_eq!(s(&events[5], "error"), "stopped");
+        assert!(
+            events
+                .windows(2)
+                .all(|w| w[0]["time"].as_f64() <= w[1]["time"].as_f64())
+        );
+        assert!(b(&value, "recorded"));
+        // Paging continues after the last event seen.
+        let first = timeline(&db, &id, 0, 2).unwrap();
+        assert_eq!(first["events"].as_array().unwrap().len(), 2);
+        let rest = timeline(&db, &id, n(&first, "next_after"), 100).unwrap();
+        assert_eq!(rest["events"].as_array().unwrap().len(), 4);
+        let none = timeline(&db, &id, n(&rest, "next_after"), 100).unwrap();
+        assert_eq!(none["events"], json!([]));
+        assert_eq!(none["next_after"], rest["next_after"]);
+        // Removing a job removes its events.
+        set("DELETE FROM jobs WHERE id=?");
+        let left: i64 = db
+            .query_row("SELECT count(*) FROM events", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(left, 0);
+    }
+
+    #[test]
+    fn a_job_from_before_events_gets_its_timeline_from_its_record() {
+        let root = tempfile::tempdir().unwrap();
+        let id = "2".repeat(32);
+        {
+            let old = Connection::open(root.path().join("jobs.sqlite3")).unwrap();
+            old.execute_batch(&format!(
+                "PRAGMA journal_mode=WAL; {SCHEMA} PRAGMA user_version=1;"
+            ))
+            .unwrap();
+            insert(&old, &id, "succeeded", 5.0);
+        }
+        let db = open(root.path()).unwrap();
+        let version: i64 = db
+            .query_row("PRAGMA user_version", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(version, SCHEMA_VERSION);
+        let value = timeline(&db, &id, 0, 100).unwrap();
+        assert!(!b(&value, "recorded"));
+        let events = value["events"].as_array().unwrap();
+        assert_eq!(events.len(), 2);
+        assert!(events.iter().all(|e| b(e, "synthesized")));
+        assert_eq!(s(&events[1], "value"), "succeeded");
+        // New changes to it are recorded from now on.
+        db.execute("UPDATE jobs SET state='failed' WHERE id=?", [&id])
+            .unwrap();
+        let value = timeline(&db, &id, 0, 100).unwrap();
+        assert_eq!(value["events"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn listing_filters_by_state_operation_project_and_time_and_pages() {
+        let root = tempfile::tempdir().unwrap();
+        let db = open(root.path()).unwrap();
+        let add = |id: &str, state: &str, age: f64, spec: Value| {
+            db.execute(
+                "INSERT INTO jobs(id,label,state,created,updated,spec) VALUES(?,?,?,?,?,?)",
+                params![
+                    id,
+                    "test",
+                    state,
+                    1000.0 - age,
+                    1000.0 - age,
+                    spec.to_string()
+                ],
+            )
+            .unwrap();
+        };
+        let (a, b_, c, d, e) = (
+            "a".repeat(32),
+            "b".repeat(32),
+            "c".repeat(32),
+            "d".repeat(32),
+            "e".repeat(32),
+        );
+        add(
+            &a,
+            "succeeded",
+            50.0,
+            json!({"steps":[],"operation":"project.execute","cwd":"/work/app","exclusive":"/work/app"}),
+        );
+        add(
+            &b_,
+            "failed",
+            40.0,
+            json!({"steps":[],"operation":"project.run","cwd":"/work/app/android","exclusive":"/work/app"}),
+        );
+        add(
+            &c,
+            "failed",
+            30.0,
+            json!({"steps":[],"operation":"android.sdk_install","cwd":"/data"}),
+        );
+        add(
+            &d,
+            "succeeded",
+            20.0,
+            json!({"steps":[],"operation":"project_x.other","cwd":"/work/app2"}),
+        );
+        add(&e, "cancelled", 10.0, json!({"steps":[]}));
+        let ids = |a: Value| -> Vec<String> {
+            query(&db, &a)
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|j| s(j, "id")[..1].to_string())
+                .collect()
+        };
+        assert_eq!(ids(json!({"limit":30})), ["e", "d", "c", "b", "a"]);
+        assert_eq!(ids(json!({"limit":30,"state":["failed"]})), ["c", "b"]);
+        // The prefix is literal: "_" is no wildcard.
+        assert_eq!(ids(json!({"limit":30,"operation":"project."})), ["b", "a"]);
+        assert_eq!(ids(json!({"limit":30,"operation":"project_"})), ["d"]);
+        // A project matches its lock, its directory and below, not a sibling.
+        assert_eq!(ids(json!({"limit":30,"project":"/work/app/"})), ["b", "a"]);
+        assert_eq!(ids(json!({"limit":30,"since":970.0})), ["e", "d", "c"]);
+        assert_eq!(
+            ids(json!({"limit":30,"state":["failed","succeeded"],"since":955.0})),
+            ["d", "c", "b"]
+        );
+        // Pages follow each other without gaps or repeats.
+        assert_eq!(ids(json!({"limit":2})), ["e", "d"]);
+        assert_eq!(ids(json!({"limit":2,"before":d})), ["c", "b"]);
+        assert_eq!(ids(json!({"limit":2,"before":b_})), ["a"]);
+        assert!(query(&db, &json!({"limit":2,"project":"relative"})).is_err());
+        assert_eq!(
+            query(&db, &json!({"limit":2,"before":"f".repeat(32)}))
+                .unwrap_err()
+                .code,
+            "job_not_found"
+        );
+    }
+
+    #[test]
+    fn a_job_records_the_operation_that_submitted_it() {
+        assert_eq!(requested_operation(), None);
+        {
+            let _outer = Request::enter("project.run", &Value::Null);
+            assert_eq!(requested_operation().as_deref(), Some("project.run"));
+            {
+                let _inner = Request::enter(
+                    "android.sdk_install",
+                    &json!({"count":9,"backoff_seconds":0}),
+                );
+                assert_eq!(
+                    requested_operation().as_deref(),
+                    Some("android.sdk_install")
+                );
+                assert_eq!(
+                    requested_retry(),
+                    Some(json!({"count":5,"backoff_seconds":1}))
+                );
+            }
+            assert_eq!(requested_operation().as_deref(), Some("project.run"));
+            assert_eq!(requested_retry(), None);
+        }
+        assert_eq!(requested_operation(), None);
+    }
+
+    #[test]
+    fn a_heavy_job_waits_queued_with_its_reason_until_a_slot_is_free() {
+        let root = tempfile::tempdir().unwrap();
+        let db = open(root.path()).unwrap();
+        let (holder, waiting) = ("3".repeat(32), "4".repeat(32));
+        let spec = json!({"steps":[],"resource":"build"});
+        for (id, state) in [(&holder, "running"), (&waiting, "queued")] {
+            db.execute(
+                "INSERT INTO jobs(id,label,state,created,updated,spec) VALUES(?,?,?,?,?,?)",
+                params![id, "Build", state, now(), now(), spec.to_string()],
+            )
+            .unwrap();
+        }
+        let _holder_worker = lease(root.path(), &holder);
+        let first = free_slot(root.path(), "build", 2).unwrap().unwrap();
+        let second = free_slot(root.path(), "build", 2).unwrap().unwrap();
+        assert!(free_slot(root.path(), "build", 2).unwrap().is_none());
+        // Another resource has its own slots.
+        assert!(free_slot(root.path(), "emulator", 1).unwrap().is_some());
+        let release = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(600));
+            drop(first);
+        });
+        let admitted = admit(&db, root.path(), &waiting, &spec, || {
+            Some(("max_builds", 2))
+        })
+        .unwrap();
+        release.join().unwrap();
+        assert!(matches!(admitted, Admission::Admitted(Some(_))));
+        let _waiting_worker = lease(root.path(), &waiting);
+        let job = read(&db, &waiting).unwrap();
+        assert_eq!(s(&job, "state"), "queued");
+        assert_eq!(s(&job, "phase"), "queued");
+        let reason = s(&job, "queued_reason");
+        assert!(
+            reason.contains("2 of 2") && reason.contains(&holder),
+            "{reason}"
+        );
+        assert!(reason.contains("jobs.max_builds"));
+        let events = timeline(&db, &waiting, 0, 100).unwrap();
+        assert!(
+            events["events"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|e| s(e, "value") == "queued" && s(e, "kind") == "phase")
+        );
+        // Cancelling a queued job stops the wait.
+        drop(admitted);
+        let _third = free_slot(root.path(), "build", 2).unwrap().unwrap();
+        cancel_tree(&db, &waiting).unwrap();
+        let stopped = admit(&db, root.path(), &waiting, &spec, || {
+            Some(("max_builds", 2))
+        })
+        .unwrap();
+        assert!(matches!(stopped, Admission::Stopped));
+        // Without a limit a job is admitted at once.
+        let unlimited = admit(&db, root.path(), &waiting, &spec, || {
+            Some(("max_builds", 0))
+        })
+        .unwrap();
+        assert!(matches!(unlimited, Admission::Admitted(None)));
+        drop(second);
+    }
+
+    #[test]
+    fn retries_pause_longer_each_time_and_stop_at_the_count() {
+        let retry = json!({"count":3,"backoff_seconds":4});
+        assert_eq!(
+            (1..=4).map(|a| retry_delay(&retry, a)).collect::<Vec<_>>(),
+            [Some(4), Some(8), Some(16), None]
+        );
+        assert_eq!(retry_delay(&Value::Null, 1), None);
+        assert_eq!(retry_delay(&json!({"count":0}), 1), None);
+        // Never more than five retries, never longer than ten minutes.
+        let greedy = json!({"count":50,"backoff_seconds":500});
+        assert_eq!(retry_delay(&greedy, 2), Some(RETRY_PAUSE_LIMIT));
+        assert_eq!(retry_delay(&greedy, 6), None);
+    }
+
+    #[test]
+    fn resource_limits_come_from_settings_with_defaults() {
+        assert_eq!(resource_limit(&json!({}), "build"), Some(("max_builds", 2)));
+        assert_eq!(
+            resource_limit(&json!({}), "emulator"),
+            Some(("max_emulators", 0))
+        );
+        assert_eq!(
+            resource_limit(&json!({"jobs":{"max_builds":5}}), "build"),
+            Some(("max_builds", 5))
+        );
+        assert_eq!(resource_limit(&json!({}), "other"), None);
     }
 
     #[test]

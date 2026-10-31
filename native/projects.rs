@@ -373,6 +373,7 @@ pub fn execute(a: &Value) -> Result {
     let label = s(&value, "label").to_string();
     value["timeout"] = a["timeout"].clone();
     value["single_active"] = json!(true);
+    value["resource"] = json!("build");
     value["operation_key"] =
         json!({"operation":"project.execute","arguments":a,"project":value["cwd"]});
     jobs::submit(&label, value)
@@ -402,7 +403,7 @@ pub fn run(a: &Value) -> Result {
         let launch = json!({"path":root,"device":device,"bundle_id":s(a,"bundle_id")});
         return jobs::submit(
             &format!("Deploy {}", s(&project, "name")),
-            json!({"steps":[{"argv":[tc::find("xtool")?,"dev","run","--udid",device,"--configuration",config]},{"argv":[crate::core::own_executable()?,"_iphone_launch",launch.to_string()]}],"cwd":root,"env":env,"exclusive":root,"single_active":true}),
+            json!({"steps":[{"argv":[tc::find("xtool")?,"dev","run","--udid",device,"--configuration",config]},{"argv":[crate::core::own_executable()?,"_iphone_launch",launch.to_string()]}],"cwd":root,"env":env,"exclusive":root,"single_active":true,"resource":"build"}),
         );
     }
     if kind(&project, "kotlin-multiplatform") && platform == "ios" {
@@ -454,6 +455,9 @@ pub fn run(a: &Value) -> Result {
         let mut spec = json!({"steps":steps,"cwd":project["gradle_directory"],"env":env,"artifacts":["**/build/outputs/apk/**/*.apk"],"exclusive":root,"single_active":true});
         if serves {
             spec["timeout"] = json!(86400);
+        } else {
+            // A Metro session runs for hours, so only a plain install takes a build slot.
+            spec["resource"] = json!("build");
         }
         return jobs::submit(&format!("Deploy {}", s(&project, "name")), spec);
     }
