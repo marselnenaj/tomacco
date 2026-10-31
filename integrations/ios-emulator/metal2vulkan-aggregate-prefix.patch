@@ -1,0 +1,129 @@
+diff --git a/src/native/emitter/body/vector_store.rs b/src/native/emitter/body/vector_store.rs
+--- a/src/native/emitter/body/vector_store.rs
++++ b/src/native/emitter/body/vector_store.rs
+@@ -993,7 +993,28 @@
+                         && bitcast_width(&vector_ty).is_some()
+                         && bitcast_width(&vector_ty) == bitcast_width(result_ty)
+             );
+-        if !direct && !bitcast {
++        // An opaque LLVM pointer also permits a load of a smaller vector from
++        // byte zero of this aggregate. Resolve that prefix in complete source
++        // lanes; choosing a later, similarly typed member would change the
++        // address. Loads spanning a partial source lane remain unsupported here.
++        let prefix = match (&vector_ty, result_ty) {
++            (LlType::Vector(element, _), LlType::Vector(_, _)) => {
++                match (
++                    bitcast_width(element),
++                    bitcast_width(result_ty),
++                    bitcast_width(&vector_ty),
++                ) {
++                    (Some(lane_bits), Some(bits), Some(total))
++                        if lane_bits > 0 && bits > 0 && bits < total && bits % lane_bits == 0 =>
++                    {
++                        Some((element.as_ref(), bits / lane_bits))
++                    }
++                    _ => None,
++                }
++            }
++            _ => None,
++        };
++        if !direct && !bitcast && prefix.is_none() {
+             return Ok(false);
+         }
+ 
+@@ -1019,7 +1040,52 @@
+         ));
+ 
+         let result_type = self.type_id(result_ty)?;
+-        if direct {
++        if let Some((element, count)) = prefix {
++            // Read only the bytes named by the LLVM load, never the remaining
++            // vector lanes or aggregate padding. Logical SPIR-V keeps typed
++            // pointers; only the assembled value is bitcast.
++            let element_type = self.type_id(element)?;
++            let element_ptr_type = self.ptr_type_id(storage, element)?;
++            let mut lanes = Vec::with_capacity(count as usize);
++            for lane in 0..count {
++                let element_ptr = self.fresh();
++                let index = self.const_uint(lane)?;
++                instructions.push(Self::inst(
++                    Op::InBoundsAccessChain,
++                    Some(element_ptr_type),
++                    Some(element_ptr),
++                    vec![Operand::IdRef(vector_ptr), Operand::IdRef(index)],
++                ));
++                let loaded = self.fresh();
++                instructions.push(Self::inst(
++                    Op::Load,
++                    Some(element_type),
++                    Some(loaded),
++                    vec![Operand::IdRef(element_ptr)],
++                ));
++                lanes.push(loaded);
++            }
++            let loaded = if count == 1 {
++                lanes[0]
++            } else {
++                let prefix_type =
++                    self.type_id(&LlType::Vector(Box::new(element.clone()), count))?;
++                let loaded = self.fresh();
++                instructions.push(Self::inst(
++                    Op::CompositeConstruct,
++                    Some(prefix_type),
++                    Some(loaded),
++                    lanes.into_iter().map(Operand::IdRef).collect(),
++                ));
++                loaded
++            };
++            instructions.push(Self::inst(
++                Op::Bitcast,
++                Some(result_type),
++                Some(result),
++                vec![Operand::IdRef(loaded)],
++            ));
++        } else if direct {
+             instructions.push(Self::inst(
+                 Op::Load,
+                 Some(result_type),
+diff --git a/src/native/tests/buffers.rs b/src/native/tests/buffers.rs
+--- a/src/native/tests/buffers.rs
++++ b/src/native/tests/buffers.rs
+@@ -7258,6 +7258,38 @@
+     assert!(asm.contains("OpBitcast"), "{asm}");
+     assert!(!asm.contains("non-bitcastable"), "{asm}");
+     assert!(!asm.contains("OpBitcast %_ptr_"), "{asm}");
++}
++
++/// A narrower vector load through an aggregate pointer addresses its first bytes,
++/// even when the leading member has a different scalar width. It must not load
++/// the following member merely because that member has the requested type.
++#[test]
++fn native_aggregate_prefix_vector_load_reads_only_the_required_lanes() {
++    for (result_type, expected_loads) in [("<4 x half>", 2), ("<2 x half>", 1), ("<3 x i32>", 3)] {
++        let ll = format!(
++            r#"
++%Inner = type {{ <4 x float>, <4 x half>, [8 x i8] }}
++%Outer = type {{ %Inner, [32 x i8] }}
++define {result_type} @read_prefix() {{
++entry:
++  %record = alloca %Outer, align 16
++  %head = getelementptr inbounds %Outer, ptr %record, i64 0, i32 0, i32 0
++  store <4 x float> zeroinitializer, ptr %head, align 16
++  %result = load {result_type}, ptr %record, align 4
++  ret {result_type} %result
++}}
++"#
++        );
++        let bytes = emit_vulkan_spirv(&ll).expect("aggregate prefix vector load");
++        let asm = disassemble(&bytes).expect("disassemble");
++        assert_eq!(asm.matches("OpLoad").count(), expected_loads, "{asm}");
++        assert!(asm.contains("OpBitcast"), "{asm}");
++        assert!(!asm.contains("OpBitcast %_ptr_"), "{asm}");
++        assert!(
++            !asm.contains("OpFConvert"),
++            "memory is reinterpreted, not converted: {asm}"
++        );
++    }
+ }
+ 
+ #[test]

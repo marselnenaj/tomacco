@@ -1,0 +1,815 @@
+diff --git i/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs w/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+index 4023b95..d90f66e 100644
+--- i/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
++++ w/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+@@ -53,6 +53,57 @@ pub const MAPPER_CAPTURE_REG_MAPPER_DEVICE: u32 = 19;
+ pub const MAPPER_CAPTURE_REG_REQUEST_TYPE: u32 = 21;
+ pub const MAPPER_CAPTURE_REG_MAPPING_INTERNAL: u32 = 22;
+ 
++/// Two recovered producer-write calling conventions. Both retain the mapper
++/// device in x19. One retains request type/internal in x21/x22; the other in
++/// x20/x21. In the latter, the same x21 object supplies the ring's mapping ID
++/// from +0x30, while w20 supplies its request type. A kernel pointer and the
++/// MAP/UNMAP ordinal are disjoint, so x21 selects a layout without probing RAM
++/// or scanning registers. Selection is not validation: the ring type, object
++/// owner, mapping ID and structure size must still corroborate the capture.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub enum MapperLayout {
++    #[default]
++    Compact,
++    Extended,
++}
++
++impl MapperLayout {
++    pub fn from_x21(value: u64) -> Self {
++        if guest_kernel_va(value) {
++            Self::Extended
++        } else {
++            Self::Compact
++        }
++    }
++
++    pub fn request_type_register(self) -> u32 {
++        match self {
++            Self::Compact => MAPPER_CAPTURE_REG_REQUEST_TYPE,
++            Self::Extended => 20,
++        }
++    }
++
++    pub fn internal_register(self) -> u32 {
++        match self {
++            Self::Compact => MAPPER_CAPTURE_REG_MAPPING_INTERNAL,
++            Self::Extended => MAPPER_CAPTURE_REG_REQUEST_TYPE,
++        }
++    }
++}
++
++/// Layout recovered from the same producer implementation as its register
++/// handoff. The extended object inserts an auxiliary descriptor before the
++/// page-table memory descriptor/map, and adds a root-page count. It must not
++/// be selected by trying pointers until a page table happens to parse.
++impl MapperLayout {
++    fn page_fields(self) -> (u64, u64, u64) {
++        match self {
++            Self::Compact => (0x48, 0x50, 0x70),
++            Self::Extended => (0x58, 0x60, 0x80),
++        }
++    }
++}
++
+ pub const ROW_BYTES_ALIGN: u64 = 128;
+ pub const DEVICE_PLANE_DESC_LEN: usize = 0x40;
+ pub const DEVICE_PLANE_OFFSET: usize = 0x08;
+@@ -220,9 +271,13 @@ pub struct MapperInternalFields {
+     pub owner_kva: u64,
+     pub mapping_id: u32,
+     pub internal_size: u32,
+-    pub page_field_48: u64,
+-    pub page_field_50: u64,
++    pub page_memory_descriptor: u64,
++    pub page_memory_map: u64,
+     pub raw_page_count: u64,
++    /// Extended layout: zero root pages for a single leaf table, one otherwise.
++    pub root_pages: u64,
++    /// Extended layout declares the number of leaf table pages at +0x78.
++    pub leaf_table_pages: Option<u64>,
+ }
+ 
+ #[derive(Clone, Debug, PartialEq, Eq)]
+@@ -705,9 +760,11 @@ pub fn read_mapper_identity(
+         owner_kva,
+         mapping_id,
+         internal_size,
+-        page_field_48: 0,
+-        page_field_50: 0,
++        page_memory_descriptor: 0,
++        page_memory_map: 0,
+         raw_page_count: 0,
++        root_pages: 0,
++        leaf_table_pages: None,
+     })
+ }
+ 
+@@ -716,16 +773,25 @@ pub fn read_mapper_internal(
+     internal_kva: u64,
+     has_mapper_device: bool,
+     mapper_device_kva: u64,
++    layout: MapperLayout,
+ ) -> Result<MapperInternalFields, Status> {
+     let mut fields = read_mapper_identity(mem, internal_kva, has_mapper_device, mapper_device_kva)?;
+-    fields.page_field_48 = read_u64_at(mem, internal_kva, MAPPING_INTERNAL_PAGE_FIELD_48).ok_or(
+-        Status::ErrInternalRead("iosurface_mapper_page_field_48_read"),
++    let (descriptor_offset, map_offset, count_offset) = layout.page_fields();
++    fields.page_memory_descriptor = read_u64_at(mem, internal_kva, descriptor_offset).ok_or(
++        Status::ErrInternalRead("iosurface_mapper_page_descriptor_read"),
+     )?;
+-    fields.page_field_50 = read_u64_at(mem, internal_kva, MAPPING_INTERNAL_PAGE_FIELD_50).ok_or(
+-        Status::ErrInternalRead("iosurface_mapper_page_field_50_read"),
+-    )?;
+-    fields.raw_page_count = read_u64_at(mem, internal_kva, MAPPING_INTERNAL_PAGE_COUNT)
++    fields.page_memory_map = read_u64_at(mem, internal_kva, map_offset)
++        .ok_or(Status::ErrInternalRead("iosurface_mapper_page_map_read"))?;
++    fields.raw_page_count = read_u64_at(mem, internal_kva, count_offset)
+         .ok_or(Status::ErrInternalRead("iosurface_mapper_page_count_read"))?;
++    if layout == MapperLayout::Extended {
++        fields.root_pages = read_u64_at(mem, internal_kva, 0x70)
++            .ok_or(Status::ErrInternalRead("iosurface_mapper_root_pages_read"))?;
++        fields.leaf_table_pages = Some(
++            read_u64_at(mem, internal_kva, 0x78)
++                .ok_or(Status::ErrInternalRead("iosurface_mapper_leaf_pages_read"))?,
++        );
++    }
+     Ok(fields)
+ }
+ 
+@@ -802,9 +868,9 @@ pub fn build_table_plan(
+     if st != Status::Ok {
+         return Err(st);
+     }
+-    let field_48_populated = mem.is_kernel_va(fields.page_field_48);
+-    let field_50_populated = mem.is_kernel_va(fields.page_field_50);
+-    if !field_48_populated && !field_50_populated {
++    let descriptor_populated = mem.is_kernel_va(fields.page_memory_descriptor);
++    let map_populated = mem.is_kernel_va(fields.page_memory_map);
++    if !descriptor_populated && !map_populated {
+         return Err(Status::ErrInternalFields(
+             "iosurface_page_table_fields_invalid",
+         ));
+@@ -812,45 +878,58 @@ pub fn build_table_plan(
+     let required_pages = span_page_count_shift(min_size, page_shift);
+     let pages = required_entry_count(fields, min_size, page_shift)?;
+ 
+-    // One chase, `+0x48` then `+0xb8`.
+-    //
+-    // There used to be a second, `+0x50` then `+0x28`, with the entries of
+-    // whichever parsed first being returned — a "try both, keep the one that
+-    // works" ladder, which this project refuses on principle but could not
+-    // refuse here without evidence, because the alternative reading was that
+-    // the two fields are two layouts handled side by side.
+-    //
+-    // Two driven arm64 boots settled it, over **223 successful resolves** on
+-    // deliberately different workloads (Safari plus window drags; Finder view
+-    // switching, System Settings panes, Mission Control and window resizes).
+-    // Both fields held a kernel VA on every one of them, so the branch really
+-    // did choose rather than dispatch — and `+0x48` won every one, with the
+-    // second chase never once carrying a resolve that the first had failed.
+-    // A branch that chooses, and always chooses the same way, is a fallback.
+-    //
+-    // What replaces the fallback is loudness. Every way the `+0x48` chase can
+-    // fail now reaches `mapper_resolve_fail` under its own slug instead of
+-    // being silently rescued by a rail nothing has confirmed, and
+-    // [`CandidateOutcome::other_field_populated`] keeps measuring the premise.
+-    // The field test above stays: a mapping with only `+0x50` set is still
+-    // *detected*, and refused by name rather than resolved through the
+-    // unconfirmed path.
+-    if !field_48_populated {
+-        return Err(Status::ErrNoPageTable("iosurface_page_table_only_field_50"));
++    // The table always comes from the layout's IOMemoryDescriptor +0xb8.
++    // The adjacent IOMemoryMap aliases the same table; it is not a fallback.
++    // Compact +0x48 and extended +0x58 are selected with the producer ABI,
++    // before any pointer chase, and share this descriptor contract.
++    if !descriptor_populated {
++        return Err(Status::ErrNoPageTable(
++            "iosurface_page_table_descriptor_absent",
++        ));
+     }
+-    let table_kva = match read_u64_at(mem, fields.page_field_48, MAPPING_PAGE_TABLE_FROM_F48) {
++    let table_kva = match read_u64_at(
++        mem,
++        fields.page_memory_descriptor,
++        MAPPING_PAGE_TABLE_FROM_F48,
++    ) {
+         Some(v) if mem.is_kernel_va(v) => v,
+         Some(_) => {
+             return Err(Status::ErrNoPageTable(
+-                "iosurface_page_table_pointer_48_invalid",
++                "iosurface_page_table_pointer_invalid",
+             ))
+         }
+         None => {
+             return Err(Status::ErrPageTableRead(
+-                "iosurface_page_table_pointer_48_read",
++                "iosurface_page_table_pointer_read",
+             ))
+         }
+     };
++    // The extended producer lays out one root page only when the leaf entries
++    // span multiple pages. Its leaf entries remain contiguous in kernel VA.
++    // Check the declared geometry before skipping the root: reading root PFNs
++    // as surface PFNs would write into the guest's page tables.
++    if let Some(leaf_pages) = fields.leaf_table_pages {
++        let per_page = page_size_of(page_shift) / U32_SIZE as u64;
++        let expected_leaf_pages = (u64::from(pages) - 1) / per_page + 1;
++        if leaf_pages != expected_leaf_pages
++            || leaf_pages > per_page
++            || fields.root_pages != u64::from(leaf_pages > 1)
++        {
++            return Err(Status::ErrPageCount(
++                "iosurface_page_table_geometry_invalid",
++            ));
++        }
++    } else if fields.root_pages != 0 {
++        return Err(Status::ErrPageCount(
++            "iosurface_page_table_geometry_invalid",
++        ));
++    }
++    let table_kva = checked_mul_u64(fields.root_pages, page_size_of(page_shift))
++        .and_then(|offset| checked_add_u64(table_kva, offset))
++        .filter(|&address| mem.is_kernel_va(address))
++        .ok_or(Status::ErrNoPageTable(
++            "iosurface_page_table_leaf_pointer_invalid",
++        ))?;
+     let entries = read_table_entries(mem, table_kva, pages, page_shift)?;
+     Ok(PageTablePlan {
+         entries,
+@@ -858,7 +937,7 @@ pub fn build_table_plan(
+         min_size,
+         required_pages,
+         candidates: CandidateOutcome {
+-            other_field_populated: field_50_populated,
++            other_field_populated: map_populated,
+         },
+     })
+ }
+@@ -969,18 +1048,15 @@ mod tests {
+             internal_kva: internal,
+             mapping_id: 3,
+             internal_size: MAPPING_INTERNAL_EXPECTED_SIZE,
+-            page_field_48: field_48,
+-            page_field_50: field_50,
++            page_memory_descriptor: field_48,
++            page_memory_map: field_50,
+             raw_page_count: 1,
+             ..MapperInternalFields::default()
+         };
+ 
+         let error =
+             build_table_plan(&mem, 3, &fields, PAGE_SIZE_ARM64E, PAGE_SHIFT_ARM64E).unwrap_err();
+-        assert_eq!(
+-            error.refusal(),
+-            Some("iosurface_page_table_pointer_48_read")
+-        );
++        assert_eq!(error.refusal(), Some("iosurface_page_table_pointer_read"));
+     }
+ 
+     /// The page table comes through `+0x48` or it does not come at all.
+@@ -1000,12 +1076,12 @@ mod tests {
+         let table_a = ARM_KERNEL_VA_BASE + 0x40_000;
+         let table_b = ARM_KERNEL_VA_BASE + 0x50_000;
+         let good_entry = 1u32; // frame 1, which `entry_gpa_shift` accepts
+-        let base = |page_field_48, page_field_50| MapperInternalFields {
++        let base = |page_memory_descriptor, page_memory_map| MapperInternalFields {
+             internal_kva: internal,
+             mapping_id: 3,
+             internal_size: MAPPING_INTERNAL_EXPECTED_SIZE,
+-            page_field_48,
+-            page_field_50,
++            page_memory_descriptor,
++            page_memory_map,
+             raw_page_count: 1,
+             ..MapperInternalFields::default()
+         };
+@@ -1060,7 +1136,10 @@ mod tests {
+             PAGE_SHIFT_ARM64E,
+         )
+         .expect_err("the deleted chase does not answer this");
+-        assert_eq!(error.refusal(), Some("iosurface_page_table_only_field_50"));
++        assert_eq!(
++            error.refusal(),
++            Some("iosurface_page_table_descriptor_absent")
++        );
+ 
+         // Both populated, `+0x48`'s table unparseable. This is the one shape
+         // the fallback was ever load-bearing for, and `earlier_failed` read
+@@ -1087,6 +1166,76 @@ mod tests {
+         );
+     }
+ 
++    /// Both page geometries and the single/multi-leaf boundary must resolve
++    /// actual leaf PFNs. Root-table PFNs are never surface backing.
++    #[test]
++    fn extended_layout_resolves_leaf_entries_and_checks_root_geometry() {
++        for shift in [12u32, 14] {
++            let page_size = page_size_of(shift);
++            let per_page = page_size / U32_SIZE as u64;
++            for count in [1u64, per_page, per_page + 1] {
++                let internal = ARM_KERNEL_VA_BASE + 0x10_000;
++                let descriptor = ARM_KERNEL_VA_BASE + 0x20_000;
++                let table = ARM_KERNEL_VA_BASE + 0x40_000;
++                let root_pages = u64::from(count > per_page);
++                let leaf_pages = (count - 1) / per_page + 1;
++                let mut mem = MapMem::new();
++                mem.put_u64(internal + MAPPING_INTERNAL_BACKPTR, 0);
++                mem.put_u32(internal + MAPPING_INTERNAL_ID, 7);
++                mem.put_u32(
++                    internal + MAPPING_INTERNAL_SIZE,
++                    MAPPING_INTERNAL_EXPECTED_SIZE,
++                );
++                // The old fields are deliberately unusable. No pointer probing
++                // or compact-layout fallback can answer this fixture.
++                mem.put_u64(internal + 0x48, 0);
++                mem.put_u64(internal + 0x50, 0);
++                mem.put_u64(internal + 0x58, descriptor);
++                mem.put_u64(internal + 0x60, 0);
++                mem.put_u64(internal + 0x70, root_pages);
++                mem.put_u64(internal + 0x78, leaf_pages);
++                mem.put_u64(internal + 0x80, count);
++                mem.put_u64(descriptor + MAPPING_PAGE_TABLE_FROM_F48, table);
++                if root_pages != 0 {
++                    mem.put_u32(table, 0); // never read as a surface entry
++                }
++                let leaf_base = table + root_pages * page_size;
++                let entries: Vec<u32> = (0..count).map(|i| (((100 + i) as u32) << 2) | 1).collect();
++                for (i, &entry) in entries.iter().enumerate() {
++                    mem.put_u32(leaf_base + i as u64 * U32_SIZE as u64, entry);
++                }
++                let fields =
++                    read_mapper_internal(&mem, internal, false, 0, MapperLayout::Extended).unwrap();
++                let plan = build_table_plan(&mem, 7, &fields, count * page_size, shift).unwrap();
++                assert_eq!(plan.entries, entries);
++                assert_eq!(plan.page_table_kva, leaf_base);
++                assert_eq!(plan.required_pages, count);
++                for (roots, leaves) in [(root_pages ^ 1, leaf_pages), (root_pages, leaf_pages + 1)]
++                {
++                    let mut invalid = fields;
++                    invalid.root_pages = roots;
++                    invalid.leaf_table_pages = Some(leaves);
++                    assert_eq!(
++                        build_table_plan(&mem, 7, &invalid, page_size, shift)
++                            .unwrap_err()
++                            .refusal(),
++                        Some("iosurface_page_table_geometry_invalid")
++                    );
++                }
++                assert!(
++                    build_table_plan(&mem, 7, &fields, (count + 1) * page_size, shift).is_err()
++                );
++                mem.put_u32(leaf_base, 0);
++                assert_eq!(
++                    build_table_plan(&mem, 7, &fields, page_size, shift)
++                        .unwrap_err()
++                        .refusal(),
++                    Some("iosurface_page_table_entry_invalid")
++                );
++            }
++        }
++    }
++
+     #[test]
+     fn packed_span_estimate_rounds_the_row_up() {
+         // 200 BGRA = 800 tight, rounded to 896; the estimate is that row times
+diff --git i/reims-vgpu/crates/reims-vgpu/src/model/state.rs w/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+index ffb1f9f..92726ce 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/model/state.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+@@ -4,6 +4,7 @@ use crate::model::{LruBytesMemo, GFX_MMIO_SIZE, MAX_CHANNELS};
+ use crate::runtime::decode::resource::{
+     DecodeStatus as ResourceDecodeStatus, Descriptor, ListObjectEntry, SamplerDescriptor,
+ };
++use crate::protocol::iosurface_pages::MapperLayout;
+ use reims_vgpu_core::access::BackingId;
+ use reims_vgpu_core::identity::{ObjectListRef, ResourceId};
+ use reims_vgpu_core::namespace::Teardown;
+@@ -1758,6 +1759,7 @@ pub struct MapperCapture {
+     pub request_type: u32,
+     /// Guest kernel VA of MappingInternal.
+     pub mapping_internal: u64,
++    pub mapping_layout: MapperLayout,
+ }
+ 
+ /// Which incarnation of the pages behind a task-local name a value describes.
+@@ -2015,6 +2017,7 @@ pub struct MappingEntry {
+     pub condemned_entries: Option<Vec<u32>>,
+     /// Guest KVA of MappingInternal (from capture or recover).
+     pub mapping_internal: u64,
++    pub mapping_layout: MapperLayout,
+     pub page_table_kva: u64,
+     /// Cached `sIOSurfaceDeviceDescriptor` (0x200) from MappingInternal+0x38.
+     /// Used for biplanar plane selection by texture geometry; empty when unknown.
+@@ -5492,7 +5495,12 @@ impl DeviceState {
+     }
+ 
+     /// Attach directed MappingInternal capture to a mapped slot.
+-    pub fn attach_mapping_internal(&mut self, mapping_id: u32, mapping_internal: u64) -> bool {
++    pub fn attach_mapping_internal(
++        &mut self,
++        mapping_id: u32,
++        mapping_internal: u64,
++        mapping_layout: MapperLayout,
++    ) -> bool {
+         self.max_mapping_id_seen = self.max_mapping_id_seen.max(mapping_id);
+         if !crate::model::is_mapping_id(mapping_id) {
+             StateMutationDecline::AttachMappingIdSentinel { mapping_id }
+@@ -5508,12 +5516,13 @@ impl DeviceState {
+         // A re-statement of the SAME MappingInternal (notify trailing our
+         // eager resolve) is not a new surface: keep bindings, generation,
+         // resident, and deferred windows untouched.
+-        if e.mapping_internal == mapping_internal {
++        if e.mapping_internal == mapping_internal && e.mapping_layout == mapping_layout {
+             e.mapped = true;
+             return true;
+         }
+         e.mapped = true;
+         e.mapping_internal = mapping_internal;
++        e.mapping_layout = mapping_layout;
+         e.page_entries.clear();
+         e.page_table_kva = 0;
+         e.condemned_entries = None;
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+index 180b3a5..b5bab42 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -6703,7 +6703,7 @@ fn mapper_ref_texture_sample_resolves_geometry_before_reading_it() {
+     host.write_gpa(desc_kva, &desc).expect("seed descriptor");
+ 
+     state.mapper_device_kva = mapper;
+-    assert!(state.attach_mapping_internal(mid, internal));
++    assert!(state.attach_mapping_internal(mid, internal, crate::protocol::iosurface_pages::MapperLayout::Compact));
+     {
+         let m = state.mappings.get(&mid).expect("mapping");
+         assert!(m.mapped && m.mapping_internal != 0);
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+index 835e7c9..83fdb26 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -1,7 +1,7 @@
+ //! IOSurface mapper capture + page-table / geometry resolve.
+ //!
+-//! Capture runs on the iosfc producer MMIO path (guest x19/x21/x22 still hold
+-//! the directed handoff from `do_host_mapping_gated`). Resolve builds
++//! Capture runs on the iosfc producer MMIO path (the guest registers still hold
++//! one of the two directed handoffs from `do_host_mapping_gated`). Resolve builds
+ //! `MappingEntry.page_entries` and geometry from MappingInternal + device
+ //! descriptor via guest KVA reads ([`HostOps::read_kva`]).
+ 
+@@ -11,8 +11,8 @@ use crate::model::{DeviceState, MapperCapture};
+ use crate::protocol::iosurface_pages::{
+     self, build_table_plan, decode_device_surface, decode_mapper_request_entry, guest_kernel_va,
+     mapper_request_published_entry_offset, mapping_span_bound, read_internal_desc_ptr,
+-    read_mapper_identity, read_mapper_internal, validate_mapper_internal, PagesMemory,
+-    DEVICE_DESC_LEN, MAPPER_CAPTURE_REG_MAPPER_DEVICE, MAPPER_CAPTURE_REG_MAPPING_INTERNAL,
++    read_mapper_identity, read_mapper_internal, validate_mapper_internal, MapperLayout,
++    PagesMemory, DEVICE_DESC_LEN, MAPPER_CAPTURE_REG_MAPPER_DEVICE,
+     MAPPER_CAPTURE_REG_REQUEST_TYPE, MAPPER_REQUEST_ENTRY_LEN, MAPPER_REQUEST_MAP,
+     MAPPER_REQUEST_UNMAP,
+ };
+@@ -224,14 +224,29 @@ pub fn capture_at_producer<H: HostMemory + HostOps>(
+             return capture_xreg_failed(mid, producer, decline);
+         }
+     };
+-    let rtype = match host.read_xreg(MAPPER_CAPTURE_REG_REQUEST_TYPE) {
++    let x21 = match host.read_xreg(MAPPER_CAPTURE_REG_REQUEST_TYPE) {
++        Ok(value) => value,
++        Err(error) => {
++            let decline = MapperDecline::CaptureRequestTypeXregRead(error);
++            return capture_xreg_failed(mid, producer, decline);
++        }
++    };
++    let layout = MapperLayout::from_x21(x21);
++    let register = |index| {
++        if index == MAPPER_CAPTURE_REG_REQUEST_TYPE {
++            Ok(x21)
++        } else {
++            host.read_xreg(index)
++        }
++    };
++    let rtype = match register(layout.request_type_register()) {
+         Ok(value) => value as u32,
+         Err(error) => {
+             let decline = MapperDecline::CaptureRequestTypeXregRead(error);
+             return capture_xreg_failed(mid, producer, decline);
+         }
+     };
+-    let internal = match host.read_xreg(MAPPER_CAPTURE_REG_MAPPING_INTERNAL) {
++    let internal = match register(layout.internal_register()) {
+         Ok(value) => value,
+         Err(error) => {
+             let decline = MapperDecline::CaptureInternalXregRead(error);
+@@ -325,6 +340,7 @@ pub fn capture_at_producer<H: HostMemory + HostOps>(
+         mapper_device_kva: mapper,
+         request_type: rtype,
+         mapping_internal: internal,
++        mapping_layout: layout,
+     })
+ }
+ 
+@@ -344,7 +360,7 @@ pub fn apply_capture(state: &mut DeviceState, cap: &MapperCapture, mapping_id: u
+     if cap.mapper_device_kva != 0 {
+         state.mapper_device_kva = cap.mapper_device_kva;
+     }
+-    state.attach_mapping_internal(mapping_id, cap.mapping_internal)
++    state.attach_mapping_internal(mapping_id, cap.mapping_internal, cap.mapping_layout)
+ }
+ 
+ /// Resolve page table + device-descriptor geometry for a mapped slot.
+@@ -368,7 +384,7 @@ pub fn resolve_mapping_backing<H: HostMemory + HostOps>(
+     let had_cached_pages = cached_pages != 0;
+     let mem = MapperMem::new(host);
+ 
+-    let fields = match read_mapper_internal(&mem, internal, mapper != 0, mapper) {
++    let fields = match read_mapper_internal(&mem, internal, mapper != 0, mapper, m.mapping_layout) {
+         Ok(f) => f,
+         Err(status) => {
+             let reason = refusal_reason(&status);
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs
+index 4458cb3..7dad08f 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs
+@@ -483,8 +483,8 @@ fn mapping_offsets_of_pages_maps_guest_pages_to_surface_offsets() {
+ use super::*;
+ use crate::protocol::endian::st32;
+ use crate::protocol::iosurface_pages::{
+-    MAPPING_INTERNAL_BACKPTR, MAPPING_INTERNAL_EXPECTED_SIZE, MAPPING_INTERNAL_ID,
+-    MAPPING_INTERNAL_SIZE, PAGE_ENTRY_PFN_SHIFT, PAGE_ENTRY_VALID,
++    MAPPER_CAPTURE_REG_MAPPING_INTERNAL, MAPPING_INTERNAL_BACKPTR, MAPPING_INTERNAL_EXPECTED_SIZE,
++    MAPPING_INTERNAL_ID, MAPPING_INTERNAL_SIZE, PAGE_ENTRY_PFN_SHIFT, PAGE_ENTRY_VALID,
+ };
+ 
+ /// The span is a hull over the *resolvable* entries, in PFN order-independent
+@@ -673,15 +673,49 @@ fn capture_validates_identity_and_ring() {
+         MAPPING_INTERNAL_EXPECTED_SIZE,
+     );
+ 
+-    host.set_xreg(MAPPER_CAPTURE_REG_MAPPER_DEVICE, mapper);
+-    host.set_xreg(MAPPER_CAPTURE_REG_REQUEST_TYPE, MAPPER_REQUEST_MAP as u64);
+-    host.set_xreg(MAPPER_CAPTURE_REG_MAPPING_INTERNAL, internal);
+-
+-    let cap = capture_at_producer(&state, &host, 1).expect("capture");
+-    assert_eq!(cap.producer, 1);
+-    assert_eq!(cap.mapping_internal, internal);
+-    assert!(apply_capture(&mut state, &cap, 7));
+-    assert_eq!(state.mappings.get(&7).unwrap().mapping_internal, internal);
++    for (type_register, internal_register) in [(21, 22), (20, 21)] {
++        for request_type in [MAPPER_REQUEST_MAP, MAPPER_REQUEST_UNMAP] {
++            for reg in 20..=22 {
++                host.set_xreg(reg, 0);
++            }
++            host.set_xreg(MAPPER_CAPTURE_REG_MAPPER_DEVICE, mapper);
++            host.set_xreg(type_register, request_type as u64);
++            host.set_xreg(internal_register, internal);
++            st32(&mut entry, request_type);
++            let _ = host.write_gpa(ring, &entry);
++            let cap = capture_at_producer(&state, &host, 1).expect("corroborated capture");
++            assert_eq!(cap.producer, 1);
++            assert_eq!(cap.mapping_internal, internal);
++            assert_eq!(cap.request_type, request_type);
++            if request_type == MAPPER_REQUEST_MAP {
++                assert!(apply_capture(&mut state, &cap, 7));
++                assert_eq!(state.mappings.get(&7).unwrap().mapping_internal, internal);
++            }
++            for (offset, bad, good) in [
++                (MAPPING_INTERNAL_BACKPTR, mapper + 8, mapper),
++                (MAPPING_INTERNAL_ID, 8, 7),
++                (
++                    MAPPING_INTERNAL_SIZE,
++                    0x100,
++                    MAPPING_INTERNAL_EXPECTED_SIZE as u64,
++                ),
++            ] {
++                if offset == MAPPING_INTERNAL_BACKPTR {
++                    put_u64(&mut host, internal + offset, bad);
++                } else {
++                    put_u32(&mut host, internal + offset, bad as u32);
++                }
++                assert!(capture_at_producer(&state, &host, 1).is_none());
++                if offset == MAPPING_INTERNAL_BACKPTR {
++                    put_u64(&mut host, internal + offset, good);
++                } else {
++                    put_u32(&mut host, internal + offset, good as u32);
++                }
++            }
++            host.set_xreg(type_register, 3 - request_type as u64);
++            assert!(capture_at_producer(&state, &host, 1).is_none());
++        }
++    }
+ }
+ 
+ #[test]
+@@ -781,10 +815,54 @@ fn span_fixture(pfn: u32) -> (DeviceState, FakeHost, u64) {
+     host.map_range(page_gpa, PAGE_SIZE_ARM64E as usize, 0x55);
+ 
+     state.mapper_device_kva = mapper;
+-    assert!(state.attach_mapping_internal(3, internal));
++    assert!(state.attach_mapping_internal(
++        3,
++        internal,
++        crate::protocol::iosurface_pages::MapperLayout::Compact
++    ));
+     (state, host, page_gpa)
+ }
+ 
++#[test]
++fn extended_capture_carries_layout_through_resolve_and_unmap() {
++    let (mut state, mut host, _) = span_fixture(0x1e8a0);
++    assert!(resolve_mapping_backing(&mut state, &host, 3));
++    let compact_generation = state.mappings[&3].map_generation;
++    put_u64(&mut host, KVA + 0x48, 0);
++    put_u64(&mut host, KVA + 0x50, 0);
++    put_u64(&mut host, KVA + 0x58, KVA + 0x2000);
++    put_u64(&mut host, KVA + 0x60, 0);
++    put_u64(&mut host, KVA + 0x70, 0);
++    put_u64(&mut host, KVA + 0x78, 1);
++    put_u64(&mut host, KVA + 0x80, 1);
++    let ring = 0x4000;
++    let mut request = [0u8; MAPPER_REQUEST_ENTRY_LEN];
++    request[..4].copy_from_slice(&MAPPER_REQUEST_MAP.to_le_bytes());
++    request[4..8].copy_from_slice(&3u32.to_le_bytes());
++    host.map_range(ring, request.len(), 0);
++    host.write_gpa(ring, &request).unwrap();
++    state.iosfc.ring_base = ring;
++    host.set_xreg(19, KVA + 0x1000);
++    host.set_xreg(20, MAPPER_REQUEST_MAP as u64);
++    host.set_xreg(21, KVA);
++    host.set_xreg(22, 0); // the real extended handoff keeps a ring offset here
++    let mut cap = capture_at_producer(&state, &host, 1).unwrap();
++    assert_eq!(cap.mapping_layout, MapperLayout::Extended);
++    assert!(apply_capture(&mut state, &cap, 3));
++    assert!(state.mappings[&3].page_entries.is_empty());
++    assert_ne!(state.mappings[&3].map_generation, compact_generation);
++    assert!(resolve_mapping_backing(&mut state, &host, 3));
++    assert_eq!(state.mappings[&3].page_entries, vec![(0x1e8a0 << 2) | 1]);
++    let generation = state.mappings[&3].map_generation;
++    assert!(apply_capture(&mut state, &cap, 3));
++    assert_eq!(state.mappings[&3].map_generation, generation);
++    assert_eq!(state.mappings[&3].page_entries.len(), 1);
++    cap.request_type = MAPPER_REQUEST_UNMAP;
++    assert!(apply_capture(&mut state, &cap, 3));
++    assert!(!state.mappings[&3].mapped);
++    assert!(state.mappings[&3].page_entries.is_empty());
++}
++
+ #[test]
+ fn resolve_builds_page_entries() {
+     let pfn = 0x1e88c_u32;
+@@ -904,7 +982,11 @@ impl HostOps for FailingKvaHost {
+ fn assert_revalidate_error_preserves_cached_page_plan(err: MemError) {
+     let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
+     let entry = (0x444u32 << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID;
+-    assert!(state.attach_mapping_internal(3, KVA));
++    assert!(state.attach_mapping_internal(
++        3,
++        KVA,
++        crate::protocol::iosurface_pages::MapperLayout::Compact
++    ));
+     assert!(state.set_mapping_geom(
+         3,
+         64,
+@@ -955,7 +1037,11 @@ fn revalidate_unmapped_read_preserves_cached_page_plan() {
+ #[test]
+ fn pages_cover_geom_false_when_table_shorter_than_span() {
+     let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
+-    assert!(state.attach_mapping_internal(8, KVA));
++    assert!(state.attach_mapping_internal(
++        8,
++        KVA,
++        crate::protocol::iosurface_pages::MapperLayout::Compact
++    ));
+     {
+         let m = state.mappings.get_mut(&8).unwrap();
+         m.mapped = true;
+@@ -980,7 +1066,11 @@ fn pages_cover_geom_false_when_table_shorter_than_span() {
+ #[test]
+ fn pages_cover_geom_true_for_full_table() {
+     let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
+-    assert!(state.attach_mapping_internal(3, KVA));
++    assert!(state.attach_mapping_internal(
++        3,
++        KVA,
++        crate::protocol::iosurface_pages::MapperLayout::Compact
++    ));
+     assert!(state.set_mapping_geom(
+         3,
+         64,
+@@ -1028,7 +1118,11 @@ fn a_generous_table_cannot_cover_a_window_past_the_wire_allocation() {
+     desc[DEVICE_DESC_PLANE_COUNT] = 0;
+ 
+     let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
+-    assert!(state.attach_mapping_internal(9, KVA));
++    assert!(state.attach_mapping_internal(
++        9,
++        KVA,
++        crate::protocol::iosurface_pages::MapperLayout::Compact
++    ));
+     assert!(state.set_mapping_device_desc(9, &desc));
+     assert!(state.set_mapping_geom(
+         9,
+@@ -1055,7 +1149,11 @@ fn a_generous_table_cannot_cover_a_window_past_the_wire_allocation() {
+ #[test]
+ fn pages_cover_geom_249_tile_fits_in_sixteen_16k_pages() {
+     let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
+-    assert!(state.attach_mapping_internal(8, KVA));
++    assert!(state.attach_mapping_internal(
++        8,
++        KVA,
++        crate::protocol::iosurface_pages::MapperLayout::Compact
++    ));
+     {
+         let m = state.mappings.get_mut(&8).unwrap();
+         m.mapped = true;
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
+index 855387e..f8a15f6 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
+@@ -132,7 +132,7 @@ fn a_rect_taller_than_its_window_is_refused_on_both_storage_shapes() {
+             .map(|i| ((base_pfn + i) << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID)
+             .collect();
+         state.map_surface(5);
+-        state.attach_mapping_internal(5, 0);
++        state.attach_mapping_internal(5, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+         let m = state.mappings.get_mut(&5).unwrap();
+         m.mapping_internal = 1;
+         m.page_entries = entries;
+@@ -214,7 +214,7 @@ fn a_writeback_lands_every_row_at_its_own_offset() {
+                 .map(|i| ((base_pfn + i) << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID)
+                 .collect();
+             state.map_surface(4);
+-            state.attach_mapping_internal(4, 0);
++            state.attach_mapping_internal(4, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+             let m = state.mappings.get_mut(&4).unwrap();
+             m.mapping_internal = 1;
+             m.page_entries = entries;
+@@ -296,7 +296,7 @@ fn a_skipping_writeback_leaves_the_guest_its_own_pages() {
+             .map(|i| ((base_pfn + i) << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID)
+             .collect();
+         state.map_surface(4);
+-        state.attach_mapping_internal(4, 0);
++        state.attach_mapping_internal(4, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+         let m = state.mappings.get_mut(&4).unwrap();
+         m.mapping_internal = 1;
+         m.page_entries = entries;
+@@ -371,7 +371,7 @@ fn a_writeback_refused_because_the_geometry_moved_says_so_by_name() {
+     let base_pfn = 0x40u32;
+     host.map_range((base_pfn as u64) << PAGE_SHIFT_X86, 8 * PAGE as usize, 0x55);
+     state.map_surface(4);
+-    state.attach_mapping_internal(4, 0);
++    state.attach_mapping_internal(4, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+     let m = state.mappings.get_mut(&4).unwrap();
+     m.mapping_internal = 1;
+     m.page_entries = (0..4)
+@@ -430,7 +430,7 @@ fn writing_guest_pages_moves_the_host_write_record_and_reading_them_does_not() {
+         .map(|i| ((base_pfn + i) << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID)
+         .collect();
+     state.map_surface(4);
+-    state.attach_mapping_internal(4, 0);
++    state.attach_mapping_internal(4, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+     let m = state.mappings.get_mut(&4).unwrap();
+     m.mapping_internal = 1;
+     m.page_entries = entries;
+@@ -507,7 +507,7 @@ fn a_skipping_write_supersedes_the_debt_instead_of_paying_it_over_the_skip() {
+         .map(|i| ((base_pfn + i) << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID)
+         .collect();
+     state.map_surface(7);
+-    state.attach_mapping_internal(7, 0);
++    state.attach_mapping_internal(7, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+     let m = state.mappings.get_mut(&7).unwrap();
+     m.mapping_internal = 1;
+     m.page_entries = entries;
+@@ -617,7 +617,7 @@ fn a_skipping_writeback_re_takes_the_stamp_so_the_skip_set_cannot_only_grow() {
+         .map(|i| ((base_pfn + i) << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID)
+         .collect();
+     state.map_surface(4);
+-    state.attach_mapping_internal(4, 0);
++    state.attach_mapping_internal(4, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+     let m = state.mappings.get_mut(&4).unwrap();
+     m.mapping_internal = 1;
+     m.page_entries = entries;
+@@ -671,7 +671,7 @@ fn write_bumps_generation() {
+     host.map_range(gpa, 0x4000, 0);
+     let entry = (pfn << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID;
+     state.map_surface(3);
+-    state.attach_mapping_internal(3, 0); // leave internal 0; set pages manually
++    state.attach_mapping_internal(3, 0, crate::protocol::iosurface_pages::MapperLayout::Compact); // leave internal 0; set pages manually
+     let m = state.mappings.get_mut(&3).unwrap();
+     m.mapping_internal = 1;
+     m.page_entries = vec![entry];
+@@ -704,7 +704,7 @@ fn a_host_cache_write_arms_the_guest_write_witness_for_the_copy() {
+     host.map_range(gpa, 0x4000, 0);
+     let entry = (pfn << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID;
+     state.map_surface(11);
+-    state.attach_mapping_internal(11, 0);
++    state.attach_mapping_internal(11, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+     let m = state.mappings.get_mut(&11).unwrap();
+     m.mapping_internal = 1;
+     m.page_entries = vec![entry];
+@@ -749,7 +749,7 @@ fn mapping_write_invalidates_intersecting_residency_windows_only() {
+     host.map_range(gpa, 0x4000, 0);
+     let entry = (pfn << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID;
+     state.map_surface(7);
+-    state.attach_mapping_internal(7, 0);
++    state.attach_mapping_internal(7, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+     let m = state.mappings.get_mut(&7).unwrap();
+     m.mapping_internal = 1;
+     m.page_entries = vec![entry];
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/vulkan.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/vulkan.rs
+index c3c7ddd..8b7954c 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/vulkan.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/vulkan.rs
+@@ -1041,7 +1041,7 @@ mod tests {
+             0x55,
+         );
+         state.map_surface(7);
+-        state.attach_mapping_internal(7, 0);
++        state.attach_mapping_internal(7, 0, crate::protocol::iosurface_pages::MapperLayout::Compact);
+         let m = state.mappings.get_mut(&7).unwrap();
+         m.mapping_internal = 1;
+         m.page_entries = (0..16)

@@ -1,0 +1,230 @@
+--- a/src/passes/resources/discovery.rs
++++ b/src/passes/resources/discovery.rs
+@@ -433,7 +433,36 @@
+ pub(in crate::passes) fn body_buf_elem_type(ctx: &Ctx, func: &Function, pid: Word) -> Option<Word> {
+     let mut elements = body_buf_elem_types(ctx, func, pid).into_iter();
+     let element = elements.next()?;
+-    elements.next().is_none().then_some(element)
++    if elements.next().is_some() {
++        return None;
++    }
++    // A record's first field can be the only single-index access while later fields carry a
++    // runtime record index. Prove that those suffixes also belong to this proposed array element;
++    // otherwise selecting the first field's type would discard the record stride and layout.
++    let defs = type_defs(&ctx.module);
++    let aliases = buffer_pointer_aliases(func, pid);
++    for instruction in func.blocks.iter().flat_map(|block| &block.instructions) {
++        if !matches!(
++            instruction.class.opcode,
++            Op::AccessChain
++                | Op::InBoundsAccessChain
++                | Op::PtrAccessChain
++                | Op::InBoundsPtrAccessChain
++        ) || instruction.operands.len() <= 2
++            || !matches!(instruction.operands.first(), Some(Operand::IdRef(base)) if aliases.contains(base))
++        {
++            continue;
++        }
++        let selected =
++            rewrites::type_after_spirv_access_operands(&defs, element, &instruction.operands[2..])?;
++        let result = instruction
++            .result_type
++            .and_then(|ty| ptr_pointee(&defs, ty))?;
++        if selected != result {
++            return None;
++        }
++    }
++    Some(element)
+ }
+ 
+ /// Detect the canonical flat-word view emitted for a homogeneous aggregate buffer. Every rooted
+@@ -1081,9 +1110,43 @@
+                 instructions: member_chains[..1].to_vec(),
+             }],
+         });
++        module.types_global_values.push(Instruction::new(
++            Op::TypePointer,
++            None,
++            Some(6),
++            vec![
++                Operand::StorageClass(StorageClass::UniformConstant),
++                Operand::IdRef(1),
++            ],
++        ));
++        // A sole float4 record-0 field does not prove a float4 array: buffer[record].field1
++        // below loads float2. A genuine float4 array's lane access must remain supported.
++        for (label, pointer_type) in [(22, 5), (23, 6)] {
++            let mut instructions = member_chains[..1].to_vec();
++            instructions.push(Instruction::new(
++                Op::InBoundsAccessChain,
++                Some(pointer_type),
++                Some(13),
++                vec![Operand::IdRef(10), Operand::IdRef(32), Operand::IdRef(31)],
++            ));
++            module.functions.push(Function {
++                def: None,
++                end: None,
++                parameters: vec![],
++                blocks: vec![Block {
++                    label: Some(Instruction::new(Op::Label, None, Some(label), vec![])),
++                    instructions,
++                }],
++            });
++        }
+         let ctx = Ctx::new(module);
+ 
+         assert_eq!(body_buf_elem_type(&ctx, &ctx.module.functions[0], 10), None);
++        assert_eq!(body_buf_elem_type(&ctx, &ctx.module.functions[2], 10), None);
++        assert_eq!(
++            body_buf_elem_type(&ctx, &ctx.module.functions[3], 10),
++            Some(2)
++        );
+         assert_eq!(
+             body_buf_elem_type(&ctx, &ctx.module.functions[1], 10),
+             Some(2)
+--- a/src/passes/stage_input/mod.rs
++++ b/src/passes/stage_input/mod.rs
+@@ -1135,18 +1135,15 @@
+                                 typed_aliases: vec![],
+                             },
+                         )
+-                    } else if !pointee_is_scalar
+-                        && buffer_has_multi_index_access_chains(
+-                            &ctx.module.functions[entry_idx],
+-                            *pid,
+-                        )
+-                        && struct_buffer_needs_record_array(
+-                            &layout_defs,
+-                            &ctx.module.functions[entry_idx],
+-                            *pid,
+-                            st,
+-                        )
+-                    {
++                    } else if buffer_has_multi_index_access_chains(
++                        &ctx.module.functions[entry_idx],
++                        *pid,
++                    ) && struct_buffer_needs_record_array(
++                        &layout_defs,
++                        &ctx.module.functions[entry_idx],
++                        *pid,
++                        st,
++                    ) {
+                         let rta = ctx.ty_runtime_array(st);
+                         let block = ctx.module.fresh_id();
+                         ctx.new_globals.push(type_inst(
+--- a/src/native/tests/buffers.rs
++++ b/src/native/tests/buffers.rs
+@@ -11599,3 +11599,113 @@
+         crate::emit_sidecar::AirStructLayoutMappingStatus::EmittedShapeMismatch
+     );
+ }
++
++#[test]
++fn native_opaque_record_buffer_preserves_mixed_vector_members_and_stride() {
++    let ll = r#"
++%Record = type { <4 x float>, <2 x float> }
++define void @main(i32 %index, ptr addrspace(1) %records, ptr addrspace(1) %output) {
++entry:
++  %head = getelementptr inbounds %Record, ptr addrspace(1) %records, i64 0, i32 0
++  %first = load <4 x float>, ptr addrspace(1) %head, align 16
++  %row = zext i32 %index to i64
++  %member = getelementptr inbounds %Record, ptr addrspace(1) %records, i64 %row, i32 1
++  %pair = load <2 x float>, ptr addrspace(1) %member, align 8
++  %prefix = shufflevector <4 x float> %first, <4 x float> undef, <2 x i32> <i32 0, i32 1>
++  %sum = fadd <2 x float> %prefix, %pair
++  store <2 x float> %sum, ptr addrspace(1) %output, align 8
++  ret void
++}
++!air.kernel = !{!0}
++!0 = !{ptr @main, !1, !2}
++!1 = !{}
++!2 = !{!3, !4, !6}
++!3 = !{i32 0, !"air.thread_position_in_grid", !"air.arg_type_name", !"uint", !"air.arg_name", !"index"}
++!4 = !{i32 1, !"air.buffer", !"air.location_index", i32 0, i32 1, !"air.read", !"air.address_space", i32 1, !"air.struct_type_info", !5, !"air.arg_type_size", i32 32, !"air.arg_type_align_size", i32 16, !"air.arg_type_name", !"Record", !"air.arg_name", !"records"}
++!5 = !{i32 0, i32 16, i32 0, !"float4", !"head", i32 16, i32 8, i32 0, !"float2", !"pair"}
++!6 = !{i32 2, !"air.buffer", !"air.location_index", i32 1, i32 1, !"air.write", !"air.address_space", i32 1, !"air.arg_type_name", !"float2", !"air.arg_name", !"output"}
++"#;
++    let mut module =
++        load_bytes(emit_vulkan_spirv(ll).expect("native emit")).expect("load emitted module");
++    // Helper aggregates can retain an opaque byte pointer at the interface seam even though
++    // every GEP still carries the original member type. Exercise that seam explicitly.
++    let byte = module.fresh_id();
++    let pointer = module.fresh_id();
++    module.types_global_values.extend([
++        Instruction::new(
++            Op::TypeInt,
++            None,
++            Some(byte),
++            vec![Operand::LiteralBit32(8), Operand::LiteralBit32(0)],
++        ),
++        Instruction::new(
++            Op::TypePointer,
++            None,
++            Some(pointer),
++            vec![
++                Operand::StorageClass(StorageClass::UniformConstant),
++                Operand::IdRef(byte),
++            ],
++        ),
++    ]);
++    let entry = module
++        .functions
++        .iter_mut()
++        .find(|f| !f.blocks.is_empty())
++        .unwrap();
++    entry.parameters[1].result_type = Some(pointer);
++    let function_type = match entry.def.as_ref().unwrap().operands[1] {
++        Operand::IdRef(id) => id,
++        _ => panic!("function type"),
++    };
++    module
++        .types_global_values
++        .iter_mut()
++        .find(|ty| ty.result_id == Some(function_type))
++        .unwrap()
++        .operands[2] = Operand::IdRef(pointer);
++    let output = passes::transform(
++        module,
++        Stage::Kernel,
++        None,
++        None,
++        meta::parse_air_kernel_meta(ll).as_ref(),
++        Some("main"),
++    )
++    .expect("opaque interface must retain the heterogeneous record layout");
++    let record_arrays = output
++        .types_global_values
++        .iter()
++        .filter_map(|ty| {
++            let [Operand::IdRef(element)] = ty.operands.as_slice() else {
++                return None;
++            };
++            (ty.class.opcode == Op::TypeRuntimeArray).then_some((ty.result_id.unwrap(), *element))
++        })
++        .filter(|(_, element)| {
++            output.types_global_values.iter().any(|ty| {
++                ty.result_id == Some(*element)
++                    && ty.class.opcode == Op::TypeStruct
++                    && ty.operands.len() == 2
++            })
++        })
++        .map(|(array, _)| array)
++        .collect::<HashSet<_>>();
++    assert!(
++        !record_arrays.is_empty(),
++        "record must not become an array of its first field"
++    );
++    assert!(output.annotations.iter().any(|annotation|
++        matches!(annotation.operands.as_slice(), [Operand::IdRef(array), Operand::Decoration(Decoration::ArrayStride), Operand::LiteralBit32(32)] if record_arrays.contains(array))));
++    let bytes = output
++        .assemble()
++        .iter()
++        .flat_map(|word| word.to_le_bytes())
++        .collect::<Vec<_>>();
++    let tmp =
++        std::env::temp_dir().join(format!("metal2vulkan_opaque_record_{}", std::process::id()));
++    std::fs::create_dir_all(&tmp).unwrap();
++    let validation = tools::spirv_val_bytes(&bytes, &tmp);
++    std::fs::remove_dir_all(&tmp).unwrap();
++    validation.expect("record accesses must satisfy Vulkan pointer and layout contracts");
++}

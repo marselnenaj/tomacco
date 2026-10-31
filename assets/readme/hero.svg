@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1200" viewBox="0 0 2400 1200">
+<rect width="2400" height="1200" fill="#0E0E0C"/>
+<rect x="28" y="0" width="54" height="72" fill="#F2361F" />
+<text x="44" y="49" font-family="JetBrainsMono Nerd Font" font-size="36" font-weight="700" fill="#0E0E0C" text-anchor="start" xml:space="preserve">1</text>
+<text x="112" y="49" font-family="JetBrainsMono Nerd Font" font-size="36" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">2</text>
+<text x="180" y="49" font-family="JetBrainsMono Nerd Font" font-size="36" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">3</text>
+<text x="248" y="49" font-family="JetBrainsMono Nerd Font" font-size="36" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">4</text>
+<text x="2356" y="49" font-family="JetBrainsMono Nerd Font" font-size="36" font-weight="400" fill="#F4F2EC" text-anchor="end" xml:space="preserve">made for Omarchy</text>
+<rect x="22.0" y="94.0" width="1576" height="616" fill="#171714" stroke="#34332E" stroke-width="4" />
+<text x="88" y="458" font-family="Adwaita Sans" font-size="271.3" font-weight="800" fill="#F4F2EC" text-anchor="start" letter-spacing="-10.85">Tomacco</text>
+<svg x="1266.4" y="215.9" width="249.6" height="249.6" viewBox="0 0 100 100"><path d="M50 25C60 16 95 17 95 57C95 81 74 97 50 97C26 97 5 81 5 57C5 17 40 16 50 25Z" fill="#F2361F"/><g stroke="#0E0E0C" fill="#0E0E0C"><path d="M24 47 46 63 24 79" fill="none" stroke-width="10.5" stroke-miterlimit="8"/></g><g fill="#0E0E0C"><rect x="53" y="70" width="27" height="10.5"/></g><g stroke="#2FA84F" stroke-width="9"><line x1="50" y1="25" x2="50.00" y2="2.00"/><line x1="50" y1="25" x2="71.87" y2="17.89"/><line x1="50" y1="25" x2="63.52" y2="43.61"/><line x1="50" y1="25" x2="36.48" y2="43.61"/><line x1="50" y1="25" x2="28.13" y2="17.89"/></g></svg>
+<text x="96" y="602" font-family="Adwaita Sans" font-size="70" font-weight="500" fill="#F4F2EC" text-anchor="start" letter-spacing="-1.26">iOS and Android, from Linux. No Mac needed.</text>
+<rect x="22.0" y="734.0" width="1576" height="444" fill="#171714" stroke="#2FA84F" stroke-width="4" />
+<text x="96" y="816" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#2FA84F" text-anchor="start" xml:space="preserve">❯ </text>
+<text x="146.4" y="816" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#F4F2EC" text-anchor="start" xml:space="preserve">tomaccoctl call </text>
+<text x="549.6" y="816" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#F4F2EC" text-anchor="start" xml:space="preserve">project.run</text>
+<text x="826.8" y="816" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve"> {…}</text>
+<text x="96" y="874" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">{"ok":true,"result":{…,"state":"queued",…}}</text>
+<text x="96" y="932" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#2FA84F" text-anchor="start" xml:space="preserve">❯ </text>
+<text x="146.4" y="932" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#F4F2EC" text-anchor="start" xml:space="preserve">tomaccoctl call </text>
+<text x="549.6" y="932" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#F4F2EC" text-anchor="start" xml:space="preserve">job.wait</text>
+<text x="751.2" y="932" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve"> {…}</text>
+<text x="96" y="990" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">{"ok":true,"result":{…,"state":"succeeded",…}}</text>
+<text x="96" y="1048" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#2FA84F" text-anchor="start" xml:space="preserve">❯ </text>
+<text x="146.4" y="1048" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#F4F2EC" text-anchor="start" xml:space="preserve">tomaccoctl call </text>
+<text x="549.6" y="1048" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#F4F2EC" text-anchor="start" xml:space="preserve">runtime.input</text>
+<text x="877.2" y="1048" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve"> {…,"x":0.5,"y":0.7}</text>
+<text x="96" y="1106" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#2FA84F" text-anchor="start" xml:space="preserve">❯ </text>
+<rect x="146" y="1073" width="25" height="42" fill="#F2361F" />
+<rect x="1622.0" y="94.0" width="756" height="1084" fill="#171714" stroke="#34332E" stroke-width="4" />
+<rect x="1797" y="232" width="407" height="840" fill="#0E0E0C" stroke="#F4F2EC" stroke-width="6" rx="63" />
+<rect x="1815" y="250" width="371" height="804" fill="#F4F2EC" rx="49" />
+<rect x="1846" y="355" width="186" height="25" fill="#0E0E0C" />
+<rect x="1846" y="423" width="309" height="37" fill="#D5D2C8" />
+<rect x="1846" y="481" width="309" height="37" fill="#D5D2C8" />
+<rect x="1846" y="540" width="309" height="37" fill="#D5D2C8" />
+<rect x="1846" y="784" width="309" height="59" fill="#F2361F" />
+<polyline points="1657,813 2344,813" fill="none" stroke="#F2361F" stroke-width="3" stroke-linecap="butt" stroke-linejoin="miter" />
+<polyline points="2000,180 2000,1124" fill="none" stroke="#F2361F" stroke-width="3" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="1657" y="793" font-family="JetBrainsMono Nerd Font" font-size="36" font-weight="400" fill="#F4F2EC" text-anchor="start" xml:space="preserve">y 0.7</text>
+<text x="2020" y="214" font-family="JetBrainsMono Nerd Font" font-size="36" font-weight="400" fill="#F4F2EC" text-anchor="start" xml:space="preserve">x 0.5</text>
+<circle cx="2000" cy="813" r="19" fill="#F4F2EC" stroke="#0E0E0C" stroke-width="8"/>
+</svg>

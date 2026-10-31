@@ -1,0 +1,102 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
+@@ -11,21 +11,43 @@
+ use reims_vgpu_vulkan::pixel::XrRenderFormat;
+ 
+ use super::draw_validation::DrawValidationDecline;
+-use super::types::{DrawError, DrawRequest};
++use super::types::{BlendKey, BlendStateResource, DrawError, DrawRequest};
+ 
+ type Formats = [Option<XrRenderFormat>; 8];
+ type ShaderWords = Arc<Vec<u32>>;
++
++/// Replacement has no destination term. Drop this fixed-function state for XR
++/// before pipeline creation so the translator's quantization remains the last
++/// colour operation. No source-over, min/max or dual-source blend is admitted.
++fn replaces_source(blend: &BlendStateResource) -> bool {
++    use reims_vgpu_core::blend::{BlendFactor, BlendOperation};
++    blend.src_rgb == BlendFactor::One.ordinal()
++        && blend.dst_rgb == BlendFactor::Zero.ordinal()
++        && blend.op_rgb == BlendOperation::Add.ordinal()
++        && blend.src_alpha == BlendFactor::One.ordinal()
++        && blend.dst_alpha == BlendFactor::Zero.ordinal()
++        && blend.op_alpha == BlendOperation::Add.ordinal()
++}
++
++pub(super) fn pipeline_blend(
++    format: Option<XrRenderFormat>,
++    blend: Option<BlendStateResource>,
++) -> Option<BlendKey> {
++    blend
++        .filter(|b| format.is_none() || !replaces_source(b))
++        .map(|b| b.key())
++}
+ 
+ /// The attachment's semantic format survives lowering to the Float32 image.
+ /// A renderer lacking quantization after blend must decline before GPU work.
+ pub(super) fn formats(req: &DrawRequest) -> Result<Formats, DrawError> {
+     let mut formats = [None; 8];
+     let primary = req.color_attachment.and_then(|a| a.xr_format());
+-    for (slot, (format, blend)) in std::iter::once((primary, req.blend.is_some()))
++    for (slot, (format, blend)) in std::iter::once((primary, req.blend))
+         .chain(
+             req.secondary_targets
+                 .iter()
+-                .map(|s| (s.attachment.xr_format(), s.blend.is_some())),
++                .map(|s| (s.attachment.xr_format(), s.blend)),
+         )
+         .enumerate()
+     {
+@@ -39,10 +61,22 @@
+                 },
+             ));
+         }
+-        if blend {
+-            return Err(DrawError::DrawValidation(
+-                DrawValidationDecline::XrBlendRequiresQuantization { slot: slot as u32 },
+-            ));
++        if let Some(blend) = blend {
++            if !replaces_source(&blend) {
++                let refusal =
++                    DrawValidationDecline::XrBlendRequiresQuantization { slot: slot as u32 };
++                let pipeline = req.pipeline_object.as_ref().map_or(0, |p| p.id().get());
++                // Diagnostic identity is not admission: factors and operations
++                // above are the only facts that can admit replacement.
++                crate::observe::Emit::decline("xr_blend_state", &refusal)
++                    .field("pipeline", pipeline)
++                    .field("slot", slot)
++                    .field("format", format!("{format:?}"))
++                    .field("blend", format!("{blend:?}"))
++                    .field("blend_color", format!("{:?}", req.blend_color))
++                    .fail_once(pipeline.wrapping_mul(8).wrapping_add(slot as u64));
++                return Err(DrawError::DrawValidation(refusal));
++            }
+         }
+         let samples = req.raster_sample_count.max(1);
+         if samples > 1 {
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -3348,7 +3348,10 @@
+         frag: frag_digest,
+         attrs: attr_keys,
+         topology: topology_key,
+-        blend: req.blend.map(|b| b.key()),
++        blend: super::color_quantization::pipeline_blend(
++            req.color_attachment.and_then(|a| a.xr_format()),
++            req.blend,
++        ),
+         secondary_blend: {
+             let mut per_slot = [None; MAX_SECONDARY_ATTACH];
+             for (slot, target) in req
+@@ -3357,7 +3360,10 @@
+                 .take(MAX_SECONDARY_ATTACH)
+                 .enumerate()
+             {
+-                per_slot[slot] = target.blend.map(|b| b.key());
++                per_slot[slot] = super::color_quantization::pipeline_blend(
++                    target.attachment.xr_format(),
++                    target.blend,
++                );
+             }
+             per_slot
+         },

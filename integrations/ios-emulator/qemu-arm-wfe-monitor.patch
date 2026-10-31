@@ -1,0 +1,262 @@
+target/arm: WFE waits for the location an exclusive load monitors.
+
+XNU's ticket and spin locks wait with LDXR/LDAXR; compare; WFE; retry (the
+hottest kernel block of the run-357 swipe profile: __TEXT_EXEC+0x70b9c,
+45M WFE and 45M exclusive loads in 14 s). The architecture wakes such a
+WFE when the global monitor leaves Exclusive, i.e. when another observer
+writes the monitored granule; QEMU's helper_wfe returns at once while the
+monitor is armed, so the waiter re-runs its loop and leaves to the main
+loop on every WFE for as long as the lock is held.
+
+With the CPU property tomacco-wfe-wait-us (default 50, 0 = upstream) the
+helper now waits, without BQL, until the monitored location differs from
+what the load-exclusive read (checked first, so a store between the LDXR
+and the WFE is not lost), SEV sets the event register (consumed), an
+interrupt or kick is pending (checked at least every ~1-2 us, so exclusive
+sections, queued work and cpu_exit are not held up), the event stream's
+next event, or the bound. WFE may return spuriously, so an ABA store, a
+location outside RAM or an unaligned or AArch32 exclusive only shorten the
+wait. On an x86 host with WAITPKG each slice is UMONITOR/UMWAIT (C0.1) on
+the location's cache line: the core idles and wakes on the store itself;
+otherwise a PAUSE loop. A64 load-exclusives record their size in
+env->tomacco_exclusive_bytes for the comparison. Single-threaded TCG
+(round robin, icount) yields to the next vCPU instead of spinning out its
+time slice.
+
+tests/engine/wfe-monitor.S (virt, 2 CPUs, CPU 1 waits 200 us per round
+for CPU 0's STLR): 4600-5200 WFEs per round -> 4 (one per 50 us bound),
+release-to-acquire 0.4-1.9 us -> 0.5-0.9 us with UMWAIT (1.4 us with
+PAUSE); a WFE on a never-written word returns after the bound (60 us), a
+SEV wakes it, a word written before the WFE ends it at once.
+
+diff --git a/target/arm/cpu.c b/target/arm/cpu.c
+--- a/target/arm/cpu.c
++++ b/target/arm/cpu.c
+@@ -2519,6 +2519,7 @@
+     DEFINE_PROP_BOOL("backcompat-cntfrq", ARMCPU, backcompat_cntfrq, false),
+     DEFINE_PROP_BOOL("backcompat-pauth-default-use-qarma5", ARMCPU,
+                       backcompat_pauth_default_use_qarma5, false),
++    DEFINE_PROP_UINT32("tomacco-wfe-wait-us", ARMCPU, tomacco_wfe_wait_us, 50),
+ };
+ 
+ static const gchar *arm_gdb_arch_name(CPUState *cs)
+diff --git a/target/arm/cpu.h b/target/arm/cpu.h
+--- a/target/arm/cpu.h
++++ b/target/arm/cpu.h
+@@ -713,6 +713,11 @@
+      * semantics of these fields are baked into the migration format.
+      */
+     uint64_t exclusive_high;
++    /*
++     * Bytes the last A64 load-exclusive read at exclusive_addr (1-16), for
++     * WFE's wait on the monitored location (op_helper.c tomacco_wfe_wait).
++     */
++    uint8_t tomacco_exclusive_bytes;
+ 
+     struct {
+         ARMPACKey apia;
+@@ -1101,6 +1106,13 @@
+      */
+     bool host_cpu_probe_failed;
+ 
++    /*
++     * WFE with the exclusive monitor armed waits up to this many
++     * microseconds for the monitored location to change (0: return at
++     * once, as upstream QEMU does).
++     */
++    uint32_t tomacco_wfe_wait_us;
++
+     /* QOM property to indicate we should use the back-compat CNTFRQ default */
+     bool backcompat_cntfrq;
+ 
+diff --git a/target/arm/tcg/op_helper.c b/target/arm/tcg/op_helper.c
+--- a/target/arm/tcg/op_helper.c
++++ b/target/arm/tcg/op_helper.c
+@@ -34,6 +34,7 @@
+ #ifndef CONFIG_USER_ONLY
+ #include "qemu/rcu.h"
+ #include "system/memory.h"
++#include "exec/translation-block.h"
+ #endif
+ 
+ /* A process-start opt-in: changing tracing at runtime cannot silently change
+@@ -789,6 +790,154 @@
+ }
+ #endif
+ 
++#ifndef CONFIG_USER_ONLY
++typedef struct TomaccoWFEWait {
++    const void *host;
++    unsigned bytes;
++    uint64_t val, high;
++} TomaccoWFEWait;
++
++/* The monitored location still holds what the load-exclusive read. */
++static bool tomacco_wfe_unchanged(const TomaccoWFEWait *w)
++{
++    switch (w->bytes) {
++    case 1:
++        return qatomic_read((uint8_t *)w->host) == (uint8_t)w->val;
++    case 2:
++        return qatomic_read((uint16_t *)w->host) == (uint16_t)w->val;
++    case 4:
++        return qatomic_read((uint32_t *)w->host) == (uint32_t)w->val;
++    case 8:
++        return qatomic_read((uint64_t *)w->host) == w->val;
++    case 16:
++        return qatomic_read((uint64_t *)w->host) == w->val &&
++               qatomic_read((uint64_t *)w->host + 1) == w->high;
++    }
++    return false;
++}
++
++#if defined(__x86_64__)
++#include <cpuid.h>
++
++/* CPUID.(7,0):ECX[5] WAITPKG: UMONITOR/UMWAIT at user level. */
++static bool tomacco_host_has_waitpkg(void)
++{
++    static int known; /* 0 unknown, 1 no, 2 yes */
++    unsigned a, b, c = 0, d;
++
++    if (!qatomic_read(&known)) {
++        bool yes = __get_cpuid_count(7, 0, &a, &b, &c, &d) && (c & (1u << 5));
++        qatomic_set(&known, yes ? 2 : 1);
++    }
++    return qatomic_read(&known) == 2;
++}
++
++/*
++ * Arm the host monitor on the location's cache line and, if it still holds
++ * the value, wait in C0.1 (fast wake) until a store to that line by another
++ * core, a host interrupt or about @cycles TSC cycles (the OS may cap it:
++ * /sys/devices/system/cpu/umwait_control/max_time).
++ */
++__attribute__((target("waitpkg")))
++static void tomacco_umwait(const TomaccoWFEWait *w, uint64_t cycles)
++{
++    __builtin_ia32_umonitor((void *)w->host);
++    if (tomacco_wfe_unchanged(w)) {
++        __builtin_ia32_umwait(1, __builtin_ia32_rdtsc() + cycles);
++    }
++}
++#endif
++
++/*
++ * WFE while this CPU's exclusive monitor is armed (a LDXR/LDAXR spin
++ * loop: XNU's ticket and spin locks). The architecture wakes such a WFE
++ * when the global monitor leaves Exclusive, i.e. when another observer
++ * writes the monitored granule. Upstream QEMU returns at once instead, so
++ * a waiting vCPU re-runs its loop (and leaves the TB to the main loop on
++ * every WFE) for as long as the lock is held.
++ *
++ * Wait here instead, without BQL or any lock, until one of:
++ *  - the location differs from what the load-exclusive read (the event;
++ *    checked first, so a store between the LDXR and the WFE is not lost),
++ *  - SEV set the event register (consumed, as WFE does),
++ *  - an interrupt or a kick is pending (cpu_exit, queued work, exclusive
++ *    sections), so the main loop sees it with at most one wait slice delay,
++ *  - the event stream's next event (CNTKCTL/CNTHCTL EVNTEN),
++ *  - tomacco-wfe-wait-us elapsed: WFE may return spuriously, so a store
++ *    of the same value (ABA), a location outside RAM or any doubt only
++ *    ends the wait early or never starts it.
++ * On an x86 host with WAITPKG the slices are UMWAIT on the location's
++ * cache line (the core idles and wakes on the store itself); otherwise a
++ * PAUSE loop. Single-threaded TCG yields to the next vCPU instead. Only
++ * A64 load-exclusives record the size; AArch32 code keeps upstream's
++ * behaviour.
++ */
++static void tomacco_wfe_wait(CPUARMState *env)
++{
++    ARMCPU *cpu = env_archcpu(env);
++    CPUState *cs = env_cpu(env);
++    TomaccoWFEWait w = {
++        .bytes = env->tomacco_exclusive_bytes,
++        .val = env->exclusive_val,
++        .high = env->exclusive_high,
++    };
++    int64_t now, deadline, next_event;
++
++    if (!cpu->tomacco_wfe_wait_us || !env->aarch64 || !w.bytes ||
++        (env->exclusive_addr & (w.bytes - 1))) {
++        return;
++    }
++    w.host = tlb_vaddr_to_host(env, env->exclusive_addr, MMU_DATA_LOAD,
++                               arm_to_core_mmu_idx(arm_mmu_idx(env)));
++    if (!w.host || !tomacco_wfe_unchanged(&w)) {
++        return;
++    }
++    /*
++     * One thread for all vCPUs (round robin, icount): the store can only
++     * come from another vCPU of this thread, and icount stops
++     * QEMU_CLOCK_VIRTUAL while nothing runs. Hand the thread over (as
++     * YIELD does there) instead of spinning out the time slice.
++     */
++    if (!tcg_cflags_has(cs, CF_PARALLEL)) {
++        cs->exception_index = EXCP_YIELD;
++        cpu_loop_exit(cs);
++    }
++
++    now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
++    deadline = now + (int64_t)cpu->tomacco_wfe_wait_us * SCALE_US;
++    next_event = gt_calc_next_event_stream(env);
++    if (next_event > 0 &&
++        next_event < INT64_MAX / gt_cntfrq_period_ns(cpu)) {
++        deadline = MIN(deadline, next_event * gt_cntfrq_period_ns(cpu));
++    }
++
++    for (;;) {
++        if (qatomic_read(&env->event_register)) {
++            qatomic_set(&env->event_register, false);
++            return;
++        }
++        if (cpu_test_interrupt(cs, ~0) || qatomic_read(&cs->exit_request) ||
++            (int16_t)qatomic_read(&cs->neg.icount_decr.u16.high) < 0 ||
++            !tomacco_wfe_unchanged(&w)) {
++            return;
++        }
++        if (qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) >= deadline) {
++            return;
++        }
++#if defined(__x86_64__)
++        if (tomacco_host_has_waitpkg()) {
++            /* ~1-2 us per slice bounds the delay of a kick. */
++            tomacco_umwait(&w, 4096);
++            continue;
++        }
++#endif
++        for (int i = 0; i < 64; i++) {
++            cpu_relax();
++        }
++    }
++}
++#endif
++
+ void HELPER(wfe)(CPUARMState *env, uint32_t insn_len)
+ {
+ #ifdef CONFIG_USER_ONLY
+@@ -835,8 +984,12 @@
+      * instruction the architecture allows for the PE to leave
+      * low-power state for any reason. QEMU chooses to treat being in
+      * an exclusive region as such and return directly.
++     *
++     * Unless tomacco-wfe-wait-us is set: then we wait for the monitored
++     * location itself, bounded (tomacco_wfe_wait).
+      */
+     if (env->exclusive_addr != -1) {
++        tomacco_wfe_wait(env);
+         return;
+     }
+ 
+diff --git a/target/arm/tcg/translate-a64.c b/target/arm/tcg/translate-a64.c
+--- a/target/arm/tcg/translate-a64.c
++++ b/target/arm/tcg/translate-a64.c
+@@ -3620,6 +3620,8 @@
+         tcg_gen_mov_i64(cpu_reg(s, rt), cpu_exclusive_val);
+     }
+     tcg_gen_mov_i64(cpu_exclusive_addr, clean_addr);
++    tcg_gen_st8_i32(tcg_constant_i32(1 << (size + is_pair)), tcg_env,
++                    offsetof(CPUARMState, tomacco_exclusive_bytes));
+ }
+ 
+ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,

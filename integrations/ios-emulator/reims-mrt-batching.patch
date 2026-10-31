@@ -1,0 +1,664 @@
+reims-vgpu: let MRT draws batch, and say what a frame interval waits for.
+
+On Home-screen page swipes (~10 presents/s, every
+frame one CmdExecIndirect2 of 28-46 draws plus one CmdDisplaySwapMapping):
+every draw of the iOS compositor carries a secondary colour attachment
+(store_routes mrt_draw_multi = draws), and JoinTerms barred MRT outright
+(nojoin_mrt = draws, engine_delta batch_opens=0). So every draw was its own
+vkQueueSubmit + fence + ring slot, and with RING_DEPTH 8 the drain worker
+blocked on ring slots: draw_phase slot_us 95-260 ms/s, ring_retire_blocks
+35-55/s, while gpu_span busy_us said this device used ~25 ms of GPU a second.
+The same box had another process (an Unreal game) holding the AMD GPU at
+gpu_busy_percent 99 %, so each round trip waited for a GPU time slice:
+readback_split fence_us/fence 6-11 ms against gpu_us/gpu ~1 ms, also in
+seconds with 3-21 draws. op0x37 took 30-45 ms a frame and op0x08 11-14 ms.
+
+The MRT rung shared its reason with the depth rung (the per-draw ad-hoc
+framebuffer the deferred path used to leak). That framebuffer is cache-owned
+now and both submit paths dispose through dispose_ad_hoc_attachments; the
+depth rung was already relaxed for that reason, MRT was not. Secondary
+barriers derive their source scope from the tracked access, a secondary
+sampled later goes through the resident-sample barrier, and the pass echo
+compares the framebuffer (which names every secondary view). So the default
+now lets an MRT draw open and join a batch; REIMS_VGPU_BATCH_MRT=off restores
+the bar (census name nojoin_mrt). With it a frame's draws and the render
+store's readback (which appends to the open batch) are one submission.
+
+Measurement, census only:
+- drain_ops prints op<N>_max_us beside each opcode's sum, so a long tranche
+  names its packet.
+- frame_cycle (under drain_ops): presents, present-to-present interval
+  (sum/max), host_us = child-packet dispatch time between two presents,
+  gap_us = from the end of the tranche that carried a present (its stamp
+  published, IRQ queued) to the start of the next CmdExecIndirect2 (guest
+  IRQ delivery + wake + CPU work for the next frame), overlapped = next exec
+  already queued behind the present, and gpu_busy = the host's
+  gpu_busy_percent of every DRM card, so a GPU held by another process shows
+  in the log.
+
+Tests: exec::tests::a_secondary_attachment_alone_does_not_bar_batching,
+census frame_cycle_tests (3) and drain_ops_reports_each_opcodes_longest_dispatch,
+parity consecutive_mrt_draws_join_one_batch_and_keep_both_attachments (fails
+with REIMS_VGPU_BATCH_MRT=off).
+
+diff --git a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+index 07b0067..1ca1976 100644
+--- a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -374,6 +374,17 @@ pub const BATCH_MIXED_TARGETS: &str = "REIMS_VGPU_BATCH_MIXED_TARGETS";
+ /// Off is a refusal (`nojoin_depth`) and never a permission.
+ pub const BATCH_DEPTH: &str = "REIMS_VGPU_BATCH_DEPTH";
+ 
++/// `off` bars a draw carrying secondary colour attachments (MRT) from deferring
++/// its submit, the way every such draw was barred before (`nojoin_mrt`).
++///
++/// The bar shared its reason with [`BATCH_DEPTH`]'s: the per-draw ad-hoc
++/// framebuffer the deferred path used to leak. That framebuffer is cache-owned
++/// now and both submit paths dispose through one function, so the default arm
++/// lets an MRT draw open and join a batch. The iOS compositor draws every
++/// Home-screen quad as MRT, so under the bar each draw of a frame was its own
++/// submission and fence. Off is a refusal and never a permission.
++pub const BATCH_MRT: &str = "REIMS_VGPU_BATCH_MRT";
++
+ /// `off` stages the guest bytes of a `[[buffer(n)]]` bind even when the stage's
+ /// own reflection says the shader never dereferences it.
+ ///
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+index 298aedc..738a40b 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -2322,6 +2322,29 @@ unsafe fn upload_buffer_to_sampled_image(
+ struct JoinTerms {
+     force_loss: bool,
+     quirk: bool,
++    /// An MRT draw whose submit may not be deferred.
++    ///
++    /// Not a statement about secondary attachments either, and for the same
++    /// reason as `depth_barred` below: the rung shared `ordinary_ad_hoc_framebuffer`
++    /// with depth and colour inputs, whose per-draw framebuffer the deferred path
++    /// used to leak. That framebuffer is cache-owned now
++    /// (`ensure_ad_hoc_framebuffer`) and both submit paths go through
++    /// [`dispose_ad_hoc_attachments`]. Everything else an MRT draw records is
++    /// ordered inside the command buffer like a single-target draw's: the
++    /// secondary barrier loop derives its source scope from the tracked access
++    /// the previous draw left (`registry_mark_ready_at` with the pass's final
++    /// layout), a secondary sampled later goes through the same resident-sample
++    /// barrier, and the pass echo compares the framebuffer, which names every
++    /// secondary view, so a continuation cannot land in a pass with other
++    /// secondaries.
++    ///
++    /// The iOS paravirtual compositor renders every Home-screen draw as MRT
++    /// (`mrt_draw_multi` = `draws`, `nojoin_mrt` = `draws`, `batch_opens=0`), so
++    /// with this rung each of the 28-46 draws of a frame was its own
++    /// `vkQueueSubmit` with its own fence, and `slot_us` (100-260 ms/s) was the
++    /// drain worker waiting on ring slots of an eight-deep ring. On a host GPU
++    /// another process keeps busy every one of those round trips waits for a
++    /// time slice. [`crate::config::BATCH_MRT`]`=off` restores the bar for an A/B.
+     is_mrt: bool,
+     /// A depth draw whose submit may not be deferred.
+     ///
+@@ -2415,6 +2438,43 @@ fn depth_bars_batching(has_depth: bool) -> bool {
+     has_depth && batch_depth_disabled()
+ }
+ 
++/// Whether [`crate::config::BATCH_MRT`] is switched off, read once per process.
++///
++/// Latched for the same reason [`batch_depth_disabled`] is: this sits on the
++/// per-draw path and `std::env::var_os` is a lock and an allocation.
++fn batch_mrt_disabled() -> bool {
++    use std::sync::OnceLock;
++    static OFF: OnceLock<bool> = OnceLock::new();
++    *OFF.get_or_init(|| {
++        let (state, value) = crate::config::read(crate::config::BATCH_MRT);
++        match state {
++            crate::config::Switch::Off => {
++                crate::observe::off("batch_mrt reason=batch_mrt_disabled_by_env");
++                true
++            }
++            // Named rather than silently read as the default. It still takes the
++            // default arm: this switch may only turn a rail off.
++            crate::config::Switch::Unrecognized => {
++                crate::observe::fail(format!(
++                    "batch_mrt reason=batch_mrt_env_unrecognized value={}",
++                    value.unwrap_or_default()
++                ));
++                false
++            }
++            crate::config::Switch::On | crate::config::Switch::Unset => false,
++        }
++    })
++}
++
++/// The `is_mrt` term, as the draw path computes it.
++///
++/// A function for the reason [`depth_bars_batching`] is one: a test can reach
++/// the decision and not just the field, so the rung cannot silently go back to
++/// barring every draw that carries a secondary attachment.
++fn mrt_bars_batching(is_mrt: bool) -> bool {
++    is_mrt && batch_mrt_disabled()
++}
++
+ /// Hand this draw's ad-hoc attachment handles to the graveyard.
+ ///
+ /// **Both submit paths call this and neither may inline it.** They differ only in
+@@ -2979,7 +3039,7 @@ pub(crate) unsafe fn execute_draw_inner(
+     let terms = JoinTerms {
+         force_loss,
+         quirk: ctx.caps.quirks.no_deferred_draw_batching,
+-        is_mrt,
++        is_mrt: mrt_bars_batching(is_mrt),
+         depth_barred: depth_bars_batching(req.depth.is_some()),
+         reads_back: !req.skip_readback,
+         has_query: req.occlusion_query.is_some(),
+@@ -7299,6 +7359,38 @@ mod tests {
+         assert_eq!(barred.refusal(), Some("nojoin_depth"));
+     }
+ 
++    /// A secondary colour attachment on its own must not stop a draw deferring
++    /// its submit.
++    ///
++    /// The iOS compositor draws every Home-screen quad into two attachments, so
++    /// this rung decided the submission count of that whole rail: one
++    /// `vkQueueSubmit` and one ring slot per draw while it barred MRT, one per
++    /// batch now. Through the production predicate, like the depth test above,
++    /// so re-adding `is_mrt` unconditionally fails here. `BATCH_MRT` is unset in
++    /// the test process, which is the shipping arm.
++    #[test]
++    fn a_secondary_attachment_alone_does_not_bar_batching() {
++        let mrt_only = JoinTerms {
++            is_mrt: mrt_bars_batching(true),
++            ..join_terms(0)
++        };
++        assert!(
++            mrt_only.batch_eligible(),
++            "an MRT draw must be able to open or join a batch"
++        );
++        assert_eq!(mrt_only.refusal(), None);
++        assert!(!mrt_bars_batching(false));
++
++        // The switch's arm keeps its own census name, so an A/B boot says which
++        // arm it ran.
++        let barred = JoinTerms {
++            is_mrt: true,
++            ..join_terms(0)
++        };
++        assert!(!barred.batch_eligible());
++        assert_eq!(barred.refusal(), Some("nojoin_mrt"));
++    }
++
+     // There is deliberately no test that `batch_eligible` and `refusal` agree
+     // about which rungs gate opening a batch. Both read `JoinScope` off the same
+     // ladder entry, so any such test asserts the scope field against itself:
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
+index 9efa07b..06d8fc2 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
+@@ -1054,6 +1054,10 @@ impl FinishPhase {
+ struct ProcOpTable {
+     ns: [std::sync::atomic::AtomicU64; PROC_OP_SLOTS],
+     count: [std::sync::atomic::AtomicU64; PROC_OP_SLOTS],
++    /// The longest single dispatch of each opcode in the window. A sum and a
++    /// count cannot say whether `max_tranche_us` is one long packet or many
++    /// short ones; this names the packet.
++    max_ns: [std::sync::atomic::AtomicU64; PROC_OP_SLOTS],
+     above_max: std::sync::atomic::AtomicU64,
+ }
+ 
+@@ -1066,6 +1070,7 @@ impl Default for ProcOpTable {
+         Self {
+             ns: std::array::from_fn(|_| std::sync::atomic::AtomicU64::new(0)),
+             count: std::array::from_fn(|_| std::sync::atomic::AtomicU64::new(0)),
++            max_ns: std::array::from_fn(|_| std::sync::atomic::AtomicU64::new(0)),
+             above_max: std::sync::atomic::AtomicU64::new(0),
+         }
+     }
+@@ -2011,6 +2016,7 @@ impl DrainDutyCensus {
+         };
+         slot.fetch_add(ns, Relaxed);
+         self.proc_ops.count[opcode as usize].fetch_add(1, Relaxed);
++        self.proc_ops.max_ns[opcode as usize].fetch_max(ns, Relaxed);
+     }
+ 
+     /// The per-opcode split of the window [`Self::note`] just reported, or
+@@ -2028,11 +2034,14 @@ impl DrainDutyCensus {
+         for opcode in 0..PROC_OP_SLOTS {
+             let n = self.proc_ops.count[opcode].swap(0, Relaxed);
+             let us = self.proc_ops.ns[opcode].swap(0, Relaxed) / 1000;
++            let max = self.proc_ops.max_ns[opcode].swap(0, Relaxed) / 1000;
+             if n == 0 {
+                 continue;
+             }
+             any = true;
+-            body.push_str(&format!(" op{opcode:#04x}_us={us} op{opcode:#04x}_n={n}"));
++            body.push_str(&format!(
++                " op{opcode:#04x}_us={us} op{opcode:#04x}_n={n} op{opcode:#04x}_max_us={max}"
++            ));
+         }
+         let above = self.proc_ops.above_max.swap(0, Relaxed);
+         any.then(|| format!("drain_ops win_ms={win_ms} above_max={above}{body}"))
+@@ -2647,6 +2656,188 @@ pub fn note_vcpu_lock_wait(us: u64) {
+     }
+ }
+ 
++static FRAME_CYCLE: std::sync::Mutex<FrameCycleCensus> =
++    std::sync::Mutex::new(FrameCycleCensus::new());
++
++/// Opcodes that present a frame: op8 `CmdDisplaySwapMapping` on the arm
++/// pathway, op6/op7 on the x86 display pipe.
++const PRESENT_OPCODES: [u16; 3] = [0x06, 0x07, 0x08];
++/// `CmdExecIndirect2`, the packet a frame's GPU work arrives in.
++const EXEC_OPCODE: u16 = 0x37;
++
++/// A frame's lifecycle from the device's side, split at the two hand-offs.
++///
++/// `drain_duty` says how busy the worker was and `drain_ops` which packets it
++/// was busy with, but neither says what the *frame rate* is waiting for. A
++/// guest that renders one frame at a time spends each frame interval in two
++/// alternating places: this device executing the frame's packets (`host_us`),
++/// and the guest between being told the previous frame completed and handing
++/// over the next one (`gap_us`: from the end of the tranche that carried a
++/// present, which is when its stamp is published and the IRQ queued, to the
++/// start of the next `CmdExecIndirect2`). That gap holds the IRQ delivery, the
++/// guest's wake-up and all of its CPU work for the next frame. `host_us +
++/// gap_us` near `interval_us` means the two run serially, and the larger of
++/// the two is the one worth attacking. `overlapped` counts frames whose next
++/// exec had already arrived in the present's own tranche — the guest was ahead
++/// of the device.
++///
++/// `gpu_busy` is the host's own busy figure for every DRM card that publishes
++/// one (amdgpu's `gpu_busy_percent`), sampled at report time. It is not this
++/// device's load: it once read 99 % on the card this device renders on while
++/// `gpu_span busy_us` said this device used 2.5 % of it, because another
++/// process held the GPU — and every fence wait here queues behind that.
++#[derive(Debug, Default)]
++pub(crate) struct FrameCycleCensus {
++    presents: u64,
++    interval_us: u64,
++    interval_max_us: u64,
++    intervals: u64,
++    host_us: u64,
++    host_max_us: u64,
++    gap_n: u64,
++    gap_us: u64,
++    gap_max_us: u64,
++    overlapped: u64,
++    /// Dispatch time of every child packet since the last present.
++    host_acc_us: u64,
++    last_present_end_us: Option<u64>,
++    /// A present was dispatched in the tranche now running.
++    present_in_tranche: bool,
++    /// When the last present's tranche ended, while no exec has followed.
++    present_visible_us: Option<u64>,
++}
++
++impl FrameCycleCensus {
++    const fn new() -> Self {
++        Self {
++            presents: 0,
++            interval_us: 0,
++            interval_max_us: 0,
++            intervals: 0,
++            host_us: 0,
++            host_max_us: 0,
++            gap_n: 0,
++            gap_us: 0,
++            gap_max_us: 0,
++            overlapped: 0,
++            host_acc_us: 0,
++            last_present_end_us: None,
++            present_in_tranche: false,
++            present_visible_us: None,
++        }
++    }
++
++    /// One child packet dispatch that ended at `end_us` and took `dur_us`.
++    pub(crate) fn note_op(&mut self, opcode: u16, end_us: u64, dur_us: u64) {
++        self.host_acc_us = self.host_acc_us.saturating_add(dur_us);
++        if PRESENT_OPCODES.contains(&opcode) {
++            self.presents += 1;
++            if let Some(last) = self.last_present_end_us {
++                let interval = end_us.saturating_sub(last);
++                self.interval_us = self.interval_us.saturating_add(interval);
++                self.interval_max_us = self.interval_max_us.max(interval);
++                self.intervals += 1;
++                self.host_us = self.host_us.saturating_add(self.host_acc_us);
++                self.host_max_us = self.host_max_us.max(self.host_acc_us);
++            }
++            self.host_acc_us = 0;
++            self.last_present_end_us = Some(end_us);
++            self.present_in_tranche = true;
++            self.present_visible_us = None;
++        } else if opcode == EXEC_OPCODE {
++            if self.present_in_tranche {
++                // The next frame was already queued behind the present.
++                self.overlapped += 1;
++                self.present_in_tranche = false;
++            } else if let Some(visible) = self.present_visible_us.take() {
++                let start = end_us.saturating_sub(dur_us);
++                let gap = start.saturating_sub(visible);
++                self.gap_n += 1;
++                self.gap_us = self.gap_us.saturating_add(gap);
++                self.gap_max_us = self.gap_max_us.max(gap);
++            }
++        }
++    }
++
++    /// The tranche now ending published its stamps at `now_us`.
++    pub(crate) fn tranche_ended(&mut self, now_us: u64) {
++        if self.present_in_tranche {
++            self.present_in_tranche = false;
++            self.present_visible_us = Some(now_us);
++        }
++    }
++
++    /// The window's line, or `None` when no present was dispatched in it.
++    pub(crate) fn take(&mut self, gpu_busy: &str) -> Option<String> {
++        if self.presents == 0 {
++            return None;
++        }
++        let line = format!(
++            "frame_cycle presents={} intervals={} interval_us={} interval_max_us={} \
++             host_us={} host_max_us={} gap_n={} gap_us={} gap_max_us={} overlapped={} \
++             gpu_busy={gpu_busy}",
++            self.presents,
++            self.intervals,
++            self.interval_us,
++            self.interval_max_us,
++            self.host_us,
++            self.host_max_us,
++            self.gap_n,
++            self.gap_us,
++            self.gap_max_us,
++            self.overlapped,
++        );
++        let keep = (
++            self.host_acc_us,
++            self.last_present_end_us,
++            self.present_in_tranche,
++            self.present_visible_us,
++        );
++        *self = Self::new();
++        (
++            self.host_acc_us,
++            self.last_present_end_us,
++            self.present_in_tranche,
++            self.present_visible_us,
++        ) = keep;
++        Some(line)
++    }
++}
++
++/// `card<N>:<percent>` for every DRM card that publishes `gpu_busy_percent`,
++/// comma-separated, or `none`. A sysfs read per card once a second.
++fn host_gpu_busy() -> String {
++    #[cfg(target_os = "linux")]
++    {
++        let mut cards: Vec<(u32, String)> = Vec::new();
++        if let Ok(entries) = std::fs::read_dir("/sys/class/drm") {
++            for entry in entries.flatten() {
++                let name = entry.file_name().to_string_lossy().into_owned();
++                let Some(index) = name
++                    .strip_prefix("card")
++                    .and_then(|rest| rest.parse::<u32>().ok())
++                else {
++                    continue;
++                };
++                if let Ok(text) =
++                    std::fs::read_to_string(entry.path().join("device/gpu_busy_percent"))
++                {
++                    cards.push((index, format!("card{index}:{}", text.trim())));
++                }
++            }
++        }
++        cards.sort();
++        if !cards.is_empty() {
++            return cards
++                .into_iter()
++                .map(|(_, s)| s)
++                .collect::<Vec<_>>()
++                .join(",");
++        }
++    }
++    "none".to_string()
++}
++
+ static DRAIN_DUTY: std::sync::LazyLock<DrainDutyCensus> =
+     std::sync::LazyLock::new(DrainDutyCensus::default);
+ 
+@@ -2761,6 +2952,11 @@ pub fn note_drain_decode(ns: u64) {
+ /// Attribute one `process_child_packet` dispatch, in nanoseconds, by opcode.
+ pub fn note_drain_proc(opcode: u16, ns: u64) {
+     DRAIN_DUTY.note_proc(opcode, ns);
++    let end_us = crate::observe::elapsed_us();
++    FRAME_CYCLE
++        .lock()
++        .unwrap_or_else(|p| p.into_inner())
++        .note_op(opcode, end_us, ns / 1000);
+ }
+ 
+ /// Attribute one span inside `process_exec_indirect2`, in nanoseconds.
+@@ -2804,6 +3000,10 @@ pub fn note_drain_tranche(
+     drain_us: u64,
+     publish_us: u64,
+ ) {
++    FRAME_CYCLE
++        .lock()
++        .unwrap_or_else(|p| p.into_inner())
++        .tranche_ended(crate::observe::elapsed_us());
+     if let Some(line) = DRAIN_DUTY.note(drain_us, publish_us, crate::observe::elapsed_ms() as u64) {
+         crate::observe::off(line);
+         // The rail this device is running on, asked four times below at the
+@@ -2821,6 +3021,15 @@ pub fn note_drain_tranche(
+         if let Some(ops) = DRAIN_DUTY.take_proc_ops() {
+             crate::observe::off(ops);
+         }
++        // Under `drain_ops`: the same packets, read as frames. Says how much of
++        // a frame interval was this device's and how much the guest's.
++        if let Some(cycle) = FRAME_CYCLE
++            .lock()
++            .unwrap_or_else(|p| p.into_inner())
++            .take(&host_gpu_busy())
++        {
++            crate::observe::off(cycle);
++        }
+         // Under `drain_ops`, dividing its `op0x37_us` the way `chain_phase`
+         // divides `draw_us`.
+         if let Some(exec) = DRAIN_DUTY.take_exec_phases() {
+@@ -3537,3 +3746,94 @@ mod lookup_age_tests {
+         }
+     }
+ }
++
++#[cfg(test)]
++mod frame_cycle_tests {
++    use super::{DrainDutyCensus, FrameCycleCensus};
++
++    /// `drain_ops` names the longest dispatch of each opcode beside its sum, and
++    /// the report resets it with the sum.
++    #[test]
++    fn drain_ops_reports_each_opcodes_longest_dispatch() {
++        let c = DrainDutyCensus::default();
++        c.note_proc(0x37, 30_000_000);
++        c.note_proc(0x37, 12_000_000);
++        c.note_proc(0x08, 11_000_000);
++        let line = c.take_proc_ops().expect("packets were dispatched");
++        assert!(
++            line.contains(" op0x37_us=42000 op0x37_n=2 op0x37_max_us=30000"),
++            "{line}"
++        );
++        assert!(
++            line.contains(" op0x08_us=11000 op0x08_n=1 op0x08_max_us=11000"),
++            "{line}"
++        );
++        c.note_proc(0x37, 1_000_000);
++        let line = c.take_proc_ops().unwrap();
++        assert!(line.contains(" op0x37_max_us=1000"), "{line}");
++    }
++
++    /// Two frames rendered one at a time: exec, present, guest gap, exec,
++    /// present. The interval is split into this device's dispatch time and the
++    /// guest's gap, which starts where the present's tranche published.
++    #[test]
++    fn a_serial_frame_splits_into_host_time_and_guest_gap() {
++        let mut c = FrameCycleCensus::default();
++        c.note_op(0x37, 30_000, 30_000);
++        c.note_op(0x08, 42_000, 12_000);
++        c.tranche_ended(42_500);
++        // The guest needs 57.5 ms before the next frame's exec starts.
++        c.note_op(0x37, 130_000, 30_000);
++        c.note_op(0x08, 142_000, 12_000);
++        c.tranche_ended(142_300);
++        let line = c.take("card2:99").expect("presents were dispatched");
++        assert!(
++            line.starts_with("frame_cycle presents=2 intervals=1 interval_us=100000 "),
++            "{line}"
++        );
++        assert!(line.contains(" host_us=42000 host_max_us=42000 "), "{line}");
++        assert!(
++            line.contains(" gap_n=1 gap_us=57500 gap_max_us=57500 overlapped=0 "),
++            "{line}"
++        );
++        assert!(line.ends_with(" gpu_busy=card2:99"), "{line}");
++    }
++
++    /// An exec dispatched in the present's own tranche was queued before the
++    /// guest could have seen the stamp: it is an overlap and not a gap, and it
++    /// must not arm a gap that the following frame would be charged with.
++    #[test]
++    fn an_exec_behind_the_present_in_one_tranche_is_an_overlap() {
++        let mut c = FrameCycleCensus::default();
++        c.note_op(0x08, 10_000, 5_000);
++        c.note_op(0x37, 20_000, 10_000);
++        c.tranche_ended(20_100);
++        c.note_op(0x37, 90_000, 10_000);
++        let line = c.take("none").unwrap();
++        assert!(
++            line.contains(" gap_n=0 gap_us=0 gap_max_us=0 overlapped=1 "),
++            "{line}"
++        );
++    }
++
++    /// A window without a present says nothing, and a report keeps the frame
++    /// in progress, so the next window's first interval is measured from the
++    /// last present of this one.
++    #[test]
++    fn the_report_resets_counts_and_keeps_the_frame_in_progress() {
++        let mut c = FrameCycleCensus::default();
++        assert_eq!(c.take("none"), None);
++        c.note_op(0x08, 10_000, 1_000);
++        c.tranche_ended(10_000);
++        assert!(c.take("none").unwrap().contains("presents=1 intervals=0 "));
++        c.note_op(0x37, 50_000, 20_000);
++        c.note_op(0x08, 60_000, 10_000);
++        let line = c.take("none").unwrap();
++        assert!(
++            line.contains("presents=1 intervals=1 interval_us=50000 "),
++            "{line}"
++        );
++        assert!(line.contains(" host_us=30000 "), "{line}");
++        assert!(line.contains(" gap_n=1 gap_us=20000 "), "{line}");
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index 5b51143..68158c4 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -4103,6 +4103,98 @@ fn mrt_secondary_attachment_becomes_sampleable_resident() {
+     assert_eq!(delta.sampled_reuploads, 0, "no host reupload: {delta:?}");
+ }
+ 
++/// Two MRT draws in a row share one command buffer: the first opens a batch,
++/// the second joins it, and both attachments still hold what the draws
++/// recorded when the batch is finally read.
++///
++/// The iOS compositor draws every Home-screen quad into two attachments, and
++/// MRT used to bar batching outright (`nojoin_mrt`), which made each of a
++/// frame's 28-46 draws its own submission and fence. The secondary here is
++/// cleared to blue with every channel masked off, then *loaded* by the joining
++/// draw, so a join that lost the first pass's store or recorded the second
++/// pass against the wrong framebuffer reads back something other than blue.
++#[test]
++fn consecutive_mrt_draws_join_one_batch_and_keep_both_attachments() {
++    use reims_vgpu_core::blend::ColorWriteMask;
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let (w, h) = (16u32, 16u32);
++    let primary = TargetIdentity::Surface {
++        id: 0x1b0,
++        width: w,
++        height: h,
++        generation: 1,
++        format: SURFACE_TEST_FORMAT,
++    };
++    let secondary = TargetIdentity::Surface {
++        id: 0x1b1,
++        width: w,
++        height: h,
++        generation: 1,
++        format: SURFACE_TEST_FORMAT,
++    };
++    let draw = |load_secondary: bool| {
++        let mut req = engine_req(&v, &f, w, h);
++        req.target_identity = Some(primary.clone());
++        req.skip_readback = true;
++        req.secondary_targets.push(SecondaryColorTarget {
++            seed: None,
++            identity: secondary.clone(),
++            width: w,
++            height: h,
++            attachment: color_attachment(
++                reims_vgpu::protocol::pixel_format::MTL_FORMAT_RGBA8_UNORM,
++                [0.0, 0.0, 1.0, 1.0],
++            ),
++            load: load_secondary,
++            blend: None,
++            color_write_mask: ColorWriteMask::NONE,
++        });
++        req
++    };
++    engine::reset_draw_counters();
++    let before = engine::counter_snapshot();
++    match engine::execute_draw_request(engine_device(), &draw(false)) {
++        Ok(_) => {}
++        Err(e) if skip_if_no_gpu(&e.to_string()) => {
++            eprintln!("SKIP consecutive mrt batch: {e}");
++            return;
++        }
++        Err(e) => panic!("first mrt draw: {e}"),
++    }
++    engine::execute_draw_request(engine_device(), &draw(true)).expect("joining mrt draw");
++    let d = engine::counter_snapshot().delta_since(&before);
++    assert!(
++        d.batch_opens >= 1,
++        "the first MRT draw must open a batch: {d:?}"
++    );
++    assert!(
++        d.batch_joins >= 1,
++        "the second MRT draw must join it: {d:?}"
++    );
++
++    let px = engine::read_target(&primary)
++        .expect("read the primary")
++        .into_rgba8()
++        .expect("an eight-bit colour readback");
++    let all_green = (0..(w * h) as usize).all(|p| near(px[p * 4 + 1], 128));
++    assert!(
++        all_green,
++        "the primary must hold the fragment colour everywhere"
++    );
++    let px = engine::read_target(&secondary)
++        .expect("read the secondary")
++        .into_rgba8()
++        .expect("an eight-bit colour readback");
++    let i = ((h / 2) * w + w / 2) as usize * 4;
++    let (c0, g, c2, a) = (px[i], px[i + 1], px[i + 2], px[i + 3]);
++    assert!(
++        g == 0 && a == 255 && ((c0 == 255 && c2 == 0) || (c0 == 0 && c2 == 255)),
++        "the masked secondary must keep the first pass's blue clear through the join: \
++         ({c0},{g},{c2},{a})"
++    );
++}
++
+ /// The vibrancy coverage mask is Metal RG16Float (0x41). Exercise the real
+ /// secondary format end-to-end: the RG16Float render pass / pipeline / resident
+ /// image build and render without error, and the mask persists as a resident.

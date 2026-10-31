@@ -1,0 +1,1033 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -17,6 +17,10 @@
+     MAPPER_REQUEST_UNMAP,
+ };
+ use crate::runtime::host::{HostMemory, HostOps, MemError};
++
++mod rect_batch;
++pub use rect_batch::RectBatchRefusal;
++pub(crate) use rect_batch::{copy_mapping_rects, MappingRectCopy, MappingStorageIdentity};
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ enum MapperDecline {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+@@ -16,6 +16,9 @@
+ use crate::runtime::changed_runs::ChangedRuns;
+ use crate::runtime::host::{HostMemory, HostOps};
+ use crate::runtime::mapper;
++
++mod planar_xr;
++pub use planar_xr::*;
+ 
+ /// The rail that can copy a resident straight into a mapping's guest pages.
+ ///
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -1367,6 +1367,71 @@
+     if let Some(mid) = surface {
+         // Ensure backing pages exist for this surface id.
+         let _ = objects::ensure_surface_for_texture_bind(state, host, mid);
++        // A whole mapper/backing reference to native RGB10 + alpha8 has two
++        // storage windows. Its float32 sample cannot pass through a one-plane
++        // window or a BGRA8 cache. Serialized plane views retain their own
++        // single-plane interpretation below.
++        if resolved_resource.as_ref().is_some_and(|resource| {
++            resource.entry.object_type == objects::OBJECT_TYPE_BACKING
++                || matches!(resource.decoded(), Ok(crate::runtime::decode::resource::Descriptor::IOSurfaceTexture {
++                    pixel_format, ..
++                }) if pixel_format::PlanarXrFormat::from_mtl(*pixel_format).is_some())
++        }) {
++            if let Some((width, height)) = state.mappings.get(&mid).and_then(|mapping| {
++                pixel_format::PlanarXrFormat::from_mtl(mapping.format)
++                    .map(|_| (mapping.width, mapping.height))
++            }) {
++                if !native_uploads_asking_host().float32 {
++                    crate::observe::Emit::decline(
++                        "dual_xr_surface_sample",
++                        &LinearLoadRefusal::PlanarXr {
++                            reason: "dual_xr_surface_sample_float32_filter_unsupported",
++                        },
++                    )
++                    .field("mapping", mid)
++                    .field("ref", texture_ref)
++                    .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                    return None;
++                }
++                let Some(resource) = resolved_resource.as_ref() else {
++                    crate::observe::Emit::decline(
++                        "dual_xr_surface_sample",
++                        &LinearLoadRefusal::DescriptorUndecodable,
++                    )
++                    .field("mapping", mid)
++                    .field("ref", texture_ref)
++                    .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                    return None;
++                };
++                let sample = match load_planar_xr_surface_sample(
++                    state, host, resource, mid, width, height,
++                ) {
++                    Ok(sample) => sample,
++                    Err(why) => {
++                        crate::observe::Emit::decline("dual_xr_surface_sample", &why)
++                            .field("mapping", mid)
++                            .field("ref", texture_ref)
++                            .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                        return None;
++                    }
++                };
++                crate::runtime::drain::note_store_route("dual_xr_surface_sample_n");
++                return Some((
++                    sample.width,
++                    sample.height,
++                    mid,
++                    SampledSourceRequest::Bytes(
++                        sample.bytes,
++                        Some(LinearSampleIdentity {
++                            key: resource.lifetime_ref().id(),
++                            generation: sample.generation,
++                        }),
++                        sample.byte_format,
++                        crate::backend::vulkan::engine::SampledByteOrigin::SerializedSurfaceView,
++                    ),
++                ));
++            }
++        }
+         // A ref-texture serialized record is the exact Metal texture view over the
+         // IOSurface bytes. Materialize it only when it differs from (or cannot
+         // be inferred from) the base mapping. Exact base views keep the fast
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
+@@ -49,10 +49,62 @@
+ 
+ #[derive(Debug)]
+ struct PlanarXrConverted {
+-    level: crate::runtime::decode::resource::PlanarXrLevel,
++    layout: PlanarXrSampleLayout,
+     native: [Vec<u8>; 2],
+     linear: Arc<Vec<u8>>,
+     generation: u64,
++}
++
++/// The two formats share the resource lifetime and exact-input comparison,
++/// but have different storage and conversion boundaries. Carry that distinction
++/// with the memo so a native 4+1 read can never reuse an APV 4+4 conversion.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++enum PlanarXrSampleLayout {
++    Apv(crate::runtime::decode::resource::PlanarXrLevel),
++    NativeSurface(crate::protocol::iosurface_pages::PlanarXrSurfaceLayout),
++}
++
++impl PlanarXrSampleLayout {
++    fn convert(
++        self,
++        planes: &[Vec<u8>; 2],
++    ) -> Result<
++        reims_vgpu_vulkan::pixel::SampledUpload,
++        reims_vgpu_vulkan::pixel::SampledUploadRefusal,
++    > {
++        match self {
++            Self::Apv(level) => reims_vgpu_vulkan::pixel::sampled_planar_xr_upload_bytes(
++                level.format,
++                &planes[0],
++                &planes[1],
++            ),
++            Self::NativeSurface(layout) => {
++                reims_vgpu_vulkan::pixel::sampled_planar_xr_surface_upload_bytes(
++                    layout.format,
++                    &planes[0],
++                    &planes[1],
++                )
++            }
++        }
++    }
++
++    fn scratch_route(self, reused: bool) -> &'static str {
++        match (self, reused) {
++            (Self::Apv(_), true) => "dual_xr_read_scratch_reused_n",
++            (Self::Apv(_), false) => "dual_xr_read_scratch_grown_n",
++            (Self::NativeSurface(_), true) => "dual_xr_surface_scratch_reused_n",
++            (Self::NativeSurface(_), false) => "dual_xr_surface_scratch_grown_n",
++        }
++    }
++
++    fn conversion_route(self, reused: bool) -> &'static str {
++        match (self, reused) {
++            (Self::Apv(_), true) => "dual_xr_convert_reused_n",
++            (Self::Apv(_), false) => "dual_xr_convert_new_n",
++            (Self::NativeSurface(_), true) => "dual_xr_surface_convert_reused_n",
++            (Self::NativeSurface(_), false) => "dual_xr_surface_convert_new_n",
++        }
++    }
+ }
+ 
+ #[derive(Debug)]
+@@ -68,6 +120,20 @@
+             Self::Read(why) => why.slug(),
+             Self::Upload(why) => why.slug(),
+             Self::ForeignRail => "dual_xr_memo_foreign_rail",
++        }
++    }
++
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match self {
++            Self::Read(why) => why.fields(),
++            _ => Vec::new(),
++        }
++    }
++
++    fn owner(&self) -> &'static str {
++        match self {
++            Self::Read(why) => why.owner(),
++            _ => std::any::type_name::<Self>(),
+         }
+     }
+ }
+@@ -83,6 +149,43 @@
+     read_native: impl FnOnce(&mut C, &mut [Vec<u8>; 2]) -> Result<(), E>,
+     next_generation: impl FnOnce(&mut C) -> u64,
+ ) -> Result<(Arc<Vec<u8>>, u64), PlanarXrMemoRefusal<E>> {
++    planar_xr_sample_for_layout(
++        resource,
++        mip_level,
++        PlanarXrSampleLayout::Apv(level),
++        context,
++        read_native,
++        next_generation,
++    )
++}
++
++/// A whole native IOSurface's two fresh reads use the same retained scratch
++/// and upload currency, with the native 4+1 conversion selected by its type.
++pub(crate) fn planar_xr_surface_sample_bytes<C, E>(
++    resource: &TaskResource,
++    layout: crate::protocol::iosurface_pages::PlanarXrSurfaceLayout,
++    context: &mut C,
++    read_native: impl FnOnce(&mut C, &mut [Vec<u8>; 2]) -> Result<(), E>,
++    next_generation: impl FnOnce(&mut C) -> u64,
++) -> Result<(Arc<Vec<u8>>, u64), PlanarXrMemoRefusal<E>> {
++    planar_xr_sample_for_layout(
++        resource,
++        0,
++        PlanarXrSampleLayout::NativeSurface(layout),
++        context,
++        read_native,
++        next_generation,
++    )
++}
++
++fn planar_xr_sample_for_layout<C, E>(
++    resource: &TaskResource,
++    mip_level: u32,
++    layout: PlanarXrSampleLayout,
++    context: &mut C,
++    read_native: impl FnOnce(&mut C, &mut [Vec<u8>; 2]) -> Result<(), E>,
++    next_generation: impl FnOnce(&mut C) -> u64,
++) -> Result<(Arc<Vec<u8>>, u64), PlanarXrMemoRefusal<E>> {
+     resource
+         .with_rail_state(|held: &mut ResidentTargets| {
+             let memo = held.planar_xr_samples.entry(mip_level).or_default();
+@@ -90,23 +193,16 @@
+             read_native(context, &mut memo.scratch).map_err(PlanarXrMemoRefusal::Read)?;
+             let reused = capacities.iter().all(|&capacity| capacity != 0)
+                 && capacities == memo.scratch.each_ref().map(|bytes| bytes.capacity());
+-            crate::runtime::drain::note_store_route(if reused {
+-                "dual_xr_read_scratch_reused_n"
+-            } else {
+-                "dual_xr_read_scratch_grown_n"
+-            });
++            crate::runtime::drain::note_store_route(layout.scratch_route(reused));
+             if let Some(converted) = &memo.converted {
+-                if converted.level == level && converted.native == memo.scratch {
+-                    crate::runtime::drain::note_store_route("dual_xr_convert_reused_n");
++                if converted.layout == layout && converted.native == memo.scratch {
++                    crate::runtime::drain::note_store_route(layout.conversion_route(true));
+                     return Ok((Arc::clone(&converted.linear), converted.generation));
+                 }
+             }
+-            let upload = reims_vgpu_vulkan::pixel::sampled_planar_xr_upload_bytes(
+-                level.format,
+-                &memo.scratch[0],
+-                &memo.scratch[1],
+-            )
+-            .map_err(PlanarXrMemoRefusal::Upload)?;
++            let upload = layout
++                .convert(&memo.scratch)
++                .map_err(PlanarXrMemoRefusal::Upload)?;
+             let (_, bytes) = upload.into_parts();
+             let linear = Arc::new(bytes);
+             // One device-wide allocator serves all sampled producers, so a
+@@ -116,7 +212,7 @@
+             // The previous input becomes scratch for the following bind.
+             let native = std::mem::take(&mut memo.scratch);
+             let previous = memo.converted.replace(PlanarXrConverted {
+-                level,
++                layout,
+                 native,
+                 linear: Arc::clone(&linear),
+                 generation,
+@@ -124,7 +220,7 @@
+             if let Some(previous) = previous {
+                 memo.scratch = previous.native;
+             }
+-            crate::runtime::drain::note_store_route("dual_xr_convert_new_n");
++            crate::runtime::drain::note_store_route(layout.conversion_route(false));
+             Ok((linear, generation))
+         })
+         .ok_or(PlanarXrMemoRefusal::ForeignRail)?
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -1008,6 +1008,75 @@
+     pub bytes: std::sync::Arc<Vec<u8>>,
+     pub byte_format: SampledByteFormat,
+     pub generation: u64,
++}
++
++/// Sample one native paired IOSurface through a retained resource. The read
++/// transaction settles first and holds the device exclusively through both
++/// reads, so a memo hit only reuses conversion, never a stale guest read.
++#[cfg(feature = "backend-vulkan")]
++pub(crate) fn load_planar_xr_surface_sample<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    resource: &crate::model::TaskResource,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++) -> Result<
++    PlanarXrSample,
++    crate::backend::vulkan::engine::resource_lease::PlanarXrMemoRefusal<
++        crate::runtime::mapping_write::PlanarXrMappingRefusal,
++    >,
++> {
++    use crate::backend::vulkan::engine::resource_lease::{
++        planar_xr_surface_sample_bytes, PlanarXrMemoRefusal,
++    };
++    let mut read = crate::runtime::mapping_write::prepare_planar_xr_surface_read(
++        state, host, mapping_id, width, height,
++    )
++    .map_err(PlanarXrMemoRefusal::Read)?;
++    let layout = read.layout();
++    // The mapping describes native storage, while a mapper-ref-texture declares
++    // its logical view. A RGB-only view of a paired mapping must not silently
++    // acquire its alpha plane. Backing references name the whole allocation.
++    if resource.entry.object_type != objects::OBJECT_TYPE_BACKING {
++        let declared = match resource.decoded() {
++            Ok(crate::runtime::decode::resource::Descriptor::IOSurfaceTexture {
++                mapping_id,
++                width,
++                height,
++                pixel_format,
++                ..
++            }) => Some((*mapping_id, *width, *height, *pixel_format)),
++            _ => None,
++        };
++        let expected = (mapping_id, layout.width, layout.height, layout.format.mtl());
++        if declared != Some(expected) {
++            return Err(PlanarXrMemoRefusal::Read(
++                crate::runtime::mapping_write::PlanarXrMappingRefusal::TextureView {
++                    expected,
++                    declared,
++                },
++            ));
++        }
++    }
++
++    let (bytes, generation) = planar_xr_surface_sample_bytes(
++        resource,
++        layout,
++        &mut read,
++        |read, planes| read.read_into(planes),
++        |read| read.next_sampled_generation(),
++    )?;
++    Ok(PlanarXrSample {
++        width: layout.width,
++        height: layout.height,
++        bytes,
++        generation,
++        byte_format: SampledByteFormat::linearized_from_source(
++            TexelLayout::Rgba32Float,
++            layout.format.mtl(),
++        ),
++    })
+ }
+ 
+ /// Read both pieces of one immutable XR construction descriptor. Each plane
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -212,6 +212,13 @@
+             MTL_FORMAT_RGB10A8_2P_XR10 => Some(Self::Rgb10Alpha8),
+             MTL_FORMAT_RGB10A8_2P_XR10_SRGB => Some(Self::Rgb10Alpha8Srgb),
+             _ => None,
++        }
++    }
++
++    pub const fn mtl(self) -> u16 {
++        match self {
++            Self::Rgb10Alpha8 => MTL_FORMAT_RGB10A8_2P_XR10,
++            Self::Rgb10Alpha8Srgb => MTL_FORMAT_RGB10A8_2P_XR10_SRGB,
+         }
+     }
+ 
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+@@ -0,0 +1,326 @@
++//! Prepare every host view before moving any bytes of a multi-plane transfer.
++//!
++//! A mapping generation alone cannot prove the geometry: the device descriptor
++//! can be republished without replacing its page list. The transaction retains
++//! both, then rechecks them after settlement and page revalidation. Imports are
++//! local to this call and released before it returns; no CPU alias escapes to a
++//! later GPU submission. The guest CPUs are not stopped by this transaction.
++
++use super::{mapping_page_gpas, PagesVouched, RunCopy};
++use crate::model::{DeviceState, MappingEntry};
++use crate::runtime::guest_ram::GuestRun;
++use crate::runtime::host::{HostMemory, HostOps};
++
++#[derive(Debug)]
++pub enum RectBatchRefusal {
++    Allocation,
++    StorageChanged,
++    PagesNotOurs,
++    Empty,
++    MixedDirections,
++    Window { index: usize },
++    Overlap { first: usize, second: usize },
++    Map { offset: u64, pages: usize },
++    HostBound { offset: u64 },
++}
++
++impl crate::observe::Decline for RectBatchRefusal {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::Allocation => "mapping_rect_batch_allocation",
++            Self::StorageChanged => "mapping_rect_batch_storage_changed",
++            Self::PagesNotOurs => "mapping_rect_batch_pages_not_ours",
++            Self::Empty => "mapping_rect_batch_empty",
++            Self::MixedDirections => "mapping_rect_batch_mixed_directions",
++            Self::Window { .. } => "mapping_rect_batch_window",
++            Self::Overlap { .. } => "mapping_rect_batch_overlap",
++            Self::Map { .. } => "mapping_rect_batch_map",
++            Self::HostBound { .. } => "mapping_rect_batch_host_bound",
++        }
++    }
++
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match self {
++            Self::Window { index } => vec![("plane", index.to_string())],
++            Self::Overlap { first, second } => vec![
++                ("first_plane", first.to_string()),
++                ("second_plane", second.to_string()),
++            ],
++            Self::Map { offset, pages } => {
++                vec![("offset", offset.to_string()), ("pages", pages.to_string())]
++            }
++            Self::HostBound { offset } => vec![("offset", offset.to_string())],
++            _ => Vec::new(),
++        }
++    }
++}
++
++/// Identity of the storage whose layout the caller decoded, including its
++/// complete descriptor. Taken after writeback settlement, never before it.
++pub(crate) struct MappingStorageIdentity {
++    mapping_id: u32,
++    generation: u32,
++    descriptor: Vec<u8>,
++    geometry: (bool, u32, u32, u16),
++}
++
++impl MappingStorageIdentity {
++    pub(crate) fn capture(
++        mapping_id: u32,
++        mapping: &MappingEntry,
++    ) -> Result<Self, RectBatchRefusal> {
++        if !mapping.mapped || mapping.page_entries.is_empty() {
++            return Err(RectBatchRefusal::StorageChanged);
++        }
++        let mut descriptor = Vec::new();
++        descriptor
++            .try_reserve_exact(mapping.device_desc.len())
++            .map_err(|_| RectBatchRefusal::Allocation)?;
++        descriptor.extend_from_slice(&mapping.device_desc);
++        Ok(Self {
++            mapping_id,
++            generation: mapping.map_generation,
++            descriptor,
++            geometry: (
++                mapping.has_geom,
++                mapping.width,
++                mapping.height,
++                mapping.format,
++            ),
++        })
++    }
++
++    fn covers(&self, state: &DeviceState, mapping_id: u32) -> bool {
++        self.mapping_id == mapping_id
++            && state.mappings.get(&mapping_id).is_some_and(|m| {
++                m.mapped
++                    && !m.page_entries.is_empty()
++                    && m.map_generation == self.generation
++                    && m.device_desc == self.descriptor
++                    && (m.has_geom, m.width, m.height, m.format) == self.geometry
++            })
++    }
++}
++
++pub(crate) struct MappingRectCopy<'a> {
++    offset: u64,
++    copy: RunCopy<'a>,
++}
++
++impl<'a> MappingRectCopy<'a> {
++    pub(crate) fn new(offset: u64, copy: RunCopy<'a>) -> Self {
++        Self { offset, copy }
++    }
++
++    fn end(&self) -> Option<u64> {
++        self.offset
++            .checked_add(u64::try_from(self.copy.len()).ok()?)
++    }
++}
++
++struct MappedRun {
++    bytes: GuestRun,
++    offset: u64,
++    owned: bool,
++}
++
++/// Local view owner. Any preparation error releases the already acquired views
++/// without copying a prefix. One view per physical run also avoids duplicate
++/// bounce-buffer writeback when planes share a boundary page.
++struct Views<'a, H: HostOps> {
++    host: &'a mut H,
++    runs: Vec<MappedRun>,
++}
++
++impl<H: HostOps> Drop for Views<'_, H> {
++    fn drop(&mut self) {
++        for run in self.runs.iter().rev().filter(|run| run.owned) {
++            self.host
++                .unmap_pages(run.bytes.host_ptr(), run.bytes.len() as usize);
++        }
++    }
++}
++
++struct Piece {
++    copy_index: usize,
++    buffer_offset: usize,
++    bytes: GuestRun,
++}
++
++/// Move disjoint rectangles of one settled mapping as one publication unit.
++///
++/// All windows, proofs, views and piece bounds are prepared before the first
++/// byte moves. Failure therefore neither writes a prefix nor returns a partial
++/// read. Success on the write direction invalidates both windows; the surface
++/// owner advances its content generation once after this function returns.
++/// This is not an atomic store with respect to concurrently running guest CPUs.
++pub(crate) fn copy_mapping_rects<H: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut H,
++    mapping_id: u32,
++    identity: &MappingStorageIdentity,
++    vouched: &PagesVouched,
++    copies: &mut [MappingRectCopy<'_>],
++) -> Result<(), RectBatchRefusal> {
++    use RectBatchRefusal as R;
++    let writing = copies.first().ok_or(R::Empty)?.copy.is_write();
++    for (index, copy) in copies.iter().enumerate() {
++        if copy.copy.is_write() != writing {
++            return Err(R::MixedDirections);
++        }
++        if copy.copy.len() == 0 || copy.copy.len() > isize::MAX as usize || copy.end().is_none() {
++            return Err(R::Window { index });
++        }
++        for (other_index, other) in copies[..index].iter().enumerate() {
++            if copy.offset < other.end().ok_or(R::Window { index: other_index })?
++                && other.offset < copy.end().ok_or(R::Window { index })?
++            {
++                return Err(R::Overlap {
++                    first: other_index,
++                    second: index,
++                });
++            }
++        }
++    }
++    if !identity.covers(state, mapping_id) || !vouched.covers(state, mapping_id) {
++        return Err(R::StorageChanged);
++    }
++    let contig = super::ensure_contig_view(state, host, mapping_id);
++    let mut views = Views {
++        host,
++        runs: Vec::new(),
++    };
++    if let Some((ptr, len)) = contig {
++        if len > isize::MAX as usize {
++            return Err(R::HostBound { offset: 0 });
++        }
++        views.runs.try_reserve_exact(1).map_err(|_| R::Allocation)?;
++        let bytes = GuestRun::whole(ptr, len as u64).ok_or(R::HostBound { offset: 0 })?;
++        views.runs.push(MappedRun {
++            bytes,
++            offset: 0,
++            owned: false,
++        });
++    } else {
++        let gpas = mapping_page_gpas(state, views.host, mapping_id).ok_or(R::PagesNotOurs)?;
++        let page_size = state.page_size();
++        let page_len = usize::try_from(page_size).map_err(|_| R::HostBound { offset: 0 })?;
++        let mapping_span = (gpas.len() as u64)
++            .checked_mul(page_size)
++            .ok_or(R::HostBound { offset: 0 })?;
++        for (index, copy) in copies.iter().enumerate() {
++            if copy.end().ok_or(R::Window { index })? > mapping_span {
++                return Err(R::Window { index });
++            }
++        }
++        let runs = reims_vgpu_paging::runs::contig_page_runs(&gpas, page_size);
++        views
++            .runs
++            .try_reserve_exact(runs.len())
++            .map_err(|_| R::Allocation)?;
++        for run in runs {
++            let offset = (run.start as u64)
++                .checked_mul(page_size)
++                .ok_or(R::HostBound { offset: 0 })?;
++            let end = (run.end as u64)
++                .checked_mul(page_size)
++                .ok_or(R::HostBound { offset })?;
++            if !copies
++                .iter()
++                .any(|copy| copy.offset < end && copy.end().is_some_and(|e| offset < e))
++            {
++                continue;
++            }
++            let page_count = run.end - run.start;
++            let total = page_count
++                .checked_mul(page_len)
++                .filter(|&n| n <= isize::MAX as usize)
++                .ok_or(R::HostBound { offset })?;
++            let ptr = views.host.map_pages(&gpas[run], page_len).ok_or(R::Map {
++                offset,
++                pages: page_count,
++            })?;
++            let Some(bytes) = GuestRun::whole(ptr, total as u64) else {
++                views.host.unmap_pages(ptr, total);
++                return Err(R::HostBound { offset });
++            };
++            views.runs.push(MappedRun {
++                bytes,
++                offset,
++                owned: true,
++            });
++        }
++    }
++    if !identity.covers(state, mapping_id) || !vouched.covers(state, mapping_id) {
++        return Err(R::StorageChanged);
++    }
++    let mut pieces = Vec::new();
++    pieces
++        .try_reserve_exact(
++            copies
++                .len()
++                .checked_mul(views.runs.len())
++                .ok_or(R::Allocation)?,
++        )
++        .map_err(|_| R::Allocation)?;
++    for (copy_index, copy) in copies.iter().enumerate() {
++        let end = copy.end().ok_or(R::Window { index: copy_index })?;
++        let mut covered = 0u64;
++        for run in &views.runs {
++            let run_end = run
++                .offset
++                .checked_add(run.bytes.len())
++                .ok_or(R::HostBound { offset: run.offset })?;
++            let lo = copy.offset.max(run.offset);
++            let hi = end.min(run_end);
++            if lo >= hi {
++                continue;
++            }
++            let len = hi - lo;
++            let bytes =
++                GuestRun::in_mapping(run.bytes.host_ptr(), run.bytes.len(), lo - run.offset, len)
++                    .ok_or(R::HostBound { offset: lo })?;
++            let buffer_offset =
++                usize::try_from(lo - copy.offset).map_err(|_| R::Window { index: copy_index })?;
++            covered = covered
++                .checked_add(len)
++                .ok_or(R::Window { index: copy_index })?;
++            pieces.push(Piece {
++                copy_index,
++                buffer_offset,
++                bytes,
++            });
++        }
++        if covered != copy.copy.len() as u64 {
++            return Err(R::Window { index: copy_index });
++        }
++    }
++    // No fallible operation below. Each copy's packed-row bound was established
++    // by RunCopy's constructor; each host span is a bounded live GuestRun.
++    if writing {
++        state.note_host_wrote_mapping(mapping_id);
++    }
++    for piece in pieces {
++        // SAFETY: the transaction retains each view until after every piece;
++        // GuestRun checked its host bound and the enclosing copy's span is covered.
++        unsafe {
++            copies[piece.copy_index].copy.apply(
++                piece.bytes.host_ptr(),
++                0,
++                piece.buffer_offset,
++                piece.bytes.len() as usize,
++            );
++        }
++    }
++    // Release all transient CPU views before publishing content or stamping the
++    // dirty witness. A host that copies on unmap must finish that work first.
++    drop(views);
++    if writing {
++        for copy in copies {
++            let end = copy.offset + copy.copy.len() as u64; // checked in preparation
++            state.invalidate_storage_residency_window(mapping_id, copy.offset, end);
++            super::note_mapping_write_footprint(state, mapping_id, copy.offset, end - copy.offset);
++        }
++    }
++    Ok(())
++}
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/planar_xr.rs
+@@ -0,0 +1,329 @@
++//! Native RGB10 + alpha8 IOSurface transfers, distinct from APV's 4+4 planes.
++//!
++//! One mapping owns the pair. The allocation and both windows are validated
++//! before either plane is transferred. Guest padding is never staged or
++//! overwritten, and a Store advances the mapping's currency only once, after
++//! both planes and all transient host views are complete.
++
++use super::vouch_for_write;
++use crate::model::{DeviceState, MappingEntry};
++use crate::protocol::iosurface_pages::{PlanarXrSurfaceLayout, PlanarXrSurfaceRefusal};
++use crate::runtime::host::{HostMemory, HostOps};
++use crate::runtime::mapper::{
++    self, MappingRectCopy, MappingStorageIdentity, RectBatchRefusal, RectStride, RunCopy,
++};
++
++#[derive(Debug)]
++pub enum PlanarXrMappingRefusal {
++    MappingAbsent,
++    MappingNotResident,
++    GeometryMoved {
++        requested: [u32; 2],
++        latched: [u32; 2],
++    },
++    TextureView {
++        expected: (u32, u32, u32, u16),
++        declared: Option<(u32, u32, u32, u16)>,
++    },
++    Layout(PlanarXrSurfaceRefusal),
++    Allocation,
++    PlaneShape {
++        index: u8,
++    },
++    SourceLength {
++        index: u8,
++        actual: usize,
++        expected: usize,
++    },
++    StorageChanged,
++    PagesNotOurs,
++    Transfer(RectBatchRefusal),
++}
++
++impl crate::observe::Decline for PlanarXrMappingRefusal {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::MappingAbsent => "dual_xr_mapping_absent",
++            Self::MappingNotResident => "dual_xr_mapping_not_resident",
++            Self::GeometryMoved { .. } => "dual_xr_mapping_geometry_moved",
++            Self::TextureView { .. } => "dual_xr_surface_sample_texture_view",
++            Self::Layout(why) => why.slug(),
++            Self::Allocation => "dual_xr_mapping_allocation",
++            Self::PlaneShape { .. } => "dual_xr_mapping_plane_shape",
++            Self::SourceLength { .. } => "dual_xr_mapping_source_length",
++            Self::StorageChanged => "dual_xr_mapping_storage_changed",
++            Self::PagesNotOurs => "dual_xr_mapping_pages_not_ours",
++            Self::Transfer(why) => why.slug(),
++        }
++    }
++
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match self {
++            Self::GeometryMoved { requested, latched } => vec![
++                ("requested", format!("{}x{}", requested[0], requested[1])),
++                ("latched", format!("{}x{}", latched[0], latched[1])),
++            ],
++            Self::TextureView { expected, declared } => vec![
++                ("expected_view", format!("{expected:?}")),
++                ("declared_view", format!("{declared:?}")),
++            ],
++            Self::PlaneShape { index } => vec![("plane", index.to_string())],
++            Self::SourceLength {
++                index,
++                actual,
++                expected,
++            } => vec![
++                ("plane", index.to_string()),
++                ("actual", actual.to_string()),
++                ("expected", expected.to_string()),
++            ],
++            Self::Layout(why) => vec![("layout_refusal", format!("{why:?}"))],
++            Self::Transfer(why) => why.fields(),
++            _ => Vec::new(),
++        }
++    }
++
++    fn owner(&self) -> &'static str {
++        match self {
++            Self::Transfer(why) => why.owner(),
++            _ => std::any::type_name::<Self>(),
++        }
++    }
++}
++
++/// Resolve only the native 4+1 storage windows. APV construction descriptors
++/// have a separate owner and cannot enter this transfer through format alone.
++pub fn planar_xr_mapping_layout(
++    mapping: &MappingEntry,
++    width: u32,
++    height: u32,
++) -> Result<PlanarXrSurfaceLayout, PlanarXrMappingRefusal> {
++    if !mapping.mapped || mapping.page_entries.is_empty() {
++        return Err(PlanarXrMappingRefusal::MappingNotResident);
++    }
++    if !mapping.has_geom || mapping.width != width || mapping.height != height {
++        return Err(PlanarXrMappingRefusal::GeometryMoved {
++            requested: [width, height],
++            latched: [mapping.width, mapping.height],
++        });
++    }
++    PlanarXrSurfaceLayout::decode(&mapping.device_desc, mapping.format, width, height)
++        .map_err(PlanarXrMappingRefusal::Layout)
++}
++
++struct Transfer {
++    layout: PlanarXrSurfaceLayout,
++    identity: MappingStorageIdentity,
++    rects: [RectStride; 2],
++}
++
++impl Transfer {
++    fn capture(
++        state: &DeviceState,
++        mapping_id: u32,
++        width: u32,
++        height: u32,
++    ) -> Result<Self, PlanarXrMappingRefusal> {
++        use PlanarXrMappingRefusal as R;
++        let mapping = state.mappings.get(&mapping_id).ok_or(R::MappingAbsent)?;
++        let layout = planar_xr_mapping_layout(mapping, width, height)?;
++        let identity = MappingStorageIdentity::capture(mapping_id, mapping).map_err(R::Transfer)?;
++        let make_rect = |index: usize| {
++            let plane = layout.planes[index];
++            let rect = RectStride::new(
++                u64::from(plane.row_stride),
++                u64::from(plane.tight_row),
++                u64::from(height),
++            )
++            .filter(|rect| {
++                rect.span() <= isize::MAX as usize && rect.packed() <= isize::MAX as usize
++            })
++            .ok_or(R::PlaneShape { index: index as u8 })?;
++            if plane.offset.checked_add(rect.span() as u64) != Some(plane.touched_end) {
++                return Err(R::PlaneShape { index: index as u8 });
++            }
++            Ok(rect)
++        };
++        Ok(Self {
++            layout,
++            identity,
++            rects: [make_rect(0)?, make_rect(1)?],
++        })
++    }
++}
++
++/// Both tight plane buffers belong to one validated native surface read.
++/// No GPU resident or render support is implied by possession of these bytes.
++pub struct PlanarXrSurfaceRead {
++    pub layout: PlanarXrSurfaceLayout,
++    pub planes: [Vec<u8>; 2],
++}
++
++/// A read keeps exclusive device and host access from debt settlement through
++/// both transfers. No caller can queue a later Store between those two steps.
++pub(crate) struct PlanarXrSurfaceReadTransaction<'a, M: HostMemory + HostOps> {
++    state: &'a mut DeviceState,
++    host: &'a mut M,
++    mapping_id: u32,
++    transfer: Transfer,
++    vouched: mapper::PagesVouched,
++}
++
++impl<M: HostMemory + HostOps> PlanarXrSurfaceReadTransaction<'_, M> {
++    pub(crate) fn layout(&self) -> PlanarXrSurfaceLayout {
++        self.transfer.layout
++    }
++
++    pub(crate) fn next_sampled_generation(&mut self) -> u64 {
++        self.state.next_sampled_content_generation()
++    }
++
++    pub(crate) fn read_into(
++        &mut self,
++        planes: &mut [Vec<u8>; 2],
++    ) -> Result<(), PlanarXrMappingRefusal> {
++        use PlanarXrMappingRefusal as R;
++        for (plane, rect) in planes.iter_mut().zip(self.transfer.rects) {
++            plane
++                .try_reserve_exact(rect.packed().saturating_sub(plane.len()))
++                .map_err(|_| R::Allocation)?;
++            plane.resize(rect.packed(), 0);
++        }
++        let [rgb, alpha] = planes;
++        let mut copies = [
++            MappingRectCopy::new(
++                self.transfer.layout.planes[0].offset,
++                RunCopy::read_rect(rgb, self.transfer.rects[0])
++                    .ok_or(R::PlaneShape { index: 0 })?,
++            ),
++            MappingRectCopy::new(
++                self.transfer.layout.planes[1].offset,
++                RunCopy::read_rect(alpha, self.transfer.rects[1])
++                    .ok_or(R::PlaneShape { index: 1 })?,
++            ),
++        ];
++        mapper::copy_mapping_rects(
++            self.state,
++            self.host,
++            self.mapping_id,
++            &self.transfer.identity,
++            &self.vouched,
++            &mut copies,
++        )
++        .map_err(R::Transfer)?;
++        crate::runtime::drain::note_store_route("dual_xr_surface_read_n");
++        Ok(())
++    }
++}
++
++pub(crate) fn prepare_planar_xr_surface_read<'a, M: HostMemory + HostOps>(
++    state: &'a mut DeviceState,
++    host: &'a mut M,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++) -> Result<PlanarXrSurfaceReadTransaction<'a, M>, PlanarXrMappingRefusal> {
++    mapper::ensure_resolved_for_scanout(state, host, mapping_id);
++    crate::runtime::writeback_debt::settle_for_mapping(
++        state,
++        host,
++        mapping_id,
++        crate::runtime::render_writeback::SettleSite::MappingRectRead,
++    );
++    let transfer = Transfer::capture(state, mapping_id, width, height)?;
++    // A read has no write footprint, but it must not read a recycled backing.
++    let (_, vouched) = mapper::vouch_mapping_pages_verdict(state, host, mapping_id);
++    let vouched = vouched.ok_or(PlanarXrMappingRefusal::PagesNotOurs)?;
++    Ok(PlanarXrSurfaceReadTransaction {
++        state,
++        host,
++        mapping_id,
++        transfer,
++        vouched,
++    })
++}
++
++pub fn read_planar_xr_surface<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++) -> Result<PlanarXrSurfaceRead, PlanarXrMappingRefusal> {
++    let mut read = prepare_planar_xr_surface_read(state, host, mapping_id, width, height)?;
++    let mut planes = [Vec::new(), Vec::new()];
++    read.read_into(&mut planes)?;
++    Ok(PlanarXrSurfaceRead {
++        layout: read.layout(),
++        planes,
++    })
++}
++
++/// Store a complete native pair. A refusal cannot publish a first-plane-only
++/// result: both sources, layout, live pages and host views are checked before
++/// any guest byte is copied. This API does not admit a float render resident;
++/// its producer must establish native fragment quantization separately.
++pub fn write_planar_xr_surface<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    expected_layout: PlanarXrSurfaceLayout,
++    planes: &[Vec<u8>; 2],
++) -> Result<usize, PlanarXrMappingRefusal> {
++    use PlanarXrMappingRefusal as R;
++    mapper::ensure_resolved_for_scanout(state, host, mapping_id);
++    crate::runtime::writeback_debt::settle_for_mapping(
++        state,
++        host,
++        mapping_id,
++        crate::runtime::render_writeback::SettleSite::MappingRectWrite,
++    );
++    let transfer = Transfer::capture(
++        state,
++        mapping_id,
++        expected_layout.width,
++        expected_layout.height,
++    )?;
++    if transfer.layout != expected_layout {
++        return Err(R::StorageChanged);
++    }
++    for (index, (plane, rect)) in planes.iter().zip(transfer.rects).enumerate() {
++        if plane.len() != rect.packed() {
++            return Err(R::SourceLength {
++                index: index as u8,
++                actual: plane.len(),
++                expected: rect.packed(),
++            });
++        }
++    }
++    let bytes = planes[0]
++        .len()
++        .checked_add(planes[1].len())
++        .ok_or(R::Allocation)?;
++    let vouched =
++        vouch_for_write(state, host, mapping_id, "dual_xr_surface").ok_or(R::PagesNotOurs)?;
++    let mut copies = [
++        MappingRectCopy::new(
++            transfer.layout.planes[0].offset,
++            RunCopy::write_rect(&planes[0], transfer.rects[0]).ok_or(R::PlaneShape { index: 0 })?,
++        ),
++        MappingRectCopy::new(
++            transfer.layout.planes[1].offset,
++            RunCopy::write_rect(&planes[1], transfer.rects[1]).ok_or(R::PlaneShape { index: 1 })?,
++        ),
++    ];
++    mapper::copy_mapping_rects(
++        state,
++        host,
++        mapping_id,
++        &transfer.identity,
++        &vouched,
++        &mut copies,
++    )
++    .map_err(R::Transfer)?;
++    state.mark_mapping_written(mapping_id);
++    crate::runtime::surface_cache::forget(state, mapping_id);
++    mapper::stamp_guest_write_gen(state, host, mapping_id);
++    crate::runtime::drain::note_store_route("dual_xr_surface_write_n");
++    Ok(bytes)
++}

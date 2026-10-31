@@ -1,0 +1,130 @@
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+@@ -298,14 +298,32 @@
+     })
+ }
+ 
+-/// Encode both native IOSurface planes from linear float output. Allocation
+-/// and conversion finish for the whole pair before a caller can write either
+-/// plane. Normalized writes saturate and use integer round-to-nearest-even.
++/// A complete native plane pair and this conversion's exact-work census.
++/// Reuse applies only to bit-identical adjacent source texels. The produced
++/// planes retain the scalar codec's bytes, including its NaN and RNE rules.
++pub struct PlanarXrStoreEncoding {
++    pub planes: [Vec<u8>; 2],
++    pub encoded_texels: u64,
++    pub reused_texels: u64,
++}
++
++/// Encode a native plane pair when the caller only consumes the bytes.
+ pub fn render_store_planar_xr_surface_bytes(
+     format: PlanarXrFormat,
+     layout: TexelLayout,
+     bytes: &[u8],
+ ) -> Result<[Vec<u8>; 2], RenderStoreRefusal> {
++    render_store_planar_xr_surface_encoding(format, layout, bytes).map(|encoded| encoded.planes)
++}
++
++/// Encode both native IOSurface planes from linear float output. Allocation
++/// and conversion finish for the whole pair before a caller can write either
++/// plane. Normalized writes saturate and use integer round-to-nearest-even.
++pub fn render_store_planar_xr_surface_encoding(
++    format: PlanarXrFormat,
++    layout: TexelLayout,
++    bytes: &[u8],
++) -> Result<PlanarXrStoreEncoding, RenderStoreRefusal> {
+     let source_stride = float_source_stride(layout)?;
+     if !bytes.len().is_multiple_of(source_stride) {
+         return Err(RenderStoreRefusal::IncompleteTexel);
+@@ -321,7 +339,21 @@
+     planes[1]
+         .try_reserve_exact(count)
+         .map_err(|_| RenderStoreRefusal::AllocationFailed)?;
++    let mut previous_source = None;
++    let mut previous_rgb = [0; 4];
++    let mut previous_alpha = 0;
++    let mut encoded_texels = 0;
++    let mut reused_texels = 0;
+     for source in bytes.chunks_exact(source_stride) {
++        // Exact source bits, not float equality: signed zero and NaN payloads
++        // may differ. This reuse is local to one admitted format/layout and
++        // one conversion; it retains no guest identity or cross-frame state.
++        if previous_source == Some(source) {
++            planes[0].extend_from_slice(&previous_rgb);
++            planes[1].push(previous_alpha);
++            reused_texels += 1;
++            continue;
++        }
+         let values = source_values(source);
+         let alpha = if values[3].is_nan() { 0.0 } else { values[3] };
+         let codes = reims_vgpu_core::pixel_format::PlanarXrCodes {
+@@ -337,10 +369,18 @@
+         if !format.write_surface_component_codes(codes, &mut rgb, &mut alpha) {
+             return Err(RenderStoreRefusal::IncompleteTexel);
+         }
++        previous_source = Some(source);
++        previous_rgb = rgb;
++        previous_alpha = alpha[0];
++        encoded_texels += 1;
+         planes[0].extend_from_slice(&rgb);
+         planes[1].extend_from_slice(&alpha);
+     }
+-    Ok(planes)
++    Ok(PlanarXrStoreEncoding {
++        planes,
++        encoded_texels,
++        reused_texels,
++    })
+ }
+ 
+ /// Convert a linear float resident directly into the guest's XR packing.
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -33,9 +33,9 @@
+ mod xr_upload;
+ pub use xr_upload::{
+     quantized_xr_render_values, quantized_xr_values, render_store_bytes,
+-    render_store_planar_xr_surface_bytes, sampled_planar_xr_surface_upload_bytes,
+-    sampled_planar_xr_upload_bytes, sampled_upload_bytes, RenderStoreRefusal, SampledUpload,
+-    SampledUploadRefusal,
++    render_store_planar_xr_surface_bytes, render_store_planar_xr_surface_encoding,
++    sampled_planar_xr_surface_upload_bytes, sampled_planar_xr_upload_bytes, sampled_upload_bytes,
++    PlanarXrStoreEncoding, RenderStoreRefusal, SampledUpload, SampledUploadRefusal,
+ };
+ 
+ use reims_vgpu_core::pixel_format::{
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -101,7 +101,7 @@
+             return Err(R::SourceShape);
+         }
+         let started = std::time::Instant::now();
+-        let planes = reims_vgpu_vulkan::pixel::render_store_planar_xr_surface_bytes(
++        let encoded = reims_vgpu_vulkan::pixel::render_store_planar_xr_surface_encoding(
+             layout.format,
+             crate::protocol::pixel_format::TexelLayout::Rgba32Float,
+             readback.bytes(),
+@@ -111,6 +111,14 @@
+             "native_xr_encode_us",
+             started.elapsed().as_micros() as u64,
+         );
++        crate::runtime::drain::note_store_route_n(
++            "native_xr_encode_texels_n",
++            encoded.encoded_texels,
++        );
++        crate::runtime::drain::note_store_route_n(
++            "native_xr_encode_reused_texels_n",
++            encoded.reused_texels,
++        );
+         if readback.is_leased() {
+             crate::runtime::drain::note_store_route("native_xr_store_leased_n");
+             crate::runtime::drain::note_store_route_n(
+@@ -120,7 +128,7 @@
+         } else {
+             crate::runtime::drain::note_store_route("native_xr_store_copied_n");
+         }
+-        planes
++        encoded.planes
+     };
+     crate::runtime::mapping_write::write_planar_xr_surface(state, host, target, &planes)
+         .map_err(R::Mapping)

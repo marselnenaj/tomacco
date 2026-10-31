@@ -1,0 +1,129 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -3418,6 +3418,18 @@
+         }
+     }
+ 
++    /// Whether these exact stored bytes can land in a declared guest
++    /// destination. Use the same byte-copy contract as the GPU-direct rail,
++    /// including storage-image formats absent from the render Store table.
++    pub fn matches_byte_destination(self, mtl: u16) -> bool {
++        use crate::backend::vulkan::translate::pixel;
++        let layout = self.storage_layout();
++        pixel::verbatim_texel(mtl).is_some_and(|(want, bytes)| {
++            bytes == layout.bytes_per_texel()
++                && pixel::stored_bytes_agree(pixel::vk_texel_layout(layout), want)
++        })
++    }
++
+     /// The eight-bit colour order a four-byte-colour resident was read in.
+     pub fn eight_bit(bgra: bool) -> Self {
+         if bgra {
+@@ -3437,6 +3449,25 @@
+ }
+ 
+ impl TargetReadback {
++    /// Apply the existing colour narrowing only when a consumer needs it.
++    /// Eight-bit orders retain their bytes. A native layout without a
++    /// narrowing stays typed as native, so `into_rgba8` still refuses it.
++    /// This consumes one completed readback; it submits no GPU work.
++    pub fn narrow_to_rgba8(self) -> Result<Self, DrawError> {
++        let Some(layout) = self.texel.native_layout() else {
++            return Ok(self);
++        };
++        let pixels = self.pixels.len() as u64 / u64::from(layout.bytes_per_texel());
++        let (pixels, texel) = narrow_readback_to_rgba8(
++            self.pixels,
++            layout,
++            readback_vk_format(layout),
++            pixels,
++            false,
++        )?;
++        Ok(Self { pixels, texel })
++    }
++
+     /// The frame in semantic RGBA8, exchanging R and B only when it is not
+     /// already in that order.
+     ///
+@@ -5642,19 +5673,7 @@
+ }
+ 
+ fn read_target_inner(identity: &TargetIdentity) -> Result<TargetReadback, DrawError> {
+-    let readback = read_target_texels(identity)?;
+-    let Some(layout) = readback.texel.native_layout() else {
+-        return Ok(readback);
+-    };
+-    let pixels = readback.pixels.len() as u64 / u64::from(layout.bytes_per_texel());
+-    let (pixels, texel) = narrow_readback_to_rgba8(
+-        readback.pixels,
+-        layout,
+-        readback_vk_format(layout),
+-        pixels,
+-        false,
+-    )?;
+-    Ok(TargetReadback { pixels, texel })
++    read_target_texels(identity)?.narrow_to_rgba8()
+ }
+ 
+ /// Full-frame readback of a resident target (present / Synchronize / Map / Store boundary).
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -1022,9 +1022,7 @@
+     // actual order through ResidentReadSnapshot::bgra and ReadbackTexel.
+     // If the readback already has the destination's layout, retain its bytes.
+     // XR instead has a float resident whose linear values need XR encoding.
+-    // Only consumers requiring eight-bit colour take the quantizing API.
+-    let resident_layout =
+-        crate::backend::vulkan::translate::pixel::texel_layout_of(identity.resident_format());
++    // Only consumers requiring eight-bit colour take the narrowing step.
+     let xr = crate::protocol::pixel_format::XrFormat::from_mtl(c0.format).is_some();
+     // Only independently owned bytes reach guest settlement/publication.
+     // In particular, the XR staging lease ends after conversion and before
+@@ -1085,17 +1083,22 @@
+             )
+         }
+     } else {
+-        let native = resident_layout.is_some_and(|layout| {
+-            crate::protocol::pixel_format::store_texel_order(c0.format) == Some(layout)
+-        });
+-        let readback = if native {
+-            crate::backend::vulkan::engine::read_target_texels(identity)
+-        } else {
+-            crate::backend::vulkan::engine::read_target(identity)
+-        }
+-        .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
++        // Read once at the resident's native width. The copying rail owes the
++        // same bytes as the direct rail when that rail's format contract
++        // accepts them; a failed host-memory import must not quantize R16Float
++        // or RG16Float simply because the older render Store table omits them.
++        let readback = crate::backend::vulkan::engine::read_target_texels(identity)
++            .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
+         let storage_layout = readback.texel.storage_layout();
+-        if crate::protocol::pixel_format::store_texel_order(c0.format) == Some(storage_layout) {
++        if readback.texel.matches_byte_destination(c0.format) {
++            crate::runtime::drain::note_store_route("gva_verbatim_readback_selected_n");
++            if matches!(
++                storage_layout,
++                crate::protocol::pixel_format::TexelLayout::R16Float
++                    | crate::protocol::pixel_format::TexelLayout::Rg16Float
++            ) {
++                crate::runtime::drain::note_store_route("gva_half_float_readback_preserved_n");
++            }
+             if storage_layout.is_four_byte_color() {
+                 crate::runtime::drain::note_store_route("gva_colour_verbatim_selected_n");
+                 crate::runtime::drain::note_store_route_n(
+@@ -1107,11 +1110,12 @@
+                 }
+             }
+             CopiedFrame::Native(readback.pixels)
+-        } else if readback.texel.native_layout().is_some() {
+-            return Err(GvaWritebackDecline::FormatNeedsConversion { format: c0.format });
+         } else {
++            crate::runtime::drain::note_store_route("gva_colour_conversion_selected_n");
+             CopiedFrame::Rgba8(
+                 readback
++                    .narrow_to_rgba8()
++                    .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?
+                     .into_rgba8()
+                     .ok_or(GvaWritebackDecline::FormatNeedsConversion { format: c0.format })?,
+             )

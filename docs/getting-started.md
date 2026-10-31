@@ -1,0 +1,186 @@
+# Getting started
+
+This guide takes you from nothing to a running app and a first agent call. Plan
+on about ten minutes of your own time, plus any compile and SDK downloads.
+
+**Prefer not to do this yourself?** Give your coding agent [its setup guide](agent-setup.md).
+
+## 1. Install
+
+```sh
+curl -fsSL https://tomacco.dev/install.sh | bash
+```
+
+This finds the latest release, checks its checksum and signature, and installs it for your
+user into `~/.local`, adding the bar widget on Omarchy. Use `bash -s -- --no-omarchy` at the
+end to leave the widget out. On Arch it asks before installing the system packages with
+`sudo pacman`. Elsewhere, install Qt 6.9 or newer first, with Quick, Quick Controls 2,
+WebEngine Quick, Network and SVG, plus FFmpeg, OpenSSL and Python 3.11 or newer.
+
+To read it first: `curl -fsSL https://tomacco.dev/install.sh -o install.sh`.
+
+Tomacco runs on x86_64 Linux. Arch Linux and Omarchy are the tested platform. Other
+distributions should work, but they have not been qualified. On Linux for Apple Silicon (M1,
+M2, Asahi), the tools and agent API are experimental and the virtual iOS device is not
+available.
+
+<details>
+<summary>By hand, or from source</summary>
+
+**From a release tarball.** Download the package, its `.sha256` and `.sig` from the
+[releases page](https://github.com/marselnenaj/tomacco/releases), then:
+
+```sh
+sha256sum -c tomacco-1.0.0-Linux-x86_64.tar.gz.sha256
+tar -xzf tomacco-1.0.0-Linux-x86_64.tar.gz
+python3 tomacco-1.0.0-Linux-x86_64/install.py --omarchy
+```
+
+**From a checkout.** You also need CMake, Ninja, a C++20 compiler, Rust/Cargo 1.89 or newer,
+protobuf and the FFmpeg development libraries. On Arch:
+
+```sh
+sudo pacman -S --needed git cmake ninja clang rust python openssl rsync unzip protobuf ffmpeg ttf-dejavu qt6-base qt6-declarative qt6-svg qt6-webengine qt6-tools
+cmake -S . -B build-product -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-product
+python3 install.py --binary build-product/tomacco --cli build-product/tomaccoctl --omarchy
+```
+
+Leave out `--omarchy` on other desktops. `tomacco` and `tomaccoctl` go in `~/.local/bin`, which
+must be on your `PATH`. To upgrade, roll back or uninstall, see [Building](building.md#installing).
+
+</details>
+
+## 2. Set up your tools
+
+```sh
+tomaccoctl setup
+```
+
+It lists what this computer can do and what is missing, in plain text. Then it offers to connect
+Claude Code and Codex, and to install the Android SDK with an emulator called `Tomacco`. That
+download is about 5 GB and accepts Google's Android SDK license, so it asks first. A missing tool
+is fine until you need it. For the same check as JSON, use `tomaccoctl doctor`.
+
+## 3. Pick a route
+
+| Route | What it needs | What you get |
+| --- | --- | --- |
+| [A. Look around](#route-a-look-around) | Only Tomacco | The desktop and the web layout lab with its demo app |
+| [B. An existing project](#route-b-an-existing-project) | Only Tomacco to open it; the project's own toolchain to build it | Your project in the workspace, and the exact build commands |
+| [C. A new Android app](#route-c-a-new-android-app) | Android SDK command-line tools, a JDK 17 or newer, Gradle, and KVM (`tomaccoctl doctor` reports it) or a phone | A native app running in the real Android Emulator |
+
+Other targets take more setup and are not first-day routes. The
+[iPhone route](iphone.md) needs Apple's SDK, an Apple account and an iPhone. The
+[virtual iOS device](virtual-ios/README.md) needs your own restore image, a boot
+ticket Tomacco does not make for you, and a 16 GiB graphics card.
+
+### Route A: look around
+
+```sh
+tomacco
+tomacco --device 17
+```
+
+The first command opens the native workspace. The second opens the layout lab, a
+Chromium view of a web page in a device frame, with an included demo app. The
+device ids come from `tomaccoctl call catalog.list`.
+
+### Route B: an existing project
+
+Opening a project never runs its build scripts, so this is safe for any checkout.
+
+```sh
+tomaccoctl call project.inspect '{"path":"/absolute/project"}'
+tomaccoctl call project.plan '{"path":"/absolute/project","platform":"android"}'
+tomacco --project /absolute/project
+```
+
+`project.inspect` detects Flutter, Gradle, Swift, xtool, web and Xcode projects.
+`project.plan` prints the exact commands a build would run, without running them.
+A folder Tomacco does not recognize answers `project_unrecognized`; adding a
+`tomacco.json` with tasks makes it a project.
+
+To build, pick the platform your project uses. This one starts a durable job:
+
+```sh
+tomaccoctl call project.execute '{"path":"/absolute/project","platform":"android","action":"build"}'
+```
+
+Then wait for the job as in [step 3 of route C](#route-c-a-new-android-app).
+
+### Route C: a new Android app
+
+If you said yes to Android in `tomaccoctl setup`, skip to step 4. Its emulator is called `Tomacco`.
+
+**1. Point Tomacco at your tools.** Install the
+[Android SDK command-line tools](https://developer.android.com/studio#command-line-tools-only),
+a JDK and Gradle (on Arch, `jdk-openjdk` and `gradle`). Unpack the command-line tools to `SDK/cmdline-tools/latest`, because that
+is where Tomacco looks for `sdkmanager`. Then tell Tomacco where everything is:
+
+```sh
+tomaccoctl call settings.configure '{"android_sdk":"/absolute/Android/Sdk","java_home":"/usr/lib/jvm/default","executables":{"gradle":"/usr/bin/gradle"}}'
+```
+
+**2. Install the SDK packages and create an emulator.** Licenses are accepted only
+because you say so here. `android.sdk_packages` lists what is available.
+
+```sh
+tomaccoctl call android.sdk_install '{"packages":["platform-tools","emulator","platforms;android-36","build-tools;36.0.0","system-images;android-36;google_apis;x86_64"],"accept_licenses":true}'
+tomaccoctl call android.avd_create '{"name":"First","system_image":"system-images;android-36;google_apis;x86_64","profile_id":"pixel-11"}'
+tomaccoctl call android.avd_start '{"name":"First"}'
+```
+
+These are durable jobs. Each call answers with a job whose id is in `result.id`.
+
+**3. Wait for a job.** Queued or running is not success. Repeat `job.wait` until the
+state is `succeeded`, `failed`, `cancelled` or `timed_out`; it waits at most 60
+seconds per call. An emulator stays running as a job while it is up, so wait for
+the install and create jobs, and for the emulator check `device.list`.
+
+```sh
+tomaccoctl call job.wait '{"job_id":"JOB_ID","seconds":60}'
+tomaccoctl call job.logs '{"job_id":"JOB_ID","offset":0}'
+```
+
+**4. Create, build and run the app.** The emulator's name in `device.list` is
+usually `emulator-5554`.
+
+```sh
+tomaccoctl call device.list '{"platform":"android"}'
+tomaccoctl call project.create '{"path":"/absolute/FirstApp","kind":"android","name":"FirstApp","organization":"dev.example"}'
+tomaccoctl call project.execute '{"path":"/absolute/FirstApp","platform":"android","action":"build","format":"apk"}'
+tomaccoctl call project.run '{"path":"/absolute/FirstApp","platform":"android","device":"emulator-5554"}'
+```
+
+**5. See it.** Wait for the run job, then take a screenshot or open the live view.
+The live view also needs [scrcpy 4.1](android.md#see-and-control-the-device).
+
+```sh
+tomaccoctl call device.capture '{"platform":"android","device":"emulator-5554","path":"/absolute/first.png"}'
+tomacco --project /absolute/FirstApp --workspace runtime
+```
+
+You have a first success when the screenshot shows the starter's counter app.
+The [Android guide](android.md) goes on from here. If a step fails, read the error's
+`message` and `remedy`; [Troubleshooting](troubleshooting.md) lists the common ones.
+
+## 4. Make your first agent call
+
+`tomaccoctl` is also a local MCP server. It speaks over standard input and output, with
+no network port and no token. `tomaccoctl setup` registers it for you; by hand:
+
+```sh
+claude mcp add --transport stdio --scope user tomacco -- "$(command -v tomaccoctl)" mcp
+codex mcp add tomacco -- "$(command -v tomaccoctl)" mcp
+```
+
+Then ask your agent to call the `doctor` tool and tell you what is missing. It
+sees the same operations you just used, with their schemas. The
+[agent guide](agents.md) has the contract and a workflow per platform.
+
+## Where next
+
+- [Desktop](desktop.md): navigation, shortcuts, device windows.
+- [Agents](agents.md): MCP, jobs and workflows.
+- [Android](android.md), [iPhone](iphone.md), [virtual iOS device](virtual-ios/README.md).

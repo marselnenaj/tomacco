@@ -1,0 +1,49 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -3384,20 +3384,23 @@
+     true
+ }
+ 
+-/// Seed color RT LOAD from guest mapper-ref-texture (BGRA→RGBA) or normal-texture/view linear RGBA.
+-///
+-/// Every color RT is an ephemeral host RT now, so every `Load` needs this: the
+-/// mapper-ref-texture guest-memory alias that let Metal Load read the surface bytes in
+-/// place is deleted. This used to run only on the alias-reject fallback
+-/// (unaligned offset or row stride, span out of range, no device), which is why
+-/// it is already a complete path and not a new one.
+-fn seed_native_color_load<M: HostMemory + HostOps>(
++/// Read a scalar floating-point attachment's prior contents at native width.
++/// A display cache or RGBA8 sample is not the attachment's stored half/float
++/// texel. The owned seed carries the exact layout through GPU seed upload.
++fn seed_scalar_float_color_load<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+     task_id: u32,
+     span: GvaSpan,
+ ) -> Option<pixel_format::ColorLoadSeed> {
+-    let layout = pixel_format::store_texel_order(span.format)?;
++    // Load admission is independent of the Store byte-copy table: R16Float
++    // still has a converting Store fallback, but loading its two-byte rows
++    // must preserve their native bits and cannot use that fallback's RGBA8.
++    let layout = match span.format {
++        pixel_format::MTL_FORMAT_R16_FLOAT => pixel_format::TexelLayout::R16Float,
++        pixel_format::MTL_FORMAT_R32_FLOAT => pixel_format::TexelLayout::R32Float,
++        _ => return None,
++    };
+     let (tight, len) = reims_vgpu_protocol::extent::tight_image_layout(
+         span.width,
+         span.height,
+@@ -3441,8 +3444,11 @@
+         format,
+         ..
+     } = span;
+-    if format == pixel_format::MTL_FORMAT_R32_FLOAT {
+-        return seed_native_color_load(state, host, task_id, span);
++    if matches!(
++        format,
++        pixel_format::MTL_FORMAT_R16_FLOAT | pixel_format::MTL_FORMAT_R32_FLOAT
++    ) {
++        return seed_scalar_float_color_load(state, host, task_id, span);
+     }
+     // Discrete GPU: exact target GVA is the strongest identity across object-ref
+     // recycling. Fall back to the normal texture namespace, never the

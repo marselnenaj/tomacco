@@ -1,0 +1,386 @@
+target/arm: probe the jump cache at TB exits whose next state is known.
+
+Requires qemu-tcg-jump-cache (its hash and TB_JMP_PAGE_MULTIPLIER).
+
+Every BR, BLR, RET, BRA*, BLRA*, RETA* and every direct branch out of the
+4 KiB page (goto_tb stays page-local) ended in tcg_gen_lookup_and_goto_ptr,
+i.e. helper_lookup_tb_ptr: a call, get_tb_cpu_state through the CPU class
+hook, curr_cflags, the breakpoint check and tb_lookup, ~10 ns even on a
+jump-cache hit. What decides a hit is a hash, two loads and three compares,
+and for these exits the state the next TB must have is known when the exit
+is translated: hflags cannot change inside a TB, cflags are the TB's own
+(TBs with an instruction budget, single-step, breakpoints, icount,
+nochain or memory-only plugin re-instrumentation keep the generic exit),
+and BTYPE is what the branch stores (set_btype records it; a BR through
+another register than x16/x17 sets it at run time and keeps the helper).
+
+gen_tomacco_lookup_and_goto_ptr, by the CPU property tomacco-jmp-probe:
+  1 (default) a direct branch out of the page probes the constant entry
+    tb_jmp_cache_hash_func(dest) inline (cpu_pc compared, so a CF_PCREL TB
+    run at another virtual address misses); indirect exits call the new
+    helper_tomacco_lookup_tb_ptr(env, cs_base, flags | cflags << 32), which
+    returns the cached TB or falls back to helper_lookup_tb_ptr;
+  2 indirect exits hash cpu_pc inline as well: fastest on hits, but ~160
+    more bytes of host code per exit, which costs more than it saves once
+    the translated code outgrows the host caches;
+  0 the generic helper everywhere (as upstream).
+A miss always takes helper_lookup_tb_ptr, which fills the cache as before.
+New tcg_gen_goto_ptr() emits the goto_ptr of a TB the caller found.
+
+tests/engine/branch-bench.S (ns per iteration, best of 7, over
+qemu-tcg-jump-cache): page4k (4 cross-page direct branches) 24.5 -> 3.6,
+page16k 24.4 -> 3.6, call (BL + RET) 7.5 -> 2.6, msgsend (BL to a stub,
+BR x16 to one of 16 IMPs, RET) 22.5 -> 9.1, blr 16.4 -> 8.1, wide 58 -> 57;
+the checksum equals stock QEMU's. Mode 2: page4k 5.3, call 2.4, msgsend 8.5,
+blr 8.0 but wide 64 and smc 117 (more host code per TB).
+tests/engine/jump-cache-probe.S passes in all three modes.
+
+diff --git a/include/tcg/tcg-op-common.h b/include/tcg/tcg-op-common.h
+--- a/include/tcg/tcg-op-common.h
++++ b/include/tcg/tcg-op-common.h
+@@ -85,6 +85,15 @@
+  */
+ void tcg_gen_lookup_and_goto_ptr(void);
+ 
++/**
++ * tcg_gen_goto_ptr() - jump to the start of a translated block
++ * @ptr: host code address of a TB (TranslationBlock tc.ptr)
++ *
++ * The caller found the TB itself (e.g. an inline jump-cache probe) and
++ * must not use this in a TB with CF_NO_GOTO_PTR.
++ */
++void tcg_gen_goto_ptr(TCGv_ptr ptr);
++
+ void tcg_gen_plugin_cb(unsigned from);
+ void tcg_gen_plugin_mem_cb(TCGv_i64 addr, unsigned meminfo);
+ 
+diff --git a/target/arm/cpu.c b/target/arm/cpu.c
+--- a/target/arm/cpu.c
++++ b/target/arm/cpu.c
+@@ -2497,6 +2497,7 @@
+     DEFINE_PROP_BOOL("tomacco-strict-sysregs", ARMCPU, tomacco_strict_sysregs, false),
+     DEFINE_PROP_BOOL("tomacco-ap-reset-fpen", ARMCPU, tomacco_ap_reset_fpen, false),
+     DEFINE_PROP_BOOL("tomacco-pauth-fast", ARMCPU, tomacco_pauth_fast, true),
++    DEFINE_PROP_UINT8("tomacco-jmp-probe", ARMCPU, tomacco_jmp_probe, 1),
+     DEFINE_PROP_UINT64("midr", ARMCPU, midr, 0),
+     DEFINE_PROP_UINT64("mp-affinity", ARMCPU,
+                         mp_affinity, ARM64_AFFINITY_INVALID),
+diff --git a/target/arm/cpu.h b/target/arm/cpu.h
+--- a/target/arm/cpu.h
++++ b/target/arm/cpu.h
+@@ -1111,6 +1111,13 @@
+     /* Evaluate the pointer-authentication bypass without helpers. */
+     bool tomacco_pauth_fast;
+ 
++    /*
++     * Jump-cache probe at indirect and cross-page exits whose resulting
++     * state is known (translate-a64.c gen_tomacco_lookup_and_goto_ptr):
++     * 0 generic helper, 1 lean helper, 2 inline in translated code.
++     */
++    uint8_t tomacco_jmp_probe;
++
+     /* QOM property to indicate we should use the back-compat QARMA5 default */
+     bool backcompat_pauth_default_use_qarma5;
+ 
+diff --git a/target/arm/tcg/helper-a64-defs.h b/target/arm/tcg/helper-a64-defs.h
+--- a/target/arm/tcg/helper-a64-defs.h
++++ b/target/arm/tcg/helper-a64-defs.h
+@@ -159,3 +159,5 @@
+ #ifndef CONFIG_USER_ONLY
+ DEF_HELPER_2(exception_return, void, env, i64)
+ #endif
++
++DEF_HELPER_FLAGS_3(tomacco_lookup_tb_ptr, TCG_CALL_NO_WG_SE, cptr, env, i64, i64)
+diff --git a/target/arm/tcg/helper-a64.c b/target/arm/tcg/helper-a64.c
+--- a/target/arm/tcg/helper-a64.c
++++ b/target/arm/tcg/helper-a64.c
+@@ -44,6 +44,9 @@
+ #include "user/page-protection.h"
+ #endif
+ #include "vec_internal.h"
++#include "exec/helper-proto-common.h"
++#include "exec/translation-block.h"
++#include "accel/tcg/tb-hash.h"
+ 
+ #define HELPER_H "tcg/helper-a64-defs.h"
+ #include "exec/helper-info.c.inc"
+@@ -1781,3 +1784,28 @@
+      */
+     env->btype = is_guarded_page(env, pc, GETPC()) ? 3 : 1;
+ }
++
++/*
++ * helper_lookup_tb_ptr for a TB exit whose resulting CPU state the
++ * translator knows (target/arm/tcg/translate-a64.c
++ * gen_tomacco_lookup_and_goto_ptr): @cs_base and @flags_cflags
++ * (tb->flags | cflags << 32) are what helper_lookup_tb_ptr would compute
++ * with get_tb_cpu_state and curr_cflags. A jump-cache hit returns the TB
++ * without either; anything else takes the generic helper.
++ */
++const void *HELPER(tomacco_lookup_tb_ptr)(CPUARMState *env, uint64_t cs_base,
++                                         uint64_t flags_cflags)
++{
++    CPUState *cs = env_cpu(env);
++    CPUJumpCache *jc = cs->tb_jmp_cache;
++    vaddr pc = env->pc;
++    uint32_t h = tb_jmp_cache_hash_func(pc);
++    TranslationBlock *tb = qatomic_read(&jc->array[h].tb);
++
++    if (likely(tb && jc->array[h].pc == pc && tb->cs_base == cs_base &&
++               tb->flags == (uint32_t)flags_cflags &&
++               tb_cflags(tb) == (uint32_t)(flags_cflags >> 32))) {
++        return tb->tc.ptr;
++    }
++    return helper_lookup_tb_ptr(env);
++}
+diff --git a/target/arm/tcg/translate-a64.c b/target/arm/tcg/translate-a64.c
+--- a/target/arm/tcg/translate-a64.c
++++ b/target/arm/tcg/translate-a64.c
+@@ -30,6 +30,8 @@
+ #include "semihosting/semihost.h"
+ #include "cpregs.h"
+ #include "vphone-surface-source.h"
++#include "exec/translation-block.h"
++#include "accel/tcg/tb-hash.h"
+ 
+ static TCGv_i64 cpu_X[32];
+ static TCGv_i64 cpu_gcspr[4];
+@@ -175,6 +177,7 @@
+     tcg_debug_assert(val >= 1 && val <= 3);
+     set_btype_raw(val);
+     s->btype = -1;
++    s->tomacco_exit_btype = val;
+ }
+ 
+ static void reset_btype(DisasContext *s)
+@@ -530,6 +533,154 @@
+     s->base.is_jmp = DISAS_NORETURN;
+ }
+ 
++/*
++ * cflags of TBs whose exits keep the out-of-line lookup: one-off TBs with
++ * an instruction budget or special execution, single-stepping, chaining
++ * suppressed, breakpoints, icount, plugin memory-only re-instrumentation.
++ */
++#define TOMACCO_JMP_INLINE_EXCLUDED_CF \
++    (CF_COUNT_MASK | CF_NO_GOTO_TB | CF_NO_GOTO_PTR | CF_SINGLE_STEP | \
++     CF_MEMI_ONLY | CF_USE_ICOUNT | CF_NOIRQ | CF_BP_PAGE | CF_INVALID)
++
++/*
++ * tcg_gen_lookup_and_goto_ptr() for exits whose resulting CPU state is
++ * known at translation time (ARMCPU tomacco-jmp-probe, default 1).
++ *
++ * helper_lookup_tb_ptr spends ~10 ns per indirect branch even on a hit (a
++ * call, get_tb_cpu_state through a hook, curr_cflags, the breakpoint check,
++ * tb_lookup), while what decides a hit is a hash, two loads and three
++ * compares. Here those compares use the state this TB leaves behind: the
++ * hflags cannot change inside a TB (every write that changes them ends the
++ * TB with an exit); cflags are the TB's own, which is what curr_cflags()
++ * returns for every TB outside TOMACCO_JMP_INLINE_EXCLUDED_CF (a vCPU only
++ * starts single-stepping, and one-insn-per-tb only takes effect, from the
++ * main loop's lookup, as for chained jumps); BTYPE, the only A64 TB flag
++ * not cached in hflags besides PSTATE.SS (never set without SS_ACTIVE,
++ * whose exits do not come here), is @btype: what the TB's last
++ * instruction leaves, -1 when only known at run time. cpu_pc already
++ * holds the target.
++ *
++ *   1  @direct exits (a branch out of the page to @dest, known now) probe
++ *      the entry tb_jmp_cache_hash_func(@dest) inline; indirect ones call
++ *      helper_tomacco_lookup_tb_ptr with the expected state
++ *   2  indirect exits hash cpu_pc and probe inline too (fastest on a hit,
++ *      but ~160 bytes of host code per exit: slower with many TBs)
++ *   0  the generic helper everywhere, as upstream
++ *
++ * Entry, page bucket and fields are those of accel/tcg tb_lookup, so a hit
++ * here is a hit there. An invalidated TB keeps CF_INVALID in the compared
++ * cflags and misses; a CF_PCREL TB run at another virtual address than it
++ * was translated for compares another pc and misses. Every miss, and every
++ * TB this cannot serve, takes the generic helper as before.
++ */
++static void gen_tomacco_lookup_and_goto_ptr(DisasContext *s, int btype,
++                                           bool direct, vaddr dest)
++{
++    TranslationBlock *tb = s->base.tb;
++    uint32_t cflags = tb_cflags(tb);
++    uint64_t cs_base = tb->cs_base;
++    TCGLabel *slow;
++    TCGv_i64 h, t, u;
++    TCGv_ptr entry, target;
++
++    QEMU_BUILD_BUG_ON(sizeof(((CPUJumpCache *)0)->array[0]) != 16);
++    QEMU_BUILD_BUG_ON(offsetof(TranslationBlock, cflags) !=
++                      offsetof(TranslationBlock, flags) + 4);
++    QEMU_BUILD_BUG_ON(offsetof(TranslationBlock, flags) % 8);
++    QEMU_BUILD_BUG_ON(sizeof(vaddr) != 8);
++
++    if (!s->tomacco_jmp_probe || HOST_BIG_ENDIAN || btype < 0 ||
++        (cflags & TOMACCO_JMP_INLINE_EXCLUDED_CF) ||
++        qemu_loglevel_mask(CPU_LOG_TB_CPU | CPU_LOG_EXEC)) {
++        tcg_gen_lookup_and_goto_ptr();
++        return;
++    }
++    if (dc_isar_feature(aa64_bti, s)) {
++        cs_base = FIELD_DP64(cs_base, TBFLAG_A64, BTYPE, btype);
++    } else if (btype != 0) {
++        tcg_gen_lookup_and_goto_ptr();
++        return;
++    }
++
++    if (direct) {
++        /* A direct branch out of the page: the entry index is a constant. */
++        entry = tcg_temp_new_ptr();
++        target = tcg_temp_new_ptr();
++        t = tcg_temp_new_i64();
++        slow = gen_new_label();
++        tcg_gen_ld_ptr(entry, tcg_env,
++                       offsetof(CPUState, tb_jmp_cache) - sizeof(CPUState));
++        tcg_gen_addi_ptr(entry, entry, 16 * tb_jmp_cache_hash_func(dest));
++        /* entry->tb != NULL (a cleared entry keeps its pc) */
++        tcg_gen_ld_i64(t, entry, offsetof(CPUJumpCache, array[0].tb));
++        tcg_gen_brcondi_i64(TCG_COND_EQ, t, 0, slow);
++        tcg_gen_trunc_i64_ptr(target, t);
++        tcg_gen_ld_i64(t, entry, offsetof(CPUJumpCache, array[0].pc));
++        tcg_gen_brcond_i64(TCG_COND_NE, t, cpu_pc, slow);
++        tcg_gen_ld_i64(t, target, offsetof(TranslationBlock, cs_base));
++        tcg_gen_brcondi_i64(TCG_COND_NE, t, cs_base, slow);
++        tcg_gen_ld_i64(t, target, offsetof(TranslationBlock, flags));
++        tcg_gen_brcondi_i64(TCG_COND_NE, t,
++                            (uint64_t)tb->flags | ((uint64_t)cflags << 32), slow);
++        tcg_gen_ld_ptr(target, target, offsetof(TranslationBlock, tc.ptr));
++        tcg_gen_goto_ptr(target);
++        gen_set_label(slow);
++        tcg_gen_lookup_and_goto_ptr();
++        return;
++    }
++    if (s->tomacco_jmp_probe == 1) {
++        target = tcg_temp_new_ptr();
++        gen_helper_tomacco_lookup_tb_ptr(target, tcg_env,
++                                        tcg_constant_i64(cs_base),
++                                        tcg_constant_i64((uint64_t)tb->flags |
++                                                         (uint64_t)cflags << 32));
++        tcg_gen_goto_ptr(target);
++        return;
++    }
++
++    h = tcg_temp_new_i64();
++    t = tcg_temp_new_i64();
++    u = tcg_temp_new_i64();
++    entry = tcg_temp_new_ptr();
++    target = tcg_temp_new_ptr();
++    slow = gen_new_label();
++
++    /* tb_jmp_cache_hash_func(pc) * sizeof(entry) */
++    tcg_gen_shri_i64(h, cpu_pc, TARGET_PAGE_BITS);
++    tcg_gen_muli_i64(h, h, TB_JMP_PAGE_MULTIPLIER);
++    tcg_gen_shri_i64(h, h, 64 - (TB_JMP_CACHE_BITS - TB_JMP_PAGE_BITS));
++    tcg_gen_shli_i64(h, h, TB_JMP_PAGE_BITS);
++    tcg_gen_shri_i64(t, cpu_pc, 2);
++    tcg_gen_shri_i64(u, t, TB_JMP_PAGE_BITS);
++    tcg_gen_xor_i64(t, t, u);
++    tcg_gen_andi_i64(t, t, TB_JMP_ADDR_MASK);
++    tcg_gen_or_i64(h, h, t);
++    tcg_gen_shli_i64(h, h, 4);
++
++    tcg_gen_ld_ptr(entry, tcg_env,
++                   offsetof(CPUState, tb_jmp_cache) - sizeof(CPUState));
++    tcg_gen_trunc_i64_ptr(target, h);
++    tcg_gen_add_ptr(entry, entry, target);
++
++    /* entry->tb != NULL && entry->pc == pc */
++    tcg_gen_ld_i64(t, entry, offsetof(CPUJumpCache, array[0].tb));
++    tcg_gen_brcondi_i64(TCG_COND_EQ, t, 0, slow);
++    tcg_gen_trunc_i64_ptr(target, t);
++    tcg_gen_ld_i64(t, entry, offsetof(CPUJumpCache, array[0].pc));
++    tcg_gen_brcond_i64(TCG_COND_NE, t, cpu_pc, slow);
++    /* tb->cs_base, tb->flags and tb_cflags(tb) of the state we leave */
++    tcg_gen_ld_i64(t, target, offsetof(TranslationBlock, cs_base));
++    tcg_gen_brcondi_i64(TCG_COND_NE, t, cs_base, slow);
++    tcg_gen_ld_i64(t, target, offsetof(TranslationBlock, flags));
++    tcg_gen_brcondi_i64(TCG_COND_NE, t,
++                        (uint64_t)tb->flags | ((uint64_t)cflags << 32), slow);
++    tcg_gen_ld_ptr(target, target, offsetof(TranslationBlock, tc.ptr));
++    tcg_gen_goto_ptr(target);
++
++    gen_set_label(slow);
++    tcg_gen_lookup_and_goto_ptr();
++}
++
+ static inline bool use_goto_tb(DisasContext *s, uint64_t dest)
+ {
+     if (s->ss_active) {
+@@ -563,7 +714,9 @@
+         if (s->ss_active) {
+             gen_step_complete_exception(s);
+         } else {
+-            tcg_gen_lookup_and_goto_ptr();
++            /* A direct branch leaves BTYPE as it is (s->btype, if known). */
++            gen_tomacco_lookup_and_goto_ptr(s, s->btype, true,
++                                           s->pc_curr + diff);
+             s->base.is_jmp = DISAS_NORETURN;
+         }
+     }
+@@ -1895,6 +2048,7 @@
+             gen_pc_plus_diff(s, pc, 0);
+             gen_helper_guarded_page_br(tcg_env, pc);
+             s->btype = -1;
++            s->tomacco_exit_btype = -1;
+         }
+     }
+ }
+@@ -11150,6 +11304,8 @@
+     dc->cp_regs = arm_cpu->cp_regs;
+     dc->tomacco_strict_sysregs = arm_cpu->tomacco_strict_sysregs;
+     dc->tomacco_pauth_fast = tomacco_pauth_fast(env);
++    dc->tomacco_jmp_probe = arm_cpu->tomacco_jmp_probe;
++    dc->tomacco_exit_btype = -1;
+     dc->features = env->features;
+     dc->dcz_blocksize = get_dczid_bs(arm_cpu);
+     dc->gm_blocksize = arm_cpu->gm_blocksize;
+@@ -11353,10 +11509,14 @@
+             break;
+         case DISAS_UPDATE_NOCHAIN:
+             gen_a64_update_pc(dc, 4);
+-            /* fall through */
+-        case DISAS_JUMP:
+             tcg_gen_lookup_and_goto_ptr();
+             break;
++        case DISAS_JUMP:
++            /* BR, BLR, RET and their PAC forms: cpu_pc holds the target. */
++            gen_tomacco_lookup_and_goto_ptr(dc, dc->btype >= 0 ?
++                                           dc->btype : dc->tomacco_exit_btype,
++                                           false, 0);
++            break;
+         case DISAS_NORETURN:
+         case DISAS_SWI:
+             break;
+diff --git a/target/arm/tcg/translate.h b/target/arm/tcg/translate.h
+--- a/target/arm/tcg/translate.h
++++ b/target/arm/tcg/translate.h
+@@ -110,6 +110,10 @@
+     bool tomacco_strict_sysregs;
+     /* internals.h tomacco_pauth_fast(), fixed for the CPU. */
+     bool tomacco_pauth_fast;
++    /* ARMCPU tomacco_jmp_probe, for gen_tomacco_lookup_and_goto_ptr. */
++    uint8_t tomacco_jmp_probe;
++    /* BTYPE the TB's last branch stored (set_btype), -1 unknown or none. */
++    int tomacco_exit_btype;
+     uint64_t features; /* CPU features bits */
+     bool aarch64;
+     bool thumb;
+diff --git a/tcg/tcg-op.c b/tcg/tcg-op.c
+--- a/tcg/tcg-op.c
++++ b/tcg/tcg-op.c
+@@ -2605,6 +2605,13 @@
+     tcg_gen_op1i(INDEX_op_goto_tb, 0, idx);
+ }
+ 
++void tcg_gen_goto_ptr(TCGv_ptr ptr)
++{
++    tcg_debug_assert(!(tcg_ctx->gen_tb->cflags & CF_NO_GOTO_PTR));
++    plugin_gen_disable_mem_helpers();
++    tcg_gen_op1i(INDEX_op_goto_ptr, TCG_TYPE_PTR, tcgv_ptr_arg(ptr));
++}
++
+ void tcg_gen_lookup_and_goto_ptr(void)
+ {
+     TCGv_ptr ptr;

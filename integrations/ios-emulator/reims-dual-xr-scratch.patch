@@ -1,0 +1,239 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
+@@ -39,8 +39,16 @@
+ /// exact inputs. Every bind still settles and reads both planes before asking
+ /// this memo. Equal bytes permit conversion reuse even after physical backing
+ /// replacement; a write anywhere in either tight plane forces a new upload.
++#[derive(Debug, Default)]
++struct PlanarXrSampleMemo {
++    // Each new read overwrites these buffers completely before it can publish
++    // content. Failed or partial reads leave the last converted input intact.
++    scratch: [Vec<u8>; 2],
++    converted: Option<PlanarXrConverted>,
++}
++
+ #[derive(Debug)]
+-struct PlanarXrSampleMemo {
++struct PlanarXrConverted {
+     level: crate::runtime::decode::resource::PlanarXrLevel,
+     native: [Vec<u8>; 2],
+     linear: Arc<Vec<u8>>,
+@@ -48,55 +56,74 @@
+ }
+ 
+ #[derive(Debug)]
+-pub(crate) enum PlanarXrMemoRefusal {
++pub(crate) enum PlanarXrMemoRefusal<E> {
++    Read(E),
+     Upload(reims_vgpu_vulkan::pixel::SampledUploadRefusal),
+     ForeignRail,
+ }
+ 
+-impl crate::observe::Decline for PlanarXrMemoRefusal {
++impl<E: crate::observe::Decline> crate::observe::Decline for PlanarXrMemoRefusal<E> {
+     fn slug(&self) -> &'static str {
+         match self {
++            Self::Read(why) => why.slug(),
+             Self::Upload(why) => why.slug(),
+             Self::ForeignRail => "dual_xr_memo_foreign_rail",
+         }
+     }
+ }
+ 
+-pub(crate) fn planar_xr_sample_bytes(
++/// Read fresh bytes into resource-owned scratch space, then compare both
++/// planes with the last complete input. `context` lets the loader and the
++/// generation allocator borrow their common owner sequentially.
++pub(crate) fn planar_xr_sample_bytes<C, E>(
+     resource: &TaskResource,
+     mip_level: u32,
+     level: crate::runtime::decode::resource::PlanarXrLevel,
+-    native: [Vec<u8>; 2],
+-    next_generation: impl FnOnce() -> u64,
+-) -> Result<(Arc<Vec<u8>>, u64), PlanarXrMemoRefusal> {
++    context: &mut C,
++    read_native: impl FnOnce(&mut C, &mut [Vec<u8>; 2]) -> Result<(), E>,
++    next_generation: impl FnOnce(&mut C) -> u64,
++) -> Result<(Arc<Vec<u8>>, u64), PlanarXrMemoRefusal<E>> {
+     resource
+         .with_rail_state(|held: &mut ResidentTargets| {
+-            if let Some(memo) = held.planar_xr_samples.get(&mip_level) {
+-                if memo.level == level && memo.native == native {
++            let memo = held.planar_xr_samples.entry(mip_level).or_default();
++            let capacities = memo.scratch.each_ref().map(|bytes| bytes.capacity());
++            read_native(context, &mut memo.scratch).map_err(PlanarXrMemoRefusal::Read)?;
++            let reused = capacities.iter().all(|&capacity| capacity != 0)
++                && capacities == memo.scratch.each_ref().map(|bytes| bytes.capacity());
++            crate::runtime::drain::note_store_route(if reused {
++                "dual_xr_read_scratch_reused_n"
++            } else {
++                "dual_xr_read_scratch_grown_n"
++            });
++            if let Some(converted) = &memo.converted {
++                if converted.level == level && converted.native == memo.scratch {
+                     crate::runtime::drain::note_store_route("dual_xr_convert_reused_n");
+-                    return Ok((Arc::clone(&memo.linear), memo.generation));
++                    return Ok((Arc::clone(&converted.linear), converted.generation));
+                 }
+             }
+             let upload = reims_vgpu_vulkan::pixel::sampled_planar_xr_upload_bytes(
+                 level.format,
+-                &native[0],
+-                &native[1],
++                &memo.scratch[0],
++                &memo.scratch[1],
+             )
+             .map_err(PlanarXrMemoRefusal::Upload)?;
+             let (_, bytes) = upload.into_parts();
+             let linear = Arc::new(bytes);
+             // One device-wide allocator serves all sampled producers, so a
+             // recycled or colliding key cannot claim an older image's bytes.
+-            let generation = next_generation();
+-            held.planar_xr_samples.insert(
+-                mip_level,
+-                PlanarXrSampleMemo {
+-                    level,
+-                    native,
+-                    linear: Arc::clone(&linear),
+-                    generation,
+-                },
+-            );
++            let generation = next_generation(context);
++            // Both buffers rotate only after the read and conversion succeed.
++            // The previous input becomes scratch for the following bind.
++            let native = std::mem::take(&mut memo.scratch);
++            let previous = memo.converted.replace(PlanarXrConverted {
++                level,
++                native,
++                linear: Arc::clone(&linear),
++                generation,
++            });
++            if let Some(previous) = previous {
++                memo.scratch = previous.native;
++            }
+             crate::runtime::drain::note_store_route("dual_xr_convert_new_n");
+             Ok((linear, generation))
+         })
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -1063,63 +1063,69 @@
+             crate::runtime::render_writeback::SettleSite::LinearTextureSampled,
+         );
+     }
+-    let mut packed = [Vec::new(), Vec::new()];
+-    for (index, (plane, bytes)) in level.planes.iter().zip(&mut packed).enumerate() {
+-        bytes
+-            .try_reserve_exact(packed_len)
+-            .map_err(|_| R::PlanarXr {
+-                reason: "dual_xr_sample_allocation_failed",
+-            })?;
+-        bytes.resize(packed_len, 0);
+-        if plane.layout.row_stride == u64::from(plane.tight_row) {
+-            gva_mem::read_task_gva_by_id(
+-                host,
+-                &state.tasks,
+-                task_id,
+-                plane.gva,
+-                bytes,
+-                state.page_shift,
+-            )
+-            .map_err(|_| R::PlanarRowUnreadable {
+-                plane: index as u8,
+-                row: 0,
+-            })?;
+-        } else {
+-            let row_len = plane.tight_row as usize;
+-            for row in 0..height {
+-                let gva = plane
+-                    .gva
+-                    .checked_add(
+-                        u64::from(row)
+-                            .checked_mul(plane.layout.row_stride)
+-                            .ok_or(R::SizeOverflow)?,
+-                    )
+-                    .ok_or(R::SizeOverflow)?;
+-                let offset = row as usize * row_len;
+-                gva_mem::read_task_gva_by_id(
+-                    host,
+-                    &state.tasks,
+-                    task_id,
+-                    gva,
+-                    &mut bytes[offset..offset + row_len],
+-                    state.page_shift,
+-                )
+-                .map_err(|_| R::PlanarRowUnreadable {
+-                    plane: index as u8,
+-                    row,
+-                })?;
+-            }
+-        }
+-    }
++    use crate::backend::vulkan::engine::resource_lease::PlanarXrMemoRefusal;
+     let (bytes, generation) =
+         crate::backend::vulkan::engine::resource_lease::planar_xr_sample_bytes(
+             resource,
+             mip_level,
+             level,
+-            packed,
+-            || state.next_sampled_content_generation(),
++            state,
++            |state, packed| {
++                for (index, (plane, bytes)) in level.planes.iter().zip(packed).enumerate() {
++                    bytes
++                        .try_reserve_exact(packed_len.saturating_sub(bytes.len()))
++                        .map_err(|_| R::PlanarXr {
++                            reason: "dual_xr_sample_allocation_failed",
++                        })?;
++                    bytes.resize(packed_len, 0);
++                    if plane.layout.row_stride == u64::from(plane.tight_row) {
++                        gva_mem::read_task_gva_by_id(
++                            host,
++                            &state.tasks,
++                            task_id,
++                            plane.gva,
++                            bytes,
++                            state.page_shift,
++                        )
++                        .map_err(|_| R::PlanarRowUnreadable {
++                            plane: index as u8,
++                            row: 0,
++                        })?;
++                    } else {
++                        let row_len = plane.tight_row as usize;
++                        for row in 0..height {
++                            let gva = plane
++                                .gva
++                                .checked_add(
++                                    u64::from(row)
++                                        .checked_mul(plane.layout.row_stride)
++                                        .ok_or(R::SizeOverflow)?,
++                                )
++                                .ok_or(R::SizeOverflow)?;
++                            let offset = row as usize * row_len;
++                            gva_mem::read_task_gva_by_id(
++                                host,
++                                &state.tasks,
++                                task_id,
++                                gva,
++                                &mut bytes[offset..offset + row_len],
++                                state.page_shift,
++                            )
++                            .map_err(|_| R::PlanarRowUnreadable {
++                                plane: index as u8,
++                                row,
++                            })?;
++                        }
++                    }
++                }
++                Ok(())
++            },
++            |state| state.next_sampled_content_generation(),
+         )
+-        .map_err(|why| R::PlanarXr { reason: why.slug() })?;
++        .map_err(|why| match why {
++            PlanarXrMemoRefusal::Read(why) => why,
++            why => R::PlanarXr { reason: why.slug() },
++        })?;
+     crate::runtime::drain::note_store_route("dual_xr_sample_n");
+     Ok(PlanarXrSample {
+         width,

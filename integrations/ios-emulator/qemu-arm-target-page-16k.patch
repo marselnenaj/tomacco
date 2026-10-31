@@ -1,0 +1,279 @@
+target/arm: 16 KiB target pages (-M ...,tomacco-page-bits) and a 16 KiB-only CPU.
+
+tomacco-vphone states no minimum_page_bits, so machine_memory_init() commits
+Arm's legacy default before any CPU exists: the engine runs with
+1 KiB target pages (target_page.bits == 10, read from a paused
+engine). The CPUs' later preference for 4 KiB cannot raise
+it. Every structure that is per target page is then per KiB for a guest
+whose XNU, SPTM, TXM and SEP firmware map only 16 KiB pages:
+
+  - a TB ends at a 1 KiB boundary and goto_tb chains only within one, so a
+    direct branch into the next KiB leaves through lookup_and_goto_ptr;
+  - a 16 KiB guest page needs 16 softmmu TLB fills, and lg_page_size 14 >
+    TARGET_PAGE_BITS makes every one a "large page": tlb_add_large_page
+    merges them into one region per mmu_idx, so nearly every TLBI by VA
+    (XNU unmap, protect, COW) becomes a full flush of that mmu_idx.
+
+The machine option tomacco-page-bits=N (10, 12 or 14; any machine; 10 is
+today's tomacco-vphone size, for A/B on another board) is read in
+qemu_create_machine() ahead of the board's minimum_page_bits and is the
+first preference, so it is the size in effect; the machine property of the
+same name reads it back (and only confirms it when applied).
+
+The CPU property tomacco-granule-16k (default off) reports and implements
+only the 16 KiB granule: ID_AA64MMFR0 TGRAN4 = TGRAN64 = 0xf, TGRAN4_2 =
+TGRAN64_2 = 1, TGRAN16/TGRAN16_2 kept (implemented); a guest that still
+selects 4 or 64 KiB is translated with 16 KiB (the IMPDEF choice for an
+unimplemented granule), logged once as a guest error. Only such a CPU
+accepts 14-bit target pages; any other v8 CPU keeps asking for 12 bits and
+refuses to realize on a 16 KiB machine. That is required, not cosmetic: a
+translation smaller than the target page is right only where VA and PA
+agree modulo the target page (tlb_set_page_full maps the whole target page
+from the walk's aligned PA; fine for PMSA, wrong for 4 KiB page tables:
+tests/engine/jump-cache-probe.S runs wrong code at 14 bits without it).
+
+Every guest stage was checked for its granule: the SEP firmware writes
+TCR_EL1 = 0x010000036520a59c (TG0 = TG1 = 16 KiB) and otherwise only
+T0SZ/EPD0; SPTM writes 0x000800226511a511 (TG0 = TG1 = 16 KiB) and a
+per-geometry TCR on address-space switch; TXM writes no TCR; XNU's set_tcr
+has no caller and it reads ID_AA64MMFR0 only for ECV (bits 63:60). So the
+AP cores and the SEP core (a separate "max" CPU, but the target page size
+is one per process) can all be 16 KiB-only.
+
+Run with run_ios_paravirt.py --target-page 16k (tomacco-page-bits=14 plus
+-global max-arm-cpu.tomacco-granule-16k=on, which reaches the SEP CPU too)
+or 4k (tomacco-page-bits=12 alone); an engine without this patch refuses the
+machine option. Orthogonal to the other engine patches; with
+qemu-tcg-jump-cache the jump cache keeps 512 entries per page bucket, now
+per 16 KiB page.
+
+diff --git a/hw/core/machine.c b/hw/core/machine.c
+--- a/hw/core/machine.c
++++ b/hw/core/machine.c
+@@ -18,6 +18,8 @@
+ #include "hw/core/loader.h"
+ #include "qemu/error-report.h"
+ #include "qapi/error.h"
++#include "qapi/visitor.h"
++#include "exec/target_page.h"
+ #include "qapi/qapi-visit-machine.h"
+ #include "qapi/qapi-commands-machine.h"
+ #include "qemu/madvise.h"
+@@ -1054,6 +1056,31 @@ out:
+     return r;
+ }
+ 
++static void machine_get_tomacco_page_bits(Object *obj, Visitor *v,
++                                         const char *name, void *opaque,
++                                         Error **errp)
++{
++    uint8_t bits = qemu_target_page_bits();
++
++    visit_type_uint8(v, name, &bits, errp);
++}
++
++static void machine_set_tomacco_page_bits(Object *obj, Visitor *v,
++                                         const char *name, void *opaque,
++                                         Error **errp)
++{
++    uint8_t bits;
++
++    if (!visit_type_uint8(v, name, &bits, errp)) {
++        return;
++    }
++    /* Applied before the board existed (system/vl.c); only confirm it here. */
++    if (!tomacco_target_page_bits_requested || bits != qemu_target_page_bits()) {
++        error_setg(errp, "tomacco-page-bits is fixed at machine creation (-M) and is %d",
++                   qemu_target_page_bits());
++    }
++}
++
+ static void machine_class_init(ObjectClass *oc, const void *data)
+ {
+     MachineClass *mc = MACHINE_CLASS(oc);
+@@ -1078,6 +1105,12 @@ static void machine_class_init(ObjectClass *oc, const void *data)
+ 
+     mc->create_default_memdev = create_default_memdev;
+ 
++    object_class_property_add(oc, "tomacco-page-bits", "uint8",
++        machine_get_tomacco_page_bits, machine_set_tomacco_page_bits, NULL, NULL);
++    object_class_property_set_description(oc, "tomacco-page-bits",
++        "Target page size in bits: 10, 12 or 14, chosen with -M at start "
++        "(reads back the size in effect)");
++
+     object_class_property_add_str(oc, "kernel",
+         machine_get_kernel, machine_set_kernel);
+     object_class_property_set_description(oc, "kernel",
+diff --git a/include/exec/page-vary.h b/include/exec/page-vary.h
+--- a/include/exec/page-vary.h
++++ b/include/exec/page-vary.h
+@@ -58,6 +58,13 @@ bool set_preferred_target_page_bits(int bits);
+  */
+ void finalize_target_page_bits(void);
+ 
++/*
++ * True when the machine options chose the target page size
++ * (-M ...,tomacco-page-bits=N, system/vl.c). A CPU still refuses a target page
++ * larger than its smallest translation granule (target/arm/cpu.c).
++ */
++extern bool tomacco_target_page_bits_requested;
++
+ /**
+  * migration_legacy_page_bits
+  *
+diff --git a/system/vl.c b/system/vl.c
+--- a/system/vl.c
++++ b/system/vl.c
+@@ -2202,6 +2202,36 @@ static void qemu_create_machine_containers(Object *machine)
+     }
+ }
+ 
++/*
++ * -M <machine>,tomacco-page-bits=N (qemu-arm-target-page-16k): the target page
++ * size, decided here because machine_memory_init() below commits it before any
++ * machine property is applied. Without it the board's minimum_page_bits (or
++ * the target's legacy default: 1 KiB on Arm for a board that states none, as
++ * tomacco-vphone) stays in charge.
++ */
++bool tomacco_target_page_bits_requested;
++
++static void tomacco_request_target_page_bits(QDict *qdict)
++{
++    const char *text = qdict_get_try_str(qdict, "tomacco-page-bits");
++    uint64_t bits;
++
++    if (!qdict_haskey(qdict, "tomacco-page-bits")) {
++        return;
++    }
++    if (!text || qemu_strtou64(text, NULL, 10, &bits) ||
++        (bits != 10 && bits != 12 && bits != 14)) {
++        error_report("tomacco-page-bits must be 10 (1 KiB), 12 (4 KiB) or 14 (16 KiB) target pages");
++        exit(EXIT_FAILURE);
++    }
++    /* The first preference: the size can only shrink from here. A CPU
++     * whose granules are smaller refuses to realize (target/arm/cpu.c). */
++    if (!set_preferred_target_page_bits(bits)) {
++        g_assert_not_reached();
++    }
++    tomacco_target_page_bits_requested = true;
++}
++
+ static void qemu_create_machine(QDict *qdict)
+ {
+     MachineClass *machine_class = select_machine(qdict, &error_fatal);
+@@ -2214,7 +2244,8 @@ static void qemu_create_machine(QDict *qdict)
+     object_property_add_child(machine_get_container("unattached"),
+                               "sysbus", OBJECT(sysbus_get_default()));
+ 
+-    if (machine_class->minimum_page_bits) {
++    tomacco_request_target_page_bits(qdict);
++    if (!tomacco_target_page_bits_requested && machine_class->minimum_page_bits) {
+         if (!set_preferred_target_page_bits(machine_class->minimum_page_bits)) {
+             /* This would be a board error: specifying a minimum smaller than
+              * a target's compile-time fixed setting.
+diff --git a/target/arm/cpu.c b/target/arm/cpu.c
+--- a/target/arm/cpu.c
++++ b/target/arm/cpu.c
+@@ -2145,6 +2145,18 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
+              */
+             pagebits = 10;
+         }
++        if (cpu->tomacco_granule16k) {
++            /*
++             * Only 16 KiB translations exist on this CPU (below), so it
++             * accepts 16 KiB target pages. Any other v8 CPU still asks for
++             * 4 KiB and so refuses a 16 KiB machine: a translation smaller
++             * than a target page is only right where VA and PA agree modulo
++             * the target page (tlb_set_page_full maps the whole target page
++             * from the walk's page-aligned PA), true for PMSA, not for 4 KiB
++             * page tables.
++             */
++            pagebits = 14;
++        }
+         if (!set_preferred_target_page_bits(pagebits)) {
+             /*
+              * This can only ever happen for hotplugging a CPU, or if
+@@ -2153,11 +2165,37 @@ static void arm_cpu_realizefn(DeviceState *dev, Error **errp)
+              */
+             error_setg(errp, "This CPU requires a smaller page size "
+                        "than the system is using");
++            if (tomacco_target_page_bits_requested) {
++                error_append_hint(errp, "-M tomacco-page-bits=%d needs a CPU with "
++                                  "tomacco-granule-16k=on\n", TARGET_PAGE_BITS);
++            }
+             return;
+         }
+     }
+ #endif
+ 
++    if (cpu->tomacco_granule16k && arm_feature(env, ARM_FEATURE_AARCH64)) {
++        /*
++         * Apple's XNU, SPTM, TXM and SEP firmware program TG0 = TG1 = 16 KiB
++         * only. Advertise exactly that: TGRAN4 and TGRAN64 = 0xf (not
++         * implemented), TGRAN4_2 and TGRAN64_2 = 1 (not at stage 2), TGRAN16
++         * and TGRAN16_2 as the model has them (at least implemented). A
++         * guest that still selects 4 or 64 KiB gets 16 KiB, the architecture's
++         * IMPDEF choice for an unimplemented granule (sanitize_gran_size
++         * logs it once).
++         */
++        FIELD_DP64_IDREG(isar, ID_AA64MMFR0, TGRAN4, 0xf);
++        FIELD_DP64_IDREG(isar, ID_AA64MMFR0, TGRAN64, 0xf);
++        if (!FIELD_EX64_IDREG(isar, ID_AA64MMFR0, TGRAN16)) {
++            FIELD_DP64_IDREG(isar, ID_AA64MMFR0, TGRAN16, 1);
++        }
++        FIELD_DP64_IDREG(isar, ID_AA64MMFR0, TGRAN4_2, 1);
++        FIELD_DP64_IDREG(isar, ID_AA64MMFR0, TGRAN64_2, 1);
++        if (FIELD_EX64_IDREG(isar, ID_AA64MMFR0, TGRAN16_2) == 1) {
++            FIELD_DP64_IDREG(isar, ID_AA64MMFR0, TGRAN16_2, 2);
++        }
++    }
++
+     /* This cpu-id-to-MPIDR affinity is used only for TCG; KVM will override it.
+      * We don't support setting cluster ID ([16..23]) (known as Aff2
+      * in later ARM ARM versions), or any of the higher affinity level fields,
+@@ -2515,6 +2553,7 @@ static const Property arm_cpu_properties[] = {
+                         mp_affinity, ARM64_AFFINITY_INVALID),
+     DEFINE_PROP_INT32("node-id", ARMCPU, node_id, CPU_UNSET_NUMA_NODE_ID),
+     DEFINE_PROP_INT32("core-count", ARMCPU, core_count, -1),
++    DEFINE_PROP_BOOL("tomacco-granule-16k", ARMCPU, tomacco_granule16k, false),
+     /* True to default to the backward-compat old CNTFRQ rather than 1Ghz */
+     DEFINE_PROP_BOOL("backcompat-cntfrq", ARMCPU, backcompat_cntfrq, false),
+     DEFINE_PROP_BOOL("backcompat-pauth-default-use-qarma5", ARMCPU,
+diff --git a/target/arm/cpu.h b/target/arm/cpu.h
+--- a/target/arm/cpu.h
++++ b/target/arm/cpu.h
+@@ -1116,6 +1116,13 @@ struct ArchCPU {
+     /* QOM property to indicate we should use the back-compat CNTFRQ default */
+     bool backcompat_cntfrq;
+ 
++    /*
++     * tomacco-granule-16k: report and implement only the 16 KiB translation
++     * granule (ID_AA64MMFR0 TGRAN4/TGRAN64 and their stage-2 fields: not
++     * implemented) and prefer 16 KiB target pages.
++     */
++    bool tomacco_granule16k;
++
+     /* Preserve upstream Darwin compatibility, but make research CPUs trap
+      * unknown system registers instead of silently skipping instructions. */
+     bool tomacco_strict_sysregs;
+diff --git a/target/arm/helper.c b/target/arm/helper.c
+--- a/target/arm/helper.c
++++ b/target/arm/helper.c
+@@ -9905,6 +9905,17 @@ static ARMGranuleSize sanitize_gran_size(ARMCPU *cpu, ARMGranuleSize gran,
+      * that is (with an IMPDEF choice of which one to pick). We choose
+      * to implement the smallest supported granule size.
+      */
++    if (cpu->tomacco_granule16k && gran != GranInvalid) {
++        static int reported;
++
++        if (!qatomic_xchg(&reported, 1)) {
++            qemu_log_mask(LOG_GUEST_ERROR,
++                          "tomacco-granule-16k: guest selected a %s KiB %s "
++                          "granule; translating with 16 KiB (reported once)\n",
++                          gran == Gran4K ? "4" : "64",
++                          stage2 ? "stage-2" : "stage-1");
++        }
++    }
+     if (have4k(cpu, stage2)) {
+         return Gran4K;
+     }

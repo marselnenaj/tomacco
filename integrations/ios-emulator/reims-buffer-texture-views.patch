@@ -1,0 +1,332 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -44,6 +44,7 @@
+     OBJECT_TYPE_MAPPER_REF_TEXTURE, OBJECT_TYPE_SERIALIZER_OBJECT, OBJECT_TYPE_TEXTURE,
+     OBJECT_TYPE_TEXTURE_GENERATE_MIPMAPS, OBJECT_TYPE_TEXTURE_VIEW,
+     TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE, TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE_WIDE,
++    TEXTURE_VIEW_OPCODE_SIMPLE, TEXTURE_VIEW_OPCODE_RANGED, TEXTURE_VIEW_OPCODE_SWIZZLE,
+ };
+ use crate::runtime::gva_mem;
+ use crate::runtime::host::{HostMemory, HostOps};
+@@ -1323,8 +1324,9 @@
+ /// If `texture_ref` is a texture-view object whose descriptor is a buffer-backed
+ /// texture (view_opcode 9, `newTextureWithDescriptor:offset:bytesPerRow:`, or
+ /// its `TextureDescriptor2` form), return its decoded descriptor. `None` for a
+-/// non-texture-view object or a real texture VIEW (opcode 7/8/0x1b) — those stay on
+-/// the view path silently.
++/// non-texture-view object or a view whose terminal is another storage kind.
++/// A view over a buffer texture carries its checked format/range from the
++/// chain resolver into the existing row loader.
+ fn buffer_texture_descriptor<M: HostMemory + HostOps>(
+     state: &DeviceState,
+     host: &M,
+@@ -1344,13 +1346,27 @@
+         return None;
+     }
+     let desc_bytes = &resource.descriptor;
+-    if !matches!(
+-        texture_view_opcode(desc_bytes),
+-        Some(TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE) | Some(TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE_WIDE)
+-    ) {
+-        return None;
+-    }
+-    decode_buffer_texture_descriptor(desc_bytes).ok()
++    match texture_view_opcode(desc_bytes) {
++        Some(TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE)
++        | Some(TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE_WIDE) => {
++            decode_buffer_texture_descriptor(desc_bytes).ok()
++        }
++        Some(TEXTURE_VIEW_OPCODE_SIMPLE)
++        | Some(TEXTURE_VIEW_OPCODE_RANGED)
++        | Some(TEXTURE_VIEW_OPCODE_SWIZZLE) => {
++            match resolve_texture_view_reasoned(state, host, task_id, texture_ref) {
++                Ok(view) => view.base_buffer_texture,
++                Err(why) => {
++                    crate::observe::Emit::decline("sample_view_resolve", &why)
++                        .field("task", task_id)
++                        .field("ref", texture_ref)
++                        .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                    None
++                }
++            }
++        }
++        _ => None,
++    }
+ }
+ 
+ /// Say, once per (site, format), that a sampled texture reached the GPU
+@@ -1560,6 +1576,12 @@
+     // rail makes, and its absence here is what let a rendered frame stay in a
+     // host resident while this read served the guest the frame before it.
+     crate::runtime::writeback_debt::pay_for_texture(state, host, task_id, texture_ref);
++    // A view additionally names the buffer-backed texture whose own Store may
++    // still be deferred. Settle that original texture as well as the view and
++    // the buffer before reading their shared allocation.
++    if bt.new_texture_ref != texture_ref {
++        crate::runtime::writeback_debt::pay_for_texture(state, host, task_id, bt.new_texture_ref);
++    }
+     let raw = load_buffer_bytes(state, host, task_id, bt.buffer_ref, bt.offset)?;
+     if (raw.len() as u64) < span {
+         crate::observe::fail(format!(
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -16,6 +16,8 @@
+     /// Non-view base texture ref after walking the view chain (archive
+     /// `REIMS_VGPU_RESOURCE_RESOLVE_MAX_VIEW_CHAIN` walk).
+     pub(crate) base_texture_ref: u32,
++    /// Buffer-backed terminal of the view chain, with the checked sample format.
++    pub(crate) base_buffer_texture: Option<BufferTextureDescriptor>,
+     pub(crate) level: u32,
+     /// Present when the view carries a swizzle form (opcode 0x1b); selectors already validated.
+     pub(crate) swizzle: Option<pixel_format::SwizzlePlan>,
+@@ -45,6 +47,16 @@
+         bytes_hex: String,
+         reason: DecodeStatus,
+     },
++    BufferBaseRange {
++        texture_ref: u32,
++        level: u32,
++        slice_base: u64,
++        slice_count: u64,
++    },
++    BufferBaseFormat {
++        texture_ref: u32,
++        detail: String,
++    },
+     HopZeroBase {
+         texture_ref: u32,
+         opcode: u32,
+@@ -82,6 +94,8 @@
+             }
+             // Keep the descriptor decoder's exact registered reason primary.
+             Self::HopDecode { reason, .. } => reason.slug(),
++            Self::BufferBaseRange { .. } => "texture_view_buffer_range",
++            Self::BufferBaseFormat { .. } => "texture_view_buffer_format",
+             Self::HopZeroBase { .. } => "texture_view_hop_zero_base",
+             Self::HopLevelOverflow { .. } => "texture_view_hop_level_overflow",
+             Self::HopSwizzleInvalid { .. } => "texture_view_hop_swizzle_invalid",
+@@ -127,6 +141,24 @@
+                 fields.extend(reason.fields());
+                 fields
+             }
++            Self::BufferBaseRange {
++                texture_ref,
++                level,
++                slice_base,
++                slice_count,
++            } => vec![
++                ("texture_ref", texture_ref.to_string()),
++                ("level", level.to_string()),
++                ("slice_base", slice_base.to_string()),
++                ("slice_count", slice_count.to_string()),
++            ],
++            Self::BufferBaseFormat {
++                texture_ref,
++                detail,
++            } => vec![
++                ("texture_ref", texture_ref.to_string()),
++                ("detail", detail.clone()),
++            ],
+             Self::HopZeroBase {
+                 texture_ref,
+                 opcode,
+@@ -246,6 +278,20 @@
+     ));
+ }
+ 
++/// Object tag 8 includes both views and textures backed by a buffer. The
++/// operation's checked decoder owns that distinction, rather than the tag.
++enum DecodedTextureViewHop {
++    View {
++        base: u32,
++        level: u32,
++        swizzle: Option<pixel_format::SwizzlePlan>,
++        pixel_format: Option<u16>,
++        slice_base: u64,
++        slice_count: u64,
++    },
++    BufferTexture(BufferTextureDescriptor),
++}
++
+ /// Decode one texture-view hop (does not walk nested bases).
+ ///
+ /// The `Result` carries a specific failure slug for the always-on fail log. No
+@@ -257,9 +303,9 @@
+     host: &M,
+     task_id: u32,
+     texture_ref: u32,
+-) -> Result<(u32, u32, Option<pixel_format::SwizzlePlan>, Option<u16>), TextureViewDecline> {
++) -> Result<DecodedTextureViewHop, TextureViewDecline> {
+     use crate::runtime::decode::resource::{
+-        decode_texture_view_descriptor, texture_view_header, OBJECT_TYPE_TEXTURE_VIEW,
++        OBJECT_TYPE_TEXTURE_VIEW, decode_texture_view_descriptor, texture_view_header,
+     };
+     let (_entry, desc) = objects::resolve_descriptor(
+         state,
+@@ -285,10 +331,7 @@
+     })?;
+     // Bytes visible before decode, for the len-mismatch / bad-opcode census.
+     let (opcode, declared) = texture_view_header(&desc).unwrap_or((0, 0));
+-    let view = decode_texture_view_descriptor(&desc).map_err(|reason| {
+-        // Dump the full wire blob for an unknown texture-view opcode: this is the
+-        // only signal that reveals a new serializer variant (off the hot path —
+-        // fires only on a genuine decode failure).
++    let decode_failure = |reason| {
+         let hex: String = desc.iter().map(|b| format!("{b:02x}")).collect();
+         TextureViewDecline::HopDecode {
+             texture_ref,
+@@ -298,7 +341,16 @@
+             bytes_hex: hex,
+             reason,
+         }
+-    })?;
++    };
++    if matches!(
++        opcode,
++        TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE | TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE_WIDE
++    ) {
++        return decode_buffer_texture_descriptor(&desc)
++            .map(DecodedTextureViewHop::BufferTexture)
++            .map_err(decode_failure);
++    }
++    let view = decode_texture_view_descriptor(&desc).map_err(decode_failure)?;
+     if view.base_texture_ref == 0 {
+         return Err(TextureViewDecline::HopZeroBase {
+             texture_ref,
+@@ -331,7 +383,14 @@
+     };
+     // Zero pixel_format means inherit base (serializer always writes a real format when set).
+     let pixel_format = view.declared_pixel_format();
+-    Ok((view.base_texture_ref, level, swizzle, pixel_format))
++    Ok(DecodedTextureViewHop::View {
++        base: view.base_texture_ref,
++        level,
++        swizzle,
++        pixel_format,
++        slice_base: view.slice_base,
++        slice_count: view.slice_count,
++    })
+ }
+ 
+ /// Resolve texture-view to non-view base + mip + format override + swizzle.
+@@ -350,38 +409,94 @@
+ ) -> Result<ViewResolve, TextureViewDecline> {
+     use crate::runtime::decode::resource::OBJECT_TYPE_TEXTURE_VIEW;
+ 
+-    let (mut base, level, swizzle, pixel_format) =
+-        decode_texture_view_hop_reasoned(state, host, task_id, texture_ref)?;
+-
+-    // Collapse nested texture-view bases to a non-view texture (mapper-ref-texture /
+-    // normal-texture).
+-    let mut depth = 0u32;
+-    for _ in 1..MAX_TEXTURE_VIEW_CHAIN {
++    let (mut base, level, swizzle, pixel_format, slice_base, slice_count) =
++        match decode_texture_view_hop_reasoned(state, host, task_id, texture_ref)? {
++            DecodedTextureViewHop::BufferTexture(bt) => {
++                return Ok(ViewResolve {
++                    base_texture_ref: texture_ref,
++                    base_buffer_texture: Some(bt),
++                    level: 0,
++                    swizzle: None,
++                    pixel_format: None,
++                });
++            }
++            DecodedTextureViewHop::View {
++                base,
++                level,
++                swizzle,
++                pixel_format,
++                slice_base,
++                slice_count,
++            } => (base, level, swizzle, pixel_format, slice_base, slice_count),
++        };
++
++    // A buffer-backed texture is a terminal even though it shares tag 8 with
++    // views. Decode each hop once, and carry its descriptor to the row loader.
++    for depth in 1..=MAX_TEXTURE_VIEW_CHAIN {
+         let Some(entry) = objects::lookup_list_entry(state, host, task_id, base) else {
+-            // Base missing from the list — leave the ref for the caller to fail
+-            // visibly (same as a one-hop miss on an unmapped base).
+             break;
+         };
+         if entry.object_type != OBJECT_TYPE_TEXTURE_VIEW {
+             break;
+         }
+-        depth += 1;
+-        let (next, _lvl, _sw, _fmt) = decode_texture_view_hop_reasoned(state, host, task_id, base)?;
+-        if next == 0 || next == base {
+-            return Err(TextureViewDecline::ChainSelfOrZero { base, next, depth });
+-        }
+-        base = next;
+-    }
+-
+-    // Final base must not still be a texture-view past the chain cap.
+-    if let Some(entry) = objects::lookup_list_entry(state, host, task_id, base) {
+-        if entry.object_type == OBJECT_TYPE_TEXTURE_VIEW {
+-            return Err(TextureViewDecline::ChainOverflow { base, depth });
+-        }
+-    }
+-
++        match decode_texture_view_hop_reasoned(state, host, task_id, base)? {
++            DecodedTextureViewHop::BufferTexture(mut bt) => {
++                // This loader represents one 2D level/slice. Never discard a
++                // view's requested mip or array window to make the bind work.
++                if level != 0 || slice_base != 0 || slice_count > 1 {
++                    return Err(TextureViewDecline::BufferBaseRange {
++                        texture_ref,
++                        level,
++                        slice_base,
++                        slice_count,
++                    });
++                }
++                bt.desc.pixel_format =
++                    effective_view_sample_format_reasoned(bt.desc.pixel_format, pixel_format)
++                        .map_err(|why| TextureViewDecline::BufferBaseFormat {
++                            texture_ref,
++                            detail: why.to_string().replace(' ', "_"),
++                        })?;
++                if crate::observe::first_sight(
++                    "texture_view_buffer_base",
++                    (u64::from(task_id) << 32) | u64::from(texture_ref),
++                ) {
++                    crate::observe::off(format!(
++                        "texture_view_buffer_base task={task_id} ref={texture_ref} base={base} \
++                         buffer={} level={level} fmt={:#x} swizzled={}",
++                        bt.buffer_ref, bt.desc.pixel_format,
++                        swizzle.as_ref().is_some_and(|plan| !pixel_format::swizzle_is_identity(plan)) as u8,
++                    ));
++                }
++                return Ok(ViewResolve {
++                    base_texture_ref: base,
++                    base_buffer_texture: Some(bt),
++                    level,
++                    swizzle,
++                    pixel_format,
++                });
++            }
++            DecodedTextureViewHop::View { base: next, .. } => {
++                if depth == MAX_TEXTURE_VIEW_CHAIN {
++                    return Err(TextureViewDecline::ChainOverflow {
++                        base,
++                        depth: (depth - 1) as u32,
++                    });
++                }
++                if next == 0 || next == base {
++                    return Err(TextureViewDecline::ChainSelfOrZero {
++                        base,
++                        next,
++                        depth: depth as u32,
++                    });
++                }
++                base = next;
++            }
++        }
++    }
+     Ok(ViewResolve {
+         base_texture_ref: base,
++        base_buffer_texture: None,
+         level,
+         swizzle,
+         pixel_format,

@@ -1,0 +1,177 @@
+reims-vgpu: the guest-rung blank census stops scanning a serve it already judged.
+
+`note_guest_rung_blank` counts guest-memo serves that came back all zeroes
+(lin_rung_guest_blank) with `rgba.iter().any(|&b| b != 0)` on every serve: a
+byte-at-a-time scan that stops at the first non-zero byte, so content pays
+little and a blank or mostly transparent span pays its whole length. Measured
+(after reims-memo-arm-in-exec): with the memo's read and compare
+down to ~45 ms in the worst drain second, `sampled_phase` resolve was still
+743 ms there, ~670 ms of it outside every resolve_split part, at ~6.4 ms per
+blank serve of a 1216x2688 RGBA16F layer (one full pass over 25 MiB); the
+icon-press stalls of 0.3-1.5 s on the Home screen remained.
+
+Now `rung_bytes_blank` answers the census. A serve the guest memo names by
+its content generation (`LinearSampleIdentity::generation`, from the device
+wide `next_sampled_content_generation`, so one generation is one set of
+bytes) reuses the verdict its first serve computed
+(`lin_rung_blank_verdict_reused`); at most 1024 verdicts are held and the
+table is cleared when full. A serve without a generation, and the first serve
+of each, scans 4 KiB blocks with an OR fold that stops only between blocks,
+which compiles to wide loads. The census counts, their meaning and the host
+cache comparison are unchanged; only how the blank verdict is reached.
+
+Tests: draw::vulkan::vulkan_split_tests::the_blank_verdict_is_reused_per_content_generation;
+the existing blank-census tests pass None and keep their counts.
+
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -6508,6 +6508,7 @@
+ /// `span` is `(gva, width, height)` — the GVA cache's key, taken as one value
+ /// because every lookup below needs all three and none of them means anything
+ /// apart.
++#[allow(clippy::too_many_arguments)]
+ fn note_guest_rung_blank<H: HostMemory>(
+     state: &DeviceState,
+     host: &H,
+@@ -6516,6 +6517,7 @@
+     span: (u64, u32, u32),
+     rgba: &[u8],
+     byte_format: SampledByteFormat,
++    content_generation: Option<u64>,
+ ) {
+     let (gva, w, h) = span;
+     crate::runtime::drain::note_store_route("lin_rung_guest_memo");
+@@ -6531,7 +6533,7 @@
+     if host_entry {
+         crate::runtime::drain::note_store_route("lin_rung_host_entry");
+     }
+-    if rgba.is_empty() || rgba.iter().any(|&b| b != 0) {
++    if rgba.is_empty() || !rung_bytes_blank(rgba, content_generation) {
+         return;
+     }
+     crate::runtime::drain::note_store_route("lin_rung_guest_blank");
+@@ -6580,6 +6582,49 @@
+     }
+ }
+ 
++/// Whether every byte of a sampled serve is zero, for the census above.
++///
++/// A byte-at-a-time `any` stopped at the first non-zero byte, so content paid
++/// little and a blank or mostly transparent span paid its whole length: it
++/// spent ~6.4 ms per blank serve of a 1216x2688 RGBA16F
++/// layer, up to ~670 ms of a drain second in `sampled_phase` resolve with the
++/// memo's own read and compare at ~45 ms. Two things now keep the census off
++/// the frame's time. A serve the memo names by its content generation (device
++/// wide, so one generation is one set of bytes) reuses the verdict its first
++/// serve computed; and the scan ORs 4 KiB blocks without stopping inside one,
++/// which the compiler turns into wide loads instead of one compare per byte.
++fn rung_bytes_blank(rgba: &[u8], content_generation: Option<u64>) -> bool {
++    use std::collections::HashMap;
++    use std::sync::Mutex;
++    /// Verdicts held at once; the memo serves a few dozen spans.
++    const VERDICTS: usize = 1024;
++    static KNOWN: Mutex<Option<HashMap<u64, bool>>> = Mutex::new(None);
++    let scan = || {
++        rgba.chunks(4096)
++            .all(|block| block.iter().fold(0u8, |acc, &b| acc | b) == 0)
++    };
++    let Some(generation) = content_generation else {
++        return scan();
++    };
++    if let Some(blank) = KNOWN
++        .lock()
++        .ok()
++        .and_then(|known| known.as_ref().and_then(|map| map.get(&generation).copied()))
++    {
++        crate::runtime::drain::note_store_route("lin_rung_blank_verdict_reused");
++        return blank;
++    }
++    let blank = scan();
++    if let Ok(mut known) = KNOWN.lock() {
++        let map = known.get_or_insert_with(HashMap::new);
++        if map.len() >= VERDICTS {
++            map.clear();
++        }
++        map.insert(generation, blank);
++    }
++    blank
++}
++
+ pub(super) fn load_linear_from_host_caches<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -6636,6 +6681,7 @@
+             (gva, w, h),
+             &rgba,
+             byte_format,
++            identity.as_ref().map(|identity| identity.generation),
+         );
+         // The other half of a channel-order reading. A GVA span is *written* by
+         // the render Store at the attachment's declared format and *read* here
+@@ -12830,6 +12876,26 @@
+     /// bearing serve over a cached span must still be counted, and a blank one
+     /// must land in both counters — the subset relation is the property, not
+     /// either number.
++    /// The blank census reuses a verdict for content it already judged (one
++    /// content generation is one set of bytes) and scans anything unnamed.
++    #[test]
++    fn the_blank_verdict_is_reused_per_content_generation() {
++        use crate::runtime::drain::store_route_count;
++        let blank = vec![0u8; 3 * 4096 + 7];
++        let mut tail = blank.clone();
++        *tail.last_mut().unwrap() = 1;
++        assert!(rung_bytes_blank(&blank, None));
++        assert!(!rung_bytes_blank(&tail, None));
++        let generation = u64::MAX - 7;
++        let reused = store_route_count("lin_rung_blank_verdict_reused");
++        assert!(rung_bytes_blank(&blank, Some(generation)));
++        assert_eq!(store_route_count("lin_rung_blank_verdict_reused"), reused);
++        // Same generation: the verdict, not the bytes, answers.
++        assert!(rung_bytes_blank(&tail, Some(generation)));
++        assert_eq!(store_route_count("lin_rung_blank_verdict_reused"), reused + 1);
++        assert!(!rung_bytes_blank(&tail, Some(generation - 1)));
++    }
++
+     #[test]
+     fn a_serve_over_a_cached_span_is_counted_whether_or_not_it_came_back_blank() {
+         use crate::runtime::drain::store_route_count;
+@@ -12862,6 +12928,7 @@
+             (gva, w, h),
+             &content,
+             SampledByteFormat::synthesised(TexelLayout::Rgba8),
++            None,
+         );
+         assert_eq!(
+             store_route_count("lin_rung_host_entry"),
+@@ -12885,6 +12952,7 @@
+             (gva, w, h),
+             &blank,
+             SampledByteFormat::synthesised(TexelLayout::Rgba8),
++            None,
+         );
+         assert_eq!(store_route_count("lin_rung_host_entry"), entries + 2);
+         assert_eq!(
+@@ -12902,6 +12970,7 @@
+             (gva + 0x10_0000, w, h),
+             &blank,
+             SampledByteFormat::synthesised(TexelLayout::Rgba8),
++            None,
+         );
+         assert_eq!(store_route_count("lin_rung_host_entry"), entries + 2);
+         assert_eq!(
+@@ -13168,6 +13237,7 @@
+             (content_gva, w, h),
+             &blank,
+             SampledByteFormat::synthesised(TexelLayout::Rgba8),
++            None,
+         );
+         assert_eq!(
+             store_route_count("lin_rung_blank_host_content"),
+@@ -13188,6 +13258,7 @@
+             (blank_gva, w, h),
+             &blank,
+             SampledByteFormat::synthesised(TexelLayout::Rgba8),
++            None,
+         );
+         assert_eq!(
+             store_route_count("lin_rung_blank_host_agrees"),

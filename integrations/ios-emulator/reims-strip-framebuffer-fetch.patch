@@ -1,0 +1,488 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -52,6 +52,7 @@
+ pub mod reason;
+ mod slab;
+ pub mod stage_phase;
++mod strip_fetch;
+ pub mod types;
+ pub mod vk_call;
+ #[cfg(feature = "host-window")]
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -1439,7 +1439,7 @@
+             DrawValidationDecline::EmptyFragmentSpirv,
+         ));
+     }
+-    ordered_color_fetch_width(req)?;
++    validate_ordered_color_fetch(req)?;
+     // Every viewport, not just the first: a NaN in slot 3 reaches
+     // `vkCmdSetViewport` exactly as one in slot 0 does, and the driver's
+     // behaviour on it is undefined either way.
+@@ -3486,20 +3486,39 @@
+     // data. A direct import binds the guest's pages; a scattered window is
+     // gathered once by this command buffer; only incapable hosts CPU-stage it.
+     phase.enter(super::draw_phase::Phase::StageIndex);
+-    let index_slot = match &req.indexed {
+-        Some(indexed) => Some(stage_buffer_content(
+-            ctx,
+-            pools,
+-            counters,
+-            &indexed.content,
+-            StageBufferUse {
+-                snapshot_volatile: batch_eligible,
+-                gather_role: buffer_gather_role(req, CbBind::key_of(&indexed.content))
+-                    .expect("the index buffer was classified"),
+-            },
+-            &mut guest_gathers,
+-        )?),
+-        None => None,
++    let strip_fetch = if is_ordered_fetch_strip(req) {
++        Some(super::strip_fetch::StripFetchIndices::from_validated(req)?)
++    } else {
++        None
++    };
++    let index_slot = if let Some(strip) = &strip_fetch {
++        if strip.bytes.is_empty() {
++            None
++        } else {
++            let slot = {
++                let _s = stage_phase::Span::open(stage_phase::Part::Acquire);
++                pools.acquire_staging(ctx, strip.bytes.len() as u64, counters)?
++            };
++            let _s = stage_phase::Span::moving(stage_phase::Part::Bytes, strip.bytes.len() as u64);
++            pools.write_staging(ctx, &slot, &strip.bytes)?;
++            Some(BoundBuffer::from(slot))
++        }
++    } else {
++        match &req.indexed {
++            Some(indexed) => Some(stage_buffer_content(
++                ctx,
++                pools,
++                counters,
++                &indexed.content,
++                StageBufferUse {
++                    snapshot_volatile: batch_eligible,
++                    gather_role: buffer_gather_role(req, CbBind::key_of(&indexed.content))
++                        .expect("the index buffer was classified"),
++                },
++                &mut guest_gathers,
++            )?),
++            None => None,
++        }
+     };
+ 
+     // Storage buffers (deduplicated by content with the vertex streams: a
+@@ -3582,7 +3601,11 @@
+     // slot's cached framebuffer was built against. One predicate, because the
+     // two answers it feeds have to agree: which pass the slot is ensured under,
+     // and whether the draw builds (and later disposes) a framebuffer of its own.
+-    let color_fetch_width = ordered_color_fetch_width(req)?;
++    let color_fetch_width = if strip_fetch.is_some() {
++        None
++    } else {
++        ordered_color_fetch_width(req)?
++    };
+     let ordinary_ad_hoc_framebuffer = is_mrt || req.depth.is_some() || !req.color_inputs.is_empty();
+     let ad_hoc_framebuffer = ordinary_ad_hoc_framebuffer || req.multisample_resolve;
+     let (primary_pass, primary_pass_compatibility) = if ad_hoc_framebuffer {
+@@ -5412,57 +5435,86 @@
+     }
+     phase.enter(super::draw_phase::Phase::RecordDraw);
+     unsafe { pools.bind_vertex_buffers(&ctx.device, cb, counters) };
+-    match (&req.indexed, &index_slot) {
+-        (Some(indexed), Some(ibuf)) => {
++    if let Some(strip) = &strip_fetch {
++        if let Some(ibuf) = &index_slot {
+             ctx.device
+-                .cmd_bind_index_buffer(cb, ibuf.buffer, ibuf.offset, indexed.index_type.vk());
+-            if let Some(width) = color_fetch_width {
+-                for instance in 0..req.instance_count.unwrap_or(1) {
+-                    for primitive in 0..indexed.index_count / width {
+-                        color_fetch_barrier(&ctx.device, cb);
+-                        ctx.device.cmd_draw_indexed(
+-                            cb,
+-                            width,
+-                            1,
+-                            primitive * width,
+-                            indexed.vertex_offset,
+-                            req.base_instance + instance,
+-                        );
++                .cmd_bind_index_buffer(cb, ibuf.buffer, ibuf.offset, vk::IndexType::UINT32);
++            for instance in 0..req.instance_count.unwrap_or(1) {
++                for primitive in 0..strip.primitives {
++                    let (count, first) = strip.draw_range(primitive);
++                    color_fetch_barrier(&ctx.device, cb);
++                    ctx.device.cmd_draw_indexed(
++                        cb,
++                        count,
++                        1,
++                        first,
++                        strip.vertex_offset,
++                        req.base_instance + instance,
++                    );
++                    crate::runtime::drain::note_store_route(
++                        "color_fetch_strip_primitives_recorded_n",
++                    );
++                }
++            }
++        }
++        crate::runtime::drain::note_store_route("color_fetch_strip_draws_recorded_n");
++    } else {
++        match (&req.indexed, &index_slot) {
++            (Some(indexed), Some(ibuf)) => {
++                ctx.device.cmd_bind_index_buffer(
++                    cb,
++                    ibuf.buffer,
++                    ibuf.offset,
++                    indexed.index_type.vk(),
++                );
++                if let Some(width) = color_fetch_width {
++                    for instance in 0..req.instance_count.unwrap_or(1) {
++                        for primitive in 0..indexed.index_count / width {
++                            color_fetch_barrier(&ctx.device, cb);
++                            ctx.device.cmd_draw_indexed(
++                                cb,
++                                width,
++                                1,
++                                primitive * width,
++                                indexed.vertex_offset,
++                                req.base_instance + instance,
++                            );
++                        }
+                     }
++                } else {
++                    ctx.device.cmd_draw_indexed(
++                        cb,
++                        indexed.index_count,
++                        req.instance_count.unwrap_or(1),
++                        0,
++                        indexed.vertex_offset,
++                        req.base_instance,
++                    );
+                 }
+-            } else {
+-                ctx.device.cmd_draw_indexed(
+-                    cb,
+-                    indexed.index_count,
+-                    req.instance_count.unwrap_or(1),
+-                    0,
+-                    indexed.vertex_offset,
+-                    req.base_instance,
+-                );
+             }
+-        }
+-        _ => {
+-            if let Some(width) = color_fetch_width {
+-                for instance in 0..req.instance_count.unwrap_or(1) {
+-                    for primitive in 0..req.vertex_count / width {
+-                        color_fetch_barrier(&ctx.device, cb);
+-                        ctx.device.cmd_draw(
+-                            cb,
+-                            width,
+-                            1,
+-                            req.first_vertex + primitive * width,
+-                            req.base_instance + instance,
+-                        );
++            _ => {
++                if let Some(width) = color_fetch_width {
++                    for instance in 0..req.instance_count.unwrap_or(1) {
++                        for primitive in 0..req.vertex_count / width {
++                            color_fetch_barrier(&ctx.device, cb);
++                            ctx.device.cmd_draw(
++                                cb,
++                                width,
++                                1,
++                                req.first_vertex + primitive * width,
++                                req.base_instance + instance,
++                            );
++                        }
+                     }
++                } else {
++                    ctx.device.cmd_draw(
++                        cb,
++                        req.vertex_count,
++                        req.instance_count.unwrap_or(1),
++                        req.first_vertex,
++                        req.base_instance,
++                    );
+                 }
+-            } else {
+-                ctx.device.cmd_draw(
+-                    cb,
+-                    req.vertex_count,
+-                    req.instance_count.unwrap_or(1),
+-                    req.first_vertex,
+-                    req.base_instance,
+-                );
+             }
+         }
+     }
+@@ -6095,20 +6147,14 @@
+ /// framebuffer fetch also orders overlapping primitives within a draw. On this
+ /// baseline path, emit one complete list primitive per draw and put a BY_REGION
+ /// barrier before each. First vertex/index and instance values remain original.
+-/// Strips and PrimitiveId require a distinct lowering, so refuse them visibly.
++/// This width helper represents list primitives only. Triangle strips use the
++/// distinct parity-preserving index plan; PrimitiveId remains refused.
+ fn ordered_color_fetch_width(req: &DrawRequest) -> Result<Option<u32>, DrawError> {
+     use reims_vgpu_core::topology::PrimitiveType;
+     if req.color_inputs.is_empty() {
+         return Ok(None);
+     }
+-    let targets = 1 + req.secondary_targets.len();
+-    for slot in req.color_inputs.slots() {
+-        if slot as usize >= targets {
+-            return Err(DrawError::DrawValidation(
+-                DrawValidationDecline::ColorInputMissingTarget { slot, targets },
+-            ));
+-        }
+-    }
++    validate_color_fetch_common(req)?;
+     let width = match req.primitive_topology.0 {
+         PrimitiveType::Point => 1,
+         PrimitiveType::Line => 2,
+@@ -6121,6 +6167,36 @@
+             ))
+         }
+     };
++    Ok(Some(width))
++}
++
++fn is_ordered_fetch_strip(req: &DrawRequest) -> bool {
++    !req.color_inputs.is_empty()
++        && req.primitive_topology.0 == reims_vgpu_core::topology::PrimitiveType::TriangleStrip
++}
++
++fn validate_ordered_color_fetch(req: &DrawRequest) -> Result<(), DrawError> {
++    if is_ordered_fetch_strip(req) {
++        validate_color_fetch_common(req)?;
++        super::strip_fetch::StripFetchIndices::shape(req)?;
++        Ok(())
++    } else {
++        ordered_color_fetch_width(req).map(|_| ())
++    }
++}
++
++fn validate_color_fetch_common(req: &DrawRequest) -> Result<(), DrawError> {
++    if req.color_inputs.is_empty() {
++        return Ok(());
++    }
++    let targets = 1 + req.secondary_targets.len();
++    for slot in req.color_inputs.slots() {
++        if slot as usize >= targets {
++            return Err(DrawError::DrawValidation(
++                DrawValidationDecline::ColorInputMissingTarget { slot, targets },
++            ));
++        }
++    }
+     // SPIR-V draw parameters whose value subdivision would change. VertexIndex
+     // and InstanceIndex are preserved by each command's original offsets.
+     for (builtin, changes) in [
+@@ -6161,7 +6237,7 @@
+             DrawValidationDecline::ColorInputDrawRangeOverflow,
+         ));
+     }
+-    Ok(Some(width))
++    Ok(())
+ }
+ 
+ unsafe fn color_fetch_barrier(device: &ash::Device, cb: vk::CommandBuffer) {
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_execution.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_execution.rs
+@@ -17,6 +17,9 @@
+ /// A specific failure while preparing or executing a validated draw.
+ #[derive(Clone, Debug, PartialEq, Eq)]
+ pub enum DrawExecutionDecline {
++    ColorInputIndexAllocation {
++        bytes: usize,
++    },
+     ConstantVertexRequiresCpuBytes {
+         location: u32,
+     },
+@@ -161,6 +164,7 @@
+ impl Decline for DrawExecutionDecline {
+     fn slug(&self) -> &'static str {
+         match self {
++            Self::ColorInputIndexAllocation { .. } => "vk_draw_exec_color_input_index_allocation",
+             Self::ConstantVertexRequiresCpuBytes { .. } => {
+                 "vk_draw_exec_constant_vertex_requires_cpu_bytes"
+             }
+@@ -195,6 +199,7 @@
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::ColorInputIndexAllocation { bytes } => vec![("bytes", bytes.to_string())],
+             Self::ConstantVertexRequiresCpuBytes { location } => {
+                 vec![("location", location.to_string())]
+             }
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -1054,31 +1054,28 @@
+     /// out of guest RAM (same freshness as the CPU staging path's encode-time
+     /// read).
+     ///
+-    /// **Nothing in the product calls this.** Both call sites are `#[cfg(test)]`,
+-    /// and that is the whole story of the method: it materializes a fragmented
+-    /// gather into one contiguous `Vec` so a test can compare it against what
+-    /// the guest laid out. It is not a rail, and the heap `Vec` it builds is
+-    /// not a cost the device pays.
+-    ///
+-    /// It claimed the opposite until the host-pointer import landed — "every
+-    /// `GuestRuns` bind is a CPU gather now, the GPU has no way to reach guest
+-    /// pages". That was true when written and is now contradicted by the
+-    /// `GuestRuns` doc a few lines above, on this same type: a draw-time buffer
+-    /// bind is gathered by `vkCmdCopyBuffer` inside the draw's own command
+-    /// buffer and never crosses the CPU. `write_staging_from_runs` does still
+-    /// exist, but on the sampled rail, where `stage_phase` records it as zero
+-    /// on a host that can import.
+-    ///
+-    /// Two doc comments on one type disagreeing is the divergence class
+-    /// `AGENTS.md` warns about. This one earns a paragraph rather than a
+-    /// deletion because the false half was the one a reader met first on
+-    /// arriving at the method, and what it told them was that the gather does
+-    /// not exist.
++    /// Ordinary vertex/storage/index binds retain their imported or gathered
++    /// GPU route. Ordered framebuffer fetch on a triangle strip is the product
++    /// exception: it snapshots the validated index window once while building
++    /// a parity-preserving per-primitive index sequence. Its CPU gather is an
++    /// explicit compatibility cost, not a zero-copy bind. Guest-run freshness
++    /// is the same encode-time contract as the existing CPU staging fallback.
++    /// Coverage must be validated before this materialization; the synthetic
++    /// fixture callers also use it to compare their fragmented byte windows.
+     pub fn cpu_bytes(&self) -> std::borrow::Cow<'_, [u8]> {
++        self.try_cpu_bytes()
++            .expect("CPU buffer snapshot allocation")
++    }
++
++    /// Fallible materialization for the ordered-fetch compatibility path.
++    pub fn try_cpu_bytes(
++        &self,
++    ) -> Result<std::borrow::Cow<'_, [u8]>, std::collections::TryReserveError> {
+         match self {
+-            Self::Bytes(b) => std::borrow::Cow::Borrowed(b.as_slice()),
++            Self::Bytes(b) => Ok(std::borrow::Cow::Borrowed(b.as_slice())),
+             Self::GuestRuns(src) => {
+-                let mut out = Vec::with_capacity(src.total_len as usize);
++                let mut out = Vec::new();
++                out.try_reserve_exact(src.total_len as usize)?;
+                 let mut skip = src.source_offset;
+                 for run in src.runs.iter() {
+                     let take = (src.total_len as usize).saturating_sub(out.len());
+@@ -1105,7 +1102,7 @@
+                     }
+                 }
+                 out.resize(src.total_len as usize, 0);
+-                std::borrow::Cow::Owned(out)
++                Ok(std::borrow::Cow::Owned(out))
+             }
+         }
+     }
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/strip_fetch.rs
+@@ -0,0 +1,105 @@
++//! Preserve triangle-strip parity while ordering framebuffer fetch primitives.
++//!
++//! An even triangle is a three-index strip. An odd triangle receives one
++//! duplicate prefix index: its first triangle is degenerate and its second
++//! has the original odd winding, vertex ordering and provoking vertex.
++//! PrimitiveId is refused by the shared fetch admission check. This does not
++//! change topology, front-face state, vertex IDs, base vertex or base instance.
++
++use super::draw_execution::DrawExecutionDecline;
++use super::draw_validation::DrawValidationDecline;
++use super::types::{DrawError, DrawRequest, IndexType};
++
++pub(super) struct StripFetchIndices {
++    pub(super) bytes: Vec<u8>,
++    pub(super) primitives: u32,
++    pub(super) vertex_offset: i32,
++}
++
++fn overflow() -> DrawError {
++    DrawError::DrawValidation(DrawValidationDecline::ColorInputDrawRangeOverflow)
++}
++
++impl StripFetchIndices {
++    /// The u32 firstIndex domain bounds the entire generated index sequence.
++    pub(super) fn shape(req: &DrawRequest) -> Result<(u32, u32), DrawError> {
++        let count = req
++            .indexed
++            .as_ref()
++            .map_or(req.vertex_count, |i| i.index_count);
++        let primitives = count.saturating_sub(2);
++        let indices = primitives
++            .checked_mul(3)
++            .and_then(|n| n.checked_add(primitives / 2))
++            .ok_or_else(overflow)?;
++        Ok((primitives, indices))
++    }
++
++    /// Called after validate_v1 has checked index length and guest-run coverage.
++    /// Snapshot once before recording GPU work, never once per primitive.
++    pub(super) fn from_validated(req: &DrawRequest) -> Result<Self, DrawError> {
++        let (primitives, indices) = Self::shape(req)?;
++        let byte_len = (indices as usize).checked_mul(4).ok_or_else(overflow)?;
++        let mut bytes = Vec::new();
++        bytes.try_reserve_exact(byte_len).map_err(|_| {
++            DrawError::DrawExecution(DrawExecutionDecline::ColorInputIndexAllocation {
++                bytes: byte_len,
++            })
++        })?;
++        let source = req
++            .indexed
++            .as_ref()
++            .map(|i| i.content.try_cpu_bytes())
++            .transpose()
++            .map_err(|_| {
++                DrawError::DrawExecution(DrawExecutionDecline::ColorInputIndexAllocation {
++                    bytes: req.indexed.as_ref().map_or(0, |i| i.content.len()),
++                })
++            })?;
++        let index_at = |position: u32| -> Result<u32, DrawError> {
++            let Some(indexed) = &req.indexed else {
++                return req.first_vertex.checked_add(position).ok_or_else(overflow);
++            };
++            let source = source
++                .as_ref()
++                .expect("indexed request retains its snapshot");
++            let start = (position as usize)
++                .checked_mul(indexed.index_type.byte_size())
++                .ok_or_else(overflow)?;
++            let end = start
++                .checked_add(indexed.index_type.byte_size())
++                .ok_or_else(overflow)?;
++            let value = source.get(start..end).ok_or_else(|| {
++                DrawError::DrawValidation(DrawValidationDecline::IndexBytesShort {
++                    actual: source.len(),
++                    expected: end,
++                })
++            })?;
++            Ok(match indexed.index_type {
++                IndexType::U16 => u32::from(u16::from_le_bytes([value[0], value[1]])),
++                IndexType::U32 => u32::from_le_bytes([value[0], value[1], value[2], value[3]]),
++            })
++        };
++        for primitive in 0..primitives {
++            let first = index_at(primitive)?;
++            if primitive & 1 != 0 {
++                bytes.extend_from_slice(&first.to_le_bytes());
++            }
++            bytes.extend_from_slice(&first.to_le_bytes());
++            bytes.extend_from_slice(&index_at(primitive + 1)?.to_le_bytes());
++            bytes.extend_from_slice(&index_at(primitive + 2)?.to_le_bytes());
++        }
++        debug_assert_eq!(bytes.len(), byte_len);
++        Ok(Self {
++            bytes,
++            primitives,
++            vertex_offset: req.indexed.as_ref().map_or(0, |i| i.vertex_offset),
++        })
++    }
++
++    pub(super) fn draw_range(&self, primitive: u32) -> (u32, u32) {
++        debug_assert!(primitive < self.primitives);
++        let odd = primitive & 1;
++        (3 + odd, (primitive / 2) * 7 + odd * 3)
++    }
++}

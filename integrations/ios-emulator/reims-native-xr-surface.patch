@@ -1,0 +1,551 @@
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -188,6 +188,10 @@
+ /// In particular it is not R32Float, whose ordinal is [`MTL_FORMAT_R32_FLOAT`].
+ pub const MTL_FORMAT_ARGB8_UNORM: u16 = 84;
+ 
++/// IOSurface's native BGR10-XR plus independent normalized alpha allocation.
++/// Its alpha plane is one byte, unlike the APV ARGB8 paging plane.
++pub const IOSURFACE_FORMAT_BGR10_ALPHA8: u32 = u32::from_be_bytes(*b"b3a8");
++
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum PlanarXrFormat {
+     Rgb10Alpha8,
+@@ -244,6 +248,37 @@
+     /// texel carrying the alpha code in its red byte, not a float32 value.
+     pub const fn apv_plane_bytes_per_element(self) -> [u8; 2] {
+         [4, 4]
++    }
++
++    pub const fn surface_plane_bytes_per_element(self) -> [u8; 2] {
++        [4, 1]
++    }
++
++    /// Native mapped IOSurfaces have no APV paging merge or half intermediate.
++    pub fn surface_component_codes(self, rgb: &[u8], alpha: &[u8]) -> Option<PlanarXrCodes> {
++        let [alpha] = alpha else { return None };
++        let codes = self.rgb_format().component_codes(rgb)?;
++        Some(PlanarXrCodes {
++            rgb: [codes[0], codes[1], codes[2]],
++            alpha: *alpha,
++        })
++    }
++
++    pub fn write_surface_component_codes(
++        self,
++        codes: PlanarXrCodes,
++        rgb: &mut [u8],
++        alpha: &mut [u8],
++    ) -> bool {
++        if rgb.len() != 4 || alpha.len() != 1 || codes.rgb.iter().any(|&code| code > 1023) {
++            return false;
++        }
++        let [r, g, b] = codes.rgb;
++        if !self.rgb_format().write_component_codes([r, g, b, 894], rgb) {
++            return false;
++        }
++        alpha[0] = codes.alpha;
++        true
+     }
+ 
+     /// Decode storage codes before transfer expansion and the host merge's
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+@@ -334,6 +334,228 @@
+     pub height: u32,
+     pub bytes_per_row: u32,
+     pub bytes_per_element: u16,
++}
++
++/// A complete native XR IOSurface. Both windows name one mapping allocation;
++/// neither may be substituted for the surface-level stride or for APV's
++/// four-byte ARGB paging plane.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct PlanarXrSurfaceLayout {
++    pub format: pixel_format::PlanarXrFormat,
++    pub width: u32,
++    pub height: u32,
++    pub allocation_size: u64,
++    pub planes: [PlanarXrSurfacePlane; 2],
++}
++
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub struct PlanarXrSurfacePlane {
++    pub offset: u64,
++    pub row_stride: u32,
++    pub tight_row: u32,
++    pub touched_end: u64,
++    pub allocation_end: u64,
++    pub bytes_per_element: u8,
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum PlanarXrSurfacePlaneCause {
++    Geometry,
++    ElementWidth,
++    Addressing {
++        element_size: [u8; 2],
++        compression_footprint: u8,
++        address_format: u8,
++        compression_type: u8,
++        qualifier: u8,
++        extended_pixels: [u8; 4],
++    },
++    Origin,
++    RowStride,
++    Bounds,
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum PlanarXrSurfaceRefusal {
++    Format,
++    Descriptor,
++    SurfaceGeometry,
++    SurfaceOrigin,
++    SurfaceAddressing {
++        address_format: u8,
++        compression_type: u8,
++        extended_pixels: [u8; 4],
++    },
++    Plane {
++        index: u8,
++        cause: PlanarXrSurfacePlaneCause,
++    },
++    PlaneOverlap,
++}
++
++impl PlanarXrSurfaceRefusal {
++    pub const fn slug(self) -> &'static str {
++        use PlanarXrSurfacePlaneCause as P;
++        match self {
++            Self::Format => "dual_xr_surface_format",
++            Self::Descriptor => "dual_xr_surface_descriptor",
++            Self::SurfaceGeometry => "dual_xr_surface_geometry",
++            Self::SurfaceOrigin => "dual_xr_surface_origin",
++            Self::SurfaceAddressing { .. } => "dual_xr_surface_addressing",
++            Self::Plane {
++                cause: P::Geometry, ..
++            } => "dual_xr_surface_plane_geometry",
++            Self::Plane {
++                cause: P::ElementWidth,
++                ..
++            } => "dual_xr_surface_plane_element_width",
++            Self::Plane {
++                cause: P::Addressing { .. },
++                ..
++            } => "dual_xr_surface_plane_addressing",
++            Self::Plane {
++                cause: P::Origin, ..
++            } => "dual_xr_surface_plane_origin",
++            Self::Plane {
++                cause: P::RowStride,
++                ..
++            } => "dual_xr_surface_plane_stride",
++            Self::Plane {
++                cause: P::Bounds, ..
++            } => "dual_xr_surface_plane_bounds",
++            Self::PlaneOverlap => "dual_xr_surface_plane_overlap",
++        }
++    }
++}
++
++impl PlanarXrSurfaceLayout {
++    /// Recover the native, linear two-plane layout from the device descriptor.
++    /// Nonzero surface origins and unequal plane offset/base need a separately
++    /// recovered addressing contract and are refused rather than added together.
++    /// The descriptor's addressing/compression and extended-pixel fields must
++    /// describe ordinary linear rows. This does not admit a render attachment.
++    pub fn decode(
++        desc: &[u8],
++        mtl: u16,
++        width: u32,
++        height: u32,
++    ) -> Result<Self, PlanarXrSurfaceRefusal> {
++        use PlanarXrSurfacePlaneCause as P;
++        use PlanarXrSurfaceRefusal as R;
++        let format = pixel_format::PlanarXrFormat::from_mtl(mtl).ok_or(R::Format)?;
++        let surface = decode_device_surface(desc).ok_or(R::Descriptor)?;
++        if surface.pixel_format != pixel_format::IOSURFACE_FORMAT_BGR10_ALPHA8 {
++            return Err(R::Format);
++        }
++        if width == 0
++            || height == 0
++            || surface.width != width
++            || surface.height != height
++            || surface.plane_count != 2
++            || surface.alloc_size == 0
++        {
++            return Err(R::SurfaceGeometry);
++        }
++        if surface.base_offset != 0 {
++            return Err(R::SurfaceOrigin);
++        }
++        // DeviceDescriptor1 -> Descriptor2 preserves address format at +0x25
++        // and compression type at +0x26. Extended pixels are +0x28..0x2c.
++        if desc[0x25] != 0 || desc[0x26] != 0 || desc[0x28..0x2c].iter().any(|&b| b != 0) {
++            return Err(R::SurfaceAddressing {
++                address_format: desc[0x25],
++                compression_type: desc[0x26],
++                extended_pixels: desc[0x28..0x2c].try_into().map_err(|_| R::Descriptor)?,
++            });
++        }
++        let mut planes = [PlanarXrSurfacePlane::default(); 2];
++        for (index, expected_bpe) in format
++            .surface_plane_bytes_per_element()
++            .into_iter()
++            .enumerate()
++        {
++            let fail = |cause| R::Plane {
++                index: index as u8,
++                cause,
++            };
++            let (plane, _) = device_desc_plane(desc, index as u32).ok_or(R::Descriptor)?;
++            if plane.width != width || plane.height != height {
++                return Err(fail(P::Geometry));
++            }
++            if plane.bytes_per_element != u16::from(expected_bpe) {
++                return Err(fail(P::ElementWidth));
++            }
++            let start = DEVICE_DESC_PLANES + index * DEVICE_PLANE_DESC_LEN;
++            let raw = &desc[start..start + DEVICE_PLANE_DESC_LEN];
++            // +0x24..0x27 expands to compression footprint, address format,
++            // compression type and an additional native plane qualifier.
++            // No compressed, tiled or extended-pixel addressing is invented.
++            // Element dimensions use either a direct positive byte or a
++            // high-bit power-of-two encoding. 0x80 denotes 2^0, hence one
++            // texel, just like the direct encoding 1. Other dimensions cannot
++            // describe this ordinary one-texel-per-element row layout.
++            if raw[0x24..0x2c].iter().any(|&b| b != 0)
++                || !matches!(raw[DEVICE_PLANE_DIMS], 1 | 0x80)
++                || !matches!(raw[DEVICE_PLANE_DIMS + 4], 1 | 0x80)
++            {
++                return Err(fail(P::Addressing {
++                    element_size: [raw[DEVICE_PLANE_DIMS], raw[DEVICE_PLANE_DIMS + 4]],
++                    compression_footprint: raw[0x24],
++                    address_format: raw[0x25],
++                    compression_type: raw[0x26],
++                    qualifier: raw[0x27],
++                    extended_pixels: raw[0x28..0x2c].try_into().map_err(|_| R::Descriptor)?,
++                }));
++            }
++            if plane.plane_offset != plane.plane_base {
++                return Err(fail(P::Origin));
++            }
++            let tight_row = width
++                .checked_mul(u32::from(expected_bpe))
++                .ok_or(fail(P::RowStride))?;
++            if plane.bytes_per_row < tight_row {
++                return Err(fail(P::RowStride));
++            }
++            let offset = u64::from(plane.plane_offset);
++            let touched_end = offset
++                .checked_add(u64::from(height - 1) * u64::from(plane.bytes_per_row))
++                .and_then(|end| end.checked_add(u64::from(tight_row)))
++                .ok_or(fail(P::Bounds))?;
++            let allocation_end = offset
++                .checked_add(u64::from(plane.plane_size))
++                .ok_or(fail(P::Bounds))?;
++            if plane.plane_size == 0
++                || touched_end > allocation_end
++                || allocation_end > u64::from(surface.alloc_size)
++            {
++                return Err(fail(P::Bounds));
++            }
++            planes[index] = PlanarXrSurfacePlane {
++                offset,
++                row_stride: plane.bytes_per_row,
++                tight_row,
++                touched_end,
++                allocation_end,
++                bytes_per_element: expected_bpe,
++            };
++        }
++        if planes[0].offset < planes[1].allocation_end
++            && planes[1].offset < planes[0].allocation_end
++        {
++            return Err(R::PlaneOverlap);
++        }
++        Ok(Self {
++            format,
++            width,
++            height,
++            allocation_size: u64::from(surface.alloc_size),
++            planes,
++        })
++    }
++
++    pub fn touched_end(self) -> u64 {
++        self.planes[0].touched_end.max(self.planes[1].touched_end)
++    }
+ }
+ 
+ pub fn arm_kernel_va(address: u64) -> bool {
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+@@ -152,6 +152,47 @@
+     })
+ }
+ 
++/// Native IOSurface storage is BGR10 plus one alpha byte per texel. There is
++/// no APV half-read/merge/requantization boundary on this route.
++pub fn sampled_planar_xr_surface_upload_bytes(
++    format: PlanarXrFormat,
++    rgb: &[u8],
++    alpha: &[u8],
++) -> Result<SampledUpload, SampledUploadRefusal> {
++    if !rgb.len().is_multiple_of(4) {
++        return Err(SampledUploadRefusal::IncompleteXrTexel);
++    }
++    if rgb.len() / 4 != alpha.len() {
++        return Err(SampledUploadRefusal::PlanarPlaneSizeMismatch);
++    }
++    let length = alpha
++        .len()
++        .checked_mul(16)
++        .ok_or(SampledUploadRefusal::ExpandedSizeOverflow)?;
++    let mut bytes = Vec::new();
++    bytes
++        .try_reserve_exact(length)
++        .map_err(|_| SampledUploadRefusal::AllocationFailed)?;
++    let colour = if format.is_srgb() {
++        srgb_values()
++    } else {
++        linear_values()
++    };
++    for (rgb, alpha) in rgb.chunks_exact(4).zip(alpha) {
++        let codes = format
++            .surface_component_codes(rgb, std::slice::from_ref(alpha))
++            .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
++        for code in codes.rgb {
++            bytes.extend_from_slice(&colour[usize::from(code)].to_le_bytes());
++        }
++        bytes.extend_from_slice(&(f32::from(codes.alpha) / 255.0).to_le_bytes());
++    }
++    Ok(SampledUpload {
++        format: StorageImageFormat::Rgba32Float,
++        bytes,
++    })
++}
++
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum RenderStoreRefusal {
+     NotXr,
+@@ -171,6 +212,90 @@
+             Self::AllocationFailed => "render_store_xr_allocation_failed",
+         }
+     }
++}
++
++fn xr_colour_code(value: f32, srgb: bool) -> u16 {
++    let value = if value.is_nan() { 0.0 } else { value };
++    let value = if srgb {
++        let magnitude = value.abs();
++        let encoded = if magnitude <= 0.0031308 {
++            magnitude * 12.92
++        } else {
++            1.055 * magnitude.powf(1.0 / 2.4) - 0.055
++        };
++        encoded.copysign(value)
++    } else {
++        value
++    };
++    value
++        .mul_add(510.0, 384.0)
++        .round_ties_even()
++        .clamp(0.0, 1023.0) as u16
++}
++
++fn float_source_stride(layout: TexelLayout) -> Result<usize, RenderStoreRefusal> {
++    match layout {
++        TexelLayout::Rgba16Float => Ok(8),
++        TexelLayout::Rgba32Float => Ok(16),
++        _ => Err(RenderStoreRefusal::SourceLayout),
++    }
++}
++
++fn source_values(source: &[u8]) -> [f32; 4] {
++    std::array::from_fn(|channel| {
++        if source.len() == 8 {
++            let lane = &source[channel * 2..channel * 2 + 2];
++            f16_to_f32(u16::from_le_bytes([lane[0], lane[1]]))
++        } else {
++            let lane = &source[channel * 4..channel * 4 + 4];
++            f32::from_le_bytes([lane[0], lane[1], lane[2], lane[3]])
++        }
++    })
++}
++
++/// Encode both native IOSurface planes from linear float output. Allocation
++/// and conversion finish for the whole pair before a caller can write either
++/// plane. Normalized writes saturate and use integer round-to-nearest-even.
++pub fn render_store_planar_xr_surface_bytes(
++    format: PlanarXrFormat,
++    layout: TexelLayout,
++    bytes: &[u8],
++) -> Result<[Vec<u8>; 2], RenderStoreRefusal> {
++    let source_stride = float_source_stride(layout)?;
++    if !bytes.len().is_multiple_of(source_stride) {
++        return Err(RenderStoreRefusal::IncompleteTexel);
++    }
++    let count = bytes.len() / source_stride;
++    let rgb_len = count
++        .checked_mul(4)
++        .ok_or(RenderStoreRefusal::SizeOverflow)?;
++    let mut planes = [Vec::new(), Vec::new()];
++    planes[0]
++        .try_reserve_exact(rgb_len)
++        .map_err(|_| RenderStoreRefusal::AllocationFailed)?;
++    planes[1]
++        .try_reserve_exact(count)
++        .map_err(|_| RenderStoreRefusal::AllocationFailed)?;
++    for source in bytes.chunks_exact(source_stride) {
++        let values = source_values(source);
++        let alpha = if values[3].is_nan() { 0.0 } else { values[3] };
++        let codes = reims_vgpu_core::pixel_format::PlanarXrCodes {
++            rgb: [
++                xr_colour_code(values[0], format.is_srgb()),
++                xr_colour_code(values[1], format.is_srgb()),
++                xr_colour_code(values[2], format.is_srgb()),
++            ],
++            alpha: (alpha.clamp(0.0, 1.0) * 255.0).round_ties_even() as u8,
++        };
++        let mut rgb = [0; 4];
++        let mut alpha = [0; 1];
++        if !format.write_surface_component_codes(codes, &mut rgb, &mut alpha) {
++            return Err(RenderStoreRefusal::IncompleteTexel);
++        }
++        planes[0].extend_from_slice(&rgb);
++        planes[1].extend_from_slice(&alpha);
++    }
++    Ok(planes)
+ }
+ 
+ /// Convert a linear float resident directly into the guest's XR packing.
+@@ -182,11 +307,7 @@
+     bytes: &[u8],
+ ) -> Result<Vec<u8>, RenderStoreRefusal> {
+     let xr = XrFormat::from_mtl(mtl).ok_or(RenderStoreRefusal::NotXr)?;
+-    let source_stride = match layout {
+-        TexelLayout::Rgba16Float => 8,
+-        TexelLayout::Rgba32Float => 16,
+-        _ => return Err(RenderStoreRefusal::SourceLayout),
+-    };
++    let source_stride = float_source_stride(layout)?;
+     if !bytes.len().is_multiple_of(source_stride) {
+         return Err(RenderStoreRefusal::IncompleteTexel);
+     }
+@@ -197,39 +318,14 @@
+     packed
+         .try_reserve_exact(size)
+         .map_err(|_| RenderStoreRefusal::AllocationFailed)?;
+-    let code = |value: f32, colour: bool| {
+-        let value = if colour && xr.is_srgb() {
+-            let magnitude = value.abs();
+-            let encoded = if magnitude <= 0.0031308 {
+-                magnitude * 12.92
+-            } else {
+-                1.055 * magnitude.powf(1.0 / 2.4) - 0.055
+-            };
+-            encoded.copysign(value)
+-        } else {
+-            value
+-        };
+-        // NaN has no ordered component; choose black. Infinities saturate at
+-        // the representable end points rather than narrowing the whole image.
+-        let value = if value.is_nan() { 0.0 } else { value };
+-        (value.mul_add(510.0, 384.0).round().clamp(0.0, 1023.0)) as u16
+-    };
+     for source in bytes.chunks_exact(source_stride) {
+-        let values: [f32; 4] = std::array::from_fn(|channel| {
+-            if source_stride == 8 {
+-                let lane = &source[channel * 2..channel * 2 + 2];
+-                f16_to_f32(u16::from_le_bytes([lane[0], lane[1]]))
+-            } else {
+-                let lane = &source[channel * 4..channel * 4 + 4];
+-                f32::from_le_bytes([lane[0], lane[1], lane[2], lane[3]])
+-            }
+-        });
++        let values = source_values(source);
+         let mut texel = [0; 8];
+         let codes = [
+-            code(values[0], true),
+-            code(values[1], true),
+-            code(values[2], true),
+-            code(values[3].clamp(0.0, 1.0), false),
++            xr_colour_code(values[0], xr.is_srgb()),
++            xr_colour_code(values[1], xr.is_srgb()),
++            xr_colour_code(values[2], xr.is_srgb()),
++            xr_colour_code(values[3].clamp(0.0, 1.0), false),
+         ];
+         xr.write_component_codes(codes, &mut texel[..xr.bytes_per_texel()]);
+         packed.extend_from_slice(&texel[..xr.bytes_per_texel()]);
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -32,8 +32,9 @@
+ 
+ mod xr_upload;
+ pub use xr_upload::{
+-    render_store_bytes, sampled_planar_xr_upload_bytes, sampled_upload_bytes, RenderStoreRefusal,
+-    SampledUpload, SampledUploadRefusal,
++    render_store_bytes, render_store_planar_xr_surface_bytes,
++    sampled_planar_xr_surface_upload_bytes, sampled_planar_xr_upload_bytes, sampled_upload_bytes,
++    RenderStoreRefusal, SampledUpload, SampledUploadRefusal,
+ };
+ 
+ use reims_vgpu_core::pixel_format::{
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+@@ -445,6 +445,12 @@
+         fmt: u16,
+         surface: Option<crate::protocol::iosurface_pages::DeviceSurfaceRecord>,
+         planes: [Option<crate::protocol::iosurface_pages::DevicePlaneRecord>; 2],
++        paired_layout: Option<
++            Result<
++                crate::protocol::iosurface_pages::PlanarXrSurfaceLayout,
++                crate::protocol::iosurface_pages::PlanarXrSurfaceRefusal,
++            >,
++        >,
+     },
+ 
+     /// The ref-texture entry's descriptor bytes could not be read.
+@@ -620,9 +626,25 @@
+                 fmt,
+                 surface,
+                 planes,
++                paired_layout,
+             } => {
+                 v.push(("mid", mapping_id.to_string()));
+                 v.push(("fmt", format!("{fmt:#x}")));
++                if let Some(layout) = paired_layout {
++                    match layout {
++                        Ok(layout) => v.push((
++                            "paired_layout",
++                            format!("validated:end={}", layout.touched_end()),
++                        )),
++                        Err(why) => {
++                            v.push(("paired_layout", why.slug().to_owned()));
++                            v.push(("layout_detail", format!("{why:?}")));
++                            if let crate::protocol::iosurface_pages::PlanarXrSurfaceRefusal::Plane { index, .. } = why {
++                                v.push(("layout_plane", index.to_string()));
++                            }
++                        }
++                    }
++                }
+                 if let Some(surface) = surface {
+                     v.push(("surface_format", format!("{:#x}", surface.pixel_format)));
+                     v.push(("surface_base", surface.base_offset.to_string()));
+@@ -936,6 +958,14 @@
+                 planes: std::array::from_fn(|index| {
+                     device_desc_plane(&m.device_desc, index as u32).map(|(plane, _)| plane)
+                 }),
++                paired_layout: pixel_format::PlanarXrFormat::from_mtl(fmt).map(|_| {
++                    crate::protocol::iosurface_pages::PlanarXrSurfaceLayout::decode(
++                        &m.device_desc,
++                        fmt,
++                        m.width,
++                        m.height,
++                    )
++                }),
+             }
+             .at(resolved_ref));
+         }

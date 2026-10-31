@@ -1,0 +1,244 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+@@ -45,6 +45,7 @@
+ };
+ use crate::runtime::task_slot::{resolve_task_word, TaskWordSite};
+ use reims_vgpu_core::operation::{OperationClass, OperationHome};
++use reims_vgpu_core::stream::{SegmentEnd, SegmentOpening, StreamCursor};
+ use reims_vgpu_protocol::closure::Rail;
+ use reims_vgpu_protocol::decode::blit::BlitRecord;
+ use reims_vgpu_protocol::decode::sync::SyncRecord;
+@@ -218,7 +219,7 @@
+     ///
+     /// **Sticky, and it cannot go stale.** There is no retirement path and none
+     /// is needed: this field describes the accumulator beside it, a
+-    /// `StreamAccum` is built fresh per stream and dropped at [`finish_stream`],
++    /// `StreamAccum` is built fresh per encoder and retired at [`finish_stream`],
+     /// so the refusal and the state it describes have exactly the same life. The
+     /// compute rail's equivalent needs a `clear_refusal_at` because a
+     /// `ComputeAccum` outlives many dispatches; a render pass's state does not
+@@ -1015,7 +1016,7 @@
+     for stream in streams {
+         let mut acc = StreamAccum::default();
+         let walk_started = std::time::Instant::now();
+-        walk_stream(
++        let finish_ns = walk_stream(
+             state,
+             host,
+             task_id,
+@@ -1024,12 +1025,9 @@
+             &mut acc,
+             resolved.as_mut(),
+         );
+-        let walk_ns = walk_started.elapsed().as_nanos() as u64;
++        let walk_ns = (walk_started.elapsed().as_nanos() as u64).saturating_sub(finish_ns);
+         *measured_ns += walk_ns;
+         crate::runtime::drain::note_exec_phase(crate::runtime::drain::ExecPhase::Walk, walk_ns);
+-        let finish_started = std::time::Instant::now();
+-        finish_stream(state, host, task_id, out, &acc);
+-        let finish_ns = finish_started.elapsed().as_nanos() as u64;
+         *measured_ns += finish_ns;
+         crate::runtime::drain::note_exec_phase(crate::runtime::drain::ExecPhase::Finish, finish_ns);
+     }
+@@ -1547,40 +1545,44 @@
+ /// where a record was, and the dispatch is the part that would have had to be
+ /// written twice for them to disagree at all.
+ ///
+-/// The sink owns exactly the state that spans records — the open compute
+-/// segment — and nothing that spans streams.
++/// The sink owns the encoder state spanning records and continuation segments.
++/// `StreamCursor` supplies its boundaries; nothing here spans command streams.
+ struct StreamSink<'a, M: HostMemory + HostOps> {
+     state: &'a mut DeviceState,
+     host: &'a mut M,
+     task_id: u32,
+     out: &'a mut ExecResult,
+     acc: &'a mut StreamAccum,
+-    /// `Some` between the [`Self::begin_segment`] and [`Self::end_segment`] of a
+-    /// compute segment, and `None` everywhere else. A compute record arriving
++    /// `Some` throughout a compute encoder, including its continuation segments,
++    /// and `None` everywhere else. A compute record arriving
+     /// while this is `None` is a walker that skipped the opening, which is a
+     /// loss and is named rather than absorbed.
+     compute: Option<crate::runtime::compute_session::ComputeSegment>,
++    /// The same contract owner used by planning decides when an encoder ends.
++    /// Render and compute state survives continuation segments, never a new
++    /// encoder. A command stream can contain several independent encoders.
++    cursor: StreamCursor,
++    finish_ns: u64,
++    render_encoders_finished: u64,
+ }
+ 
+ impl<'a, M: HostMemory + HostOps> StreamSink<'a, M> {
+     /// A segment of `kind` is about to deliver its records.
+-    fn begin_segment(&mut self, kind: SegmentKind) {
+-        if self.compute.is_some() {
+-            // The previous segment's encoder was never committed. Committing it
+-            // here is the only reading that does not drop the work the guest
+-            // already recorded into it, and the line says the walker paired its
+-            // calls wrongly rather than leaving that silent.
+-            crate::observe::fail(format!(
+-                "exec_segment_unended task={} opening={} (a segment opened while a compute \
+-                 segment was still open, so its encoder had not been committed)",
+-                self.task_id,
+-                kind.name()
+-            ));
+-            self.end_segment();
+-        }
+-        if matches!(kind, SegmentKind::Compute) {
+-            self.compute = Some(crate::runtime::compute_session::ComputeSegment::default());
+-        }
++    fn begin_segment(
++        &mut self,
++        kind: SegmentKind,
++        lifetime: SegmentLifetime,
++    ) -> Result<(), reims_vgpu_core::stream::StreamRefusal> {
++        if let SegmentOpening::Opened(_, _) = self.cursor.begin_kind(kind, lifetime)? {
++            match kind {
++                SegmentKind::Render => *self.acc = StreamAccum::default(),
++                SegmentKind::Compute => {
++                    self.compute = Some(crate::runtime::compute_session::ComputeSegment::default());
++                }
++                SegmentKind::Blit | SegmentKind::Event | SegmentKind::Info => {}
++            }
++        }
++        Ok(())
+     }
+ 
+     /// One record of the open segment.
+@@ -1632,11 +1634,33 @@
+ 
+     /// The open segment has delivered its last record.
+     ///
+-    /// Only compute has anything to do here, and it is a commit rather than a
+-    /// teardown: the session's whole multi-record encoder is the work, so a
+-    /// failure at this point loses all of it and is the one thing this method
+-    /// reports.
+-    fn end_segment(&mut self) {
++    /// Commit only at the encoder's actual end. Render must finish before a
++    /// following blit, compute dispatch or render pass can observe its targets.
++    /// A held encoder keeps its accumulator and compute session intact.
++    fn end_segment(&mut self) -> Result<(), reims_vgpu_core::stream::StreamRefusal> {
++        let kind = self.cursor.open_encoder();
++        if matches!(self.cursor.end()?, SegmentEnd::EncoderHeld { .. }) {
++            return Ok(());
++        }
++        match kind {
++            Some(SegmentKind::Render) => {
++                let started = std::time::Instant::now();
++                finish_stream(self.state, self.host, self.task_id, self.out, self.acc);
++                self.finish_ns += started.elapsed().as_nanos() as u64;
++                *self.acc = StreamAccum::default();
++                self.render_encoders_finished += 1;
++                crate::runtime::drain::note_store_route("render_encoder_finished");
++                if self.render_encoders_finished > 1 {
++                    crate::runtime::drain::note_store_route("render_encoder_additional_in_stream");
++                }
++            }
++            Some(SegmentKind::Compute) => self.finish_compute(),
++            Some(SegmentKind::Blit | SegmentKind::Event | SegmentKind::Info) | None => {}
++        }
++        Ok(())
++    }
++
++    fn finish_compute(&mut self) {
+         let Some(mut segment) = self.compute.take() else {
+             return;
+         };
+@@ -1668,7 +1692,7 @@
+     out: &mut ExecResult,
+     acc: &mut StreamAccum,
+     mut resolved: Option<&mut ResolvedCursor<'_>>,
+-) {
++) -> u64 {
+     // **The one place this crate frames an exec stream, counted.** Seam 6 asks
+     // for zero re-scans of already resolved EXEC bytes, and the shape the
+     // violation took here was two rail pre-scans walking the same stream
+@@ -1693,7 +1717,7 @@
+                 .field("task", task_id)
+                 .field("bytes", stream.len())
+                 .fail_once(u64::from(task_id));
+-            return;
++            return 0;
+         }
+     };
+     let mut sink = StreamSink {
+@@ -1703,6 +1727,9 @@
+         out,
+         acc,
+         compute: None,
++        cursor: StreamCursor::new(),
++        finish_ns: 0,
++        render_encoders_finished: 0,
+     };
+     for framed in segments.by_ref() {
+         let framed = match framed {
+@@ -1723,7 +1750,7 @@
+                     .field("bytes", stream.len())
+                     .field("segments_before", segments.segments())
+                     .fail_once(u64::from(task_id));
+-                return;
++                return sink.finish_ns;
+             }
+         };
+         let (kind, commands) = match framed.body {
+@@ -1735,7 +1762,16 @@
+             // implements no protection domain, so nothing acts on the value;
+             // that it is *read* rather than stepped over is what lets that
+             // sentence be a choice rather than a limitation.
+-            SegmentBody::ProtectionEnvelope { .. } => continue,
++            SegmentBody::ProtectionEnvelope { options } => {
++                if let Err(refusal) = sink
++                    .cursor
++                    .protection_envelope(reims_vgpu_core::stream::ProtectionOptions(options))
++                {
++                    note_encoder_lifetime_refused(task_id, refusal);
++                    return sink.finish_ns;
++                }
++                continue;
++            }
+         };
+         // The encoder-lifetime census, counted once per segment. The two
+         // pre-scans on the Vulkan rail used to walk the same stream through the
+@@ -1743,7 +1779,10 @@
+         // on that rail and the reading was a rail-dependent multiple of the
+         // truth.
+         crate::runtime::drain::note_store_route(segment_chain_route(framed.lifetime));
+-        sink.begin_segment(kind);
++        if let Err(refusal) = sink.begin_segment(kind, framed.lifetime) {
++            note_encoder_lifetime_refused(task_id, refusal);
++            return sink.finish_ns;
++        }
+         walk_segment_records(kind, framed.commands_offset, commands, |op, cmd| {
+             // Stepped for every record this walk reaches, whether or not the
+             // arm below has anything to do with the answer: the two walks stay
+@@ -1755,11 +1794,28 @@
+             }
+             sink.record(kind, op, cmd);
+         });
+-        sink.end_segment();
++        if let Err(refusal) = sink.end_segment() {
++            note_encoder_lifetime_refused(task_id, refusal);
++            return sink.finish_ns;
++        }
+         if let Some(cursor) = resolved.as_deref_mut() {
+             cursor.end_segment();
+         }
+     }
++    let finish_ns = sink.finish_ns;
++    if let Err(refusal) = sink.cursor.finish() {
++        note_encoder_lifetime_refused(task_id, refusal);
++    }
++    finish_ns
++}
++
++fn note_encoder_lifetime_refused(task_id: u32, refusal: reims_vgpu_core::stream::StreamRefusal) {
++    // The stable reason and coordinates remain the contract owner's; this
++    // executor does not choose one half of a malformed continuation edge.
++    crate::observe::fail(format!(
++        "exec_encoder_lifetime reason={} task={task_id} detail={refusal:?}",
++        refusal.reason(),
++    ));
+ }
+ 
+ /// Every census route [`segment_chain_route`] can answer, in the order

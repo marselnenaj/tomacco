@@ -1,0 +1,36 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -940,6 +940,13 @@
+     sample_format: u16,
+     native: NativeUploads,
+ ) -> Option<TexelLayout> {
++    // The copying rail must retain the same native scalar half texel that
++    // sampled_pixels already admits for an imported guest buffer. R16_SFLOAT
++    // sampling and linear filtering are Vulkan baseline requirements. Sending
++    // a failed host import to the RGBA8 converter loses/refuses this sample.
++    if sample_format == pixel_format::MTL_FORMAT_R16_FLOAT {
++        return Some(TexelLayout::R16Float);
++    }
+     if sample_format == pixel_format::MTL_FORMAT_R32_FLOAT {
+         return native.r32_float.then_some(TexelLayout::R32Float);
+     }
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -2156,12 +2156,11 @@
+ /// The gap that had to close first was the third rail, not the sampler: the CPU
+ /// Store converter reaches [`rgba8_to_texel`], which carried no `R16_FLOAT` arm,
+ /// so the format would have rendered fine and then lost every frame on any host
+-/// without a guest-RAM import. [`sampled_class`] answering `None` for it is
+-/// **not** a blocker and was once recorded as one — read that function's doc
+-/// before believing otherwise; it selects a CPU-upload fast path and cannot
+-/// refuse a bind. What admits a sampled `R16_FLOAT` is
+-/// `translate::pixel::sampled_pixels`, which has carried it as a native
+-/// [`TexelLayout::R16Float`] rail throughout.
++/// without a guest-RAM import. [`sampled_class`] still answers `None` for it:
++/// that class selects byte-color CPU upload paths, not every native texel.
++/// The native scalar sampled rail is [`TexelLayout::R16Float`]. Both imported
++/// guest buffers and copying uploads must retain its two-byte half bits;
++/// neither may fall through an RGBA8 conversion when host RAM import fails.
+ ///
+ /// `R8_UNORM` is here for the same kind of reading one rail over: macOS 26 also
+ /// renders into a single-channel *eight-bit* linear GVA target — a coverage,

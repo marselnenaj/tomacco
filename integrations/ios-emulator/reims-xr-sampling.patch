@@ -1,0 +1,527 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -170,6 +170,65 @@
+ pub const MTL_FORMAT_BGRA10_XR_SRGB: u16 = 553;
+ pub const MTL_FORMAT_BGR10_XR: u16 = 554;
+ pub const MTL_FORMAT_BGR10_XR_SRGB: u16 = 555;
++
++/// Extended-range texels have no bit-compatible Vulkan normalized format.
++/// Keep their packing and transfer function together until an upload decodes
++/// them. In particular, a BGR texel's two high bits are not an alpha channel.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum XrFormat {
++    Bgr10,
++    Bgr10Srgb,
++    Bgra10,
++    Bgra10Srgb,
++}
++
++impl XrFormat {
++    pub const fn from_mtl(format: u16) -> Option<Self> {
++        match format {
++            MTL_FORMAT_BGR10_XR => Some(Self::Bgr10),
++            MTL_FORMAT_BGR10_XR_SRGB => Some(Self::Bgr10Srgb),
++            MTL_FORMAT_BGRA10_XR => Some(Self::Bgra10),
++            MTL_FORMAT_BGRA10_XR_SRGB => Some(Self::Bgra10Srgb),
++            _ => None,
++        }
++    }
++
++    pub const fn bytes_per_texel(self) -> usize {
++        match self {
++            Self::Bgr10 | Self::Bgr10Srgb => 4,
++            Self::Bgra10 | Self::Bgra10Srgb => 8,
++        }
++    }
++
++    pub const fn is_srgb(self) -> bool {
++        matches!(self, Self::Bgr10Srgb | Self::Bgra10Srgb)
++    }
++
++    /// Raw RGBA codes, before the linear XR encoding and optional sRGB
++    /// expansion. 894 is exactly alpha 1 in this encoding. Padding is ignored.
++    pub fn component_codes(self, texel: &[u8]) -> Option<[u16; 4]> {
++        if texel.len() != self.bytes_per_texel() {
++            return None;
++        }
++        Some(match self {
++            Self::Bgr10 | Self::Bgr10Srgb => {
++                let word = u32::from_le_bytes([texel[0], texel[1], texel[2], texel[3]]);
++                [
++                    ((word >> 20) & 1023) as u16,
++                    ((word >> 10) & 1023) as u16,
++                    (word & 1023) as u16,
++                    894,
++                ]
++            }
++            Self::Bgra10 | Self::Bgra10Srgb => [
++                ld16(&texel[4..]) >> 6,
++                ld16(&texel[2..]) >> 6,
++                ld16(texel) >> 6,
++                ld16(&texel[6..]) >> 6,
++            ],
++        })
++    }
++}
+ /// `MTLPixelFormatRGBA16Unorm`. Its ordinal sits between two this table
+ /// already carries — `RGBA16Uint` at `0x71` and `RGBA16Float` at `0x73` — and
+ /// its absence was a decode gap rather than a rail gap: `bytes_per_pixel`
+@@ -3257,12 +3316,22 @@
+         match self {
+             Self::Rgba8 => dst.copy_from_slice(src),
+             Self::Bgr10Xr => {
+-                for (s, d) in src.as_chunks::<4>().0.iter().zip(dst.as_chunks_mut::<4>().0) {
++                for (s, d) in src
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0)
++                {
+                     d.copy_from_slice(&bgr10_xr_to_rgba8(s));
+                 }
+             }
+             Self::Bgra10Xr => {
+-                for (s, d) in src.as_chunks::<8>().0.iter().zip(dst.as_chunks_mut::<4>().0) {
++                for (s, d) in src
++                    .as_chunks::<8>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0)
++                {
+                     d.copy_from_slice(&bgra10_xr_to_rgba8(s));
+                 }
+             }
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -29,6 +29,9 @@
+ //! mean two things depending on where it was asked.
+ 
+ use ash::vk;
++
++mod xr_upload;
++pub use xr_upload::{sampled_upload_bytes, SampledUpload, SampledUploadRefusal};
+ 
+ use reims_vgpu_core::pixel_format::{
+     self, ColorNumericType, SwizzlePlan, SwizzleSource, TexelLayout, COMPONENT_A, COMPONENT_B,
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+new file mode 100644
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+@@ -0,0 +1,243 @@
++//! CPU-origin sampled images whose guest storage has no native Vulkan format.
++//! This does not admit XR render targets, storage writes or resident aliases.
++
++use std::sync::OnceLock;
++
++use reims_vgpu_core::pixel_format::XrFormat;
++
++use super::{sampled_image, Refusal, StorageImageFormat};
++
++/// The bytes and the format that interprets them travel together. XR bytes
++/// become linear RGBA32Float before the hardware filters them, preserving
++/// negative and above-white values. An sRGB transform after filtering would
++/// produce different colours, even for an ordinary black/white edge.
++pub struct SampledUpload {
++    format: StorageImageFormat,
++    bytes: Vec<u8>,
++}
++
++impl SampledUpload {
++    pub fn into_parts(self) -> (StorageImageFormat, Vec<u8>) {
++        (self.format, self.bytes)
++    }
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum SampledUploadRefusal {
++    Format(Refusal),
++    IncompleteXrTexel,
++    ExpandedSizeOverflow,
++    AllocationFailed,
++}
++
++impl SampledUploadRefusal {
++    pub const fn slug(self) -> &'static str {
++        match self {
++            Self::Format(why) => why.slug(),
++            Self::IncompleteXrTexel => "sampled_xr_incomplete_texel",
++            Self::ExpandedSizeOverflow => "sampled_xr_size_overflow",
++            Self::AllocationFailed => "sampled_xr_allocation_failed",
++        }
++    }
++}
++
++fn linear_values() -> &'static [f32; 1024] {
++    static VALUES: OnceLock<[f32; 1024]> = OnceLock::new();
++    VALUES.get_or_init(|| std::array::from_fn(|code| (code as f32 - 384.0) / 510.0))
++}
++
++fn srgb_values() -> &'static [f32; 1024] {
++    static VALUES: OnceLock<[f32; 1024]> = OnceLock::new();
++    VALUES.get_or_init(|| {
++        linear_values().map(|encoded| {
++            let magnitude = encoded.abs();
++            let linear = if magnitude <= 0.04045 {
++                magnitude / 12.92
++            } else {
++                ((magnitude + 0.055) / 1.055).powf(2.4)
++            };
++            linear.copysign(encoded)
++        })
++    })
++}
++
++/// Decode tightly packed guest levels, preserving their order and all colour
++/// codes. The engine still validates the mip geometry and host format support.
++/// Ordinary supported formats retain their original allocation and bytes.
++///
++/// XR's packing/linear encoding and clamped alpha are specified at
++/// https://developer.apple.com/documentation/metal/mtlpixelformat/bgra10_xr_srgb
++/// The signed sRGB extension is specified at
++/// https://developer.apple.com/documentation/coregraphics/cgcolorspace/extendedsrgb
++pub fn sampled_upload_bytes(
++    mtl: u16,
++    bytes: Vec<u8>,
++) -> Result<SampledUpload, SampledUploadRefusal> {
++    let Some(xr) = XrFormat::from_mtl(mtl) else {
++        return Ok(SampledUpload {
++            format: sampled_image(mtl).map_err(SampledUploadRefusal::Format)?,
++            bytes,
++        });
++    };
++    let stride = xr.bytes_per_texel();
++    if !bytes.len().is_multiple_of(stride) {
++        return Err(SampledUploadRefusal::IncompleteXrTexel);
++    }
++    let length = (bytes.len() / stride)
++        .checked_mul(16)
++        .ok_or(SampledUploadRefusal::ExpandedSizeOverflow)?;
++    let mut decoded = Vec::new();
++    decoded
++        .try_reserve_exact(length)
++        .map_err(|_| SampledUploadRefusal::AllocationFailed)?;
++    let linear = linear_values();
++    let colour = if xr.is_srgb() { srgb_values() } else { linear };
++    for texel in bytes.chunks_exact(stride) {
++        let codes = xr
++            .component_codes(texel)
++            .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
++        for &code in &codes[..3] {
++            decoded.extend_from_slice(&colour[usize::from(code)].to_le_bytes());
++        }
++        // Alpha is linear even in an sRGB texture, and Metal clamps it.
++        decoded.extend_from_slice(&linear[usize::from(codes[3])].clamp(0.0, 1.0).to_le_bytes());
++    }
++    Ok(SampledUpload {
++        format: StorageImageFormat::Rgba32Float,
++        bytes: decoded,
++    })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use reims_vgpu_core::pixel_format as p;
++
++    fn packed(format: XrFormat, rgba: [u16; 4], padding: bool) -> Vec<u8> {
++        match format {
++            XrFormat::Bgr10 | XrFormat::Bgr10Srgb => {
++                let [r, g, b, _] = rgba.map(u32::from);
++                (b | (g << 10) | (r << 20) | if padding { 3 << 30 } else { 0 })
++                    .to_le_bytes()
++                    .to_vec()
++            }
++            XrFormat::Bgra10 | XrFormat::Bgra10Srgb => [rgba[2], rgba[1], rgba[0], rgba[3]]
++                .into_iter()
++                .flat_map(|c| ((c << 6) | if padding { 63 } else { 0 }).to_le_bytes())
++                .collect(),
++        }
++    }
++
++    fn floats(bytes: &[u8]) -> Vec<f32> {
++        bytes
++            .as_chunks::<4>()
++            .0
++            .iter()
++            .map(|c| f32::from_le_bytes(*c))
++            .collect()
++    }
++
++    #[test]
++    fn xr_sampling_preserves_every_code_and_channel_and_ignores_padding() {
++        for mtl in [
++            p::MTL_FORMAT_BGR10_XR,
++            p::MTL_FORMAT_BGR10_XR_SRGB,
++            p::MTL_FORMAT_BGRA10_XR,
++            p::MTL_FORMAT_BGRA10_XR_SRGB,
++        ] {
++            let xr = XrFormat::from_mtl(mtl).unwrap();
++            let mut input = Vec::new();
++            for code in 0..1024 {
++                input.extend(packed(xr, [code, 1023 - code, 384, code], true));
++            }
++            let (format, bytes) = sampled_upload_bytes(mtl, input).unwrap().into_parts();
++            assert_eq!(format, StorageImageFormat::Rgba32Float);
++            assert_eq!(bytes.len(), 1024 * 16);
++            let output = floats(&bytes);
++            let mut previous = f32::NEG_INFINITY;
++            for (code, rgba) in output.as_chunks::<4>().0.iter().enumerate() {
++                assert!(rgba[0] > previous, "all 1024 codes stay distinct");
++                previous = rgba[0];
++                assert_eq!(rgba[1], output[(1023 - code) * 4]);
++                assert_eq!(rgba[2], 0.0);
++                // Round-trip through the independent inverse transfer, in f64.
++                let value = f64::from(rgba[0]);
++                let encoded = if xr.is_srgb() {
++                    value.signum()
++                        * if value.abs() <= 0.0031308 {
++                            value.abs() * 12.92
++                        } else {
++                            1.055 * value.abs().powf(1.0 / 2.4) - 0.055
++                        }
++                } else {
++                    value
++                };
++                assert!((encoded * 510.0 + 384.0 - code as f64).abs() < 0.001);
++                let alpha = if xr.bytes_per_texel() == 4 {
++                    1.0
++                } else {
++                    ((code as f32 - 384.0) / 510.0).clamp(0.0, 1.0)
++                };
++                assert_eq!(rgba[3], alpha);
++            }
++            assert!(output[0] < -0.5 && output[1023 * 4] > 1.25);
++        }
++    }
++
++    #[test]
++    fn srgb_is_expanded_before_filtering_and_alpha_stays_linear() {
++        let xr = XrFormat::Bgra10Srgb;
++        let input = [
++            packed(xr, [384, 639, 894, 639], false),
++            packed(xr, [894, 639, 384, 1023], false),
++        ]
++        .concat();
++        let (_, bytes) = sampled_upload_bytes(p::MTL_FORMAT_BGRA10_XR_SRGB, input)
++            .unwrap()
++            .into_parts();
++        let values = floats(&bytes);
++        assert!(((values[0] + values[4]) * 0.5 - 0.5).abs() < 1e-6);
++        assert!((values[1] - 0.21404114).abs() < 1e-6);
++        assert_eq!(values[3], 0.5);
++        assert_eq!(values[7], 1.0);
++        assert!((srgb_values()[0] + 0.5271151).abs() < 1e-6);
++        // Apple's prose upper bound 1.66894 describes code 1022. Its
++        // explicit (code - 384) / 510 formula also defines code 1023;
++        // do not rescale all 1024 codes to the prose endpoint. skcms fixed
++        // that same discrepancy in 12776964e26d33991ef8626d4fed226eefee7cdc.
++        assert!((srgb_values()[1022] - 1.6689452).abs() < 1e-6);
++        assert!((srgb_values()[1023] - 1.6749653).abs() < 1e-6);
++    }
++
++    #[test]
++    fn upload_rejects_partial_texels_and_never_changes_native_bytes() {
++        for (format, width) in [(p::MTL_FORMAT_BGR10_XR, 4), (p::MTL_FORMAT_BGRA10_XR, 8)] {
++            for length in 1..width {
++                assert!(matches!(
++                    sampled_upload_bytes(format, vec![0; length]),
++                    Err(SampledUploadRefusal::IncompleteXrTexel)
++                ));
++            }
++            assert!(
++                sampled_image(format).is_err(),
++                "XR bytes cannot bind natively"
++            );
++            assert!(
++                super::super::storage_image(format).is_err(),
++                "sampling does not admit writes"
++            );
++        }
++        let bytes = vec![1, 2, 3, 4];
++        let pointer = bytes.as_ptr();
++        let (format, bytes) = sampled_upload_bytes(p::MTL_FORMAT_BGRA8_UNORM, bytes)
++            .unwrap()
++            .into_parts();
++        assert_eq!(format, StorageImageFormat::Bgra8Unorm);
++        assert_eq!(bytes.as_ptr(), pointer);
++        assert_eq!(bytes, [1, 2, 3, 4]);
++        assert!(matches!(
++            sampled_upload_bytes(u16::MAX, vec![0; 4]),
++            Err(SampledUploadRefusal::Format(_))
++        ));
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+@@ -1132,12 +1132,47 @@
+                     .is_some(),
+             });
+         } else {
+-            let Some(sampled_fmt) = mtl_to_engine_sampled(t.pixel_format) else {
+-                crate::observe::fail(format!(
+-                    "compute_linux sampled_format fail reason=mtl_format_unsupported pipe={} bind={} fmt={:#x}",
+-                    acc.pipeline_ref, t.binding, t.pixel_format
+-                ));
+-                return ComputeStatus::Unsupported("sampled_format_unsupported");
++            // Only byte uploads may convert a guest format. Resident and
++            // multisample sources already have a GPU representation and must
++            // still satisfy the original, bit-compatible format admission.
++            let source = match t.rail.multisample_target.take() {
++                Some(identity) => ComputeSampledSource::MultisampleTarget(identity),
++                None => match t.rail.serve.and_then(ResidentServe::sample_source) {
++                    Some((identity, generation)) => ComputeSampledSource::ResidentCopy(
++                        crate::backend::vulkan::engine::ComputeResidentSampleBind {
++                            identity,
++                            generation,
++                        },
++                    ),
++                    None => ComputeSampledSource::Bytes(std::mem::take(&mut t.bytes)),
++                },
++            };
++            let (sampled_fmt, source) = match source {
++                ComputeSampledSource::Bytes(bytes) => {
++                    match reims_vgpu_vulkan::pixel::sampled_upload_bytes(t.pixel_format, bytes) {
++                        Ok(upload) => {
++                            let (format, bytes) = upload.into_parts();
++                            (format, ComputeSampledSource::Bytes(bytes))
++                        }
++                        Err(why) => {
++                            crate::observe::fail(format!(
++                                "compute_linux sampled_upload fail reason={} pipe={} bind={} fmt={:#x}",
++                                why.slug(), acc.pipeline_ref, t.binding, t.pixel_format
++                            ));
++                            return ComputeStatus::Unsupported(why.slug());
++                        }
++                    }
++                }
++                resident => {
++                    let Some(format) = mtl_to_engine_sampled(t.pixel_format) else {
++                        crate::observe::fail(format!(
++                            "compute_linux sampled_format fail reason=mtl_format_unsupported pipe={} bind={} fmt={:#x}",
++                            acc.pipeline_ref, t.binding, t.pixel_format
++                        ));
++                        return ComputeStatus::Unsupported("sampled_format_unsupported");
++                    };
++                    (format, resident)
++                }
+             };
+             sampled_images.push(ComputeSampledImageResource {
+                 binding: t.binding,
+@@ -1147,22 +1182,7 @@
+                 width: t.width,
+                 height: t.height,
+                 mip_levels: t.mip_levels,
+-                // Asked in the order the sources exclude each other, not as a
+-                // pair: the producer that sets `multisample_target` is the one
+-                // rail that stages nothing, and it leaves `serve` and `bytes`
+-                // empty because there is nothing for either to hold.
+-                source: match t.rail.multisample_target.take() {
+-                    Some(identity) => ComputeSampledSource::MultisampleTarget(identity),
+-                    None => match t.rail.serve.and_then(ResidentServe::sample_source) {
+-                        Some((identity, generation)) => ComputeSampledSource::ResidentCopy(
+-                            crate::backend::vulkan::engine::ComputeResidentSampleBind {
+-                                identity,
+-                                generation,
+-                            },
+-                        ),
+-                        None => ComputeSampledSource::Bytes(std::mem::take(&mut t.bytes)),
+-                    },
+-                },
++                source,
+             });
+         }
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
+@@ -1132,6 +1132,87 @@
+     }
+ }
+ 
++/// Upload guest XR texels through the same converter used by dispatch, then
++/// fetch on the actual GPU. This checks that extended values survive image
++/// creation and binding, not just the CPU conversion function.
++#[test]
++fn compute_sampled_xr_upload_preserves_extended_range() {
++    use reims_vgpu_protocol::pixel_format as p;
++    let _g = engine_test_session();
++    let Some(words) = assemble_spvasm(SAMPLED_IMAGE_FETCH_KERNEL, "sampled_xr") else {
++        return;
++    };
++    for (mtl, bgra, srgb) in [
++        (p::MTL_FORMAT_BGR10_XR, false, false),
++        (p::MTL_FORMAT_BGR10_XR_SRGB, false, true),
++        (p::MTL_FORMAT_BGRA10_XR, true, false),
++        (p::MTL_FORMAT_BGRA10_XR_SRGB, true, true),
++    ] {
++        let packed = if bgra {
++            [1023u16, 639, 0, 500]
++                .into_iter()
++                .flat_map(|c| (c << 6).to_le_bytes())
++                .collect()
++        } else {
++            (1023u32 | (639 << 10)).to_le_bytes().to_vec()
++        };
++        let (format, bytes) = reims_vgpu_vulkan::pixel::sampled_upload_bytes(mtl, packed)
++            .expect("decode owned XR texels")
++            .into_parts();
++        let request = ComputeRequest {
++            spirv: words.clone(),
++            entry: "main".into(),
++            dispatch: engine::ComputeDispatch::Workgroups([1, 1, 1]),
++            storage_buffers: vec![ComputeBufferResource {
++                binding: 0,
++                bytes: vec![0; 16],
++                writable: true,
++            }],
++            sampled_images: vec![ComputeSampledImageResource {
++                mip_levels: 1,
++                binding: 32,
++                array_element: 0,
++                descriptor_count: 1,
++                format,
++                width: 1,
++                height: 1,
++                source: ComputeSampledSource::Bytes(bytes),
++            }],
++            samplers: vec![],
++            storage_images: vec![],
++        };
++        let Some(output) = engine_or_skip("compute XR sampling", &request) else {
++            return;
++        };
++        let expected = if srgb {
++            [-0.5271151, 0.21404114, 1.6749653]
++        } else {
++            [-0.7529412, 0.5, 1.2529412]
++        };
++        let expected = [
++            expected[0],
++            expected[1],
++            expected[2],
++            if bgra { 116.0 / 510.0 } else { 1.0 },
++        ];
++        assert_eq!(output.buffers[0].bytes.len(), 16);
++        for (channel, raw) in output.buffers[0]
++            .bytes
++            .as_chunks::<4>()
++            .0
++            .iter()
++            .enumerate()
++        {
++            let actual = f32::from_le_bytes(*raw);
++            assert!(
++                (actual - expected[channel]).abs() < 1e-5,
++                "XR format {mtl} channel {channel}: {actual} != {}",
++                expected[channel]
++            );
++        }
++    }
++}
++
+ /// Execute the translator's aggregate-prefix load on actual Vulkan memory.
+ /// Half values are treated as payload bits, so negative zero, infinity and NaN
+ /// must survive without a numeric conversion or selection of the later half field.

@@ -1,0 +1,1498 @@
+diff --git c/hw/arm/apple_regs.c w/hw/arm/apple_regs.c
+index 1f04975..af45b85 100644
+--- c/hw/arm/apple_regs.c
++++ w/hw/arm/apple_regs.c
+@@ -11,6 +11,10 @@
+ #include "system/system.h"
+ #include "xnu/apple_regs.h"
+ #include "hw/arm/apple_amcc.h"
++#include "hw/core/boards.h"
++#include "hw/arm/machines-qom.h"
++#include "target/arm/internals.h"
++#include "exec/cputlb.h"
+ 
+ typedef uint64_t usize;
+ typedef uint64_t u64;
+@@ -27,6 +31,85 @@ void log_write(const char *, CPUARMState *, const ARMCPRegInfo *, u64 val);
+ 
+ #include "apple_regs_autogen.h"
+ 
++/* UPERM follows the current translation regime. HUPERM/VUPERM are explicit
++ * EL2 accessors, so switching between TXM and ExclaveCore cannot overwrite
++ * the other world's EL0 permissions. */
++static unsigned sprr_user_bank(CPUARMState *env, const ARMCPRegInfo *ri)
++{
++    if (ri->opc1 == 4) {
++        return ri->opc2 == 1 ? 2 : 1;
++    }
++    return el_is_in_host(env, arm_current_el(env)) ? 2 : 1;
++}
++
++static uint64_t sprr_user_read(CPUARMState *env, const ARMCPRegInfo *ri)
++{
++    return env->sprr_uperm_el[sprr_user_bank(env, ri)];
++}
++
++static void sprr_user_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
++{
++    unsigned bank = sprr_user_bank(env, ri);
++    if (env->sprr_uperm_el[bank] != value) {
++        env->sprr_uperm_el[bank] = value;
++        tlb_flush(env_cpu(env));
++    }
++}
++
++static const ARMCPRegInfo apple_user_permissions[] = {
++    { .name = "SPRR_UPERM_EL0", .state = ARM_CP_STATE_AA64, .access = PL0_RW,
++      .type = ARM_CP_ALIAS | ARM_CP_NO_RAW,
++      .opc0 = 3, .opc1 = 6, .crn = 15, .crm = 1, .opc2 = 5,
++      .readfn = sprr_user_read, .writefn = sprr_user_write },
++    { .name = "SPRR_HUPERM_EL0", .state = ARM_CP_STATE_AA64, .access = PL2_RW,
++      .opc0 = 3, .opc1 = 4, .crn = 15, .crm = 5, .opc2 = 1,
++      .fieldoffset = offsetof(CPUARMState, sprr_uperm_el[2]),
++      .writefn = sprr_user_write },
++    { .name = "SPRR_VUPERM_EL0", .state = ARM_CP_STATE_AA64, .access = PL2_RW,
++      .opc0 = 3, .opc1 = 4, .crn = 15, .crm = 5, .opc2 = 2,
++      .fieldoffset = offsetof(CPUARMState, sprr_uperm_el[1]),
++      .writefn = sprr_user_write },
++};
++
++/* The supplied T8140 tree exposes a read-only 64-bit Siri timebase counter.
++ * Use the same virtual clock and frequency as the emulated physical CPU
++ * counter. This keeps pause/resume and the synthetic boot timebase consistent;
++ * it is neither wall-clock time nor a success-returning service endpoint. */
++static MemTxResult exclave_timebase_read(void *opaque, hwaddr offset,
++                                         uint64_t *value, unsigned size,
++                                         MemTxAttrs attrs)
++{
++    ARMCPU *cpu = opaque;
++    if (offset != 0 || size != 8) {
++        return MEMTX_ACCESS_ERROR;
++    }
++    *value = gt_get_countervalue(&cpu->env);
++    return MEMTX_OK;
++}
++
++static MemTxResult exclave_timebase_write(void *opaque, hwaddr offset,
++                                          uint64_t value, unsigned size,
++                                          MemTxAttrs attrs)
++{
++    return MEMTX_ACCESS_ERROR;
++}
++
++static const MemoryRegionOps exclave_timebase_ops = {
++    .read_with_attrs = exclave_timebase_read,
++    .write_with_attrs = exclave_timebase_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++    .valid = { .min_access_size = 8, .max_access_size = 8 },
++    .impl = { .min_access_size = 8, .max_access_size = 8 },
++};
++
++void apple_exclave_timebase_init(ARMCPU *cpu, Object *owner,
++                                 MemoryRegion *region, hwaddr address)
++{
++    memory_region_init_io(region, owner, &exclave_timebase_ops, cpu,
++                          "exclave-timebase", 8);
++    memory_region_add_subregion(get_system_memory(), address, region);
++}
++
+ static uint64_t pmc0_read(CPUARMState *env, const ARMCPRegInfo *ri) {
+     if (0 == env->pc) return 0;
+     static uint64_t internal_count = 0;
+@@ -114,8 +197,8 @@ void apple_regs_init(ARMCPU *cpu, AMCCState *amcc, struct dtree_node *dt_root, s
+     APPLE_STATE(env)->ctrr_a_lwr_el2 = REGION_START("BootKC-rx");
+     APPLE_STATE(env)->ctrr_a_upr_el2 = REGION_END("BootKC-rs");
+ 
+-    // CTRR region C: [DeviceTree, SPTM-rx]
+-    APPLE_STATE(env)->acc_ctrr_c_lwr_el2 = REGION_START("DeviceTree");
++    // A loaded secure kernel precedes DeviceTree in the protected region.
++    APPLE_STATE(env)->acc_ctrr_c_lwr_el2 = REGION_START(info->cl4 ? "CL4-rx" : "DeviceTree");
+     APPLE_STATE(env)->acc_ctrr_c_upr_el2 = REGION_END("SPTM-rx");
+     if (amcc) {
+         amcc->ctrr_lwr[AMCC_BANK_C] = APPLE_STATE(env)->acc_ctrr_c_lwr_el2;
+@@ -126,9 +209,9 @@ void apple_regs_init(ARMCPU *cpu, AMCCState *amcc, struct dtree_node *dt_root, s
+     APPLE_STATE(env)->acc_ctxr_a_lwr_el2 = REGION_START("SPTM-rx");
+     APPLE_STATE(env)->acc_ctxr_a_upr_el2 = REGION_END("SPTM-rx");
+ 
+-    // CTXR region B: [CL4-dummypage]
+-    APPLE_STATE(env)->acc_ctxr_b_lwr_el2 = REGION_START("CL4-dummypage");
+-    APPLE_STATE(env)->acc_ctxr_b_upr_el2 = REGION_END("CL4-dummypage");
++    // CTXR region B protects the real CL4 code bank when it is present.
++    APPLE_STATE(env)->acc_ctxr_b_lwr_el2 = REGION_START(info->cl4 ? "CL4-rx" : "CL4-dummypage");
++    APPLE_STATE(env)->acc_ctxr_b_upr_el2 = REGION_END(info->cl4 ? "CL4-rx" : "CL4-dummypage");
+ 
+     // CTXR region C: [TXM-rx, TXM-bx]
+     APPLE_STATE(env)->acc_ctxr_c_lwr_el2 = REGION_START("TXM-rx");
+@@ -149,5 +232,41 @@ void apple_regs_init(ARMCPU *cpu, AMCCState *amcc, struct dtree_node *dt_root, s
+         (info->dram_base + info->dram_size - ((2 * info->dram_size) / 32));
+ 
+     define_arm_cp_regs(cpu, apple_sysregs);
++    define_arm_cp_regs(cpu, apple_user_permissions);
+     define_arm_cp_regs(cpu, apple_pmcregs);
+ }
++
++/* Real CPU instructions and the production register bank, with plain RAM and
++ * no Apple firmware. Tests supply their own tiny ELF using the generic loader. */
++static void apple_cpu_test_init(MachineState *machine)
++{
++    ARMCPU *cpu = ARM_CPU(object_new(machine->cpu_type));
++    MemoryRegion *timebase = g_new0(MemoryRegion, 1);
++    cpu->has_el2 = true;
++    cpu->has_el3 = false;
++    cpu->gt_cntfrq_hz = 1000000;
++    unset_feature(&cpu->env, ARM_FEATURE_CBAR);
++    unset_feature(&cpu->env, ARM_FEATURE_CBAR_RO);
++    unset_feature(&cpu->env, ARM_FEATURE_EL3);
++    unset_feature(&cpu->env, ARM_FEATURE_PMU);
++    set_feature(&cpu->env, ARM_FEATURE_EL2);
++    cpu->env.apple_state = g_new0(apple_state_t, 1);
++    define_arm_cp_regs(cpu, apple_sysregs);
++    define_arm_cp_regs(cpu, apple_user_permissions);
++    qdev_realize(DEVICE(cpu), NULL, &error_fatal);
++    memory_region_add_subregion(get_system_memory(), 0, machine->ram);
++    apple_exclave_timebase_init(cpu, OBJECT(machine), timebase, 0x10000000);
++}
++
++static void apple_cpu_test_class(MachineClass *mc)
++{
++    mc->desc = "Tomacco Apple CPU permission test rig (no OS or firmware)";
++    mc->init = apple_cpu_test_init;
++    mc->max_cpus = 1;
++    mc->default_cpu_type = ARM_CPU_TYPE_NAME("max");
++    mc->default_ram_size = 64 * 1024 * 1024;
++    mc->default_ram_id = "tomacco-apple-cpu-test.ram";
++    mc->no_serial = mc->no_parallel = mc->no_floppy = mc->no_cdrom = true;
++}
++DEFINE_MACHINE_WITH_INTERFACES("tomacco-apple-cpu-test", apple_cpu_test_class,
++                               { TYPE_TARGET_AARCH64_MACHINE }, { })
+diff --git c/hw/arm/darwin.c w/hw/arm/darwin.c
+index 246476d..7f0f32a 100644
+--- c/hw/arm/darwin.c
++++ w/hw/arm/darwin.c
+@@ -14,14 +14,20 @@
+ #include "hw/arm/exynos4210.h"
+ #include "system/system.h"
+ #include "hw/core/sysbus.h"
++#include "hw/core/qdev-properties.h"
+ #include "hw/core/platform-bus.h"
+ #include "xnu/boot/xnuboot.h"
+ #include "xnu/apple_dtree.h"
+ #include "xnu/apple_regs.h"
+ #include "hw/arm/apple_amcc.h"
++#include "mcc-t8140.h"
+ #include "xnu/patch.h"
+ #include "xnu/macho.h"
+ #include "hw/intc/apple_aic.h"
++#include "ui/console.h"
++#include "system/physmem.h"
++#include "qemu/guest-random.h"
++#include "qemu/units.h"
+ 
+ // See device tree specification section 2.3.8: ranges
+ #define IO_RANGE_BASE_OFFSET     1
+@@ -52,6 +58,13 @@ struct DarwinState {
+     DeviceState           *aic;
+     struct xnu_boot_info   bootinfo;
+     qemu_irq               irqs[DARWIN_MACHINE_NUM_IRQS];
++    QemuConsole           *boot_console;
++    bool                   research_dart;
++    bool                   research_mcc;
++    bool                   research_ptd;
++    MemoryRegion           cl4_debug_root_mmio;
++    uint32_t               cl4_debug_root;
++    MemoryRegion           cl4_timebase_mmio;
+ };
+ 
+ MACHINE_CLASS_ARG(bootkc);
+@@ -61,6 +74,542 @@ MACHINE_CLASS_ARG(sptm);
+ MACHINE_CLASS_ARG(txm);
+ MACHINE_CLASS_ARG(tc);
+ MACHINE_CLASS_ARG(ramdisk);
++MACHINE_CLASS_ARG(boot_display);
++MACHINE_CLASS_ARG(boot_storage);
++MACHINE_CLASS_ARG(cl4);
++MACHINE_CLASS_ARG(exclave_integrity);
++MACHINE_CLASS_ARG(exclave_trustcache);
++static mmap_file_t check_and_open(const char *path, const char *errmsg);
++
++/* These are iBoot descriptors for an actual, separately supplied secure kernel.
++ * Enabling the property alone never substitutes for booting that kernel. */
++static void cl4_tree_property(struct xnu_boot_info *info, const char *path,
++                              const char *name, uint32_t bytes)
++{
++    struct dtree_node *node = adt_find_node(info->dtree_f.buf, path);
++    uint8_t *copy;
++    size_t offset, extra = sizeof(struct dtree_prop) + ROUND_UP(bytes, 4);
++    struct dtree_prop *prop;
++
++    if (!node) {
++        error_setg(&error_fatal, "CL4 requires device-tree node %s", path);
++        return;
++    }
++    if (adt_get_prop_val(node, name)) {
++        if (adt_get_prop_len(node, name) != bytes) {
++            error_setg(&error_fatal, "CL4 property %s/%s has wrong size", path, name);
++        }
++        return;
++    }
++    offset = (uint8_t *)(node + 1) - (uint8_t *)info->dtree_f.buf;
++    if (offset > info->dtree_f.len || info->dtree_f.len > SIZE_MAX - extra ||
++        node->nProperties == UINT32_MAX) {
++        error_setg(&error_fatal, "Invalid CL4 device tree");
++        return;
++    }
++    copy = mmap(NULL, info->dtree_f.len + extra, PROT_READ | PROT_WRITE,
++                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++    if (copy == MAP_FAILED) {
++        error_setg_errno(&error_fatal, errno, "Cannot allocate CL4 device tree");
++        return;
++    }
++    memcpy(copy, info->dtree_f.buf, offset);
++    prop = (struct dtree_prop *)(copy + offset);
++    g_strlcpy(prop->name, name, sizeof(prop->name));
++    prop->length = bytes;
++    memcpy(copy + offset + extra, (uint8_t *)info->dtree_f.buf + offset,
++           info->dtree_f.len - offset);
++    node = (struct dtree_node *)(copy + offset - sizeof(*node));
++    node->nProperties++;
++    munmap(info->dtree_f.buf, info->dtree_f.len);
++    info->dtree_f.buf = copy;
++    info->dtree_f.len += extra;
++}
++
++/* Insert a named child into the private boot-time tree. Firmware trees omit
++ * iBoot's dynamically allocated Exclave metadata descriptors. */
++static void cl4_tree_node(struct xnu_boot_info *info, const char *parent,
++                          const char *name)
++{
++    g_autofree char *path = g_strdup_printf("%s/%s", parent, name);
++    struct dtree_node *node;
++    struct dtree_prop *prop;
++    size_t parent_offset, offset, bytes = strlen(name) + 1;
++    size_t extra = sizeof(*node) + sizeof(*prop) + ROUND_UP(bytes, 4);
++    uint8_t *copy;
++
++    if (adt_find_node(info->dtree_f.buf, path)) {
++        return;
++    }
++    node = adt_find_node(info->dtree_f.buf, parent);
++    if (!node || node->nChildren == UINT32_MAX || bytes > 64 ||
++        info->dtree_f.len > SIZE_MAX - extra) {
++        error_setg(&error_fatal, "Invalid CL4 parent node %s", parent);
++        return;
++    }
++    parent_offset = (uint8_t *)node - (uint8_t *)info->dtree_f.buf;
++    offset = parent_offset + sizeof(*node);
++    for (unsigned i = 0; i < node->nProperties; i++) {
++        size_t length;
++        if (offset > info->dtree_f.len || info->dtree_f.len - offset < sizeof(*prop)) {
++            error_setg(&error_fatal, "Truncated CL4 parent node %s", parent);
++            return;
++        }
++        prop = (struct dtree_prop *)((uint8_t *)info->dtree_f.buf + offset);
++        length = ROUND_UP((size_t)(prop->length & 0x7fffffff), 4);
++        offset += sizeof(*prop);
++        if (length > info->dtree_f.len - offset) {
++            error_setg(&error_fatal, "Truncated CL4 property in %s", parent);
++            return;
++        }
++        offset += length;
++    }
++    copy = mmap(NULL, info->dtree_f.len + extra, PROT_READ | PROT_WRITE,
++                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++    if (copy == MAP_FAILED) {
++        error_setg_errno(&error_fatal, errno, "Cannot allocate CL4 child node");
++        return;
++    }
++    memcpy(copy, info->dtree_f.buf, offset);
++    ((struct dtree_node *)(copy + parent_offset))->nChildren++;
++    node = (struct dtree_node *)(copy + offset);
++    node->nProperties = 1;
++    prop = (struct dtree_prop *)(node + 1);
++    g_strlcpy(prop->name, "name", sizeof(prop->name));
++    prop->length = bytes;
++    memcpy(prop + 1, name, bytes);
++    memcpy(copy + offset + extra, (uint8_t *)info->dtree_f.buf + offset,
++           info->dtree_f.len - offset);
++    munmap(info->dtree_f.buf, info->dtree_f.len);
++    info->dtree_f.buf = copy;
++    info->dtree_f.len += extra;
++}
++
++static void prepare_cl4_tree(struct xnu_boot_info *info)
++{
++    struct dtree_node *chosen;
++    uint32_t *enabled;
++    const char *regions[] = { "CL4-rx", "CL4-ro", "CL4-rw", "CL4-le",
++        "CL4-entry", "CL4-virt", "CL4-dummypage",
++        "ExclaveOSIntegrityCatalog", "ExclaveOSTrustCache" };
++    if (!info->cl4) {
++        if (info->exclave_integrity || info->exclave_trustcache) {
++            error_setg(&error_fatal, "Exclave metadata requires research-cl4");
++        }
++        return;
++    }
++    if (!info->sptm || !info->exclave_integrity || !info->exclave_trustcache) {
++        error_setg(&error_fatal, "research-cl4 requires SPTM, exclave-integrity and exclave-trustcache");
++        return;
++    }
++    info->cl4_f = check_and_open(info->cl4, "error opening CL4 bundle");
++    info->exclave_integrity_f = check_and_open(info->exclave_integrity, "error opening Exclave integrity catalog");
++    info->exclave_trustcache_f = check_and_open(info->exclave_trustcache, "error opening Exclave trust cache");
++    if (!info->exclave_integrity_f.len || info->exclave_integrity_f.len > 16 * MiB ||
++        !info->exclave_trustcache_f.len || info->exclave_trustcache_f.len > 16 * MiB) {
++        error_setg(&error_fatal, "Exclave metadata must be nonempty and at most 16 MiB each");
++        return;
++    }
++    cl4_tree_property(info, "chosen", "exclaves-enabled", 4);
++    cl4_tree_property(info, "chosen", "cl4-entropy", 192);
++    for (unsigned i = 0; i < G_N_ELEMENTS(regions); i++) {
++        cl4_tree_property(info, "chosen/memory-map", regions[i], 16);
++    }
++    cl4_tree_node(info, "chosen", "exclave-memory-map");
++    for (unsigned i = 7; i < G_N_ELEMENTS(regions); i++) {
++        g_autofree char *path = g_strdup_printf("chosen/exclave-memory-map/%s", regions[i]);
++        cl4_tree_node(info, "chosen/exclave-memory-map", regions[i]);
++        cl4_tree_property(info, path, "range", 16);
++        cl4_tree_property(info, path, "flags", 4);
++        stl_le_p(adt_get_prop_val(adt_find_node(info->dtree_f.buf, path), "flags"), 0);
++    }
++    chosen = adt_find_node(info->dtree_f.buf, "chosen");
++    enabled = adt_get_prop_val(chosen, "exclaves-enabled");
++    stl_le_p(enabled, 1);
++    qemu_guest_getrandom_nofail(adt_get_prop_val(chosen, "cl4-entropy"), 192);
++}
++
++static bool research_dart_get(Object *obj, Error **errp)
++{
++    return DARWIN_MACHINE(obj)->research_dart;
++}
++
++static void research_dart_set(Object *obj, bool value, Error **errp)
++{
++    DARWIN_MACHINE(obj)->research_dart = value;
++}
++
++/* PMGR scratch word containing the consistent-debug registry PFN. With no
++ * debugger registry installed it is zero. This is one retained 32-bit word,
++ * not a permissive mapping of the PMGR block: all other PMGR registers remain
++ * unimplemented. CL4 checks this optional pointer before setting up services. */
++static uint64_t cl4_debug_read(void *opaque, hwaddr offset, unsigned size)
++{
++    return ((DarwinState *)opaque)->cl4_debug_root;
++}
++
++static void cl4_debug_write(void *opaque, hwaddr offset, uint64_t value,
++                            unsigned size)
++{
++    ((DarwinState *)opaque)->cl4_debug_root = value;
++}
++
++static const MemoryRegionOps cl4_debug_ops = {
++    .read = cl4_debug_read,
++    .write = cl4_debug_write,
++    .endianness = DEVICE_LITTLE_ENDIAN,
++    .valid = { .min_access_size = 4, .max_access_size = 4 },
++    .impl = { .min_access_size = 4, .max_access_size = 4 },
++};
++
++static void init_cl4_debug_root(DarwinState *s, struct dtree_node *root,
++                               uint64_t iobase)
++{
++    struct dtree_node *pmgr;
++    struct adt_io_reg *reg;
++    bool found = false;
++    if (!s->bootinfo.cl4) {
++        return;
++    }
++    pmgr = adt_find_node(root, "arm-io/pmgr");
++    if (!pmgr || iobase != 0x210000000 || !adt_get_prop_val(pmgr, "reg") ||
++        adt_get_prop_len(pmgr, "reg") % sizeof(*reg)) {
++        error_setg(&error_fatal, "CL4 debug scratch requires the T8140 PMGR layout");
++        return;
++    }
++    reg = adt_get_prop_val(pmgr, "reg");
++    for (unsigned i = 0; reg && i < adt_get_prop_len(pmgr, "reg") / sizeof(*reg); i++) {
++        found |= reg[i].base == 0xf82b8000 && reg[i].len == 0x10000;
++    }
++    if (!found) {
++        error_setg(&error_fatal, "CL4 debug scratch register is absent from PMGR");
++        return;
++    }
++    memory_region_init_io(&s->cl4_debug_root_mmio, OBJECT(s), &cl4_debug_ops, s,
++                          "cl4-debug-registry-pfn", 4);
++    memory_region_add_subregion(get_system_memory(), iobase + 0xf82b8004,
++                                &s->cl4_debug_root_mmio);
++}
++
++static void init_cl4_timebase(DarwinState *s, struct dtree_node *root)
++{
++    struct dtree_node *node;
++    struct adt_io_reg *reg;
++    if (!s->bootinfo.cl4) {
++        return;
++    }
++    node = adt_find_node(root, "arm-io/siri-exclave-timebase");
++    if (!node || !adt_get_prop_val(node, "reg") ||
++        adt_get_prop_len(node, "reg") != sizeof(*reg)) {
++        error_setg(&error_fatal, "CL4 requires the T8140 Siri timebase descriptor");
++        return;
++    }
++    reg = adt_get_prop_val(node, "reg");
++    /* This exclave-assigned descriptor is already an absolute PA, unlike
++     * the relative DART register tuples below. Keep all other offsets unmapped. */
++    if (reg->base != 0x3482a8000 || reg->len != 0x4000) {
++        error_setg(&error_fatal, "Unsupported CL4 timebase register layout");
++        return;
++    }
++    apple_exclave_timebase_init(s->cpu, OBJECT(s), &s->cl4_timebase_mmio,
++                                reg->base);
++}
++
++static bool mcc_tree_u32(struct dtree_node *node, const char *name, uint32_t expected)
++{
++    void *value = adt_get_prop_val(node, name);
++    return value && adt_get_prop_len(node, name) == 4 && ldl_le_p(value) == expected;
++}
++
++static void init_research_mcc(DarwinState *s, struct dtree_node *root, uint64_t iobase)
++{
++    struct dtree_node *node;
++    struct adt_io_reg *reg;
++    void *dram;
++    DeviceState *device;
++    if (!s->research_mcc) {
++        return;
++    }
++    node = adt_find_node(root, "arm-io/mcc");
++    if (!node || iobase != 0x210000000 ||
++        !adt_get_prop_val(node, "compatible") ||
++        adt_get_prop_len(node, "compatible") != sizeof("mcc,t8140") ||
++        memcmp(adt_get_prop_val(node, "compatible"), "mcc,t8140", sizeof("mcc,t8140")) ||
++        !mcc_tree_u32(node, "amcc-count", 1) ||
++        !mcc_tree_u32(node, "dcs-count-per-amcc", 4) ||
++        !mcc_tree_u32(node, "amcc-reg-idx", 2) ||
++        !mcc_tree_u32(node, "dcs-reg-idx", 8) ||
++        !adt_get_prop_val(node, "reg") ||
++        adt_get_prop_len(node, "reg") != 12 * sizeof(*reg) ||
++        !adt_get_prop_val(node, "dramcfg-data") ||
++        adt_get_prop_len(node, "dramcfg-data") != 8) {
++        error_setg(&error_fatal, "research-mcc requires the T8140 MCC tree layout and dramcfg-data");
++        return;
++    }
++    reg = adt_get_prop_val(node, "reg");
++    if (reg[2].base != 0x10000000 || reg[2].len != 0x140000) {
++        error_setg(&error_fatal, "Unsupported T8140 AMCC register range");
++        return;
++    }
++    for (unsigned i = 0; i < 4; ++i) {
++        if (reg[8 + i].base != 0x10400000 + i * 0x200000 ||
++            reg[8 + i].len != 0x8000) {
++            error_setg(&error_fatal, "Unsupported T8140 DCS register range");
++            return;
++        }
++    }
++    dram = adt_get_prop_val(node, "dramcfg-data");
++    device = qdev_new("tomacco-mcc-t8140");
++    object_property_add_child(OBJECT(s), "mcc", OBJECT(device));
++    /* Start the functional memory model in the tree's configured DRAM mode.
++     * The original driver writes this second word to DCS + 0x1d48. This is an
++     * explicit emulator boot policy, not an assertion of silicon POR state. */
++    qdev_prop_set_uint64(device, "dram-config", ldl_le_p((uint8_t *)dram + 4));
++    sysbus_realize_and_unref(SYS_BUS_DEVICE(device), &error_fatal);
++    /* Preserve CTRR ownership, including unexpected future tree layouts. */
++    if (s->amcc) {
++        for (unsigned i = 0; i < AMCC_NUM_BANKS; ++i) {
++            uint32_t lower = s->amcc->lwr_reg[i];
++            uint32_t upper = s->amcc->upr_reg[i];
++            if (((uint64_t)lower + 4 > PMCC_GATE_WINDOW &&
++                 lower < PMCC_GATE_WINDOW + PMCC_GATE_WINDOW_SIZE) ||
++                ((uint64_t)upper + 4 > PMCC_GATE_WINDOW &&
++                 upper < PMCC_GATE_WINDOW + PMCC_GATE_WINDOW_SIZE)) {
++                error_setg(&error_fatal, "MCC maintenance gate overlaps CTRR registers");
++                return;
++            }
++        }
++    }
++    sysbus_mmio_map(SYS_BUS_DEVICE(device), 0, iobase + reg[2].base + 0x1000);
++    sysbus_mmio_map_overlap(SYS_BUS_DEVICE(device), 1 + PMCC_CHANNELS,
++                           iobase + reg[2].base + PMCC_GATE_WINDOW, 1);
++    for (unsigned i = 0; i < 4; ++i) {
++        sysbus_mmio_map(SYS_BUS_DEVICE(device), i + 1, iobase + reg[8 + i].base);
++    }
++}
++
++static bool research_mcc_get(Object *obj, Error **errp)
++{
++    return DARWIN_MACHINE(obj)->research_mcc;
++}
++
++static void init_research_ptd(DarwinState *s, struct dtree_node *root, uint64_t iobase)
++{
++    if (!s->research_ptd) {
++        return;
++    }
++    struct dtree_node *node = adt_find_node(root, "arm-io/mcc");
++    struct dtree_node *nub = adt_find_node(root, "arm-io/pmp/iop-pmp-nub");
++    if (!s->research_mcc || !node || !nub ||
++        !mcc_tree_u32(nub, "ptd-driver-version", 1) ||
++        !mcc_tree_u32(node, "pmp_ptd_db_reg_idx", 6) ||
++        !mcc_tree_u32(node, "pmp_ptd_update_reg_idx", 7)) {
++        error_setg(&error_fatal, "research-ptd requires the validated T8140 MCC/PTD binding");
++        return;
++    }
++    struct adt_io_reg *reg = adt_get_prop_val(node, "reg");
++    if (reg[6].base != 0xf03c0000 || reg[6].len != 0x4000 ||
++        reg[7].base != 0xf03d0000 || reg[7].len != 0x4000) {
++        error_setg(&error_fatal, "Unsupported T8140 PTD register views");
++        return;
++    }
++    DeviceState *device = qdev_new("tomacco-ptd-t8140");
++    object_property_add_child(OBJECT(s), "ptd", OBJECT(device));
++    object_property_set_link(OBJECT(device), "cpu", OBJECT(s->cpu), &error_fatal);
++    /* Transport only: no PMP response or unqualified SoC interrupt wiring. */
++    sysbus_realize_and_unref(SYS_BUS_DEVICE(device), &error_fatal);
++    sysbus_mmio_map(SYS_BUS_DEVICE(device), 0, iobase + reg[6].base);
++}
++
++static bool research_ptd_get(Object *obj, Error **errp)
++{
++    return DARWIN_MACHINE(obj)->research_ptd;
++}
++
++static void research_ptd_set(Object *obj, bool value, Error **errp)
++{
++    DARWIN_MACHINE(obj)->research_ptd = value;
++}
++
++static void research_mcc_set(Object *obj, bool value, Error **errp)
++{
++    DARWIN_MACHINE(obj)->research_mcc = value;
++}
++
++static void init_research_dart(DarwinState *s, struct dtree_node *node,
++                               uint64_t iobase, const char *name)
++{
++    struct adt_io_reg *reg;
++    uint32_t *irq;
++    DeviceState *device;
++
++    if (!node || !adt_get_prop_val(node, "reg") ||
++        !adt_get_prop_val(node, "interrupts") ||
++        !adt_get_prop_val(node, "compatible") ||
++        adt_get_prop_len(node, "reg") != sizeof(*reg) ||
++        adt_get_prop_len(node, "interrupts") != sizeof(*irq) ||
++        adt_get_prop_len(node, "compatible") != sizeof("dart,t8110") ||
++        memcmp(adt_get_prop_val(node, "compatible"), "dart,t8110",
++               sizeof("dart,t8110"))) {
++        error_setg(&error_fatal, "research-dart requires a T8110 %s node", name);
++        return;
++    }
++    reg = adt_get_prop_val(node, "reg");
++    irq = adt_get_prop_val(node, "interrupts");
++    if (reg->len != 0xc000 || reg->base > UINT64_MAX - iobase - 0xc000 ||
++        irq[0] >= 0x400) {
++        error_setg(&error_fatal, "Unsupported research-dart register/IRQ layout");
++        return;
++    }
++    device = qdev_new("tomacco-dart-t8110");
++    object_property_add_child(OBJECT(s), name, OBJECT(device));
++    sysbus_realize_and_unref(SYS_BUS_DEVICE(device), &error_fatal);
++    sysbus_mmio_map(SYS_BUS_DEVICE(device), 0, iobase + reg->base);
++    sysbus_connect_irq(SYS_BUS_DEVICE(device), 0,
++                       qdev_get_gpio_in(s->aic, irq[0]));
++}
++
++static void init_dcp_dart(DarwinState *s, struct dtree_node *root,
++                          uint64_t iobase)
++{
++    struct dtree_node *aop;
++    if (!s->research_dart) {
++        return;
++    }
++    init_research_dart(s, adt_find_node(root, "arm-io/dart-dcp"), iobase, "dart-dcp");
++    aop = adt_find_node(root, "arm-io/dart-aop");
++    if (s->bootinfo.cl4 && aop && adt_get_prop_val(aop, "compatible")) {
++        init_research_dart(s, aop, iobase, "dart-aop");
++    }
++}
++
++static bool boot_media_get(Object *obj, Error **errp)
++{
++    return DARWIN_MACHINE(obj)->bootinfo.boot_media;
++}
++
++static void boot_media_set(Object *obj, bool value, Error **errp)
++{
++    DARWIN_MACHINE(obj)->bootinfo.boot_media = value;
++}
++
++/* Supply XNU's documented boot RAM-image descriptors without modifying the
++ * input device tree. The image bytes already reside in reserved guest RAM.
++ * DiskImages registers real IOMedia; this is not a NAND controller or a
++ * persistent disk. Default boots retain the original memory-device path. */
++static void prepare_boot_media_tree(struct xnu_boot_info *info)
++{
++    struct dtree_node *chosen;
++    uint8_t *copy, *cursor;
++    size_t offset, length;
++    const char *names[] = { "boot-ramdmg-size", "boot-ramdmg-extents" };
++    const uint32_t sizes[] = { 8, 16 };
++    const size_t extra = 2 * sizeof(struct dtree_prop) + 24;
++
++    if (!info->boot_media) {
++        return;
++    }
++    chosen = adt_find_node(info->dtree_f.buf, "chosen");
++    if (!chosen) {
++        error_setg(&error_fatal, "boot-media requires a chosen device-tree node");
++        return;
++    }
++    if (adt_get_prop_val(chosen, names[0]) ||
++        adt_get_prop_val(chosen, names[1])) {
++        /* The loader validates existing descriptors before updating them. */
++        return;
++    }
++    offset = (uint8_t *)(chosen + 1) - (uint8_t *)info->dtree_f.buf;
++    if (offset > info->dtree_f.len || info->dtree_f.len > SIZE_MAX - extra ||
++        chosen->nProperties > UINT32_MAX - 2) {
++        error_setg(&error_fatal, "Invalid boot-media device tree");
++        return;
++    }
++    length = info->dtree_f.len + extra;
++    copy = mmap(NULL, length, PROT_READ | PROT_WRITE,
++                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
++    if (copy == MAP_FAILED) {
++        error_setg_errno(&error_fatal, errno, "Cannot allocate boot-media device tree");
++        return;
++    }
++    memcpy(copy, info->dtree_f.buf, offset);
++    cursor = copy + offset;
++    for (unsigned i = 0; i < G_N_ELEMENTS(names); i++) {
++        struct dtree_prop *prop = (struct dtree_prop *)cursor;
++        g_strlcpy(prop->name, names[i], sizeof(prop->name));
++        prop->length = sizes[i];
++        cursor += sizeof(*prop) + sizes[i];
++    }
++    memcpy(cursor, (uint8_t *)info->dtree_f.buf + offset,
++           info->dtree_f.len - offset);
++    chosen = (struct dtree_node *)(copy + offset - sizeof(*chosen));
++    chosen->nProperties += 2;
++    munmap(info->dtree_f.buf, info->dtree_f.len);
++    info->dtree_f.buf = copy;
++    info->dtree_f.len = length;
++}
++
++static bool boot_display_update(void *opaque)
++{
++    DarwinState *s = opaque;
++    qemu_console_update_full(s->boot_console);
++    return true;
++}
++
++static const GraphicHwOps boot_display_ops = {
++    .gfx_update = boot_display_update,
++};
++
++static void boot_display_unmap(pixman_image_t *image, void *unused)
++{
++    physical_memory_unmap(pixman_image_get_data(image),
++                         (hwaddr)pixman_image_get_stride(image) *
++                         pixman_image_get_height(image), false, 0);
++}
++
++static void init_boot_display(DarwinState *s)
++{
++    struct xnu_boot_info *info = &s->bootinfo;
++    hwaddr size = (hwaddr)info->video_stride * info->video_height;
++    hwaddr mapped = size;
++    DisplaySurface *surface;
++    void *pixels;
++
++    if (!size) {
++        return;
++    }
++    pixels = physical_memory_map(info->video_base, &mapped, false);
++    if (!pixels || mapped != size) {
++        if (pixels) {
++            physical_memory_unmap(pixels, mapped, false, 0);
++        }
++        error_setg(&error_fatal, "Cannot map boot-display guest RAM");
++        return;
++    }
++    surface = qemu_create_displaysurface_from(info->video_width,
++                  info->video_height, PIXMAN_x8r8g8b8, info->video_stride, pixels);
++    pixman_image_set_destroy_function(surface->image, boot_display_unmap, NULL);
++    s->boot_console = qemu_graphic_console_create(NULL, 0, &boot_display_ops, s);
++    qemu_console_set_surface(s->boot_console, surface);
++}
++
++static void parse_boot_display(struct xnu_boot_info *info)
++{
++    unsigned width, height;
++    char extra;
++
++    if (!info->boot_display) {
++        return;
++    }
++    if (sscanf(info->boot_display, "%ux%u%c", &width, &height, &extra) != 2 ||
++        width < 64 || width > 4096 || height < 64 || height > 4096) {
++        error_setg(&error_fatal, "boot-display must be WIDTHxHEIGHT (64..4096)");
++        return;
++    }
++    info->video_width = width;
++    info->video_height = height;
++    info->video_stride = ROUND_UP_POW2(width * 4, 64);
++}
+ 
+ static void alloc_zeroed(const char *name, hwaddr pa, size_t len) {
+     if (0 == len) {
+@@ -79,6 +628,7 @@ static void do_darwin_reset(void *state) {
+     ARMCPU *cpu = s->cpu;
+     CPUState *cs = CPU(cpu);
+     CPUARMState *env = &cpu->env;
++    s->cl4_debug_root = 0;
+ 
+     cpu_reset(cs);
+ 
+@@ -102,8 +652,12 @@ static mmap_file_t check_and_open(const char *path, const char *errmsg) {
+     fd = open(path, O_RDONLY | O_BINARY);
+     if (fd < 0) goto fail;
+ 
+-    fstat(fd, &stats);
++    if (fstat(fd, &stats) || !S_ISREG(stats.st_mode) || stats.st_size <= 0) {
++        close(fd);
++        goto fail;
++    }
+     mapping = mmap(NULL, stats.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
++    close(fd);
+     if (MAP_FAILED == mapping) goto fail;
+ 
+     if (is_im4p(mapping)) {
+@@ -114,6 +668,8 @@ static mmap_file_t check_and_open(const char *path, const char *errmsg) {
+     return (mmap_file_t){
+         .buf = mapping,
+         .len = stats.st_size,
++        .device = stats.st_dev,
++        .inode = stats.st_ino,
+     };
+ 
+ fail:
+@@ -209,6 +765,8 @@ static void darwin_init(MachineState *ms) {
+         info->sptm_f = check_and_open(info->sptm, "error opening SPTM");
+         info->txm_f = check_and_open(info->txm, "error opening TXM");
+     }
++    prepare_boot_media_tree(info);
++    prepare_cl4_tree(info);
+     dt_root = info->dtree_f.buf;
+ 
+     check_dtree(dt_root);
+@@ -240,7 +798,9 @@ static void darwin_init(MachineState *ms) {
+     info->dram_size = *(u64*)adt_get_prop_val(chosen_node, "dram-size");
+ 
+     s->cpu = ARM_CPU(cpuobj);
++    parse_boot_display(info);
+     arm_load_xnu(s->cpu, ms, info);
++    init_boot_display(s);
+     if (info->has_mte) setup_mte(cpuobj, MACHINE(s), info);
+ 
+     struct dtree_node *amcc_node = adt_find_node(dt_root, "chosen/lock-regs/amcc");
+@@ -253,6 +813,10 @@ static void darwin_init(MachineState *ms) {
+     assert(0 == arm_io_ranges[0]); // child bus phys addr must be zero
+ 
+     s->aic = apple_aic_create(adt_find_node(dt_root, "arm-io/aic"), iobase);
++    init_dcp_dart(s, dt_root, iobase);
++    init_cl4_debug_root(s, dt_root, iobase);
++    init_cl4_timebase(s, dt_root);
++    init_research_mcc(s, dt_root, iobase);
+ 
+     struct dtree_node *uart0 = adt_find_node(dt_root, "arm-io/uart0");
+     if (!uart0) {
+@@ -280,6 +844,7 @@ static void darwin_init(MachineState *ms) {
+     s->cpu->sme_vq.supported = 0x0b;
+ 
+     qdev_realize(DEVICE(cpuobj), NULL, &error_fatal);
++    init_research_ptd(s, dt_root, iobase);
+ 
+     // On Apple Si, FIQ is hardwired to platform timer
+     // Hardwire IRQ to the AIC
+@@ -295,6 +860,11 @@ static void darwin_init(MachineState *ms) {
+         munmap(info->sptm_f.buf, info->sptm_f.len);
+         munmap(info->txm_f.buf, info->txm_f.len);
+     }
++    if (info->cl4) {
++        munmap(info->cl4_f.buf, info->cl4_f.len);
++        munmap(info->exclave_integrity_f.buf, info->exclave_integrity_f.len);
++        munmap(info->exclave_trustcache_f.buf, info->exclave_trustcache_f.len);
++    }
+ }
+ 
+ static void darwin_machine_init(MachineClass *mc) {
+@@ -314,6 +884,27 @@ static void darwin_machine_class_init(ObjectClass *oc, const void *data) {
+     object_class_property_add_str(oc, "txm", txm_darwin_class_get, txm_darwin_class_set);
+     object_class_property_add_str(oc, "tc", tc_darwin_class_get, tc_darwin_class_set);
+     object_class_property_add_str(oc, "ramdisk", ramdisk_darwin_class_get, ramdisk_darwin_class_set);
++    object_class_property_add_str(oc, "research-cl4", cl4_darwin_class_get, cl4_darwin_class_set);
++    object_class_property_set_description(oc, "research-cl4",
++        "Optional unwrapped ExclaveCore BUND v4 firmware; experimental secure-kernel boot");
++    object_class_property_add_str(oc, "exclave-integrity", exclave_integrity_darwin_class_get, exclave_integrity_darwin_class_set);
++    object_class_property_add_str(oc, "exclave-trustcache", exclave_trustcache_darwin_class_get, exclave_trustcache_darwin_class_set);
++    object_class_property_add_str(oc, "boot-display", boot_display_darwin_class_get, boot_display_darwin_class_set);
++    object_class_property_set_description(oc, "boot-display",
++        "Optional guest boot framebuffer WIDTHxHEIGHT; no GPU emulation");
++    object_class_property_add_bool(oc, "boot-media", boot_media_get, boot_media_set);
++    object_class_property_add_bool(oc, "research-dart", research_dart_get, research_dart_set);
++    object_class_property_add_bool(oc, "research-mcc", research_mcc_get, research_mcc_set);
++    object_class_property_add_bool(oc, "research-ptd", research_ptd_get, research_ptd_set);
++    object_class_property_set_description(oc, "research-mcc",
++        "Experimental T8140 cache-way/DRAM registers; requires matching tree, incomplete MCC");
++    object_class_property_set_description(oc, "research-dart",
++        "Experimental T8110 DCP IOMMU; requires matching tree, no display emulation");
++    object_class_property_set_description(oc, "boot-media",
++        "Register the RAM image through Apple's DiskImages/IOMedia; not persistent storage");
++    object_class_property_add_str(oc, "boot-storage", boot_storage_darwin_class_get, boot_storage_darwin_class_set);
++    object_class_property_set_description(oc, "boot-storage",
++        "Explicit owner-only image copy for file-backed boot-media; original ramdisk is preserved");
+ 
+     darwin_machine_init(mc);
+ }
+diff --git c/hw/arm/meson.build w/hw/arm/meson.build
+index 2a21540..b3962d2 100644
+--- c/hw/arm/meson.build
++++ w/hw/arm/meson.build
+@@ -114,7 +114,7 @@ arm_common_ss.add(files('boot.c'))
+ 
+ hw_common_arch += {'arm': arm_common_ss}
+ 
+-arm_common_ss.add(files('darwin.c', 'xnuboot_sptm.c', 'xnu_patch.c', 'apple_regs.c', 'apple_dtree.c', 'apple_amcc.c', 'macho.c'))
++arm_common_ss.add(files('darwin.c', 'dart-t8110.c', 'mcc-t8140.c', 'ptd-t8140.c', 'pmp-research.c', 'asc-mailbox.c', 'asc-controller.c', 'xnuboot_sptm.c', 'xnu_patch.c', 'apple_regs.c', 'apple_dtree.c', 'apple_amcc.c', 'macho.c'))
+ 
+ arm_common_ss.add(custom_target('apple_regs_autogen.h',
+   output: 'apple_regs_autogen.h',
+diff --git c/hw/arm/trace-events w/hw/arm/trace-events
+index 1b16f71..60097f8 100644
+--- c/hw/arm/trace-events
++++ w/hw/arm/trace-events
+@@ -96,3 +96,16 @@ z2_aer915_event(int8_t event, int8_t len) "i2c event =0x%x len=%d bytes"
+ 
+ # bcm2838.c
+ bcm2838_gic_set_irq(int irq, int level) "gic irq:%d lvl:%d"
++# dart-t8110.c
++tomacco_dart_mmio(const char *action, uint64_t reg, uint64_t value, bool known) "%s offset=0x%" PRIx64 " value=0x%" PRIx64 " supported=%u"
++
++# mcc-t8140.c
++tomacco_mcc_mmio(bool write, unsigned bank, uint64_t reg, uint64_t value, unsigned size, bool known) "write=%u bank=%u offset=0x%" PRIx64 " value=0x%" PRIx64 " size=%u supported=%u"
++
++# ptd-t8140.c
++tomacco_ptd_mmio(bool write, uint64_t reg, uint64_t value, unsigned size, bool known) "write=%u offset=0x%" PRIx64 " value=0x%" PRIx64 " size=%u supported=%u"
++
++# asc-mailbox.c
++tomacco_asc_mailbox_mmio(bool write, uint64_t reg, uint64_t value, unsigned size, bool known) "write=%u offset=0x%" PRIx64 " value=0x%" PRIx64 " size=%u supported=%u"
++
++tomacco_asc_controller_mmio(bool write, uint64_t reg, uint64_t value, unsigned size, bool known) "write=%u offset=0x%" PRIx64 " value=0x%" PRIx64 " size=%u supported=%u"
+diff --git c/hw/arm/xnuboot_sptm.c w/hw/arm/xnuboot_sptm.c
+index b96d421..235fa3c 100644
+--- c/hw/arm/xnuboot_sptm.c
++++ w/hw/arm/xnuboot_sptm.c
+@@ -2,10 +2,13 @@
+ #include "exec/memattrs.h"
+ #include "hw/arm/machines-qom.h"
+ #include "system/address-spaces.h"
++#include "system/system.h"
++#include "qemu/error-report.h"
+ #include "cpu.h"
+ #include <sys/mman.h>
+ #include <fcntl.h>
+ #include <sys/stat.h>
++#include <sys/file.h>
+ #include <inttypes.h>
+ #include "qemu/bitops.h"
+ #include "xnu/boot/xnuboot.h"
+@@ -16,6 +19,7 @@
+ #include "xnu/mach-o/macho_arm64.h"
+ #include "xnu/patch.h"
+ #include "xnu/macho.h"
++#include "exclave-bundle.h"
+ 
+ // #define DEBUG_MEMORY_LAYOUT
+ 
+@@ -44,6 +48,169 @@ static hwaddr vtop(macho_info_t *mi, hwaddr v) {
+     return mi->physlo + (v - mi->virtlo);
+ }
+ 
++typedef struct BootStorage {
++    MemoryRegion ram;
++    Notifier exit;
++    int fd;
++    size_t size;
++} BootStorage;
++
++static void flush_boot_storage(Notifier *notifier, void *unused)
++{
++    BootStorage *storage = container_of(notifier, BootStorage, exit);
++    int mapped, file;
++
++    do {
++        mapped = msync(memory_region_get_ram_ptr(&storage->ram),
++                       storage->size, MS_SYNC);
++    } while (mapped < 0 && errno == EINTR);
++    if (mapped < 0) {
++        error_report("boot-storage msync failed: %s", strerror(errno));
++    }
++    do {
++        file = fsync(storage->fd);
++    } while (file < 0 && errno == EINTR);
++    if (file < 0) {
++        error_report("boot-storage fsync failed: %s", strerror(errno));
++    }
++    fprintf(stderr, "TOMACCO_BOOT_STORAGE_FLUSH bytes=%zu msync=%d fsync=%d\n",
++            storage->size, mapped, file);
++    /* This flush cannot replace a clean guest filesystem unmount. */
++}
++
++static void load_boot_ramdisk(struct xnu_boot_info *info, MachineState *ms,
++                             hwaddr base)
++{
++    struct stat file;
++    BootStorage *storage;
++    int fd;
++
++    if (base < info->dram_base || base - info->dram_base > info->dram_size ||
++        info->ramdisk_f.len > info->dram_size - (base - info->dram_base)) {
++        error_setg(&error_fatal, "boot RAM image does not fit in guest memory");
++        return;
++    }
++    if (!info->boot_storage) {
++        if (address_space_write(&address_space_memory, base,
++                                MEMTXATTRS_UNSPECIFIED, info->ramdisk_f.buf,
++                                info->ramdisk_f.len) != MEMTX_OK) {
++            error_setg(&error_fatal, "Cannot load boot RAM image");
++        }
++        return;
++    }
++    if (!info->boot_media || info->boot_storage[0] != '/' ||
++        info->ramdisk_f.len % DARWIN_PAGE_SIZE) {
++        error_setg(&error_fatal, "boot-storage requires boot-media, an absolute "
++                   "working-copy path and a page-aligned image");
++        return;
++    }
++    /* No creation/truncation here. The caller owns preparation of an explicit
++     * working copy. Refuse devices, aliases of the source and shared inodes. */
++    fd = open(info->boot_storage, O_RDWR | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
++    if (fd < 0) {
++        error_setg_errno(&error_fatal, errno, "Cannot open boot-storage copy");
++        return;
++    }
++    if (fstat(fd, &file) || !S_ISREG(file.st_mode) ||
++        file.st_uid != geteuid() || file.st_nlink != 1 ||
++        (file.st_mode & 0077) || file.st_size != info->ramdisk_f.len ||
++        (file.st_dev == info->ramdisk_f.device &&
++         file.st_ino == info->ramdisk_f.inode)) {
++        close(fd);
++        error_setg(&error_fatal, "boot-storage must be a separate owner-only "
++                   "regular image copy with exactly the source size");
++        return;
++    }
++    if (flock(fd, LOCK_EX | LOCK_NB)) {
++        close(fd);
++        error_setg(&error_fatal, "boot-storage copy is already in use");
++        return;
++    }
++    storage = g_new0(BootStorage, 1);
++    storage->fd = fd;
++    storage->size = file.st_size;
++    /* Overlay just the reserved RAM-image extent. mmap faults in the pages
++     * actually read by the guest, without an eager multi-GiB memory copy.
++     * The RAMBlock owns the descriptor (and lock) for the engine lifetime. */
++    memory_region_init_ram_from_fd(&storage->ram, OBJECT(ms), "boot-storage",
++                                   storage->size, RAM_SHARED | RAM_NAMED_FILE,
++                                   fd, 0, &error_fatal);
++    memory_region_add_subregion_overlap(get_system_memory(), base,
++                                        &storage->ram, 1);
++    storage->exit.notify = flush_boot_storage;
++    qemu_add_exit_notifier(&storage->exit);
++    fprintf(stderr, "TOMACCO_BOOT_STORAGE base=0x%" HWADDR_PRIx
++            " bytes=%zu shared=1 source_preserved=1\n", base, storage->size);
++}
++
++static void prepare_boot_ramfile(struct xnu_boot_info *info, hwaddr base)
++{
++    if (!info->boot_media) {
++        return;
++    }
++    struct dtree_node *chosen = adt_find_node(info->dtree_f.buf, "chosen");
++    uint64_t *size = adt_get_prop_val(chosen, "boot-ramdmg-size");
++    uint64_t *extent = adt_get_prop_val(chosen, "boot-ramdmg-extents");
++
++    if (!size || !extent ||
++        adt_get_prop_len(chosen, "boot-ramdmg-size") != 8 ||
++        adt_get_prop_len(chosen, "boot-ramdmg-extents") != 16) {
++        error_setg(&error_fatal, "boot RAM image requires 8-byte size and 16-byte extent");
++        return;
++    }
++    *size = info->ramdisk_f.len;
++    extent[0] = base;
++    extent[1] = info->ramdisk_f.len;
++    fprintf(stderr, "TOMACCO_BOOT_RAMFILE base=0x%" HWADDR_PRIx " size=%zu\n",
++            base, info->ramdisk_f.len);
++}
++
++static void prepare_boot_video(struct xnu_boot_info *info, boot_args *args)
++{
++    struct dtree_node *vram;
++    uint64_t *reg;
++    hwaddr end, size, base;
++
++    if (!info->video_width) {
++        return;
++    }
++    vram = adt_find_node((struct dtree_node *)info->dtree_f.buf, "vram");
++    if (!vram || adt_get_prop_len(vram, "reg") != 16) {
++        error_setg(&error_fatal, "boot-display requires a 16-byte vram/reg");
++        return;
++    }
++    size = ROUND_NEXT_PAGE((uint64_t)info->video_stride * info->video_height);
++    end = info->dram_base + args->memSize;
++    if (size > args->memSize || end < info->dram_base) {
++        error_setg(&error_fatal, "boot-display does not fit in guest RAM");
++        return;
++    }
++    base = ROUND_DOWN_POW2(end - size, DARWIN_PAGE_SIZE);
++    if (base < args->topOfKernelData) {
++        error_setg(&error_fatal, "boot-display overlaps kernel boot data");
++        return;
++    }
++    info->video_base = base;
++    info->video_size = size;
++    reg = adt_get_prop_val(vram, "reg");
++    reg[0] = base;
++    reg[1] = size;
++    /* Keep the framebuffer out of XNU's page allocator and SPTM's typed
++     * bootstrap region. Extending topOfKernelData leaves untyped pages and
++     * makes SPTM reject the boot before the serial console is available. */
++    args->memSize = base - info->dram_base;
++    args->Video.v_baseAddr = base;
++    args->Video.v_display = 0; /* Text boot console, not a graphics driver. */
++    args->Video.v_width = info->video_width;
++    args->Video.v_height = info->video_height;
++    args->Video.v_rowBytes = info->video_stride;
++    args->Video.v_depth = 32;
++    fprintf(stderr, "TOMACCO_BOOT_DISPLAY base=0x%" HWADDR_PRIx
++            " size=%" HWADDR_PRIu " width=%u height=%u stride=%u\n",
++            base, size, info->video_width, info->video_height,
++            info->video_stride);
++}
++
+ static void set_adt_mmap(struct dtree_node *memory_map, const char *reg_name, hwaddr paddr, size_t sz) {
+     u64 *map_prop = adt_get_prop_val(memory_map, reg_name);
+     if (!map_prop) {
+@@ -97,6 +264,14 @@ static void arm_load_xnu_sptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_inf
+     macho_info_t bkc_mi  = macho_get_info(macho_bkc);
+     macho_info_t txm_mi  = macho_get_info(macho_txm);
+     macho_info_t sptm_mi = macho_get_info(macho_sptm);
++    TomaccoCl4Layout cl4 = {0};
++    if (info->cl4) {
++        const char *error = tomacco_cl4_parse(info->cl4_f.buf, info->cl4_f.len, &cl4);
++        if (error) {
++            error_setg(&error_fatal, "%s", error);
++            return;
++        }
++    }
+ 
+     hwaddr args_base_phys  = 0;
+     hwaddr dtree_base_phys = 0;
+@@ -171,11 +346,15 @@ static void arm_load_xnu_sptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_inf
+         SEGLEN(bkc, "__PRELINK_TEXT") +
+         SEGLEN(bkc, "__DATA_CONST") +
+         SEGLEN(bkc, "__DATA_SPTM") +
++        cl4.rx_size +
+         dtree_size_rounded +
+         tc_size_rounded +
+         DARWIN_PAGE_SIZE; // extra page we skip in front of the device tree
+ 
+-    assert(GET_L2_PT_INDEX(bkc_mi.virtlo) > bytes_before_sptm);
++    if (GET_L2_PT_INDEX(bkc_mi.virtlo) <= bytes_before_sptm) {
++        error_setg(&error_fatal, "Boot images exceed the SPTM placement window");
++        return;
++    }
+     SKIP(GET_L2_PT_INDEX(bkc_mi.virtlo) - bytes_before_sptm);
+ 
+     // To find struct layout in SPTM, search for function that uses the string
+@@ -238,13 +417,29 @@ static void arm_load_xnu_sptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_inf
+         END_ENTRY("BootKC-rs");
+     }
+ 
+-    // CL4-rx, CL4-ro (ignored)
++    if (info->cl4) {
++        if (address_space_write(&address_space_memory, blob_head, MEMTXATTRS_UNSPECIFIED,
++                                info->cl4_f.buf, cl4.rx_size) != MEMTX_OK) {
++            error_setg(&error_fatal, "Cannot load CL4 executable bank");
++            return;
++        }
++        blob_head += cl4.rx_size;
++        END_ENTRY("CL4-rx");
++        /* SPTM reads immediately before DeviceTree during early boot. Keep
++         * that readable guard page in CL4-ro so DeviceTree itself starts at
++         * its header: ExclaveCore receives this memory-map entry directly,
++         * rather than XNU's separately adjusted boot_args.deviceTreeP. */
++        blob_head += PAGE_SIZE;
++        END_ENTRY("CL4-ro");
++    }
+ 
+     // DeviceTree
+     {
+         // SPTM reads a few bytes before the device tree during early boot, and
+         // will panic if you don't provide an extra readable page here.
+-        blob_head += PAGE_SIZE;
++        if (!info->cl4) {
++            blob_head += PAGE_SIZE;
++        }
+         dtree_base_phys = blob_head;
+         blob_head += dtree_size_rounded;
+         END_ENTRY("DeviceTree");
+@@ -318,6 +513,40 @@ static void arm_load_xnu_sptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_inf
+         END_ENTRY("BootKC-le");
+     }
+ 
++    if (info->cl4) {
++        if (address_space_write(&address_space_memory, blob_head, MEMTXATTRS_UNSPECIFIED,
++                                (uint8_t *)info->cl4_f.buf + cl4.rx_size,
++                                cl4.rw_size) != MEMTX_OK) {
++            error_setg(&error_fatal, "Cannot load CL4 writable bank");
++            return;
++        }
++        blob_head += cl4.rw_size;
++        END_ENTRY("CL4-rw");
++        END_ENTRY("CL4-le");
++        mmap_file_t *files[] = { &info->exclave_integrity_f, &info->exclave_trustcache_f };
++        const char *names[] = { "ExclaveOSIntegrityCatalog", "ExclaveOSTrustCache" };
++        for (unsigned i = 0; i < G_N_ELEMENTS(files); i++) {
++            if (address_space_write(&address_space_memory, blob_head, MEMTXATTRS_UNSPECIFIED,
++                                    files[i]->buf, files[i]->len) != MEMTX_OK) {
++                error_setg(&error_fatal, "Cannot load %s", names[i]);
++                return;
++            }
++            set_adt_mmap(map, names[i], blob_head, files[i]->len);
++            g_autofree char *path = g_strdup_printf("chosen/exclave-memory-map/%s", names[i]);
++            struct dtree_node *region = adt_find_node((struct dtree_node *)dtree, path);
++            uint8_t *range = adt_get_prop_val(region, "range");
++            stq_le_p(range, blob_head);
++            stq_le_p(range + 8, files[i]->len);
++            blob_head += ROUND_NEXT_PAGE(files[i]->len);
++            blob_tail = blob_head;
++        }
++        set_adt_mmap(map, "CL4-virt", cl4.virt, 0);
++        set_adt_mmap(map, "CL4-entry", cl4.entry, 0);
++        fprintf(stderr, "TOMACCO_CL4_LOADED rx=%" PRIu64 " rw=%" PRIu64
++                " ranges=%u entry=0x%" PRIx64 "\n",
++                cl4.rx_size, cl4.rw_size, cl4.ranges, cl4.entry);
++    }
++
+     // CL4-dummypage
+     {
+         blob_head += DARWIN_PAGE_SIZE;
+@@ -339,6 +568,7 @@ static void arm_load_xnu_sptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_inf
+         blob_head = ROUND_NEXT_PAGE(blob_head);
+         END_ENTRY("RAMDisk");
+     }
++    prepare_boot_ramfile(info, rd_base_phys);
+ 
+ #undef PUSH_SEG
+ #undef END_ENTRY
+@@ -381,8 +611,16 @@ static void arm_load_xnu_sptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_inf
+         args.memSize = info->dram_size;
+     }
+     args.topOfKernelData = blob_head;
++    prepare_boot_video(info, &args);
+     args.deviceTreeP = dtree_base_phys - args.physBase + args.virtBase;
+-    args.deviceTreeLength = info->dtree_f.len;
++    /* SK maps the boot tree as whole 16 KiB frames. The reserved extent was
++     * rounded above and its RAM tail is zero; XNU still parses node counts. */
++    args.deviceTreeLength = info->cl4 ? dtree_size_rounded : info->dtree_f.len;
++    if (info->cl4) {
++        fprintf(stderr, "TOMACCO_CL4_DEVICE_TREE base=0x%" HWADDR_PRIx
++                " bytes=%zu reserved=%" PRIu64 "\n", dtree_base_phys,
++                info->dtree_f.len, (uint64_t)dtree_size_rounded);
++    }
+     g_strlcpy(args.CommandLine, info->args, BOOT_LINE_LENGTH);
+ 
+ #ifdef DEBUG_MEMORY_LAYOUT
+@@ -431,13 +669,7 @@ static void arm_load_xnu_sptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_inf
+         info->tc_f.len
+     );
+ 
+-    address_space_write(
+-        &address_space_memory,
+-        rd_base_phys,
+-        MEMTXATTRS_UNSPECIFIED,
+-        info->ramdisk_f.buf,
+-        info->ramdisk_f.len
+-    );
++    load_boot_ramdisk(info, ms, rd_base_phys);
+ 
+     info->init_pc = vtop(&sptm_mi, sptm_mi.entrypoint);
+     info->init_x0 = args_base_phys;
+@@ -475,6 +707,7 @@ static void arm_load_xnu_nosptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_i
+     struct dtree_node *map = adt_find_node((struct dtree_node*)info->dtree_f.buf, "chosen/memory-map");
+     set_adt_mmap(map, "TrustCache", tc_base_phys, info->tc_f.len + sizeof(trust_cache_offsets_t));
+     set_adt_mmap(map, "RAMDisk", rd_base_phys, info->ramdisk_f.len);
++    prepare_boot_ramfile(info, rd_base_phys);
+ 
+     boot_args args = {0};
+     args.Revision = kBootArgsRevision2;
+@@ -483,6 +716,7 @@ static void arm_load_xnu_nosptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_i
+     args.physBase = info->dram_base;
+     args.memSize = info->dram_size;
+     args.topOfKernelData = rd_base_phys + ROUND_NEXT_PAGE(info->ramdisk_f.len);
++    prepare_boot_video(info, &args);
+     args.deviceTreeP = dtree_base_phys - args.physBase + args.virtBase;
+     args.deviceTreeLength = info->dtree_f.len;
+     g_strlcpy(args.CommandLine, info->args, BOOT_LINE_LENGTH);
+@@ -534,13 +768,7 @@ static void arm_load_xnu_nosptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_i
+         info->tc_f.len
+     );
+ 
+-    address_space_write(
+-        &address_space_memory,
+-        rd_base_phys,
+-        MEMTXATTRS_UNSPECIFIED,
+-        info->ramdisk_f.buf,
+-        info->ramdisk_f.len
+-    );
++    load_boot_ramdisk(info, ms, rd_base_phys);
+ 
+     info->init_pc = vtop(&bkc_mi, bkc_mi.entrypoint);
+     info->init_x0 = args_base_phys;
+diff --git c/include/xnu/apple_regs.h w/include/xnu/apple_regs.h
+index fd11710..08f6176 100644
+--- c/include/xnu/apple_regs.h
++++ w/include/xnu/apple_regs.h
+@@ -8,3 +8,5 @@
+ #include "xnu/boot/xnuboot.h"
+ 
+ void apple_regs_init(ARMCPU *cpu, AMCCState *amcc, struct dtree_node *dt_root, struct xnu_boot_info *info);
++void apple_exclave_timebase_init(ARMCPU *cpu, Object *owner,
++                                 MemoryRegion *region, hwaddr address);
+diff --git c/include/xnu/boot/xnuboot.h w/include/xnu/boot/xnuboot.h
+index 2c4c01e..acde4ac 100644
+--- c/include/xnu/boot/xnuboot.h
++++ w/include/xnu/boot/xnuboot.h
+@@ -36,15 +36,27 @@ typedef int8_t  i8;
+ typedef struct {
+     void   *buf;
+     size_t  len;
++    dev_t   device;
++    ino_t   inode;
+ } mmap_file_t;
+ 
+ struct xnu_boot_info {
+     // Arguments to a -M darwin machine
+     char *bootkc, *args, *dtree, *sptm, *txm, *tc, *ramdisk;
+     mmap_file_t bootkc_f, dtree_f, sptm_f, txm_f, tc_f, ramdisk_f;
++    char *cl4, *exclave_integrity, *exclave_trustcache;
++    mmap_file_t cl4_f, exclave_integrity_f, exclave_trustcache_f;
+ 
+     uint64_t dram_base, dram_size;
+     bool has_mte;
++    bool boot_media;
++    /* Explicit owner-only working copy; never the source ramdisk inode. */
++    char *boot_storage;
++
++    /* Optional real guest boot framebuffer, not a GPU or UIKit compositor. */
++    char *boot_display;
++    uint32_t video_width, video_height, video_stride;
++    hwaddr video_base, video_size;
+ 
+     // Feedback from the kernel loader back to the darwin machine to boot during reset
+     hwaddr  init_pc, init_x0;
+diff --git c/scripts/darwin/dumpregs.py w/scripts/darwin/dumpregs.py
+index 2ab90fc..da7f6db 100755
+--- c/scripts/darwin/dumpregs.py
++++ w/scripts/darwin/dumpregs.py
+@@ -27,7 +27,6 @@
+ 
+ rs_cpustate = [
+     "CURRENTG",
+-    "SPRR_UPERM_EL0",
+ ]
+ 
+ rs_banked = [
+diff --git c/target/arm/cpu.c w/target/arm/cpu.c
+index 787e4dc..80cd71d 100644
+--- c/target/arm/cpu.c
++++ w/target/arm/cpu.c
+@@ -2486,6 +2486,7 @@ static ObjectClass *arm_cpu_class_by_name(const char *cpu_model)
+ }
+ 
+ static const Property arm_cpu_properties[] = {
++    DEFINE_PROP_BOOL("tomacco-strict-sysregs", ARMCPU, tomacco_strict_sysregs, false),
+     DEFINE_PROP_UINT64("midr", ARMCPU, midr, 0),
+     DEFINE_PROP_UINT64("mp-affinity", ARMCPU,
+                         mp_affinity, ARM64_AFFINITY_INVALID),
+diff --git c/target/arm/cpu.h w/target/arm/cpu.h
+index 575254a..b867099 100644
+--- c/target/arm/cpu.h
++++ w/target/arm/cpu.h
+@@ -817,7 +817,8 @@ typedef struct CPUArchState {
+     // SPRR stuff
+     uint64_t sprr_config_el[4];
+     uint64_t sprr_pperm_el[4];
+-    uint64_t sprr_uperm_el0;
++    /* EL1&0 (VUPERM) and EL2&0 (HUPERM) have independent user permissions. */
++    uint64_t sprr_uperm_el[3];
+ 
+     // GXF stuff (extracted from struct arm_guest_extregs_t in KDK development kernel)
+     uint64_t gxf_config_el[4];
+@@ -1091,6 +1092,10 @@ struct ArchCPU {
+     /* QOM property to indicate we should use the back-compat CNTFRQ default */
+     bool backcompat_cntfrq;
+ 
++    /* Preserve upstream Darwin compatibility, but make research CPUs trap
++     * unknown system registers instead of silently skipping instructions. */
++    bool tomacco_strict_sysregs;
++
+     /* QOM property to indicate we should use the back-compat QARMA5 default */
+     bool backcompat_pauth_default_use_qarma5;
+ 
+diff --git c/target/arm/ptw.c w/target/arm/ptw.c
+index 699da26..a478dbc 100644
+--- c/target/arm/ptw.c
++++ w/target/arm/ptw.c
+@@ -1672,13 +1672,12 @@ static int get_S1prot_sprr(CPUARMState *env, int pxn_uxn, int ap) {
+     };
+ 
+     if (0 == arm_current_el(env)) {
+-        sprr_reg = env->sprr_uperm_el0;
++        sprr_reg = env->sprr_uperm_el[el_is_in_host(env, 0) ? 2 : 1];
+     } else {
+         sprr_reg = env->sprr_pperm_el[arm_current_el(env)];
+     }
+ 
+     sprr_idx = (sprr_reg >> (4 * (pxn_uxn | (ap << 2)))) & 0x0F;
+-
+     if (arm_apple_is_gl(env)) {
+         return gl_perm_table[sprr_idx];
+     } else {
+diff --git c/target/arm/tcg/helper-defs.h w/target/arm/tcg/helper-defs.h
+index 0077aeb..4d2a44b 100644
+--- c/target/arm/tcg/helper-defs.h
++++ w/target/arm/tcg/helper-defs.h
+@@ -1,5 +1,7 @@
+ /* SPDX-License-Identifier: GPL-2.0-or-later */
+ 
++DEF_HELPER_3(tomacco_sysreg_fault, void, env, i64, i32)
++
+ DEF_HELPER_FLAGS_1(sxtb16, TCG_CALL_NO_RWG_SE, i32, i32)
+ DEF_HELPER_FLAGS_1(uxtb16, TCG_CALL_NO_RWG_SE, i32, i32)
+ 
+diff --git c/target/arm/tcg/op_helper.c w/target/arm/tcg/op_helper.c
+index 2384c4b..55f5698 100644
+--- c/target/arm/tcg/op_helper.c
++++ w/target/arm/tcg/op_helper.c
+@@ -27,6 +27,12 @@
+ #include "accel/tcg/probe.h"
+ #include "cpregs.h"
+ #include "qemu/log.h"
++#include "trace.h"
++
++void HELPER(tomacco_sysreg_fault)(CPUARMState *env, uint64_t pc, uint32_t insn)
++{
++    trace_tomacco_arm_sysreg_fault(pc, insn, arm_current_el(env));
++}
+ 
+ // #define LOG_MSRS
+ 
+diff --git c/target/arm/tcg/tlb_helper.c w/target/arm/tcg/tlb_helper.c
+index 4c3f16d..529363e 100644
+--- c/target/arm/tcg/tlb_helper.c
++++ w/target/arm/tcg/tlb_helper.c
+@@ -12,6 +12,7 @@
+ #include "internals.h"
+ #include "cpu-features.h"
+ #include "hw/intc/armv7m_nvic.h"
++#include "trace.h"
+ 
+ /*
+  * Returns true if the stage 1 translation regime is using LPAE format page
+@@ -347,6 +348,9 @@ void arm_cpu_do_transaction_failed(CPUState *cs, hwaddr physaddr,
+ 
+     /* now we have a real cpu fault */
+     cpu_restore_state(cs, retaddr);
++    trace_tomacco_arm_bus_fault(env->aarch64 ? env->pc : env->regs[15],
++                              physaddr, addr, size, access_type, mmu_idx,
++                              response);
+ 
+     fi.ea = arm_extabort_type(response);
+     fi.type = ARMFault_SyncExternal;
+diff --git c/target/arm/tcg/trace-events w/target/arm/tcg/trace-events
+index bf1803c..c2bf8ec 100644
+--- c/target/arm/tcg/trace-events
++++ w/target/arm/tcg/trace-events
+@@ -1,6 +1,12 @@
+ # SPDX-License-Identifier: GPL-2.0-or-later
+ # See docs/devel/tracing.rst for syntax documentation.
+ 
++# tlb_helper.c -- observation only; the original external abort still occurs.
++tomacco_arm_bus_fault(uint64_t pc, uint64_t physical, uint64_t virtaddr, unsigned size, unsigned access, int mmu, unsigned response) "pc=0x%" PRIx64 " physical=0x%" PRIx64 " virtual=0x%" PRIx64 " size=%u access=%u mmu=%d response=%u"
++
++# op_helper.c -- executed unknown register before a strict CPU's real UNDEF.
++tomacco_arm_sysreg_fault(uint64_t pc, uint32_t instruction, unsigned el) "pc=0x%" PRIx64 " instruction=0x%08" PRIx32 " el=%u"
++
+ # gicv5-cpuif.c
+ gicv5_recalc_ppi_hppi(int domain, uint32_t id, uint8_t prio) "domain %d new PPI HPPI id 0x%x prio %u"
+ gicv5_gicr_cdia_fail(int domain, const char *reason) "domain %d CDIA attempt failed: %s"
+diff --git c/target/arm/tcg/translate-a64.c w/target/arm/tcg/translate-a64.c
+index 5381c01..983ebda 100644
+--- c/target/arm/tcg/translate-a64.c
++++ w/target/arm/tcg/translate-a64.c
+@@ -2919,6 +2919,17 @@ static void handle_sys(DisasContext *s, bool isread,
+         qemu_log_mask(LOG_UNIMP, "%s access to unsupported AArch64 "
+                       "system register S%d_%d_c%d_c%d_%d (pc = 0x%016lX)\n",
+                       isread ? "r" : "w", op0, op1, crn, crm, op2, s->pc_curr);
++        if (s->tomacco_strict_sysregs) {
++            uint32_t insn = 0xd5000000 | (isread << 21) | (op0 << 19) |
++                            (op1 << 16) | (crn << 12) | (crm << 8) |
++                            (op2 << 5) | rt;
++            /* Emit at execution, not translation: speculative/unused TBs
++             * must never become evidence of a guest register access. */
++            gen_helper_tomacco_sysreg_fault(tcg_env,
++                                          tcg_constant_i64(s->pc_curr),
++                                          tcg_constant_i32(insn));
++            gen_sysreg_undef(s, isread, op0, op1, op2, crn, crm, rt);
++        }
+         return;
+     }
+ 
+@@ -11053,6 +11064,7 @@ static void aarch64_tr_init_disas_context(DisasContextBase *dcbase,
+     dc->vec_len = 0;
+     dc->vec_stride = 0;
+     dc->cp_regs = arm_cpu->cp_regs;
++    dc->tomacco_strict_sysregs = arm_cpu->tomacco_strict_sysregs;
+     dc->features = env->features;
+     dc->dcz_blocksize = get_dczid_bs(arm_cpu);
+     dc->gm_blocksize = arm_cpu->gm_blocksize;
+diff --git c/target/arm/tcg/translate.h w/target/arm/tcg/translate.h
+index a3d0315..6aa06cb 100644
+--- c/target/arm/tcg/translate.h
++++ w/target/arm/tcg/translate.h
+@@ -107,6 +107,7 @@ typedef struct DisasContext {
+     uint32_t svc_imm;
+     int current_el;
+     GHashTable *cp_regs;
++    bool tomacco_strict_sysregs;
+     uint64_t features; /* CPU features bits */
+     bool aarch64;
+     bool thumb;
+diff --git c/ui/ui-qmp-cmds.c w/ui/ui-qmp-cmds.c
+index 753cc2b..8179ced 100644
+--- c/ui/ui-qmp-cmds.c
++++ w/ui/ui-qmp-cmds.c
+@@ -311,7 +311,7 @@ static bool ppm_save(int fd, pixman_image_t *image, Error **errp)
+         qemu_pixman_linebuf_fill(linebuf, image, width, 0, y);
+         if (qio_channel_write_all(QIO_CHANNEL(ioc),
+                                   (char *)pixman_image_get_data(linebuf),
+-                                  pixman_image_get_stride(linebuf), errp) < 0) {
++                                  width * 3, errp) < 0) {
+             return false;
+         }
+     }

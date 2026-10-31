@@ -1,0 +1,303 @@
+diff --git a/hw/arm/Kconfig b/hw/arm/Kconfig
+--- a/hw/arm/Kconfig
++++ b/hw/arm/Kconfig
+@@ -1,3 +1,13 @@
++config TOMACCO_VPHONE
++    bool
++    default y
++    depends on AARCH64 && TCG
++    select ARM_GICV3
++    select PL011
++    select VMAPPLE_AES
++    select VMAPPLE_CFG
++    select VMAPPLE_BDIF
++
+ config ARM_VIRT
+     bool
+     default y
+diff --git a/hw/arm/meson.build b/hw/arm/meson.build
+--- a/hw/arm/meson.build
++++ b/hw/arm/meson.build
+@@ -121,3 +121,5 @@
+   command: [find_program('../../scripts/darwin/dumpregs.py')],
+   capture: true,
+ ))
++
++arm_common_ss.add(when: 'CONFIG_TOMACCO_VPHONE', if_true: files('vphone-research.c'))
+diff --git a/hw/arm/xnuboot_sptm.c b/hw/arm/xnuboot_sptm.c
+--- a/hw/arm/xnuboot_sptm.c
++++ b/hw/arm/xnuboot_sptm.c
+@@ -284,7 +284,9 @@
+     macho_verify_header(macho_bkc, true);
+     macho_verify_header(macho_txm, false);
+     macho_verify_header(macho_sptm, false);
+-    patch_kc(macho_bkc);
++    if (!info->preserve_kernel) {
++        patch_kc(macho_bkc);
++    }
+ 
+     struct dtree_node *map = adt_find_node((struct dtree_node*)dtree, "chosen/memory-map");
+     hwaddr blob_head = info->dram_base;
+@@ -701,7 +703,9 @@
+     assert(!info->has_mte);
+ 
+     macho_verify_header(macho_bkc, true);
+-    patch_kc(macho_bkc);
++    if (!info->preserve_kernel) {
++        patch_kc(macho_bkc);
++    }
+     macho_load(&bkc_mi, xnu_load_phys);
+ 
+     struct dtree_node *map = adt_find_node((struct dtree_node*)info->dtree_f.buf, "chosen/memory-map");
+diff --git a/include/xnu/boot/xnuboot.h b/include/xnu/boot/xnuboot.h
+--- a/include/xnu/boot/xnuboot.h
++++ b/include/xnu/boot/xnuboot.h
+@@ -49,6 +49,7 @@
+ 
+     uint64_t dram_base, dram_size;
+     bool has_mte;
++    bool preserve_kernel;
+     bool boot_media;
+     /* Explicit owner-only working copy; never the source ramdisk inode. */
+     char *boot_storage;
+diff --git a/hw/display/meson.build b/hw/display/meson.build
+--- a/hw/display/meson.build
++++ b/hw/display/meson.build
+@@ -143,3 +143,5 @@
+ system_ss.add(when: 'CONFIG_OMAP', if_true: files('omap_lcdc.c'))
+ 
+ modules += { 'hw-display': hw_display_modules }
++
++subdir('tomacco-reims')
+diff --git a/hw/display/trace-events b/hw/display/trace-events
+--- a/hw/display/trace-events
++++ b/hw/display/trace-events
+@@ -226,3 +226,14 @@
+ apple_gfx_iosfc_unmap_memory_region(void* mem, void *region) "unmapping @ %p from memory region %p"
+ apple_gfx_iosfc_raise_irq(uint32_t vector) "vector=0x%x"
+ 
++
++reims_vgpu_mmio_realize(uint64_t handle, const char *backend) "handle=0x%"PRIx64" backend=%s"
++reims_vgpu_mmio_gfx_read(uint64_t offset, uint64_t val) "offset=0x%"PRIx64" val=0x%"PRIx64
++reims_vgpu_mmio_gfx_write(uint64_t offset, uint64_t val) "offset=0x%"PRIx64" val=0x%"PRIx64
++reims_vgpu_mmio_iosfc_read(uint64_t offset, uint64_t val) "offset=0x%"PRIx64" val=0x%"PRIx64
++reims_vgpu_mmio_iosfc_write(uint64_t offset, uint64_t val) "offset=0x%"PRIx64" val=0x%"PRIx64
++reims_vgpu_mmio_irq_gfx(void) "pulse gfx IRQ"
++reims_vgpu_mmio_irq_iosfc(void) "pulse iosfc IRQ"
++reims_vgpu_mmio_scanout(uint64_t mapping_id, uint64_t width, uint64_t height) "mapping=%"PRIu64" %"PRIu64"x%"PRIu64
++reims_vgpu_mmio_mode_change(uint64_t width, uint64_t height) "mode=%"PRIu64"x%"PRIu64
++reims_vgpu_mmio_cursor(uint64_t x, uint64_t y, uint64_t show) "x=%"PRIu64" y=%"PRIu64" show=%"PRIu64
+diff --git a/hw/vmapple/aes.c b/hw/vmapple/aes.c
+--- a/hw/vmapple/aes.c
++++ b/hw/vmapple/aes.c
+@@ -42,7 +42,7 @@
+ #define CMD_KEY_BLOCK_MODE_MASK  (0x3 << CMD_KEY_BLOCK_MODE_SHIFT)
+ #define CMD_IV            0x2
+ #define CMD_IV_CONTEXT_SHIFT     26
+-#define CMD_IV_CONTEXT_MASK      (0x3 << CMD_KEY_CONTEXT_SHIFT)
++#define CMD_IV_CONTEXT_MASK      (0x3 << CMD_IV_CONTEXT_SHIFT)
+ #define CMD_DSB           0x3
+ #define CMD_SKG           0x4
+ #define CMD_DATA          0x5
+@@ -92,26 +92,13 @@
+ typedef struct Key {
+     uint32_t key_len;
+     uint8_t key[32];
++    bool is_encrypt;
++    QCryptoCipherMode block_mode;
+ } Key;
+ 
+ typedef struct IV {
+     uint32_t iv[4];
+ } IV;
+-
+-static Key builtin_keys[CMD_KEY_SELECT_MAX_IDX + 1] = {
+-    [1] = {
+-        .key_len = 32,
+-        .key = { 0x1 },
+-    },
+-    [2] = {
+-        .key_len = 32,
+-        .key = { 0x2 },
+-    },
+-    [3] = {
+-        .key_len = 32,
+-        .key = { 0x3 },
+-    }
+-};
+ 
+ struct AESState {
+     SysBusDevice parent_obj;
+@@ -131,8 +118,6 @@
+     uint32_t fifo_idx;
+     Key key[2];
+     IV iv[4];
+-    bool is_encrypt;
+-    QCryptoCipherMode block_mode;
+ };
+ 
+ static void aes_update_irq(AESState *s)
+@@ -200,27 +185,34 @@
+ 
+     switch ((cmd & CMD_KEY_BLOCK_MODE_MASK) >> CMD_KEY_BLOCK_MODE_SHIFT) {
+     case 0:
+-        s->block_mode = QCRYPTO_CIPHER_MODE_ECB;
++        s->key[ctxt].block_mode = QCRYPTO_CIPHER_MODE_ECB;
+         break;
+     case 1:
+-        s->block_mode = QCRYPTO_CIPHER_MODE_CBC;
+-        break;
+-    default:
+-        return false;
+-    }
+-
+-    s->is_encrypt = cmd & CMD_KEY_ENCRYPT_MASK;
++        s->key[ctxt].block_mode = QCRYPTO_CIPHER_MODE_CBC;
++        break;
++    default:
++        return false;
++    }
++
++    s->key[ctxt].is_encrypt = cmd & CMD_KEY_ENCRYPT_MASK;
+     key_len = key_lens[(cmd & CMD_KEY_KEY_LEN_MASK) >> CMD_KEY_KEY_LEN_SHIFT];
+ 
+     if (key_select) {
+         trace_aes_cmd_key_select_builtin(ctxt, key_select,
+-                                         s->is_encrypt ? "en" : "de",
+-                                         QCryptoCipherMode_str(s->block_mode));
+-        s->key[ctxt] = builtin_keys[key_select];
++                                         s->key[ctxt].is_encrypt ? "en" : "de",
++                                         QCryptoCipherMode_str(s->key[ctxt].block_mode));
++        /* This research board has no provisioned hardware-bound secrets.
++         * Never substitute QEMU's constant example keys for UID/GID keys. */
++        memset(&s->key[ctxt], 0, sizeof(s->key[ctxt]));
++        s->irq_status |= REG_IRQ_STATUS_INVALID_CMD;
++        qemu_log_mask(LOG_GUEST_ERROR,
++                      "tomacco-vphone AES: hardware key selector %u unavailable\n",
++                      key_select);
++        return true; /* consume the rejected command; do not wedge the FIFO */
+     } else {
+         trace_aes_cmd_key_select_new(ctxt, key_len,
+-                                     s->is_encrypt ? "en" : "de",
+-                                     QCryptoCipherMode_str(s->block_mode));
++                                     s->key[ctxt].is_encrypt ? "en" : "de",
++                                     QCryptoCipherMode_str(s->key[ctxt].block_mode));
+         if (key_len > sizeof(s->key[ctxt].key)) {
+             return false;
+         }
+@@ -253,7 +245,7 @@
+ 
+ static void dump_data(const char *desc, const void *p, size_t len)
+ {
+-    static const size_t MAX_LEN = 0x1000;
++    enum { MAX_LEN = 0x1000 };
+     char hex[MAX_LEN * 2 + 1] = "";
+ 
+     if (len > MAX_LEN) {
+@@ -267,7 +259,7 @@
+ static bool cmd_data(AESState *s)
+ {
+     uint32_t cmd = s->fifo[0];
+-    uint32_t ctxt_iv = 0;
++    uint32_t ctxt_iv = (cmd & CMD_DATA_IV_CTX_MASK) >> CMD_DATA_IV_CTX_SHIFT;
+     uint32_t ctxt_key = (cmd & CMD_DATA_KEY_CTX_MASK) >> CMD_DATA_KEY_CTX_SHIFT;
+     uint32_t len = cmd & CMD_DATA_LEN_MASK;
+     uint64_t src_addr = s->fifo[2];
+@@ -324,7 +316,7 @@
+         qemu_log_mask(LOG_GUEST_ERROR, "%s: Invalid key length\n", __func__);
+         return false;
+     }
+-    cipher = qcrypto_cipher_new(alg, s->block_mode,
++    cipher = qcrypto_cipher_new(alg, s->key[ctxt_key].block_mode,
+                                 s->key[ctxt_key].key,
+                                 s->key[ctxt_key].key_len, NULL);
+     if (!cipher) {
+@@ -332,14 +324,14 @@
+                       __func__);
+         return false;
+     }
+-    if (s->block_mode != QCRYPTO_CIPHER_MODE_ECB) {
++    if (s->key[ctxt_key].block_mode != QCRYPTO_CIPHER_MODE_ECB) {
+         if (qcrypto_cipher_setiv(cipher, (void *)s->iv[ctxt_iv].iv,
+                                  sizeof(s->iv[ctxt_iv].iv), NULL) != 0) {
+             qemu_log_mask(LOG_GUEST_ERROR, "%s: Failed to set IV\n", __func__);
+             return false;
+         }
+     }
+-    if (s->is_encrypt) {
++    if (s->key[ctxt_key].is_encrypt) {
+         if (qcrypto_cipher_encrypt(cipher, src->data, dst->data, len, NULL) != 0) {
+             qemu_log_mask(LOG_GUEST_ERROR, "%s: Encryption failed\n", __func__);
+             return false;
+@@ -360,6 +352,11 @@
+         return false;
+     }
+ 
++    if (len >= 16 && s->key[ctxt_key].block_mode == QCRYPTO_CIPHER_MODE_CBC) {
++        const uint8_t *tail = s->key[ctxt_key].is_encrypt ? dst->data : src->data;
++        memcpy(s->iv[ctxt_iv].iv, tail + len - 16, 16);
++    }
++
+     return true;
+ }
+ 
+@@ -437,6 +434,7 @@
+         break;
+     default:
+         s->irq_status |= REG_IRQ_STATUS_INVALID_CMD;
++        success = true; /* consume unsupported commands after signalling error */
+         break;
+     }
+ 
+@@ -544,6 +542,11 @@
+     s->irq_status = 0;
+     s->irq_enable = 0;
+     s->watermark = 0;
++    s->flag_info = 0;
++    s->fifo_idx = 0;
++    memset(s->fifo, 0, sizeof(s->fifo));
++    memset(s->key, 0, sizeof(s->key));
++    memset(s->iv, 0, sizeof(s->iv));
+ }
+ 
+ static void aes_init(Object *obj)
+diff --git a/hw/vmapple/bdif.c b/hw/vmapple/bdif.c
+--- a/hw/vmapple/bdif.c
++++ b/hw/vmapple/bdif.c
+@@ -82,6 +82,8 @@
+ 
+     switch (offset & ~REG_DEVID_MASK) {
+     case REG_STATUS:
++        /* vphone600 checks this as SimpleVirtio's custom_device_id (1),
++         * not a media-present flag. Missing media fails the read command. */
+         ret = REG_STATUS_ACTIVE;
+         break;
+     case REG_CFG:
+@@ -137,7 +139,7 @@
+ static void vblk_cmd(uint64_t devid, BlockBackend *blk, uint64_t gp_addr,
+                      uint64_t static_off)
+ {
+-    VblkReq req;
++    VblkReq req = { 0 };
+     VblkSector sector;
+     uint64_t off = 0;
+     g_autofree char *buf = NULL;
+@@ -148,10 +150,17 @@
+     dma_result = dma_memory_read(&address_space_memory, gp_addr,
+                                  &req, sizeof(req), MEMTXATTRS_UNSPECIFIED);
+     if (dma_result != MEMTX_OK) {
+-        goto out;
++        return; /* no valid completion pointer was read */
+     }
+ 
+     le2cpu_req(&req);
++
++    if (req.retval.len != 1) {
++        return;
++    }
++    if (!blk || !blk_is_available(blk)) {
++        goto out;
++    }
+ 
+     if (req.sector.len != sizeof(sector)) {
+         goto out;

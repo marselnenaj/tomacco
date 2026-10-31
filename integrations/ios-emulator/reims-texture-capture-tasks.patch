@@ -1,0 +1,234 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+--- a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -1216,10 +1216,13 @@
+ /// flight instead of the last half millisecond of a batch.
+ pub const BATCH_DRAWS: &str = "REIMS_VGPU_BATCH_DRAWS";
+ 
+-/// **A count, not a switch: a guest task id.** Write the texels that one task's
+-/// draws sample and the frames its render Stores land, as raw files under
++/// **A list of ids, not a switch: one guest task id, or several separated by
++/// commas** (read with [`ids`]). Write the texels that those tasks' draws sample
++/// and the frames their render Stores land, as raw files under
+ /// `texture-capture/` in [`LOG_DIRECTORY`]. Without a log directory it writes
+-/// nothing.
++/// nothing. Task ids are handed out in the order guest processes connect, so the
++/// same process can hold a different id on the next boot; naming every id it has
++/// held catches it on any of them.
+ ///
+ /// Diagnostic capture in the sense of [`AIR_CAPTURE`]: it observes and never
+ /// decides. Every draw, bind and Store runs exactly as it does unset; the cost is
+@@ -1436,6 +1439,44 @@
+     }
+ }
+ 
++/// The ids a list variable names, or why the value was not usable.
++///
++/// Separate from [`Count`] because a list of ids is not a bound: nothing about it
++/// narrows, and `0` is an id rather than a cap that stops the device.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub enum Ids {
++    /// Nothing set.
++    Unset,
++    /// One or more ids, in the order given.
++    Named(Vec<u32>),
++    /// Set to something that is not a comma-separated list of ids, carrying the
++    /// raw text so the refusal can quote what it rejected.
++    Refused(String),
++}
++
++/// Read `name` as one id or a comma-separated list of ids.
++pub fn ids(name: &str) -> Ids {
++    parse_ids(std::env::var_os(name).map(|raw| raw.to_string_lossy().into_owned()))
++}
++
++fn parse_ids(value: Option<String>) -> Ids {
++    let Some(value) = value else {
++        return Ids::Unset;
++    };
++    let trimmed = value.trim();
++    if trimmed.is_empty() {
++        return Ids::Unset;
++    }
++    match trimmed
++        .split(',')
++        .map(|id| id.trim().parse::<u32>())
++        .collect::<Result<Vec<_>, _>>()
++    {
++        Ok(ids) => Ids::Named(ids),
++        Err(_) => Ids::Refused(value),
++    }
++}
++
+ /// Which of a fixed set of named alternatives the operator asked for, or why
+ /// the value was not usable.
+ ///
+@@ -1578,6 +1619,23 @@
+     use super::*;
+ 
+     #[test]
++    fn an_id_list_names_every_id_and_refuses_anything_else() {
++        assert_eq!(parse_ids(None), Ids::Unset);
++        assert_eq!(parse_ids(Some(" ".into())), Ids::Unset);
++        assert_eq!(parse_ids(Some("6".into())), Ids::Named(vec![6]));
++        assert_eq!(
++            parse_ids(Some(" 4, 6,0 ".into())),
++            Ids::Named(vec![4, 6, 0])
++        );
++        for refused in ["4,,6", "4;6", "-1", "six", "4,"] {
++            assert_eq!(
++                parse_ids(Some(refused.into())),
++                Ids::Refused(refused.into())
++            );
++        }
++    }
++
++    #[test]
+     fn panel_contract_preserves_portrait_geometry_density_and_refresh() {
+         let panel = Panel::parse("1170x2532@60:65x141", 8192, 120).unwrap();
+         assert_eq!(panel.pixels(), (1170, 2532));
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs
+@@ -1,4 +1,4 @@
+-//! Write the texels one task's draws sample and store, for offline inspection.
++//! Write the texels named tasks' draws sample and store, for offline inspection.
+ //!
+ //! A diagnostic capture in the sense of `AIR_CAPTURE`: it observes and never
+ //! decides. Every draw, bind and Store runs exactly as it does with the switch
+@@ -7,13 +7,14 @@
+ //! appears — names no failing record: every draw resolves, every Store lands,
+ //! and the only evidence of which step lost the content is the content itself.
+ //!
+-//! [`crate::config::TEXTURE_CAPTURE`] names one guest task. Its sampled sources
+-//! (as the bind uploads or reads them) and its render Stores (as the resident
+-//! holds them) are written to `<log directory>/texture-capture/`, one raw file
+-//! per distinct content, named by sequence, role, ref, pipeline, extent, texel
+-//! layout and elapsed milliseconds. A source that binds the same bytes again
+-//! under the same ref is written once. The total is bounded by file count and
+-//! bytes; reaching either bound is reported once and ends the capture.
++//! [`crate::config::TEXTURE_CAPTURE`] names one guest task or several. Their
++//! sampled sources (as the bind uploads or reads them) and their render Stores
++//! (as the resident holds them) are written to `<log directory>/texture-capture/`,
++//! one raw file per distinct content, named by sequence, task, role, ref,
++//! pipeline, extent, texel layout and elapsed milliseconds; each `draws.log` line
++//! starts with its task. A source that binds the same bytes again under the same
++//! task and ref is written once. The total is bounded by file count and bytes;
++//! reaching either bound is reported once and ends the capture.
+ 
+ use std::collections::HashMap;
+ use std::hash::{Hash, Hasher};
+@@ -28,24 +29,29 @@
+ 
+ struct Capture {
+     directory: PathBuf,
+-    task_id: u32,
++    task_ids: Vec<u32>,
++}
++
++impl Capture {
++    fn names(&self, task_id: u32) -> bool {
++        self.task_ids.contains(&task_id)
++    }
+ }
+ 
+ fn capture() -> Option<&'static Capture> {
+     static CAPTURE: OnceLock<Option<Capture>> = OnceLock::new();
+     CAPTURE
+         .get_or_init(|| {
+-            let task_id =
+-                match crate::config::count(crate::config::TEXTURE_CAPTURE, u64::from(u32::MAX)) {
+-                    crate::config::Count::Unset => return None,
+-                    crate::config::Count::Narrowed(task) => task as u32,
+-                    crate::config::Count::Refused(value) => {
+-                        crate::observe::fail(format!(
+-                            "texture_capture reason=task_unreadable value={value:?}"
+-                        ));
+-                        return None;
+-                    }
+-                };
++            let task_ids = match crate::config::ids(crate::config::TEXTURE_CAPTURE) {
++                crate::config::Ids::Unset => return None,
++                crate::config::Ids::Named(task_ids) => task_ids,
++                crate::config::Ids::Refused(value) => {
++                    crate::observe::fail(format!(
++                        "texture_capture reason=task_unreadable value={value:?}"
++                    ));
++                    return None;
++                }
++            };
+             let crate::config::LogDirectory::Directory(base) = crate::config::log_directory()
+             else {
+                 crate::observe::fail(
+@@ -63,10 +69,13 @@
+                 return None;
+             }
+             crate::observe::off(format!(
+-                "texture_capture task={task_id} dir={}",
++                "texture_capture tasks={task_ids:?} dir={}",
+                 directory.display()
+             ));
+-            Some(Capture { directory, task_id })
++            Some(Capture {
++                directory,
++                task_ids,
++            })
+         })
+         .as_ref()
+ }
+@@ -74,7 +83,7 @@
+ /// Whether `task_id` is the task being captured. Callers ask before doing any
+ /// readback a capture would need, so an unset switch costs one load.
+ pub(crate) fn wants(task_id: u32) -> bool {
+-    capture().is_some_and(|capture| capture.task_id == task_id)
++    capture().is_some_and(|capture| capture.names(task_id))
+ }
+ 
+ /// Write one capture. `role` is `sample` or `store`; `layout` is the texel
+@@ -93,8 +102,8 @@
+     static FILES: AtomicU64 = AtomicU64::new(0);
+     static BYTES: AtomicU64 = AtomicU64::new(0);
+     static EXHAUSTED: AtomicBool = AtomicBool::new(false);
+-    static LAST: OnceLock<Mutex<HashMap<(&'static str, u32), u64>>> = OnceLock::new();
+-    let Some(capture) = capture().filter(|capture| capture.task_id == task_id) else {
++    static LAST: OnceLock<Mutex<HashMap<(&'static str, u32, u32), u64>>> = OnceLock::new();
++    let Some(capture) = capture().filter(|capture| capture.names(task_id)) else {
+         return;
+     };
+     let mut hasher = std::collections::hash_map::DefaultHasher::new();
+@@ -106,7 +115,7 @@
+             .get_or_init(|| Mutex::new(HashMap::new()))
+             .lock()
+             .unwrap_or_else(|poisoned| poisoned.into_inner());
+-        if last.insert((role, texture_ref), digest) == Some(digest) {
++        if last.insert((role, task_id, texture_ref), digest) == Some(digest) {
+             return;
+         }
+     }
+@@ -126,7 +135,7 @@
+         .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+         .collect();
+     let name = format!(
+-        "{sequence:05}-{role}-r{texture_ref}-p{pipeline_ref}-{width}x{height}-{layout}-t{}.raw",
++        "{sequence:05}-k{task_id}-{role}-r{texture_ref}-p{pipeline_ref}-{width}x{height}-{layout}-t{}.raw",
+         crate::observe::elapsed_us() / 1000
+     );
+     if let Err(e) = std::fs::write(capture.directory.join(&name), bytes) {
+@@ -294,7 +303,7 @@
+     use std::io::Write as _;
+     static LINES: AtomicU64 = AtomicU64::new(0);
+     static FILE: OnceLock<Option<Mutex<std::fs::File>>> = OnceLock::new();
+-    let Some(capture) = capture().filter(|capture| capture.task_id == task_id) else {
++    let Some(capture) = capture().filter(|capture| capture.names(task_id)) else {
+         return;
+     };
+     if LINES.fetch_add(1, Ordering::Relaxed) >= MAX_DRAW_LINES {
+@@ -314,7 +323,7 @@
+         return;
+     };
+     let mut file = file.lock().unwrap_or_else(|p| p.into_inner());
+-    let _ = file.write_all(line.as_bytes());
++    let _ = file.write_all(format!("task={task_id} {line}").as_bytes());
+ }
+ 
+ /// Record the depth-stencil state a captured task's draw bound, as decoded,

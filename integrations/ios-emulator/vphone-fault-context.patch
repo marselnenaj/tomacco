@@ -1,0 +1,61 @@
+--- a/target/arm/tcg/op_helper.c
++++ b/target/arm/tcg/op_helper.c
+@@ -28,10 +28,13 @@
+ #include "cpregs.h"
+ #include "qemu/log.h"
+ #include "trace.h"
++#include "vphone-fault.h"
+ 
+ void HELPER(tomacco_sysreg_fault)(CPUARMState *env, uint64_t pc, uint32_t insn)
+ {
+-    trace_tomacco_arm_sysreg_fault(pc, insn, arm_current_el(env));
++    trace_tomacco_arm_sysreg_fault(pc, insn, arm_current_el(env),
++                                 env_cpu(env)->cpu_index);
++    tomacco_trace_fault_context(env, pc, "sysreg");
+ }
+ 
+ // #define LOG_MSRS
+--- a/target/arm/tcg/tlb_helper.c
++++ b/target/arm/tcg/tlb_helper.c
+@@ -13,6 +13,7 @@
+ #include "cpu-features.h"
+ #include "hw/intc/armv7m_nvic.h"
+ #include "trace.h"
++#include "vphone-fault.h"
+ 
+ /*
+  * Returns true if the stage 1 translation regime is using LPAE format page
+@@ -350,7 +351,9 @@
+     cpu_restore_state(cs, retaddr);
+     trace_tomacco_arm_bus_fault(env->aarch64 ? env->pc : env->regs[15],
+                               physaddr, addr, size, access_type, mmu_idx,
+-                              response);
++                              response, cs->cpu_index);
++    tomacco_trace_fault_context(env, env->aarch64 ? env->pc : env->regs[15],
++                               "bus");
+ 
+     fi.ea = arm_extabort_type(response);
+     fi.type = ARMFault_SyncExternal;
+--- a/target/arm/tcg/trace-events
++++ b/target/arm/tcg/trace-events
+@@ -2,10 +2,10 @@
+ # See docs/devel/tracing.rst for syntax documentation.
+ 
+ # tlb_helper.c -- observation only; the original external abort still occurs.
+-tomacco_arm_bus_fault(uint64_t pc, uint64_t physical, uint64_t virtaddr, unsigned size, unsigned access, int mmu, unsigned response) "pc=0x%" PRIx64 " physical=0x%" PRIx64 " virtual=0x%" PRIx64 " size=%u access=%u mmu=%d response=%u"
++tomacco_arm_bus_fault(uint64_t pc, uint64_t physical, uint64_t virtaddr, unsigned size, unsigned access, int mmu, unsigned response, unsigned cpu) "pc=0x%" PRIx64 " physical=0x%" PRIx64 " virtual=0x%" PRIx64 " size=%u access=%u mmu=%d response=%u cpu=%u"
+ 
+ # op_helper.c -- executed unknown register before a strict CPU's real UNDEF.
+-tomacco_arm_sysreg_fault(uint64_t pc, uint32_t instruction, unsigned el) "pc=0x%" PRIx64 " instruction=0x%08" PRIx32 " el=%u"
++tomacco_arm_sysreg_fault(uint64_t pc, uint32_t instruction, unsigned el, unsigned cpu) "pc=0x%" PRIx64 " instruction=0x%08" PRIx32 " el=%u cpu=%u"
+ 
+ # gicv5-cpuif.c
+ gicv5_recalc_ppi_hppi(int domain, uint32_t id, uint8_t prio) "domain %d new PPI HPPI id 0x%x prio %u"
+@@ -15,3 +15,7 @@
+ gicv5_cddi(int domain, uint32_t id) "domain %d CDDI deactivating interrupt ID 0x%x"
+ gicv5_update_irq_fiq(bool irq, bool fiq, bool nmi) "now IRQ %d FIQ %d NMI %d"
+ gicv5_update_ppi_state(int ppi, bool level) "PPI %d source level now %d"
++
++# Original AArch64 fault state; enabled explicitly for local bring-up logs.
++tomacco_arm_fault_context(unsigned cpu, uint64_t pc, const char *kind, uint32_t pstate, unsigned el, uint64_t tcr, uint64_t ttbr0, uint64_t ttbr1) "cpu=%u pc=0x%" PRIx64 " kind=%s pstate=0x%" PRIx32 " el=%u tcr_el1=0x%" PRIx64 " ttbr0_el1=0x%" PRIx64 " ttbr1_el1=0x%" PRIx64
++tomacco_arm_fault_registers(unsigned cpu, uint64_t pc, unsigned first, uint64_t a, uint64_t b, uint64_t c, uint64_t d) "cpu=%u pc=0x%" PRIx64 " first=%u values=0x%" PRIx64 ",0x%" PRIx64 ",0x%" PRIx64 ",0x%" PRIx64

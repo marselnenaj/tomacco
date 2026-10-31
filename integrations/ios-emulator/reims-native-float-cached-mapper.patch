@@ -1,0 +1,140 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -1023,35 +1023,88 @@
+ /// Compare a live MappingInternal with the retained CPU Store incarnation.
+ /// This reads the existing protocol's identity, descriptor and complete table
+ /// plan without updating DeviceState, retiring aliases or touching the engine.
+-/// Unreadable live fields are not a cached-plan success. A caller can choose
+-/// the owned route before acquiring a lease; after a GPU wait a failed witness
+-/// refuses copying into prepared guest spans.
++/// The resolver's existing NoCpu/Unmapped cached-plan policy is carried as an
++/// explicit unwitnessed outcome, never a verified re-walk. Other read/contract
++/// failures refuse copying. No CPU substitution or host capability is added.
++pub(crate) enum LiveMappingWitness {
++    Verified,
++    CachedUnwitnessed(CachedMapperAlias),
++}
++
++pub(crate) enum CachedMapperAlias {
++    NoCpu,
++    Unmapped,
++}
++
++impl CachedMapperAlias {
++    pub(crate) fn host_error(&self) -> MemError {
++        match self {
++            Self::NoCpu => MemError::NoCpu,
++            Self::Unmapped => MemError::Unmapped,
++        }
++    }
++}
++
++impl LiveMappingWitness {
++    pub(crate) fn note_postread(self) {
++        use crate::runtime::drain::note_store_route;
++        match self {
++            Self::Verified => note_store_route("native_image_postread_mapper_vouched_n"),
++            Self::CachedUnwitnessed(why) => {
++                note_store_route("native_image_postread_mapper_unwitnessed_n");
++                note_store_route(match why {
++                    CachedMapperAlias::NoCpu => "native_image_postread_mapper_no_cpu_n",
++                    CachedMapperAlias::Unmapped => "native_image_postread_mapper_unmapped_n",
++                });
++            }
++        }
++    }
++}
++
+ pub(crate) fn check_live_mapping_storage<H: HostMemory + HostOps>(
+     state: &DeviceState,
+     host: &H,
+     mapping_id: u32,
+-) -> Result<(), RectBatchRefusal> {
++) -> Result<LiveMappingWitness, RectBatchRefusal> {
+     use RectBatchRefusal as R;
+     let m = state.mappings.get(&mapping_id).ok_or(R::StorageChanged)?;
+     if !m.mapped || m.page_entries.is_empty() {
+         return Err(R::StorageChanged);
+     }
+     if m.mapping_internal == 0 {
+-        return Ok(());
++        return Ok(LiveMappingWitness::Verified);
+     }
+     let mem = MapperMem::new(host);
+     let contract = |why| match mem.last_error() {
+         Some(error) => R::MapperRead(error),
+         None => R::MapperContract(why),
+     };
+-    let fields = read_mapper_internal(
++    let fields = match read_mapper_internal(
+         &mem,
+         m.mapping_internal,
+         state.mapper_device_kva != 0,
+         state.mapper_device_kva,
+         m.mapping_layout,
+-    )
+-    .map_err(contract)?;
++    ) {
++        Ok(fields) => fields,
++        Err(why) => match mem.last_error() {
++            // Exact existing resolver policy: an unavailable CPU-backed KVA
++            // alias does not revoke the already captured physical page plan.
++            // Only the initial internal-read failure has that policy; a later
++            // page-table failure remains a typed refusal.
++            Some(MemError::NoCpu) => {
++                return Ok(LiveMappingWitness::CachedUnwitnessed(
++                    CachedMapperAlias::NoCpu,
++                ))
++            }
++            Some(MemError::Unmapped) => {
++                return Ok(LiveMappingWitness::CachedUnwitnessed(
++                    CachedMapperAlias::Unmapped,
++                ))
++            }
++            _ => return Err(contract(why)),
++        },
++    };
+     let status = validate_mapper_internal(&mem, mapping_id, &fields);
+     if status != iosurface_pages::Status::Ok {
+         return Err(contract(status));
+@@ -1081,7 +1134,7 @@
+     if plan.page_table_kva != m.page_table_kva || plan.entries != m.page_entries {
+         return Err(R::MapperPlanChanged);
+     }
+-    Ok(())
++    Ok(LiveMappingWitness::Verified)
+ }
+ 
+ /// Fail-closed page-list revalidation before host writeback or import-present.
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+@@ -241,8 +241,8 @@
+             .get(&self.mapping_id)
+             .is_some_and(|m| m.mapping_internal != 0)
+         {
+-            super::check_live_mapping_storage(state, self.views.host, self.mapping_id)?;
+-            crate::runtime::drain::note_store_route("native_image_postread_mapper_vouched_n");
++            super::check_live_mapping_storage(state, self.views.host, self.mapping_id)?
++                .note_postread();
+         }
+         match super::backing_pages_witness(state, self.views.host, self.mapping_id) {
+             super::BackingWitness::Drifted => Err(RectBatchRefusal::PagesNotOurs),
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+@@ -261,8 +261,14 @@
+         state: &DeviceState,
+         host: &mut M,
+     ) -> Result<NativeImageSourcePlan, NativeImageWriteRefusal> {
+-        mapper::check_live_mapping_storage(state, host, self.mapping_id)
+-            .map_err(NativeImageWriteRefusal::Transfer)?;
++        if let mapper::LiveMappingWitness::CachedUnwitnessed(why) =
++            mapper::check_live_mapping_storage(state, host, self.mapping_id)
++                .map_err(NativeImageWriteRefusal::Transfer)?
++        {
++            crate::observe::Emit::decline("native_float_lease_cached_mapper", &why.host_error())
++                .field("mapping", self.mapping_id)
++                .fail_once(u64::from(self.mapping_id));
++        }
+         if host.map_pages_stable() {
+             return Ok(NativeImageSourcePlan::StableViews);
+         }

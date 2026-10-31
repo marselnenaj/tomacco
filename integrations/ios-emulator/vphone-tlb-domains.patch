@@ -1,0 +1,117 @@
+diff --git c/accel/tcg/cputlb.c w/accel/tcg/cputlb.c
+index 7f7c208..c77db3f 100644
+--- c/accel/tcg/cputlb.c
++++ w/accel/tcg/cputlb.c
+@@ -348,6 +348,25 @@ void tlb_destroy(CPUState *cpu)
+     }
+ }
+ 
++/* A separate firmware processor can share RAM without sharing translations.
++ * Do not send its guest TLBI requests into the application's page tables, or
++ * vice versa. Normal boards retain the common, zero-initialized domain.
++ * This is only for guest translation maintenance; RAM/TB invalidation still
++ * follows the physical memory mappings across every CPU.
++ */
++static bool tlb_broadcast_local(CPUState *src)
++{
++    CPUState *cpu;
++
++    CPU_FOREACH(cpu) {
++        if (cpu != src &&
++            cpu->tlb_broadcast_domain == src->tlb_broadcast_domain) {
++            return false;
++        }
++    }
++    return true;
++}
++
+ /* flush_all_helper: run fn across all cpus
+  *
+  * If the wait flag is set then the src cpu's helper will be queued as
+@@ -361,7 +380,8 @@ static void flush_all_helper(CPUState *src, run_on_cpu_func fn,
+     CPUState *cpu;
+ 
+     CPU_FOREACH(cpu) {
+-        if (cpu != src) {
++        if (cpu != src &&
++            cpu->tlb_broadcast_domain == src->tlb_broadcast_domain) {
+             async_run_on_cpu(cpu, fn, d);
+         }
+     }
+@@ -427,6 +447,10 @@ void tlb_flush_by_mmuidx_all_cpus_synced(CPUState *src_cpu, MMUIdxMap idxmap)
+ 
+     tlb_debug("mmu_idx: 0x%"PRIx16"\n", idxmap);
+ 
++    if (tlb_broadcast_local(src_cpu)) {
++        tlb_flush_by_mmuidx(src_cpu, idxmap);
++        return;
++    }
+     flush_all_helper(src_cpu, fn, RUN_ON_CPU_HOST_INT(idxmap));
+     async_safe_run_on_cpu(src_cpu, fn, RUN_ON_CPU_HOST_INT(idxmap));
+ }
+@@ -624,6 +648,11 @@ void tlb_flush_page_by_mmuidx_all_cpus_synced(CPUState *src_cpu,
+     /* This should already be page aligned */
+     addr &= TARGET_PAGE_MASK;
+ 
++    if (tlb_broadcast_local(src_cpu)) {
++        tlb_flush_page_by_mmuidx(src_cpu, addr, idxmap);
++        return;
++    }
++
+     /*
+      * Allocate memory to hold addr+idxmap only when needed.
+      * See tlb_flush_page_by_mmuidx for details.
+@@ -639,7 +668,8 @@ void tlb_flush_page_by_mmuidx_all_cpus_synced(CPUState *src_cpu,
+ 
+         /* Allocate a separate data block for each destination cpu.  */
+         CPU_FOREACH(dst_cpu) {
+-            if (dst_cpu != src_cpu) {
++            if (dst_cpu != src_cpu &&
++                dst_cpu->tlb_broadcast_domain == src_cpu->tlb_broadcast_domain) {
+                 d = g_new(TLBFlushPageByMMUIdxData, 1);
+                 d->addr = addr;
+                 d->idxmap = idxmap;
+@@ -810,6 +840,11 @@ void tlb_flush_range_by_mmuidx_all_cpus_synced(CPUState *src_cpu,
+     TLBFlushRangeData d, *p;
+     CPUState *dst_cpu;
+ 
++    if (tlb_broadcast_local(src_cpu)) {
++        tlb_flush_range_by_mmuidx(src_cpu, addr, len, idxmap, bits);
++        return;
++    }
++
+     /* If no page bits are significant, this devolves to tlb_flush. */
+     if (bits < TARGET_PAGE_BITS) {
+         tlb_flush_by_mmuidx_all_cpus_synced(src_cpu, idxmap);
+@@ -832,7 +867,8 @@ void tlb_flush_range_by_mmuidx_all_cpus_synced(CPUState *src_cpu,
+ 
+     /* Allocate a separate data block for each destination cpu.  */
+     CPU_FOREACH(dst_cpu) {
+-        if (dst_cpu != src_cpu) {
++        if (dst_cpu != src_cpu &&
++            dst_cpu->tlb_broadcast_domain == src_cpu->tlb_broadcast_domain) {
+             p = g_memdup(&d, sizeof(d));
+             async_run_on_cpu(dst_cpu, tlb_flush_range_by_mmuidx_async_1,
+                              RUN_ON_CPU_HOST_PTR(p));
+diff --git c/include/hw/core/cpu.h w/include/hw/core/cpu.h
+index b54035f..e055754 100644
+--- c/include/hw/core/cpu.h
++++ w/include/hw/core/cpu.h
+@@ -413,6 +413,9 @@ struct qemu_work_item;
+  *   QOM parent.
+  *   Under TCG this value is propagated to @tcg_cflags.
+  *   See TranslationBlock::TCG CF_CLUSTER_MASK.
++ * @tlb_broadcast_domain: Board-defined translation maintenance domain under TCG.
++ *   Defaults to zero (all CPUs). Set before realize for an isolated processor
++ *   with independent page tables, such as a firmware coprocessor.
+  * @start_powered_off: Indicates whether the CPU starts in powered-off state.
+  * @tcg_cflags: Pre-computed cflags for this cpu.
+  * @nr_threads: Number of threads within this CPU core.
+@@ -557,6 +560,7 @@ struct CPUState {
+     /* TODO Move common fields from CPUArchState here. */
+     int cpu_index;
+     int cluster_index;
++    unsigned tlb_broadcast_domain;
+     uint32_t tcg_cflags;
+     uint32_t halted;
+     int32_t exception_index;

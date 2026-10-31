@@ -1,0 +1,416 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
+@@ -677,6 +677,38 @@
+     Import { inner: HostRamDecline },
+ }
+ 
++impl GuestWriteDecline {
++    /// The optional direct-copy representation was unavailable before any
++    /// guest write was submitted. A host readback can preserve the work in
++    /// these cases; invalid bounds, ended lifetimes and device failures cannot
++    /// be repaired by changing the transfer route.
++    pub(crate) fn permits_host_readback(self) -> bool {
++        match self {
++            Self::Unsupported { .. } => true,
++            Self::Import { inner } => matches!(
++                inner,
++                HostRamDecline::Unsupported { .. }
++                    | HostRamDecline::BufferExcludesMemoryType { .. }
++                    | HostRamDecline::TooSmall { .. }
++                    | HostRamDecline::NoImportableMemoryType {
++                        refusal: ImportTypeRefusal::NoTypeMeetsRequest { .. },
++                        ..
++                    }
++                    | HostRamDecline::AllocateMemory {
++                        result: vk::Result::ERROR_INVALID_EXTERNAL_HANDLE,
++                    }
++                    | HostRamDecline::NoImportableMemoryType {
++                        refusal: ImportTypeRefusal::PointerDeclined {
++                            result: vk::Result::ERROR_INVALID_EXTERNAL_HANDLE,
++                        },
++                        ..
++                    }
++            ),
++            _ => false,
++        }
++    }
++}
++
+ impl Decline for GuestWriteDecline {
+     fn slug(&self) -> &'static str {
+         match self {
+@@ -726,8 +758,51 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++    use crate::backend::vulkan::caps::HostPointerImport;
+     use crate::backend::vulkan::caps::memory_topology::MemoryTypeRefusal;
+-    use crate::backend::vulkan::caps::HostPointerImport;
++
++    #[test]
++    fn optional_import_refusals_can_copy_but_invalid_ownership_cannot() {
++        let imported = |inner| GuestWriteDecline::Import { inner };
++        for decline in [
++            imported(HostRamDecline::AllocateMemory {
++                result: vk::Result::ERROR_INVALID_EXTERNAL_HANDLE,
++            }),
++            imported(HostRamDecline::Unsupported {
++                rung: HostPointerImport::DisabledByEnv,
++            }),
++            imported(HostRamDecline::BufferExcludesMemoryType {
++                host_base: 4096,
++                picked: 1,
++                buffer_types: 1,
++            }),
++            imported(HostRamDecline::TooSmall {
++                required: 8192,
++                available: 4096,
++            }),
++        ] {
++            assert!(decline.permits_host_readback(), "{decline}");
++        }
++        for decline in [
++            imported(HostRamDecline::AllocateMemory {
++                result: vk::Result::ERROR_DEVICE_LOST,
++            }),
++            imported(HostRamDecline::Retired { import_id: 7 }),
++            imported(HostRamDecline::Bound {
++                inner: GuestRamError::SliceEndPastImport {
++                    end: 8192,
++                    import_len: 4096,
++                },
++            }),
++            GuestWriteDecline::NoCompletionPoint,
++            GuestWriteDecline::WindowTooSmall {
++                need: 8192,
++                have: 4096,
++            },
++        ] {
++            assert!(!decline.permits_host_readback(), "{decline}");
++        }
++    }
+ 
+     /// One slug per check. Two sharing one would mean watching a slug fire and
+     /// still not knowing whether the driver refused the pointer or the memory
+@@ -821,10 +896,12 @@
+         // The mask rides along so an empty one — the driver accepting the
+         // pointer for no type at all — is separable from an incompatible one
+         // without a second boot.
+-        assert!(unmet
+-            .fields()
+-            .iter()
+-            .any(|(name, value)| *name == "pointer_types" && value == "0xa"));
++        assert!(
++            unmet
++                .fields()
++                .iter()
++                .any(|(name, value)| *name == "pointer_types" && value == "0xa")
++        );
+     }
+ 
+     #[test]
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec_compute.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec_compute.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec_compute.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec_compute.rs
+@@ -28,12 +28,12 @@
+     push: Option<(u32, ComputeDispatchPayload)>,
+ }
+ 
+-struct PreparedStorageImage {
++struct PreparedStorageImage<'a> {
+     binding: u32,
+     array_element: u32,
+     slot: StorageImageSlot,
+     seed: Option<BufferSlot>,
+-    dst: ComputeImageDst,
++    dst: ComputeImageDst<'a>,
+     len: usize,
+     width: u32,
+     height: u32,
+@@ -103,7 +103,7 @@
+ }
+ 
+ /// Post-dispatch copy destination for one storage image.
+-enum ComputeImageDst {
++enum ComputeImageDst<'a> {
+     /// Pooled host-visible buffer; the CPU reads it back and the runtime
+     /// writes guest pages itself.
+     Readback(BufferSlot),
+@@ -119,7 +119,13 @@
+     /// bounds-checked against the one RAMBlock import that produced it. The
+     /// bound is the type, which is the whole argument in
+     /// `runtime/guest_ram.rs`.
+-    Direct(super::GuestCopyPlan),
++    Direct {
++        plan: super::GuestCopyPlan,
++        /// Only an admitted direct copy can create a guest-write debt. Keeping
++        /// the footprint on that variant prevents a readback fallback from
++        /// claiming DMA merely because the original request preferred it.
++        pages: &'a [u64],
++    },
+ }
+ 
+ pub(crate) fn validate_compute(req: &ComputeRequest) -> Result<(), DrawError> {
+@@ -784,17 +790,30 @@
+             counters.note_compute_storage_seed_upload(resource.bytes.len() as u64);
+             Some(staging)
+         };
+-        // Where the output goes is the caller's decision, not this rail's: a
+-        // request that named guest pages licensed them first, and one that did
+-        // not gets the pooled readback and the device→host crossing with it.
++        // Guest pages were licensed against their geometry and lifetime, but
++        // the driver may still refuse to import their allocation. That optional
++        // optimization must not discard the compute dispatch. Resolve it before
++        // recording commands; the ordinary readback preserves the output.
+         let dst = match &resource.destination {
+             super::types::ComputeImageDestination::Host => ComputeImageDst::Readback(
+                 pools.acquire_readback_extra(ctx, resource.bytes.len() as u64, counters)?,
+             ),
+-            super::types::ComputeImageDestination::GuestPages { target, .. } => {
+-                ComputeImageDst::Direct(unsafe {
+-                    super::plan_guest_copy(ctx, pools, counters, target)?
+-                })
++            super::types::ComputeImageDestination::GuestPages { target, pages } => {
++                match unsafe { super::plan_guest_copy(ctx, pools, counters, target) } {
++                    Ok(plan) => ComputeImageDst::Direct { plan, pages },
++                    Err(DrawError::GuestPageWrite(decline)) if decline.permits_host_readback() => {
++                        crate::observe::off(format!(
++                            "compute_copy_fallback bind={} reason={decline}",
++                            resource.binding
++                        ));
++                        ComputeImageDst::Readback(pools.acquire_readback_extra(
++                            ctx,
++                            resource.bytes.len() as u64,
++                            counters,
++                        )?)
++                    }
++                    Err(error) => return Err(error),
++                }
+             }
+         };
+         simg_slots.push(PreparedStorageImage {
+@@ -1325,7 +1344,7 @@
+                     &copy,
+                 );
+             }
+-            ComputeImageDst::Direct(plan) => {
++            ComputeImageDst::Direct { plan, .. } => {
+                 // Recorded into the dispatch's own command buffer, so the whole
+                 // thing is still one submission and one fence. Both calls are
+                 // the render rail's, unchanged: the plan already describes
+@@ -1396,21 +1415,18 @@
+     // here — before any fallible step below, because a failure past the submit
+     // does not un-submit the copy and the pages are being written either way.
+     //
+-    // Read straight off the request rather than off `simg_slots`, so nothing
+-    // depends on the two being the same length in the same order — and so the
+-    // destination and the residency that decide the source are read off one
+-    // record, which is the only way they cannot disagree.
++    // Use the prepared destination, which owns both its admitted plan and its
++    // footprint. A requested import that fell back to readback owes no DMA
++    // debt. Destination and residency still come from the same prepared record.
+     //
+     // Which source applies is a fact about where the image lives. A transient
+     // slot is sealed into this submission's ring entry and cannot be recycled
+     // before the fence retires, so the ring is its lifetime. A registered
+     // resident was popped out of that live set at acquire and lives in the
+     // compute-storage registry instead, so it needs the pin.
+-    for resource in &req.storage_images {
+-        if let super::types::ComputeImageDestination::GuestPages { pages, .. } =
+-            &resource.destination
+-        {
+-            let source = match &resource.residency {
++    for prepared in &simg_slots {
++        if let ComputeImageDst::Direct { pages, .. } = &prepared.dst {
++            let source = match &prepared.residency {
+                 Some(residency) => super::GuestWriteSource::ResidentStorage(&residency.identity),
+                 None => super::GuestWriteSource::RingEntry,
+             };
+@@ -1501,7 +1517,7 @@
+             // that is the saving this arm exists for, and a bump here would
+             // report it as still being paid. `bytes` is what the queued copy
+             // lands, for the caller's own census.
+-            ComputeImageDst::Direct(_) => {
++            ComputeImageDst::Direct { .. } => {
+                 images.push(super::types::ComputeImageResult::Landed {
+                     bytes: prepared.len as u64,
+                 });
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -1494,11 +1494,10 @@
+     /// One result per requested storage image, in request order (same length as
+     /// `storage_images`).
+     ///
+-    /// Which variant comes back is decided entirely by the matching request's
+-    /// [`ComputeStorageImageResource::destination`] — the engine does not choose
+-    /// a rail here, it honours the one it was given, so the caller can pair
+-    /// result `i` with its own destination without asking the engine what it
+-    /// did.
++    /// A requested host destination returns bytes. A requested direct copy
++    /// returns `Landed` only if its import was admitted; an optional import
++    /// refusal returns bytes instead. The result names which writeback the
++    /// caller now owes, without changing the request's order or geometry.
+     pub images: Vec<ComputeImageResult>,
+ }
+ 
+@@ -1532,6 +1531,9 @@
+     ///
+     /// Carries the same [`super::GuestPageTarget`] the render rail writes through, so
+     /// the guest-window geometry has exactly one spelling in this crate.
++    /// If the driver declines the optional import before submission, execution
++    /// returns `ComputeImageResult::Bytes` through the ordinary host readback.
++    /// Bounds, lifetime and device-loss errors still refuse the dispatch.
+     ///
+     /// # Why the guest cannot see these pages before the copy lands
+     ///
+@@ -1591,8 +1593,9 @@
+ /// was asked for.
+ #[derive(Debug)]
+ pub enum ComputeImageResult {
+-    /// Readback pixels, for [`ComputeImageDestination::Host`]. Tight rows: the
+-    /// caller re-pitches them into the guest's window.
++    /// Readback pixels, for [`ComputeImageDestination::Host`] or a requested
++    /// direct copy whose optional import was declined. Tight rows: the caller
++    /// re-pitches them into the guest's window.
+     Bytes(Vec<u8>),
+     /// The copy into the guest's own pages is on the queue, for
+     /// [`ComputeImageDestination::GuestPages`]. There are no bytes to hand back
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
+@@ -487,6 +487,118 @@
+ }
+ 
+ /// Storage image Rgba8Unorm: each invocation writes solid red (known unorm result).
++/// A late optional-import refusal must execute once and return the actual
++/// image through host readback, without a guest DMA debt or a false Landed.
++#[test]
++fn compute_guest_import_refusal_uses_readback_without_dma_debt() {
++    use reims_vgpu::runtime::guest_ram::{GuestRamImport, GuestRamRegion, GuestRef};
++    use reims_vgpu::runtime::guest_ram_map::GuestWindowRun;
++    // Isolate the capability switch from every other test's global engine.
++    if reims_vgpu::config::read(reims_vgpu::config::GUEST_IMPORT).0
++        != reims_vgpu::config::Switch::Off
++    {
++        let output = Command::new(std::env::current_exe().unwrap())
++            .args([
++                "--exact",
++                "compute_guest_import_refusal_uses_readback_without_dma_debt",
++                "--test-threads=1",
++                "--nocapture",
++            ])
++            .env(reims_vgpu::config::GUEST_IMPORT, "off")
++            .output()
++            .expect("run copying capability in a separate process");
++        eprint!("{}", String::from_utf8_lossy(&output.stderr));
++        println!("{}", String::from_utf8_lossy(&output.stdout));
++        assert!(output.status.success(), "copying child failed");
++        return;
++    }
++    let _g = engine_test_session();
++    let Some(words) = assemble_spvasm(&storage_image_write_red_kernel("Rgba8"), "copy_fallback")
++    else {
++        return;
++    };
++    // Real owned memory. The disabled import must not touch it; retaining it
++    // through the engine reset also makes a mistaken import fail safely.
++    let mut memory = vec![0xa5u8; 8192];
++    let import = std::sync::Arc::new(
++        GuestRamImport::new(
++            GuestRamRegion {
++                gpa_base: 0x100000,
++                host_va: memory.as_mut_ptr() as u64,
++                len: memory.len() as u64,
++            },
++            4096,
++        )
++        .unwrap(),
++    );
++    let footprint = vec![import.gpa_base().unwrap()];
++    for resident in [false, true] {
++        engine::reset_draw_counters();
++        let slice = import.slice(0, 64).unwrap();
++        let identity = ComputeStorageResidencyKey {
++            mapping_id: 91,
++            map_generation: 1,
++            surface_offset: 0,
++            surface_bpr: 16,
++            span_end: 64,
++            width: 4,
++            height: 4,
++            pixel_format: 0x46,
++            texture_ref: 0,
++        };
++        let req = ComputeRequest {
++            spirv: words.clone(),
++            entry: "main".into(),
++            dispatch: engine::ComputeDispatch::Workgroups([4, 4, 1]),
++            storage_images: vec![ComputeStorageImageResource {
++                destination: engine::ComputeImageDestination::GuestPages {
++                    target: Box::new(engine::GuestPageTarget {
++                        runs: vec![GuestWindowRun {
++                            window_offset: 0,
++                            guest: GuestRef::new(import.clone(), slice).unwrap(),
++                        }],
++                        row_length_texels: 4,
++                        width: 4,
++                        height: 4,
++                        format: ash::vk::Format::R8G8B8A8_UNORM,
++                        shared_backing: None,
++                    }),
++                    pages: footprint.clone(),
++                },
++                binding: 0,
++                array_element: 0,
++                descriptor_count: 1,
++                format: StorageImageFormat::Rgba8Unorm,
++                width: 4,
++                height: 4,
++                bytes: vec![0; 64],
++                seed_skipped: false,
++                residency: resident.then_some(ComputeStorageResidency {
++                    identity,
++                    seed_generation: 1,
++                    output_generation: 2,
++                }),
++            }],
++            ..Default::default()
++        };
++        let Some(out) = engine_or_skip("copy fallback", &req) else {
++            return;
++        };
++        assert_eq!(out.images.len(), 1);
++        let engine::ComputeImageResult::Bytes(bytes) = &out.images[0] else {
++            panic!("an unimportable allocation cannot have received DMA");
++        };
++        assert_eq!(bytes, &[255, 0, 0, 255].repeat(16));
++        assert!(memory.iter().all(|&byte| byte == 0xa5));
++        assert!(!engine::guest_writes_outstanding());
++        let counters = engine::counter_snapshot();
++        assert_eq!(counters.dispatches, 1, "no replay after submission");
++        assert_eq!(counters.readback_compute_image_bytes, 64);
++        assert_eq!(counters.compute_post_wait_skips, 0, "CPU bytes owe a fence");
++    }
++    engine::test_reset_engine(engine_device());
++}
++
+ #[test]
+ fn compute_storage_image_rgba8unorm_known_result() {
+     let _g = engine_test_session();
+@@ -1105,7 +1217,13 @@
+             };
+             assert!(output.images.is_empty());
+             assert_eq!(output.buffers[0].bytes.len(), 16);
+-            for (channel, raw) in output.buffers[0].bytes.as_chunks::<4>().0.iter().enumerate() {
++            for (channel, raw) in output.buffers[0]
++                .bytes
++                .as_chunks::<4>()
++                .0
++                .iter()
++                .enumerate()
++            {
+                 let actual = f32::from_le_bytes(*raw);
+                 let encoded = f32::from(rgba[channel]) / 255.0;
+                 let expected = if srgb && channel < 3 {

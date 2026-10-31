@@ -1,0 +1,101 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -10302,6 +10302,43 @@
+                 )
+             })?;
+         }
++        // Public XR secondary residents contain Float32, so a guest Store
++        // cannot leave them in the registry or import them as packed codes.
++        // Retain each prepared identity and capture its GVA write licence
++        // before GPU submission, just as the primary synchronous Store does.
++        let mut interleaved_xr_secondary_stores = Vec::new();
++        if writeback_guest {
++            for (index, color) in req.colors.iter().enumerate().skip(1).filter(|(_, color)| {
++                pixel_format::XrFormat::from_mtl(color.format).is_some()
++                    && reims_vgpu_protocol::pass_action::store_action_publishes_single_sample(
++                        color.store_action,
++                    )
++            }) {
++                let refused = || {
++                    DrawError::DrawPreparation(DrawPreparationDecline::NativeXrStoreFailed {
++                        slot: color.slot,
++                        mapping_id: color.mapping_id,
++                    })
++                };
++                // build_secondary_targets admits exactly one resident per
++                // contiguous colour slot, or refuses the entire draw.
++                let identity = resources
++                    .secondary_targets
++                    .get(index - 1)
++                    .ok_or_else(refused)?
++                    .identity
++                    .clone();
++                let pages = if color.target_gva != 0 {
++                    Some(
++                        sync_store_target_pages(state, host, req.task_id, color)
++                            .ok_or_else(refused)?,
++                    )
++                } else {
++                    None
++                };
++                interleaved_xr_secondary_stores.push((index, identity, pages));
++            }
++        }
+         // The engine's own typed `DrawError` (a `vk_*` VkCall slug, a
+         // `DrawReason` refusal, an interim `_untyped`) propagates unchanged so
+         // the boundary below names the engine's specific check as the primary
+@@ -10379,6 +10416,54 @@
+                 );
+             }
+         }
++        for (index, identity, pages) in interleaved_xr_secondary_stores {
++            let color = &req.colors[index];
++            let refused = || {
++                DrawError::DrawPreparation(DrawPreparationDecline::NativeXrStoreFailed {
++                    slot: color.slot,
++                    mapping_id: color.mapping_id,
++                })
++            };
++            if color.target_gva != 0 {
++                crate::runtime::render_writeback::vulkan::store_gva_frame(
++                    state,
++                    host,
++                    req.task_id,
++                    &identity,
++                    color,
++                    color.texture_ref,
++                    pages.as_ref(),
++                    &[],
++                )
++                .map_err(|why| {
++                    crate::observe::Emit::decline("interleaved_xr_secondary_store", &why)
++                        .field("slot", color.slot)
++                        .fail();
++                    refused()
++                })?;
++                crate::backend::vulkan::engine::note_resident_content_copied_out(&identity);
++            } else {
++                if !crate::runtime::render_writeback::vulkan::store_render_frame(
++                    state,
++                    host,
++                    color.mapping_id,
++                    &identity,
++                    color.width,
++                    color.height,
++                ) {
++                    return Err(refused());
++                }
++                publish_surface_store(
++                    state,
++                    host,
++                    color.mapping_id,
++                    color.width,
++                    color.height,
++                    color.format,
++                );
++            }
++            crate::runtime::drain::note_store_route("interleaved_xr_secondary_store_n");
++        }
+         // RGB nonzero (ignore alpha) so black+alpha is not mistaken for content.
+         // Resident/import path uses skip_readback → empty `out.pixels` is **expected**
+         // and must not be read as "GPU drew black" (use import_content res_rgb_nz).

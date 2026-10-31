@@ -1,0 +1,568 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -2730,6 +2730,13 @@
+             .map(|id| id.resident_format())
+             .unwrap_or(crate::backend::vulkan::translate::pixel::RESIDENT_RGBA_FORMAT)
+     });
++    // The resident this draw publishes into, in its own declaration. That is
++    // the attachment's format everywhere but a multisample resolve whose source
++    // is the other sRGB/linear member over the destination's bytes: the pass
++    // renders and resolves in the source's format through a view, and the
++    // resident is ensured -- and stays declared -- as the texture the guest made,
++    // so its later sampled reads decode it as the guest declared it.
++    let resident_format = req.resolve_target_format.unwrap_or(color0_format);
+     // A guest-sourced sampled bind used to force the immediate-submit path.
+     // Its read of guest RAM happens when the CB *executes*, and this device
+     // acked the packet as soon as it was consumed, so deferred submit stretched
+@@ -3163,6 +3170,18 @@
+                 },
+             ));
+         }
++        if req.multisample_resolve
++            && req.resolve_target_format.is_some()
++            && req.target_identity.is_none()
++        {
++            // The view in the source's format is the resident's; a pooled target
++            // has none to offer.
++            return Err(DrawError::Unsupported(
++                super::reason::DrawReason::MultisampleResidentTargetMissing {
++                    sample_count: raster_sample_count,
++                },
++            ));
++        }
+         if !req.multisample_resolve {
+             if req.target_identity.is_none() {
+                 return Err(DrawError::Unsupported(
+@@ -3651,7 +3670,10 @@
+         is_mrt || req.depth.is_some() || !color_inputs(req).is_empty();
+     let ad_hoc_framebuffer = ordinary_ad_hoc_framebuffer || req.multisample_resolve;
+     let (primary_pass, primary_pass_compatibility) = if ad_hoc_framebuffer {
+-        let mut color_only = PassKey::single(pass_key.color0_load, pass_key.color0_format);
++        let mut color_only = PassKey::single(
++            pass_key.color0_load,
++            req.resolve_target_format.unwrap_or(pass_key.color0_format),
++        );
+         color_only.host_accessible_color0 = pass_key.host_accessible_color0;
+         (
+             caches.get_or_create_pass(ctx, color_only, counters, pools)?,
+@@ -3709,7 +3731,7 @@
+                 primary_pass,
+                 primary_pass_compatibility,
+                 gen,
+-                color0_format,
++                resident_format,
+                 req.guest_target_memory.clone(),
+                 counters,
+             )?;
+@@ -3807,6 +3829,24 @@
+             }
+         };
+     let _multisample_source_image = if req.multisample_resolve {
++        // The destination is attached in the pass's format: its own view, or,
++        // where the resident is declared as the other sRGB/linear member, the
++        // resident's view in the source's format.
++        let missing = || {
++            DrawError::Unsupported(
++                super::reason::DrawReason::MultisampleResidentTargetMissing {
++                    sample_count: raster_sample_count,
++                },
++            )
++        };
++        let resolve_view = match (req.resolve_target_format, &req.target_identity) {
++            (None, _) => target_view,
++            (Some(_), Some(identity)) => {
++                unsafe { pools.registry_attachment_view(ctx, identity, color0_format, counters)? }
++                    .ok_or_else(missing)?
++            }
++            (Some(_), None) => return Err(missing()),
++        };
+         let (image, _view, framebuffer) = pools.acquire_multisample_target(
+             ctx,
+             super::pools::MultisampleTargetKey {
+@@ -3815,7 +3855,7 @@
+                 format: color0_format,
+                 samples: raster_sample_count,
+                 compatibility: pass_key.framebuffer_compatibility(),
+-                resolve_view: target_view,
++                resolve_view,
+                 depth_view: depth_attachment.as_ref().map(|depth| depth.view),
+                 transient_depth: depth_attachment
+                     .as_ref()
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
+@@ -860,6 +860,20 @@
+         unsafe { self.registry_view(ctx, identity, format, counters) }
+     }
+ 
++    /// The resident's view in exactly `format`, for a pass that attaches it as
++    /// another member of its format class than the one it is declared in: a
++    /// multisample resolve whose source is the sRGB (or linear) sibling of its
++    /// destination. Retained with the slot like every other interpretation.
++    pub(crate) unsafe fn registry_attachment_view(
++        &mut self,
++        ctx: &DeviceContext,
++        identity: &TargetIdentity,
++        format: vk::Format,
++        counters: &EngineCounters,
++    ) -> Result<Option<vk::ImageView>, DrawError> {
++        unsafe { self.registry_view(ctx, identity, format, counters) }
++    }
++
+     /// The view over this resident's allocation in exactly `format`, created and
+     /// retained on first ask.
+     ///
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -532,6 +532,13 @@
+     /// Rasterize into an N-sample attachment and resolve into the ordinary
+     /// primary target at render-pass end.
+     pub multisample_resolve: bool,
++    /// The resolve destination's own declared format, when the resolve renders
++    /// in its multisample source's format instead -- the other member of an
++    /// sRGB/linear pair over the same bytes. The resident keeps this
++    /// declaration, so its later sampled reads see the texture the guest made;
++    /// the pass attaches it through a view in [`Self::color_attachment`]'s
++    /// format. `None` when the two are one format.
++    pub resolve_target_format: Option<vk::Format>,
+     /// Every viewport the guest bound, in its order. Empty takes the
+     /// full-target default, and so does any slot past the end of this list when
+     /// [`Self::scissors`] is longer — the two counts are independent in Metal
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -528,6 +528,33 @@
+     /// Multisample attachment discarded into this request's single-sample
+     /// target at pass end. Zero for an ordinary colour attachment.
+     pub multisample_source_ref: u32,
++    /// The multisample attachment's own `MTLPixelFormat`, the format the
++    /// pipeline writes and the pass resolves in. It differs from [`Self::format`]
++    /// only where the destination is the other member of an sRGB/linear pair
++    /// over the same bytes (see [`resolve_format_compatible`]). Zero for an
++    /// ordinary colour attachment.
++    pub multisample_source_format: u16,
++}
++
++/// Whether a multisample source in `source` may resolve into a destination in
++/// `resolve`.
++///
++/// Equal formats always may. Beyond that only the two members of an sRGB/linear
++/// pair over one byte layout do: Metal's validation of a resolve attachment
++/// checks its storage, type, size and sample count but not its pixel format,
++/// and iOS's own wallpaper renderer resolves a `BGRA8Unorm_sRGB` raster into
++/// its `BGRA8Unorm` drawable. The resolved bytes carry the source's encoding --
++/// the drawable is composited as sRGB-encoded content -- so the backend renders
++/// and resolves in the source's format and leaves the destination its own.
++/// Formats whose bytes differ stay refused: that resolve would be a conversion,
++/// and nothing here establishes which.
++pub(crate) fn resolve_format_compatible(source: u16, resolve: u16) -> bool {
++    if source == resolve {
++        return true;
++    }
++    pixel_format::is_srgb(source) != pixel_format::is_srgb(resolve)
++        && pixel_format::store_texel_order(source)
++            .is_some_and(|layout| pixel_format::store_texel_order(resolve) == Some(layout))
+ }
+ 
+ /// One `setVisibilityResultMode:offset:`, as the encoder state it is.
+@@ -2561,6 +2588,7 @@
+         clear_color: [0.0; 4],
+         target_seed: None,
+         multisample_source_ref: 0,
++        multisample_source_format: 0,
+         #[cfg(feature = "backend-vulkan")]
+         paired_xr: rt.paired_xr,
+     };
+@@ -2635,74 +2663,80 @@
+             .fail();
+             return None;
+         }
+-        let (target_ref, multisample_source_ref, target) = if att.resolve_texture_ref != 0 {
+-            let resolve_attachment = ColorAttachment {
+-                texture_ref: att.resolve_texture_ref,
+-                resolve_texture_ref: 0,
+-                level: 0,
+-                ..att
+-            };
+-            let Some(resolve_target) =
+-                lookup_render_target(state, host, task_id, resolve_attachment)
+-            else {
+-                crate::runtime::drain::note_store_route("mrt_resolve_target_unresolved");
+-                return None;
+-            };
+-            if crate::observe::first_sight(
+-                "render_resolve_contract",
+-                (u64::from(att.texture_ref) << 32) | u64::from(att.resolve_texture_ref),
+-            ) {
+-                crate::observe::off(format!(
+-                    "render_resolve_contract task={task_id} pipe={pipeline_ref} \
++        let (target_ref, multisample_source_ref, multisample_source_format, target) =
++            if att.resolve_texture_ref != 0 {
++                let resolve_attachment = ColorAttachment {
++                    texture_ref: att.resolve_texture_ref,
++                    resolve_texture_ref: 0,
++                    level: 0,
++                    ..att
++                };
++                let Some(resolve_target) =
++                    lookup_render_target(state, host, task_id, resolve_attachment)
++                else {
++                    crate::runtime::drain::note_store_route("mrt_resolve_target_unresolved");
++                    return None;
++                };
++                if crate::observe::first_sight(
++                    "render_resolve_contract",
++                    (u64::from(att.texture_ref) << 32) | u64::from(att.resolve_texture_ref),
++                ) {
++                    crate::observe::off(format!(
++                        "render_resolve_contract task={task_id} pipe={pipeline_ref} \
+                      source_ref={} source_mid={} source_gva={:#x} source={}x{} \
+                      source_fmt={:#x} resolve_ref={} resolve_mid={} resolve_gva={:#x} \
+                      resolve={}x{} resolve_fmt={:#x} load={} store={} raster_samples={}",
+-                    att.texture_ref,
+-                    source_target.mapping_id,
+-                    source_target.target_gva,
+-                    source_target.width,
+-                    source_target.height,
+-                    source_target.format,
+-                    att.resolve_texture_ref,
+-                    resolve_target.mapping_id,
+-                    resolve_target.target_gva,
+-                    resolve_target.width,
+-                    resolve_target.height,
+-                    resolve_target.format,
+-                    att.load_action,
+-                    att.store_action,
+-                    // What the attachment will be encoded at, which is the
+-                    // pipeline's count where a rail consults it and the target's
+-                    // otherwise. Every construction site of the resolved target
+-                    // hardcodes `1` (see `AttachmentSampleCounts::target`), so
+-                    // this is the same number the `unwrap_or(1)` here used to
+-                    // spell — said in terms of where it comes from rather than
+-                    // as a literal that happens to match.
+-                    pipeline_sample_count.unwrap_or(source_target.sample_count),
+-                ));
+-            }
+-            if source_target.width != resolve_target.width
+-                || source_target.height != resolve_target.height
+-                || source_target.format != resolve_target.format
+-            {
+-                crate::observe::fail(format!(
+-                    "render_resolve_target_mismatch source={} resolve={} source_geom={}x{} \
++                        att.texture_ref,
++                        source_target.mapping_id,
++                        source_target.target_gva,
++                        source_target.width,
++                        source_target.height,
++                        source_target.format,
++                        att.resolve_texture_ref,
++                        resolve_target.mapping_id,
++                        resolve_target.target_gva,
++                        resolve_target.width,
++                        resolve_target.height,
++                        resolve_target.format,
++                        att.load_action,
++                        att.store_action,
++                        // What the attachment will be encoded at, which is the
++                        // pipeline's count where a rail consults it and the target's
++                        // otherwise. Every construction site of the resolved target
++                        // hardcodes `1` (see `AttachmentSampleCounts::target`), so
++                        // this is the same number the `unwrap_or(1)` here used to
++                        // spell — said in terms of where it comes from rather than
++                        // as a literal that happens to match.
++                        pipeline_sample_count.unwrap_or(source_target.sample_count),
++                    ));
++                }
++                if source_target.width != resolve_target.width
++                    || source_target.height != resolve_target.height
++                    || !resolve_format_compatible(source_target.format, resolve_target.format)
++                {
++                    crate::observe::fail(format!(
++                        "render_resolve_target_mismatch source={} resolve={} source_geom={}x{} \
+                      resolve_geom={}x{} source_fmt={:#x} resolve_fmt={:#x}",
+-                    att.texture_ref,
++                        att.texture_ref,
++                        att.resolve_texture_ref,
++                        source_target.width,
++                        source_target.height,
++                        resolve_target.width,
++                        resolve_target.height,
++                        source_target.format,
++                        resolve_target.format
++                    ));
++                    return None;
++                }
++                (
+                     att.resolve_texture_ref,
+-                    source_target.width,
+-                    source_target.height,
+-                    resolve_target.width,
+-                    resolve_target.height,
++                    att.texture_ref,
+                     source_target.format,
+-                    resolve_target.format
+-                ));
+-                return None;
+-            }
+-            (att.resolve_texture_ref, att.texture_ref, resolve_target)
+-        } else {
+-            (att.texture_ref, 0, source_target)
+-        };
++                    resolve_target,
++                )
++            } else {
++                (att.texture_ref, 0, 0, source_target)
++            };
+         let ResolvedRenderTarget {
+             buffer_texture,
+             mapping_id,
+@@ -2999,6 +3033,7 @@
+             clear_color,
+             target_seed: seed,
+             multisample_source_ref,
++            multisample_source_format,
+             #[cfg(feature = "backend-vulkan")]
+             paired_xr,
+         });
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -3484,6 +3484,107 @@
+     }));
+ }
+ 
++/// The two members of an sRGB/linear pair over one byte layout may resolve into
++/// each other; nothing else that differs may. iOS's wallpaper renderer resolves
++/// a `BGRA8Unorm_sRGB` raster into its `BGRA8Unorm` drawable, and Metal's
++/// validation never checks a resolve target's pixel format.
++#[test]
++fn resolve_formats_pair_only_the_srgb_and_linear_members_of_one_layout() {
++    use crate::protocol::pixel_format::{
++        MTL_FORMAT_BGRA8_UNORM, MTL_FORMAT_BGRA8_UNORM_SRGB, MTL_FORMAT_RGBA16_FLOAT,
++        MTL_FORMAT_RGBA8_UNORM, MTL_FORMAT_RGBA8_UNORM_SRGB,
++    };
++    for (source, resolve) in [
++        (MTL_FORMAT_BGRA8_UNORM, MTL_FORMAT_BGRA8_UNORM),
++        (MTL_FORMAT_BGRA8_UNORM_SRGB, MTL_FORMAT_BGRA8_UNORM),
++        (MTL_FORMAT_BGRA8_UNORM, MTL_FORMAT_BGRA8_UNORM_SRGB),
++        (MTL_FORMAT_RGBA8_UNORM_SRGB, MTL_FORMAT_RGBA8_UNORM),
++    ] {
++        assert!(
++            resolve_format_compatible(source, resolve),
++            "{source:#x} -> {resolve:#x}"
++        );
++    }
++    for (source, resolve) in [
++        // Same width, other channel order: a swizzle, not a transfer function.
++        (MTL_FORMAT_RGBA8_UNORM_SRGB, MTL_FORMAT_BGRA8_UNORM),
++        (MTL_FORMAT_RGBA8_UNORM, MTL_FORMAT_BGRA8_UNORM),
++        // Other bytes altogether: a conversion.
++        (MTL_FORMAT_RGBA16_FLOAT, MTL_FORMAT_BGRA8_UNORM),
++    ] {
++        assert!(
++            !resolve_format_compatible(source, resolve),
++            "{source:#x} -> {resolve:#x}"
++        );
++    }
++}
++
++#[test]
++fn mrt_draw_request_resolves_an_srgb_raster_into_its_linear_drawable() {
++    use crate::protocol::pixel_format::{MTL_FORMAT_BGRA8_UNORM, MTL_FORMAT_BGRA8_UNORM_SRGB};
++    use reims_vgpu_protocol::pass_action::MTL_STORE_ACTION_MULTISAMPLE_RESOLVE;
++
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++    let mut host = FakeHost::new();
++    state.define_task(1, 0x1000, 2);
++    for (texture_ref, mapping_id, format) in [
++        (42, 9, MTL_FORMAT_BGRA8_UNORM_SRGB),
++        (43, 10, MTL_FORMAT_BGRA8_UNORM),
++    ] {
++        assert!(state.map_surface(mapping_id));
++        assert!(state.set_mapping_geom(mapping_id, 64, 64, format));
++        state
++            .texture_to_mapping
++            .insert((1, texture_ref), mapping_id);
++    }
++    let mut att = clear_black_attachment(42);
++    att.resolve_texture_ref = 43;
++    att.store_action = MTL_STORE_ACTION_MULTISAMPLE_RESOLVE;
++
++    let req = single_rt_draw_request(&mut state, &mut host, 7, att)
++        .expect("an sRGB raster resolves into its linear drawable");
++    assert_eq!(req.colors[0].texture_ref, 43, "the published target");
++    assert_eq!(
++        req.colors[0].format, MTL_FORMAT_BGRA8_UNORM,
++        "the destination keeps its own declaration"
++    );
++    assert_eq!(
++        req.colors[0].multisample_source_format, MTL_FORMAT_BGRA8_UNORM_SRGB,
++        "the pass renders and resolves in the source's"
++    );
++}
++
++#[test]
++fn mrt_draw_request_refuses_a_resolve_that_would_reorder_channels() {
++    use crate::protocol::pixel_format::{MTL_FORMAT_BGRA8_UNORM, MTL_FORMAT_RGBA8_UNORM_SRGB};
++    use reims_vgpu_protocol::pass_action::MTL_STORE_ACTION_MULTISAMPLE_RESOLVE;
++
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++    let mut host = FakeHost::new();
++    state.define_task(1, 0x1000, 2);
++    for (texture_ref, mapping_id, format) in [
++        (42, 9, MTL_FORMAT_RGBA8_UNORM_SRGB),
++        (43, 10, MTL_FORMAT_BGRA8_UNORM),
++    ] {
++        assert!(state.map_surface(mapping_id));
++        assert!(state.set_mapping_geom(mapping_id, 64, 64, format));
++        state
++            .texture_to_mapping
++            .insert((1, texture_ref), mapping_id);
++    }
++    let mut att = clear_black_attachment(42);
++    att.resolve_texture_ref = 43;
++    att.store_action = MTL_STORE_ACTION_MULTISAMPLE_RESOLVE;
++    let cap = crate::observe::FailCapture::start();
++
++    assert!(single_rt_draw_request(&mut state, &mut host, 7, att).is_none());
++    assert!(cap.lines().iter().any(|line| {
++        line.contains("render_resolve_target_mismatch")
++            && line.contains("source_fmt=0x47")
++            && line.contains("resolve_fmt=0x50")
++    }));
++}
++
+ /// qemu-shim: texture-view of mapper-ref-texture is a valid color RT (archive
+ /// resource_resolve_texture view chain). Without this, App Store UI pipes
+ /// that bind a view as color attachment drop the entire MRT pass.
+@@ -6970,6 +7071,7 @@
+         clear_color: [0.0; 4],
+         target_seed: None,
+         multisample_source_ref: 0,
++        multisample_source_format: 0,
+     };
+ 
+     let armed = sync_store_allowed_pages(&state, &host, 1, Some(&c0), true)
+@@ -7181,6 +7283,7 @@
+         clear_color: [0.0; 4],
+         target_seed: None,
+         multisample_source_ref: 0,
++        multisample_source_format: 0,
+     };
+     // Full height, left half only: the partial store the Load seed forces, and
+     // it crosses the page boundary at row 64.
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -10668,14 +10668,29 @@
+         resources.height = h;
+         resources.vertex_count = vertex_count;
+         if let Some(c0) = req.colors.first() {
+-            let (attachment, _) =
+-                translate::pixel::color_attachment(c0.format).map_err(|reason| {
++            let attachment_format = |format| {
++                translate::pixel::color_attachment(format).map_err(|reason| {
+                     DrawError::Unsupported(
+                         crate::backend::vulkan::engine::reason::DrawReason::ColorAttachmentFormat(
+                             reason,
+                         ),
+                     )
+-                })?;
++                })
++            };
++            // A resolve renders in its multisample source's format. Where that is
++            // the other sRGB/linear member over the destination's bytes, the
++            // destination keeps its own declaration and the engine attaches it
++            // through a view in the source's (see `resolve_format_compatible`).
++            let rendered = if c0.multisample_source_ref != 0 && c0.multisample_source_format != 0 {
++                c0.multisample_source_format
++            } else {
++                c0.format
++            };
++            let (attachment, _) = attachment_format(rendered)?;
++            if rendered != c0.format {
++                let (declared, _) = attachment_format(c0.format)?;
++                resources.resolve_target_format = Some(declared.with_clear(target_clear).format());
++            }
+             resources.color_attachment = Some(attachment.with_clear(target_clear));
+         }
+         // Attachment-count census, taken before the MRT gate rather than inside
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+@@ -5686,6 +5686,7 @@
+             clear_color: c.clear_color,
+             target_seed: None,
+             multisample_source_ref: c.multisample_source_ref,
++            multisample_source_format: c.multisample_source_format,
+             #[cfg(feature = "backend-vulkan")]
+             paired_xr: c.paired_xr.clone(),
+         })
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -413,6 +413,60 @@
+     }
+ }
+ 
++/// A multisample resolve whose raster is the sRGB member of its destination's
++/// format class: iOS's wallpaper renders `BGRA8Unorm_sRGB` four times over and
++/// resolves into its `BGRA8Unorm` drawable. The drawable keeps the raster's
++/// encoding of the shader's linear colour -- what the compositor reads as
++/// sRGB-encoded content -- while the resident stays the linear texture it is.
++#[test]
++fn a_multisample_resolve_from_an_srgb_raster_stores_encoded_bytes_in_a_linear_target() {
++    use reims_vgpu::protocol::pixel_format::{MTL_FORMAT_BGRA8_UNORM, MTL_FORMAT_BGRA8_UNORM_SRGB};
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let (w, h) = (16u32, 16u32);
++    let identity = TargetIdentity::Surface {
++        id: 4401,
++        width: w,
++        height: h,
++        generation: 1,
++        format: SURFACE_TEST_FORMAT,
++    };
++    let mut req = engine_req(&v, &f, w, h);
++    req.raster_sample_count = 4;
++    req.color_sample_count = 4;
++    req.multisample_resolve = true;
++    req.target_identity = Some(identity.clone());
++    req.skip_readback = true;
++    req.color_attachment = Some(color_attachment(
++        MTL_FORMAT_BGRA8_UNORM_SRGB,
++        [0.0, 0.0, 0.0, 1.0],
++    ));
++    req.resolve_target_format =
++        Some(color_attachment(MTL_FORMAT_BGRA8_UNORM, [0.0, 0.0, 0.0, 1.0]).format());
++    match engine::execute_draw_request(engine_device(), &req) {
++        Ok(_) => {}
++        Err(e) if skip_if_no_gpu(&e.to_string()) => {
++            eprintln!("SKIP srgb resolve: {e}");
++            return;
++        }
++        Err(e) => panic!("srgb resolve draw: {e}"),
++    }
++    let px = engine::read_target(&identity)
++        .expect("read the resolved target")
++        .into_rgba8()
++        .expect("an eight-bit colour readback");
++    // float4(0.25, 0.5, 0.75, 1.0) encodes to about (137, 188, 225); stored
++    // linear it would read (64, 128, 191). Green is the same index in either
++    // channel order.
++    let i = ((h / 2) * w + w / 2) as usize * 4;
++    let (c0, g, c2) = (px[i], px[i + 1], px[i + 2]);
++    assert!(near(g, 188), "green {g}: expected the sRGB encoding of 0.5 (188)");
++    assert!(
++        (near(c0, 137) && near(c2, 225)) || (near(c0, 225) && near(c2, 137)),
++        "red/blue ({c0}, {c2}): expected the sRGB encodings of 0.25 and 0.75"
++    );
++}
++
+ /// The whole `DrawOutput`, for a case whose answer is not pixels.
+ ///
+ /// [`draw_or_skip`] returns only the normalized colour bytes, which is right
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/tests.rs
+@@ -2744,6 +2744,7 @@
+             clear_color: [0.1, 0.2, 0.3, 1.0],
+             target_seed: Some(vec![0xbb; 16].into()),
+             multisample_source_ref: 0,
++            multisample_source_format: 0,
+         }],
+         ..Default::default()
+     };

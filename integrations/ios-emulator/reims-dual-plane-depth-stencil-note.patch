@@ -1,0 +1,107 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
+index a5d3fd3..77baaa9 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
+@@ -2642,20 +2642,44 @@ pub fn decode_dual_plane_texture_descriptor(
+         | u64::from(out.planes[0].height & 0xff_ffff);
+     // Known APV XR pairs have a Vulkan sampled rail. Its layout/capability
+     // refusals are reported by that consumer; decoding an executable pair is
+-    // not itself unsupported guest work. Other dual formats still have no bind.
+-    if out.xr_format().is_none()
+-        && crate::observe::first_sight("dual_plane_texture_unexecutable", key)
+-    {
+-        crate::observe::fail(format!(
+-            "dual_plane_texture_unexecutable pf={:#x} plane0={}x{} plane1={}x{} levels={levels} \
+-             (decoded; no rail binds a two-plane texture yet, so a bind of this object \
+-             refuses at the type gate)",
+-            out.pixel_format(),
+-            out.planes[0].width,
+-            out.planes[0].height,
+-            out.planes[1].width,
+-            out.planes[1].height,
+-        ));
++    // not itself unsupported guest work.
++    //
++    // A combined depth/stencil format is the other executable pair: the guest
++    // describes a `Depth32Float_Stencil8` texture as a depth plane and a
++    // stencil plane over one allocation. The depth rail binds an attachment of
++    // it by identity -- `TargetIdentity::Texture { ref_: depth.texture_ref, .. }`
++    // in `runtime::draw::vulkan`, which reads no descriptor -- so no pass is
++    // lost to the shape. It is still noted once, as a shape and not as a
++    // refusal: the `dual_plane_texture_unexecutable` line it used to share told
++    // a log reader that a bind "refuses at the type gate", 38 times in one
++    // iOS 27 boot, every one of them pf=0x104 and none of them a refusal.
++    // Other dual formats still have no bind.
++    if out.xr_format().is_none() {
++        if crate::protocol::pixel_format::depth_stencil_packing(out.pixel_format()).is_some() {
++            if crate::observe::first_sight("dual_plane_depth_stencil_texture", key) {
++                crate::observe::fail(format!(
++                    "dual_plane_depth_stencil_texture pf={:#x} plane0={}x{} plane1={}x{} \
++                     levels={levels} (decoded; the depth rail binds an attachment of this \
++                     object by identity, so no pass is lost to its two planes)",
++                    out.pixel_format(),
++                    out.planes[0].width,
++                    out.planes[0].height,
++                    out.planes[1].width,
++                    out.planes[1].height,
++                ));
++            }
++        } else if crate::observe::first_sight("dual_plane_texture_unexecutable", key) {
++            crate::observe::fail(format!(
++                "dual_plane_texture_unexecutable pf={:#x} plane0={}x{} plane1={}x{} \
++                 levels={levels} (decoded; no rail binds a two-plane texture yet, so a bind \
++                 of this object refuses at the type gate)",
++                out.pixel_format(),
++                out.planes[0].width,
++                out.planes[0].height,
++                out.planes[1].width,
++                out.planes[1].height,
++            ));
++        }
+     }
+     Ok(out)
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
+index 7f68638..a0e6444 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
+@@ -3750,6 +3750,39 @@ fn a_dual_plane_descriptor_decodes_both_planes_and_the_shared_trailer() {
+     );
+ }
+ 
++/// A depth/stencil pair is the other dual-plane shape the guest sends: a
++/// `Depth32Float_Stencil8` texture is one allocation described as a depth
++/// plane and a stencil plane. The depth rail attaches it by identity -- a named
++/// depth attachment is `TargetIdentity::Texture { ref_, .. }` and no descriptor
++/// is read for it -- so no pass is lost to the shape, and the first-sight note
++/// must not say one is. It used to be the `dual_plane_texture_unexecutable`
++/// line, which told a log reader that a bind "refuses at the type gate": 38
++/// such lines in one iOS 27 boot, every one pf=0x104, none of them a refusal.
++#[test]
++fn a_depth_stencil_dual_plane_descriptor_is_noted_as_attached_not_refused() {
++    use crate::protocol::pixel_format::MTL_FORMAT_DEPTH32_FLOAT_STENCIL8;
++    let b = dual_plane_body([1, 1], (608, 224), MTL_FORMAT_DEPTH32_FLOAT_STENCIL8);
++    let cap = crate::observe::FailCapture::start();
++    let d = decode_dual_plane_texture_descriptor(&b).expect("a well-formed body decodes");
++    assert_eq!(d.pixel_format(), MTL_FORMAT_DEPTH32_FLOAT_STENCIL8);
++    let lines = cap.lines();
++    assert!(
++        !lines
++            .iter()
++            .any(|l| l.starts_with("dual_plane_texture_unexecutable")),
++        "a depth/stencil pair is bound by identity; nothing may call it unexecutable: {lines:?}"
++    );
++    let note = cap.one("dual_plane_depth_stencil_texture");
++    assert!(
++        note.contains("pf=0x104") && note.contains("plane0=608x224"),
++        "{note}"
++    );
++    assert!(
++        !note.contains("refuse"),
++        "the note must not read as a refusal: {note}"
++    );
++}
++
+ /// A dual-plane texture names the one allocation its two planes share, and it
+ /// is the same window a single-plane texture over that handle names.
+ ///

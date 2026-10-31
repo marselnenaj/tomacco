@@ -1,0 +1,148 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -1270,8 +1270,25 @@
+         crate::runtime::drain::note_store_route("cpu_buffer_extent_narrowed");
+         crate::runtime::drain::note_store_route_n("cpu_buffer_extent_saved_bytes", full - avail);
+     }
+-    let want = host_alloc_len(avail).filter(|&n| n > 0)?;
+-    let (read_gva, read_span) = (gva + offset, want as u64);
++    let Some(want) = host_alloc_len(avail).filter(|&n| n > 0) else {
++        crate::observe::fail(format!(
++            "load_buffer fail reason=draw_buffer_host_extent task={task_id} ref={buffer_ref} avail={avail}"
++        ));
++        return None;
++    };
++    let Some(read_gva) = gva.checked_add(offset) else {
++        crate::observe::fail(format!(
++            "load_buffer fail reason=draw_buffer_gva_overflow task={task_id} ref={buffer_ref} gva={gva:#x} off={offset}"
++        ));
++        return None;
++    };
++    let read_span = want as u64;
++    if read_gva.checked_add(read_span).is_none() {
++        crate::observe::fail(format!(
++            "load_buffer fail reason=draw_buffer_gva_overflow task={task_id} ref={buffer_ref} gva={read_gva:#x} span={read_span}"
++        ));
++        return None;
++    }
+     // Census, pay, settle — the whole obligation of a CPU read of one named
+     // resource's guest bytes. This site used to carry the settle alone, because
+     // it held `DeviceState` shared and so *could* not pay; see
+@@ -1285,13 +1302,20 @@
+         read_span,
+         crate::runtime::render_writeback::SettleSite::BufferGuestRead,
+     );
+-    let mut buf = vec![0u8; want];
++    let mut buf = Vec::new();
++    if buf.try_reserve_exact(want).is_err() {
++        crate::observe::fail(format!(
++            "load_buffer fail reason=draw_buffer_host_allocation task={task_id} ref={buffer_ref} want={want}"
++        ));
++        return None;
++    }
++    buf.resize(want, 0);
+     // Use device page_shift (x86=12); unshifted helper defaults to arm14 and fails.
+     if gva_mem::read_task_gva_by_id(
+         host,
+         &state.tasks,
+         task_id,
+-        gva + offset,
++        read_gva,
+         &mut buf,
+         state.page_shift,
+     )
+@@ -1306,7 +1330,8 @@
+     Some(buf)
+ }
+ 
+-/// Standalone CPU buffer read (non-draw-setup callers): resolve + read.
++/// Standalone CPU buffer read (non-draw-setup Metal callers): resolve + read.
++#[cfg(any(test, all(feature = "backend-metal", target_os = "macos")))]
+ fn load_buffer_bytes<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -1565,14 +1590,21 @@
+         ));
+         return None;
+     }
+-    let span = bpr
+-        .checked_mul(u64::from(h - 1))?
+-        .checked_add(u64::from(tight))?;
++    let Some(span) = bpr
++        .checked_mul(u64::from(h - 1))
++        .and_then(|prefix| prefix.checked_add(u64::from(tight)))
++    else {
++        crate::observe::fail(format!(
++            "buftex fail reason=buftex_span_overflow ref={texture_ref} buf={} bpr={bpr} tight={tight} {w}x{h}",
++            bt.buffer_ref
++        ));
++        return None;
++    };
+     // A buffer-backed texture is two contract references over one allocation:
+     // the texture-view texture object the guest binds and samples, and the buffer
+     // buffer that owns the storage. A synchronize names the former and a debt
+-    // may be armed under either, so both are paid. `load_buffer_bytes` below
+-    // pays for `bt.buffer_ref`; this is the sibling call every other sampled
++    // may be armed under either, so both are paid. `read_buffer_bytes_resolved`
++    // below pays for `bt.buffer_ref`; this is the sibling call every other sampled
+     // rail makes, and its absence here is what let a rendered frame stay in a
+     // host resident while this read served the guest the frame before it.
+     crate::runtime::writeback_debt::pay_for_texture(state, host, task_id, texture_ref);
+@@ -1582,22 +1614,48 @@
+     if bt.new_texture_ref != texture_ref {
+         crate::runtime::writeback_debt::pay_for_texture(state, host, task_id, bt.new_texture_ref);
+     }
+-    let raw = load_buffer_bytes(state, host, task_id, bt.buffer_ref, bt.offset)?;
+-    if (raw.len() as u64) < span {
++    let backing = resolve_buffer_backing(state, host, task_id, bt.buffer_ref, None)?;
++    let avail = backing.size.checked_sub(bt.offset).unwrap_or(0);
++    if span > avail {
+         crate::observe::fail(format!(
+             "buftex span_oob ref={texture_ref} buf={} off={} bpr={bpr} span={span} avail={} {w}x{h}",
+-            bt.buffer_ref,
+-            bt.offset,
+-            raw.len()
++            bt.buffer_ref, bt.offset, avail
+         ));
+         return None;
++    }
++    // The descriptor owns the reach: include inter-row padding, exclude the
++    // final row's padding and every unrelated byte after the texture. Buffer
++    // debt payment and disjointness-narrowed settling still belong to the
++    // shared CPU reader, using the exact span it will read.
++    let raw = read_buffer_bytes_resolved(
++        state,
++        host,
++        task_id,
++        bt.buffer_ref,
++        &backing,
++        bt.offset,
++        Some(span),
++    )?;
++    crate::runtime::drain::note_store_route("buftex_bounded_read");
++    crate::runtime::drain::note_store_route_n("buftex_source_read_bytes", span);
++    crate::runtime::drain::note_store_route_n("buftex_tail_skipped_bytes", avail - span);
++    // Tight rows already have the requested layout; retain this allocation
++    // instead of allocating and copying a second identical image.
++    if bpr == u64::from(tight) || h == 1 {
++        crate::runtime::drain::note_store_route("buftex_packing_copy_avoided");
++        return Some((w, h, fmt, raw));
+     }
+     let row_bytes = usize::try_from(tight).ok()?;
+     let stride = usize::try_from(bpr).ok()?;
+     let mut packed = Vec::new();
+-    packed
+-        .try_reserve_exact(row_bytes.checked_mul(h as usize)?)
+-        .ok()?;
++    let packed_bytes = row_bytes.checked_mul(h as usize)?;
++    if packed.try_reserve_exact(packed_bytes).is_err() {
++        crate::observe::fail(format!(
++            "buftex fail reason=buftex_host_allocation ref={texture_ref} buf={} want={packed_bytes}",
++            bt.buffer_ref
++        ));
++        return None;
++    }
+     for row in 0..h as usize {
+         let start = row.checked_mul(stride)?;
+         packed.extend_from_slice(raw.get(start..start.checked_add(row_bytes)?)?);

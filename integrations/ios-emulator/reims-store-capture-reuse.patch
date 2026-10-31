@@ -1,0 +1,1344 @@
+reims-vgpu: the present capture reuses the render Store's readback.
+
+On the Home screen (~10 presents/s, no host window carrying the
+frame): every frame read the compositor's RGBA16F 1206x2622 front (25 MB of
+half floats) back from the GPU twice. The render Store read it to land the
+guest's pages (store_native_float_surface, native_float_readback_us ~9.4 ms,
+native_float_publish_us ~3.5 ms a frame), and the present capture that
+followed (capture_resident_bgra_into, reims-present-capture-in-place) read
+the same resident again with its own submission and fence to fill the BGRA8
+retain the frame mailbox publishes: one more GPU round trip and 25 MB a
+frame, 1-2 ms on an idle GPU and 6-10 ms on one another process keeps busy.
+
+Now a native-float Store of a surface a present captured recently, while the
+display needs CPU frames, converts the readback it already holds into BGRA8
+on its way to the guest (store_capture::stash, through texels_into_bgra, the
+conversion half split out of capture_resident_bgra_into so both callers run
+the same code), and seals it with the epoch its finish stamped the resident
+with. The present capture takes those bytes (store_capture::take, swapped
+into the retain without a copy, the old scratch recycled for the next Store)
+only when every way the resident could differ from a fresh readback is
+excluded:
+
+- same identity (mapping, incarnation, extent, format), and the registry
+  slot still names the same VkImage, declared format and extent,
+  single-sampled, content-ready, not guest-imported (host-writable memory);
+- no queue submission since the readback: a new process-wide count bumped by
+  the four DeviceContext entry points that are the only routes to the one
+  queue of the one VkDevice, read under the engine lock that covered the
+  copy and its fence wait. Equal means the GPU was given nothing since, so no
+  rail, with or without registry bookkeeping, can have written the image;
+- no recording batch (a fresh readback would append to it and run it first);
+- the resident's content stamp and the mapping's surface_content_epoch both
+  still at the sealed epoch (a draw recorded into it clears the stamp, a
+  guest/host write to the mapping advances the epoch); a Store that failed
+  after its readback never seals and its stash is discarded.
+
+Any refusal reads the resident back exactly as before. A stash serves one
+present. REIMS_VGPU_STORE_CAPTURE_REUSE=off restores two readbacks a frame.
+
+Census (store_routes): present_capture_reused, present_capture_reused_bytes_n,
+present_capture_fresh plus present_capture_fresh_<why> (disabled, nothing,
+identity, unsealed, absent, replaced, not_ready, guest_imported,
+resident_rewritten, mapping_written, submitted, recording, length);
+store_capture_stashed_n, store_capture_convert_us, store_capture_sealed_n,
+store_capture_seal_refused_n, store_capture_convert_refused_n,
+store_capture_not_presented_n.
+
+Tests: store_capture::tests (verdict: every write shape refused, identity /
+seal / length, census names), render_writeback store_capture_gate_tests
+(stash only for recently presented surfaces on a CPU display), parity
+the_stores_readback_serves_the_present_only_while_nothing_touched_the_resident
+(real GPU: reused bytes == in-place capture == copying capture, a draw into
+the resident / into another resident / another readback / a moved mapping
+epoch / an unsealed stash / another incarnation / another length each force
+a fresh readback, and the fresh capture after a rewrite shows the new draw).
+
+diff --git c/reims-vgpu/crates/reims-vgpu-config/src/lib.rs i/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+index 1ca1976..d4cbe4f 100644
+--- c/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ i/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -385,6 +385,20 @@ pub const BATCH_DEPTH: &str = "REIMS_VGPU_BATCH_DEPTH";
+ /// submission and fence. Off is a refusal and never a permission.
+ pub const BATCH_MRT: &str = "REIMS_VGPU_BATCH_MRT";
+ 
++/// `off` makes every present capture read its resident back from the GPU, the
++/// way each one did before the render Store's readback was reused.
++///
++/// By default a native-float render Store of a surface the display presented
++/// recently converts the bytes it has just read back into BGRA8 on their way to
++/// the guest's pages, tagged with what that readback saw: the resident's
++/// identity, image and extent, and the device's queue-submission count. The
++/// next present capture of that resident takes those bytes instead of reading
++/// the resident a second time, and only when nothing can have changed it since:
++/// no submission and no recording batch, the resident still vouched for at the
++/// epoch the Store sealed, the mapping still at that epoch. Off is a refusal and
++/// never a permission (`present_capture_fresh_disabled`).
++pub const STORE_CAPTURE_REUSE: &str = "REIMS_VGPU_STORE_CAPTURE_REUSE";
++
+ /// `off` stages the guest bytes of a `[[buffer(n)]]` bind even when the stage's
+ /// own reflection says the shader never dereferences it.
+ ///
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
+index d648580..5687b4b 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
+@@ -1701,6 +1701,7 @@ impl DeviceContext {
+         command_buffers: &[vk::CommandBuffer],
+         fence: vk::Fence,
+     ) -> Result<(), vk::Result> {
++        note_queue_submission();
+         let timeline = self
+             .stamp_completion
+             .as_ref()
+@@ -1719,6 +1720,7 @@ impl DeviceContext {
+         command_buffers: &[vk::CommandBuffer],
+         fence: vk::Fence,
+     ) -> Result<(), vk::Result> {
++        note_queue_submission();
+         let timeline = self
+             .stamp_completion
+             .as_ref()
+@@ -1777,6 +1779,7 @@ impl DeviceContext {
+         signal_semaphores: &[vk::Semaphore],
+         fence: vk::Fence,
+     ) -> Result<(), vk::Result> {
++        note_queue_submission();
+         if let Some(owner) = self.queue_owner.as_ref() {
+             return owner.submit_sync_ordered(
+                 command_buffers,
+@@ -1805,6 +1808,7 @@ impl DeviceContext {
+         &self,
+         transaction: PresentTransaction<'_>,
+     ) -> Result<PresentSubmission, vk::Result> {
++        note_queue_submission();
+         if let Some(owner) = self.queue_owner.as_ref() {
+             return owner
+                 .enqueue_present(transaction)
+@@ -2734,3 +2738,29 @@ mod persist_owner_tests {
+         std::fs::remove_dir_all(&dir).ok();
+     }
+ }
++
++/// Every submission this device has handed to its one graphics queue — guest
++/// work (synchronous and batched), ordered queue work (readbacks, writebacks)
++/// and window present transactions — counted when it is handed over, before
++/// the driver or the queue owner sees it, and whether or not it then succeeds.
++///
++/// The four `DeviceContext` methods that bump it are the only callers of
++/// `vkQueueSubmit` and of the queue owner's submit entries, and this device
++/// creates one `VkDevice` with one queue. So two equal readings of this count
++/// bracket an interval in which the GPU was given nothing to execute: any
++/// resident image read back at the first reading, after a fence that waited for
++/// everything queued before it, still holds exactly those bytes at the second
++/// — unless commands were recorded and not yet submitted, which the open batch
++/// answers and [`super::store_capture`] asks separately.
++///
++/// Process-global because the engine is: one `EngineState` behind one lock.
++static QUEUE_SUBMISSIONS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++
++fn note_queue_submission() {
++    QUEUE_SUBMISSIONS.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
++}
++
++/// [`QUEUE_SUBMISSIONS`] now.
++pub(crate) fn queue_submissions() -> u64 {
++    QUEUE_SUBMISSIONS.load(std::sync::atomic::Ordering::SeqCst)
++}
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+index 08720d4..b88463e 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -37,6 +37,9 @@ mod queue_owner;
+ pub mod resource_lease;
+ mod scatter_shader;
+ pub(crate) mod stamp_completion;
++/// The render Store's readback, converted on its way to the guest, handed to
++/// the next present capture of the same resident when nothing changed it.
++pub mod store_capture;
+ /// The requested draw-time buffer-gather working set. Re-exported for the same
+ /// reason: `pools` is private, and the number this reports is what a content
+ /// cache on that rail would have to be sized from.
+@@ -3019,7 +3022,6 @@ pub fn capture_resident_bgra_into(
+     identity: &TargetIdentity,
+     dst: &mut [u8],
+ ) -> Option<(usize, u8, [u8; 4])> {
+-    use crate::protocol::pixel_format::Rgba8Narrowing;
+     {
+         let guard = lock_engine();
+         let slot = guard.pools.registry_get(identity)?;
+@@ -3042,6 +3044,31 @@ pub fn capture_resident_bgra_into(
+         }
+     };
+     let texel = texels.texel;
++    let stats = texels_into_bgra(&texels, dst, &decline)?;
++    drop(texels);
++    if matches!(texel, ReadbackTexel::Native(_)) {
++        crate::runtime::drain::note_store_route("target_read_narrowed");
++    }
++    crate::runtime::drain::note_store_route("present_capture_fused");
++    Some(stats)
++}
++
++/// The conversion half of [`capture_resident_bgra_into`]: one readback's bytes
++/// into tight BGRA8 `dst`, with the frame's figures, or `None` with the same
++/// refusals (reported through `decline`).
++///
++/// One function for both of its callers — the present capture, which reads
++/// the resident and converts at once, and the render Store's
++/// [`store_capture`] stash, which converts the readback it already holds — so
++/// a reused frame is these bytes by construction and not by a second
++/// implementation agreeing with the first.
++pub(crate) fn texels_into_bgra(
++    texels: &ConsumableTargetTexels,
++    dst: &mut [u8],
++    decline: &dyn Fn(&DrawError),
++) -> Option<present_capture::FrameStats> {
++    use crate::protocol::pixel_format::Rgba8Narrowing;
++    let texel = texels.texel;
+     let plan = match texel {
+         ReadbackTexel::Bgra8 => Rgba8Narrowing::Bgra8,
+         ReadbackTexel::Rgba8 => Rgba8Narrowing::Rgba8,
+@@ -3082,13 +3109,7 @@ pub fn capture_resident_bgra_into(
+     if pixels.checked_mul(RESIDENT_READ_BYTES_PER_TEXEL as usize)? < dst.len() {
+         return None;
+     }
+-    let stats = present_capture::convert_with_stats(plan, texels.bytes(), dst)?;
+-    drop(texels);
+-    if matches!(texel, ReadbackTexel::Native(_)) {
+-        crate::runtime::drain::note_store_route("target_read_narrowed");
+-    }
+-    crate::runtime::drain::note_store_route("present_capture_fused");
+-    Some(stats)
++    present_capture::convert_with_stats(plan, texels.bytes(), dst)
+ }
+ 
+ /// The six fallible Vulkan calls a whole-image readback makes, named per rail.
+@@ -5834,13 +5855,23 @@ impl ConsumableTargetTexels {
+ pub fn read_target_texels_consumable(
+     identity: &TargetIdentity,
+ ) -> Result<ConsumableTargetTexels, DrawError> {
++    read_target_texels_delivered(identity, ReadbackDelivery::Lease).map(|(texels, _)| texels)
++}
++
++/// [`read_target_texels_consumable`], plus what the readback saw, taken under
++/// the same engine lock as the copy and its fence wait: the
++/// [`store_capture::ReadWitness`] a later present capture compares against to
++/// prove the resident still holds these bytes.
++pub fn read_target_texels_consumable_witnessed(
++    identity: &TargetIdentity,
++) -> Result<(ConsumableTargetTexels, store_capture::ReadWitness), DrawError> {
+     read_target_texels_delivered(identity, ReadbackDelivery::Lease)
+ }
+ 
+ /// Read a resident at its own texel width into independently owned bytes.
+ /// Store consumers retain float range and native integer bits.
+ pub fn read_target_texels(identity: &TargetIdentity) -> Result<TargetReadback, DrawError> {
+-    let readback = read_target_texels_delivered(identity, ReadbackDelivery::Copy)?;
++    let (readback, _) = read_target_texels_delivered(identity, ReadbackDelivery::Copy)?;
+     match readback.storage {
+         ReadbackResult::Copied(pixels) => Ok(TargetReadback {
+             pixels,
+@@ -5857,7 +5888,7 @@ pub fn read_target_texels(identity: &TargetIdentity) -> Result<TargetReadback, D
+ fn read_target_texels_delivered(
+     identity: &TargetIdentity,
+     delivery: ReadbackDelivery,
+-) -> Result<ConsumableTargetTexels, DrawError> {
++) -> Result<(ConsumableTargetTexels, store_capture::ReadWitness), DrawError> {
+     let mut guard = lock_engine();
+     let EngineState {
+         ref mut owner,
+@@ -5890,12 +5921,23 @@ fn read_target_texels_delivered(
+         )?;
+         pools.registry_note_access(identity, read_access);
+         counters.note_target_read(rb_size, TargetReadDelivery::Host);
++        // Still under the lock that covered the copy and its fence wait, so
++        // nothing can be submitted between the bytes and this description of
++        // them.
++        let witness = store_capture::ReadWitness::taken(
++            identity,
++            snap.image,
++            snap.format,
++            snap.width,
++            snap.height,
++            context::queue_submissions(),
++        );
+         let texel = if layout.is_four_byte_color() {
+             ReadbackTexel::eight_bit(snap.bgra())
+         } else {
+             ReadbackTexel::Native(layout)
+         };
+-        Ok(ConsumableTargetTexels { storage, texel })
++        Ok((ConsumableTargetTexels { storage, texel }, witness))
+     }
+ }
+ 
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs
+new file mode 100644
+index 0000000..ee2d279
+--- /dev/null
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs
+@@ -0,0 +1,642 @@
++//! One readback per frame, where there used to be two.
++//!
++//! # What it removes
++//!
++//! On a host whose window does not carry the frame, every frame of the iOS
++//! compositor read its RGBA16F front surface — 1206x2622, 25 MB of half floats —
++//! back from the GPU twice. The render Store read it to land the guest's pages
++//! (`store_native_float_surface`, `native_float_readback_us` ~9 ms a frame on
++//! in a profile), and the present capture that followed read the same resident
++//! again with its own submission and fence to fill the retained BGRA8 frame
++//! (`capture_resident_bgra_into`). Nothing ran between the two: the second
++//! readback copied bytes the first had just delivered, and paid another GPU
++//! round trip for them — 1-2 ms on an idle GPU, 6-10 ms on one another process
++//! keeps busy.
++//!
++//! Now the Store, when the surface is one the display presented recently,
++//! converts the readback it already holds into BGRA8 on its way to the guest
++//! ([`stash`]), with the same conversion the present capture runs
++//! ([`super::texels_into_bgra`]), and seals it with the epoch it vouched for the
++//! resident at ([`seal`]). The present capture of that resident takes the bytes
++//! ([`take`]) instead of reading the resident again — when, and only when, it
++//! can prove they are what that second readback would return.
++//!
++//! # Why the bytes are the second readback's
++//!
++//! A readback returns the resident image's contents at the point in queue order
++//! where its copy runs, after a fence that waited for everything queued before
++//! it. The reused bytes are the Store readback's, converted by the function the
++//! present capture converts with. So they equal a fresh capture exactly when
++//! the resident image holds the same contents at the present as at the Store's
++//! copy, and the fresh capture would read that same image. [`judge`] accepts
++//! only when every way that could fail is excluded:
++//!
++//! - **The same image.** The present asks for the identity the Store read (the
++//!   mapping, its incarnation, extent and format), the registry still holds a
++//!   slot at it, and that slot names the same `VkImage`, declared format and
++//!   extent, single-sampled, content-ready. A recycled or recreated resident
++//!   cannot pass as the one that was read.
++//! - **Nothing executed on the GPU since.** [`super::context::queue_submissions`]
++//!   counts every handover to the device's one queue — the only way any command
++//!   reaches the GPU — and the witness took it under the engine lock that also
++//!   covered the copy and its fence. Equal at the present, the GPU has been
++//!   given nothing at all since the copy, so no draw, blit, clear, seed, compute
++//!   dispatch or GPU writeback can have written the image, whichever rail
++//!   recorded it and whatever registry bookkeeping it did or did not do.
++//! - **Nothing recorded and waiting.** A fresh readback would append to an open
++//!   draw batch and submit it, so it would see draws recorded since the Store
++//!   that the GPU has not run yet. Any recording batch refuses.
++//! - **Not host-visible memory.** A guest-imported resident is the guest's own
++//!   pages, which a CPU can change with no submission at all. Refused.
++//! - **The registry still vouches for it.** [`seal`] records the epoch the
++//!   Store stamped the resident with (`stamp_resident_content_epoch`, the
++//!   mapping's `surface_content_epoch` after its write). The present requires
++//!   the resident's stamp and the mapping's epoch both still at that value. A
++//!   draw recorded into the resident clears its stamp, and a guest or host
++//!   write to the mapping advances the epoch, so either sends the capture back
++//!   to the GPU even though neither alone could change what a readback returns
++//!   without a submission. A Store that failed after its readback never seals,
++//!   and an unsealed stash is never taken.
++//!
++//! Every refusal is the old rail, not a loss: the capture reads the resident
++//! as it did before, and the census says why (`present_capture_fresh_<why>`).
++//! A stash is taken at most once.
++//!
++//! # Lock order
++//!
++//! The stash mutex is taken before the engine lock wherever both are held, and
++//! [`stash`] — called while the Store holds a staging lease — takes no engine
++//! lock at all (the [`super::ConsumableTargetTexels`] rule).
++
++use super::{ConsumableTargetTexels, TargetIdentity};
++use ash::vk;
++use parking_lot::Mutex;
++
++/// What a readback saw, captured under the lock that covered the copy.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct ReadWitness {
++    identity: TargetIdentity,
++    image: vk::Image,
++    format: vk::Format,
++    width: u32,
++    height: u32,
++    submissions: u64,
++}
++
++impl ReadWitness {
++    pub(crate) fn taken(
++        identity: &TargetIdentity,
++        image: vk::Image,
++        format: vk::Format,
++        width: u32,
++        height: u32,
++        submissions: u64,
++    ) -> Self {
++        ReadWitness {
++            identity: identity.clone(),
++            image,
++            format,
++            width,
++            height,
++            submissions,
++        }
++    }
++
++    /// The identity the readback was asked for.
++    pub fn identity(&self) -> &TargetIdentity {
++        &self.identity
++    }
++
++    /// The queue-submission count right after the readback's fence.
++    pub fn submissions(&self) -> u64 {
++        self.submissions
++    }
++}
++
++/// The resident as the registry describes it at the present.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(crate) struct ResidentNow {
++    pub image: vk::Image,
++    pub format: vk::Format,
++    pub width: u32,
++    pub height: u32,
++    pub sample_count: u32,
++    pub content_ready: bool,
++    pub guest_imported: bool,
++    pub content_epoch: Option<u32>,
++}
++
++/// Why a present capture read its resident back instead of taking the stash.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum Fresh {
++    /// [`crate::config::STORE_CAPTURE_REUSE`] is off.
++    Disabled,
++    /// No Store stashed a frame since the last present took or refused one.
++    Nothing,
++    /// The stash is another resident's (another mapping, incarnation, extent
++    /// or format).
++    Identity,
++    /// The Store that stashed it did not finish: no epoch was sealed.
++    Unsealed,
++    /// No resident at this identity any more.
++    Absent,
++    /// A resident is there, but not the image (or extent, format, sample
++    /// count) that was read.
++    Replaced,
++    /// The resident holds no ready content.
++    NotReady,
++    /// Guest-imported memory: host writes need no submission.
++    GuestImported,
++    /// The resident's content stamp moved off the sealed epoch: a draw since.
++    ResidentRewritten,
++    /// The mapping's epoch moved off the sealed epoch: a write since.
++    MappingWritten,
++    /// GPU work was submitted since the readback.
++    Submitted,
++    /// Commands are recorded and not yet submitted.
++    Recording,
++    /// The present asks for another number of bytes than the stash holds.
++    Length,
++}
++
++impl Fresh {
++    /// The census name, one per reason.
++    pub fn census(self) -> &'static str {
++        match self {
++            Fresh::Disabled => "present_capture_fresh_disabled",
++            Fresh::Nothing => "present_capture_fresh_nothing",
++            Fresh::Identity => "present_capture_fresh_identity",
++            Fresh::Unsealed => "present_capture_fresh_unsealed",
++            Fresh::Absent => "present_capture_fresh_absent",
++            Fresh::Replaced => "present_capture_fresh_replaced",
++            Fresh::NotReady => "present_capture_fresh_not_ready",
++            Fresh::GuestImported => "present_capture_fresh_guest_imported",
++            Fresh::ResidentRewritten => "present_capture_fresh_resident_rewritten",
++            Fresh::MappingWritten => "present_capture_fresh_mapping_written",
++            Fresh::Submitted => "present_capture_fresh_submitted",
++            Fresh::Recording => "present_capture_fresh_recording",
++            Fresh::Length => "present_capture_fresh_length",
++        }
++    }
++
++    #[cfg(test)]
++    const ALL: [Fresh; 13] = [
++        Fresh::Disabled,
++        Fresh::Nothing,
++        Fresh::Identity,
++        Fresh::Unsealed,
++        Fresh::Absent,
++        Fresh::Replaced,
++        Fresh::NotReady,
++        Fresh::GuestImported,
++        Fresh::ResidentRewritten,
++        Fresh::MappingWritten,
++        Fresh::Submitted,
++        Fresh::Recording,
++        Fresh::Length,
++    ];
++}
++
++/// The decision, with every input passed in, so a test reaches each refusal.
++///
++/// `sealed` is the epoch [`seal`] recorded, `now` the registry's slot at the
++/// asked identity, `mapping_epoch` the mapping's `surface_content_epoch`,
++/// `submissions` and `recording` the queue count and open-batch state at the
++/// present, `held` the stash's byte count and `need` the present's.
++#[allow(clippy::too_many_arguments)]
++pub(crate) fn judge(
++    witness: &ReadWitness,
++    sealed: Option<u32>,
++    asked: &TargetIdentity,
++    now: Option<ResidentNow>,
++    mapping_epoch: Option<u32>,
++    submissions: u64,
++    recording: bool,
++    held: usize,
++    need: usize,
++) -> Result<(), Fresh> {
++    if &witness.identity != asked {
++        return Err(Fresh::Identity);
++    }
++    let Some(sealed) = sealed else {
++        return Err(Fresh::Unsealed);
++    };
++    let Some(now) = now else {
++        return Err(Fresh::Absent);
++    };
++    if now.image != witness.image
++        || now.format != witness.format
++        || now.width != witness.width
++        || now.height != witness.height
++        || now.sample_count != 1
++    {
++        return Err(Fresh::Replaced);
++    }
++    if !now.content_ready {
++        return Err(Fresh::NotReady);
++    }
++    if now.guest_imported {
++        return Err(Fresh::GuestImported);
++    }
++    if now.content_epoch != Some(sealed) {
++        return Err(Fresh::ResidentRewritten);
++    }
++    if mapping_epoch != Some(sealed) {
++        return Err(Fresh::MappingWritten);
++    }
++    if submissions != witness.submissions {
++        return Err(Fresh::Submitted);
++    }
++    if recording {
++        return Err(Fresh::Recording);
++    }
++    if held != need {
++        return Err(Fresh::Length);
++    }
++    Ok(())
++}
++
++/// One converted frame, waiting for its present.
++struct Stash {
++    witness: ReadWitness,
++    sealed: Option<u32>,
++    bgra: Vec<u8>,
++    stats: (usize, u8, [u8; 4]),
++}
++
++/// How many recent present captures the Store asks about. A compositor cycles
++/// two or three buffers; four covers that with one to spare.
++const RECENT_PRESENTS: usize = 4;
++
++struct Shelf {
++    stash: Option<Stash>,
++    /// A buffer to convert the next Store into: the present's previous scratch
++    /// once a present took a stash, so the steady state allocates nothing.
++    spare: Vec<u8>,
++    recent: [(u32, u32, u32); RECENT_PRESENTS],
++    next: usize,
++}
++
++static SHELF: Mutex<Shelf> = Mutex::new(Shelf {
++    stash: None,
++    spare: Vec::new(),
++    recent: [(0, 0, 0); RECENT_PRESENTS],
++    next: 0,
++});
++
++/// Whether [`crate::config::STORE_CAPTURE_REUSE`] is switched off, read once.
++pub fn disabled() -> bool {
++    use std::sync::OnceLock;
++    static OFF: OnceLock<bool> = OnceLock::new();
++    *OFF.get_or_init(|| {
++        let (state, value) = crate::config::read(crate::config::STORE_CAPTURE_REUSE);
++        match state {
++            crate::config::Switch::Off => {
++                crate::observe::off("store_capture reason=store_capture_reuse_disabled_by_env");
++                true
++            }
++            crate::config::Switch::Unrecognized => {
++                crate::observe::fail(format!(
++                    "store_capture reason=store_capture_reuse_env_unrecognized value={}",
++                    value.unwrap_or_default()
++                ));
++                false
++            }
++            crate::config::Switch::On | crate::config::Switch::Unset => false,
++        }
++    })
++}
++
++/// A present capture of `mapping` at this geometry is about to run.
++pub fn note_presented(mapping: u32, width: u32, height: u32) {
++    let mut shelf = SHELF.lock();
++    let entry = (mapping, width, height);
++    if shelf.recent.contains(&entry) {
++        return;
++    }
++    let at = shelf.next;
++    shelf.recent[at] = entry;
++    shelf.next = (at + 1) % RECENT_PRESENTS;
++}
++
++/// Whether a present capture of `mapping` at this geometry ran recently — the
++/// Store's test for whether converting its readback is likely to be used.
++pub fn presented_recently(mapping: u32, width: u32, height: u32) -> bool {
++    mapping != 0 && SHELF.lock().recent.contains(&(mapping, width, height))
++}
++
++/// Convert the Store's readback into the stash, replacing any earlier one.
++///
++/// Takes no engine lock: the caller holds the staging lease. `false` (and no
++/// stash) when the conversion refuses — the present then reads back as before.
++pub fn stash(witness: ReadWitness, texels: &ConsumableTargetTexels) -> bool {
++    let need = (witness.width as usize)
++        .saturating_mul(witness.height as usize)
++        .saturating_mul(crate::protocol::pixel_format::RGBA8_BPP as usize);
++    let mut shelf = SHELF.lock();
++    let mut bgra = match shelf.stash.take() {
++        Some(old) => old.bgra,
++        None => std::mem::take(&mut shelf.spare),
++    };
++    drop(shelf);
++    bgra.clear();
++    bgra.resize(need, 0);
++    let started = std::time::Instant::now();
++    let stats = super::texels_into_bgra(texels, &mut bgra, &|_| {});
++    let mut shelf = SHELF.lock();
++    match stats {
++        Some(stats) if need != 0 => {
++            crate::runtime::drain::note_store_route_us(
++                "store_capture_convert_us",
++                started.elapsed().as_micros() as u64,
++            );
++            crate::runtime::drain::note_store_route("store_capture_stashed_n");
++            shelf.stash = Some(Stash {
++                witness,
++                sealed: None,
++                bgra,
++                stats,
++            });
++            true
++        }
++        _ => {
++            crate::runtime::drain::note_store_route("store_capture_convert_refused_n");
++            shelf.spare = bgra;
++            false
++        }
++    }
++}
++
++/// The Store landed and stamped `identity` with `epoch`: the stash may serve.
++///
++/// Seals only a stash for this identity, and only while the resident really
++/// carries that stamp; otherwise the stash is dropped.
++pub fn seal(identity: &TargetIdentity, epoch: u32) -> bool {
++    let stamped = super::resident_content_state(identity) == super::ResidentContent::Epoch(epoch);
++    let mut shelf = SHELF.lock();
++    let Some(stash) = shelf.stash.as_mut() else {
++        return false;
++    };
++    if &stash.witness.identity != identity {
++        return false;
++    }
++    if !stamped {
++        let dropped = shelf.stash.take().map(|s| s.bgra).unwrap_or_default();
++        shelf.spare = dropped;
++        crate::runtime::drain::note_store_route("store_capture_seal_refused_n");
++        return false;
++    }
++    stash.sealed = Some(epoch);
++    crate::runtime::drain::note_store_route("store_capture_sealed_n");
++    true
++}
++
++/// Drop any stash (a Store of this identity failed after stashing).
++pub fn discard(identity: &TargetIdentity) {
++    let mut shelf = SHELF.lock();
++    if shelf
++        .stash
++        .as_ref()
++        .is_some_and(|s| &s.witness.identity == identity)
++    {
++        let dropped = shelf.stash.take().map(|s| s.bgra).unwrap_or_default();
++        shelf.spare = dropped;
++    }
++}
++
++/// A stashed frame handed to a present.
++pub struct Reused {
++    pub bgra: Vec<u8>,
++    pub stats: (usize, u8, [u8; 4]),
++}
++
++/// Take the stash for a present of `identity` needing `need` bytes, or say why
++/// the present must read the resident back. The stash is consumed either way.
++pub fn take(
++    identity: &TargetIdentity,
++    mapping_epoch: Option<u32>,
++    need: usize,
++) -> Result<Reused, Fresh> {
++    if disabled() {
++        return Err(Fresh::Disabled);
++    }
++    let mut shelf = SHELF.lock();
++    let Some(stash) = shelf.stash.take() else {
++        return Err(Fresh::Nothing);
++    };
++    // Stash before engine: the order every holder of both takes them in.
++    let verdict = {
++        let guard = super::lock_engine();
++        let now = guard.pools.registry_get(identity).map(|slot| ResidentNow {
++            image: slot.image,
++            format: slot.format.declared(),
++            width: slot.width,
++            height: slot.height,
++            sample_count: slot.sample_count,
++            content_ready: slot.content_ready,
++            guest_imported: slot.memory.is_guest_imported(),
++            content_epoch: slot.content_epoch,
++        });
++        let recording = guard.pools.batch_open_recording().is_some();
++        judge(
++            &stash.witness,
++            stash.sealed,
++            identity,
++            now,
++            mapping_epoch,
++            super::context::queue_submissions(),
++            recording,
++            stash.bgra.len(),
++            need,
++        )
++    };
++    match verdict {
++        Ok(()) => Ok(Reused {
++            bgra: stash.bgra,
++            stats: stash.stats,
++        }),
++        Err(why) => {
++            shelf.spare = stash.bgra;
++            Err(why)
++        }
++    }
++}
++
++/// Return a buffer for the next Store to convert into.
++pub fn give_back(buffer: Vec<u8>) {
++    let mut shelf = SHELF.lock();
++    if shelf.spare.capacity() < buffer.capacity() {
++        shelf.spare = buffer;
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use ash::vk::Handle;
++
++    fn surface(id: u32, generation: u64) -> TargetIdentity {
++        TargetIdentity::Surface {
++            id,
++            width: 4,
++            height: 2,
++            generation,
++            format: vk::Format::R16G16B16A16_SFLOAT,
++        }
++    }
++
++    fn witness() -> ReadWitness {
++        ReadWitness::taken(
++            &surface(7, 3),
++            vk::Image::from_raw(0x1000),
++            vk::Format::R16G16B16A16_SFLOAT,
++            4,
++            2,
++            41,
++        )
++    }
++
++    fn now() -> ResidentNow {
++        ResidentNow {
++            image: vk::Image::from_raw(0x1000),
++            format: vk::Format::R16G16B16A16_SFLOAT,
++            width: 4,
++            height: 2,
++            sample_count: 1,
++            content_ready: true,
++            guest_imported: false,
++            content_epoch: Some(9),
++        }
++    }
++
++    fn verdict(
++        asked: &TargetIdentity,
++        sealed: Option<u32>,
++        now: Option<ResidentNow>,
++        mapping_epoch: Option<u32>,
++        submissions: u64,
++        recording: bool,
++        need: usize,
++    ) -> Result<(), Fresh> {
++        judge(
++            &witness(),
++            sealed,
++            asked,
++            now,
++            mapping_epoch,
++            submissions,
++            recording,
++            32,
++            need,
++        )
++    }
++
++    /// The one shape that reuses: same resident, sealed, still stamped, the
++    /// mapping unmoved, nothing submitted or recording, the same length.
++    #[test]
++    fn an_untouched_resident_reuses_the_stores_bytes() {
++        assert_eq!(
++            verdict(&surface(7, 3), Some(9), Some(now()), Some(9), 41, false, 32),
++            Ok(())
++        );
++    }
++
++    /// A write of any kind between the Store and the present sends the capture
++    /// back to the GPU, each under its own name.
++    #[test]
++    fn every_write_between_store_and_present_forces_a_fresh_readback() {
++        let id = surface(7, 3);
++        // GPU work submitted after the readback — whatever it wrote.
++        assert_eq!(
++            verdict(&id, Some(9), Some(now()), Some(9), 42, false, 32),
++            Err(Fresh::Submitted)
++        );
++        // Recorded and not yet submitted: a fresh readback would run it first.
++        assert_eq!(
++            verdict(&id, Some(9), Some(now()), Some(9), 41, true, 32),
++            Err(Fresh::Recording)
++        );
++        // A draw into the resident cleared its stamp.
++        let drawn = ResidentNow {
++            content_epoch: None,
++            ..now()
++        };
++        assert_eq!(
++            verdict(&id, Some(9), Some(drawn), Some(9), 41, false, 32),
++            Err(Fresh::ResidentRewritten)
++        );
++        // A guest or host write advanced the mapping's epoch.
++        assert_eq!(
++            verdict(&id, Some(9), Some(now()), Some(10), 41, false, 32),
++            Err(Fresh::MappingWritten)
++        );
++        // Another image now answers for the identity.
++        let recycled = ResidentNow {
++            image: vk::Image::from_raw(0x2000),
++            ..now()
++        };
++        assert_eq!(
++            verdict(&id, Some(9), Some(recycled), Some(9), 41, false, 32),
++            Err(Fresh::Replaced)
++        );
++        assert_eq!(
++            verdict(&id, Some(9), None, Some(9), 41, false, 32),
++            Err(Fresh::Absent)
++        );
++        let imported = ResidentNow {
++            guest_imported: true,
++            ..now()
++        };
++        assert_eq!(
++            verdict(&id, Some(9), Some(imported), Some(9), 41, false, 32),
++            Err(Fresh::GuestImported)
++        );
++        let unready = ResidentNow {
++            content_ready: false,
++            ..now()
++        };
++        assert_eq!(
++            verdict(&id, Some(9), Some(unready), Some(9), 41, false, 32),
++            Err(Fresh::NotReady)
++        );
++        let multisampled = ResidentNow {
++            sample_count: 4,
++            ..now()
++        };
++        assert_eq!(
++            verdict(&id, Some(9), Some(multisampled), Some(9), 41, false, 32),
++            Err(Fresh::Replaced)
++        );
++    }
++
++    /// A stash only ever serves the resident it read, after its Store sealed.
++    #[test]
++    fn a_stash_serves_only_its_own_sealed_resident_at_its_own_length() {
++        // Another mapping, and the same mapping's next incarnation.
++        assert_eq!(
++            verdict(&surface(8, 3), Some(9), Some(now()), Some(9), 41, false, 32),
++            Err(Fresh::Identity)
++        );
++        assert_eq!(
++            verdict(&surface(7, 4), Some(9), Some(now()), Some(9), 41, false, 32),
++            Err(Fresh::Identity)
++        );
++        assert_eq!(
++            verdict(&surface(7, 3), None, Some(now()), Some(9), 41, false, 32),
++            Err(Fresh::Unsealed)
++        );
++        assert_eq!(
++            verdict(&surface(7, 3), Some(9), Some(now()), Some(9), 41, false, 28),
++            Err(Fresh::Length)
++        );
++    }
++
++    #[test]
++    fn each_fresh_reason_has_its_own_census_name() {
++        let names: std::collections::HashSet<_> = Fresh::ALL.iter().map(|f| f.census()).collect();
++        assert_eq!(names.len(), Fresh::ALL.len());
++        assert!(names
++            .iter()
++            .all(|n| n.starts_with("present_capture_fresh_")));
++    }
++}
+diff --git c/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs i/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+index f1ad01e..a4e0aac 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ i/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -200,6 +200,8 @@ fn store_native_float_surface<M: HostMemory + HostOps>(
+     )
+     .map_err(R::Mapping)?;
+     let expected_bytes = target.packed_bytes();
++    // Asked before the writer borrows the device state for the transaction.
++    let stash = present_wants_stash(state, mapping_id, width, height);
+     let bytes = match target.prepared_source_plan(state, host) {
+         Ok(plan) => {
+             let writer = crate::runtime::mapping_write::prepare_native_image_write(
+@@ -207,8 +209,9 @@ fn store_native_float_surface<M: HostMemory + HostOps>(
+             )
+             .map_err(R::Mapping)?;
+             let read_started = std::time::Instant::now();
+-            let readback = crate::backend::vulkan::engine::read_target_texels_consumable(identity)
+-                .map_err(R::Read)?;
++            let (readback, witness) =
++                crate::backend::vulkan::engine::read_target_texels_consumable_witnessed(identity)
++                    .map_err(R::Read)?;
+             crate::runtime::drain::note_store_route_us(
+                 "native_float_readback_us",
+                 read_started.elapsed().as_micros() as u64,
+@@ -220,6 +223,14 @@ fn store_native_float_surface<M: HostMemory + HostOps>(
+                 // staging lease before failed preparation releases guest views.
+                 return Err(R::SourceShape);
+             }
++            // The present capture that follows would read this same resident
++            // back again. Convert these bytes for it now, while they are in
++            // hand, when the display needs CPU frames and has been presenting
++            // this surface; `seal` at the call site licenses them once the
++            // Store has landed and stamped the resident.
++            if stash {
++                crate::backend::vulkan::engine::store_capture::stash(witness, &readback);
++            }
+             let leased = readback.is_leased();
+             let publish_started = std::time::Instant::now();
+             // Ownership, never readback.bytes(), crosses this boundary. The
+@@ -280,6 +291,25 @@ fn store_native_float_surface<M: HostMemory + HostOps>(
+     Ok(bytes)
+ }
+ 
++/// Convert a native-float Store's readback into the present's stash when a
++/// present capture is likely to want it: reuse is on, the display needs CPU
++/// frames, and this mapping was presented recently at this geometry.
++///
++/// A Store of a surface no present will capture would pay the conversion for
++/// nothing, so it is skipped (`store_capture_not_presented_n`); the first
++/// present of a new buffer reads back as before and enlists it.
++fn present_wants_stash(state: &DeviceState, mapping_id: u32, width: u32, height: u32) -> bool {
++    use crate::backend::vulkan::engine::store_capture;
++    if store_capture::disabled() || state.present.display_from_resident {
++        return false;
++    }
++    if !store_capture::presented_recently(mapping_id, width, height) {
++        crate::runtime::drain::note_store_route("store_capture_not_presented_n");
++        return false;
++    }
++    true
++}
++
+ #[derive(Debug)]
+ enum NativeXrStoreRefusal {
+     Mapping(crate::runtime::mapping_write::PlanarXrMappingRefusal),
+@@ -588,9 +618,19 @@ pub fn store_render_frame<M: HostMemory + HostOps>(
+         match store_native_float_surface(state, host, mapping_id, identity, width, height) {
+             Ok(bytes) => {
+                 finish(state, mapping_id, identity, bytes, started, false);
++                // `finish` stamped the resident with the mapping's epoch; the
++                // stash, if this Store made one, may now serve that epoch.
++                if let Some(epoch) = state
++                    .mappings
++                    .get(&mapping_id)
++                    .map(|m| m.surface_content_epoch)
++                {
++                    crate::backend::vulkan::engine::store_capture::seal(identity, epoch);
++                }
+                 return true;
+             }
+             Err(why) => {
++                crate::backend::vulkan::engine::store_capture::discard(identity);
+                 crate::observe::Emit::decline("native_float_render_store", &why)
+                     .field("mapping", mapping_id)
+                     .field("geom", format!("{width}x{height}"))
+@@ -826,6 +866,58 @@ fn finish(
+     ));
+ }
+ 
++#[cfg(test)]
++mod store_capture_gate_tests {
++    use super::present_wants_stash;
++    use crate::backend::vulkan::engine::store_capture;
++    use crate::model::{DeviceId, DeviceState, PAGE_SHIFT_ARM64E};
++
++    /// A Store converts for the present only for a surface the display has been
++    /// presenting at that geometry, and only while the display needs CPU frames:
++    /// every other Store would pay the conversion for nothing.
++    #[test]
++    fn only_a_recently_presented_surface_on_a_cpu_display_is_stashed() {
++        let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++        state.present.display_from_resident = false;
++        let (mapping, w, h) = (0x5_7197, 1206, 2622);
++        assert!(
++            !present_wants_stash(&state, mapping, w, h),
++            "never presented"
++        );
++        store_capture::note_presented(mapping, w, h);
++        assert!(present_wants_stash(&state, mapping, w, h));
++        assert!(
++            !present_wants_stash(&state, mapping, w, h + 2),
++            "another geometry"
++        );
++        assert!(
++            !present_wants_stash(&state, 0, w, h),
++            "mapping 0 is no surface"
++        );
++        state.present.display_from_resident = true;
++        assert!(
++            !present_wants_stash(&state, mapping, w, h),
++            "a window carrying the resident takes no CPU frame"
++        );
++    }
++
++    /// The recent set follows the presents: a buffer not presented for four
++    /// other surfaces' presents is no longer stashed for.
++    #[test]
++    fn the_recent_present_set_forgets_old_surfaces() {
++        let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++        state.present.display_from_resident = false;
++        let (w, h) = (31, 17);
++        store_capture::note_presented(0x6_0001, w, h);
++        assert!(present_wants_stash(&state, 0x6_0001, w, h));
++        for m in 0x6_0002..0x6_0006 {
++            store_capture::note_presented(m, w, h);
++        }
++        assert!(!present_wants_stash(&state, 0x6_0001, w, h));
++        assert!(present_wants_stash(&state, 0x6_0005, w, h));
++    }
++}
++
+ #[cfg(test)]
+ mod guest_backed_finish_tests {
+     use super::finish_needs_registry_handoff;
+diff --git c/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/vulkan.rs i/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/vulkan.rs
+index d54c54f..8338ef3 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/vulkan.rs
++++ i/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/vulkan.rs
+@@ -69,20 +69,65 @@ pub fn published_frame_rgba8(
+ 
+ pub fn try_capture_from_resident(
+     state: &mut DeviceState,
+-    buf: &mut [u8],
++    buf: &mut Vec<u8>,
+     mapping_id: u32,
+     width: u32,
+     height: u32,
+ ) -> bool {
+     let identity = surface_identity(state, mapping_id, width, height);
++    // The render Store may have just read this resident back and converted
++    // it for us. Taken only when `store_capture::take` proves nothing can have
++    // changed the resident since; every refusal reads it back below, as before.
++    if let Some(stats) = take_store_capture(state, buf, &identity, mapping_id, width, height) {
++        state.present.capture_stats = Some(stats);
++        return true;
++    }
+     // Written in place into the caller's recycled scratch, straight from the
+     // staging buffer, with the frame's figures taken on the way — the bytes
+     // `read_resident_bgra` would have moved in, without its copy-out, its two
+     // fresh allocations or the drain's second walk. On `None` the scratch is
+     // not a frame and the caller recycles it; the prior retain is untouched.
+-    let Some(stats) = engine::capture_resident_bgra_into(&identity, buf) else {
++    let Some(stats) = engine::capture_resident_bgra_into(&identity, buf.as_mut_slice()) else {
+         return false;
+     };
+     state.present.capture_stats = Some(stats);
+     true
+ }
++
++/// Swap the Store's converted frame into `buf` when the stash may serve this
++/// present, handing `buf`'s old allocation back for the next Store. Counts the
++/// outcome either way (`present_capture_reused`, `present_capture_fresh` and
++/// `present_capture_fresh_<why>`).
++fn take_store_capture(
++    state: &DeviceState,
++    buf: &mut Vec<u8>,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++) -> Option<(usize, u8, [u8; 4])> {
++    use crate::backend::vulkan::engine::store_capture;
++    store_capture::note_presented(mapping_id, width, height);
++    let mapping_epoch = state
++        .mappings
++        .get(&mapping_id)
++        .map(|m| m.surface_content_epoch);
++    match store_capture::take(identity, mapping_epoch, buf.len()) {
++        Ok(reused) => {
++            let mut bgra = reused.bgra;
++            std::mem::swap(buf, &mut bgra);
++            store_capture::give_back(bgra);
++            crate::runtime::drain::note_store_route("present_capture_reused");
++            crate::runtime::drain::note_store_route_n(
++                "present_capture_reused_bytes_n",
++                buf.len() as u64,
++            );
++            Some(reused.stats)
++        }
++        Err(why) => {
++            crate::runtime::drain::note_store_route("present_capture_fresh");
++            crate::runtime::drain::note_store_route(why.census());
++            None
++        }
++    }
++}
+diff --git c/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs i/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index 68158c4..935e0ea 100644
+--- c/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ i/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -5936,3 +5936,199 @@ fn the_in_place_present_capture_is_the_copying_capture() {
+     engine::execute_draw_request(engine_device(), &req).expect("BGRA8 surface seed");
+     check("bgra8 surface", &surface, (sw * sh) as usize);
+ }
++
++/// The render Store's readback serves the present capture that follows it —
++/// the same bytes a fresh capture reads — and only while nothing can have
++/// changed the resident in between.
++///
++/// An RGBA16F front at a size that takes the banded conversion, seeded with
++/// every class of half float. Each round plays the Store's half by hand (the
++/// witnessed readback, the stash, the stamp the Store's `finish` makes, the
++/// seal) and then the present's (`store_capture::take`):
++///
++/// - untouched: the stash is taken, and equals both the in-place capture and
++///   the copying capture byte for byte, figures included; it is taken once;
++/// - a draw into the resident between Store and present: refused, and the
++///   fresh capture shows the draw's pixels, not the stash's;
++/// - a draw into another resident: refused all the same (the GPU ran work);
++/// - another readback: refused (a submission);
++/// - the mapping's epoch moved: refused; an unsealed stash: refused; another
++///   incarnation of the mapping: refused.
++///
++/// Fails on a tree without the reuse (no `store_capture`), on any byte the
++/// stash converts differently from the capture, and on any write it lets
++/// through.
++#[test]
++fn the_stores_readback_serves_the_present_only_while_nothing_touched_the_resident() {
++    use engine::store_capture::{self, Fresh};
++    use reims_vgpu_core::blend::ColorWriteMask;
++    use reims_vgpu_protocol::pixel_format::{ColorLoadSeed, TexelLayout, MTL_FORMAT_RGBA16_FLOAT};
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let (w, h) = (613u32, 431u32);
++    let pixels = (w * h) as usize;
++    let need = pixels * 4;
++    let specials = [
++        0x0000u16, 0x8000, 0x0001, 0x03ff, 0x0400, 0x3800, 0x3801, 0x37ff, 0x3c00, 0x3c01, 0x7bff,
++        0x7c00, 0xfc00, 0x7e00, 0xfe01, 0xbc00, 0x2e66, 0x1c00,
++    ];
++    let words = |mut state: u32| -> Vec<u8> {
++        (0..pixels * 4)
++            .map(|i| {
++                state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
++                if i % 7 == 0 {
++                    specials[(state >> 20) as usize % specials.len()]
++                } else {
++                    (state >> 16) as u16
++                }
++            })
++            .flat_map(|w| w.to_le_bytes())
++            .collect()
++    };
++    let front = TargetIdentity::Surface {
++        id: 0x7310,
++        width: w,
++        height: h,
++        generation: 1,
++        format: ash::vk::Format::R16G16B16A16_SFLOAT,
++    };
++    let other = TargetIdentity::Surface {
++        id: 0x7311,
++        width: w,
++        height: h,
++        generation: 1,
++        format: ash::vk::Format::R16G16B16A16_SFLOAT,
++    };
++    // Write `raw` into a resident: a CPU seed, then a draw that writes nothing.
++    let seed = |identity: &TargetIdentity, raw: Vec<u8>| {
++        let mut req = engine_req(&v, &f, w, h);
++        req.target_identity = Some(identity.clone());
++        req.color_attachment = Some(color_attachment(MTL_FORMAT_RGBA16_FLOAT, [0.0; 4]));
++        req.target_cpu_seed = Some(ColorLoadSeed {
++            pixels: std::sync::Arc::new(raw),
++            layout: TexelLayout::Rgba16Float,
++        });
++        req.skip_readback = true;
++        req.color_write_mask = ColorWriteMask::NONE;
++        engine::execute_draw_request(engine_device(), &req)
++    };
++    match seed(&front, words(0x2545_f491)) {
++        Ok(_) => {}
++        Err(e) if skip_if_no_gpu(&e.to_string()) => {
++            eprintln!("SKIP store capture reuse: {e}");
++            return;
++        }
++        Err(e) => panic!("RGBA16F front seed: {e}"),
++    }
++    // The Store's half: the readback it lands the guest with, converted on the
++    // way, then the stamp its `finish` makes and the seal after it.
++    let store = |epoch: u32| {
++        let (texels, witness) =
++            engine::read_target_texels_consumable_witnessed(&front).expect("Store readback");
++        assert_eq!(witness.identity(), &front);
++        assert!(store_capture::stash(witness, &texels), "stash");
++        drop(texels);
++        assert!(engine::stamp_resident_content_epoch(&front, epoch), "stamp");
++        assert!(store_capture::seal(&front, epoch), "seal");
++    };
++    let fresh = || {
++        let mut dst = vec![0x5au8; need];
++        let stats = engine::capture_resident_bgra_into(&front, &mut dst).expect("fresh capture");
++        (dst, stats)
++    };
++
++    // Untouched: the stash is the fresh capture, and the copying capture.
++    store(5);
++    let reused = store_capture::take(&front, Some(5), need).expect("an untouched resident reuses");
++    let (now, stats) = fresh();
++    assert!(
++        reused.bgra == now,
++        "reused bytes differ from a fresh capture"
++    );
++    assert_eq!(reused.stats, stats, "reused figures");
++    let copied = engine::read_resident_bgra(&front, need).expect("copying capture");
++    assert!(
++        copied == now,
++        "fresh capture differs from the copying capture"
++    );
++    // A stash is taken once.
++    assert_eq!(
++        store_capture::take(&front, Some(5), need).err(),
++        Some(Fresh::Nothing)
++    );
++
++    // A draw into the resident between the Store and the present.
++    store(6);
++    seed(&front, words(0x0bad_cafe)).expect("rewrite the front");
++    let why = store_capture::take(&front, Some(6), need).err();
++    assert!(
++        matches!(
++            why,
++            Some(Fresh::ResidentRewritten | Fresh::Submitted | Fresh::Recording)
++        ),
++        "a write to the resident must force a fresh readback: {why:?}"
++    );
++    let (rewritten, _) = fresh();
++    assert!(
++        rewritten != reused.bgra,
++        "the fresh capture shows the new draw"
++    );
++
++    // A draw into another resident: the GPU ran work, so no proof is left.
++    store(7);
++    seed(&other, words(0x1234_5678)).expect("draw elsewhere");
++    let why = store_capture::take(&front, Some(7), need).err();
++    assert!(
++        matches!(why, Some(Fresh::Submitted | Fresh::Recording)),
++        "any GPU work since the Store forces a fresh readback: {why:?}"
++    );
++    assert!(fresh().0 == rewritten, "the front itself is unchanged");
++
++    // Another readback of the front is a submission too.
++    store(8);
++    engine::read_target_texels(&front).expect("another readback");
++    assert_eq!(
++        store_capture::take(&front, Some(8), need).err(),
++        Some(Fresh::Submitted)
++    );
++
++    // The mapping's epoch moved on (a guest or host write to the mapping).
++    store(9);
++    assert_eq!(
++        store_capture::take(&front, Some(10), need).err(),
++        Some(Fresh::MappingWritten)
++    );
++
++    // A Store that never sealed (it failed after its readback).
++    let (texels, witness) = engine::read_target_texels_consumable_witnessed(&front).unwrap();
++    assert!(store_capture::stash(witness, &texels));
++    drop(texels);
++    assert_eq!(
++        store_capture::take(&front, Some(9), need).err(),
++        Some(Fresh::Unsealed)
++    );
++
++    // Another incarnation of the same mapping, and another length.
++    store(11);
++    let next = TargetIdentity::Surface {
++        id: 0x7310,
++        width: w,
++        height: h,
++        generation: 2,
++        format: ash::vk::Format::R16G16B16A16_SFLOAT,
++    };
++    assert_eq!(
++        store_capture::take(&next, Some(11), need).err(),
++        Some(Fresh::Identity)
++    );
++    store(12);
++    assert_eq!(
++        store_capture::take(&front, Some(12), need - 4).err(),
++        Some(Fresh::Length)
++    );
++
++    // And after every refusal, the reuse comes back for an untouched resident.
++    store(13);
++    let again = store_capture::take(&front, Some(13), need).expect("reuse resumes");
++    assert!(again.bgra == fresh().0, "reused bytes after refusals");
++}

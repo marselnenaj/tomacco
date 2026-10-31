@@ -1,0 +1,49 @@
+[package]
+name = "tomacco-core"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.89"
+description = "Tomacco: Give your agent a phone. Build, run and test iOS and Android apps from Linux. No Mac needed. Made for Omarchy."
+license = "GPL-2.0-or-later"
+
+[[bin]]
+name = "tomaccoctl"
+path = "native/main.rs"
+
+[dependencies]
+base64 = "0.23"
+glob = "0.3"
+libc = "0.2"
+regex = "1"
+roxmltree = "0.21"
+rusqlite = { version = "0.41", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.11"
+tempfile = "3"
+uuid = { version = "1", features = ["v4"] }
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync", "net", "macros"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+tonic = { version = "0.14", features = ["transport"] }
+tonic-prost = "0.14"
+prost = "0.14"
+tower = { version = "0.5", features = ["util"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+hyper = { version = "1", features = ["client", "http1"] }
+http-body-util = "0.1"
+ed25519-dalek = { version = "=3.0.0", default-features = false }
+semver = "=1.0.28"
+tar = "=0.4.46"
+flate2 = { version = "=1.1.10", default-features = false, features = ["rust_backend"] }
+
+[build-dependencies]
+tonic-prost-build = "0.14"
+
+[lints.clippy]
+collapsible_if = "allow"
+chunks_exact_to_as_chunks = "allow"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"

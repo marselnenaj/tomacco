@@ -1,0 +1,17 @@
+--- !tapi-tbd
+tbd-version: 4
+targets: [ arm64-ios, arm64e-ios ]
+install-name: '/usr/lib/libSystem.B.dylib'
+exports:
+  - targets: [ arm64-ios, arm64e-ios ]
+    symbols: [ ___stack_chk_fail, ___stack_chk_guard, ___error, _open, _close,
+               _dup, _dup2, _dprintf, _fork, _execve, _waitpid, _kill, _sleep,
+               __exit, _mkdir, _chmod, _chown, _write, _read, _symlink, _strcmp,
+               _snprintf, _strlen, _getenv, _lseek, _opendir, _readdir, _closedir, _dlopen, _dlsym,
+               _dlerror, _fsync, _unmount, _unlink, _rename, _renamex_np, _bzero, _memcpy, _memset, _usleep,
+               _tcgetattr, _tcsetattr, _cfmakeraw, _alarm, _signal, _sigprocmask,
+               _pthread_set_qos_class_self_np, __NSConcreteGlobalBlock, __NSConcreteStackBlock,
+               _getuid, _getgid, _getpid, _sigaction, dyld_stub_binder ]
+  - targets: [ arm64-ios, arm64e-ios ]
+    symbols: [ _openat, _mkdirat, _unlinkat, _malloc, _free, _strerror, _fstat ]
+...

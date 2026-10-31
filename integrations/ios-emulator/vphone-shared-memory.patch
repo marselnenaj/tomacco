@@ -1,0 +1,41 @@
+diff --git a/hw/arm/xnuboot_sptm.c b/hw/arm/xnuboot_sptm.c
+--- a/hw/arm/xnuboot_sptm.c
++++ b/hw/arm/xnuboot_sptm.c
+@@ -37,8 +37,18 @@
+ #define GET_L2_PT_INDEX(a)      (( ((a)) & ( (BIT(36)-1)) ))
+ #define STRIP_L2_PT_INDEX(a)    (( ((a)) & (~(BIT(36)-1)) ))
+ 
+-static void alloc_ram(Object *cpuobj, hwaddr base, size_t len) {
++static void alloc_ram(MachineState *machine, hwaddr base, size_t len) {
+     MemoryRegion *ram_main = get_system_memory();
++    /* Use an explicitly supplied QEMU memory backend for local vhost-user
++     * transports. MachineState owns it; retain private RAM by default. */
++    if (machine->ram) {
++        if (memory_region_size(machine->ram) != len) {
++            error_report("Darwin RAM backend size differs from the device tree");
++            exit(EXIT_FAILURE);
++        }
++        memory_region_add_subregion(ram_main, base, machine->ram);
++        return;
++    }
+     MemoryRegion *ram_subreg = g_new(MemoryRegion, 1);
+     memory_region_init_ram(ram_subreg, NULL, "dram", len, &error_fatal);
+     memory_region_add_subregion(ram_main, base, ram_subreg);
+@@ -259,7 +269,7 @@
+     u8 *macho_bkc = (u8*)info->bootkc_f.buf;
+     u8 *macho_txm = (u8*)info->txm_f.buf;
+ 
+-    alloc_ram(OBJECT(cpu), info->dram_base, info->dram_size);
++    alloc_ram(ms, info->dram_base, info->dram_size);
+ 
+     macho_info_t bkc_mi  = macho_get_info(macho_bkc);
+     macho_info_t txm_mi  = macho_get_info(macho_txm);
+@@ -678,7 +688,7 @@
+ static void arm_load_xnu_nosptm(ARMCPU *cpu, MachineState *ms, struct xnu_boot_info *info) {
+     u8 *macho_bkc = (u8*)info->bootkc_f.buf;
+ 
+-    alloc_ram(OBJECT(cpu), info->dram_base, info->dram_size);
++    alloc_ram(ms, info->dram_base, info->dram_size);
+ 
+     macho_info_t bkc_mi  = macho_get_info(macho_bkc);
+ 

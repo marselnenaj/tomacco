@@ -1,0 +1,196 @@
+reims-vgpu: every XR fragment output reaches its encoder as binary16.
+
+Metal: the AGX pixel write of an XR (PBE15) attachment is a Half4 partition
+transfer: the value the hardware encoder quantizes, with
+round-to-nearest-even, is the fragment output rounded to binary16, for
+blended, replacement and unblended writes alike.
+Before: only the shader-evaluated blend path rounded to binary16 (its clamped
+source and every blend step). An unblended or replacement XR write quantized
+the shader's Float32 value, so a colour such as 0.51875 stored code 649 from
+one draw and 648 (its binary16 value 0.518555) from a source-over draw of the
+same colour.
+Now: `color_quantization::rewrite` declares `OutputPrecision::Binary16` for
+every XR output; the translator rounds each channel once before the RTNE
+encoder. The three writes store one code. A clear keeps its Float32
+quantization: no partition is recovered for it.
+Test: `vk_engine_parity::an_xr_fragment_output_reaches_its_encoder_as_binary16`
+on RADV: 0.51875 stores 648 (649 before) on 554, 550 and as the XR alpha of
+553; 0.75 and -0.25 are exact ties (766.5, 256.5) that store 766 and 256 for
+all three blend states.
+
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
+index 9fdd2ad..2b2f3c8 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
+@@ -6,6 +6,11 @@
+ //! target read back as a framebuffer input, which also puts the draw on the
+ //! ordered framebuffer-fetch path. Admission needs the format's original
+ //! source clamp; blend-colour and dual-source factors remain refused.
++//!
++//! Every XR pixel write is a Half4 partition transfer (the PBE15 configuration
++//! of the AGX format table): the value the encoder receives is
++//! binary16 whether the slot blends, replaces or writes unblended, so the
++//! three store one code for one colour.
+ 
+ use std::collections::HashMap;
+ use std::sync::{Arc, Weak};
+@@ -13,7 +18,7 @@ use std::sync::{Arc, Weak};
+ use metal2vulkan::fragment_color::{
+     AffineColorEncoding, BlendArithmetic, BlendEquation, BlendedFragmentColor,
+     ColorChannelEncoding, ColorQuantizationRefusal, ColorTransfer, DestinationInput,
+-    FragmentColorEncoding, ProgrammableBlend, SourceClamp,
++    FragmentColorEncoding, OutputPrecision, ProgrammableBlend, SourceClamp,
+ };
+ use reims_vgpu_core::pixel_format::{PlanarXrFormat, XrFormat};
+ use reims_vgpu_vulkan::pixel::XrRenderFormat;
+@@ -341,6 +346,10 @@ fn rewrite(source: &[u32], plan: Plan) -> Result<ShaderWords, DrawError> {
+             encoding: FragmentColorEncoding {
+                 location: location as u32,
+                 channels: [colour, colour, colour, alpha],
++                // The half partition transfer, for blended and unblended
++                // writes alike. A clear keeps its own Float32 quantization:
++                // no partition is recovered for it.
++                precision: OutputPrecision::Binary16,
+             },
+             blend,
+         });
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index ddaac91..7fd2ea0 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -460,7 +460,10 @@ fn a_multisample_resolve_from_an_srgb_raster_stores_encoded_bytes_in_a_linear_ta
+     // channel order.
+     let i = ((h / 2) * w + w / 2) as usize * 4;
+     let (c0, g, c2) = (px[i], px[i + 1], px[i + 2]);
+-    assert!(near(g, 188), "green {g}: expected the sRGB encoding of 0.5 (188)");
++    assert!(
++        near(g, 188),
++        "green {g}: expected the sRGB encoding of 0.5 (188)"
++    );
+     assert!(
+         (near(c0, 137) && near(c2, 225)) || (near(c0, 225) && near(c2, 137)),
+         "red/blue ({c0}, {c2}): expected the sRGB encodings of 0.25 and 0.75"
+@@ -5374,3 +5377,123 @@ void main() { primary=vec4(1.0,0.5,0.0,0.25); secondary=primary; }
+         assert_eq!(joined, [255, 128, 0, 255].repeat(64), "slot {slot}");
+     }
+ }
++
++/// The guest's stored XR codes of one decoded resident texel: the colour
++/// channels through the format's transfer function, alpha through the family's
++/// own alpha interval (alpha8 natively, XR10 for BGRA10, none for BGR10).
++fn xr_stored_codes(format: reims_vgpu_vulkan::pixel::XrRenderFormat, texel: [f32; 4]) -> [i32; 4] {
++    use reims_vgpu_core::pixel_format::XrFormat;
++    use reims_vgpu_vulkan::pixel::XrRenderFormat;
++    let encode = |value: f32| -> f64 {
++        let value = f64::from(value);
++        if !format.is_srgb() {
++            return value;
++        }
++        let magnitude = value.abs();
++        let encoded = if magnitude <= 0.0031308 {
++            magnitude * 12.92
++        } else {
++            1.055 * magnitude.powf(1.0 / 2.4) - 0.055
++        };
++        encoded.copysign(value)
++    };
++    let colour = |value: f32| (encode(value) * 510.0 + 384.0).round() as i32;
++    let alpha = match format {
++        XrRenderFormat::NativeSurface(_) => (f64::from(texel[3]) * 255.0).round() as i32,
++        XrRenderFormat::Interleaved(XrFormat::Bgra10 | XrFormat::Bgra10Srgb) => {
++            (f64::from(texel[3]) * 510.0 + 384.0).round() as i32
++        }
++        XrRenderFormat::Interleaved(XrFormat::Bgr10 | XrFormat::Bgr10Srgb) => 1,
++    };
++    [colour(texel[0]), colour(texel[1]), colour(texel[2]), alpha]
++}
++
++/// Every XR pixel write is a half partition transfer: the encoder receives a
++/// binary16 value whether the draw blends, replaces or declares no blend.
++/// `0.51875` encodes as code 649 from Float32 and 648 from its binary16
++/// rounding `0.518555`; `0.75` and `-0.25` are exact ties (766.5 and 256.5)
++/// that round to even on both grids. On BGRA10 sRGB the alpha channel carries
++/// the partition-sensitive value.
++#[test]
++fn an_xr_fragment_output_reaches_its_encoder_as_binary16() {
++    use reims_vgpu_protocol::pixel_format::{
++        MTL_FORMAT_BGR10_XR, MTL_FORMAT_BGRA10_XR_SRGB, MTL_FORMAT_RGB10A8_2P_XR10,
++    };
++    use reims_vgpu_vulkan::pixel::{quantized_xr_render_values, XrRenderFormat};
++    let _g = engine_test_session();
++    let v = framebuffer_fetch_glsl("vertex", FETCH_VERTEX);
++    let f = framebuffer_fetch_glsl(
++        "fragment",
++        "#version 450
++layout(location=0) out vec4 primary;
++void main() { primary=vec4(0.51875,0.75,-0.25,0.51875); }
++",
++    );
++    let source = [0.51875f32, 0.75, -0.25, 0.51875];
++    let replacement = BlendStateResource {
++        src_rgb: MTL_BLEND_FACTOR_ONE,
++        dst_rgb: MTL_BLEND_FACTOR_ZERO,
++        op_rgb: MTL_BLEND_OPERATION_ADD,
++        src_alpha: MTL_BLEND_FACTOR_ONE,
++        dst_alpha: MTL_BLEND_FACTOR_ZERO,
++        op_alpha: MTL_BLEND_OPERATION_ADD,
++    };
++    let source_over = BlendStateResource {
++        src_rgb: MTL_BLEND_FACTOR_ONE,
++        dst_rgb: MTL_BLEND_FACTOR_ONE_MINUS_SOURCE_ALPHA,
++        op_rgb: MTL_BLEND_OPERATION_ADD,
++        src_alpha: MTL_BLEND_FACTOR_ONE,
++        dst_alpha: MTL_BLEND_FACTOR_ONE_MINUS_SOURCE_ALPHA,
++        op_alpha: MTL_BLEND_OPERATION_ADD,
++    };
++    let formats = [
++        MTL_FORMAT_BGR10_XR,
++        MTL_FORMAT_RGB10A8_2P_XR10,
++        MTL_FORMAT_BGRA10_XR_SRGB,
++    ];
++    for (n, mtl) in formats.into_iter().enumerate() {
++        let format = XrRenderFormat::from_mtl(mtl).unwrap();
++        // Over a black, transparent clear source-over stores the clamped and
++        // rounded source itself, so all three writes must agree.
++        let expected = xr_stored_codes(
++            format,
++            quantized_xr_render_values(format, source.map(binary16)),
++        );
++        if format.is_srgb() {
++            assert_eq!(expected[3], 648, "reference changed");
++        } else {
++            assert_eq!(expected[..3], [648, 766, 256], "reference changed");
++        }
++        for (m, blend) in [None, Some(replacement), Some(source_over)]
++            .into_iter()
++            .enumerate()
++        {
++            let identity = TargetIdentity::Gva {
++                gva: 0x2c9000 + n as u64 * 0x3000 + m as u64 * 0x1000,
++                width: 8,
++                height: 8,
++                generation: 1,
++                format: ash::vk::Format::R32G32B32A32_SFLOAT,
++            };
++            let mut req = engine_req(&v, &f, 8, 8);
++            req.target_identity = Some(identity.clone());
++            req.color_attachment = Some(color_attachment(mtl, [0.0; 4]));
++            req.blend = blend;
++            req.color_write_mask = engine::ColorWriteMask::ALL;
++            req.skip_readback = true;
++            engine::execute_draw_request(engine_device(), &req).expect("XR write");
++            let actual = engine::read_target_texels(&identity).unwrap().pixels;
++            assert_eq!(actual.len(), 64 * 16);
++            for texel in actual.as_chunks::<16>().0 {
++                let texel: [f32; 4] = std::array::from_fn(|c| {
++                    f32::from_le_bytes(texel[c * 4..c * 4 + 4].try_into().unwrap())
++                });
++                assert_eq!(
++                    xr_stored_codes(format, texel),
++                    expected,
++                    "{format:?} blend {blend:?}: {texel:?}"
++                );
++            }
++        }
++    }
++}

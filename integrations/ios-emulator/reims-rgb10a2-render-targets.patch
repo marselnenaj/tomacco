@@ -1,0 +1,379 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -660,6 +660,9 @@
+     /// nothing here moves such a bind to the CPU, which could not serve it
+     /// anyway — its channels do not sit on byte boundaries.
+     Bgr10a2Unorm,
++    /// The same native packed storage contract with red in bits 0..9.
++    /// Like `Bgr10a2Unorm`, this class does not admit a CPU upload conversion.
++    Rgb10a2Unorm,
+     /// The two `uint16` channels `MTLPixelFormatRG16Uint` stores a texel in.
+     ///
+     /// Declared for the cross-check, on [`Self::Bgr10a2Unorm`]'s terms and for
+@@ -1069,6 +1072,7 @@
+                 | Self::Rg16Float
+                 | Self::Rgba16Float
+                 | Self::Bgr10a2Unorm
++                | Self::Rgb10a2Unorm
+                 | Self::Rg16Uint
+         )
+     }
+@@ -2093,6 +2097,7 @@
+         MTL_FORMAT_RGBA16_FLOAT => SampledClass::Rgba16Float,
+         MTL_FORMAT_RG16_FLOAT => SampledClass::Rg16Float,
+         MTL_FORMAT_BGR10A2_UNORM => SampledClass::Bgr10a2Unorm,
++        MTL_FORMAT_RGB10A2_UNORM => SampledClass::Rgb10a2Unorm,
+         MTL_FORMAT_RG16_UINT => SampledClass::Rg16Uint,
+         MTL_FORMAT_RGBA32_FLOAT => SampledClass::Rgba32Float,
+         _ => return None,
+@@ -2190,6 +2195,11 @@
+ /// only lossy rail in the set. The byte copy is what normally runs and it is
+ /// exact.
+ ///
++/// `RGB10A2_UNORM` is also a measured iOS buffer-backed render target. Its
++/// resident, native Load seed and both Store rails retain the guest's packed
++/// word (`A2B10G10R10_UNORM_PACK32`). Clear-only passes construct that word
++/// directly; there is no eight-bit conversion on its rendering paths.
++///
+ /// XR render targets keep their declared packed guest representation: four
+ /// bytes for BGR and eight for BGRA. A rail without a native XR attachment
+ /// must retain canonical decoded values and quantize after each fragment blend,
+@@ -2325,6 +2335,7 @@
+         | MTL_FORMAT_R32_FLOAT
+         | MTL_FORMAT_R8_UNORM
+         | MTL_FORMAT_BGR10A2_UNORM
++        | MTL_FORMAT_RGB10A2_UNORM
+         | MTL_FORMAT_BGR10_XR
+         | MTL_FORMAT_BGR10_XR_SRGB
+         | MTL_FORMAT_BGRA10_XR
+@@ -2399,6 +2410,7 @@
+         // identical `VK_FORMAT_A2R10G10B10_UNORM_PACK32` word the guest's
+         // destination does, so the copy converts nothing.
+         MTL_FORMAT_BGR10A2_UNORM => TexelLayout::Bgr10a2Unorm,
++        MTL_FORMAT_RGB10A2_UNORM => TexelLayout::Rgb10a2Unorm,
+         // The integer colour target, and the member whose absence here would be
+         // a **loss** rather than a slow path. Every other member declines to the
+         // CPU converter; this one has no CPU converter to decline to, because
+@@ -2611,6 +2623,19 @@
+                 height,
+                 &components[COMPONENT_R].to_le_bytes(),
+             )
++        }
++        ClearComponents::Float(components) if format == MTL_FORMAT_RGB10A2_UNORM => {
++            // UNORM clear conversion clamps each channel and rounds at its
++            // declared width. The f32 carrier matches the GPU clear value.
++            // NaN maps to zero through Rust's saturating float-to-int cast;
++            // graphics APIs leave a NaN clear result unspecified.
++            let channel =
++                |value: f32, mask: u32| (value.clamp(0.0, 1.0) * mask as f32 + 0.5) as u32;
++            let word = channel(components[COMPONENT_R], 0x3ff)
++                | channel(components[COMPONENT_G], 0x3ff) << 10
++                | channel(components[COMPONENT_B], 0x3ff) << 20
++                | channel(components[COMPONENT_A], 0x3) << 30;
++            solid_native_clear_image(format, width, height, &word.to_le_bytes())
+         }
+         ClearComponents::Float(_) => {
+             let row_bytes = width.checked_mul(RGBA8_BPP)?;
+@@ -3012,13 +3037,9 @@
+         // the arm is trivial to add when one is. Admitting a layout costs three
+         // conversions and a census line, so they are added on measurement.
+         //
+-        // The two remaining packed 32-bit colour layouts are here because
+-        // `render_target_bpp` does not admit their formats: no guest has been
+-        // observed declaring a render target in one, so there is no seed to
+-        // convert and an arm would be a conversion written against nothing. Add
+-        // both halves together if one is ever measured — the obligation
+-        // `render_target_bpp` states runs in that direction, and `Bgr10a2Unorm`
+-        // is the member that has now been measured and moved out.
++        // RGB10A2, R32Float and RG16Uint carry native Load seeds and Stores;
++        // a semantic RGBA8 seed would discard their precision. RG11B10Float
++        // remains sampled-only and has no admitted render-target contract.
+         TexelLayout::Rg8
+         | TexelLayout::R32Float
+         | TexelLayout::R16Unorm
+@@ -4300,7 +4321,7 @@
+         }
+         // A guard on the walk itself: an admission set that silently emptied
+         // would satisfy every assertion above.
+-        assert_eq!(admitted, 15, "the admitted colour render target formats");
++        assert_eq!(admitted, 16, "the admitted colour render target formats");
+     }
+ 
+     /// An integer texel has no semantic eight-bit solid colour.
+@@ -4350,7 +4371,7 @@
+                 .unwrap_or_else(|| panic!("render target {format:#x} cannot publish its clear"));
+             assert_eq!(image.pixels().len(), image.row_bytes() as usize * 2);
+         }
+-        assert_eq!(admitted, 15, "the admitted colour render target formats");
++        assert_eq!(admitted, 16, "the admitted colour render target formats");
+ 
+         let integer = solid_clear_image(MTL_FORMAT_RG16_UINT, 2, 2, &clear)
+             .expect("RG16Uint is an admitted render target");
+@@ -4389,6 +4410,50 @@
+             Some(TexelLayout::R32Float)
+         );
+         assert!(!solid_color_reaches_texel(MTL_FORMAT_R32_FLOAT));
++    }
++
++    #[test]
++    fn rgb10a2_render_target_keeps_native_storage_on_both_store_rails() {
++        assert_eq!(render_target_bpp(MTL_FORMAT_RGB10A2_UNORM), Some(4));
++        assert_eq!(
++            render_target_numeric_type(MTL_FORMAT_RGB10A2_UNORM),
++            Some(ColorNumericType::Float)
++        );
++        assert!(TexelLayout::Rgb10a2Unorm.is_render_target_layout());
++        assert_eq!(
++            store_texel_order(MTL_FORMAT_RGB10A2_UNORM),
++            Some(TexelLayout::Rgb10a2Unorm)
++        );
++        // Both imported and copied Stores must carry the packed word. An
++        // eight-bit readback would discard two bits from each color channel.
++        assert!(Rgba8Narrowing::for_layout(TexelLayout::Rgb10a2Unorm).is_none());
++        assert!(!solid_color_reaches_texel(MTL_FORMAT_RGB10A2_UNORM));
++        assert!(render_target_bpp(MTL_FORMAT_RGB10A2_UINT).is_none());
++        assert!(render_target_bpp(MTL_FORMAT_RG11B10_FLOAT).is_none());
++    }
++
++    #[test]
++    fn rgb10a2_clear_preserves_every_ten_bit_code_and_all_alpha_codes() {
++        for red in 0..1024u32 {
++            let green = (red + 341) % 1024;
++            let blue = 1023 - red;
++            let alpha = red % 4;
++            let clear = [
++                f64::from(red) / 1023.0,
++                f64::from(green) / 1023.0,
++                f64::from(blue) / 1023.0,
++                f64::from(alpha) / 3.0,
++            ];
++            let image = solid_clear_image(MTL_FORMAT_RGB10A2_UNORM, 3, 2, &clear).unwrap();
++            let word = red | green << 10 | blue << 20 | alpha << 30;
++            assert_eq!(image.encoding(), ClearImageEncoding::Native);
++            assert_eq!(image.row_bytes(), 12);
++            assert_eq!(image.pixels(), word.to_le_bytes().repeat(6), "red={red}");
++        }
++        let clamped =
++            solid_clear_image(MTL_FORMAT_RGB10A2_UNORM, 1, 1, &[-1.0, 2.0, 0.5, 2.0]).unwrap();
++        let word = 1023u32 << 10 | 512 << 20 | 3 << 30;
++        assert_eq!(clamped.pixels(), word.to_le_bytes());
+     }
+ 
+     /// The byte copy must carry the integer target, because nothing else can.
+@@ -4499,6 +4564,7 @@
+                 SampledClass::Rgba16Float => TexelLayout::Rgba16Float,
+                 SampledClass::Rg16Float => TexelLayout::Rg16Float,
+                 SampledClass::Bgr10a2Unorm => TexelLayout::Bgr10a2Unorm,
++                SampledClass::Rgb10a2Unorm => TexelLayout::Rgb10a2Unorm,
+                 SampledClass::Rg16Uint => TexelLayout::Rg16Uint,
+                 SampledClass::Rgba32Float => TexelLayout::Rgba32Float,
+             });
+@@ -5361,6 +5427,7 @@
+                     TexelLayout::Bgra8 => SampledClass::Bgra8Unorm,
+                     TexelLayout::Rgba16Float => SampledClass::Rgba16Float,
+                     TexelLayout::Bgr10a2Unorm => SampledClass::Bgr10a2Unorm,
++                    TexelLayout::Rgb10a2Unorm => SampledClass::Rgb10a2Unorm,
+                     TexelLayout::Rg16Uint => SampledClass::Rg16Uint,
+                     // Named rather than defaulted. This arm used to be
+                     // `_ => SampledClass::Bgra8Unorm`, which was true only while
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/buffer_target.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/buffer_target.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/buffer_target.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/buffer_target.rs
+@@ -299,8 +299,9 @@
+     }
+ 
+     pub(crate) fn clear_is_exact(&self) -> bool {
+-        // Wider float and packed/sRGB clear conversion still needs its own
+-        // native CPU representation. Draw clears are performed by the GPU.
++        // RGB10A2, R32Float and RG16Uint have native CPU clear images.
++        // The remaining wider float and packed/sRGB clears still need one.
++        // Draw clears are performed by the GPU.
+         !pixel_format::is_srgb(self.descriptor.desc.pixel_format)
+             && matches!(
+                 self.layout,
+@@ -308,6 +309,7 @@
+                     | pixel_format::TexelLayout::Bgra8
+                     | pixel_format::TexelLayout::R8
+                     | pixel_format::TexelLayout::R32Float
++                    | pixel_format::TexelLayout::Rgb10a2Unorm
+                     | pixel_format::TexelLayout::Rg16Uint
+             )
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -173,6 +173,71 @@
+         let fresh = target.seed(&mut rig.state, &mut rig.host, 1).unwrap();
+         assert_eq!(&fresh.pixels[8..12], &7.125f32.to_le_bytes());
+         assert_eq!(&fresh.pixels[..8], &raw[..8]);
++    }
++
++    #[test]
++    fn buffer_target_rgb10a2_load_and_store_preserve_words_offset_and_padding() {
++        let (mut rig, mut descriptor) = fixture();
++        descriptor.desc.pixel_format = pixel_format::MTL_FORMAT_RGB10A2_UNORM;
++        let resolved = resolve(&rig, descriptor).unwrap();
++        let target = resolved.buffer_texture.as_ref().unwrap();
++        assert!(target.clear_is_exact());
++        let words = [0x00100403u32, 0x7fe00401, 0x803ffffd, 0xffd553fe];
++        let raw: Vec<u8> = words.iter().flat_map(|word| word.to_le_bytes()).collect();
++        let mut padded = vec![0xa5; 40];
++        padded[8..16].copy_from_slice(&raw[..8]);
++        padded[24..32].copy_from_slice(&raw[8..]);
++        write_task_gva_arm64e(
++            &mut rig.host,
++            &rig.state.tasks[1],
++            StoreRig::gva(1),
++            &padded,
++        );
++        let seed = target.seed(&mut rig.state, &mut rig.host, 1).unwrap();
++        assert_eq!(seed.layout, pixel_format::TexelLayout::Rgb10a2Unorm);
++        assert_eq!(seed.pixels.as_slice(), raw);
++
++        let stored: Vec<u8> = words
++            .iter()
++            .rev()
++            .flat_map(|word| word.to_le_bytes())
++            .collect();
++        write_gva_frame_within(
++            &mut rig.state,
++            &mut rig.host,
++            1,
++            resolved.target_gva,
++            resolved.width,
++            resolved.height,
++            resolved.row_stride,
++            resolved.format,
++            FrameRows::Native(&stored),
++            None,
++        )
++        .unwrap();
++        let mut back = vec![0; 40];
++        crate::runtime::gva_mem::read_task_gva(
++            &rig.host,
++            &rig.state.tasks[1],
++            StoreRig::gva(1),
++            &mut back,
++            PAGE_SHIFT_ARM64E,
++        )
++        .unwrap();
++        padded[8..16].copy_from_slice(&stored[..8]);
++        padded[24..32].copy_from_slice(&stored[8..]);
++        assert_eq!(
++            back, padded,
++            "Store must leave both row padding and the buffer prefix intact"
++        );
++        assert_eq!(
++            target
++                .seed(&mut rig.state, &mut rig.host, 1)
++                .unwrap()
++                .pixels
++                .as_slice(),
++            stored
++        );
+     }
+ 
+     #[test]
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+@@ -816,6 +816,9 @@
+                 // decline it and this rail is where that decline appears. The
+                 // NVIDIA host it was measured on advertises it.
+                 p::MTL_FORMAT_BGR10A2_UNORM,
++                // iOS buffer-backed render targets, retained natively on Load,
++                // clear and both Store rails, with red in the low ten bits.
++                p::MTL_FORMAT_RGB10A2_UNORM,
+                 // The first **integer** colour attachment, and the one that
+                 // could not be admitted by adding a table entry. A macos-15
+                 // guest renders into linear `RG16Uint` targets, and every pass
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -4366,6 +4366,85 @@
+ }
+ 
+ #[test]
++fn rgb10a2_color_clear_native_load_draw_and_resident_load_preserve_packed_words() {
++    use reims_vgpu_core::blend::ColorWriteMask;
++    use reims_vgpu_protocol::pixel_format::{self as p, ColorLoadSeed, TexelLayout};
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let identity = TargetIdentity::Gva {
++        gva: 0x268000,
++        width: 4,
++        height: 2,
++        generation: 1,
++        format: ash::vk::Format::A2B10G10R10_UNORM_PACK32,
++    };
++    let mut req = engine_req(&v, &f, 4, 2);
++    let clear = [1.0 / 1023.0, 513.0 / 1023.0, 1022.0 / 1023.0, 2.0 / 3.0];
++    req.target_identity = Some(identity.clone());
++    req.color_attachment = Some(color_attachment(p::MTL_FORMAT_RGB10A2_UNORM, clear));
++    req.skip_readback = true;
++    req.color_write_mask = ColorWriteMask::NONE;
++    engine::execute_draw_request(engine_device(), &req).expect("RGB10A2 native GPU clear");
++    let cleared = engine::read_target(&identity).unwrap();
++    assert_eq!(
++        cleared.texel,
++        engine::ReadbackTexel::Native(TexelLayout::Rgb10a2Unorm)
++    );
++    let cpu_clear = p::solid_clear_image(p::MTL_FORMAT_RGB10A2_UNORM, 4, 2, &clear).unwrap();
++    assert_eq!(
++        cleared.pixels,
++        cpu_clear.pixels(),
++        "CPU and GPU clear use the same channel order and width"
++    );
++
++    // Distinct low bits and alpha codes cannot survive an RGBA8 round trip.
++    let words = [
++        0x00100403u32,
++        0x7fe00401,
++        0x803ffffd,
++        0xffd553fe,
++        0xc0200401,
++        0x405557fd,
++        0xbfe00803,
++        0x002ffbfd,
++    ];
++    let raw: Vec<u8> = words.iter().flat_map(|word| word.to_le_bytes()).collect();
++    req.target_cpu_seed = Some(ColorLoadSeed {
++        pixels: std::sync::Arc::new(raw.clone()),
++        layout: TexelLayout::Rgb10a2Unorm,
++    });
++    engine::execute_draw_request(engine_device(), &req).expect("RGB10A2 native CPU Load");
++    assert_eq!(engine::read_target(&identity).unwrap().pixels, raw);
++    req.target_cpu_seed = None;
++    req.load_from_target = true;
++    engine::execute_draw_request(engine_device(), &req).expect("RGB10A2 resident Load");
++    assert_eq!(engine::read_target(&identity).unwrap().pixels, raw);
++
++    req.color_write_mask = ColorWriteMask::ALL;
++    req.scissors = vec![ScissorResource {
++        x: 0,
++        y: 0,
++        width: 2,
++        height: 2,
++    }];
++    engine::execute_draw_request(engine_device(), &req).expect("RGB10A2 fragment write");
++    let drawn = engine::read_target(&identity).unwrap();
++    for (index, bytes) in drawn.pixels.chunks_exact(4).enumerate() {
++        let word = u32::from_le_bytes(bytes.try_into().unwrap());
++        if index % 4 < 2 {
++            // Vulkan permits either neighboring UNORM code. Channel order,
++            // alpha and untouched texels remain exact requirements.
++            for (shift, expected) in [(0, 256u32), (10, 512), (20, 767)] {
++                assert!(((word >> shift) & 1023).abs_diff(expected) <= 1);
++            }
++            assert_eq!(word >> 30, 3);
++        } else {
++            assert_eq!(word, words[index], "scissor must preserve every stored bit");
++        }
++    }
++}
++
++#[test]
+ fn r32_color_clear_load_draw_and_blend_preserve_native_precision() {
+     use reims_vgpu_core::blend::ColorWriteMask;
+     use reims_vgpu_protocol::pixel_format::{ColorLoadSeed, TexelLayout, MTL_FORMAT_R32_FLOAT};

@@ -1,0 +1,24 @@
+build/
+build-product/
+build-asan/
+config-temp/
+.tooling/
+target/
+qa/
+__pycache__/
+*.pyc
+backups/
+*.log
+preview*.png
+references/
+*.pid
+*.port
+/verification.json
+/dist/
+/dist-notes/
+.env
+.env.*
+# Engine build leftovers and local screenshots in the checkout root.
+pc-bios/
+meson-*/
+/*.png

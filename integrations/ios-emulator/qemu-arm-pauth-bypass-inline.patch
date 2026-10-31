@@ -1,0 +1,483 @@
+target/arm: evaluate the SPTM pointer-authentication bypass without helpers.
+
+The SPTM base engine never enforces pointer authentication
+(QEMU_SPTM_DISABLE_PAC, pinned by tests/python/test_engine_pac.py): PAC*
+returns its operand, AUT* returns it with the PAC field refilled from
+bit 55 and never fails, XPAC* strips. No PAC algorithm runs for those: the
+early returns make pauth_computepac dead in every helper but PACGA (the
+built engine has no call to it), and -cpu max on this QEMU defaults to
+pauth-impdef (xxhash) anyway, not QARMA5. What every PACIBSP/RETAB,
+PACIASP/AUTIASP, BLRAA, LDRAA, XPACI ... still paid was a TCG helper call
+plus arm_mmu_idx_el, pauth_check_trap, arm_mmu_idx and aa64_va_parameters
+per instruction: on the virt machine (-cpu max, tests/engine/pac-bench.S,
+a recent engine) a frame-only call costs 8-9.5 ns and the same call
+signed with pacibsp/retab 31-32 ns; PACDZA+AUTDZA+XPACI cost ~14 ns each.
+
+On a CPU without EL2 and EL3 (the vphone board removes both) the trap check
+can never fire, so the bypass is a function of the pointer, its bit 55 and
+the current translation regime alone:
+
+- PAC* (PACIA/IB/DA/DB, the Z and 1716 forms, PACIASP/PACIBSP) emit nothing;
+- AUT*, the combined RETA*/BRA*/BLRA*/ERETA*, LDRAA/LDRAB and XPAC* become
+  an inline strip: dst = bit55 ? src | mask : src & ~mask, with mask read
+  from env->tomacco_pauth_strip[row][bit55];
+- rebuild_hflags_a64 records those masks whenever it sets PAUTH_ACTIVE:
+  pauth_ptr_mask(aa64_va_parameters()) of the stage 1 regime per half,
+  instruction and data, and 0 for AUT* with a key arm_sctlr() leaves off.
+  Every change of an input (TCR, SCTLR, EL, HCR) already rebuilds the hflags
+  the translated code was built for.
+
+PACGA keeps its helper. The tomacco-pauth-fast CPU property (default on)
+restores the helper path, so one binary can be compared with itself
+(-global max-arm-cpu.tomacco-pauth-fast=off). The results are those of the
+helpers for every TCR/SCTLR shape tests/engine/pac-sweep.S runs (checked
+against a model of the helpers, the previous engine and the helper path).
+
+diff --git a/target/arm/internals.h b/target/arm/internals.h
+--- a/target/arm/internals.h
++++ b/target/arm/internals.h
+@@ -1886,6 +1886,50 @@
+     return mask;
+ }
+ 
++/*
++ * The SPTM base engine does not enforce pointer authentication: PAC* returns
++ * its operand, AUT* returns it with the PAC field refilled from bit 55 and
++ * never fails, XPAC* strips as architected and PACGA computes a code
++ * (target/arm/tcg/pauth_helper.c; tests/python/test_engine_pac.py pins it).
++ * Apple's PAC implementation does weird things after launchd starts and there
++ * are multiple processes; use this to straight up disable PAC for now.
++ */
++#define QEMU_SPTM_DISABLE_PAC
++
++/*
++ * Rows of CPUARMState.tomacco_pauth_strip: the mask AUT* with that key, or
++ * XPACI/XPACD, removes from a pointer in the current translation regime.
++ */
++enum {
++    TOMACCO_PAUTH_IA,
++    TOMACCO_PAUTH_IB,
++    TOMACCO_PAUTH_DA,
++    TOMACCO_PAUTH_DB,
++    TOMACCO_PAUTH_XPACI,
++    TOMACCO_PAUTH_XPACD,
++    TOMACCO_PAUTH_ROWS,
++};
++
++/*
++ * tomacco_pauth_fast:
++ * Whether this CPU evaluates the bypass without the pauth helpers: PAC* as
++ * a no-op and AUT* and XPAC* as an inline strip with the masks
++ * rebuild_hflags_a64 records (PACGA keeps its helper). That is exact
++ * only when pauth_check_trap() can never trap, i.e. without EL2 and EL3
++ * (HCR_EL2.API, SCR_EL3.API). The tomacco-pauth-fast CPU property (default
++ * on) turns it off for comparison.
++ */
++static inline bool tomacco_pauth_fast(CPUARMState *env)
++{
++#ifdef QEMU_SPTM_DISABLE_PAC
++    return env_archcpu(env)->tomacco_pauth_fast &&
++           !arm_feature(env, ARM_FEATURE_EL2) &&
++           !arm_feature(env, ARM_FEATURE_EL3);
++#else
++    return false;
++#endif
++}
++
+ /* Add the cpreg definitions for debug related system registers */
+ void define_debug_regs(ARMCPU *cpu);
+ 
+diff --git a/target/arm/cpu.h b/target/arm/cpu.h
+--- a/target/arm/cpu.h
++++ b/target/arm/cpu.h
+@@ -820,6 +820,15 @@
+     /* EL1&0 (VUPERM) and EL2&0 (HUPERM) have independent user permissions. */
+     uint64_t sprr_uperm_el[3];
+ 
++    /*
++     * Pointer-authentication bypass (internals.h tomacco_pauth_fast): for
++     * each TOMACCO_PAUTH_* row and each half of the address space (bit 55),
++     * the bits pauth_original_ptr() replaces with bit 55 in the current
++     * translation regime, 0 for AUT* with a disabled key. Recorded with the
++     * hflags (rebuild_hflags_a64) and read by translated code.
++     */
++    uint64_t tomacco_pauth_strip[6][2];
++
+     // GXF stuff (extracted from struct arm_guest_extregs_t in KDK development kernel)
+     uint64_t gxf_config_el[4];
+     uint64_t gxf_entry_el[4];
+@@ -1099,6 +1108,9 @@
+     /* Enable FP/Advanced SIMD after a PSCI CPU_ON reset for the vphone APs. */
+     bool tomacco_ap_reset_fpen;
+ 
++    /* Evaluate the pointer-authentication bypass without helpers. */
++    bool tomacco_pauth_fast;
++
+     /* QOM property to indicate we should use the back-compat QARMA5 default */
+     bool backcompat_pauth_default_use_qarma5;
+ 
+diff --git a/target/arm/cpu.c b/target/arm/cpu.c
+--- a/target/arm/cpu.c
++++ b/target/arm/cpu.c
+@@ -2496,6 +2496,7 @@
+ static const Property arm_cpu_properties[] = {
+     DEFINE_PROP_BOOL("tomacco-strict-sysregs", ARMCPU, tomacco_strict_sysregs, false),
+     DEFINE_PROP_BOOL("tomacco-ap-reset-fpen", ARMCPU, tomacco_ap_reset_fpen, false),
++    DEFINE_PROP_BOOL("tomacco-pauth-fast", ARMCPU, tomacco_pauth_fast, true),
+     DEFINE_PROP_UINT64("midr", ARMCPU, midr, 0),
+     DEFINE_PROP_UINT64("mp-affinity", ARMCPU,
+                         mp_affinity, ARM64_AFFINITY_INVALID),
+diff --git a/target/arm/tcg/hflags.c b/target/arm/tcg/hflags.c
+--- a/target/arm/tcg/hflags.c
++++ b/target/arm/tcg/hflags.c
+@@ -275,6 +275,39 @@
+     return 0;
+ }
+ 
++/*
++ * Record what helper_aut* and helper_xpac* would remove from a pointer in this
++ * regime: pauth_original_ptr() with the aa64_va_parameters() of the same
++ * stage 1 regime, per half (bit 55), for instruction and data keys; AUT*
++ * with a key that arm_sctlr() leaves disabled returns its operand, so its
++ * row is 0. Every change of the inputs (TCR, SCTLR, EL, HCR) rebuilds the
++ * hflags, which is what keeps this and the TB flags current together.
++ */
++static void tomacco_pauth_record(CPUARMState *env, int el, ARMMMUIdx stage1)
++{
++    uint64_t sctlr = arm_sctlr(env, el);
++
++    QEMU_BUILD_BUG_ON(ARRAY_SIZE(env->tomacco_pauth_strip) != TOMACCO_PAUTH_ROWS);
++    for (int select = 0; select < 2; select++) {
++        uint64_t va = (uint64_t)select << 55;
++        uint64_t insn = pauth_ptr_mask(aa64_va_parameters(env, va, stage1,
++                                                          false, false));
++        uint64_t data = pauth_ptr_mask(aa64_va_parameters(env, va, stage1,
++                                                          true, false));
++
++        env->tomacco_pauth_strip[TOMACCO_PAUTH_IA][select] =
++            sctlr & SCTLR_EnIA ? insn : 0;
++        env->tomacco_pauth_strip[TOMACCO_PAUTH_IB][select] =
++            sctlr & SCTLR_EnIB ? insn : 0;
++        env->tomacco_pauth_strip[TOMACCO_PAUTH_DA][select] =
++            sctlr & SCTLR_EnDA ? data : 0;
++        env->tomacco_pauth_strip[TOMACCO_PAUTH_DB][select] =
++            sctlr & SCTLR_EnDB ? data : 0;
++        env->tomacco_pauth_strip[TOMACCO_PAUTH_XPACI][select] = insn;
++        env->tomacco_pauth_strip[TOMACCO_PAUTH_XPACD][select] = data;
++    }
++}
++
+ static CPUARMTBFlags rebuild_hflags_a64(CPUARMState *env, int el, int fp_el,
+                                         ARMMMUIdx mmu_idx)
+ {
+@@ -367,6 +400,10 @@
+          */
+         if (sctlr & (SCTLR_EnIA | SCTLR_EnIB | SCTLR_EnDA | SCTLR_EnDB)) {
+             DP_TBFLAG_A64(flags, PAUTH_ACTIVE, 1);
++            /* Translated code reads the masks only while PAUTH_ACTIVE. */
++            if (tomacco_pauth_fast(env)) {
++                tomacco_pauth_record(env, el, stage1);
++            }
+         }
+     }
+ 
+diff --git a/target/arm/tcg/pauth_helper.c b/target/arm/tcg/pauth_helper.c
+--- a/target/arm/tcg/pauth_helper.c
++++ b/target/arm/tcg/pauth_helper.c
+@@ -27,9 +27,7 @@
+ #include "tcg/tcg-gvec-desc.h"
+ #include "qemu/xxhash.h"
+ 
+-// Apple's PAC implementation does weird things after launchd starts and there
+-// are multiple processes; use this to straight up disable PAC for now
+-#define QEMU_SPTM_DISABLE_PAC
++/* QEMU_SPTM_DISABLE_PAC (the bypass) is defined in internals.h. */
+ 
+ static uint64_t pac_cell_shuffle(uint64_t i)
+ {
+diff --git a/target/arm/tcg/translate.h b/target/arm/tcg/translate.h
+--- a/target/arm/tcg/translate.h
++++ b/target/arm/tcg/translate.h
+@@ -108,6 +108,8 @@
+     int current_el;
+     GHashTable *cp_regs;
+     bool tomacco_strict_sysregs;
++    /* internals.h tomacco_pauth_fast(), fixed for the CPU. */
++    bool tomacco_pauth_fast;
+     uint64_t features; /* CPU features bits */
+     bool aarch64;
+     bool thumb;
+diff --git a/target/arm/tcg/translate-a64.c b/target/arm/tcg/translate-a64.c
+--- a/target/arm/tcg/translate-a64.c
++++ b/target/arm/tcg/translate-a64.c
+@@ -1944,6 +1944,31 @@
+     return true;
+ }
+ 
++/*
++ * The pointer-authentication bypass without a helper call (internals.h
++ * tomacco_pauth_fast): dst = pauth_original_ptr(src) with the mask of
++ * tomacco_pauth_strip[row][src<55>], i.e. src | mask when bit 55 is set and
++ * src & ~mask when it is clear. A zero mask (AUT* with a disabled key)
++ * leaves src as it is, as the helpers do.
++ */
++static void gen_tomacco_pauth_strip(TCGv_i64 dst, TCGv_i64 src, int row)
++{
++    TCGv_i64 half = tcg_temp_new_i64();
++    TCGv_i64 mask = tcg_temp_new_i64();
++    TCGv_ptr entry = tcg_temp_new_ptr();
++
++    tcg_gen_shri_i64(half, src, 55 - 3);
++    tcg_gen_andi_i64(half, half, sizeof(uint64_t));
++    tcg_gen_trunc_i64_ptr(entry, half);
++    tcg_gen_add_ptr(entry, entry, tcg_env);
++    tcg_gen_ld_i64(mask, entry, offsetof(CPUARMState, tomacco_pauth_strip) +
++                   row * sizeof(((CPUARMState *)0)->tomacco_pauth_strip[0]));
++    tcg_gen_sextract_i64(half, src, 55, 1);
++    tcg_gen_and_i64(half, half, mask);
++    tcg_gen_andc_i64(dst, src, mask);
++    tcg_gen_or_i64(dst, dst, half);
++}
++
+ static TCGv_i64 auth_branch_target(DisasContext *s, TCGv_i64 dst,
+                                    TCGv_i64 modifier, bool use_key_a)
+ {
+@@ -1958,7 +1983,10 @@
+     }
+ 
+     truedst = tcg_temp_new_i64();
+-    if (use_key_a) {
++    if (s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(truedst, dst,
++                               use_key_a ? TOMACCO_PAUTH_IA : TOMACCO_PAUTH_IB);
++    } else if (use_key_a) {
+         gen_helper_autia_combined(truedst, tcg_env, dst, modifier);
+     } else {
+         gen_helper_autib_combined(truedst, tcg_env, dst, modifier);
+@@ -2210,7 +2238,9 @@
+ 
+ static bool trans_XPACLRI(DisasContext *s, arg_XPACLRI *a)
+ {
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(cpu_X[30], cpu_X[30], TOMACCO_PAUTH_XPACI);
++    } else if (s->pauth_active) {
+         gen_helper_xpaci(cpu_X[30], tcg_env, cpu_X[30]);
+     }
+     return true;
+@@ -2218,7 +2248,8 @@
+ 
+ static bool trans_PACIA1716(DisasContext *s, arg_PACIA1716 *a)
+ {
+-    if (s->pauth_active) {
++    /* Under the bypass PAC* is the identity. */
++    if (s->pauth_active && !s->tomacco_pauth_fast) {
+         gen_helper_pacia(cpu_X[17], tcg_env, cpu_X[17], cpu_X[16]);
+     }
+     return true;
+@@ -2226,7 +2257,8 @@
+ 
+ static bool trans_PACIB1716(DisasContext *s, arg_PACIB1716 *a)
+ {
+-    if (s->pauth_active) {
++    /* Under the bypass PAC* is the identity. */
++    if (s->pauth_active && !s->tomacco_pauth_fast) {
+         gen_helper_pacib(cpu_X[17], tcg_env, cpu_X[17], cpu_X[16]);
+     }
+     return true;
+@@ -2234,7 +2266,9 @@
+ 
+ static bool trans_AUTIA1716(DisasContext *s, arg_AUTIA1716 *a)
+ {
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(cpu_X[17], cpu_X[17], TOMACCO_PAUTH_IA);
++    } else if (s->pauth_active) {
+         gen_helper_autia(cpu_X[17], tcg_env, cpu_X[17], cpu_X[16]);
+     }
+     return true;
+@@ -2242,7 +2276,9 @@
+ 
+ static bool trans_AUTIB1716(DisasContext *s, arg_AUTIB1716 *a)
+ {
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(cpu_X[17], cpu_X[17], TOMACCO_PAUTH_IB);
++    } else if (s->pauth_active) {
+         gen_helper_autib(cpu_X[17], tcg_env, cpu_X[17], cpu_X[16]);
+     }
+     return true;
+@@ -2278,7 +2314,8 @@
+ 
+ static bool trans_PACIAZ(DisasContext *s, arg_PACIAZ *a)
+ {
+-    if (s->pauth_active) {
++    /* Under the bypass PAC* is the identity. */
++    if (s->pauth_active && !s->tomacco_pauth_fast) {
+         gen_helper_pacia(cpu_X[30], tcg_env, cpu_X[30], tcg_constant_i64(0));
+     }
+     return true;
+@@ -2286,7 +2323,8 @@
+ 
+ static bool trans_PACIASP(DisasContext *s, arg_PACIASP *a)
+ {
+-    if (s->pauth_active) {
++    /* Under the bypass PAC* is the identity. */
++    if (s->pauth_active && !s->tomacco_pauth_fast) {
+         gen_helper_pacia(cpu_X[30], tcg_env, cpu_X[30], cpu_X[31]);
+     }
+     return true;
+@@ -2294,7 +2332,8 @@
+ 
+ static bool trans_PACIBZ(DisasContext *s, arg_PACIBZ *a)
+ {
+-    if (s->pauth_active) {
++    /* Under the bypass PAC* is the identity. */
++    if (s->pauth_active && !s->tomacco_pauth_fast) {
+         gen_helper_pacib(cpu_X[30], tcg_env, cpu_X[30], tcg_constant_i64(0));
+     }
+     return true;
+@@ -2302,7 +2341,8 @@
+ 
+ static bool trans_PACIBSP(DisasContext *s, arg_PACIBSP *a)
+ {
+-    if (s->pauth_active) {
++    /* Under the bypass PAC* is the identity. */
++    if (s->pauth_active && !s->tomacco_pauth_fast) {
+         gen_helper_pacib(cpu_X[30], tcg_env, cpu_X[30], cpu_X[31]);
+     }
+     return true;
+@@ -2310,7 +2350,9 @@
+ 
+ static bool trans_AUTIAZ(DisasContext *s, arg_AUTIAZ *a)
+ {
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(cpu_X[30], cpu_X[30], TOMACCO_PAUTH_IA);
++    } else if (s->pauth_active) {
+         gen_helper_autia(cpu_X[30], tcg_env, cpu_X[30], tcg_constant_i64(0));
+     }
+     return true;
+@@ -2318,7 +2360,9 @@
+ 
+ static bool trans_AUTIASP(DisasContext *s, arg_AUTIASP *a)
+ {
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(cpu_X[30], cpu_X[30], TOMACCO_PAUTH_IA);
++    } else if (s->pauth_active) {
+         gen_helper_autia(cpu_X[30], tcg_env, cpu_X[30], cpu_X[31]);
+     }
+     return true;
+@@ -2326,7 +2370,9 @@
+ 
+ static bool trans_AUTIBZ(DisasContext *s, arg_AUTIBZ *a)
+ {
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(cpu_X[30], cpu_X[30], TOMACCO_PAUTH_IB);
++    } else if (s->pauth_active) {
+         gen_helper_autib(cpu_X[30], tcg_env, cpu_X[30], tcg_constant_i64(0));
+     }
+     return true;
+@@ -2334,7 +2380,9 @@
+ 
+ static bool trans_AUTIBSP(DisasContext *s, arg_AUTIBSP *a)
+ {
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(cpu_X[30], cpu_X[30], TOMACCO_PAUTH_IB);
++    } else if (s->pauth_active) {
+         gen_helper_autib(cpu_X[30], tcg_env, cpu_X[30], cpu_X[31]);
+     }
+     return true;
+@@ -4364,7 +4412,10 @@
+     }
+     dirty_addr = read_cpu_reg_sp(s, a->rn, 1);
+ 
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        gen_tomacco_pauth_strip(dirty_addr, dirty_addr,
++                               a->m ? TOMACCO_PAUTH_DB : TOMACCO_PAUTH_DA);
++    } else if (s->pauth_active) {
+         if (!a->m) {
+             gen_helper_autda_combined(dirty_addr, tcg_env, dirty_addr,
+                                       tcg_constant_i64(0));
+@@ -9087,7 +9138,11 @@
+ TRANS_FEAT(ABS, aa64_cssc, gen_rr, a->rd, a->rn,
+            a->sf ? tcg_gen_abs_i64 : gen_abs32)
+ 
+-static bool gen_pacaut(DisasContext *s, arg_pacaut *a, NeonGenTwo64OpEnvFn fn)
++/* gen_pacaut's `tomacco` for PAC*: the bypass returns the operand. */
++#define TOMACCO_PAUTH_IDENTITY (-1)
++
++static bool gen_pacaut(DisasContext *s, arg_pacaut *a, NeonGenTwo64OpEnvFn fn,
++                       int tomacco)
+ {
+     TCGv_i64 tcg_rd, tcg_rn;
+ 
+@@ -9099,34 +9154,42 @@
+     } else {
+         tcg_rn = cpu_reg_sp(s, a->rn);
+     }
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        if (tomacco != TOMACCO_PAUTH_IDENTITY) {
++            tcg_rd = cpu_reg(s, a->rd);
++            gen_tomacco_pauth_strip(tcg_rd, tcg_rd, tomacco);
++        }
++    } else if (s->pauth_active) {
+         tcg_rd = cpu_reg(s, a->rd);
+         fn(tcg_rd, tcg_env, tcg_rd, tcg_rn);
+     }
+     return true;
+ }
+ 
+-TRANS_FEAT(PACIA, aa64_pauth, gen_pacaut, a, gen_helper_pacia)
+-TRANS_FEAT(PACIB, aa64_pauth, gen_pacaut, a, gen_helper_pacib)
+-TRANS_FEAT(PACDA, aa64_pauth, gen_pacaut, a, gen_helper_pacda)
+-TRANS_FEAT(PACDB, aa64_pauth, gen_pacaut, a, gen_helper_pacdb)
+-
+-TRANS_FEAT(AUTIA, aa64_pauth, gen_pacaut, a, gen_helper_autia)
+-TRANS_FEAT(AUTIB, aa64_pauth, gen_pacaut, a, gen_helper_autib)
+-TRANS_FEAT(AUTDA, aa64_pauth, gen_pacaut, a, gen_helper_autda)
+-TRANS_FEAT(AUTDB, aa64_pauth, gen_pacaut, a, gen_helper_autdb)
++TRANS_FEAT(PACIA, aa64_pauth, gen_pacaut, a, gen_helper_pacia, TOMACCO_PAUTH_IDENTITY)
++TRANS_FEAT(PACIB, aa64_pauth, gen_pacaut, a, gen_helper_pacib, TOMACCO_PAUTH_IDENTITY)
++TRANS_FEAT(PACDA, aa64_pauth, gen_pacaut, a, gen_helper_pacda, TOMACCO_PAUTH_IDENTITY)
++TRANS_FEAT(PACDB, aa64_pauth, gen_pacaut, a, gen_helper_pacdb, TOMACCO_PAUTH_IDENTITY)
++
++TRANS_FEAT(AUTIA, aa64_pauth, gen_pacaut, a, gen_helper_autia, TOMACCO_PAUTH_IA)
++TRANS_FEAT(AUTIB, aa64_pauth, gen_pacaut, a, gen_helper_autib, TOMACCO_PAUTH_IB)
++TRANS_FEAT(AUTDA, aa64_pauth, gen_pacaut, a, gen_helper_autda, TOMACCO_PAUTH_DA)
++TRANS_FEAT(AUTDB, aa64_pauth, gen_pacaut, a, gen_helper_autdb, TOMACCO_PAUTH_DB)
+ 
+-static bool do_xpac(DisasContext *s, int rd, NeonGenOne64OpEnvFn *fn)
++static bool do_xpac(DisasContext *s, int rd, NeonGenOne64OpEnvFn *fn, int tomacco)
+ {
+-    if (s->pauth_active) {
++    if (s->pauth_active && s->tomacco_pauth_fast) {
++        TCGv_i64 tcg_rd = cpu_reg(s, rd);
++        gen_tomacco_pauth_strip(tcg_rd, tcg_rd, tomacco);
++    } else if (s->pauth_active) {
+         TCGv_i64 tcg_rd = cpu_reg(s, rd);
+         fn(tcg_rd, tcg_env, tcg_rd);
+     }
+     return true;
+ }
+ 
+-TRANS_FEAT(XPACI, aa64_pauth, do_xpac, a->rd, gen_helper_xpaci)
+-TRANS_FEAT(XPACD, aa64_pauth, do_xpac, a->rd, gen_helper_xpacd)
++TRANS_FEAT(XPACI, aa64_pauth, do_xpac, a->rd, gen_helper_xpaci, TOMACCO_PAUTH_XPACI)
++TRANS_FEAT(XPACD, aa64_pauth, do_xpac, a->rd, gen_helper_xpacd, TOMACCO_PAUTH_XPACD)
+ 
+ static bool do_logic_reg(DisasContext *s, arg_logic_shift *a,
+                          ArithTwoOp *fn, ArithTwoOp *inv_fn, bool setflags)
+@@ -11086,6 +11149,7 @@
+     dc->vec_stride = 0;
+     dc->cp_regs = arm_cpu->cp_regs;
+     dc->tomacco_strict_sysregs = arm_cpu->tomacco_strict_sysregs;
++    dc->tomacco_pauth_fast = tomacco_pauth_fast(env);
+     dc->features = env->features;
+     dc->dcz_blocksize = get_dczid_bs(arm_cpu);
+     dc->gm_blocksize = arm_cpu->gm_blocksize;

@@ -1,0 +1,1264 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/host_writes.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/host_writes.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/host_writes.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/host_writes.rs
+@@ -161,6 +161,9 @@
+     /// clean sheet, and saying so is the difference between a quiet instrument
+     /// and a blind one.
+     unnamed_while_armed: u64,
++    /// Armed pages a walking rail wrote: licensed by the walk, disarmed and
++    /// counted instead of reported. See [`WriteRail`].
++    walked_over_release: u64,
+ }
+ 
+ /// One minimum supported guest page per allocation. This is derived from the
+@@ -194,6 +197,62 @@
+     }
+ }
+ 
++/// A writer that records into this census, and where its pages came from.
++///
++/// The source decides what a release means to it. A rail that walked the
++/// task's live page table for this write found the page mapped at that moment:
++/// whatever the guest released earlier, the table names the page now, so the
++/// walk is the licence and the write is counted rather than reported (two
++/// soaks of an hour read about 1000 such writes, every one a page the guest had
++/// mapped again through a path this device does not observe). A rail writing
++/// through a page list it kept from an earlier resolve holds the page only
++/// through that list, and a release is exactly what retires the list.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct WriteRail {
++    /// The name a finding prints.
++    pub name: &'static str,
++    /// True when the pages come from a live walk of the task's page table.
++    pub walked: bool,
++}
++
++impl WriteRail {
++    /// A writer whose pages come from walking the task's live page table.
++    pub const fn walked(name: &'static str) -> Self {
++        Self { name, walked: true }
++    }
++
++    /// A writer whose pages come from a list retained from an earlier resolve.
++    pub const fn listed(name: &'static str) -> Self {
++        Self {
++            name,
++            walked: false,
++        }
++    }
++}
++
++/// Which guest statement took a page back from this device.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum Release {
++    /// A task-range unmap: the task's page table stops naming the page.
++    TaskRange,
++    /// A surface unmap through the mapping ring: the surface's page list stops
++    /// naming the page. A task can still map it through its own range.
++    SurfaceList,
++}
++
++impl Release {
++    pub fn slug(self) -> &'static str {
++        match self {
++            Self::TaskRange => "task_range",
++            Self::SurfaceList => "surface_list",
++        }
++    }
++}
++
++/// The release cell's flag for [`Release::SurfaceList`]. Epochs count writes
++/// and cannot reach the top bit, so the cell carries both.
++const SURFACE_RELEASE: u64 = 1 << 63;
++
+ /// A write this device recorded against a page the guest had taken back.
+ ///
+ /// Both epochs travel with it: `released_at` is the write census epoch current
+@@ -209,6 +268,12 @@
+     pub released_at: u64,
+     /// Write census epoch of the write that landed on it afterwards.
+     pub wrote_at: u64,
++    /// The writer that recorded that write. A finding is only actionable once it
++    /// names the rail to read next, and the epochs alone cannot: every rail
++    /// shares the one counter.
++    pub rail: &'static str,
++    /// The statement that released the page.
++    pub release: Release,
+ }
+ 
+ /// How many findings the report queue holds between drains.
+@@ -227,7 +292,9 @@
+     armed: &'a mut u64,
+     hits: &'a mut Vec<ReleasedWrite>,
+     hits_dropped: &'a mut u64,
++    walked_over_release: &'a mut u64,
+     page_shift: u32,
++    rail: WriteRail,
+ }
+ 
+ impl HitSink<'_> {
+@@ -244,14 +311,28 @@
+             if *cell == 0 {
+                 continue;
+             }
+-            let released_at = std::mem::replace(cell, 0);
++            let marker = std::mem::replace(cell, 0);
+             *self.armed = self.armed.saturating_sub(1);
++            let release = if marker & SURFACE_RELEASE != 0 {
++                Release::SurfaceList
++            } else {
++                Release::TaskRange
++            };
++            // A rail that walked the live table found the page mapped for this
++            // write: the walk is the licence, so the page leaves the watch and
++            // is counted instead of reported.
++            if self.rail.walked {
++                *self.walked_over_release += 1;
++                continue;
++            }
+             let page = chunk_key * EPOCHS_PER_CHUNK as u64 + (slot + offset) as u64;
+             if self.hits.len() < RELEASED_REPORT_CAP {
+                 self.hits.push(ReleasedWrite {
+                     gpa: page << self.page_shift,
+-                    released_at,
++                    released_at: marker & !SURFACE_RELEASE,
+                     wrote_at: at,
++                    rail: self.rail.name,
++                    release,
+                 });
+             } else {
+                 *self.hits_dropped += 1;
+@@ -261,19 +342,29 @@
+ }
+ 
+ impl PageEpochs {
+-    fn note_page_range(&mut self, mut page: u64, mut count: usize, epoch: u64, page_shift: u32) {
++    fn note_page_range(
++        &mut self,
++        mut page: u64,
++        mut count: usize,
++        epoch: u64,
++        page_shift: u32,
++        rail: WriteRail,
++    ) {
+         let Self {
+             chunks,
+             armed,
+             hits,
+             hits_dropped,
++            walked_over_release,
+             ..
+         } = self;
+         let mut sink = HitSink {
+             armed,
+             hits,
+             hits_dropped,
++            walked_over_release,
+             page_shift,
++            rail,
+         };
+         while count != 0 {
+             let chunk_key = page / EPOCHS_PER_CHUNK as u64;
+@@ -305,7 +396,7 @@
+     /// release epoch: the question is whether anything was written since the
+     /// guest stopped wanting us there, and re-stamping it would forgive a write
+     /// that had already happened.
+-    fn arm(&mut self, page: u64, epoch: u64) {
++    fn arm(&mut self, page: u64, epoch: u64, release: Release) {
+         let chunk_key = page / EPOCHS_PER_CHUNK as u64;
+         let slot = (page % EPOCHS_PER_CHUNK as u64) as usize;
+         let chunk = self
+@@ -316,12 +407,22 @@
+             .released
+             .get_or_insert_with(|| Box::new([0; EPOCHS_PER_CHUNK]));
+         if released[slot] != 0 {
++            // The first release keeps its epoch. A task-range release of a page
++            // a surface already released is the stronger statement — no table
++            // names it now — so it drops the surface flag.
++            if release == Release::TaskRange {
++                released[slot] &= !SURFACE_RELEASE;
++            }
+             return;
+         }
+         // Epoch 0 is "never written", so an arm at epoch 0 would be
+         // indistinguishable from an unarmed cell. Arm at 1 instead: no write
+         // has happened yet, so no write can be older than it.
+-        released[slot] = epoch.max(1);
++        released[slot] = epoch.max(1)
++            | match release {
++                Release::TaskRange => 0,
++                Release::SurfaceList => SURFACE_RELEASE,
++            };
+         self.armed += 1;
+     }
+ 
+@@ -340,7 +441,7 @@
+         }
+     }
+ 
+-    fn note_pages<I>(&mut self, pages: I, epoch: u64, page_shift: u32)
++    fn note_pages<I>(&mut self, pages: I, epoch: u64, page_shift: u32, rail: WriteRail)
+     where
+         I: IntoIterator<Item = u64>,
+     {
+@@ -349,13 +450,16 @@
+             armed,
+             hits,
+             hits_dropped,
++            walked_over_release,
+             ..
+         } = self;
+         let mut sink = HitSink {
+             armed,
+             hits,
+             hits_dropped,
++            walked_over_release,
+             page_shift,
++            rail,
+         };
+         let mut pages = pages.into_iter().peekable();
+         while let Some(gpa) = pages.next() {
+@@ -477,37 +581,46 @@
+     /// The mapping id is not stored. It was, while the record was a ring that
+     /// resolved the page list again at read time and had to refuse once the
+     /// mapping moved; capturing the pages here is what retired that refusal.
+-    pub fn note_mapping(&mut self, pages: Option<&[u64]>) {
++    pub fn note_mapping(&mut self, rail: WriteRail, pages: Option<&[u64]>) {
+         self.epoch = self.epoch.wrapping_add(1);
+         match pages {
+             Some(p) => self
+                 .pages
+-                .note_pages(p.iter().copied(), self.epoch, self.page_shift),
++                .note_pages(p.iter().copied(), self.epoch, self.page_shift, rail),
+             None => self.pages.note_unknown(self.epoch),
+         }
+     }
+ 
+     /// Record a write covering exactly `pages` (page-aligned guest addresses).
+-    pub fn note_pages(&mut self, pages: Vec<u64>) {
++    ///
++    /// `rail` names the writer, here and on every recorder below, so that a
++    /// write landing on a released page says which code path to read.
++    pub fn note_pages(&mut self, rail: WriteRail, pages: Vec<u64>) {
+         self.epoch = self.epoch.wrapping_add(1);
+-        self.pages.note_pages(pages, self.epoch, self.page_shift);
++        self.pages
++            .note_pages(pages, self.epoch, self.page_shift, rail);
+     }
+ 
+     /// Record an already-resolved page iterator without materializing a second
+     /// allocation. The caller retains ownership of the allocation identity;
+     /// this type owns only its page-exact epochs.
+-    pub fn note_page_iter<I>(&mut self, pages: I)
++    pub fn note_page_iter<I>(&mut self, rail: WriteRail, pages: I)
+     where
+         I: IntoIterator<Item = u64>,
+     {
+         self.epoch = self.epoch.wrapping_add(1);
+-        self.pages.note_pages(pages, self.epoch, self.page_shift);
++        self.pages
++            .note_pages(pages, self.epoch, self.page_shift, rail);
+     }
+ 
+     /// Record the exact page runs retained with an admitted guest allocation.
+     /// The run partition was derived once with the resource, so a repeated
+     /// Store updates slices rather than rebuilding adjacency page by page.
+-    pub fn note_footprint(&mut self, footprint: &crate::runtime::guest_ram::GuestPageFootprint) {
++    pub fn note_footprint(
++        &mut self,
++        rail: WriteRail,
++        footprint: &crate::runtime::guest_ram::GuestPageFootprint,
++    ) {
+         self.epoch = self.epoch.wrapping_add(1);
+         if footprint.page_size() != (1u64 << self.page_shift) {
+             self.pages.note_unknown(self.epoch);
+@@ -520,6 +633,7 @@
+                 run.end - run.start,
+                 self.epoch,
+                 self.page_shift,
++                rail,
+             );
+         }
+     }
+@@ -555,8 +669,8 @@
+     /// address is page-aligned at this guest's geometry by the same shift the
+     /// write census uses, so an arm and a write cannot disagree about which
+     /// cell they mean.
+-    pub fn release_page(&mut self, gpa: u64) {
+-        self.pages.arm(gpa >> self.page_shift, self.epoch);
++    pub fn release_page(&mut self, gpa: u64, release: Release) {
++        self.pages.arm(gpa >> self.page_shift, self.epoch, release);
+     }
+ 
+     /// The guest has mapped `gpa` again, so writing to it is legitimate.
+@@ -582,6 +696,12 @@
+ 
+     /// Writes that named no pages while something was armed, and so could
+     /// neither implicate nor clear it.
++    pub fn walked_writes_over_releases(&self) -> u64 {
++        self.pages.walked_over_release
++    }
++
++    /// Writes that named no pages while something was armed, and so could
++    /// neither implicate nor clear it.
+     pub fn unnamed_writes_while_armed(&self) -> u64 {
+         self.pages.unnamed_while_armed
+     }
+@@ -599,7 +719,7 @@
+     fn a_write_to_other_pages_leaves_this_window_quiet() {
+         let mut w = HostWrites::default();
+         let mark = w.epoch();
+-        w.note_pages(vec![9 * P, 10 * P]);
++        w.note_pages(WriteRail::listed("test"), vec![9 * P, 10 * P]);
+         assert_eq!(
+             w.wrote_any_since(mark, &[3 * P, 4 * P]),
+             HostWriteVerdict::Quiet
+@@ -615,10 +735,10 @@
+     #[test]
+     fn a_write_the_reader_already_saw_does_not_answer_for_a_later_mark() {
+         let mut w = HostWrites::default();
+-        w.note_pages(vec![4 * P]);
++        w.note_pages(WriteRail::listed("test"), vec![4 * P]);
+         let after = w.epoch();
+         assert_eq!(w.wrote_any_since(after, &[4 * P]), HostWriteVerdict::Quiet);
+-        w.note_pages(vec![4 * P]);
++        w.note_pages(WriteRail::listed("test"), vec![4 * P]);
+         assert_eq!(
+             w.wrote_any_since(after, &[4 * P]),
+             HostWriteVerdict::Overlap
+@@ -653,7 +773,7 @@
+         let mut w = HostWrites::default();
+         let stale = w.epoch();
+         for i in 0..4096u64 {
+-            w.note_pages(vec![(100 + i) * P]);
++            w.note_pages(WriteRail::listed("test"), vec![(100 + i) * P]);
+         }
+         assert_eq!(
+             w.wrote_any_since(stale, &[3 * P]),
+@@ -674,7 +794,7 @@
+     fn a_write_repeated_every_frame_occupies_one_entry() {
+         let mut w = HostWrites::default();
+         for _ in 0..10_000 {
+-            w.note_pages(vec![4 * P, 5 * P]);
++            w.note_pages(WriteRail::listed("test"), vec![4 * P, 5 * P]);
+         }
+         assert_eq!(w.pages.recorded_pages(), 2);
+         assert_eq!(
+@@ -690,7 +810,7 @@
+         let mut w = HostWrites::default();
+         let mark = w.epoch();
+         let far = (EPOCHS_PER_CHUNK as u64 * 4096) + 3 * P;
+-        w.note_pages(vec![3 * P, far]);
++        w.note_pages(WriteRail::listed("test"), vec![3 * P, far]);
+         assert_eq!(w.wrote_any_since(mark, &[3 * P]), HostWriteVerdict::Overlap);
+         assert_eq!(w.wrote_any_since(mark, &[far]), HostWriteVerdict::Overlap);
+         assert_eq!(w.pages.recorded_pages(), 2);
+@@ -706,7 +826,7 @@
+             .expect("one contiguous allocation chunk");
+         let mut w = HostWrites::default();
+         let before = w.epoch();
+-        w.note_footprint(&footprint);
++        w.note_footprint(WriteRail::listed("test"), &footprint);
+         let after_full = w.epoch();
+         assert_eq!(w.pages.recorded_pages(), EPOCHS_PER_CHUNK);
+         assert_eq!(
+@@ -718,7 +838,7 @@
+             HostWriteVerdict::Quiet
+         );
+ 
+-        w.note_pages(vec![7 * P]);
++        w.note_pages(WriteRail::listed("test"), vec![7 * P]);
+         assert_eq!(
+             w.wrote_any_since(after_full, &[7 * P]),
+             HostWriteVerdict::Overlap
+@@ -737,7 +857,7 @@
+             .expect("arm64 footprint");
+         let mut w = HostWrites::default();
+         let mark = w.epoch();
+-        w.note_footprint(&footprint);
++        w.note_footprint(WriteRail::listed("test"), &footprint);
+         assert_eq!(
+             w.wrote_any_since(mark, &[0x9000]),
+             HostWriteVerdict::Unnamed
+@@ -752,7 +872,7 @@
+         const ARM_PAGE: u64 = 1 << crate::model::PAGE_SHIFT_ARM64E;
+         let mut w = HostWrites::new(crate::model::PAGE_SHIFT_ARM64E);
+         let mark = w.epoch();
+-        w.note_pages(vec![3 * ARM_PAGE, 4 * ARM_PAGE]);
++        w.note_pages(WriteRail::listed("test"), vec![3 * ARM_PAGE, 4 * ARM_PAGE]);
+         assert_eq!(w.pages.recorded_pages(), 2);
+         assert_eq!(
+             w.wrote_any_since(mark, &[4 * ARM_PAGE]),
+@@ -776,11 +896,11 @@
+     fn a_mapping_re_pointed_after_the_write_is_still_answered_by_the_pages_it_wrote() {
+         let mut w = HostWrites::default();
+         let mark = w.epoch();
+-        w.note_mapping(Some(&[7 * P]));
++        w.note_mapping(WriteRail::listed("test"), Some(&[7 * P]));
+         assert_eq!(w.wrote_any_since(mark, &[7 * P]), HostWriteVerdict::Overlap);
+         assert_eq!(w.wrote_any_since(mark, &[8 * P]), HostWriteVerdict::Quiet);
+         // Whatever the mapping is re-pointed at, this write's pages do not move.
+-        w.note_mapping(Some(&[8 * P]));
++        w.note_mapping(WriteRail::listed("test"), Some(&[8 * P]));
+         assert_eq!(w.wrote_any_since(mark, &[7 * P]), HostWriteVerdict::Overlap);
+         assert_eq!(w.wrote_any_since(mark, &[3 * P]), HostWriteVerdict::Quiet);
+     }
+@@ -791,7 +911,7 @@
+     fn a_mapping_write_that_cannot_name_all_its_pages_invalidates_everything_older() {
+         let mut w = HostWrites::default();
+         let mark = w.epoch();
+-        w.note_mapping(None);
++        w.note_mapping(WriteRail::listed("test"), None);
+         assert_eq!(w.wrote_any_since(mark, &[3 * P]), HostWriteVerdict::Unnamed);
+     }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/released_pages.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/released_pages.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/released_pages.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/released_pages.rs
+@@ -77,6 +77,13 @@
+ //!
+ //! It does **not** mean the write reached a page table. It means the ordering
+ //! this device relies on did not hold, which is the precondition for that.
++//!
++//! Only rails that write through a page list they kept report. A rail that
++//! walked the task's live table for the write found the page mapped at that
++//! moment, so the walk licenses it; such writes leave the watch and are counted
++//! in the levels line (`walked=`). Two hour-long soaks read about a thousand of
++//! them and every one was a page the guest had mapped again through a path this
++//! device does not observe, while the list-keeping rails read none.
+ 
+ /// Report the writes that landed on pages the guest had taken back.
+ ///
+@@ -84,25 +91,88 @@
+ /// draining a queue that is empty on every tranche of every healthy boot; the
+ /// detection itself happened at the write.
+ pub fn sweep(state: &mut crate::model::DeviceState) {
+-    let writes = &mut state.host_writes;
+-    for hit in writes.take_released_writes() {
++    for hit in state.host_writes.take_released_writes() {
+         crate::runtime::drain::note_store_route("released_write_after_release");
+         if !crate::observe::first_sight("released_write_after_release", hit.gpa) {
+             continue;
+         }
+         crate::observe::fail(format!(
+             "released_pages reason=released_write_after_release gpa={:#x} \
+-             released_at={} wrote_at={} armed={} (this device wrote to a guest page after the \
+-             guest released it; the guest is entitled to have given that page to something \
+-             else, including its own page table)",
++             released_at={} wrote_at={} released_by={} rail={} owner={} armed={} (this device \
++             wrote to a guest page after the guest released it; the guest is entitled to have \
++             given that page to something else, including its own page table)",
+             hit.gpa,
+             hit.released_at,
+             hit.wrote_at,
+-            writes.armed_pages(),
++            hit.release.slug(),
++            hit.rail,
++            PageOwner::of(state, hit.gpa),
++            state.host_writes.armed_pages(),
+         ));
+     }
+ }
+ 
++/// What this device still holds that names a page, read when a finding fires.
++///
++/// The discriminator the residue paragraph above asks for, for the holders the
++/// device keeps itself. A page a live mapping or a registered view still names
++/// is reachable, so a write through it may be legitimate and the finding is the
++/// guard's blind spot rather than the defect; `None` is the reading that
++/// matters, because then nothing this device holds licenses the write. A task-GVA
++/// rail walks the live page table as it writes, so for those rails the walk is
++/// itself the holder and `None` here does not exonerate or implicate them.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum PageOwner {
++    /// A mapped surface's current page list names the page.
++    Mapping(u32),
++    /// A surface's condemned page list (fresh MAP, no resolve since) names it.
++    Condemned(u32),
++    /// A registered task-GVA view of this task covers it.
++    View(u32),
++    /// Nothing this device holds names the page.
++    None,
++}
++
++impl PageOwner {
++    pub fn of(state: &crate::model::DeviceState, gpa: u64) -> Self {
++        use crate::protocol::iosurface_pages::entry_gpa_shift;
++        let shift = state.page_shift;
++        let names = |entries: &[u32]| {
++            entries
++                .iter()
++                .any(|&entry| entry_gpa_shift(entry, shift) == Some(gpa))
++        };
++        for (&id, m) in &state.mappings {
++            if m.mapped && names(&m.page_entries) {
++                return Self::Mapping(id);
++            }
++        }
++        for (&id, m) in &state.mappings {
++            if m.condemned_entries.as_deref().is_some_and(names) {
++                return Self::Condemned(id);
++            }
++        }
++        for v in &state.gva_host_views {
++            let len = v.ptr_len as u64;
++            if v.first_gpa != 0 && gpa >= v.first_gpa && gpa - v.first_gpa < len {
++                return Self::View(v.task_id);
++            }
++        }
++        Self::None
++    }
++}
++
++impl std::fmt::Display for PageOwner {
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        match self {
++            Self::Mapping(id) => write!(f, "mapping:{id}"),
++            Self::Condemned(id) => write!(f, "condemned:{id}"),
++            Self::View(task) => write!(f, "view:task{task}"),
++            Self::None => f.write_str("none"),
++        }
++    }
++}
++
+ /// The guard's own levels, at most once per census interval.
+ ///
+ /// `armed` is the population the guard is watching, and unlike the watch this
+@@ -128,6 +198,7 @@
+     if writes.armed_pages() == 0
+         && writes.dropped_released_writes() == 0
+         && writes.unnamed_writes_while_armed() == 0
++        && writes.walked_writes_over_releases() == 0
+     {
+         return;
+     }
+@@ -135,10 +206,11 @@
+         return;
+     }
+     crate::observe::off(format!(
+-        "released_pages_levels armed={} dropped={} unnamed={}",
++        "released_pages_levels armed={} dropped={} unnamed={} walked={}",
+         writes.armed_pages(),
+         writes.dropped_released_writes(),
+         writes.unnamed_writes_while_armed(),
++        writes.walked_writes_over_releases(),
+     ));
+ }
+ 
+@@ -175,7 +247,7 @@
+ 
+ #[cfg(test)]
+ mod tests {
+-    use crate::runtime::host_writes::HostWrites;
++    use crate::runtime::host_writes::{HostWrites, Release, WriteRail};
+ 
+     use super::*;
+ 
+@@ -186,8 +258,8 @@
+     #[test]
+     fn a_released_page_nobody_wrote_to_stays_armed_and_quiet() {
+         let mut w = HostWrites::default();
+-        w.release_page(9 * P);
+-        w.note_pages(vec![3 * P, 4 * P]);
++        w.release_page(9 * P, Release::TaskRange);
++        w.note_pages(WriteRail::listed("test"), vec![3 * P, 4 * P]);
+         assert!(w.take_released_writes().is_empty());
+         assert_eq!(w.armed_pages(), 1);
+     }
+@@ -197,10 +269,10 @@
+     #[test]
+     fn a_write_after_the_release_is_reported_once() {
+         let mut w = HostWrites::default();
+-        w.note_pages(vec![P]);
++        w.note_pages(WriteRail::listed("test"), vec![P]);
+         let released_at = w.epoch();
+-        w.release_page(9 * P);
+-        w.note_pages(vec![9 * P]);
++        w.release_page(9 * P, Release::TaskRange);
++        w.note_pages(WriteRail::listed("test"), vec![9 * P]);
+ 
+         let found = w.take_released_writes();
+         assert_eq!(found.len(), 1);
+@@ -213,7 +285,7 @@
+             "a page that reported is not armed again"
+         );
+ 
+-        w.note_pages(vec![9 * P]);
++        w.note_pages(WriteRail::listed("test"), vec![9 * P]);
+         assert!(
+             w.take_released_writes().is_empty(),
+             "one late write is one finding, not one per write for the rest of the boot"
+@@ -225,8 +297,8 @@
+     #[test]
+     fn a_write_before_the_release_is_not_a_finding() {
+         let mut w = HostWrites::default();
+-        w.note_pages(vec![9 * P]);
+-        w.release_page(9 * P);
++        w.note_pages(WriteRail::listed("test"), vec![9 * P]);
++        w.release_page(9 * P, Release::TaskRange);
+         assert!(w.take_released_writes().is_empty());
+         assert_eq!(w.armed_pages(), 1, "still armed, still waiting");
+     }
+@@ -237,10 +309,10 @@
+     #[test]
+     fn a_remapped_page_leaves_the_guard() {
+         let mut w = HostWrites::default();
+-        w.release_page(9 * P);
++        w.release_page(9 * P, Release::TaskRange);
+         w.remap_page(9 * P);
+         assert_eq!(w.armed_pages(), 0);
+-        w.note_pages(vec![9 * P]);
++        w.note_pages(WriteRail::listed("test"), vec![9 * P]);
+         assert!(w.take_released_writes().is_empty());
+     }
+ 
+@@ -255,9 +327,9 @@
+     #[test]
+     fn a_page_mapped_again_by_a_different_task_is_disarmed() {
+         let mut w = HostWrites::default();
+-        w.release_page(9 * P);
++        w.release_page(9 * P, Release::TaskRange);
+         w.remap_page(9 * P);
+-        w.note_pages(vec![9 * P]);
++        w.note_pages(WriteRail::listed("test"), vec![9 * P]);
+         assert!(
+             w.take_released_writes().is_empty(),
+             "a write through the other task's live mapping is ordinary work"
+@@ -269,12 +341,12 @@
+     #[test]
+     fn a_second_release_does_not_forgive_a_write_that_already_landed() {
+         let mut w = HostWrites::default();
+-        w.note_pages(vec![P]);
++        w.note_pages(WriteRail::listed("test"), vec![P]);
+         let first = w.epoch();
+-        w.release_page(9 * P);
+-        w.note_pages(vec![7 * P]);
+-        w.release_page(9 * P);
+-        w.note_pages(vec![9 * P]);
++        w.release_page(9 * P, Release::TaskRange);
++        w.note_pages(WriteRail::listed("test"), vec![7 * P]);
++        w.release_page(9 * P, Release::TaskRange);
++        w.note_pages(WriteRail::listed("test"), vec![9 * P]);
+         let found = w.take_released_writes();
+         assert_eq!(found.len(), 1);
+         assert_eq!(
+@@ -294,7 +366,7 @@
+             0,
+             "nothing armed, nothing to be undecided about"
+         );
+-        w.release_page(9 * P);
++        w.release_page(9 * P, Release::TaskRange);
+         w.note_unknown();
+         assert!(w.take_released_writes().is_empty());
+         assert_eq!(w.unnamed_writes_while_armed(), 1);
+@@ -313,13 +385,13 @@
+     fn sixty_thousand_released_pages_are_all_armed_and_all_answer() {
+         const N: u64 = 62_666;
+         let mut w = HostWrites::default();
+-        w.note_pages(vec![0]);
++        w.note_pages(WriteRail::listed("test"), vec![0]);
+         for page in 1..=N {
+-            w.release_page(page * P);
++            w.release_page(page * P, Release::TaskRange);
+         }
+         assert_eq!(w.armed_pages(), N);
+         // The last page released is well past any capacity the watch had.
+-        w.note_pages(vec![N * P]);
++        w.note_pages(WriteRail::listed("test"), vec![N * P]);
+         let found = w.take_released_writes();
+         assert_eq!(found.len(), 1);
+         assert_eq!(found[0].gpa, N * P);
+@@ -334,9 +406,9 @@
+     fn a_page_released_before_the_first_write_is_still_armed() {
+         let mut w = HostWrites::default();
+         assert_eq!(w.epoch(), 0, "nothing written yet");
+-        w.release_page(9 * P);
++        w.release_page(9 * P, Release::TaskRange);
+         assert_eq!(w.armed_pages(), 1);
+-        w.note_pages(vec![9 * P]);
++        w.note_pages(WriteRail::listed("test"), vec![9 * P]);
+         assert_eq!(w.take_released_writes().len(), 1);
+     }
+ 
+@@ -349,8 +421,8 @@
+         let footprint = crate::runtime::guest_ram::GuestPageFootprint::new(pages, P)
+             .expect("one contiguous allocation");
+         let mut w = HostWrites::default();
+-        w.release_page(300 * P);
+-        w.note_footprint(&footprint);
++        w.release_page(300 * P, Release::TaskRange);
++        w.note_footprint(WriteRail::listed("test"), &footprint);
+         let found = w.take_released_writes();
+         assert_eq!(found.len(), 1);
+         assert_eq!(found[0].gpa, 300 * P);
+@@ -361,12 +433,12 @@
+     #[test]
+     fn a_flood_of_findings_is_counted_rather_than_lost_silently() {
+         let mut w = HostWrites::default();
+-        w.note_pages(vec![0]);
++        w.note_pages(WriteRail::listed("test"), vec![0]);
+         let pages: Vec<u64> = (1..=200u64).map(|page| page * P).collect();
+         for &gpa in &pages {
+-            w.release_page(gpa);
++            w.release_page(gpa, Release::TaskRange);
+         }
+-        w.note_pages(pages);
++        w.note_pages(WriteRail::listed("test"), pages);
+         let found = w.take_released_writes();
+         assert_eq!(found.len() as u64 + w.dropped_released_writes(), 200);
+         assert!(
+@@ -386,9 +458,9 @@
+     fn arm64_pages_arm_and_report_at_arm64_geometry() {
+         const ARM_PAGE: u64 = 1 << crate::model::PAGE_SHIFT_ARM64E;
+         let mut w = HostWrites::new(crate::model::PAGE_SHIFT_ARM64E);
+-        w.release_page(3 * ARM_PAGE);
++        w.release_page(3 * ARM_PAGE, Release::TaskRange);
+         // An address inside the same 16 KiB page, not at its base.
+-        w.note_pages(vec![3 * ARM_PAGE + 4096]);
++        w.note_pages(WriteRail::listed("test"), vec![3 * ARM_PAGE + 4096]);
+         let found = w.take_released_writes();
+         assert_eq!(found.len(), 1);
+         assert_eq!(found[0].gpa, 3 * ARM_PAGE);
+@@ -422,6 +494,125 @@
+         );
+     }
+ 
++    /// A finding names the writer that landed it, so it says which rail to
++    /// read rather than only that some write broke the ordering.
++    #[test]
++    fn a_finding_names_the_rail_that_wrote() {
++        let mut w = HostWrites::default();
++        w.release_page(9 * P, Release::TaskRange);
++        w.note_pages(WriteRail::listed("mapper_runs"), vec![9 * P]);
++        let hits = w.take_released_writes();
++        assert_eq!(hits.len(), 1);
++        assert_eq!(hits[0].rail, "mapper_runs");
++    }
++
++    /// A rail that walked the task's live table found the page mapped for this
++    /// write, whichever release came before, so the page leaves the watch and
++    /// is counted rather than reported.
++    #[test]
++    fn a_walked_write_over_any_release_is_counted_not_reported() {
++        for release in [Release::SurfaceList, Release::TaskRange] {
++            let mut w = HostWrites::default();
++            w.release_page(9 * P, release);
++            w.note_pages(WriteRail::walked("gva_span"), vec![9 * P]);
++            assert!(w.take_released_writes().is_empty());
++            assert_eq!(w.armed_pages(), 0, "the walk licensed the page");
++            assert_eq!(w.walked_writes_over_releases(), 1);
++        }
++    }
++
++    /// A rail writing through a page list it kept is exactly what a surface
++    /// unmap retired, so that write is the finding, and it says which release
++    /// it broke and when that release happened.
++    #[test]
++    fn a_listed_write_over_a_surface_release_is_the_finding() {
++        let mut w = HostWrites::default();
++        w.note_pages(WriteRail::listed("test"), vec![P]);
++        let released_at = w.epoch();
++        w.release_page(9 * P, Release::SurfaceList);
++        w.note_pages(WriteRail::listed("mapper_runs"), vec![9 * P]);
++        let hits = w.take_released_writes();
++        assert_eq!(hits.len(), 1);
++        assert_eq!(hits[0].release, Release::SurfaceList);
++        assert_eq!(
++            hits[0].released_at, released_at,
++            "the flag is not part of the epoch"
++        );
++        assert_eq!(hits[0].rail, "mapper_runs");
++    }
++
++    /// A page a surface released and then a task released is named by no table
++    /// at all, so a finding names the task release.
++    #[test]
++    fn a_task_release_outranks_an_earlier_surface_release() {
++        let mut w = HostWrites::default();
++        w.release_page(9 * P, Release::SurfaceList);
++        w.release_page(9 * P, Release::TaskRange);
++        assert_eq!(w.armed_pages(), 1, "one page, armed once");
++        w.note_pages(WriteRail::listed("mapper_runs"), vec![9 * P]);
++        let hits = w.take_released_writes();
++        assert_eq!(hits.len(), 1);
++        assert_eq!(hits[0].release, Release::TaskRange);
++    }
++
++    fn surface_state() -> crate::model::DeviceState {
++        crate::model::DeviceState::new(crate::model::DeviceId(1), crate::model::PAGE_SHIFT_X86)
++    }
++
++    fn give_surface_page(state: &mut crate::model::DeviceState, mapping_id: u32, page: u32) {
++        use crate::protocol::iosurface_pages::{PAGE_ENTRY_PFN_SHIFT, PAGE_ENTRY_VALID};
++        assert!(state.map_surface(mapping_id));
++        let m = state.mappings.get_mut(&mapping_id).unwrap();
++        m.page_entries = vec![(page << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID];
++        state.note_mapping_pages_adopted(mapping_id);
++    }
++
++    /// A surface unmapped through the mapping ring is a release like a task-GVA
++    /// unmap: a later write to its old page is a finding, and nothing this
++    /// device holds names that page any more.
++    #[test]
++    fn a_surface_unmap_arms_the_pages_it_named() {
++        let mut state = surface_state();
++        give_surface_page(&mut state, 3, 9);
++        assert!(state.unmap_surface(3));
++        assert_eq!(state.host_writes.armed_pages(), 1);
++
++        state.note_host_wrote_pages(WriteRail::listed("test"), vec![9 * P]);
++        let hits = state.host_writes.take_released_writes();
++        assert_eq!(hits.len(), 1, "the write after the unmap is the finding");
++        assert_eq!(PageOwner::of(&state, hits[0].gpa), PageOwner::None);
++    }
++
++    /// The guest handing a released page to another surface licenses writing
++    /// it again, so the adoption disarms it and the new surface's write is not
++    /// reported.
++    #[test]
++    fn a_page_adopted_by_another_surface_is_disarmed() {
++        let mut state = surface_state();
++        give_surface_page(&mut state, 3, 9);
++        assert!(state.unmap_surface(3));
++        give_surface_page(&mut state, 4, 9);
++        assert_eq!(state.host_writes.armed_pages(), 0);
++
++        state.note_host_wrote_mapping(WriteRail::listed("test"), 4);
++        assert!(state.host_writes.take_released_writes().is_empty());
++        assert_eq!(PageOwner::of(&state, 9 * P), PageOwner::Mapping(4));
++    }
++
++    /// A live page list is the stronger claim than a condemned one, and a page
++    /// no list names has no owner.
++    #[test]
++    fn the_owner_is_the_live_list_before_a_condemned_one() {
++        let mut state = surface_state();
++        give_surface_page(&mut state, 3, 9);
++        // A fresh MAP condemns the list it replaces until the next resolve.
++        assert!(state.map_surface(3));
++        assert_eq!(PageOwner::of(&state, 9 * P), PageOwner::Condemned(3));
++        give_surface_page(&mut state, 5, 9);
++        assert_eq!(PageOwner::of(&state, 9 * P), PageOwner::Mapping(5));
++        assert_eq!(PageOwner::of(&state, 10 * P), PageOwner::None);
++    }
++
+     /// A stall does not bank intervals it slept through.
+     ///
+     /// The claim moves to `now`, not forward by one interval, so the tranches
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/node_guard.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/node_guard.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/node_guard.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/node_guard.rs
+@@ -230,6 +230,7 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++    use crate::runtime::host_writes::WriteRail;
+ 
+     const P: u64 = 4096;
+ 
+@@ -254,7 +255,7 @@
+         let mut writes = HostWrites::default();
+         assert_eq!(w.observe(&writes, 9 * P, 100), NodeVerdict::FirstSight);
+ 
+-        writes.note_pages(vec![9 * P]);
++        writes.note_pages(WriteRail::listed("test"), vec![9 * P]);
+         let v = w.observe(&writes, 9 * P, 350);
+         assert_eq!(v, NodeVerdict::Wrote { gap_us: 250 });
+         assert!(v.is_finding());
+@@ -272,7 +273,7 @@
+         let mut w = NodeWatch::default();
+         let mut writes = HostWrites::default();
+         w.observe(&writes, 9 * P, 0);
+-        writes.note_pages(vec![8 * P, 10 * P]);
++        writes.note_pages(WriteRail::listed("test"), vec![8 * P, 10 * P]);
+         assert_eq!(w.observe(&writes, 9 * P, 1), NodeVerdict::Quiet);
+     }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/gva_store_witness.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/gva_store_witness.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/gva_store_witness.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/gva_store_witness.rs
+@@ -445,6 +445,7 @@
+ mod tests {
+     use super::*;
+     use crate::runtime::host::FakeHost;
++    use crate::runtime::host_writes::WriteRail;
+ 
+     /// The x86 guest page, to match the `DeviceState` these tests build.
+     const PAGE: u64 = 1u64 << crate::model::PAGE_SHIFT_X86;
+@@ -504,10 +505,10 @@
+         assert_eq!(reach(&state, &host, key(0xabc)), GvaWriteReach::Quiet);
+ 
+         // Somewhere else: still quiet, because the ask is page-exact.
+-        state.note_host_wrote_pages(vec![9 * PAGE]);
++        state.note_host_wrote_pages(WriteRail::listed("test"), vec![9 * PAGE]);
+         assert_eq!(reach(&state, &host, key(0xabc)), GvaWriteReach::Quiet);
+ 
+-        state.note_host_wrote_pages(vec![4 * PAGE]);
++        state.note_host_wrote_pages(WriteRail::listed("test"), vec![4 * PAGE]);
+         assert_eq!(
+             reach(&state, &host, key(0xabc)),
+             GvaWriteReach::Host(HostWriteVerdict::Overlap)
+@@ -545,7 +546,7 @@
+ 
+         armed(&mut state, &mut host, key(0xabc), &pages);
+         for i in 0..256u64 {
+-            state.note_host_wrote_pages(vec![(100 + i) * PAGE]);
++            state.note_host_wrote_pages(WriteRail::listed("test"), vec![(100 + i) * PAGE]);
+         }
+         assert_eq!(
+             reach(&state, &host, key(0xabc)),
+@@ -554,9 +555,9 @@
+         );
+ 
+         armed(&mut state, &mut host, key(0xabc), &pages);
+-        state.note_host_wrote_pages(vec![3 * PAGE]);
++        state.note_host_wrote_pages(WriteRail::listed("test"), vec![3 * PAGE]);
+         for i in 0..256u64 {
+-            state.note_host_wrote_pages(vec![(100 + i) * PAGE]);
++            state.note_host_wrote_pages(WriteRail::listed("test"), vec![(100 + i) * PAGE]);
+         }
+         assert_eq!(
+             reach(&state, &host, key(0xabc)),
+@@ -575,7 +576,7 @@
+         let mut host = FakeHost::new();
+         let pages = [3 * PAGE];
+         // The order `store_gva_frame` uses: record the write, then stamp.
+-        state.note_host_wrote_pages(pages.to_vec());
++        state.note_host_wrote_pages(WriteRail::listed("test"), pages.to_vec());
+         armed(&mut state, &mut host, key(0xabc), &pages);
+         assert_eq!(reach(&state, &host, key(0xabc)), GvaWriteReach::Quiet);
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/model/state.rs b/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/model/state.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+@@ -5,6 +5,7 @@
+ use crate::runtime::decode::resource::{
+     DecodeStatus as ResourceDecodeStatus, Descriptor, ListObjectEntry, SamplerDescriptor,
+ };
++use crate::runtime::host_writes::WriteRail;
+ use reims_vgpu_core::access::BackingId;
+ use reims_vgpu_core::identity::{ObjectListRef, ResourceId};
+ use reims_vgpu_core::namespace::Teardown;
+@@ -5460,6 +5461,7 @@
+             return false;
+         }
+         self.forget_compositor_mapping(mapping_id);
++        self.note_mapping_pages_released(mapping_id);
+         if let Some(e) = self.mappings.get_mut(&mapping_id) {
+             e.mapped = false;
+             e.page_entries.clear();
+@@ -5644,8 +5646,55 @@
+ 
+     /// The same, for a writer that walked the guest page tables and so knows
+     /// exactly which pages it landed in even though it names no mapping.
+-    pub fn note_host_wrote_pages(&mut self, pages: Vec<u64>) {
+-        self.host_writes.note_pages(pages);
++    pub fn note_host_wrote_pages(&mut self, rail: WriteRail, pages: Vec<u64>) {
++        self.host_writes.note_pages(rail, pages);
++    }
++
++    /// Arm the release guard on every page `mapping_id` names, because the guest
++    /// has just unmapped it.
++    ///
++    /// The guard used to learn about releases only from task-GVA unmaps, and
++    /// only when the range still translated as the packet was read — so a
++    /// surface the guest unmapped through the mapping ring was never armed, and
++    /// a write landing on its old pages through a stale list could not be told
++    /// from a legitimate one. Entries that name no page are skipped rather than
++    /// refusing the set: an arm is a watch, not a licence, and watching fewer
++    /// pages cannot make a write look legitimate.
++    pub fn note_mapping_pages_released(&mut self, mapping_id: u32) {
++        if !crate::runtime::node_guard::enabled() {
++            return;
++        }
++        for gpa in self.mapping_named_pages(mapping_id) {
++            self.host_writes
++                .release_page(gpa, crate::runtime::host_writes::Release::SurfaceList);
++        }
++    }
++
++    /// Disarm the release guard on every page `mapping_id` names now: the guest
++    /// has just handed those pages to a surface, so writing them is licensed
++    /// again. Without this a page recycled from one surface into another reads
++    /// as a write after release the first time the new surface is written.
++    pub fn note_mapping_pages_adopted(&mut self, mapping_id: u32) {
++        if !crate::runtime::node_guard::enabled() {
++            return;
++        }
++        for gpa in self.mapping_named_pages(mapping_id) {
++            self.host_writes.remap_page(gpa);
++        }
++    }
++
++    /// The pages `mapping_id`'s entries name, skipping entries that name none.
++    fn mapping_named_pages(&self, mapping_id: u32) -> Vec<u64> {
++        let shift = self.page_shift;
++        self.mappings
++            .get(&mapping_id)
++            .map(|m| {
++                m.page_entries
++                    .iter()
++                    .filter_map(|&e| crate::protocol::iosurface_pages::entry_gpa_shift(e, shift))
++                    .collect()
++            })
++            .unwrap_or_default()
+     }
+ 
+     /// Every guest page a mapping covers, or `None` when the set cannot be
+@@ -5687,7 +5736,7 @@
+     }
+ 
+     /// The same, for a writer that knows which mapping's pages it is landing in.
+-    pub fn note_host_wrote_mapping(&mut self, mapping_id: u32) {
++    pub fn note_host_wrote_mapping(&mut self, rail: WriteRail, mapping_id: u32) {
+         let Some(entries) = self
+             .mappings
+             .get(&mapping_id)
+@@ -5708,11 +5757,13 @@
+             self.host_writes.note_unknown();
+             return;
+         }
+-        self.host_writes
+-            .note_page_iter(entries.iter().map(|&entry| {
++        self.host_writes.note_page_iter(
++            rail,
++            entries.iter().map(|&entry| {
+                 crate::protocol::iosurface_pages::entry_gpa_shift(entry, shift)
+                     .expect("page entries were validated above")
+-            }));
++            }),
++        );
+     }
+ 
+     /// Issue a sampled-content generation that has never been issued before.
+@@ -6633,8 +6684,10 @@
+         let mut epoch = state.host_writes.epoch();
+         for announce in [
+             &mut DeviceState::note_host_wrote_guest_ram as &mut dyn FnMut(&mut DeviceState),
+-            &mut |s: &mut DeviceState| s.note_host_wrote_pages(vec![0x1000]),
+-            &mut |s: &mut DeviceState| s.note_host_wrote_mapping(7),
++            &mut |s: &mut DeviceState| {
++                s.note_host_wrote_pages(WriteRail::listed("test"), vec![0x1000])
++            },
++            &mut |s: &mut DeviceState| s.note_host_wrote_mapping(WriteRail::listed("test"), 7),
+         ] {
+             announce(&mut state);
+             let now = state.host_writes.epoch();
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+@@ -10,6 +10,7 @@
+ use crate::model::{DeviceState, MappingEntry};
+ use crate::runtime::guest_ram::{GuestRamRegion, GuestRun};
+ use crate::runtime::host::{HostMemory, HostOps};
++use crate::runtime::host_writes::WriteRail;
+ 
+ #[derive(Debug)]
+ pub enum RectBatchRefusal {
+@@ -554,7 +555,7 @@
+     )?;
+     prepared.copy(copies)?;
+     if writing {
+-        state.note_host_wrote_mapping(mapping_id);
++        state.note_host_wrote_mapping(WriteRail::listed("mapper_rect_batch"), mapping_id);
+     }
+     prepared.complete(state, |_, _| ());
+     Ok(())
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -17,6 +17,7 @@
+     MAPPER_REQUEST_UNMAP,
+ };
+ use crate::runtime::host::{HostMemory, HostOps, MemError};
++use crate::runtime::host_writes::WriteRail;
+ 
+ mod rect_batch;
+ pub use rect_batch::RectBatchRefusal;
+@@ -714,6 +715,7 @@
+     if let Some(import) = retired_import {
+         state.retired_guest_imports.push(import);
+     }
++    state.note_mapping_pages_adopted(mapping_id);
+     if incarnation_changed {
+         // The condemned backing really died and the id now carries a new
+         // surface: drop the prior incarnation's deferred windows before any
+@@ -2570,7 +2572,7 @@
+     if copy.is_write() {
+         // Puts bytes into guest pages the hypervisor's dirty bitmap cannot
+         // witness. The read direction shares this walk and writes nothing.
+-        state.note_host_wrote_mapping(mapping_id);
++        state.note_host_wrote_mapping(WriteRail::listed("mapper_runs"), mapping_id);
+     }
+     let page_size = state.page_size();
+     let len = copy.len();
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -19,6 +19,7 @@
+ 
+ use super::*;
+ use crate::runtime::host::{HostMemory, HostOps};
++use crate::runtime::host_writes::WriteRail;
+ 
+ #[derive(Debug)]
+ enum NativeFloatStoreRefusal {
+@@ -1573,7 +1574,7 @@
+     // caller that goes on to fail its submit has over-recorded rather than
+     // under-recorded — the direction that costs a re-read instead of a wrong
+     // frame.
+-    state.note_host_wrote_pages(gpas.to_vec());
++    state.note_host_wrote_pages(WriteRail::walked("gva_plane_licence"), gpas.to_vec());
+     Ok(GvaPlaneLicence {
+         target,
+         gpas: gpas.to_vec(),
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+@@ -7,6 +7,7 @@
+ use crate::model::{scanout_extent_ok, DeviceState, MappingEntry};
+ use crate::protocol::pixel_format;
+ use crate::runtime::host::{GuestRamRegionsError, HostMemory, HostOps};
++use crate::runtime::host_writes::WriteRail;
+ use crate::runtime::mapper::{
+     self, MappingRectCopy, MappingRectPreparation, MappingRectWindow, MappingStorageIdentity,
+     PreparedMappingRectTransfer, RectBatchRefusal, RectStride, RectViewSource, RunCopy,
+@@ -91,7 +92,8 @@
+             self.state.invalidate_mapping_pages(self.mapping_id);
+         }
+         result?;
+-        self.state.note_host_wrote_mapping(self.mapping_id);
++        self.state
++            .note_host_wrote_mapping(WriteRail::listed("native_image"), self.mapping_id);
+         self.transfer.complete(self.state, |state, host| {
+             state.mark_mapping_written(self.mapping_id);
+             crate::runtime::surface_cache::forget(state, self.mapping_id);
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/vulkan.rs
+@@ -16,6 +16,7 @@
+ //! The gate is the module's, once, rather than thirteen items' each.
+ 
+ use super::*;
++use crate::runtime::host_writes::WriteRail;
+ 
+ /// A check that stopped a resident's frame from reaching the guest's pages
+ /// without a host copy, so the flush owes the copying rail instead.
+@@ -646,7 +647,7 @@
+     // than from zero, because unlike the contig view this rail knows its own
+     // rows and has no pointer whose coverage it is restating.
+     mapper::note_mapping_write_footprint(state, mapping_id, base_off, span_end - base_off);
+-    state.note_host_wrote_mapping(mapping_id);
++    state.note_host_wrote_mapping(WriteRail::listed("mapper_surface_licence"), mapping_id);
+     note_readback_phase(
+         ReadbackPhase::Resolve,
+         resolve_started.elapsed().as_micros() as u64,
+@@ -741,7 +742,9 @@
+     };
+ 
+     mapper::note_physical_page_write_footprint(&footprint, base_off, span_end - base_off);
+-    state.host_writes.note_footprint(&footprint);
++    state
++        .host_writes
++        .note_footprint(WriteRail::listed("guest_backed_resident"), &footprint);
+     state.invalidate_storage_residency_window(mapping_id, base_off, span_end);
+     let _ = state.mark_mapping_written(mapping_id);
+     crate::runtime::surface_cache::forget(state, mapping_id);
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+@@ -15,6 +15,7 @@
+ use crate::protocol::pixel_format::{self, RowToRgba8, MTL_FORMAT_BGRA8_UNORM, RGBA8_BPP};
+ use crate::runtime::changed_runs::ChangedRuns;
+ use crate::runtime::host::{HostMemory, HostOps};
++use crate::runtime::host_writes::WriteRail;
+ use crate::runtime::mapper;
+ 
+ mod planar_xr;
+@@ -438,7 +439,7 @@
+     // guest has not written" is stale the moment this rail runs. Recorded beside
+     // the footprint mark rather than in each caller, so the two cannot drift and
+     // a new caller inherits both.
+-    state.note_host_wrote_mapping(mapping_id);
++    state.note_host_wrote_mapping(WriteRail::listed("mapping_contig"), mapping_id);
+     Some(view)
+ }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/gva_view.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/gva_view.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/gva_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/gva_view.rs
+@@ -17,6 +17,7 @@
+ use crate::model::{DeviceState, GvaHostView, TaskEntry, TaskTable};
+ use crate::runtime::gva_mem::HostPhys;
+ use crate::runtime::host::{HostMemory, HostOps, MemError};
++use crate::runtime::host_writes::WriteRail;
+ use crate::runtime::mapper::{RectStride, RunCopy};
+ use reims_vgpu_paging::resolve::{geometry_for_page_shift, Task};
+ #[cfg(test)]
+@@ -633,7 +634,9 @@
+     // caller of it writes. Recorded on the acquisition rather than in each caller
+     // because that is where the resolved page list exists, and because a new
+     // caller then inherits the record instead of having to remember it.
+-    state.host_writes.note_page_iter(gpas.iter().copied());
++    state
++        .host_writes
++        .note_page_iter(WriteRail::walked("gva_fresh_span"), gpas.iter().copied());
+     Some(FreshSpan {
+         // SAFETY: map_pages returned `map_len` mapped bytes at `ptr_base`.
+         ptr: unsafe { (ptr_base as *mut u8).add(off) },
+@@ -843,7 +846,9 @@
+     if writing {
+         // Every refused preparation is now copy-free. Record exact page epochs
+         // immediately before the first write, without cloning the page list.
+-        state.host_writes.note_page_iter(gpas.iter().copied());
++        state
++            .host_writes
++            .note_page_iter(WriteRail::walked("gva_span"), gpas.iter().copied());
+     }
+     let copied_runs = prepared.runs.len() as u64;
+     for run in &prepared.runs {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
+@@ -6,6 +6,7 @@
+ use crate::runtime::decode::resource::{PlanarXrLayoutRefusal, PlanarXrLevel};
+ use crate::runtime::guest_ram::{GuestPageFootprint, GuestRun};
+ use crate::runtime::host::{HostMemory, HostOps};
++use crate::runtime::host_writes::WriteRail;
+ use crate::runtime::mapper::{RectStride, RunCopy};
+ use std::sync::Arc;
+ 
+@@ -324,7 +325,9 @@
+         }
+         let writing = copies[0].is_write();
+         if writing {
+-            state.host_writes.note_footprint(&self.footprint);
++            state
++                .host_writes
++                .note_footprint(WriteRail::walked("planar_xr"), &self.footprint);
+         }
+         for (i, offset, bytes) in pieces {
+             // SAFETY: all pieces are bounded live GuestRuns held by views;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/objects/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/objects/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/objects/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/objects/mod.rs
+@@ -3948,6 +3948,7 @@
+             state.retired_guest_imports.push(import);
+         }
+     }
++    state.note_mapping_pages_adopted(surface_id);
+ 
+     // Dims come from plane 0 for a multi-plane surface, which is bookkeeping;
+     // the format is `latched_mapping_format`'s, which is a contract.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+@@ -5283,7 +5283,7 @@
+     match family {
+         MapFamily::UnmapMemory => {
+             for gpa in pages {
+-                writes.release_page(gpa);
++                writes.release_page(gpa, crate::runtime::host_writes::Release::TaskRange);
+             }
+         }
+         _ => {

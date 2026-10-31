@@ -1,0 +1,63 @@
+--- a/target/arm/tcg/op_helper.c
++++ b/target/arm/tcg/op_helper.c
+@@ -18,6 +18,7 @@
+  */
+ #include "qemu/osdep.h"
+ #include "qemu/main-loop.h"
++#include "qemu/atomic.h"
+ #include "cpu.h"
+ #include "exec/target_page.h"
+ #include "helper.h"
+@@ -57,6 +58,35 @@
+     return target_el;
+ }
+ 
++/* Observe only original EL0 traps and alignment faults, never ordinary
++ * demand paging or system calls. Trace capture changes no exception semantics.
++ * A shared atomic bounds the entire process even with threaded AP execution. */
++static void tomacco_trace_user_exception(CPUARMState *env, uint32_t excp,
++                                         uint64_t syndrome, uint32_t target_el)
++{
++    static unsigned captured;
++    unsigned ec = syn_get_ec(syndrome);
++    if (!env->aarch64 || arm_current_el(env) != 0 ||
++        !(ec == EC_AA64_BKPT || ec == EC_PCALIGNMENT ||
++          ec == EC_SPALIGNMENT || ec == EC_PACFAIL ||
++          (ec == EC_DATAABORT && (syndrome & 0x3f) == 0x21)) ||
++        !trace_event_get_state_backends(TRACE_TOMACCO_ARM_USER_EXCEPTION)) {
++        return;
++    }
++    /* Stop incrementing after the budget; no wraparound can reopen it. */
++    unsigned sequence = qatomic_read(&captured);
++    while (sequence < 128) {
++        unsigned previous = qatomic_cmpxchg(&captured, sequence, sequence + 1);
++        if (previous == sequence) {
++            trace_tomacco_arm_user_exception(env_cpu(env)->cpu_index, env->pc,
++                                             syndrome, excp, target_el, sequence + 1);
++            tomacco_trace_fault_context(env, env->pc, "user-trap");
++            return;
++        }
++        sequence = previous;
++    }
++}
++
+ void raise_exception(CPUARMState *env, uint32_t excp,
+                      uint64_t syndrome, uint32_t target_el)
+ {
+@@ -75,6 +105,7 @@
+         }
+     }
+ 
++    tomacco_trace_user_exception(env, excp, syndrome, target_el);
+     assert(!excp_is_internal(excp));
+     cs->exception_index = excp;
+     env->exception.syndrome = syndrome;
+--- a/target/arm/tcg/trace-events
++++ b/target/arm/tcg/trace-events
+@@ -19,3 +19,6 @@
+ # Original AArch64 fault state; enabled explicitly for local bring-up logs.
+ tomacco_arm_fault_context(unsigned cpu, uint64_t pc, const char *kind, uint32_t pstate, unsigned el, uint64_t tcr, uint64_t ttbr0, uint64_t ttbr1) "cpu=%u pc=0x%" PRIx64 " kind=%s pstate=0x%" PRIx32 " el=%u tcr_el1=0x%" PRIx64 " ttbr0_el1=0x%" PRIx64 " ttbr1_el1=0x%" PRIx64
+ tomacco_arm_fault_registers(unsigned cpu, uint64_t pc, unsigned first, uint64_t a, uint64_t b, uint64_t c, uint64_t d) "cpu=%u pc=0x%" PRIx64 " first=%u values=0x%" PRIx64 ",0x%" PRIx64 ",0x%" PRIx64 ",0x%" PRIx64
++
++# Original EL0 traps: observational, process-wide capture budget 128.
++tomacco_arm_user_exception(unsigned cpu, uint64_t pc, uint64_t syndrome, unsigned exception, unsigned target_el, unsigned sequence) "cpu=%u pc=0x%" PRIx64 " syndrome=0x%" PRIx64 " exception=%u target_el=%u sequence=%u"

@@ -1,0 +1,216 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs
+@@ -290,11 +290,11 @@
+ /// texel files, so a frame that came out wrong can be joined to the draws that
+ /// made it: target, pipeline, primitive shape, indices, viewport, scissor and
+ /// the raster state that decides which triangles reach the target.
+-pub(crate) fn note_draw(req: &crate::runtime::draw::DrawEncodeRequest) {
++fn append_draw_line(task_id: u32, line: &str) {
+     use std::io::Write as _;
+     static LINES: AtomicU64 = AtomicU64::new(0);
+     static FILE: OnceLock<Option<Mutex<std::fs::File>>> = OnceLock::new();
+-    let Some(capture) = capture().filter(|capture| capture.task_id == req.task_id) else {
++    let Some(capture) = capture().filter(|capture| capture.task_id == task_id) else {
+         return;
+     };
+     if LINES.fetch_add(1, Ordering::Relaxed) >= MAX_DRAW_LINES {
+@@ -313,6 +313,111 @@
+     else {
+         return;
+     };
++    let mut file = file.lock().unwrap_or_else(|p| p.into_inner());
++    let _ = file.write_all(line.as_bytes());
++}
++
++/// Record the depth-stencil state a captured task's draw bound, as decoded,
++/// once per distinct (ref, state): a ref the guest deletes and reuses for
++/// another state is written again.
++pub(crate) fn note_depth_stencil(
++    task_id: u32,
++    ds_ref: u32,
++    ds: &crate::runtime::decode::resource::DepthStencilDescriptor,
++) {
++    static SEEN: OnceLock<Mutex<std::collections::HashSet<(u32, String)>>> = OnceLock::new();
++    if !wants(task_id) {
++        return;
++    }
++    let face = |f: &crate::runtime::decode::resource::DepthStencilFace| {
++        format!(
++            "cmp={} fail={} dfail={} pass={} read={:#x} write={:#x}",
++            f.compare_function,
++            f.stencil_failure_operation,
++            f.depth_failure_operation,
++            f.depth_stencil_pass_operation,
++            f.read_mask,
++            f.write_mask
++        )
++    };
++    let state = format!(
++        "depth_cmp={} depth_write={} front_en={} back_en={} front=[{}] back=[{}]",
++        ds.depth_compare_function,
++        ds.depth_write_enabled as u8,
++        ds.front_stencil_enabled as u8,
++        ds.back_stencil_enabled as u8,
++        face(&ds.front_face),
++        face(&ds.back_face)
++    );
++    let fresh = SEEN
++        .get_or_init(Default::default)
++        .lock()
++        .unwrap_or_else(|p| p.into_inner())
++        .insert((ds_ref, state.clone()));
++    if fresh {
++        append_draw_line(
++            task_id,
++            &format!(
++                "t={} depth_stencil ds={ds_ref} {state}\n",
++                crate::observe::elapsed_us() / 1000
++            ),
++        );
++    }
++}
++
++/// Record which shaders a captured task's pipeline runs, once per pipeline
++/// ref and shader pair: the entry points the reflection names and, when
++/// `AIR_CAPTURE` is on, the files their AIR was written to.
++pub(crate) fn note_pipeline(
++    task_id: u32,
++    pipeline_ref: u32,
++    vertex: &crate::runtime::m2v_cache::CachedShader,
++    fragment: Option<&crate::runtime::m2v_cache::CachedShader>,
++) {
++    static SEEN: OnceLock<Mutex<std::collections::HashSet<(u32, String)>>> = OnceLock::new();
++    if !wants(task_id) {
++        return;
++    }
++    let describe = |shader: Option<&crate::runtime::m2v_cache::CachedShader>| {
++        shader.map_or_else(
++            || "none".to_owned(),
++            |shader| {
++                format!(
++                    "{}:{}",
++                    shader.reflection.entry_point.as_deref().unwrap_or("?"),
++                    shader
++                        .air_capture_hint
++                        .as_ref()
++                        .map_or("-", |hint| hint.file_name.as_str())
++                )
++            },
++        )
++    };
++    let shaders = format!(
++        "vertex={} fragment={}",
++        describe(Some(vertex)),
++        describe(fragment)
++    );
++    let fresh = SEEN
++        .get_or_init(Default::default)
++        .lock()
++        .unwrap_or_else(|p| p.into_inner())
++        .insert((pipeline_ref, shaders.clone()));
++    if fresh {
++        append_draw_line(
++            task_id,
++            &format!(
++                "t={} pipeline pipe={pipeline_ref} {shaders}\n",
++                crate::observe::elapsed_us() / 1000
++            ),
++        );
++    }
++}
++
++pub(crate) fn note_draw(req: &crate::runtime::draw::DrawEncodeRequest) {
++    if !wants(req.task_id) {
++        return;
++    }
+     let target = req
+         .colors
+         .first()
+@@ -347,11 +452,32 @@
+         .first()
+         .map(|s| format!("{},{},{},{}", s.x, s.y, s.width, s.height))
+         .unwrap_or_default();
++    let depth = req
++        .depth_attach
++        .as_ref()
++        .map(|d| {
++            format!(
++                "(tex={} load={} store={} clear={})",
++                d.texture_ref, d.load_action, d.store_action, d.clear_depth
++            )
++        })
++        .unwrap_or_else(|| "none".to_owned());
++    let stencil = req
++        .stencil_attach
++        .as_ref()
++        .map(|s| {
++            format!(
++                "(tex={} load={} store={} clear={})",
++                s.texture_ref, s.load_action, s.store_action, s.clear_stencil
++            )
++        })
++        .unwrap_or_else(|| "none".to_owned());
+     let line =
+         format!(
+         "t={} pipe={} target=[{target}] colors={} prim={} vtx={} first={} inst={} base_inst={} \
+          {indexed} vp=[{viewport}] sc=[{scissor}] cull={:?} front={:?} fill={:?} ds={} \
+-         stencil_ref={:?} depth_attach={} stencil_attach={} continues={} pass_continues={} \
++         stencil_ref={:?} depth_attach={depth} stencil_attach={stencil} continues={} \
++         pass_continues={} \
+          vtex={} ftex={}\n",
+         crate::observe::elapsed_us() / 1000,
+         req.pipeline_ref,
+@@ -366,15 +492,12 @@
+         req.fill_mode,
+         req.depth_stencil_ref,
+         req.stencil_ref,
+-        req.depth_attach.is_some() as u8,
+-        req.stencil_attach.is_some() as u8,
+         req.continues_render_pass as u8,
+         req.render_pass_continues as u8,
+         req.vertex_textures.iter().filter(|t| t.texture_ref != 0).count(),
+         req.fragment_textures.iter().filter(|t| t.texture_ref != 0).count(),
+     );
+-    let mut file = file.lock().unwrap_or_else(|p| p.into_inner());
+-    let _ = file.write_all(line.as_bytes());
++    append_draw_line(req.task_id, &line);
+ }
+ 
+ #[cfg(test)]
+@@ -389,6 +512,7 @@
+         assert!(!wants(0));
+         assert!(!wants(6));
+         write("sample", 6, 1, 1, 1, 1, "Bgra8", &[1, 2, 3, 4]);
++        note_depth_stencil(6, 11, &Default::default());
+         assert!(rechecks().lock().unwrap().is_empty());
+     }
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -7924,6 +7924,12 @@
+     let pd = &resolved.desc;
+     let v_shader = resolved.vertex.clone();
+     let f_shader = resolved.fragment.clone();
++    crate::runtime::texture_capture::note_pipeline(
++        req.task_id,
++        req.pipeline_ref,
++        &v_shader,
++        f_shader.as_deref(),
++    );
+     if f_shader.is_none() {
+         use metal2vulkan::reflect::{ResourceAccess as A, ResourceKind as K};
+         if v_shader.reflection.bindings.iter().any(|binding| {
+@@ -10279,6 +10285,11 @@
+                 }
+             };
+             if let Some(ds) = ds {
++                crate::runtime::texture_capture::note_depth_stencil(
++                    req.task_id,
++                    req.depth_stencil_ref,
++                    &ds,
++                );
+                 if !depth_stencil_descriptor_is_trivial(&ds) {
+                     match translate::raster::compare_function(ds.depth_compare_function).ok() {
+                         Some(compare) => {

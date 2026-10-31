@@ -1,0 +1,313 @@
+accel/tcg: a 64k-entry jump cache that flushes in O(fills).
+
+The guest profile of a Home-screen swipe executed 575k distinct
+translation blocks in 14 s at 4.3 instructions per TB, with ~200 block
+starts in each hot 4 KiB page. helper_lookup_tb_ptr's per-vCPU jump cache
+had 4096 entries in 64 page buckets of 64 slots each (pc bits 0-5 xor
+6-11, so word-aligned A64 starts shared slots four ways within a page):
+indirect branches, returns and every branch out of a page that missed it
+paid get_page_addr_code plus a QHT probe, ~100 ns against ~10 ns for a hit
+(tests/engine/branch-bench.S "wide": 8192 BLR targets).
+
+- TB_JMP_CACHE_BITS 12 -> 16 (1 MiB per vCPU), 512 slots per page bucket
+  (pc >> 2 folded with the bits above it) and 128 buckets chosen by a
+  Fibonacci hash of the page number. The page/slot split is kept, so
+  tb_jmp_cache_clear_page still clears exactly the slots a page can use.
+- A full flush (every TLB flush; an ASID change in TTBR0 is one) used to
+  clear all entries; the owner now logs the indices it fills
+  (TB_JMP_CACHE_LOG = 4096) and clears only those. Only the owning vCPU
+  fills entries or trusts the log; any other caller (reset, tb_flush in an
+  exclusive section) clears everything, as before. tlb_flush_range uses the
+  full flush beyond 16 pages instead of clearing 1024 slots per page.
+- tb_jmp_cache_inval_tb no longer clears every vCPU's whole cache per
+  invalidated CF_PCREL TB (arm always uses CF_PCREL): a code-page write
+  invalidating N TBs cost N full clears of every cache. do_tb_phys_invalidate
+  sets CF_INVALID first, every jump-cache user compares tb_cflags() against
+  cflags that never contain it, and TB memory is only reclaimed by tb_flush,
+  which clears all caches.
+- Read-only accel properties jmp-cache-misses (found in the QHT),
+  jmp-cache-absent (nothing found: a translation follows) and
+  jmp-cache-flushes, summed over the vCPUs (qom-get /machine/accel), for
+  measuring a live guest. Hits are not counted.
+
+tests/engine/branch-bench.S (virt, -cpu max, 1 CPU, best of 7, ns per
+iteration, host loaded by a running phone): wide 78 -> 58, smc 107 -> 95;
+the hit-only phases unchanged. tests/engine/jump-cache-probe.S (MMU on:
+remapped pages after TLBI VAE1, TLBI VMALLE1 and an ASID change, a direct
+cross-page exit, rewritten code) gives the stock QEMU results.
+
+diff --git a/accel/tcg/cpu-exec.c b/accel/tcg/cpu-exec.c
+--- a/accel/tcg/cpu-exec.c
++++ b/accel/tcg/cpu-exec.c
+@@ -250,9 +250,12 @@
+ 
+     tb = tb_htable_lookup(cpu, s);
+     if (tb == NULL) {
++        jc->stat_absent++;
+         return NULL;
+     }
++    jc->stat_miss++;
+ 
++    tb_jmp_cache_note_fill(jc, hash);
+     jc->array[hash].pc = s.pc;
+     qatomic_set(&jc->array[hash].tb, tb);
+ 
+@@ -980,6 +983,7 @@
+                  */
+                 h = tb_jmp_cache_hash_func(s.pc);
+                 jc = cpu->tb_jmp_cache;
++                tb_jmp_cache_note_fill(jc, h);
+                 jc->array[h].pc = s.pc;
+                 qatomic_set(&jc->array[h].tb, tb);
+             }
+diff --git a/accel/tcg/cputlb.c b/accel/tcg/cputlb.c
+--- a/accel/tcg/cputlb.c
++++ b/accel/tcg/cputlb.c
+@@ -767,10 +767,11 @@
+     qemu_spin_unlock(&cpu->neg.tlb.c.lock);
+ 
+     /*
+-     * If the length is larger than the jump cache size, then it will take
+-     * longer to clear each entry individually than it will to clear it all.
++     * Clearing a page costs 2 * TB_JMP_PAGE_SIZE stores; a full flush only
++     * the entries filled since the last one (tcg_flush_jmp_cache), so beyond
++     * a few pages the full flush is cheaper.
+      */
+-    if (d.len >= (TARGET_PAGE_SIZE * TB_JMP_CACHE_SIZE)) {
++    if (d.len >= TARGET_PAGE_SIZE * 16) {
+         tcg_flush_jmp_cache(cpu);
+         return;
+     }
+diff --git a/accel/tcg/tb-hash.h b/accel/tcg/tb-hash.h
+--- a/accel/tcg/tb-hash.h
++++ b/accel/tcg/tb-hash.h
+@@ -31,24 +31,38 @@
+ /* Only the bottom TB_JMP_PAGE_BITS of the jump cache hash bits vary for
+    addresses on the same page.  The top bits are the same.  This allows
+    TLB invalidation to quickly clear a subset of the hash table.  */
+-#define TB_JMP_PAGE_BITS (TB_JMP_CACHE_BITS / 2)
++/*
++ * 512 entries per 4 KiB page (one per two instructions): hot guest pages
++ * hold ~200 block starts. 128 page buckets in a 2^16-entry cache.
++ */
++#define TB_JMP_PAGE_BITS (TB_JMP_CACHE_BITS - 7)
+ #define TB_JMP_PAGE_SIZE (1 << TB_JMP_PAGE_BITS)
+ #define TB_JMP_ADDR_MASK (TB_JMP_PAGE_SIZE - 1)
+ #define TB_JMP_PAGE_MASK (TB_JMP_CACHE_SIZE - TB_JMP_PAGE_SIZE)
++/* Fibonacci hashing of the page number spreads pages over the buckets. */
++#define TB_JMP_PAGE_MULTIPLIER 0x9e3779b97f4a7c15ull
+ 
++/*
++ * The page part is a function of the page number alone, the in-page part
++ * of the instruction index (pc >> 2: A64 and A32 code is word aligned; two
++ * Thumb halfwords merely share an entry) folded with the bits above it.
++ * Translated code that probes the cache inline must compute the same
++ * function (target/arm/tcg/translate-a64.c gen_tomacco_jmp_cache_probe).
++ */
+ static inline unsigned int tb_jmp_cache_hash_page(vaddr pc)
+ {
+-    vaddr tmp;
+-    tmp = pc ^ (pc >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS));
+-    return (tmp >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS)) & TB_JMP_PAGE_MASK;
++    uint64_t page = (uint64_t)(pc >> TARGET_PAGE_BITS);
++
++    return ((page * TB_JMP_PAGE_MULTIPLIER) >>
++            (64 - (TB_JMP_CACHE_BITS - TB_JMP_PAGE_BITS))) << TB_JMP_PAGE_BITS;
+ }
+ 
+ static inline unsigned int tb_jmp_cache_hash_func(vaddr pc)
+ {
+-    vaddr tmp;
+-    tmp = pc ^ (pc >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS));
+-    return (((tmp >> (TARGET_PAGE_BITS - TB_JMP_PAGE_BITS)) & TB_JMP_PAGE_MASK)
+-           | (tmp & TB_JMP_ADDR_MASK));
++    vaddr insn = pc >> 2;
++
++    return tb_jmp_cache_hash_page(pc) |
++           ((insn ^ (insn >> TB_JMP_PAGE_BITS)) & TB_JMP_ADDR_MASK);
+ }
+ 
+ #else
+diff --git a/accel/tcg/tb-jmp-cache.h b/accel/tcg/tb-jmp-cache.h
+--- a/accel/tcg/tb-jmp-cache.h
++++ b/accel/tcg/tb-jmp-cache.h
+@@ -12,8 +12,20 @@
+ #include "qemu/rcu.h"
+ #include "exec/cpu-common.h"
+ 
+-#define TB_JMP_CACHE_BITS 12
++/*
++ * 2^16 entries (1 MiB per vCPU). The guest of a phone executes hundreds of
++ * thousands of distinct blocks with ~200 block starts per 4 KiB page; 4096
++ * entries partitioned 64 per page missed often, and every miss costs a
++ * get_page_addr_code plus a QHT probe (~100 ns against ~10 ns for a hit).
++ * A full flush clears only the entries filled since the previous one (the
++ * fill log), so the size does not make TLB flushes dearer.
++ */
++#ifndef TB_JMP_CACHE_BITS
++#define TB_JMP_CACHE_BITS 16
++#endif
+ #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
++/* Fills remembered for a cheap full flush; more fills mean a memset. */
++#define TB_JMP_CACHE_LOG 4096
+ 
+ /*
+  * Invalidated in parallel; all accesses to 'tb' must be atomic.
+@@ -24,10 +36,34 @@
+  */
+ typedef struct CPUJumpCache {
+     struct rcu_head rcu;
++    /*
++     * Written only by the owning vCPU (or with it stopped): indices filled
++     * since the last full flush; filled_n > TB_JMP_CACHE_LOG means the log
++     * overflowed and the next full flush clears the whole array.
++     */
++    uint32_t filled_n;
++    uint32_t filled[TB_JMP_CACHE_LOG];
++    /* Statistics of the out-of-line misses (owner-written, read racily). */
++    uint64_t stat_miss;
++    uint64_t stat_absent;
++    uint64_t stat_flush;
+     struct {
+         TranslationBlock *tb;
+         vaddr pc;
+     } array[TB_JMP_CACHE_SIZE];
+ } CPUJumpCache;
+ 
++/* Remember that entry @h of @jc is about to be filled. Owner only. */
++static inline void tb_jmp_cache_note_fill(CPUJumpCache *jc, uint32_t h)
++{
++    uint32_t n = jc->filled_n;
++
++    if (n < TB_JMP_CACHE_LOG) {
++        jc->filled[n] = h;
++    }
++    if (n <= TB_JMP_CACHE_LOG) {
++        jc->filled_n = n + 1;
++    }
++}
++
+ #endif /* ACCEL_TCG_TB_JMP_CACHE_H */
+diff --git a/accel/tcg/tb-maint.c b/accel/tcg/tb-maint.c
+--- a/accel/tcg/tb-maint.c
++++ b/accel/tcg/tb-maint.c
+@@ -897,10 +897,15 @@
+     CPUState *cpu;
+ 
+     if (tb_cflags(tb) & CF_PCREL) {
+-        /* A TB may be at any virtual address */
+-        CPU_FOREACH(cpu) {
+-            tcg_flush_jmp_cache(cpu);
+-        }
++        /*
++         * A TB may be at any virtual address, so its entries cannot be
++         * found without a scan; clearing every vCPU's whole cache per
++         * invalidated TB made each code-page write cost a full flush of
++         * every cache. Nothing needs clearing: do_tb_phys_invalidate set
++         * CF_INVALID before calling us, every jump-cache user compares
++         * tb_cflags() against cflags that never contain it, and TB memory
++         * is reclaimed only by tb_flush, which clears all caches.
++         */
+     } else {
+         uint32_t h = tb_jmp_cache_hash_func(tb->pc);
+ 
+diff --git a/accel/tcg/tcg-all.c b/accel/tcg/tcg-all.c
+--- a/accel/tcg/tcg-all.c
++++ b/accel/tcg/tcg-all.c
+@@ -29,6 +29,8 @@
+ #include "exec/icount.h"
+ #include "tcg/startup.h"
+ #include "tcg/tcg.h"
++#include "hw/core/cpu.h"
++#include "tb-jmp-cache.h"
+ #include "qapi/error.h"
+ #include "qemu/error-report.h"
+ #include "qemu/accel.h"
+@@ -248,6 +250,27 @@
+ }
+ #endif
+ 
++/*
++ * Jump-cache statistics summed over the vCPUs: misses found in the QHT,
++ * misses with no TB (a translation follows) and full flushes. Hits are
++ * not counted (most happen in translated code).
++ */
++static void tcg_get_jmp_cache_stat(Object *obj, Visitor *v,
++                                   const char *name, void *opaque,
++                                   Error **errp)
++{
++    size_t offset = (uintptr_t)opaque;
++    uint64_t value = 0;
++    CPUState *cpu;
++
++    CPU_FOREACH(cpu) {
++        if (cpu->tb_jmp_cache) {
++            value += qatomic_read((uint64_t *)((char *)cpu->tb_jmp_cache + offset));
++        }
++    }
++    visit_type_uint64(v, name, &value, errp);
++}
++
+ static void tcg_set_tb_size(Object *obj, Visitor *v,
+                             const char *name, void *opaque,
+                             Error **errp)
+@@ -328,6 +351,22 @@
+         "Far TB-chain selections since startup, not executed branches (read-only)");
+ #endif
+ 
++    object_class_property_add(oc, "jmp-cache-misses", "int",
++                              tcg_get_jmp_cache_stat, NULL, NULL,
++                              (void *)offsetof(CPUJumpCache, stat_miss));
++    object_class_property_add(oc, "jmp-cache-absent", "int",
++                              tcg_get_jmp_cache_stat, NULL, NULL,
++                              (void *)offsetof(CPUJumpCache, stat_absent));
++    object_class_property_add(oc, "jmp-cache-flushes", "int",
++                              tcg_get_jmp_cache_stat, NULL, NULL,
++                              (void *)offsetof(CPUJumpCache, stat_flush));
++    object_class_property_set_description(oc, "jmp-cache-misses",
++        "Jump-cache misses found in the TB hash table, all vCPUs (read-only)");
++    object_class_property_set_description(oc, "jmp-cache-absent",
++        "Jump-cache misses with no TB to find (translations follow)");
++    object_class_property_set_description(oc, "jmp-cache-flushes",
++        "Full jump-cache flushes over all vCPUs (read-only)");
++
+     object_class_property_add_bool(oc, "split-wx",
+         tcg_get_splitwx, tcg_set_splitwx);
+     object_class_property_set_description(oc, "split-wx",
+diff --git a/accel/tcg/translate-all.c b/accel/tcg/translate-all.c
+--- a/accel/tcg/translate-all.c
++++ b/accel/tcg/translate-all.c
+@@ -626,13 +626,31 @@
+ void tcg_flush_jmp_cache(CPUState *cpu)
+ {
+     CPUJumpCache *jc = cpu->tb_jmp_cache;
++    uint32_t n;
+ 
+     /* During early initialization, the cache may not yet be allocated. */
+     if (unlikely(jc == NULL)) {
+         return;
+     }
+ 
+-    for (int i = 0; i < TB_JMP_CACHE_SIZE; i++) {
+-        qatomic_set(&jc->array[i].tb, NULL);
++    /*
++     * Only the owning vCPU fills entries and the fill log, so only it may
++     * trust and reset the log (TLB flushes run on the owner). Any other
++     * caller (reset, tb_flush in an exclusive section) clears everything
++     * and leaves the log alone: extra entries in it are merely cleared twice.
++     */
++    n = jc->filled_n;
++    if (qemu_cpu_is_self(cpu) && n <= TB_JMP_CACHE_LOG) {
++        for (uint32_t i = 0; i < n; i++) {
++            qatomic_set(&jc->array[jc->filled[i]].tb, NULL);
++        }
++    } else {
++        for (int i = 0; i < TB_JMP_CACHE_SIZE; i++) {
++            qatomic_set(&jc->array[i].tb, NULL);
++        }
+     }
++    if (qemu_cpu_is_self(cpu)) {
++        jc->filled_n = 0;
++    }
++    jc->stat_flush++;
+ }

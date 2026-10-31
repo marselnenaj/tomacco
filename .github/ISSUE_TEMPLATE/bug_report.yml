@@ -1,0 +1,55 @@
+name: Bug report
+description: Something does not work as the documentation says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a security problem, use a [private advisory](https://github.com/marselnenaj/tomacco/security/advisories/new) instead.
+        Never attach Apple firmware, iOS images, keys, tickets or anything taken from them; logs from a guest can contain device identifiers, so read them first.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Desktop
+        - tomaccoctl or MCP
+        - Android
+        - Swift on Android
+        - iPhone over USB
+        - Virtual iOS device
+        - Install or package
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: For an agent or CLI problem, the `tomaccoctl` call and its JSON result.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: "`tomaccoctl --version`, or the About dialog."
+    validations:
+      required: true
+  - type: textarea
+    id: host
+    attributes:
+      label: Host
+      description: Distribution, desktop, Qt and Rust version, GPU and driver. `tomaccoctl call doctor '{}'` shows most of it.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The relevant part only.
+      render: text

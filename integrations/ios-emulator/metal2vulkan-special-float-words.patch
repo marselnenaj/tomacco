@@ -1,0 +1,125 @@
+diff --git a/src/native/emitter/types.rs b/src/native/emitter/types.rs
+--- a/src/native/emitter/types.rs
++++ b/src/native/emitter/types.rs
+@@ -582,6 +582,16 @@
+             },
+             LlValue::Float32Bits(bits) => match self.resolve_type(ty)? {
+                 LlType::Float => self.const_float32_bits(*bits),
++                // LLVM prints an infinity or NaN of every floating type as the same type-free word
++                // (`half +inf`, `bfloat -qnan`), which the parser keeps as its float32 pattern. In
++                // a narrower type that word names the same value; a finite float32 pattern names
++                // none there and stays an error.
++                LlType::Half if float32_bits_are_inf_or_nan(*bits) => {
++                    self.const_float16_bits(f32_to_f16_bits(f32::from_bits(*bits)))
++                }
++                LlType::BFloat if float32_bits_are_inf_or_nan(*bits) => {
++                    self.const_int(16, u64::from(inf_or_nan_float32_bits_as_bfloat16(*bits)))
++                }
+                 other => Err(format!(
+                     "native emitter: float32 bit literal f0x{bits:08x} used as non-float type {other:?}"
+                 )),
+@@ -1089,9 +1099,49 @@
+     }
+ }
+ 
++/// Whether a float32 pattern is an infinity or a NaN (all exponent bits set).
++fn float32_bits_are_inf_or_nan(bits: u32) -> bool {
++    bits & 0x7f80_0000 == 0x7f80_0000
++}
++
++/// The bfloat16 pattern of a float32 infinity or NaN: bfloat16 is float32's upper half, except
++/// that a NaN whose payload lies only in the dropped bits keeps one payload bit so that it stays
++/// a NaN rather than becoming an infinity.
++fn inf_or_nan_float32_bits_as_bfloat16(bits: u32) -> u16 {
++    let upper = (bits >> 16) as u16;
++    let nan_lost_payload = bits & 0x007f_ffff != 0 && upper & 0x007f == 0;
++    upper | u16::from(nan_lost_payload)
++}
++
+ #[cfg(test)]
+ mod float_literal_tests {
+-    use super::f32_to_f16_bits;
++    use super::{
++        f32_to_f16_bits, float32_bits_are_inf_or_nan, inf_or_nan_float32_bits_as_bfloat16,
++    };
++
++    #[test]
++    fn special_float32_words_keep_their_value_in_half_and_bfloat() {
++        // `+inf`, `-inf`, `+qnan`, `-qnan`, `snan` as the parser stores them.
++        for bits in [
++            0x7f80_0000,
++            0xff80_0000,
++            0x7fc0_0000,
++            0xffc0_0000,
++            0x7f80_0001,
++        ] {
++            assert!(float32_bits_are_inf_or_nan(bits));
++        }
++        assert!(!float32_bits_are_inf_or_nan(0x3f80_0000));
++        assert!(!float32_bits_are_inf_or_nan(0x7f7f_ffff));
++        assert_eq!(f32_to_f16_bits(f32::from_bits(0x7f80_0000)), 0x7c00);
++        assert_eq!(f32_to_f16_bits(f32::from_bits(0xff80_0000)), 0xfc00);
++        assert_eq!(f32_to_f16_bits(f32::from_bits(0x7fc0_0000)), 0x7e00);
++        assert_eq!(f32_to_f16_bits(f32::from_bits(0x7f80_0001)), 0x7c01);
++        assert_eq!(inf_or_nan_float32_bits_as_bfloat16(0x7f80_0000), 0x7f80);
++        assert_eq!(inf_or_nan_float32_bits_as_bfloat16(0xff80_0000), 0xff80);
++        assert_eq!(inf_or_nan_float32_bits_as_bfloat16(0xffc0_0000), 0xffc0);
++        assert_eq!(inf_or_nan_float32_bits_as_bfloat16(0x7f80_0001), 0x7f81);
++    }
+ 
+     #[test]
+     fn decimal_half_conversion_rounds_to_nearest_ties_even() {
+diff --git a/src/native/tests/types.rs b/src/native/tests/types.rs
+--- a/src/native/tests/types.rs
++++ b/src/native/tests/types.rs
+@@ -2638,3 +2638,50 @@
+         Err(e) => panic!("emit failed: {}", e),
+     }
+ }
++
++#[test]
++fn native_half_and_bfloat_special_words_emit_their_values() {
++    // LLVM 23's llvm-dis prints an infinity or NaN of every floating type with the words it uses
++    // for float (`half +inf`, `bfloat -inf`, `+qnan`), not as `0xH`/`0xR` patterns.
++    let ll = r#"
++target triple = "spirv-unknown-vulkan1.2"
++define void @main(i1 %pick, i1 %quiet, ptr addrspace(1) %out, ptr addrspace(1) %outbf) {
++entry:
++  %infinite = select i1 %pick, half +inf, half -inf
++  %value = select i1 %quiet, half +qnan, half %infinite
++  store half %value, ptr addrspace(1) %out, align 2
++  store bfloat -inf, ptr addrspace(1) %outbf, align 2
++  ret void
++}
++"#;
++    let module = load_bytes(emit_vulkan_spirv(ll).expect("native emit")).expect("load native spv");
++    let type_id = |opcode: Op| {
++        module
++            .types_global_values
++            .iter()
++            .find(|inst| {
++                inst.class.opcode == opcode
++                    && matches!(inst.operands.first(), Some(Operand::LiteralBit32(16)))
++            })
++            .and_then(|inst| inst.result_id)
++            .expect("16-bit type")
++    };
++    // The 32-bit literal word of every constant of one type.
++    let literals = |ty: Word| {
++        module
++            .types_global_values
++            .iter()
++            .filter(|inst| inst.class.opcode == Op::Constant && inst.result_type == Some(ty))
++            .filter_map(|inst| match inst.operands.as_slice() {
++                [Operand::LiteralBit32(word)] => Some(*word),
++                _ => None,
++            })
++            .collect::<HashSet<_>>()
++    };
++    let half = literals(type_id(Op::TypeFloat));
++    for bits in [0x7c00, 0xfc00, 0x7e00] {
++        assert!(half.contains(&bits), "missing half 0x{bits:04x}: {half:x?}");
++    }
++    let bfloat = literals(type_id(Op::TypeInt));
++    assert!(bfloat.contains(&0xff80), "missing bfloat -inf: {bfloat:x?}");
++}

@@ -1,0 +1,341 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+@@ -19,6 +19,10 @@
+ 
+ mod planar_xr;
+ pub use planar_xr::*;
++mod native_image;
++pub use native_image::{
++    write_captured_native_image, NativeImageWriteRefusal, NativeImageWriteTarget,
++};
+ 
+ /// The rail that can copy a resident straight into a mapping's guest pages.
+ ///
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+@@ -0,0 +1,166 @@
++//! Native-width image publication into a captured single-plane mapping.
++//!
++//! The producer captures storage before a GPU wait. No conversion, scanout
++//! cache, row padding or replacement mapping can stand in for these texels.
++
++use super::{mapper_ref_texture_sample_window, vouch_for_write, SurfaceWriteRefusal};
++use crate::model::{scanout_extent_ok, DeviceState, MappingEntry};
++use crate::protocol::pixel_format;
++use crate::runtime::host::{HostMemory, HostOps};
++use crate::runtime::mapper::{
++    self, MappingRectCopy, MappingStorageIdentity, RectBatchRefusal, RectStride, RunCopy,
++};
++
++#[derive(Debug)]
++pub enum NativeImageWriteRefusal {
++    Surface(SurfaceWriteRefusal),
++    Transfer(RectBatchRefusal),
++    SourceLength { need: usize, have: usize },
++}
++
++impl crate::observe::Decline for NativeImageWriteRefusal {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::Surface(why) => why.slug(),
++            Self::Transfer(why) => why.slug(),
++            Self::SourceLength { .. } => "native_image_source_length",
++        }
++    }
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match self {
++            Self::Surface(why) => why.fields(),
++            Self::Transfer(why) => why.fields(),
++            Self::SourceLength { need, have } => {
++                vec![("need", need.to_string()), ("have", have.to_string())]
++            }
++        }
++    }
++    fn owner(&self) -> &'static str {
++        match self {
++            Self::Surface(why) => why.owner(),
++            Self::Transfer(why) => why.owner(),
++            Self::SourceLength { .. } => std::any::type_name::<Self>(),
++        }
++    }
++}
++
++/// The declared whole-image view and original storage incarnation. This owner
++/// retains only metadata; a staging lease must end before the writer is called.
++pub struct NativeImageWriteTarget {
++    mapping_id: u32,
++    identity: MappingStorageIdentity,
++    offset: u64,
++    rect: RectStride,
++}
++
++impl NativeImageWriteTarget {
++    pub fn capture(
++        mapping_id: u32,
++        mapping: &MappingEntry,
++        width: u32,
++        height: u32,
++        format: u16,
++    ) -> Result<Self, NativeImageWriteRefusal> {
++        use NativeImageWriteRefusal as R;
++        let refused = |why| R::Surface(why);
++        if !scanout_extent_ok(width, height) {
++            return Err(refused(SurfaceWriteRefusal::Geometry { width, height }));
++        }
++        if !mapping.mapped || mapping.page_entries.is_empty() {
++            return Err(refused(SurfaceWriteRefusal::MappingNotResident));
++        }
++        if !mapping.has_geom || mapping.width != width || mapping.height != height {
++            return Err(refused(SurfaceWriteRefusal::GeometryMoved {
++                latched_width: mapping.width,
++                latched_height: mapping.height,
++                frame_width: width,
++                frame_height: height,
++            }));
++        }
++        if mapping.format != format {
++            return Err(refused(SurfaceWriteRefusal::NativeFormatMismatch {
++                source: format,
++                mapping: mapping.format,
++            }));
++        }
++        let tight = pixel_format::tight_row_bytes(width, format)
++            .ok_or_else(|| refused(SurfaceWriteRefusal::FormatRowLength { format }))?;
++        let (offset, stride, end) =
++            mapper_ref_texture_sample_window(mapping, width, height, format).ok_or_else(|| {
++                refused(SurfaceWriteRefusal::WindowUnresolved {
++                    width,
++                    height,
++                    format,
++                })
++            })?;
++        let rect = RectStride::new(u64::from(stride), u64::from(tight), u64::from(height))
++            .filter(|r| {
++                r.span() <= isize::MAX as usize
++                    && r.packed() <= isize::MAX as usize
++                    && offset
++                        .checked_add(r.span() as u64)
++                        .is_some_and(|e| e <= end)
++            })
++            .ok_or_else(|| {
++                refused(SurfaceWriteRefusal::FrameExtent {
++                    bpr: stride as usize,
++                    height,
++                })
++            })?;
++        Ok(Self {
++            mapping_id,
++            identity: MappingStorageIdentity::capture(mapping_id, mapping).map_err(R::Transfer)?,
++            offset,
++            rect,
++        })
++    }
++
++    pub fn packed_bytes(&self) -> usize {
++        self.rect.packed()
++    }
++}
++
++/// Publish tightly packed native texels without an intermediate eight-bit
++/// image. All host views and source bounds are checked before a byte moves;
++/// copies on unmap finish before currency publication. Guest CPUs may run.
++pub fn write_captured_native_image<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    target: NativeImageWriteTarget,
++    src: &[u8],
++) -> Result<usize, NativeImageWriteRefusal> {
++    use NativeImageWriteRefusal as R;
++    let mapping_id = target.mapping_id;
++    let bytes = target.packed_bytes();
++    if src.len() != bytes {
++        return Err(R::SourceLength {
++            need: bytes,
++            have: src.len(),
++        });
++    }
++    mapper::ensure_resolved_for_scanout(state, host, mapping_id);
++    crate::runtime::writeback_debt::settle_for_mapping(
++        state,
++        host,
++        mapping_id,
++        crate::runtime::render_writeback::SettleSite::MappingNativeImageWrite,
++    );
++    let vouched = vouch_for_write(state, host, mapping_id, "captured_native_image")
++        .ok_or(R::Surface(SurfaceWriteRefusal::PagesNotOurs))?;
++    let copy = RunCopy::write_rect(src, target.rect)
++        .ok_or(R::Transfer(RectBatchRefusal::Window { index: 0 }))?;
++    mapper::copy_mapping_rects(
++        state,
++        host,
++        mapping_id,
++        &target.identity,
++        &vouched,
++        &mut [MappingRectCopy::new(target.offset, copy)],
++    )
++    .map_err(R::Transfer)?;
++    state.mark_mapping_written(mapping_id);
++    crate::runtime::surface_cache::forget(state, mapping_id);
++    mapper::stamp_guest_write_gen(state, host, mapping_id);
++    crate::runtime::drain::note_store_route("native_image_captured_write_n");
++    Ok(bytes)
++}
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+@@ -56,11 +56,13 @@
+ }
+ 
+ /// Identity of the storage whose layout the caller decoded, including its
+-/// complete descriptor. Taken after writeback settlement, never before it.
++/// complete descriptor and ordered page list. A producer captures this before
++/// readback; the copy rechecks it after settlement and view preparation.
+ pub(crate) struct MappingStorageIdentity {
+     mapping_id: u32,
+     generation: u32,
+     descriptor: Vec<u8>,
++    pages: Vec<u32>,
+     geometry: (bool, u32, u32, u16),
+ }
+ 
+@@ -77,10 +79,16 @@
+             .try_reserve_exact(mapping.device_desc.len())
+             .map_err(|_| RectBatchRefusal::Allocation)?;
+         descriptor.extend_from_slice(&mapping.device_desc);
++        let mut pages = Vec::new();
++        pages
++            .try_reserve_exact(mapping.page_entries.len())
++            .map_err(|_| RectBatchRefusal::Allocation)?;
++        pages.extend_from_slice(&mapping.page_entries);
+         Ok(Self {
+             mapping_id,
+             generation: mapping.map_generation,
+             descriptor,
++            pages,
+             geometry: (
+                 mapping.has_geom,
+                 mapping.width,
+@@ -97,6 +105,7 @@
+                     && !m.page_entries.is_empty()
+                     && m.map_generation == self.generation
+                     && m.device_desc == self.descriptor
++                    && m.page_entries == self.pages
+                     && (m.has_geom, m.width, m.height, m.format) == self.geometry
+             })
+     }
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -19,6 +19,86 @@
+ 
+ use super::*;
+ use crate::runtime::host::{HostMemory, HostOps};
++
++#[derive(Debug)]
++enum NativeFloatStoreRefusal {
++    Mapping(crate::runtime::mapping_write::NativeImageWriteRefusal),
++    Read(crate::backend::vulkan::engine::DrawError),
++    Identity,
++    SourceShape,
++}
++
++impl crate::observe::Decline for NativeFloatStoreRefusal {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::Mapping(why) => why.slug(),
++            Self::Read(why) => why.slug(),
++            Self::Identity => "native_float_store_identity",
++            Self::SourceShape => "native_float_store_source_shape",
++        }
++    }
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match self {
++            Self::Mapping(why) => why.fields(),
++            Self::Read(why) => why.fields(),
++            _ => Vec::new(),
++        }
++    }
++    fn owner(&self) -> &'static str {
++        match self {
++            Self::Mapping(why) => why.owner(),
++            Self::Read(why) => why.owner(),
++            _ => std::any::type_name::<Self>(),
++        }
++    }
++}
++
++/// Preserve RGBA16Float's native range and half bits. This compatibility route
++/// owns the readback copy, so the staging owner ends before guest settlement.
++fn store_native_float_surface<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++    width: u32,
++    height: u32,
++) -> Result<usize, NativeFloatStoreRefusal> {
++    use crate::backend::vulkan::engine::TargetIdentity;
++    use crate::protocol::pixel_format::{TexelLayout, MTL_FORMAT_RGBA16_FLOAT};
++    use NativeFloatStoreRefusal as R;
++    let mapping = state.mappings.get(&mapping_id).ok_or(R::Identity)?;
++    if !matches!(identity, TargetIdentity::Surface { id, width: w, height: h, generation, format }
++        if *id == mapping_id && *w == width && *h == height
++            && *generation == u64::from(mapping.map_generation)
++            && *format == ash::vk::Format::R16G16B16A16_SFLOAT)
++    {
++        return Err(R::Identity);
++    }
++    let target = crate::runtime::mapping_write::NativeImageWriteTarget::capture(
++        mapping_id,
++        mapping,
++        width,
++        height,
++        MTL_FORMAT_RGBA16_FLOAT,
++    )
++    .map_err(R::Mapping)?;
++    let readback = crate::backend::vulkan::engine::read_target_texels(identity).map_err(R::Read)?;
++    if readback.texel.native_layout() != Some(TexelLayout::Rgba16Float)
++        || readback.pixels.len() != target.packed_bytes()
++    {
++        return Err(R::SourceShape);
++    }
++    let bytes = crate::runtime::mapping_write::write_captured_native_image(
++        state,
++        host,
++        target,
++        &readback.pixels,
++    )
++    .map_err(R::Mapping)?;
++    crate::runtime::drain::note_store_route("native_float_render_store_n");
++    crate::runtime::drain::note_store_route_n("native_float_store_bytes_n", bytes as u64);
++    Ok(bytes)
++}
+ 
+ #[derive(Debug)]
+ enum NativeXrStoreRefusal {
+@@ -187,6 +267,27 @@
+                 .field("geom", format!("{width}x{height}"))
+                 .fail_once(u64::from(mapping_id));
+             crate::runtime::drain::note_store_route("render_flush_gpu_declined");
++        }
++    }
++    // Keep a native-width GPU-to-guest copy when available. A refused
++    // compatibility route must not narrow a float destination.
++    if state
++        .mappings
++        .get(&mapping_id)
++        .is_some_and(|m| m.format == crate::protocol::pixel_format::MTL_FORMAT_RGBA16_FLOAT)
++    {
++        match store_native_float_surface(state, host, mapping_id, identity, width, height) {
++            Ok(bytes) => {
++                finish(state, mapping_id, identity, bytes, started, false);
++                return true;
++            }
++            Err(why) => {
++                crate::observe::Emit::decline("native_float_render_store", &why)
++                    .field("mapping", mapping_id)
++                    .field("geom", format!("{width}x{height}"))
++                    .fail();
++                return false;
++            }
+         }
+     }
+     // The copying arms. These are the only arms on a host that cannot import

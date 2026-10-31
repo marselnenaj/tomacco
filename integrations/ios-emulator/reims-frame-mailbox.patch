@@ -1,0 +1,1071 @@
+reims-vgpu: publish each changed present frame into a file the viewer reads without QMP.
+
+The desktop's live view polled `screendump` (ppm, 1179x2556, ~9 MB) about
+16 times a second through the control plane (native/ios_emulator/control.rs
+frame_file), changed or not. QEMU runs `screendump` as a coroutine command on
+its main loop with the BQL held (ui/ui-qmp-cmds.c qmp_screendump: "coroutine-
+only ... main thread only"): qemu_console_co_wait_update schedules
+console_hw_update_bh -> graphic_hw_update -> reims_vgpu_mmio_fb_update (device
+poll + host-action delivery) and waits for it, then ppm_save converts the
+console surface row by row through pixman (qemu_pixman_linebuf_fill to
+PIXMAN_BE_r8g8b8) and writes it with qio_channel_write_all on a blocking file
+descriptor, which never yields. Measured: QEMU main
+thread 68 % busy during swipes, the six vCPU threads ~20 %, `irq_wait` (IRQ
+delivery through the main-loop BH) 0.29 ms mean with hops up to 277 ms.
+
+The device already holds the frame: every accepted DisplaySwap on a host
+whose window does not carry it converts the front surface into the retained
+BGRA8 frame (`PresentState::frame_bgra`, reims-present-capture-in-place) on
+the present drain. Now, when REIMS_VGPU_FRAME_MAILBOX names a file
+(tools/run_ios_paravirt.py sets it for interactive sessions to
+$XDG_RUNTIME_DIR/tomacco/ios-mailbox/<token>/frames, the directory 0700
+and locked by the launcher), `runtime::frame_mailbox::offer` copies that retain
+into a hand-off buffer (one memcpy under the device lock, allocation reused;
+a frame the writer has not taken yet is replaced by the newer one) and a
+thread of its own (`reims-frame-mailbox`) compares it with the frame it
+published last and, only when the bytes differ, writes it into the file:
+
+  4 KiB header (magic PSFRMBX1, version 1, 2 slots, slot capacity, writer pid,
+  newest frame number, instance) + two slots of one tight BGRA8 frame each.
+  Frame n lives in slot n % 2; its slot sequence is 2n+1 while it is written
+  and 2n once complete, then the header's newest number becomes n. A reader
+  takes n, requires 2n before and after copying the slot and retries
+  otherwise; a geometry change empties both slots and the newest number
+  before it resizes the file.
+
+The writer creates the file itself (O_CREAT|O_EXCL, 0600), refuses a
+directory others may enter, an existing file and a link, and never grows the
+file past the process's RLIMIT_FSIZE (read from /proc/self/limits; a write
+past it would be SIGXFSZ). Every refusal and the first write failure is one
+fail-log line (`frame_mailbox_refused`, `frame_mailbox_publish_failed`); the
+census `OFF frame_mailbox published= unchanged= coalesced= failed= offered=
+offer_us= write_us= frame=` is written at power-of-two publish counts. Without
+the variable nothing here runs and nothing the guest sees changes either way:
+the mailbox is fed from the retain after the present's own work.
+
+The control plane (native/ios_emulator/control.rs mailbox_frame_file) answers
+`frame` transport=file from the mailbox without opening QMP: an unchanged
+frame number is `changed:false` with the existing file and touches nothing;
+a new frame is converted BGRA -> PPM in tomaccoctl's process. With no mailbox
+or no frame in it yet (an older engine, boot before the first present) it
+falls back to screendump.
+
+Tests: runtime::frame_mailbox::tests (round trip of number/geometry/bytes, a
+slot being rewritten is never handed out, geometry change empties before it
+resizes, file-limit refusal keeps the previous frame, private-directory /
+existing-file / link refusals, the writer thread publishes only changed
+frames and coalesces bursts, a reader racing the writer never takes a mixed
+frame); reims-vgpu-config a_frame_mailbox_is_an_absolute_path_or_nothing.
+
+diff --git a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+index 557c7d1..07b0067 100644
+--- a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -1385,6 +1385,41 @@ pub fn log_directory() -> LogDirectory {
+     }
+ }
+ 
++/// Optional path of the file this process publishes each changed present
++/// frame into, for a viewer that reads frames without the emulator's monitor
++/// (`runtime::frame_mailbox`). The launcher names a file in a directory private
++/// to its owner; the device creates it and refuses one that already exists.
++/// This affects only observation: unset, no frame leaves the device this way.
++pub const FRAME_MAILBOX: &str = "REIMS_VGPU_FRAME_MAILBOX";
++
++#[derive(Debug, PartialEq, Eq)]
++pub enum FrameMailbox {
++    Unset,
++    File(std::path::PathBuf),
++    Refused(std::ffi::OsString),
++}
++
++/// What a [`FRAME_MAILBOX`] value names: an absolute path, nothing (unset or
++/// empty), or a refusal carrying the value.
++pub fn parse_frame_mailbox(value: Option<std::ffi::OsString>) -> FrameMailbox {
++    match value {
++        None => FrameMailbox::Unset,
++        Some(value) if value.is_empty() => FrameMailbox::Unset,
++        Some(value) => {
++            let path = std::path::PathBuf::from(&value);
++            if path.is_absolute() {
++                FrameMailbox::File(path)
++            } else {
++                FrameMailbox::Refused(value)
++            }
++        }
++    }
++}
++
++pub fn frame_mailbox() -> FrameMailbox {
++    parse_frame_mailbox(std::env::var_os(FRAME_MAILBOX))
++}
++
+ /// What one variable says, including the two ways it says nothing usable.
+ ///
+ /// Four states rather than a `bool` because "unset", "explicitly on" and
+@@ -1623,6 +1658,12 @@ pub fn report_line() -> String {
+         LogDirectory::Refused(value) => format!("refused({value:?})"),
+     };
+     out.push_str(&format!(" log_directory={directory}"));
++    let mailbox = match frame_mailbox() {
++        FrameMailbox::Unset => "unset".to_owned(),
++        FrameMailbox::File(path) => format!("{:?}", path),
++        FrameMailbox::Refused(value) => format!("refused({value:?})"),
++    };
++    out.push_str(&format!(" frame_mailbox={mailbox}"));
+     out
+ }
+ 
+@@ -1647,6 +1688,22 @@ mod tests {
+         }
+     }
+ 
++    #[test]
++    fn a_frame_mailbox_is_an_absolute_path_or_nothing() {
++        assert_eq!(parse_frame_mailbox(None), FrameMailbox::Unset);
++        assert_eq!(parse_frame_mailbox(Some("".into())), FrameMailbox::Unset);
++        assert_eq!(
++            parse_frame_mailbox(Some(
++                "/run/user/1000/tomacco/ios-mailbox/a/frames".into()
++            )),
++            FrameMailbox::File("/run/user/1000/tomacco/ios-mailbox/a/frames".into())
++        );
++        assert_eq!(
++            parse_frame_mailbox(Some("frames".into())),
++            FrameMailbox::Refused("frames".into())
++        );
++    }
++
+     #[test]
+     fn panel_contract_preserves_portrait_geometry_density_and_refresh() {
+         let panel = Panel::parse("1170x2532@60:65x141", 8192, 120).unwrap();
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+index f513d7c..006698c 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+@@ -5060,6 +5060,11 @@ fn present_named_mapping<H: HostMemory + HostOps>(
+             // exact CPU frame (PPM) throttled to every 600th present, so a
+             // headless run leaves a viewable trace without a window.
+             maybe_dump_present_frame(&state.present.frame_bgra, w, h);
++            // The viewer's copy of the same retain, published by a thread of
++            // its own: the desktop's live view reads it from a file instead of
++            // asking QEMU's main loop for a `screendump` of the console. An
++            // engine-carried present has no CPU pixels and offers nothing.
++            crate::runtime::frame_mailbox::offer(&state.present.frame_bgra, w, h, u64::from(gen));
+         }
+         // No guest-page comparison here. The presented surface's guest window is
+         // stale by construction on the Vulkan rail — `import_present` defers the
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/frame_mailbox.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/frame_mailbox.rs
+new file mode 100644
+index 0000000..031f902
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/frame_mailbox.rs
+@@ -0,0 +1,895 @@
++//! The retained present frame, published for a viewer outside the main loop.
++//!
++//! # What it removes
++//!
++//! A desktop viewer of the guest's screen used to poll QMP `screendump` about
++//! sixteen times a second. QEMU runs that command as a coroutine of its main
++//! loop, holding the big lock: it waits for a console refresh
++//! (`graphic_hw_update`, which here runs this device's poll and delivers its
++//! host actions), converts the console surface to RGB row by row through
++//! pixman and writes the ~9 MB picture to a file with blocking writes — for
++//! every poll, changed or not. A profile showed the main thread
++//! 68 % busy while the six vCPU threads ran ~20 %, and the main-loop interrupt
++//! hop (`irq_wait`) reaching 277 ms: the guest was waiting for the lock the
++//! viewer kept taking.
++//!
++//! This device already holds what the viewer wants. Every accepted
++//! `DisplaySwap` on a host whose window does not carry the frame converts the
++//! front surface into the retained BGRA8 frame (`PresentState::frame_bgra`,
++//! `capture_resident_bgra_into`) on the present drain, off the main thread.
++//! [`offer`] copies that retain into a hand-off buffer, and a writer thread of
++//! its own publishes it into a file the launcher named
++//! ([`crate::config::FRAME_MAILBOX`]) — only when its bytes differ from the
++//! frame it published last. The control plane reads the newest frame from that
++//! file without QMP, so a poll costs QEMU nothing, and an unchanged screen
++//! costs the reader one 4 KiB read.
++//!
++//! # The file
++//!
++//! All integers little-endian. A 4 KiB header, then two slots of `capacity`
++//! bytes each:
++//!
++//! | offset | field |
++//! |---|---|
++//! | 0 | magic `PSFRMBX1` |
++//! | 8 | `u32` version (1) |
++//! | 12 | `u32` header bytes (4096) |
++//! | 16 | `u32` slot count (2) |
++//! | 24 | `u64` slot capacity in bytes |
++//! | 32 | `u64` writer process id |
++//! | 40 | `u64` newest complete frame number, 0 for none |
++//! | 48 | `u64` writer instance (distinguishes two engines on one path) |
++//! | 64 + 64·i | slot `i` descriptor |
++//!
++//! A slot descriptor: `u64` sequence, `u32` width, `u32` height, `u32` stride,
++//! `u32` pixel format (`BGRA` as four bytes: B, G, R, A per pixel, tight rows
++//! of `stride` bytes), `u64` frame bytes, `u64` guest content generation, `u64`
++//! wall-clock nanoseconds of the publish.
++//!
++//! Frame `n` (from 1) lives in slot `n % 2`. The writer sets that slot's
++//! sequence to `2n + 1` (odd: being written), writes the pixels, then the
++//! descriptor fields, then the sequence `2n`, then the header's newest frame
++//! number `n`. A reader takes the newest number `n`, requires the slot's
++//! sequence to read `2n` before and after it copies the pixels, and discards
++//! the copy otherwise: the slot it is reading is rewritten only two frames
++//! later, and that rewrite makes the sequence odd before it touches a pixel.
++//! A geometry change first marks both slots invalid (`u64::MAX`) and the newest
++//! number 0, then resizes the file, so no reader takes bytes laid out for
++//! another capacity.
++//!
++//! # Limits
++//!
++//! The launcher creates the file's directory, private to its owner. The writer
++//! creates the file itself (`create_new`, mode 0600), refuses a directory
++//! anyone else may enter, and never grows the file past this process's file
++//! size limit — the launcher caps it, and the kernel answers a write past it
++//! with `SIGXFSZ`, which ends the emulator. With no variable, nothing here
++//! runs: [`offer`] returns after one load.
++use std::fs::File;
++use std::os::unix::fs::{FileExt, MetadataExt, OpenOptionsExt};
++use std::path::Path;
++use std::sync::atomic::{AtomicBool, Ordering};
++use std::sync::{Arc, Condvar, Mutex, OnceLock};
++use std::time::Instant;
++
++pub const MAGIC: [u8; 8] = *b"PSFRMBX1";
++pub const VERSION: u32 = 1;
++pub const HEADER_BYTES: u64 = 4096;
++pub const SLOTS: u64 = 2;
++/// B, G, R, A bytes per pixel, as the retain holds them.
++pub const FORMAT_BGRA8: u32 = u32::from_le_bytes(*b"BGRA");
++/// The largest edge a published frame may have (the viewer's own bound).
++pub const MAX_EDGE: u32 = 16384;
++
++const OFF_VERSION: u64 = 8;
++const OFF_HEADER_BYTES: u64 = 12;
++const OFF_SLOTS: u64 = 16;
++const OFF_CAPACITY: u64 = 24;
++const OFF_WRITER: u64 = 32;
++const OFF_LATEST: u64 = 40;
++const OFF_INSTANCE: u64 = 48;
++const SLOT_TABLE: u64 = 64;
++const SLOT_DESCRIPTOR: u64 = 64;
++/// Odd, and never `2n` for any frame: a slot that holds nothing.
++const INVALID_SEQUENCE: u64 = u64::MAX;
++
++fn descriptor(slot: u64) -> u64 {
++    SLOT_TABLE + slot * SLOT_DESCRIPTOR
++}
++
++/// The soft `RLIMIT_FSIZE` this process runs under, from `/proc/self/limits`
++/// (`None`: unlimited, or not stated).
++pub fn parse_file_size_limit(limits: &str) -> Option<u64> {
++    let line = limits
++        .lines()
++        .find(|line| line.starts_with("Max file size"))?;
++    line["Max file size".len()..]
++        .split_whitespace()
++        .next()?
++        .parse()
++        .ok()
++}
++
++fn file_size_limit() -> Option<u64> {
++    parse_file_size_limit(&std::fs::read_to_string("/proc/self/limits").ok()?)
++}
++
++/// Why a publish did not happen. Each is reported once and the writer goes on;
++/// the previous frame stays readable.
++#[derive(Debug, PartialEq, Eq)]
++pub enum PublishError {
++    /// The frame's length is not `width * height * 4`, or an edge is out of range.
++    Geometry,
++    /// Two slots of this frame would exceed the process's file size limit.
++    FileLimit { needed: u64, limit: u64 },
++    /// A write or resize failed.
++    Io(std::io::ErrorKind),
++}
++
++impl From<std::io::Error> for PublishError {
++    fn from(error: std::io::Error) -> Self {
++        PublishError::Io(error.kind())
++    }
++}
++
++/// The writer's side of one mailbox file.
++pub struct Writer {
++    file: File,
++    capacity: u64,
++    frame: u64,
++    limit: Option<u64>,
++}
++
++impl Writer {
++    /// Create the mailbox at `path`. Refuses an existing file, a link, and a
++    /// directory that is not private to the file's owner.
++    pub fn create(path: &Path, limit: Option<u64>) -> Result<Self, String> {
++        if !path.is_absolute() {
++            return Err("path_not_absolute".into());
++        }
++        let parent = path.parent().ok_or("no_directory")?;
++        let directory = std::fs::symlink_metadata(parent).map_err(|_| "directory_missing")?;
++        if !directory.is_dir() || directory.mode() & 0o077 != 0 {
++            return Err("directory_not_private".into());
++        }
++        // `create_new` is O_CREAT|O_EXCL: it neither follows a link nor opens
++        // a file someone else placed there first.
++        let file = std::fs::OpenOptions::new()
++            .read(true)
++            .write(true)
++            .create_new(true)
++            .mode(0o600)
++            .open(path)
++            .map_err(|error| format!("create_{:?}", error.kind()).to_lowercase())?;
++        let created = file.metadata().map_err(|_| "stat")?;
++        if created.uid() != directory.uid() || !created.is_file() {
++            return Err("owner_mismatch".into());
++        }
++        let instance = std::time::SystemTime::now()
++            .duration_since(std::time::UNIX_EPOCH)
++            .map(|d| d.as_nanos() as u64)
++            .unwrap_or(0)
++            ^ (u64::from(std::process::id()) << 32);
++        let mut header = vec![0u8; HEADER_BYTES as usize];
++        header[..8].copy_from_slice(&MAGIC);
++        let put32 = |h: &mut [u8], at: u64, v: u32| {
++            h[at as usize..at as usize + 4].copy_from_slice(&v.to_le_bytes())
++        };
++        let put64 = |h: &mut [u8], at: u64, v: u64| {
++            h[at as usize..at as usize + 8].copy_from_slice(&v.to_le_bytes())
++        };
++        put32(&mut header, OFF_VERSION, VERSION);
++        put32(&mut header, OFF_HEADER_BYTES, HEADER_BYTES as u32);
++        put32(&mut header, OFF_SLOTS, SLOTS as u32);
++        put64(&mut header, OFF_CAPACITY, 0);
++        put64(&mut header, OFF_WRITER, u64::from(std::process::id()));
++        put64(&mut header, OFF_LATEST, 0);
++        put64(&mut header, OFF_INSTANCE, instance);
++        for slot in 0..SLOTS {
++            put64(&mut header, descriptor(slot), INVALID_SEQUENCE);
++        }
++        if limit.is_some_and(|limit| limit < HEADER_BYTES) {
++            return Err("file_limit".into());
++        }
++        file.write_all_at(&header, 0).map_err(|_| "write_header")?;
++        Ok(Writer {
++            file,
++            capacity: 0,
++            frame: 0,
++            limit,
++        })
++    }
++
++    /// The newest frame number published so far (0: none).
++    pub fn frame(&self) -> u64 {
++        self.frame
++    }
++
++    fn put64(&self, at: u64, value: u64) -> std::io::Result<()> {
++        self.file.write_all_at(&value.to_le_bytes(), at)
++    }
++
++    /// Lay the slots out for frames of `bytes`. Readers lose the current frame
++    /// until the next publish; none can take bytes laid out for another size.
++    fn relayout(&mut self, bytes: u64) -> Result<(), PublishError> {
++        let needed = HEADER_BYTES + SLOTS * bytes;
++        if let Some(limit) = self.limit.filter(|limit| needed > *limit) {
++            return Err(PublishError::FileLimit { needed, limit });
++        }
++        for slot in 0..SLOTS {
++            self.put64(descriptor(slot), INVALID_SEQUENCE)?;
++        }
++        self.put64(OFF_LATEST, 0)?;
++        self.capacity = 0;
++        self.put64(OFF_CAPACITY, 0)?;
++        self.file.set_len(needed)?;
++        self.put64(OFF_CAPACITY, bytes)?;
++        self.capacity = bytes;
++        Ok(())
++    }
++
++    /// Publish one tight BGRA8 frame as the next frame number.
++    pub fn publish(
++        &mut self,
++        pixels: &[u8],
++        width: u32,
++        height: u32,
++        generation: u64,
++    ) -> Result<u64, PublishError> {
++        if !(1..=MAX_EDGE).contains(&width) || !(1..=MAX_EDGE).contains(&height) {
++            return Err(PublishError::Geometry);
++        }
++        let stride = u64::from(width) * 4;
++        let bytes = stride * u64::from(height);
++        if pixels.len() as u64 != bytes {
++            return Err(PublishError::Geometry);
++        }
++        if bytes != self.capacity {
++            self.relayout(bytes)?;
++        }
++        let frame = self.frame + 1;
++        let slot = frame % SLOTS;
++        let at = descriptor(slot);
++        self.put64(at, 2 * frame + 1)?;
++        self.file
++            .write_all_at(pixels, HEADER_BYTES + slot * self.capacity)?;
++        let realtime = std::time::SystemTime::now()
++            .duration_since(std::time::UNIX_EPOCH)
++            .map(|d| d.as_nanos() as u64)
++            .unwrap_or(0);
++        let mut fields = [0u8; 40];
++        fields[0..4].copy_from_slice(&width.to_le_bytes());
++        fields[4..8].copy_from_slice(&height.to_le_bytes());
++        fields[8..12].copy_from_slice(&(stride as u32).to_le_bytes());
++        fields[12..16].copy_from_slice(&FORMAT_BGRA8.to_le_bytes());
++        fields[16..24].copy_from_slice(&bytes.to_le_bytes());
++        fields[24..32].copy_from_slice(&generation.to_le_bytes());
++        fields[32..40].copy_from_slice(&realtime.to_le_bytes());
++        self.file.write_all_at(&fields, at + 8)?;
++        self.put64(at, 2 * frame)?;
++        self.put64(OFF_LATEST, frame)?;
++        self.frame = frame;
++        Ok(frame)
++    }
++}
++
++/// One frame as a reader took it.
++#[derive(Debug, PartialEq, Eq)]
++pub struct Frame {
++    pub number: u64,
++    pub width: u32,
++    pub height: u32,
++    pub generation: u64,
++    pub pixels: Vec<u8>,
++}
++
++/// What a reader found.
++#[derive(Debug, PartialEq, Eq)]
++pub enum Read {
++    /// No frame has been published (or the slots are being laid out again).
++    Empty,
++    /// The slot was rewritten while it was read; ask again.
++    Torn,
++    Frame(Frame),
++}
++
++/// The reader's side, as the control plane implements it — kept here so the
++/// writer's tests prove the protocol and not only the writer's bytes.
++pub fn read(file: &File) -> std::io::Result<Read> {
++    let mut header = [0u8; 192];
++    file.read_exact_at(&mut header, 0)?;
++    let get32 =
++        |h: &[u8], at: u64| u32::from_le_bytes(h[at as usize..at as usize + 4].try_into().unwrap());
++    let get64 =
++        |h: &[u8], at: u64| u64::from_le_bytes(h[at as usize..at as usize + 8].try_into().unwrap());
++    let invalid =
++        |what: &str| std::io::Error::new(std::io::ErrorKind::InvalidData, what.to_owned());
++    if header[..8] != MAGIC
++        || get32(&header, OFF_VERSION) != VERSION
++        || u64::from(get32(&header, OFF_HEADER_BYTES)) != HEADER_BYTES
++        || u64::from(get32(&header, OFF_SLOTS)) != SLOTS
++    {
++        return Err(invalid("not a frame mailbox"));
++    }
++    let latest = get64(&header, OFF_LATEST);
++    let capacity = get64(&header, OFF_CAPACITY);
++    if latest == 0 || capacity == 0 {
++        return Ok(Read::Empty);
++    }
++    let slot = latest % SLOTS;
++    let at = descriptor(slot) as usize;
++    let sequence = get64(&header, at as u64);
++    if sequence != 2 * latest {
++        return Ok(Read::Torn);
++    }
++    let width = get32(&header, at as u64 + 8);
++    let height = get32(&header, at as u64 + 12);
++    let stride = get32(&header, at as u64 + 16);
++    let format = get32(&header, at as u64 + 20);
++    let bytes = get64(&header, at as u64 + 24);
++    let generation = get64(&header, at as u64 + 32);
++    if !(1..=MAX_EDGE).contains(&width)
++        || !(1..=MAX_EDGE).contains(&height)
++        || u64::from(stride) != u64::from(width) * 4
++        || format != FORMAT_BGRA8
++        || bytes != u64::from(stride) * u64::from(height)
++        || bytes > capacity
++    {
++        return Ok(Read::Torn);
++    }
++    let mut pixels = vec![0u8; bytes as usize];
++    file.read_exact_at(&mut pixels, HEADER_BYTES + slot * capacity)?;
++    let mut after = [0u8; 8];
++    file.read_exact_at(&mut after, at as u64)?;
++    if u64::from_le_bytes(after) != sequence {
++        return Ok(Read::Torn);
++    }
++    Ok(Read::Frame(Frame {
++        number: latest,
++        width,
++        height,
++        generation,
++        pixels,
++    }))
++}
++
++/// Counts the writer thread reports in its census line.
++#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
++pub struct Counts {
++    /// Frames offered by the present drain.
++    pub offered: u64,
++    /// Offered frames a newer one replaced before the writer took them.
++    pub coalesced: u64,
++    /// Frames the writer took whose bytes equal the frame it published last.
++    pub unchanged: u64,
++    pub published: u64,
++    pub failed: u64,
++    /// Microseconds the writer spent comparing and writing.
++    pub write_us: u64,
++    /// Microseconds the drain spent copying into the hand-off buffer.
++    pub offer_us: u64,
++}
++
++struct Pending {
++    pixels: Vec<u8>,
++    width: u32,
++    height: u32,
++    generation: u64,
++    fresh: bool,
++    stop: bool,
++    counts: Counts,
++}
++
++struct Shared {
++    pending: Mutex<Pending>,
++    ready: Condvar,
++    /// Set by the writer after each frame it finished with, for tests.
++    idle: Condvar,
++}
++
++/// The present drain's hand-off to one writer thread.
++///
++/// The drain copies the retain into `pending` (one `memcpy`, the allocation
++/// reused) and returns; the writer swaps that buffer out under the lock — an
++/// O(1) exchange — and does its comparison and file writes without it. A frame
++/// the writer has not taken yet is replaced by a newer one: the viewer wants
++/// the newest picture, not every picture.
++pub struct Publisher {
++    shared: Arc<Shared>,
++    thread: Option<std::thread::JoinHandle<()>>,
++}
++
++impl Publisher {
++    pub fn start(writer: Writer) -> std::io::Result<Self> {
++        let shared = Arc::new(Shared {
++            pending: Mutex::new(Pending {
++                pixels: Vec::new(),
++                width: 0,
++                height: 0,
++                generation: 0,
++                fresh: false,
++                stop: false,
++                counts: Counts::default(),
++            }),
++            ready: Condvar::new(),
++            idle: Condvar::new(),
++        });
++        let thread_shared = Arc::clone(&shared);
++        let thread = std::thread::Builder::new()
++            .name("reims-frame-mailbox".into())
++            .spawn(move || write_loop(writer, &thread_shared))?;
++        Ok(Publisher {
++            shared,
++            thread: Some(thread),
++        })
++    }
++
++    /// Hand one tight BGRA8 frame to the writer.
++    pub fn offer(&self, pixels: &[u8], width: u32, height: u32, generation: u64) {
++        let started = Instant::now();
++        let Ok(mut pending) = self.shared.pending.lock() else {
++            return;
++        };
++        if pending.fresh {
++            pending.counts.coalesced += 1;
++        }
++        pending.pixels.clear();
++        pending.pixels.extend_from_slice(pixels);
++        pending.width = width;
++        pending.height = height;
++        pending.generation = generation;
++        pending.fresh = true;
++        pending.counts.offered += 1;
++        pending.counts.offer_us += started.elapsed().as_micros() as u64;
++        drop(pending);
++        self.shared.ready.notify_one();
++    }
++
++    pub fn counts(&self) -> Counts {
++        self.shared
++            .pending
++            .lock()
++            .map(|pending| pending.counts)
++            .unwrap_or_default()
++    }
++
++    /// Wait until the writer has taken every offered frame and finished with it.
++    pub fn settle(&self, timeout: std::time::Duration) -> bool {
++        let deadline = Instant::now() + timeout;
++        let Ok(mut pending) = self.shared.pending.lock() else {
++            return false;
++        };
++        loop {
++            let c = pending.counts;
++            if !pending.fresh && c.offered == c.coalesced + c.unchanged + c.published + c.failed {
++                return true;
++            }
++            let Some(left) = deadline.checked_duration_since(Instant::now()) else {
++                return false;
++            };
++            pending = match self.shared.idle.wait_timeout(pending, left) {
++                Ok((guard, _)) => guard,
++                Err(_) => return false,
++            };
++        }
++    }
++}
++
++impl Drop for Publisher {
++    fn drop(&mut self) {
++        if let Ok(mut pending) = self.shared.pending.lock() {
++            pending.stop = true;
++        }
++        self.shared.ready.notify_one();
++        if let Some(thread) = self.thread.take() {
++            let _ = thread.join();
++        }
++    }
++}
++
++fn write_loop(mut writer: Writer, shared: &Shared) {
++    // Three buffers rotate: the drain fills `pending`, the writer holds the one
++    // it is writing and the one it published last, to compare against.
++    let mut work: Vec<u8> = Vec::new();
++    let mut last: Vec<u8> = Vec::new();
++    let mut last_geometry = (0u32, 0u32);
++    loop {
++        let (width, height, generation) = {
++            let Ok(mut pending) = shared.pending.lock() else {
++                return;
++            };
++            while !pending.fresh && !pending.stop {
++                pending = match shared.ready.wait(pending) {
++                    Ok(guard) => guard,
++                    Err(_) => return,
++                };
++            }
++            if pending.stop {
++                return;
++            }
++            std::mem::swap(&mut pending.pixels, &mut work);
++            pending.fresh = false;
++            (pending.width, pending.height, pending.generation)
++        };
++        let started = Instant::now();
++        let outcome = if (width, height) == last_geometry && work == last {
++            None
++        } else {
++            Some(writer.publish(&work, width, height, generation))
++        };
++        let elapsed = started.elapsed().as_micros() as u64;
++        let published = matches!(outcome, Some(Ok(_)));
++        if published {
++            std::mem::swap(&mut work, &mut last);
++            last_geometry = (width, height);
++        }
++        let Ok(mut pending) = shared.pending.lock() else {
++            return;
++        };
++        pending.counts.write_us += elapsed;
++        match &outcome {
++            None => pending.counts.unchanged += 1,
++            Some(Ok(_)) => pending.counts.published += 1,
++            Some(Err(_)) => pending.counts.failed += 1,
++        }
++        let counts = pending.counts;
++        drop(pending);
++        shared.idle.notify_all();
++        if let Some(Err(error)) = outcome {
++            static REPORTED: AtomicBool = AtomicBool::new(false);
++            if !REPORTED.swap(true, Ordering::Relaxed) {
++                crate::observe::fail(format!(
++                    "frame_mailbox_publish_failed error={error:?} geom={width}x{height} \
++                     (the previous frame stays readable; reported once)"
++                ));
++            }
++        }
++        // Power-of-two spacing, as `capture_sampling`: readable from the first
++        // frame on, about twenty lines in a day.
++        if published && counts.published.is_power_of_two() {
++            crate::observe::off(format!(
++                "frame_mailbox published={} unchanged={} coalesced={} failed={} offered={} \
++                 offer_us={} write_us={} frame={}",
++                counts.published,
++                counts.unchanged,
++                counts.coalesced,
++                counts.failed,
++                counts.offered,
++                counts.offer_us,
++                counts.write_us,
++                writer.frame()
++            ));
++        }
++    }
++}
++
++static PUBLISHER: OnceLock<Option<Publisher>> = OnceLock::new();
++
++fn publisher() -> Option<&'static Publisher> {
++    PUBLISHER
++        .get_or_init(|| {
++            let path = match crate::config::frame_mailbox() {
++                crate::config::FrameMailbox::Unset => return None,
++                crate::config::FrameMailbox::File(path) => path,
++                crate::config::FrameMailbox::Refused(value) => {
++                    crate::observe::fail(format!(
++                        "frame_mailbox_refused reason=path_not_absolute value={value:?}"
++                    ));
++                    return None;
++                }
++            };
++            let limit = file_size_limit();
++            let writer = match Writer::create(&path, limit) {
++                Ok(writer) => writer,
++                Err(reason) => {
++                    crate::observe::fail(format!(
++                        "frame_mailbox_refused reason={reason} path={path:?}"
++                    ));
++                    return None;
++                }
++            };
++            match Publisher::start(writer) {
++                Ok(publisher) => {
++                    crate::observe::off(format!(
++                        "frame_mailbox open path={path:?} file_limit={limit:?}"
++                    ));
++                    Some(publisher)
++                }
++                Err(error) => {
++                    crate::observe::fail(format!(
++                        "frame_mailbox_refused reason=thread_{:?} path={path:?}",
++                        error.kind()
++                    ));
++                    None
++                }
++            }
++        })
++        .as_ref()
++}
++
++/// Offer the frame a present has just retained (`PresentState::frame_bgra`,
++/// tight BGRA8 rows of `width * 4` bytes) to the viewer's mailbox. Returns
++/// after one copy into the writer's hand-off buffer; a process started without
++/// [`crate::config::FRAME_MAILBOX`] returns at once.
++pub fn offer(pixels: &[u8], width: u32, height: u32, generation: u64) {
++    if pixels.is_empty() {
++        return;
++    }
++    if let Some(publisher) = publisher() {
++        publisher.offer(pixels, width, height, generation);
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::os::unix::fs::PermissionsExt;
++    use std::path::PathBuf;
++    use std::time::Duration;
++
++    struct Scratch(PathBuf);
++    impl Drop for Scratch {
++        fn drop(&mut self) {
++            let _ = std::fs::remove_dir_all(&self.0);
++        }
++    }
++    fn scratch(name: &str) -> Scratch {
++        static N: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++        let dir = std::env::temp_dir().join(format!(
++            "reims-frame-mailbox-{}-{}-{name}",
++            std::process::id(),
++            N.fetch_add(1, Ordering::Relaxed)
++        ));
++        std::fs::create_dir(&dir).unwrap();
++        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700)).unwrap();
++        Scratch(dir)
++    }
++    fn picture(width: u32, height: u32, seed: u8) -> Vec<u8> {
++        (0..width * height * 4)
++            .map(|i| (i as u8).wrapping_mul(31).wrapping_add(seed))
++            .collect()
++    }
++    fn open(path: &Path) -> File {
++        File::open(path).unwrap()
++    }
++
++    #[test]
++    fn the_file_size_limit_is_read_from_the_soft_column() {
++        let limits = "Limit                     Soft Limit           Hard Limit           Units     \n\
++                      Max cpu time              unlimited            unlimited            seconds   \n\
++                      Max file size             34603008             34603008             bytes     \n";
++        assert_eq!(parse_file_size_limit(limits), Some(34603008));
++        let unlimited =
++            "Max file size             unlimited            unlimited            bytes\n";
++        assert_eq!(parse_file_size_limit(unlimited), None);
++        assert_eq!(parse_file_size_limit(""), None);
++    }
++
++    #[test]
++    fn a_published_frame_reads_back_with_its_number_geometry_and_bytes() {
++        let dir = scratch("roundtrip");
++        let path = dir.0.join("frames");
++        let mut writer = Writer::create(&path, None).unwrap();
++        let reader = open(&path);
++        assert_eq!(read(&reader).unwrap(), Read::Empty);
++        let mode = std::fs::metadata(&path).unwrap().permissions().mode();
++        assert_eq!(mode & 0o777, 0o600);
++        for (number, seed) in [(1u64, 3u8), (2, 9), (3, 27)] {
++            let pixels = picture(5, 3, seed);
++            assert_eq!(writer.publish(&pixels, 5, 3, 40 + number).unwrap(), number);
++            let Read::Frame(frame) = read(&reader).unwrap() else {
++                panic!("no frame after publish {number}");
++            };
++            assert_eq!(
++                frame,
++                Frame {
++                    number,
++                    width: 5,
++                    height: 3,
++                    generation: 40 + number,
++                    pixels
++                }
++            );
++        }
++        // Two slots, so a frame stays readable while the next one is written.
++        assert_eq!(
++            std::fs::metadata(&path).unwrap().len(),
++            HEADER_BYTES + 2 * 5 * 3 * 4
++        );
++    }
++
++    #[test]
++    fn a_slot_being_rewritten_is_never_handed_out() {
++        let dir = scratch("torn");
++        let path = dir.0.join("frames");
++        let mut writer = Writer::create(&path, None).unwrap();
++        writer.publish(&picture(4, 4, 1), 4, 4, 1).unwrap();
++        writer.publish(&picture(4, 4, 2), 4, 4, 2).unwrap();
++        let reader = open(&path);
++        // The writer has begun frame 4 in slot 0, which the header's frame 2
++        // names: its sequence went odd before any pixel moved.
++        writer.put64(descriptor(0), 2 * 4 + 1).unwrap();
++        assert_eq!(read(&reader).unwrap(), Read::Torn);
++        // A descriptor that does not describe a tight BGRA8 frame is no frame.
++        writer.put64(descriptor(0), 2 * 2).unwrap();
++        assert!(matches!(read(&reader).unwrap(), Read::Frame(_)));
++        writer
++            .file
++            .write_all_at(&3u32.to_le_bytes(), descriptor(0) + 16)
++            .unwrap();
++        assert_eq!(read(&reader).unwrap(), Read::Torn);
++    }
++
++    #[test]
++    fn a_geometry_change_empties_the_mailbox_before_it_resizes_it() {
++        let dir = scratch("relayout");
++        let path = dir.0.join("frames");
++        let mut writer = Writer::create(&path, None).unwrap();
++        writer.publish(&picture(4, 4, 1), 4, 4, 1).unwrap();
++        writer.publish(&picture(4, 4, 2), 4, 4, 2).unwrap();
++        // Laid out again, both slots and the newest number say "nothing".
++        writer.relayout(2 * 2 * 4).unwrap();
++        let reader = open(&path);
++        assert_eq!(read(&reader).unwrap(), Read::Empty);
++        let pixels = picture(2, 2, 5);
++        assert_eq!(writer.publish(&pixels, 2, 2, 3).unwrap(), 3);
++        let Read::Frame(frame) = read(&reader).unwrap() else {
++            panic!("no frame after a relayout");
++        };
++        assert_eq!((frame.number, frame.width, frame.height), (3, 2, 2));
++        assert_eq!(frame.pixels, pixels);
++        assert_eq!(
++            std::fs::metadata(&path).unwrap().len(),
++            HEADER_BYTES + 2 * 2 * 2 * 4
++        );
++    }
++
++    #[test]
++    fn a_frame_beyond_the_file_limit_is_refused_and_the_previous_one_kept() {
++        let dir = scratch("limit");
++        let path = dir.0.join("frames");
++        let limit = HEADER_BYTES + 2 * 4 * 4 * 4;
++        let mut writer = Writer::create(&path, Some(limit)).unwrap();
++        let pixels = picture(4, 4, 1);
++        writer.publish(&pixels, 4, 4, 1).unwrap();
++        assert_eq!(
++            writer.publish(&picture(8, 8, 2), 8, 8, 2),
++            Err(PublishError::FileLimit {
++                needed: HEADER_BYTES + 2 * 8 * 8 * 4,
++                limit
++            })
++        );
++        assert_eq!(std::fs::metadata(&path).unwrap().len(), limit);
++        let Read::Frame(frame) = read(&open(&path)).unwrap() else {
++            panic!("the refused frame took the previous one with it");
++        };
++        assert_eq!(frame.pixels, pixels);
++        // A frame whose bytes do not match its geometry is refused too.
++        assert_eq!(
++            writer.publish(&pixels, 4, 3, 3),
++            Err(PublishError::Geometry)
++        );
++        assert_eq!(writer.publish(&[], 0, 0, 3), Err(PublishError::Geometry));
++    }
++
++    #[test]
++    fn the_mailbox_is_created_only_where_its_owner_alone_may_look() {
++        let dir = scratch("private");
++        let path = dir.0.join("frames");
++        // An existing file — or a link — is not taken over.
++        std::fs::write(&path, b"someone else's").unwrap();
++        assert!(Writer::create(&path, None).is_err());
++        std::fs::remove_file(&path).unwrap();
++        std::os::unix::fs::symlink(dir.0.join("elsewhere"), &path).unwrap();
++        assert!(Writer::create(&path, None).is_err());
++        assert!(!dir.0.join("elsewhere").exists());
++        std::fs::remove_file(&path).unwrap();
++        // A directory others may enter is refused.
++        std::fs::set_permissions(&dir.0, std::fs::Permissions::from_mode(0o755)).unwrap();
++        assert_eq!(
++            Writer::create(&path, None).err().as_deref(),
++            Some("directory_not_private")
++        );
++        std::fs::set_permissions(&dir.0, std::fs::Permissions::from_mode(0o700)).unwrap();
++        assert!(Writer::create(Path::new("relative/frames"), None).is_err());
++        assert!(Writer::create(&dir.0.join("missing/frames"), None).is_err());
++        assert!(Writer::create(&path, None).is_ok());
++    }
++
++    #[test]
++    fn the_writer_thread_publishes_only_frames_that_changed() {
++        let dir = scratch("thread");
++        let path = dir.0.join("frames");
++        let publisher = Publisher::start(Writer::create(&path, None).unwrap()).unwrap();
++        let reader = open(&path);
++        let first = picture(6, 2, 1);
++        publisher.offer(&first, 6, 2, 1);
++        assert!(publisher.settle(Duration::from_secs(10)));
++        let Read::Frame(frame) = read(&reader).unwrap() else {
++            panic!("no frame");
++        };
++        assert_eq!((frame.number, &frame.pixels), (1, &first));
++        // The same bytes again — a present that changed nothing — are not a
++        // new frame, whatever generation they carry.
++        publisher.offer(&first, 6, 2, 2);
++        assert!(publisher.settle(Duration::from_secs(10)));
++        let Read::Frame(frame) = read(&reader).unwrap() else {
++            panic!("no frame");
++        };
++        assert_eq!(frame.number, 1);
++        let second = picture(6, 2, 2);
++        publisher.offer(&second, 6, 2, 3);
++        assert!(publisher.settle(Duration::from_secs(10)));
++        let Read::Frame(frame) = read(&reader).unwrap() else {
++            panic!("no frame");
++        };
++        assert_eq!(
++            (frame.number, frame.generation, &frame.pixels),
++            (2, 3, &second)
++        );
++        // The same bytes at another geometry are another picture.
++        publisher.offer(&second, 4, 3, 4);
++        assert!(publisher.settle(Duration::from_secs(10)));
++        let counts = publisher.counts();
++        assert_eq!(counts.offered, 4);
++        assert_eq!(counts.unchanged, 1);
++        assert_eq!(counts.published, 3);
++        assert_eq!(counts.failed, 0);
++        // A burst coalesces to the newest frame; nothing is lost but the
++        // pictures in between.
++        for seed in 10..60u8 {
++            publisher.offer(&picture(6, 2, seed), 6, 2, u64::from(seed));
++        }
++        assert!(publisher.settle(Duration::from_secs(10)));
++        let Read::Frame(frame) = read(&reader).unwrap() else {
++            panic!("no frame");
++        };
++        assert_eq!(frame.pixels, picture(6, 2, 59));
++        let counts = publisher.counts();
++        assert_eq!(
++            counts.offered,
++            counts.coalesced + counts.unchanged + counts.published + counts.failed
++        );
++    }
++
++    #[test]
++    fn a_reader_racing_the_writer_never_takes_a_torn_frame() {
++        let dir = scratch("race");
++        let path = dir.0.join("frames");
++        let mut writer = Writer::create(&path, None).unwrap();
++        // 256 KiB a frame: long enough a copy for the writer to overtake it.
++        let (width, height) = (256u32, 256u32);
++        // Every frame is one byte value throughout, so a mixed frame shows.
++        let stop = Arc::new(AtomicBool::new(false));
++        let reader_stop = Arc::clone(&stop);
++        let reader_path = path.clone();
++        let reader = std::thread::spawn(move || {
++            let file = open(&reader_path);
++            let (mut frames, mut torn) = (0u64, 0u64);
++            while !reader_stop.load(Ordering::Relaxed) {
++                match read(&file).unwrap() {
++                    Read::Frame(frame) => {
++                        let first = frame.pixels[0];
++                        assert!(
++                            frame.pixels.iter().all(|&b| b == first),
++                            "frame {} mixes two pictures",
++                            frame.number
++                        );
++                        assert_eq!(first, frame.number as u8);
++                        frames += 1;
++                    }
++                    Read::Torn => torn += 1,
++                    Read::Empty => {}
++                }
++            }
++            (frames, torn)
++        });
++        for number in 1..=600u64 {
++            let pixels = vec![number as u8; (width * height * 4) as usize];
++            writer.publish(&pixels, width, height, number).unwrap();
++        }
++        stop.store(true, Ordering::Relaxed);
++        let (frames, _torn) = reader.join().unwrap();
++        assert!(frames > 0);
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+index 9dcfd7f..8505802 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+@@ -43,6 +43,8 @@ pub mod drain;
+ pub mod exec;
+ /// Product-path event + encoder fence sync (event/blit/compute/render domains).
+ pub mod fence_exec;
++/// The retained present frame, published for a viewer outside the main loop.
++pub mod frame_mailbox;
+ /// Is the hypervisor's guest-write generation a sound cache key for the
+ /// zero-copy sampled gathers? Measurement, not policy.
+ pub mod gather_witness;

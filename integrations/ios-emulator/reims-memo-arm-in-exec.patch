@@ -1,0 +1,395 @@
+reims-vgpu: a linear memo read vouches for the rest of its command buffer (arm in exec).
+
+The guest linear memo witness (reims-linear-memo-witness) lets a sampled bind
+skip re-reading a guest-CPU texture's span when the hypervisor's dirty
+bitmap and this device's write record both vouch for it. The hypervisor half
+has an arming window: a token tracked since the last doorbell reads
+generation 0 until the next doorbell harvests it, and a long submission rings
+no doorbell while it runs. A texture first sampled inside one was re-read on
+every draw. On a drag starting on a Home-screen icon:
+125 draws in one second sampled a new 1216x2688 RGBA16F span (25 MiB); 118
+re-read and compared it (memo_read 316 ms + memo_cmp 219 ms of a 727 ms
+sampled resolve, 839 ms drain), one CmdExecIndirect2 took 801 ms
+(sync_exec_lock_hold, 97 draws), lmw_arm_unarmed 114 and lmw_unarmed 112,
+lin_memo_vouched 7. On the screen the page did not follow the finger and the
+swipe began 0.3-1.2 s after the release.
+
+Now `runtime::linear_memo_witness` has scopes: `execute_submission` opens one
+around each command buffer's walk and closes it after; every event record
+starts a new one (`break_scope`). A read that confirms the memo while the
+token's generation is still 0 records the scope, `host_writes.epoch()` and
+the memo generation (`lmw_arm_scope`), and a later bind in the same scope is
+vouched (`lmw_scope_vouched`, counted under lin_memo_vouched as well) when
+the memo generation, page list and span are unchanged, `host_writes` is
+quiet for the pages since the confirming read, and nothing submitted can
+still write them. Outside a scope, or in another one, the arming window
+refuses as before (`lmw_unarmed`).
+
+Why a scope is sound for the guest half: every read in it runs after the
+submission's doorbell, so every guest store ordered before the handoff is in
+the bytes read. Metal leaves a resource's contents undefined when the CPU
+writes it while a command buffer uses it; the one ordered way to write it
+mid-buffer is an event the buffer waits on, and an event ends the scope. The
+device half is unchanged, and scoped vouches share the audit stride (one in
+64 reads and compares; a difference fails lin_memo_witness_unsound and drops
+the vouch). REIMS_VGPU_LINEAR_MEMO_SCOPE=off turns scopes off.
+
+Tests: linear_memo_witness::tests a_read_in_a_scope_vouches_for_that_scope_only,
+no_scope_no_vouch_in_the_arming_window, an_event_breaks_the_scope,
+a_scope_keeps_the_device_half, a_scope_is_audited_and_a_failed_audit_drops_it.
+
+--- a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -633,6 +633,17 @@
+ /// the arm to compare against when it fires, or when a texture looks stale.
+ pub const LINEAR_MEMO_WITNESS: &str = "REIMS_VGPU_LINEAR_MEMO_WITNESS";
+ 
++/// `off` keeps the guest linear memo witness to its hypervisor half alone.
++///
++/// By default a span whose guest-write token is still in its arming window (a
++/// texture first tracked since the last doorbell) is vouched for by a read
++/// that confirmed the memo earlier in the same command buffer, as long as this
++/// device wrote nothing into it and nothing submitted can still write it
++/// (`runtime::linear_memo_witness`, scopes). Without that, every draw of a
++/// long submission re-reads a full-screen texture the guest may not write
++/// while the command buffer uses it.
++pub const LINEAR_MEMO_SCOPE: &str = "REIMS_VGPU_LINEAR_MEMO_SCOPE";
++
+ /// `off` narrows a draw chain's pipeline resolution back to the full walk —
+ /// object list, descriptor, decode, MTLB read, AIR carve and content hash, for
+ /// the pipeline and both of its functions, on every draw.
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/linear_memo_witness.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/linear_memo_witness.rs
+@@ -34,6 +34,29 @@
+ //! memo's own content generation is part of it too, so a memo evicted or
+ //! refilled in between cannot be served under an older vouch.
+ //!
++//! # Inside one command buffer: the scope
++//!
++//! The guest half has an arming window: a token tracked since the last
++//! doorbell reads generation 0 until the next one harvests it, and a long
++//! submission rings no doorbell while it runs. A texture first sampled in it
++//! (a new full-screen backdrop under an icon's press, ~100 draws in one
++//! command buffer) was re-read whole on every draw: 118 reads of a
++//! 25 MiB RGBA16F span in one second, 727 of 839 ms of drain time, one
++//! `CmdExecIndirect2` of 801 ms, `lmw_arm_unarmed` 114.
++//!
++//! So a bind may also be vouched for by a read that confirmed the memo
++//! earlier **in the same scope**: one command buffer's walk
++//! ([`open_scope`] .. [`close_scope`], cut short at every event record by
++//! [`break_scope`]). Metal leaves a resource's contents undefined while the
++//! CPU writes it during a command buffer's use of it; the one ordered way for
++//! the guest CPU to write it mid-buffer is an event the buffer waits for, and
++//! an event ends the scope. Every read in the scope happens after the
++//! submission's doorbell, so every guest store ordered before the handoff is
++//! in it. The device half is unchanged: `host_writes` quiet since the
++//! confirming read, nothing submitted reaching the pages, the same page list,
++//! span and memo generation, and the same audit stride.
++//! `REIMS_VGPU_LINEAR_MEMO_SCOPE=off` turns the scope off.
++//!
+ //! # Everything undecidable reads
+ //!
+ //! No token (host without a dirty bitmap), a token still in its arming window,
+@@ -87,6 +110,17 @@
+     /// Vouches since the last audit.
+     vouches: u32,
+     last_seen: u64,
++    /// A read inside a scope that confirmed the memo while `guest_gen` was
++    /// still unreadable. Vouches only within that same scope.
++    scoped: Option<ScopedVouch>,
++}
++
++/// A confirming read inside one scope (see the module's "the scope").
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++struct ScopedVouch {
++    scope: u64,
++    host_epoch: u64,
++    memo_generation: u64,
+ }
+ 
+ /// Per-device state: one entry per memo span worth tracking.
+@@ -94,6 +128,10 @@
+ pub struct LinearMemoWitness {
+     entries: HashMap<MemoKey, Entry>,
+     binds: u64,
++    /// The open scope, 0 when none is open.
++    scope: u64,
++    /// The last scope number handed out.
++    scopes: u64,
+ }
+ 
+ impl LinearMemoWitness {
+@@ -122,7 +160,8 @@
+     NoEntry,
+     /// The page list or span length differs from the one the token watches.
+     Repointed,
+-    /// Tracked, but no read has confirmed the memo under a readable generation.
++    /// Tracked, but no read has confirmed the memo under a readable generation,
++    /// nor one in the open scope.
+     Unarmed,
+     /// The memo is absent, refilled, or a different length than the entry's.
+     MemoMoved,
+@@ -175,6 +214,38 @@
+     })
+ }
+ 
++/// Whether a read in a scope may vouch for later binds in it.
++pub fn scope_enabled() -> bool {
++    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
++    *ON.get_or_init(|| {
++        !matches!(
++            crate::config::switch(crate::config::LINEAR_MEMO_SCOPE),
++            crate::config::Switch::Off
++        )
++    })
++}
++
++/// A command buffer's walk begins: reads from here on may vouch for later binds
++/// until [`close_scope`] or [`break_scope`].
++pub fn open_scope(state: &mut DeviceState) {
++    let w = &mut state.linear_memo_witness;
++    w.scopes = w.scopes.wrapping_add(1).max(1);
++    w.scope = w.scopes;
++}
++
++/// The walk ended: no read vouches outside the scope it was made in.
++pub fn close_scope(state: &mut DeviceState) {
++    state.linear_memo_witness.scope = 0;
++}
++
++/// An event record: the guest CPU may write between what came before it and
++/// what follows, so what follows starts a scope of its own.
++pub fn break_scope(state: &mut DeviceState) {
++    if state.linear_memo_witness.scope != 0 {
++        open_scope(state);
++    }
++}
++
+ /// Ask both halves about `key` for a bind whose span walks to `gpas`, with the
+ /// memo currently at `memo_generation` (`None`: no memo of this span's length).
+ ///
+@@ -194,6 +265,7 @@
+         ..
+     } = state;
+     let now = witness.touch();
++    let scope = witness.scope;
+     let Some(e) = witness.entries.get_mut(&key) else {
+         return Verdict::Refused(Refusal::NoEntry);
+     };
+@@ -202,7 +274,22 @@
+         return Verdict::Refused(Refusal::Repointed);
+     }
+     if e.guest_gen == 0 {
+-        return Verdict::Refused(Refusal::Unarmed);
++        // The guest half cannot answer yet; a read earlier in this scope can.
++        let Some(v) = e.scoped.filter(|v| scope != 0 && v.scope == scope) else {
++            return Verdict::Refused(Refusal::Unarmed);
++        };
++        if memo_generation != Some(v.memo_generation) {
++            return Verdict::Refused(Refusal::MemoMoved);
++        }
++        match host_writes.wrote_any_since(v.host_epoch, gpas) {
++            HostWriteVerdict::Quiet => {}
++            other => return Verdict::Refused(Refusal::HostWrote(other)),
++        }
++        if !pending_disjoint(gpas) {
++            return Verdict::Refused(Refusal::Pending);
++        }
++        crate::runtime::drain::note_store_route("lmw_scope_vouched");
++        return vouch(e);
+     }
+     if memo_generation != Some(e.memo_generation) {
+         return Verdict::Refused(Refusal::MemoMoved);
+@@ -219,6 +306,11 @@
+     if !pending_disjoint(gpas) {
+         return Verdict::Refused(Refusal::Pending);
+     }
++    vouch(e)
++}
++
++/// One more vouch for `e`; every [`AUDIT_STRIDE`]th is an audit.
++fn vouch(e: &mut Entry) -> Verdict {
+     e.vouches += 1;
+     if e.vouches >= AUDIT_STRIDE {
+         e.vouches = 0;
+@@ -296,6 +388,7 @@
+                     memo_generation: 0,
+                     vouches: 0,
+                     last_seen: now,
++                    scoped: None,
+                 },
+             );
+             token
+@@ -309,11 +402,27 @@
+ }
+ 
+ /// The read under `baseline` found the memo's bytes at `memo_generation`: let
+-/// later binds vouch for them. A baseline without a readable generation, or one
+-/// whose token is no longer this entry's, arms nothing.
++/// later binds vouch for them. A baseline without a readable generation arms
++/// only the open scope; one whose token is no longer this entry's arms nothing.
+ pub fn arm(state: &mut DeviceState, key: MemoKey, baseline: Baseline, memo_generation: u64) {
++    let scope = state.linear_memo_witness.scope;
+     let Some(guest_gen) = baseline.guest_gen.filter(|&g| g != 0) else {
+         crate::runtime::drain::note_store_route("lmw_arm_unarmed");
++        if scope == 0 || !scope_enabled() {
++            return;
++        }
++        let Some(e) = state.linear_memo_witness.entries.get_mut(&key) else {
++            return;
++        };
++        if e.token != baseline.token {
++            return;
++        }
++        e.scoped = Some(ScopedVouch {
++            scope,
++            host_epoch: baseline.host_epoch,
++            memo_generation,
++        });
++        crate::runtime::drain::note_store_route("lmw_arm_scope");
+         return;
+     };
+     let Some(e) = state.linear_memo_witness.entries.get_mut(&key) else {
+@@ -333,6 +442,7 @@
+     if let Some(e) = state.linear_memo_witness.entries.get_mut(&key) {
+         e.guest_gen = 0;
+         e.vouches = 0;
++        e.scoped = None;
+     }
+ }
+ 
+@@ -515,6 +625,104 @@
+         assert_eq!(ask_now(&mut s2, &h2), Verdict::Refused(Refusal::NoEntry));
+     }
+ 
++    /// A span confirmed inside the arming window: read in an open scope,
++    /// generation 0, memo generation 5.
++    fn scoped(state: &mut DeviceState, host: &mut FakeHost) {
++        host.guest_write_startup_window = true;
++        let b = baseline(state, host, KEY, &pages(), 3 * PAGE).unwrap();
++        arm(state, KEY, b, 5);
++    }
++
++    /// Inside the arming window, a read in the open scope vouches for the
++    /// rest of that scope, and for nothing outside it.
++    #[test]
++    fn a_read_in_a_scope_vouches_for_that_scope_only() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        open_scope(&mut state);
++        scoped(&mut state, &mut host);
++        assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++        assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++        close_scope(&mut state);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::Unarmed)
++        );
++        open_scope(&mut state);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::Unarmed)
++        );
++    }
++
++    /// Outside any scope the arming window arms nothing, as before.
++    #[test]
++    fn no_scope_no_vouch_in_the_arming_window() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        scoped(&mut state, &mut host);
++        open_scope(&mut state);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::Unarmed)
++        );
++    }
++
++    /// An event record ends the scope: the guest CPU may write after it.
++    #[test]
++    fn an_event_breaks_the_scope() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        open_scope(&mut state);
++        scoped(&mut state, &mut host);
++        assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++        break_scope(&mut state);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::Unarmed)
++        );
++        // Outside a scope a break opens none.
++        close_scope(&mut state);
++        break_scope(&mut state);
++        assert_eq!(state.linear_memo_witness.scope, 0);
++    }
++
++    /// The device half still refuses inside a scope: a write this device
++    /// recorded into the span, an outstanding GPU write, a moved memo.
++    #[test]
++    fn a_scope_keeps_the_device_half() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        open_scope(&mut state);
++        scoped(&mut state, &mut host);
++        assert_eq!(
++            ask(&mut state, &host, KEY, &pages(), 3 * PAGE, Some(5), |_| false),
++            Verdict::Refused(Refusal::Pending)
++        );
++        assert_eq!(
++            ask(&mut state, &host, KEY, &pages(), 3 * PAGE, Some(6), quiet),
++            Verdict::Refused(Refusal::MemoMoved)
++        );
++        state.note_host_wrote_pages(WriteRail::listed("test"), vec![12 * PAGE]);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::HostWrote(HostWriteVerdict::Overlap))
++        );
++    }
++
++    /// Scoped vouches share the audit stride, and a failed audit drops them.
++    #[test]
++    fn a_scope_is_audited_and_a_failed_audit_drops_it() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        open_scope(&mut state);
++        scoped(&mut state, &mut host);
++        for _ in 1..AUDIT_STRIDE {
++            assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++        }
++        assert_eq!(ask_now(&mut state, &host), Verdict::AuditDue);
++        note_audit(&mut state, KEY, false);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::Unarmed)
++        );
++    }
++
+     /// A store that lands between the baseline and the read it describes makes
+     /// the *next* bind refuse: the baseline is the generation before the read.
+     #[test]
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+@@ -1020,6 +1020,9 @@
+     for stream in streams {
+         let mut acc = StreamAccum::default();
+         let walk_started = std::time::Instant::now();
++        // One command buffer is one scope of the linear memo witness: a read
++        // that confirms a sampled texture may serve the buffer's later draws.
++        crate::runtime::linear_memo_witness::open_scope(state);
+         let finish_ns = walk_stream(
+             state,
+             host,
+@@ -1029,6 +1032,7 @@
+             &mut acc,
+             resolved.as_mut(),
+         );
++        crate::runtime::linear_memo_witness::close_scope(state);
+         let walk_ns = (walk_started.elapsed().as_nanos() as u64).saturating_sub(finish_ns);
+         *measured_ns += walk_ns;
+         crate::runtime::drain::note_exec_phase(crate::runtime::drain::ExecPhase::Walk, walk_ns);
+@@ -1968,6 +1972,9 @@
+             return;
+         }
+     };
++    // An event can order a guest CPU write between the records around it, so
++    // no memo read before it vouches for a bind after it.
++    crate::runtime::linear_memo_witness::break_scope(state);
+     // Refusals are emitted by `execute_event` itself, against the ref that
+     // failed; there is nothing left for this caller to report.
+     fence_exec::execute_event(state, task_id, &record);

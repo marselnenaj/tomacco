@@ -1,0 +1,249 @@
+diff --git a/src/native/emitter/body/calls.rs b/src/native/emitter/body/calls.rs
+--- a/src/native/emitter/body/calls.rs
++++ b/src/native/emitter/body/calls.rs
+@@ -663,22 +663,23 @@
+         Ok(Some(result))
+     }
+ 
+-    /// When a raw, descriptor-backed DEVICE buffer pointer is passed to a callee param that is itself a
+-    /// raw device buffer (and will be helper-inlined), pass the buffer's ROOT id rather than the value the
+-    /// arg normally resolves to. A `void*` device buffer reaches a helper through an IDENTITY
+-    /// `bitcast ptr addrspace(1) %buf to ptr addrspace(1)`; the bitcast result carries a Private byte
+-    /// placeholder VALUE for any DIRECT in-function access, but if that placeholder is passed as the call
+-    /// argument, the emitted-graph inliner roots the callee's accesses (loads/stores AND atomics) on
+-    /// the Private var — demoting the buffer to reads-zero / writes-discarded and dropping its
+-    /// StorageBuffer binding. Passing the descriptor-backed root instead keeps the real device buffer
+-    /// live.
++    /// When a raw, descriptor-backed DEVICE or CONSTANT buffer pointer is passed to a callee param that
++    /// is itself a raw buffer of the same address space (and will be helper-inlined), pass the buffer's
++    /// ROOT id rather than the value the arg normally resolves to. A `void*` device buffer reaches a
++    /// helper through an IDENTITY `bitcast ptr addrspace(1) %buf to ptr addrspace(1)`, and a constant
++    /// buffer's later array element through a GEP such as `getelementptr %T, ptr addrspace(2) %buf,
++    /// i64 1, ...`; either result carries a Private placeholder VALUE for any DIRECT in-function
++    /// access, but if that placeholder is passed as the call argument, the emitted-graph inliner roots
++    /// the callee's accesses (loads/stores AND atomics) on the Private var — demoting the buffer to
++    /// reads-zero / writes-discarded and dropping its StorageBuffer binding. Passing the
++    /// descriptor-backed root instead keeps the real buffer live.
+     ///
+     /// Gated structurally and tightly so it only fires for the genuine case: the arg must be a Local with
+-    /// a modelable descriptor-backed `raw_offsets` entry whose root is a real device-buffer param. A
+-    /// constant non-zero cursor is recorded for that callee parameter and reapplied while the helper is
+-    /// emitted; conflicting call-site cursors and dynamic offsets fail visibly rather than silently
+-    /// discarding an offset. This lives ONLY on the call-argument path; direct accesses and pointer merges
+-    /// keep their existing behavior.
++    /// a modelable descriptor-backed `raw_offsets` entry whose root is a real buffer param of the same
++    /// address space. A constant non-zero cursor is recorded for that callee parameter and reapplied
++    /// while the helper is emitted; conflicting call-site cursors and dynamic offsets fail visibly
++    /// rather than silently discarding an offset. This lives ONLY on the call-argument path; direct
++    /// accesses and pointer merges keep their existing behavior.
+     pub(in crate::native::emitter) fn raw_device_call_arg_id(
+         &mut self,
+         callee: &str,
+@@ -697,8 +698,8 @@
+         let LlType::Ptr(param_addrspace) = self.resolve_type(param_ty)? else {
+             return Ok(None);
+         };
+-        if param_addrspace != 1 {
+-            return Ok(None); // device buffers only; the workgroup case is handled separately
++        if !matches!(param_addrspace, 1 | 2) {
++            return Ok(None); // device and constant buffers; the workgroup case is handled separately
+         }
+         let LlValue::Local(arg_name) = &arg.value else {
+             return Ok(None);
+@@ -706,7 +707,11 @@
+         let Some(raw) = self.raw_offsets.get(arg_name).cloned() else {
+             return Ok(None);
+         };
+-        if self.bda_device_pointers && raw.addrspace == 1 && !raw.unmodelable {
++        if self.bda_device_pointers
++            && param_addrspace == 1
++            && raw.addrspace == 1
++            && !raw.unmodelable
++        {
+             let mut address_raw = raw.clone();
+             if address_raw.device_addr_base.is_none() {
+                 let Some(base) = self.bda_direct_addresses.get(&raw.root).copied() else {
+@@ -718,7 +723,7 @@
+                 .materialize_device_address(&address_raw, instructions)
+                 .map(Some);
+         }
+-        if raw.addrspace != 1
++        if raw.addrspace != param_addrspace
+             || !raw.dyn_terms.is_empty()
+             || raw.unmodelable
+             || raw.device_addr_base.is_some()
+diff --git a/src/native/emitter/body/core_inst.rs b/src/native/emitter/body/core_inst.rs
+--- a/src/native/emitter/body/core_inst.rs
++++ b/src/native/emitter/body/core_inst.rs
+@@ -771,7 +771,7 @@
+             }
+         }
+         // Preserve a descriptor-backed raw buffer's byte cursor across helper inlining.  A non-zero
+-        // GEP of a raw device buffer has a Private placeholder as its ordinary SSA value, while its
++        // GEP of a raw device or constant buffer has a Private placeholder as its ordinary SSA value, while its
+         // real descriptor root and byte offset live in `raw_offsets`.  Binding the helper parameter
+         // to that placeholder silently turns helper writes into Private writes.  Root the inline
+         // substitution at the descriptor instead and carry the cursor onto the parameter; the
+@@ -783,7 +783,8 @@
+                 .cloned()
+                 .filter(|raw| {
+                     !raw.unmodelable
+-                        && ((self.raw_buffer_params.contains(name) && raw.addrspace == 1)
++                        && ((self.raw_buffer_params.contains(name)
++                            && matches!(raw.addrspace, 1 | 2))
+                             || (self.bda_device_pointers && raw.device_addr_base.is_some()))
+                 })
+                 .or_else(|| {
+diff --git a/src/native/tests/buffers.rs b/src/native/tests/buffers.rs
+--- a/src/native/tests/buffers.rs
++++ b/src/native/tests/buffers.rs
+@@ -11741,3 +11741,149 @@
+     std::fs::remove_dir_all(&tmp).unwrap();
+     validation.expect("record accesses must satisfy Vulkan pointer and layout contracts");
+ }
++
++/// Translate a kernel that reads one field of a constant buffer's first `Effect` record itself and
++/// hands a pointer into the buffer's SECOND record (byte 56, word 14) to `helper`. The entry's two
++/// views make the buffer raw, so the GEP result's ordinary value is a Private placeholder.
++fn constant_buffer_helper_asm(tag: &str, helper: &str) -> String {
++    let ll = format!(
++        r#"
++target triple = "spirv-unknown-vulkan1.2"
++%Plane = type {{ [3 x [2 x float]], float }}
++%Effect = type {{ %Plane, [3 x [2 x float]], half, half }}
++
++define void @k(ptr addrspace(2) %globals, ptr addrspace(1) %out) {{
++entry:
++  %second = getelementptr inbounds %Effect, ptr addrspace(2) %globals, i64 1, i32 0, i32 0, i64 0, i64 0
++  %sum = call float @helper(ptr addrspace(2) %second)
++  %alpha_ptr = getelementptr inbounds %Effect, ptr addrspace(2) %globals, i64 0, i32 2
++  %alpha = load half, ptr addrspace(2) %alpha_ptr, align 4
++  %wide = fpext half %alpha to float
++  %total = fadd float %sum, %wide
++  store float %total, ptr addrspace(1) %out, align 4
++  ret void
++}}
++
++{helper}
++!air.kernel = !{{!0}}
++!0 = !{{ptr @k, !1, !2}}
++!1 = !{{}}
++!2 = !{{!3, !4}}
++!3 = !{{i32 0, !"air.buffer", !"air.location_index", i32 0, i32 1, !"air.read", !"air.address_space", i32 2, !"air.arg_type_size", i32 56, !"air.arg_type_align_size", i32 4, !"air.arg_type_name", !"Effect", !"air.arg_name", !"globals"}}
++!4 = !{{i32 1, !"air.buffer", !"air.location_index", i32 1, i32 1, !"air.write", !"air.address_space", i32 1, !"air.arg_type_name", !"float", !"air.arg_name", !"out"}}
++"#
++    );
++    let tmp = std::env::temp_dir().join(format!(
++        "metal2vulkan_constant_helper_{tag}_{}",
++        std::process::id()
++    ));
++    let _ = std::fs::create_dir_all(&tmp);
++    let spv = crate::translate_sanitized_native(&ll, Stage::Kernel, &tmp).expect("translate");
++    let asm = disassemble(&spv).expect("disassemble");
++    if std::process::Command::new("spirv-val")
++        .arg("--version")
++        .output()
++        .is_ok()
++    {
++        tools::spirv_val_bytes(&spv, &tmp).expect("spirv-val");
++    }
++    let _ = std::fs::remove_dir_all(&tmp);
++    // A read through the Private placeholder is a copy of a null constant.
++    let nulls = asm
++        .lines()
++        .filter(|line| line.contains("= OpConstantNull"))
++        .filter_map(|line| line.split_whitespace().next())
++        .collect::<HashSet<_>>();
++    assert!(
++        !asm.lines().any(|line| line.contains("OpCopyObject")
++            && line
++                .split_whitespace()
++                .last()
++                .is_some_and(|id| nulls.contains(id))),
++        "the helper must read the constant buffer, not a zero placeholder:\n{asm}"
++    );
++    asm
++}
++
++/// The 32-bit unsigned constants of a disassembled module, by result id.
++fn uint32_constant_ids(asm: &str) -> HashMap<String, u32> {
++    let uint_ty = uint32_type_id(asm);
++    asm.lines()
++        .filter_map(|line| {
++            let mut words = line.split_whitespace();
++            let id = words.next()?;
++            let ["=", "OpConstant", ty, value] = words.collect::<Vec<_>>()[..] else {
++                return None;
++            };
++            if ty != uint_ty {
++                return None;
++            }
++            Some((id.to_string(), value.parse().ok()?))
++        })
++        .collect()
++}
++
++#[test]
++fn native_constant_buffer_cursor_reaches_an_inlined_leaf_helper() {
++    let asm = constant_buffer_helper_asm(
++        "leaf",
++        r#"define internal float @helper(ptr addrspace(2) %p) {
++entry:
++  %a = load float, ptr addrspace(2) %p, align 4
++  %q = getelementptr inbounds float, ptr addrspace(2) %p, i64 3
++  %b = load float, ptr addrspace(2) %q, align 4
++  %s = fadd float %a, %b
++  ret float %s
++}
++"#,
++    );
++    let words = uint32_constant_ids(&asm);
++    let read = asm
++        .lines()
++        .filter(|line| line.contains("OpInBoundsAccessChain"))
++        .filter_map(|line| line.split_whitespace().last())
++        .filter_map(|id| words.get(id).copied())
++        .collect::<HashSet<_>>();
++    // Words 14 and 17 are the helper's two floats in the second record, word 13 the entry's half.
++    for word in [14, 17, 13] {
++        assert!(
++            read.contains(&word),
++            "missing a read of word {word}:\n{asm}"
++        );
++    }
++}
++
++#[test]
++fn native_constant_buffer_cursor_reaches_a_looping_helper() {
++    let asm = constant_buffer_helper_asm(
++        "loop",
++        r#"define internal float @helper(ptr addrspace(2) %p) {
++entry:
++  br label %loop
++
++loop:
++  %i = phi i64 [ 0, %entry ], [ %next, %loop ]
++  %acc = phi float [ 0.0, %entry ], [ %sum, %loop ]
++  %q = getelementptr inbounds float, ptr addrspace(2) %p, i64 %i
++  %v = load float, ptr addrspace(2) %q, align 4
++  %sum = fadd float %acc, %v
++  %next = add nuw nsw i64 %i, 1
++  %done = icmp eq i64 %next, 4
++  br i1 %done, label %exit, label %loop
++
++exit:
++  ret float %sum
++}
++"#,
++    );
++    // The loop's word index starts at the second record, not at the buffer's first word.
++    let word_14 = uint32_constant_ids(&asm)
++        .into_iter()
++        .find_map(|(id, value)| (value == 14).then_some(id))
++        .expect("word 14 constant");
++    assert!(
++        asm.lines().any(|line| line.contains("OpIAdd")
++            && line.split_whitespace().any(|operand| operand == word_14)),
++        "the helper's dynamic index must be rebased on word 14:\n{asm}"
++    );
++}

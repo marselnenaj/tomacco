@@ -1,0 +1,341 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/gva_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/gva_view.rs
+@@ -452,8 +452,9 @@
+ /// and then calls a writer which walks again has proved something about a page
+ /// table it is no longer using: between the two walks the guest can re-point
+ /// the range, and the second walk — the one whose answer the bytes actually go
+-/// to — was never checked. Passing the set down means there is only one walk
+-/// and its result is both the authorisation and the destination.
++/// to — was never checked. Passing the set down binds authorisation to the
++/// retained destination list. A later validation walk must match that entire
++/// ordered list before copying; it never replaces it with unlicensed pages.
+ ///
+ /// `gpas` are page bases ([`collect_span_gpas`] masks them), so no masking is
+ /// needed here.
+@@ -490,8 +491,9 @@
+ /// Write a packed `src` into the guest rectangle at `gva`, bounded to the pages
+ /// a deferred window was armed on.
+ ///
+-/// The rectangle is resolved **once** — one task lookup, one page-table walk,
+-/// one run split — and every row is placed into the runs that walk produced.
++/// The rectangle is prepared as one transfer: one destination walk and one
++/// revalidation walk after all host views are acquired. Every row is placed
++/// into that validated run set, with no per-row page-table walk.
+ /// The alternative this replaces is the caller doing its own `0..row_count`
+ /// loop over [`write_span_within`], which re-pays all of that per row for a
+ /// destination it has already described.
+@@ -520,8 +522,8 @@
+ 
+ /// Read the guest rectangle at `gva` into a packed `dst`.
+ ///
+-/// The read counterpart of [`write_rect_within`], and the same one-walk
+-/// argument. A read authorises nothing, so it carries no window.
++/// The read counterpart of [`write_rect_within`], with the same preparation
++/// and revalidation. A read authorises nothing, so it carries no window.
+ pub(crate) fn read_rect<H: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut H,
+@@ -686,72 +688,67 @@
+     false
+ }
+ 
+-/// Multi-import span copy: map each packed GPA run, move bytes, unmap. No
+-/// `write_gpa`/`read_gpa`.
+-///
+-/// Ephemeral per-run maps (do not register partial views — Darwin unmap needs
+-/// the full map_pages base; product Linux alias is a no-op unmap).
+-///
+-/// **This is the only implementation of the GVA rail's run walk.** The write and
+-/// read directions were two functions, ~57 % identical, and the read one had
+-/// already drifted: it returned a bare `false` at six sites where the write one
+-/// named six [`MemError`]s — including at `collect_span_gpas`, where it threw
+-/// away a refusal the walk had already computed. Every one of those loses the
+-/// caller's bytes, so every one is now named. The `buf_off`/`host_off`/`n`
+-/// arithmetic and the bound that guards it existed once per direction too, and
+-/// one of those directions writes guest memory.
+-///
+-/// Every refusal names its own check. Fragmentation is **not** one of them:
+-/// a gapped span is split into packed runs and mapped a run at a time, so a
+-/// caller reporting "not contiguous" for a failure of this function is reporting
+-/// a condition the function does not test.
+-///
+-/// Three steps are write-only and are keyed on the direction, not duplicated:
+-/// the [`WindowPages`] containment check, which only a deferred write carries an
+-/// authorisation set for; [`DeviceState::note_host_wrote_pages`], which
+-/// invalidates what the hypervisor's dirty bitmap cannot witness; and the
+-/// per-run footprint mark. `allowed` is ignored in the read direction because a
+-/// read authorises nothing.
+-fn span_multi<H: HostMemory + HostOps>(
+-    state: &mut DeviceState,
+-    host: &mut H,
+-    task_id: u32,
++/// One bounded copy piece and the complete host mapping that keeps it live.
++struct PreparedGvaRun {
++    map_base: usize,
++    map_len: usize,
++    bytes: crate::runtime::guest_ram::GuestRun,
++    buf_offset: usize,
++    gpa: u64,
++}
++
++/// All views stay local to the transfer. Every return path releases each view
++/// with its original base and length, including refusal of a later import.
++struct PreparedGvaRuns<'a, H: HostOps> {
++    host: &'a mut H,
++    runs: Vec<PreparedGvaRun>,
++}
++
++impl<H: HostOps> Drop for PreparedGvaRuns<'_, H> {
++    fn drop(&mut self) {
++        for run in self.runs.iter().rev() {
++            self.host.unmap_pages(run.map_base, run.map_len);
++        }
++    }
++}
++
++fn prepare_gva_runs<'a, H: HostOps>(
++    host: &'a mut H,
++    gpas: &[u64],
+     gva: u64,
+-    mut copy: RunCopy<'_>,
+-    allowed: WindowPages<'_>,
+-) -> Result<(), MemError> {
+-    let length = copy.len() as u64;
+-    let page_shift = state.page_shift;
+-    let page_size = state.page_size();
+-    let page_sz = page_size as usize;
+-    let gpas = {
+-        let Some((_tid, task)) = resolve_task_for_walk(&state.tasks, task_id) else {
+-            return Err(MemError::NoSuchTask);
+-        };
+-        collect_span_gpas(host, task, gva, length, page_shift)?
++    length: usize,
++    page_size: u64,
++) -> Result<PreparedGvaRuns<'a, H>, MemError> {
++    use crate::runtime::guest_ram::GuestRun;
++    if !page_size.is_power_of_two() {
++        return Err(MemError::UnsupportedPageShift);
++    }
++    let page_len = usize::try_from(page_size).map_err(|_| MemError::Overflow)?;
++    let span_page_base = gva & !(page_size - 1);
++    let end = gva.checked_add(length as u64).ok_or(MemError::Overflow)?;
++    let count = contig_run_count(gpas, page_size);
++    if count == 0 {
++        return Err(MemError::BadArgs);
++    }
++    let allocation_bytes = count
++        .checked_mul(std::mem::size_of::<PreparedGvaRun>())
++        .filter(|&n| n <= isize::MAX as usize)
++        .ok_or(MemError::Overflow)?;
++    let mut prepared = PreparedGvaRuns {
++        host,
++        runs: Vec::new(),
+     };
+-    if copy.is_write() {
+-        // Puts bytes into guest pages the hypervisor's dirty bitmap cannot
+-        // witness. Recorded here, after the walk that names them and before any
+-        // of them is written, so a refusal below costs a spurious invalidation
+-        // rather than a missing one.
+-        state.host_writes.note_page_iter(gpas.iter().copied());
+-        if !span_within_window(&gpas, allowed) {
+-            return Err(MemError::WriteOutsideWindow);
+-        }
+-    }
+-    if gpas.iter().any(|&g| !host.is_ram_gpa(g)) {
+-        return Err(MemError::NotRam);
+-    }
+-    crate::runtime::mapper::flush_retired_views(state, host);
+-    let span_page_base = gva & !(page_size - 1);
+-    let end = gva.checked_add(length).ok_or(MemError::Overflow)?;
+-    let mut copied_runs = 0u64;
+-    for run in contig_page_runs_iter(&gpas, page_size) {
++    prepared
++        .runs
++        .try_reserve_exact(count)
++        .map_err(|_| MemError::HostAllocation {
++            bytes: allocation_bytes,
++        })?;
++    for run in contig_page_runs_iter(gpas, page_size) {
+         let run_gpas = &gpas[run.clone()];
+         let total = run_gpas
+             .len()
+-            .checked_mul(page_sz)
++            .checked_mul(page_len)
+             .filter(|&n| n <= isize::MAX as usize)
+             .ok_or(MemError::Overflow)?;
+         let offset = (run.start as u64)
+@@ -763,42 +760,117 @@
+         let run_end = run_gva
+             .checked_add(total as u64)
+             .ok_or(MemError::Overflow)?;
+-        let copy_lo = gva.max(run_gva);
+-        let copy_hi = end.min(run_end);
+-        if copy_lo >= copy_hi {
++        let lo = gva.max(run_gva);
++        let hi = end.min(run_end);
++        if lo >= hi {
+             continue;
+         }
+-        let Some(ptr) = host.map_pages(run_gpas, page_sz) else {
+-            return Err(MemError::MapPagesRefused);
+-        };
+-        let buf_off = (copy_lo - gva) as usize;
+-        let host_off = (copy_lo - run_gva) as usize;
+-        let n = (copy_hi - copy_lo) as usize;
+-        if n > total.saturating_sub(host_off) || n > copy.len().saturating_sub(buf_off) {
+-            host.unmap_pages(ptr, total);
++        let buf_offset = usize::try_from(lo - gva).map_err(|_| MemError::Overflow)?;
++        let host_offset = usize::try_from(lo - run_gva).map_err(|_| MemError::Overflow)?;
++        let n = usize::try_from(hi - lo).map_err(|_| MemError::Overflow)?;
++        if host_offset.checked_add(n).is_none_or(|end| end > total)
++            || buf_offset.checked_add(n).is_none_or(|end| end > length)
++        {
+             return Err(MemError::RunOutOfRange);
+         }
+-        // SAFETY: map_pages packed `total` bytes, and the bound above puts
+-        // `host_off + n` inside it and `buf_off + n` inside the caller's buffer.
+-        unsafe { copy.apply(ptr, host_off, buf_off, n) };
+-        if copy.is_write() {
+-            // A run is packed by construction, so the `n` bytes at `host_off`
+-            // are the `n` bytes at `run_gpas[0] + host_off` in guest-physical
+-            // space — the exact destination, not the run's hull.
+-            crate::observe::footprint::note_written_range(
+-                run_gpas[0].saturating_add(host_off as u64),
+-                n as u64,
+-            );
++        let gpa = run_gpas[0]
++            .checked_add(host_offset as u64)
++            .ok_or(MemError::Overflow)?;
++        gpa.checked_add(n as u64).ok_or(MemError::Overflow)?;
++        let base = prepared
++            .host
++            .map_pages(run_gpas, page_len)
++            .ok_or(MemError::MapPagesRefused)?;
++        let Some(bytes) = GuestRun::in_mapping(base, total as u64, host_offset as u64, n as u64)
++        else {
++            prepared.host.unmap_pages(base, total);
++            return Err(MemError::RunOutOfRange);
++        };
++        prepared.runs.push(PreparedGvaRun {
++            map_base: base,
++            map_len: total,
++            bytes,
++            buf_offset,
++            gpa,
++        });
++    }
++    Ok(prepared)
++}
++
++/// Prepare every packed physical run before moving any span bytes. Mapping,
++/// allocation, geometry and post-import page-table refusals leave both the
++/// guest destination and the caller's read buffer untouched by this transfer.
++///
++/// This does not freeze guest CPUs or make a snapshot of concurrent CPU stores.
++/// The second walk detects page rewiring during host-view acquisition, and the
++/// prepared views remain alive through copying and are all released on return.
++/// Deferred writes are licensed against the exact page list being copied.
++fn span_multi<H: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut H,
++    task_id: u32,
++    gva: u64,
++    mut copy: RunCopy<'_>,
++    allowed: WindowPages<'_>,
++) -> Result<(), MemError> {
++    let length = copy.len();
++    let page_shift = state.page_shift;
++    let page_size = state.page_size();
++    let gpas = {
++        let Some((_tid, task)) = resolve_task_for_walk(&state.tasks, task_id) else {
++            return Err(MemError::NoSuchTask);
++        };
++        collect_span_gpas(host, task, gva, length as u64, page_shift)?
++    };
++    let writing = copy.is_write();
++    if writing && !span_within_window(&gpas, allowed) {
++        return Err(MemError::WriteOutsideWindow);
++    }
++    if gpas.iter().any(|&g| !host.is_ram_gpa(g)) {
++        return Err(MemError::NotRam);
++    }
++    crate::runtime::mapper::flush_retired_views(state, host);
++    let prepared = prepare_gva_runs(host, &gpas, gva, length, page_size)?;
++    // Host view acquisition can yield while the guest rewires its page table.
++    // Never copy into retained aliases if the span now names another allocation.
++    let Some((_tid, task)) = resolve_task_for_walk(&state.tasks, task_id) else {
++        return Err(MemError::NoSuchTask);
++    };
++    let current = collect_span_gpas(prepared.host, task, gva, length as u64, page_shift)?;
++    if current != gpas {
++        return Err(MemError::GvaPagesChanged);
++    }
++    if writing {
++        // Every refused preparation is now copy-free. Record exact page epochs
++        // immediately before the first write, without cloning the page list.
++        state.host_writes.note_page_iter(gpas.iter().copied());
++    }
++    let copied_runs = prepared.runs.len() as u64;
++    for run in &prepared.runs {
++        // SAFETY: GuestRun bounds the live alias; preparation bounds its entire
++        // window within copy.len(). Rectangular copy.apply skips row padding.
++        unsafe {
++            copy.apply(
++                run.bytes.host_ptr(),
++                0,
++                run.buf_offset,
++                run.bytes.len() as usize,
++            )
++        };
++        if writing {
++            crate::observe::footprint::note_written_range(run.gpa, run.bytes.len());
+         }
+-        host.unmap_pages(ptr, total);
+-        copied_runs += 1;
+-    }
+-    crate::runtime::drain::note_store_route(if copy.is_write() {
++    }
++    drop(prepared);
++    // Caller publication and these completed-transfer counters occur only
++    // after all temporary views have been released.
++    crate::runtime::drain::note_store_route(if writing {
+         "gva_streamed_run_write_n"
+     } else {
+         "gva_streamed_run_read_n"
+     });
+     crate::runtime::drain::note_store_route_n("gva_streamed_run_copies_n", copied_runs);
++    crate::runtime::drain::note_store_route("gva_prepared_transfer_n");
+     Ok(())
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/host.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/host.rs
+@@ -76,6 +76,12 @@
+     /// A packed run's copy window fell outside the bytes `map_pages` returned or
+     /// outside the caller's buffer. Run arithmetic, not a guest condition.
+     RunOutOfRange,
++    /// A temporary transfer's bookkeeping could not be allocated on the host.
++    HostAllocation {
++        bytes: usize,
++    },
++    /// The GVA span no longer resolves to the pages whose host views were prepared.
++    GvaPagesChanged,
+     /// The walk resolved a page the caller was not authorised to write.
+     ///
+     /// Only a *deferred* write carries an authorisation set: it was armed
+@@ -146,12 +152,15 @@
+             Self::NotRam => "mem_not_ram",
+             Self::MapPagesRefused => "mem_map_pages_refused",
+             Self::RunOutOfRange => "mem_run_out_of_range",
++            Self::HostAllocation { .. } => "mem_host_allocation",
++            Self::GvaPagesChanged => "mem_gva_pages_changed",
+             Self::WriteOutsideWindow => "mem_write_outside_window",
+         }
+     }
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::HostAllocation { bytes } => vec![("bytes", bytes.to_string())],
+             Self::QemuReadGpaCallbackFailed(rc)
+             | Self::QemuWriteGpaCallbackFailed(rc)
+             | Self::QemuReadKvaCallbackFailed(rc)

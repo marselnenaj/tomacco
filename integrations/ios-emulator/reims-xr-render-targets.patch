@@ -1,0 +1,316 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -2001,6 +2001,12 @@
+ /// only lossy rail in the set. The byte copy is what normally runs and it is
+ /// exact.
+ ///
++/// XR render targets are the exception to the same-width resident rule: the
++/// shader renders into a linear `RGBA16_FLOAT` resident so filtering and
++/// blending stay in linear light, then the Store encoder writes Apple's
++/// packed XR10 representation to guest memory. The guest allocation remains
++/// four or eight bytes per pixel; the Vulkan resident is eight bytes.
++///
+ /// `RG8_UNORM` is deliberately *not* here. No guest has been observed declaring
+ /// a two-channel eight-bit render target, and admitting a format costs three
+ /// conversions plus a census line, so members are added on measurement rather
+@@ -2130,7 +2136,11 @@
+         | MTL_FORMAT_R16_FLOAT
+         | MTL_FORMAT_R32_FLOAT
+         | MTL_FORMAT_R8_UNORM
+-        | MTL_FORMAT_BGR10A2_UNORM => ColorNumericType::Float,
++        | MTL_FORMAT_BGR10A2_UNORM
++        | MTL_FORMAT_BGR10_XR
++        | MTL_FORMAT_BGR10_XR_SRGB
++        | MTL_FORMAT_BGRA10_XR
++        | MTL_FORMAT_BGRA10_XR_SRGB => ColorNumericType::Float,
+         MTL_FORMAT_RG16_UINT => ColorNumericType::Uint,
+         _ => return None,
+     })
+@@ -3131,9 +3141,69 @@
+             // normally runs.
+             dst[..4].copy_from_slice(&rgba8_to_bgr10a2_word(rgba).to_le_bytes());
+         }
++        MTL_FORMAT_BGR10_XR | MTL_FORMAT_BGR10_XR_SRGB => {
++            encode_xr_texel(format, rgba, dst);
++        }
++        MTL_FORMAT_BGRA10_XR | MTL_FORMAT_BGRA10_XR_SRGB => {
++            encode_xr_texel(format, rgba, dst);
++        }
+         _ => return false,
+     }
+     true
++}
++
++/// Encode semantic, linear RGBA8 as one of Apple's XR10 guest texels.
++///
++/// A render target's Vulkan resident is linear RGBA16F. The CPU fallback
++/// narrows that resident to RGBA8 before reaching this exact-format encoder;
++/// sRGB XR encodes RGB but alpha stays linear in both XR variants.
++fn encode_xr_texel(format: u16, rgba: [u8; 4], dst: &mut [u8]) {
++    let xr = XrFormat::from_mtl(format).expect("caller matched an XR format");
++    let srgb = xr.is_srgb();
++    let code = |value| {
++        if srgb {
++            unorm8_to_extended_srgb_xr(value)
++        } else {
++            u16::from(value) * 2 + 384
++        }
++    };
++    let r = code(rgba[COMPONENT_R]);
++    let g = code(rgba[COMPONENT_G]);
++    let b = code(rgba[COMPONENT_B]);
++    let a = u16::from(rgba[COMPONENT_A]) * 2 + 384;
++    match xr {
++        XrFormat::Bgr10 | XrFormat::Bgr10Srgb => {
++            let word = u32::from(b) | (u32::from(g) << 10) | (u32::from(r) << 20);
++            dst[..4].copy_from_slice(&word.to_le_bytes());
++        }
++        XrFormat::Bgra10 | XrFormat::Bgra10Srgb => {
++            for (lane, value) in [(0, b), (2, g), (4, r), (6, a)] {
++                st16(&mut dst[lane..lane + 2], value << 6);
++            }
++        }
++    }
++}
++
++const EXTENDED_SRGB_XR_ENCODE: [u16; 256] = [
++    384, 409, 427, 440, 451, 461, 469, 476, 483, 490, 496, 501, 507, 512, 517, 521, 526, 530, 534,
++    538, 542, 546, 550, 553, 557, 560, 564, 567, 570, 573, 577, 580, 583, 585, 588, 591, 594, 597,
++    599, 602, 605, 607, 610, 612, 615, 617, 620, 622, 624, 627, 629, 631, 633, 636, 638, 640, 642,
++    644, 646, 648, 650, 652, 654, 656, 658, 660, 662, 664, 666, 668, 670, 672, 674, 675, 677, 679,
++    681, 683, 684, 686, 688, 690, 691, 693, 695, 696, 698, 700, 701, 703, 705, 706, 708, 709, 711,
++    713, 714, 716, 717, 719, 720, 722, 723, 725, 726, 728, 729, 731, 732, 734, 735, 736, 738, 739,
++    741, 742, 743, 745, 746, 748, 749, 750, 752, 753, 754, 756, 757, 758, 760, 761, 762, 764, 765,
++    766, 767, 769, 770, 771, 773, 774, 775, 776, 778, 779, 780, 781, 782, 784, 785, 786, 787, 788,
++    790, 791, 792, 793, 794, 796, 797, 798, 799, 800, 801, 802, 804, 805, 806, 807, 808, 809, 810,
++    811, 813, 814, 815, 816, 817, 818, 819, 820, 821, 822, 823, 825, 826, 827, 828, 829, 830, 831,
++    832, 833, 834, 835, 836, 837, 838, 839, 840, 841, 842, 843, 844, 845, 846, 847, 848, 849, 850,
++    851, 852, 853, 854, 855, 856, 857, 858, 859, 860, 861, 862, 863, 864, 865, 866, 867, 868, 869,
++    869, 870, 871, 872, 873, 874, 875, 876, 877, 878, 879, 880, 881, 881, 882, 883, 884, 885, 886,
++    887, 888, 889, 890, 890, 891, 892, 893, 894,
++];
++
++#[inline]
++fn unorm8_to_extended_srgb_xr(value: u8) -> u16 {
++    EXTENDED_SRGB_XR_ENCODE[value as usize]
+ }
+ 
+ /// Whether [`texel_to_rgba8`] answers for this format by **narrowing** it
+@@ -3487,6 +3557,14 @@
+     Rgba16Float,
+     /// Ten bits per colour channel and two of alpha in one packed word.
+     Bgr10A2,
++    /// Three XR10 colour components with linear transfer encoding.
++    Bgr10Xr,
++    /// Three XR10 colour components with extended sRGB transfer encoding.
++    Bgr10XrSrgb,
++    /// Four XR10 components in padded 16-bit lanes with linear transfer.
++    Bgra10Xr,
++    /// Four XR10 components in padded 16-bit lanes with extended sRGB transfer.
++    Bgra10XrSrgb,
+ }
+ 
+ impl Rgba8ToRow {
+@@ -3501,6 +3579,10 @@
+             MTL_FORMAT_RG16_FLOAT => Self::Rg16Float,
+             MTL_FORMAT_RGBA16_FLOAT => Self::Rgba16Float,
+             MTL_FORMAT_BGR10A2_UNORM => Self::Bgr10A2,
++            MTL_FORMAT_BGR10_XR => Self::Bgr10Xr,
++            MTL_FORMAT_BGR10_XR_SRGB => Self::Bgr10XrSrgb,
++            MTL_FORMAT_BGRA10_XR => Self::Bgra10Xr,
++            MTL_FORMAT_BGRA10_XR_SRGB => Self::Bgra10XrSrgb,
+             _ => return None,
+         })
+     }
+@@ -3510,8 +3592,12 @@
+         match self {
+             Self::R8 => 1,
+             Self::R16Float => RG8_BPP,
+-            Self::Rgba8 | Self::Bgra8 | Self::Rg16Float | Self::Bgr10A2 => RGBA8_BPP,
++            Self::Rgba8 | Self::Bgra8 | Self::Rg16Float | Self::Bgr10A2 | Self::Bgr10Xr => {
++                RGBA8_BPP
++            }
+             Self::Rgba16Float => RGBA16F_BPP,
++            Self::Bgra10Xr | Self::Bgra10XrSrgb => RGBA16F_BPP,
++            Self::Bgr10XrSrgb => RGBA8_BPP,
+         }
+     }
+ 
+@@ -3579,6 +3665,23 @@
+                     let mut texel = [0u8; 4];
+                     texel.copy_from_slice(s);
+                     d.copy_from_slice(&rgba8_to_bgr10a2_word(texel).to_le_bytes());
++                }
++            }
++            Self::Bgr10Xr | Self::Bgr10XrSrgb | Self::Bgra10Xr | Self::Bgra10XrSrgb => {
++                let format = match self {
++                    Self::Bgr10Xr => MTL_FORMAT_BGR10_XR,
++                    Self::Bgr10XrSrgb => MTL_FORMAT_BGR10_XR_SRGB,
++                    Self::Bgra10Xr => MTL_FORMAT_BGRA10_XR,
++                    Self::Bgra10XrSrgb => MTL_FORMAT_BGRA10_XR_SRGB,
++                    _ => unreachable!(),
++                };
++                for (s, d) in src
++                    .chunks_exact(4)
++                    .zip(dst.chunks_exact_mut(self.destination_bytes_per_pixel() as usize))
++                {
++                    let mut rgba = [0u8; 4];
++                    rgba.copy_from_slice(s);
++                    encode_xr_texel(format, rgba, d);
+                 }
+             }
+         }
+@@ -3975,7 +4078,7 @@
+         }
+         // A guard on the walk itself: an admission set that silently emptied
+         // would satisfy every assertion above.
+-        assert_eq!(admitted, 11, "the admitted colour render target formats");
++        assert_eq!(admitted, 15, "the admitted colour render target formats");
+     }
+ 
+     /// An integer texel has no semantic eight-bit solid colour.
+@@ -4025,7 +4128,7 @@
+                 .unwrap_or_else(|| panic!("render target {format:#x} cannot publish its clear"));
+             assert_eq!(image.pixels().len(), image.row_bytes() as usize * 2);
+         }
+-        assert_eq!(admitted, 11, "the admitted colour render target formats");
++        assert_eq!(admitted, 15, "the admitted colour render target formats");
+ 
+         let integer = solid_clear_image(MTL_FORMAT_RG16_UINT, 2, 2, &clear)
+             .expect("RG16Uint is an admitted render target");
+@@ -4181,9 +4284,11 @@
+             // admitted for macOS 26's blur intermediate.
+             let single_channel_float =
+                 (format == MTL_FORMAT_R16_FLOAT).then_some(TexelLayout::R16Float);
++            let xr_resident = XrFormat::from_mtl(format).map(|_| TexelLayout::Rgba16Float);
+             let layout = store_texel_order(format)
+                 .or(from_class)
+                 .or(single_channel_float)
++                .or(xr_resident)
+                 .unwrap_or_else(|| panic!("{format:#x} is renderable with no layout"));
+             if !from_formats.contains(&layout) {
+                 from_formats.push(layout);
+@@ -6203,10 +6308,49 @@
+                 is_srgb(format),
+                 matches!(format, MTL_FORMAT_BGR10_XR_SRGB | MTL_FORMAT_BGRA10_XR_SRGB)
+             );
+-            // Capture support must not accidentally admit an unconverted GPU texture.
++            // CPU capture alone does not admit sampled/storage access. XR
++            // render targets have their own RGBA16F resident and Store encoder.
+             assert!(sampled_class(format).is_none());
+             assert!(storage_selector(format).is_none());
+-            assert!(render_target_bpp(format).is_none());
++            assert_eq!(render_target_bpp(format), bytes_per_pixel(format));
++            assert_eq!(
++                render_target_numeric_type(format),
++                Some(ColorNumericType::Float)
++            );
++        }
++    }
++
++    #[test]
++    fn xr_render_target_rows_encode_linear_rgba_and_the_srgb_variant() {
++        for format in FORMATS {
++            let xr = XrFormat::from_mtl(format).unwrap();
++            let rgba = [0, 64, 128, 255];
++            let mut encoded = vec![0; bytes_per_pixel(format).unwrap() as usize];
++            assert!(rgba8_to_texel(format, rgba, &mut encoded));
++            let codes = xr.component_codes(&encoded).unwrap();
++            let rgb_code = |value: u8| {
++                let linear = f64::from(value) / 255.0;
++                let transfer = if xr.is_srgb() {
++                    if linear <= 0.003_130_8 {
++                        linear * 12.92
++                    } else {
++                        1.055 * linear.powf(1.0 / 2.4) - 0.055
++                    }
++                } else {
++                    linear
++                };
++                (transfer * 510.0 + 384.0).round() as u16
++            };
++            assert_eq!(
++                codes,
++                [rgb_code(rgba[0]), rgb_code(rgba[1]), rgb_code(rgba[2]), 894],
++                "RGB receives the selected XR transfer; alpha is linear and opaque"
++            );
++            assert_eq!(render_target_bpp(format), bytes_per_pixel(format));
++            assert_eq!(
++                render_target_numeric_type(format),
++                Some(ColorNumericType::Float)
++            );
+         }
+     }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -725,10 +725,17 @@
+ /// renderable format a single edit there rather than a pair of edits that a
+ /// commit can half-land.
+ pub fn color_attachment(mtl: u16) -> Result<(vk::Format, ColorNumericType), Refusal> {
+-    let f = translate(mtl)?;
++    // XR10 has no bit-compatible Vulkan format. Keep its live resident in
++    // linear half-float so blending and sampling match Metal's linear shader
++    // values; the Store rail encodes the guest's XR10 bytes afterwards.
++    let format = if pixel_format::XrFormat::from_mtl(mtl).is_some() {
++        vk::Format::R16G16B16A16_SFLOAT
++    } else {
++        translate(mtl)?.vk
++    };
+     let numeric = pixel_format::render_target_numeric_type(mtl)
+         .ok_or(Refusal::NoColorAttachmentFormat(mtl))?;
+-    Ok((f.vk, numeric))
++    Ok((format, numeric))
+ }
+ 
+ /// The guest's scanout byte order, in Vulkan terms.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+@@ -364,10 +364,40 @@
+                 "renderable {mtl:#x} allocates as {allocation:?}, which no \
+                  TexelLayout names — its resident identity cannot describe it"
+             );
+-            assert_eq!(
+-                bytes_per_texel(allocation),
+-                Some(p::render_target_bpp(mtl).expect("color_attachment admitted it")),
+-                "{mtl:#x}: the allocation and the contract disagree on width"
++            let resident_bpp = bytes_per_texel(allocation);
++            if p::XrFormat::from_mtl(mtl).is_some() {
++                assert_eq!(allocation, vk::Format::R16G16B16A16_SFLOAT);
++                assert_eq!(resident_bpp, Some(8));
++            } else {
++                assert_eq!(
++                    resident_bpp,
++                    Some(p::render_target_bpp(mtl).expect("color_attachment admitted it")),
++                    "{mtl:#x}: the allocation and the contract disagree on width"
++                );
++            }
++        }
++    }
++
++    #[test]
++    fn xr_render_targets_use_a_linear_float_resident_and_keep_guest_width() {
++        for format in [
++            p::MTL_FORMAT_BGR10_XR,
++            p::MTL_FORMAT_BGR10_XR_SRGB,
++            p::MTL_FORMAT_BGRA10_XR,
++            p::MTL_FORMAT_BGRA10_XR_SRGB,
++        ] {
++            let (attachment, loss) = color_attachment(format).expect("XR is renderable");
++            assert_eq!(loss, None);
++            assert_eq!(attachment.vk, vk::Format::R16G16B16A16_SFLOAT);
++            assert_eq!(
++                p::render_target_bpp(format),
++                p::bytes_per_pixel(format),
++                "the guest allocation keeps its declared 4 or 8 byte texel"
++            );
++            assert_eq!(
++                bytes_per_texel(attachment.vk),
++                Some(8),
++                "the Vulkan resident holds linear RGBA16F for blending"
+             );
+         }
+     }

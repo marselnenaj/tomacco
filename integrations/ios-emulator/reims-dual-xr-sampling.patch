@@ -1,0 +1,377 @@
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+@@ -3,7 +3,7 @@
+ 
+ use std::sync::OnceLock;
+ 
+-use reims_vgpu_core::pixel_format::{f16_to_f32, TexelLayout, XrFormat};
++use reims_vgpu_core::pixel_format::{f16_to_f32, PlanarXrFormat, TexelLayout, XrFormat};
+ 
+ use super::{sampled_image, Refusal, StorageImageFormat};
+ 
+@@ -26,6 +26,7 @@
+ pub enum SampledUploadRefusal {
+     Format(Refusal),
+     IncompleteXrTexel,
++    PlanarPlaneSizeMismatch,
+     ExpandedSizeOverflow,
+     AllocationFailed,
+ }
+@@ -35,6 +36,7 @@
+         match self {
+             Self::Format(why) => why.slug(),
+             Self::IncompleteXrTexel => "sampled_xr_incomplete_texel",
++            Self::PlanarPlaneSizeMismatch => "sampled_dual_xr_plane_size_mismatch",
+             Self::ExpandedSizeOverflow => "sampled_xr_size_overflow",
+             Self::AllocationFailed => "sampled_xr_allocation_failed",
+         }
+@@ -58,6 +60,95 @@
+             };
+             linear.copysign(encoded)
+         })
++    })
++}
++
++/// The paging shader reads half values. Every nonzero value in the closed XR
++/// and alpha code tables is a normal binary16: the smallest magnitude is
++/// 1/(510*12.92), above 2^-14; the largest is below 2. Thus rounding the f32
++/// significand to ten fraction bits is exactly binary16 RNE here. This is not
++/// a general float-to-half conversion accepting arbitrary render output.
++fn paging_half_read(value: f32) -> f32 {
++    let bits = value.to_bits();
++    f32::from_bits((bits + 0xfff + ((bits >> 13) & 1)) & !0x1fff)
++}
++
++fn planar_colour_values(format: PlanarXrFormat) -> &'static [f32; 1024] {
++    static LINEAR: OnceLock<[f32; 1024]> = OnceLock::new();
++    static SRGB: OnceLock<[f32; 1024]> = OnceLock::new();
++    let srgb = format.is_srgb();
++    let values = if srgb { srgb_values() } else { linear_values() };
++    let table = if srgb { &SRGB } else { &LINEAR };
++    table.get_or_init(|| {
++        values.map(|value| {
++            // Paging writes the half read into the native XR texture, which
++            // re-encodes and quantizes RGB before a later shader samples it.
++            let value = paging_half_read(value);
++            let encoded = if srgb {
++                let magnitude = value.abs();
++                let encoded = if magnitude <= 0.0031308 {
++                    magnitude * 12.92
++                } else {
++                    1.055 * magnitude.powf(1.0 / 2.4) - 0.055
++                };
++                encoded.copysign(value)
++            } else {
++                value
++            };
++            let code = encoded
++                .mul_add(510.0, 384.0)
++                .round_ties_even()
++                .clamp(0.0, 1023.0) as usize;
++            values[code]
++        })
++    })
++}
++
++/// Merge tightly packed APV RGB/ARGB storage at the original paging boundary.
++/// Both planes must cover the same texels. The result carries linear colour
++/// and normalized alpha; sRGB has already been expanded before filtering.
++/// Host filtering support and guest-memory geometry belong to the caller.
++pub fn sampled_planar_xr_upload_bytes(
++    format: PlanarXrFormat,
++    rgb: &[u8],
++    alpha: &[u8],
++) -> Result<SampledUpload, SampledUploadRefusal> {
++    if rgb.len() != alpha.len() {
++        return Err(SampledUploadRefusal::PlanarPlaneSizeMismatch);
++    }
++    if !rgb.len().is_multiple_of(4) {
++        return Err(SampledUploadRefusal::IncompleteXrTexel);
++    }
++    let length = (rgb.len() / 4)
++        .checked_mul(16)
++        .ok_or(SampledUploadRefusal::ExpandedSizeOverflow)?;
++    let mut decoded = Vec::new();
++    decoded
++        .try_reserve_exact(length)
++        .map_err(|_| SampledUploadRefusal::AllocationFailed)?;
++    let colour = planar_colour_values(format);
++    static ALPHA: OnceLock<[f32; 256]> = OnceLock::new();
++    let alpha_values = ALPHA.get_or_init(|| {
++        std::array::from_fn(|code| {
++            // Metal normalized integer writes use intRTNE after saturation.
++            (paging_half_read(code as f32 / 255.0) * 255.0)
++                .round_ties_even()
++                .clamp(0.0, 255.0)
++                / 255.0
++        })
++    });
++    for (rgb, alpha) in rgb.chunks_exact(4).zip(alpha.chunks_exact(4)) {
++        let codes = format
++            .component_codes(rgb, alpha)
++            .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
++        for code in codes.rgb {
++            decoded.extend_from_slice(&colour[usize::from(code)].to_le_bytes());
++        }
++        decoded.extend_from_slice(&alpha_values[usize::from(codes.alpha)].to_le_bytes());
++    }
++    Ok(SampledUpload {
++        format: StorageImageFormat::Rgba32Float,
++        bytes: decoded,
+     })
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -32,8 +32,8 @@
+ 
+ mod xr_upload;
+ pub use xr_upload::{
+-    render_store_bytes, sampled_upload_bytes, RenderStoreRefusal, SampledUpload,
+-    SampledUploadRefusal,
++    render_store_bytes, sampled_planar_xr_upload_bytes, sampled_upload_bytes, RenderStoreRefusal,
++    SampledUpload, SampledUploadRefusal,
+ };
+ 
+ use reims_vgpu_core::pixel_format::{
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -1273,6 +1273,58 @@
+     let mut surface: Option<u32> = None;
+     let resolved_resource =
+         resource.or_else(|| objects::resolve_resource(state, host, task_id, texture_ref).ok());
++    if let Some(resource) = resolved_resource.as_ref().filter(|resource| {
++        resource.entry.object_type
++            == crate::runtime::decode::resource::OBJECT_TYPE_DUAL_PLANE_TEXTURE
++    }) {
++        // A dual descriptor cannot pass through the single-plane geometry
++        // decoder: its second dimension block occupies the first one's format
++        // trailer. Consume the resource's total typed decode exactly once.
++        let descriptor = match resource.decoded() {
++            Ok(crate::runtime::decode::resource::Descriptor::DualPlaneTexture(descriptor)) => {
++                descriptor
++            }
++            _ => {
++                crate::observe::Emit::decline(
++                    "dual_xr_sample",
++                    &LinearLoadRefusal::DescriptorUndecodable,
++                )
++                .field("task", task_id)
++                .field("ref", texture_ref)
++                .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                return None;
++            }
++        };
++        let sample = match load_planar_xr_sample(
++            state,
++            host,
++            task_id,
++            texture_ref,
++            descriptor,
++            native_uploads_asking_host(),
++        ) {
++            Ok(sample) => sample,
++            Err(why) => {
++                crate::observe::Emit::decline("dual_xr_sample", &why)
++                    .field("task", task_id)
++                    .field("ref", texture_ref)
++                    .field("fmt", format!("{:#x}", descriptor.pixel_format()))
++                    .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                return None;
++            }
++        };
++        return Some((
++            sample.width,
++            sample.height,
++            0,
++            SampledSourceRequest::Bytes(
++                std::sync::Arc::new(sample.bytes),
++                None,
++                sample.byte_format,
++                crate::backend::vulkan::engine::SampledByteOrigin::LinearTexture,
++            ),
++        ));
++    }
+     if let Some(resource) = resolved_resource.as_ref() {
+         let entry = resource.entry;
+         if entry.object_type == objects::OBJECT_TYPE_REF_TEXTURE {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -614,6 +614,10 @@
+     RowConvertUnsupported { format: u16 },
+     #[cfg(feature = "backend-vulkan")]
+     XrUpload { reason: &'static str },
++    #[cfg(feature = "backend-vulkan")]
++    PlanarXr { reason: &'static str },
++    #[cfg(feature = "backend-vulkan")]
++    PlanarRowUnreadable { plane: u8, row: u32 },
+     /// Two faces of one cube texture read back in different layouts.
+     ///
+     /// One descriptor names one pixel format, so the six faces cannot legally
+@@ -651,6 +655,10 @@
+             #[cfg(feature = "backend-vulkan")]
+             Self::XrUpload { reason } => reason,
+             #[cfg(feature = "backend-vulkan")]
++            Self::PlanarXr { reason } => reason,
++            #[cfg(feature = "backend-vulkan")]
++            Self::PlanarRowUnreadable { .. } => "dual_xr_sample_row_unreadable",
++            #[cfg(feature = "backend-vulkan")]
+             Self::CubeFaceLayoutMismatch { .. } => "linear_load_cube_face_layout_mismatch",
+         }
+     }
+@@ -674,6 +682,10 @@
+                 vec![("end", end.to_string()), ("alloc", allocation.to_string())]
+             }
+             Self::PaddedRowUnreadable { row } => vec![("row", row.to_string())],
++            #[cfg(feature = "backend-vulkan")]
++            Self::PlanarRowUnreadable { plane, row } => {
++                vec![("plane", plane.to_string()), ("row", row.to_string())]
++            }
+             #[cfg(feature = "backend-vulkan")]
+             Self::CubeFaceLayoutMismatch { face } => vec![("face", face.to_string())],
+             _ => Vec::new(),
+@@ -987,6 +999,128 @@
+         bytes,
+         SampledByteFormat::linearized_from_source(TexelLayout::Rgba32Float, format),
+     ))
++}
++
++#[cfg(feature = "backend-vulkan")]
++pub(crate) struct PlanarXrSample {
++    pub width: u32,
++    pub height: u32,
++    pub bytes: Vec<u8>,
++    pub byte_format: SampledByteFormat,
++}
++
++/// Read both pieces of one immutable XR construction descriptor. Each plane
++/// settles its own physical-page writeback debt before either read starts;
++/// each read touches only tight texel rows, including for padded allocations.
++/// The returned upload owns the merged bytes through ordinary sampled-image
++/// submission, so no borrowed guest pointer escapes the task walk.
++#[cfg(feature = "backend-vulkan")]
++pub(crate) fn load_planar_xr_sample<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    task_id: u32,
++    texture_ref: u32,
++    descriptor: &crate::runtime::decode::resource::DualPlaneTextureDescriptor,
++    native: NativeUploads,
++) -> Result<PlanarXrSample, LinearLoadRefusal> {
++    use LinearLoadRefusal as R;
++    let level = descriptor
++        .xr_level(0, state.page_shift)
++        .map_err(|why| R::PlanarXr { reason: why.slug() })?;
++    if level.planes.iter().any(|plane| plane.layout.planes() != 1) {
++        return Err(R::PlanarXr {
++            reason: "dual_xr_sample_non_2d",
++        });
++    }
++    if !native.float32 {
++        return Err(R::PlanarXr {
++            reason: "dual_xr_sample_float32_filter_unsupported",
++        });
++    }
++    let width = level.planes[0].layout.width;
++    let height = level.planes[0].layout.height;
++    let packed_len = u64::from(level.planes[0].tight_row)
++        .checked_mul(u64::from(height))
++        .and_then(host_alloc_len)
++        .ok_or(R::SizeOverflow)?;
++    // Reject an expanded upload that cannot be addressed before reading RAM.
++    u64::from(width)
++        .checked_mul(u64::from(height))
++        .and_then(|size| size.checked_mul(16))
++        .and_then(host_alloc_len)
++        .ok_or(R::SizeOverflow)?;
++    for plane in level.planes {
++        crate::runtime::writeback_debt::settle_for_texture(
++            state,
++            host,
++            task_id,
++            texture_ref,
++            plane.gva,
++            plane.touched_span,
++            crate::runtime::render_writeback::SettleSite::LinearTextureSampled,
++        );
++    }
++    let mut packed = [Vec::new(), Vec::new()];
++    for (index, (plane, bytes)) in level.planes.iter().zip(&mut packed).enumerate() {
++        bytes
++            .try_reserve_exact(packed_len)
++            .map_err(|_| R::PlanarXr {
++                reason: "dual_xr_sample_allocation_failed",
++            })?;
++        bytes.resize(packed_len, 0);
++        if plane.layout.row_stride == u64::from(plane.tight_row) {
++            gva_mem::read_task_gva_by_id(
++                host,
++                &state.tasks,
++                task_id,
++                plane.gva,
++                bytes,
++                state.page_shift,
++            )
++            .map_err(|_| R::PlanarRowUnreadable {
++                plane: index as u8,
++                row: 0,
++            })?;
++        } else {
++            let row_len = plane.tight_row as usize;
++            for row in 0..height {
++                let gva = plane
++                    .gva
++                    .checked_add(u64::from(row) * plane.layout.row_stride)
++                    .ok_or(R::SizeOverflow)?;
++                let offset = row as usize * row_len;
++                gva_mem::read_task_gva_by_id(
++                    host,
++                    &state.tasks,
++                    task_id,
++                    gva,
++                    &mut bytes[offset..offset + row_len],
++                    state.page_shift,
++                )
++                .map_err(|_| R::PlanarRowUnreadable {
++                    plane: index as u8,
++                    row,
++                })?;
++            }
++        }
++    }
++    let upload = reims_vgpu_vulkan::pixel::sampled_planar_xr_upload_bytes(
++        level.format,
++        &packed[0],
++        &packed[1],
++    )
++    .map_err(|why| R::PlanarXr { reason: why.slug() })?;
++    let (_, bytes) = upload.into_parts();
++    crate::runtime::drain::note_store_route("dual_xr_sample_n");
++    Ok(PlanarXrSample {
++        width,
++        height,
++        bytes,
++        byte_format: SampledByteFormat::linearized_from_source(
++            TexelLayout::Rgba32Float,
++            descriptor.pixel_format(),
++        ),
++    })
+ }
+ 
+ // Eight, because the last one is the caller's identity and the whole point of
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
+@@ -2639,7 +2639,12 @@
+     let key = (u64::from(out.pixel_format()) << 48)
+         | (u64::from(out.planes[0].width & 0xff_ffff) << 24)
+         | u64::from(out.planes[0].height & 0xff_ffff);
+-    if crate::observe::first_sight("dual_plane_texture_unexecutable", key) {
++    // Known APV XR pairs have a Vulkan sampled rail. Its layout/capability
++    // refusals are reported by that consumer; decoding an executable pair is
++    // not itself unsupported guest work. Other dual formats still have no bind.
++    if out.xr_format().is_none()
++        && crate::observe::first_sight("dual_plane_texture_unexecutable", key)
++    {
+         crate::observe::fail(format!(
+             "dual_plane_texture_unexecutable pf={:#x} plane0={}x{} plane1={}x{} levels={levels} \
+              (decoded; no rail binds a two-plane texture yet, so a bind of this object \

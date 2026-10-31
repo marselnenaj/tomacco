@@ -1,0 +1,635 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+@@ -6,6 +6,8 @@
+ use alloc::string::{String, ToString};
+ use alloc::vec;
+ use alloc::vec::Vec;
++
++pub mod components;
+ 
+ pub const U32_SIZE: usize = 4;
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+@@ -468,6 +468,10 @@
+         fmt: u16,
+         surface: Option<crate::protocol::iosurface_pages::DeviceSurfaceRecord>,
+         planes: [Option<crate::protocol::iosurface_pages::DevicePlaneRecord>; 2],
++        components: [Result<
++            crate::protocol::iosurface_pages::components::DevicePlaneComponents,
++            crate::protocol::iosurface_pages::components::PlaneComponentsRefusal,
++        >; 2],
+         paired_layout: Option<
+             Result<
+                 crate::protocol::iosurface_pages::PlanarXrSurfaceLayout,
+@@ -719,6 +723,7 @@
+                 fmt,
+                 surface,
+                 planes,
++                components,
+                 paired_layout,
+             } => {
+                 v.push(("mid", mapping_id.to_string()));
+@@ -769,6 +774,42 @@
+                         ));
+                     }
+                 }
++                v.push(("component_field_offsets", "2c,30,34,38,3c".to_owned()));
++                v.push((
++                    "component_byte_order",
++                    "bit_depth,bit_offset,name,type,range".to_owned(),
++                ));
++                for (index, metadata) in components.into_iter().enumerate() {
++                    let value = match metadata {
++                        Ok(metadata) => {
++                            let fields = metadata
++                                .components()
++                                .iter()
++                                .map(|component| {
++                                    component.fields.map(|value| value.to_string()).join(",")
++                                })
++                                .collect::<Vec<_>>()
++                                .join(";");
++                            format!("count={}:fields={fields}", metadata.components().len())
++                        }
++                        Err(why) => {
++                            let fields = crate::observe::Refusal::fields(&why)
++                                .into_iter()
++                                .map(|(key, value)| format!("{key}={value}"))
++                                .collect::<Vec<_>>()
++                                .join(",");
++                            format!("refused:{}:{fields}", why.slug())
++                        }
++                    };
++                    v.push((
++                        if index == 0 {
++                            "plane0_components"
++                        } else {
++                            "plane1_components"
++                        },
++                        value,
++                    ));
++                }
+             }
+             C::RefTextureDescDecode { len } => v.push(("desc_len", len.to_string())),
+             C::BackingMipView { surface_id, level } => {
+@@ -1142,6 +1183,7 @@
+         }
+         let fmt = effective_view_sample_format(base_fmt, view_fmt_override).unwrap_or(base_fmt);
+         if pixel_format::render_target_bpp(fmt).is_none() {
++            use crate::protocol::iosurface_pages::components::device_desc_plane_components;
+             use crate::protocol::iosurface_pages::{decode_device_surface, device_desc_plane};
+             return Err(C::MapperRefTextureFormat {
+                 mapping_id,
+@@ -1149,6 +1191,9 @@
+                 surface: decode_device_surface(&m.device_desc),
+                 planes: std::array::from_fn(|index| {
+                     device_desc_plane(&m.device_desc, index as u32).map(|(plane, _)| plane)
++                }),
++                components: std::array::from_fn(|index| {
++                    device_desc_plane_components(&m.device_desc, index as u32)
+                 }),
+                 paired_layout: pixel_format::PlanarXrFormat::from_mtl(fmt).map(|_| {
+                     crate::protocol::iosurface_pages::PlanarXrSurfaceLayout::decode(
+@@ -1795,6 +1840,96 @@
+         );
+     }
+ 
++    /// Synthetic column values establish the diagnostic's ownership and byte
++    /// preservation. They do not assign channel names or enum meanings.
++    #[test]
++    fn a_refused_mapper_target_preserves_its_native_plane_component_bytes() {
++        use crate::protocol::endian::st32;
++        use crate::protocol::iosurface_pages::{
++            DEVICE_DESC_LEN, DEVICE_DESC_PIXEL_FORMAT, DEVICE_DESC_PLANES, DEVICE_DESC_PLANE_COUNT,
++            DEVICE_PLANE_DESC_LEN,
++        };
++
++        let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_X86);
++        let host = FakeHost::new();
++        let tex_ref = 0x19ab_c000;
++        assert!(state.map_surface(78));
++        state.texture_to_mapping.insert((4, tex_ref), 78);
++        let m = state.mappings.get_mut(&78).unwrap();
++        m.has_geom = true;
++        m.width = 320;
++        m.height = 320;
++        m.format = 0x21e;
++        m.device_desc = vec![0; DEVICE_DESC_LEN];
++        st32(&mut m.device_desc[DEVICE_DESC_PIXEL_FORMAT..], 0x5f524234);
++        m.device_desc[DEVICE_DESC_PLANE_COUNT] = 2;
++        for (index, count) in [1, 2].into_iter().enumerate() {
++            let base = DEVICE_DESC_PLANES + index * DEVICE_PLANE_DESC_LEN;
++            m.device_desc[base + 0x27] = count;
++            for component in 0..usize::from(count) {
++                for (column, offset) in [0x2c, 0x30, 0x34, 0x38, 0x3c].into_iter().enumerate() {
++                    m.device_desc[base + offset + component] =
++                        (index * 100 + component * 10 + column) as u8;
++                }
++            }
++        }
++
++        let cap = crate::observe::FailCapture::start();
++        assert!(lookup_render_target(&mut state, &host, 4, attach(tex_ref)).is_none());
++        let line = cap.one("rt_resolve");
++        assert!(line.starts_with("rt_resolve reason=rt_mapper_ref_texture_format "));
++        assert!(
++            line.contains("component_field_offsets=2c,30,34,38,3c"),
++            "{line}"
++        );
++        assert!(
++            line.contains("plane0_components=count=1:fields=0,1,2,3,4"),
++            "{line}"
++        );
++        assert!(
++            line.contains(
++                "plane1_components=count=2:fields=100,101,102,103,104;110,111,112,113,114"
++            ),
++            "{line}"
++        );
++    }
++
++    #[test]
++    fn malformed_component_metadata_keeps_the_format_refusal_and_names_the_bad_count() {
++        use crate::protocol::iosurface_pages::components::DEVICE_PLANE_COMPONENT_COUNT;
++        use crate::protocol::iosurface_pages::{
++            DEVICE_DESC_LEN, DEVICE_DESC_PLANES, DEVICE_DESC_PLANE_COUNT,
++        };
++
++        let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_X86);
++        let host = FakeHost::new();
++        let tex_ref = 0x19ab_c001;
++        assert!(state.map_surface(79));
++        state.texture_to_mapping.insert((4, tex_ref), 79);
++        let m = state.mappings.get_mut(&79).unwrap();
++        m.has_geom = true;
++        m.width = 320;
++        m.height = 320;
++        m.format = 0x21e;
++        m.device_desc = vec![0; DEVICE_DESC_LEN];
++        m.device_desc[DEVICE_DESC_PLANE_COUNT] = 2;
++        m.device_desc[DEVICE_DESC_PLANES + DEVICE_PLANE_COMPONENT_COUNT] = 5;
++
++        let cap = crate::observe::FailCapture::start();
++        assert!(lookup_render_target(&mut state, &host, 4, attach(tex_ref)).is_none());
++        let line = cap.one("rt_resolve");
++        assert!(line.starts_with("rt_resolve reason=rt_mapper_ref_texture_format "));
++        assert!(
++            line.contains("plane0_components=refused:iosurface_components_component_count"),
++            "{line}"
++        );
++        assert!(
++            line.contains("iosurface_components_component_count:count=5"),
++            "{line}"
++        );
++        assert!(line.contains("plane1_components=count=0:fields="), "{line}");
++    }
++
+     /// A colour attachment naming `texture_ref` at level 0 — the shape every
+     /// case below is about, so that a case that means to vary the subresource
+     /// has to say so.
+@@ -1821,10 +1956,16 @@
+         for _ in 0..8 {
+             assert!(lookup_render_target(&mut state, &host, 4, attach(tex_ref)).is_none());
+         }
++        assert!(cap
++            .one("rt_view_resolve")
++            .starts_with("rt_view_resolve reason=texture_view_hop_no_list_entry "));
++        assert!(cap
++            .one("rt_resolve")
++            .starts_with("rt_resolve reason=rt_no_list_entry "));
+         assert_eq!(
+             cap.lines().len(),
+-            1,
+-            "eight draws against one unresolvable attachment must spend one line: {:?}",
++            2,
++            "eight draws must report each of the view and target checks once: {:?}",
+             cap.lines()
+         );
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -3650,7 +3650,12 @@
+                 }
+             }
+             Self::Bgra8 => {
+-                for (s, d) in src.chunks_exact(4).zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0.iter_mut())
++                {
+                     d[COMPONENT_R] = s[2];
+                     d[COMPONENT_G] = s[1];
+                     d[COMPONENT_B] = s[0];
+@@ -3658,14 +3663,14 @@
+                 }
+             }
+             Self::A8 => {
+-                for (s, d) in src.iter().zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src.iter().zip(dst.as_chunks_mut::<4>().0.iter_mut()) {
+                     let mut px = [0u8; 4];
+                     px[COMPONENT_A] = *s;
+                     d.copy_from_slice(&px);
+                 }
+             }
+             Self::R8 => {
+-                for (s, d) in src.iter().zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src.iter().zip(dst.as_chunks_mut::<4>().0.iter_mut()) {
+                     let mut px = [0u8; 4];
+                     px[COMPONENT_R] = *s;
+                     px[COMPONENT_A] = UNORM8_MAX;
+@@ -3673,7 +3678,12 @@
+                 }
+             }
+             Self::Rg8 => {
+-                for (s, d) in src.chunks_exact(2).zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src
++                    .as_chunks::<2>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0.iter_mut())
++                {
+                     let mut px = [0u8; 4];
+                     px[COMPONENT_R] = s[0];
+                     px[COMPONENT_G] = s[1];
+@@ -3683,7 +3693,12 @@
+             }
+             Self::Rgba16Float => {
+                 let lut = f16_to_unorm8_lut();
+-                for (s, d) in src.chunks_exact(8).zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src
++                    .as_chunks::<8>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0.iter_mut())
++                {
+                     d[COMPONENT_R] = lut[ld16(&s[0..2]) as usize];
+                     d[COMPONENT_G] = lut[ld16(&s[2..4]) as usize];
+                     d[COMPONENT_B] = lut[ld16(&s[4..6]) as usize];
+@@ -3692,7 +3707,12 @@
+             }
+             Self::Rg16Float => {
+                 let lut = f16_to_unorm8_lut();
+-                for (s, d) in src.chunks_exact(4).zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0.iter_mut())
++                {
+                     let mut px = [0u8; 4];
+                     px[COMPONENT_R] = lut[ld16(&s[0..2]) as usize];
+                     px[COMPONENT_G] = lut[ld16(&s[2..4]) as usize];
+@@ -3869,7 +3889,12 @@
+         match self {
+             Self::Rgba8 => dst.copy_from_slice(src),
+             Self::Bgra8 => {
+-                for (s, d) in src.chunks_exact(4).zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0.iter_mut())
++                {
+                     d[0] = s[COMPONENT_B];
+                     d[1] = s[COMPONENT_G];
+                     d[2] = s[COMPONENT_R];
+@@ -3877,26 +3902,41 @@
+                 }
+             }
+             Self::R8 => {
+-                for (s, d) in src.chunks_exact(4).zip(dst.iter_mut()) {
++                for (s, d) in src.as_chunks::<4>().0.iter().zip(dst.iter_mut()) {
+                     *d = s[COMPONENT_R];
+                 }
+             }
+             Self::R16Float => {
+                 let lut = unorm8_to_f16_lut();
+-                for (s, d) in src.chunks_exact(4).zip(dst.chunks_exact_mut(2)) {
++                for (s, d) in src
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<2>().0.iter_mut())
++                {
+                     st16(d, lut[s[COMPONENT_R] as usize]);
+                 }
+             }
+             Self::Rg16Float => {
+                 let lut = unorm8_to_f16_lut();
+-                for (s, d) in src.chunks_exact(4).zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0.iter_mut())
++                {
+                     st16(&mut d[0..2], lut[s[COMPONENT_R] as usize]);
+                     st16(&mut d[2..4], lut[s[COMPONENT_G] as usize]);
+                 }
+             }
+             Self::Rgba16Float => {
+                 let lut = unorm8_to_f16_lut();
+-                for (s, d) in src.chunks_exact(4).zip(dst.chunks_exact_mut(8)) {
++                for (s, d) in src
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<8>().0.iter_mut())
++                {
+                     let r = u64::from(lut[s[COMPONENT_R] as usize]);
+                     let g = u64::from(lut[s[COMPONENT_G] as usize]);
+                     let b = u64::from(lut[s[COMPONENT_B] as usize]);
+@@ -3905,7 +3945,12 @@
+                 }
+             }
+             Self::Bgr10A2 => {
+-                for (s, d) in src.chunks_exact(4).zip(dst.chunks_exact_mut(4)) {
++                for (s, d) in src
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
++                    .zip(dst.as_chunks_mut::<4>().0.iter_mut())
++                {
+                     let mut texel = [0u8; 4];
+                     texel.copy_from_slice(s);
+                     d.copy_from_slice(&rgba8_to_bgr10a2_word(texel).to_le_bytes());
+@@ -3920,7 +3965,9 @@
+                     _ => unreachable!(),
+                 };
+                 for (s, d) in src
+-                    .chunks_exact(4)
++                    .as_chunks::<4>()
++                    .0
++                    .iter()
+                     .zip(dst.chunks_exact_mut(self.destination_bytes_per_pixel() as usize))
+                 {
+                     let mut rgba = [0u8; 4];
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages/components.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages/components.rs
+new file mode 100644
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages/components.rs
+@@ -0,0 +1,258 @@
++//! Component bytes in compact mapper **plane** records.
++//!
++//! The original arm64e plane producer writes the count at +0x27 and five
++//! four-byte columns at +0x2c/+0x30/+0x34/+0x38/+0x3c. It refuses counts above
++//! four. Each getter result is stored with `strb`: these are serialized bytes,
++//! not complete native enum values. The original property builder binds the
++//! columns to bit depth, bit offset, name, type and range, in that order. Enum
++//! meanings remain unassigned here. The surface header has a different +0x27 field and
++//! must never be decoded as a plane record.
++
++use super::{DEVICE_DESC_LEN, DEVICE_DESC_PLANES, DEVICE_DESC_PLANE_COUNT, DEVICE_PLANE_DESC_LEN};
++use alloc::string::{String, ToString};
++use alloc::vec;
++use alloc::vec::Vec;
++
++pub const DEVICE_PLANE_COMPONENT_COUNT: usize = 0x27;
++pub const DEVICE_PLANE_COMPONENT_FIELD_OFFSETS: [usize; 5] = [0x2c, 0x30, 0x34, 0x38, 0x3c];
++pub const DEVICE_PLANE_MAX_COMPONENTS: usize = 4;
++pub const DEVICE_DESC_MAX_PLANES: usize =
++    (DEVICE_DESC_LEN - DEVICE_DESC_PLANES) / DEVICE_PLANE_DESC_LEN;
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct DevicePlaneComponentBytes {
++    /// Serialized bit-depth, bit-offset, name, type and range bytes. This does
++    /// not widen the stored bytes back into complete native enum ordinals.
++    pub fields: [u8; DEVICE_PLANE_COMPONENT_FIELD_OFFSETS.len()],
++}
++
++/// Only the declared components are exposed. Bytes in inactive column slots
++/// are neither interpreted nor allowed to masquerade as active metadata.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct DevicePlaneComponents {
++    count: u8,
++    components: [DevicePlaneComponentBytes; DEVICE_PLANE_MAX_COMPONENTS],
++}
++
++impl DevicePlaneComponents {
++    pub fn components(&self) -> &[DevicePlaneComponentBytes] {
++        &self.components[..usize::from(self.count)]
++    }
++
++    fn decode_plane(bytes: &[u8]) -> Result<Self, PlaneComponentsRefusal> {
++        let Some(bytes) = bytes.get(..DEVICE_PLANE_DESC_LEN) else {
++            return Err(PlaneComponentsRefusal::ShortPlane);
++        };
++        let count = bytes[DEVICE_PLANE_COMPONENT_COUNT];
++        if usize::from(count) > DEVICE_PLANE_MAX_COMPONENTS {
++            return Err(PlaneComponentsRefusal::ComponentCount { count });
++        }
++        let mut components = [DevicePlaneComponentBytes {
++            fields: [0; DEVICE_PLANE_COMPONENT_FIELD_OFFSETS.len()],
++        }; DEVICE_PLANE_MAX_COMPONENTS];
++        for (index, component) in components[..usize::from(count)].iter_mut().enumerate() {
++            component.fields =
++                DEVICE_PLANE_COMPONENT_FIELD_OFFSETS.map(|offset| bytes[offset + index]);
++        }
++        Ok(Self { count, components })
++    }
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum PlaneComponentsRefusal {
++    ShortDescriptor,
++    ShortPlane,
++    PlaneCount { count: u8 },
++    PlaneIndex { index: u32, count: u8 },
++    ComponentCount { count: u8 },
++}
++
++impl PlaneComponentsRefusal {
++    pub fn slug(self) -> &'static str {
++        match self {
++            Self::ShortDescriptor => "iosurface_components_descriptor_short",
++            Self::ShortPlane => "iosurface_components_plane_short",
++            Self::PlaneCount { .. } => "iosurface_components_plane_count",
++            Self::PlaneIndex { .. } => "iosurface_components_plane_index",
++            Self::ComponentCount { .. } => "iosurface_components_component_count",
++        }
++    }
++}
++
++impl reims_vgpu_observe::Refusal for PlaneComponentsRefusal {
++    fn refusal(&self) -> Option<&'static str> {
++        Some(self.slug())
++    }
++
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match *self {
++            Self::ShortDescriptor | Self::ShortPlane => Vec::new(),
++            Self::PlaneCount { count } | Self::ComponentCount { count } => {
++                vec![("count", count.to_string())]
++            }
++            Self::PlaneIndex { index, count } => {
++                vec![("index", index.to_string()), ("count", count.to_string())]
++            }
++        }
++    }
++}
++
++/// Decode only an actually declared plane in the compact descriptor. A zero
++/// plane count describes nonplanar storage; it does not make the surface
++/// header's bytes into a plane-component record.
++pub fn device_desc_plane_components(
++    desc: &[u8],
++    index: u32,
++) -> Result<DevicePlaneComponents, PlaneComponentsRefusal> {
++    if desc.len() < DEVICE_DESC_LEN {
++        return Err(PlaneComponentsRefusal::ShortDescriptor);
++    }
++    let count = desc[DEVICE_DESC_PLANE_COUNT];
++    if usize::from(count) > DEVICE_DESC_MAX_PLANES {
++        return Err(PlaneComponentsRefusal::PlaneCount { count });
++    }
++    if index >= u32::from(count) {
++        return Err(PlaneComponentsRefusal::PlaneIndex { index, count });
++    }
++    // Count and index are bounded before converting or multiplying the index.
++    let start = DEVICE_DESC_PLANES + index as usize * DEVICE_PLANE_DESC_LEN;
++    DevicePlaneComponents::decode_plane(&desc[start..start + DEVICE_PLANE_DESC_LEN])
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn descriptor(planes: u8) -> Vec<u8> {
++        let mut bytes = vec![0; DEVICE_DESC_LEN];
++        bytes[DEVICE_DESC_PLANE_COUNT] = planes;
++        bytes
++    }
++
++    #[test]
++    fn native_columns_are_transposed_into_their_own_components() {
++        let mut desc = descriptor(2);
++        let start = DEVICE_DESC_PLANES + DEVICE_PLANE_DESC_LEN;
++        desc[start + DEVICE_PLANE_COMPONENT_COUNT] = 4;
++        for (column, offset) in DEVICE_PLANE_COMPONENT_FIELD_OFFSETS.into_iter().enumerate() {
++            for index in 0..DEVICE_PLANE_MAX_COMPONENTS {
++                desc[start + offset + index] = (column * 10 + index) as u8;
++            }
++        }
++        let metadata = device_desc_plane_components(&desc, 1).unwrap();
++        assert_eq!(metadata.components().len(), 4);
++        for (index, component) in metadata.components().iter().enumerate() {
++            assert_eq!(
++                component.fields,
++                [
++                    index as u8,
++                    10 + index as u8,
++                    20 + index as u8,
++                    30 + index as u8,
++                    40 + index as u8
++                ]
++            );
++        }
++        assert!(device_desc_plane_components(&desc, 0)
++            .unwrap()
++            .components()
++            .is_empty());
++    }
++
++    #[test]
++    fn inactive_slots_and_unknown_byte_values_do_not_create_components() {
++        let mut desc = descriptor(1);
++        let start = DEVICE_DESC_PLANES;
++        desc[start + DEVICE_PLANE_COMPONENT_COUNT] = 1;
++        for offset in DEVICE_PLANE_COMPONENT_FIELD_OFFSETS {
++            desc[start + offset..start + offset + DEVICE_PLANE_MAX_COMPONENTS].fill(0xff);
++        }
++        let metadata = device_desc_plane_components(&desc, 0).unwrap();
++        assert_eq!(
++            metadata.components(),
++            &[DevicePlaneComponentBytes { fields: [255; 5] }]
++        );
++    }
++
++    #[test]
++    fn a_nonplanar_header_is_never_a_component_plane() {
++        let mut desc = descriptor(0);
++        desc[DEVICE_PLANE_COMPONENT_COUNT] = 1;
++        desc[DEVICE_PLANE_COMPONENT_FIELD_OFFSETS[0]] = 8;
++        assert_eq!(
++            device_desc_plane_components(&desc, 0),
++            Err(PlaneComponentsRefusal::PlaneIndex { index: 0, count: 0 })
++        );
++    }
++
++    #[test]
++    fn oversized_counts_and_indices_are_typed_refusals() {
++        let mut desc = descriptor(1);
++        desc[DEVICE_DESC_PLANES + DEVICE_PLANE_COMPONENT_COUNT] = 5;
++        assert_eq!(
++            device_desc_plane_components(&desc, 0),
++            Err(PlaneComponentsRefusal::ComponentCount { count: 5 })
++        );
++        assert_eq!(
++            device_desc_plane_components(&desc, u32::MAX),
++            Err(PlaneComponentsRefusal::PlaneIndex {
++                index: u32::MAX,
++                count: 1
++            })
++        );
++        desc[DEVICE_DESC_PLANE_COUNT] = (DEVICE_DESC_MAX_PLANES + 1) as u8;
++        assert_eq!(
++            device_desc_plane_components(&desc, 0),
++            Err(PlaneComponentsRefusal::PlaneCount { count: 8 })
++        );
++    }
++
++    #[test]
++    fn the_last_declared_plane_is_within_the_compact_descriptor() {
++        let mut desc = descriptor(DEVICE_DESC_MAX_PLANES as u8);
++        let start = DEVICE_DESC_PLANES + (DEVICE_DESC_MAX_PLANES - 1) * DEVICE_PLANE_DESC_LEN;
++        desc[start + DEVICE_PLANE_COMPONENT_COUNT] = 4;
++        desc[DEVICE_DESC_LEN - 1] = 0xad;
++        assert_eq!(
++            device_desc_plane_components(&desc, (DEVICE_DESC_MAX_PLANES - 1) as u32)
++                .unwrap()
++                .components()[3]
++                .fields[4],
++            0xad
++        );
++    }
++
++    #[test]
++    fn every_short_record_refuses_without_reading_a_field() {
++        for len in 0..DEVICE_DESC_LEN {
++            assert_eq!(
++                device_desc_plane_components(&vec![0xff; len], 0),
++                Err(PlaneComponentsRefusal::ShortDescriptor)
++            );
++        }
++        for len in 0..DEVICE_PLANE_DESC_LEN {
++            assert_eq!(
++                DevicePlaneComponents::decode_plane(&vec![0xff; len]),
++                Err(PlaneComponentsRefusal::ShortPlane)
++            );
++        }
++    }
++
++    #[test]
++    fn every_component_count_preserves_only_admitted_active_slots() {
++        let mut desc = descriptor(1);
++        for count in 0..=u8::MAX {
++            desc[DEVICE_DESC_PLANES + DEVICE_PLANE_COMPONENT_COUNT] = count;
++            match device_desc_plane_components(&desc, 0) {
++                Ok(metadata) => {
++                    assert!(usize::from(count) <= DEVICE_PLANE_MAX_COMPONENTS);
++                    assert_eq!(metadata.components().len(), usize::from(count));
++                }
++                Err(why) => {
++                    assert!(usize::from(count) > DEVICE_PLANE_MAX_COMPONENTS);
++                    assert_eq!(why, PlaneComponentsRefusal::ComponentCount { count });
++                }
++            }
++        }
++    }
++}

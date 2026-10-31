@@ -1,0 +1,82 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -3406,6 +3406,18 @@
+ }
+ 
+ impl ReadbackTexel {
++    /// Exact byte layout of this readback, including eight-bit colour order.
++    /// A byte-preserving Store compares this to the destination's declared
++    /// storage layout; consumers requiring semantic RGBA8 still use
++    /// `TargetReadback::into_rgba8`.
++    pub fn storage_layout(self) -> TexelLayout {
++        match self {
++            Self::Rgba8 => TexelLayout::Rgba8,
++            Self::Bgra8 => TexelLayout::Bgra8,
++            Self::Native(layout) => layout,
++        }
++    }
++
+     /// The eight-bit colour order a four-byte-colour resident was read in.
+     pub fn eight_bit(bgra: bool) -> Self {
+         if bgra {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -1015,14 +1015,12 @@
+     let Some(pages) = pages else {
+         return Err(GvaWritebackDecline::Unlicensed);
+     };
+-    // The blocking readback the direct arm exists to avoid. `into_rgba8` is the
+-    // order every GVA guest writer takes, and it exchanges or not according to
+-    // the order the engine reports for the image it copied — which for a target
+-    // the guest declared in BGRA order, as most of them are, is a whole-frame
+-    // pass and not the no-op this comment used to claim. Both spellings of that
+-    // declaration must reach the same answer; `ResidentReadSnapshot::bgra` is
+-    // where they do, and where they did not.
+-    // If the resident already has the destination's layout, retain its bytes.
++    // The blocking readback the direct arm exists to avoid. Its own byte
++    // layout decides whether a frame can land verbatim: matching eight-bit
++    // colour must not exchange channels to semantic RGBA8 and then back again
++    // in the guest row writer. Surface and texture residents both carry their
++    // actual order through ResidentReadSnapshot::bgra and ReadbackTexel.
++    // If the readback already has the destination's layout, retain its bytes.
+     // XR instead has a float resident whose linear values need XR encoding.
+     // Only consumers requiring eight-bit colour take the quantizing API.
+     let resident_layout =
+@@ -1096,20 +1094,27 @@
+             crate::backend::vulkan::engine::read_target(identity)
+         }
+         .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
+-        match readback.texel.native_layout() {
+-            Some(layout)
+-                if crate::protocol::pixel_format::store_texel_order(c0.format) == Some(layout) =>
+-            {
+-                CopiedFrame::Native(readback.pixels)
++        let storage_layout = readback.texel.storage_layout();
++        if crate::protocol::pixel_format::store_texel_order(c0.format) == Some(storage_layout) {
++            if storage_layout.is_four_byte_color() {
++                crate::runtime::drain::note_store_route("gva_colour_verbatim_selected_n");
++                crate::runtime::drain::note_store_route_n(
++                    "gva_colour_row_scratch_bytes_avoided",
++                    u64::from(c0.width) * u64::from(storage_layout.bytes_per_texel()),
++                );
++                if storage_layout == crate::protocol::pixel_format::TexelLayout::Bgra8 {
++                    crate::runtime::drain::note_store_route("gva_bgra_channel_roundtrip_avoided_n");
++                }
+             }
+-            Some(_) => {
+-                return Err(GvaWritebackDecline::FormatNeedsConversion { format: c0.format })
+-            }
+-            None => CopiedFrame::Rgba8(
++            CopiedFrame::Native(readback.pixels)
++        } else if readback.texel.native_layout().is_some() {
++            return Err(GvaWritebackDecline::FormatNeedsConversion { format: c0.format });
++        } else {
++            CopiedFrame::Rgba8(
+                 readback
+                     .into_rgba8()
+                     .ok_or(GvaWritebackDecline::FormatNeedsConversion { format: c0.format })?,
+-            ),
++            )
+         }
+     };
+     let rows = match &frame {

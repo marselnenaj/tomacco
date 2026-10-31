@@ -1,0 +1,305 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
+index f7ccddf..69af92b 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
+@@ -943,6 +943,66 @@ pub(crate) struct PipelineKey {
+     /// decides it.
+     pub viewport_slots: u32,
+     pub layout: LayoutId,
++    /// Fragment texture arguments this pipeline answers `is_null_texture` true
++    /// for -- [`super::types::DrawRequest::frag_null_textures`] -- as the
++    /// specialization constants `NULL_TEXTURE_SPEC_ID_BASE + n`. In the key
++    /// because a specialization is pipeline state: the same shaders with a
++    /// different set of unbound arguments are a different pipeline.
++    pub frag_null_textures: u128,
++}
++
++/// The specialization a pipeline's fragment stage is created with for
++/// [`PipelineKey::frag_null_textures`]: one `VK_TRUE` (a `VkBool32`, four bytes)
++/// per set bit `n`, mapped to constant id `NULL_TEXTURE_SPEC_ID_BASE + n`, which
++/// is where the translator put the `OpSpecConstantFalse` answering
++/// `is_null_texture` for `[[texture(n)]]`. An id the module does not declare is
++/// ignored by the driver, so a draw may name every argument it left unbound
++/// without asking which ones the shader asks about. Empty for a zero mask, and
++/// then not attached at all.
++pub(crate) fn null_texture_specialization(
++    mask: u128,
++) -> (Vec<vk::SpecializationMapEntry>, Vec<u8>) {
++    let value = vk::TRUE.to_ne_bytes();
++    let mut entries = Vec::new();
++    let mut data = Vec::new();
++    for index in 0..u128::BITS {
++        if mask & (1u128 << index) == 0 {
++            continue;
++        }
++        entries.push(
++            vk::SpecializationMapEntry::default()
++                .constant_id(metal2vulkan::reflect::NULL_TEXTURE_SPEC_ID_BASE + index)
++                .offset(data.len() as u32)
++                .size(value.len()),
++        );
++        data.extend_from_slice(&value);
++    }
++    (entries, data)
++}
++
++#[cfg(test)]
++mod null_texture_specialization_tests {
++    use super::*;
++
++    /// Each set bit of the mask becomes one `VK_TRUE` at the argument's own
++    /// id, packed in index order, and a zero mask specializes nothing.
++    #[test]
++    fn a_null_texture_mask_specializes_exactly_its_arguments_true() {
++        let (entries, data) = null_texture_specialization(0);
++        assert!(entries.is_empty() && data.is_empty());
++
++        let (entries, data) = null_texture_specialization((1 << 0) | (1 << 11) | (1 << 127));
++        let base = metal2vulkan::reflect::NULL_TEXTURE_SPEC_ID_BASE;
++        let map: Vec<(u32, u32, usize)> = entries
++            .iter()
++            .map(|entry| (entry.constant_id, entry.offset, entry.size))
++            .collect();
++        assert_eq!(
++            map,
++            vec![(base, 0, 4), (base + 11, 4, 4), (base + 127, 8, 4)]
++        );
++        assert_eq!(data, [vk::TRUE.to_ne_bytes(); 3].concat());
++    }
+ }
+ 
+ /// Lc: compute pipeline cache key — SPIR-V content digest + entry name + layout
+@@ -2705,17 +2765,28 @@ impl ObjectCaches {
+         }
+ 
+         let main_c = super::context::main_entry();
++        // The null-texture answers this pipeline bakes in, in the form the
++        // translator's `OpSpecConstantFalse` per texture argument expects: one
++        // `VK_TRUE` per set bit, at the argument's id. Built before the stage
++        // list because the create info borrows it until the driver call.
++        let (null_texture_entries, null_texture_data) =
++            null_texture_specialization(key.frag_null_textures);
++        let null_texture_spec = vk::SpecializationInfo::default()
++            .map_entries(&null_texture_entries)
++            .data(&null_texture_data);
+         let mut stages = vec![vk::PipelineShaderStageCreateInfo::default()
+             .stage(vk::ShaderStageFlags::VERTEX)
+             .module(vert_module)
+             .name(&main_c)];
+         if let Some(module) = frag_module {
+-            stages.push(
+-                vk::PipelineShaderStageCreateInfo::default()
+-                    .stage(vk::ShaderStageFlags::FRAGMENT)
+-                    .module(module)
+-                    .name(&main_c),
+-            );
++            let mut stage = vk::PipelineShaderStageCreateInfo::default()
++                .stage(vk::ShaderStageFlags::FRAGMENT)
++                .module(module)
++                .name(&main_c);
++            if key.frag_null_textures != 0 {
++                stage = stage.specialization_info(&null_texture_spec);
++            }
++            stages.push(stage);
+         }
+         // Both lists were rebuilt here from the attributes with the step function
+         // matched a second and a third time. They are built once, in the loop
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+index 3cf4b5e..0982dff 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -3521,6 +3521,7 @@ pub(crate) unsafe fn execute_draw_inner(
+         depth_stencil: depth_stencil_plan.state,
+         viewport_slots: slot_count_u32,
+         layout: layout.id,
++        frag_null_textures: req.frag_null_textures,
+     };
+     // One cache, consulted once. `get_or_create_pipeline` already counts the hit
+     // and already checks the negative entry for a key that failed to compile.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+index 928e95b..4ccf892 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -567,6 +567,17 @@ pub struct DrawRequest {
+     pub vertex_attributes: Vec<VertexAttributeResource>,
+     pub storage_buffers: Vec<StorageBufferResource>,
+     pub sampled_images: Vec<SampledImageResource>,
++    /// Fragment `[[texture(n)]]` arguments the shader declares and uses, that
++    /// the guest bound nothing to, and that [`Self::sampled_images`] therefore
++    /// serves with the neutral 1x1 substitute: bit `n` set. The pipeline is
++    /// specialized to answer `is_null_texture` true for exactly these
++    /// (`metal2vulkan::reflect::NULL_TEXTURE_SPEC_ID_BASE + n`), which is what
++    /// the shader is told on Metal for an unbound argument. Without it the
++    /// translator's folded false sent a shader guarding an optional texture
++    /// down its sampling path, onto the substitute's transparent black: iOS's
++    /// wallpaper was darkened by a `darkTex` the guest never bound, on 960
++    /// draws of `celosia::fragmentShader`.
++    pub frag_null_textures: u128,
+     pub samplers: Vec<SamplerResource>,
+     /// CPU Load contents with the texel layout that interprets their bytes.
+     /// Shared cache allocations stay shared; native floating-point contents
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+index 5f1a59b..8cc454b 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -9196,6 +9196,14 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+         //
+         // Cold path: the vector is empty on every draw that binds what it
+         // samples, so this costs one `is_empty` on the hot path.
++        //
++        // Every argument the substitute stands in for is also named to the
++        // engine, which specializes the pipeline to answer `is_null_texture`
++        // true for it. The substitute alone is not the repair: a shader that
++        // asks before sampling would read the translator's folded false and
++        // sample the substitute's transparent black -- iOS's wallpaper did, on
++        // the optional `darkTex` its pass never binds, 960 draws.
++        let mut frag_null_textures: u128 = 0;
+         for (f_shader, index) in f_shader.iter().flat_map(|shader| {
+             frag_unbound_used_textures
+                 .iter()
+@@ -9279,6 +9287,12 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+                 identity: None,
+                 swizzle: Default::default(),
+             });
++            // A Metal texture index is below `TEXTURE_ARGUMENT_COUNT`; the
++            // synthetic index of an argument-buffer texture need not be, and the
++            // translator gives such a texture no constant to set.
++            if index < u128::BITS {
++                frag_null_textures |= 1u128 << index;
++            }
+         }
+         {
+             let mut push_smp = |index: u32,
+@@ -9988,6 +10002,7 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+         resources.vertex_attributes = attrs;
+         resources.storage_buffers = storage;
+         resources.sampled_images = images;
++        resources.frag_null_textures = frag_null_textures;
+         resources.color_inputs = frag_color_inputs;
+         resources.continues_render_pass = req.continues_render_pass;
+         resources.render_pass_continues = req.render_pass_continues;
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
+index 446bbed..74bb458 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
+@@ -1485,6 +1485,120 @@ fn glsl_words(src: &str, stage: &str, name: &str) -> Option<Vec<u32>> {
+     )
+ }
+ 
++/// **A fragment shader asking `is_null_texture` takes the null path exactly when
++/// the draw names the argument unbound.**
++///
++/// The product path binds a neutral 1x1 transparent-black image where a
++/// declared fragment texture arrived unbound (`frag_neutral_texture_substituted`)
++/// and names the argument in `DrawRequest::frag_null_textures`; the pipeline is
++/// then specialized so the translator's per-argument `OpSpecConstantFalse`
++/// (`NULL_TEXTURE_SPEC_ID_BASE + n`) reads true. The shader here is that shape
++/// in GLSL: a `constant_id` bool at the argument's id, red on the null path, the
++/// sampled texel otherwise. Bound and unnamed, the texel (green) must come
++/// through; substituted and named, the red must, and the substitute's
++/// transparent black must reach nothing. iOS's wallpaper is this shape -- an
++/// optional darkening texture guarded by `is_null_texture` -- and before the
++/// specialization every one of its passes sampled the substitute.
++///
++/// Skips on a host without `glslc`.
++#[test]
++fn a_fragment_shader_asking_is_null_texture_takes_the_null_path_only_when_told() {
++    let _guard = engine_test_lock().lock().unwrap();
++    let vert = translate_words("render_tri.air", Stage::Vertex);
++    let Some(frag) = glsl_words(
++        &format!(
++            r#"#version 450
++layout(constant_id = {id}) const bool tex0_null = false;
++layout(set = 0, binding = 32) uniform texture2D tex0;
++layout(set = 0, binding = 160) uniform sampler smp0;
++layout(location = 0) out vec4 color;
++void main() {{
++    if (tex0_null) {{
++        color = vec4(1.0, 0.0, 0.0, 1.0);
++    }} else {{
++        color = texture(sampler2D(tex0, smp0), vec2(0.5, 0.5));
++    }}
++}}
++"#,
++            id = metal2vulkan::reflect::NULL_TEXTURE_SPEC_ID_BASE
++        ),
++        "fragment",
++        "null_texture_predicate",
++    ) else {
++        return;
++    };
++    let identity = TargetIdentity::Surface {
++        id: 990_409,
++        width: W,
++        height: H,
++        generation: 1,
++        format: SURFACE_TEST_FORMAT,
++    };
++    let texel_image = |rgba: [u8; 4]| SampledImageResource {
++        binding: 32,
++        array_element: 0,
++        descriptor_count: 1,
++        width: 1,
++        height: 1,
++        layers: 1,
++        kind: reims_vgpu_core::texture_shape::TextureKind::D2,
++        multisampled: false,
++        source: SampledSource::Bytes(std::sync::Arc::new(rgba.to_vec())),
++        byte_origin: Default::default(),
++        format: ash::vk::Format::R8G8B8A8_UNORM,
++        identity: None,
++        swizzle: Default::default(),
++    };
++    let draw = |image: SampledImageResource, null_mask: u128| -> Result<Vec<u8>, String> {
++        let mut req = batch_req(&vert, &frag, &identity, false, half_scissor(true));
++        req.sampled_images.push(image);
++        req.samplers.push(SamplerResource::normalized_default(160));
++        req.frag_null_textures = null_mask;
++        engine::execute_draw_request(engine_device(), &req).map_err(|e| e.to_string())?;
++        Ok(engine::read_target(&identity)
++            .expect("read_target flushes the batch")
++            .into_rgba8()
++            .expect("an eight-bit colour readback"))
++    };
++    const GREEN: [u8; 4] = [0, 255, 0, 255];
++    let bound = match draw(texel_image(GREEN), 0) {
++        Ok(px) => px,
++        Err(msg) => {
++            if skip_if_no_gpu(&msg) {
++                eprintln!("skipping: {msg}");
++                return;
++            }
++            panic!("bound draw: {msg}");
++        }
++    };
++    // Inside the scissored half, where the triangle covers the target.
++    let i = (((H / 2) * W + W / 4) * 4) as usize;
++    assert!(
++        near(bound[i], 0) && near(bound[i + 1], 255) && near(bound[i + 2], 0),
++        "a bound argument samples its texel: {:?}",
++        &bound[i..i + 4]
++    );
++    // The product's substitute for an unbound argument, and the argument named.
++    let unbound = draw(texel_image([0, 0, 0, 0]), 1).expect("the specialized draw");
++    assert!(
++        near(unbound[i], 255) && near(unbound[i + 1], 0) && near(unbound[i + 2], 0),
++        "an unbound argument takes the null path: {:?}",
++        &unbound[i..i + 4]
++    );
++    // The same substitute with the argument not named: the sampling path, onto
++    // the substitute's transparent black. This is what every unbound argument
++    // got before the specialization existed, and it is what one that is bound
++    // elsewhere but left unnamed still gets, which is why the draw side names
++    // every argument it substitutes for.
++    let unnamed = draw(texel_image([0, 0, 0, 0]), 0).expect("the unspecialized draw");
++    assert!(
++        near(unnamed[i], 0) && near(unnamed[i + 1], 0) && near(unnamed[i + 2], 0),
++        "an unnamed argument samples the substitute: {:?}",
++        &unnamed[i..i + 4]
++    );
++    engine::test_quiesce_ring();
++}
++
+ /// **The gathered bytes, observed in shader output.**
+ ///
+ /// [`a_scattered_guest_buffer_window_is_gathered_by_the_gpu_in_one_region_per_stretch`]

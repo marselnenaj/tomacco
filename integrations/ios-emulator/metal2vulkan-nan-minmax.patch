@@ -1,0 +1,223 @@
+diff --git a/src/native/owned_cfg.rs b/src/native/owned_cfg.rs
+index cbe6d05..72e09d2 100644
+--- a/src/native/owned_cfg.rs
++++ b/src/native/owned_cfg.rs
+@@ -2147,7 +2147,7 @@ fn glsl_ext_inst_contract(number: u32) -> Option<GlslExtInstContract> {
+             arity: 2,
+             width_16_or_32: true,
+         }),
+-        Glsl::FMin | Glsl::FMax => Some(FloatSame {
++        Glsl::FMin | Glsl::FMax | Glsl::NMin | Glsl::NMax => Some(FloatSame {
+             arity: 2,
+             width_16_or_32: false,
+         }),
+diff --git a/src/native/tests/control_flow.rs b/src/native/tests/control_flow.rs
+index 484579e..e95c4e1 100644
+--- a/src/native/tests/control_flow.rs
++++ b/src/native/tests/control_flow.rs
+@@ -397,11 +397,11 @@ declare float @air.fast_fmedian3.f32(float, float, float)
+     let asm = disassemble(&out).expect("disassemble transformed");
+     let fmax_count = asm
+         .lines()
+-        .filter(|line| line.contains("OpExtInst") && line.contains(" FMax "))
++        .filter(|line| line.contains("OpExtInst") && line.contains(" NMax "))
+         .count();
+     let fmin_count = asm
+         .lines()
+-        .filter(|line| line.contains("OpExtInst") && line.contains(" FMin "))
++        .filter(|line| line.contains("OpExtInst") && line.contains(" NMin "))
+         .count();
+     assert_eq!(fmax_count, 4, "{asm}");
+     assert_eq!(fmin_count, 4, "{asm}");
+diff --git a/src/native/tests/types.rs b/src/native/tests/types.rs
+index a7d14c4..f3ed63f 100644
+--- a/src/native/tests/types.rs
++++ b/src/native/tests/types.rs
+@@ -116,8 +116,10 @@ declare float @llvm.minnum.f32(float, float)
+         .flat_map(|w| w.to_le_bytes())
+         .collect::<Vec<_>>();
+     let asm = disassemble(&out).expect("disassemble transformed");
+-    assert!(asm.lines().any(|line| line.contains(" FMax ")), "{asm}");
+-    assert!(asm.lines().any(|line| line.contains(" FMin ")), "{asm}");
++    // LLVM maxnum/minnum keep IEEE maxNum/minNum's NaN rule: the GLSL N-variants.
++    assert!(asm.lines().any(|line| line.contains(" NMax ")), "{asm}");
++    assert!(asm.lines().any(|line| line.contains(" NMin ")), "{asm}");
++    assert!(!asm.contains(" FMax ") && !asm.contains(" FMin "), "{asm}");
+     assert!(!asm.contains("OpFunctionCall"), "{asm}");
+     assert!(!asm.contains("llvm.maxnum"), "{asm}");
+     assert!(!asm.contains("llvm.minnum"), "{asm}");
+@@ -130,6 +132,57 @@ declare float @llvm.minnum.f32(float, float)
+     }
+ }
+ 
++#[test]
++fn native_air_float_minmax_clamp_and_saturate_keep_metal_nan_rules() {
++    // Metal fmin/fmax are IEEE minNum/maxNum and clamp/saturate are built from them,
++    // so a NaN operand yields the other operand (clamp: the low edge). GLSL FMin,
++    // FMax and FClamp leave that undefined, and RADV and ANV return the NaN from
++    // FMin and FClamp in a fragment shader; the N-variants are the faithful ops.
++    let ll = r#"
++target triple = "spirv-unknown-vulkan1.2"
++define void @main(float %x, float %y) {
++entry:
++  %mx = tail call float @air.fmax.f32(float %x, float %y)
++  %mn = tail call float @air.fmin.f32(float %mx, float %y)
++  %cl = tail call float @air.clamp.f32(float %mn, float 0.000000e+00, float 1.000000e+00)
++  %st = tail call float @air.saturate.f32(float %cl)
++  ret void
++}
++
++declare float @air.fmax.f32(float, float)
++declare float @air.fmin.f32(float, float)
++declare float @air.clamp.f32(float, float, float)
++declare float @air.saturate.f32(float)
++"#;
++    let tmp = std::env::temp_dir().join(format!(
++        "metal2vulkan_native_float_nan_rules_{}",
++        std::process::id()
++    ));
++    let _ = std::fs::create_dir_all(&tmp);
++    let module = load_bytes(emit_vulkan_spirv(ll).expect("native emit")).expect("load native spv");
++    let out = passes::transform(module, Stage::Kernel, None, None, None, Some("main"))
++        .expect("interface transform")
++        .assemble()
++        .iter()
++        .flat_map(|w| w.to_le_bytes())
++        .collect::<Vec<_>>();
++    let asm = disassemble(&out).expect("disassemble transformed");
++    assert!(asm.contains(" NMax "), "{asm}");
++    assert!(asm.contains(" NMin "), "{asm}");
++    assert_eq!(asm.matches(" NClamp ").count(), 2, "{asm}");
++    for undefined_on_nan in [" FMax ", " FMin ", " FClamp "] {
++        assert!(!asm.contains(undefined_on_nan), "{asm}");
++    }
++    assert!(!asm.contains("OpFunctionCall"), "{asm}");
++    if std::process::Command::new("spirv-val")
++        .arg("--version")
++        .output()
++        .is_ok()
++    {
++        tools::spirv_val_bytes(&out, &tmp).expect("spirv-val");
++    }
++}
++
+ #[test]
+ fn native_air_integer_clamp_uses_integer_extinsts() {
+     let ll = r#"
+diff --git a/src/passes/air_calls/bfloat_glsl.rs b/src/passes/air_calls/bfloat_glsl.rs
+index 2f151d3..90cff9c 100644
+--- a/src/passes/air_calls/bfloat_glsl.rs
++++ b/src/passes/air_calls/bfloat_glsl.rs
+@@ -229,12 +229,17 @@ pub(in crate::passes) fn glsl_extinst(name: &str) -> Option<GLSLstd450> {
+         || is_air_math(name, "fmax")
+         || is_air_math(name, "max")
+     {
+-        FMax
++        // Metal's `fmax` and LLVM's `maxnum` are IEEE maxNum: a NaN operand yields
++        // the other operand. GLSL `FMax` leaves that case undefined, and a host
++        // whose `max` returns the NaN turns a shader's guarded `max(t, 0)` into a
++        // NaN that propagates. `NMax` is the GLSL spelling of maxNum.
++        NMax
+     } else if name.starts_with("llvm.minnum.")
+         || is_air_math(name, "fmin")
+         || is_air_math(name, "min")
+     {
+-        FMin
++        // See `NMax` above: Metal `fmin` and LLVM `minnum` are IEEE minNum.
++        NMin
+     } else if is_air_math(name, "sqrt") {
+         Sqrt
+     } else if is_air_math(name, "rsqrt") {
+@@ -288,7 +293,9 @@ pub(in crate::passes) fn glsl_extinst(name: &str) -> Option<GLSLstd450> {
+     } else if is_air_math(name, "fma") || name.starts_with("llvm.fmuladd.") {
+         Fma
+     } else if is_air_math(name, "clamp") {
+-        FClamp
++        // Metal defines float `clamp(x, lo, hi)` as `fmin(fmax(x, lo), hi)`, so a
++        // NaN `x` yields `lo`. That is `NClamp`; `FClamp` leaves NaN undefined.
++        NClamp
+     } else {
+         return None;
+     })
+diff --git a/src/passes/air_calls/float_imageblock.rs b/src/passes/air_calls/float_imageblock.rs
+index 85ee3c0..bf28f07 100644
+--- a/src/passes/air_calls/float_imageblock.rs
++++ b/src/passes/air_calls/float_imageblock.rs
+@@ -537,10 +537,12 @@ pub(in crate::passes) fn lower_float_math(
+     // fold them into two ext-inst operations instead of forwarding all three operands to one
+     // invalid OpExtInst.
+     if args.len() == 3 {
++        // `fmax3`/`fmin3` are two Metal `fmax`/`fmin` steps, so they keep maxNum/minNum's
++        // NaN rule (see `glsl_extinst`).
+         let ternary_minmax = if name.contains("fmax3") {
+-            Some(GLSLstd450::FMax)
++            Some(GLSLstd450::NMax)
+         } else if name.contains("fmin3") {
+-            Some(GLSLstd450::FMin)
++            Some(GLSLstd450::NMin)
+         } else if name.starts_with("air.max3.u.") {
+             Some(GLSLstd450::UMax)
+         } else if name.starts_with("air.min3.u.") {
+@@ -581,6 +583,7 @@ pub(in crate::passes) fn lower_float_math(
+             ]);
+         }
+     }
++    // The median is built from Metal min/max steps; they keep minNum/maxNum NaN rules.
+     if name.contains("fmedian3") && args.len() == 3 {
+         let ext = ctx.glsl();
+         let min_ab = ctx.module.fresh_id();
+@@ -593,7 +596,7 @@ pub(in crate::passes) fn lower_float_math(
+                 Some(min_ab),
+                 vec![
+                     Operand::IdRef(ext),
+-                    Operand::LiteralExtInstInteger(GLSLstd450::FMin as u32),
++                    Operand::LiteralExtInstInteger(GLSLstd450::NMin as u32),
+                     Operand::IdRef(args[0]),
+                     Operand::IdRef(args[1]),
+                 ],
+@@ -604,7 +607,7 @@ pub(in crate::passes) fn lower_float_math(
+                 Some(max_ab),
+                 vec![
+                     Operand::IdRef(ext),
+-                    Operand::LiteralExtInstInteger(GLSLstd450::FMax as u32),
++                    Operand::LiteralExtInstInteger(GLSLstd450::NMax as u32),
+                     Operand::IdRef(args[0]),
+                     Operand::IdRef(args[1]),
+                 ],
+@@ -615,7 +618,7 @@ pub(in crate::passes) fn lower_float_math(
+                 Some(min_max_ab_c),
+                 vec![
+                     Operand::IdRef(ext),
+-                    Operand::LiteralExtInstInteger(GLSLstd450::FMin as u32),
++                    Operand::LiteralExtInstInteger(GLSLstd450::NMin as u32),
+                     Operand::IdRef(max_ab),
+                     Operand::IdRef(args[2]),
+                 ],
+@@ -626,7 +629,7 @@ pub(in crate::passes) fn lower_float_math(
+                 Some(res),
+                 vec![
+                     Operand::IdRef(ext),
+-                    Operand::LiteralExtInstInteger(GLSLstd450::FMax as u32),
++                    Operand::LiteralExtInstInteger(GLSLstd450::NMax as u32),
+                     Operand::IdRef(min_ab),
+                     Operand::IdRef(min_max_ab_c),
+                 ],
+@@ -692,7 +695,8 @@ pub(in crate::passes) fn lower_float_math(
+             ops,
+         )]);
+     }
+-    // saturate(x) = FClamp(x, 0, 1); needs synthesized 0/1 constants of the result ELEMENT type
++    // saturate(x) = NClamp(x, 0, 1): Metal's saturate is its clamp, so a NaN `x` yields 0, which
++    // FClamp leaves undefined. Needs synthesized 0/1 constants of the result ELEMENT type
+     // (half `air.saturate.f16` -> half 0/1; float -> float 0/1; else spirv-val rejects the mismatch).
+     if name.contains("saturate") && args.len() == 1 {
+         let ext = ctx.glsl();
+@@ -706,7 +710,7 @@ pub(in crate::passes) fn lower_float_math(
+             Some(res),
+             vec![
+                 Operand::IdRef(ext),
+-                Operand::LiteralExtInstInteger(GLSLstd450::FClamp as u32),
++                Operand::LiteralExtInstInteger(GLSLstd450::NClamp as u32),
+                 Operand::IdRef(args[0]),
+                 Operand::IdRef(lo),
+                 Operand::IdRef(hi),

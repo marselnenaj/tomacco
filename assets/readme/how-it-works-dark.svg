@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1320" viewBox="0 0 2400 1320">
+<rect width="2400" height="1320" fill="#0E0E0C"/>
+<rect x="660" y="80" width="500" height="1160" fill="#F2361F" />
+<text x="704" y="164" font-family="Adwaita Sans" font-size="52" font-weight="700" fill="#0E0E0C" text-anchor="start" letter-spacing="-0.78">Tomacco</text>
+<text x="694" y="452" font-family="Adwaita Sans" font-size="276" font-weight="800" fill="#0E0E0C" text-anchor="start" letter-spacing="-8.28">170</text>
+<text x="704" y="548" font-family="Adwaita Sans" font-size="84" font-weight="700" fill="#0E0E0C" text-anchor="start" letter-spacing="-2.10">typed</text>
+<text x="704" y="642" font-family="Adwaita Sans" font-size="84" font-weight="700" fill="#0E0E0C" text-anchor="start" letter-spacing="-2.10">operations</text>
+<text x="704" y="1102" font-family="Adwaita Sans" font-size="50" font-weight="500" fill="#0E0E0C" text-anchor="start" letter-spacing="0.00">One schema.</text>
+<text x="704" y="1164" font-family="Adwaita Sans" font-size="50" font-weight="500" fill="#0E0E0C" text-anchor="start" letter-spacing="0.00">Durable jobs.</text>
+<polyline points="80,82 660,82" fill="none" stroke="#F4F2EC" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="76" y="204" font-family="Adwaita Sans" font-size="104" font-weight="700" fill="#F4F2EC" text-anchor="start" letter-spacing="-3.12">Your agent</text>
+<text x="80" y="284" font-family="Adwaita Sans" font-size="50" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">Claude Code, Codex,</text>
+<text x="80" y="348" font-family="Adwaita Sans" font-size="50" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">any MCP client.</text>
+<text x="80" y="412" font-family="Adwaita Sans" font-size="50" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">Over MCP or the</text>
+<text x="80" y="476" font-family="Adwaita Sans" font-size="50" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">tomaccoctl JSON CLI.</text>
+<polyline points="80,662 660,662" fill="none" stroke="#F4F2EC" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="76" y="784" font-family="Adwaita Sans" font-size="104" font-weight="700" fill="#F4F2EC" text-anchor="start" letter-spacing="-3.12">You</text>
+<text x="80" y="864" font-family="Adwaita Sans" font-size="50" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">In the Qt desktop.</text>
+<text x="80" y="928" font-family="Adwaita Sans" font-size="50" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">Watch, and take over</text>
+<text x="80" y="992" font-family="Adwaita Sans" font-size="50" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">at any time.</text>
+<polyline points="1160,82 2320,82" fill="none" stroke="#F4F2EC" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="1220" y="198" font-family="Adwaita Sans" font-size="104" font-weight="700" fill="#F4F2EC" text-anchor="start" letter-spacing="-3.12">Build</text>
+<text x="1224" y="272" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">project.execute</text>
+<text x="1744" y="272" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">job.wait</text>
+<polyline points="1160,322 2320,322" fill="none" stroke="#F4F2EC" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="1220" y="438" font-family="Adwaita Sans" font-size="104" font-weight="700" fill="#F4F2EC" text-anchor="start" letter-spacing="-3.12">Run</text>
+<text x="1224" y="520" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">project.run</text>
+<text x="1224" y="578" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">ios.virtual.start</text>
+<polyline points="1160,762 2320,762" fill="none" stroke="#F4F2EC" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="1220" y="878" font-family="Adwaita Sans" font-size="104" font-weight="700" fill="#F4F2EC" text-anchor="start" letter-spacing="-3.12">Tap</text>
+<text x="1224" y="952" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">runtime.input</text>
+<text x="1744" y="952" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">ios.emulator.control</text>
+<polyline points="1160,1002 2320,1002" fill="none" stroke="#F4F2EC" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="1220" y="1118" font-family="Adwaita Sans" font-size="104" font-weight="700" fill="#F4F2EC" text-anchor="start" letter-spacing="-3.12">Debug</text>
+<text x="1224" y="1192" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">debug.start</text>
+<text x="1744" y="1192" font-family="JetBrainsMono Nerd Font" font-size="42" font-weight="400" fill="#96948B" text-anchor="start" xml:space="preserve">device.logs</text>
+<polyline points="1760,372 1804,372" fill="none" stroke="#2FA84F" stroke-width="6" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="1820" y="390" font-family="Adwaita Sans" font-size="52" font-weight="600" fill="#F4F2EC" text-anchor="start" letter-spacing="-0.78">Android</text>
+<text x="1820" y="444" font-family="Adwaita Sans" font-size="40" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">emulator or phone</text>
+<polyline points="1760,506 1804,506" fill="none" stroke="#2FA84F" stroke-width="6" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="1820" y="524" font-family="Adwaita Sans" font-size="52" font-weight="600" fill="#F4F2EC" text-anchor="start" letter-spacing="-0.78">iPhone</text>
+<text x="1820" y="578" font-family="Adwaita Sans" font-size="40" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">over USB, not qualified</text>
+<polyline points="1760,640 1804,640" fill="none" stroke="#2FA84F" stroke-width="6" stroke-linecap="butt" stroke-linejoin="miter" />
+<text x="1820" y="658" font-family="Adwaita Sans" font-size="52" font-weight="600" fill="#F4F2EC" text-anchor="start" letter-spacing="-0.78">Virtual iOS device</text>
+<text x="1820" y="712" font-family="Adwaita Sans" font-size="40" font-weight="400" fill="#96948B" text-anchor="start" letter-spacing="0.00">experimental</text>
+<polyline points="1760,369 1760,643" fill="none" stroke="#2FA84F" stroke-width="6" stroke-linecap="butt" stroke-linejoin="miter" />
+<polyline points="1429,406 1760,406" fill="none" stroke="#2FA84F" stroke-width="6" stroke-linecap="butt" stroke-linejoin="miter" />
+</svg>

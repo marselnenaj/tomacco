@@ -1,0 +1,230 @@
+diff --git a/tcg/x86_64/tcg-target.h b/tcg/x86_64/tcg-target.h
+--- a/tcg/x86_64/tcg-target.h
++++ b/tcg/x86_64/tcg-target.h
+@@ -25,10 +25,19 @@
+ #ifndef I386_TCG_TARGET_H
+ #define I386_TCG_TARGET_H
+ 
++#include "qemu/units.h"
++
+ #define TCG_TARGET_INSN_UNIT_SIZE  1
+ 
+ #define TCG_TARGET_NB_REGS   32
++/* Larger x86_64 caches retain an indirect tail for distant TB chains. */
++#if TCG_TARGET_REG_BITS == 64
++#define MAX_CODE_GEN_BUFFER_SIZE  (4 * GiB)
++#define TCG_TARGET_HAS_WIDE_TB_CHAINING 1
++#else
+ #define MAX_CODE_GEN_BUFFER_SIZE  (2 * GiB)
++#define TCG_TARGET_HAS_WIDE_TB_CHAINING 0
++#endif
+ 
+ typedef enum {
+     TCG_REG_EAX = 0,
+diff --git a/tcg/x86_64/tcg-target.c.inc b/tcg/x86_64/tcg-target.c.inc
+--- a/tcg/x86_64/tcg-target.c.inc
++++ b/tcg/x86_64/tcg-target.c.inc
+@@ -2360,6 +2360,22 @@
+     tcg_out8(s, OPC_JMP_long); /* jmp im */
+     set_jmp_insn_offset(s, which);
+     tcg_out32(s, 0);
++    if (TCG_TARGET_HAS_WIDE_TB_CHAINING &&
++        tcg_code_buffer_size() > 2 * GiB) {
++        /*
++         * Keep the direct E9 instruction and its aligned displacement. A
++         * distant target patches that displacement to zero, reaching this
++         * immutable RIP-relative indirect tail. Only data, never an opcode,
++         * changes while another vCPU executes the block.
++         */
++        uintptr_t slot = get_jmp_target_addr(s, which);
++        intptr_t disp = tcg_pcrel_diff(s, (const void *)slot) - 6;
++        g_assert(disp == (int32_t)disp);
++        tcg_out_opc(s, OPC_GRP5, 0, 0, 0);
++        tcg_out8(s, (EXT5_JMPN_Ev << 3) | 5);
++        tcg_out32(s, disp);
++    }
++    /* Reset skips the tail and reaches the original unchained exit. */
+     set_jmp_reset_offset(s, which);
+ }
+ 
+@@ -2369,12 +2385,32 @@
+     tcg_out_modrm(s, OPC_GRP5, EXT5_JMPN_Ev, a0);
+ }
+ 
++#if TCG_TARGET_HAS_WIDE_TB_CHAINING
++static uint64_t wide_chain_patch_count;
++
++uint64_t tcg_wide_chain_patch_count(void)
++{
++    return qatomic_read(&wide_chain_patch_count);
++}
++#endif
++
+ void tb_target_set_jmp_target(const TranslationBlock *tb, int n,
+                               uintptr_t jmp_rx, uintptr_t jmp_rw)
+ {
+     /* patch the branch destination */
+     uintptr_t addr = tb->jmp_target_addr[n];
+-    qatomic_set((int32_t *)jmp_rw, addr - (jmp_rx + 4));
++    intptr_t disp = addr - (jmp_rx + 4);
++    if (disp != (int32_t)disp) {
++        /* Only a wide cache emits the six-byte indirect tail. */
++        g_assert(TCG_TARGET_HAS_WIDE_TB_CHAINING &&
++                 tcg_code_buffer_size() > 2 * GiB);
++        disp = 0;
++#if TCG_TARGET_HAS_WIDE_TB_CHAINING
++        /* Counts far-chain selections, not executed guest branches. */
++        qatomic_inc(&wide_chain_patch_count);
++#endif
++    }
++    qatomic_set((int32_t *)jmp_rw, disp);
+     /* no need to flush icache explicitly */
+ }
+ 
+diff --git a/include/tcg/tcg.h b/include/tcg/tcg.h
+--- a/include/tcg/tcg.h
++++ b/include/tcg/tcg.h
+@@ -33,6 +33,9 @@
+ #include "tcg/tcg-mo.h"
+ #include "tcg/target-reg-bits.h"
+ #include "tcg-target.h"
++#ifndef TCG_TARGET_HAS_WIDE_TB_CHAINING
++#define TCG_TARGET_HAS_WIDE_TB_CHAINING 0
++#endif
+ #include "tcg/tcg-cond.h"
+ #include "tcg/insn-start-words.h"
+ #include "tcg/debug-assert.h"
+@@ -625,6 +628,11 @@
+ 
+ size_t tcg_code_size(void);
+ size_t tcg_code_capacity(void);
++/* Entire mapped address span, including prologue and guard pages. */
++size_t tcg_code_buffer_size(void);
++#if TCG_TARGET_HAS_WIDE_TB_CHAINING
++uint64_t tcg_wide_chain_patch_count(void);
++#endif
+ 
+ /**
+  * tcg_tb_insert:
+diff --git a/tcg/region.c b/tcg/region.c
+--- a/tcg/region.c
++++ b/tcg/region.c
+@@ -895,6 +895,16 @@
+  * regions.
+  * See also: tcg_code_size()
+  */
++/*
++ * Unlike usable code capacity, this includes the holes between regions and
++ * the final guard page removed from total_size at initialization. Branch
++ * reach is an address-span property, not a count of usable code bytes.
++ */
++size_t tcg_code_buffer_size(void)
++{
++    return region.start_aligned ? region.total_size + qemu_real_host_page_size() : 0;
++}
++
+ size_t tcg_code_capacity(void)
+ {
+     size_t guard_size, capacity;
+diff --git a/accel/tcg/cpu-exec.c b/accel/tcg/cpu-exec.c
+--- a/accel/tcg/cpu-exec.c
++++ b/accel/tcg/cpu-exec.c
+@@ -612,7 +612,8 @@
+     uintptr_t jmp_rx = (uintptr_t)tb->tc.ptr + offset;
+     uintptr_t jmp_rw = jmp_rx - tcg_splitwx_diff;
+ 
+-    tb->jmp_target_addr[n] = addr;
++    /* The wide-chain tail loads this naturally aligned pointer directly. */
++    qatomic_set(&tb->jmp_target_addr[n], addr);
+     tb_target_set_jmp_target(c_tb, n, jmp_rx, jmp_rw);
+ }
+ 
+diff --git a/accel/tcg/tcg-all.c b/accel/tcg/tcg-all.c
+--- a/accel/tcg/tcg-all.c
++++ b/accel/tcg/tcg-all.c
+@@ -28,6 +28,7 @@
+ #include "exec/replay-core.h"
+ #include "exec/icount.h"
+ #include "tcg/startup.h"
++#include "tcg/tcg.h"
+ #include "qapi/error.h"
+ #include "qemu/error-report.h"
+ #include "qemu/accel.h"
+@@ -216,6 +217,37 @@
+     visit_type_uint32(v, name, &value, errp);
+ }
+ 
++static void tcg_get_max_tb_size(Object *obj, Visitor *v,
++                                const char *name, void *opaque,
++                                Error **errp)
++{
++    uint64_t value = MAX_CODE_GEN_BUFFER_SIZE / MiB;
++    visit_type_uint64(v, name, &value, errp);
++}
++
++static void tcg_get_tb_buffer_size(Object *obj, Visitor *v,
++                                   const char *name, void *opaque,
++                                   Error **errp)
++{
++    uint64_t value = tcg_code_buffer_size();
++    visit_type_uint64(v, name, &value, errp);
++}
++
++static bool tcg_get_wide_tb_chaining(Object *obj, Error **errp)
++{
++    return TCG_TARGET_HAS_WIDE_TB_CHAINING;
++}
++
++#if TCG_TARGET_HAS_WIDE_TB_CHAINING
++static void tcg_get_wide_chain_patches(Object *obj, Visitor *v,
++                                      const char *name, void *opaque,
++                                      Error **errp)
++{
++    uint64_t value = tcg_wide_chain_patch_count();
++    visit_type_uint64(v, name, &value, errp);
++}
++#endif
++
+ static void tcg_set_tb_size(Object *obj, Visitor *v,
+                             const char *name, void *opaque,
+                             Error **errp)
+@@ -275,6 +307,26 @@
+         NULL, NULL);
+     object_class_property_set_description(oc, "tb-size",
+         "TCG translation block cache size");
++
++    object_class_property_add(oc, "max-tb-size", "int",
++                             tcg_get_max_tb_size, NULL, NULL, NULL);
++    object_class_property_set_description(oc, "max-tb-size",
++        "Host backend translation-buffer limit in MiB (read-only)");
++    object_class_property_add(oc, "tb-buffer-size", "int",
++                             tcg_get_tb_buffer_size, NULL, NULL, NULL);
++    object_class_property_set_description(oc, "tb-buffer-size",
++        "Actual mapped translation-buffer address span in bytes (read-only)");
++    object_class_property_add_bool(oc, "wide-tb-chaining",
++                                  tcg_get_wide_tb_chaining, NULL);
++    object_class_property_set_description(oc, "wide-tb-chaining",
++        "Host backend has a range-independent TB-chain tail (read-only)");
++
++#if TCG_TARGET_HAS_WIDE_TB_CHAINING
++    object_class_property_add(oc, "wide-tb-chain-patches", "int",
++                             tcg_get_wide_chain_patches, NULL, NULL, NULL);
++    object_class_property_set_description(oc, "wide-tb-chain-patches",
++        "Far TB-chain selections since startup, not executed branches (read-only)");
++#endif
+ 
+     object_class_property_add_bool(oc, "split-wx",
+         tcg_get_splitwx, tcg_set_splitwx);
+diff --git a/accel/accel-system.c b/accel/accel-system.c
+--- a/accel/accel-system.c
++++ b/accel/accel-system.c
+@@ -49,6 +49,9 @@
+         object_unref(OBJECT(accel));
+     } else {
+         object_set_accelerator_compat_props(acc->compat_props);
++        /* Read-only weak link: keep the accelerator's existing ownership. */
++        object_property_add_link(OBJECT(ms), "accel", TYPE_ACCEL,
++                                 (Object **)&ms->accelerator, NULL, 0);
+     }
+     return ret;
+ }

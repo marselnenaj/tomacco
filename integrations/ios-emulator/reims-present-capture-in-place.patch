@@ -1,0 +1,848 @@
+reims-vgpu: the present capture converts the leased readback in place.
+
+Every accepted DisplaySwap on a host whose window is not engine-presented
+(the vphone: `window_publish no_window`, `capture_sampling light=0`) reads
+the compositor's 1206x2622 RGBA16F front back for the CPU retain
+(`frame_bgra`). Before: `read_resident_bgra` copied the 25 MiB staging
+buffer into a fresh `Vec` (ReadbackDelivery::Copy), narrowed it through the
+half-float LUT into a fresh 12 MiB RGBA8 `Vec`, exchanged R and B across
+it, and the drain then walked the retain again for `present_content`'s
+`rgb_nz`/`max_rgb`: four whole-frame passes and two allocations under the
+device lock, 11-22 ms per present measured on this host (copy 2-9 ms, LUT
+5-8 ms, exchange 1.2 ms, walk 0.9 ms; plus the ~1.6 ms fence), which is
+`drain_ops op0x08_us / op0x08_n` on a running device (measured:
+111-178 ms/s at 6-11 presents/s, 11-22 ms each).
+Now: `engine::capture_resident_bgra_into` borrows the staging buffer
+(`read_target_texels_consumable`, ReadbackDelivery::Lease) and
+`present_capture::convert_with_stats` writes BGRA8 straight into the
+recycled capture scratch, in pixel-independent bands on up to four scoped
+threads, taking `bgra_rgb_stats`'s figures block by block while the bytes
+are in cache; the drain takes those figures (`PresentState::capture_stats`,
+cleared at the top of every capture, set only by a resident capture whose
+buffer becomes the retain) instead of rescanning. 1.3-1.9 ms for the same
+frame on the same host.
+Same bytes: `Rgba8Narrowing::convert_to_bgra8` is `convert` followed by the
+R/B exchange (same table, same slots; the RGBA16F arm is fused, every other
+arm is the two-step form), per-pixel independent, and taking `need` bytes is
+the old `truncate(need)`. Same refusals and decline lines
+(`present_capture reason=…`, `readback_texel_not_scanout`, the
+`target_read_narrowed` route); the prior retain is kept on every refusal.
+Nothing the guest reads changes: the retain feeds the console paint and
+the window only. New route `present_capture_fused` counts the rail.
+Tests: pixel_format::convert_to_bgra8_tests (all 65 536 half words in every
+channel slot, every plan, refusals); engine::present_capture::tests (the
+vphone geometry banded across threads, every plan at block/band edges, the
+leading-pixel truncation, refusals, black frames) against the old
+narrow + exchange + bgra_rgb_stats rail; vk_engine_parity::
+the_in_place_present_capture_is_the_copying_capture on RADV (a 613x431
+RGBA16F resident seeded with NaN/inf/negative/subnormal/tie words and a
+BGRA8 surface: identical bytes and figures to read_resident_bgra, twice,
+plus truncation and the over-long refusal).
+
+diff --git i/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs w/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+index 919e3c0..b30ba48 100644
+--- i/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ w/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -3408,6 +3408,146 @@ impl Rgba8Narrowing {
+         }
+         true
+     }
++
++    /// [`Self::convert`] followed by an exchange of R and B, written straight
++    /// into scanout (BGRA8) order.
++    ///
++    /// The present capture used to narrow a half-float frame into a fresh RGBA8
++    /// `Vec` and then walk it again to exchange R and B. Both passes are one
++    /// here for `Rgba16Float`, the compositor's front format, and the bytes are
++    /// the same table lookups landing in the exchanged slots: `dst[0]` is the
++    /// LUT of the source's blue half, and so on. Every other layout is the
++    /// two-step form spelled out, so there is one conversion per layout and
++    /// this cannot disagree with `convert` on any value.
++    pub fn convert_to_bgra8(self, src: &[u8], pixels: u32, dst_bgra: &mut [u8]) -> bool {
++        let px = pixels as usize;
++        let Some(src_len) = px.checked_mul(self.source_layout().bytes_per_texel() as usize) else {
++            return false;
++        };
++        let Some(dst_len) = px.checked_mul(RGBA8_BPP as usize) else {
++            return false;
++        };
++        if src.len() < src_len || dst_bgra.len() < dst_len {
++            return false;
++        }
++        match self {
++            Self::Rgba16Float => {
++                // Fixed-size chunks and a `u16` index into a 65 536-entry
++                // table: every access is in bounds by type, so the loop carries
++                // no checks. This is the capture's whole per-pixel cost.
++                let lut = f16_to_unorm8_lut();
++                let half = |s: &[u8; 8], c: usize| {
++                    lut[usize::from(u16::from_le_bytes([s[c * 2], s[c * 2 + 1]]))]
++                };
++                for (s, d) in src[..src_len]
++                    .as_chunks::<8>()
++                    .0
++                    .iter()
++                    .zip(dst_bgra[..dst_len].as_chunks_mut::<4>().0.iter_mut())
++                {
++                    d[COMPONENT_R] = half(s, COMPONENT_B);
++                    d[COMPONENT_G] = half(s, COMPONENT_G);
++                    d[COMPONENT_B] = half(s, COMPONENT_R);
++                    d[COMPONENT_A] = half(s, COMPONENT_A);
++                }
++            }
++            // A BGRA8 source narrowed to RGBA and exchanged back is its own bytes.
++            Self::Bgra8 => dst_bgra[..dst_len].copy_from_slice(&src[..dst_len]),
++            _ => {
++                if !self.convert(src, pixels, dst_bgra) {
++                    return false;
++                }
++                for d in dst_bgra[..dst_len].as_chunks_mut::<4>().0 {
++                    d.swap(COMPONENT_R, COMPONENT_B);
++                }
++            }
++        }
++        true
++    }
++}
++
++#[cfg(test)]
++mod convert_to_bgra8_tests {
++    use super::*;
++
++    const EVERY_PLAN: [Rgba8Narrowing; 7] = [
++        Rgba8Narrowing::Rgba8,
++        Rgba8Narrowing::Bgra8,
++        Rgba8Narrowing::Rgba16Float,
++        Rgba8Narrowing::R16Float,
++        Rgba8Narrowing::Rg16Float,
++        Rgba8Narrowing::R8,
++        Rgba8Narrowing::Bgr10a2Unorm,
++    ];
++
++    /// The old two-step answer: `convert` into RGBA8, then exchange R and B.
++    fn two_step(plan: Rgba8Narrowing, src: &[u8], pixels: u32) -> Vec<u8> {
++        let mut rgba = vec![0u8; pixels as usize * 4];
++        assert!(plan.convert(src, pixels, &mut rgba));
++        for px in rgba.as_chunks_mut::<4>().0 {
++            px.swap(0, 2);
++        }
++        rgba
++    }
++
++    /// Every half-float bit pattern, in every channel slot, through the fused
++    /// arm: NaNs, infinities, negatives, subnormals and the 0.5 tie included.
++    /// A slot mix-up or a different rounding fails on the first word it moves.
++    #[test]
++    fn the_fused_half_float_arm_is_convert_then_exchange_for_every_word() {
++        let pixels = 65536u32;
++        for rotate in 0..4usize {
++            let mut src = Vec::with_capacity(pixels as usize * 8);
++            for word in 0..pixels {
++                for channel in 0..4usize {
++                    // Each channel walks the whole table at its own offset, so
++                    // no two channels of a pixel carry the same word.
++                    let value = (word as usize + (channel + rotate) * 16411) as u16;
++                    src.extend_from_slice(&value.to_le_bytes());
++                }
++            }
++            let mut fused = vec![0xa5u8; pixels as usize * 4];
++            assert!(Rgba8Narrowing::Rgba16Float.convert_to_bgra8(&src, pixels, &mut fused));
++            assert_eq!(fused, two_step(Rgba8Narrowing::Rgba16Float, &src, pixels));
++        }
++    }
++
++    #[test]
++    fn every_plan_agrees_with_convert_then_exchange() {
++        let pixels = 517u32;
++        let mut state = 0x9e37_79b9u32;
++        let src: Vec<u8> = (0..pixels as usize * 8)
++            .map(|_| {
++                state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
++                (state >> 24) as u8
++            })
++            .collect();
++        for plan in EVERY_PLAN {
++            let bytes = pixels as usize * plan.source_layout().bytes_per_texel() as usize;
++            let mut fused = vec![0x5au8; pixels as usize * 4];
++            assert!(
++                plan.convert_to_bgra8(&src[..bytes], pixels, &mut fused),
++                "{plan:?}"
++            );
++            assert_eq!(fused, two_step(plan, &src[..bytes], pixels), "{plan:?}");
++        }
++    }
++
++    /// The same refusals `convert` has, and the destination left as it was.
++    #[test]
++    fn a_short_source_or_destination_is_refused_and_writes_nothing() {
++        for plan in EVERY_PLAN {
++            let bpt = plan.source_layout().bytes_per_texel() as usize;
++            let src = vec![0x3cu8; 4 * bpt];
++            let mut dst = vec![7u8; 16];
++            assert!(
++                !plan.convert_to_bgra8(&src[..4 * bpt - 1], 4, &mut dst),
++                "{plan:?}"
++            );
++            assert!(!plan.convert_to_bgra8(&src, 4, &mut dst[..15]), "{plan:?}");
++            assert_eq!(dst, vec![7u8; 16], "{plan:?}");
++        }
++    }
+ }
+ 
+ /// Read `layout`'s texels back as a semantic-RGBA8 frame — the inverse of
+diff --git i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs w/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+index 6bd9f8c..08720d4 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -30,6 +30,7 @@ mod host_ram;
+ pub mod init_decline;
+ mod linear_target_import;
+ mod pools;
++mod present_capture;
+ mod queue_owner;
+ /// This rail's half of a serialized resource's rail state: the resident-target
+ /// leases the guest's own delete releases.
+@@ -2989,6 +2990,107 @@ pub fn read_resident_bgra(identity: &TargetIdentity, need: usize) -> Option<Vec<
+     Some(px)
+ }
+ 
++/// The present capture's form of [`read_resident_bgra`]: the same frame, the
++/// same refusals, written straight into the caller's recycled buffer.
++///
++/// [`read_resident_bgra`] copies the staging buffer out into a `Vec`, narrows
++/// that into a second one and exchanges R and B across it, after which the
++/// drain walks the result for `present_content`'s figures — four whole-frame
++/// passes and two fresh allocations per accepted present, 11-22 ms of
++/// `op0x08_us` at the vphone's 1206x2622 RGBA16F front. This borrows the
++/// staging buffer in place and writes `dst` once, in bands across a few
++/// threads, with the figures taken on the way (see [`present_capture`]).
++///
++/// The bytes are the old rail's by construction: the narrowing is the same
++/// `Rgba8Narrowing` table and the exchange is the same slot swap
++/// ([`crate::protocol::pixel_format::Rgba8Narrowing::convert_to_bgra8`]), a
++/// four-byte colour readback is copied or exchanged exactly as
++/// `TargetReadback::into_bgra8` did, and `dst` taking `dst.len()` bytes is the
++/// old `truncate(need)`.
++///
++/// `Some((rgb_nz, max_rgb, px0))` on success, the figures
++/// `observe::bgra_rgb_stats` returns for `dst`. `None` exactly where
++/// [`read_resident_bgra`] answers `None`, with the same decline lines; `dst`
++/// is then not a frame and the caller keeps its prior retain.
++///
++/// The lease is dropped before this returns and nothing here takes the engine
++/// lock while it is held — the rule [`ConsumableTargetTexels`] states.
++pub fn capture_resident_bgra_into(
++    identity: &TargetIdentity,
++    dst: &mut [u8],
++) -> Option<(usize, u8, [u8; 4])> {
++    use crate::protocol::pixel_format::Rgba8Narrowing;
++    {
++        let guard = lock_engine();
++        let slot = guard.pools.registry_get(identity)?;
++        if !slot.content_ready {
++            return None;
++        }
++    }
++    let decline = |e: &DrawError| {
++        let mut emit = crate::observe::Emit::decline("present_capture", e);
++        for (key, value) in draw_execution::identity_fields(identity) {
++            emit = emit.field(key, value);
++        }
++        emit.off();
++    };
++    let texels = match read_target_texels_consumable(identity) {
++        Ok(texels) => texels,
++        Err(e) => {
++            decline(&e);
++            return None;
++        }
++    };
++    let texel = texels.texel;
++    let plan = match texel {
++        ReadbackTexel::Bgra8 => Rgba8Narrowing::Bgra8,
++        ReadbackTexel::Rgba8 => Rgba8Narrowing::Rgba8,
++        ReadbackTexel::Native(layout) => {
++            // The old rail's shape check, refused under the old rail's error.
++            if let Err(e) = readback_pixel_count(texels.bytes().len(), layout) {
++                decline(&e);
++                return None;
++            }
++            match Rgba8Narrowing::for_layout(layout) {
++                Some(plan) => plan,
++                None => {
++                    crate::runtime::drain::note_store_route(
++                        "target_read_narrow_allocation_avoided",
++                    );
++                    crate::observe::off(format!(
++                        "present_capture reason=readback_texel_not_scanout texel={texel:?}"
++                    ));
++                    return None;
++                }
++            }
++        }
++    };
++    let bpt = plan.source_layout().bytes_per_texel() as usize;
++    let pixels = texels.bytes().len() / bpt;
++    // `narrow_colour_bytes` refused a native frame whose pixel count does not
++    // fit a `u32`, before it looked at the caller's length.
++    if matches!(texel, ReadbackTexel::Native(_)) && u32::try_from(pixels).is_err() {
++        decline(&DrawError::TargetRead(
++            reason::TargetReadDecline::ColourPixelCount {
++                pixels: pixels as u64,
++            },
++        ));
++        return None;
++    }
++    // The old `px.len() < need` refusal: the resident holds fewer pixels than
++    // the present names.
++    if pixels.checked_mul(RESIDENT_READ_BYTES_PER_TEXEL as usize)? < dst.len() {
++        return None;
++    }
++    let stats = present_capture::convert_with_stats(plan, texels.bytes(), dst)?;
++    drop(texels);
++    if matches!(texel, ReadbackTexel::Native(_)) {
++        crate::runtime::drain::note_store_route("target_read_narrowed");
++    }
++    crate::runtime::drain::note_store_route("present_capture_fused");
++    Some(stats)
++}
++
+ /// The six fallible Vulkan calls a whole-image readback makes, named per rail.
+ ///
+ /// The rails differ in nothing else, but they must not share slugs: a
+diff --git i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/present_capture.rs w/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/present_capture.rs
+new file mode 100644
+index 0000000..57048be
+--- /dev/null
++++ w/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/present_capture.rs
+@@ -0,0 +1,298 @@
++//! The present capture's CPU half: one pass from a resident's readback bytes
++//! to the tight BGRA8 retain, with the frame's occupancy figures on the side.
++//!
++//! # What it replaced, and what it cost
++//!
++//! Every accepted `CmdDisplaySwap` on a host with no engine-presented window
++//! (`window_publish no_window=…`, `capture_sampling light=0`) captured the
++//! compositor's RGBA16F front surface — 1206x2622 on the vphone, 25 MiB of
++//! half floats — through four whole-frame passes and two fresh allocations,
++//! all on the drain under the device lock:
++//!
++//! 1. the staging buffer copied out into a fresh 25 MiB `Vec`
++//!    (`ReadbackDelivery::Copy`, `readback_split map_us`);
++//! 2. that `Vec` narrowed through the half-float LUT into a fresh 12 MiB RGBA8
++//!    `Vec` (`narrow_colour_bytes`);
++//! 3. R and B exchanged across it (`TargetReadback::into_bgra8`);
++//! 4. moved into the retain, and then walked again by the drain for
++//!    `present_content`'s `rgb_nz` / `max_rgb` (`observe::bgra_rgb_stats`).
++//!
++//! Measured on this host's CPU (i9-13900K) with the product's own conversion
++//! at that geometry: 2-9 ms for the copy (the upper end while the fresh pages
++//! fault), 5-8 ms for the LUT, 1.2 ms for the exchange and 0.9 ms for the walk,
++//! plus the readback fence (~1.6 ms, `readback_split fence_us`) — the 11-22 ms
++//! per present that `drain_ops op0x08_us / op0x08_n` reads on the vphone.
++//!
++//! Now the staging buffer is borrowed in place (`ReadbackDelivery::Lease`) and
++//! [`convert_with_stats`] writes BGRA8 straight into the recycled capture
++//! scratch in pixel-independent bands on up to four scoped threads, folding the
++//! walk into each block while it is still in cache: 1.3-1.9 ms for the same
++//! frame on the same host, the fence unchanged.
++//!
++//! # Why the bytes are the same
++//!
++//! The conversion is [`Rgba8Narrowing::convert_to_bgra8`], which is
++//! `Rgba8Narrowing::convert` followed by the exchange — the same table, the
++//! same slots — and every pixel is converted independently of every other, so
++//! a band boundary cannot change a byte. The figures are `bgra_rgb_stats`'s own
++//! rule (a pixel counts when `max(B, G, R) != 0`) summed and maxed across
++//! bands, which is associative; `px0` is the first pixel of the first band.
++
++use crate::protocol::pixel_format::{Rgba8Narrowing, RGBA8_BPP};
++
++/// `(rgb_nz, max_rgb, px0)`, exactly as `observe::bgra_rgb_stats` spells them.
++pub type FrameStats = (usize, u8, [u8; 4]);
++
++/// Pixels converted before their figures are taken: 64 KiB of BGRA8, so the
++/// walk reads what the conversion just wrote out of L2 rather than DRAM.
++const BLOCK_PIXELS: usize = 16 * 1024;
++
++/// Frames smaller than this are converted on the calling thread; a thread
++/// costs tens of microseconds to start and a small frame is done before that.
++const PARALLEL_MIN_PIXELS: usize = 1 << 18;
++
++/// The most threads one capture uses. The drain already shares the host with
++/// the guest's vCPU threads; four bands bring a 3.2 Mpx frame to about a
++/// millisecond, and more would mostly contend for memory bandwidth.
++const MAX_THREADS: usize = 4;
++
++fn capture_threads() -> usize {
++    static THREADS: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
++    *THREADS.get_or_init(|| {
++        std::thread::available_parallelism()
++            .map(usize::from)
++            .unwrap_or(1)
++            .clamp(1, MAX_THREADS)
++    })
++}
++
++/// The figures for one run of tight BGRA8, and how two runs combine.
++fn stats_of(bgra: &[u8]) -> (usize, u8) {
++    let (nz, max, _) = crate::observe::bgra_rgb_stats(bgra);
++    (nz, max)
++}
++
++/// Convert one band, block by block, taking each block's figures right after
++/// writing it. `false` only on a length the caller has already ruled out.
++fn convert_band(plan: Rgba8Narrowing, src: &[u8], dst: &mut [u8]) -> Option<(usize, u8)> {
++    let bpt = plan.source_layout().bytes_per_texel() as usize;
++    let px = RGBA8_BPP as usize;
++    let mut nz = 0usize;
++    let mut max = 0u8;
++    for (s, d) in src
++        .chunks(BLOCK_PIXELS * bpt)
++        .zip(dst.chunks_mut(BLOCK_PIXELS * px))
++    {
++        let pixels = u32::try_from(d.len() / px).ok()?;
++        if !plan.convert_to_bgra8(s, pixels, d) {
++            return None;
++        }
++        let (block_nz, block_max) = stats_of(d);
++        nz += block_nz;
++        max = max.max(block_max);
++    }
++    Some((nz, max))
++}
++
++/// Write `dst.len() / 4` pixels of `src` (in `plan`'s source layout) into `dst`
++/// as tight BGRA8 and return the frame's figures.
++///
++/// `None` — with `dst` untouched — when `dst` is not a whole number of pixels
++/// or `src` holds fewer of them; the capture treats that as no frame.
++pub fn convert_with_stats(plan: Rgba8Narrowing, src: &[u8], dst: &mut [u8]) -> Option<FrameStats> {
++    let px = RGBA8_BPP as usize;
++    let bpt = plan.source_layout().bytes_per_texel() as usize;
++    if !dst.len().is_multiple_of(px) {
++        return None;
++    }
++    let pixels = dst.len() / px;
++    let src = src.get(..pixels.checked_mul(bpt)?)?;
++    u32::try_from(pixels).ok()?;
++    let threads = if pixels >= PARALLEL_MIN_PIXELS {
++        capture_threads()
++    } else {
++        1
++    };
++    let (nz, max) = if threads <= 1 {
++        convert_band(plan, src, dst)?
++    } else {
++        // Whole blocks per band, so a band boundary is also a block boundary
++        // and each thread's walk covers exactly what it wrote.
++        let band_pixels = pixels.div_ceil(threads).div_ceil(BLOCK_PIXELS) * BLOCK_PIXELS;
++        let results: Vec<Option<(usize, u8)>> = std::thread::scope(|scope| {
++            let handles: Vec<_> = src
++                .chunks(band_pixels * bpt)
++                .zip(dst.chunks_mut(band_pixels * px))
++                .map(|(s, d)| scope.spawn(move || convert_band(plan, s, d)))
++                .collect();
++            handles
++                .into_iter()
++                .map(|handle| handle.join().unwrap_or(None))
++                .collect()
++        });
++        let mut nz = 0usize;
++        let mut max = 0u8;
++        for band in results {
++            let (band_nz, band_max) = band?;
++            nz += band_nz;
++            max = max.max(band_max);
++        }
++        (nz, max)
++    };
++    let px0 = match dst {
++        [b, g, r, a, ..] => [*b, *g, *r, *a],
++        _ => [0; 4],
++    };
++    Some((nz, max, px0))
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::protocol::pixel_format::TexelLayout;
++
++    /// The rail this replaced, step for step: narrow to RGBA8 (or keep a
++    /// four-byte colour readback), exchange R and B, then walk the result.
++    fn old_rail(plan: Rgba8Narrowing, src: &[u8], pixels: usize) -> (Vec<u8>, FrameStats) {
++        let mut rgba = vec![0u8; pixels * 4];
++        assert!(plan.convert(src, pixels as u32, &mut rgba));
++        for px in rgba.as_chunks_mut::<4>().0 {
++            px.swap(0, 2);
++        }
++        let stats = crate::observe::bgra_rgb_stats(&rgba);
++        (rgba, stats)
++    }
++
++    fn noise(bytes: usize, seed: u32) -> Vec<u8> {
++        let mut state = seed;
++        (0..bytes)
++            .map(|_| {
++                state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
++                (state >> 24) as u8
++            })
++            .collect()
++    }
++
++    /// Half floats a composite actually holds — mostly in [0, 1], some black,
++    /// some past one, some negative — so `rgb_nz` and `max_rgb` are not
++    /// trivially the pixel count and 255.
++    fn composite_like(pixels: usize, seed: u32) -> Vec<u8> {
++        let words = noise(pixels * 8, seed);
++        words
++            .as_chunks::<2>()
++            .0
++            .iter()
++            .map(|w| {
++                let r = u16::from_le_bytes(*w);
++                match r % 8 {
++                    0 => 0u16,
++                    1 => 0x3c00 + (r >> 6),
++                    2 => 0x8000 | (r >> 4),
++                    _ => 0x2000 + (r % 0x1c00),
++                }
++            })
++            .flat_map(u16::to_le_bytes)
++            .collect()
++    }
++
++    /// The vphone's front surface at its own geometry, banded across threads:
++    /// every byte and every figure is the old rail's.
++    #[test]
++    fn a_full_screen_half_float_frame_is_the_old_rails_frame_and_figures() {
++        let pixels = 1206 * 2622;
++        let src = composite_like(pixels, 7);
++        let plan = Rgba8Narrowing::for_layout(TexelLayout::Rgba16Float).unwrap();
++        let mut dst = vec![0xeeu8; pixels * 4];
++        let stats = convert_with_stats(plan, &src, &mut dst).expect("a whole frame");
++        let (want, want_stats) = old_rail(plan, &src, pixels);
++        assert!(dst == want, "converted bytes differ from narrow + exchange");
++        assert_eq!(stats, want_stats);
++        assert!(
++            stats.0 > 0 && stats.0 < pixels,
++            "{stats:?}: the figures must be informative"
++        );
++    }
++
++    /// Band and block edges are where a split would lose or repeat a pixel, so
++    /// frames are taken on both sides of each, for every plan.
++    #[test]
++    fn every_plan_and_split_edge_matches_the_old_rail() {
++        let sizes = [
++            1,
++            BLOCK_PIXELS - 1,
++            BLOCK_PIXELS,
++            BLOCK_PIXELS + 1,
++            PARALLEL_MIN_PIXELS - 1,
++            PARALLEL_MIN_PIXELS,
++            PARALLEL_MIN_PIXELS + 3 * BLOCK_PIXELS + 17,
++        ];
++        let plans = [
++            Rgba8Narrowing::Rgba8,
++            Rgba8Narrowing::Bgra8,
++            Rgba8Narrowing::Rgba16Float,
++            Rgba8Narrowing::R16Float,
++            Rgba8Narrowing::Rg16Float,
++            Rgba8Narrowing::R8,
++            Rgba8Narrowing::Bgr10a2Unorm,
++        ];
++        for (i, &pixels) in sizes.iter().enumerate() {
++            for plan in plans {
++                let bpt = plan.source_layout().bytes_per_texel() as usize;
++                let src = noise(pixels * bpt, 31 + i as u32);
++                let mut dst = vec![0x11u8; pixels * 4];
++                let stats = convert_with_stats(plan, &src, &mut dst)
++                    .unwrap_or_else(|| panic!("{plan:?} {pixels}"));
++                let (want, want_stats) = old_rail(plan, &src, pixels);
++                assert!(dst == want, "{plan:?} {pixels}: bytes");
++                assert_eq!(stats, want_stats, "{plan:?} {pixels}: figures");
++            }
++        }
++    }
++
++    /// A destination shorter than the source is the old `truncate(need)`: the
++    /// leading pixels of the conversion, nothing past them read or written.
++    #[test]
++    fn a_shorter_destination_takes_the_leading_pixels() {
++        let plan = Rgba8Narrowing::Rgba16Float;
++        let src = composite_like(1000, 3);
++        let mut dst = vec![0u8; 600 * 4];
++        let stats = convert_with_stats(plan, &src, &mut dst).unwrap();
++        let (want, _) = old_rail(plan, &src, 1000);
++        assert_eq!(&dst[..], &want[..600 * 4]);
++        assert_eq!(stats, crate::observe::bgra_rgb_stats(&want[..600 * 4]));
++    }
++
++    /// Refusals leave the scratch as it was.
++    #[test]
++    fn a_short_source_or_a_partial_pixel_is_refused_untouched() {
++        let plan = Rgba8Narrowing::Rgba16Float;
++        let src = composite_like(10, 5);
++        let mut dst = vec![9u8; 11 * 4];
++        assert_eq!(convert_with_stats(plan, &src, &mut dst), None);
++        assert_eq!(dst, vec![9u8; 11 * 4]);
++        let mut ragged = vec![9u8; 4 * 4 + 2];
++        assert_eq!(convert_with_stats(plan, &src, &mut ragged), None);
++        assert_eq!(ragged, vec![9u8; 4 * 4 + 2]);
++    }
++
++    #[test]
++    fn a_black_frame_reads_black_and_an_empty_one_reads_zero() {
++        let plan = Rgba8Narrowing::Rgba16Float;
++        // Opaque black: alpha is 1.0, colour is zero, so `rgb_nz` is zero.
++        let src: Vec<u8> = [0u16, 0, 0, 0x3c00]
++            .repeat(PARALLEL_MIN_PIXELS + 5)
++            .into_iter()
++            .flat_map(u16::to_le_bytes)
++            .collect();
++        let mut dst = vec![1u8; (PARALLEL_MIN_PIXELS + 5) * 4];
++        assert_eq!(
++            convert_with_stats(plan, &src, &mut dst),
++            Some((0, 0, [0, 0, 0, 255]))
++        );
++        let mut empty: Vec<u8> = Vec::new();
++        assert_eq!(
++            convert_with_stats(plan, &src, &mut empty),
++            Some((0, 0, [0; 4]))
++        );
++    }
++}
+diff --git i/reims-vgpu/crates/reims-vgpu/src/model/state.rs w/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+index 4350236..d12ac8a 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/model/state.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+@@ -2588,6 +2588,16 @@ pub struct PresentState {
+     /// skipped) captures, so the readback-elision ratio is visible.
+     pub full_captures: u64,
+     pub light_captures: u64,
++    /// `(rgb_nz, max_rgb, px0)` of the frame the last capture wrote, when that
++    /// capture computed them while converting it — the same three numbers
++    /// `observe::bgra_rgb_stats` returns for those bytes.
++    ///
++    /// Cleared at the top of every `capture_present_frame` and set only by a
++    /// resident capture whose buffer then becomes [`Self::frame_bgra`], so a
++    /// `Some` here always describes the bytes in that retain. The present drain
++    /// takes it instead of walking the 12 MiB frame a second time; `None` (host
++    /// cache source, a light capture, another rail) falls back to the walk.
++    pub capture_stats: Option<(usize, u8, [u8; 4])>,
+ }
+ 
+ /// Hardware cursor model.
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+index e288e01..f513d7c 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+@@ -5014,7 +5014,15 @@ fn present_named_mapping<H: HostMemory + HostOps>(
+             // `px[0].max(px[1]).max(px[2])` per pixel, so a separate scan for
+             // `max_rgb` was a second full 8 MiB walk of the frame, under the
+             // device lock, for a value this call already returns.
+-            let (rgb_nz, max_rgb, px0) = crate::observe::bgra_rgb_stats(&state.present.frame_bgra);
++            //
++            // And usually not even that: a resident capture takes the same three
++            // figures while it converts the frame, and leaves them only when its
++            // buffer is the retain now in `frame_bgra`.
++            let (rgb_nz, max_rgb, px0) = state
++                .present
++                .capture_stats
++                .take()
++                .unwrap_or_else(|| crate::observe::bgra_rgb_stats(&state.present.frame_bgra));
+             let verdict = present_content_verdict(&state.present.frame_bgra, max_rgb);
+             if verdict == PresentContentVerdict::Unsampled {
+                 // Not a decline: an engine resident carried the frame to the
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/mod.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/mod.rs
+index c43b836..5b19d81 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/mod.rs
+@@ -147,6 +147,10 @@ pub fn capture_present_frame(
+     // Test isolation: exclude proxy-sequence assertions running in parallel.
+     #[cfg(test)]
+     let _proxy_shared = crate::runtime::census::present_proxy::test_shared();
++    // Whatever this capture leaves in `frame_bgra`, figures from an earlier one
++    // do not describe it. Only a resident capture that publishes its buffer
++    // below sets them again.
++    state.present.capture_stats = None;
+     if mapping_id == 0 || !scanout_extent_ok(width, height) {
+         return false;
+     }
+@@ -292,7 +296,8 @@ pub fn capture_present_frame(
+              reason=no_resident_content present_mapping={} frame_mapping={}",
+             state.present.present_mapping, state.present.frame_mapping
+         ));
+-        // Recycle the untouched scratch; the prior retain stays intact.
++        // Recycle the scratch; the prior retain stays intact.
++        state.present.capture_stats = None;
+         state.present.capture_scratch = buf;
+         return false;
+     }
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/vulkan.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/vulkan.rs
+index f9e4e51..d54c54f 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/vulkan.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/vulkan.rs
+@@ -69,18 +69,20 @@ pub fn published_frame_rgba8(
+ 
+ pub fn try_capture_from_resident(
+     state: &mut DeviceState,
+-    buf: &mut Vec<u8>,
++    buf: &mut [u8],
+     mapping_id: u32,
+     width: u32,
+     height: u32,
+ ) -> bool {
+-    let need = buf.len();
+     let identity = surface_identity(state, mapping_id, width, height);
+-    let Some(bgra) = engine::read_resident_bgra(&identity, need) else {
++    // Written in place into the caller's recycled scratch, straight from the
++    // staging buffer, with the frame's figures taken on the way — the bytes
++    // `read_resident_bgra` would have moved in, without its copy-out, its two
++    // fresh allocations or the drain's second walk. On `None` the scratch is
++    // not a frame and the caller recycles it; the prior retain is untouched.
++    let Some(stats) = engine::capture_resident_bgra_into(&identity, buf) else {
+         return false;
+     };
+-    debug_assert_eq!(bgra.len(), need);
+-    // Move (not copy) the readback in; the untouched scratch returns to the pool.
+-    state.present.capture_scratch = std::mem::replace(buf, bgra);
++    state.present.capture_stats = Some(stats);
+     true
+ }
+diff --git i/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs w/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index ec9a32f..5b51143 100644
+--- i/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ w/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -5718,3 +5718,129 @@ void main() { primary=vec4(1.0,0.5,0.0,0.25); secondary=primary; }
+         );
+     }
+ }
++
++/// The present capture's in-place rail reads the same frame as the copying
++/// rail it replaced, on a real resident, and leaves the frame readable again.
++///
++/// Two residents: the compositor's RGBA16F front at a size that takes the
++/// banded multi-thread conversion, seeded with every class of half float a
++/// composite can hold (NaN, infinities, negatives, subnormals, the 0.5 tie,
++/// values past one), and a scanout-order BGRA8 surface. For each,
++/// `capture_resident_bgra_into` must write exactly the bytes
++/// `read_resident_bgra` returns and report `bgra_rgb_stats`'s figures for
++/// them; a destination shorter than the frame is the old `truncate(need)`.
++/// Fails on a tree without the fused capture (the function does not exist),
++/// and on any slot, rounding or band-edge difference in it.
++#[test]
++fn the_in_place_present_capture_is_the_copying_capture() {
++    use reims_vgpu_core::blend::ColorWriteMask;
++    use reims_vgpu_protocol::pixel_format::{
++        ColorLoadSeed, TexelLayout, MTL_FORMAT_BGRA8_UNORM, MTL_FORMAT_RGBA16_FLOAT,
++    };
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let stats = |bgra: &[u8]| {
++        let mut nz = 0usize;
++        let mut max = 0u8;
++        for px in bgra.as_chunks::<4>().0 {
++            let m = px[0].max(px[1]).max(px[2]);
++            nz += usize::from(m != 0);
++            max = max.max(m);
++        }
++        let px0 = [bgra[0], bgra[1], bgra[2], bgra[3]];
++        (nz, max, px0)
++    };
++    let check = |label: &str, identity: &TargetIdentity, pixels: usize| {
++        let need = pixels * 4;
++        let old = engine::read_resident_bgra(identity, need).expect("copying capture");
++        assert_eq!(old.len(), need, "{label}");
++        for round in 0..2 {
++            let mut dst = vec![0x5au8; need];
++            let got = engine::capture_resident_bgra_into(identity, &mut dst)
++                .unwrap_or_else(|| panic!("{label}: in-place capture, round {round}"));
++            assert!(dst == old, "{label}: bytes differ from the copying capture");
++            assert_eq!(got, stats(&old), "{label}: figures");
++        }
++        let short = need / 2 / 4 * 4;
++        let mut dst = vec![0u8; short];
++        let got = engine::capture_resident_bgra_into(identity, &mut dst).expect("short");
++        assert_eq!(&dst[..], &old[..short], "{label}: leading pixels");
++        assert_eq!(got, stats(&old[..short]), "{label}: leading figures");
++        // A destination the resident cannot fill is the old `len < need` refusal.
++        let mut long = vec![0u8; need + 4];
++        assert_eq!(
++            engine::capture_resident_bgra_into(identity, &mut long),
++            None,
++            "{label}"
++        );
++    };
++
++    let (w, h) = (613u32, 431u32);
++    let pixels = (w * h) as usize;
++    let specials = [
++        0x0000u16, 0x8000, 0x0001, 0x03ff, 0x0400, 0x3800, 0x3801, 0x37ff, 0x3c00, 0x3c01, 0x7bff,
++        0x7c00, 0xfc00, 0x7e00, 0xfe01, 0xbc00, 0x2e66, 0x1c00,
++    ];
++    let mut state = 0x2545_f491u32;
++    let words: Vec<u16> = (0..pixels * 4)
++        .map(|i| {
++            state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
++            if i % 7 == 0 {
++                specials[(state >> 20) as usize % specials.len()]
++            } else {
++                (state >> 16) as u16
++            }
++        })
++        .collect();
++    let raw: Vec<u8> = words.iter().flat_map(|w| w.to_le_bytes()).collect();
++    let front = TargetIdentity::Gva {
++        gva: 0x2c0000,
++        width: w,
++        height: h,
++        generation: 1,
++        format: ash::vk::Format::R16G16B16A16_SFLOAT,
++    };
++    let mut req = engine_req(&v, &f, w, h);
++    req.target_identity = Some(front.clone());
++    req.color_attachment = Some(color_attachment(MTL_FORMAT_RGBA16_FLOAT, [0.0; 4]));
++    req.target_cpu_seed = Some(ColorLoadSeed {
++        pixels: std::sync::Arc::new(raw.clone()),
++        layout: TexelLayout::Rgba16Float,
++    });
++    req.skip_readback = true;
++    req.color_write_mask = ColorWriteMask::NONE;
++    match engine::execute_draw_request(engine_device(), &req) {
++        Ok(_) => {}
++        Err(e) if skip_if_no_gpu(&e.to_string()) => {
++            eprintln!("SKIP in-place present capture: {e}");
++            return;
++        }
++        Err(e) => panic!("RGBA16F front seed: {e}"),
++    }
++    assert_eq!(
++        engine::read_target_texels(&front).unwrap().pixels,
++        raw,
++        "precondition: the resident holds the seeded words"
++    );
++    check("rgba16f front", &front, pixels);
++
++    let (sw, sh) = (37u32, 23u32);
++    let surface = TargetIdentity::Surface {
++        id: 4242,
++        width: sw,
++        height: sh,
++        generation: 1,
++        format: SURFACE_TEST_FORMAT,
++    };
++    let bgra: Vec<u8> = (0..(sw * sh) as usize * 4)
++        .map(|i| (i * 37 % 251) as u8)
++        .collect();
++    let mut req = engine_req(&v, &f, sw, sh);
++    req.target_identity = Some(surface.clone());
++    req.color_attachment = Some(color_attachment(MTL_FORMAT_BGRA8_UNORM, [0.0; 4]));
++    req.target_cpu_seed = Some(bgra.into());
++    req.skip_readback = true;
++    req.color_write_mask = ColorWriteMask::NONE;
++    engine::execute_draw_request(engine_device(), &req).expect("BGRA8 surface seed");
++    check("bgra8 surface", &surface, (sw * sh) as usize);
++}

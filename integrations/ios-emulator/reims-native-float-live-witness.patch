@@ -1,0 +1,262 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -1018,6 +1018,70 @@
+     } else {
+         mapped && !empty_pages
+     }
++}
++
++/// Compare a live MappingInternal with the retained CPU Store incarnation.
++/// This reads the existing protocol's identity, descriptor and complete table
++/// plan without updating DeviceState, retiring aliases or touching the engine.
++/// Unreadable live fields are not a cached-plan success. A caller can choose
++/// the owned route before acquiring a lease; after a GPU wait a failed witness
++/// refuses copying into prepared guest spans.
++pub(crate) fn check_live_mapping_storage<H: HostMemory + HostOps>(
++    state: &DeviceState,
++    host: &H,
++    mapping_id: u32,
++) -> Result<(), RectBatchRefusal> {
++    use RectBatchRefusal as R;
++    let m = state.mappings.get(&mapping_id).ok_or(R::StorageChanged)?;
++    if !m.mapped || m.page_entries.is_empty() {
++        return Err(R::StorageChanged);
++    }
++    if m.mapping_internal == 0 {
++        return Ok(());
++    }
++    let mem = MapperMem::new(host);
++    let contract = |why| match mem.last_error() {
++        Some(error) => R::MapperRead(error),
++        None => R::MapperContract(why),
++    };
++    let fields = read_mapper_internal(
++        &mem,
++        m.mapping_internal,
++        state.mapper_device_kva != 0,
++        state.mapper_device_kva,
++        m.mapping_layout,
++    )
++    .map_err(contract)?;
++    let status = validate_mapper_internal(&mem, mapping_id, &fields);
++    if status != iosurface_pages::Status::Ok {
++        return Err(contract(status));
++    }
++    match read_internal_desc_ptr(&mem, m.mapping_internal) {
++        Ok(address) => {
++            let mut desc = [0u8; DEVICE_DESC_LEN];
++            if !mem.read(address, &mut desc) {
++                return Err(R::MapperRead(
++                    mem.last_error().unwrap_or(MemError::Unmapped),
++                ));
++            }
++            if m.device_desc.as_slice() != desc {
++                return Err(R::MapperDescriptorChanged);
++            }
++        }
++        Err(iosurface_pages::Status::ErrInternalFields(
++            "iosurface_mapper_device_desc_pointer_zero",
++        )) if m.device_desc.is_empty() => {}
++        Err(why) => return Err(contract(why)),
++    }
++    let span = (m.page_entries.len() as u64)
++        .checked_mul(state.page_size())
++        .ok_or(R::MapperPlanChanged)?;
++    let plan =
++        build_table_plan(&mem, mapping_id, &fields, span, state.page_shift).map_err(contract)?;
++    if plan.page_table_kva != m.page_table_kva || plan.entries != m.page_entries {
++        return Err(R::MapperPlanChanged);
++    }
++    Ok(())
+ }
+ 
+ /// Fail-closed page-list revalidation before host writeback or import-present.
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+@@ -24,6 +24,10 @@
+     HostBound { offset: u64 },
+     RamWindow { gpa: u64, len: u64 },
+     RamAmbiguous { gpa: u64 },
++    MapperContract(crate::protocol::iosurface_pages::Status),
++    MapperRead(crate::runtime::host::MemError),
++    MapperDescriptorChanged,
++    MapperPlanChanged,
+ }
+ 
+ impl crate::observe::Decline for RectBatchRefusal {
+@@ -40,11 +44,17 @@
+             Self::HostBound { .. } => "mapping_rect_batch_host_bound",
+             Self::RamWindow { .. } => "mapping_rect_batch_ram_window",
+             Self::RamAmbiguous { .. } => "mapping_rect_batch_ram_ambiguous",
++            Self::MapperContract(why) => crate::observe::Refusal::refusal(why)
++                .unwrap_or("mapping_rect_mapper_invalid_ok_refusal"),
++            Self::MapperRead(why) => why.slug(),
++            Self::MapperDescriptorChanged => "mapping_rect_mapper_descriptor_changed",
++            Self::MapperPlanChanged => "mapping_rect_mapper_plan_changed",
+         }
+     }
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::MapperRead(why) => why.fields(),
+             Self::Window { index } => vec![("plane", index.to_string())],
+             Self::Overlap { first, second } => vec![
+                 ("first_plane", first.to_string()),
+@@ -72,6 +82,7 @@
+     descriptor: Vec<u8>,
+     pages: Vec<u32>,
+     geometry: (bool, u32, u32, u16),
++    mapper: (u64, crate::protocol::iosurface_pages::MapperLayout, u64),
+ }
+ 
+ impl MappingStorageIdentity {
+@@ -103,6 +114,11 @@
+                 mapping.height,
+                 mapping.format,
+             ),
++            mapper: (
++                mapping.mapping_internal,
++                mapping.mapping_layout,
++                mapping.page_table_kva,
++            ),
+         })
+     }
+ 
+@@ -115,6 +131,7 @@
+                     && m.device_desc == self.descriptor
+                     && m.page_entries == self.pages
+                     && (m.has_geom, m.width, m.height, m.format) == self.geometry
++                    && (m.mapping_internal, m.mapping_layout, m.page_table_kva) == self.mapper
+             })
+     }
+ }
+@@ -216,9 +233,17 @@
+ impl<H: HostMemory + HostOps> PreparedMappingRectTransfer<'_, H> {
+     /// Read-only re-walk after a GPU wait. This performs no mapping, engine
+     /// access or invalidation; a caller ends its source lease before retiring
+-    /// storage on Drifted. MappingInternal needs a separate live resolver and
+-    /// is excluded from the prepared-source route by its owner.
++    /// storage on Drifted. MappingInternal uses the decoded table contract
++    /// through a read-only witness without adopting or retiring any storage.
+     pub(crate) fn check_backing(&self, state: &DeviceState) -> Result<(), RectBatchRefusal> {
++        if state
++            .mappings
++            .get(&self.mapping_id)
++            .is_some_and(|m| m.mapping_internal != 0)
++        {
++            super::check_live_mapping_storage(state, self.views.host, self.mapping_id)?;
++            crate::runtime::drain::note_store_route("native_image_postread_mapper_vouched_n");
++        }
+         match super::backing_pages_witness(state, self.views.host, self.mapping_id) {
+             super::BackingWitness::Drifted => Err(RectBatchRefusal::PagesNotOurs),
+             super::BackingWitness::Verified => {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+@@ -18,7 +18,6 @@
+     Transfer(RectBatchRefusal),
+     SourceLength { need: usize, have: usize },
+     RamRegions(GuestRamRegionsError),
+-    LiveInternal,
+ }
+ 
+ pub(crate) enum NativeImageSourcePlan {
+@@ -81,7 +80,14 @@
+             }
+         };
+         drop(source);
+-        if matches!(&result, Err(R::Transfer(RectBatchRefusal::PagesNotOurs))) {
++        if matches!(
++            &result,
++            Err(R::Transfer(
++                RectBatchRefusal::PagesNotOurs
++                    | RectBatchRefusal::MapperDescriptorChanged
++                    | RectBatchRefusal::MapperPlanChanged
++            ))
++        ) {
+             self.state.invalidate_mapping_pages(self.mapping_id);
+         }
+         result?;
+@@ -108,13 +114,6 @@
+ ) -> Result<PreparedNativeImageWrite<'a, M>, NativeImageWriteRefusal> {
+     use NativeImageWriteRefusal as R;
+     let mapping_id = target.mapping_id;
+-    if state
+-        .mappings
+-        .get(&mapping_id)
+-        .is_none_or(|m| m.mapping_internal != 0)
+-    {
+-        return Err(R::LiveInternal);
+-    }
+     mapper::ensure_resolved_for_scanout(state, host, mapping_id);
+     crate::runtime::writeback_debt::settle_for_mapping(
+         state,
+@@ -160,7 +159,6 @@
+             Self::Transfer(why) => why.slug(),
+             Self::SourceLength { .. } => "native_image_source_length",
+             Self::RamRegions(why) => why.slug(),
+-            Self::LiveInternal => "native_image_prepared_live_internal",
+         }
+     }
+     fn fields(&self) -> Vec<(&'static str, String)> {
+@@ -171,7 +169,6 @@
+                 vec![("need", need.to_string()), ("have", have.to_string())]
+             }
+             Self::RamRegions(why) => why.fields(),
+-            Self::LiveInternal => Vec::new(),
+         }
+     }
+     fn owner(&self) -> &'static str {
+@@ -180,7 +177,6 @@
+             Self::Transfer(why) => why.owner(),
+             Self::SourceLength { .. } => std::any::type_name::<Self>(),
+             Self::RamRegions(why) => why.owner(),
+-            Self::LiveInternal => std::any::type_name::<Self>(),
+         }
+     }
+ }
+@@ -192,7 +188,6 @@
+     identity: MappingStorageIdentity,
+     offset: u64,
+     rect: RectStride,
+-    live_internal: bool,
+ }
+ 
+ impl NativeImageWriteTarget {
+@@ -254,7 +249,6 @@
+             identity: MappingStorageIdentity::capture(mapping_id, mapping).map_err(R::Transfer)?,
+             offset,
+             rect,
+-            live_internal: mapping.mapping_internal != 0,
+         })
+     }
+ 
+@@ -262,13 +256,13 @@
+         self.rect.packed()
+     }
+ 
+-    pub(crate) fn prepared_source_plan(
++    pub(crate) fn prepared_source_plan<M: HostMemory + HostOps>(
+         &self,
+-        host: &mut impl HostOps,
++        state: &DeviceState,
++        host: &mut M,
+     ) -> Result<NativeImageSourcePlan, NativeImageWriteRefusal> {
+-        if self.live_internal {
+-            return Err(NativeImageWriteRefusal::LiveInternal);
+-        }
++        mapper::check_live_mapping_storage(state, host, self.mapping_id)
++            .map_err(NativeImageWriteRefusal::Transfer)?;
+         if host.map_pages_stable() {
+             return Ok(NativeImageSourcePlan::StableViews);
+         }
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -83,7 +83,7 @@
+     )
+     .map_err(R::Mapping)?;
+     let expected_bytes = target.packed_bytes();
+-    let bytes = match target.prepared_source_plan(host) {
++    let bytes = match target.prepared_source_plan(state, host) {
+         Ok(plan) => {
+             let writer = crate::runtime::mapping_write::prepare_native_image_write(
+                 state, host, target, plan,

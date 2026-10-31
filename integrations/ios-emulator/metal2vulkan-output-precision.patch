@@ -1,0 +1,144 @@
+metal2vulkan: `OutputPrecision` on a fragment colour encoding.
+
+Metal: on AGX the PBE15 (XR) pixel write is a Half4 partition transfer, the
+f16 `pixel.write` intrinsic the AGXCompilerCore format table selects for the
+Half4/USC1 configuration:
+a Float32 fragment output reaches the encoder rounded to binary16, whether
+or not the slot blends.
+Before: the pass rounded to binary16 only inside a binary16
+`ProgrammableBlend`. An unblended or replacement write quantized the Float32
+value directly, so one colour could store two different codes depending on
+the blend state of the draw that wrote it.
+Now: `FragmentColorEncoding` carries `precision`. `Binary16` emits one
+`OpQuantizeToF16` per channel after the blend, if any, and before the
+channel encoders; a binary16 blend result is already on that grid. `Float32`
+is the previous behaviour and what every existing caller test declares.
+Test: `fragment_color::tests::a_binary16_output_precision_rounds_every_channel_before_its_encoder`
+(four roundings precede the first encoder, a Float32-arithmetic blend under
+the binary16 precision rounds its result once; fails to compile before, the
+field does not exist). The GPU proof is reims-xr-binary16-partition.patch.
+
+diff --git i/docs/HOWTO.md w/docs/HOWTO.md
+index ec1fe99..70cbef8 100644
+--- i/docs/HOWTO.md
++++ w/docs/HOWTO.md
+@@ -84,7 +84,10 @@ source per channel, evaluates the Metal factors and operation in Float32 or in
+ individually rounded binary16 steps, and only then quantizes. Blend-colour and
+ dual-source factors are not representable. The caller owns the input
+ attachment and must order the destination read after every earlier write to
+-that location, including earlier primitives of the same draw. The caller must validate the returned
++that location, including earlier primitives of the same draw. An encoding's
++`OutputPrecision::Binary16` rounds the value every channel encoder receives to
++binary16 first, blended or not, for an attachment whose pixel write is a half
++partition transfer; `Float32` passes the shader's value unchanged. The caller must validate the returned
+ module for its Vulkan environment, check Float32 attachment support, preserve
+ attachment write masks, and handle MSAA resolve quantization separately.
+ Unsupported output types, pointer escapes, grouped/component decorations, or
+diff --git i/src/fragment_color.rs w/src/fragment_color.rs
+index a9842c2..e9e7a8b 100644
+--- i/src/fragment_color.rs
++++ w/src/fragment_color.rs
+@@ -23,6 +23,17 @@ pub enum ColorTransfer {
+     ExtendedSrgb,
+ }
+ 
++/// The precision in which a fragment's colour reaches its encoder.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum OutputPrecision {
++    /// The shader's Float32 value, unchanged.
++    Float32,
++    /// The value rounded to binary16 with `OpQuantizeToF16` first, whether
++    /// or not the location blends: the attachment's pixel write is a half
++    /// partition transfer, so no Float32 value ever reaches its encoder.
++    Binary16,
++}
++
+ /// An affine integer encoding with a checked, inclusive code interval.
+ ///
+ /// Encoding uses `roundEven(scale * encode(linear) + zero)`, then saturates to
+@@ -75,6 +86,8 @@ pub struct FragmentColorEncoding {
+     pub location: u32,
+     /// Encodings in shader RGBA order.
+     pub channels: [ColorChannelEncoding; 4],
++    /// The precision of the value the channel encoders receive.
++    pub precision: OutputPrecision,
+ }
+ 
+ /// One side of a programmable blend equation, with Metal's meaning.
+@@ -470,12 +483,12 @@ fn quantize_outputs(
+         .flat_map(|b| &b.instructions)
+         .filter(|i| i.class.opcode == Op::Return)
+         .count();
+-    // The expression builder needs fewer than 180 ids per RGBA return, and a
++    // The expression builder needs fewer than 200 ids per RGBA return, and a
+     // blend fewer than 200 more, plus fixed declarations. Guard fresh_id
+     // before modifying the owned module.
+     let per_return = plan
+         .iter()
+-        .map(|o| if o.blend.is_some() { 380 } else { 180 })
++        .map(|o| if o.blend.is_some() { 400 } else { 200 })
+         .sum::<usize>();
+     let added_ids = returns
+         .checked_mul(per_return)
+@@ -739,6 +752,13 @@ fn quantize_outputs(
+                 );
+                 values = builder.blend(&mut code, blend, values, image, float4);
+             }
++            if output.encoding.precision == OutputPrecision::Binary16 {
++                // A binary16 blend result is already on this grid; a Float32
++                // one, blended or not, reaches the encoders rounded once.
++                for value in &mut values {
++                    *value = builder.round(&mut code, *value, true);
++                }
++            }
+             let mut channels = Vec::with_capacity(4);
+             for (&value, &encoding) in values.iter().zip(&output.encoding.channels) {
+                 channels.push(Operand::IdRef(builder.quantize(&mut code, value, encoding)));
+@@ -1348,6 +1368,7 @@ mod tests {
+             encoding: FragmentColorEncoding {
+                 location: 0,
+                 channels: [ColorChannelEncoding::Affine(XR); 4],
++                precision: OutputPrecision::Float32,
+             },
+             blend: Some(ProgrammableBlend {
+                 color,
+@@ -1532,6 +1553,39 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn a_binary16_output_precision_rounds_every_channel_before_its_encoder() {
++        let bytes = fragment("vulkan1.2", "", "");
++        let mut encoding = plan(SOURCE_OVER, SOURCE_OVER, 192).encoding;
++        encoding.precision = OutputPrecision::Binary16;
++        let out = quantize_present_fragment_color_outputs(&bytes, &[encoding]).unwrap();
++        validate(&out);
++        let ops = body_ops(&load_bytes(&out).unwrap());
++        assert_eq!(
++            ops.iter().filter(|&&op| op == Op::QuantizeToF16).count(),
++            4,
++            "one rounding per channel, none inside the encoders"
++        );
++        let last_rounding = ops.iter().rposition(|&op| op == Op::QuantizeToF16).unwrap();
++        let first_encoder = ops.iter().position(|&op| op == Op::IsNan).unwrap();
++        assert!(
++            last_rounding < first_encoder,
++            "rounding precedes every encoder"
++        );
++
++        // A blend in Float32 arithmetic under a binary16 partition rounds its
++        // combined value once; a binary16 blend adds nothing to its own steps.
++        let mut float = plan(SOURCE_OVER, SOURCE_OVER, 192);
++        float.encoding.precision = OutputPrecision::Binary16;
++        if let Some(blend) = &mut float.blend {
++            blend.arithmetic = BlendArithmetic::Float32;
++        }
++        let out = blend_and_quantize_present_fragment_color_outputs(&bytes, &[float]).unwrap();
++        validate(&out);
++        let ops = body_ops(&load_bytes(&out).unwrap());
++        assert_eq!(ops.iter().filter(|&&op| op == Op::QuantizeToF16).count(), 4);
++    }
++
+     #[test]
+     fn a_source_clamp_must_be_a_finite_ordered_interval() {
+         assert!(SourceClamp::checked(0.0, 1.0).is_ok());

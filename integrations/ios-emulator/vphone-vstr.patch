@@ -1,0 +1,6 @@
+diff --git a/hw/arm/meson.build b/hw/arm/meson.build
+--- a/hw/arm/meson.build
++++ b/hw/arm/meson.build
+@@ -125 +125 @@
+-arm_common_ss.add(when: 'CONFIG_TOMACCO_VPHONE', if_true: files('vphone-research.c', 'vphone-sep.c', 'vphone-asmf.c'))
++arm_common_ss.add(when: 'CONFIG_TOMACCO_VPHONE', if_true: files('vphone-research.c', 'vphone-sep.c', 'vphone-asmf.c', 'vphone-vstr.c'))

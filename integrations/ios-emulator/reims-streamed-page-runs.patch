@@ -1,0 +1,335 @@
+--- a/reims-vgpu/crates/reims-vgpu-paging/src/runs.rs
++++ b/reims-vgpu/crates/reims-vgpu-paging/src/runs.rs
+@@ -44,22 +44,23 @@
+     }
+     let mut runs: Vec<WindowRun> = Vec::new();
+     let mut consumed = 0u64;
+-    let mut i = 0usize;
+-    while i < window.len() && consumed < span {
+-        let mut j = i + 1;
+-        while j < window.len() && window[j] == window[i] + ((j - i) as u64) * page {
+-            j += 1;
+-        }
+-        let start_offset = if i == 0 { head_off } else { 0 };
+-        let avail = ((j - i) as u64) * page - start_offset;
++    let mut stretches = contig_page_runs_iter(window, page);
++    while consumed < span {
++        let Some(pages) = stretches.next() else {
++            break;
++        };
++        let start_offset = if pages.start == 0 { head_off } else { 0 };
++        let avail = u64::try_from(pages.len())
++            .ok()?
++            .checked_mul(page)?
++            .checked_sub(start_offset)?;
+         let len = avail.min(span - consumed);
+         runs.push(WindowRun {
+-            pages: i..j,
++            pages,
+             start_offset,
+             len,
+         });
+         consumed += len;
+-        i = j;
+     }
+     (consumed == span).then_some(runs)
+ }
+@@ -69,20 +70,51 @@
+ /// Each run is a half-open index range `[start, end)` into `gpas` where
+ /// `gpas[i+1] == gpas[i] + page_size`. Callers multi-import one run at a time.
+ pub fn contig_page_runs(gpas: &[u64], page_size: u64) -> Vec<Range<usize>> {
+-    if gpas.is_empty() || page_size == 0 {
+-        return Vec::new();
+-    }
+-    let mut runs = Vec::new();
+-    let mut start = 0usize;
+-    for i in 1..gpas.len() {
+-        if gpas[i] != gpas[i - 1].wrapping_add(page_size) {
+-            runs.push(start..i);
+-            start = i;
++    contig_page_runs_iter(gpas, page_size).collect()
++}
++
++/// Borrowed traversal of the same maximal runs, without a temporary range list.
++/// An address-space wrap is a break, never a contiguous physical allocation.
++pub fn contig_page_runs_iter(gpas: &[u64], page_size: u64) -> ContigPageRuns<'_> {
++    ContigPageRuns {
++        gpas,
++        page_size,
++        cursor: if page_size == 0 { gpas.len() } else { 0 },
++    }
++}
++
++#[derive(Clone, Debug)]
++pub struct ContigPageRuns<'a> {
++    gpas: &'a [u64],
++    page_size: u64,
++    cursor: usize,
++}
++
++impl Iterator for ContigPageRuns<'_> {
++    type Item = Range<usize>;
++
++    fn next(&mut self) -> Option<Self::Item> {
++        let start = self.cursor;
++        if start == self.gpas.len() {
++            return None;
+         }
+-    }
+-    runs.push(start..gpas.len());
+-    runs
+-}
++        self.cursor += 1;
++        while self.cursor < self.gpas.len()
++            && self.gpas[self.cursor - 1].checked_add(self.page_size)
++                == Some(self.gpas[self.cursor])
++        {
++            self.cursor += 1;
++        }
++        Some(start..self.cursor)
++    }
++
++    fn size_hint(&self) -> (usize, Option<usize>) {
++        let remaining = self.gpas.len() - self.cursor;
++        (usize::from(remaining != 0), Some(remaining))
++    }
++}
++
++impl core::iter::FusedIterator for ContigPageRuns<'_> {}
+ 
+ /// How many runs [`contig_page_runs`] would return, without building them.
+ ///
+@@ -93,12 +125,7 @@
+ /// was the entire cost of the check. Counting the breaks is the same traversal
+ /// with no allocation.
+ pub fn contig_run_count(gpas: &[u64], page_size: u64) -> usize {
+-    if gpas.is_empty() || page_size == 0 {
+-        return 0;
+-    }
+-    1 + (1..gpas.len())
+-        .filter(|&i| gpas[i] != gpas[i - 1].wrapping_add(page_size))
+-        .count()
++    contig_page_runs_iter(gpas, page_size).count()
+ }
+ 
+ #[cfg(test)]
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/gva_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/gva_view.rs
+@@ -19,7 +19,9 @@
+ use crate::runtime::host::{HostMemory, HostOps, MemError};
+ use crate::runtime::mapper::{RectStride, RunCopy};
+ use reims_vgpu_paging::resolve::{geometry_for_page_shift, Task};
+-use reims_vgpu_paging::runs::{contig_page_runs, contig_run_count};
++#[cfg(test)]
++use reims_vgpu_paging::runs::contig_page_runs;
++use reims_vgpu_paging::runs::{contig_page_runs_iter, contig_run_count};
+ use reims_vgpu_paging::span::span_page_bases;
+ 
+ /// Dedup key for a fragmented-span decline: the span identity plus its shape.
+@@ -202,6 +204,10 @@
+ ) -> Result<Vec<u64>, MemError> {
+     if length == 0 {
+         return Err(MemError::BadArgs);
++    }
++    gva.checked_add(length).ok_or(MemError::Overflow)?;
++    if length > isize::MAX as u64 {
++        return Err(MemError::Overflow);
+     }
+     if !task.active || task.directory_pfn == 0 {
+         return Err(MemError::NoTaskDirectory);
+@@ -321,9 +327,11 @@
+         }
+         return None;
+     }
++    let ptr_len = gpas
++        .len()
++        .checked_mul(page_sz)
++        .filter(|&n| n <= isize::MAX as usize)?;
+     let ptr = host.map_pages(&gpas, page_sz)?;
+-    let page_sz = (1usize) << page_shift;
+-    let ptr_len = gpas.len().saturating_mul(page_sz);
+     state.gva_host_views.push(GvaHostView {
+         task_id: resolved_tid,
+         gva,
+@@ -594,8 +602,11 @@
+     }
+     crate::runtime::mapper::flush_retired_views(state, host);
+     let page_sz = page_size as usize;
++    let map_len = gpas
++        .len()
++        .checked_mul(page_sz)
++        .filter(|&n| n <= isize::MAX as usize)?;
+     let ptr_base = host.map_pages(&gpas, page_sz)?;
+-    let map_len = gpas.len().saturating_mul(page_sz);
+     let off = (gva & (page_size - 1)) as usize;
+     if off >= map_len || ((map_len - off) as u64) < length {
+         host.unmap_pages(ptr_base, map_len);
+@@ -620,7 +631,7 @@
+     // caller of it writes. Recorded on the acquisition rather than in each caller
+     // because that is where the resolved page list exists, and because a new
+     // caller then inherits the record instead of having to remember it.
+-    state.note_host_wrote_pages(gpas.clone());
++    state.host_writes.note_page_iter(gpas.iter().copied());
+     Some(FreshSpan {
+         // SAFETY: map_pages returned `map_len` mapped bytes at `ptr_base`.
+         ptr: unsafe { (ptr_base as *mut u8).add(off) },
+@@ -724,7 +735,7 @@
+         // witness. Recorded here, after the walk that names them and before any
+         // of them is written, so a refusal below costs a spurious invalidation
+         // rather than a missing one.
+-        state.note_host_wrote_pages(gpas.clone());
++        state.host_writes.note_page_iter(gpas.iter().copied());
+         if !span_within_window(&gpas, allowed) {
+             return Err(MemError::WriteOutsideWindow);
+         }
+@@ -732,31 +743,38 @@
+     if gpas.iter().any(|&g| !host.is_ram_gpa(g)) {
+         return Err(MemError::NotRam);
+     }
+-    let runs = contig_page_runs(&gpas, page_size);
+-    if runs.is_empty() {
+-        return Err(MemError::BadArgs);
+-    }
+     crate::runtime::mapper::flush_retired_views(state, host);
+     let span_page_base = gva & !(page_size - 1);
+-    let end = gva.saturating_add(length);
+-    for run in &runs {
++    let end = gva.checked_add(length).ok_or(MemError::Overflow)?;
++    let mut copied_runs = 0u64;
++    for run in contig_page_runs_iter(&gpas, page_size) {
+         let run_gpas = &gpas[run.clone()];
++        let total = run_gpas
++            .len()
++            .checked_mul(page_sz)
++            .filter(|&n| n <= isize::MAX as usize)
++            .ok_or(MemError::Overflow)?;
++        let offset = (run.start as u64)
++            .checked_mul(page_size)
++            .ok_or(MemError::Overflow)?;
++        let run_gva = span_page_base
++            .checked_add(offset)
++            .ok_or(MemError::Overflow)?;
++        let run_end = run_gva
++            .checked_add(total as u64)
++            .ok_or(MemError::Overflow)?;
++        let copy_lo = gva.max(run_gva);
++        let copy_hi = end.min(run_end);
++        if copy_lo >= copy_hi {
++            continue;
++        }
+         let Some(ptr) = host.map_pages(run_gpas, page_sz) else {
+             return Err(MemError::MapPagesRefused);
+         };
+-        let total = run_gpas.len().saturating_mul(page_sz);
+-        let run_gva = span_page_base.saturating_add((run.start as u64).saturating_mul(page_size));
+-        let run_end = run_gva.saturating_add(total as u64);
+-        let copy_lo = gva.max(run_gva);
+-        let copy_hi = end.min(run_end);
+-        if copy_lo >= copy_hi {
+-            host.unmap_pages(ptr, total);
+-            continue;
+-        }
+         let buf_off = (copy_lo - gva) as usize;
+         let host_off = (copy_lo - run_gva) as usize;
+         let n = (copy_hi - copy_lo) as usize;
+-        if host_off + n > total || buf_off + n > copy.len() {
++        if n > total.saturating_sub(host_off) || n > copy.len().saturating_sub(buf_off) {
+             host.unmap_pages(ptr, total);
+             return Err(MemError::RunOutOfRange);
+         }
+@@ -773,7 +791,14 @@
+             );
+         }
+         host.unmap_pages(ptr, total);
+-    }
++        copied_runs += 1;
++    }
++    crate::runtime::drain::note_store_route(if copy.is_write() {
++        "gva_streamed_run_write_n"
++    } else {
++        "gva_streamed_run_read_n"
++    });
++    crate::runtime::drain::note_store_route_n("gva_streamed_run_copies_n", copied_runs);
+     Ok(())
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/guest_ram_map.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/guest_ram_map.rs
+@@ -575,7 +575,7 @@
+             return Err(report_once(refusal));
+         }
+         let mut out = Vec::new();
+-        for run in reims_vgpu_paging::runs::contig_page_runs(gpas, page_size) {
++        for run in reims_vgpu_paging::runs::contig_page_runs_iter(gpas, page_size) {
+             let run_start = (run.start as u64) * page_size;
+             let run_end = (run.end as u64) * page_size;
+             // Clip to the window: the first run usually starts before it (the
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -2597,9 +2597,11 @@
+         return false;
+     }
+     flush_retired_views(state, host);
+-    let runs = reims_vgpu_paging::runs::contig_page_runs(&gpas, page_size);
++    let runs = reims_vgpu_paging::runs::contig_page_runs_iter(&gpas, page_size);
+     let import_started = std::time::Instant::now();
+-    for run in &runs {
++    let mut run_count = 0usize;
++    for run in runs {
++        run_count += 1;
+         let run_gpas = &gpas[run.clone()];
+         let run_mlo = (run.start as u64).saturating_mul(page_size);
+         let run_mhi = (run.end as u64).saturating_mul(page_size);
+@@ -2657,7 +2659,7 @@
+         crate::observe::off(format!(
+             "{site}_runs mid={mapping_id} us={import_us} bytes={len} pages={} runs={}",
+             gpas.len(),
+-            runs.len()
++            run_count
+         ));
+     }
+     true
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+@@ -387,12 +387,12 @@
+                 return Err(R::Window { index });
+             }
+         }
+-        let runs = reims_vgpu_paging::runs::contig_page_runs(&gpas, page_size);
++        let run_count = reims_vgpu_paging::runs::contig_run_count(&gpas, page_size);
+         views
+             .runs
+-            .try_reserve_exact(runs.len())
++            .try_reserve_exact(run_count)
+             .map_err(|_| R::Allocation)?;
+-        for run in runs {
++        for run in reims_vgpu_paging::runs::contig_page_runs_iter(&gpas, page_size) {
+             let offset = (run.start as u64)
+                 .checked_mul(page_size)
+                 .ok_or(R::HostBound { offset: 0 })?;
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
+@@ -102,11 +102,9 @@
+         let hi = level
+             .planes
+             .iter()
+-            .map(|p| p.gva.checked_add(p.touched_span))
+-            .collect::<Option<Vec<_>>>()
+-            .ok_or(Refusal::Shape)?
+-            .into_iter()
+-            .max()
++            .try_fold(0, |hi, p| {
++                p.gva.checked_add(p.touched_span).map(|end| hi.max(end))
++            })
+             .ok_or(Refusal::Shape)?;
+         let page_start = lo & !(page - 1);
+         let span = hi
+@@ -326,7 +324,7 @@
+         }
+         let writing = copies[0].is_write();
+         if writing {
+-            state.note_host_wrote_pages(self.footprint.pages().to_vec());
++            state.host_writes.note_footprint(&self.footprint);
+         }
+         for (i, offset, bytes) in pieces {
+             // SAFETY: all pieces are bounded live GuestRuns held by views;

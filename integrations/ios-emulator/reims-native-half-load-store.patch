@@ -1,0 +1,368 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -2388,10 +2388,9 @@
+ /// The byte-copy rail declines by name and the caller falls to the CPU
+ /// converter, which is [`convert_rgba8_to_row`] — so the obligation a missing
+ /// arm creates lands there instead, and that one *is* a loss if unmet.
+-/// `RG16_FLOAT` is renderable and absent from here for that reason and no
+-/// other: `a_byte_copy_destination_is_the_texel_every_other_table_agrees_it_is`
+-/// requires an admitted format to have a [`sampled_class`] naming the same
+-/// texel, and `RG16_FLOAT` has none.
++/// Scalar and paired half-float residents also have independent sampled and
++/// storage layouts. Their Store must preserve those same native texels; an
++/// RGBA8 conversion loses range and precision before a guest can read them.
+ ///
+ /// sRGB folds onto its linear sibling for the same reason [`sampled_class`]
+ /// folds it: the qualifier describes how a sampler interprets the bytes, not
+@@ -2401,6 +2400,8 @@
+         MTL_FORMAT_RGBA8_UNORM | MTL_FORMAT_RGBA8_UNORM_SRGB => TexelLayout::Rgba8,
+         MTL_FORMAT_BGRA8_UNORM | MTL_FORMAT_BGRA8_UNORM_SRGB => TexelLayout::Bgra8,
+         MTL_FORMAT_RGBA16_FLOAT => TexelLayout::Rgba16Float,
++        MTL_FORMAT_R16_FLOAT => TexelLayout::R16Float,
++        MTL_FORMAT_RG16_FLOAT => TexelLayout::Rg16Float,
+         MTL_FORMAT_R32_FLOAT => TexelLayout::R32Float,
+         // The packed ten-bit colour word. Admitted because the byte copy is the
+         // only rail that can land it without loss: the CPU converter reaches
+@@ -5394,6 +5395,18 @@
+     /// sampled table all name **one** texel for a given format. A width
+     /// assertion would only re-state whichever of them was consulted first.
+     #[test]
++    fn scalar_and_paired_half_float_store_use_their_native_texel_layouts() {
++        for (format, layout) in [
++            (MTL_FORMAT_R16_FLOAT, TexelLayout::R16Float),
++            (MTL_FORMAT_RG16_FLOAT, TexelLayout::Rg16Float),
++        ] {
++            assert_eq!(render_target_bpp(format), Some(layout.bytes_per_texel()));
++            assert_eq!(store_texel_order(format), Some(layout));
++            assert!(layout.is_render_target_layout());
++        }
++    }
++
++    #[test]
+     fn a_byte_copy_destination_is_the_texel_every_other_table_agrees_it_is() {
+         for fmt in 0u16..=u16::MAX {
+             let Some(order) = store_texel_order(fmt) else {
+@@ -5409,12 +5422,19 @@
+                 Some(order.bytes_per_texel()),
+                 "{fmt:#x} is a Store destination this device will not render into"
+             );
+-            if order == TexelLayout::R32Float {
+-                assert_eq!(fmt, MTL_FORMAT_R32_FLOAT);
++            if matches!(order, TexelLayout::R16Float | TexelLayout::R32Float) {
++                assert_eq!(
++                    order,
++                    match fmt {
++                        MTL_FORMAT_R16_FLOAT => TexelLayout::R16Float,
++                        MTL_FORMAT_R32_FLOAT => TexelLayout::R32Float,
++                        _ => panic!("{fmt:#x} claims a scalar float layout"),
++                    }
++                );
+                 assert_eq!(
+                     sampled_class(fmt),
+                     None,
+-                    "R32 is a native Vulkan sampled layout, not a CPU unorm conversion"
++                    "scalar floats use the native Vulkan sampled layout, without a CPU unorm class"
+                 );
+                 continue;
+             }
+@@ -5426,6 +5446,7 @@
+                     TexelLayout::Rgba8 => SampledClass::Rgba8Unorm,
+                     TexelLayout::Bgra8 => SampledClass::Bgra8Unorm,
+                     TexelLayout::Rgba16Float => SampledClass::Rgba16Float,
++                    TexelLayout::Rg16Float => SampledClass::Rg16Float,
+                     TexelLayout::Bgr10a2Unorm => SampledClass::Bgr10a2Unorm,
+                     TexelLayout::Rgb10a2Unorm => SampledClass::Rgb10a2Unorm,
+                     TexelLayout::Rg16Uint => SampledClass::Rg16Uint,
+@@ -5447,10 +5468,10 @@
+         }
+         // A renderable format that is still not a byte-copy destination, so a
+         // further widening of the set above has to change this line to pass.
+-        assert!(render_target_bpp(MTL_FORMAT_RG16_FLOAT).is_some());
++        assert!(render_target_bpp(MTL_FORMAT_R8_UNORM).is_some());
+         assert!(
+-            store_texel_order(MTL_FORMAT_RG16_FLOAT).is_none(),
+-            "RG16_FLOAT renders but is not admitted to a copy"
++            store_texel_order(MTL_FORMAT_R8_UNORM).is_none(),
++            "R8_UNORM renders but is not admitted to a copy"
+         );
+         // The widened one, named so that removing it from the rule is a test
+         // failure rather than a silent narrowing back to eight bits.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -3620,6 +3620,7 @@
+         pixel_format::MTL_FORMAT_R16_FLOAT => pixel_format::TexelLayout::R16Float,
+         pixel_format::MTL_FORMAT_R32_FLOAT => pixel_format::TexelLayout::R32Float,
+         pixel_format::MTL_FORMAT_RGBA16_FLOAT => pixel_format::TexelLayout::Rgba16Float,
++        pixel_format::MTL_FORMAT_RG16_FLOAT => pixel_format::TexelLayout::Rg16Float,
+         _ => return None,
+     };
+     let (tight, len) = reims_vgpu_protocol::extent::tight_image_layout(
+@@ -3647,6 +3648,9 @@
+     }
+     if layout == pixel_format::TexelLayout::Rgba16Float {
+         crate::runtime::drain::note_store_route("rgba16_gva_render_load_n");
++    }
++    if layout == pixel_format::TexelLayout::Rg16Float {
++        crate::runtime::drain::note_store_route("rg16_gva_render_load_n");
+     }
+     Some(pixel_format::ColorLoadSeed {
+         pixels: std::sync::Arc::new(pixels),
+@@ -3677,8 +3681,10 @@
+     if matches!(
+         format,
+         pixel_format::MTL_FORMAT_R16_FLOAT | pixel_format::MTL_FORMAT_R32_FLOAT
+-    ) || (format == pixel_format::MTL_FORMAT_RGBA16_FLOAT
+-        && crate::backend::selected().rail() == crate::backend::Rail::Vulkan)
++    ) || (matches!(
++        format,
++        pixel_format::MTL_FORMAT_RGBA16_FLOAT | pixel_format::MTL_FORMAT_RG16_FLOAT
++    ) && crate::backend::selected().rail() == crate::backend::Rail::Vulkan)
+     {
+         // The Vulkan seed uploader accepts the attachment's own half-float
+         // texels. Its display caches and sampled RGBA8 fallback cannot retain
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -238,6 +238,89 @@
+                 .as_slice(),
+             stored
+         );
++    }
++
++    #[test]
++    fn buffer_half_float_load_store_preserves_native_bits_and_shared_padding() {
++        for (format, layout, words) in [
++            (
++                pixel_format::MTL_FORMAT_R16_FLOAT,
++                TexelLayout::R16Float,
++                vec![0xc280u16, 0x3c01, 0x0001, 0x8000],
++            ),
++            (
++                pixel_format::MTL_FORMAT_RG16_FLOAT,
++                TexelLayout::Rg16Float,
++                vec![
++                    0xc280u16, 0x3c01, 0x0001, 0x8000, 0x7e35, 0x7c00, 0xfc00, 0x3555,
++                ],
++            ),
++        ] {
++            let (mut rig, mut descriptor) = fixture();
++            descriptor.desc.pixel_format = format;
++            let resolved = resolve(&rig, descriptor).unwrap();
++            let target = resolved.buffer_texture.as_ref().unwrap();
++            let raw: Vec<u8> = words.iter().flat_map(|v| v.to_le_bytes()).collect();
++            let row_bytes = layout.bytes_per_texel() as usize * 2;
++            let mut padded = vec![0xa5; 40];
++            for row in 0..2 {
++                padded[8 + row * 16..8 + row * 16 + row_bytes]
++                    .copy_from_slice(&raw[row * row_bytes..(row + 1) * row_bytes]);
++            }
++            write_task_gva_arm64e(
++                &mut rig.host,
++                &rig.state.tasks[1],
++                StoreRig::gva(1),
++                &padded,
++            );
++            let seed = target.seed(&mut rig.state, &mut rig.host, 1).unwrap();
++            assert_eq!(seed.layout, layout);
++            assert_eq!(seed.pixels.as_slice(), raw);
++            let stored: Vec<u8> = words.iter().rev().flat_map(|v| v.to_le_bytes()).collect();
++            write_gva_frame_within(
++                &mut rig.state,
++                &mut rig.host,
++                1,
++                resolved.target_gva,
++                resolved.width,
++                resolved.height,
++                resolved.row_stride,
++                resolved.format,
++                FrameRows::Native(&stored),
++                None,
++            )
++            .unwrap();
++            let mut back = vec![0; 40];
++            crate::runtime::gva_mem::read_task_gva(
++                &rig.host,
++                &rig.state.tasks[1],
++                StoreRig::gva(1),
++                &mut back,
++                PAGE_SHIFT_ARM64E,
++            )
++            .unwrap();
++            for row in 0..2 {
++                padded[8 + row * 16..8 + row * 16 + row_bytes]
++                    .copy_from_slice(&stored[row * row_bytes..(row + 1) * row_bytes]);
++            }
++            assert_eq!(
++                back, padded,
++                "{layout:?} Store must preserve the shared prefix and padding"
++            );
++            assert_eq!(
++                target
++                    .seed(&mut rig.state, &mut rig.host, 1)
++                    .unwrap()
++                    .pixels
++                    .as_slice(),
++                stored
++            );
++            assert_eq!(
++                seed.pixels.as_slice(),
++                raw,
++                "a returned Load still owns its original bytes"
++            );
++        }
+     }
+ 
+     #[test]
+@@ -8538,6 +8621,65 @@
+ 
+ #[test]
+ #[cfg(feature = "backend-vulkan")]
++fn rg16_native_load_preserves_padded_rows_and_ignores_lossy_display_caches() {
++    let mut rig = StoreRig::new(4);
++    let gva = StoreRig::gva(1);
++    let words = [
++        0xc280u16, 0x3c01, 0x0001, 0x8000, 0x7e35, 0x7c00, 0xfc00, 0x3555,
++    ];
++    let raw: Vec<u8> = words.iter().flat_map(|v| v.to_le_bytes()).collect();
++    let mut padded = vec![0xa5; 24];
++    padded[..8].copy_from_slice(&raw[..8]);
++    padded[16..24].copy_from_slice(&raw[8..]);
++    write_task_gva_arm64e(&mut rig.host, &rig.state.tasks[1], gva, &padded);
++    crate::runtime::surface_cache::store_gva_owned(
++        &mut rig.state,
++        gva,
++        2,
++        2,
++        vec![17; 16],
++        1,
++        None,
++        true,
++    );
++    let span = GvaSpan {
++        texture_ref: 6,
++        gva,
++        row_stride: 16,
++        width: 2,
++        height: 2,
++        format: pixel_format::MTL_FORMAT_RG16_FLOAT,
++    };
++    let seed = seed_color_load(&mut rig.state, &mut rig.host, 1, span).unwrap();
++    assert_eq!(seed.layout, TexelLayout::Rg16Float);
++    assert_eq!(*seed.pixels, raw);
++    write_task_gva_arm64e(
++        &mut rig.host,
++        &rig.state.tasks[1],
++        gva + 16,
++        &0x4821u16.to_le_bytes(),
++    );
++    let fresh = seed_color_load(&mut rig.state, &mut rig.host, 1, span).unwrap();
++    let mut expected = raw.clone();
++    expected[8..10].copy_from_slice(&0x4821u16.to_le_bytes());
++    assert_eq!(*fresh.pixels, expected);
++    assert_eq!(*seed.pixels, raw);
++    assert!(seed_color_load(
++        &mut rig.state,
++        &mut rig.host,
++        1,
++        GvaSpan {
++            row_stride: 7,
++            ..span
++        }
++    )
++    .is_none());
++    rig.point(1, 0);
++    assert!(seed_color_load(&mut rig.state, &mut rig.host, 1, span).is_none());
++}
++
++#[test]
++#[cfg(feature = "backend-vulkan")]
+ fn rgba16_native_load_preserves_bits_padding_and_freshness_over_display_caches() {
+     let mut rig = StoreRig::new(4);
+     let gva = StoreRig::gva(1);
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -4366,6 +4366,81 @@
+ }
+ 
+ #[test]
++fn small_half_float_native_loads_keep_primary_and_secondary_bits() {
++    use reims_vgpu_core::blend::ColorWriteMask;
++    use reims_vgpu_protocol::pixel_format::{self as p, ColorLoadSeed, TexelLayout};
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    for (index, mtl, layout, vk, words) in [
++        (
++            0,
++            p::MTL_FORMAT_R16_FLOAT,
++            TexelLayout::R16Float,
++            ash::vk::Format::R16_SFLOAT,
++            vec![0xc280u16, 0x3c01, 0x0001, 0x8000],
++        ),
++        (
++            1,
++            p::MTL_FORMAT_RG16_FLOAT,
++            TexelLayout::Rg16Float,
++            ash::vk::Format::R16G16_SFLOAT,
++            vec![
++                0xc280u16, 0x3c01, 0x0001, 0x8000, 0x7e35, 0x7c00, 0xfc00, 0x3555,
++            ],
++        ),
++    ] {
++        let identity = |gva| TargetIdentity::Gva {
++            gva,
++            width: 2,
++            height: 2,
++            generation: 1,
++            format: vk,
++        };
++        let primary = identity(0x280000 + index * 0x8000);
++        let secondary = identity(0x284000 + index * 0x8000);
++        let raw: Vec<u8> = words.iter().flat_map(|v| v.to_le_bytes()).collect();
++        let other: Vec<u8> = words.iter().rev().flat_map(|v| v.to_le_bytes()).collect();
++        let seed = |pixels| ColorLoadSeed {
++            pixels: std::sync::Arc::new(pixels),
++            layout,
++        };
++        let mut req = engine_req(&v, &f, 2, 2);
++        req.target_identity = Some(primary.clone());
++        req.color_attachment = Some(color_attachment(mtl, [0.0; 4]));
++        req.target_cpu_seed = Some(seed(raw.clone()));
++        req.skip_readback = true;
++        req.color_write_mask = ColorWriteMask::NONE;
++        req.secondary_targets.push(SecondaryColorTarget {
++            identity: secondary.clone(),
++            width: 2,
++            height: 2,
++            attachment: color_attachment(mtl, [0.0; 4]),
++            load: true,
++            seed: Some(seed(other.clone())),
++            blend: None,
++            color_write_mask: ColorWriteMask::NONE,
++        });
++        engine::execute_draw_request(engine_device(), &req)
++            .expect("native small half-float CPU Loads");
++        for (target, expected) in [(&primary, &raw), (&secondary, &other)] {
++            let actual = engine::read_target_texels(target).unwrap();
++            assert_eq!(actual.texel, engine::ReadbackTexel::Native(layout));
++            assert_eq!(&actual.pixels, expected);
++        }
++        req.target_cpu_seed = None;
++        req.load_from_target = true;
++        req.secondary_targets[0].seed = None;
++        engine::execute_draw_request(engine_device(), &req)
++            .expect("native small half-float resident Loads");
++        assert_eq!(engine::read_target_texels(&primary).unwrap().pixels, raw);
++        assert_eq!(
++            engine::read_target_texels(&secondary).unwrap().pixels,
++            other
++        );
++    }
++}
++
++#[test]
+ fn rgba16_native_cpu_and_resident_loads_preserve_primary_and_secondary_bits() {
+     use reims_vgpu_core::blend::ColorWriteMask;
+     use reims_vgpu_protocol::pixel_format::{ColorLoadSeed, TexelLayout, MTL_FORMAT_RGBA16_FLOAT};

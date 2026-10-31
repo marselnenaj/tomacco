@@ -1,0 +1,513 @@
+diff --git a/src/passes/value_queries.rs b/src/passes/value_queries.rs
+--- a/src/passes/value_queries.rs
++++ b/src/passes/value_queries.rs
+@@ -1,6 +1,105 @@
+ //! Seam-neutral structural queries over retained SPIR-V types and values.
+ 
+ use super::*;
++
++/// Literal indices for an extract/insert. Malformed operands must not disappear from a path.
++pub(in crate::passes) fn literal_index_path(operands: &[Operand]) -> Option<Vec<u32>> {
++    if operands.is_empty() {
++        return None;
++    }
++    operands
++        .iter()
++        .map(|operand| match operand {
++            Operand::LiteralBit32(index) => Some(*index),
++            _ => None,
++        })
++        .collect()
++}
++
++pub(in crate::passes) fn composite_paths_are_disjoint(left: &[u32], right: &[u32]) -> bool {
++    !left.starts_with(right) && !right.starts_with(left)
++}
++
++/// Find an existing SSA value for a composite projection without synthesizing a new aggregate.
++///
++/// An insertion owns its complete subtree. Reading inside it descends into the inserted value;
++/// reading a disjoint field follows the base. Reading an ancestor of a changed field would require
++/// reconstruction and must not return the old base's value. Nested extracts compose their paths.
++/// Exact typed provenance takes precedence over aggregate storage: a logical pointer field may
++/// have an integer payload while its actual pointer is retained in the emitter's sidecar.
++/// The lookup borrows the caller's definitions and retains no cached result across IR rewrites.
++/// A value can be visited at most once: these pure definitions cannot legally form an SSA cycle.
++pub(in crate::passes) fn resolve_composite_path<'a>(
++    mut aggregate: Word,
++    path: &[u32],
++    mut definition: impl FnMut(Word) -> Option<&'a Instruction>,
++    mut projected_value: impl FnMut(Word, &[u32]) -> Option<Word>,
++) -> Option<Word> {
++    let mut path = path.to_vec();
++    let mut visited = HashSet::new();
++    while visited.insert(aggregate) {
++        if path.is_empty() {
++            return Some(aggregate);
++        }
++        if let Some(value) = projected_value(aggregate, &path) {
++            return Some(value);
++        }
++        let instruction = definition(aggregate)?;
++        match instruction.class.opcode {
++            Op::CompositeInsert => {
++                let [Operand::IdRef(object), Operand::IdRef(base), indices @ ..] =
++                    instruction.operands.as_slice()
++                else {
++                    return None;
++                };
++                let inserted_path = literal_index_path(indices)?;
++                if path.starts_with(&inserted_path) {
++                    path.drain(..inserted_path.len());
++                    aggregate = *object;
++                } else if composite_paths_are_disjoint(&path, &inserted_path) {
++                    aggregate = *base;
++                } else {
++                    return None;
++                }
++            }
++            Op::CompositeExtract => {
++                let [Operand::IdRef(composite), indices @ ..] = instruction.operands.as_slice()
++                else {
++                    return None;
++                };
++                let mut combined = literal_index_path(indices)?;
++                combined.extend_from_slice(&path);
++                path = combined;
++                aggregate = *composite;
++            }
++            Op::CompositeConstruct | Op::ConstantComposite | Op::SpecConstantComposite => {
++                let result_type = definition(instruction.result_type?)?;
++                // Structs, arrays and matrices have one operand per member/element/column.
++                // Vector construction can concatenate vector operands: its operand ordinal
++                // is not necessarily a component index. Leave that projection intact.
++                if !matches!(
++                    result_type.class.opcode,
++                    Op::TypeStruct | Op::TypeArray | Op::TypeMatrix
++                ) {
++                    return None;
++                }
++                let Operand::IdRef(object) = instruction.operands.get(path[0] as usize)? else {
++                    return None;
++                };
++                aggregate = *object;
++                path.remove(0);
++            }
++            Op::CopyObject => {
++                let [Operand::IdRef(source)] = instruction.operands.as_slice() else {
++                    return None;
++                };
++                aggregate = *source;
++            }
++            _ => return None,
++        }
++    }
++    None
++}
+ 
+ /// Snapshot result types for one function plus module-scope values. Passes that inspect every
+ /// instruction in a function use this instead of repeatedly scanning the complete module.
+diff --git a/src/passes/emitted_inline/mod.rs b/src/passes/emitted_inline/mod.rs
+--- a/src/passes/emitted_inline/mod.rs
++++ b/src/passes/emitted_inline/mod.rs
+@@ -1164,6 +1164,16 @@
+         })
+         .collect::<HashMap<_, _>>();
+     let mut elided_aggregate_extracts = HashSet::new();
++    let mut aggregate_pointers = HashMap::new();
++    for fact in &ctx.emit_sidecar.aggregate_pointer_values {
++        if let Some(previous) =
++            aggregate_pointers.insert((fact.aggregate, fact.indices.as_slice()), fact.source)
++        {
++            if previous != fact.source {
++                return Err("conflicting emitted aggregate pointer provenance".into());
++            }
++        }
++    }
+     for instruction in callee.blocks.iter().flat_map(|block| &block.instructions) {
+         if instruction.class.opcode != Op::CompositeExtract {
+             continue;
+@@ -1176,29 +1186,9 @@
+         let Some(root) = remap.get(composite).copied() else {
+             continue;
+         };
+-        let Some(path) = instruction
+-            .operands
+-            .iter()
+-            .skip(1)
+-            .map(|operand| match operand {
+-                Operand::LiteralBit32(index) => Some(*index),
+-                _ => None,
+-            })
+-            .collect::<Option<Vec<_>>>()
+-        else {
++        let Some(path) = literal_index_path(&instruction.operands[1..]) else {
+             continue;
+         };
+-        if let Some(source) = ctx
+-            .emit_sidecar
+-            .aggregate_pointer_values
+-            .iter()
+-            .find(|fact| fact.aggregate == root && fact.indices == path)
+-            .map(|fact| fact.source)
+-        {
+-            remap.insert(result, source);
+-            elided_aggregate_extracts.insert(result);
+-            continue;
+-        }
+         let result_is_pointer = instruction
+             .result_type
+             .and_then(|ty| definitions.get(&ty))
+@@ -1206,7 +1196,25 @@
+         if result_is_pointer
+             || aggregate_path_type(root, &path, &definitions) == instruction.result_type
+         {
+-            if let Some(object) = resolve_inserted_object(root, &path, &definitions) {
++            if let Some(object) = resolve_composite_path(
++                root,
++                &path,
++                |id| definitions.get(&id).copied(),
++                |id, path| aggregate_pointers.get(&(id, path)).copied(),
++            ) {
++                let object_type = definitions.get(&object).and_then(|inst| inst.result_type);
++                let compatible = if result_is_pointer {
++                    object_type
++                        .and_then(|ty| definitions.get(&ty))
++                        .is_some_and(|definition| definition.class.opcode == Op::TypePointer)
++                } else {
++                    object_type == instruction.result_type
++                };
++                if !compatible {
++                    // Logical pointer slots use integer payloads. Without matching typed
++                    // provenance, forwarding that payload would lose the actual handle.
++                    continue;
++                }
+                 remap.insert(result, object);
+                 elided_aggregate_extracts.insert(result);
+             }
+@@ -1367,50 +1375,6 @@
+     )
+ }
+ 
+-fn resolve_inserted_object(
+-    mut aggregate: Word,
+-    mut path: &[u32],
+-    definitions: &HashMap<Word, &Instruction>,
+-) -> Option<Word> {
+-    let mut visited = HashSet::new();
+-    while visited.insert(aggregate) {
+-        let definition = definitions.get(&aggregate)?;
+-        match definition.class.opcode {
+-            Op::CompositeInsert => {
+-                let [Operand::IdRef(object), Operand::IdRef(composite), indices @ ..] =
+-                    definition.operands.as_slice()
+-                else {
+-                    return None;
+-                };
+-                let insert_path = indices
+-                    .iter()
+-                    .map(|operand| match operand {
+-                        Operand::LiteralBit32(index) => Some(*index),
+-                        _ => None,
+-                    })
+-                    .collect::<Option<Vec<_>>>()?;
+-                if path == insert_path {
+-                    return Some(*object);
+-                }
+-                if let Some(suffix) = path.strip_prefix(insert_path.as_slice()) {
+-                    aggregate = *object;
+-                    path = suffix;
+-                } else {
+-                    aggregate = *composite;
+-                }
+-            }
+-            Op::CopyObject => {
+-                let Some(Operand::IdRef(source)) = definition.operands.first() else {
+-                    return None;
+-                };
+-                aggregate = *source;
+-            }
+-            _ => return None,
+-        }
+-    }
+-    None
+-}
+-
+ fn resolve_copy_object_source(mut value: Word, definitions: &HashMap<Word, &Instruction>) -> Word {
+     let mut visited = HashSet::new();
+     while visited.insert(value) {
+diff --git a/src/passes/air_calls/images/resolve.rs b/src/passes/air_calls/images/resolve.rs
+--- a/src/passes/air_calls/images/resolve.rs
++++ b/src/passes/air_calls/images/resolve.rs
+@@ -22,8 +22,15 @@
+                 let Some(Operand::IdRef(composite)) = inst.operands.first() else {
+                     return current;
+                 };
+-                let path = literal_path(&inst.operands[1..]);
+-                let Some(source) = resolve_composite_insert_path(ctx, *composite, &path) else {
++                let Some(path) = literal_index_path(&inst.operands[1..]) else {
++                    return current;
++                };
++                let Some(source) = resolve_composite_path(
++                    *composite,
++                    &path,
++                    |id| value_inst(ctx, id),
++                    |_, _| None,
++                ) else {
+                     return current;
+                 };
+                 current = source;
+@@ -53,47 +60,6 @@
+         }
+     }
+     current
+-}
+-
+-pub(in crate::passes) fn resolve_composite_insert_path(
+-    ctx: &Ctx,
+-    value: Word,
+-    path: &[u32],
+-) -> Option<Word> {
+-    let inst = value_inst(ctx, value)?;
+-    match inst.class.opcode {
+-        Op::CompositeInsert => {
+-            let inserted = match inst.operands.first()? {
+-                Operand::IdRef(id) => *id,
+-                _ => return None,
+-            };
+-            let base = match inst.operands.get(1)? {
+-                Operand::IdRef(id) => *id,
+-                _ => return None,
+-            };
+-            let insert_path = literal_path(&inst.operands[2..]);
+-            if insert_path == path {
+-                Some(inserted)
+-            } else {
+-                resolve_composite_insert_path(ctx, base, path)
+-            }
+-        }
+-        Op::CopyObject => match inst.operands.first()? {
+-            Operand::IdRef(source) => resolve_composite_insert_path(ctx, *source, path),
+-            _ => None,
+-        },
+-        _ => None,
+-    }
+-}
+-
+-pub(in crate::passes) fn literal_path(operands: &[Operand]) -> Vec<u32> {
+-    operands
+-        .iter()
+-        .filter_map(|operand| match operand {
+-            Operand::LiteralBit32(value) => Some(*value),
+-            _ => None,
+-        })
+-        .collect()
+ }
+ 
+ pub(in crate::passes) fn value_inst(ctx: &Ctx, value: Word) -> Option<&Instruction> {
+diff --git a/src/passes/resources/texture_array.rs b/src/passes/resources/texture_array.rs
+--- a/src/passes/resources/texture_array.rs
++++ b/src/passes/resources/texture_array.rs
+@@ -30,7 +30,9 @@
+ use crate::spirv_module::Operand;
+ use spirv::{Op, StorageClass, Word};
+ 
+-use super::super::{air_names, type_def_of, value_result_type, Ctx};
++use super::super::{
++    air_names, literal_index_path, resolve_composite_path, type_def_of, value_result_type, Ctx,
++};
+ 
+ /// Materialize per-element image loads for every `ImageArray`-bound texture argument. No-op unless the
+ /// stage-input pass recorded at least one array-texture variable.
+@@ -40,9 +42,15 @@
+     }
+     let names = air_names(&ctx.module);
+ 
+-    // Clone the entry function's instruction defs (result_id -> instruction) so tracing is independent
+-    // of the mutation below.
+-    let mut defs: HashMap<Word, Instruction> = HashMap::new();
++    // Snapshot globals and entry definitions before mutation. Composite projections need the
++    // aggregate type as well as its producing instruction to distinguish packed vector operands.
++    let mut defs: HashMap<Word, Instruction> = ctx
++        .module
++        .types_global_values
++        .iter()
++        .chain(ctx.new_globals.iter())
++        .filter_map(|inst| inst.result_id.map(|id| (id, inst.clone())))
++        .collect();
+     for blk in &ctx.module.functions[entry_idx].blocks {
+         for inst in &blk.instructions {
+             if let Some(rid) = inst.result_id {
+@@ -586,7 +594,7 @@
+                     return None;
+                 };
+                 let path = literal_index_path(&inst.operands[1..])?;
+-                resolve_inserted_value(defs, *composite, &path)?
++                resolve_composite_path(*composite, &path, |id| defs.get(&id), |_, _| None)?
+             }
+             _ => return None,
+         };
+@@ -699,54 +707,12 @@
+                     return None;
+                 };
+                 let path = literal_index_path(&inst.operands[1..])?;
+-                ptr = resolve_inserted_value(defs, *composite, &path)?;
++                ptr = resolve_composite_path(*composite, &path, |id| defs.get(&id), |_, _| None)?;
+             }
+             _ => return None,
+         }
+     }
+     None
+-}
+-
+-fn resolve_inserted_value(
+-    defs: &HashMap<Word, Instruction>,
+-    mut composite: Word,
+-    path: &[u32],
+-) -> Option<Word> {
+-    for _ in 0..8 {
+-        let inst = defs.get(&composite)?;
+-        match inst.class.opcode {
+-            Op::CompositeInsert => {
+-                let Operand::IdRef(inserted) = inst.operands.first()? else {
+-                    return None;
+-                };
+-                let Operand::IdRef(base) = inst.operands.get(1)? else {
+-                    return None;
+-                };
+-                if literal_index_path(&inst.operands[2..])?.as_slice() == path {
+-                    return Some(*inserted);
+-                }
+-                composite = *base;
+-            }
+-            Op::CopyObject => {
+-                let Operand::IdRef(source) = inst.operands.first()? else {
+-                    return None;
+-                };
+-                composite = *source;
+-            }
+-            _ => return None,
+-        }
+-    }
+-    None
+-}
+-
+-fn literal_index_path(operands: &[Operand]) -> Option<Vec<u32>> {
+-    operands
+-        .iter()
+-        .map(|operand| match operand {
+-            Operand::LiteralBit32(index) => Some(*index),
+-            _ => None,
+-        })
+-        .collect()
+ }
+ 
+ /// Delete dead pure pointer-derivations (AccessChain/PtrAccessChain/Bitcast/CopyObject) reachable from
+diff --git a/src/passes/resources/collapse.rs b/src/passes/resources/collapse.rs
+--- a/src/passes/resources/collapse.rs
++++ b/src/passes/resources/collapse.rs
+@@ -1407,7 +1407,9 @@
+                     let Some(Operand::IdRef(base)) = inst.operands.get(1) else {
+                         continue;
+                     };
+-                    let path = literal_path(&inst.operands[2..]);
++                    let Some(path) = literal_index_path(&inst.operands[2..]) else {
++                        continue;
++                    };
+                     inserts.insert(result, (*base, path.clone()));
+                     if resource_values.contains(object) {
+                         direct_resource_inserts.push((result, *base, *object));
+@@ -1420,6 +1422,18 @@
+                         &paths,
+                         resource_values,
+                     );
++                    // The emitter stores logical pointers as integer payloads in aggregates.
++                    // Its exact per-result sidecar facts own those fields. Keep them after
++                    // deriving the other paths from the base and inserted operand; otherwise
++                    // a second pointer field erases its own provenance as soon as the first
++                    // resource field makes result_paths nonempty.
++                    if let Some(pointer_paths) = paths.remove(&result) {
++                        for (path, source) in pointer_paths {
++                            result_paths
++                                .retain(|other, _| composite_paths_are_disjoint(other, &path));
++                            result_paths.insert(path, source);
++                        }
++                    }
+                     if !result_paths.is_empty() {
+                         paths.insert(result, result_paths);
+                     }
+@@ -1458,7 +1472,9 @@
+                     let Some(Operand::IdRef(composite)) = inst.operands.first() else {
+                         continue;
+                     };
+-                    let path = literal_path(&inst.operands[1..]);
++                    let Some(path) = literal_index_path(&inst.operands[1..]) else {
++                        continue;
++                    };
+                     // A mixed aggregate may contain an opaque resource in one field while this
+                     // extract reads a disjoint ordinary field. Bypass resource-bearing inserts
+                     // that cannot affect the requested path. Besides being ordinary composite
+@@ -1691,10 +1707,6 @@
+         })
+ }
+ 
+-fn composite_paths_are_disjoint(left: &[u32], right: &[u32]) -> bool {
+-    !left.starts_with(right) && !right.starts_with(left)
+-}
+-
+ pub(in crate::passes) fn insert_resource_path(
+     out: &mut HashMap<Vec<u32>, Word>,
+     prefix: &[u32],
+@@ -1716,16 +1728,6 @@
+             out.insert(full, *resource);
+         }
+     }
+-}
+-
+-pub(in crate::passes) fn literal_path(operands: &[Operand]) -> Vec<u32> {
+-    operands
+-        .iter()
+-        .filter_map(|operand| match operand {
+-            Operand::LiteralBit32(value) => Some(*value),
+-            _ => None,
+-        })
+-        .collect()
+ }
+ 
+ pub(in crate::passes) fn path_suffix<'a>(path: &'a [u32], prefix: &[u32]) -> Option<&'a [u32]> {
+diff --git a/src/passes/resources/discovery.rs b/src/passes/resources/discovery.rs
+--- a/src/passes/resources/discovery.rs
++++ b/src/passes/resources/discovery.rs
+@@ -28,17 +28,10 @@
+                         continue;
+                     };
+                     let mut result_paths = paths.get(base).cloned().unwrap_or_default();
+-                    let path = literal_path(&inst.operands[2..]);
+-                    if aliases.contains(object) {
+-                        result_paths.insert(path.clone(), *object);
+-                    }
+-                    if let Some(object_paths) = paths.get(object) {
+-                        for (suffix, alias) in object_paths {
+-                            let mut full = path.clone();
+-                            full.extend(suffix);
+-                            result_paths.insert(full, *alias);
+-                        }
+-                    }
++                    let Some(path) = literal_index_path(&inst.operands[2..]) else {
++                        continue;
++                    };
++                    insert_resource_path(&mut result_paths, &path, *object, &paths, &aliases);
+                     if !result_paths.is_empty() && paths.get(&result) != Some(&result_paths) {
+                         paths.insert(result, result_paths);
+                         changed = true;
+@@ -71,7 +64,9 @@
+                     let Some(Operand::IdRef(composite)) = inst.operands.first() else {
+                         continue;
+                     };
+-                    let path = literal_path(&inst.operands[1..]);
++                    let Some(path) = literal_index_path(&inst.operands[1..]) else {
++                        continue;
++                    };
+                     let Some(composite_paths) = paths.get(composite) else {
+                         continue;
+                     };

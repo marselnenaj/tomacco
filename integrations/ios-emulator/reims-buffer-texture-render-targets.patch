@@ -1,0 +1,1123 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+@@ -339,6 +339,7 @@
+ /// unnoticed: all three orders type-check.
+ #[derive(Clone, Debug, PartialEq, Eq)]
+ pub(super) struct ResolvedRenderTarget {
++    pub(super) buffer_texture: Option<std::sync::Arc<BufferTextureTarget>>,
+     #[cfg(feature = "backend-vulkan")]
+     pub(super) paired_xr: Option<std::sync::Arc<super::planar_xr::PairedXrTarget>>,
+     /// Non-zero ⇒ a host mapping; `0` with `target_gva` non-zero ⇒ normal-texture
+@@ -408,6 +409,7 @@
+ /// contract. Grouped by rung in the order [`lookup_render_target`] tries them.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub(super) enum RenderTargetCause {
++    BufferTexture(BufferTargetDecline),
+     /// Native paired storage needs the running rail's complete paired route.
+     NativeXrRail,
+     #[cfg(feature = "backend-vulkan")]
+@@ -626,6 +628,7 @@
+     fn slug(&self) -> &'static str {
+         use RenderTargetCause as C;
+         match self.cause {
++            C::BufferTexture(why) => why.slug(),
+             C::NativeXrRail => "rt_native_xr_rail",
+             #[cfg(feature = "backend-vulkan")]
+             C::PairedXr => "rt_apv_xr",
+@@ -675,6 +678,7 @@
+         use RenderTargetCause as C;
+         let mut v = vec![("base", self.base_ref.to_string())];
+         match self.cause {
++            C::BufferTexture(why) => v.extend(why.fields()),
+             C::NativeXrRail => {}
+             #[cfg(feature = "backend-vulkan")]
+             C::PairedXr => {}
+@@ -892,6 +896,7 @@
+ 
+ fn native_xr_target(mapping: &crate::model::MappingEntry, mapping_id: u32) -> ResolvedRenderTarget {
+     ResolvedRenderTarget {
++        buffer_texture: None,
+         #[cfg(feature = "backend-vulkan")]
+         paired_xr: None,
+         mapping_id,
+@@ -969,18 +974,33 @@
+     use RenderTargetCause as C;
+     let texture_ref = att.texture_ref;
+     // Texture-view view → base (archive resource_resolve_texture view chain).
+-    let (resolved_ref, view_fmt_override, view_level) =
+-        if let Some(view) = resolve_texture_view(state, host, task_id, texture_ref) {
+-            // Archive resolve_texture rejects swizzled views for linear resolve.
+-            if let Some(plan) = view.swizzle.as_ref() {
+-                if !pixel_format::swizzle_is_identity(plan) {
+-                    return Err(C::ViewSwizzled.at(view.base_texture_ref));
+-                }
+-            }
+-            (view.base_texture_ref, view.pixel_format, view.level)
+-        } else {
+-            (texture_ref, None, 0)
+-        };
++    let (resolved_ref, view_fmt_override, view_level, buffer_texture) = if let Some(view) =
++        match resolve_texture_view_reasoned(state, host, task_id, texture_ref) {
++            Ok(view) => Some(view),
++            Err(TextureViewDecline::HopObjectNotView { .. }) => None,
++            Err(why) => {
++                crate::observe::Emit::decline("rt_view_resolve", &why)
++                    .field("task", task_id)
++                    .field("ref", texture_ref)
++                    .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                None
++            }
++        } {
++        // Archive resolve_texture rejects swizzled views for linear resolve.
++        if let Some(plan) = view.swizzle.as_ref() {
++            if !pixel_format::swizzle_is_identity(plan) {
++                return Err(C::ViewSwizzled.at(view.base_texture_ref));
++            }
++        }
++        (
++            view.base_texture_ref,
++            view.pixel_format,
++            view.level,
++            view.base_buffer_texture,
++        )
++    } else {
++        (texture_ref, None, 0, None)
++    };
+     // The level the pass names is relative to the texture it names, so a pass
+     // rendering into level 1 of a view whose own range starts at level 2 lands
+     // on the base texture's level 3. Both halves reach every rung below as one
+@@ -996,6 +1016,18 @@
+     )?;
+     if resolved_ref == 0 {
+         return Err(C::ViewBaseUnbound.at(resolved_ref));
++    }
++    if let Some(descriptor) = buffer_texture {
++        return BufferTextureTarget::resolve(
++            state,
++            host,
++            task_id,
++            resolved_ref,
++            descriptor,
++            att,
++            level,
++        )
++        .map_err(|why| C::BufferTexture(why).at(resolved_ref));
+     }
+     // Archive lookup order is by **live** object-list type + descriptor, not a
+     // sticky cache: mapper-ref-texture first, else normal-texture. Guest reuses object refs;
+@@ -1130,6 +1162,7 @@
+             .at(resolved_ref));
+         }
+         return Ok(ResolvedRenderTarget {
++            buffer_texture: None,
+             #[cfg(feature = "backend-vulkan")]
+             paired_xr: None,
+             mapping_id,
+@@ -1229,6 +1262,7 @@
+         }
+         // mapping_id = surface_id; no linear GVA.
+         return Ok(ResolvedRenderTarget {
++            buffer_texture: None,
+             #[cfg(feature = "backend-vulkan")]
+             paired_xr: None,
+             mapping_id: surface_id,
+@@ -1277,6 +1311,7 @@
+             let target = PairedXrTarget::capture(state, host, task_id, resolved_ref, resource, xr)?;
+             crate::runtime::drain::note_store_route("apv_xr_render_target_n");
+             Ok(ResolvedRenderTarget {
++                buffer_texture: None,
+                 paired_xr: Some(target),
+                 mapping_id: 0,
+                 target_gva: rgb.gva,
+@@ -1453,6 +1488,7 @@
+         return Err(C::RowStride { bpr, tight }.at(resolved_ref));
+     }
+     Ok(ResolvedRenderTarget {
++        buffer_texture: None,
+         #[cfg(feature = "backend-vulkan")]
+         paired_xr: None,
+         mapping_id: 0,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -94,6 +94,9 @@
+ pub(crate) mod planar_xr;
+ mod render_target;
+ use render_target::{lookup_render_target, ResolvedRenderTarget};
++mod buffer_target;
++pub(crate) use buffer_target::BufferTargetDecline;
++pub use buffer_target::BufferTextureTarget;
+ 
+ /// Bind **index** cap for the buffer argument table.
+ ///
+@@ -500,6 +503,9 @@
+ /// layers are the GVA form.
+ #[derive(Clone, Debug, Default)]
+ pub struct ColorRtRequest {
++    /// Checked buffer alias, retaining its texture and allocation owner until
++    /// the pass has completed and published Store into the shared bytes.
++    pub buffer_texture: Option<std::sync::Arc<BufferTextureTarget>>,
+     #[cfg(feature = "backend-vulkan")]
+     pub paired_xr: Option<std::sync::Arc<planar_xr::PairedXrTarget>>,
+     pub slot: u32,
+@@ -2231,6 +2237,7 @@
+         return lost("unbound_texture_ref");
+     }
+     let Some(ResolvedRenderTarget {
++        buffer_texture,
+         mapping_id,
+         target_gva: gva,
+         width: w,
+@@ -2247,6 +2254,18 @@
+     let need = (w as usize).saturating_mul(h as usize).saturating_mul(4);
+     if rgba.len() < need {
+         return lost("readback_short");
++    }
++    if buffer_texture.is_some() {
++        // This recovery API carries only raw pixels and current attachment
++        // names. It has neither the original buffer owner nor the destination
++        // pages captured before rendering, so it cannot authorize publication.
++        crate::observe::Emit::decline(
++            "writeback_chain_rgba",
++            &BufferTargetDecline::Recovery(fmt),
++        )
++        .field("ref", att.texture_ref)
++        .fail();
++        return false;
+     }
+     if gva != 0 {
+         // The refusal is carried out, not collapsed. `write_gva_rgba8`'s own doc
+@@ -2459,6 +2478,7 @@
+         .pipeline_raster_sample_count(state, host, task_id, pipeline_ref)
+         .unwrap_or(rt.sample_count);
+     let c0 = ColorRtRequest {
++        buffer_texture: rt.buffer_texture,
+         slot: 0,
+         texture_ref: color_texture_ref,
+         mapping_id: rt.mapping_id,
+@@ -2536,6 +2556,17 @@
+             crate::runtime::drain::note_store_route("mrt_slot_unresolved");
+             return None;
+         };
++        if source_target.buffer_texture.is_some()
++            && pipeline_sample_count.is_some_and(|samples| samples != 1)
++        {
++            crate::observe::Emit::decline(
++                "buffer_texture_rt",
++                &BufferTargetDecline::Samples(pipeline_sample_count.unwrap_or(1)),
++            )
++            .field("ref", att.texture_ref)
++            .fail();
++            return None;
++        }
+         let (target_ref, multisample_source_ref, target) = if att.resolve_texture_ref != 0 {
+             let resolve_attachment = ColorAttachment {
+                 texture_ref: att.resolve_texture_ref,
+@@ -2605,6 +2636,7 @@
+             (att.texture_ref, 0, source_target)
+         };
+         let ResolvedRenderTarget {
++            buffer_texture,
+             mapping_id,
+             target_gva: gva,
+             width: mw,
+@@ -2664,6 +2696,9 @@
+         let mut load_action = att.load_action;
+         let mut clear_color = att.clear_color;
+         let mut seed = None;
++        if let Some(target) = &buffer_texture {
++            target.prepare(state, host);
++        }
+         #[cfg(feature = "backend-vulkan")]
+         let paired = paired_xr.is_some();
+         #[cfg(not(feature = "backend-vulkan"))]
+@@ -2672,13 +2707,26 @@
+             // Clear-only stream record for this attachment: real Metal Clear.
+             load_action = MTL_LOAD_ACTION_CLEAR;
+             clear_color = cl.clear_color;
+-            if mapping_id == 0 && !paired {
++            if mapping_id == 0 && !paired && buffer_texture.is_none() {
+                 seed = Some(solid_rgba8(mw, mh, &cl.clear_color).into());
+             }
+         } else if att.load_action == MTL_LOAD_ACTION_CLEAR {
+-            if mapping_id == 0 && !paired {
++            if mapping_id == 0 && !paired && buffer_texture.is_none() {
+                 seed = Some(solid_rgba8(mw, mh, &att.clear_color).into());
+             }
++        } else if att.load_action == MTL_LOAD_ACTION_LOAD && buffer_texture.is_some() {
++            // Buffer writes can invalidate a texture resident without naming
++            // that texture. Start this pass from native shared bytes; later
++            // draws in the same pass still use the resident chain.
++            seed = match buffer_texture.as_ref().unwrap().seed(state, host, task_id) {
++                Ok(seed) => Some(seed),
++                Err(why) => {
++                    crate::observe::Emit::decline("buffer_texture_rt", &why)
++                        .field("ref", target_ref)
++                        .fail();
++                    return None;
++                }
++            };
+         } else if att.load_action == MTL_LOAD_ACTION_LOAD && mapping_id == 0 && !paired {
+             // # This arm compares an ordinal, and the contract term is wider
+             //
+@@ -2868,6 +2916,7 @@
+             }
+         }
+         colors.push(ColorRtRequest {
++            buffer_texture,
+             slot,
+             texture_ref: target_ref,
+             mapping_id,
+@@ -3008,6 +3057,21 @@
+         span,
+         state.page_shift,
+     );
++    if c.buffer_texture.is_some() {
++        let want = reims_vgpu_paging::span::pages_spanned(c.target_gva, span, state.page_size());
++        if ordered.len() as u64 != want {
++            crate::observe::Emit::decline(
++                "buffer_texture_rt",
++                &BufferTargetDecline::Pages {
++                    want,
++                    got: ordered.len(),
++                },
++            )
++            .field("ref", c.texture_ref)
++            .fail();
++            return None;
++        }
++    }
+     if ordered.is_empty() {
+         crate::runtime::drain::note_store_route("sync_store_unbounded");
+         return None;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -175,6 +175,27 @@
+     crate::runtime::chain_phase::enter(crate::runtime::chain_phase::Phase::PrepPages);
+     let sync_store_pages =
+         sync_store_allowed_pages(state, host, req.task_id, colors.first(), writeback_guest);
++    if writeback_guest
++        && colors.first().is_some_and(|c| {
++            c.buffer_texture.is_some()
++                && reims_vgpu_protocol::pass_action::store_action_publishes_single_sample(
++                    c.store_action,
++                )
++        })
++        && sync_store_pages.is_none()
++    {
++        crate::observe::Emit::decline(
++            "draw_prepare",
++            &DrawPreparationDecline::BufferTextureStoreFailed {
++                slot: colors[0].slot,
++            },
++        )
++        .fail();
++        return (
++            EncodeStatus::BadArgs("buffer_texture_store_unlicensed"),
++            None,
++        );
++    }
+     // Back to `Prep`, which is now the residue: everything in this function
+     // before the metal2vulkan call that is neither of the two spans above.
+     crate::runtime::chain_phase::enter(crate::runtime::chain_phase::Phase::Prep);
+@@ -258,7 +279,8 @@
+                     // readback. `read_resident_chain` fail-logs a lost resident.
+                     note_mapper_ref_texture_store_route("gva_store_sync");
+                     if let Some(c0) = req.colors.first().filter(|c| {
+-                        c.paired_xr.is_some()
++                        c.buffer_texture.is_some()
++                            || c.paired_xr.is_some()
+                             || pixel_format::XrFormat::from_mtl(c.format).is_some()
+                             || pixel_format::store_texel_order(c.format).is_some_and(|layout| {
+                                 !layout.is_four_byte_color()
+@@ -9720,6 +9742,10 @@
+             .is_some_and(|color| color.format == pixel_format::MTL_FORMAT_R32_FLOAT);
+         if (gpu_only_content_allowed
+             || native_color
++            || req
++                .colors
++                .first()
++                .is_some_and(|c| c.buffer_texture.is_some())
+             || req.colors.first().is_some_and(|c| c.paired_xr.is_some()))
+             && store_is_store
+             && writeback_guest
+@@ -9729,7 +9755,10 @@
+                 // `&&` already established `store_is_store && writeback_guest`.
+                 // (The sibling rail above re-tests its pair for real, because
+                 // its outer condition is an `||`.)
+-                if req.colors.first().is_some_and(|c| c.paired_xr.is_some())
++                if req
++                    .colors
++                    .first()
++                    .is_some_and(|c| c.paired_xr.is_some() || c.buffer_texture.is_some())
+                     || gva_store_defer_eligible(req)
+                 {
+                     resources.target_identity = Some(identity.clone());
+@@ -9737,6 +9766,44 @@
+                     gva_resident_store = Some(identity);
+                 }
+             }
++        }
++        if writeback_guest
++            && store_is_store
++            && gva_resident_store.is_none()
++            && req
++                .colors
++                .first()
++                .is_some_and(|c| c.buffer_texture.is_some())
++        {
++            return Err(DrawError::DrawPreparation(
++                DrawPreparationDecline::BufferTextureStoreFailed {
++                    slot: req.colors[0].slot,
++                },
++            ));
++        }
++        if let Some((color, buffer)) = req
++            .colors
++            .first()
++            .and_then(|color| color.buffer_texture.as_ref().map(|buffer| (color, buffer)))
++        {
++            let identity = gva_chain_identity(req)
++                .filter(|identity| {
++                    req.gva_alloc_gen != 0
++                        && translate::pixel::texel_layout_of(identity.resident_format())
++                            == Some(buffer.layout())
++                })
++                .ok_or_else(|| {
++                    crate::observe::Emit::decline(
++                        "buffer_texture_rt",
++                        &BufferTargetDecline::Format(color.format),
++                    )
++                    .field("ref", color.texture_ref)
++                    .fail();
++                    DrawError::DrawPreparation(DrawPreparationDecline::BufferTextureStoreFailed {
++                        slot: color.slot,
++                    })
++                })?;
++            resources.target_identity = Some(identity);
+         }
+         // A mapper-ref-texture composite Store renders into its registry resident, and skips
+         // its readback when the deferred rail can name that resident as the
+@@ -10438,15 +10505,21 @@
+         // cannot leave them in the registry or import them as packed codes.
+         // Retain each prepared identity and capture its GVA write licence
+         // before GPU submission, just as the primary synchronous Store does.
+-        let mut interleaved_xr_secondary_stores = Vec::new();
++        let mut native_secondary_stores = Vec::new();
+         if writeback_guest {
+             for (index, color) in req.colors.iter().enumerate().skip(1).filter(|(_, color)| {
+-                pixel_format::XrFormat::from_mtl(color.format).is_some()
++                (color.buffer_texture.is_some()
++                    || pixel_format::XrFormat::from_mtl(color.format).is_some())
+                     && reims_vgpu_protocol::pass_action::store_action_publishes_single_sample(
+                         color.store_action,
+                     )
+             }) {
+                 let refused = || {
++                    if color.buffer_texture.is_some() {
++                        return DrawError::DrawPreparation(
++                            DrawPreparationDecline::BufferTextureStoreFailed { slot: color.slot },
++                        );
++                    }
+                     DrawError::DrawPreparation(DrawPreparationDecline::NativeXrStoreFailed {
+                         slot: color.slot,
+                         mapping_id: color.mapping_id,
+@@ -10468,7 +10541,7 @@
+                 } else {
+                     None
+                 };
+-                interleaved_xr_secondary_stores.push((index, identity, pages));
++                native_secondary_stores.push((index, identity, pages));
+             }
+         }
+         // The engine's own typed `DrawError` (a `vk_*` VkCall slug, a
+@@ -10548,9 +10621,14 @@
+                 );
+             }
+         }
+-        for (index, identity, pages) in interleaved_xr_secondary_stores {
++        for (index, identity, pages) in native_secondary_stores {
+             let color = &req.colors[index];
+             let refused = || {
++                if color.buffer_texture.is_some() {
++                    return DrawError::DrawPreparation(
++                        DrawPreparationDecline::BufferTextureStoreFailed { slot: color.slot },
++                    );
++                }
+                 DrawError::DrawPreparation(DrawPreparationDecline::NativeXrStoreFailed {
+                     slot: color.slot,
+                     mapping_id: color.mapping_id,
+@@ -10568,7 +10646,7 @@
+                     &[],
+                 )
+                 .map_err(|why| {
+-                    crate::observe::Emit::decline("interleaved_xr_secondary_store", &why)
++                    crate::observe::Emit::decline("native_secondary_store", &why)
+                         .field("slot", color.slot)
+                         .fail();
+                     refused()
+@@ -10594,7 +10672,11 @@
+                     color.format,
+                 );
+             }
+-            crate::runtime::drain::note_store_route("interleaved_xr_secondary_store_n");
++            crate::runtime::drain::note_store_route(if color.buffer_texture.is_some() {
++                "buffer_texture_secondary_store_n"
++            } else {
++                "interleaved_xr_secondary_store_n"
++            });
+         }
+         // RGB nonzero (ignore alpha) so black+alpha is not mistaken for content.
+         // Resident/import path uses skip_readback → empty `out.pixels` is **expected**
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -57,6 +57,11 @@
+         texture_ref: u32,
+         detail: String,
+     },
++    BufferBaseShape {
++        texture_ref: u32,
++        texture_type: u16,
++        levels: u64,
++    },
+     HopZeroBase {
+         texture_ref: u32,
+         opcode: u32,
+@@ -96,6 +101,7 @@
+             Self::HopDecode { reason, .. } => reason.slug(),
+             Self::BufferBaseRange { .. } => "texture_view_buffer_range",
+             Self::BufferBaseFormat { .. } => "texture_view_buffer_format",
++            Self::BufferBaseShape { .. } => "texture_view_buffer_shape",
+             Self::HopZeroBase { .. } => "texture_view_hop_zero_base",
+             Self::HopLevelOverflow { .. } => "texture_view_hop_level_overflow",
+             Self::HopSwizzleInvalid { .. } => "texture_view_hop_swizzle_invalid",
+@@ -159,6 +165,15 @@
+                 ("texture_ref", texture_ref.to_string()),
+                 ("detail", detail.clone()),
+             ],
++            Self::BufferBaseShape {
++                texture_ref,
++                texture_type,
++                levels,
++            } => vec![
++                ("texture_ref", texture_ref.to_string()),
++                ("texture_type", texture_type.to_string()),
++                ("levels", levels.to_string()),
++            ],
+             Self::HopZeroBase {
+                 texture_ref,
+                 opcode,
+@@ -280,6 +295,7 @@
+ 
+ /// Object tag 8 includes both views and textures backed by a buffer. The
+ /// operation's checked decoder owns that distinction, rather than the tag.
++#[derive(Clone)]
+ enum DecodedTextureViewHop {
+     View {
+         base: u32,
+@@ -288,6 +304,8 @@
+         pixel_format: Option<u16>,
+         slice_base: u64,
+         slice_count: u64,
++        texture_type: u16,
++        level_count: u64,
+     },
+     BufferTexture(BufferTextureDescriptor),
+ }
+@@ -390,6 +408,8 @@
+         pixel_format,
+         slice_base: view.slice_base,
+         slice_count: view.slice_count,
++        texture_type: view.texture_type,
++        level_count: view.level_count,
+     })
+ }
+ 
+@@ -409,26 +429,29 @@
+ ) -> Result<ViewResolve, TextureViewDecline> {
+     use crate::runtime::decode::resource::OBJECT_TYPE_TEXTURE_VIEW;
+ 
+-    let (mut base, level, swizzle, pixel_format, slice_base, slice_count) =
+-        match decode_texture_view_hop_reasoned(state, host, task_id, texture_ref)? {
+-            DecodedTextureViewHop::BufferTexture(bt) => {
+-                return Ok(ViewResolve {
+-                    base_texture_ref: texture_ref,
+-                    base_buffer_texture: Some(bt),
+-                    level: 0,
+-                    swizzle: None,
+-                    pixel_format: None,
+-                });
+-            }
+-            DecodedTextureViewHop::View {
+-                base,
+-                level,
+-                swizzle,
+-                pixel_format,
+-                slice_base,
+-                slice_count,
+-            } => (base, level, swizzle, pixel_format, slice_base, slice_count),
+-        };
++    let first = (
++        texture_ref,
++        decode_texture_view_hop_reasoned(state, host, task_id, texture_ref)?,
++    );
++    let mut buffer_view_hops = Vec::new();
++    let (mut base, level, swizzle, pixel_format) = match first.1.clone() {
++        DecodedTextureViewHop::BufferTexture(bt) => {
++            return Ok(ViewResolve {
++                base_texture_ref: texture_ref,
++                base_buffer_texture: Some(bt),
++                level: 0,
++                swizzle: None,
++                pixel_format: None,
++            });
++        }
++        DecodedTextureViewHop::View {
++            base,
++            level,
++            swizzle,
++            pixel_format,
++            ..
++        } => (base, level, swizzle, pixel_format),
++    };
+ 
+     // A buffer-backed texture is a terminal even though it shares tag 8 with
+     // views. Decode each hop once, and carry its descriptor to the row loader.
+@@ -441,22 +464,50 @@
+         }
+         match decode_texture_view_hop_reasoned(state, host, task_id, base)? {
+             DecodedTextureViewHop::BufferTexture(mut bt) => {
+-                // This loader represents one 2D level/slice. Never discard a
+-                // view's requested mip or array window to make the bind work.
+-                if level != 0 || slice_base != 0 || slice_count > 1 {
+-                    return Err(TextureViewDecline::BufferBaseRange {
+-                        texture_ref,
++                let mut buffer_swizzle = pixel_format::swizzle_identity();
++                // The buffer is the single-level terminal. Apply every view
++                // from the terminal outwards; inner ranges and format changes
++                // must not disappear just because an outer view inherits them.
++                for (view_ref, hop) in buffer_view_hops.iter().rev().chain(std::iter::once(&first))
++                {
++                    let DecodedTextureViewHop::View {
+                         level,
++                        swizzle,
++                        pixel_format,
+                         slice_base,
+                         slice_count,
+-                    });
++                        texture_type,
++                        level_count,
++                        ..
++                    } = hop
++                    else {
++                        continue;
++                    };
++                    if *level != 0 || *slice_base != 0 || *slice_count > 1 {
++                        return Err(TextureViewDecline::BufferBaseRange {
++                            texture_ref: *view_ref,
++                            level: *level,
++                            slice_base: *slice_base,
++                            slice_count: *slice_count,
++                        });
++                    }
++                    if !matches!(*texture_type, 0 | 2) || *level_count > 1 {
++                        return Err(TextureViewDecline::BufferBaseShape {
++                            texture_ref: *view_ref,
++                            texture_type: *texture_type,
++                            levels: *level_count,
++                        });
++                    }
++                    bt.desc.pixel_format =
++                        effective_view_sample_format_reasoned(bt.desc.pixel_format, *pixel_format)
++                            .map_err(|why| TextureViewDecline::BufferBaseFormat {
++                                texture_ref: *view_ref,
++                                detail: why.to_string().replace(' ', "_"),
++                            })?;
++                    if let Some(plan) = swizzle {
++                        buffer_swizzle = plan.clone().after(&buffer_swizzle);
++                    }
+                 }
+-                bt.desc.pixel_format =
+-                    effective_view_sample_format_reasoned(bt.desc.pixel_format, pixel_format)
+-                        .map_err(|why| TextureViewDecline::BufferBaseFormat {
+-                            texture_ref,
+-                            detail: why.to_string().replace(' ', "_"),
+-                        })?;
+                 if crate::observe::first_sight(
+                     "texture_view_buffer_base",
+                     (u64::from(task_id) << 32) | u64::from(texture_ref),
+@@ -465,18 +516,18 @@
+                         "texture_view_buffer_base task={task_id} ref={texture_ref} base={base} \
+                          buffer={} level={level} fmt={:#x} swizzled={}",
+                         bt.buffer_ref, bt.desc.pixel_format,
+-                        swizzle.as_ref().is_some_and(|plan| !pixel_format::swizzle_is_identity(plan)) as u8,
++                        (!pixel_format::swizzle_is_identity(&buffer_swizzle)) as u8,
+                     ));
+                 }
+                 return Ok(ViewResolve {
+                     base_texture_ref: base,
+                     base_buffer_texture: Some(bt),
+                     level,
+-                    swizzle,
++                    swizzle: Some(buffer_swizzle),
+                     pixel_format,
+                 });
+             }
+-            DecodedTextureViewHop::View { base: next, .. } => {
++            hop @ DecodedTextureViewHop::View { base: next, .. } => {
+                 if depth == MAX_TEXTURE_VIEW_CHAIN {
+                     return Err(TextureViewDecline::ChainOverflow {
+                         base,
+@@ -490,6 +541,7 @@
+                         depth: depth as u32,
+                     });
+                 }
++                buffer_view_hops.push((base, hop));
+                 base = next;
+             }
+         }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+@@ -5671,6 +5671,7 @@
+         .colors
+         .iter()
+         .map(|c| draw::ColorRtRequest {
++            buffer_texture: c.buffer_texture.clone(),
+             slot: c.slot,
+             texture_ref: c.texture_ref,
+             mapping_id: c.mapping_id,
+@@ -6219,6 +6220,18 @@
+         }
+         return ok;
+     }
++    if let Some(buffer) = &c0.buffer_texture {
++        if !buffer.clear_is_exact() {
++            crate::observe::Emit::decline(
++                "render_clear",
++                &draw::BufferTargetDecline::Clear(c0.format),
++            )
++            .field("ref", c0.texture_ref)
++            .fail();
++            return false;
++        }
++        buffer.prepare(state, host);
++    }
+     // Format and clear representation are one contract decision. Continuous
+     // colour keeps the semantic RGBA8 carrier the existing converters consume;
+     // integer targets carry their own texels, where `1` remains the integer 1.
+@@ -6251,6 +6264,9 @@
+         )
+         .is_ok();
+         if ok {
++            if let Some(buffer) = &c0.buffer_texture {
++                buffer.published(state, task_id, c0.texture_ref);
++            }
+             crate::runtime::surface_cache::forget_gva_copies(
+                 state,
+                 task_id,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
+@@ -1233,7 +1233,9 @@
+     c0: &crate::runtime::draw::ColorRtRequest,
+     window: GvaWindow,
+ ) -> bool {
+-    if c0.texture_ref == 0 || window.generation == 0 {
++    if c0.buffer_texture.is_some() || c0.texture_ref == 0 || window.generation == 0 {
++        // The ledger names texture references. A buffer alias must publish
++        // synchronously because another reader may name only its parent.
+         return false;
+     }
+     // The resident the payment will name is derived from `c0` and this
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -991,6 +991,9 @@
+     };
+     let decline = match direct {
+         Ok(extent) => {
++            if let Some(buffer) = &c0.buffer_texture {
++                buffer.published(state, task_id, texture_ref);
++            }
+             crate::runtime::drain::note_store_route("gva_flush_gpu_direct");
+             return Ok(extent);
+         }
+@@ -1150,6 +1153,9 @@
+         CopiedFrame::Rgba8(bytes) => crate::runtime::draw::FrameRows::Rgba8(bytes),
+     };
+     let extent = land_gva_frame_bytes(state, host, task_id, c0, texture_ref, rows, pages, skip)?;
++    if let Some(buffer) = &c0.buffer_texture {
++        buffer.published(state, task_id, texture_ref);
++    }
+     crate::backend::vulkan::engine::note_resident_content_copied_out(identity);
+     crate::runtime::drain::note_store_route("gva_flush_copied");
+     Ok(extent)
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs
+@@ -15,6 +15,9 @@
+ /// A specific pipeline/stage preparation failure before engine request validation.
+ #[derive(Clone, Debug, PartialEq, Eq)]
+ pub enum DrawPreparationDecline {
++    BufferTextureStoreFailed {
++        slot: u32,
++    },
+     FragmentlessUnsupported {
+         feature: &'static str,
+     },
+@@ -241,6 +244,7 @@
+ impl Decline for DrawPreparationDecline {
+     fn slug(&self) -> &'static str {
+         match self {
++            Self::BufferTextureStoreFailed { .. } => "draw_prepare_buffer_texture_store_failed",
+             Self::FragmentlessUnsupported { .. } => "draw_prepare_fragmentless_unsupported",
+             Self::NativeXrLoadMissing { .. } => "draw_prepare_native_xr_load_missing",
+             Self::NativeXrStoreFailed { .. } => "draw_prepare_native_xr_store_failed",
+@@ -369,6 +373,7 @@
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::BufferTextureStoreFailed { slot } => vec![("slot", slot.to_string())],
+             Self::FragmentlessUnsupported { feature } => vec![("feature", feature.to_string())],
+             Self::NativeXrLoadMissing { slot, mapping_id }
+             | Self::NativeXrStoreFailed { slot, mapping_id } => vec![
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/buffer_target.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/buffer_target.rs
+new file mode 100644
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/buffer_target.rs
+@@ -0,0 +1,331 @@
++//! Colour attachments aliasing an explicitly retained buffer allocation.
++//!
++//! A buffer texture has no allocation of its own. Its serialized offset is
++//! relative to the referenced buffer, once, and its row pitch is mandatory.
++//! Keep both objects through the pass and publish Store before returning it:
++//! the ordinary deferred texture ledger does not name every buffer alias.
++
++use super::*;
++use std::sync::Arc;
++
++#[derive(Clone, Debug)]
++pub struct BufferTextureTarget {
++    descriptor: BufferTextureDescriptor,
++    texture: Arc<crate::model::TaskResource>,
++    parent: Arc<crate::model::TaskResource>,
++    gva: u64,
++    layout: pixel_format::TexelLayout,
++}
++
++impl PartialEq for BufferTextureTarget {
++    fn eq(&self, other: &Self) -> bool {
++        self.descriptor == other.descriptor
++            && Arc::ptr_eq(&self.texture, &other.texture)
++            && Arc::ptr_eq(&self.parent, &other.parent)
++            && self.gva == other.gva
++            && self.layout == other.layout
++    }
++}
++impl Eq for BufferTextureTarget {}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(crate) enum BufferTargetDecline {
++    Rail,
++    Shape(crate::runtime::heap_query::TextureDescriptor),
++    Usage(u32),
++    Swizzle,
++    Subresource {
++        level: u32,
++        slice: u32,
++        depth_plane: u32,
++    },
++    Object {
++        object: u32,
++        why: objects::LadderRung,
++    },
++    Parent {
++        buffer: u32,
++        why: objects::BufferSpanRefusal,
++    },
++    Reference {
++        requested: u32,
++        declared: u32,
++    },
++    Format(u16),
++    Stride {
++        stride: u64,
++        tight: u32,
++    },
++    Footprint {
++        offset: u64,
++        stride: u64,
++        height: u32,
++        allocation: u64,
++    },
++    Address {
++        base: u64,
++        offset: u64,
++        span: u64,
++    },
++    Pages {
++        want: u64,
++        got: usize,
++    },
++    Allocation,
++    Load {
++        row: u32,
++    },
++    Samples(u32),
++    Clear(u16),
++    Recovery(u16),
++}
++
++impl crate::observe::Decline for BufferTargetDecline {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::Rail => "rt_buffer_texture_rail",
++            Self::Shape(_) => "rt_buffer_texture_shape",
++            Self::Usage(_) => "rt_buffer_texture_usage",
++            Self::Swizzle => "rt_buffer_texture_swizzle",
++            Self::Subresource { .. } => "rt_buffer_texture_subresource",
++            Self::Object { .. } => "rt_buffer_texture_object",
++            Self::Parent { .. } => "rt_buffer_texture_parent",
++            Self::Reference { .. } => "rt_buffer_texture_reference",
++            Self::Format(_) => "rt_buffer_texture_format",
++            Self::Stride { .. } => "rt_buffer_texture_stride",
++            Self::Footprint { .. } => "rt_buffer_texture_footprint",
++            Self::Address { .. } => "rt_buffer_texture_address",
++            Self::Pages { .. } => "rt_buffer_texture_pages",
++            Self::Allocation => "rt_buffer_texture_host_allocation",
++            Self::Load { .. } => "rt_buffer_texture_load",
++            Self::Samples(_) => "rt_buffer_texture_raster_samples",
++            Self::Clear(_) => "rt_buffer_texture_clear_representation",
++            Self::Recovery(_) => "rt_buffer_texture_recovery_unlicensed",
++        }
++    }
++
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        // Every enum arm carries the decoded values at its own boundary.
++        vec![("detail", format!("{self:?}"))]
++    }
++}
++
++impl BufferTextureTarget {
++    pub(super) fn layout(&self) -> pixel_format::TexelLayout {
++        self.layout
++    }
++
++    pub(super) fn resolve<M: HostMemory + HostOps>(
++        state: &DeviceState,
++        host: &M,
++        task_id: u32,
++        base_ref: u32,
++        bt: BufferTextureDescriptor,
++        att: ColorAttachment,
++        level: u32,
++    ) -> Result<ResolvedRenderTarget, BufferTargetDecline> {
++        use BufferTargetDecline as D;
++        // The Vulkan Store below preserves native texels and publishes every
++        // MRT slot. The Metal copying rail has not established that contract.
++        if crate::backend::selected().rail() != crate::backend::Rail::Vulkan {
++            return Err(D::Rail);
++        }
++        let d = bt.desc;
++        if d.texture_type != 2
++            || d.width == 0
++            || d.height == 0
++            || d.depth != 1
++            || d.mipmap_level_count != 1
++            || d.sample_count != 1
++            || d.array_length != 1
++        {
++            return Err(D::Shape(d));
++        }
++        // Usage zero is the native descriptor's default, including RenderTarget.
++        // An explicit usage mask must actually declare that operation.
++        if d.usage != 0 && d.usage & 4 == 0 {
++            return Err(D::Usage(d.usage));
++        }
++        if d.swizzle.is_some_and(|raw| {
++            pixel_format::swizzle_plan(&raw)
++                .is_none_or(|plan| !pixel_format::swizzle_is_identity(&plan))
++        }) {
++            return Err(D::Swizzle);
++        }
++        if level != 0 || att.slice != 0 || att.depth_plane != 0 {
++            return Err(D::Subresource {
++                level,
++                slice: att.slice,
++                depth_plane: att.depth_plane,
++            });
++        }
++        if bt.new_texture_ref != base_ref {
++            return Err(D::Reference {
++                requested: base_ref,
++                declared: bt.new_texture_ref,
++            });
++        }
++        let layout = native_attachment_layout(d.pixel_format).ok_or(D::Format(d.pixel_format))?;
++        let tight = pixel_format::tight_row_bytes(d.width, d.pixel_format)
++            .ok_or(D::Format(d.pixel_format))?;
++        if bt.bytes_per_row < u64::from(tight) || bt.bytes_per_row > u64::from(u32::MAX) {
++            return Err(D::Stride {
++                stride: bt.bytes_per_row,
++                tight,
++            });
++        }
++        let texture =
++            objects::resolve_resource(state, host, task_id, base_ref).map_err(|why| D::Object {
++                object: base_ref,
++                why,
++            })?;
++        let parent =
++            objects::resolve_resource(state, host, task_id, bt.buffer_ref).map_err(|why| {
++                D::Object {
++                    object: bt.buffer_ref,
++                    why,
++                }
++            })?;
++        let (base, allocation) = objects::resolve_buffer_span_from_resource(state, &parent)
++            .map_err(|why| D::Parent {
++                buffer: bt.buffer_ref,
++                why,
++            })?;
++        // The existing Store capture/map rail authorizes the full padded image.
++        // Keep that whole footprint inside the parent even though row copies
++        // write only texels. No address or extent uses saturating arithmetic.
++        let span = bt
++            .bytes_per_row
++            .checked_mul(u64::from(d.height))
++            .filter(|span| {
++                bt.offset
++                    .checked_add(*span)
++                    .is_some_and(|end| end <= allocation)
++            })
++            .ok_or(D::Footprint {
++                offset: bt.offset,
++                stride: bt.bytes_per_row,
++                height: d.height,
++                allocation,
++            })?;
++        let gva = base
++            .checked_add(bt.offset)
++            .filter(|gva| *gva != 0 && gva.checked_add(span).is_some())
++            .ok_or(D::Address {
++                base,
++                offset: bt.offset,
++                span,
++            })?;
++        let target = Arc::new(Self {
++            descriptor: bt,
++            texture,
++            parent,
++            gva,
++            layout,
++        });
++        crate::runtime::drain::note_store_route("buffer_texture_rt_resolved");
++        Ok(ResolvedRenderTarget {
++            #[cfg(feature = "backend-vulkan")]
++            paired_xr: None,
++            buffer_texture: Some(target),
++            mapping_id: 0,
++            target_gva: gva,
++            width: d.width,
++            height: d.height,
++            row_stride: bt.bytes_per_row as u32,
++            format: d.pixel_format,
++            sample_count: 1,
++        })
++    }
++
++    /// The alias can overlap a debt under another texture name. Complete that
++    /// earlier content before this pass reads or replaces the shared bytes.
++    /// Once per render pass, never once per draw in the pass.
++    pub(crate) fn prepare<M: HostMemory + HostOps>(&self, state: &mut DeviceState, host: &mut M) {
++        crate::runtime::writeback_debt::pay_all(state, host);
++        crate::runtime::render_writeback::settle_guest_writes(
++            crate::runtime::render_writeback::SettleSite::LinearTextureSeed,
++        );
++    }
++
++    /// Read precisely the attachment's native texels. Address/ref pixel caches
++    /// cannot certify a buffer alias after a sibling buffer or texture write.
++    pub(super) fn seed<M: HostMemory + HostOps>(
++        &self,
++        state: &mut DeviceState,
++        host: &mut M,
++        task_id: u32,
++    ) -> Result<pixel_format::ColorLoadSeed, BufferTargetDecline> {
++        let d = self.descriptor.desc;
++        let (tight, len) = reims_vgpu_protocol::extent::tight_image_layout(
++            d.width,
++            d.height,
++            self.layout.bytes_per_texel(),
++        )
++        .ok_or(BufferTargetDecline::Allocation)?;
++        let mut pixels = Vec::new();
++        pixels
++            .try_reserve_exact(len)
++            .map_err(|_| BufferTargetDecline::Allocation)?;
++        pixels.resize(len, 0);
++        for (row, bytes) in pixels.chunks_exact_mut(tight as usize).enumerate() {
++            // The constructor checked the complete padded footprint.
++            let address = self.gva + row as u64 * self.descriptor.bytes_per_row;
++            if !crate::runtime::gva_view::read_span(state, host, task_id, address, bytes) {
++                return Err(BufferTargetDecline::Load { row: row as u32 });
++            }
++        }
++        Ok(pixel_format::ColorLoadSeed {
++            pixels: Arc::new(pixels),
++            layout: self.layout,
++        })
++    }
++
++    pub(crate) fn published(&self, state: &mut DeviceState, task_id: u32, view_ref: u32) {
++        let mut names = [
++            self.descriptor.buffer_ref,
++            self.descriptor.new_texture_ref,
++            view_ref,
++        ];
++        names.sort_unstable();
++        for (index, name) in names.into_iter().enumerate() {
++            if name != 0 && (index == 0 || names[index - 1] != name) {
++                state.buffer_write_gen.note_write(task_id, name);
++                state.invalidate_object_host_copies(task_id, name);
++            }
++        }
++        crate::runtime::surface_cache::evict_gva(state, self.gva);
++        crate::runtime::drain::note_store_route("buffer_texture_rt_published");
++    }
++
++    pub(crate) fn clear_is_exact(&self) -> bool {
++        // Wider float and packed/sRGB clear conversion still needs its own
++        // native CPU representation. Draw clears are performed by the GPU.
++        !pixel_format::is_srgb(self.descriptor.desc.pixel_format)
++            && matches!(
++                self.layout,
++                pixel_format::TexelLayout::Rgba8
++                    | pixel_format::TexelLayout::Bgra8
++                    | pixel_format::TexelLayout::R8
++                    | pixel_format::TexelLayout::R32Float
++                    | pixel_format::TexelLayout::Rg16Uint
++            )
++    }
++}
++
++fn native_attachment_layout(format: u16) -> Option<pixel_format::TexelLayout> {
++    #[cfg(feature = "backend-vulkan")]
++    {
++        let (attachment, _) =
++            crate::backend::vulkan::translate::pixel::color_attachment(format).ok()?;
++        let layout = crate::backend::vulkan::translate::pixel::texel_layout_of(attachment.vk)?;
++        // A codec-backed XR resident is not the buffer's byte representation.
++        (Some(layout.bytes_per_texel()) == pixel_format::render_target_bpp(format))
++            .then_some(layout)
++    }
++    #[cfg(not(feature = "backend-vulkan"))]
++    {
++        let _ = format;
++        None
++    }
++}

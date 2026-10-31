@@ -1,0 +1,695 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+index 1f8de66..d9b03fe 100644
+--- a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -1215,6 +1215,19 @@ counts! {
+ /// `crate::runtime::gpu_hang_trail`'s ring covers every submission still in
+ /// flight instead of the last half millisecond of a batch.
+ pub const BATCH_DRAWS: &str = "REIMS_VGPU_BATCH_DRAWS";
++
++/// **A count, not a switch: a guest task id.** Write the texels that one task's
++/// draws sample and the frames its render Stores land, as raw files under
++/// `texture-capture/` in [`LOG_DIRECTORY`]. Without a log directory it writes
++/// nothing.
++///
++/// Diagnostic capture in the sense of [`AIR_CAPTURE`]: it observes and never
++/// decides. Every draw, bind and Store runs exactly as it does unset; the cost is
++/// the readback of each captured resident and the files, bounded in count and
++/// bytes by the writer. It exists because a guest process's offscreen rendering
++/// that comes out wrong — an icon without its glyph — names no failing record,
++/// and the content of each step is the only thing that says which step lost it.
++pub const TEXTURE_CAPTURE: &str = "REIMS_VGPU_TEXTURE_CAPTURE";
+ }
+ 
+ choices! {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/device/mod.rs b/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
+index 5519905..0da8a53 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
+@@ -599,6 +599,12 @@ pub fn device_drain(id: u64) -> bool {
+     post_sweep(PostSweep::SlotRecheck, || {
+         crate::runtime::objects::slot_recheck::sweep(&device.state, &host)
+     });
++    // Diagnostic only, and empty unless `TEXTURE_CAPTURE` names a task: re-read
++    // the buffer-texture spans that task bound blank. Charged to the slot
++    // recheck's bucket because it is the same kind of deferred probe read.
++    post_sweep(PostSweep::SlotRecheck, || {
++        crate::runtime::texture_capture::sweep(&device.state, &host)
++    });
+     // The ordering plane's own residue, on the same one-second cadence as the
+     // levels above and for the reason `backing_outstanding_census` is emitted
+     // beside `store_routes`: the routes count what *happened* to a pipeline and
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+index 90a0f22..d7cecdf 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -1705,6 +1705,21 @@ fn load_buffer_texture_rows<M: HostMemory + HostOps>(
+         bt.offset,
+         BufferReadExtent::Rows(rect),
+     )?;
++    if crate::runtime::texture_capture::wants(task_id) && raw.iter().all(|&b| b == 0) {
++        crate::runtime::texture_capture::arm_blank_recheck(
++            state,
++            &*host,
++            task_id,
++            texture_ref,
++            bt.buffer_ref,
++            backing.gva + bt.offset,
++            bpr,
++            tight as usize,
++            w,
++            h,
++            fmt,
++        );
++    }
+     crate::runtime::drain::note_store_route("buftex_bounded_read");
+     crate::runtime::drain::note_store_route_n("buftex_source_read_bytes", rect.packed() as u64);
+     crate::runtime::drain::note_store_route_n("buftex_tail_skipped_bytes", avail - span);
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+index 6cfd5f3..cc60491 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -218,6 +218,9 @@ pub fn encode_draw_chain<M: HostMemory + HostOps>(
+     if req.pipeline_ref != 0 && (req.vertex_count > 0 || req.indexed.is_some()) {
+         record_plane_draw(req);
+         req.chain_resident_established = false;
++        if crate::runtime::texture_capture::wants(req.task_id) {
++            crate::runtime::texture_capture::note_draw(req);
++        }
+         let engine = try_metal2vulkan_draw(state, host, req, writeback_guest);
+         // Set from the result itself rather than inside the arms, because the
+         // arms are where this went wrong: the refusal slug was assigned only in
+@@ -229,6 +232,18 @@ pub fn encode_draw_chain<M: HostMemory + HostOps>(
+         engine_outcome = EngineDrawOutcome::of(&engine);
+         match engine {
+             Ok(M2vDrawSpan::Pixels { bytes, bgra }) => {
++                if crate::runtime::texture_capture::wants(req.task_id) {
++                    crate::runtime::texture_capture::write(
++                        "store",
++                        req.task_id,
++                        req.colors.first().map(|c| c.texture_ref).unwrap_or(0),
++                        req.pipeline_ref,
++                        pass_w,
++                        pass_h,
++                        if bgra { "Bgra8" } else { "Rgba8" },
++                        &bytes,
++                    );
++                }
+                 draw_rgba = Some(bytes);
+                 draw_bgra = bgra;
+                 crate::observe::line(format!(
+@@ -248,6 +263,12 @@ pub fn encode_draw_chain<M: HostMemory + HostOps>(
+                 ));
+             }
+             Ok(M2vDrawSpan::ResidentGvaStore { identity }) => {
++                capture_resident(
++                    req,
++                    "store",
++                    req.colors.first().map(|c| c.texture_ref).unwrap_or(0),
++                    &identity,
++                );
+                 let _store_span = crate::runtime::chain_phase::CostSpan::new("gva_store_us");
+                 note_mapper_ref_texture_store_route("gva_flush");
+                 // Metal Store preserves the attachment in host GPU memory. It
+@@ -1198,6 +1219,58 @@ fn note_sampled_ref_backing(
+     ));
+ }
+ 
++/// [`crate::runtime::texture_capture`] for one bind's source, as the bind
++/// receives it: uploaded bytes as they are, a resident through a readback.
++fn capture_sampled_source(
++    req: &DrawEncodeRequest,
++    texture_ref: u32,
++    width: u32,
++    height: u32,
++    source: &SampledSourceRequest,
++) {
++    match source {
++        SampledSourceRequest::Bytes(bytes, _, format, _) => crate::runtime::texture_capture::write(
++            "sample",
++            req.task_id,
++            texture_ref,
++            req.pipeline_ref,
++            width,
++            height,
++            &format!("{:?}", format.layout()),
++            bytes,
++        ),
++        SampledSourceRequest::Target(identity, _) => {
++            capture_resident(req, "sample", texture_ref, identity)
++        }
++        SampledSourceRequest::GuestRuns(..) => {}
++    }
++}
++
++/// [`crate::runtime::texture_capture`] for a resident, read at its own texel
++/// width. A readback that fails is a capture lost, never a draw's failure.
++fn capture_resident(
++    req: &DrawEncodeRequest,
++    role: &'static str,
++    texture_ref: u32,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++) {
++    if !crate::runtime::texture_capture::wants(req.task_id) {
++        return;
++    }
++    if let Ok(readback) = crate::backend::vulkan::engine::read_target_texels(identity) {
++        crate::runtime::texture_capture::write(
++            role,
++            req.task_id,
++            texture_ref,
++            req.pipeline_ref,
++            identity.width(),
++            identity.height(),
++            &format!("{:?}", readback.texel),
++            &readback.pixels,
++        );
++    }
++}
++
+ pub(super) fn resolve_sampled_source<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -8772,6 +8845,9 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+                         (rw, rh, src)
+                     }
+                 };
++                if crate::runtime::texture_capture::wants(req.task_id) {
++                    capture_sampled_source(req, texture_ref, tw, th, &loaded);
++                }
+                 let mut bytes_identity = None;
+                 let mut byte_origin = crate::backend::vulkan::engine::SampledByteOrigin::Synthetic;
+                 // Byte layout of a CPU-origin bind. Default RGBA8; a source that
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/fence_exec.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/fence_exec.rs
+index fac4394..98efd70 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/fence_exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/fence_exec.rs
+@@ -162,6 +162,29 @@ pub fn execute_event(state: &mut DeviceState, task_id: u32, cmd: &EventRecord) -
+     if plan.updates_state {
+         state.set_fence_generation(task_id, tag, cmd.event_ref, plan.update_value);
+     }
++    // Census of what each event record met. A wait this table cannot satisfy
++    // does not hold the drain, so whether one ever happens — and on which
++    // task, event and value — is the question a guest that signals an event
++    // from its CPU asks of this device.
++    crate::runtime::drain::note_store_route(match plan.decision {
++        Decision::SignalUpdate => "event_signal_update",
++        Decision::SignalNoop => "event_signal_noop",
++        Decision::WaitSatisfied => "event_wait_satisfied",
++        Decision::WaitPending => "event_wait_pending",
++        Decision::Invalid => "event_plan_invalid",
++    });
++    if plan.decision == Decision::WaitPending
++        && crate::observe::first_sight(
++            "event_wait_pending",
++            (u64::from(task_id) << 32) | u64::from(cmd.event_ref),
++        )
++    {
++        crate::observe::off(format!(
++            "event_wait_pending task={task_id} event={} value={} current={current:?} (the \
++             wait does not hold the drain; the commands after it run now)",
++            cmd.event_ref, cmd.value,
++        ));
++    }
+     match plan.decision {
+         Decision::SignalUpdate | Decision::SignalNoop | Decision::WaitSatisfied => FenceStatus::Ok,
+         Decision::WaitPending => FenceStatus::Pending,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/m2v_cache.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/m2v_cache.rs
+index 412d245..e0039b1 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/m2v_cache.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/m2v_cache.rs
+@@ -844,6 +844,45 @@ fn capture_air(air: &[u8], stage: Stage, spirv: &[u8]) -> Option<AirCaptureHint>
+     }
+ }
+ 
++/// Name the SIMD-group intrinsics a translated module calls, once per module.
++///
++/// AIR's simdgroup is 32 lanes and a Vulkan subgroup on this host may be wider;
++/// the translator emulates 32-lane partitions for these calls, so which shaders
++/// depend on that emulation is the question a wrong-but-not-refused frame asks.
++/// Observation only: the names come from the module's string table, the line
++/// carries the emitted SPIR-V word count that `linux_m2v_async done` joins on,
++/// and nothing here changes the translation.
++fn note_simd_intrinsics(air: &[u8], stage: Stage, spirv: &[u8]) {
++    const NEEDLE: &[u8] = b"air.simd";
++    let mut names: Vec<String> = Vec::new();
++    let mut at = 0;
++    while let Some(found) = air[at..].windows(NEEDLE.len()).position(|w| w == NEEDLE) {
++        let start = at + found;
++        let end = air[start..]
++            .iter()
++            .position(|&b| !(b.is_ascii_alphanumeric() || b == b'_' || b == b'.'))
++            .map_or(air.len(), |n| start + n);
++        let name = String::from_utf8_lossy(&air[start..end]).into_owned();
++        if !names.contains(&name) && names.len() < 16 {
++            names.push(name);
++        }
++        at = end.max(start + 1);
++    }
++    if names.is_empty() {
++        return;
++    }
++    let mut hasher = std::collections::hash_map::DefaultHasher::new();
++    air.hash(&mut hasher);
++    if crate::observe::first_sight("m2v_simd_intrinsics", hasher.finish()) {
++        crate::observe::off(format!(
++            "m2v_simd_intrinsics stage={} spv={} names=[{}]",
++            stage_name(stage),
++            spirv.len() / 4,
++            names.join(","),
++        ));
++    }
++}
++
+ fn translate_air(air: &[u8], stage: Stage) -> M2vResult<CachedShader> {
+     // metal2vulkan's tool boundary uses fixed scratch names inside `tmp_dir`.
+     // Serialize sync and background calls so their AIR/LLVM/SPIR-V files never
+@@ -864,6 +903,7 @@ fn translate_air(air: &[u8], stage: Stage) -> M2vResult<CachedShader> {
+         metal2vulkan::translate_reflected(path.to_str().unwrap_or(name), stage, &tmp)
+             .map_err(|e| translate_decline(stage, e.to_string()))?;
+     let hint = capture_air(air, stage, &spirv);
++    note_simd_intrinsics(air, stage, &spirv);
+     let mut shader = finish_translated(spirv, reflection, stage)?;
+     shader.air_capture_hint = hint;
+     Ok(shader)
+@@ -890,6 +930,7 @@ fn translate_kernel_air(air: &[u8], local_size: [u32; 3]) -> M2vResult<CachedSha
+         detail: e.to_string(),
+     })?;
+     let hint = capture_air(air, Stage::Kernel, &spirv);
++    note_simd_intrinsics(air, Stage::Kernel, &spirv);
+     if reflection.local_size != Some(local_size) {
+         return Err(M2vCacheDecline::KernelLocalSizeMismatch {
+             requested: local_size,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+index 8b6f2ed..12b7029 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+@@ -143,6 +143,8 @@ pub mod surface_currency;
+ pub mod task_slot;
+ /// Texture / mapper-ref-texture geometry registration.
+ pub mod texture;
++/// Raw texels of one task's sampled sources and Stores, behind `TEXTURE_CAPTURE`.
++pub mod texture_capture;
+ /// Track host-authoritative surface and GVA frames, and transfer them on demand.
+ pub mod writeback_debt;
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs
+new file mode 100644
+index 0000000..3044eef
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/texture_capture.rs
+@@ -0,0 +1,394 @@
++//! Write the texels one task's draws sample and store, for offline inspection.
++//!
++//! A diagnostic capture in the sense of `AIR_CAPTURE`: it observes and never
++//! decides. Every draw, bind and Store runs exactly as it does with the switch
++//! unset; a write that fails costs its file and nothing else. It exists because
++//! a frame that renders wrong inside a guest process — an icon whose glyph never
++//! appears — names no failing record: every draw resolves, every Store lands,
++//! and the only evidence of which step lost the content is the content itself.
++//!
++//! [`crate::config::TEXTURE_CAPTURE`] names one guest task. Its sampled sources
++//! (as the bind uploads or reads them) and its render Stores (as the resident
++//! holds them) are written to `<log directory>/texture-capture/`, one raw file
++//! per distinct content, named by sequence, role, ref, pipeline, extent, texel
++//! layout and elapsed milliseconds. A source that binds the same bytes again
++//! under the same ref is written once. The total is bounded by file count and
++//! bytes; reaching either bound is reported once and ends the capture.
++
++use std::collections::HashMap;
++use std::hash::{Hash, Hasher};
++use std::path::PathBuf;
++use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
++use std::sync::{Mutex, OnceLock};
++
++/// Upper bound on files one process writes.
++const MAX_FILES: u64 = 20_000;
++/// Upper bound on bytes one process writes.
++const MAX_BYTES: u64 = 768 << 20;
++
++struct Capture {
++    directory: PathBuf,
++    task_id: u32,
++}
++
++fn capture() -> Option<&'static Capture> {
++    static CAPTURE: OnceLock<Option<Capture>> = OnceLock::new();
++    CAPTURE
++        .get_or_init(|| {
++            let task_id =
++                match crate::config::count(crate::config::TEXTURE_CAPTURE, u64::from(u32::MAX)) {
++                    crate::config::Count::Unset => return None,
++                    crate::config::Count::Narrowed(task) => task as u32,
++                    crate::config::Count::Refused(value) => {
++                        crate::observe::fail(format!(
++                            "texture_capture reason=task_unreadable value={value:?}"
++                        ));
++                        return None;
++                    }
++                };
++            let crate::config::LogDirectory::Directory(base) = crate::config::log_directory()
++            else {
++                crate::observe::fail(
++                    "texture_capture reason=no_log_directory (the capture writes beside the \
++                     renderer logs and has nowhere else it may write)",
++                );
++                return None;
++            };
++            let directory = base.join("texture-capture");
++            if let Err(e) = std::fs::create_dir_all(&directory) {
++                crate::observe::fail(format!(
++                    "texture_capture reason=mkdir_failed dir={} err={e}",
++                    directory.display()
++                ));
++                return None;
++            }
++            crate::observe::off(format!(
++                "texture_capture task={task_id} dir={}",
++                directory.display()
++            ));
++            Some(Capture { directory, task_id })
++        })
++        .as_ref()
++}
++
++/// Whether `task_id` is the task being captured. Callers ask before doing any
++/// readback a capture would need, so an unset switch costs one load.
++pub(crate) fn wants(task_id: u32) -> bool {
++    capture().is_some_and(|capture| capture.task_id == task_id)
++}
++
++/// Write one capture. `role` is `sample` or `store`; `layout` is the texel
++/// layout the bytes are in, as the engine names it.
++#[allow(clippy::too_many_arguments)]
++pub(crate) fn write(
++    role: &'static str,
++    task_id: u32,
++    texture_ref: u32,
++    pipeline_ref: u32,
++    width: u32,
++    height: u32,
++    layout: &str,
++    bytes: &[u8],
++) {
++    static FILES: AtomicU64 = AtomicU64::new(0);
++    static BYTES: AtomicU64 = AtomicU64::new(0);
++    static EXHAUSTED: AtomicBool = AtomicBool::new(false);
++    static LAST: OnceLock<Mutex<HashMap<(&'static str, u32), u64>>> = OnceLock::new();
++    let Some(capture) = capture().filter(|capture| capture.task_id == task_id) else {
++        return;
++    };
++    let mut hasher = std::collections::hash_map::DefaultHasher::new();
++    bytes.hash(&mut hasher);
++    (width, height, layout).hash(&mut hasher);
++    let digest = hasher.finish();
++    {
++        let mut last = LAST
++            .get_or_init(|| Mutex::new(HashMap::new()))
++            .lock()
++            .unwrap_or_else(|poisoned| poisoned.into_inner());
++        if last.insert((role, texture_ref), digest) == Some(digest) {
++            return;
++        }
++    }
++    let size = bytes.len() as u64;
++    let sequence = FILES.fetch_add(1, Ordering::Relaxed);
++    let total = BYTES.fetch_add(size, Ordering::Relaxed) + size;
++    if sequence >= MAX_FILES || total > MAX_BYTES {
++        if !EXHAUSTED.swap(true, Ordering::Relaxed) {
++            crate::observe::fail(format!(
++                "texture_capture reason=bound_reached files={sequence} bytes={total}"
++            ));
++        }
++        return;
++    }
++    let layout: String = layout
++        .chars()
++        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
++        .collect();
++    let name = format!(
++        "{sequence:05}-{role}-r{texture_ref}-p{pipeline_ref}-{width}x{height}-{layout}-t{}.raw",
++        crate::observe::elapsed_us() / 1000
++    );
++    if let Err(e) = std::fs::write(capture.directory.join(&name), bytes) {
++        if crate::observe::first_sight("texture_capture_write_failed", 0) {
++            crate::observe::fail(format!(
++                "texture_capture reason=write_failed file={name} err={e}"
++            ));
++        }
++    }
++}
++
++/// When after a blank read the same span is read again, in microseconds.
++const RECHECK_AFTER_US: [u64; 4] = [2_000, 20_000, 200_000, 2_000_000];
++/// Upper bound on spans watched at once.
++const MAX_RECHECKS: usize = 256;
++
++/// A buffer-backed texture that read all zero at its bind, to be read again.
++///
++/// The question it answers is whether a blank read was early or final: whether
++/// the guest's bytes appear in the same span a little later (the read raced the
++/// guest's write), or never do, and whether the span still translates to the
++/// page it did (the guest remapped the address under the read).
++struct Recheck {
++    task_id: u32,
++    texture_ref: u32,
++    buffer_ref: u32,
++    gva: u64,
++    row_pitch: u64,
++    row_bytes: usize,
++    width: u32,
++    height: u32,
++    format: u16,
++    armed_us: u64,
++    gpa_then: Option<u64>,
++    next: usize,
++}
++
++fn rechecks() -> &'static Mutex<Vec<Recheck>> {
++    static RECHECKS: OnceLock<Mutex<Vec<Recheck>>> = OnceLock::new();
++    RECHECKS.get_or_init(|| Mutex::new(Vec::new()))
++}
++
++/// Watch a buffer-backed texture span that read all zero at its bind.
++#[allow(clippy::too_many_arguments)]
++pub(crate) fn arm_blank_recheck<M: crate::runtime::host::HostMemory>(
++    state: &crate::model::DeviceState,
++    host: &M,
++    task_id: u32,
++    texture_ref: u32,
++    buffer_ref: u32,
++    gva: u64,
++    row_pitch: u64,
++    row_bytes: usize,
++    width: u32,
++    height: u32,
++    format: u16,
++) {
++    if !wants(task_id) {
++        return;
++    }
++    let gpa_then = state.tasks.get(task_id).and_then(|task| {
++        crate::runtime::gva_mem::translate_task_gva(host, task, gva, state.page_shift)
++    });
++    crate::observe::off(format!(
++        "texture_capture_blank task={task_id} ref={texture_ref} buf={buffer_ref} gva={gva:#x} \
++         gpa={gpa_then:?} {width}x{height} fmt={format:#x} pitch={row_pitch}"
++    ));
++    let mut watched = rechecks().lock().unwrap_or_else(|p| p.into_inner());
++    if watched.len() < MAX_RECHECKS {
++        watched.push(Recheck {
++            task_id,
++            texture_ref,
++            buffer_ref,
++            gva,
++            row_pitch,
++            row_bytes,
++            width,
++            height,
++            format,
++            armed_us: crate::observe::elapsed_us(),
++            gpa_then,
++            next: 0,
++        });
++    }
++}
++
++/// Read every watched span whose next delay has passed. Per drain tranche;
++/// returns at once when nothing is watched.
++pub fn sweep<M: crate::runtime::host::HostMemory>(state: &crate::model::DeviceState, host: &M) {
++    if capture().is_none() {
++        return;
++    }
++    let now = crate::observe::elapsed_us();
++    let mut watched = rechecks().lock().unwrap_or_else(|p| p.into_inner());
++    if watched.is_empty() {
++        return;
++    }
++    for recheck in watched.iter_mut() {
++        let Some(&after) = RECHECK_AFTER_US.get(recheck.next) else {
++            continue;
++        };
++        let age = now.saturating_sub(recheck.armed_us);
++        if age < after {
++            continue;
++        }
++        recheck.next += 1;
++        let mut bytes = vec![0u8; recheck.row_bytes * recheck.height as usize];
++        let mut readable = true;
++        for (row, destination) in bytes.chunks_mut(recheck.row_bytes).enumerate() {
++            let row_gva = recheck.gva + row as u64 * recheck.row_pitch;
++            if crate::runtime::gva_mem::read_task_gva_by_id(
++                host,
++                &state.tasks,
++                recheck.task_id,
++                row_gva,
++                destination,
++                state.page_shift,
++            )
++            .is_err()
++            {
++                readable = false;
++                break;
++            }
++        }
++        let gpa_now = state.tasks.get(recheck.task_id).and_then(|task| {
++            crate::runtime::gva_mem::translate_task_gva(host, task, recheck.gva, state.page_shift)
++        });
++        let nonzero = bytes.iter().filter(|&&b| b != 0).count();
++        crate::observe::off(format!(
++            "texture_capture_recheck task={} ref={} buf={} gva={:#x} after_us={age} \
++             readable={} nonzero={nonzero}/{} gpa_then={:?} gpa_now={:?}",
++            recheck.task_id,
++            recheck.texture_ref,
++            recheck.buffer_ref,
++            recheck.gva,
++            readable as u8,
++            bytes.len(),
++            recheck.gpa_then,
++            gpa_now,
++        ));
++        if readable && nonzero > 0 {
++            write(
++                "recheck",
++                recheck.task_id,
++                recheck.texture_ref,
++                0,
++                recheck.width,
++                recheck.height,
++                if recheck.format == 80 { "Bgra8" } else { "Raw" },
++                &bytes,
++            );
++        }
++    }
++    watched.retain(|recheck| recheck.next < RECHECK_AFTER_US.len());
++}
++
++/// Upper bound on draw records one process writes.
++const MAX_DRAW_LINES: u64 = 200_000;
++
++/// Append one line describing a captured task's draw to `draws.log` beside the
++/// texel files, so a frame that came out wrong can be joined to the draws that
++/// made it: target, pipeline, primitive shape, indices, viewport, scissor and
++/// the raster state that decides which triangles reach the target.
++pub(crate) fn note_draw(req: &crate::runtime::draw::DrawEncodeRequest) {
++    use std::io::Write as _;
++    static LINES: AtomicU64 = AtomicU64::new(0);
++    static FILE: OnceLock<Option<Mutex<std::fs::File>>> = OnceLock::new();
++    let Some(capture) = capture().filter(|capture| capture.task_id == req.task_id) else {
++        return;
++    };
++    if LINES.fetch_add(1, Ordering::Relaxed) >= MAX_DRAW_LINES {
++        return;
++    }
++    let Some(file) = FILE
++        .get_or_init(|| {
++            std::fs::OpenOptions::new()
++                .create(true)
++                .append(true)
++                .open(capture.directory.join("draws.log"))
++                .ok()
++                .map(Mutex::new)
++        })
++        .as_ref()
++    else {
++        return;
++    };
++    let target = req
++        .colors
++        .first()
++        .map(|c| {
++            format!(
++                "ref={} {}x{} fmt={:#x} mid={}",
++                c.texture_ref, c.width, c.height, c.format, c.mapping_id
++            )
++        })
++        .unwrap_or_else(|| "none".to_owned());
++    let indexed = req
++        .indexed
++        .as_ref()
++        .map(|i| {
++            format!(
++                "idx(type={} count={} buf={} off={} base={})",
++                i.index_type,
++                i.index_count,
++                i.index_buffer_ref,
++                i.index_buffer_offset,
++                i.base_vertex
++            )
++        })
++        .unwrap_or_else(|| "idx(none)".to_owned());
++    let viewport = req
++        .viewports
++        .first()
++        .map(|v| format!("{:.1},{:.1},{:.1},{:.1}", v[0], v[1], v[2], v[3]))
++        .unwrap_or_default();
++    let scissor = req
++        .scissors
++        .first()
++        .map(|s| format!("{},{},{},{}", s.x, s.y, s.width, s.height))
++        .unwrap_or_default();
++    let line =
++        format!(
++        "t={} pipe={} target=[{target}] colors={} prim={} vtx={} first={} inst={} base_inst={} \
++         {indexed} vp=[{viewport}] sc=[{scissor}] cull={:?} front={:?} fill={:?} ds={} \
++         stencil_ref={:?} depth_attach={} stencil_attach={} continues={} pass_continues={} \
++         vtex={} ftex={}\n",
++        crate::observe::elapsed_us() / 1000,
++        req.pipeline_ref,
++        req.colors.len(),
++        req.primitive_type,
++        req.vertex_count,
++        req.first_vertex,
++        req.instance_count,
++        req.base_instance,
++        req.cull_mode,
++        req.front_facing,
++        req.fill_mode,
++        req.depth_stencil_ref,
++        req.stencil_ref,
++        req.depth_attach.is_some() as u8,
++        req.stencil_attach.is_some() as u8,
++        req.continues_render_pass as u8,
++        req.render_pass_continues as u8,
++        req.vertex_textures.iter().filter(|t| t.texture_ref != 0).count(),
++        req.fragment_textures.iter().filter(|t| t.texture_ref != 0).count(),
++    );
++    let mut file = file.lock().unwrap_or_else(|p| p.into_inner());
++    let _ = file.write_all(line.as_bytes());
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    /// Unset, the capture names no task, so every hook's `wants` is a no-op and
++    /// a write leaves no file behind. The test binary never sets the switch.
++    #[test]
++    fn an_unset_switch_captures_nothing() {
++        assert!(std::env::var_os(crate::config::TEXTURE_CAPTURE).is_none());
++        assert!(!wants(0));
++        assert!(!wants(6));
++        write("sample", 6, 1, 1, 1, 1, "Bgra8", &[1, 2, 3, 4]);
++        assert!(rechecks().lock().unwrap().is_empty());
++    }
++}

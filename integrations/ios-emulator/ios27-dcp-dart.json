@@ -1,0 +1,68 @@
+{
+  "format": 1,
+  "hardware_profile": "dcp-dart",
+  "firmware": "27.0.1",
+  "build": "24A446",
+  "device": "iPhone17,3",
+  "data_layout": "single-data",
+  "scope": "DCP driver matching and T8110 DART research; no display or coprocessor firmware",
+  "kernel_changed": false,
+  "graphical_apps_qualified": false,
+  "nodes": [
+    "/device-tree/arm-io/dcp",
+    "/device-tree/arm-io/dcp/iop-dcp-nub",
+    "/device-tree/arm-io/dcp0-expert",
+    "/device-tree/arm-io/disp0",
+    "/device-tree/arm-io/dart-dcp",
+    "/device-tree/arm-io/dart-dcp/mapper-dcp"
+  ],
+  "bootloader_properties": {
+    "/arm-io/dart-dcp/dart-id": 0
+  },
+  "device_tree": {
+    "input_sha256": "ad9116fda6c0bb360e10b3e92dfc2621c44bcf2659ca76e27143554e8898f4de",
+    "output_sha256": "d8012f0578e9104e93e367e388491e75427158d5c00d9fe67589fb0940a44460",
+    "edits": [
+      {
+        "offset": 194696,
+        "before": "0f000000",
+        "after": "10000000"
+      },
+      {
+        "offset": 195352,
+        "before": "0a000000",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000f000000696f702c617363777261702d763600000b000000"
+      },
+      {
+        "offset": 195748,
+        "before": "10000000",
+        "after": "636f6d70617469626c650000000000000000000000000000000000000000000013000000696f702d6e75622c727462756464792d7632000011000000"
+      },
+      {
+        "offset": 196680,
+        "before": "32000000",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000e0000006463702d6578706572742d763100000033000000"
+      },
+      {
+        "offset": 206536,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000c00000064697370302c743831343000"
+      },
+      {
+        "offset": 206628,
+        "before": "13000000",
+        "after": "15000000"
+      },
+      {
+        "offset": 207456,
+        "before": "06000000",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000b000000646172742c74383131300000646172742d696400000000000000000000000000000000000000000000000000040000000000000007000000"
+      },
+      {
+        "offset": 207720,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      }
+    ]
+  }
+}

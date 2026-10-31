@@ -1,0 +1,155 @@
+{
+  "format": 1,
+  "hardware_profile": "exclave-dart",
+  "firmware": "27.0.1",
+  "build": "24A446",
+  "device": "iPhone17,3",
+  "data_layout": "single-data",
+  "scope": "ExclaveCore boot with real AOP/DCP T8110 DART instances; no qualified secure services or display",
+  "kernel_changed": false,
+  "graphical_apps_qualified": false,
+  "requires_exclave_bundle": true,
+  "nodes": [
+    "/device-tree/arm-io/dart-aop",
+    "/device-tree/arm-io/dart-aop/mapper-aop",
+    "/device-tree/arm-io/dart-aop/mapper-exclave-aop",
+    "/device-tree/arm-io/dart-aop/mapper-aop2",
+    "/device-tree/arm-io/dart-aop/mapper-exclave-aop2",
+    "/device-tree/arm-io/dart-aop/mapper-admac-leap-s",
+    "/device-tree/arm-io/dart-aop/mapper-admac-base-ns",
+    "/device-tree/arm-io/dart-aop/mapper-admac-leap-ns",
+    "/device-tree/arm-io/dart-aop/mapper-admac-base-s",
+    "/device-tree/arm-io/dart-aop/mapper-scm",
+    "/device-tree/arm-io/dart-dcp/mapper-dcp-exclave",
+    "/device-tree/arm-io/dcp-exclave-mailbox"
+  ],
+  "bootloader_properties": {
+    "/arm-io/dart-aop/dart-id": 1
+  },
+  "device_tree": {
+    "input_sha256": "d8012f0578e9104e93e367e388491e75427158d5c00d9fe67589fb0940a44460",
+    "output_sha256": "385fc2c53beaf23f4a3fbf1250c8d8424b007cbeaed216067f85b13da264d43a",
+    "edits": [
+      {
+        "offset": 119776,
+        "before": "1f000000",
+        "after": "21000000"
+      },
+      {
+        "offset": 119784,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000b000000646172742c74383131300000646172742d6964000000000000000000000000000000000000000000000000000400000001000000"
+      },
+      {
+        "offset": 121136,
+        "before": "04000000",
+        "after": "05000000"
+      },
+      {
+        "offset": 121144,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 121320,
+        "before": "04000000",
+        "after": "05000000"
+      },
+      {
+        "offset": 121328,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 121512,
+        "before": "04000000",
+        "after": "05000000"
+      },
+      {
+        "offset": 121520,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 121696,
+        "before": "04000000",
+        "after": "05000000"
+      },
+      {
+        "offset": 121704,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 121888,
+        "before": "04000000",
+        "after": "05000000"
+      },
+      {
+        "offset": 121896,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 122080,
+        "before": "05000000",
+        "after": "06000000"
+      },
+      {
+        "offset": 122088,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 122312,
+        "before": "05000000",
+        "after": "06000000"
+      },
+      {
+        "offset": 122320,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 122544,
+        "before": "04000000",
+        "after": "05000000"
+      },
+      {
+        "offset": 122552,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 122736,
+        "before": "04000000",
+        "after": "05000000"
+      },
+      {
+        "offset": 122744,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 208068,
+        "before": "04000000",
+        "after": "05000000"
+      },
+      {
+        "offset": 208076,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000d000000696f6d6d752d6d617070657200000000"
+      },
+      {
+        "offset": 211764,
+        "before": "0a000000",
+        "after": "0b000000"
+      },
+      {
+        "offset": 211772,
+        "before": "",
+        "after": "636f6d70617469626c650000000000000000000000000000000000000000000019000000696f702c7365637572652d727462756464792d70726f787900000000"
+      }
+    ]
+  }
+}

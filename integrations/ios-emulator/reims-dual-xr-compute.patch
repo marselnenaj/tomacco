@@ -1,0 +1,234 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/mod.rs
+@@ -1394,6 +1394,22 @@
+         residency: Option<ComputeStorageResidencyCandidate>,
+         serve: Option<ResidentServe>,
+     ) -> Self;
++
++    /// A paired texture must be staged by the selected rail as a whole. A rail
++    /// without that representation refuses before either plane is read.
++    fn stage_planar_xr<M: HostMemory + HostOps>(
++        _state: &mut DeviceState,
++        _host: &mut M,
++        _task_id: u32,
++        _texture_ref: u32,
++        _binding: u32,
++        _level: u32,
++        _descriptor: &crate::runtime::decode::resource::DualPlaneTextureDescriptor,
++    ) -> Result<StagedTexture<Self>, ComputeStatus> {
++        Err(ComputeStatus::Unsupported(
++            "compute_dual_xr_rail_unsupported",
++        ))
++    }
+ }
+ 
+ /// The storage-mirror window a staged binding corresponds to.
+@@ -1902,6 +1918,35 @@
+         })
+         .unwrap_or(false);
+     if let Some(entry) = stage_entry {
++        if entry.object_type == crate::runtime::decode::resource::OBJECT_TYPE_DUAL_PLANE_TEXTURE {
++            let descriptor = objects::read_descriptor(state, host, task_id, &entry).ok_or(
++                ComputeStatus::GuestIo("compute_dual_xr_descriptor_unreadable"),
++            )?;
++            let descriptor =
++                crate::runtime::decode::resource::decode_dual_plane_texture_descriptor(&descriptor)
++                    .map_err(|_| {
++                        ComputeStatus::MissingTexture("compute_dual_xr_descriptor_undecodable")
++                    })?;
++            if is_storage {
++                return Err(ComputeStatus::Unsupported(
++                    "compute_dual_xr_storage_unsupported",
++                ));
++            }
++            if view_pixel_format.is_some_and(|format| format != descriptor.pixel_format()) {
++                return Err(ComputeStatus::Unsupported(
++                    "compute_dual_xr_view_format_unsupported",
++                ));
++            }
++            return R::stage_planar_xr(
++                state,
++                host,
++                task_id,
++                texture_ref,
++                binding,
++                view_level,
++                &descriptor,
++            );
++        }
+         if entry.object_type == objects::OBJECT_TYPE_REF_TEXTURE {
+             if let Some(desc) = objects::read_descriptor(state, host, task_id, &entry) {
+                 if let Ok(t5) = reims_vgpu_wire::device_desc::ref_texture_header(&desc) {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+@@ -281,10 +281,21 @@
+ /// This rail's half of a staged compute texture. See [`RailStage`].
+ ///
+ /// [`RailStage`]: crate::runtime::compute_exec::RailStage
++/// The staged bytes retain their encoding independently of the guest format.
++/// Paired XR bytes are already merged and linear; applying the single-plane
++/// converter to them again would interpret floats as packed colour codes.
++#[derive(Clone, Copy, Debug, Default)]
++pub(crate) enum SampledEncoding {
++    #[default]
++    Guest,
++    LinearUpload(crate::backend::vulkan::engine::StorageImageFormat),
++}
++
+ #[derive(Debug, Default)]
+ pub(crate) struct VulkanStage {
+     /// Which element of the descriptor binding's array this fills.
+     pub(crate) array_element: u32,
++    pub(crate) sampled_encoding: SampledEncoding,
+     /// How many descriptors the binding declares.
+     pub(crate) descriptor_count: u32,
+     /// The storage-mirror window this staging corresponds to, so the writeback
+@@ -329,7 +340,62 @@
+             residency,
+             serve,
+             multisample_target: None,
+-        }
++            sampled_encoding: SampledEncoding::Guest,
++        }
++    }
++
++    fn stage_planar_xr<M: HostMemory + HostOps>(
++        state: &mut DeviceState,
++        host: &mut M,
++        task_id: u32,
++        texture_ref: u32,
++        binding: u32,
++        level: u32,
++        descriptor: &crate::runtime::decode::resource::DualPlaneTextureDescriptor,
++    ) -> Result<StagedTexture<Self>, ComputeStatus> {
++        use crate::observe::Decline as _;
++        use crate::protocol::pixel_format::TexelLayout;
++        let sample = crate::runtime::draw::load_planar_xr_sample(
++            state,
++            host,
++            task_id,
++            texture_ref,
++            descriptor,
++            level,
++            crate::runtime::draw::NativeUploads {
++                float32: crate::backend::vulkan::engine::supports_sampled_layout_linear_filter(
++                    TexelLayout::Rgba32Float,
++                ),
++                ..crate::runtime::draw::NativeUploads::NONE
++            },
++        )
++        .map_err(|why| {
++            crate::observe::Emit::decline("compute_dual_xr_sample", &why)
++                .field("task", task_id)
++                .field("ref", texture_ref)
++                .field("level", level)
++                .fail();
++            ComputeStatus::Unsupported(why.slug())
++        })?;
++        // The paired loader's native representation is RGBA32Float. Keep that
++        // representation on the rail instead of changing the guest format.
++        let mut rail = Self::stage(texture_ref, None, None);
++        rail.sampled_encoding = SampledEncoding::LinearUpload(
++            crate::backend::vulkan::engine::StorageImageFormat::Rgba32Float,
++        );
++        crate::runtime::drain::note_store_route("compute_dual_xr_sample_n");
++        Ok(StagedTexture {
++            binding,
++            pixel_format: descriptor.pixel_format(),
++            storage_selector: None,
++            width: sample.width,
++            height: sample.height,
++            mip_levels: 1,
++            bytes: sample.bytes,
++            is_storage: false,
++            writeback: TextureWriteback::None,
++            rail,
++        })
+     }
+ }
+ 
+@@ -1148,21 +1214,27 @@
+                 },
+             };
+             let (sampled_fmt, source) = match source {
+-                ComputeSampledSource::Bytes(bytes) => {
+-                    match reims_vgpu_vulkan::pixel::sampled_upload_bytes(t.pixel_format, bytes) {
+-                        Ok(upload) => {
+-                            let (format, bytes) = upload.into_parts();
+-                            (format, ComputeSampledSource::Bytes(bytes))
+-                        }
+-                        Err(why) => {
+-                            crate::observe::fail(format!(
++                ComputeSampledSource::Bytes(bytes) => match t.rail.sampled_encoding {
++                    SampledEncoding::LinearUpload(format) => {
++                        (format, ComputeSampledSource::Bytes(bytes))
++                    }
++                    SampledEncoding::Guest => {
++                        match reims_vgpu_vulkan::pixel::sampled_upload_bytes(t.pixel_format, bytes)
++                        {
++                            Ok(upload) => {
++                                let (format, bytes) = upload.into_parts();
++                                (format, ComputeSampledSource::Bytes(bytes))
++                            }
++                            Err(why) => {
++                                crate::observe::fail(format!(
+                                 "compute_linux sampled_upload fail reason={} pipe={} bind={} fmt={:#x}",
+                                 why.slug(), acc.pipeline_ref, t.binding, t.pixel_format
+                             ));
+-                            return ComputeStatus::Unsupported(why.slug());
++                                return ComputeStatus::Unsupported(why.slug());
++                            }
+                         }
+                     }
+-                }
++                },
+                 resident => {
+                     let Some(format) = mtl_to_engine_sampled(t.pixel_format) else {
+                         crate::observe::fail(format!(
+@@ -2001,6 +2073,7 @@
+             residency: None,
+             serve: None,
+             multisample_target: Some(identity),
++            sampled_encoding: SampledEncoding::Guest,
+         },
+     })
+ }
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -1021,11 +1021,12 @@
+     task_id: u32,
+     texture_ref: u32,
+     descriptor: &crate::runtime::decode::resource::DualPlaneTextureDescriptor,
++    mip_level: u32,
+     native: NativeUploads,
+ ) -> Result<PlanarXrSample, LinearLoadRefusal> {
+     use LinearLoadRefusal as R;
+     let level = descriptor
+-        .xr_level(0, state.page_shift)
++        .xr_level(mip_level, state.page_shift)
+         .map_err(|why| R::PlanarXr { reason: why.slug() })?;
+     if level.planes.iter().any(|plane| plane.layout.planes() != 1) {
+         return Err(R::PlanarXr {
+@@ -1086,7 +1087,11 @@
+             for row in 0..height {
+                 let gva = plane
+                     .gva
+-                    .checked_add(u64::from(row) * plane.layout.row_stride)
++                    .checked_add(
++                        u64::from(row)
++                            .checked_mul(plane.layout.row_stride)
++                            .ok_or(R::SizeOverflow)?,
++                    )
+                     .ok_or(R::SizeOverflow)?;
+                 let offset = row as usize * row_len;
+                 gva_mem::read_task_gva_by_id(
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -1301,6 +1301,7 @@
+             task_id,
+             texture_ref,
+             descriptor,
++            0,
+             native_uploads_asking_host(),
+         ) {
+             Ok(sample) => sample,

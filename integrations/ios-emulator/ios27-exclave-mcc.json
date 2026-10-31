@@ -1,0 +1,42 @@
+{
+  "format": 1,
+  "hardware_profile": "exclave-mcc",
+  "firmware": "27.0.1",
+  "build": "24A446",
+  "device": "iPhone17,3",
+  "data_layout": "single-data",
+  "scope": "T8140 MCC register research; PMGR waits and unsupported MCC transactions remain real failures",
+  "kernel_changed": false,
+  "graphical_apps_qualified": false,
+  "requires_exclave_bundle": true,
+  "nodes": [
+    "/device-tree/arm-io/pmgr",
+    "/device-tree/arm-io/mcc"
+  ],
+  "device_tree": {
+    "input_sha256": "385fc2c53beaf23f4a3fbf1250c8d8424b007cbeaed216067f85b13da264d43a",
+    "output_sha256": "ab8bc77d7940071663c452d16340ace6402d19348b44509f400d21721276a5ef",
+    "edits": [
+      {
+        "offset": 36828,
+        "before": "51000000",
+        "after": "52000000"
+      },
+      {
+        "offset": 36836,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000c000000706d6772312c743831343000"
+      },
+      {
+        "offset": 103088,
+        "before": "14000000",
+        "after": "15000000"
+      },
+      {
+        "offset": 103096,
+        "before": "",
+        "after": "636f6d70617469626c65000000000000000000000000000000000000000000000a0000006d63632c7438313430000000"
+      }
+    ]
+  }
+}

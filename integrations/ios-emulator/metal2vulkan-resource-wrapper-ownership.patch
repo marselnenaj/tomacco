@@ -1,0 +1,51 @@
+--- a/src/passes/emitted_inline/mod.rs
++++ b/src/passes/emitted_inline/mod.rs
+@@ -1622,17 +1622,19 @@
+         return Err("callee entry block has no label".into());
+     }
+ 
+-    // Continuation block: OpPhi for the result (if any), then the post instructions.
++    // A single return dominates the continuation, so preserve it as an ordinary
++    // SSA copy. In particular, opaque handles inside returned aggregates must
++    // remain visible to resource-wrapper forwarding before AIR calls lower.
++    // Multiple return edges still require a phi.
+     let mut cont_insts: Vec<Instruction> = vec![];
+     if let (Some(cr), Some(rty)) = (call_res, ret_ty) {
+         if phi_sources.len() == 1 {
+-            // single return -> OpCopyObject is enough (no real phi needed), but keep ids valid by phi.
+-            let (lbl, v) = phi_sources[0];
++            let (_, v) = phi_sources[0];
+             cont_insts.push(Instruction::new(
+-                Op::Phi,
++                Op::CopyObject,
+                 Some(rty),
+                 Some(cr),
+-                vec![Operand::IdRef(v), Operand::IdRef(lbl)],
++                vec![Operand::IdRef(v)],
+             ));
+         } else if !phi_sources.is_empty() {
+             let mut ops = vec![];
+--- a/src/passes/resources/collapse.rs
++++ b/src/passes/resources/collapse.rs
+@@ -1484,6 +1484,10 @@
+                     };
+                     if let Some(resource) = composite_paths.get(&path).copied() {
+                         replacements.push((result, resource));
++                        // This extracted handle can itself be inserted into a
++                        // later wrapper before replacements are applied. Carry
++                        // its exact origin across that SSA edge as well.
++                        paths.insert(result, HashMap::from([(vec![], resource)]));
+                         continue;
+                     }
+                     let mut result_paths = HashMap::new();
+@@ -1698,6 +1702,10 @@
+     paths: &HashMap<Word, HashMap<Vec<u32>, Word>>,
+     resource_values: &HashSet<Word>,
+ ) {
++    // An insert replaces this subtree even when the new value contains no
++    // resource. Keeping an older descendant would forward a handle from a
++    // field that the program has overwritten. Unrelated siblings survive.
++    out.retain(|path, _| composite_paths_are_disjoint(path, prefix));
+     if resource_values.contains(&value) {
+         out.insert(prefix.to_vec(), value);
+     }

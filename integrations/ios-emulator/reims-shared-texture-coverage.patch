@@ -1,0 +1,57 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-wire/src/manifest.rs b/reims-vgpu/crates/reims-vgpu-wire/src/manifest.rs
+--- a/reims-vgpu/crates/reims-vgpu-wire/src/manifest.rs
++++ b/reims-vgpu/crates/reims-vgpu-wire/src/manifest.rs
+@@ -2156,23 +2156,23 @@
+             reason: EMITS_NO_OPERATION,
+         },
+     },
+-    // Shared textures emit nothing. A shared texture is an IOSurface reached
+-    // through a mach port, so the host learns of it by another route.
++    // The shared-texture capability is read-only in the oracle. Silence at
++    // its default state is not proof of no emission: the original PCC arm64e
++    // driver emits shared descriptor and handle records when its byte +0x29
++    // is 1. No live perturbation fixture pins those records, so do not publish
++    // an opcode or a covered view from static analysis. Serializer operation
++    // tags and FIFO packet tags are separate namespaces.
+     Entry {
+         class: "PGSerializer",
+         selector: "newSharedTextureWithDescriptor:newTextureRef:allocator:",
+         opcodes: &[],
+-        coverage: Coverage::Excluded {
+-            reason: EMITS_NO_OPERATION,
+-        },
++        coverage: Coverage::Unimplemented,
+     },
+     Entry {
+         class: "PGSerializer",
+         selector: "newSharedTextureWithHandle:allocator:",
+         opcodes: &[],
+-        coverage: Coverage::Excluded {
+-            reason: EMITS_NO_OPERATION,
+-        },
++        coverage: Coverage::Unimplemented,
+     },
+     Entry {
+         class: "PGSerializerRenderCommandEncoder",
+@@ -3485,6 +3485,21 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++
++    #[test]
++    fn shared_texture_creation_is_not_excluded_by_default_capability_silence() {
++        for selector in [
++            "newSharedTextureWithDescriptor:newTextureRef:allocator:",
++            "newSharedTextureWithHandle:allocator:",
++        ] {
++            let row = MANIFEST
++                .iter()
++                .find(|row| row.class == "PGSerializer" && row.selector == selector)
++                .expect("shared texture creation must remain in the inventory");
++            assert_eq!(row.coverage, Coverage::Unimplemented, "{selector}");
++            assert!(row.opcodes.is_empty(), "no live oracle pins this record");
++        }
++    }
+ 
+     #[test]
+     fn no_selector_appears_twice_under_the_same_class() {

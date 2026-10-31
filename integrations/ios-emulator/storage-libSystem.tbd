@@ -1,0 +1,10 @@
+--- !tapi-tbd
+tbd-version: 4
+targets: [ arm64-ios ]
+install-name: '/usr/lib/libSystem.B.dylib'
+exports:
+  - targets: [ arm64-ios ]
+    symbols: [ ___stack_chk_fail, ___stack_chk_guard, ___error, _open, _close,
+               _pread, _write, _dprintf, _dlopen, _dlsym, _dlerror, _sysctlbyname,
+               dyld_stub_binder ]
+...

@@ -1,0 +1,312 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -227,6 +227,27 @@
+                 ld16(&texel[6..]) >> 6,
+             ],
+         })
++    }
++
++    /// Pack RGBA codes into the declared guest texel, clearing padding bits.
++    /// Codes are already in the destination's transfer function.
++    pub fn write_component_codes(self, codes: [u16; 4], texel: &mut [u8]) -> bool {
++        if texel.len() != self.bytes_per_texel() || codes.iter().any(|&code| code > 1023) {
++            return false;
++        }
++        let [r, g, b, a] = codes;
++        match self {
++            Self::Bgr10 | Self::Bgr10Srgb => {
++                let word = u32::from(b) | (u32::from(g) << 10) | (u32::from(r) << 20);
++                texel.copy_from_slice(&word.to_le_bytes());
++            }
++            Self::Bgra10 | Self::Bgra10Srgb => {
++                for (lane, code) in [b, g, r, a].into_iter().enumerate() {
++                    st16(&mut texel[lane * 2..lane * 2 + 2], code << 6);
++                }
++            }
++        }
++        true
+     }
+ }
+ /// `MTLPixelFormatRGBA16Unorm`. Its ordinal sits between two this table
+@@ -3187,17 +3208,7 @@
+     let g = code(rgba[COMPONENT_G]);
+     let b = code(rgba[COMPONENT_B]);
+     let a = u16::from(rgba[COMPONENT_A]) * 2 + 384;
+-    match xr {
+-        XrFormat::Bgr10 | XrFormat::Bgr10Srgb => {
+-            let word = u32::from(b) | (u32::from(g) << 10) | (u32::from(r) << 20);
+-            dst[..4].copy_from_slice(&word.to_le_bytes());
+-        }
+-        XrFormat::Bgra10 | XrFormat::Bgra10Srgb => {
+-            for (lane, value) in [(0, b), (2, g), (4, r), (6, a)] {
+-                st16(&mut dst[lane..lane + 2], value << 6);
+-            }
+-        }
+-    }
++    let _ = xr.write_component_codes([r, g, b, a], &mut dst[..xr.bytes_per_texel()]);
+ }
+ 
+ const EXTENDED_SRGB_XR_ENCODE: [u16; 256] = [
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -31,7 +31,10 @@
+ use ash::vk;
+ 
+ mod xr_upload;
+-pub use xr_upload::{sampled_upload_bytes, SampledUpload, SampledUploadRefusal};
++pub use xr_upload::{
++    render_store_bytes, sampled_upload_bytes, RenderStoreRefusal, SampledUpload,
++    SampledUploadRefusal,
++};
+ 
+ use reims_vgpu_core::pixel_format::{
+     self, ColorNumericType, SwizzlePlan, SwizzleSource, TexelLayout, COMPONENT_A, COMPONENT_B,
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+@@ -1,9 +1,9 @@
+ //! CPU-origin sampled images whose guest storage has no native Vulkan format.
+-//! This does not admit XR render targets, storage writes or resident aliases.
++//! XR upload and render Store conversions preserve extended colour range.
+ 
+ use std::sync::OnceLock;
+ 
+-use reims_vgpu_core::pixel_format::XrFormat;
++use reims_vgpu_core::pixel_format::{f16_to_f32, TexelLayout, XrFormat};
+ 
+ use super::{sampled_image, Refusal, StorageImageFormat};
+ 
+@@ -59,6 +59,91 @@
+             linear.copysign(encoded)
+         })
+     })
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum RenderStoreRefusal {
++    NotXr,
++    SourceLayout,
++    IncompleteTexel,
++    SizeOverflow,
++    AllocationFailed,
++}
++
++impl RenderStoreRefusal {
++    pub const fn slug(self) -> &'static str {
++        match self {
++            Self::NotXr => "render_store_not_xr",
++            Self::SourceLayout => "render_store_xr_source_layout",
++            Self::IncompleteTexel => "render_store_xr_incomplete_texel",
++            Self::SizeOverflow => "render_store_xr_size_overflow",
++            Self::AllocationFailed => "render_store_xr_allocation_failed",
++        }
++    }
++}
++
++/// Convert a linear float resident directly into the guest's XR packing.
++/// RGB retains negative and above-white values up to the destination's range.
++/// Alpha is clamped to [0, 1], including for the sRGB spellings.
++pub fn render_store_bytes(
++    mtl: u16,
++    layout: TexelLayout,
++    bytes: &[u8],
++) -> Result<Vec<u8>, RenderStoreRefusal> {
++    let xr = XrFormat::from_mtl(mtl).ok_or(RenderStoreRefusal::NotXr)?;
++    let source_stride = match layout {
++        TexelLayout::Rgba16Float => 8,
++        TexelLayout::Rgba32Float => 16,
++        _ => return Err(RenderStoreRefusal::SourceLayout),
++    };
++    if !bytes.len().is_multiple_of(source_stride) {
++        return Err(RenderStoreRefusal::IncompleteTexel);
++    }
++    let size = (bytes.len() / source_stride)
++        .checked_mul(xr.bytes_per_texel())
++        .ok_or(RenderStoreRefusal::SizeOverflow)?;
++    let mut packed = Vec::new();
++    packed
++        .try_reserve_exact(size)
++        .map_err(|_| RenderStoreRefusal::AllocationFailed)?;
++    let code = |value: f32, colour: bool| {
++        let value = if colour && xr.is_srgb() {
++            let magnitude = value.abs();
++            let encoded = if magnitude <= 0.0031308 {
++                magnitude * 12.92
++            } else {
++                1.055 * magnitude.powf(1.0 / 2.4) - 0.055
++            };
++            encoded.copysign(value)
++        } else {
++            value
++        };
++        // NaN has no ordered component; choose black. Infinities saturate at
++        // the representable end points rather than narrowing the whole image.
++        let value = if value.is_nan() { 0.0 } else { value };
++        (value.mul_add(510.0, 384.0).round().clamp(0.0, 1023.0)) as u16
++    };
++    for source in bytes.chunks_exact(source_stride) {
++        let values: [f32; 4] = std::array::from_fn(|channel| {
++            if source_stride == 8 {
++                let lane = &source[channel * 2..channel * 2 + 2];
++                f16_to_f32(u16::from_le_bytes([lane[0], lane[1]]))
++            } else {
++                let lane = &source[channel * 4..channel * 4 + 4];
++                f32::from_le_bytes([lane[0], lane[1], lane[2], lane[3]])
++            }
++        });
++        let mut texel = [0; 8];
++        let codes = [
++            code(values[0], true),
++            code(values[1], true),
++            code(values[2], true),
++            code(values[3].clamp(0.0, 1.0), false),
++        ];
++        xr.write_component_codes(codes, &mut texel[..xr.bytes_per_texel()]);
++        packed.extend_from_slice(&texel[..xr.bytes_per_texel()]);
++    }
++    Ok(packed)
+ }
+ 
+ /// Decode tightly packed guest levels, preserving their order and all colour
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -5525,7 +5525,9 @@
+     Ok((snap, layout))
+ }
+ 
+-fn read_target_inner(identity: &TargetIdentity) -> Result<TargetReadback, DrawError> {
++/// Read a resident at its own texel width. Store consumers use this to retain
++/// float range and native integer bits instead of quantizing through RGBA8.
++pub fn read_target_texels(identity: &TargetIdentity) -> Result<TargetReadback, DrawError> {
+     let mut guard = lock_engine();
+     let EngineState {
+         ref mut owner,
+@@ -5558,12 +5560,29 @@
+         )?;
+         pools.registry_note_access(identity, read_access);
+         counters.note_target_read(rb_size, TargetReadDelivery::Host);
+-        // A wide resident is quantized here rather than refused; see
+-        // `narrow_readback_to_rgba8` for why that direction is the safe one.
+-        let (pixels, texel) =
+-            narrow_readback_to_rgba8(out, layout, snap.format, pixels, snap.bgra())?;
+-        Ok(TargetReadback { pixels, texel })
+-    }
++        let texel = if layout.is_four_byte_color() {
++            ReadbackTexel::eight_bit(snap.bgra())
++        } else {
++            ReadbackTexel::Native(layout)
++        };
++        Ok(TargetReadback { pixels: out, texel })
++    }
++}
++
++fn read_target_inner(identity: &TargetIdentity) -> Result<TargetReadback, DrawError> {
++    let readback = read_target_texels(identity)?;
++    let Some(layout) = readback.texel.native_layout() else {
++        return Ok(readback);
++    };
++    let pixels = readback.pixels.len() as u64 / u64::from(layout.bytes_per_texel());
++    let (pixels, texel) = narrow_readback_to_rgba8(
++        readback.pixels,
++        layout,
++        readback_vk_format(layout),
++        pixels,
++        false,
++    )?;
++    Ok(TargetReadback { pixels, texel })
+ }
+ 
+ /// Full-frame readback of a resident target (present / Synchronize / Map / Store boundary).
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -512,8 +512,22 @@
+     // pass and not the no-op this comment used to claim. Both spellings of that
+     // declaration must reach the same answer; `ResidentReadSnapshot::bgra` is
+     // where they do, and where they did not.
+-    let readback = crate::backend::vulkan::engine::read_target(identity)
+-        .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
++    // If the resident already has the destination's layout, retain its bytes.
++    // XR instead has a float resident whose linear values need XR encoding.
++    // Only consumers requiring eight-bit colour take the quantizing API.
++    let resident_layout =
++        crate::backend::vulkan::translate::pixel::texel_layout_of(identity.resident_format());
++    let xr = crate::protocol::pixel_format::XrFormat::from_mtl(c0.format).is_some();
++    let native = xr
++        || resident_layout.is_some_and(|layout| {
++            crate::protocol::pixel_format::store_texel_order(c0.format) == Some(layout)
++        });
++    let readback = if native {
++        crate::backend::vulkan::engine::read_target_texels(identity)
++    } else {
++        crate::backend::vulkan::engine::read_target(identity)
++    }
++    .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
+     // Two ways to land a frame, and which one is decided by what the readback
+     // actually holds rather than by what this rail wishes it held.
+     //
+@@ -525,9 +539,27 @@
+     // guest-RAM import serves it instead of losing every frame of it.
+     let extent = match readback.texel.native_layout() {
+         Some(layout) => {
+-            if crate::protocol::pixel_format::store_texel_order(c0.format) != Some(layout) {
++            let encoded;
++            let bytes = if xr {
++                encoded = reims_vgpu_vulkan::pixel::render_store_bytes(
++                    c0.format,
++                    layout,
++                    &readback.pixels,
++                )
++                .map_err(|reason| {
++                    crate::observe::fail(format!(
++                        "gva_store_xr reason={} fmt={:#x} layout={layout:?}",
++                        reason.slug(),
++                        c0.format
++                    ));
++                    GvaWritebackDecline::FormatNeedsConversion { format: c0.format }
++                })?;
++                &encoded
++            } else if crate::protocol::pixel_format::store_texel_order(c0.format) == Some(layout) {
++                &readback.pixels
++            } else {
+                 return Err(GvaWritebackDecline::FormatNeedsConversion { format: c0.format });
+-            }
++            };
+             crate::runtime::drain::note_store_route("gva_flush_copied_native");
+             land_gva_frame_bytes(
+                 state,
+@@ -535,7 +567,7 @@
+                 task_id,
+                 c0,
+                 texture_ref,
+-                crate::runtime::draw::FrameRows::Native(&readback.pixels),
++                crate::runtime::draw::FrameRows::Native(bytes),
+                 pages,
+                 skip,
+             )?
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -256,11 +256,14 @@
+                     // run exactly as it does for a Store that never skipped its
+                     // readback. `read_resident_chain` fail-logs a lost resident.
+                     note_mapper_ref_texture_store_route("gva_store_sync");
+-                    if let Some(c0) = req
+-                        .colors
+-                        .first()
+-                        .filter(|c| c.format == pixel_format::MTL_FORMAT_R32_FLOAT)
+-                    {
++                    if let Some(c0) = req.colors.first().filter(|c| {
++                        pixel_format::XrFormat::from_mtl(c.format).is_some()
++                            || pixel_format::store_texel_order(c.format).is_some_and(|layout| {
++                                !layout.is_four_byte_color()
++                                    && translate::pixel::texel_layout_of(identity.resident_format())
++                                        == Some(layout)
++                            })
++                    }) {
+                         match crate::runtime::render_writeback::vulkan::store_gva_frame(
+                             state,
+                             host,

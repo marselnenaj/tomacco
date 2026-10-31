@@ -1,0 +1,1060 @@
+"""Black-box contract tests of the compiled Rust CLI and actual worker processes."""
+import hashlib
+import fcntl
+import json
+import os
+import shlex
+import socket
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import unittest
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
+from pathlib import Path
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from native_client import ROOT, StudioError, binary, catalog, dispatch, jobs, preview
+from host_patience import PATIENCE
+
+
+class Isolated(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="tomacco-native-test-")
+        self.root = Path(self.temp.name)
+        # Jobs under test refuse at once under host pressure, as a point-in-time
+        # check; waiting for a quiet host would outlast their test deadlines.
+        self.env = patch.dict(os.environ, {"TOMACCO_HOME": str(self.root / "state"), "TOMACCO_TEST_ROOT": str(self.root),
+                                           "TOMACCO_IOS_PRESSURE_WAIT_SECONDS": "0",
+                                           "TOMACCO_IOS_PRESSURE_DIRECTORY": str(self.root / "pressure")})
+        # A quiet host: these jobs run synthetic engines, and a real guest's
+        # I/O on the same machine must not refuse them.
+        (self.root / "pressure").mkdir()
+        for resource in ("io", "memory"):
+            (self.root / "pressure" / resource).write_text(
+                "some avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+                "full avg10=0.00 avg60=0.00 avg300=0.00 total=0\n")
+        self.env.start()
+        self.workers = []
+
+    def tearDown(self):
+        for job in jobs.listing(200):
+            if job["state"] not in jobs.TERMINAL:
+                jobs.cancel(job["id"])
+                jobs.wait(job["id"], 5)
+        for worker in self.workers:
+            worker.wait(5 * PATIENCE)
+            worker.stderr.close()
+        self.env.stop()
+        self.temp.cleanup()
+
+    def submit(self, steps, timeout=10, artifacts=None, exclusive=""):
+        # The durable schema predates this migration. Seed it directly to test
+        # old-job compatibility and _worker's process, logging and output contract.
+        jobs.listing()
+        job_id = uuid.uuid4().hex
+        spec = dict(cwd=str(self.root), steps=steps, timeout=timeout, artifacts=artifacts or [], env={}, exclusive=exclusive)
+        with closing(sqlite3.connect(self.root / "state/jobs.sqlite3")) as db, db:
+            db.execute("INSERT INTO jobs(id,label,state,created,updated,spec) VALUES(?,?,'queued',?,?,?)",
+                       (job_id, "fixture", time.time(), time.time(), json.dumps(spec)))
+        self.workers.append(subprocess.Popen([binary(), "_worker", job_id], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE))
+        return jobs.get(job_id)
+
+    def wait_log(self, job, value):
+        deadline = time.monotonic() + 5 * PATIENCE
+        while value not in jobs.logs(job["id"])["text"]:
+            self.assertLess(time.monotonic(), deadline, jobs.get(job["id"]))
+            time.sleep(.03)
+
+    def tool(self, name, source=None):
+        path = self.root / name
+        path.write_text("#!" + sys.executable + "\n" + (source or "import json,sys;print(json.dumps(sys.argv[1:]))\n"))
+        path.chmod(0o755)
+        dispatch("settings.configure", {"executables": {name: str(path)}})
+        return str(path)
+
+
+class NativeDebuggerValidationTests(Isolated):
+    def request(self, program, **extra):
+        return dispatch("debug.start", {"backend": "android-lldb", "device": "validation-only", "bundle_id": "dev.example.app", "program": str(program), **extra})
+
+    def elf(self, name="library.so", elf_class=2, machine=62):
+        file = self.root / name
+        header = bytearray(64)
+        header[:7] = b"\x7fELF" + bytes([elf_class, 1, 1])
+        header[18:20] = machine.to_bytes(2, "little")
+        file.write_bytes(header)
+        return file
+
+    def test_rejects_non_elf_and_unsupported_architecture_before_contacting_device(self):
+        file = self.root / "bad.so"
+        for data in (b"short", b"not an ELF library" * 4):
+            file.write_bytes(data)
+            with self.assertRaises(StudioError) as result: self.request(file)
+            self.assertEqual(result.exception.code, "invalid_native_binary")
+        for cls, machine in ((2, 3), (1, 62), (2, 999)):
+            with self.assertRaises(StudioError) as result: self.request(self.elf(elf_class=cls, machine=machine))
+            self.assertEqual(result.exception.code, "unsupported_native_arch")
+        self.assertEqual(dispatch("debug.list", {})["sessions"], [])
+
+    def test_rejects_command_paths_and_inapplicable_launch_options(self):
+        with self.assertRaises(StudioError) as result: self.request(self.elf("bad\ncommand.so"))
+        self.assertEqual(result.exception.code, "invalid_argument")
+        for extra in ({"args": ["--flag"]}, {"port": 5039}):
+            with self.assertRaises(StudioError) as result: self.request(self.elf(), **extra)
+            self.assertEqual(result.exception.code, "invalid_argument")
+        self.assertEqual(dispatch("debug.list", {})["sessions"], [])
+
+    def test_foreign_pid_namespace_is_not_treated_as_a_dead_debugger(self):
+        session = uuid.uuid4().hex
+        directory = self.root / "state/debug" / session
+        directory.mkdir(parents=True)
+        (directory / "state.json").write_text(json.dumps({"session": session, "pid": os.getpid(), "process_token": "invisible", "process_namespace": "pid:[foreign]", "terminated": False}))
+        state = dispatch("debug.list", {})["sessions"][0]
+        self.assertFalse(state["terminated"])
+        self.assertEqual(state["worker_visibility"], "different_process_namespace")
+
+
+class RuntimeAudioTests(Isolated):
+    """Exercise ownership and concurrency with actual durable worker processes."""
+    def setUp(self):
+        super().setUp()
+        self.owner = subprocess.Popen([sys.executable, "-c", "import time;time.sleep(60)"])
+        self.session = uuid.uuid4().hex
+        self.directory = self.root / "state/native-sessions" / self.session
+        self.directory.mkdir(parents=True)
+        token = Path(f"/proc/{self.owner.pid}/stat").read_text().rsplit(")", 1)[1].split()[19]
+        self.runtime = dict(session=self.session, platform="android", device="audio-test-device",
+                            status="connected", pid=self.owner.pid, pid_token=token,
+                            control_socket=str(self.root / "runtime.sock"))
+        (self.directory / "state.json").write_text(json.dumps(self.runtime))
+        (self.directory / "spec.json").write_text(json.dumps(dict(platform="android", device="audio-test-device")))
+        self.tool("adb")
+        self.tool("scrcpy", "import json,os,sys,time\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\n(root/'audio-start.json').write_text(json.dumps(dict(args=sys.argv[1:],adb=os.environ['ADB'],server=os.environ['SCRCPY_SERVER_PATH'])))\nprint('audio client ready',flush=True)\ntime.sleep(60)\n")
+        (self.root / "scrcpy-server").touch()
+        self.listener = socket.socket(socket.AF_UNIX)
+        self.listener.bind(self.runtime["control_socket"])
+        self.listener.listen(16)
+        self.listener.settimeout(.1)
+        self.closed = threading.Event()
+        self.operations = []
+        def serve():
+            while not self.closed.is_set():
+                try: client, _ = self.listener.accept()
+                except socket.timeout: continue
+                except OSError: break
+                with client, client.makefile("rb") as reader:
+                    request = json.loads(reader.readline())
+                    self.operations.append(request["operation"])
+                    if request["operation"] == "stop": self.runtime["status"] = "disconnected"
+                    client.sendall(json.dumps(dict(ok=True, result=self.runtime)).encode() + b"\n")
+        self.server = threading.Thread(target=serve)
+        self.server.start()
+
+    def tearDown(self):
+        self.closed.set()
+        self.listener.close()
+        self.server.join(2)
+        self.owner.terminate()
+        self.owner.wait(5 * PATIENCE)
+        super().tearDown()
+
+    def audio(self, action="status"):
+        return dispatch("runtime.audio", dict(session=self.session, action=action))
+
+    def test_concurrent_start_reuses_output_only_job_and_rapid_toggle_is_serialized(self):
+        self.assertFalse(self.audio()["configured"])
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            results = list(pool.map(lambda _: self.audio("start"), range(6)))
+        job_id = results[0]["job_id"]
+        self.assertEqual({r["job_id"] for r in results}, {job_id})
+        self.wait_log(dict(id=job_id), "audio client ready")
+        info = json.loads((self.root / "audio-start.json").read_text())
+        self.assertEqual(info["args"], ["--serial", "audio-test-device", "--no-video", "--no-control", "--no-window", "--audio-source=output", "--audio-codec=raw", "--audio-buffer=60", "--require-audio"])
+        self.assertEqual(info["adb"], str(self.root / "adb"))
+        self.assertEqual(info["server"], str(self.root / "scrcpy-server"))
+        self.assertEqual(jobs.get(job_id)["phase"], "streaming")
+        self.assertEqual(dispatch("runtime.state", dict(session=self.session))["audio"]["job_id"], job_id)
+        self.assertFalse(self.audio("stop")["enabled"])
+        restarted = self.audio("start")
+        self.assertNotEqual(restarted["job_id"], job_id)
+        self.assertEqual(jobs.get(job_id)["state"], "cancelled")
+        self.assertEqual(len([j for j in jobs.listing() if j["state"] not in jobs.TERMINAL]), 1)
+        dispatch("runtime.stop", dict(session=self.session))
+        self.assertEqual(jobs.wait(restarted["job_id"], 5)["state"], "cancelled")
+        self.assertIn("stop", self.operations)
+
+    def test_runtime_crash_cancels_audio_without_a_polling_client(self):
+        job_id = self.audio("start")["job_id"]
+        self.wait_log(dict(id=job_id), "audio client ready")
+        self.owner.kill(); self.owner.wait(5 * PATIENCE)
+        self.assertEqual(jobs.wait(job_id, 5)["state"], "cancelled")
+        self.assertFalse(self.audio()["enabled"])
+
+    def test_audio_failure_keeps_video_connected_and_records_actionable_error(self):
+        self.tool("scrcpy", "import sys\nprint('Audio capture failed',flush=True)\nsys.exit(1)\n")
+        job_id = self.audio("start")["job_id"]
+        self.assertEqual(jobs.wait(job_id, 5)["state"], "failed")
+        state = dispatch("runtime.state", dict(session=self.session))
+        self.assertEqual(state["status"], "connected")
+        self.assertEqual(state["audio"]["status"], "failed")
+        self.assertFalse(state["audio"]["enabled"])
+        self.assertIn("error", state["audio"])
+        self.assertIn("Audio capture failed", Path(state["audio"]["log_path"]).read_text())
+
+    def test_stopped_session_cannot_start_audio_and_ios_is_not_advertised(self):
+        self.runtime["status"] = "disconnected"
+        with self.assertRaises(StudioError) as error: self.audio("start")
+        self.assertEqual(error.exception.code, "runtime_unavailable")
+        self.assertEqual(jobs.listing(), [])
+        self.runtime["platform"] = "ios"
+        (self.directory / "state.json").write_text(json.dumps(self.runtime))
+        with self.assertRaises(StudioError) as error: self.audio("start")
+        self.assertEqual(error.exception.code, "audio_unsupported")
+
+    def test_explicit_off_is_preserved_and_missing_audio_job_does_not_break_video_stop(self):
+        self.assertTrue(self.audio("stop")["configured"])
+        (self.directory / "audio.json").write_text(json.dumps(dict(enabled=True, job_id=uuid.uuid4().hex)))
+        state = dispatch("runtime.state", dict(session=self.session))
+        self.assertEqual(state["status"], "connected")
+        self.assertEqual(state["audio"]["status"], "failed")
+        dispatch("runtime.stop", dict(session=self.session))
+        self.assertIn("stop", self.operations)
+
+
+class CatalogueTests(Isolated):
+    def test_builtins_and_full_round_trip(self):
+        profiles = catalog.builtin()
+        self.assertEqual(len(profiles), 13)
+        self.assertEqual(len({p["id"] for p in profiles}), 13)
+        for p in profiles:
+            self.assertTrue(p["source"].startswith("https://"))
+            value = {**p, "id": "custom-" + p["id"]}
+            source = self.root / "profile.json"
+            source.write_text(json.dumps(value))
+            self.assertEqual(catalog.import_profiles(str(source))["imported"], [value["id"]])
+            with self.assertRaises(StudioError): catalog.import_profiles(str(source))
+            value["name"] = "Updated name"
+            source.write_text(json.dumps(value))
+            catalog.import_profiles(str(source), True)
+            dest = self.root / (value["id"] + ".json")
+            catalog.export_profile(value["id"], str(dest))
+            self.assertEqual(json.loads(dest.read_text()), value)
+            catalog.remove(value["id"])
+        self.assertEqual(len(catalog.profiles()), 13)
+        self.assertTrue(all(p["platform"] == "ios" for p in dispatch("catalog.list", {"platform": "ios"})))
+
+    def test_import_atomicity_builtin_protection_and_bad_geometry(self):
+        base = {**catalog.builtin()[0], "id": "valid-custom"}
+        for invalid in ({**base, "id": "../escape"}, {**base, "colors": ["red"]},
+                        {**base, "source": "javascript:alert(1)"}, {**base, "dpr": float("nan")},
+                        {**base, "width": True}, {**base, "execute": "whoami"},
+                        {**base, "safePortrait": dict(top=299, bottom=299, right=299, left=299)},
+                        {**base, "openWidth": 600}, {**base, "colorNames": []}):
+            source = self.root / "bad.json"
+            source.write_text(json.dumps([base, invalid]))
+            with self.assertRaises(StudioError): catalog.import_profiles(str(source))
+            self.assertEqual(len(catalog.profiles()), 13)
+        source.write_text(json.dumps(catalog.builtin()[0]))
+        with self.assertRaises(StudioError): catalog.import_profiles(str(source), True)
+        with self.assertRaises(StudioError): catalog.remove(catalog.builtin()[0]["id"])
+
+    def test_concurrent_imports_preserve_every_profile(self):
+        from concurrent.futures import ThreadPoolExecutor
+        base = catalog.builtin()[0]
+        paths = []
+        for i in range(12):
+            p = self.root / f"p{i}.json"
+            p.write_text(json.dumps({**base, "id": f"parallel-{i}"}))
+            paths.append(p)
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            list(pool.map(lambda p: catalog.import_profiles(str(p)), paths))
+        self.assertEqual(len(catalog.profiles()), 25)
+
+
+class JobTests(Isolated):
+    def test_parallel_first_database_open_preserves_complete_schema(self):
+        for iteration in range(4):
+            state = self.root / f'parallel-state-{iteration}'
+            barrier = threading.Barrier(16)
+            def first_open(_):
+                barrier.wait(timeout=10)
+                return jobs.listing()
+            with patch.dict(os.environ, {'TOMACCO_HOME': str(state)}):
+                with ThreadPoolExecutor(max_workers=16) as pool:
+                    self.assertEqual(list(pool.map(first_open, range(16))), [[]] * 16)
+            with closing(sqlite3.connect(state / 'jobs.sqlite3')) as db:
+                self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0], 'ok')
+                self.assertEqual(db.execute('PRAGMA journal_mode').fetchone()[0], 'wal')
+                for table in ('jobs', 'inputs'):
+                    self.assertEqual(db.execute(f'SELECT count(*) FROM {table}').fetchone()[0], 0)
+
+    def test_public_task_executes_and_self_spawns_native_worker(self):
+        (self.root / "tomacco.json").write_text(json.dumps({"tasks": {"check": [sys.executable, "-c", "print('compiled')"]}}))
+        job = dispatch("project.execute", {"path": str(self.root), "action": "task", "task": "check"})
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        self.assertIn("compiled", jobs.logs(job["id"])["text"])
+
+    def test_workspace_serializes_and_waiting_job_cancels(self):
+        command = [sys.executable, "-c", "import time;from pathlib import Path;p=Path('active');assert not p.exists();p.touch();print('entered',flush=True);time.sleep(.8);p.unlink()"]
+        first = self.submit([{"argv": command}], exclusive=str(self.root))
+        self.wait_log(first, "entered")
+        second = self.submit([{"argv": command}], exclusive=str(self.root))
+        third = self.submit([{"argv": command}], exclusive=str(self.root))
+        jobs.cancel(third["id"])
+        self.assertEqual(jobs.wait(third["id"], 5)["state"], "cancelled")
+        self.assertEqual(jobs.wait(first["id"], 5)["state"], "succeeded")
+        self.assertEqual(jobs.wait(second["id"], 5)["state"], "succeeded")
+        self.assertIn("Waiting for workspace", jobs.logs(second["id"])["text"])
+
+    def test_process_logs_hashes_and_nonzero_exit(self):
+        command = [sys.executable, "-c", "from pathlib import Path;print('compiled');Path('output.txt').write_text('result')"]
+        job = self.submit([{"argv": command}], artifacts=["*.txt"])
+        done = jobs.wait(job["id"], 5)
+        self.assertEqual(done["state"], "succeeded", done)
+        self.assertIn("compiled", jobs.logs(job["id"])["text"])
+        self.assertEqual(done["result"]["artifacts"][0]["sha256"], hashlib.sha256(b"result").hexdigest())
+        job = self.submit([{"argv": [sys.executable, "-c", "raise SystemExit(7)"]}])
+        done = jobs.wait(job["id"], 5)
+        self.assertEqual((done["state"], done["exit_code"]), ("failed", 7))
+
+    def test_cancel_kills_descendants(self):
+        marker = self.root / "should-not-exist"
+        child = "import time;from pathlib import Path;time.sleep(2);Path(" + repr(str(marker)) + ").touch()"
+        code = "import subprocess,sys,time;subprocess.Popen([sys.executable,'-c'," + repr(child) + "]);print('ready',flush=True);time.sleep(60)"
+        job = self.submit([{"argv": [sys.executable, "-c", code]}])
+        self.wait_log(job, "ready")
+        jobs.cancel(job["id"])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "cancelled")
+        time.sleep(2.1)
+        self.assertFalse(marker.exists())
+
+    def test_process_groups_are_reaped_without_container_init(self):
+        value = subprocess.run([sys.executable, str(ROOT / "tests/fixtures/job_reaper_host.py")],
+                               capture_output=True, text=True, timeout=40)
+        self.assertEqual(value.returncode, 0, value.stdout + value.stderr)
+        result = json.loads(value.stdout)
+        self.assertEqual([row["mode"] for row in result], ["cancel", "exit"])
+        self.assertTrue(all(row["descendants_reaped"] == 3 and row["unrelated_process_preserved"] for row in result))
+
+    def test_timeout_finite_capture_and_log_limit(self):
+        step = {"argv": [sys.executable, "-c", "import time;print('live',flush=True);time.sleep(60)"]}
+        job = self.submit([step], timeout=1)
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "timed_out")
+        job = self.submit([{**step, "duration": .2}], timeout=5)
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        job = self.submit([{"argv": [sys.executable, "-c", "import sys,time;sys.stdout.write('x'*33554433);sys.stdout.flush();time.sleep(60)"]}])
+        done = jobs.wait(job["id"], 5)
+        self.assertEqual(done["state"], "failed")
+        self.assertIn("32 MiB", done["result"]["error"])
+
+    def test_binary_output_is_atomic_and_failure_keeps_previous(self):
+        output = self.root / "image.png"
+        command = [sys.executable, "-c", "import sys;sys.stdout.buffer.write(bytes([137,80,78,71]))"]
+        job = self.submit([{"argv": command, "output": str(output)}])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        self.assertEqual(output.read_bytes(), b"\x89PNG")
+        job = self.submit([{"argv": command[:-1] + [command[-1] + ";sys.exit(1)"], "output": str(output)}])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "failed")
+        self.assertEqual(output.read_bytes(), b"\x89PNG")
+        self.assertEqual(list(self.root.glob("*.part")), [])
+
+    def test_interactive_input_and_incremental_logs(self):
+        job = self.submit([{"argv": [sys.executable, "-c", "print('ready',flush=True);print(input(),flush=True)"], "interactive": True}])
+        self.wait_log(job, "ready")
+        jobs.send(job["id"])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        first = jobs.logs(job["id"], limit=10)
+        second = jobs.logs(job["id"], offset=first["next_offset"])
+        self.assertEqual(first["text"] + second["text"], jobs.logs(job["id"])["text"])
+        self.assertIn("\nr\n", second["text"])
+
+    def test_worker_recovery_checks_pid_start_token(self):
+        jobs.listing()
+        job_id = uuid.uuid4().hex
+        with closing(sqlite3.connect(self.root / "state/jobs.sqlite3")) as db, db:
+            db.execute("INSERT INTO jobs(id,label,state,created,updated,spec,pid,token) VALUES(?,?,'running',?,?,?,?,?)",
+                       (job_id, "stale", time.time(), time.time(), '{}', os.getpid(), "wrong-start-token"))
+        self.assertEqual(jobs.get(job_id)["state"], "failed")
+        self.assertEqual(jobs.listing()[0]["result"]["error"], "Worker exited unexpectedly")
+
+    def test_live_worker_lease_survives_inaccessible_pid_and_cancels_cooperatively(self):
+        job = self.submit([{"argv": [sys.executable, "-c", "import time;print('ready',flush=True);time.sleep(60)"]}])
+        self.wait_log(job, "ready")
+        lease = self.root / "state/jobs" / (job["id"] + ".worker.lock")
+        self.assertTrue(lease.is_file())
+        # A shared database can be read from a PID namespace that cannot see
+        # the host worker. A missing /proc entry must not cancel a live job.
+        with closing(sqlite3.connect(self.root / "state/jobs.sqlite3")) as db, db:
+            db.execute("UPDATE jobs SET pid=?,token=? WHERE id=?", (2147483647, "foreign-namespace", job["id"]))
+        self.assertEqual(jobs.get(job["id"])["state"], "running")
+        self.assertEqual(jobs.listing()[0]["state"], "running")
+        self.assertIn("ready", jobs.logs(job["id"])["text"])
+        jobs.cancel(job["id"])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "cancelled")
+        with lease.open("rb") as stream:
+            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    def test_released_worker_lease_recovers_even_when_a_pid_has_been_reused(self):
+        jobs.listing()
+        job_id = uuid.uuid4().hex
+        own_token = Path(f"/proc/{os.getpid()}/stat").read_text().rsplit(")", 1)[1].split()[19]
+        with closing(sqlite3.connect(self.root / "state/jobs.sqlite3")) as db, db:
+            db.execute("INSERT INTO jobs(id,label,state,created,updated,spec,pid,token) VALUES(?,?,'running',?,?,?,?,?)",
+                       (job_id, "released lease", time.time(), time.time(), '{}', os.getpid(), own_token))
+        directory = self.root / "state/jobs"
+        directory.mkdir(exist_ok=True)
+        (directory / (job_id + ".worker.lock")).touch()
+        self.assertEqual(jobs.get(job_id)["state"], "failed")
+        self.assertEqual(jobs.get(job_id)["result"]["error"], "Worker exited unexpectedly")
+
+
+class AdapterTests(Isolated):
+    def test_project_inspection_is_read_only_and_plans_are_argv(self):
+        root = self.root / "project with spaces"
+        root.mkdir()
+        (root / "settings.gradle").touch()
+        marker = self.root / "executed"
+        (root / "gradlew").write_text("#!/bin/sh\ntouch " + shlex.quote(str(marker)))
+        self.assertIn("gradle", dispatch("project.inspect", {"path": str(root)})["kinds"])
+        for action, target in (("build", "assembleDebug"), ("test", "testDebugUnitTest"), ("lint", "lintDebug"), ("instrumented-test", "connectedDebugAndroidTest")):
+            plan = dispatch("project.plan", {"path": str(root), "action": action})
+            self.assertEqual(plan["steps"][0]["argv"], ["/bin/sh", str(root / "gradlew"), "--console=plain", target])
+        self.assertFalse(marker.exists())
+
+    def test_xtool_config_preserves_comments_and_other_keys(self):
+        (self.root / "xtool.yml").write_text("version: 1\nbundleID: com.example.Old\n# keep this\n")
+        dispatch("project.configure", {"path": str(self.root), "application_id": "dev.test.New", "tasks": {"check": ["swift", "test"]}})
+        self.assertEqual((self.root / "xtool.yml").read_text(), "version: 1\nbundleID: dev.test.New\n# keep this\n")
+        with self.assertRaises(StudioError): dispatch("project.configure", {"path": str(self.root), "tasks": {"bad": "echo bad"}})
+
+    def test_adb_quotes_shell_and_resolves_actual_launcher(self):
+        self.tool("adb", "import json,sys\nargs=sys.argv[1:]\nprint('priority=0\\ndev.test.app/.MainActivity' if 'resolve-activity' in args[-1] else json.dumps(args))\n")
+        url = "app://test?q=$(touch /tmp/bad)&x='value'"
+        value = dispatch("android.deep_link", {"device": "emulator-5554", "url": url})
+        self.assertEqual(shlex.split(json.loads(value["stdout"])[-1])[-1], url)
+        value = dispatch("android.launch", {"device": "emulator-5554", "bundle_id": "dev.test.app"})
+        self.assertEqual(shlex.split(json.loads(value["stdout"])[-1]), ["am", "start", "-W", "-n", "dev.test.app/.MainActivity"])
+        with self.assertRaises(StudioError): dispatch("android.input", {"device": "x;touch bad", "action": "tap"})
+        self.tool("adb", "print('No activity found')\n")
+        with self.assertRaises(StudioError): dispatch("android.launch", {"device": "emulator-5554", "bundle_id": "dev.test.app"})
+
+    def test_native_split_apk_jobs_and_ipa_validation(self):
+        self.tool("adb")
+        files = [self.root / "base.apk", self.root / "split.apk"]
+        for path in files: path.touch()
+        job = dispatch("device.install", {"platform": "android", "device": "serial", "paths": list(map(str, files))})
+        self.assertIn("install-multiple", job["plan"]["steps"][0]["argv"])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        with self.assertRaises(StudioError): dispatch("device.install", {"platform": "ios", "device": "serial", "paths": [str(files[0])]})
+
+    def test_avd_registry_and_active_device_protection(self):
+        path = self.root / "state/avds/Pixel.avd"
+        path.mkdir(parents=True)
+        (path / "config.ini").write_text("hw.lcd.width=100\nimage.sysdir.1=system-images/test/\n")
+        dispatch("android.avd_profile", {"name": "Pixel", "profile_id": "pixel-11"})
+        self.assertTrue((path.parent / "Pixel.ini").is_file())
+        self.tool("emulator")
+        job = dispatch("android.avd_start", {"name": "Pixel", "headless": True})
+        self.assertEqual(job["plan"]["env"]["ANDROID_AVD_HOME"], str(path.parent))
+        self.assertIn("-no-window", job["plan"]["steps"][0]["argv"])
+        self.assertNotIn("-no-audio", job["plan"]["steps"][0]["argv"])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        silent = dispatch("android.avd_start", {"name": "Pixel", "headless": True, "audio": False})
+        self.assertIn("-no-audio", silent["plan"]["steps"][0]["argv"])
+        self.assertEqual(jobs.wait(silent["id"], 5)["state"], "succeeded")
+        with (path / "multiinstance.lock").open("a") as active:
+            fcntl.flock(active, fcntl.LOCK_EX)
+            with self.assertRaises(StudioError): dispatch("android.avd_profile", {"name": "Pixel", "profile_id": "pixel-11"})
+
+    def test_avd_performance_settings_preserve_data_and_skip_old_snapshots(self):
+        path = self.root / "state/avds/Performance.avd"
+        path.mkdir(parents=True)
+        config = path / "config.ini"
+        config.write_text("# preserve comments\nhw.ramSize=2G\nhw.cpu.ncore=4\nhw.gpu.mode=auto\n")
+        data = path / "userdata-qemu.img"
+        data.write_bytes(b"existing user data")
+        (path.parent / "Performance.ini").write_text(f"path={path}\n")
+        before = config.read_bytes()
+        avd = next(v for v in dispatch("android.avds", {})["avds"] if v["name"] == "Performance")
+        self.assertEqual(avd["memory_mb"], 2048)
+        result = dispatch("android.avd_configure", dict(name="Performance", gpu="host", vulkan="off", memory_mb=4096))
+        self.assertEqual(Path(result["backup"]).read_bytes(), before)
+        self.assertIn("# preserve comments", config.read_text())
+        self.assertIn("hw.cpu.ncore=4", config.read_text())
+        self.assertIn("hw.gpu.mode=host", config.read_text())
+        self.assertEqual(data.read_bytes(), b"existing user data")
+        dispatch("android.avd_configure", dict(name="Performance", cores=8))
+        self.assertEqual(Path(result["backup"]).read_bytes(), before)
+        dispatch("android.avd_profile", dict(name="Performance", profile_id="pixel-11"))
+        self.assertIn("hw.gpu.mode=host", config.read_text())
+        self.assertIn("hw.ramSize=4096", config.read_text())
+        self.tool("emulator")
+        job = dispatch("android.avd_start", dict(name="Performance", headless=True))
+        self.assertIn("-no-snapshot-load", job["plan"]["steps"][0]["argv"])
+        self.assertIn("-Vulkan", job["plan"]["steps"][0]["argv"])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        before = config.read_bytes()
+        (path / "hardware-qemu.ini.lock").touch()
+        with (path / "multiinstance.lock").open("a") as active:
+            fcntl.flock(active, fcntl.LOCK_EX)
+            with self.assertRaises(StudioError) as error:
+                dispatch("android.avd_configure", dict(name="Performance", gpu="swiftshader"))
+            self.assertEqual(error.exception.code, "avd_in_use")
+            self.assertEqual(config.read_bytes(), before)
+        # The files persist after shutdown/crash; an unlocked device is editable.
+        dispatch("android.avd_configure", dict(name="Performance", cores=4))
+        self.assertTrue((path / "hardware-qemu.ini.lock").exists())
+
+    def test_avd_settings_reject_pending_start_before_emulator_takes_its_lock(self):
+        path = self.root / "state/avds/Starting.avd"
+        path.mkdir(parents=True)
+        config = path / "config.ini"
+        config.write_text("hw.gpu.mode=auto\n")
+        (path.parent / "Starting.ini").write_text(f"path={path}\n")
+        jobs.listing()
+        job_id = uuid.uuid4().hex
+        spec = dict(cwd=str(self.root), steps=[], exclusive="android-avd:Starting")
+        with closing(sqlite3.connect(self.root / "state/jobs.sqlite3")) as db, db:
+            db.execute("INSERT INTO jobs(id,label,state,created,updated,spec) VALUES(?,?,'queued',?,?,?)",
+                       (job_id, "pending emulator", time.time(), time.time(), json.dumps(spec)))
+        for op, fields in (("android.avd_configure", {"gpu":"host"}),
+                           ("android.avd_profile", {"profile_id":"pixel-11"})):
+            with self.assertRaises(StudioError) as error:
+                dispatch(op, dict(name="Starting", **fields))
+            self.assertEqual(error.exception.code, "avd_in_use")
+            self.assertEqual(config.read_text(), "hw.gpu.mode=auto\n")
+        # A dead, never-started worker is recovered instead of blocking forever.
+        with closing(sqlite3.connect(self.root / "state/jobs.sqlite3")) as db, db:
+            db.execute("UPDATE jobs SET created=? WHERE id=?", (time.time()-60, job_id))
+        dispatch("android.avd_configure", dict(name="Starting", gpu="host"))
+        self.assertEqual(jobs.get(job_id)["state"], "failed")
+        self.assertIn("hw.gpu.mode=host", config.read_text())
+
+    def test_avd_performance_rejects_invalid_settings_before_writing(self):
+        path = self.root / "state/avds/Invalid.avd"
+        path.mkdir(parents=True)
+        config = path / "config.ini"
+        config.write_text("hw.gpu.mode=auto\n")
+        (path.parent / "Invalid.ini").write_text(f"path={path}\n")
+        for fields in ({}, {"gpu":"bogus"}, {"memory_mb":0}, {"memory_mb":999999}, {"cores":0}, {"cores":33}):
+            with self.assertRaises(StudioError):
+                dispatch("android.avd_configure", dict(name="Invalid", **fields))
+            self.assertEqual(config.read_text(), "hw.gpu.mode=auto\n")
+        with self.assertRaises(StudioError):
+            dispatch("android.avd_configure", dict(name="../Invalid", gpu="host"))
+
+    def test_emulator_profiles_survive_discovery_and_ambiguous_displays_stay_unknown(self):
+        path = self.root / "state/avds/Pixel.avd"
+        path.mkdir(parents=True)
+        config = path / "config.ini"
+        config.write_text("image.sysdir.1=system-images/android-36/google_apis/x86_64/\n")
+        dispatch("android.avd_profile", {"name": "Pixel", "profile_id": "pixel-11"})
+        sdk = self.root / "sdk"
+        image = sdk / "system-images/android-36/google_apis/x86_64/system.img"
+        image.parent.mkdir(parents=True); image.touch()
+        dispatch("settings.configure", {"android_sdk": str(sdk)})
+        self.tool("adb", "import sys\na=sys.argv[1:]\nif a[:1]==['devices']: print('List of devices attached\\nemulator-5554 device model:sdk_gphone64_x86_64')\nelif a[-3:]==['emu','avd','name']: print('Pixel\\nOK')\nelif 'sys.boot_completed' in a[-1]: print('1')\n")
+        value = dispatch("android.avds", {})
+        avd = next(a for a in value["avds"] if a["name"] == "Pixel")
+        self.assertEqual(avd["profile_id"], "pixel-11")
+        self.assertEqual(avd["profile_source"], "assigned")
+        self.assertEqual(avd["display"], {"width": 1080, "height": 2424, "density": 420})
+        self.assertIn("system-images;android-36;google_apis;x86_64", value["system_images"])
+        device = dispatch("device.list", {"platform": "android"})["devices"][0]
+        self.assertEqual(device["avd"], "Pixel")
+        self.assertEqual(device["kind"], "emulator")
+        self.assertEqual(device["profile_id"], "pixel-11")
+        self.assertTrue(device["booted"])
+        config.write_text(config.read_text().replace("tomacco.profile.id=pixel-11\n", ""))
+        self.assertEqual(dispatch("device.list", {"platform": "android"})["devices"][0]["profile_source"], "display-match")
+        custom = next(p for p in catalog.builtin() if p["id"] == "pixel-11")
+        custom.update(id="my-own-phone", name="My own phone")
+        source = self.root / "custom.json"; source.write_text(json.dumps(custom))
+        catalog.import_profiles(str(source))
+        device = dispatch("device.list", {"platform": "android"})["devices"][0]
+        self.assertIsNone(device["profile_id"])
+        self.assertEqual(device["profile_source"], "unknown")
+        dispatch("android.avd_profile", {"name": "Pixel", "profile_id": "my-own-phone"})
+        device = dispatch("device.list", {"platform": "android"})["devices"][0]
+        self.assertEqual(device["profile_id"], "my-own-phone")
+        self.assertEqual(device["name"], "My own phone · Pixel")
+
+    def test_remote_quoting_and_traversal_rejection(self):
+        self.tool("ssh")
+        dispatch("remote.configure", {"name": "mac", "host": "user@mac", "directory": "/Users/user/my project"})
+        job = dispatch("remote.run", {"name": "mac", "argv": ["printf", "$(danger) 'quoted'"]})
+        command = job["plan"]["steps"][0]["argv"][-1]
+        self.assertEqual(shlex.split(command), ["cd", "--", "/Users/user/my project", "&&", "exec", "printf", "$(danger) 'quoted'"])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        with self.assertRaises(StudioError): dispatch("remote.configure", {"name": "mac", "host": "-oProxyCommand=evil", "directory": "/Users/user"})
+        with self.assertRaises(StudioError): dispatch("remote.fetch", {"name": "mac", "remote_path": "../secret", "path": str(self.root / "out")})
+
+    def test_created_native_projects_have_no_python_build_dependency(self):
+        sdk = self.root / "sdk"
+        (sdk / "platforms/android-36").mkdir(parents=True)
+        self.tool("gradle")
+        dispatch("settings.configure", {"android_sdk": str(sdk)})
+        for kind in ("android", "swift-android"):
+            project = self.root / kind
+            result = dispatch("project.create", {"path": str(project), "kind": kind, "organization": "dev.test_app", "name": "Counter"})
+            self.assertEqual(result["api"], 36)
+            java = next(project.rglob("*.java")).read_text()
+            self.assertEqual('System.loadLibrary' in java, kind == "swift-android")
+            self.assertFalse(list(project.rglob("*.py")))
+            if kind == "swift-android":
+                self.assertIn("Java_dev_test_1app_counter_MainActivity_nextCount", next(project.rglob("Counter.swift")).read_text())
+                self.assertIn("ProcessBuilder", (project / "app/build.gradle.kts").read_text())
+            with self.assertRaises(StudioError): dispatch("project.create", {"path": str(project), "kind": kind})
+
+    def test_settings_validation_preserves_previous_configuration(self):
+        tool = self.tool("adb")
+        before = dispatch("settings.get")
+        with self.assertRaises(StudioError): dispatch("settings.configure", {"executables": {"unknown": tool}})
+        self.assertEqual(dispatch("settings.get"), before)
+
+
+    def test_framework_plans_and_swift_sdk_setup(self):
+        for tool in ('flutter', 'xtool', 'npm'): self.tool(tool)
+        flutter = self.root / 'FlutterApp'
+        flutter.mkdir(); (flutter / 'pubspec.yaml').write_text('flutter:\n')
+        (flutter / 'android').mkdir(); (flutter / 'ios').mkdir()
+        plan = dispatch('project.plan', {'path': str(flutter), 'format': 'aab'})
+        self.assertEqual(plan['steps'][0]['argv'][1:], ['build', 'appbundle', '--debug'])
+        with self.assertRaises(StudioError): dispatch('project.plan', {'path': str(flutter), 'platform': 'ios'})
+        web = self.root / 'WebApp'; web.mkdir()
+        (web / 'package.json').write_text(json.dumps({'scripts': {'build': 'vite build'}, 'dependencies': {'react-native': '1', 'expo': '1', '@capacitor/core': '1'}}))
+        self.assertEqual(dispatch('project.inspect', {'path': str(web)})['kinds'], ['react-native', 'expo', 'capacitor', 'web'])
+        self.assertEqual(dispatch('project.plan', {'path': str(web), 'platform': 'web'})['steps'][0]['argv'][1:], ['run', 'build'])
+        ios = self.root / 'IOSApp'; ios.mkdir(); (ios / 'xtool.yml').write_text('bundleID: dev.test.app\n')
+        plan = dispatch('project.plan', {'path': str(ios), 'platform': 'ios', 'format': 'ipa', 'sign': True})
+        self.assertEqual(plan['steps'][0]['argv'][1:], ['dev', 'build', '--configuration', 'debug', '--sign', '--ipa'])
+        package = self.root / 'Swift'; package.mkdir(); (package / 'Package.swift').touch()
+        sysroot = self.root / 'sdk/sysroot'; (sysroot / 'usr/include').mkdir(parents=True)
+        script = sysroot.parent / 'scripts/setup-android-sdk.sh'; script.parent.mkdir(); script.write_text('exit 0\n')
+        ndk = self.root / 'ndk'; ndk.mkdir(); (ndk / 'source.properties').touch()
+        self.tool('swift', 'import os;print("sdkRootPath: " + os.environ["TOMACCO_TEST_ROOT"] + "/sdk/sysroot")\n')
+        dispatch('settings.configure', {'android_ndk': str(ndk), 'swift_android_sdk': 'swift-test_android'})
+        plan = dispatch('swift.plan', {'path': str(package), 'architecture': 'x86_64'})
+        self.assertIn('x86_64-unknown-linux-android26', plan['steps'][0]['argv'])
+        self.assertTrue(dispatch('swift.status')['android']['configured'])
+        job = dispatch('swift.android_configure')
+        self.assertEqual(jobs.wait(job['id'], 5)['state'], 'succeeded')
+        with self.assertRaises(StudioError): dispatch('swift.sdk_install', {'source': 'https://example.invalid/sdk.tar.gz'})
+        with self.assertRaises(StudioError): dispatch('swift.plan', {'path': str(package), 'action': 'test'})
+
+    def test_concurrent_run_reuses_job_and_machine_reload_targets_same_app(self):
+        self.tool('flutter', '''import json,sys,time
+from pathlib import Path
+assert '--machine' in sys.argv
+with Path('launches').open('a') as f:f.write('launch\\n')
+print(json.dumps([{'event':'app.start','params':{'appId':'fixture-app'}}]),flush=True)
+print(json.dumps([{'event':'app.started','params':{'appId':'fixture-app'}}]),flush=True)
+for line in sys.stdin:
+ value=json.loads(line)[0]
+ Path('command.json').write_text(json.dumps(value))
+ if value['method']=='app.stop':break
+ print(json.dumps([{'id':value['id'],'result':{'code':0}}]),flush=True)
+''')
+        (self.root/'pubspec.yaml').write_text('flutter:\n');(self.root/'android').mkdir()
+        args={'path':str(self.root),'platform':'android','device':'emulator-5554'}
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            values=list(pool.map(lambda _:dispatch('project.run',args),range(8)))
+        self.assertEqual(len({value['id'] for value in values}),1)
+        self.assertEqual(sum(bool(value.get('reused')) for value in values),7)
+        job=values[0];deadline=time.monotonic()+5*PATIENCE
+        while jobs.get(job['id']).get('phase')!='ready':
+            self.assertLess(time.monotonic(),deadline);time.sleep(.03)
+        self.assertEqual((self.root/'launches').read_text(),'launch\n')
+        with self.assertRaises(StudioError) as blocked:
+            dispatch('project.run',{**args,'device':'emulator-5556'})
+        self.assertEqual(blocked.exception.code,'workspace_busy')
+        self.assertEqual(blocked.exception.details['job']['id'],job['id'])
+        with self.assertRaises(StudioError) as blocked:
+            dispatch('project.execute',{'path':str(self.root),'platform':'android'})
+        self.assertEqual(blocked.exception.code,'workspace_busy')
+        jobs.send(job['id'],'reload')
+        while not (self.root/'command.json').exists():
+            self.assertLess(time.monotonic(),deadline);time.sleep(.03)
+        command=json.loads((self.root/'command.json').read_text())
+        self.assertEqual(command['method'],'app.restart');self.assertEqual(command['params']['appId'],'fixture-app')
+        self.assertFalse(command['params']['fullRestart'])
+        jobs.send(job['id'],'quit');self.assertEqual(jobs.wait(job['id'],5)['state'],'succeeded')
+        again=dispatch('project.run',args);self.assertNotEqual(again['id'],job['id'])
+
+    def test_repeated_build_reuses_active_job_and_allows_next_build_after_finish(self):
+        self.tool('flutter','import time;print("building",flush=True);time.sleep(.7)\n')
+        (self.root/'pubspec.yaml').write_text('flutter:\n');(self.root/'android').mkdir()
+        args={'path':str(self.root),'platform':'android','action':'build'}
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            values=list(pool.map(lambda _:dispatch('project.execute',args),range(6)))
+        self.assertEqual(len({value['id'] for value in values}),1)
+        self.assertEqual(jobs.wait(values[0]['id'],5)['state'],'succeeded')
+        later=dispatch('project.execute',args);self.assertNotEqual(later['id'],values[0]['id'])
+
+    def test_managed_avd_creation_uses_native_followup_worker(self):
+        self.tool('avdmanager', 'import pathlib,sys\np=pathlib.Path(sys.argv[sys.argv.index("--path")+1]);p.mkdir(parents=True);(p/"config.ini").write_text("image.sysdir.1=system-images/test/\\n")\n')
+        job = dispatch('android.avd_create', {'name': 'Fixture', 'system_image': 'system-images;android-36;google_apis;x86_64', 'profile_id': 'pixel-11'})
+        done = jobs.wait(job['id'], 5)
+        self.assertEqual(done['state'], 'succeeded', jobs.logs(job['id']))
+        self.assertIn('call', done['plan']['steps'][1]['argv'])
+        self.assertNotIn('python', done['plan']['steps'][1]['argv'][0])
+        self.assertTrue(any(v['name'] == 'Fixture' and v['managed'] for v in dispatch('android.avds')['avds']))
+
+    def test_corrupt_user_state_and_directory_outputs_return_errors(self):
+        state = self.root / 'state'; state.mkdir(exist_ok=True)
+        for filename, operation in [('settings.json', 'settings.get'), ('remotes.json', 'remote.list'), ('profiles.json', 'catalog.list')]:
+            target = state / filename; target.write_text('[true]')
+            with self.assertRaises(StudioError): dispatch(operation)
+            target.unlink()
+        for operation in ['device.screenshot', 'preview.capture']:
+            args = {'path': '/'}
+            if operation.startswith('device'): args.update(platform='android', device='fixture')
+            with self.assertRaises(StudioError): dispatch(operation, args)
+
+
+class ProtocolTests(Isolated):
+    def test_cli_schema_errors_and_file_arguments(self):
+        schema = json.loads(subprocess.check_output([binary(), "schema"]))["result"]
+        self.assertEqual(len(schema["operations"]), len(json.loads((ROOT / "assets/operations.json").read_text())))
+        expected = json.loads((ROOT / "assets/operations.json").read_text())
+        self.assertEqual(schema["operations"], expected)
+        for op, values in (("device.install", {}), ("job.list", {"limit": True}), ("doctor", {"execute": "evil"}), ("preview.capture", {})):
+            with self.assertRaises(StudioError): dispatch(op, values)
+        args = self.root / "args.json"
+        args.write_text('{"platform":"ios"}')
+        value = json.loads(subprocess.check_output([binary(), "call", "catalog.list", "@" + str(args)]))
+        self.assertTrue(all(p["platform"] == "ios" for p in value["result"]))
+
+    def test_mcp_handshake_resources_and_error_recovery(self):
+        requests = [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}},
+            {"jsonrpc": "2.0", "method": "notifications/initialized"},
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
+            {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "catalog.list"}},
+            {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "device.install", "arguments": {}}},
+            {"jsonrpc": "2.0", "id": 5, "method": "resources/read", "params": {"uri": "tomacco://catalog"}},
+        ]
+        output = subprocess.check_output([binary(), "mcp"], input='bad\n' + '\n'.join(map(json.dumps, requests)) + '\n', text=True)
+        replies = sorted([json.loads(line) for line in output.splitlines()], key=lambda r: -1 if r["id"] is None else r["id"])
+        self.assertEqual(replies[0]["error"]["code"], -32700)
+        self.assertEqual([r["id"] for r in replies[1:]], [1, 2, 3, 4, 5])
+        self.assertEqual(replies[1]["result"]["protocolVersion"], "2025-11-25")
+        self.assertEqual(len(replies[2]["result"]["tools"]), len(json.loads((ROOT / "assets/operations.json").read_text())))
+        self.assertFalse(replies[3]["result"]["isError"])
+        self.assertTrue(replies[4]["result"]["isError"])
+        self.assertIn("contents", replies[5]["result"])
+
+    def test_mcp_wait_does_not_block_other_requests_and_cancellation_preserves_job(self):
+        import queue
+        job=self.submit([{"argv":[sys.executable,"-c","import time;print('ready',flush=True);time.sleep(30)"]}],timeout=40)
+        self.wait_log(job,"ready")
+        process=subprocess.Popen([binary(),"mcp"],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        replies=queue.Queue()
+        def read():
+            for line in process.stdout: replies.put(json.loads(line))
+        reader=threading.Thread(target=read,daemon=True);reader.start()
+        def send(value):process.stdin.write(json.dumps({"jsonrpc":"2.0",**value})+"\n");process.stdin.flush()
+        try:
+            send({"id":1,"method":"initialize","params":{}})
+            self.assertEqual(replies.get(timeout=3)["id"],1)
+            send({"id":2,"method":"tools/call","params":{"name":"job.wait","arguments":{"job_id":job["id"],"seconds":30}}})
+            send({"id":3,"method":"tools/call","params":{"name":"catalog.list"}})
+            send({"id":4,"method":"ping"})
+            immediate=[replies.get(timeout=2),replies.get(timeout=2)]
+            self.assertEqual({r["id"] for r in immediate},{3,4})
+            send({"method":"notifications/cancelled","params":{"requestId":2}})
+            process.stdin.close();process.wait(3*PATIENCE);reader.join(1)
+            self.assertTrue(replies.empty(),list(replies.queue))
+            self.assertEqual(jobs.get(job["id"])["state"],"running")
+        finally:
+            if process.poll() is None:process.kill();process.wait()
+            if not process.stdin.closed:process.stdin.close()
+            process.stdout.close();process.stderr.close()
+            jobs.cancel(job["id"]);jobs.wait(job["id"],5)
+
+    def test_long_socket_path_and_preview_readiness(self):
+        data = self.root / ("nested-project-" * 12) / "state"
+        directory = Path('/tmp') / f"tomacco-{os.getuid()}-{hashlib.sha256(os.fsencode(data)).hexdigest()[:16]}"
+        directory.mkdir(mode=0o700)
+        server = socket.socket(socket.AF_UNIX)
+        server.bind(str(directory / 'preview-test.sock'))
+        server.listen()
+        samples = []
+        def serve():
+            for _ in range(6):
+                conn, _ = server.accept()
+                with conn:
+                    request = json.loads(conn.makefile('rb').readline())
+                    if request['method'] == 'state': result = {'loading': False}
+                    else:
+                        samples.append(True)
+                        result = len(samples) >= 3
+                    conn.sendall(json.dumps({'id': 1, 'result': result}).encode() + b'\n')
+        thread = threading.Thread(target=serve, daemon=True)
+        thread.start()
+        try:
+            with patch.dict(os.environ, {'TOMACCO_HOME': str(data)}):
+                self.assertEqual(preview.ready('test', timeout=5), {'loading': False})
+            self.assertEqual(len(samples), 3)
+            thread.join(1)
+        finally:
+            server.close()
+            (directory / 'preview-test.sock').unlink()
+            directory.rmdir()
+
+
+
+
+class ProjectFilesTests(Isolated):
+    def test_conflicts_binary_bounds_permissions_and_symlink_escape(self):
+        file = self.root / "source.swift"
+        file.write_text("let value = 1\n")
+        file.chmod(0o755)
+        a = {"path": str(self.root), "file": "source.swift"}
+        read = dispatch("files.read", a)
+        file.write_text("let value = 2\n")
+        with self.assertRaises(StudioError) as error:
+            dispatch("files.write", {**a, "text": "lost update", "if_match": read["sha256"]})
+        self.assertEqual(error.exception.code, "file_conflict")
+        self.assertEqual(file.read_text(), "let value = 2\n")
+        read = dispatch("files.read", a)
+        dispatch("files.write", {**a, "text": "let value = 3\n", "if_match": read["sha256"]})
+        self.assertEqual(file.stat().st_mode & 0o777, 0o755)
+        (self.root / "outside").symlink_to("/etc")
+        with self.assertRaises(StudioError): dispatch("files.read", {**a, "file": "outside/passwd"})
+        with self.assertRaises(StudioError): dispatch("files.write", {**a, "file": "../escape", "text": "x", "if_match": ""})
+        file.write_bytes(b"\x00\xff")
+        with self.assertRaises(StudioError): dispatch("files.read", a)
+        file.write_bytes(b"x" * (1024*1024+1))
+        with self.assertRaises(StudioError): dispatch("files.read", a)
+
+    def test_listing_search_and_new_files(self):
+        base = {"path": str(self.root)}
+        dispatch("files.mkdir", {**base, "directory": "src"})
+        dispatch("files.write", {**base, "file": "src/main.rs", "text": "fn main() { println!(\"Grüße\"); }\n", "if_match": ""})
+        (self.root / "build").mkdir()
+        (self.root / "build/generated.txt").write_text("Grüße")
+        listed = dispatch("files.list", base)
+        self.assertIn("src", [e["name"] for e in listed["entries"]])
+        self.assertNotIn("build", [e["name"] for e in listed["entries"]])
+        results = dispatch("files.search", {**base, "query": "grüße"})
+        self.assertEqual([m["file"] for m in results["matches"]], ["src/main.rs"])
+        with self.assertRaises(StudioError): dispatch("files.write", {**base, "file": "src/main.rs", "text": "overwrite", "if_match": ""})
+
+
+
+
+class ReleaseContractTests(Isolated):
+    def test_version_preserves_comments_and_rejects_ambiguous_gradle(self):
+        pubspec = self.root / "pubspec.yaml"
+        pubspec.write_text("name: example\nversion: 1.0.0+1 # Keep this note\n")
+        result = dispatch("release.version", {"path":str(self.root), "version":"2.3.4", "build_number":12})
+        self.assertEqual("name: example\nversion: 2.3.4+12 # Keep this note\n", pubspec.read_text())
+        self.assertEqual(Path(result["backup"]).read_text(), "name: example\nversion: 1.0.0+1 # Keep this note\n")
+        pubspec.unlink()
+        (self.root / "app").mkdir()
+        gradle=self.root / "app/build.gradle.kts"
+        gradle.write_text('versionName = providers.gradleProperty("appVersion").get()\nversionCode = 1\n')
+        with self.assertRaises(StudioError): dispatch("release.version", {"path":str(self.root), "version":"2.0.0", "build_number":2})
+        self.assertIn('providers.gradleProperty', gradle.read_text())
+
+    def test_signing_cancel_and_worker_crash_remove_temporary_credentials(self):
+        password=self.root/"password";password.write_text("private-fixture-password\n");password.chmod(0o600)
+        self.tool("keytool", "import os,time\nfrom pathlib import Path\nPath(os.environ['TOMACCO_TEST_ROOT'],'signer.pid').write_text(str(os.getpid()))\ntime.sleep(60)\n")
+        for crash in [False,True]:
+            marker=self.root/"signer.pid"
+            marker.unlink(missing_ok=True)
+            output=self.root/("crash.p12" if crash else "cancel.p12")
+            job=dispatch("release.keystore",{"output":str(output),"password_file":str(password),"alias":"fixture","distinguished_name":"CN=Fixture"})
+            deadline=time.monotonic()+5*PATIENCE
+            while not marker.exists():
+                self.assertLess(time.monotonic(),deadline,jobs.get(job["id"]))
+                time.sleep(.03)
+            signer=int(marker.read_text())
+            self.assertTrue(list(self.root.glob('.tomacco-sign-*/key-password')))
+            if crash:
+                import signal
+                with closing(sqlite3.connect(self.root/'state/jobs.sqlite3')) as db:
+                    pid=db.execute('SELECT pid FROM jobs WHERE id=?',[job['id']]).fetchone()[0]
+                os.kill(pid,signal.SIGKILL)
+            else:jobs.cancel(job['id'])
+            done=jobs.wait(job['id'],5)
+            self.assertEqual(done['state'],'failed' if crash else 'cancelled',done)
+            self.assertFalse(list(self.root.glob('.tomacco-sign-*')))
+            self.assertFalse(output.exists())
+            self.assertNotIn('private-fixture-password',jobs.logs(job['id'])['text'])
+            deadline=time.monotonic()+3*PATIENCE
+            while Path(f'/proc/{signer}/stat').exists() and Path(f'/proc/{signer}/stat').read_text().rsplit(')',1)[1].split()[0]!='Z':
+                self.assertLess(time.monotonic(),deadline,'signing process survived cancellation')
+                time.sleep(.03)
+
+    def test_apple_commands_are_typed_quoted_and_keep_failure_evidence(self):
+        self.tool("ssh")
+        dispatch("remote.configure", {"name":"mac", "host":"build-mac", "directory":"/Users/build/An App"})
+        job=dispatch("apple.test", {"remote":"mac", "project":"ios/Runner.xcworkspace", "scheme":"App; $(touch NEVER)", "destination":"platform=iOS Simulator,id=123", "only_testing":["AppUITests/Navigation"]})
+        command=job["plan"]["steps"][-1]["argv"][-1]
+        self.assertIn("'App; $(touch NEVER)'", command)
+        self.assertIn("-only-testing:AppUITests/Navigation", command)
+        self.assertTrue(job["plan"]["cleanup"])
+        self.assertIn("Tests.xcresult.zip",job["plan"]["always_artifacts"])
+        jobs.cancel(job["id"]);jobs.wait(job["id"],5)
+        with self.assertRaises(StudioError):dispatch("apple.export", {"remote":"mac", "archive":"../outside", "export_options":"missing"})
+
+    def test_play_prepare_validates_transaction_and_never_commits_implicitly(self):
+        key=self.root / "key.pem"
+        subprocess.run(["openssl","genpkey","-algorithm","RSA","-pkeyopt","rsa_keygen_bits:2048","-out",str(key)],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        credentials=self.root / "account.json"
+        credentials.write_text(json.dumps({"type":"service_account","private_key":key.read_text(),"private_key_id":"fixture","client_email":"test@example.iam.gserviceaccount.com","token_uri":"https://oauth2.googleapis.com/token"}))
+        credentials.chmod(0o600)
+        bundle=self.root / "app.aab";bundle.write_bytes(b"PK\x03\x04contract-fixture")
+        self.tool("jarsigner", "print('jar verified.')\n")
+        self.tool("curl", r"""import sys,json,os
+from pathlib import Path
+args=sys.argv[1:]
+url=next(a for a in args if a.startswith('https://'))
+output=Path(args[args.index('--output')+1])
+method=args[args.index('--request')+1]
+root=Path(os.environ['TOMACCO_TEST_ROOT'])
+with (root/'requests.jsonl').open('a') as file:file.write(json.dumps({'url':url,'method':method})+'\n')
+if 'oauth2.googleapis.com' in url:
+    body=Path(args[args.index('--data-binary')+1][1:]).read_text()
+    assert 'assertion=' in body and body.count('.')>=2
+    value={'access_token':'fixture-token','expires_in':3600}
+else:
+    header=Path(args[args.index('--header')+1][1:]).read_text()
+    assert 'Authorization: Bearer fixture-token' in header
+    if url.endswith('/edits'):value={'id':'edit123','expiryTimeSeconds':'9999999999'}
+    elif '/bundles?' in url:value={'versionCode':42,'sha256':'fixture'}
+    elif '/tracks/' in url:
+        value=json.loads(Path(args[args.index('--data-binary')+1][1:]).read_text())
+        assert value['releases'][0]['versionCodes']==['42']
+    else:value={}
+output.write_text(json.dumps(value))
+print('200',end='')
+""")
+        job=dispatch("play.prepare", {"credentials":str(credentials),"package":"app.example","path":str(bundle),"release_name":"Contract"})
+        done=jobs.wait(job["id"],15)
+        self.assertEqual(done["state"],"succeeded",jobs.logs(job["id"]))
+        report=json.loads(Path(done["result"]["artifacts"][0]["path"]).read_text())
+        self.assertEqual(report["result"]["edit_id"],"edit123")
+        self.assertFalse(report["result"]["committed"])
+        requests=[json.loads(line) for line in (self.root/'requests.jsonl').read_text().splitlines()]
+        self.assertTrue(any(':validate' in r['url'] for r in requests))
+        self.assertFalse(any(':commit' in r['url'] for r in requests))
+        self.assertNotIn('fixture-token',jobs.logs(job["id"])["text"])
+        self.assertFalse(list((self.root/'state/private').glob('*')))
+
+
+class IphoneLinuxTests(Isolated):
+    def test_deployment_launches_actual_signed_id_and_rejects_ambiguous_apps(self):
+        project=self.root/'App';project.mkdir()
+        (project/'xtool.yml').write_text('bundleID: dev.test.app\n')
+        manifest=project/'xtool/Counter.app/Info.plist';manifest.parent.mkdir(parents=True)
+        manifest.write_text('<?xml version="1.0"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist><dict><key>CFBundleIdentifier</key><string>dev.test.app</string></dict></plist>')
+        inventory=self.root/'apps.json'
+        inventory.write_text(json.dumps([{'CFBundleIdentifier':'XTL-ABC123.dev.test.app'}]))
+        self.tool('xtool')
+        self.tool('go-ios', "import json,os,sys\nfrom pathlib import Path\nr=Path(os.environ['TOMACCO_TEST_ROOT'])\nif sys.argv[1]=='apps':print((r/'apps.json').read_text())\nelse:(r/'launched.json').write_text(json.dumps(sys.argv[1:]))\n")
+        args={'path':str(project),'platform':'ios','device':'00008110-0011223344556677'}
+        done=jobs.wait(dispatch('project.run',args)['id'],10)
+        self.assertEqual(done['state'],'succeeded',jobs.logs(done['id']))
+        marker=self.root/'launched.json'
+        self.assertEqual(json.loads(marker.read_text()),['launch','XTL-ABC123.dev.test.app','--udid='+args['device']])
+        marker.unlink()
+        inventory.write_text(json.dumps([{'CFBundleIdentifier':'XTL-ABC123.dev.test.app'},{'CFBundleIdentifier':'XTL-OTHER.dev.test.app'}]))
+        done=jobs.wait(dispatch('project.run',args)['id'],10)
+        self.assertEqual(done['state'],'failed')
+        self.assertFalse(marker.exists())
+        done=jobs.wait(dispatch('project.run',{**args,'bundle_id':'XTL-ABC123.dev.test.app'})['id'],10)
+        self.assertEqual(done['state'],'succeeded',jobs.logs(done['id']))
+        marker.unlink()
+        self.tool('xtool','raise SystemExit(1)\n')
+        done=jobs.wait(dispatch('project.run',args)['id'],10)
+        self.assertEqual(done['state'],'failed')
+        self.assertFalse(marker.exists())
+
+    def test_physical_runtime_owns_usb_processes_and_starts_xctest_without_mac(self):
+        self.tool('iproxy', (ROOT/'tests/fixtures/iphone_usb.py').read_text())
+        self.tool('go-ios', "import json,os,sys,time\nfrom pathlib import Path\nPath(os.environ['TOMACCO_TEST_ROOT'],'runner-process.json').write_text(json.dumps({'pid':os.getpid(),'argv':sys.argv[1:]}))\ntime.sleep(120)\n")
+        device='00008110-0011223344556677'
+        live=dispatch('runtime.start',{'platform':'ios','device':device,'runner_bundle_id':'dev.test.Runner.xctrunner'})
+        try:
+            self.assertEqual(live['transport'],'usb/wda')
+            self.assertEqual(live['codec'],'mjpeg')
+            self.assertFalse(live['mac_required'])
+            self.assertEqual(live['point_width'],390)
+            runner=json.loads((self.root/'runner-process.json').read_text())
+            usb=json.loads((self.root/'usb-process.json').read_text())
+            self.assertEqual(runner['argv'],['runwda','--udid='+device,'--bundleid=dev.test.Runner.xctrunner','--testrunnerbundleid=dev.test.Runner.xctrunner','--xctestconfig=WebDriverAgentRunner.xctest'])
+            self.assertEqual(usb['argv'][:4],['--udid',device,'--source','127.0.0.1'])
+            calls=[json.loads(line) for line in (self.root/'wda-calls.jsonl').read_text().splitlines()]
+            caps=next(c['body']['capabilities']['alwaysMatch'] for c in calls if c['path']=='/session')
+            self.assertFalse(caps['shouldTerminateApp'])
+            with socket.socket(socket.AF_UNIX) as stream:
+                stream.settimeout(3);stream.connect(live['video_socket'])
+                wire=b''
+                while len(wire)<8:wire+=stream.recv(8-len(wire))
+                self.assertEqual(wire,b'\x00\x00\x00\x04\xff\xd8\xff\xd9')
+            with ThreadPoolExecutor(max_workers=6) as pool:
+                reused=list(pool.map(lambda _:dispatch('runtime.start',{'platform':'ios','device':device,'runner_bundle_id':'dev.test.Runner.xctrunner'}),range(6)))
+            self.assertTrue(all(item['session']==live['session'] and item['pid']==live['pid'] and item['reused'] for item in reused))
+            with self.assertRaises(StudioError) as busy:
+                dispatch('runtime.start',{'platform':'ios','device':device})
+            self.assertEqual(busy.exception.code,'runtime_configuration_conflict')
+            self.assertEqual(busy.exception.details['session'],live['session'])
+        finally:
+            dispatch('runtime.stop',{'session':live['session']})
+        deadline=time.monotonic()+5*PATIENCE
+        while Path(live['video_socket']).exists() and time.monotonic()<deadline:time.sleep(.02)
+        self.assertFalse(Path(live['video_socket']).exists())
+        for owned in (runner,usb):
+            with self.assertRaises(ProcessLookupError):os.kill(owned['pid'],0)
+
+    def test_doctor_never_exposes_apple_credentials_and_reports_project_limit(self):
+        self.tool('xtool', "import sys\nprint('Not installed' if sys.argv[1]=='sdk' else 'Logged in.\\nTOKEN=private-test-credential')\n")
+        self.tool('idevice_id', "print('')\n")
+        self.tool('go-ios')
+        (self.root/'pubspec.yaml').write_text('flutter:\n')
+        result=dispatch('ios.doctor',{'path':str(self.root)})
+        self.assertFalse(result['mac_required'])
+        self.assertFalse(result['local_modern_ios_emulator'])
+        self.assertFalse(result['sdk_ready'])
+        self.assertTrue(result['signing_ready'])
+        self.assertFalse(result['ready'])
+        self.assertNotIn('private-test-credential',json.dumps(result))
+        self.assertFalse(next(c for c in result['checks'] if c['name']=='project')['ready'])
+
+    def test_sdk_directory_import_pairing_and_userspace_tunnel_are_real_jobs(self):
+        self.tool('xtool');self.tool('idevicepair');self.tool('go-ios')
+        sdk=self.root/'Xcode.app';sdk.mkdir()
+        job=dispatch('ios.sdk_install',{'path':str(sdk),'slim':True})
+        self.assertEqual(job['plan']['steps'][0]['argv'][1:],['sdk','install',str(sdk),'--slim'])
+        self.assertEqual(jobs.wait(job['id'],5)['state'],'succeeded')
+        device='00008110-0011223344556677'
+        for action in ('pair','tunnel','developer-image'):
+            job=dispatch('ios.prepare',{'action':action,'device':device})
+            args=job['plan']['steps'][0]['argv']
+            self.assertNotIn('sudo',args)
+            if action=='tunnel':self.assertIn('--userspace',args)
+            self.assertEqual(jobs.wait(job['id'],5)['state'],'succeeded')
+        with self.assertRaises(StudioError):dispatch('ios.prepare',{'action':'pair','device':'--another-device'})
+
+    def test_runner_digest_failure_preserves_report_and_never_installs(self):
+        marker=self.root/'installed'
+        self.tool('xtool', f"from pathlib import Path\nPath({str(marker)!r}).touch()\n")
+        self.tool('curl', "import sys\nfrom pathlib import Path\nPath(sys.argv[sys.argv.index('--output')+1]).write_bytes(b'not-the-pinned-runner')\n")
+        job=dispatch('ios.wda_prepare',{'device':'00008110-0011223344556677'})
+        done=jobs.wait(job['id'],10)
+        self.assertEqual(done['state'],'failed',done)
+        report=json.loads(Path(done['result']['artifacts'][0]['path']).read_text())
+        self.assertEqual(report['error']['code'],'checksum_mismatch')
+        self.assertFalse(marker.exists())
+
+
+if __name__ == "__main__": unittest.main()

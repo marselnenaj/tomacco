@@ -1,0 +1,270 @@
+diff --git a/docs/REFLECTION.md b/docs/REFLECTION.md
+index 7fce6a2..84d291d 100644
+--- a/docs/REFLECTION.md
++++ b/docs/REFLECTION.md
+@@ -390,6 +390,21 @@ Successful reflected translation records the applied states in
+ `None` for `Unknown`; the corresponding binding's `texture_shape.storage_format` reports the same
+ choice. Create the image view and descriptor from the same runtime state used for translation.
+ 
++### Null-texture specialization
++
++`air.is_null_texture` of a `[[texture(n)]]` argument asks whether the consumer bound anything at
++Metal slot `n`, which only the consumer knows. Translation therefore lowers that query to a
++specialization constant: an `OpSpecConstantFalse` decorated `SpecId NULL_TEXTURE_SPEC_ID_BASE + n`.
++Unspecialized, the module behaves as if every declared texture were bound. When the consumer
++creates a pipeline for a draw that leaves slot `n` unbound (and substitutes a placeholder
++descriptor so the layout stays complete), it sets that constant to `VK_TRUE` through
++`VkSpecializationInfo`; the shader then takes the branch it takes on Metal for an unbound
++argument instead of sampling the placeholder. A constant id the module does not declare is
++ignored, so a consumer may name every unbound slot without asking which ones the shader tests.
++Only a texture loaded straight from its argument has such a constant; `is_null_texture` of a
++texture reached through an argument buffer or a descriptor array stays the constant false, and of
++a value from `air.get_null_texture_*` stays the constant true.
++
+ ## Typical consumer flow
+ 
+ 1. Call `translate_reflected` (or a serde-enabled CLI with `--emit-meta`).
+diff --git a/src/native/tests/textures.rs b/src/native/tests/textures.rs
+index 5df56d3..c8ffd7f 100644
+--- a/src/native/tests/textures.rs
++++ b/src/native/tests/textures.rs
+@@ -1080,6 +1080,76 @@ declare i32 @air.get_width_texture_2d(ptr addrspace(1), i32)
+     let _ = std::fs::remove_dir_all(tmp);
+ }
+ 
++/// `air.is_null_texture(%t)` of a `[[texture(n)]]` argument is the consumer's question, not this
++/// module's: the argument is null exactly when the consumer bound nothing there. So it lowers to
++/// the argument's specialization constant -- `OpSpecConstantFalse` with `SpecId
++/// NULL_TEXTURE_SPEC_ID_BASE + n` -- and a consumer that leaves the argument unbound sets it true.
++/// Folded to a constant false, as it was, the shader took its sampling path on whatever the
++/// consumer substituted for the missing texture. Branching keeps the predicate live, as the shader
++/// this shape was observed in does: an optional darkening texture, sampled only when bound.
++#[test]
++fn native_is_null_texture_of_a_texture_argument_lowers_to_its_specialization_constant() {
++    let ll = r#"
++target triple = "spirv-unknown-vulkan1.2"
++define void @k(ptr addrspace(1) %tex, ptr addrspace(2) %sampler, ptr addrspace(1) %out) {
++entry:
++  %isnull = call i1 @air.is_null_texture_2d(ptr addrspace(1) %tex)
++  br i1 %isnull, label %null, label %bound
++null:
++  store float 1.000000e+00, ptr addrspace(1) %out, align 4
++  br label %done
++bound:
++  %sample = tail call { <4 x float>, i8 } @air.sample_texture_2d.v4f32(ptr addrspace(1) %tex, ptr addrspace(2) %sampler, <2 x float> zeroinitializer)
++  %color = extractvalue { <4 x float>, i8 } %sample, 0
++  %x = extractelement <4 x float> %color, i64 0
++  store float %x, ptr addrspace(1) %out, align 4
++  br label %done
++done:
++  ret void
++}
++
++declare i1 @air.is_null_texture_2d(ptr addrspace(1))
++declare { <4 x float>, i8 } @air.sample_texture_2d.v4f32(ptr addrspace(1), ptr addrspace(2), <2 x float>)
++
++!air.kernel = !{!0}
++!0 = !{ptr @k, !1, !2}
++!1 = !{}
++!2 = !{!3, !4, !5}
++!3 = !{i32 0, !"air.texture", !"air.location_index", i32 7, i32 1, !"air.sample", !"air.arg_type_name", !"texture2d<float, sample>", !"air.arg_name", !"tex"}
++!4 = !{i32 1, !"air.sampler", !"air.location_index", i32 1, i32 1, !"air.arg_type_name", !"sampler", !"air.arg_name", !"sampler"}
++!5 = !{i32 2, !"air.buffer", !"air.location_index", i32 2, i32 1, !"air.write", !"air.address_space", i32 1, !"air.arg_type_size", i32 4, !"air.arg_type_align_size", i32 4, !"air.arg_type_name", !"float*", !"air.arg_name", !"out"}
++"#;
++    let tmp = std::env::temp_dir().join(format!(
++        "metal2vulkan_null_texture_argument_spec_{}",
++        std::process::id()
++    ));
++    let _ = std::fs::create_dir_all(&tmp);
++    let spv = crate::translate_sanitized_native(ll, Stage::Kernel, &tmp)
++        .expect("a kernel guarding an optional texture must translate");
++    let asm = disassemble(&spv).expect("disassemble");
++    let spec_id = crate::reflect::NULL_TEXTURE_SPEC_ID_BASE + 7;
++    assert!(
++        asm.contains("OpSpecConstantFalse"),
++        "the predicate must be the argument's specialization constant, not a folded false:\n{asm}"
++    );
++    assert!(
++        asm.contains(&format!("SpecId {spec_id}")),
++        "the constant must carry the argument's own id {spec_id}:\n{asm}"
++    );
++    assert!(
++        asm.contains("OpBranchConditional"),
++        "the guard must survive as a branch the consumer decides:\n{asm}"
++    );
++    if std::process::Command::new("spirv-val")
++        .arg("--version")
++        .output()
++        .is_ok()
++    {
++        tools::spirv_val_bytes(&spv, &tmp).expect("spirv-val");
++    }
++    let _ = std::fs::remove_dir_all(tmp);
++}
++
+ #[test]
+ fn native_is_null_texture_of_get_null_texture_lowers_to_true() {
+     // `air.is_null_texture(%t)` where `%t` came from `air.get_null_texture_2d()` must lower to a
+diff --git a/src/passes/air_calls/dispatch_texture.rs b/src/passes/air_calls/dispatch_texture.rs
+index 0e30f8c..cf8c636 100644
+--- a/src/passes/air_calls/dispatch_texture.rs
++++ b/src/passes/air_calls/dispatch_texture.rs
+@@ -822,8 +822,15 @@ pub(in crate::passes) fn lower_image_size_query(
+     Ok(out)
+ }
+ 
+-/// `air.is_null_texture*`: yields a bool telling whether the texture operand is one of the
+-/// synthesized null-image values tracked on the pass Ctx.
++/// `air.is_null_texture*`: yields a bool telling whether the texture operand is the null texture.
++///
++/// Three answers. A value synthesized by `air.get_null_texture_*` is null: constant true. A value
++/// loaded straight from a `[[texture(n)]]` argument is whatever the consumer bound there, which
++/// this module cannot know: the argument's specialization constant, false unless the consumer
++/// says otherwise (`crate::reflect::NULL_TEXTURE_SPEC_ID_BASE`). Folding that case to a constant
++/// false made a shader that guards an optional texture with `is_null_texture` sample whatever the
++/// consumer substituted for the unbound argument. Anything else -- an argument-buffer texture, an
++/// array element, a value no single load produced -- keeps the constant false it always had.
+ pub(in crate::passes) fn lower_is_null_texture(
+     ctx: &mut Ctx,
+     name: &str,
+@@ -837,8 +844,13 @@ pub(in crate::passes) fn lower_is_null_texture(
+         .first()
+         .copied()
+         .ok_or_else(|| format!("{name} missing texture"))?;
+-    let is_null = ctx.null_image_values.contains(&img);
+-    let c = ctx.const_bool_of(rty, is_null);
++    let c = if ctx.null_image_values.contains(&img) {
++        ctx.const_bool_of(rty, true)
++    } else if let Some(metal_index) = texture_argument_index(ctx, img) {
++        ctx.null_texture_spec_constant(rty, metal_index)
++    } else {
++        ctx.const_bool_of(rty, false)
++    };
+     Ok(vec![Instruction::new(
+         Op::CopyObject,
+         Some(rty),
+@@ -847,6 +859,20 @@ pub(in crate::passes) fn lower_is_null_texture(
+     )])
+ }
+ 
++/// The Metal texture index of the `[[texture(n)]]` argument `img` was loaded from, when `img`
++/// resolves to one load of that argument's own descriptor variable.
++fn texture_argument_index(ctx: &Ctx, img: Word) -> Option<u32> {
++    let value = resolve_image_value(ctx, img);
++    let load = super::value_inst(ctx, value)?;
++    if load.class.opcode != Op::Load {
++        return None;
++    }
++    let Some(Operand::IdRef(pointer)) = load.operands.first() else {
++        return None;
++    };
++    ctx.texture_argument_vars.get(pointer).copied()
++}
++
+ /// `air.get_num_mip_levels_texture_<dim>(texture)` -> `OpImageQueryLevels` for sampled images.
+ /// SPIR-V forbids the query on storage images (Sampled=2), and the texture contract used by private capture harnesses
+ /// synthesizes one mip level for storage-write targets, so those yield the constant 1.
+diff --git a/src/passes/mod.rs b/src/passes/mod.rs
+index ccd7770..3edf26e 100644
+--- a/src/passes/mod.rs
++++ b/src/passes/mod.rs
+@@ -396,6 +396,14 @@ struct Ctx {
+     fragment_imageblock_coord_var: Option<Word>,
+     /// Fragment output rewrite created a `BuiltIn FragDepth` Output variable.
+     writes_frag_depth: bool,
++    /// Descriptor variable of each sampled `[[texture(n)]]` entry parameter -> `n`, recorded as
++    /// the interface binds it. `air.is_null_texture` of a value loaded straight from one of these
++    /// lowers to the argument's specialization constant
++    /// (see [`crate::reflect::NULL_TEXTURE_SPEC_ID_BASE`]).
++    texture_argument_vars: HashMap<Word, u32>,
++    /// Metal texture index -> the `OpSpecConstantFalse` answering `air.is_null_texture` for it,
++    /// so every query of one argument shares one constant and one `SpecId`.
++    null_texture_spec_constants: HashMap<u32, Word>,
+ }
+ 
+ impl Ctx {
+@@ -470,6 +478,8 @@ impl Ctx {
+             uses_fragment_imageblock: false,
+             fragment_imageblock_coord_var: None,
+             writes_frag_depth: false,
++            texture_argument_vars: HashMap::new(),
++            null_texture_spec_constants: HashMap::new(),
+         }
+     }
+ 
+@@ -1392,6 +1402,37 @@ impl Ctx {
+         self.get_or_create(op, Some(bool_ty), vec![])
+     }
+ 
++    /// The specialization constant answering `air.is_null_texture` for Metal texture argument
++    /// `metal_index`: an `OpSpecConstantFalse` decorated `SpecId NULL_TEXTURE_SPEC_ID_BASE +
++    /// metal_index`, created once per argument. False unspecialized, because an unspecialized
++    /// module is one whose consumer bound every declared texture; the consumer that leaves the
++    /// argument unbound sets it true, which is what the shader is told on Metal for a slot nothing
++    /// was bound to.
++    fn null_texture_spec_constant(&mut self, bool_ty: Word, metal_index: u32) -> Word {
++        if let Some(&id) = self.null_texture_spec_constants.get(&metal_index) {
++            return id;
++        }
++        let id = self.module.fresh_id();
++        self.new_globals.push(Instruction::new(
++            Op::SpecConstantFalse,
++            Some(bool_ty),
++            Some(id),
++            vec![],
++        ));
++        self.module.annotations.push(Instruction::new(
++            Op::Decorate,
++            None,
++            None,
++            vec![
++                Operand::IdRef(id),
++                Operand::Decoration(Decoration::SpecId),
++                Operand::LiteralBit32(crate::reflect::NULL_TEXTURE_SPEC_ID_BASE + metal_index),
++            ],
++        ));
++        self.null_texture_spec_constants.insert(metal_index, id);
++        id
++    }
++
+     /// Constant integer `v` of the given integer type `int_ty` (any width/signedness). Reuses an
+     /// existing matching `OpConstant`. Used to synthesize `0`/`1` of a value's own int type for
+     /// bool<->int convert lowerings.
+diff --git a/src/passes/stage_input/mod.rs b/src/passes/stage_input/mod.rs
+index 510a05f..f6d8834 100644
+--- a/src/passes/stage_input/mod.rs
++++ b/src/passes/stage_input/mod.rs
+@@ -827,6 +827,12 @@ pub(super) fn build_stage_input(
+             ));
+             let binding = required_resource_binding(*pid, resource_binding)?;
+             decorate_binding(&mut ctx.module, var, descriptor_layout.set, binding);
++            // The one fact `air.is_null_texture` of this argument needs: which Metal argument the
++            // descriptor stands for, so the predicate can be the argument's specialization
++            // constant rather than a folded false.
++            if let Some(metal_index) = metal_texture_index {
++                ctx.texture_argument_vars.insert(var, metal_index);
++            }
+             ctx.interface_buffer_var(var); // SPIR-V 1.4+ lists every resource on the entry interface.
+             bindings.push((
+                 *pid,
+diff --git a/src/reflect/mod.rs b/src/reflect/mod.rs
+index 2a7a6fb..d144f64 100644
+--- a/src/reflect/mod.rs
++++ b/src/reflect/mod.rs
+@@ -97,6 +97,16 @@ pub const KERNEL_DISPATCH_PUSH_CONSTANT_SIZE: u32 = 48;
+ /// region. Consumers must specialize all three values when creating each region pipeline.
+ pub const KERNEL_LOCAL_SIZE_SPEC_IDS: [u32; 3] = [0, 1, 2];
+ 
++/// Vulkan specialization-constant ids answering `air.is_null_texture` for a declared texture
++/// argument: the constant for `[[texture(n)]]` has id `NULL_TEXTURE_SPEC_ID_BASE + n` and is
++/// emitted as `OpSpecConstantFalse`, so an unspecialized module behaves as if every declared
++/// texture were bound. A consumer that leaves a declared texture argument unbound sets that id to
++/// `VK_TRUE` when it creates the pipeline, which is the answer the shader gets on Metal for an
++/// argument nothing was bound to. Only a texture loaded straight from its argument has such a
++/// constant; an argument-buffer or array texture keeps the constant false. Ids below the base are
++/// the dispatch-region ids; the range above it spans [`TEXTURE_ARGUMENT_COUNT`] indices.
++pub const NULL_TEXTURE_SPEC_ID_BASE: u32 = 16;
++
+ /// Default byte offset of the exact-thread dispatch-region payload.
+ pub const DEFAULT_KERNEL_DISPATCH_PUSH_CONSTANT_OFFSET: u32 = 0;
+ 

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "tomacco": {
+      "command": "tomaccoctl",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}

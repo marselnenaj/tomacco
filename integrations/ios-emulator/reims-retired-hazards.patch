@@ -1,0 +1,133 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-core/src/depend.rs b/reims-vgpu/crates/reims-vgpu-core/src/depend.rs
+--- a/reims-vgpu/crates/reims-vgpu-core/src/depend.rs
++++ b/reims-vgpu/crates/reims-vgpu-core/src/depend.rs
+@@ -75,6 +75,10 @@
+ #[derive(Debug, Default)]
+ pub struct DependencyGraph {
+     entries: Vec<Entry>,
++    retired_entries: usize,
++    // Reclaiming storage must not erase the ingress-order contract, including
++    // an admission with no accesses or a retired tail removed by compaction.
++    last_admitted: Option<IngressOrdinal>,
+     by_backing: HashMap<BackingId, Vec<usize>>,
+     /// Keyed by the heap, not by `HeapId`: the membership generation says
+     /// which set a record was written against and never which memory exists, so
+@@ -113,7 +117,7 @@
+     /// Live accesses, for a test or a report. Not a bound anything enforces.
+     #[must_use]
+     pub fn live_accesses(&self) -> usize {
+-        self.entries.iter().filter(|e| e.live).count()
++        self.entries.len() - self.retired_entries
+     }
+ 
+     /// Admit one transaction's accesses and return the ordinals it must wait
+@@ -136,11 +140,19 @@
+         accesses: &[AccessIntent],
+     ) -> Vec<IngressOrdinal> {
+         assert!(
+-            self.entries
+-                .last()
+-                .is_none_or(|last| ordinal > last.ordinal),
++            self.last_admitted.is_none_or(|last| ordinal > last),
+             "transactions are admitted in ingress order; {ordinal:?} arrived after a later one"
+         );
++        self.last_admitted = Some(ordinal);
++        // Runtime callers retire completed transactions but need not remember
++        // a separate maintenance call. Otherwise every later DomainOnly
++        // access scans the entire session history, including dead entries.
++        // Rebuild only after enough retirements amortize it; no live access
++        // is evicted. The small floor avoids rebuilding short steady queues
++        // on every admission, and the ratio bounds work by the live set.
++        if self.retired_entries >= 256 && self.retired_entries >= self.live_accesses() {
++            self.compact();
++        }
+         // Taken out so the gathering below can borrow the indexes; put back
+         // before returning, so the next admission finds the capacity this one
+         // grew. Both are cleared here rather than at the end, because a
+@@ -260,10 +272,12 @@
+     /// creating edges when the work that declared it has finished, and a caller
+     /// that retires early publishes a hazard it still owes.
+     pub fn retire(&mut self, ordinal: IngressOrdinal) {
+-        for &idx in self.by_ordinal.get(&ordinal).into_iter().flatten() {
+-            self.entries[idx].live = false;
+-        }
+-        self.by_ordinal.remove(&ordinal);
++        if let Some(indices) = self.by_ordinal.remove(&ordinal) {
++            self.retired_entries += indices.len();
++            for idx in indices {
++                self.entries[idx].live = false;
++            }
++        }
+     }
+ 
+     /// Drop retired entries and rebuild the indexes.
+@@ -274,6 +288,7 @@
+     pub fn compact(&mut self) {
+         let live: Vec<_> = self.entries.iter().copied().filter(|e| e.live).collect();
+         self.entries.clear();
++        self.retired_entries = 0;
+         self.by_backing.clear();
+         self.by_heap.clear();
+         self.by_domain.clear();
+@@ -505,6 +520,61 @@
+         assert_eq!(g.live_accesses(), 1);
+         g.compact();
+         assert_eq!(g.live_accesses(), 1, "only the live access survives");
++    }
++
++    /// A long session must cost the live workload plus bounded maintenance,
++    /// even if its caller never explicitly compacts. Keep one old hazard live
++    /// across every rebuild while a moving window completes out of age order.
++    #[test]
++    fn completed_history_does_not_accumulate_in_admission_scans() {
++        let mut graph = DependencyGraph::new();
++        graph.admit(
++            ord(1),
++            &[intent(AccessKey::Whole(res(1)), AccessMode::Write)],
++        );
++        for n in 2..4098 {
++            if n >= 6 {
++                graph.retire(ord(n - 4));
++                graph.retire(ord(n - 4)); // repeated completion changes no counts
++            }
++            let before = graph.census().domain_only_comparisons;
++            let actual = graph.admit(ord(n), &[intent(AccessKey::DomainOnly, AccessMode::Write)]);
++            let expected: Vec<_> = std::iter::once(ord(1))
++                .chain((2.max(n.saturating_sub(3))..n).map(ord))
++                .collect();
++            assert_eq!(
++                actual, expected,
++                "retired history cannot remove the old live hazard"
++            );
++            assert!(graph.entries.len() <= 260, "history grew at admission {n}");
++            assert!(
++                graph.census().domain_only_comparisons - before <= 520,
++                "completed work was rescanned without bound at admission {n}"
++            );
++            assert_eq!(graph.live_accesses(), (n as usize).min(5));
++        }
++        let census = graph.census();
++        graph.compact();
++        assert_eq!(graph.census(), census);
++        assert_eq!(graph.entries.len(), graph.live_accesses());
++    }
++
++    #[test]
++    #[should_panic(expected = "admitted in ingress order")]
++    fn compaction_cannot_erase_the_last_admitted_ordinal() {
++        let mut graph = DependencyGraph::new();
++        graph.admit(ord(5), &[intent(AccessKey::DomainOnly, AccessMode::Write)]);
++        graph.retire(ord(5));
++        graph.compact();
++        graph.admit(ord(4), &[intent(AccessKey::DomainOnly, AccessMode::Read)]);
++    }
++
++    #[test]
++    #[should_panic(expected = "admitted in ingress order")]
++    fn an_empty_admission_still_advances_the_ordinal() {
++        let mut graph = DependencyGraph::new();
++        graph.admit(ord(5), &[]);
++        graph.admit(ord(4), &[intent(AccessKey::DomainOnly, AccessMode::Read)]);
+     }
+ 
+     /// Compaction is bookkeeping. It must not change an answer, and it must not

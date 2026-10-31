@@ -1,0 +1,235 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+@@ -2491,7 +2491,7 @@
+         }
+         let mut ran = false;
+         for ingress in state.parked.ready_in_order() {
+-            if declined_by_the_device(state, ingress) {
++            if declined_by_the_device(state, host, ingress) {
+                 continue;
+             }
+             let Some(work) = state
+@@ -2528,10 +2528,16 @@
+ /// keeps its place and is offered again — `ready_in_order` is a list for
+ /// exactly this reason — so declining one costs the positions behind it
+ /// nothing, which is the head-of-line stall the switch removes.
+-fn declined_by_the_device(
++fn declined_by_the_device<H: HostMemory + HostOps>(
+     state: &mut DeviceState,
++    host: &H,
+     ingress: reims_vgpu_core::identity::IngressOrdinal,
+ ) -> bool {
++    if declined_by_translation(state, ingress, |state, submission, resolved| {
++        crate::runtime::exec::preflight_submission(state, host, submission, resolved, &mut 0)
++    }) {
++        return true;
++    }
+     let Some(opcode) = state.parked.opcode(ingress) else {
+         return false;
+     };
+@@ -2550,6 +2556,46 @@
+     if let Some(domain) = state.parked.domain_of(ingress) {
+         note_present_backpressure_hold(state, domain, ingress);
+         state.pending.child_mask |= 1u32.checked_shl(domain).unwrap_or(0);
++    }
++    true
++}
++
++/// The model releases ordering; the device must still own a usable translation.
++/// A retired pipeline name is terminal in the model but may remain bound by an
++/// already recorded command buffer. Its lease cannot become Ready again, so
++/// the waiting-pipeline pump cannot hold that command for an async translation.
++/// Keep the complete, unexecuted position in ParkedStore until its own plan
++/// finishes. Never revive the name, consume the command or publish completion
++/// while that plan is pending.
++fn declined_by_translation(
++    state: &mut DeviceState,
++    ingress: reims_vgpu_core::identity::IngressOrdinal,
++    plan: impl FnOnce(
++        &DeviceState,
++        &crate::runtime::exec::ExecSubmission,
++        &reims_vgpu_core::exec::ExecWork,
++    ) -> Vec<u32>,
++) -> bool {
++    let Some((submission, resolved)) = state.parked.planning(ingress) else {
++        return false;
++    };
++    // Live Ready leases already carry the admission/pump's translation promise.
++    // Keep their warm path free of another AIR load and content hash.
++    if resolved
++        .pipeline_leases
++        .iter()
++        .all(|&lease| state.pipeline_is_ready(lease))
++        || plan(state, submission, resolved).is_empty()
++    {
++        return false;
++    }
++    note_store_route("released_translation_pending");
++    // This position is in ready_in_order(), not waiting_in_order(). The pump's
++    // final waiting-position scan therefore cannot arrange its next drain.
++    match state.parked.domain_of(ingress) {
++        Some(0) => state.pending.main_drain = true,
++        Some(domain) => state.pending.child_mask |= 1u32.checked_shl(domain).unwrap_or(0),
++        None => {}
+     }
+     true
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
+@@ -26,6 +26,154 @@
+ /// cannot pin an offset the decoder does not read.
+ const TAHOE: DeviceInfoForm = DeviceInfoForm::WithKeyLimit;
+ const MONTEREY: DeviceInfoForm = DeviceInfoForm::WithoutKeyLimit;
++
++mod released_translation_gate {
++    use super::*;
++    use crate::runtime::exec::ExecSubmission;
++    use crate::runtime::parked::{ParkedWork, Release};
++    use reims_vgpu_core::exec::ExecWork;
++    use reims_vgpu_core::identity::{
++        DeviceEpoch, IngressOrdinal, ObjectListRef, ResourceId, SlotGeneration,
++    };
++    use reims_vgpu_core::pipeline::PipelineState;
++
++    const INGRESS: IngressOrdinal = IngressOrdinal(19);
++    const PIPELINE: ResourceId = ResourceId {
++        slot: ObjectListRef(14),
++        generation: SlotGeneration(3),
++    };
++
++    fn fixture(domain: u32, retired: bool) -> DeviceState {
++        let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++        assert!(state.declare_pipeline(PIPELINE));
++        if retired {
++            assert!(state.retire_pipeline(PIPELINE).took);
++        } else {
++            state.advance_pipeline(PIPELINE, PipelineState::Translating);
++            state.advance_pipeline(PIPELINE, PipelineState::Compiling);
++            assert!(state.ready_pipeline(PIPELINE));
++        }
++        let packet = Packet {
++            opcode: 0x37,
++            stamp_waits: vec![],
++            total_size: 0,
++            completion_stamp: 27,
++            payload: vec![1, 2, 3],
++            next_head: 0,
++        };
++        let submission = ExecSubmission::stated(8, vec![vec![4, 5, 6]]);
++        let resolved = ExecWork {
++            pipeline_leases: vec![PIPELINE],
++            ..ExecWork::default()
++        };
++        state.parked.park(
++            INGRESS,
++            ParkedWork::with_submission(domain, DeviceEpoch::FIRST, packet, submission, resolved),
++        );
++        assert!(state.parked.mark_ready(INGRESS));
++        state
++    }
++
++    #[test]
++    fn retired_pipeline_waits_without_consuming_or_reviving_and_retries_its_own_domain() {
++        for domain in [0, 3] {
++            let mut state = fixture(domain, true);
++            let bytes = state.parked.retained_bytes();
++            for _ in 0..2 {
++                state.pending.main_drain = false;
++                state.pending.child_mask = 0;
++                assert!(declined_by_translation(
++                    &mut state,
++                    INGRESS,
++                    |_, submission, work| {
++                        assert_eq!(submission.task_id(), 8);
++                        assert_eq!(submission.streams(), &[vec![4, 5, 6]]);
++                        assert_eq!(work.pipeline_leases, [PIPELINE]);
++                        vec![PIPELINE.slot.0]
++                    }
++                ));
++                assert_eq!(state.parked.retained_bytes(), bytes);
++                assert_eq!(state.parked.ready_in_order(), [INGRESS]);
++                assert!(state.parked.waiting_in_order().is_empty());
++                assert_eq!(state.pipeline_state(PIPELINE), Some("retired"));
++                assert_eq!(state.pending.main_drain, domain == 0);
++                assert_eq!(
++                    state.pending.child_mask,
++                    if domain == 0 { 0 } else { 1 << domain }
++                );
++            }
++            assert!(!declined_by_translation(
++                &mut state,
++                INGRESS,
++                |_, _, _| vec![]
++            ));
++            assert_eq!(state.pipeline_state(PIPELINE), Some("retired"));
++            let work = state
++                .parked
++                .release(INGRESS, Release::Ready)
++                .expect("completed plan releases the retained command once");
++            assert_eq!(work.packet().payload, [1, 2, 3]);
++            assert_eq!(work.packet().completion_stamp, 27);
++            assert!(state.parked.release(INGRESS, Release::Ready).is_none());
++            assert!(state.parked.is_empty());
++        }
++    }
++
++    #[test]
++    fn ready_live_pipeline_keeps_the_warm_path_free_of_another_plan() {
++        let mut state = fixture(3, false);
++        assert!(!declined_by_translation(&mut state, INGRESS, |_, _, _| {
++            panic!("the live Ready lease already promises a completed translation")
++        }));
++        assert!(
++            state.parked.is_parked(INGRESS),
++            "the gate itself never executes"
++        );
++    }
++
++    #[test]
++    fn a_ready_replacement_in_the_same_slot_does_not_ready_the_retained_generation() {
++        let mut state = fixture(3, true);
++        let replacement = ResourceId {
++            generation: SlotGeneration(4),
++            ..PIPELINE
++        };
++        assert!(state.declare_pipeline(replacement));
++        state.advance_pipeline(replacement, PipelineState::Translating);
++        state.advance_pipeline(replacement, PipelineState::Compiling);
++        assert!(state.ready_pipeline(replacement));
++        assert!(declined_by_translation(
++            &mut state,
++            INGRESS,
++            |_, _, resolved| {
++                assert_eq!(resolved.pipeline_leases, [PIPELINE]);
++                vec![PIPELINE.slot.0]
++            }
++        ));
++        assert!(state.pipeline_is_ready(replacement));
++        assert_eq!(state.pipeline_state(PIPELINE), Some("retired"));
++    }
++
++    #[test]
++    fn terminal_translation_failure_or_missing_inputs_do_not_wait_forever() {
++        let mut state = fixture(3, true);
++        assert!(!declined_by_translation(
++            &mut state,
++            INGRESS,
++            |_, _, _| vec![]
++        ));
++        assert!(!state.pending.main_drain);
++        assert_eq!(state.pending.child_mask, 0);
++        // Preflight reports only asynchronously pending inputs. Missing AIR or
++        // a completed translation failure proceeds to the executor's typed
++        // refusal and normal completion rather than parking indefinitely.
++        assert!(!declined_by_translation(
++            &mut state,
++            IngressOrdinal(20),
++            |_, _, _| { panic!("an unheld position has no planning inputs") }
++        ));
++    }
++}
+ 
+ /// I2's carve-out, asserted rather than trusted: a partial packet is the
+ /// normal state of a ring whose producer is mid-write, so it must not reach

@@ -1,0 +1,1002 @@
+reims-vgpu: the guest linear memo skips its re-read where both write witnesses vouch.
+
+`load_linear_guest_memoized` served a guest-CPU texture's converted copy only
+after re-reading the texture's whole span out of guest memory and comparing it
+byte for byte. A Home-screen swipe did that ~420-
+1730 times a second over 1.1-2.9 GiB/s, every bind a hit: `sampled_resolve_split`
+memo_read_us + memo_cmp_us 90-280 ms of a 105-320 ms `resolve_us`.
+Now `runtime::linear_memo_witness` keeps, per memo span (bounded at 64), a guest
+write tracking token over the span's pages (HostOps::track_guest_writes, the
+reims-vgpu-dirty bitmap harvested at every work-handing register write) and the
+`host_writes` epoch, both taken after the writeback-debt settle and before the
+read that confirms the memo. A later bind is served from the memo without the
+read only when: the page walk is complete and equals the watched list, the
+span length and the memo's content generation are unchanged, the token's
+generation is readable and unchanged, `host_writes.wrote_any_since` is Quiet
+for those pages, and no submitted GPU write can still reach them. Every other
+answer reads and compares exactly as before (a token is armed only for a span
+the memo already holds). One vouched bind in 64 per span is read and compared
+anyway; a difference fails `lin_memo_witness_unsound` and disarms the span.
+`REIMS_VGPU_LINEAR_MEMO_WITNESS=off` restores the read on every bind. Routes:
+lin_memo_vouched(_kb), lmw_* (refusal reasons, armed, audit_ok/unsound, evict);
+`sampled_resolve_split` gains memo_witness_us/_n. Requires
+reims-sampled-resolve-split.patch.
+Tests: runtime::linear_memo_witness::tests (9: vouch, guest store in/out of the
+span, recorded device write and unnamed write, outstanding GPU write, moved
+page list/span/memo, arming window and no dirty bitmap, a store racing the
+read, the audit stride and a failed audit, the bound and token release);
+draw::tests::guest_linear_memo_reuses_arc_and_observes_guest_writes (third
+load vouched; a guest store and a device write each observed on the next
+load); draw::tests::guest_linear_memo_reads_every_load_where_guest_writes_are_unobservable.
+
+diff --git i/reims-vgpu/crates/reims-vgpu-config/src/lib.rs w/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+index 5a36df3..557c7d1 100644
+--- i/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ w/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -596,6 +596,18 @@ pub const SAMPLED_IDENTITY: &str = "REIMS_VGPU_SAMPLED_IDENTITY";
+ /// through the alarm. Use it for a soundness sweep, never for a timing.
+ pub const GATHER_AUDIT_ALL: &str = "REIMS_VGPU_GATHER_AUDIT_ALL";
+ 
++/// `off` narrows the guest linear memo back to re-reading and comparing a
++/// sampled texture's whole span on every bind.
++///
++/// By default a bind whose span both write witnesses vouch for — no guest store
++/// harvested into its pages, no write this device recorded into them, nothing
++/// submitted that could still land there, since the read that last confirmed
++/// the memo — is served from the memo without that read
++/// (`runtime::linear_memo_witness`). The two arms serve the same bytes whenever
++/// the witnesses are sound, which is what `lmw_audit_unsound` checks; this is
++/// the arm to compare against when it fires, or when a texture looks stale.
++pub const LINEAR_MEMO_WITNESS: &str = "REIMS_VGPU_LINEAR_MEMO_WITNESS";
++
+ /// `off` narrows a draw chain's pipeline resolution back to the full walk —
+ /// object list, descriptor, decode, MTLB read, AIR carve and content hash, for
+ /// the pipeline and both of its functions, on every draw.
+diff --git i/reims-vgpu/crates/reims-vgpu/src/model/state.rs w/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+index d12ac8a..17e571f 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/model/state.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+@@ -3248,6 +3248,10 @@ pub struct DeviceState {
+     /// against the bytes themselves. See
+     /// [`crate::runtime::gather_witness`] — it selects no behaviour.
+     pub gather_witness: crate::runtime::gather_witness::GatherWitness,
++    /// Which [`Self::guest_linear_memo`] spans both write witnesses vouch for,
++    /// so a bind may skip re-reading them. See
++    /// [`crate::runtime::linear_memo_witness`].
++    pub linear_memo_witness: crate::runtime::linear_memo_witness::LinearMemoWitness,
+     /// The GVA render targets a Store has stamped, and what the two write
+     /// witnesses said at the time. The GVA half of the mapper-ref-texture witness that
+     /// licenses the attachment LOAD elision — see
+@@ -3608,6 +3612,7 @@ impl DeviceState {
+             gva_resident_backing: std::collections::BTreeMap::new(),
+             guest_linear_memo: LruBytesMemo::new(GUEST_LINEAR_MEMO_BYTE_CAP),
+             gather_witness: crate::runtime::gather_witness::GatherWitness::default(),
++            linear_memo_witness: Default::default(),
+             bound_buffers: crate::runtime::bound_buffers::BoundBuffers::default(),
+             buffer_write_gen: crate::runtime::buffer_write_gen::BufferWriteGens::default(),
+             sampled_content_gen: 0,
+@@ -3681,6 +3686,7 @@ impl DeviceState {
+         // them armed on the host forever.
+         tokens.extend(self.gather_witness.take_tokens());
+         tokens.extend(self.gva_store_witness.take_tokens());
++        tokens.extend(self.linear_memo_witness.take_tokens());
+         // Back onto the retired list rather than out through the return value:
+         // the caller's contract is "invalidate backend aliases, then release
+         // views", and a token release is neither. `flush_retired_views` drains
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+index 55c127a..22e1473 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -4572,15 +4572,153 @@ fn guest_linear_memo_reuses_arc_and_observes_guest_writes() {
+     );
+     assert_eq!(id2.expect("identity").generation, id1.generation);
+ 
+-    // A direct guest write must be observed on the very next load.
++    // The second load read the span and confirmed the memo under a live
++    // write-witness baseline, so the third may serve it without reading.
++    let vouched = crate::runtime::drain::census::store_route_count("lin_memo_vouched");
++    let (_, _, rgba_v, id_v, _) =
++        load_linear_from_host_caches(&mut state, &mut host, 1, tex_ref, &td)
++            .expect("vouched load must succeed");
++    assert!(std::sync::Arc::ptr_eq(&rgba1, &rgba_v));
++    assert_eq!(id_v.expect("identity").generation, id1.generation);
++    assert!(
++        crate::runtime::drain::census::store_route_count("lin_memo_vouched") > vouched,
++        "a span neither witness saw written is served without a read"
++    );
++
++    // A guest write must be observed on the very next load. The hypervisor
++    // sees a guest store through its dirty bitmap, which is what
++    // `guest_wrote_page` models; the bytes land in the same pages.
++    let pages = crate::runtime::gva_mem::task_gva_page_gpas(
++        &host,
++        &state.tasks,
++        1,
++        texel_gva,
++        32,
++        state.page_shift,
++    );
++    assert_eq!(pages.len(), 1, "the 4x2 texture sits in one page");
+     let bgra_new = [90u8, 60, 30, 255].repeat(8);
+     write_task_gva_arm64e(&mut host, &state.tasks[1], texel_gva, &bgra_new);
++    host.guest_wrote_page(pages[0]);
+     let (_, _, rgba3, id3, _) =
+         load_linear_from_host_caches(&mut state, &mut host, 1, tex_ref, &td)
+             .expect("post-write load must succeed");
+     assert!(!std::sync::Arc::ptr_eq(&rgba1, &rgba3));
+     assert_eq!(&rgba3[..4], &[90, 60, 30, 255], "native BGRA8, unswizzled");
+-    assert_ne!(id3.expect("identity").generation, id1.generation);
++    let id3 = id3.expect("identity");
++    assert_ne!(id3.generation, id1.generation);
++
++    // Re-confirmed by the next read, then vouched again.
++    let (_, _, rgba4, _, _) =
++        load_linear_from_host_caches(&mut state, &mut host, 1, tex_ref, &td).expect("reload");
++    assert!(std::sync::Arc::ptr_eq(&rgba3, &rgba4));
++    let (_, _, rgba5, _, _) =
++        load_linear_from_host_caches(&mut state, &mut host, 1, tex_ref, &td).expect("vouched");
++    assert!(std::sync::Arc::ptr_eq(&rgba3, &rgba5));
++
++    // A write this device makes into the pages is the other half: the
++    // hypervisor does not see it, the page record does.
++    let bgra_dev = [11u8, 22, 33, 255].repeat(8);
++    write_task_gva_arm64e(&mut host, &state.tasks[1], texel_gva, &bgra_dev);
++    state.note_host_wrote_pages(
++        crate::runtime::host_writes::WriteRail::listed("test"),
++        pages.clone(),
++    );
++    let (_, _, rgba6, id6, _) =
++        load_linear_from_host_caches(&mut state, &mut host, 1, tex_ref, &td)
++            .expect("post-device-write load must succeed");
++    assert_eq!(
++        &rgba6[..4],
++        &[11, 22, 33, 255],
++        "a device write is observed"
++    );
++    assert_ne!(id6.expect("identity").generation, id3.generation);
++}
++
++/// With no dirty bitmap the witness can vouch for nothing, so every load reads
++/// and compares exactly as before it existed: a store the host cannot report
++/// is still observed by the compare.
++#[cfg(feature = "backend-vulkan")]
++#[test]
++fn guest_linear_memo_reads_every_load_where_guest_writes_are_unobservable() {
++    use crate::protocol::endian::{st16, st32, st64};
++    use crate::protocol::gva::{DIRECTORY_DEPTH, DIRECTORY_ROOT_PFN};
++    use crate::protocol::pixel_format::MTL_FORMAT_BGRA8_UNORM;
++    use crate::runtime::decode::resource::{
++        list_object_entry_offset, OBJECT_LIST_ENTRY_LEN, TEXTURE_DESC_BASE_LEN,
++        TEXTURE_DESC_MIPMAP_LEVEL_COUNT, TEXTURE_DESC_PIXEL_FORMAT, TEXTURE_DESC_ROW_STRIDE,
++        TEXTURE_DESC_USED_SIZE, TEXTURE_DESC_WIDTH,
++    };
++
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++    let mut host = FakeHost::new();
++    host.guest_writes_unobservable = true;
++    let dir_pfn = 2u32;
++    let root_pfn = 3u32;
++    let dir_gpa = (dir_pfn as u64) << PAGE_SHIFT_ARM64E;
++    let root_gpa = (root_pfn as u64) << PAGE_SHIFT_ARM64E;
++    host.map_range(dir_gpa, 0x20, 0);
++    host.map_range(root_gpa, 0x4000, 0);
++    let mut d = [0u8; 8];
++    st32(&mut d[DIRECTORY_ROOT_PFN as usize..], root_pfn);
++    st32(&mut d[DIRECTORY_DEPTH as usize..], 1);
++    assert!(host.write_gpa(dir_gpa, &d).is_ok());
++    for i in 0..4u32 {
++        let pfn = 4 + i;
++        host.map_range((pfn as u64) << PAGE_SHIFT_ARM64E, 0x4000, 0);
++        let mut pte = [0u8; 4];
++        st32(&mut pte, pfn);
++        assert!(host.write_gpa(root_gpa + (i as u64) * 4, &pte).is_ok());
++    }
++    state.define_task(1, 0x1000, dir_pfn);
++    assert!(state.set_object_list(1, 0, 32));
++    let tex_ref = 6u32;
++    let body = TEXTURE_DESC_BASE_LEN;
++    let mut b = vec![0u8; body];
++    st64(&mut b[0..], 0x1000);
++    st32(&mut b[8..], 1);
++    st16(&mut b[TEXTURE_DESC_MIPMAP_LEVEL_COUNT..], 1);
++    st32(&mut b[TEXTURE_DESC_USED_SIZE..], 16 * 2);
++    st32(&mut b[TEXTURE_DESC_ROW_STRIDE..], 16);
++    st32(&mut b[TEXTURE_DESC_WIDTH..], 4);
++    st32(&mut b[TEXTURE_DESC_WIDTH + 4..], 2);
++    st16(&mut b[TEXTURE_DESC_PIXEL_FORMAT..], MTL_FORMAT_BGRA8_UNORM);
++    let desc_gva = 0x200u64;
++    write_task_gva_arm64e(&mut host, &state.tasks[1], desc_gva, &b);
++    let off = list_object_entry_offset(tex_ref, 32).unwrap();
++    let mut le = [0u8; OBJECT_LIST_ENTRY_LEN];
++    st32(
++        &mut le[0..],
++        (OBJECT_TYPE_TEXTURE as u32) | ((body as u32) << 8),
++    );
++    le[4..12].copy_from_slice(&desc_gva.to_le_bytes());
++    write_task_gva_arm64e(&mut host, &state.tasks[1], off, &le);
++    let texel_gva = 1u64 << PAGE_SHIFT_ARM64E;
++    write_task_gva_arm64e(
++        &mut host,
++        &state.tasks[1],
++        texel_gva,
++        &[7u8, 5, 3, 255].repeat(8),
++    );
++    let le_entry = objects::lookup_list_entry(&state, &host, 1, tex_ref).expect("entry");
++    let td = decode_texture_descriptor(
++        &objects::read_descriptor(&state, &host, 1, &le_entry).expect("descriptor must read"),
++    )
++    .expect("descriptor must decode");
++    for _ in 0..4 {
++        load_linear_from_host_caches(&mut state, &mut host, 1, tex_ref, &td).expect("load");
++    }
++    // A store nothing reports: only the compare can see it, and it must.
++    write_task_gva_arm64e(
++        &mut host,
++        &state.tasks[1],
++        texel_gva,
++        &[1u8, 2, 3, 255].repeat(8),
++    );
++    let (_, _, rgba, _, _) =
++        load_linear_from_host_caches(&mut state, &mut host, 1, tex_ref, &td).expect("load");
++    assert_eq!(&rgba[..4], &[1, 2, 3, 255]);
++    assert_eq!(state.linear_memo_witness.take_tokens(), Vec::<u64>::new());
+ }
+ 
+ /// Padded-stride BGRA8 (the Safari-scroll former `lin_guest_fb` hot path)
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+index cd512fa..0c2b9bf 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -6142,6 +6142,41 @@ fn native_uploads_asking_host() -> NativeUploads {
+ /// That is measured, not asserted, and it is why the surviving Finder icon
+ /// class is not a wrong-bytes defect on this rung: the bytes served are the
+ /// bytes at the address the guest named, checked afresh each time.
++/// The span's guest pages for the memo's write witness, or `None` when the
++/// witness is off or the walk came up short — a page the walk could not resolve
++/// is one no token can watch, so the bind reads.
++fn memo_witness_pages<M: HostMemory>(
++    state: &DeviceState,
++    host: &M,
++    task_id: u32,
++    gva: u64,
++    span: u64,
++) -> Option<Vec<u64>> {
++    if !crate::runtime::linear_memo_witness::enabled() {
++        return None;
++    }
++    let gpas =
++        gva_mem::task_gva_page_gpas(host, &state.tasks, task_id, gva, span, state.page_shift);
++    let wanted = reims_vgpu_paging::span::pages_spanned(gva, span, state.page_size());
++    if gpas.len() as u64 != wanted {
++        crate::runtime::drain::note_store_route("lmw_short_walk");
++        return None;
++    }
++    Some(gpas)
++}
++
++/// No GPU write this device has submitted and not yet run can land in `pages`
++/// — the third account a CPU reader of guest pages needs, after the settle.
++fn memo_pending_disjoint(pages: &[u64]) -> bool {
++    use crate::backend::{Backend as _, GuestWriteReach};
++    let backend = crate::backend::selected();
++    !backend.guest_writes_outstanding()
++        || matches!(
++            backend.guest_writes_reaching(pages),
++            GuestWriteReach::Disjoint
++        )
++}
++
+ #[allow(clippy::too_many_arguments)]
+ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+@@ -6226,6 +6261,57 @@ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+             crate::runtime::render_writeback::SettleSite::LinearMemoRead,
+         );
+     }
++    let key = (task_id, gva, w, h, planes, sample_fmt);
++    // The read below is how this memo learns the guest left the texture alone,
++    // and on a Home-screen swipe it re-read 1.1-2.9 GiB/s of unchanged texels.
++    // Where both write witnesses vouch for the span since the last read that
++    // confirmed the memo, the memo is served without it; everything they cannot
++    // vouch for reads exactly as before. See `runtime::linear_memo_witness`.
++    let mut audit = false;
++    let mut baseline = None;
++    if let Some(gpas) = memo_witness_pages(state, host, task_id, gva, span) {
++        use crate::runtime::linear_memo_witness as witness;
++        let witness_span = crate::runtime::resolve_split::Span::open(
++            crate::runtime::resolve_split::Part::MemoWitness,
++        );
++        let memo_generation = state
++            .guest_linear_memo
++            .peek(&key)
++            .filter(|m| m.native.len() == native_len)
++            .map(|m| m.generation);
++        match witness::ask(
++            state,
++            host,
++            key,
++            &gpas,
++            span,
++            memo_generation,
++            memo_pending_disjoint,
++        ) {
++            witness::Verdict::Vouched => {
++                if let Some(m) = state.guest_linear_memo.get_touch(&key) {
++                    crate::runtime::drain::note_store_route("lin_memo_vouched");
++                    crate::runtime::drain::note_store_route_n("lin_memo_vouched_kb", span / 1024);
++                    return Some((
++                        m.rgba.clone(),
++                        Some(LinearSampleIdentity {
++                            key: gva,
++                            generation: m.generation,
++                        }),
++                        m.byte_format,
++                    ));
++                }
++            }
++            witness::Verdict::AuditDue => audit = true,
++            witness::Verdict::Refused(why) => crate::runtime::drain::note_store_route(why.route()),
++        }
++        // Only a span the memo already holds is worth a token: the read below
++        // is what confirms it, and a texture bound once is never asked again.
++        if memo_generation.is_some() {
++            baseline = witness::baseline(state, host, key, &gpas, span);
++        }
++        drop(witness_span);
++    }
+     let mut read_span =
+         crate::runtime::resolve_split::Span::open(crate::runtime::resolve_split::Part::MemoRead);
+     let mut scratch = std::mem::take(&mut state.guest_linear_scratch);
+@@ -6244,7 +6330,6 @@ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+         state.guest_linear_scratch = scratch;
+         return None;
+     }
+-    let key = (task_id, gva, w, h, planes, sample_fmt);
+     // Three-way, because "the memo did not answer" has two causes that want
+     // opposite fixes and a hit/miss pair cannot tell them apart.
+     //
+@@ -6293,7 +6378,15 @@ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+         }
+     };
+     drop(compare_span);
++    if audit {
++        crate::runtime::linear_memo_witness::note_audit(state, key, hit.is_some());
++    }
+     if let Some((rgba, generation, fmt)) = hit {
++        // The read just confirmed these bytes under `baseline`; later binds may
++        // vouch for them until either witness moves.
++        if let Some(baseline) = baseline {
++            crate::runtime::linear_memo_witness::arm(state, key, baseline, generation);
++        }
+         state.guest_linear_scratch = scratch;
+         return Some((
+             rgba,
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/linear_memo_witness.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/linear_memo_witness.rs
+new file mode 100644
+index 0000000..fe00f33
+--- /dev/null
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/linear_memo_witness.rs
+@@ -0,0 +1,564 @@
++//! When the guest linear memo may serve a bind without re-reading the span.
++//!
++//! # What it removes
++//!
++//! `load_linear_guest_memoized` keeps a converted copy of every guest-CPU
++//! produced linear texture (icons, glyph atlases, the wallpaper) and, before
++//! serving it, re-reads the texture's whole span out of guest memory and
++//! compares it byte for byte with the copy. That re-read is how it knew the
++//! guest had not written the texture, and on a Home-screen swipe it was the
++//! largest cost in the drain: ~420 binds a second re-reading 1.1-2.9 GiB/s,
++//! `memo_read_us` + `memo_cmp_us` 90-280 ms of a 105-320 ms `resolve_us`
++//! (`sampled_resolve_split`), every one of them a hit.
++//!
++//! # The witness, and why it is the same one the device already trusts
++//!
++//! A bind may skip the read only when two independent accounts both say no
++//! byte of the span can have moved since the read that filled or last confirmed
++//! the memo — exactly the two halves [`crate::runtime::gather_witness`] and
++//! [`crate::runtime::gva_store_witness`] use for their own host-side copies:
++//!
++//! - **the guest CPU**: a tracking token over the span's guest pages
++//!   ([`HostOps::track_guest_writes`], the hypervisor dirty bitmap in
++//!   `reims-vgpu-dirty.c`), whose generation is harvested at every register
++//!   write that hands the device work — so every guest store ordered before a
++//!   submission is observed before that submission's draws run;
++//! - **this device**: [`crate::runtime::host_writes::HostWrites`], the
++//!   page-exact record every writer of guest pages notes into, asked with no
++//!   horizon; plus no submitted-but-unexecuted GPU write reaching the pages.
++//!
++//! Both baselines are taken **before** the read they vouch for, after the
++//! span's writeback debt is settled, so a write that races the read can only
++//! make the next bind refuse. The page list is part of the entry, so a guest
++//! that remaps the span to other pages is a re-point, not a stale answer. The
++//! memo's own content generation is part of it too, so a memo evicted or
++//! refilled in between cannot be served under an older vouch.
++//!
++//! # Everything undecidable reads
++//!
++//! No token (host without a dirty bitmap), a token still in its arming window,
++//! an unreadable generation, a short page walk, a moved page list, a moved
++//! memo, any guest store, any host write, any outstanding GPU write: each one
++//! refuses, and a refusal is the old read + compare, never a wrong frame.
++//!
++//! # The standing alarm
++//!
++//! One vouched bind in [`AUDIT_STRIDE`] per entry reads and compares anyway.
++//! Bytes that moved under a vouch fail through the always-on log
++//! (`lin_memo_witness_unsound`) and drop the entry. `REIMS_VGPU_LINEAR_MEMO_WITNESS=off`
++//! restores the read on every bind.
++
++use std::collections::HashMap;
++
++use crate::model::DeviceState;
++use crate::runtime::host::HostOps;
++use crate::runtime::host_writes::HostWriteVerdict;
++
++/// The guest linear memo's own key: (task, level-0 GVA, width, height, depth
++/// planes, sample format).
++pub type MemoKey = (u32, u64, u32, u32, u32, u16);
++
++/// Tracked spans at once. Each armed span adds its pages to the hypervisor
++/// harvest the BQL thread runs at every doorbell, so this is a harvest budget
++/// beside `gather_witness`'s 256 and `gva_store_witness`'s 128, sized to the
++/// working set the memo serves (a few dozen textures on a Home screen).
++const MAX_TRACKED_SPANS: usize = 64;
++
++/// Vouched binds of one span between audits: the same stride and the same
++/// reasoning as `gather_witness::AUDIT_STRIDE` — about a second of stale
++/// pixels at frame rate, at 1.6 % of the bytes the witness saves.
++pub const AUDIT_STRIDE: u32 = 64;
++
++#[derive(Debug)]
++struct Entry {
++    /// The span's guest pages, in GVA order, as walked when the token was armed.
++    gpas: Vec<u64>,
++    /// The span's byte length (`bpr * rows * planes`).
++    span: u64,
++    /// Host tracking token over `gpas`. Never 0.
++    token: u64,
++    /// Guest-write generation read before the read this entry vouches for. 0:
++    /// not armed — no read under a readable generation has confirmed the memo.
++    guest_gen: u64,
++    /// `host_writes.epoch()` read at the same moment.
++    host_epoch: u64,
++    /// The memo content generation those bytes are.
++    memo_generation: u64,
++    /// Vouches since the last audit.
++    vouches: u32,
++    last_seen: u64,
++}
++
++/// Per-device state: one entry per memo span worth tracking.
++#[derive(Debug, Default)]
++pub struct LinearMemoWitness {
++    entries: HashMap<MemoKey, Entry>,
++    binds: u64,
++}
++
++impl LinearMemoWitness {
++    /// Detach every token, for release through `retired_guest_write_tokens`.
++    pub fn take_tokens(&mut self) -> Vec<u64> {
++        let tokens = self.entries.values().map(|e| e.token).collect();
++        self.entries.clear();
++        tokens
++    }
++
++    fn touch(&mut self) -> u64 {
++        self.binds = self.binds.wrapping_add(1);
++        self.binds
++    }
++
++    #[cfg(test)]
++    fn len(&self) -> usize {
++        self.entries.len()
++    }
++}
++
++/// Why a bind may not skip its read.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum Refusal {
++    /// No entry: the span has not been confirmed under a token yet.
++    NoEntry,
++    /// The page list or span length differs from the one the token watches.
++    Repointed,
++    /// Tracked, but no read has confirmed the memo under a readable generation.
++    Unarmed,
++    /// The memo is absent, refilled, or a different length than the entry's.
++    MemoMoved,
++    /// The hypervisor saw a guest store into the pages.
++    GuestWrote,
++    /// The host cannot read the token's generation.
++    GuestUnreadable,
++    /// This device's page record cannot call the pages quiet.
++    HostWrote(HostWriteVerdict),
++    /// A submitted GPU write could still land in the pages.
++    Pending,
++}
++
++impl Refusal {
++    pub fn route(self) -> &'static str {
++        match self {
++            Self::NoEntry => "lmw_no_entry",
++            Self::Repointed => "lmw_repointed",
++            Self::Unarmed => "lmw_unarmed",
++            Self::MemoMoved => "lmw_memo_moved",
++            Self::GuestWrote => "lmw_guest_wrote",
++            Self::GuestUnreadable => "lmw_guest_unreadable",
++            Self::HostWrote(HostWriteVerdict::Overlap) => "lmw_host_overlap",
++            Self::HostWrote(_) => "lmw_host_unnamed",
++            Self::Pending => "lmw_pending",
++        }
++    }
++}
++
++/// The answer for one bind.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum Verdict {
++    /// Both halves quiet: serve the memo without reading.
++    Vouched,
++    /// Both halves quiet, and this bind is the entry's audit: read and compare,
++    /// and report a difference through [`note_audit`].
++    AuditDue,
++    Refused(Refusal),
++}
++
++/// Whether the witness runs at all. `off` is the narrowing arm: every bind
++/// reads, exactly as before the witness existed.
++pub fn enabled() -> bool {
++    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
++    *ON.get_or_init(|| {
++        !matches!(
++            crate::config::switch(crate::config::LINEAR_MEMO_WITNESS),
++            crate::config::Switch::Off
++        )
++    })
++}
++
++/// Ask both halves about `key` for a bind whose span walks to `gpas`, with the
++/// memo currently at `memo_generation` (`None`: no memo of this span's length).
++///
++/// Call after the span's writeback debt is settled.
++pub fn ask<H: HostOps>(
++    state: &mut DeviceState,
++    host: &H,
++    key: MemoKey,
++    gpas: &[u64],
++    span: u64,
++    memo_generation: Option<u64>,
++    pending_disjoint: impl FnOnce(&[u64]) -> bool,
++) -> Verdict {
++    let DeviceState {
++        linear_memo_witness: witness,
++        host_writes,
++        ..
++    } = state;
++    let now = witness.touch();
++    let Some(e) = witness.entries.get_mut(&key) else {
++        return Verdict::Refused(Refusal::NoEntry);
++    };
++    e.last_seen = now;
++    if e.span != span || e.gpas != gpas {
++        return Verdict::Refused(Refusal::Repointed);
++    }
++    if e.guest_gen == 0 {
++        return Verdict::Refused(Refusal::Unarmed);
++    }
++    if memo_generation != Some(e.memo_generation) {
++        return Verdict::Refused(Refusal::MemoMoved);
++    }
++    match host.guest_write_gen(e.token) {
++        Some(g) if g == e.guest_gen => {}
++        Some(_) => return Verdict::Refused(Refusal::GuestWrote),
++        None => return Verdict::Refused(Refusal::GuestUnreadable),
++    }
++    match host_writes.wrote_any_since(e.host_epoch, gpas) {
++        HostWriteVerdict::Quiet => {}
++        other => return Verdict::Refused(Refusal::HostWrote(other)),
++    }
++    if !pending_disjoint(gpas) {
++        return Verdict::Refused(Refusal::Pending);
++    }
++    e.vouches += 1;
++    if e.vouches >= AUDIT_STRIDE {
++        e.vouches = 0;
++        Verdict::AuditDue
++    } else {
++        Verdict::Vouched
++    }
++}
++
++/// Both accounts as they stand immediately before a read.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub struct Baseline {
++    token: u64,
++    /// `None` inside the host's arming window, or from a host that cannot say.
++    guest_gen: Option<u64>,
++    host_epoch: u64,
++}
++
++/// Take the baseline for a read of `key`'s span, tracking its pages if no live
++/// token watches exactly them. Call after the debt settle and **before** the
++/// read. `None` when the host cannot track the pages: the bind reads, as ever.
++pub fn baseline<H: HostOps>(
++    state: &mut DeviceState,
++    host: &mut H,
++    key: MemoKey,
++    gpas: &[u64],
++    span: u64,
++) -> Option<Baseline> {
++    if gpas.is_empty() {
++        return None;
++    }
++    let page_size = state.page_size() as usize;
++    let now = state.linear_memo_witness.touch();
++    let reusable = state
++        .linear_memo_witness
++        .entries
++        .get(&key)
++        .filter(|e| e.span == span && e.gpas == gpas)
++        .map(|e| e.token);
++    let token = match reusable {
++        Some(token) => token,
++        None => {
++            // A moved page list: the old token watches pages this span no
++            // longer has.
++            if let Some(old) = state.linear_memo_witness.entries.remove(&key) {
++                state.retired_guest_write_tokens.push(old.token);
++            }
++            while state.linear_memo_witness.entries.len() >= MAX_TRACKED_SPANS {
++                let Some(victim) = state
++                    .linear_memo_witness
++                    .entries
++                    .iter()
++                    .min_by_key(|(k, e)| (e.last_seen, **k))
++                    .map(|(k, _)| *k)
++                else {
++                    break;
++                };
++                if let Some(e) = state.linear_memo_witness.entries.remove(&victim) {
++                    crate::runtime::drain::note_store_route("lmw_evict");
++                    state.retired_guest_write_tokens.push(e.token);
++                }
++            }
++            let Some(token) = host.track_guest_writes(gpas, page_size) else {
++                crate::runtime::drain::note_store_route("lmw_untracked");
++                return None;
++            };
++            state.linear_memo_witness.entries.insert(
++                key,
++                Entry {
++                    gpas: gpas.to_vec(),
++                    span,
++                    token,
++                    guest_gen: 0,
++                    host_epoch: 0,
++                    memo_generation: 0,
++                    vouches: 0,
++                    last_seen: now,
++                },
++            );
++            token
++        }
++    };
++    Some(Baseline {
++        token,
++        guest_gen: host.guest_write_gen(token),
++        host_epoch: state.host_writes.epoch(),
++    })
++}
++
++/// The read under `baseline` found the memo's bytes at `memo_generation`: let
++/// later binds vouch for them. A baseline without a readable generation, or one
++/// whose token is no longer this entry's, arms nothing.
++pub fn arm(state: &mut DeviceState, key: MemoKey, baseline: Baseline, memo_generation: u64) {
++    let Some(guest_gen) = baseline.guest_gen.filter(|&g| g != 0) else {
++        crate::runtime::drain::note_store_route("lmw_arm_unarmed");
++        return;
++    };
++    let Some(e) = state.linear_memo_witness.entries.get_mut(&key) else {
++        return;
++    };
++    if e.token != baseline.token {
++        return;
++    }
++    e.guest_gen = guest_gen;
++    e.host_epoch = baseline.host_epoch;
++    e.memo_generation = memo_generation;
++    crate::runtime::drain::note_store_route("lmw_armed");
++}
++
++/// Forget `key`'s vouch (its token stays, re-armed by the next confirming read).
++pub fn disarm(state: &mut DeviceState, key: MemoKey) {
++    if let Some(e) = state.linear_memo_witness.entries.get_mut(&key) {
++        e.guest_gen = 0;
++        e.vouches = 0;
++    }
++}
++
++/// Report an audit read. `agreed`: the bytes were the memo's. A disagreement
++/// is a writer that escaped both halves — the one fault this module exists to
++/// rule out — so it fails visibly, once per span, and disarms the entry.
++pub fn note_audit(state: &mut DeviceState, key: MemoKey, agreed: bool) {
++    if agreed {
++        crate::runtime::drain::note_store_route("lmw_audit_ok");
++        return;
++    }
++    crate::runtime::drain::note_store_route("lmw_audit_unsound");
++    disarm(state, key);
++    let (task, gva, w, h, planes, fmt) = key;
++    if crate::observe::first_sight("lin_memo_witness_unsound", gva ^ u64::from(task) << 48) {
++        crate::observe::fail(format!(
++            "lin_memo_witness_unsound task={task} gva={gva:#x} {w}x{h} planes={planes} \
++             fmt={fmt:#x} (both write witnesses were quiet and the span's bytes moved; \
++             the memo had been served without reading for up to {AUDIT_STRIDE} binds)"
++        ));
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::runtime::host::FakeHost;
++    use crate::runtime::host_writes::WriteRail;
++
++    const PAGE: u64 = 1u64 << crate::model::PAGE_SHIFT_X86;
++    const KEY: MemoKey = (3, 0x40_0000, 64, 64, 1, 0x50);
++
++    fn device() -> DeviceState {
++        DeviceState::new(crate::model::DeviceId(1), crate::model::PAGE_SHIFT_X86)
++    }
++
++    fn pages() -> Vec<u64> {
++        vec![7 * PAGE, 8 * PAGE, 12 * PAGE]
++    }
++
++    fn quiet(_: &[u64]) -> bool {
++        true
++    }
++
++    /// A span confirmed once under a readable generation: tracked, read,
++    /// armed at memo generation 5.
++    fn armed(state: &mut DeviceState, host: &mut FakeHost) {
++        let b = baseline(state, host, KEY, &pages(), 3 * PAGE).expect("tracked");
++        arm(state, KEY, b, 5);
++    }
++
++    fn ask_now(state: &mut DeviceState, host: &FakeHost) -> Verdict {
++        ask(state, host, KEY, &pages(), 3 * PAGE, Some(5), quiet)
++    }
++
++    #[test]
++    fn a_span_nobody_wrote_is_vouched() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::NoEntry)
++        );
++        armed(&mut state, &mut host);
++        assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++        assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++    }
++
++    /// The guest CPU half: one store into one page of the span refuses, and
++    /// keeps refusing until a read re-confirms the memo.
++    #[test]
++    fn a_guest_store_into_any_page_refuses_until_reconfirmed() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        armed(&mut state, &mut host);
++        host.guest_wrote_page(12 * PAGE + 5);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::GuestWrote)
++        );
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::GuestWrote)
++        );
++        // A store outside the span is not this span's.
++        let (mut other, mut host2) = (device(), FakeHost::new());
++        armed(&mut other, &mut host2);
++        host2.guest_wrote_page(9 * PAGE);
++        assert_eq!(ask_now(&mut other, &host2), Verdict::Vouched);
++        // The read that follows a refusal re-arms at the new generation.
++        let b = baseline(&mut state, &mut host, KEY, &pages(), 3 * PAGE).unwrap();
++        arm(&mut state, KEY, b, 6);
++        assert_eq!(
++            ask(&mut state, &host, KEY, &pages(), 3 * PAGE, Some(6), quiet),
++            Verdict::Vouched
++        );
++    }
++
++    /// The device half: a recorded write into the span refuses; one into
++    /// another page does not; a write that could not name its pages refuses.
++    #[test]
++    fn a_device_write_into_the_span_refuses_and_an_unnamed_one_too() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        armed(&mut state, &mut host);
++        state.note_host_wrote_pages(WriteRail::listed("test"), vec![30 * PAGE]);
++        assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++        state.note_host_wrote_pages(WriteRail::listed("test"), vec![8 * PAGE]);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::HostWrote(HostWriteVerdict::Overlap))
++        );
++        let (mut s2, mut h2) = (device(), FakeHost::new());
++        armed(&mut s2, &mut h2);
++        s2.note_host_wrote_guest_ram();
++        assert!(matches!(
++            ask_now(&mut s2, &h2),
++            Verdict::Refused(Refusal::HostWrote(_))
++        ));
++    }
++
++    /// A submitted GPU write that could still land in the pages refuses.
++    #[test]
++    fn an_outstanding_gpu_write_refuses() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        armed(&mut state, &mut host);
++        assert_eq!(
++            ask(&mut state, &host, KEY, &pages(), 3 * PAGE, Some(5), |_| {
++                false
++            }),
++            Verdict::Refused(Refusal::Pending)
++        );
++    }
++
++    /// A remapped span, a different length, and a memo that moved or went.
++    #[test]
++    fn a_moved_page_list_span_or_memo_refuses() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        armed(&mut state, &mut host);
++        let moved = vec![7 * PAGE, 9 * PAGE, 12 * PAGE];
++        assert_eq!(
++            ask(&mut state, &host, KEY, &moved, 3 * PAGE, Some(5), quiet),
++            Verdict::Refused(Refusal::Repointed)
++        );
++        assert_eq!(
++            ask(&mut state, &host, KEY, &pages(), 2 * PAGE, Some(5), quiet),
++            Verdict::Refused(Refusal::Repointed)
++        );
++        assert_eq!(
++            ask(&mut state, &host, KEY, &pages(), 3 * PAGE, Some(4), quiet),
++            Verdict::Refused(Refusal::MemoMoved)
++        );
++        assert_eq!(
++            ask(&mut state, &host, KEY, &pages(), 3 * PAGE, None, quiet),
++            Verdict::Refused(Refusal::MemoMoved)
++        );
++        // Re-baselining over the moved list retires the old token.
++        let before = state.retired_guest_write_tokens.len();
++        baseline(&mut state, &mut host, KEY, &moved, 3 * PAGE).unwrap();
++        assert_eq!(state.retired_guest_write_tokens.len(), before + 1);
++        assert_eq!(
++            ask(&mut state, &host, KEY, &moved, 3 * PAGE, Some(5), quiet),
++            Verdict::Refused(Refusal::Unarmed)
++        );
++    }
++
++    /// The arming window: a token whose generation is not yet readable arms
++    /// nothing, and no host at all tracks nothing.
++    #[test]
++    fn an_unreadable_generation_or_no_dirty_bitmap_never_vouches() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        host.guest_write_startup_window = true;
++        let b = baseline(&mut state, &mut host, KEY, &pages(), 3 * PAGE).unwrap();
++        arm(&mut state, KEY, b, 5);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::Unarmed)
++        );
++
++        let (mut s2, mut h2) = (device(), FakeHost::new());
++        h2.guest_writes_unobservable = true;
++        assert_eq!(baseline(&mut s2, &mut h2, KEY, &pages(), 3 * PAGE), None);
++        assert_eq!(ask_now(&mut s2, &h2), Verdict::Refused(Refusal::NoEntry));
++    }
++
++    /// A store that lands between the baseline and the read it describes makes
++    /// the *next* bind refuse: the baseline is the generation before the read.
++    #[test]
++    fn a_store_racing_the_read_is_caught_by_the_next_bind() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        let b = baseline(&mut state, &mut host, KEY, &pages(), 3 * PAGE).unwrap();
++        host.guest_wrote_page(7 * PAGE);
++        arm(&mut state, KEY, b, 5);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::GuestWrote)
++        );
++    }
++
++    /// One vouch in `AUDIT_STRIDE` is an audit, and a disagreeing audit
++    /// disarms.
++    #[test]
++    fn every_stride_th_vouch_is_an_audit_and_a_failed_audit_disarms() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        armed(&mut state, &mut host);
++        for _ in 1..AUDIT_STRIDE {
++            assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++        }
++        assert_eq!(ask_now(&mut state, &host), Verdict::AuditDue);
++        assert_eq!(ask_now(&mut state, &host), Verdict::Vouched);
++        note_audit(&mut state, KEY, false);
++        assert_eq!(
++            ask_now(&mut state, &host),
++            Verdict::Refused(Refusal::Unarmed)
++        );
++    }
++
++    /// The map is bounded and an eviction releases its token.
++    #[test]
++    fn the_tracked_set_is_bounded_and_evictions_release_tokens() {
++        let (mut state, mut host) = (device(), FakeHost::new());
++        for i in 0..(MAX_TRACKED_SPANS as u64 + 5) {
++            let key = (1, 0x10_0000 + i * 0x1_0000, 8, 8, 1, 0x50);
++            baseline(&mut state, &mut host, key, &[(100 + i) * PAGE], PAGE).unwrap();
++        }
++        assert_eq!(state.linear_memo_witness.len(), MAX_TRACKED_SPANS);
++        assert_eq!(state.retired_guest_write_tokens.len(), 5);
++        let tokens = state.linear_memo_witness.take_tokens();
++        assert_eq!(tokens.len(), MAX_TRACKED_SPANS);
++        assert_eq!(state.linear_memo_witness.len(), 0);
++    }
++}
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+index e1ccc4b..9dcfd7f 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+@@ -93,6 +93,8 @@ pub mod draw;
+ /// From a drained packet to the packet the semantic model admits.
+ pub mod ingress;
+ pub mod input;
++/// When the guest linear memo may serve a bind without re-reading its span.
++pub mod linear_memo_witness;
+ /// Process-global metal2vulkan SPIR-V cache (AIR content hash → SPIR-V).
+ pub mod m2v_cache;
+ /// IOSurface mapper capture + page-table resolve.
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/resolve_split.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/resolve_split.rs
+index 1f032ec..aab24ff 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/resolve_split.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/resolve_split.rs
+@@ -49,9 +49,11 @@ pub enum Part {
+     MemoConvert = 5,
+     /// `load_buffer_texture_rows`; bytes are the rows it returned.
+     BufferRows = 6,
++    /// The memo's write-witness page walk and ask (`linear_memo_witness`).
++    MemoWitness = 7,
+ }
+ 
+-const PARTS: usize = Part::BufferRows as usize + 1;
++const PARTS: usize = Part::MemoWitness as usize + 1;
+ 
+ static NS: [AtomicU64; PARTS] = [const { AtomicU64::new(0) }; PARTS];
+ static COUNT: [AtomicU64; PARTS] = [const { AtomicU64::new(0) }; PARTS];
+@@ -110,7 +112,8 @@ pub fn take_line() -> Option<String> {
+     let cmp = take(Part::MemoCompare);
+     let convert = take(Part::MemoConvert);
+     let rows = take(Part::BufferRows);
+-    let any = [gva, zc, settle, read, cmp, convert, rows]
++    let witness = take(Part::MemoWitness);
++    let any = [gva, zc, settle, read, cmp, convert, rows, witness]
+         .iter()
+         .any(|&(_, n, _)| n != 0);
+     any.then(|| {
+@@ -118,7 +121,8 @@ pub fn take_line() -> Option<String> {
+             "sampled_resolve_split gva_resident_us={} gva_resident_n={} zero_copy_us={} \
+              zero_copy_n={} memo_settle_us={} memo_read_us={} memo_read_mib={} memo_n={} \
+              memo_cmp_us={} memo_convert_us={} memo_convert_n={} memo_convert_mib={} \
+-             buftex_us={} buftex_n={} buftex_mib={} (nested in sampled_phase resolve_us)",
++             buftex_us={} buftex_n={} buftex_mib={} memo_witness_us={} memo_witness_n={} \
++             (nested in sampled_phase resolve_us)",
+             gva.0,
+             gva.1,
+             zc.0,
+@@ -134,6 +138,8 @@ pub fn take_line() -> Option<String> {
+             rows.0,
+             rows.1,
+             mib(rows.2),
++            witness.0,
++            witness.1,
+         )
+     })
+ }

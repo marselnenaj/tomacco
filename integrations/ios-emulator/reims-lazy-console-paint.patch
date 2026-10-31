@@ -1,0 +1,574 @@
+reims-vgpu: paint the console surface when someone reads it, not on every present.
+
+Every ScanoutUpdate the device delivered was copied into QEMU's
+DisplaySurface right away (reims_vgpu_mmio_apply_scanout ->
+reims_vgpu_qemu_scanout_copy -> copy_to_bgra8 / blit_bgra_buffer, 12 MB at
+1179x2556) on the main loop with the BQL held, also when nobody would look at
+the surface. The phone runs `-display none` (tools/run_ios_paravirt.py): no
+display listener reads it, and since reims-frame-mailbox the desktop's frames
+come from the mailbox file, so the surface only serves the `screendump`
+fallback, which asks the device through gfx_update before reading it
+(qemu_console_co_wait_update -> console_hw_update_bh -> gfx_update), as every
+display refresh does.
+
+That copy is also the present's ack (device_scanout_copy ->
+note_scanout_copy_consumed clears present_action_pending and
+unpainted_presents and schedules the drain); while present_action_pending is
+set, device_drain returns without draining. A first version of this patch
+postponed the whole call to gfx_update and with it the
+ack: that showed one frame and then a frozen UI (mailbox published=1, drain
+duty 0.001, SpringBoard unresponsive).
+
+Now the paint is split. reims_vgpu_qemu_scanout_account (device_scanout_account
+-> account_bgra8) takes the copy's lock, records what copy_to_bgra8 records
+for a re-show of the retained +0x188 frame (note_snapshot_shown, now shared by
+both) and acks the present the same way, without copying; any other paint
+(pre-boundary live mapping, capture retry, no retained frame of that size)
+returns ERR_STATE untouched and C calls scanout_copy at once, as before.
+reims_vgpu_qemu_scanout_reshow copies the retained frame and changes nothing.
+When REIMS_VGPU_FRAME_MAILBOX names a file and no host window is requested,
+the MMIO shim accounts each present on delivery, marks the surface stale and
+re-shows it in gfx_update after delivering pending actions. Without a window
+the retained frame is always the CPU copy (display_from_resident false).
+REIMS_VGPU_EAGER_CONSOLE_PAINT=1 (tools/run_ios_paravirt.py --console-paint
+eager) keeps the old paint on every present. Tests: device::tests
+an_accounted_present_is_acked_like_a_painted_one_and_reshown_on_demand,
+a_paint_that_is_not_a_reshow_is_declined_without_an_ack.
+
+diff --git a/qemu/hw/display/reims-vgpu-mmio.c b/qemu/hw/display/reims-vgpu-mmio.c
+--- a/qemu/hw/display/reims-vgpu-mmio.c
++++ b/qemu/hw/display/reims-vgpu-mmio.c
+@@ -120,6 +120,24 @@
+      * pages (that dual-mid A/B thrash / dock-band mid-composite).
+      */
+     bool new_frame_ready;
++    /*
++     * Lazy console paint (reims-lazy-console-paint). Painting a present copies
++     * the retained frame (12 MB at 1179x2556) into `surface` on the main loop
++     * with the BQL held. When the frame mailbox carries the frames
++     * (REIMS_VGPU_FRAME_MAILBOX names a file) and no host window does, nothing
++     * reads the surface but the `screendump` fallback, which asks through
++     * gfx_update first (qemu_console_co_wait_update), as any display refresh
++     * does. Then apply_scanout only *accounts* the present
++     * (reims_vgpu_qemu_scanout_account: the paint's bookkeeping and, above
++     * all, its ack, which releases the display channel the worker holds
++     * until the console has taken the present), marks the surface stale, and
++     * gfx_update copies the retained frame (reims_vgpu_qemu_scanout_reshow)
++     * when someone looks. A paint that is not a re-show of the retained frame
++     * (pre-boundary, capture retry) still runs at once.
++     * REIMS_VGPU_EAGER_CONSOLE_PAINT=1 paints every present as before.
++     */
++    bool eager_console_paint;
++    bool surface_stale;
+     /* Device poll stays on QEMU's background emulation loop. */
+     QEMUTimer *poll_timer;
+     QEMUBH *action_bh;
+@@ -738,6 +756,7 @@
+         return false;
+     }
+     if (rc == REIMS_VGPU_QEMU_OK) {
++        s->surface_stale = false;
+         trace_reims_vgpu_mmio_scanout(mapping_id, width, height);
+         if (s->con) {
+             qemu_console_update_full(s->con);
+@@ -764,12 +783,50 @@
+     if (!reims_vgpu_shim_scanout_may_paint(s->rust_handle, mapping_id)) {
+         return;
+     }
++    if (!s->eager_console_paint && a->a1 != 0 && a->a2 != 0) {
++        uint32_t width = (uint32_t)a->a1;
++        uint32_t height = (uint32_t)a->a2;
++        int rc = reims_vgpu_qemu_scanout_account(s->rust_handle, mapping_id,
++                                                 width, height,
++                                                 (uint32_t)a->a3);
++
++        if (rc == REIMS_VGPU_QEMU_OK || rc == REIMS_VGPU_QEMU_EMPTY) {
++            /* Acked as painted (OK) or unchanged; the bytes wait for a reader. */
++            reims_vgpu_mmio_set_mode(s, width, height);
++            if (!s->surface) {
++                return;
++            }
++            if (rc == REIMS_VGPU_QEMU_OK) {
++                s->surface_stale = true;
++                trace_reims_vgpu_mmio_scanout(mapping_id, width, height);
++            }
++            s->new_frame_ready = true;
++            return;
++        }
++        /* Not a re-show of the retained frame: nothing was acked, paint now. */
++    }
+     if (reims_vgpu_mmio_paint_scanout(s, mapping_id, (uint32_t)a->a1,
+                                       (uint32_t)a->a2, (uint32_t)a->a3)) {
+         s->new_frame_ready = true;
+     }
+ }
+ 
++/* Copy the accounted frame in, now that someone reads the surface. */
++static void reims_vgpu_mmio_reshow(ReimsVGPUMMIOState *s)
++{
++    if (!s->surface_stale || !s->surface || s->rust_handle == 0) {
++        return;
++    }
++    s->surface_stale = false;
++    if (reims_vgpu_qemu_scanout_reshow(s->rust_handle, surface_data(s->surface),
++                                       surface_stride(s->surface),
++                                       surface_width(s->surface),
++                                       surface_height(s->surface)) ==
++        REIMS_VGPU_QEMU_OK && s->con) {
++        qemu_console_update_full(s->con);
++    }
++}
++
+ static void reims_vgpu_mmio_apply_cursor(ReimsVGPUMMIOState *s,
+                                       const ReimsVgpuHostAction *a)
+ {
+@@ -934,6 +991,8 @@
+         reims_vgpu_qemu_device_poll(s->rust_handle) == REIMS_VGPU_QEMU_OK) {
+         reims_vgpu_mmio_deliver_actions(s);
+     }
++    /* Someone reads the surface now: give it the frame the paint would have. */
++    reims_vgpu_mmio_reshow(s);
+ 
+     /* Host-console ownership is Rust's call; this only paints what it names. */
+     kind = reims_vgpu_shim_console_feed(s->rust_handle, &mapping_id, &width,
+@@ -1218,6 +1277,7 @@
+     s->con = NULL;
+     s->surface = NULL;
+     s->new_frame_ready = false;
++    s->surface_stale = false;
+     s->poll_timer = NULL;
+     s->action_bh = NULL;
+     s->early_fb_ptr = NULL;
+@@ -1243,6 +1303,19 @@
+     return true;
+ }
+ 
++/* See `eager_console_paint`. Rust accepts only an absolute mailbox path. */
++static bool reims_vgpu_mmio_eager_console_paint(void)
++{
++    const char *eager = getenv("REIMS_VGPU_EAGER_CONSOLE_PAINT");
++    const char *mailbox = getenv("REIMS_VGPU_FRAME_MAILBOX");
++
++    if (eager && (!strcmp(eager, "1") || !strcasecmp(eager, "on") ||
++                  !strcasecmp(eager, "yes") || !strcasecmp(eager, "true"))) {
++        return true;
++    }
++    return !mailbox || mailbox[0] != '/' || reims_vgpu_mmio_window_requested();
++}
++
+ static void reims_vgpu_mmio_realize(DeviceState *dev, Error **errp)
+ {
+     ReimsVGPUMMIOState *s = REIMS_VGPU_MMIO(dev);
+@@ -1264,6 +1337,7 @@
+     }
+ 
+     s->action_bh = aio_bh_new(qemu_get_aio_context(), reims_vgpu_mmio_action_bh, s);
++    s->eager_console_paint = reims_vgpu_mmio_eager_console_paint();
+ 
+     s->host_ops = (ReimsVgpuHostOps){
+         .abi_version = REIMS_VGPU_QEMU_ABI_VERSION,
+@@ -1430,6 +1504,8 @@
+     qemu_set_irq(s->irq_gfx, 0);
+     qemu_set_irq(s->irq_iosfc, 0);
+     s->new_frame_ready = false;
++    /* The EFI black surface below replaces any frame not yet copied in. */
++    s->surface_stale = false;
+ 
+     /* Restore EFI black surface. */
+     reims_vgpu_mmio_set_mode(s, REIMS_VGPU_EFI_BOOT_WIDTH, REIMS_VGPU_EFI_BOOT_HEIGHT);
+diff --git a/reims-vgpu/crates/reims-vgpu/include/reims_vgpu_qemu_abi.h b/reims-vgpu/crates/reims-vgpu/include/reims_vgpu_qemu_abi.h
+--- a/reims-vgpu/crates/reims-vgpu/include/reims_vgpu_qemu_abi.h
++++ b/reims-vgpu/crates/reims-vgpu/include/reims_vgpu_qemu_abi.h
+@@ -539,6 +539,28 @@
+                           uint32_t generation);
+ 
+ /*
++ * reims_vgpu_qemu_scanout_copy for a console nobody reads yet: records and
++ * acknowledges the present exactly as the copy would (the ack releases the
++ * display channel), without copying pixels.
++ * REIMS_VGPU_QEMU_OK: shown; the surface is stale until scanout_reshow.
++ * REIMS_VGPU_QEMU_EMPTY: unchanged.
++ * REIMS_VGPU_QEMU_ERR_STATE: not a re-show of the retained frame; nothing was
++ * acknowledged — call reims_vgpu_qemu_scanout_copy now.
++ */
++int reims_vgpu_qemu_scanout_account(uint64_t handle, uint32_t mapping_id,
++                                    uint32_t width, uint32_t height,
++                                    uint32_t generation);
++
++/*
++ * Copy the retained frame scanout_account recorded into dst (BGRA8,
++ * dst_stride bytes/row). Acknowledges nothing. REIMS_VGPU_QEMU_OK when
++ * copied, REIMS_VGPU_QEMU_EMPTY when no frame of that size is retained.
++ */
++int reims_vgpu_qemu_scanout_reshow(uint64_t handle, uint8_t *dst,
++                                   uint32_t dst_stride, uint32_t width,
++                                   uint32_t height);
++
++/*
+  * Pre-boundary early console: guest-programmed EFI FB (MMIO 0x1210 start +
+  * 0x1228 stride), contract path for boot.efi / kernel console after it leaves
+  * BAR1 linear GOP (serial: "console relocated to 0x…").
+diff --git a/reims-vgpu/crates/reims-vgpu/src/device/display_surface.rs b/reims-vgpu/crates/reims-vgpu/src/device/display_surface.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/device/display_surface.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/device/display_surface.rs
+@@ -273,6 +273,71 @@
+     }
+ }
+ 
++/// [`device_scanout_copy`] without the copy, for a console nobody reads yet
++/// (reims-lazy-console-paint: a frame mailbox carries the frames and no window
++/// is up).
++///
++/// The QEMU-side paint is not only a paint: it is the entry-side
++/// `waitForPendingFrames` ack. Once a present enqueues its ScanoutUpdate the
++/// worker skips every drain while `present_action_pending` is set
++/// (`device_drain`), and only [`note_scanout_copy_consumed`] clears it, so a
++/// console that postpones the whole call holds the display channel at its
++/// first present for as long as nobody takes a screendump (an earlier version
++/// of this patch: one frame, then a frozen UI). This takes the same lock the copy
++/// would, records what the copy would record and acks the present the same
++/// way, leaving only the bytes to [`device_scanout_reshow`].
++///
++/// `None`: the paint is not a re-show of the retained snapshot (capture retry,
++/// pre-boundary live mapping, no retain); nothing was touched or acked, and C
++/// must call [`device_scanout_copy`] now.
++pub fn device_scanout_account(
++    id: u64,
++    width: u32,
++    height: u32,
++) -> Option<crate::runtime::scanout::ScanoutCopyResult> {
++    use crate::runtime::scanout::ScanoutCopyResult;
++    let Some(slot) = device_slot(id) else {
++        return Some(ScanoutCopyResult::Failed);
++    };
++    let present_action = slot.present_action_pending.load(Ordering::Acquire);
++    let mut d = if present_action {
++        slot.inner.lock()
++    } else {
++        let Some(d) = slot.inner.try_lock() else {
++            // As the copy: a busy device without a present to ack is Unchanged.
++            return Some(ScanoutCopyResult::Unchanged);
++        };
++        d
++    };
++    let rc = crate::runtime::scanout::account_bgra8(&mut d.device.state, width, height)?;
++    if let Some(ops) = slot.ops {
++        let DeviceInner { device, actions } = &mut *d;
++        let mut host = QemuHost::new(&ops, actions, &slot.prompt_actions);
++        note_scanout_copy_consumed(&mut device.state, &mut host, &slot, rc, present_action);
++    } else {
++        let mut host = NullHost;
++        note_scanout_copy_consumed(&mut d.device.state, &mut host, &slot, rc, present_action);
++    }
++    Some(rc)
++}
++
++/// The bytes [`device_scanout_account`] left out: copy the retained snapshot
++/// into `dst` when the console is read. Acks nothing and changes no state;
++/// `false` when the device holds no snapshot of that size.
++pub fn device_scanout_reshow(
++    id: u64,
++    dst: &mut [u8],
++    dst_stride: u32,
++    width: u32,
++    height: u32,
++) -> bool {
++    let Some(slot) = device_slot(id) else {
++        return false;
++    };
++    let d = slot.inner.lock();
++    crate::runtime::scanout::reshow_bgra8(&d.device.state, dst, dst_stride, width, height)
++}
++
+ /// Entry-side `waitForPendingFrames`: what one `copy_to_bgra8` owes the device
+ /// once it returns.
+ ///
+diff --git a/reims-vgpu/crates/reims-vgpu/src/device/mod.rs b/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
+@@ -31,7 +31,8 @@
+ pub(crate) use display_surface::host_console_uses_bar1;
+ pub(crate) use display_surface::{
+     device_console_feed, device_cursor_glyph_copy, device_cursor_glyph_info,
+-    device_efi_console_copy, device_scanout_copy, device_scanout_may_paint, ConsoleFeed,
++    device_efi_console_copy, device_scanout_account, device_scanout_copy, device_scanout_may_paint,
++    device_scanout_reshow, ConsoleFeed,
+     CursorGlyphInfo,
+ };
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/device/tests.rs b/reims-vgpu/crates/reims-vgpu/src/device/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/device/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/device/tests.rs
+@@ -73,6 +73,81 @@
+     assert!(device_destroy(id));
+ }
+ 
++/// A device holding one retained 2x1 frame whose present is waiting for the
++/// console paint, as `capture_present_frame` and `enqueue_present_scanout`
++/// leave it.
++fn device_with_an_unpainted_retained_frame() -> u64 {
++    let id = device_create(None, PAGE_SHIFT_ARM64E).expect("create");
++    let slot = device_slot(id).expect("slot");
++    {
++        let present = &mut slot.inner.lock().device.state.present;
++        present.frame_bgra = vec![1, 2, 3, 4, 5, 6, 7, 8];
++        present.frame_mapping = 7;
++        present.frame_width = 2;
++        present.frame_height = 1;
++        present.frame_generation = 5;
++        present.frame_valid = true;
++        present.frame_encode_pending = true;
++        present.unpainted_presents = 3;
++    }
++    slot.present_action_pending.store(true, Ordering::Release);
++    id
++}
++
++#[test]
++fn an_accounted_present_is_acked_like_a_painted_one_and_reshown_on_demand() {
++    use crate::runtime::scanout::ScanoutCopyResult;
++    // An earlier version postponed the whole paint, and with it this ack:
++    // the worker skips every drain while `present_action_pending` is set, so
++    // the guest's display channel stood still after its first present.
++    let painted = device_with_an_unpainted_retained_frame();
++    let accounted = device_with_an_unpainted_retained_frame();
++    let mut dst = [0u8; 8];
++    assert_eq!(device_scanout_copy(painted, 7, &mut dst, 8, 2, 1, 5), ScanoutCopyResult::Painted);
++    assert_eq!(dst, [1, 2, 3, 4, 5, 6, 7, 8]);
++    assert_eq!(device_scanout_account(accounted, 2, 1), Some(ScanoutCopyResult::Painted));
++    let (p, a) = (device_slot(painted).unwrap(), device_slot(accounted).unwrap());
++    assert!(!a.present_action_pending.load(Ordering::Acquire), "the present is released");
++    {
++        let (p, a) = (&p.inner.lock().device.state.present, &a.inner.lock().device.state.present);
++        let record = |s: &crate::model::PresentState| {
++            (s.valid, s.width, s.height, s.generation, s.painted_mapping, s.painted_generation,
++             s.frame_encode_pending, s.unpainted_presents)
++        };
++        assert_eq!(record(a), record(p), "accounting records what the paint records");
++        assert_eq!(a.unpainted_presents, 0);
++    }
++    // The same frame again is Unchanged on both paths.
++    assert_eq!(device_scanout_account(accounted, 2, 1), Some(ScanoutCopyResult::Unchanged));
++    assert_eq!(device_scanout_copy(painted, 7, &mut dst, 8, 2, 1, 5), ScanoutCopyResult::Unchanged);
++    // The bytes come when the console is read, and only at the retained size.
++    let mut shown = [0u8; 8];
++    assert!(device_scanout_reshow(accounted, &mut shown, 8, 2, 1));
++    assert_eq!(shown, [1, 2, 3, 4, 5, 6, 7, 8]);
++    assert!(!device_scanout_reshow(accounted, &mut shown, 4, 1, 1));
++    assert!(device_destroy(painted));
++    assert!(device_destroy(accounted));
++}
++
++#[test]
++fn a_paint_that_is_not_a_reshow_is_declined_without_an_ack() {
++    // No retained frame: the paint must read guest memory, which only
++    // `device_scanout_copy` does, so accounting leaves the present to it.
++    let id = device_with_an_unpainted_retained_frame();
++    let slot = device_slot(id).expect("slot");
++    slot.inner.lock().device.state.present.frame_valid = false;
++    assert_eq!(device_scanout_account(id, 2, 1), None);
++    assert!(slot.present_action_pending.load(Ordering::Acquire));
++    assert_eq!(slot.inner.lock().device.state.present.unpainted_presents, 3);
++    // Nor at another size than the retained one.
++    slot.inner.lock().device.state.present.frame_valid = true;
++    assert_eq!(device_scanout_account(id, 4, 1), None);
++    assert!(slot.present_action_pending.load(Ordering::Acquire));
++    let mut dst = [0u8; 16];
++    assert!(!device_scanout_reshow(id, &mut dst, 16, 4, 1));
++    assert!(device_destroy(id));
++}
++
+ #[test]
+ fn drain_without_ops_is_ok() {
+     let id = device_create(None, PAGE_SHIFT_ARM64E).expect("create");
+diff --git a/reims-vgpu/crates/reims-vgpu/src/lib.rs b/reims-vgpu/crates/reims-vgpu/src/lib.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/lib.rs
+@@ -129,7 +129,8 @@
+     backend_name, device_console_feed, device_create, device_cursor_glyph_copy,
+     device_cursor_glyph_info, device_destroy, device_drain, device_efi_console_copy,
+     device_gfx_read, device_gfx_write, device_iosfc_read, device_iosfc_write, device_poll,
+-    device_pop_action, device_reset, device_scanout_copy, device_scanout_may_paint,
++    device_pop_action, device_reset, device_scanout_account, device_scanout_copy,
++    device_scanout_may_paint, device_scanout_reshow,
+     device_window_run_main, device_window_set_early_fb, device_window_start, device_window_stop,
+     unwind_safe, ConsoleFeed, CursorGlyphInfo,
+ };
+diff --git a/reims-vgpu/crates/reims-vgpu/src/qemu/abi.rs b/reims-vgpu/crates/reims-vgpu/src/qemu/abi.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/qemu/abi.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/qemu/abi.rs
+@@ -51,7 +51,8 @@
+     backend_name, device_console_feed, device_create, device_cursor_glyph_copy,
+     device_cursor_glyph_info, device_destroy, device_drain, device_efi_console_copy,
+     device_gfx_read, device_gfx_write, device_iosfc_read, device_iosfc_write, device_poll,
+-    device_pop_action, device_reset, device_scanout_copy, device_scanout_may_paint,
++    device_pop_action, device_reset, device_scanout_account, device_scanout_copy,
++    device_scanout_may_paint, device_scanout_reshow,
+     device_window_run_main, device_window_set_early_fb, device_window_start, device_window_stop,
+     unwind_safe, ConsoleFeed, CursorGlyphInfo,
+ };
+@@ -732,6 +733,74 @@
+             }
+         },
+         REIMS_VGPU_QEMU_ERR_PANIC,
++    )
++}
++
++/// Acknowledge a ScanoutUpdate for a console nobody reads yet, without copying
++/// its pixels (see `device_scanout_account`).
++///
++/// REIMS_VGPU_QEMU_OK: recorded as painted; the surface is stale until
++/// `reims_vgpu_qemu_scanout_reshow`. REIMS_VGPU_QEMU_EMPTY: unchanged.
++/// REIMS_VGPU_QEMU_ERR_STATE: not a re-show of the retained frame (or a
++/// failed one); nothing was acknowledged — call `reims_vgpu_qemu_scanout_copy`.
++#[no_mangle]
++pub extern "C" fn reims_vgpu_qemu_scanout_account(
++    handle: u64,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++    generation: u32,
++) -> c_int {
++    use crate::runtime::scanout::ScanoutCopyResult;
++    unwind_safe(
++        "reims_vgpu_qemu_scanout_account",
++        || {
++            if handle == 0 || width == 0 || height == 0 {
++                return REIMS_VGPU_QEMU_ERR_ARGS;
++            }
++            // The action's mapping and generation do not choose what a re-show
++            // shows (the retained snapshot); they are part of the call so C
++            // can hand both entry points the same action.
++            let _ = (mapping_id, generation);
++            match device_scanout_account(handle, width, height) {
++                Some(ScanoutCopyResult::Painted) => REIMS_VGPU_QEMU_OK,
++                Some(ScanoutCopyResult::Unchanged) => REIMS_VGPU_QEMU_EMPTY,
++                Some(ScanoutCopyResult::Failed) | None => REIMS_VGPU_QEMU_ERR_STATE,
++            }
++        },
++        REIMS_VGPU_QEMU_ERR_PANIC,
++    )
++}
++
++/// Copy the retained frame a `reims_vgpu_qemu_scanout_account` call recorded
++/// into a QEMU DisplaySurface. REIMS_VGPU_QEMU_OK when copied,
++/// REIMS_VGPU_QEMU_EMPTY when the device holds no frame of that size.
++///
++/// SAFETY: `dst` must be valid for `dst_stride * height` bytes.
++#[no_mangle]
++pub unsafe extern "C" fn reims_vgpu_qemu_scanout_reshow(
++    handle: u64,
++    dst: *mut u8,
++    dst_stride: u32,
++    width: u32,
++    height: u32,
++) -> c_int {
++    unwind_safe(
++        "reims_vgpu_qemu_scanout_reshow",
++        || {
++            if handle == 0 || dst.is_null() || width == 0 || height == 0 || dst_stride == 0 {
++                return REIMS_VGPU_QEMU_ERR_ARGS;
++            }
++            let nbytes = (height as usize).saturating_mul(dst_stride as usize);
++            // SAFETY: caller owns the DisplaySurface buffer for nbytes.
++            let buf = unsafe { slice::from_raw_parts_mut(dst, nbytes) };
++            if device_scanout_reshow(handle, buf, dst_stride, width, height) {
++                REIMS_VGPU_QEMU_OK
++            } else {
++                REIMS_VGPU_QEMU_EMPTY
++            }
++        },
++        REIMS_VGPU_QEMU_ERR_PANIC,
+     )
+ }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/scanout/mod.rs
+@@ -418,6 +418,70 @@
+     blit_bgra_buffer(&state.present.frame_bgra, dst, dst_stride, width, height)
+ }
+ 
++/// What showing the retained +0x188 snapshot at `width`x`height` records,
++/// whether its bytes were copied now (`copy_to_bgra8`) or are copied when the
++/// console is next looked at (`account_bgra8` + `reshow_bgra8`).
++fn note_snapshot_shown(state: &mut DeviceState, width: u32, height: u32) {
++    let shown_mid = state.present.frame_mapping;
++    let shown_gen = state.present.frame_generation;
++    state.present.valid = true;
++    state.present.width = width;
++    state.present.height = height;
++    state.present.generation = shown_gen;
++    state.present.painted_mapping = shown_mid;
++    state.present.painted_generation = shown_gen;
++    // First successful +0x188 blit after capture clears encode pending.
++    state.present.frame_encode_pending = false;
++}
++
++/// Whether the retained snapshot can be shown at `width`x`height`.
++fn snapshot_matches(state: &DeviceState, width: u32, height: u32) -> bool {
++    state.present.frame_valid
++        && state.present.frame_width == width
++        && state.present.frame_height == height
++        && !state.present.frame_bgra.is_empty()
++}
++
++/// `copy_to_bgra8` for a console nobody is looking at yet: when the paint
++/// would re-show the retained snapshot, record exactly what that paint records
++/// (Painted or Unchanged) without copying its bytes; the copy happens in
++/// `reshow_bgra8` when the console is read. Every other paint (capture retry,
++/// pre-boundary live mapping, EFI) reads guest memory or decides from it and
++/// is left to `copy_to_bgra8`: `None` touches nothing.
++pub fn account_bgra8(
++    state: &mut DeviceState,
++    width: u32,
++    height: u32,
++) -> Option<ScanoutCopyResult> {
++    if !scanout_extent_ok(width, height) || !snapshot_matches(state, width, height) {
++        return None;
++    }
++    if !state.present.frame_encode_pending
++        && state.present.painted_mapping == state.present.frame_mapping
++        && state.present.painted_generation == state.present.frame_generation
++    {
++        return Some(ScanoutCopyResult::Unchanged);
++    }
++    note_snapshot_shown(state, width, height);
++    Some(ScanoutCopyResult::Painted)
++}
++
++/// Copy the retained snapshot into `dst` for a console read (screendump,
++/// display refresh) after `account_bgra8` recorded it as shown. Changes no
++/// state: the present was acknowledged when it was accounted.
++pub fn reshow_bgra8(
++    state: &DeviceState,
++    dst: &mut [u8],
++    dst_stride: u32,
++    width: u32,
++    height: u32,
++) -> bool {
++    if !scanout_extent_ok(width, height) || !snapshot_matches(state, width, height) {
++        return false;
++    }
++    blit_present_snapshot(state, dst, dst_stride, width, height)
++}
++
+ /// Fill `dst` (BGRA8, `dst_stride` bytes/row) for the named mapping.
+ ///
+ /// `expected_generation` is from the HostAction (0 = always paint).
+@@ -497,14 +561,7 @@
+                     px0[0], px0[1], px0[2], px0[3]
+                 ));
+             });
+-            state.present.valid = true;
+-            state.present.width = width;
+-            state.present.height = height;
+-            state.present.generation = shown_gen;
+-            state.present.painted_mapping = shown_mid;
+-            state.present.painted_generation = shown_gen;
+-            // First successful +0x188 blit after capture clears encode pending.
+-            state.present.frame_encode_pending = false;
++            note_snapshot_shown(state, width, height);
+             return ScanoutCopyResult::Painted;
+         }
+     }

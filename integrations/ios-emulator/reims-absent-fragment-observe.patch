@@ -1,0 +1,51 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -901,25 +901,40 @@
+             return None;
+         }
+     };
+-    // Both stages are required to build a pipeline, and the two are reported
+-    // apart because they are different guest mistakes — the compute sibling
+-    // names its one stage the same way, as `kernel_func_zero`.
++    // This backend path currently requires both stages. Metal permits an
++    // absent fragment function for depth/stencil and visibility work; absence
++    // alone does not establish a malformed guest pipeline. Preserve the typed
++    // refusal until the wire-to-optional-stage contract and both rails support
++    // that work. Public contract: MTLRenderPipelineDescriptor.fragmentFunction.
+     if p.vertex_func_ref == 0 {
+         report.reason(task_id, pipeline_ref, "vertex_func_zero", "");
+         return None;
+     }
+     if p.fragment_func_ref == 0 {
+-        report.reason(task_id, pipeline_ref, "fragment_func_zero", "");
++        report.reason(
++            task_id,
++            pipeline_ref,
++            "fragment_func_zero",
++            &format!(
++                "scope=backend_required_fragment vertex={} object={} mesh={} \
++                 samples={} colors={} color0_format_known={} color0_format={:#x}",
++                p.vertex_func_ref,
++                p.object_func_ref,
++                p.mesh_func_ref,
++                p.raster_sample_count,
++                p.color_attachments.len(),
++                p.color0.has_pixel_format,
++                p.color0.pixel_format,
++            ),
++        );
+         return None;
+     }
+     // The guest has created this pipeline object, which is the semantic model's
+     // `Declared` and nothing more — no host work has started here, and both
+     // rails reach this same door before any of theirs does.
+     //
+-    // After the two zero-stage checks rather than before them: a descriptor
+-    // naming no vertex or fragment function is not a pipeline the guest can
+-    // ever bind, and declaring one would put a name in the table that nothing
+-    // will ever advance or retire.
++    // Declare only after this backend's stage admission. Declaring a refused
++    // pipeline would leave a table entry that this path cannot advance.
+     if let Some(name) = objects::name_resource(state, host, task_id, pipeline_ref) {
+         crate::runtime::drain::note_store_route(if state.declare_pipeline(name) {
+             "pipeline_declared"

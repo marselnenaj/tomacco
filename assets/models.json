@@ -1,0 +1,1390 @@
+[
+  {
+    "id": "18pro",
+    "name": "iPhone 18 Pro",
+    "family": "Current",
+    "display": "6.3″",
+    "width": 402,
+    "height": 874,
+    "pixels": "1206 × 2622",
+    "cutout": "compact",
+    "radius": 62,
+    "colors": [
+      "#3c3c3c",
+      "#f7f7f7",
+      "#e8f2ff",
+      "#4d1821"
+    ],
+    "colorNames": [
+      "Black",
+      "Silver",
+      "Glacier",
+      "Burgundy"
+    ],
+    "source": "https://www.apple.com/iphone-18-pro/specs/",
+    "platform": "ios",
+    "dpr": 3,
+    "bezel": 16,
+    "verifiedAt": "2026-10-30",
+    "confidence": "official-body-buttons-cameras; measured-island-radius; estimated-insets",
+    "notes": "Body, bezel, island, buttons and cameras from Apple's dimensional drawing; corner radius from the simulator. Safe insets estimated.",
+    "safePortrait": {
+      "top": 62,
+      "right": 0,
+      "bottom": 34,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 62,
+      "bottom": 20,
+      "left": 62
+    },
+    "cutoutWidth": 94.5,
+    "cutoutHeight": 36.67,
+    "cutoutOffset": 14,
+    "virtual": {
+      "panel": "1206x2622@60:66x143",
+      "variant": "d47vm2025vre",
+      "source": "derived",
+      "artworkSubtype": 2622,
+      "cornerRadius": 62,
+      "islandBottom": 153,
+      "note": "Derived from Apple's iPhone 16 research variant: this model's display, artwork subtype and corner values; not Apple's own description."
+    },
+    "ppi": 460,
+    "body": {
+      "width": 71.85,
+      "height": 150.01,
+      "depth": 8.75,
+      "radius": 12.71,
+      "border": 1.44
+    },
+    "buttons": [
+      {
+        "kind": "action",
+        "edge": "left",
+        "from": 0.2055,
+        "length": 0.046
+      },
+      {
+        "kind": "volumeUp",
+        "edge": "left",
+        "from": 0.2855,
+        "length": 0.0747
+      },
+      {
+        "kind": "volumeDown",
+        "edge": "left",
+        "from": 0.3802,
+        "length": 0.0747
+      },
+      {
+        "kind": "side",
+        "edge": "right",
+        "from": 0.3112,
+        "length": 0.118
+      },
+      {
+        "kind": "cameraControl",
+        "edge": "right",
+        "from": 0.599,
+        "length": 0.114
+      }
+    ],
+    "back": {
+      "parts": [
+        {
+          "kind": "plateau",
+          "x": 0,
+          "y": 0,
+          "width": 71.85,
+          "height": 48.4,
+          "radius": 6
+        },
+        {
+          "kind": "lens",
+          "x": 6.08,
+          "y": 5.53,
+          "width": 16.58
+        },
+        {
+          "kind": "lens",
+          "x": 6.08,
+          "y": 25.32,
+          "width": 16.58
+        },
+        {
+          "kind": "lens",
+          "x": 24.2,
+          "y": 15.7,
+          "width": 16.58
+        },
+        {
+          "kind": "flash",
+          "x": 54.58,
+          "y": 10.37,
+          "width": 6.9
+        },
+        {
+          "kind": "mic",
+          "x": 57.45,
+          "y": 23.41,
+          "width": 1.15
+        },
+        {
+          "kind": "lidar",
+          "x": 54.58,
+          "y": 30.71,
+          "width": 6.9
+        }
+      ],
+      "note": "Full-width camera plateau; lens, flash, microphone and LiDAR centres from Apple's dimensional drawing. Plateau height scaled off the drawing."
+    },
+    "provenance": {
+      "body": "official: https://developer.apple.com/accessories/dimensional-drawings/ (iphone-18-pro.pdf): product 71.85 x 150.01 mm, active area 66.57 x 144.73 mm, 2.64 mm housing edge to active area, glass 69.45 x 147.61 mm (metal band 1.20 mm seen from the front)",
+      "bodyRadius": "measured: Apple's continuous curve (tangent 1.5287 r) fitted to the corner profile, detail A, of https://developer.apple.com/accessories/dimensional-drawings/ (iphone-18-pro.pdf): tangent 19.43 mm; on the curve (13.90, 0.04), (8.46, 0.92), (3.80, 3.80); r = 12.71 mm",
+      "cutout": "measured: island cutout 15.66/15.68 x 6.07 mm, centre 7.99/7.91 mm from the top edge in https://developer.apple.com/accessories/dimensional-drawings/, at 0.16565 mm per point",
+      "radius": "measured: CoreSimulator DeviceCornerRadius 62 (iPhone19,2/19,3) https://github.com/damix00/expo-screen-corner-radius/pull/2",
+      "safeArea": "estimated: as the 6.3-inch 2025 iPhones (17, 17 Pro); no published value for this model",
+      "buttons": "official: button centres and lengths in https://developer.apple.com/accessories/dimensional-drawings/",
+      "back": "official: https://developer.apple.com/accessories/dimensional-drawings/; plateau height estimated",
+      "colors": "official names https://www.apple.com/iphone-18-pro/specs/; hex: Apple compare-page swatches https://www.apple.com/v/iphone/compare/an/built/styles/overview.built.css"
+    },
+    "designSource": "https://developer.apple.com/accessories/dimensional-drawings/"
+  },
+  {
+    "id": "18promax",
+    "name": "iPhone 18 Pro Max",
+    "family": "Current",
+    "display": "6.9″",
+    "width": 440,
+    "height": 956,
+    "pixels": "1320 × 2868",
+    "cutout": "compact",
+    "radius": 62,
+    "colors": [
+      "#3c3c3c",
+      "#f7f7f7",
+      "#e8f2ff",
+      "#4d1821"
+    ],
+    "colorNames": [
+      "Black",
+      "Silver",
+      "Glacier",
+      "Burgundy"
+    ],
+    "source": "https://www.apple.com/iphone-18-pro/specs/",
+    "platform": "ios",
+    "dpr": 3,
+    "bezel": 16,
+    "verifiedAt": "2026-10-30",
+    "confidence": "official-body-buttons-cameras; measured-island-radius; estimated-insets",
+    "notes": "Body, bezel, island, buttons and cameras from Apple's dimensional drawing; corner radius from the simulator. Safe insets estimated.",
+    "safePortrait": {
+      "top": 62,
+      "right": 0,
+      "bottom": 34,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 62,
+      "bottom": 20,
+      "left": 62
+    },
+    "cutoutWidth": 94.67,
+    "cutoutHeight": 36.67,
+    "cutoutOffset": 14,
+    "virtual": {
+      "panel": "1320x2868@60:72x156",
+      "variant": "d47vm2025vre",
+      "source": "derived",
+      "artworkSubtype": 2868,
+      "cornerRadius": 62,
+      "islandBottom": 153,
+      "largeFormat": true,
+      "note": "Derived from Apple's iPhone 16 research variant: this model's display, artwork subtype and corner values; not Apple's own description."
+    },
+    "ppi": 460,
+    "body": {
+      "width": 77.98,
+      "height": 163.43,
+      "depth": 8.75,
+      "radius": 12.71,
+      "border": 1.36
+    },
+    "buttons": [
+      {
+        "kind": "action",
+        "edge": "left",
+        "from": 0.1886,
+        "length": 0.0422
+      },
+      {
+        "kind": "volumeUp",
+        "edge": "left",
+        "from": 0.2621,
+        "length": 0.0685
+      },
+      {
+        "kind": "volumeDown",
+        "edge": "left",
+        "from": 0.349,
+        "length": 0.0685
+      },
+      {
+        "kind": "side",
+        "edge": "right",
+        "from": 0.2856,
+        "length": 0.1083
+      },
+      {
+        "kind": "cameraControl",
+        "edge": "right",
+        "from": 0.6319,
+        "length": 0.1046
+      }
+    ],
+    "back": {
+      "parts": [
+        {
+          "kind": "plateau",
+          "x": 0,
+          "y": 0,
+          "width": 77.98,
+          "height": 48.4,
+          "radius": 6
+        },
+        {
+          "kind": "lens",
+          "x": 6.08,
+          "y": 5.53,
+          "width": 16.58
+        },
+        {
+          "kind": "lens",
+          "x": 6.08,
+          "y": 25.32,
+          "width": 16.58
+        },
+        {
+          "kind": "lens",
+          "x": 24.2,
+          "y": 15.7,
+          "width": 16.58
+        },
+        {
+          "kind": "flash",
+          "x": 60.71,
+          "y": 10.37,
+          "width": 6.9
+        },
+        {
+          "kind": "mic",
+          "x": 63.58,
+          "y": 23.41,
+          "width": 1.15
+        },
+        {
+          "kind": "lidar",
+          "x": 60.71,
+          "y": 30.71,
+          "width": 6.9
+        }
+      ],
+      "note": "Full-width camera plateau; lens, flash, microphone and LiDAR centres from Apple's dimensional drawing. Plateau height taken from the 18 Pro (not measured on this drawing)."
+    },
+    "provenance": {
+      "body": "official: https://developer.apple.com/accessories/dimensional-drawings/ (iphone-18-pro-max.pdf): product 77.98 x 163.43 mm, active area 72.86 x 158.31 mm, 2.56 mm housing edge to active area, glass 75.58 x 161.03 mm (metal band 1.20 mm seen from the front)",
+      "bodyRadius": "measured: Apple's continuous curve (tangent 1.5287 r) fitted to the corner profile, detail A, of https://developer.apple.com/accessories/dimensional-drawings/ (iphone-18-pro-max.pdf): tangent 19.43 mm; on the curve (13.90, 0.04), (8.46, 0.92), (3.80, 3.80); r = 12.71 mm",
+      "cutout": "measured: island cutout 15.66/15.68 x 6.07 mm, centre 7.99/7.91 mm from the top edge in https://developer.apple.com/accessories/dimensional-drawings/, at 0.16565 mm per point",
+      "radius": "measured: CoreSimulator DeviceCornerRadius 62 (iPhone19,2/19,3) https://github.com/damix00/expo-screen-corner-radius/pull/2",
+      "safeArea": "estimated: as the 6.3-inch 2025 iPhones (17, 17 Pro); no published value for this model",
+      "buttons": "official: button centres and lengths in https://developer.apple.com/accessories/dimensional-drawings/",
+      "back": "official: https://developer.apple.com/accessories/dimensional-drawings/; plateau height estimated",
+      "colors": "official names https://www.apple.com/iphone-18-pro/specs/; hex: Apple compare-page swatches https://www.apple.com/v/iphone/compare/an/built/styles/overview.built.css"
+    },
+    "designSource": "https://developer.apple.com/accessories/dimensional-drawings/"
+  },
+  {
+    "id": "duo",
+    "name": "iPhone Duo",
+    "family": "Current",
+    "display": "5.4″ / 7.6″",
+    "width": 466,
+    "height": 678,
+    "openWidth": 951,
+    "openHeight": 669,
+    "pixels": "1398 × 2034",
+    "openPixels": "2670 × 1878",
+    "cutout": "punch",
+    "radius": 59,
+    "colors": [
+      "#3c4042",
+      "#fafafa"
+    ],
+    "colorNames": [
+      "Night Sky",
+      "Star White"
+    ],
+    "source": "https://www.apple.com/iphone-duo/specs/",
+    "openCutout": "none",
+    "designSource": "https://developer.apple.com/accessories/dimensional-drawings/",
+    "platform": "ios",
+    "dpr": 3,
+    "bezel": 16,
+    "verifiedAt": "2026-10-30",
+    "confidence": "official-body-buttons-cameras-outer-camera; measured-points-radii-insets; estimated-outer-landscape-and-inner-portrait-insets",
+    "notes": "Book-style foldable, hinge on the left of the outer display. Outer: punch-hole camera top right (Dynamic Island runs down the right edge, drawn by iOS, 37 x 137 pt). Inner: 951 x 669 pt at 3x rendered and scaled to the 430 ppi panel, under-display camera, no cutout. Outer landscape and inner portrait insets unverified.",
+    "safePortrait": {
+      "top": 0,
+      "right": 84,
+      "bottom": 34,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 0,
+      "left": 72
+    },
+    "cutoutWidth": 36.64,
+    "cutoutHeight": 36.64,
+    "cutoutOffset": 29.43,
+    "openSafePortrait": {
+      "top": 28,
+      "right": 0,
+      "bottom": 20,
+      "left": 0
+    },
+    "openSafeLandscape": {
+      "top": 0,
+      "right": 84,
+      "bottom": 34,
+      "left": 0
+    },
+    "virtual": {
+      "panel": "1398x2034@60:109x159",
+      "variant": "d47vm2025vre",
+      "source": "derived",
+      "artworkSubtype": 2034,
+      "cornerRadius": 48,
+      "islandBottom": 0,
+      "largeFormat": true,
+      "note": "Derived from Apple's iPhone 16 research variant. One fixed panel with the folded display's pixels; folding and the second display are not emulated."
+    },
+    "cornerRadii": [
+      8,
+      59,
+      59,
+      8
+    ],
+    "openRadius": 55,
+    "ppi": 460,
+    "openPpi": 430,
+    "body": {
+      "width": 84.1,
+      "height": 117.8,
+      "depth": 11.3,
+      "radius": 11.32,
+      "radii": [
+        2.5,
+        11.32,
+        11.32,
+        2.5
+      ],
+      "border": 1.38,
+      "screenLeft": 4.13,
+      "screenTop": 2.71,
+      "openWidth": 164.6,
+      "openHeight": 117.8,
+      "openDepth": 5.2
+    },
+    "cutoutX": 399.78,
+    "foldEdge": "left",
+    "buttons": [
+      {
+        "kind": "volumeDown",
+        "edge": "top",
+        "from": 0.4627,
+        "length": 0.1294
+      },
+      {
+        "kind": "volumeUp",
+        "edge": "top",
+        "from": 0.6218,
+        "length": 0.1294
+      },
+      {
+        "kind": "side",
+        "edge": "right",
+        "from": 0.2846,
+        "length": 0.1587
+      },
+      {
+        "kind": "cameraControl",
+        "edge": "right",
+        "from": 0.6487,
+        "length": 0.1452
+      }
+    ],
+    "openButtons": [
+      {
+        "kind": "volumeDown",
+        "edge": "top",
+        "from": 0.7364,
+        "length": 0.0661
+      },
+      {
+        "kind": "volumeUp",
+        "edge": "top",
+        "from": 0.8177,
+        "length": 0.0661
+      },
+      {
+        "kind": "side",
+        "edge": "right",
+        "from": 0.2846,
+        "length": 0.1587
+      },
+      {
+        "kind": "cameraControl",
+        "edge": "right",
+        "from": 0.6487,
+        "length": 0.1452
+      }
+    ],
+    "back": {
+      "parts": [
+        {
+          "kind": "plateau",
+          "x": 0,
+          "y": 0,
+          "width": 69.37,
+          "height": 34.62,
+          "radius": 9
+        },
+        {
+          "kind": "plateau",
+          "x": 4.94,
+          "y": 4.7,
+          "width": 55.62,
+          "height": 21.1
+        },
+        {
+          "kind": "lens",
+          "x": 7.15,
+          "y": 7.15,
+          "width": 16.2
+        },
+        {
+          "kind": "lens",
+          "x": 24.88,
+          "y": 7.15,
+          "width": 16.2
+        },
+        {
+          "kind": "mic",
+          "x": 49.0,
+          "y": 10.38,
+          "width": 1.15
+        },
+        {
+          "kind": "flash",
+          "x": 47.7,
+          "y": 17.82,
+          "width": 3.75
+        }
+      ],
+      "note": "Seen from behind the hinge is on the right; the camera sits in the opposite top corner: a raised base, a stadium with two lenses, microphone and flash (Apple's dimensional drawing)."
+    },
+    "openBack": {
+      "parts": [
+        {
+          "kind": "plateau",
+          "x": 0,
+          "y": 0,
+          "width": 69.37,
+          "height": 34.62,
+          "radius": 9
+        },
+        {
+          "kind": "plateau",
+          "x": 4.94,
+          "y": 4.7,
+          "width": 55.62,
+          "height": 21.1
+        },
+        {
+          "kind": "lens",
+          "x": 7.15,
+          "y": 7.15,
+          "width": 16.2
+        },
+        {
+          "kind": "lens",
+          "x": 24.88,
+          "y": 7.15,
+          "width": 16.2
+        },
+        {
+          "kind": "mic",
+          "x": 49.0,
+          "y": 10.38,
+          "width": 1.15
+        },
+        {
+          "kind": "flash",
+          "x": 47.7,
+          "y": 17.82,
+          "width": 3.75
+        },
+        {
+          "kind": "display",
+          "x": 86.42999999999999,
+          "y": 2.71,
+          "width": 77.17,
+          "height": 112.28,
+          "radius": 9.77,
+          "radii": [
+            1.33,
+            9.77,
+            9.77,
+            1.33
+          ]
+        }
+      ],
+      "note": "Open, from behind: the camera half on the left, the outer display on the right half with its small corners at the hinge."
+    },
+    "provenance": {
+      "body": "official: https://www.apple.com/iphone-duo/specs/ and https://developer.apple.com/accessories/dimensional-drawings/ (iphone-duo.pdf): outer bezel 2.71 mm, 4.13 mm at the hinge; inner bezel 3.45 mm",
+      "bodyRadius": "measured: Apple's continuous curve (tangent 1.5287 r) fitted to the corner profile, detail A, of https://developer.apple.com/accessories/dimensional-drawings/ (iphone-duo.pdf): tangent 17.31 mm, r = 11.32 mm; hinge corners from detail AY, tangent 3.72 mm, about 2.5 mm",
+      "border": "official: 2.71 mm housing edge to active area less the 1.33 mm housing edge to cover glass in the drawing",
+      "points": "measured: Xcode 27 simulator via https://iosref.com/res and https://safearea.info/iphone-duo: outer 466 x 678, inner 951 x 669 (3x, native scale 2.807)",
+      "cutout": "official: camera opening 6.07 mm, centre 73.39 mm from the hinge edge and 10.62 mm from the top in https://developer.apple.com/accessories/dimensional-drawings/; island size measured https://safearea.info/iphone-duo",
+      "radius": "measured: simulator 59 pt (8 pt at the hinge) outer, 55 pt inner https://github.com/expo/expo-device-hub/pull/514",
+      "safeArea": "measured: iOS 27.1 simulator https://safearea.info/iphone-duo (outer portrait and inner landscape: right 84, bottom 34); outer landscape and inner portrait kept, unverified",
+      "buttons": "official: https://developer.apple.com/accessories/dimensional-drawings/; no Action button https://www.macrumors.com/2026/09/09/iphone-duo-doesnt-have-an-action-button/",
+      "back": "official: https://developer.apple.com/accessories/dimensional-drawings/ (Detail D)",
+      "innerCamera": "official: under-display camera 115.80 mm from the left and 10.55 mm from the top, open, in https://developer.apple.com/accessories/dimensional-drawings/",
+      "colors": "official names https://www.apple.com/iphone-duo/specs/; hex: Apple compare-page swatches https://www.apple.com/v/iphone/compare/an/built/styles/overview.built.css"
+    }
+  },
+  {
+    "id": "air",
+    "name": "iPhone Air",
+    "family": "Current",
+    "display": "6.5″",
+    "width": 420,
+    "height": 912,
+    "pixels": "1260 × 2736",
+    "cutout": "island",
+    "radius": 62,
+    "colors": [
+      "#b7cbd7",
+      "#d5c9aa",
+      "#dfe0dd",
+      "#323435"
+    ],
+    "colorNames": [
+      "Sky Blue",
+      "Light Gold",
+      "Cloud White",
+      "Space Black"
+    ],
+    "source": "https://www.apple.com/iphone-air/specs/",
+    "platform": "ios",
+    "dpr": 3,
+    "bezel": 16,
+    "verifiedAt": "2026-10-30",
+    "confidence": "official-body-buttons-cameras; measured-island-radius-insets",
+    "notes": "Body, bezel, buttons and camera from Apple's dimensional drawing; island, corner radius and safe insets from the iOS 27 simulator.",
+    "safePortrait": {
+      "top": 68,
+      "right": 0,
+      "bottom": 34,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 68,
+      "bottom": 20,
+      "left": 68
+    },
+    "cutoutWidth": 125.33,
+    "cutoutHeight": 36.67,
+    "cutoutOffset": 20,
+    "virtual": {
+      "panel": "1260x2736@60:69x149",
+      "variant": "d47vm2025vre",
+      "source": "derived",
+      "artworkSubtype": 2736,
+      "cornerRadius": 62,
+      "islandBottom": 171,
+      "note": "Derived from Apple's iPhone 16 research variant: this model's display, artwork subtype and corner values; not Apple's own description."
+    },
+    "ppi": 460,
+    "body": {
+      "width": 74.7,
+      "height": 156.18,
+      "depth": 5.64,
+      "radius": 12.65,
+      "border": 1.44
+    },
+    "buttons": [
+      {
+        "kind": "action",
+        "edge": "left",
+        "from": 0.1961,
+        "length": 0.0442
+      },
+      {
+        "kind": "volumeUp",
+        "edge": "left",
+        "from": 0.273,
+        "length": 0.0717
+      },
+      {
+        "kind": "volumeDown",
+        "edge": "left",
+        "from": 0.3639,
+        "length": 0.0717
+      },
+      {
+        "kind": "side",
+        "edge": "right",
+        "from": 0.2973,
+        "length": 0.114
+      },
+      {
+        "kind": "cameraControl",
+        "edge": "right",
+        "from": 0.6161,
+        "length": 0.1095
+      }
+    ],
+    "back": {
+      "parts": [
+        {
+          "kind": "plateau",
+          "x": 0,
+          "y": 0,
+          "width": 74.7,
+          "height": 35,
+          "radius": 8
+        },
+        {
+          "kind": "lens",
+          "x": 8.38,
+          "y": 8.38,
+          "width": 15.82
+        },
+        {
+          "kind": "mic",
+          "x": 50.77,
+          "y": 15.71,
+          "width": 1.15
+        },
+        {
+          "kind": "flash",
+          "x": 55.27,
+          "y": 13.14,
+          "width": 6.3
+        }
+      ],
+      "note": "Full-width plateau with one lens; part centres from Apple's dimensional drawing, plateau height scaled off it."
+    },
+    "provenance": {
+      "body": "official: https://www.apple.com/iphone-air/specs/ and https://developer.apple.com/accessories/dimensional-drawings/ (iphone-air.pdf): 2.58 mm housing edge to active area",
+      "bodyRadius": "estimated: the curve of the 18 Pro (r 12.71 mm) scaled to detail A of https://developer.apple.com/accessories/dimensional-drawings/ (iphone-air.pdf), whose points (13.85, 0.04), (8.43, 0.91), (3.78, 3.78) are 0.4 % smaller; the drawing gives no tangent",
+      "border": "official: 2.58 mm housing edge to active area less the metal band of 1.14 mm (glass 72.42 x 153.90 mm in the drawing)",
+      "cutout": "measured: iOS 27 simulator https://safearea.info/iphone-air.md, matches the drawing to 0.1 mm",
+      "radius": "measured: https://safearea.info/, https://github.com/kylebshr/ScreenCorners",
+      "safeArea": "measured: iOS 27 simulator https://safearea.info/ (useyourloaf reports landscape top 20 on iOS 26)",
+      "buttons": "official: https://developer.apple.com/accessories/dimensional-drawings/",
+      "back": "official: https://developer.apple.com/accessories/dimensional-drawings/; plateau height and corner estimated",
+      "colors": "official names https://www.apple.com/iphone-air/specs/; hex kept as matched to product photos: Apple's swatches (https://www.apple.com/v/iphone/compare/an/built/styles/overview.built.css) are stylised near-white and pure black"
+    },
+    "designSource": "https://developer.apple.com/accessories/dimensional-drawings/"
+  },
+  {
+    "id": "17",
+    "name": "iPhone 17",
+    "family": "Current",
+    "display": "6.3″",
+    "width": 402,
+    "height": 874,
+    "pixels": "1206 × 2622",
+    "cutout": "island",
+    "radius": 62,
+    "colors": [
+      "#dfceea",
+      "#a9b689",
+      "#96aed1",
+      "#f5f5f5",
+      "#353839"
+    ],
+    "colorNames": [
+      "Lavender",
+      "Sage",
+      "Mist Blue",
+      "White",
+      "Black"
+    ],
+    "source": "https://www.apple.com/iphone-17/specs/",
+    "platform": "ios",
+    "dpr": 3,
+    "bezel": 15,
+    "verifiedAt": "2026-10-30",
+    "confidence": "official-body-buttons-cameras; measured-island-radius-insets",
+    "notes": "Body, bezel, buttons and camera from Apple's dimensional drawing; island, corner radius and safe insets from the iOS 27 simulator.",
+    "safePortrait": {
+      "top": 62,
+      "right": 0,
+      "bottom": 34,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 62,
+      "bottom": 20,
+      "left": 62
+    },
+    "cutoutWidth": 125.33,
+    "cutoutHeight": 36.67,
+    "cutoutOffset": 14,
+    "virtual": {
+      "panel": "1206x2622@60:66x143",
+      "variant": "d47vm2025vre",
+      "source": "derived",
+      "artworkSubtype": 2622,
+      "cornerRadius": 62,
+      "islandBottom": 153,
+      "note": "Derived from Apple's iPhone 16 research variant: this model's display, artwork subtype and corner values; not Apple's own description."
+    },
+    "ppi": 460,
+    "body": {
+      "width": 71.45,
+      "height": 149.61,
+      "depth": 7.95,
+      "radius": 12.58,
+      "border": 1.44
+    },
+    "buttons": [
+      {
+        "kind": "action",
+        "edge": "left",
+        "from": 0.2047,
+        "length": 0.0461
+      },
+      {
+        "kind": "volumeUp",
+        "edge": "left",
+        "from": 0.285,
+        "length": 0.0749
+      },
+      {
+        "kind": "volumeDown",
+        "edge": "left",
+        "from": 0.3799,
+        "length": 0.0749
+      },
+      {
+        "kind": "side",
+        "edge": "right",
+        "from": 0.3106,
+        "length": 0.1183
+      },
+      {
+        "kind": "cameraControl",
+        "edge": "right",
+        "from": 0.5993,
+        "length": 0.1143
+      }
+    ],
+    "back": {
+      "parts": [
+        {
+          "kind": "plateau",
+          "x": 1.18,
+          "y": 1.34,
+          "width": 24.88,
+          "height": 42.28
+        },
+        {
+          "kind": "lens",
+          "x": 5.62,
+          "y": 5.62,
+          "width": 16
+        },
+        {
+          "kind": "lens",
+          "x": 5.62,
+          "y": 23.34,
+          "width": 16
+        },
+        {
+          "kind": "flash",
+          "x": 27.27,
+          "y": 19.34,
+          "width": 6.28
+        }
+      ],
+      "note": "Vertical camera pill and flash beside it, from Apple's dimensional drawing."
+    },
+    "provenance": {
+      "body": "official: https://www.apple.com/iphone-17/specs/ and https://developer.apple.com/accessories/dimensional-drawings/ (iphone-17.pdf): active area 66.57 x 144.79 mm",
+      "bodyRadius": "measured: Apple's continuous curve (tangent 1.5287 r) fitted to the corner profile, detail A, of https://developer.apple.com/accessories/dimensional-drawings/ (iphone-17.pdf): tangent 19.23 mm; r = 12.58 mm",
+      "border": "official: 2.44 mm housing edge to active area less the metal band of 1.00 mm (glass 69.45 x 147.61 mm in the drawing)",
+      "cutout": "measured: iOS 27 simulator https://safearea.info/iphone-17.md, matches the drawing to 0.1 mm",
+      "radius": "measured: https://safearea.info/, https://github.com/kylebshr/ScreenCorners",
+      "safeArea": "measured: iOS 27 simulator https://safearea.info/",
+      "buttons": "official: https://developer.apple.com/accessories/dimensional-drawings/",
+      "back": "official: https://developer.apple.com/accessories/dimensional-drawings/",
+      "colors": "official names https://www.apple.com/iphone-17/specs/; hex: Apple compare-page swatches https://www.apple.com/v/iphone/compare/an/built/styles/overview.built.css"
+    },
+    "designSource": "https://developer.apple.com/accessories/dimensional-drawings/"
+  },
+  {
+    "id": "17e",
+    "name": "iPhone 17e",
+    "family": "Current",
+    "display": "6.1″",
+    "width": 390,
+    "height": 844,
+    "pixels": "1170 × 2532",
+    "cutout": "notch",
+    "radius": 47.33,
+    "colors": [
+      "#fce7e6",
+      "#fafafa",
+      "#3c4042"
+    ],
+    "colorNames": [
+      "Soft Pink",
+      "White",
+      "Black"
+    ],
+    "source": "https://www.apple.com/iphone-17e/specs/",
+    "platform": "ios",
+    "dpr": 3,
+    "bezel": 21,
+    "verifiedAt": "2026-10-30",
+    "confidence": "official-body-buttons-cameras; measured-island-radius-insets",
+    "notes": "Edge-connected TrueDepth notch. Body, bezel, notch, buttons and camera from Apple's dimensional drawing; corner radius and safe insets from the iOS 27 simulator.",
+    "safePortrait": {
+      "top": 47,
+      "right": 0,
+      "bottom": 34,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 47,
+      "bottom": 20,
+      "left": 47
+    },
+    "cutoutWidth": 161.33,
+    "cutoutHeight": 33.67,
+    "cutoutOffset": 0,
+    "designSource": "https://developer.apple.com/accessories/dimensional-drawings/",
+    "virtual": {
+      "panel": "1170x2532@60:65x141",
+      "variant": "d47vm2025vre",
+      "source": "derived",
+      "artworkSubtype": 2532,
+      "cornerRadius": 47,
+      "islandBottom": 0,
+      "note": "Derived from Apple's iPhone 16 research variant: this model's display, artwork subtype and corner values; not Apple's own description."
+    },
+    "ppi": 460,
+    "body": {
+      "width": 71.52,
+      "height": 146.71,
+      "depth": 7.8,
+      "radius": 10.47,
+      "border": 2.42
+    },
+    "cutoutRadius": 22.46,
+    "cutoutShoulder": 4.95,
+    "buttons": [
+      {
+        "kind": "action",
+        "edge": "left",
+        "from": 0.1875,
+        "length": 0.0514
+      },
+      {
+        "kind": "volumeUp",
+        "edge": "left",
+        "from": 0.2693,
+        "length": 0.0807
+      },
+      {
+        "kind": "volumeDown",
+        "edge": "left",
+        "from": 0.3661,
+        "length": 0.0807
+      },
+      {
+        "kind": "side",
+        "edge": "right",
+        "from": 0.2956,
+        "length": 0.125
+      }
+    ],
+    "back": {
+      "parts": [
+        {
+          "kind": "lens",
+          "x": 5.83,
+          "y": 5.83,
+          "width": 14.97
+        },
+        {
+          "kind": "mic",
+          "x": 23.8,
+          "y": 12.82,
+          "width": 1.0
+        },
+        {
+          "kind": "flash",
+          "x": 27.8,
+          "y": 11.45,
+          "width": 3.75
+        }
+      ],
+      "note": "Single lens ring without a plateau, microphone and flash in a row, from Apple's dimensional drawing."
+    },
+    "provenance": {
+      "body": "official: https://www.apple.com/iphone-17e/specs/ and https://developer.apple.com/accessories/dimensional-drawings/ (iphone-17e.pdf): 3.47 mm housing edge to active area",
+      "bodyRadius": "measured: Apple's continuous curve (tangent 1.5287 r) fitted to the corner profile, detail A, of https://developer.apple.com/accessories/dimensional-drawings/ (iphone-17e.pdf): tangent 15.89 and 16.14 mm; r = 10.47 mm",
+      "border": "official: 3.47 mm housing edge to active area less the metal band of 1.05 mm (glass 69.42 x 144.61 mm in the drawing)",
+      "cutout": "official+measured: notch 26.79 x 5.58 mm, radii R0.82/R3.72 mm in https://developer.apple.com/accessories/dimensional-drawings/; 161.33 x 33.67 pt on the iOS 27 simulator https://safearea.info/",
+      "radius": "measured: https://safearea.info/, https://github.com/kylebshr/ScreenCorners",
+      "safeArea": "measured: iOS 27 simulator https://safearea.info/",
+      "buttons": "official: https://developer.apple.com/accessories/dimensional-drawings/ (no Camera Control)",
+      "back": "official: https://developer.apple.com/accessories/dimensional-drawings/; microphone size estimated",
+      "colors": "official names https://www.apple.com/iphone-17e/specs/; hex: Apple compare-page swatches https://www.apple.com/v/iphone/compare/an/built/styles/overview.built.css"
+    }
+  },
+  {
+    "id": "16",
+    "name": "iPhone 16",
+    "family": "Other",
+    "display": "6.1″",
+    "width": 393,
+    "height": 852,
+    "pixels": "1179 × 2556",
+    "cutout": "island",
+    "radius": 55,
+    "colors": [
+      "#9aadf6",
+      "#b0d4d2",
+      "#f2adda",
+      "#fafafa",
+      "#3c4042"
+    ],
+    "colorNames": [
+      "Ultramarine",
+      "Teal",
+      "Pink",
+      "White",
+      "Black"
+    ],
+    "source": "https://www.apple.com/iphone-16/specs/",
+    "platform": "ios",
+    "dpr": 3,
+    "bezel": 20,
+    "verifiedAt": "2026-10-30",
+    "confidence": "official-body-buttons-cameras; measured-island-radius-insets",
+    "notes": "Body, bezel, buttons and camera from Apple's dimensional drawing; island, corner radius and safe insets from the iOS 27 simulator.",
+    "safePortrait": {
+      "top": 59,
+      "right": 0,
+      "bottom": 34,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 59,
+      "bottom": 20,
+      "left": 59
+    },
+    "cutoutWidth": 125,
+    "cutoutHeight": 36.67,
+    "cutoutOffset": 11.33,
+    "virtual": {
+      "panel": "1179x2556@60:65x141",
+      "variant": "d47vm2025vre",
+      "source": "apple",
+      "note": "Apple's own iPhone 16 research variant of the virtual iPhone, applied unchanged."
+    },
+    "ppi": 460,
+    "body": {
+      "width": 71.63,
+      "height": 147.64,
+      "depth": 7.8,
+      "radius": 11.38,
+      "border": 2.27
+    },
+    "buttons": [
+      {
+        "kind": "action",
+        "edge": "left",
+        "from": 0.2075,
+        "length": 0.0467
+      },
+      {
+        "kind": "volumeUp",
+        "edge": "left",
+        "from": 0.2888,
+        "length": 0.0759
+      },
+      {
+        "kind": "volumeDown",
+        "edge": "left",
+        "from": 0.385,
+        "length": 0.0759
+      },
+      {
+        "kind": "side",
+        "edge": "right",
+        "from": 0.3149,
+        "length": 0.1199
+      },
+      {
+        "kind": "cameraControl",
+        "edge": "right",
+        "from": 0.594,
+        "length": 0.1159
+      }
+    ],
+    "back": {
+      "parts": [
+        {
+          "kind": "plateau",
+          "x": 1.09,
+          "y": 1.25,
+          "width": 25.07,
+          "height": 42.47
+        },
+        {
+          "kind": "lens",
+          "x": 5.62,
+          "y": 5.62,
+          "width": 16
+        },
+        {
+          "kind": "lens",
+          "x": 5.62,
+          "y": 23.34,
+          "width": 16
+        },
+        {
+          "kind": "flash",
+          "x": 26.87,
+          "y": 19.34,
+          "width": 6.28
+        }
+      ],
+      "note": "Vertical camera pill and flash beside it, from Apple's dimensional drawing; flash size as on the 17."
+    },
+    "provenance": {
+      "body": "official: https://www.apple.com/iphone-16/specs/ and https://developer.apple.com/accessories/dimensional-drawings/ (iphone-16.pdf): 3.27 mm housing edge to active area",
+      "bodyRadius": "measured: Apple's continuous curve (tangent 1.5287 r) fitted to the corner profile, detail A, of https://developer.apple.com/accessories/dimensional-drawings/ (iphone-16.pdf): tangent 17.40 mm; r = 11.38 mm",
+      "border": "official: 3.27 mm housing edge to active area less the metal band of 1.00 mm (glass 69.63 x 145.64 mm in the drawing)",
+      "cutout": "measured: iOS 27 simulator https://safearea.info/iphone-16.md; its bottom (48 pt, 144 px) is the island-notch-location of Apple's own iPhone 16 research variant",
+      "radius": "measured: https://safearea.info/, https://github.com/kylebshr/ScreenCorners; 55 is also the display-corner-radius of Apple's research variant",
+      "safeArea": "measured: iOS 27 simulator https://safearea.info/ (iOS 18 reported landscape bottom 21)",
+      "buttons": "official: https://developer.apple.com/accessories/dimensional-drawings/",
+      "back": "official: https://developer.apple.com/accessories/dimensional-drawings/",
+      "colors": "official names https://www.apple.com/iphone-16/specs/; hex: Apple compare-page swatches https://www.apple.com/v/iphone/compare/an/built/styles/overview.built.css"
+    },
+    "designSource": "https://developer.apple.com/accessories/dimensional-drawings/"
+  },
+  {
+    "id": "pixel-11",
+    "name": "Pixel 11",
+    "display": "6.3″",
+    "width": 412,
+    "height": 924,
+    "pixels": "1080 × 2424",
+    "dpr": 2.625,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 34,
+    "bezel": 8,
+    "colors": [
+      "#d6e7ec",
+      "#c2d5bc",
+      "#bc727c",
+      "#303333"
+    ],
+    "colorNames": [
+      "Frost",
+      "Pistachio",
+      "Hibiscus",
+      "Obsidian"
+    ],
+    "source": "https://store.google.com/product/pixel_11_specs",
+    "verifiedAt": "2026-10-03",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    }
+  },
+  {
+    "id": "pixel-11-pro",
+    "name": "Pixel 11 Pro",
+    "display": "6.3″",
+    "width": 412,
+    "height": 919,
+    "pixels": "1280 × 2856",
+    "dpr": 2.625,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 34,
+    "bezel": 8,
+    "colors": [
+      "#a27561",
+      "#8c967b",
+      "#ced7dc",
+      "#303333"
+    ],
+    "colorNames": [
+      "Canyon",
+      "Olive",
+      "Fog",
+      "Obsidian"
+    ],
+    "source": "https://store.google.com/product/pixel_11_pro_specs",
+    "verifiedAt": "2026-10-03",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    }
+  },
+  {
+    "id": "pixel-11-pro-xl",
+    "name": "Pixel 11 Pro XL",
+    "display": "6.8″",
+    "width": 448,
+    "height": 997,
+    "pixels": "1344 × 2992",
+    "dpr": 3,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 34,
+    "bezel": 8,
+    "colors": [
+      "#a27561",
+      "#8c967b",
+      "#ced7dc",
+      "#303333"
+    ],
+    "colorNames": [
+      "Canyon",
+      "Olive",
+      "Fog",
+      "Obsidian"
+    ],
+    "source": "https://store.google.com/product/pixel_11_pro_specs",
+    "verifiedAt": "2026-10-03",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    }
+  },
+  {
+    "id": "pixel-11-pro-fold",
+    "name": "Pixel 11 Pro Fold",
+    "display": "6.5″ / 8.0″",
+    "width": 412,
+    "height": 892,
+    "pixels": "1080 × 2342",
+    "dpr": 2.625,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 34,
+    "bezel": 8,
+    "colors": [
+      "#8c967b",
+      "#303333"
+    ],
+    "colorNames": [
+      "Olive",
+      "Obsidian"
+    ],
+    "source": "https://store.google.com/product/pixel_11_pro_fold_specs",
+    "verifiedAt": "2026-10-03",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    },
+    "openWidth": 791,
+    "openHeight": 820,
+    "openPixels": "2076 × 2152",
+    "openCutout": "punch-right",
+    "openSafePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "openSafeLandscape": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    }
+  },
+  {
+    "id": "galaxy-s26",
+    "name": "Galaxy S26",
+    "display": "6.3″",
+    "width": 360,
+    "height": 780,
+    "pixels": "1080 × 2340",
+    "dpr": 3,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 34,
+    "bezel": 8,
+    "colors": [
+      "#52516d",
+      "#a5c4dd",
+      "#dededd",
+      "#2e3034"
+    ],
+    "colorNames": [
+      "Cobalt Violet",
+      "Sky Blue",
+      "White",
+      "Black"
+    ],
+    "source": "https://www.samsung.com/uk/business/smartphones/galaxy-s/galaxy-s26-black-256gb-sm-s942bzkgeub/",
+    "verifiedAt": "2026-10-03",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    }
+  },
+  {
+    "id": "galaxy-s26-ultra",
+    "name": "Galaxy S26 Ultra",
+    "display": "6.9″",
+    "width": 480,
+    "height": 1040,
+    "pixels": "1440 × 3120",
+    "dpr": 3,
+    "platform": "android",
+    "family": "Android",
+    "cutout": "punch",
+    "cutoutWidth": 13,
+    "cutoutHeight": 13,
+    "cutoutOffset": 11,
+    "radius": 27,
+    "bezel": 8,
+    "colors": [
+      "#52516d",
+      "#a5c4dd",
+      "#dededd",
+      "#2e3034"
+    ],
+    "colorNames": [
+      "Cobalt Violet",
+      "Sky Blue",
+      "White",
+      "Black"
+    ],
+    "source": "https://www.samsung.com/us/smartphones/galaxy-s26-ultra/",
+    "verifiedAt": "2026-10-03",
+    "confidence": "spec-resolution; reference-layout",
+    "notes": "Physical panel resolution from manufacturer. Android logical size varies with display settings; use android.calibrate for a measured profile. Frame and insets are approximate.",
+    "safePortrait": {
+      "top": 32,
+      "right": 0,
+      "bottom": 24,
+      "left": 0
+    },
+    "safeLandscape": {
+      "top": 0,
+      "right": 0,
+      "bottom": 24,
+      "left": 32
+    }
+  }
+]

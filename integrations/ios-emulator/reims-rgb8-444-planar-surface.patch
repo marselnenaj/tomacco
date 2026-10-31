@@ -1,0 +1,1596 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+index c9c8726..fb20702 100644
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+@@ -338,18 +338,23 @@ pub struct DevicePlaneRecord {
+     pub bytes_per_element: u16,
+ }
+ 
+-/// A complete native XR IOSurface. Both windows name one mapping allocation;
+-/// neither may be substituted for the surface-level stride or for APV's
+-/// four-byte ARGB paging plane.
++/// A complete native two-window IOSurface. Both windows name one mapping
++/// allocation; neither may be substituted for the surface-level stride or, for
++/// XR, for APV's four-byte ARGB paging plane.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+-pub struct PlanarXrSurfaceLayout {
+-    pub format: pixel_format::PlanarXrFormat,
++pub struct PlanarSurfaceLayout<F> {
++    pub format: F,
+     pub width: u32,
+     pub height: u32,
+     pub allocation_size: u64,
+     pub planes: [PlanarXrSurfacePlane; 2],
+ }
+ 
++/// Native RGB10 plus alpha8.
++pub type PlanarXrSurfaceLayout = PlanarSurfaceLayout<pixel_format::PlanarXrFormat>;
++/// Native eight-bit green plus blue/red.
++pub type PlanarRgb8SurfaceLayout = PlanarSurfaceLayout<pixel_format::PlanarRgb8Format>;
++
+ #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+ pub struct PlanarXrSurfacePlane {
+     pub offset: u64,
+@@ -430,7 +435,7 @@ impl PlanarXrSurfaceRefusal {
+     }
+ }
+ 
+-impl PlanarXrSurfaceLayout {
++impl<F: pixel_format::PlanarSurfaceStorage> PlanarSurfaceLayout<F> {
+     /// Recover the native, linear two-plane layout from the device descriptor.
+     /// Nonzero surface origins and unequal plane offset/base need a separately
+     /// recovered addressing contract and are refused rather than added together.
+@@ -444,9 +449,9 @@ impl PlanarXrSurfaceLayout {
+     ) -> Result<Self, PlanarXrSurfaceRefusal> {
+         use PlanarXrSurfacePlaneCause as P;
+         use PlanarXrSurfaceRefusal as R;
+-        let format = pixel_format::PlanarXrFormat::from_mtl(mtl).ok_or(R::Format)?;
++        let format = F::from_mtl(mtl).ok_or(R::Format)?;
+         let surface = decode_device_surface(desc).ok_or(R::Descriptor)?;
+-        if surface.pixel_format != pixel_format::IOSURFACE_FORMAT_BGR10_ALPHA8 {
++        if surface.pixel_format != format.iosurface_format() {
+             return Err(R::Format);
+         }
+         if width == 0
+@@ -1729,4 +1734,91 @@ mod tests {
+         )
+         .is_none());
+     }
++
++    /// The `_RB4` descriptor every 542 surface of the qualification boot
++    /// declared: 320x320, a one-byte plane at 0 and a two-byte plane right
++    /// behind it, both with tight rows.
++    fn rgb8_444_desc() -> Vec<u8> {
++        use crate::endian::{st16, st32, st64};
++        let dims = |width: u64, height: u64| 1 | (width << 8) | (1 << 32) | (height << 40);
++        let mut desc = vec![0; DEVICE_DESC_LEN];
++        st32(
++            &mut desc[DEVICE_DESC_PIXEL_FORMAT..],
++            crate::pixel_format::IOSURFACE_FORMAT_RGB8_444_2P,
++        );
++        st32(&mut desc[DEVICE_DESC_ALLOC_SIZE..], 307_200);
++        st64(&mut desc[DEVICE_DESC_DIMS..], dims(320, 320));
++        st32(&mut desc[DEVICE_DESC_BPR..], 320);
++        st16(&mut desc[DEVICE_DESC_BPE..], 1);
++        desc[DEVICE_DESC_PLANE_COUNT] = 2;
++        for (index, (offset, size, stride, bpe)) in
++            [(0u32, 102_400u32, 320u32, 1u16), (102_400, 204_800, 640, 2)]
++                .into_iter()
++                .enumerate()
++        {
++            let plane = &mut desc[DEVICE_DESC_PLANES + index * DEVICE_PLANE_DESC_LEN..];
++            st32(&mut plane[DEVICE_PLANE_OFFSET..], offset);
++            st32(&mut plane[DEVICE_PLANE_BASE..], offset);
++            st32(&mut plane[DEVICE_PLANE_SIZE..], size);
++            st64(&mut plane[DEVICE_PLANE_DIMS..], dims(320, 320));
++            st32(&mut plane[DEVICE_PLANE_BPR..], stride);
++            st16(&mut plane[DEVICE_PLANE_BPE..], bpe);
++        }
++        desc
++    }
++
++    #[test]
++    fn an_rgb8_444_surface_decodes_its_two_own_windows() {
++        use crate::pixel_format::{PlanarRgb8Format, MTL_FORMAT_RGB8_444_2P};
++        let layout =
++            PlanarRgb8SurfaceLayout::decode(&rgb8_444_desc(), MTL_FORMAT_RGB8_444_2P, 320, 320)
++                .unwrap();
++        assert_eq!(layout.format, PlanarRgb8Format::Rgb8);
++        assert_eq!(layout.allocation_size, 307_200);
++        let window = |plane: PlanarXrSurfacePlane| {
++            (
++                plane.offset,
++                plane.row_stride,
++                plane.tight_row,
++                plane.bytes_per_element,
++            )
++        };
++        assert_eq!(window(layout.planes[0]), (0, 320, 320, 1));
++        assert_eq!(window(layout.planes[1]), (102_400, 640, 640, 2));
++        assert_eq!(layout.touched_end(), 307_200);
++    }
++
++    /// The two-window decoder is one owner for every member, and each member
++    /// is held to its own surface format and element widths: an `_RB4`
++    /// descriptor is not an XR surface, and a 542 declaration over XR's
++    /// element widths is not an `_RB4` one.
++    #[test]
++    fn a_two_window_layout_holds_each_member_to_its_own_storage() {
++        use crate::pixel_format::{MTL_FORMAT_RGB10A8_2P_XR10, MTL_FORMAT_RGB8_444_2P};
++        let desc = rgb8_444_desc();
++        assert_eq!(
++            PlanarXrSurfaceLayout::decode(&desc, MTL_FORMAT_RGB10A8_2P_XR10, 320, 320),
++            Err(PlanarXrSurfaceRefusal::Format)
++        );
++        assert_eq!(
++            PlanarRgb8SurfaceLayout::decode(&desc, MTL_FORMAT_RGB10A8_2P_XR10, 320, 320),
++            Err(PlanarXrSurfaceRefusal::Format)
++        );
++        let mut wide = desc.clone();
++        crate::endian::st16(
++            &mut wide[DEVICE_DESC_PLANES + DEVICE_PLANE_DESC_LEN + DEVICE_PLANE_BPE..],
++            1,
++        );
++        assert_eq!(
++            PlanarRgb8SurfaceLayout::decode(&wide, MTL_FORMAT_RGB8_444_2P, 320, 320),
++            Err(PlanarXrSurfaceRefusal::Plane {
++                index: 1,
++                cause: PlanarXrSurfacePlaneCause::ElementWidth,
++            })
++        );
++        assert_eq!(
++            PlanarRgb8SurfaceLayout::decode(&desc, MTL_FORMAT_RGB8_444_2P, 320, 160),
++            Err(PlanarXrSurfaceRefusal::SurfaceGeometry)
++        );
++    }
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+index 7f403d2..919e3c0 100644
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -324,6 +324,202 @@ impl PlanarXrFormat {
+     }
+ }
+ 
++/// Private two-plane RGB without alpha (IOSurface `_RB4`): a full-resolution
++/// eight-bit plane and a full-resolution sixteen-bit plane.
++///
++/// Metal ordinal 542 has no public name; this one describes its storage. The
++/// channel contract comes from the guest's own GPU driver, not from a public
++/// table:
++///
++/// * every `_RB4` device descriptor names two equally sized planes with one-
++///   and two-byte elements;
++/// * the driver's texture-format record for 542 selects the read swizzle
++///   `[Blue, Red, Green, One]` (`MTLTextureSwizzle` ordinals `[4, 2, 3, 1]`,
++///   against `[2, 3, 4, 5]` for RGBA8 and `[4, 3, 2, 5]` for BGRA8). That is the
++///   `BRG1` swizzle the hardware's subsampled `GBGR`/`BGRG` layouts are read
++///   with, whose raw channels are green, blue, red in storage order;
++/// * its colour-space-conversion query answers "none" before looking at the
++///   surface, so the codes are RGB, not luma and chroma.
++///
++/// Raw channel 0 is the first plane's byte and raw channels 1 and 2 are the
++/// second plane's bytes in address order, so a texel reads
++/// `(plane1[1], plane0[0], plane1[0], 1)` — Vulkan's
++/// `G8_B8R8_2PLANE_444_UNORM` without a YCbCr conversion. Alpha is not stored.
++pub const MTL_FORMAT_RGB8_444_2P: u16 = 542;
++pub const IOSURFACE_FORMAT_RGB8_444_2P: u32 = u32::from_be_bytes(*b"_RB4");
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum PlanarRgb8Format {
++    Rgb8,
++}
++
++impl PlanarRgb8Format {
++    pub const fn from_mtl(format: u16) -> Option<Self> {
++        match format {
++            MTL_FORMAT_RGB8_444_2P => Some(Self::Rgb8),
++            _ => None,
++        }
++    }
++
++    pub const fn mtl(self) -> u16 {
++        MTL_FORMAT_RGB8_444_2P
++    }
++
++    pub const fn name(self) -> &'static str {
++        "RGB8_444_2P"
++    }
++
++    /// Green, then blue and red.
++    pub const fn surface_plane_bytes_per_element(self) -> [u8; 2] {
++        [1, 2]
++    }
++
++    /// One texel's semantic RGBA8. The format stores no alpha; it reads one.
++    pub const fn rgba8(self, green: u8, blue_red: [u8; 2]) -> [u8; 4] {
++        [blue_red[1], green, blue_red[0], u8::MAX]
++    }
++
++    /// One semantic RGBA8 texel's plane elements. Alpha has no storage.
++    pub const fn plane_elements(self, rgba: [u8; 4]) -> (u8, [u8; 2]) {
++        (rgba[COMPONENT_G], [rgba[COMPONENT_B], rgba[COMPONENT_R]])
++    }
++
++    /// Both tight planes of a solid clear, quantized exactly as an RGBA8 clear
++    /// is. The clear's alpha has no storage.
++    pub fn clear_planes(self, width: u32, height: u32, clear: &[f64; 4]) -> Option<[Vec<u8>; 2]> {
++        let texels = (width as usize).checked_mul(height as usize)?;
++        let (green, blue_red) = self.plane_elements(unorm8_rgba(clear));
++        Some([
++            solid_bytes(texels, &[green])?,
++            solid_bytes(texels.checked_mul(2)?, &blue_red)?,
++        ])
++    }
++
++    /// Expand tight plane rows into tight semantic RGBA8. Every length is
++    /// checked against the first plane's texel count before any byte is written.
++    pub fn join_rgba8(self, green: &[u8], blue_red: &[u8], rgba: &mut [u8]) -> bool {
++        let texels = green.len();
++        if texels.checked_mul(2) != Some(blue_red.len())
++            || texels.checked_mul(4) != Some(rgba.len())
++        {
++            return false;
++        }
++        for ((out, &g), br) in rgba
++            .as_chunks_mut::<4>()
++            .0
++            .iter_mut()
++            .zip(green)
++            .zip(blue_red.as_chunks::<2>().0)
++        {
++            *out = self.rgba8(g, *br);
++        }
++        true
++    }
++
++    /// Split tight eight-bit colour texels into tight plane rows. Only the two
++    /// eight-bit colour orders are sources; any other layout is refused.
++    pub fn split_texels(
++        self,
++        layout: TexelLayout,
++        texels: &[u8],
++        green: &mut [u8],
++        blue_red: &mut [u8],
++    ) -> bool {
++        let count = green.len();
++        if !matches!(layout, TexelLayout::Rgba8 | TexelLayout::Bgra8)
++            || count.checked_mul(2) != Some(blue_red.len())
++            || count.checked_mul(4) != Some(texels.len())
++        {
++            return false;
++        }
++        for ((texel, g), br) in texels
++            .as_chunks::<4>()
++            .0
++            .iter()
++            .zip(green.iter_mut())
++            .zip(blue_red.as_chunks_mut::<2>().0)
++        {
++            let rgba = match layout {
++                TexelLayout::Bgra8 => [texel[2], texel[1], texel[0], texel[3]],
++                _ => *texel,
++            };
++            (*g, *br) = self.plane_elements(rgba);
++        }
++        true
++    }
++}
++
++/// A native two-window IOSurface storage format. One mapping owns both planes,
++/// each with the window its device descriptor names; no transfer may infer an
++/// interleaved row from the pair.
++pub trait PlanarSurfaceStorage: Copy + Eq + core::fmt::Debug {
++    fn from_mtl(format: u16) -> Option<Self>;
++    fn mtl(self) -> u16;
++    /// The IOSurface pixel format every mapping of this storage declares.
++    fn iosurface_format(self) -> u32;
++    fn surface_plane_bytes_per_element(self) -> [u8; 2];
++}
++
++impl PlanarSurfaceStorage for PlanarXrFormat {
++    fn from_mtl(format: u16) -> Option<Self> {
++        Self::from_mtl(format)
++    }
++    fn mtl(self) -> u16 {
++        self.mtl()
++    }
++    fn iosurface_format(self) -> u32 {
++        IOSURFACE_FORMAT_BGR10_ALPHA8
++    }
++    fn surface_plane_bytes_per_element(self) -> [u8; 2] {
++        self.surface_plane_bytes_per_element()
++    }
++}
++
++impl PlanarSurfaceStorage for PlanarRgb8Format {
++    fn from_mtl(format: u16) -> Option<Self> {
++        Self::from_mtl(format)
++    }
++    fn mtl(self) -> u16 {
++        self.mtl()
++    }
++    fn iosurface_format(self) -> u32 {
++        IOSURFACE_FORMAT_RGB8_444_2P
++    }
++    fn surface_plane_bytes_per_element(self) -> [u8; 2] {
++        self.surface_plane_bytes_per_element()
++    }
++}
++
++/// Every native two-window surface a mapping may declare. Callers that only
++/// ask "is this storage two windows" ask here; callers that convert texels
++/// dispatch on the member.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum PlanarSurfaceFormat {
++    Xr(PlanarXrFormat),
++    Rgb8(PlanarRgb8Format),
++}
++
++impl PlanarSurfaceFormat {
++    pub const fn from_mtl(format: u16) -> Option<Self> {
++        match PlanarXrFormat::from_mtl(format) {
++            Some(xr) => Some(Self::Xr(xr)),
++            None => match PlanarRgb8Format::from_mtl(format) {
++                Some(rgb8) => Some(Self::Rgb8(rgb8)),
++                None => None,
++            },
++        }
++    }
++
++    /// The texel a render or sample resident of this storage holds: XR's
++    /// canonical Float32, or semantic RGBA8 for eight-bit codes.
++    pub const fn resident_layout(self) -> TexelLayout {
++        match self {
++            Self::Xr(_) => TexelLayout::Rgba32Float,
++            Self::Rgb8(_) => TexelLayout::Rgba8,
++        }
++    }
++}
++
+ /// Extended-range texels have no bit-compatible Vulkan normalized format.
+ /// Keep their packing and transfer function together until an upload decodes
+ /// them. In particular, a BGR texel's two high bits are not an alpha channel.
+@@ -6750,4 +6946,67 @@ mod xr_scanout_tests {
+             );
+         }
+     }
++
++    /// 542's swizzle contract, texel by texel: red from the second plane's
++    /// high byte, green from the first plane, blue from the second plane's low
++    /// byte, and an alpha the storage does not have reads one.
++    #[test]
++    fn rgb8_444_texels_follow_the_drivers_brg1_read_swizzle() {
++        let format = PlanarRgb8Format::from_mtl(MTL_FORMAT_RGB8_444_2P).unwrap();
++        assert_eq!(format.rgba8(0x22, [0x33, 0x11]), [0x11, 0x22, 0x33, 0xff]);
++        assert_eq!(
++            format.plane_elements([0x11, 0x22, 0x33, 0x00]),
++            (0x22, [0x33, 0x11])
++        );
++        assert_eq!(
++            PlanarSurfaceFormat::from_mtl(MTL_FORMAT_RGB8_444_2P),
++            Some(PlanarSurfaceFormat::Rgb8(PlanarRgb8Format::Rgb8))
++        );
++        assert_eq!(
++            PlanarSurfaceFormat::from_mtl(MTL_FORMAT_RGB10A8_2P_XR10),
++            Some(PlanarSurfaceFormat::Xr(PlanarXrFormat::Rgb10Alpha8))
++        );
++        assert_eq!(PlanarSurfaceFormat::from_mtl(MTL_FORMAT_BGRA8_UNORM), None);
++        // Not a colour target this device serves as one window, and no
++        // interleaved width may be assumed for it.
++        assert_eq!(render_target_bpp(MTL_FORMAT_RGB8_444_2P), None);
++        assert_eq!(bytes_per_pixel(MTL_FORMAT_RGB8_444_2P), None);
++    }
++
++    #[test]
++    fn rgb8_444_planes_round_trip_through_either_eight_bit_order() {
++        let format = PlanarRgb8Format::Rgb8;
++        let rgba = [1, 2, 3, 4, 5, 6, 7, 8];
++        let bgra = [3, 2, 1, 4, 7, 6, 5, 8];
++        for (layout, texels) in [(TexelLayout::Rgba8, rgba), (TexelLayout::Bgra8, bgra)] {
++            let (mut green, mut blue_red) = ([0; 2], [0; 4]);
++            assert!(format.split_texels(layout, &texels, &mut green, &mut blue_red));
++            assert_eq!((green, blue_red), ([2, 6], [3, 1, 7, 5]), "{layout:?}");
++            let mut joined = [0; 8];
++            assert!(format.join_rgba8(&green, &blue_red, &mut joined));
++            assert_eq!(joined, [1, 2, 3, 0xff, 5, 6, 7, 0xff], "{layout:?}");
++        }
++        // Lengths are checked before any byte moves, and only eight-bit
++        // colour orders are sources.
++        let (mut green, mut blue_red) = ([9; 2], [9; 3]);
++        assert!(!format.split_texels(TexelLayout::Rgba8, &rgba, &mut green, &mut blue_red));
++        assert_eq!((green, blue_red), ([9; 2], [9; 3]));
++        let (mut green, mut blue_red) = ([9; 2], [9; 4]);
++        assert!(!format.split_texels(TexelLayout::Rgba32Float, &rgba, &mut green, &mut blue_red));
++        assert!(!format.join_rgba8(&[0; 2], &[0; 4], &mut [0; 4]));
++    }
++
++    #[test]
++    fn an_rgb8_444_clear_fills_each_plane_with_its_own_elements() {
++        let [green, blue_red] = PlanarRgb8Format::Rgb8
++            .clear_planes(3, 2, &[1.0, 0.5, 0.0, 0.0])
++            .unwrap();
++        let rgba = solid_rgba8(1, 1, &[1.0, 0.5, 0.0, 0.0]);
++        assert_eq!(green, vec![rgba[1]; 6]);
++        assert_eq!(blue_red, [rgba[2], rgba[0]].repeat(6));
++        assert_eq!(
++            PlanarRgb8Format::Rgb8.clear_planes(0, 9, &[0.0; 4]),
++            Some([Vec::new(), Vec::new()])
++        );
++    }
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+index 89c0025..b2578d8 100644
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -737,6 +737,11 @@ pub fn color_attachment(mtl: u16) -> Result<(vk::Format, ColorNumericType), Refu
+     if pixel_format::PlanarXrFormat::from_mtl(mtl).is_some() {
+         return Ok((vk::Format::R32G32B32A32_SFLOAT, ColorNumericType::Float));
+     }
++    // Eight-bit codes in two windows render as semantic RGBA8; the surface's
++    // owner splits a Store into, and joins a Load from, the guest's planes.
++    if pixel_format::PlanarRgb8Format::from_mtl(mtl).is_some() {
++        return Ok((vk::Format::R8G8B8A8_UNORM, ColorNumericType::Float));
++    }
+     // XR10 has no bit-compatible Vulkan format. Its Float32 resident carries
+     // decoded canonical XR values; the engine quantizes unblended fragment
+     // outputs, and refuses blending until rounding after blend is available.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
+index 57790ff..3d8c1c3 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
+@@ -241,11 +241,14 @@ pub(crate) trait Backend: Copy {
+         false
+     }
+ 
++    /// This running rail closes render, Load and Store for every native
++    /// two-window surface: RGB10/alpha8 XR and eight-bit green + blue/red.
+     fn supports_native_xr_rendering(&self) -> bool {
+         false
+     }
+ 
+-    /// Publish a clear to both native XR storage planes, or report a refusal.
++    /// Publish a clear to both native two-window storage planes, or report a
++    /// refusal.
+     fn clear_native_xr_surface<M: HostMemory + HostOps>(
+         &self,
+         _state: &mut DeviceState,
+@@ -256,8 +259,9 @@ pub(crate) trait Backend: Copy {
+         false
+     }
+ 
+-    /// Land an abandoned native XR chain directly from its canonical resident.
+-    /// An RGBA8 recovery image cannot preserve extended range or alpha8 codes.
++    /// Land an abandoned native two-window chain directly from its resident.
++    /// An RGBA8 recovery image cannot preserve extended range or alpha8 codes,
++    /// and no interleaved recovery image has the two windows' layout.
+     fn land_native_xr_chain<M: HostMemory + HostOps>(
+         &self,
+         _state: &mut DeviceState,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/present_identity.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/present_identity.rs
+index c08365a..6df66ac 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/present_identity.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/present_identity.rs
+@@ -32,18 +32,24 @@ use ash::vk;
+ ///
+ /// The guest's own declaration, taken from the single place the writeback also
+ /// reads it. Public XR and native RGB10/alpha8 use canonical Float32 residents;
+-/// native storage is validated and transferred as two windows by its owner.
+-/// Other declarations with no resident texel fall back to scanout order and
+-/// remain subject to the render resolver's typed admission checks.
++/// native eight-bit green + blue/red uses semantic RGBA8. Native storage is
++/// validated and transferred as two windows by its owner. Other declarations
++/// with no resident texel fall back to scanout order and remain subject to the
++/// render resolver's typed admission checks.
+ fn surface_format(state: &DeviceState, mapping_id: u32) -> vk::Format {
+-    if state.mappings.get(&mapping_id).is_some_and(|mapping| {
+-        reims_vgpu_vulkan::pixel::XrRenderFormat::from_mtl(
+-            crate::runtime::mapping_write::mapping_store_format(mapping),
+-        )
+-        .is_some()
+-    }) {
++    let declared = state
++        .mappings
++        .get(&mapping_id)
++        .map(crate::runtime::mapping_write::mapping_store_format);
++    if declared.is_some_and(|mtl| reims_vgpu_vulkan::pixel::XrRenderFormat::from_mtl(mtl).is_some())
++    {
+         return vk::Format::R32G32B32A32_SFLOAT;
+     }
++    if let Some(planar) =
++        declared.and_then(crate::protocol::pixel_format::PlanarSurfaceFormat::from_mtl)
++    {
++        return crate::backend::vulkan::translate::pixel::vk_texel_layout(planar.resident_layout());
++    }
+     state
+         .mappings
+         .get(&mapping_id)
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+index f44d8aa..c3f453f 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+@@ -385,6 +385,11 @@ mod tests {
+             if rail::XrRenderFormat::from_mtl(mtl).is_some() {
+                 assert_eq!(allocation, vk::Format::R32G32B32A32_SFLOAT);
+                 assert_eq!(resident_bpp, Some(16));
++            } else if let Some(planar) = p::PlanarSurfaceFormat::from_mtl(mtl) {
++                // Two windows have no interleaved width to agree with; the
++                // resident holds the family's own canonical texel instead.
++                assert_eq!(p::render_target_bpp(mtl), None, "{mtl:#x}");
++                assert_eq!(texel_layout_of(allocation), Some(planar.resident_layout()));
+             } else {
+                 assert_eq!(
+                     resident_bpp,
+@@ -913,7 +918,8 @@ mod tests {
+             let admitted = color_attachment(mtl).is_ok();
+             assert_eq!(
+                 admitted,
+-                p::render_target_bpp(mtl).is_some() || p::PlanarXrFormat::from_mtl(mtl).is_some(),
++                p::render_target_bpp(mtl).is_some()
++                    || p::PlanarSurfaceFormat::from_mtl(mtl).is_some(),
+                 "{mtl:#x}: the two colour-attachment arms disagree"
+             );
+             if !admitted {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+index f1726a0..15457c3 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+@@ -411,6 +411,8 @@ pub(super) struct RenderTargetRefusal {
+ pub(super) enum RenderTargetCause {
+     BufferTexture(BufferTargetDecline),
+     /// Native paired storage needs the running rail's complete paired route.
++    /// This and the three `NativeXr*` checks below hold for every native
++    /// two-window surface, XR or eight-bit; their fields name the format.
+     NativeXrRail,
+     #[cfg(feature = "backend-vulkan")]
+     PairedXr,
+@@ -915,27 +917,39 @@ impl crate::observe::Decline for RenderTargetRefusal {
+ }
+ 
+ /// Validate the native pair without inventing an interleaved texel width.
+-fn validate_native_xr_target(
++fn validate_native_planar_target(
+     mapping: &crate::model::MappingEntry,
+     mapping_id: u32,
++    format: pixel_format::PlanarSurfaceFormat,
+ ) -> Result<(), RenderTargetCause> {
++    use crate::protocol::iosurface_pages::{PlanarRgb8SurfaceLayout, PlanarXrSurfaceLayout};
+     if !crate::backend::selected().supports_native_xr_rendering() {
+         return Err(RenderTargetCause::NativeXrRail);
+     }
+     if !mapping.mapped || mapping.page_entries.is_empty() {
+         return Err(RenderTargetCause::NativeXrNotResident { mapping_id });
+     }
+-    crate::protocol::iosurface_pages::PlanarXrSurfaceLayout::decode(
++    let (desc, mtl, width, height) = (
+         &mapping.device_desc,
+         mapping.format,
+         mapping.width,
+         mapping.height,
+-    )
+-    .map_err(RenderTargetCause::NativeXrLayout)?;
+-    Ok(())
++    );
++    match format {
++        pixel_format::PlanarSurfaceFormat::Xr(_) => {
++            PlanarXrSurfaceLayout::decode(desc, mtl, width, height).map(|_| ())
++        }
++        pixel_format::PlanarSurfaceFormat::Rgb8(_) => {
++            PlanarRgb8SurfaceLayout::decode(desc, mtl, width, height).map(|_| ())
++        }
++    }
++    .map_err(RenderTargetCause::NativeXrLayout)
+ }
+ 
+-fn native_xr_target(mapping: &crate::model::MappingEntry, mapping_id: u32) -> ResolvedRenderTarget {
++fn native_planar_target(
++    mapping: &crate::model::MappingEntry,
++    mapping_id: u32,
++) -> ResolvedRenderTarget {
+     ResolvedRenderTarget {
+         buffer_texture: None,
+         #[cfg(feature = "backend-vulkan")]
+@@ -1147,7 +1161,7 @@ fn resolve_render_target<M: HostMemory + HostOps>(
+         } else {
+             MTL_FORMAT_BGRA8_UNORM
+         };
+-        if pixel_format::PlanarXrFormat::from_mtl(base_fmt).is_some() {
++        if let Some(planar) = pixel_format::PlanarSurfaceFormat::from_mtl(base_fmt) {
+             let declared = live.as_ref().and_then(|entry| {
+                 objects::read_descriptor(state, host, task_id, entry)
+                     .and_then(|bytes| {
+@@ -1178,8 +1192,9 @@ fn resolve_render_target<M: HostMemory + HostOps>(
+                 }
+                 .at(resolved_ref));
+             }
+-            validate_native_xr_target(m, mapping_id).map_err(|why| why.at(resolved_ref))?;
+-            return Ok(native_xr_target(m, mapping_id));
++            validate_native_planar_target(m, mapping_id, planar)
++                .map_err(|why| why.at(resolved_ref))?;
++            return Ok(native_planar_target(m, mapping_id));
+         }
+         let fmt = effective_view_sample_format(base_fmt, view_fmt_override).unwrap_or(base_fmt);
+         if pixel_format::render_target_bpp(fmt).is_none() {
+@@ -1279,7 +1294,7 @@ fn resolve_render_target<M: HostMemory + HostOps>(
+             }
+             .at(resolved_ref),
+         )?;
+-        if pixel_format::PlanarXrFormat::from_mtl(base_fmt).is_some() {
++        if let Some(planar) = pixel_format::PlanarSurfaceFormat::from_mtl(base_fmt) {
+             let declared = ref_texture_view.map(|v| (v.pixel_format, v.width, v.height));
+             if ref_texture_view.is_some_and(|v| v.depth != 1 || v.plane_index != 0)
+                 || (live_type == Some(objects::OBJECT_TYPE_REF_TEXTURE)
+@@ -1293,8 +1308,9 @@ fn resolve_render_target<M: HostMemory + HostOps>(
+                 }
+                 .at(resolved_ref));
+             }
+-            validate_native_xr_target(m, surface_id).map_err(|why| why.at(resolved_ref))?;
+-            return Ok(native_xr_target(m, surface_id));
++            validate_native_planar_target(m, surface_id, planar)
++                .map_err(|why| why.at(resolved_ref))?;
++            return Ok(native_planar_target(m, surface_id));
+         }
+         let fmt = rt_backing_declared_format(
+             base_fmt,
+@@ -1840,6 +1856,63 @@ mod tests {
+         );
+     }
+ 
++    /// A private ordinal no rung of this device renders or names.
++    const UNRENDERED_PRIVATE_FORMAT: u16 = 0x7ff0;
++
++    /// A latched `_RB4` mapping with its two windows resident resolves to the
++    /// native two-window target: the declared format, the mapping's extent, and
++    /// no interleaved row a writer could infer from the pair.
++    #[test]
++    fn an_rgb8_444_mapper_target_resolves_to_its_two_window_surface() {
++        use crate::protocol::pixel_format::MTL_FORMAT_RGB8_444_2P;
++        let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_X86);
++        let host = FakeHost::new();
++        let tex_ref = 0x19ab_c002;
++        assert!(state.map_surface(80));
++        state.texture_to_mapping.insert((4, tex_ref), 80);
++        assert!(state.set_mapping_device_desc(
++            80,
++            &crate::runtime::mapping_write::rgb8_444_device_desc(
++                320,
++                320,
++                [(0, 320), (102_400, 640)],
++                307_200
++            )
++        ));
++        assert!(state.set_mapping_geom(80, 320, 320, MTL_FORMAT_RGB8_444_2P));
++        state.mappings.get_mut(&80).unwrap().page_entries = vec![1];
++
++        let target = lookup_render_target(&mut state, &host, 4, attach(tex_ref))
++            .expect("a resident _RB4 surface is a colour target");
++        assert_eq!(
++            (target.mapping_id, target.target_gva, target.row_stride),
++            (80, 0, 0)
++        );
++        assert_eq!((target.width, target.height), (320, 320));
++        assert_eq!(target.format, MTL_FORMAT_RGB8_444_2P);
++
++        // The same surface over a descriptor whose second window is one byte
++        // wide is not this storage, and says which window disagreed.
++        let mut narrow = crate::runtime::mapping_write::rgb8_444_device_desc(
++            320,
++            320,
++            [(0, 320), (102_400, 640)],
++            307_200,
++        );
++        crate::protocol::endian::st16(
++            &mut narrow[crate::protocol::iosurface_pages::DEVICE_DESC_PLANES
++                + crate::protocol::iosurface_pages::DEVICE_PLANE_DESC_LEN
++                + crate::protocol::iosurface_pages::DEVICE_PLANE_BPE..],
++            1,
++        );
++        assert!(state.set_mapping_device_desc(80, &narrow));
++        let cap = crate::observe::FailCapture::start();
++        assert!(lookup_render_target(&mut state, &host, 4, attach(tex_ref)).is_none());
++        assert!(cap
++            .one("rt_resolve")
++            .starts_with("rt_resolve reason=dual_xr_surface_plane_element_width "));
++    }
++
+     /// Synthetic column values establish the diagnostic's ownership and byte
+     /// preservation. They do not assign channel names or enum meanings.
+     #[test]
+@@ -1859,7 +1932,9 @@ mod tests {
+         m.has_geom = true;
+         m.width = 320;
+         m.height = 320;
+-        m.format = 0x21e;
++        // Any declaration this device does not render. 542, whose surfaces
++        // these columns were first read from, is a native two-window target now.
++        m.format = UNRENDERED_PRIVATE_FORMAT;
+         m.device_desc = vec![0; DEVICE_DESC_LEN];
+         st32(&mut m.device_desc[DEVICE_DESC_PIXEL_FORMAT..], 0x5f524234);
+         m.device_desc[DEVICE_DESC_PLANE_COUNT] = 2;
+@@ -1910,7 +1985,7 @@ mod tests {
+         m.has_geom = true;
+         m.width = 320;
+         m.height = 320;
+-        m.format = 0x21e;
++        m.format = UNRENDERED_PRIVATE_FORMAT;
+         m.device_desc = vec![0; DEVICE_DESC_LEN];
+         m.device_desc[DEVICE_DESC_PLANE_COUNT] = 2;
+         m.device_desc[DEVICE_DESC_PLANES + DEVICE_PLANE_COMPONENT_COUNT] = 5;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+index 1068581..f3be551 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -1205,9 +1205,10 @@ pub(crate) fn load_planar_xr_surface_sample<M: HostMemory + HostOps>(
+     use crate::backend::vulkan::engine::resource_lease::{
+         planar_xr_surface_sample_bytes, PlanarXrMemoRefusal,
+     };
+-    let mut read = crate::runtime::mapping_write::prepare_planar_xr_surface_read(
+-        state, host, mapping_id, width, height,
+-    )
++    let mut read = crate::runtime::mapping_write::prepare_planar_surface_read::<
++        _,
++        crate::protocol::pixel_format::PlanarXrFormat,
++    >(state, host, mapping_id, width, height)
+     .map_err(PlanarXrMemoRefusal::Read)?;
+     let layout = read.layout();
+     // The mapping describes native storage, while a mapper-ref-texture declares
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+index db112a9..6cfd5f3 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -1391,6 +1391,55 @@ pub(super) fn resolve_sampled_source<M: HostMemory + HostOps>(
+     if let Some(mid) = surface {
+         // Ensure backing pages exist for this surface id.
+         let _ = objects::ensure_surface_for_texture_bind(state, host, mid);
++        // A whole mapper/backing reference to native `_RB4` storage names two
++        // windows as well, and no one-plane window or BGRA8 cache describes
++        // it. Its sample is the shared join a render Load also reads: semantic
++        // RGBA8 with the alpha the storage lacks reading one. Serialized plane
++        // views keep their own single-plane interpretation below.
++        if let Some((width, height)) = state.mappings.get(&mid).and_then(|mapping| {
++            pixel_format::PlanarRgb8Format::from_mtl(mapping.format)
++                .map(|_| (mapping.width, mapping.height))
++        }) {
++            if let Some(resource) = resolved_resource.as_ref().filter(|resource| {
++                resource.entry.object_type == objects::OBJECT_TYPE_BACKING
++                    || matches!(resource.decoded(), Ok(crate::runtime::decode::resource::Descriptor::IOSurfaceTexture {
++                        mapping_id, width: w, height: h, pixel_format, ..
++                    }) if *mapping_id == mid && (*w, *h) == (width, height)
++                        && pixel_format::PlanarRgb8Format::from_mtl(*pixel_format).is_some())
++            }) {
++                let key = resource.lifetime_ref().id();
++                let pixels = match join_native_rgb8_surface(state, host, mid, width, height) {
++                    Ok(pixels) => pixels,
++                    Err(why) => {
++                        crate::observe::Emit::decline("native_rgb8_surface_sample", &why)
++                            .field("mapping", mid)
++                            .field("ref", texture_ref)
++                            .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                        return None;
++                    }
++                };
++                crate::runtime::drain::note_store_route("native_rgb8_surface_sample_n");
++                return Some((
++                    width,
++                    height,
++                    mid,
++                    SampledSourceRequest::Bytes(
++                        std::sync::Arc::new(pixels),
++                        Some(LinearSampleIdentity {
++                            key,
++                            // Every read is a fresh observation of the guest's
++                            // pages; no conversion is memoized across them.
++                            generation: state.next_sampled_content_generation(),
++                        }),
++                        SampledByteFormat::from_source(
++                            TexelLayout::Rgba8,
++                            pixel_format::MTL_FORMAT_RGB8_444_2P,
++                        ),
++                        crate::backend::vulkan::engine::SampledByteOrigin::SerializedSurfaceView,
++                    ),
++                ));
++            }
++        }
+         // A whole mapper/backing reference to native RGB10 + alpha8 has two
+         // storage windows. Its float32 sample cannot pass through a one-plane
+         // window or a BGRA8 cache. Serialized plane views retain their own
+@@ -2680,6 +2729,35 @@ pub(super) fn seed_interleaved_xr_color_load<M: HostMemory + HostOps>(
+     Some(seed)
+ }
+ 
++/// Both `_RB4` windows of one validated read, joined into tight semantic RGBA8
++/// with the alpha the storage does not have reading one. The one reader every
++/// eight-bit two-window consumer shares: a render Load and a sampled bind see
++/// the same texels.
++pub(crate) fn join_native_rgb8_surface<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++) -> Result<Vec<u8>, mapping_write::PlanarXrMappingRefusal> {
++    use mapping_write::PlanarXrMappingRefusal as R;
++    let read = mapping_write::read_planar_surface::<_, pixel_format::PlanarRgb8Format>(
++        state, host, mapping_id, width, height,
++    )?;
++    let len = read.planes[0].len().checked_mul(4).ok_or(R::Allocation)?;
++    let mut pixels = Vec::new();
++    pixels.try_reserve_exact(len).map_err(|_| R::Allocation)?;
++    pixels.resize(len, 0);
++    if !read
++        .layout
++        .format
++        .join_rgba8(&read.planes[0], &read.planes[1], &mut pixels)
++    {
++        return Err(R::PlaneShape { index: 1 });
++    }
++    Ok(pixels)
++}
++
+ fn read_mapper_native_color_seed<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -2702,16 +2780,17 @@ fn read_mapper_native_color_seed<M: HostMemory + HostOps>(
+         if target_format != ash::vk::Format::R32G32B32A32_SFLOAT {
+             return None;
+         }
+-        let pair =
+-            match mapping_write::read_planar_xr_surface(state, host, mapping_id, width, height) {
+-                Ok(pair) => pair,
+-                Err(why) => {
+-                    crate::observe::Emit::decline("native_xr_render_load", &why)
+-                        .field("mapping", mapping_id)
+-                        .fail();
+-                    return None;
+-                }
+-            };
++        let pair = match mapping_write::read_planar_surface::<_, pixel_format::PlanarXrFormat>(
++            state, host, mapping_id, width, height,
++        ) {
++            Ok(pair) => pair,
++            Err(why) => {
++                crate::observe::Emit::decline("native_xr_render_load", &why)
++                    .field("mapping", mapping_id)
++                    .fail();
++                return None;
++            }
++        };
+         let expanded = match reims_vgpu_vulkan::pixel::sampled_planar_xr_surface_upload_bytes(
+             pair.layout.format,
+             &pair.planes[0],
+@@ -2736,6 +2815,29 @@ fn read_mapper_native_color_seed<M: HostMemory + HostOps>(
+             layout: TexelLayout::Rgba32Float,
+         });
+     }
++    if state
++        .mappings
++        .get(&mapping_id)
++        .is_some_and(|m| pixel_format::PlanarRgb8Format::from_mtl(m.format).is_some())
++    {
++        if target_format != ash::vk::Format::R8G8B8A8_UNORM {
++            return None;
++        }
++        let pixels = match join_native_rgb8_surface(state, host, mapping_id, width, height) {
++            Ok(pixels) => pixels,
++            Err(why) => {
++                crate::observe::Emit::decline("native_rgb8_render_load", &why)
++                    .field("mapping", mapping_id)
++                    .fail();
++                return None;
++            }
++        };
++        crate::runtime::drain::note_store_route("native_rgb8_render_load_n");
++        return Some(pixel_format::ColorLoadSeed {
++            pixels: std::sync::Arc::new(pixels),
++            layout: TexelLayout::Rgba8,
++        });
++    }
+     let (format, layout, window) = {
+         let mapping = state.mappings.get(&mapping_id)?;
+         if !mapping.mapped
+@@ -2879,6 +2981,9 @@ pub(crate) fn clear_native_xr_surface<M: HostMemory + HostOps>(
+             }
+         };
+     }
++    if pixel_format::PlanarRgb8Format::from_mtl(target.format).is_some() {
++        return clear_native_rgb8_surface(state, host, target, color);
++    }
+     let result = (|| {
+         use crate::runtime::mapping_write::PlanarXrMappingRefusal as R;
+         let mapping = state
+@@ -2925,7 +3030,7 @@ pub(crate) fn clear_native_xr_surface<M: HostMemory + HostOps>(
+                 texel.copy_from_slice(value);
+             }
+         }
+-        mapping_write::write_planar_xr_surface(state, host, write_target, &planes)
++        mapping_write::write_planar_surface(state, host, write_target, &planes)
+             .map_err(NativeXrClearRefusal::Mapping)
+     })();
+     match result {
+@@ -2942,6 +3047,50 @@ pub(crate) fn clear_native_xr_surface<M: HostMemory + HostOps>(
+     }
+ }
+ 
++/// Clear both `_RB4` windows to the clear's eight-bit codes. The clear's
++/// alpha has no storage and is dropped, as Metal drops it.
++fn clear_native_rgb8_surface<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    target: &ColorRtRequest,
++    color: [f64; 4],
++) -> bool {
++    use crate::runtime::mapping_write::PlanarXrMappingRefusal as R;
++    let result = (|| {
++        let mapping = state
++            .mappings
++            .get(&target.mapping_id)
++            .ok_or(R::MappingAbsent)?;
++        if target.target_gva != 0 || target.format != mapping.format {
++            return Err(R::StorageChanged);
++        }
++        let write_target = mapping_write::PlanarRgb8SurfaceWriteTarget::capture(
++            target.mapping_id,
++            mapping,
++            target.width,
++            target.height,
++        )?;
++        let planes = write_target
++            .layout()
++            .format
++            .clear_planes(target.width, target.height, &color)
++            .ok_or(R::Allocation)?;
++        mapping_write::write_planar_surface(state, host, write_target, &planes)
++    })();
++    match result {
++        Ok(_) => {
++            crate::runtime::drain::note_store_route("native_rgb8_render_clear_n");
++            true
++        }
++        Err(why) => {
++            crate::observe::Emit::decline("native_rgb8_render_clear", &why)
++                .field("mapping", target.mapping_id)
++                .fail();
++            false
++        }
++    }
++}
++
+ /// Preserve the last encoded native chain without RGBA8 narrowing.
+ pub(crate) fn land_native_xr_chain<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+@@ -2952,7 +3101,7 @@ pub(crate) fn land_native_xr_chain<M: HostMemory + HostOps>(
+     for target in req
+         .colors
+         .iter()
+-        .filter(|target| pixel_format::PlanarXrFormat::from_mtl(target.format).is_some())
++        .filter(|target| pixel_format::PlanarSurfaceFormat::from_mtl(target.format).is_some())
+     {
+         if let Some(pair) = &target.paired_xr {
+             if !reims_vgpu_protocol::pass_action::store_action_publishes_single_sample(
+@@ -10571,7 +10720,7 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+         // completes. A resident-only MRT slot is not guest-visible storage.
+         if writeback_guest {
+             for target in req.colors.iter().skip(1).filter(|target| {
+-                pixel_format::PlanarXrFormat::from_mtl(target.format).is_some()
++                pixel_format::PlanarSurfaceFormat::from_mtl(target.format).is_some()
+                     && reims_vgpu_protocol::pass_action::store_action_publishes_single_sample(
+                         target.store_action,
+                     )
+@@ -11872,7 +12021,7 @@ fn store_surface_resident<M: HostMemory + HostOps>(
+     if state
+         .mappings
+         .get(&mapping_id)
+-        .is_some_and(|m| pixel_format::PlanarXrFormat::from_mtl(m.format).is_some())
++        .is_some_and(|m| pixel_format::PlanarSurfaceFormat::from_mtl(m.format).is_some())
+     {
+         // A native pair must publish both CPU planes before guest completion.
+         // Its transaction stamps once; do not add the ordinary writer's stamp
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+index 4260bb9..eaea068 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+@@ -5955,7 +5955,7 @@ fn dirty_color_targets<M: HostMemory + HostOps>(
+             if state
+                 .mappings
+                 .get(&mid)
+-                .is_some_and(|m| pixel_format::PlanarXrFormat::from_mtl(m.format).is_some())
++                .is_some_and(|m| pixel_format::PlanarSurfaceFormat::from_mtl(m.format).is_some())
+             {
+                 // Only the complete paired write transaction publishes native
+                 // content. A declined draw cannot advance its currency, and a
+@@ -5969,7 +5969,7 @@ fn dirty_color_targets<M: HostMemory + HostOps>(
+             if state
+                 .mappings
+                 .get(&tex_ref)
+-                .is_some_and(|m| pixel_format::PlanarXrFormat::from_mtl(m.format).is_some())
++                .is_some_and(|m| pixel_format::PlanarSurfaceFormat::from_mtl(m.format).is_some())
+             {
+                 continue;
+             }
+@@ -6019,18 +6019,16 @@ fn land_chain_before_abandon<M: HostMemory + HostOps>(
+     if req
+         .colors
+         .iter()
+-        .any(|target| pixel_format::PlanarXrFormat::from_mtl(target.format).is_some())
++        .any(|target| pixel_format::PlanarSurfaceFormat::from_mtl(target.format).is_some())
+     {
+         if end.resident {
+             let _ = crate::backend::selected().land_native_xr_chain(state, host, req);
+         }
+         // The paired Store owns its publication. Never narrow a failed native
+         // recovery to the legacy RGBA8 image or mark stale pages as written.
+-        if req
+-            .colors
+-            .first()
+-            .is_some_and(|target| pixel_format::PlanarXrFormat::from_mtl(target.format).is_some())
+-        {
++        if req.colors.first().is_some_and(|target| {
++            pixel_format::PlanarSurfaceFormat::from_mtl(target.format).is_some()
++        }) {
+             dirty_color_targets(state, host, task_id, &acc.color_targets);
+             return;
+         }
+@@ -6212,7 +6210,7 @@ fn apply_clear<M: HostMemory + HostOps>(
+         );
+         return false;
+     }
+-    if pixel_format::PlanarXrFormat::from_mtl(c0.format).is_some() {
++    if pixel_format::PlanarSurfaceFormat::from_mtl(c0.format).is_some() {
+         let ok =
+             crate::backend::selected().clear_native_xr_surface(state, host, c0, att.clear_color);
+         if ok && c0.mapping_id != 0 {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/planar_xr.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/planar_xr.rs
+index f31d344..f4cff1a 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/planar_xr.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/planar_xr.rs
+@@ -1,4 +1,5 @@
+-//! Native RGB10 + alpha8 IOSurface transfers, distinct from APV's 4+4 planes.
++//! Native two-window IOSurface transfers: RGB10 + alpha8 XR, and eight-bit
++//! green + blue/red. Both are distinct from APV's 4+4 construction planes.
+ //!
+ //! One mapping owns the pair. The allocation and both windows are validated
+ //! before either plane is transferred. Guest padding is never staged or
+@@ -7,7 +8,8 @@
+ 
+ use super::vouch_for_write;
+ use crate::model::{DeviceState, MappingEntry};
+-use crate::protocol::iosurface_pages::{PlanarXrSurfaceLayout, PlanarXrSurfaceRefusal};
++use crate::protocol::iosurface_pages::{PlanarSurfaceLayout, PlanarXrSurfaceRefusal};
++use crate::protocol::pixel_format::{PlanarRgb8Format, PlanarSurfaceStorage, PlanarXrFormat};
+ use crate::runtime::host::{HostMemory, HostOps};
+ use crate::runtime::mapper::{
+     self, MappingRectCopy, MappingStorageIdentity, RectBatchRefusal, RectStride, RunCopy,
+@@ -91,13 +93,13 @@ impl crate::observe::Decline for PlanarXrMappingRefusal {
+     }
+ }
+ 
+-/// Resolve only the native 4+1 storage windows. APV construction descriptors
+-/// have a separate owner and cannot enter this transfer through format alone.
+-pub fn planar_xr_mapping_layout(
++/// Resolve only native two-window storage. APV construction descriptors have
++/// a separate owner and cannot enter this transfer through format alone.
++pub fn planar_surface_mapping_layout<F: PlanarSurfaceStorage>(
+     mapping: &MappingEntry,
+     width: u32,
+     height: u32,
+-) -> Result<PlanarXrSurfaceLayout, PlanarXrMappingRefusal> {
++) -> Result<PlanarSurfaceLayout<F>, PlanarXrMappingRefusal> {
+     if !mapping.mapped || mapping.page_entries.is_empty() {
+         return Err(PlanarXrMappingRefusal::MappingNotResident);
+     }
+@@ -107,17 +109,17 @@ pub fn planar_xr_mapping_layout(
+             latched: [mapping.width, mapping.height],
+         });
+     }
+-    PlanarXrSurfaceLayout::decode(&mapping.device_desc, mapping.format, width, height)
++    PlanarSurfaceLayout::decode(&mapping.device_desc, mapping.format, width, height)
+         .map_err(PlanarXrMappingRefusal::Layout)
+ }
+ 
+-struct Transfer {
+-    layout: PlanarXrSurfaceLayout,
++struct Transfer<F> {
++    layout: PlanarSurfaceLayout<F>,
+     identity: MappingStorageIdentity,
+     rects: [RectStride; 2],
+ }
+ 
+-impl Transfer {
++impl<F: PlanarSurfaceStorage> Transfer<F> {
+     fn capture(
+         state: &DeviceState,
+         mapping_id: u32,
+@@ -126,7 +128,7 @@ impl Transfer {
+     ) -> Result<Self, PlanarXrMappingRefusal> {
+         use PlanarXrMappingRefusal as R;
+         let mapping = state.mappings.get(&mapping_id).ok_or(R::MappingAbsent)?;
+-        let layout = planar_xr_mapping_layout(mapping, width, height)?;
++        let layout = planar_surface_mapping_layout(mapping, width, height)?;
+         let identity = MappingStorageIdentity::capture(mapping_id, mapping).map_err(R::Transfer)?;
+         let make_rect = |index: usize| {
+             let plane = layout.planes[index];
+@@ -154,23 +156,26 @@ impl Transfer {
+ 
+ /// Both tight plane buffers belong to one validated native surface read.
+ /// No GPU resident or render support is implied by possession of these bytes.
+-pub struct PlanarXrSurfaceRead {
+-    pub layout: PlanarXrSurfaceLayout,
++pub struct PlanarSurfaceRead<F> {
++    pub layout: PlanarSurfaceLayout<F>,
+     pub planes: [Vec<u8>; 2],
+ }
+ 
++pub type PlanarXrSurfaceRead = PlanarSurfaceRead<PlanarXrFormat>;
++pub type PlanarRgb8SurfaceRead = PlanarSurfaceRead<PlanarRgb8Format>;
++
+ /// A read keeps exclusive device and host access from debt settlement through
+ /// both transfers. No caller can queue a later Store between those two steps.
+-pub(crate) struct PlanarXrSurfaceReadTransaction<'a, M: HostMemory + HostOps> {
++pub(crate) struct PlanarSurfaceReadTransaction<'a, M: HostMemory + HostOps, F> {
+     state: &'a mut DeviceState,
+     host: &'a mut M,
+     mapping_id: u32,
+-    transfer: Transfer,
++    transfer: Transfer<F>,
+     vouched: mapper::PagesVouched,
+ }
+ 
+-impl<M: HostMemory + HostOps> PlanarXrSurfaceReadTransaction<'_, M> {
+-    pub(crate) fn layout(&self) -> PlanarXrSurfaceLayout {
++impl<M: HostMemory + HostOps, F: PlanarSurfaceStorage> PlanarSurfaceReadTransaction<'_, M, F> {
++    pub(crate) fn layout(&self) -> PlanarSurfaceLayout<F> {
+         self.transfer.layout
+     }
+ 
+@@ -189,16 +194,16 @@ impl<M: HostMemory + HostOps> PlanarXrSurfaceReadTransaction<'_, M> {
+                 .map_err(|_| R::Allocation)?;
+             plane.resize(rect.packed(), 0);
+         }
+-        let [rgb, alpha] = planes;
++        let [first, second] = planes;
+         let mut copies = [
+             MappingRectCopy::new(
+                 self.transfer.layout.planes[0].offset,
+-                RunCopy::read_rect(rgb, self.transfer.rects[0])
++                RunCopy::read_rect(first, self.transfer.rects[0])
+                     .ok_or(R::PlaneShape { index: 0 })?,
+             ),
+             MappingRectCopy::new(
+                 self.transfer.layout.planes[1].offset,
+-                RunCopy::read_rect(alpha, self.transfer.rects[1])
++                RunCopy::read_rect(second, self.transfer.rects[1])
+                     .ok_or(R::PlaneShape { index: 1 })?,
+             ),
+         ];
+@@ -216,13 +221,13 @@ impl<M: HostMemory + HostOps> PlanarXrSurfaceReadTransaction<'_, M> {
+     }
+ }
+ 
+-pub(crate) fn prepare_planar_xr_surface_read<'a, M: HostMemory + HostOps>(
++pub(crate) fn prepare_planar_surface_read<'a, M: HostMemory + HostOps, F: PlanarSurfaceStorage>(
+     state: &'a mut DeviceState,
+     host: &'a mut M,
+     mapping_id: u32,
+     width: u32,
+     height: u32,
+-) -> Result<PlanarXrSurfaceReadTransaction<'a, M>, PlanarXrMappingRefusal> {
++) -> Result<PlanarSurfaceReadTransaction<'a, M, F>, PlanarXrMappingRefusal> {
+     mapper::ensure_resolved_for_scanout(state, host, mapping_id);
+     crate::runtime::writeback_debt::settle_for_mapping(
+         state,
+@@ -234,7 +239,7 @@ pub(crate) fn prepare_planar_xr_surface_read<'a, M: HostMemory + HostOps>(
+     // A read has no write footprint, but it must not read a recycled backing.
+     let (_, vouched) = mapper::vouch_mapping_pages_verdict(state, host, mapping_id);
+     let vouched = vouched.ok_or(PlanarXrMappingRefusal::PagesNotOurs)?;
+-    Ok(PlanarXrSurfaceReadTransaction {
++    Ok(PlanarSurfaceReadTransaction {
+         state,
+         host,
+         mapping_id,
+@@ -243,17 +248,17 @@ pub(crate) fn prepare_planar_xr_surface_read<'a, M: HostMemory + HostOps>(
+     })
+ }
+ 
+-pub fn read_planar_xr_surface<M: HostMemory + HostOps>(
++pub fn read_planar_surface<M: HostMemory + HostOps, F: PlanarSurfaceStorage>(
+     state: &mut DeviceState,
+     host: &mut M,
+     mapping_id: u32,
+     width: u32,
+     height: u32,
+-) -> Result<PlanarXrSurfaceRead, PlanarXrMappingRefusal> {
+-    let mut read = prepare_planar_xr_surface_read(state, host, mapping_id, width, height)?;
++) -> Result<PlanarSurfaceRead<F>, PlanarXrMappingRefusal> {
++    let mut read = prepare_planar_surface_read::<M, F>(state, host, mapping_id, width, height)?;
+     let mut planes = [Vec::new(), Vec::new()];
+     read.read_into(&mut planes)?;
+-    Ok(PlanarXrSurfaceRead {
++    Ok(PlanarSurfaceRead {
+         layout: read.layout(),
+         planes,
+     })
+@@ -266,13 +271,16 @@ pub fn read_planar_xr_surface<M: HostMemory + HostOps>(
+ /// The exact native storage incarnation a producer intends to publish into.
+ /// Capture before GPU readback or CPU conversion; later page revalidation must
+ /// not silently retarget those pixels into a newly wired allocation.
+-pub struct PlanarXrSurfaceWriteTarget {
++pub struct PlanarSurfaceWriteTarget<F> {
+     mapping_id: u32,
+-    layout: PlanarXrSurfaceLayout,
++    layout: PlanarSurfaceLayout<F>,
+     identity: MappingStorageIdentity,
+ }
+ 
+-impl PlanarXrSurfaceWriteTarget {
++pub type PlanarXrSurfaceWriteTarget = PlanarSurfaceWriteTarget<PlanarXrFormat>;
++pub type PlanarRgb8SurfaceWriteTarget = PlanarSurfaceWriteTarget<PlanarRgb8Format>;
++
++impl<F: PlanarSurfaceStorage> PlanarSurfaceWriteTarget<F> {
+     pub fn capture(
+         mapping_id: u32,
+         mapping: &MappingEntry,
+@@ -281,21 +289,21 @@ impl PlanarXrSurfaceWriteTarget {
+     ) -> Result<Self, PlanarXrMappingRefusal> {
+         Ok(Self {
+             mapping_id,
+-            layout: planar_xr_mapping_layout(mapping, width, height)?,
++            layout: planar_surface_mapping_layout(mapping, width, height)?,
+             identity: MappingStorageIdentity::capture(mapping_id, mapping)
+                 .map_err(PlanarXrMappingRefusal::Transfer)?,
+         })
+     }
+ 
+-    pub fn layout(&self) -> PlanarXrSurfaceLayout {
++    pub fn layout(&self) -> PlanarSurfaceLayout<F> {
+         self.layout
+     }
+ }
+ 
+-pub fn write_planar_xr_surface<M: HostMemory + HostOps>(
++pub fn write_planar_surface<M: HostMemory + HostOps, F: PlanarSurfaceStorage>(
+     state: &mut DeviceState,
+     host: &mut M,
+-    target: PlanarXrSurfaceWriteTarget,
++    target: PlanarSurfaceWriteTarget<F>,
+     planes: &[Vec<u8>; 2],
+ ) -> Result<usize, PlanarXrMappingRefusal> {
+     use PlanarXrMappingRefusal as R;
+@@ -307,7 +315,8 @@ pub fn write_planar_xr_surface<M: HostMemory + HostOps>(
+         mapping_id,
+         crate::runtime::render_writeback::SettleSite::MappingRectWrite,
+     );
+-    let transfer = Transfer::capture(state, mapping_id, target.layout.width, target.layout.height)?;
++    let transfer =
++        Transfer::<F>::capture(state, mapping_id, target.layout.width, target.layout.height)?;
+     if transfer.layout != target.layout {
+         return Err(R::StorageChanged);
+     }
+@@ -351,3 +360,44 @@ pub fn write_planar_xr_surface<M: HostMemory + HostOps>(
+     crate::runtime::drain::note_store_route("dual_xr_surface_write_n");
+     Ok(bytes)
+ }
++
++/// The device descriptor of a linear `_RB4` surface, for owner tests that need
++/// a native eight-bit two-window mapping. `planes` is each window's offset and
++/// row pitch, in that order.
++#[cfg(test)]
++pub(crate) fn rgb8_444_device_desc(
++    width: u32,
++    height: u32,
++    planes: [(u32, u32); 2],
++    allocation: u32,
++) -> Vec<u8> {
++    use crate::protocol::endian::{st16, st32, st64};
++    use crate::protocol::iosurface_pages::{
++        DEVICE_DESC_ALLOC_SIZE, DEVICE_DESC_BPE, DEVICE_DESC_BPR, DEVICE_DESC_DIMS,
++        DEVICE_DESC_LEN, DEVICE_DESC_PIXEL_FORMAT, DEVICE_DESC_PLANES, DEVICE_DESC_PLANE_COUNT,
++        DEVICE_PLANE_BASE, DEVICE_PLANE_BPE, DEVICE_PLANE_BPR, DEVICE_PLANE_DESC_LEN,
++        DEVICE_PLANE_DIMS, DEVICE_PLANE_OFFSET, DEVICE_PLANE_SIZE,
++    };
++    // One-texel elements in both directions, then the two extents.
++    let dims = |w: u32, h: u32| 1 | (u64::from(w) << 8) | (1 << 32) | (u64::from(h) << 40);
++    let mut desc = vec![0; DEVICE_DESC_LEN];
++    st32(
++        &mut desc[DEVICE_DESC_PIXEL_FORMAT..],
++        crate::protocol::pixel_format::IOSURFACE_FORMAT_RGB8_444_2P,
++    );
++    st32(&mut desc[DEVICE_DESC_ALLOC_SIZE..], allocation);
++    st64(&mut desc[DEVICE_DESC_DIMS..], dims(width, height));
++    st32(&mut desc[DEVICE_DESC_BPR..], planes[0].1);
++    st16(&mut desc[DEVICE_DESC_BPE..], 1);
++    desc[DEVICE_DESC_PLANE_COUNT] = 2;
++    for (index, ((offset, stride), bpe)) in planes.into_iter().zip([1u16, 2]).enumerate() {
++        let plane = &mut desc[DEVICE_DESC_PLANES + index * DEVICE_PLANE_DESC_LEN..];
++        st32(&mut plane[DEVICE_PLANE_OFFSET..], offset);
++        st32(&mut plane[DEVICE_PLANE_BASE..], offset);
++        st32(&mut plane[DEVICE_PLANE_SIZE..], stride * height);
++        st64(&mut plane[DEVICE_PLANE_DIMS..], dims(width, height));
++        st32(&mut plane[DEVICE_PLANE_BPR..], stride);
++        st16(&mut plane[DEVICE_PLANE_BPE..], bpe);
++    }
++    desc
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
+index f8a15f6..097ffd4 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
+@@ -2590,3 +2590,74 @@ fn rect_raw_roundtrip_subregion() {
+         8
+     ));
+ }
++
++/// An `_RB4` surface is written and read as one transaction over its two own
++/// windows: each plane lands at its own offset and pitch, the guest's row
++/// padding is never staged or overwritten, and the read returns exactly the
++/// tight rows that were written.
++#[test]
++fn an_rgb8_444_surface_round_trips_both_windows_and_keeps_the_padding() {
++    use crate::model::PAGE_SHIFT_X86;
++    use crate::protocol::pixel_format::MTL_FORMAT_RGB8_444_2P;
++    const PAGE: usize = 1 << PAGE_SHIFT_X86;
++    const W: u32 = 4;
++    const H: u32 = 3;
++    // Green rows of 4 bytes at a pitch of 16; blue/red rows of 8 at 32.
++    const PLANES: [(u32, u32); 2] = [(0, 16), (64, 32)];
++    let mut state = DeviceState::new(DeviceId(2), PAGE_SHIFT_X86);
++    let mut host = FakeHost::new();
++    let base_pfn = 0x40u32;
++    let base = u64::from(base_pfn) << PAGE_SHIFT_X86;
++    host.map_range(base, PAGE, 0xee);
++    state.map_surface(4);
++    state.attach_mapping_internal(
++        4,
++        0,
++        crate::protocol::iosurface_pages::MapperLayout::Compact,
++    );
++    let m = state.mappings.get_mut(&4).unwrap();
++    m.mapping_internal = 1;
++    m.page_entries = vec![(base_pfn << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID];
++    assert!(state.set_mapping_device_desc(4, &rgb8_444_device_desc(W, H, PLANES, 160)));
++    assert!(state.set_mapping_geom(4, W, H, MTL_FORMAT_RGB8_444_2P));
++
++    let planes = [
++        (0..12).collect::<Vec<u8>>(),
++        (100..124).collect::<Vec<u8>>(),
++    ];
++    let target =
++        PlanarRgb8SurfaceWriteTarget::capture(4, state.mappings.get(&4).unwrap(), W, H).unwrap();
++    assert_eq!(
++        write_planar_surface(&mut state, &mut host, target, &planes).unwrap(),
++        36
++    );
++
++    let mut guest = vec![0; 160];
++    host.read_gpa(base, &mut guest).unwrap();
++    for (index, ((offset, pitch), tight)) in PLANES.into_iter().zip([4usize, 8]).enumerate() {
++        for y in 0..H as usize {
++            let row = offset as usize + y * pitch as usize;
++            assert_eq!(
++                guest[row..row + tight],
++                planes[index][y * tight..(y + 1) * tight],
++                "plane {index} row {y}"
++            );
++            if y + 1 < H as usize {
++                assert!(
++                    guest[row + tight..row + pitch as usize]
++                        .iter()
++                        .all(|&b| b == 0xee),
++                    "plane {index} row {y}'s padding must stay the guest's"
++                );
++            }
++        }
++    }
++    assert!(
++        guest[16 * 2 + 4..64].iter().all(|&b| b == 0xee),
++        "the gap between the windows"
++    );
++
++    let read: PlanarRgb8SurfaceRead = read_planar_surface(&mut state, &mut host, 4, W, H).unwrap();
++    assert_eq!(read.planes, planes);
++    assert_eq!(read.layout.planes[1].offset, 64);
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+index f82f432..8d22c1d 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -389,7 +389,101 @@ fn store_native_xr_surface<M: HostMemory + HostOps>(
+         }
+         encoded.planes
+     };
+-    crate::runtime::mapping_write::write_planar_xr_surface(state, host, target, &planes)
++    crate::runtime::mapping_write::write_planar_surface(state, host, target, &planes)
++        .map_err(R::Mapping)
++}
++
++#[derive(Debug)]
++enum NativeRgb8StoreRefusal {
++    Mapping(crate::runtime::mapping_write::PlanarXrMappingRefusal),
++    Read(crate::backend::vulkan::engine::DrawError),
++    Identity,
++    SourceShape,
++    Allocation,
++}
++
++impl crate::observe::Decline for NativeRgb8StoreRefusal {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::Mapping(why) => why.slug(),
++            Self::Read(why) => why.slug(),
++            Self::Identity => "native_rgb8_store_identity",
++            Self::SourceShape => "native_rgb8_store_source_shape",
++            Self::Allocation => "native_rgb8_store_allocation",
++        }
++    }
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match self {
++            Self::Mapping(why) => why.fields(),
++            Self::Read(why) => why.fields(),
++            _ => Vec::new(),
++        }
++    }
++    fn owner(&self) -> &'static str {
++        match self {
++            Self::Mapping(why) => why.owner(),
++            Self::Read(why) => why.owner(),
++            _ => std::any::type_name::<Self>(),
++        }
++    }
++}
++
++/// Read an eight-bit resident and publish both native `_RB4` windows. Like
++/// the XR pair, this storage has no interleaved GPU import or Store rail: the
++/// resident must name this mapping incarnation, extent and RGBA8 allocation,
++/// and the split into green and blue/red happens once, here.
++fn store_native_rgb8_surface<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++    width: u32,
++    height: u32,
++) -> Result<usize, NativeRgb8StoreRefusal> {
++    use crate::backend::vulkan::engine::TargetIdentity;
++    use NativeRgb8StoreRefusal as R;
++    let mapping = state.mappings.get(&mapping_id).ok_or(R::Mapping(
++        crate::runtime::mapping_write::PlanarXrMappingRefusal::MappingAbsent,
++    ))?;
++    if !matches!(identity,TargetIdentity::Surface {id,width:w,height:h,generation,format}
++        if *id==mapping_id && *w==width && *h==height
++            && *generation==u64::from(mapping.map_generation)
++            && *format==ash::vk::Format::R8G8B8A8_UNORM)
++    {
++        return Err(R::Identity);
++    }
++    let target = crate::runtime::mapping_write::PlanarRgb8SurfaceWriteTarget::capture(
++        mapping_id, mapping, width, height,
++    )
++    .map_err(R::Mapping)?;
++    let format = target.layout().format;
++    // As for the XR pair, the staging lease is dropped before guest mapping
++    // settlement, which may take the engine lock.
++    let planes = {
++        let readback = crate::backend::vulkan::engine::read_target_texels_consumable(identity)
++            .map_err(R::Read)?;
++        let texels = usize::try_from(width)
++            .ok()
++            .and_then(|w| usize::try_from(height).ok().and_then(|h| w.checked_mul(h)))
++            .ok_or(R::SourceShape)?;
++        let mut planes: [Vec<u8>; 2] = [Vec::new(), Vec::new()];
++        for (plane, bytes) in planes.iter_mut().zip([Some(texels), texels.checked_mul(2)]) {
++            let bytes = bytes.ok_or(R::SourceShape)?;
++            plane.try_reserve_exact(bytes).map_err(|_| R::Allocation)?;
++            plane.resize(bytes, 0);
++        }
++        let [green, blue_red] = &mut planes;
++        if !format.split_texels(
++            readback.texel.storage_layout(),
++            readback.bytes(),
++            green,
++            blue_red,
++        ) {
++            return Err(R::SourceShape);
++        }
++        planes
++    };
++    crate::runtime::mapping_write::write_planar_surface(state, host, target, &planes)
+         .map_err(R::Mapping)
+ }
+ 
+@@ -425,6 +519,24 @@ pub fn store_render_frame<M: HostMemory + HostOps>(
+             }
+         }
+     }
++    if state.mappings.get(&mapping_id).is_some_and(|mapping| {
++        crate::protocol::pixel_format::PlanarRgb8Format::from_mtl(mapping.format).is_some()
++    }) {
++        match store_native_rgb8_surface(state, host, mapping_id, identity, width, height) {
++            Ok(bytes) => {
++                crate::runtime::drain::note_store_route("native_rgb8_render_store_n");
++                finish(state, mapping_id, identity, bytes, started, false);
++                return true;
++            }
++            Err(why) => {
++                crate::observe::Emit::decline("native_rgb8_render_store", &why)
++                    .field("mapping", mapping_id)
++                    .field("geom", format!("{width}x{height}"))
++                    .fail();
++                return false;
++            }
++        }
++    }
+     if state.mappings.get(&mapping_id).is_some_and(|mapping| {
+         crate::protocol::pixel_format::PlanarXrFormat::from_mtl(mapping.format).is_some()
+     }) {
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index 438a675..70f360b 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -5199,3 +5199,68 @@ void main() {{ vec4 xr=vec4({:?},{:?},{:?},{:?}); primary={}; secondary=xr; }}
+         }
+     }
+ }
++
++/// A native `_RB4` attachment renders into a semantic RGBA8 resident whose
++/// readback splits into the two guest windows exactly: green alone in the
++/// first, blue then red in the second, and the shader's alpha nowhere. As a
++/// secondary it is the same attachment.
++#[test]
++fn an_rgb8_444_attachment_renders_rgba8_that_splits_into_its_windows() {
++    use reims_vgpu_protocol::pixel_format::{
++        PlanarRgb8Format, TexelLayout, MTL_FORMAT_RGB8_444_2P,
++    };
++    let _g = engine_test_session();
++    let v = framebuffer_fetch_glsl("vertex", FETCH_VERTEX);
++    let f = framebuffer_fetch_glsl(
++        "fragment",
++        "#version 450
++layout(location=0) out vec4 primary;
++layout(location=1) out vec4 secondary;
++void main() { primary=vec4(1.0,0.5,0.0,0.25); secondary=primary; }
++",
++    );
++    let format = PlanarRgb8Format::from_mtl(MTL_FORMAT_RGB8_444_2P).unwrap();
++    for slot in 0..2u64 {
++        let identity = TargetIdentity::Surface {
++            id: 0x542 + slot as u32,
++            width: 8,
++            height: 8,
++            generation: 1,
++            format: ash::vk::Format::R8G8B8A8_UNORM,
++        };
++        let attachment = color_attachment(MTL_FORMAT_RGB8_444_2P, [0.2, 0.4, 0.6, 1.0]);
++        let mut req = engine_req(&v, &f, 8, 8);
++        req.vertex_count = 3;
++        if slot == 0 {
++            req.target_identity = Some(identity.clone());
++            req.color_attachment = Some(attachment);
++            req.color_write_mask = engine::ColorWriteMask::ALL;
++            req.skip_readback = true;
++        } else {
++            req.secondary_targets.push(SecondaryColorTarget {
++                identity: identity.clone(),
++                width: 8,
++                height: 8,
++                attachment,
++                load: false,
++                seed: None,
++                blend: None,
++                color_write_mask: engine::ColorWriteMask::ALL,
++            });
++        }
++        engine::execute_draw_request(engine_device(), &req).expect("_RB4 render");
++        let readback = engine::read_target_texels(&identity).unwrap();
++        let layout = readback.texel.storage_layout();
++        assert!(
++            matches!(layout, TexelLayout::Rgba8 | TexelLayout::Bgra8),
++            "slot {slot}: {layout:?}"
++        );
++        let (mut green, mut blue_red) = (vec![0; 64], vec![0; 128]);
++        assert!(format.split_texels(layout, &readback.pixels, &mut green, &mut blue_red));
++        assert_eq!(green, vec![128; 64], "slot {slot}");
++        assert_eq!(blue_red, [0, 255].repeat(64), "slot {slot}");
++        let mut joined = vec![0; 256];
++        assert!(format.join_rgba8(&green, &blue_red, &mut joined));
++        assert_eq!(joined, [255, 128, 0, 255].repeat(64), "slot {slot}");
++    }
++}

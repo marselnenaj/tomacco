@@ -1,0 +1,400 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -3015,7 +3015,31 @@
+ /// The result of a readback in whichever of the two forms was asked for.
+ enum ReadbackResult {
+     Copied(Vec<u8>),
+-    Leased { token: u64, ptr: usize, len: usize },
++    Leased(ReadbackBufferLease),
++}
++
++/// A completed readback slot retained until the CPU consumer finishes.
++/// No holder may take the engine lock: teardown holds it while awaiting leases.
++/// Returning the token is device-free and releases the slot exactly once.
++struct ReadbackBufferLease {
++    token: u64,
++    ptr: usize,
++    len: usize,
++}
++
++impl ReadbackBufferLease {
++    fn bytes(&self) -> &[u8] {
++        // SAFETY: the checked slot span is mapped for its lifetime, its GPU
++        // fence has completed, and leasing removes it from every reusable
++        // pool list. Teardown awaits the lease before freeing the mapping.
++        unsafe { std::slice::from_raw_parts(self.ptr as *const u8, self.len) }
++    }
++}
++
++impl Drop for ReadbackBufferLease {
++    fn drop(&mut self) {
++        pools::return_readback_lease(self.token);
++    }
+ }
+ 
+ /// Returns an unhanded-on readback lease when its scope exits.
+@@ -3043,47 +3067,6 @@
+     fn drop(&mut self) {
+         if let Some(lease) = self.0.take() {
+             pools::return_readback_lease(lease.token);
+-        }
+-    }
+-}
+-
+-#[allow(clippy::too_many_arguments)]
+-unsafe fn copy_image_level0_to_host(
+-    ctx: &context::DeviceContext,
+-    pools: &mut pools::ResourcePools,
+-    counters: &EngineCounters,
+-    image: ash::vk::Image,
+-    old_layout: ash::vk::ImageLayout,
+-    read_layout: ash::vk::ImageLayout,
+-    src_access: ash::vk::AccessFlags,
+-    width: u32,
+-    height: u32,
+-    rb_size: u64,
+-    ops: ReadbackOps,
+-) -> Result<Vec<u8>, DrawError> {
+-    match copy_image_level0_to_host_delivered(
+-        ctx,
+-        pools,
+-        counters,
+-        image,
+-        old_layout,
+-        read_layout,
+-        src_access,
+-        width,
+-        height,
+-        rb_size,
+-        ops,
+-        ReadbackDelivery::Copy,
+-    )? {
+-        ReadbackResult::Copied(bytes) => Ok(bytes),
+-        // Unreachable by construction — `Copy` was asked for one line above —
+-        // and stated as a decline rather than a panic because this rail runs on
+-        // the drain worker, where a panic takes the device down.
+-        ReadbackResult::Leased { token, .. } => {
+-            pools::return_readback_lease(token);
+-            Err(DrawError::TargetRead(
+-                reason::TargetReadDecline::NoReadyContent,
+-            ))
+         }
+     }
+ }
+@@ -3345,11 +3328,11 @@
+                 .map(ReadbackResult::Copied)
+         }
+         Some(lease) => match pools::invalidate_slot_for_read(ctx, &readback, ops.invalidate) {
+-            Ok(()) => Ok(ReadbackResult::Leased {
++            Ok(()) => Ok(ReadbackResult::Leased(ReadbackBufferLease {
+                 token: lease.token,
+                 ptr: lease.ptr,
+                 len: rb_size as usize,
+-            }),
++            })),
+             Err(e) => {
+                 pools::return_readback_lease(lease.token);
+                 Err(e)
+@@ -3496,9 +3479,7 @@
+ /// the engine should end the lease first. Ending it is device-free and cannot
+ /// block on anything the holder owns.
+ pub struct LeasedFrame {
+-    token: u64,
+-    ptr: usize,
+-    len: usize,
++    buffer: ReadbackBufferLease,
+     /// BGRA8 when true, semantic RGBA8 otherwise. Reported by the registry slot
+     /// the bytes were copied out of, for the same reason
+     /// [`TargetReadback::bgra`] is.
+@@ -3508,18 +3489,7 @@
+ impl LeasedFrame {
+     /// The frame, in whatever channel order [`Self::bgra`] reports.
+     pub fn bytes(&self) -> &[u8] {
+-        // SAFETY: `ptr` is the host address of a `HOST_VISIBLE` mapping
+-        // established for the slot's lifetime and covering at least `len`
+-        // bytes, and the slot is leased — so it is in no pool list, no GPU
+-        // command references it, and teardown cannot free it while this lease
+-        // is outstanding.
+-        unsafe { std::slice::from_raw_parts(self.ptr as *const u8, self.len) }
+-    }
+-}
+-
+-impl Drop for LeasedFrame {
+-    fn drop(&mut self) {
+-        pools::return_readback_lease(self.token);
++        self.buffer.bytes()
+     }
+ }
+ 
+@@ -3583,10 +3553,8 @@
+         pools.registry_note_access(identity, read_access);
+         counters.note_target_read(rb_size, TargetReadDelivery::Host);
+         Ok(match delivered {
+-            ReadbackResult::Leased { token, ptr, len } => Some(LeasedFrame {
+-                token,
+-                ptr,
+-                len,
++            ReadbackResult::Leased(buffer) => Some(LeasedFrame {
++                buffer,
+                 bgra: snap.bgra(),
+             }),
+             // The slot had no mapping to lend, so the readback fell back to a
+@@ -5526,9 +5494,63 @@
+     Ok((snap, layout))
+ }
+ 
+-/// Read a resident at its own texel width. Store consumers use this to retain
+-/// float range and native integer bits instead of quantizing through RGBA8.
++/// Native-width readback consumed once, with a completed cached staging
++/// lease when available and an owned copy otherwise. The fallback retains
++/// the same transaction's bytes; it never submits a second GPU readback.
++///
++/// A holder must finish consuming and drop this value before taking the
++/// engine lock. In particular, guest mapping settlement belongs after Drop.
++/// Neither form retains guest RAM views.
++pub struct ConsumableTargetTexels {
++    storage: ReadbackResult,
++    pub texel: ReadbackTexel,
++}
++
++impl ConsumableTargetTexels {
++    /// The resident's native bytes. The borrow cannot outlive this owner.
++    pub fn bytes(&self) -> &[u8] {
++        match &self.storage {
++            ReadbackResult::Copied(bytes) => bytes,
++            ReadbackResult::Leased(lease) => lease.bytes(),
++        }
++    }
++
++    /// Whether consuming this readback avoids the staging-to-Vec memcpy.
++    pub fn is_leased(&self) -> bool {
++        matches!(self.storage, ReadbackResult::Leased(_))
++    }
++}
++
++/// Read native-width texels for immediate conversion without an extra CPU
++/// image copy on HOST_CACHED readback memory. See the lease lock rule on
++/// [`ConsumableTargetTexels`].
++pub fn read_target_texels_consumable(
++    identity: &TargetIdentity,
++) -> Result<ConsumableTargetTexels, DrawError> {
++    read_target_texels_delivered(identity, ReadbackDelivery::Lease)
++}
++
++/// Read a resident at its own texel width into independently owned bytes.
++/// Store consumers retain float range and native integer bits.
+ pub fn read_target_texels(identity: &TargetIdentity) -> Result<TargetReadback, DrawError> {
++    let readback = read_target_texels_delivered(identity, ReadbackDelivery::Copy)?;
++    match readback.storage {
++        ReadbackResult::Copied(pixels) => Ok(TargetReadback {
++            pixels,
++            texel: readback.texel,
++        }),
++        // The transaction was asked for Copy; retain a typed refusal if that
++        // invariant changes. The unexpected lease still releases on Drop.
++        ReadbackResult::Leased(_) => Err(DrawError::TargetRead(
++            reason::TargetReadDecline::NoReadyContent,
++        )),
++    }
++}
++
++fn read_target_texels_delivered(
++    identity: &TargetIdentity,
++    delivery: ReadbackDelivery,
++) -> Result<ConsumableTargetTexels, DrawError> {
+     let mut guard = lock_engine();
+     let EngineState {
+         ref mut owner,
+@@ -5546,7 +5568,7 @@
+     let rb_size = pixels * u64::from(layout.bytes_per_texel());
+     let read_access = pools::ResidentAccess::transfer_read(snap.guest_backing.is_some());
+     unsafe {
+-        let out = copy_image_level0_to_host(
++        let storage = copy_image_level0_to_host_delivered(
+             ctx,
+             pools,
+             counters,
+@@ -5558,6 +5580,7 @@
+             snap.height,
+             rb_size,
+             target_readback_ops(),
++            delivery,
+         )?;
+         pools.registry_note_access(identity, read_access);
+         counters.note_target_read(rb_size, TargetReadDelivery::Host);
+@@ -5566,7 +5589,7 @@
+         } else {
+             ReadbackTexel::Native(layout)
+         };
+-        Ok(TargetReadback { pixels: out, texel })
++        Ok(ConsumableTargetTexels { storage, texel })
+     }
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -83,24 +83,45 @@
+     )
+     .map_err(R::Mapping)?;
+     let layout = target.layout();
+-    let readback = crate::backend::vulkan::engine::read_target_texels(identity).map_err(R::Read)?;
+-    let expected_bytes = usize::try_from(width)
+-        .ok()
+-        .and_then(|w| usize::try_from(height).ok().and_then(|h| w.checked_mul(h)))
+-        .and_then(|texels| texels.checked_mul(16))
+-        .ok_or(R::SourceShape)?;
+-    if readback.texel.native_layout()
+-        != Some(crate::protocol::pixel_format::TexelLayout::Rgba32Float)
+-        || readback.pixels.len() != expected_bytes
+-    {
+-        return Err(R::SourceShape);
+-    }
+-    let planes = reims_vgpu_vulkan::pixel::render_store_planar_xr_surface_bytes(
+-        layout.format,
+-        crate::protocol::pixel_format::TexelLayout::Rgba32Float,
+-        &readback.pixels,
+-    )
+-    .map_err(R::Encode)?;
++    // The original mapping incarnation stays captured across the GPU wait.
++    // Drop the staging lease BEFORE guest mapping settlement: settlement can
++    // take the engine lock and lease holders must never take that lock.
++    let planes = {
++        let readback = crate::backend::vulkan::engine::read_target_texels_consumable(identity)
++            .map_err(R::Read)?;
++        let expected_bytes = usize::try_from(width)
++            .ok()
++            .and_then(|w| usize::try_from(height).ok().and_then(|h| w.checked_mul(h)))
++            .and_then(|texels| texels.checked_mul(16))
++            .ok_or(R::SourceShape)?;
++        if readback.texel.native_layout()
++            != Some(crate::protocol::pixel_format::TexelLayout::Rgba32Float)
++            || readback.bytes().len() != expected_bytes
++        {
++            return Err(R::SourceShape);
++        }
++        let started = std::time::Instant::now();
++        let planes = reims_vgpu_vulkan::pixel::render_store_planar_xr_surface_bytes(
++            layout.format,
++            crate::protocol::pixel_format::TexelLayout::Rgba32Float,
++            readback.bytes(),
++        )
++        .map_err(R::Encode)?;
++        crate::runtime::drain::note_store_route_us(
++            "native_xr_encode_us",
++            started.elapsed().as_micros() as u64,
++        );
++        if readback.is_leased() {
++            crate::runtime::drain::note_store_route("native_xr_store_leased_n");
++            crate::runtime::drain::note_store_route_n(
++                "native_xr_store_cpu_copy_bytes_avoided",
++                expected_bytes as u64,
++            );
++        } else {
++            crate::runtime::drain::note_store_route("native_xr_store_copied_n");
++        }
++        planes
++    };
+     crate::runtime::mapping_write::write_planar_xr_surface(state, host, target, &planes)
+         .map_err(R::Mapping)
+ }
+@@ -168,6 +189,24 @@
+     // owes an R/B exchange first — a whole-frame pass, and `into_bgra8` on an
+     // owned copy is its home, so a non-BGRA resident takes the copy rather than
+     // teaching the lease to rewrite memory it does not own.
++    // A borrowed staging frame must not enter a writer with unpaid guest
++    // writeback debt: paying it can take the engine lock, while teardown can
++    // hold that lock awaiting this same staging lease. Settle before acquiring
++    // the lease. This transaction holds exclusive DeviceState throughout, and
++    // readback submits no guest writes, so the writer's later settlement is
++    // quiescent. Shape/page validation still belongs to the writer.
++    crate::runtime::writeback_debt::settle_for_mapping(
++        state,
++        host,
++        mapping_id,
++        crate::runtime::render_writeback::SettleSite::MappingBgra8Write,
++    );
++    // The reach check above may leave disjoint writes outstanding. The BGRA
++    // writer repeats that check, which itself takes the engine lock, so drain
++    // the complete ledger before lending the staging slot to that writer.
++    crate::runtime::render_writeback::settle_guest_writes(
++        crate::runtime::render_writeback::SettleSite::MappingBgra8Write,
++    );
+     let bpr = width.saturating_mul(4);
+     let write_started = std::time::Instant::now();
+     // A refused lease is a *routing* answer, never a loss. The lease is an
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/teardown.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/teardown.rs
+@@ -98,23 +98,26 @@
+         // it holds a lease, so it always makes progress and this always
+         // terminates.
+         //
+-        // The bound exists because a teardown that hangs is worse than one that
+-        // races: it is generous against a scatter that takes ~1 ms, and expiry
+-        // is reported rather than assumed away.
++        // A scheduling delay or a wide float conversion can outlast the
++        // observation threshold. It is never permission to unmap a live Rust
++        // borrow. Holders take no engine lock, so they can return the token
++        // while teardown waits. Report a delayed return once, then retain the
++        // backing until the last CPU reader actually releases it.
+         let lease_deadline = std::time::Instant::now() + LEASE_QUIESCE;
++        let mut delayed_reported = false;
+         while readback_leases_outstanding() != 0 {
+-            if std::time::Instant::now() >= lease_deadline {
++            if !delayed_reported && std::time::Instant::now() >= lease_deadline {
+                 crate::observe::Emit::decline(
+                     "vk_pools_destroy",
+-                    &ReadbackLeaseQuiesceExpired {
++                    &ReadbackLeaseQuiesceDelayed {
+                         outstanding: readback_leases_outstanding(),
+                         waited_ms: LEASE_QUIESCE.as_millis() as u64,
+                     },
+                 )
+                 .fail_once(0);
+-                break;
+-            }
+-            std::thread::yield_now();
++                delayed_reported = true;
++            }
++            std::thread::sleep(std::time::Duration::from_millis(1));
+         }
+         self.reclaim_returned_readback_leases();
+         for l in self.readback_leased.drain(..) {
+@@ -243,30 +246,21 @@
+     }
+ }
+ 
+-/// How long [`ResourcePools::destroy_all`] waits for readback-lease holders.
+-///
+-/// A lease spans one scatter of one frame into guest pages — measured at
+-/// ~1 ms for a 1920x1080 composite — so this is three orders of magnitude of
+-/// headroom, not a tuned number. It is a liveness bound on a wait that should
+-/// never actually reach it, and reaching it is reported.
++/// Diagnostic threshold for a delayed readback-lease return. This is not a
++/// lifetime limit: a live CPU borrow always retains its mapped backing.
+ const LEASE_QUIESCE: std::time::Duration = std::time::Duration::from_millis(500);
+ 
+-/// A teardown gave up waiting for a readback lease to come back.
+-///
+-/// Nothing here is recoverable and nothing is retried: the destroy proceeds, so
+-/// a holder that wakes afterwards reads memory the device no longer owns. That
+-/// makes this the report of a broken invariant rather than of a degraded
+-/// result — a lease is only ever held across code that takes no engine lock, so
+-/// a holder that has not returned in half a second is one that acquired the
+-/// lock anyway or died holding it.
+-struct ReadbackLeaseQuiesceExpired {
++/// Teardown is still awaiting a readback reader after the diagnostic threshold.
++/// Its backing remains mapped. Holders must drop leases before taking the
++/// engine lock, including before guest mapping settlement.
++struct ReadbackLeaseQuiesceDelayed {
+     outstanding: usize,
+     waited_ms: u64,
+ }
+ 
+-impl crate::observe::Decline for ReadbackLeaseQuiesceExpired {
++impl crate::observe::Decline for ReadbackLeaseQuiesceDelayed {
+     fn slug(&self) -> &'static str {
+-        "readback_lease_quiesce_expired"
++        "readback_lease_quiesce_delayed"
+     }
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         vec![

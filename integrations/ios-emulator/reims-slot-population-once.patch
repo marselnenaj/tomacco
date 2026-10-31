@@ -1,0 +1,62 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/objects/slot_recheck.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/objects/slot_recheck.rs
+@@ -94,6 +94,14 @@
+     sweep: u64,
+ }
+ 
++/// Population sampling belongs to the first admission, while every later
++/// lookup still keeps the same watch and its original age.
++enum WatchAdmission {
++    New,
++    Existing,
++    Full,
++}
++
+ impl Ledger {
+     const CAPACITY: usize = 1024;
+ 
+@@ -125,6 +133,17 @@
+             },
+         );
+         true
++    }
++
++    fn admit_for_population(&mut self, key: WatchKey, now_us: u64) -> WatchAdmission {
++        if self.watches.contains_key(&key) {
++            return WatchAdmission::Existing;
++        }
++        if self.admit(key, now_us) {
++            WatchAdmission::New
++        } else {
++            WatchAdmission::Full
++        }
+     }
+ 
+     /// Open a sweep and hand back the watches whose own tranche has already
+@@ -300,15 +319,19 @@
+     ref_: u32,
+ ) {
+     let now = crate::observe::elapsed_us();
+-    let admitted = ledger()
++    let admission = ledger()
+         .lock()
+         .unwrap_or_else(|e| e.into_inner())
+-        .admit((task_id, ref_), now);
+-    if !admitted {
+-        crate::runtime::drain::note_store_route("slot_recheck_dropped");
+-        return;
+-    }
+-    note_list_population(state, host, task_id, ref_);
++        .admit_for_population((task_id, ref_), now);
++    match admission {
++        WatchAdmission::New => note_list_population(state, host, task_id, ref_),
++        WatchAdmission::Existing => {
++            crate::runtime::drain::note_store_route("slot_recheck_population_repeat_skipped");
++        }
++        WatchAdmission::Full => {
++            crate::runtime::drain::note_store_route("slot_recheck_dropped");
++        }
++    }
+ }
+ 
+ /// How far the guest has actually populated the list this ref missed in.

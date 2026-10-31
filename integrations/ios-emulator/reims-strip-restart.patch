@@ -1,0 +1,626 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/topology.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/topology.rs
+index ee1ed5c..6208a30 100644
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/topology.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/topology.rs
+@@ -114,13 +114,29 @@ impl PrimitiveType {
+ 
+     /// Whether consecutive primitives share vertices.
+     ///
+-    /// The distinction a restart index would act on, and the reason its
+-    /// absence matters — see the executors.
++    /// The distinction a restart index acts on; see [`Self::restarts`].
+     #[must_use]
+     pub const fn is_strip(self) -> bool {
+         matches!(self, Self::LineStrip | Self::TriangleStrip)
+     }
+ 
++    /// Whether an indexed draw of this type ends its primitive at a restart
++    /// index, the largest value of the index type (`0xFFFF` for 16-bit and
++    /// `0xFFFFFFFF` for 32-bit indices), and starts a new one after it.
++    ///
++    /// Metal documents the sentinel for every indexed draw and has no switch
++    /// for it. It changes what is drawn only where consecutive primitives share
++    /// vertices: a strip that crosses the sentinel without restarting joins
++    /// its two halves with primitives through vertex 65535. An iOS guest's
++    /// path renderer draws thirteen four-vertex quads as one 64-index strip
++    /// joined by twelve sentinels. What a sentinel inside a list means is not
++    /// documented and no guest has been seen to send one, so a list does not
++    /// restart.
++    #[must_use]
++    pub const fn restarts(self) -> bool {
++        self.is_strip()
++    }
++
+     #[must_use]
+     pub const fn name(self) -> &'static str {
+         match self {
+@@ -199,4 +215,14 @@ mod tests {
+             .collect();
+         assert_eq!(strips, BTreeSet::from([2, 4]));
+     }
++
++    /// The restart index ends exactly the primitives that share vertices.
++    #[test]
++    fn exactly_the_two_strips_restart() {
++        for p in PrimitiveType::ALL {
++            assert_eq!(p.restarts(), p.is_strip(), "{p:?}");
++        }
++        assert!(PrimitiveType::TriangleStrip.restarts());
++        assert!(!PrimitiveType::Triangle.restarts());
++    }
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/census.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/census.rs
+index eb9140a..e6ca556 100644
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/census.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/census.rs
+@@ -1558,9 +1558,14 @@ mod tests {
+         assert!(classed.topology().dynamic);
+         assert!(!classed.topology().unrestricted);
+         assert_eq!(
+-            key(PrimitiveType::LineStrip, classed.topology()),
++            key(PrimitiveType::Line, classed.topology()),
+             TopologyKey::Class(TopologyClass::Line)
+         );
++        // A strip stays exact on this rung too, because its pipeline restarts.
++        assert_eq!(
++            key(PrimitiveType::LineStrip, classed.topology()),
++            TopologyKey::Exact(PrimitiveType::LineStrip)
++        );
+         // The extension is asked for by name, because 1.2 is below the
+         // promotion.
+         assert!(classed.extensions().extended_dynamic_state);
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pipeline.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pipeline.rs
+index 1e84ff7..58d2d57 100644
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pipeline.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pipeline.rs
+@@ -1708,11 +1708,15 @@ mod tests {
+                 expected,
+                 "{key_topology:?}"
+             );
+-            // Never restarting: Metal has no primitive-restart index and a
+-            // guest's largest index would silently cut its strip.
++            // Restarting exactly where the declared topology is a strip, as
++            // Metal's indexed strips do at the largest index.
+             assert_eq!(
+                 build.input_assembly().primitive_restart_enable,
+-                vk::FALSE,
++                if expected == vk::PrimitiveTopology::LINE_STRIP {
++                    vk::TRUE
++                } else {
++                    vk::FALSE
++                },
+                 "{key_topology:?}"
+             );
+             // And the declaration is only half the answer. A key that serves
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/topology.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/topology.rs
+index b644983..0c8382a 100644
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/topology.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/topology.rs
+@@ -23,13 +23,20 @@
+ //! happens to allow a cross-class change will run it — which is exactly why
+ //! the rung is asked for structurally rather than assumed.
+ //!
+-//! # Metal has no primitive restart
++//! # Metal restarts indexed strips
+ //!
+-//! There is no restart index in Metal: an index equal to `0xFFFF` or
+-//! `0xFFFFFFFF` is a vertex like any other. `primitiveRestartEnable` is
+-//! therefore false for every plan here, including the strips — which are the
+-//! only topologies it would have affected, and the only ones where leaving it
+-//! on would silently cut a strip the guest expected continuous.
++//! In a Metal indexed draw an index equal to the largest value of its type
++//! (`0xFFFF`, `0xFFFFFFFF`) ends the current strip and starts a new one; see
++//! [`PrimitiveType::restarts`]. Vulkan does the same only where the pipeline
++//! sets `primitiveRestartEnable`, so a strip's pipeline sets it and a list's
++//! never does. A draw that reads no index buffer is unaffected by the flag.
++//!
++//! The flag is baked into the pipeline here: making it dynamic needs
++//! `extendedDynamicState2`, which this rail does not ask for. A `Class` or
++//! `Any` pipeline declares a list and therefore does not restart, so a strip
++//! drawn through one would join its pieces with primitives through vertex
++//! 65535. A strip therefore keys [`TopologyKey::Exact`] on every rung, and the
++//! dynamic rungs share pipelines between the lists only.
+ //!
+ //! # Planned, not created
+ //!
+@@ -80,18 +87,19 @@ pub const fn topology(guest: PrimitiveType) -> vk::PrimitiveTopology {
+ /// without anybody re-reading the cell.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+ pub enum TopologyKey {
+-    /// The baseline: one pipeline per primitive type.
++    /// The baseline: one pipeline per primitive type. Every strip keys here
++    /// on every rung, because its pipeline restarts (see the module doc).
+     Exact(PrimitiveType),
+-    /// Dynamic within a class: one pipeline serves a list and its strip.
++    /// Dynamic within a class: one pipeline serves the class's list.
+     Class(TopologyClass),
+-    /// Dynamic across classes: one pipeline serves every type.
++    /// Dynamic across classes: one pipeline serves every list.
+     Any,
+ }
+ 
+ /// The key a pipeline drawing `guest` is cached under on this host.
+ #[must_use]
+ pub const fn key(guest: PrimitiveType, cell: TopologyCell) -> TopologyKey {
+-    if !cell.dynamic {
++    if !cell.dynamic || guest.restarts() {
+         TopologyKey::Exact(guest)
+     } else if cell.unrestricted {
+         TopologyKey::Any
+@@ -104,7 +112,7 @@ pub const fn key(guest: PrimitiveType, cell: TopologyCell) -> TopologyKey {
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub struct InputAssemblyPlan {
+     pub topology: vk::PrimitiveTopology,
+-    /// Always false. See the module doc.
++    /// True exactly for a strip's pipeline. See the module doc.
+     pub primitive_restart_enable: bool,
+     /// Whether `vkCmdSetPrimitiveTopology` supplies the topology per draw, in
+     /// which case the field above is the pipeline's declared one and the draw
+@@ -136,7 +144,7 @@ impl InputAssemblyPlan {
+             p_next: core::ptr::null(),
+             flags: vk::PipelineInputAssemblyStateCreateFlags::empty(),
+             topology: self.topology,
+-            primitive_restart_enable: vk::FALSE,
++            primitive_restart_enable: self.primitive_restart_enable as vk::Bool32,
+             _marker: core::marker::PhantomData,
+         }
+     }
+@@ -148,10 +156,8 @@ impl TopologyKey {
+     /// Derived from the key rather than from the guest's own primitive type,
+     /// and that is the whole reason this is a method on the key: two draws
+     /// that share a key must produce a byte-identical pipeline, so the
+-    /// declared topology has to be a function of what they share. A `Class`
+-    /// pipeline built from a triangle strip and one built from a triangle list
+-    /// would otherwise declare different topologies while claiming to be the
+-    /// same cache entry.
++    /// declared topology has to be a function of what they share, and so does
++    /// the restart flag that follows from it.
+     ///
+     /// `Class` declares [`TopologyClass::list`] — the class's one non-strip
+     /// member, which exists for exactly this. `Any` declares a triangle list;
+@@ -162,7 +168,7 @@ impl TopologyKey {
+     pub const fn input_assembly(self) -> InputAssemblyPlan {
+         InputAssemblyPlan {
+             topology: topology(self.declares()),
+-            primitive_restart_enable: false,
++            primitive_restart_enable: self.declares().restarts(),
+             dynamic: !matches!(self, Self::Exact(_)),
+         }
+     }
+@@ -183,14 +189,15 @@ impl TopologyKey {
+ }
+ 
+ /// The topology the encoder sets before a draw of `guest`, or `None` where
+-/// this host baked it into the pipeline instead.
++/// the pipeline bakes it instead: on a host without dynamic topology, and for
++/// every strip.
+ ///
+ /// `Some` exactly when [`TopologyKey::input_assembly`] reported `dynamic`, so
+ /// a caller that sets every `Some` has reproduced the guest's draw and a
+ /// caller that sets none of them is a host that bakes the topology.
+ #[must_use]
+ pub const fn dynamic(guest: PrimitiveType, cell: TopologyCell) -> Option<vk::PrimitiveTopology> {
+-    if cell.dynamic {
++    if key(guest, cell).input_assembly().dynamic {
+         Some(topology(guest))
+     } else {
+         None
+@@ -252,16 +259,29 @@ mod tests {
+         assert_eq!(vk::PrimitiveTopology::TRIANGLE_FAN.as_raw(), 5);
+     }
+ 
+-    /// Metal has no restart index, so a strip is never cut. This is the one
+-    /// place it could have been turned on and the one topology it would have
+-    /// affected.
++    /// Metal ends an indexed strip at the restart index, so a strip's
++    /// pipeline restarts on every rung and a list's never does. A strip that
++    /// reached a shared list pipeline would lose that, which is why no rung
++    /// lets it.
+     #[test]
+-    fn no_plan_enables_primitive_restart_including_the_strips() {
++    fn a_strip_pipeline_restarts_on_every_rung_and_a_list_pipeline_never() {
+         for guest in PrimitiveType::ALL {
+             for cell in [STATIC, CLASSED, FREE] {
+                 let plan = key(guest, cell).input_assembly();
+-                assert!(!plan.primitive_restart_enable);
+-                assert_eq!(plan.native().primitive_restart_enable, vk::FALSE);
++                assert_eq!(plan.primitive_restart_enable, guest.is_strip(), "{guest:?}");
++                assert_eq!(
++                    plan.native().primitive_restart_enable,
++                    if guest.is_strip() {
++                        vk::TRUE
++                    } else {
++                        vk::FALSE
++                    },
++                    "{guest:?}"
++                );
++                if guest.is_strip() {
++                    assert_eq!(key(guest, cell), TopologyKey::Exact(guest));
++                    assert_eq!(dynamic(guest, cell), None);
++                }
+             }
+         }
+         // Non-vacuous: two of those five were strips.
+@@ -286,20 +306,21 @@ mod tests {
+     }
+ 
+     /// With `extendedDynamicState` and nothing more, a pipeline serves its
+-    /// class and no further. Five types collapse to three pipelines.
++    /// class's list and no further; the strips stay exact because they
++    /// restart. Five types stay five pipelines.
+     #[test]
+     fn dynamic_topology_serves_a_class_and_stops_at_its_edge() {
+         let keys: BTreeSet<TopologyKey> = PrimitiveType::ALL
+             .iter()
+             .map(|p| key(*p, CLASSED))
+             .collect();
+-        assert_eq!(keys.len(), 3);
+-        assert!(serves(
++        assert_eq!(keys.len(), 5);
++        assert!(!serves(
+             PrimitiveType::Line,
+             PrimitiveType::LineStrip,
+             CLASSED
+         ));
+-        assert!(serves(
++        assert!(!serves(
+             PrimitiveType::Triangle,
+             PrimitiveType::TriangleStrip,
+             CLASSED
+@@ -313,19 +334,33 @@ mod tests {
+         ));
+         assert!(!serves(PrimitiveType::Point, PrimitiveType::Line, CLASSED));
+         for guest in PrimitiveType::ALL {
+-            assert!(key(guest, CLASSED).input_assembly().dynamic);
++            assert_eq!(
++                key(guest, CLASSED).input_assembly().dynamic,
++                !guest.is_strip()
++            );
+         }
+     }
+ 
+-    /// With the unrestricted property one pipeline serves everything.
++    /// With the unrestricted property one pipeline serves every list, and
++    /// each strip keeps its own.
+     #[test]
+-    fn an_unrestricted_host_needs_one_pipeline() {
++    fn an_unrestricted_host_needs_one_list_pipeline() {
+         let keys: BTreeSet<TopologyKey> =
+             PrimitiveType::ALL.iter().map(|p| key(*p, FREE)).collect();
+-        assert_eq!(keys, BTreeSet::from([TopologyKey::Any]));
++        assert_eq!(
++            keys,
++            BTreeSet::from([
++                TopologyKey::Any,
++                TopologyKey::Exact(PrimitiveType::LineStrip),
++                TopologyKey::Exact(PrimitiveType::TriangleStrip),
++            ])
++        );
+         for a in PrimitiveType::ALL {
+             for b in PrimitiveType::ALL {
+-                assert!(serves(a, b, FREE));
++                assert_eq!(
++                    serves(a, b, FREE),
++                    a == b || (!a.is_strip() && !b.is_strip())
++                );
+             }
+         }
+     }
+@@ -362,7 +397,11 @@ mod tests {
+             .input_assembly()
+             .native();
+         assert_eq!(native.topology, vk::PrimitiveTopology::TRIANGLE_STRIP);
+-        assert_eq!(native.primitive_restart_enable, vk::FALSE);
++        assert_eq!(native.primitive_restart_enable, vk::TRUE);
++        let list = TopologyKey::Exact(PrimitiveType::Triangle)
++            .input_assembly()
++            .native();
++        assert_eq!(list.primitive_restart_enable, vk::FALSE);
+         assert_eq!(
+             native.s_type,
+             vk::StructureType::PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/strip_fetch.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/strip_fetch.rs
+index 21599fd..83dc553 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/strip_fetch.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/strip_fetch.rs
+@@ -5,6 +5,11 @@
+ //! has the original odd winding, vertex ordering and provoking vertex.
+ //! PrimitiveId is refused by the shared fetch admission check. This does not
+ //! change topology, front-face state, vertex IDs, base vertex or base instance.
++//!
++//! A restart index ends the strip it is in, as Metal's indexed strips do: no
++//! triangle crosses it and parity counts again from the index after it. The
++//! generated indices are 32-bit and never the 32-bit restart index, because
++//! that value is a restart in the guest's own stream and is skipped.
+ 
+ use super::draw_execution::DrawExecutionDecline;
+ use super::draw_validation::DrawValidationDecline;
+@@ -14,6 +19,8 @@ pub(super) struct StripFetchIndices {
+     pub(super) bytes: Vec<u8>,
+     pub(super) primitives: u32,
+     pub(super) vertex_offset: i32,
++    /// `(index count, first index)` of each primitive's draw, in strip order.
++    ranges: Vec<(u32, u32)>,
+ }
+ 
+ fn overflow() -> DrawError {
+@@ -22,6 +29,7 @@ fn overflow() -> DrawError {
+ 
+ impl StripFetchIndices {
+     /// The u32 firstIndex domain bounds the entire generated index sequence.
++    /// Both counts are upper bounds: restart indices only remove primitives.
+     pub(super) fn shape(req: &DrawRequest) -> Result<(u32, u32), DrawError> {
+         let count = req
+             .indexed
+@@ -40,12 +48,19 @@ impl StripFetchIndices {
+     pub(super) fn from_validated(req: &DrawRequest) -> Result<Self, DrawError> {
+         let (primitives, indices) = Self::shape(req)?;
+         let byte_len = (indices as usize).checked_mul(4).ok_or_else(overflow)?;
+-        let mut bytes = Vec::new();
+-        bytes.try_reserve_exact(byte_len).map_err(|_| {
++        let allocation = || {
+             DrawError::DrawExecution(DrawExecutionDecline::ColorInputIndexAllocation {
+                 bytes: byte_len,
+             })
+-        })?;
++        };
++        let mut bytes = Vec::new();
++        bytes
++            .try_reserve_exact(byte_len)
++            .map_err(|_| allocation())?;
++        let mut ranges = Vec::new();
++        ranges
++            .try_reserve_exact(primitives as usize)
++            .map_err(|_| allocation())?;
+         let source = req
+             .indexed
+             .as_ref()
+@@ -80,26 +95,150 @@ impl StripFetchIndices {
+                 IndexType::U32 => u32::from_le_bytes([value[0], value[1], value[2], value[3]]),
+             })
+         };
+-        for primitive in 0..primitives {
+-            let first = index_at(primitive)?;
+-            if primitive & 1 != 0 {
+-                bytes.extend_from_slice(&first.to_le_bytes());
++        let restart = req.indexed.as_ref().map(|i| i.index_type.restart_index());
++        let count = req
++            .indexed
++            .as_ref()
++            .map_or(req.vertex_count, |i| i.index_count);
++        // The two indices before the current one in this strip, and how many
++        // indices the strip has had since it started or last restarted.
++        let mut previous = [0u32; 2];
++        let mut run = 0u32;
++        for position in 0..count {
++            let index = index_at(position)?;
++            if Some(index) == restart {
++                run = 0;
++                continue;
+             }
+-            bytes.extend_from_slice(&first.to_le_bytes());
+-            bytes.extend_from_slice(&index_at(primitive + 1)?.to_le_bytes());
+-            bytes.extend_from_slice(&index_at(primitive + 2)?.to_le_bytes());
++            if run >= 2 {
++                let odd = (run - 2) & 1;
++                let first = u32::try_from(bytes.len() / 4).map_err(|_| overflow())?;
++                if odd != 0 {
++                    bytes.extend_from_slice(&previous[0].to_le_bytes());
++                }
++                bytes.extend_from_slice(&previous[0].to_le_bytes());
++                bytes.extend_from_slice(&previous[1].to_le_bytes());
++                bytes.extend_from_slice(&index.to_le_bytes());
++                ranges.push((3 + odd, first));
++            }
++            previous = [previous[1], index];
++            run = run.saturating_add(1);
+         }
+-        debug_assert_eq!(bytes.len(), byte_len);
++        debug_assert!(bytes.len() <= byte_len);
+         Ok(Self {
+             bytes,
+-            primitives,
++            primitives: u32::try_from(ranges.len()).map_err(|_| overflow())?,
+             vertex_offset: req.indexed.as_ref().map_or(0, |i| i.vertex_offset),
++            ranges,
+         })
+     }
+ 
+     pub(super) fn draw_range(&self, primitive: u32) -> (u32, u32) {
+         debug_assert!(primitive < self.primitives);
+-        let odd = primitive & 1;
+-        (3 + odd, (primitive / 2) * 7 + odd * 3)
++        self.ranges[primitive as usize]
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::super::types::{BufferContent, IndexedDrawResource, PrimitiveTopology};
++    use super::*;
++    use reims_vgpu_core::topology::PrimitiveType;
++    use std::sync::Arc;
++
++    fn strip(index_type: IndexType, indices: &[u32]) -> DrawRequest {
++        let bytes = indices
++            .iter()
++            .flat_map(|&i| match index_type {
++                IndexType::U16 => (i as u16).to_le_bytes().to_vec(),
++                IndexType::U32 => i.to_le_bytes().to_vec(),
++            })
++            .collect();
++        DrawRequest {
++            primitive_topology: PrimitiveTopology(PrimitiveType::TriangleStrip),
++            indexed: Some(IndexedDrawResource {
++                index_type,
++                index_count: indices.len() as u32,
++                vertex_offset: 0,
++                content: BufferContent::Bytes(Arc::new(bytes)),
++            }),
++            ..DrawRequest::default()
++        }
++    }
++
++    /// Each primitive's draw, read back as the indices it submits.
++    fn draws(split: &StripFetchIndices) -> Vec<Vec<u32>> {
++        let all: Vec<u32> = split
++            .bytes
++            .as_chunks::<4>()
++            .0
++            .iter()
++            .map(|c| u32::from_le_bytes(*c))
++            .collect();
++        (0..split.primitives)
++            .map(|p| {
++                let (count, first) = split.draw_range(p);
++                all[first as usize..(first + count) as usize].to_vec()
++            })
++            .collect()
++    }
++
++    #[test]
++    fn an_unbroken_strip_keeps_its_parity() {
++        let split =
++            StripFetchIndices::from_validated(&strip(IndexType::U16, &[10, 11, 12, 13, 14]))
++                .expect("split");
++        assert_eq!(
++            draws(&split),
++            vec![vec![10, 11, 12], vec![11, 11, 12, 13], vec![12, 13, 14]]
++        );
++    }
++
++    /// The shape an iOS path renderer sends: quads joined by restart indices.
++    /// Without the restart the strip would also draw the triangles through
++    /// vertex 65535 between them.
++    #[test]
++    fn a_restart_index_ends_the_strip_and_parity_starts_again() {
++        let split = StripFetchIndices::from_validated(&strip(
++            IndexType::U16,
++            &[0, 1, 2, 3, 0xFFFF, 4, 5, 6, 7],
++        ))
++        .expect("split");
++        assert_eq!(
++            draws(&split),
++            vec![
++                vec![0, 1, 2],
++                vec![1, 1, 2, 3],
++                vec![4, 5, 6],
++                vec![5, 5, 6, 7],
++            ]
++        );
++        assert!(StripFetchIndices::shape(&strip(IndexType::U16, &[0; 9]))
++            .is_ok_and(|(primitives, _)| primitives >= split.primitives));
++    }
++
++    /// The restart index is the largest value of the guest's own type: a
++    /// 32-bit stream restarts at `0xFFFFFFFF` and draws vertex 65535.
++    #[test]
++    fn the_restart_index_is_the_largest_value_of_the_index_type() {
++        let split = StripFetchIndices::from_validated(&strip(
++            IndexType::U32,
++            &[0, 1, 0xFFFF, 0xFFFF_FFFF, 2, 3, 4],
++        ))
++        .expect("split");
++        assert_eq!(draws(&split), vec![vec![0, 1, 0xFFFF], vec![2, 3, 4]]);
++    }
++
++    /// Restarts that leave fewer than three indices draw nothing, and a
++    /// stream that is only restarts is an empty split rather than an error.
++    #[test]
++    fn short_pieces_between_restarts_draw_nothing() {
++        let split = StripFetchIndices::from_validated(&strip(
++            IndexType::U16,
++            &[0xFFFF, 1, 2, 0xFFFF, 3, 0xFFFF, 0xFFFF],
++        ))
++        .expect("split");
++        assert_eq!(split.primitives, 0);
++        assert!(split.bytes.is_empty());
+     }
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+index ef18e04..1841cf4 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -976,6 +976,15 @@ impl IndexType {
+             Self::U32 => 4,
+         }
+     }
++
++    /// The index that ends a strip in an indexed draw: the largest value this
++    /// type holds. See `PrimitiveType::restarts`.
++    pub fn restart_index(self) -> u32 {
++        match self {
++            Self::U16 => u32::from(u16::MAX),
++            Self::U32 => u32::MAX,
++        }
++    }
+ }
+ 
+ #[derive(Debug)]
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index 70f360b..3484bb7 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -1359,6 +1359,62 @@ fn indexed_u16_known_color() {
+     }
+ }
+ 
++/// Metal ends an indexed strip at the largest index of its type and starts a
++/// new one. Two quads joined by `0xFFFF` must draw as two quads: drawn as one
++/// continuous strip, the triangles through vertex 65535 (placed at the centre)
++/// would cover the gap between them.
++#[test]
++fn an_indexed_strip_restarts_at_the_largest_index() {
++    let _g = engine_test_session();
++    let v = framebuffer_fetch_glsl(
++        "vertex",
++        r#"#version 450
++void main() {
++    vec2 p[8] = vec2[](vec2(-1,-1),vec2(-1,1),vec2(-0.5,-1),vec2(-0.5,1),
++                       vec2(0.5,-1),vec2(0.5,1),vec2(1,-1),vec2(1,1));
++    gl_Position = vec4(gl_VertexIndex < 8 ? p[gl_VertexIndex] : vec2(0), 0, 1);
++}"#,
++    );
++    let f = framebuffer_fetch_glsl(
++        "fragment",
++        r#"#version 450
++layout(location=0) out vec4 color;
++void main() { color = vec4(1, 0, 0, 1); }
++"#,
++    );
++    let (w, h) = (16u32, 16u32);
++    let mut req = engine_req(&v, &f, w, h);
++    req.primitive_topology.0 = reims_vgpu_core::topology::PrimitiveType::TriangleStrip;
++    let indices = [0u16, 1, 2, 3, 0xFFFF, 4, 5, 6, 7];
++    req.vertex_count = indices.len() as u32;
++    req.indexed = Some(IndexedDrawResource {
++        index_type: IndexType::U16,
++        index_count: indices.len() as u32,
++        vertex_offset: 0,
++        content: BufferContent::Bytes(std::sync::Arc::new(
++            indices.iter().flat_map(|i| i.to_le_bytes()).collect(),
++        )),
++    });
++    let Some(px) = draw_or_skip("strip_restart", &req) else {
++        return;
++    };
++    let red = |x: u32, y: u32| {
++        let i = (y * w + x) as usize * 4;
++        px[i] == 255 && px[i + 1] == 0 && px[i + 3] == 255
++    };
++    for y in 0..h {
++        for x in (0..4).chain(12..16) {
++            assert!(red(x, y), "quad pixel ({x},{y}) not drawn");
++        }
++        for x in 5..11 {
++            assert!(
++                !red(x, y),
++                "gap pixel ({x},{y}) drawn: the strip did not restart"
++            );
++        }
++    }
++}
++
+ #[test]
+ fn storage_buffer_binding_still_renders() {
+     let _g = engine_test_session();

@@ -1,0 +1,210 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
+@@ -4015,3 +4015,71 @@
+         .iter()
+         .any(|l| l.starts_with("dual_plane_levels_over_cap")));
+ }
++
++#[test]
++fn optional_fragment_native_absence_is_not_a_zero_or_malformed_reference() {
++    use reims_vgpu_protocol::render_pipeline::{FragmentFunction, Rasterization};
++    let absent = render_pipeline_desc(62, &[(PIPELINE_TAG_VERTEX_FUNC, 7)]);
++    let decoded = decode_render_pipeline_descriptor(&absent).unwrap();
++    assert_eq!(decoded.fragment_function, FragmentFunction::Absent);
++    assert_eq!(decoded.rasterization, Rasterization::Enabled);
++    let zero = render_pipeline_desc(
++        62,
++        &[
++            (PIPELINE_TAG_VERTEX_FUNC, 7),
++            (PIPELINE_TAG_FRAGMENT_FUNC, 0),
++        ],
++    );
++    assert_eq!(
++        decode_render_pipeline_descriptor(&zero),
++        Err(DecodeStatus::ErrUnsupported(
++            "res_render_pipeline_fragment_reference_zero"
++        ))
++    );
++    let duplicate = render_pipeline_desc(
++        62,
++        &[
++            (PIPELINE_TAG_VERTEX_FUNC, 7),
++            (PIPELINE_TAG_FRAGMENT_FUNC, 3),
++            (PIPELINE_TAG_FRAGMENT_FUNC, 4),
++        ],
++    );
++    assert_eq!(
++        decode_render_pipeline_descriptor(&duplicate),
++        Err(DecodeStatus::ErrUnsupported(
++            "res_render_pipeline_duplicate_stage_field"
++        ))
++    );
++    let mut short = render_pipeline_desc(
++        62,
++        &[
++            (PIPELINE_TAG_VERTEX_FUNC, 7),
++            (PIPELINE_TAG_FRAGMENT_FUNC, 3),
++        ],
++    );
++    short[24] = 3;
++    short.pop();
++    let length = short.len() as u32;
++    st32(&mut short[4..], length);
++    st32(&mut short[12..], length - 16);
++    assert_eq!(
++        decode_render_pipeline_descriptor(&short),
++        Err(DecodeStatus::ErrUnsupported(
++            "res_render_pipeline_fragment_width"
++        ))
++    );
++    let disabled = render_pipeline_desc(62, &[(PIPELINE_TAG_VERTEX_FUNC, 7), (0x07, 0)]);
++    assert_eq!(
++        decode_render_pipeline_descriptor(&disabled)
++            .unwrap()
++            .rasterization,
++        Rasterization::Disabled
++    );
++    let invalid = render_pipeline_desc(62, &[(PIPELINE_TAG_VERTEX_FUNC, 7), (0x07, 2)]);
++    assert_eq!(
++        decode_render_pipeline_descriptor(&invalid),
++        Err(DecodeStatus::ErrUnsupported(
++            "res_render_pipeline_rasterization_value"
++        ))
++    );
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -4688,3 +4688,131 @@
+         );
+     }
+ }
++
++/// Native nil fragment semantics: the vertex stage still rasterizes and writes
++/// depth, while all color channels retain their contents. A later real fragment
++/// must consume that depth and must not reuse a pipeline with color writes off.
++#[test]
++fn optional_fragment_preserves_color_and_writes_depth_on_the_gpu() {
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let identity = TargetIdentity::Surface {
++        id: 0x6201,
++        width: 16,
++        height: 16,
++        generation: 1,
++        format: ash::vk::Format::R8G8B8A8_UNORM,
++    };
++    let depth = TargetIdentity::Texture {
++        ref_: 0x6202,
++        width: 16,
++        height: 16,
++        generation: 1,
++        stencil: false,
++    };
++    let mut req = engine_req(&v, &f, 16, 16);
++    req.target_identity = Some(identity);
++    req.color_attachment = Some(color_attachment(
++        reims_vgpu::protocol::pixel_format::MTL_FORMAT_RGBA8_UNORM,
++        [0.2, 0.4, 0.6, 1.0],
++    ));
++    req.frag_spirv = None;
++    req.depth = Some(DepthState {
++        identity: Some(depth),
++        test_enable: true,
++        write_enable: true,
++        compare: SamplerCompareFunction::Always,
++        clear_value: 0.1234567,
++        load: false,
++        stencil: None,
++    });
++    let pixels = semantic_rgba(
++        &engine::execute_draw_request(engine_device(), &req)
++            .expect("working Vulkan device required"),
++    );
++    assert!(
++        pixels.chunks_exact(4).all(|p| p
++            .iter()
++            .zip([51, 102, 153, 255])
++            .all(|(got, want)| near(*got, want))),
++        "absent fragment changed the color clear"
++    );
++    // Equal only passes if the first draw actually wrote its vertex depth. The
++    // deliberately nonstandard clear differs from the fullscreen fixture's z.
++    req.frag_spirv = Some(std::sync::Arc::new(f));
++    req.load_from_target = true;
++    let depth = req.depth.as_mut().unwrap();
++    depth.load = true;
++    depth.write_enable = false;
++    depth.compare = SamplerCompareFunction::Equal;
++    let pixels = semantic_rgba(
++        &engine::execute_draw_request(engine_device(), &req).expect("depth consumer"),
++    );
++    assert_fullscreen_fragment_color(
++        "fragment restored after nil depth producer",
++        &pixels,
++        16,
++        16,
++    );
++    req.frag_spirv = None;
++    let preserved = semantic_rgba(
++        &engine::execute_draw_request(engine_device(), &req)
++            .expect("nil stage after real fragment"),
++    );
++    assert_eq!(
++        preserved, pixels,
++        "cache must restore no-color-write semantics"
++    );
++}
++
++#[test]
++fn optional_fragment_masks_every_mrt_color_attachment_on_the_gpu() {
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let target = |id| TargetIdentity::Surface {
++        id,
++        width: 16,
++        height: 16,
++        generation: 1,
++        format: ash::vk::Format::R8G8B8A8_UNORM,
++    };
++    let secondary = target(0x6204);
++    let mut req = engine_req(&v, &f, 16, 16);
++    req.frag_spirv = None;
++    req.target_identity = Some(target(0x6203));
++    req.color_attachment = Some(color_attachment(
++        reims_vgpu::protocol::pixel_format::MTL_FORMAT_RGBA8_UNORM,
++        [0.2, 0.4, 0.6, 1.0],
++    ));
++    req.secondary_targets.push(SecondaryColorTarget {
++        identity: secondary.clone(),
++        width: 16,
++        height: 16,
++        attachment: color_attachment(
++            reims_vgpu::protocol::pixel_format::MTL_FORMAT_RGBA8_UNORM,
++            [0.8, 0.1, 0.3, 1.0],
++        ),
++        load: false,
++        blend: None,
++        color_write_mask: Default::default(),
++    });
++    let pixels = semantic_rgba(
++        &engine::execute_draw_request(engine_device(), &req)
++            .expect("working Vulkan device required"),
++    );
++    assert!(pixels.chunks_exact(4).all(|p| p
++        .iter()
++        .zip([51, 102, 153, 255])
++        .all(|(got, want)| near(*got, want))));
++    let pixels = engine::read_target(&secondary)
++        .expect("secondary resident")
++        .into_rgba8()
++        .expect("RGBA8 secondary");
++    assert!(
++        pixels.chunks_exact(4).all(|p| p
++            .iter()
++            .zip([204, 26, 77, 255])
++            .all(|(got, want)| near(*got, want))),
++        "nil stage wrote an undefined secondary fragment output"
++    );
++}

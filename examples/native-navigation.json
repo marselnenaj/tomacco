@@ -1,0 +1,13 @@
+{
+  "name": "Tomatoes · native navigation",
+  "steps": [
+    {"action": "launch", "bundle_id": "dev.example.tomatoes"},
+    {"action": "assert", "selector": {"description": "Home"}},
+    {"action": "click", "selector": {"description": "Settings"}},
+    {"action": "assert", "selector": {"description": "Settings"}},
+    {"action": "screenshot", "label": "Native settings and system bars"},
+    {"action": "key", "key": "KEYCODE_BACK"},
+    {"action": "assert", "selector": {"description": "Home"}},
+    {"action": "screenshot", "label": "Native home fills the display"}
+  ]
+}

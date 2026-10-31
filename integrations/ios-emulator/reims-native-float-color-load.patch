@@ -1,0 +1,205 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -3604,10 +3604,10 @@
+     true
+ }
+ 
+-/// Read a scalar floating-point attachment's prior contents at native width.
++/// Read a floating-point attachment's prior contents at native width.
+ /// A display cache or RGBA8 sample is not the attachment's stored half/float
+ /// texel. The owned seed carries the exact layout through GPU seed upload.
+-fn seed_scalar_float_color_load<M: HostMemory + HostOps>(
++fn seed_float_color_load<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+     task_id: u32,
+@@ -3619,6 +3619,7 @@
+     let layout = match span.format {
+         pixel_format::MTL_FORMAT_R16_FLOAT => pixel_format::TexelLayout::R16Float,
+         pixel_format::MTL_FORMAT_R32_FLOAT => pixel_format::TexelLayout::R32Float,
++        pixel_format::MTL_FORMAT_RGBA16_FLOAT => pixel_format::TexelLayout::Rgba16Float,
+         _ => return None,
+     };
+     let (tight, len) = reims_vgpu_protocol::extent::tight_image_layout(
+@@ -3643,6 +3644,9 @@
+         if !crate::runtime::gva_view::read_span(state, host, task_id, address, row) {
+             return None;
+         }
++    }
++    if layout == pixel_format::TexelLayout::Rgba16Float {
++        crate::runtime::drain::note_store_route("rgba16_gva_render_load_n");
+     }
+     Some(pixel_format::ColorLoadSeed {
+         pixels: std::sync::Arc::new(pixels),
+@@ -3673,8 +3677,14 @@
+     if matches!(
+         format,
+         pixel_format::MTL_FORMAT_R16_FLOAT | pixel_format::MTL_FORMAT_R32_FLOAT
+-    ) {
+-        return seed_scalar_float_color_load(state, host, task_id, span);
++    ) || (format == pixel_format::MTL_FORMAT_RGBA16_FLOAT
++        && crate::backend::selected().rail() == crate::backend::Rail::Vulkan)
++    {
++        // The Vulkan seed uploader accepts the attachment's own half-float
++        // texels. Its display caches and sampled RGBA8 fallback cannot retain
++        // their range or precision; a failed native read must remain a miss.
++        // The Metal seed consumer still accepts only the RGBA8 carrier.
++        return seed_float_color_load(state, host, task_id, span);
+     }
+     // Discrete GPU: exact target GVA is the strongest identity across object-ref
+     // recycling. Fall back to the normal texture namespace, never the
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -8537,6 +8537,73 @@
+ }
+ 
+ #[test]
++#[cfg(feature = "backend-vulkan")]
++fn rgba16_native_load_preserves_bits_padding_and_freshness_over_display_caches() {
++    let mut rig = StoreRig::new(4);
++    let gva = StoreRig::gva(1);
++    let words = [
++        0xc280u16, 0x3c01, 0x0001, 0x8000, 0x7e35, 0x7c00, 0xfc00, 0x3555, 0x0401, 0xbc01, 0x4800,
++        0x3bff, 0x3c00, 0x4000, 0x4200, 0x4400,
++    ];
++    let raw: Vec<u8> = words.iter().flat_map(|v| v.to_le_bytes()).collect();
++    let mut padded = vec![0xa5; 48];
++    padded[..16].copy_from_slice(&raw[..16]);
++    padded[32..48].copy_from_slice(&raw[16..]);
++    write_task_gva_arm64e(&mut rig.host, &rig.state.tasks[1], gva, &padded);
++    let span = GvaSpan {
++        texture_ref: 6,
++        gva,
++        row_stride: 32,
++        width: 2,
++        height: 2,
++        format: pixel_format::MTL_FORMAT_RGBA16_FLOAT,
++    };
++    // Neither of the display-cache identities can express these native half
++    // values. A cache hit must not replace the actual attachment contents.
++    crate::runtime::surface_cache::store_gva_owned(
++        &mut rig.state,
++        gva,
++        2,
++        2,
++        vec![17; 16],
++        1,
++        None,
++        true,
++    );
++    crate::runtime::surface_cache::store_texture(&mut rig.state, 1, 6, 2, 2, vec![29; 16], gva);
++    let seed = seed_color_load(&mut rig.state, &mut rig.host, 1, span).unwrap();
++    assert_eq!(seed.layout, TexelLayout::Rgba16Float);
++    assert_eq!(*seed.pixels, raw);
++
++    // The previous returned seed owns its bytes; a subsequent Load sees a
++    // later guest write without changing that retained seed.
++    write_task_gva_arm64e(
++        &mut rig.host,
++        &rig.state.tasks[1],
++        gva + 32,
++        &0x4821u16.to_le_bytes(),
++    );
++    let fresh = seed_color_load(&mut rig.state, &mut rig.host, 1, span).unwrap();
++    let mut expected = raw.clone();
++    expected[16..18].copy_from_slice(&0x4821u16.to_le_bytes());
++    assert_eq!(*fresh.pixels, expected);
++    assert_eq!(*seed.pixels, raw);
++    assert!(seed_color_load(
++        &mut rig.state,
++        &mut rig.host,
++        1,
++        GvaSpan {
++            row_stride: 15,
++            ..span
++        },
++    )
++    .is_none());
++    // A failed native read must not return the lossy cached picture.
++    rig.point(1, 0);
++    assert!(seed_color_load(&mut rig.state, &mut rig.host, 1, span).is_none());
++}
++
++#[test]
+ fn r32_native_load_reads_padded_rows_and_observes_a_guest_write() {
+     use crate::protocol::endian::st32;
+     use crate::protocol::gva::{DIRECTORY_DEPTH, DIRECTORY_ROOT_PFN};
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -4366,6 +4366,73 @@
+ }
+ 
+ #[test]
++fn rgba16_native_cpu_and_resident_loads_preserve_primary_and_secondary_bits() {
++    use reims_vgpu_core::blend::ColorWriteMask;
++    use reims_vgpu_protocol::pixel_format::{ColorLoadSeed, TexelLayout, MTL_FORMAT_RGBA16_FLOAT};
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let primary = TargetIdentity::Gva {
++        gva: 0x270000,
++        width: 2,
++        height: 2,
++        generation: 1,
++        format: ash::vk::Format::R16G16B16A16_SFLOAT,
++    };
++    let secondary = TargetIdentity::Gva {
++        gva: 0x274000,
++        width: 2,
++        height: 2,
++        generation: 1,
++        format: ash::vk::Format::R16G16B16A16_SFLOAT,
++    };
++    let words = [
++        0xc280u16, 0x3c01, 0x0001, 0x8000, 0x7e35, 0x7c00, 0xfc00, 0x3555, 0x0401, 0xbc01, 0x4800,
++        0x3bff, 0x3c00, 0x4000, 0x4200, 0x4400,
++    ];
++    let raw: Vec<u8> = words.iter().flat_map(|v| v.to_le_bytes()).collect();
++    let other: Vec<u8> = words.iter().rev().flat_map(|v| v.to_le_bytes()).collect();
++    let seed = |pixels| ColorLoadSeed {
++        pixels: std::sync::Arc::new(pixels),
++        layout: TexelLayout::Rgba16Float,
++    };
++    let mut req = engine_req(&v, &f, 2, 2);
++    req.target_identity = Some(primary.clone());
++    req.color_attachment = Some(color_attachment(MTL_FORMAT_RGBA16_FLOAT, [0.0; 4]));
++    req.target_cpu_seed = Some(seed(raw.clone()));
++    req.skip_readback = true;
++    req.color_write_mask = ColorWriteMask::NONE;
++    req.secondary_targets.push(SecondaryColorTarget {
++        identity: secondary.clone(),
++        width: 2,
++        height: 2,
++        attachment: color_attachment(MTL_FORMAT_RGBA16_FLOAT, [0.0; 4]),
++        load: true,
++        seed: Some(seed(other.clone())),
++        blend: None,
++        color_write_mask: ColorWriteMask::NONE,
++    });
++    engine::execute_draw_request(engine_device(), &req).expect("native half-float CPU Loads");
++    for (identity, expected) in [(&primary, &raw), (&secondary, &other)] {
++        let actual = engine::read_target_texels(identity).unwrap();
++        assert_eq!(
++            actual.texel,
++            engine::ReadbackTexel::Native(TexelLayout::Rgba16Float)
++        );
++        assert_eq!(&actual.pixels, expected);
++    }
++    req.target_cpu_seed = None;
++    req.load_from_target = true;
++    req.secondary_targets[0].seed = None;
++    req.secondary_targets[0].load = true;
++    engine::execute_draw_request(engine_device(), &req).expect("native half-float resident Loads");
++    assert_eq!(engine::read_target_texels(&primary).unwrap().pixels, raw);
++    assert_eq!(
++        engine::read_target_texels(&secondary).unwrap().pixels,
++        other
++    );
++}
++
++#[test]
+ fn rgb10a2_color_clear_native_load_draw_and_resident_load_preserve_packed_words() {
+     use reims_vgpu_core::blend::ColorWriteMask;
+     use reims_vgpu_protocol::pixel_format::{self as p, ColorLoadSeed, TexelLayout};

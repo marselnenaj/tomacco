@@ -1,0 +1,267 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
+@@ -16,6 +16,7 @@
+ //! the engine.
+ 
+ use std::collections::HashMap;
++use std::sync::Arc;
+ 
+ use super::{
+     retain_resident_resource, ResidentContentBacking, ResidentResourceLease, TargetIdentity,
+@@ -29,7 +30,78 @@
+ /// matching identity instead of overwriting an unrelated child lease. The lease
+ /// owns its resident pin and its allocation classification.
+ #[derive(Debug, Default)]
+-pub struct ResidentTargets(HashMap<TargetIdentity, ResidentResourceLease>);
++pub struct ResidentTargets {
++    targets: HashMap<TargetIdentity, ResidentResourceLease>,
++    planar_xr_samples: HashMap<u32, PlanarXrSampleMemo>,
++}
++
++/// A converted level belongs to the serialized resource, together with both
++/// exact inputs. Every bind still settles and reads both planes before asking
++/// this memo. Equal bytes permit conversion reuse even after physical backing
++/// replacement; a write anywhere in either tight plane forces a new upload.
++#[derive(Debug)]
++struct PlanarXrSampleMemo {
++    level: crate::runtime::decode::resource::PlanarXrLevel,
++    native: [Vec<u8>; 2],
++    linear: Arc<Vec<u8>>,
++    generation: u64,
++}
++
++#[derive(Debug)]
++pub(crate) enum PlanarXrMemoRefusal {
++    Upload(reims_vgpu_vulkan::pixel::SampledUploadRefusal),
++    ForeignRail,
++}
++
++impl crate::observe::Decline for PlanarXrMemoRefusal {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::Upload(why) => why.slug(),
++            Self::ForeignRail => "dual_xr_memo_foreign_rail",
++        }
++    }
++}
++
++pub(crate) fn planar_xr_sample_bytes(
++    resource: &TaskResource,
++    mip_level: u32,
++    level: crate::runtime::decode::resource::PlanarXrLevel,
++    native: [Vec<u8>; 2],
++    next_generation: impl FnOnce() -> u64,
++) -> Result<(Arc<Vec<u8>>, u64), PlanarXrMemoRefusal> {
++    resource
++        .with_rail_state(|held: &mut ResidentTargets| {
++            if let Some(memo) = held.planar_xr_samples.get(&mip_level) {
++                if memo.level == level && memo.native == native {
++                    crate::runtime::drain::note_store_route("dual_xr_convert_reused_n");
++                    return Ok((Arc::clone(&memo.linear), memo.generation));
++                }
++            }
++            let upload = reims_vgpu_vulkan::pixel::sampled_planar_xr_upload_bytes(
++                level.format,
++                &native[0],
++                &native[1],
++            )
++            .map_err(PlanarXrMemoRefusal::Upload)?;
++            let (_, bytes) = upload.into_parts();
++            let linear = Arc::new(bytes);
++            // One device-wide allocator serves all sampled producers, so a
++            // recycled or colliding key cannot claim an older image's bytes.
++            let generation = next_generation();
++            held.planar_xr_samples.insert(
++                mip_level,
++                PlanarXrSampleMemo {
++                    level,
++                    native,
++                    linear: Arc::clone(&linear),
++                    generation,
++                },
++            );
++            crate::runtime::drain::note_store_route("dual_xr_convert_new_n");
++            Ok((linear, generation))
++        })
++        .ok_or(PlanarXrMemoRefusal::ForeignRail)?
++}
+ 
+ impl RailResourceState for ResidentTargets {}
+ 
+@@ -64,21 +136,25 @@
+ ) -> ResidentContentBacking {
+     let retention = resource
+         .with_rail_state(|held: &mut ResidentTargets| {
+-            if let Some(lease) = held.0.get(identity).filter(|lease| lease.matches(identity)) {
++            if let Some(lease) = held
++                .targets
++                .get(identity)
++                .filter(|lease| lease.matches(identity))
++            {
+                 return Retention::Warm(lease.backing());
+             }
+             // An engine reset invalidates the lease under this exact identity,
+             // but another identity is another child resource, not a
+             // replacement. A texture can own several views/surfaces
+             // concurrently.
+-            held.0.remove(identity);
++            held.targets.remove(identity);
+             let acquired = retain(identity);
+             let backing = acquired
+                 .as_ref()
+                 .map(|lease| lease.backing())
+                 .unwrap_or(ResidentContentBacking::NotReady);
+             if let Some(lease) = acquired {
+-                held.0.insert(identity.clone(), lease);
++                held.targets.insert(identity.clone(), lease);
+             }
+             Retention::Acquired(backing)
+         })
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -1005,8 +1005,9 @@
+ pub(crate) struct PlanarXrSample {
+     pub width: u32,
+     pub height: u32,
+-    pub bytes: Vec<u8>,
++    pub bytes: std::sync::Arc<Vec<u8>>,
+     pub byte_format: SampledByteFormat,
++    pub generation: u64,
+ }
+ 
+ /// Read both pieces of one immutable XR construction descriptor. Each plane
+@@ -1020,6 +1021,7 @@
+     host: &mut M,
+     task_id: u32,
+     texture_ref: u32,
++    resource: &crate::model::TaskResource,
+     descriptor: &crate::runtime::decode::resource::DualPlaneTextureDescriptor,
+     mip_level: u32,
+     native: NativeUploads,
+@@ -1109,18 +1111,21 @@
+             }
+         }
+     }
+-    let upload = reims_vgpu_vulkan::pixel::sampled_planar_xr_upload_bytes(
+-        level.format,
+-        &packed[0],
+-        &packed[1],
+-    )
+-    .map_err(|why| R::PlanarXr { reason: why.slug() })?;
+-    let (_, bytes) = upload.into_parts();
++    let (bytes, generation) =
++        crate::backend::vulkan::engine::resource_lease::planar_xr_sample_bytes(
++            resource,
++            mip_level,
++            level,
++            packed,
++            || state.next_sampled_content_generation(),
++        )
++        .map_err(|why| R::PlanarXr { reason: why.slug() })?;
+     crate::runtime::drain::note_store_route("dual_xr_sample_n");
+     Ok(PlanarXrSample {
+         width,
+         height,
+         bytes,
++        generation,
+         byte_format: SampledByteFormat::linearized_from_source(
+             TexelLayout::Rgba32Float,
+             descriptor.pixel_format(),
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -1300,6 +1300,7 @@
+             host,
+             task_id,
+             texture_ref,
++            resource,
+             descriptor,
+             0,
+             native_uploads_asking_host(),
+@@ -1319,8 +1320,11 @@
+             sample.height,
+             0,
+             SampledSourceRequest::Bytes(
+-                std::sync::Arc::new(sample.bytes),
+-                None,
++                sample.bytes,
++                Some(LinearSampleIdentity {
++                    key: resource.lifetime_ref().id(),
++                    generation: sample.generation,
++                }),
+                 sample.byte_format,
+                 crate::backend::vulkan::engine::SampledByteOrigin::LinearTexture,
+             ),
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/mod.rs
+@@ -1404,6 +1404,7 @@
+         _texture_ref: u32,
+         _binding: u32,
+         _level: u32,
++        _resource: &crate::model::TaskResource,
+         _descriptor: &crate::runtime::decode::resource::DualPlaneTextureDescriptor,
+     ) -> Result<StagedTexture<Self>, ComputeStatus> {
+         Err(ComputeStatus::Unsupported(
+@@ -1919,14 +1920,18 @@
+         .unwrap_or(false);
+     if let Some(entry) = stage_entry {
+         if entry.object_type == crate::runtime::decode::resource::OBJECT_TYPE_DUAL_PLANE_TEXTURE {
+-            let descriptor = objects::read_descriptor(state, host, task_id, &entry).ok_or(
+-                ComputeStatus::GuestIo("compute_dual_xr_descriptor_unreadable"),
+-            )?;
+-            let descriptor =
+-                crate::runtime::decode::resource::decode_dual_plane_texture_descriptor(&descriptor)
+-                    .map_err(|_| {
+-                        ComputeStatus::MissingTexture("compute_dual_xr_descriptor_undecodable")
+-                    })?;
++            let resource = objects::resolve_resource(state, host, task_id, stage_ref)
++                .map_err(|_| ComputeStatus::GuestIo("compute_dual_xr_descriptor_unreadable"))?;
++            let descriptor = match resource.decoded() {
++                Ok(crate::runtime::decode::resource::Descriptor::DualPlaneTexture(descriptor)) => {
++                    descriptor
++                }
++                _ => {
++                    return Err(ComputeStatus::MissingTexture(
++                        "compute_dual_xr_descriptor_undecodable",
++                    ))
++                }
++            };
+             if is_storage {
+                 return Err(ComputeStatus::Unsupported(
+                     "compute_dual_xr_storage_unsupported",
+@@ -1944,7 +1949,8 @@
+                 texture_ref,
+                 binding,
+                 view_level,
+-                &descriptor,
++                &resource,
++                descriptor,
+             );
+         }
+         if entry.object_type == objects::OBJECT_TYPE_REF_TEXTURE {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+@@ -351,6 +351,7 @@
+         texture_ref: u32,
+         binding: u32,
+         level: u32,
++        resource: &crate::model::TaskResource,
+         descriptor: &crate::runtime::decode::resource::DualPlaneTextureDescriptor,
+     ) -> Result<StagedTexture<Self>, ComputeStatus> {
+         use crate::observe::Decline as _;
+@@ -360,6 +361,7 @@
+             host,
+             task_id,
+             texture_ref,
++            resource,
+             descriptor,
+             level,
+             crate::runtime::draw::NativeUploads {
+@@ -391,7 +393,7 @@
+             width: sample.width,
+             height: sample.height,
+             mip_levels: 1,
+-            bytes: sample.bytes,
++            bytes: sample.bytes.as_ref().clone(),
+             is_storage: false,
+             writeback: TextureWriteback::None,
+             rail,

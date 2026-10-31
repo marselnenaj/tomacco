@@ -1,0 +1,62 @@
+target/arm: tomacco-bti=off, a CPU without FEAT_BTI.
+
+-cpu max implements FEAT_BTI, which the iOS guest never uses (Apple's
+arm64e code relies on pointer authentication; no page is ever guarded),
+but which TCG pays for on every branch: BR and BLR store BTYPE, a BR
+through a register other than x16/x17 calls helper_guarded_page_br, and
+BTYPE is part of every A64 TB's flags, so one address entered by BLR
+(BTYPE 2), BR x16 (1) and fall-through or RET (0) is up to three separate
+translations, jump-cache entries and lookups.
+
+The CPU property tomacco-bti (default on: unchanged) clears
+ID_AA64PFR1_EL1.BT at realize when off, so the guest sees, and TCG
+implements, no BTI. Guest-visible: the ID register changes; only use it
+where the guest is known not to enable BTI (run_ios_paravirt.py --bti off).
+
+tests/engine/branch-bench.S with qemu-tcg-jump-cache and
+qemu-arm-jump-probe (ns per iteration, best of 7): msgsend 8.8 -> 5.4,
+blr 8.1 -> 4.5, wide 56.6 -> 43.2, flush 67.5 -> 57.9, smc 87.7 -> 80.3;
+same checksum.
+
+diff --git a/target/arm/cpu.c b/target/arm/cpu.c
+--- a/target/arm/cpu.c
++++ b/target/arm/cpu.c
+@@ -2293,6 +2293,17 @@
+ #endif
+     }
+ 
++    /*
++     * tomacco-bti=off removes FEAT_BTI (Apple's cores have none; the guest
++     * never marks a page guarded). With it, every BR/BLR stores BTYPE, a
++     * BR through other than x16/x17 calls a guarded-page helper, and BTYPE
++     * is part of every TB's flags, so one address entered by BLR (2), BR
++     * x16 (1) and fallthrough (0) is three translations.
++     */
++    if (!cpu->tomacco_bti) {
++        FIELD_DP64_IDREG(isar, ID_AA64PFR1, BT, 0);
++    }
++
+ #ifndef CONFIG_USER_ONLY
+     /*
+      * We use the wfxt_timer for timeouts and event stream so we
+@@ -2494,6 +2505,7 @@
+ }
+ 
+ static const Property arm_cpu_properties[] = {
++    DEFINE_PROP_BOOL("tomacco-bti", ARMCPU, tomacco_bti, true),
+     DEFINE_PROP_BOOL("tomacco-strict-sysregs", ARMCPU, tomacco_strict_sysregs, false),
+     DEFINE_PROP_BOOL("tomacco-ap-reset-fpen", ARMCPU, tomacco_ap_reset_fpen, false),
+     DEFINE_PROP_BOOL("tomacco-pauth-fast", ARMCPU, tomacco_pauth_fast, true),
+diff --git a/target/arm/cpu.h b/target/arm/cpu.h
+--- a/target/arm/cpu.h
++++ b/target/arm/cpu.h
+@@ -1093,6 +1093,9 @@
+     /* Uniprocessor system with MP extensions */
+     bool mp_is_up;
+ 
++    /* Keep FEAT_BTI of the CPU model (false: report and implement none). */
++    bool tomacco_bti;
++
+     /* True if we tried kvm_arm_host_cpu_features() during CPU instance_init
+      * and the probe failed (so we need to report the error in realize)
+      */

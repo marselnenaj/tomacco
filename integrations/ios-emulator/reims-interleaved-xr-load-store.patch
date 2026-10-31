@@ -1,0 +1,363 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -51,6 +51,114 @@
+             _ => std::any::type_name::<Self>(),
+         }
+     }
++}
++
++#[derive(Debug)]
++enum InterleavedXrStoreRefusal {
++    Mapping(crate::runtime::mapping_write::NativeImageWriteRefusal),
++    Read(crate::backend::vulkan::engine::DrawError),
++    Identity,
++    SourceShape,
++    Encode(reims_vgpu_vulkan::pixel::RenderStoreRefusal),
++}
++
++impl crate::observe::Decline for InterleavedXrStoreRefusal {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::Mapping(why) => why.slug(),
++            Self::Read(why) => why.slug(),
++            Self::Identity => "interleaved_xr_store_identity",
++            Self::SourceShape => "interleaved_xr_store_source_shape",
++            Self::Encode(why) => why.slug(),
++        }
++    }
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match self {
++            Self::Mapping(why) => why.fields(),
++            Self::Read(why) => why.fields(),
++            _ => Vec::new(),
++        }
++    }
++    fn owner(&self) -> &'static str {
++        match self {
++            Self::Mapping(why) => why.owner(),
++            Self::Read(why) => why.owner(),
++            _ => std::any::type_name::<Self>(),
++        }
++    }
++}
++
++/// An interleaved XR mapping stores packed codes, not its Float32 resident's
++/// bytes and not an RGBA8 scanout approximation. Capture the original storage
++/// before readback; end the staging lease before guest settlement/publication.
++fn store_interleaved_xr_surface<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++    width: u32,
++    height: u32,
++) -> Result<usize, InterleavedXrStoreRefusal> {
++    use crate::backend::vulkan::engine::TargetIdentity;
++    use crate::protocol::pixel_format::{TexelLayout, XrFormat};
++    use InterleavedXrStoreRefusal as R;
++    let mapping = state.mappings.get(&mapping_id).ok_or(R::Identity)?;
++    let format = mapping.format;
++    XrFormat::from_mtl(format).ok_or(R::Encode(
++        reims_vgpu_vulkan::pixel::RenderStoreRefusal::NotXr,
++    ))?;
++    if !matches!(identity, TargetIdentity::Surface { id, width: w, height: h, generation, format }
++        if *id == mapping_id && *w == width && *h == height
++            && *generation == u64::from(mapping.map_generation)
++            && *format == ash::vk::Format::R32G32B32A32_SFLOAT)
++    {
++        return Err(R::Identity);
++    }
++    let target = crate::runtime::mapping_write::NativeImageWriteTarget::capture(
++        mapping_id, mapping, width, height, format,
++    )
++    .map_err(R::Mapping)?;
++    let expected =
++        crate::protocol::extent::tight_image_bytes(width, height, 16).ok_or(R::SourceShape)?;
++    let packed = {
++        let source = crate::backend::vulkan::engine::read_target_texels_consumable(identity)
++            .map_err(R::Read)?;
++        if source.texel.native_layout() != Some(TexelLayout::Rgba32Float)
++            || source.bytes().len() != expected
++        {
++            return Err(R::SourceShape);
++        }
++        let started = std::time::Instant::now();
++        let packed = reims_vgpu_vulkan::pixel::render_store_bytes(
++            format,
++            TexelLayout::Rgba32Float,
++            source.bytes(),
++        )
++        .map_err(R::Encode)?;
++        if packed.len() != target.packed_bytes() {
++            return Err(R::SourceShape);
++        }
++        crate::runtime::drain::note_store_route_us(
++            "interleaved_xr_encode_us",
++            started.elapsed().as_micros() as u64,
++        );
++        if source.is_leased() {
++            crate::runtime::drain::note_store_route("interleaved_xr_store_leased_n");
++            crate::runtime::drain::note_store_route_n(
++                "interleaved_xr_cpu_copy_bytes_avoided",
++                expected as u64,
++            );
++        } else {
++            crate::runtime::drain::note_store_route("interleaved_xr_store_copied_n");
++        }
++        packed
++    };
++    let bytes =
++        crate::runtime::mapping_write::write_captured_native_image(state, host, target, &packed)
++            .map_err(R::Mapping)?;
++    crate::runtime::drain::note_store_route("interleaved_xr_render_store_n");
++    crate::runtime::drain::note_store_route_n("interleaved_xr_store_bytes_n", bytes as u64);
++    Ok(bytes)
+ }
+ 
+ /// Preserve RGBA16Float's native range and half bits. This compatibility route
+@@ -292,6 +400,23 @@
+ ) -> bool {
+     let started = std::time::Instant::now();
+     crate::runtime::drain::note_store_route("surface_flush");
++    if state.mappings.get(&mapping_id).is_some_and(|mapping| {
++        crate::protocol::pixel_format::XrFormat::from_mtl(mapping.format).is_some()
++    }) {
++        match store_interleaved_xr_surface(state, host, mapping_id, identity, width, height) {
++            Ok(bytes) => {
++                finish(state, mapping_id, identity, bytes, started, false);
++                return true;
++            }
++            Err(why) => {
++                crate::observe::Emit::decline("interleaved_xr_render_store", &why)
++                    .field("mapping", mapping_id)
++                    .field("geom", format!("{width}x{height}"))
++                    .fail();
++                return false;
++            }
++        }
++    }
+     if state.mappings.get(&mapping_id).is_some_and(|mapping| {
+         crate::protocol::pixel_format::PlanarXrFormat::from_mtl(mapping.format).is_some()
+     }) {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -2570,6 +2570,93 @@
+     })
+ }
+ 
++/// A packed public XR attachment decodes directly to the canonical Float32
++/// resident. No normalized eight-bit image or native paired-surface codec is
++/// involved. The source owner has already checked physical row geometry.
++fn interleaved_xr_load_seed(format: u16, bytes: Vec<u8>) -> Option<pixel_format::ColorLoadSeed> {
++    let expanded = match reims_vgpu_vulkan::pixel::sampled_upload_bytes(format, bytes) {
++        Ok(expanded) => expanded,
++        Err(why) => {
++            crate::observe::Emit::decline(
++                "interleaved_xr_render_load",
++                &LinearLoadRefusal::XrUpload { reason: why.slug() },
++            )
++            .field("format", format!("{format:#x}"))
++            .fail();
++            return None;
++        }
++    };
++    let (storage, bytes) = expanded.into_parts();
++    if storage != reims_vgpu_vulkan::pixel::StorageImageFormat::Rgba32Float {
++        crate::observe::Emit::decline(
++            "interleaved_xr_render_load",
++            &LinearLoadRefusal::XrUpload {
++                reason: "xr_attachment_load_not_float32",
++            },
++        )
++        .fail();
++        return None;
++    }
++    Some(pixel_format::ColorLoadSeed {
++        pixels: std::sync::Arc::new(bytes),
++        layout: TexelLayout::Rgba32Float,
++    })
++}
++
++/// Vulkan's canonical XR GVA LOAD must precede the RGBA8 display-cache doors.
++pub(super) fn seed_interleaved_xr_color_load<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    task_id: u32,
++    span: super::GvaSpan,
++) -> Option<pixel_format::ColorLoadSeed> {
++    let xr = pixel_format::XrFormat::from_mtl(span.format)?;
++    // Match the native Store owner's accepted attachment geometry before
++    // allocating either the packed source or its Float32 expansion.
++    if !crate::model::scanout_extent_ok(span.width, span.height) {
++        return None;
++    }
++    let (tight, len) = reims_vgpu_protocol::extent::tight_image_layout(
++        span.width,
++        span.height,
++        xr.bytes_per_texel() as u32,
++    )?;
++    if span.gva == 0 || span.row_stride < tight {
++        return None;
++    }
++    crate::runtime::writeback_debt::pay_for_texture(state, host, task_id, span.texture_ref);
++    crate::runtime::render_writeback::settle_guest_writes(
++        crate::runtime::render_writeback::SettleSite::LinearTextureSeed,
++    );
++    let mut bytes = Vec::new();
++    if bytes.try_reserve_exact(len).is_err() {
++        crate::observe::Emit::decline(
++            "interleaved_xr_render_load",
++            &LinearLoadRefusal::XrUpload {
++                reason: "sampled_xr_allocation_failed",
++            },
++        )
++        .fail();
++        return None;
++    }
++    bytes.resize(len, 0);
++    for (y, row) in bytes.chunks_exact_mut(tight as usize).enumerate() {
++        let offset = (y as u64).checked_mul(u64::from(span.row_stride))?;
++        if !crate::runtime::gva_view::read_span(
++            state,
++            host,
++            task_id,
++            span.gva.checked_add(offset)?,
++            row,
++        ) {
++            return None;
++        }
++    }
++    let seed = interleaved_xr_load_seed(span.format, bytes)?;
++    crate::runtime::drain::note_store_route("interleaved_xr_gva_render_load_n");
++    Some(seed)
++}
++
+ fn read_mapper_native_color_seed<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -2578,6 +2665,9 @@
+     height: u32,
+     target_format: ash::vk::Format,
+ ) -> Option<pixel_format::ColorLoadSeed> {
++    if !crate::model::scanout_extent_ok(width, height) {
++        return None;
++    }
+     if !mapper::ensure_resolved_for_scanout(state, host, mapping_id) {
+         return None;
+     }
+@@ -2622,7 +2712,7 @@
+             layout: TexelLayout::Rgba32Float,
+         });
+     }
+-    let (layout, window) = {
++    let (format, layout, window) = {
+         let mapping = state.mappings.get(&mapping_id)?;
+         if !mapping.mapped
+             || !mapping.has_geom
+@@ -2631,10 +2721,18 @@
+         {
+             return None;
+         }
+-        let layout = pixel_format::store_texel_order(mapping.format)?;
+-        if translate::pixel::vk_texel_layout(layout) != target_format {
+-            return None;
+-        }
++        let (layout, bpp) = if let Some(xr) = pixel_format::XrFormat::from_mtl(mapping.format) {
++            if target_format != ash::vk::Format::R32G32B32A32_SFLOAT {
++                return None;
++            }
++            (TexelLayout::Rgba32Float, xr.bytes_per_texel() as u32)
++        } else {
++            let layout = pixel_format::store_texel_order(mapping.format)?;
++            if translate::pixel::vk_texel_layout(layout) != target_format {
++                return None;
++            }
++            (layout, layout.bytes_per_texel())
++        };
+         let (base_off, bpr, span_end) = mapping_write::mapper_ref_texture_sample_window(
+             mapping,
+             width,
+@@ -2642,17 +2740,17 @@
+             mapping.format,
+         )?;
+         (
++            mapping.format,
+             layout,
+             mapping_write::SurfaceWindow {
+                 base_off,
+                 bpr,
+                 span_end,
+-                bpp: layout.bytes_per_texel(),
++                bpp,
+             },
+         )
+     };
+-    let (tight, len) =
+-        reims_vgpu_protocol::extent::tight_image_layout(width, height, layout.bytes_per_texel())?;
++    let (tight, len) = reims_vgpu_protocol::extent::tight_image_layout(width, height, window.bpp)?;
+     crate::runtime::writeback_debt::pay_for_mapping(state, host, mapping_id);
+     crate::runtime::render_writeback::settle_guest_writes(
+         crate::runtime::render_writeback::SettleSite::LinearTextureSeed,
+@@ -2673,6 +2771,11 @@
+         tight,
+     ) {
+         return None;
++    }
++    if pixel_format::XrFormat::from_mtl(format).is_some() {
++        let seed = interleaved_xr_load_seed(format, pixels)?;
++        crate::runtime::drain::note_store_route("interleaved_xr_mapping_render_load_n");
++        return Some(seed);
+     }
+     Some(pixel_format::ColorLoadSeed {
+         pixels: std::sync::Arc::new(pixels),
+@@ -2885,12 +2988,11 @@
+     h: u32,
+     target_format: ash::vk::Format,
+ ) -> Option<MapperRefTextureLoadSeed> {
+-    if state
+-        .mappings
+-        .get(&mapping_id)
+-        .is_some_and(|mapping| pixel_format::PlanarXrFormat::from_mtl(mapping.format).is_some())
+-    {
+-        // No single-plane guest import or RGBA8 fallback interprets this pair.
++    if state.mappings.get(&mapping_id).is_some_and(|mapping| {
++        reims_vgpu_vulkan::pixel::XrRenderFormat::from_mtl(mapping.format).is_some()
++    }) {
++        // Decode the declared packed or paired XR storage directly into the
++        // Float32 attachment; the RGBA8 display cache loses its native range.
+         let seed = read_mapper_native_color_seed(state, host, mapping_id, w, h, target_format);
+         note_mapper_ref_texture_load_seed(
+             state,
+@@ -7378,7 +7480,7 @@
+             None
+         };
+         if matches!(declared, reims_vgpu_protocol::pass_action::LoadAction::Load)
+-            && pixel_format::PlanarXrFormat::from_mtl(c.format).is_some()
++            && reims_vgpu_vulkan::pixel::XrRenderFormat::from_mtl(c.format).is_some()
+             && !req.chain_from_resident
+             && seed.is_none()
+         {
+@@ -9224,7 +9326,7 @@
+             }
+         }
+         if let Some(c0) = req.colors.first() {
+-            if pixel_format::PlanarXrFormat::from_mtl(c0.format).is_some()
++            if reims_vgpu_vulkan::pixel::XrRenderFormat::from_mtl(c0.format).is_some()
+                 && matches!(
+                     reims_vgpu_protocol::pass_action::LoadAction::from_declared(c0.load_action),
+                     reims_vgpu_protocol::pass_action::LoadAction::Load
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -3460,6 +3460,12 @@
+         format,
+         ..
+     } = span;
++    #[cfg(feature = "backend-vulkan")]
++    if pixel_format::XrFormat::from_mtl(format).is_some()
++        && crate::backend::selected().rail() == crate::backend::Rail::Vulkan
++    {
++        return vulkan::seed_interleaved_xr_color_load(state, host, task_id, span);
++    }
+     if matches!(
+         format,
+         pixel_format::MTL_FORMAT_R16_FLOAT | pixel_format::MTL_FORMAT_R32_FLOAT

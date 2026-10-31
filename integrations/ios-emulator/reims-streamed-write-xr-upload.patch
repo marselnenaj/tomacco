@@ -1,0 +1,919 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -3457,16 +3457,7 @@
+         let Some(layout) = self.texel.native_layout() else {
+             return Ok(self);
+         };
+-        let width = u64::from(layout.bytes_per_texel());
+-        if !(self.pixels.len() as u64).is_multiple_of(width) {
+-            return Err(DrawError::TargetRead(
+-                reason::TargetReadDecline::SourceShape {
+-                    expected: (self.pixels.len() as u64 / width + 1) * width,
+-                    actual: self.pixels.len() as u64,
+-                },
+-            ));
+-        }
+-        let pixels = self.pixels.len() as u64 / width;
++        let pixels = readback_pixel_count(self.pixels.len(), layout)?;
+         let (pixels, texel) = narrow_readback_to_rgba8(
+             self.pixels,
+             layout,
+@@ -5223,45 +5214,77 @@
+     pixels: u64,
+     bgra: bool,
+ ) -> Result<(Vec<u8>, ReadbackTexel), DrawError> {
++    validate_readback_source(&out, layout, pixels)?;
++    if layout.is_four_byte_color() {
++        return Ok((out, ReadbackTexel::eight_bit(bgra)));
++    }
++    match narrow_colour_bytes(&out, layout, pixels)? {
++        Some(bytes) => Ok((bytes, ReadbackTexel::Rgba8)),
++        None => Ok((out, ReadbackTexel::Native(layout))),
++    }
++}
++
++fn readback_pixel_count(bytes: usize, layout: TexelLayout) -> Result<u64, DrawError> {
++    let width = u64::from(layout.bytes_per_texel());
++    let pixels = bytes as u64 / width;
++    if !(bytes as u64).is_multiple_of(width) {
++        return Err(DrawError::TargetRead(
++            reason::TargetReadDecline::SourceShape {
++                expected: (pixels + 1) * width,
++                actual: bytes as u64,
++            },
++        ));
++    }
++    Ok(pixels)
++}
++
++fn validate_readback_source(src: &[u8], layout: TexelLayout, pixels: u64) -> Result<(), DrawError> {
+     let expected = readback_byte_extent(pixels, layout.bytes_per_texel())?;
+-    if out.len() != expected {
++    if src.len() != expected {
+         return Err(DrawError::TargetRead(
+             reason::TargetReadDecline::SourceShape {
+                 expected: expected as u64,
+-                actual: out.len() as u64,
++                actual: src.len() as u64,
+             },
+         ));
+     }
+-    if layout.is_four_byte_color() {
+-        return Ok((out, ReadbackTexel::eight_bit(bgra)));
+-    }
++    Ok(())
++}
++
++fn colour_storage(bytes: usize) -> Result<Vec<u8>, DrawError> {
++    let mut output = Vec::new();
++    output
++        .try_reserve_exact(bytes)
++        .map_err(|_| DrawError::TargetRead(reason::TargetReadDecline::HostAllocation { bytes }))?;
++    output.resize(bytes, 0);
++    Ok(output)
++}
++
++/// One codec admission and allocation for owned and leased sources. Undefined
++/// colour layouts return before allocating; their byte-preserving rail stays
++/// native. This helper does no host or engine callbacks.
++fn narrow_colour_bytes(
++    src: &[u8],
++    layout: TexelLayout,
++    pixels: u64,
++) -> Result<Option<Vec<u8>>, DrawError> {
++    validate_readback_source(src, layout, pixels)?;
+     let Some(plan) = crate::protocol::pixel_format::Rgba8Narrowing::for_layout(layout) else {
+         crate::runtime::drain::note_store_route("target_read_narrow_allocation_avoided");
+-        return Ok((out, ReadbackTexel::Native(layout)));
++        return Ok(None);
+     };
+     let count = u32::try_from(pixels).map_err(|_| {
+         DrawError::TargetRead(reason::TargetReadDecline::ColourPixelCount { pixels })
+     })?;
+     let bytes = readback_byte_extent(pixels, RESIDENT_READ_BYTES_PER_TEXEL)?;
+-    let mut narrowed = Vec::new();
+-    narrowed
+-        .try_reserve_exact(bytes)
+-        .map_err(|_| DrawError::TargetRead(reason::TargetReadDecline::HostAllocation { bytes }))?;
+-    narrowed.resize(bytes, 0);
+-    if !plan.convert(&out, count, &mut narrowed) {
++    let mut narrowed = colour_storage(bytes)?;
++    if !plan.convert(src, count, &mut narrowed) {
+         return Err(DrawError::TargetRead(
+-            reason::TargetReadDecline::SourceShape {
+-                expected: expected as u64,
+-                actual: out.len() as u64,
+-            },
++            reason::TargetReadDecline::ColourCodec { layout },
+         ));
+     }
+-    // Visible, because it is a fidelity loss and not just a slow path: the
+-    // frame this returns carries eight bits of a channel the guest asked for
+-    // sixteen of. A non-zero reading names the population that would be
+-    // repaired by teaching this rail's consumers the wider texel.
+     crate::runtime::drain::note_store_route("target_read_narrowed");
+-    Ok((narrowed, ReadbackTexel::Rgba8))
++    Ok(Some(narrowed))
+ }
+ 
+ /// The `srcAccessMask` a resident color target's readback must drain.
+@@ -5650,13 +5673,43 @@
+     /// Consume into owned bytes for a channel-order transformation. A copied
+     /// readback transfers its vector; a staging lease is copied once and
+     /// released before the owned result returns.
+-    pub fn into_owned(self) -> TargetReadback {
++    pub fn into_owned(self) -> Result<TargetReadback, DrawError> {
+         let Self { storage, texel } = self;
+         let pixels = match storage {
+             ReadbackResult::Copied(bytes) => bytes,
+-            ReadbackResult::Leased(lease) => lease.bytes().to_vec(),
++            ReadbackResult::Leased(lease) => {
++                let src = lease.bytes();
++                let mut bytes = Vec::new();
++                bytes.try_reserve_exact(src.len()).map_err(|_| {
++                    DrawError::TargetRead(reason::TargetReadDecline::HostAllocation {
++                        bytes: src.len(),
++                    })
++                })?;
++                bytes.extend_from_slice(src);
++                bytes
++            }
+         };
+-        TargetReadback { pixels, texel }
++        Ok(TargetReadback { pixels, texel })
++    }
++
++    /// Convert native cached staging directly into the final RGBA8 output.
++    /// Ownership ends before returning; no engine lock or guest callback is
++    /// used while a source lease is held. Copied eight-bit storage moves.
++    pub fn into_rgba8(self) -> Result<Vec<u8>, DrawError> {
++        let layout = self.texel.storage_layout();
++        let pixels = readback_pixel_count(self.bytes().len(), layout)?;
++        if layout.is_four_byte_color() {
++            return self.into_owned()?.into_rgba8().ok_or(DrawError::TargetRead(
++                reason::TargetReadDecline::TexelNotFourBytes {
++                    format: readback_vk_format(layout),
++                },
++            ));
++        }
++        narrow_colour_bytes(self.bytes(), layout, pixels)?.ok_or(DrawError::TargetRead(
++            reason::TargetReadDecline::TexelNotFourBytes {
++                format: readback_vk_format(layout),
++            },
++        ))
+     }
+ }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
+@@ -542,6 +542,10 @@
+ /// left is the readback that replaced them.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum TargetReadDecline {
++    /// An admitted colour codec rejected a prevalidated source/output shape.
++    ColourCodec {
++        layout: crate::protocol::pixel_format::TexelLayout,
++    },
+     /// Host serialization cannot represent the requested byte extent.
+     ByteExtent { pixels: u64, bytes_per_texel: u32 },
+     /// The completed source does not contain exactly the declared texels.
+@@ -608,6 +612,7 @@
+ impl Decline for TargetReadDecline {
+     fn slug(&self) -> &'static str {
+         match self {
++            Self::ColourCodec { .. } => "read_target_colour_codec",
+             Self::ByteExtent { .. } => "read_target_byte_extent",
+             Self::SourceShape { .. } => "read_target_source_shape",
+             Self::ColourPixelCount { .. } => "read_target_colour_pixel_count",
+@@ -621,6 +626,7 @@
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::ColourCodec { layout } => vec![("layout", format!("{layout:?}"))],
+             Self::ByteExtent {
+                 pixels,
+                 bytes_per_texel,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/resource_lease.rs
+@@ -203,6 +203,7 @@
+             let upload = layout
+                 .convert(&memo.scratch)
+                 .map_err(PlanarXrMemoRefusal::Upload)?;
++            crate::runtime::drain::census::note_xr_upload_work(&upload);
+             let (_, bytes) = upload.into_parts();
+             let linear = Arc::new(bytes);
+             // One device-wide allocator serves all sampled producers, so a
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+@@ -1224,6 +1224,7 @@
+                         match reims_vgpu_vulkan::pixel::sampled_upload_bytes(t.pixel_format, bytes)
+                         {
+                             Ok(upload) => {
++                                crate::runtime::drain::census::note_xr_upload_work(&upload);
+                                 let (format, bytes) = upload.into_parts();
+                                 (format, ComputeSampledSource::Bytes(bytes))
+                             }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
+@@ -3185,6 +3185,18 @@
+ /// its verdicts should be re-derived positionally before they are believed.
+ pub fn note_store_route(route: &'static str) {
+     note_store_route_n(route, 1);
++}
++
++/// Actual decoder work in a completed XR CPU expansion. A reused texel still
++/// reads source bytes and appends all 16 output bytes; this is not skipped
++/// texture work or a claim that fewer guest bytes were transferred.
++#[cfg(feature = "backend-vulkan")]
++pub fn note_xr_upload_work(upload: &reims_vgpu_vulkan::pixel::SampledUpload) {
++    if let Some(work) = upload.work() {
++        note_store_route("xr_upload_expanded_n");
++        note_store_route_n("xr_upload_decoded_texels_n", work.decoded_texels);
++        note_store_route_n("xr_upload_reused_texels_n", work.reused_texels);
++    }
+ }
+ 
+ /// Add `n` to a named count in the same per-second window as [`note_store_route`].
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -3160,17 +3160,62 @@
+     }
+     let src = frame.bytes();
+     let src_stride = frame.source_row_bytes(width, tight);
+-    let need = src_stride.saturating_mul(height as usize);
++    let need = src_stride
++        .checked_mul(height as usize)
++        .filter(|&n| n <= isize::MAX as usize)
++        .ok_or(MemError::BadArgs)?;
+     if src.len() < need {
+         return Err(MemError::BadArgs);
+     }
+-    let span = (height as u64).saturating_mul(bpr as u64);
+-    // Only the RGBA8 arm converts into a scratch row; the native arm's bytes
+-    // are already the destination's texel and are copied straight out of the
+-    // frame, so it must not pay an allocation per Store for a buffer it never
+-    // reads.
++    let span = u64::from(height - 1)
++        .checked_mul(u64::from(bpr))
++        .and_then(|n| n.checked_add(u64::from(tight)))
++        .filter(|&n| n <= isize::MAX as u64)
++        .ok_or(MemError::BadArgs)?;
++    gva.checked_add(span).ok_or(MemError::BadArgs)?;
++    // Native bytes need no row conversion. One fresh rectangle walk handles
++    // packed and fragmented GPA runs, preserving the same page licence.
++    if let FrameRows::Native(native) = frame {
++        if skip.is_empty() {
++            let rect = crate::runtime::mapper::RectStride::new(
++                u64::from(bpr),
++                u64::from(tight),
++                u64::from(height),
++            )
++            .ok_or(MemError::BadArgs)?;
++            let started = std::time::Instant::now();
++            crate::runtime::gva_view::write_rect_within(
++                state, host, task_id, gva, rect, native, allowed,
++            )?;
++            crate::runtime::drain::note_store_route("gva_native_rect_write_n");
++            crate::runtime::drain::note_store_route_n(
++                "gva_native_rect_write_rows_n",
++                u64::from(height),
++            );
++            crate::runtime::drain::note_store_route_us(
++                "gva_native_rect_write_us",
++                started.elapsed().as_micros() as u64,
++            );
++            return Ok(());
++        }
++    }
+     let mut row = match frame {
+-        FrameRows::Rgba8(_) => vec![0u8; tight as usize],
++        FrameRows::Rgba8(_) => {
++            let mut bytes = Vec::new();
++            bytes.try_reserve_exact(tight as usize).map_err(|_| {
++                crate::observe::Emit::decline(
++                    "gva_row_storage",
++                    &mapping_write::SurfaceWriteRefusal::HostAllocation {
++                        bytes: tight as usize,
++                    },
++                )
++                .field("task", task_id)
++                .fail();
++                MemError::BadArgs
++            })?;
++            bytes.resize(tight as usize, 0);
++            bytes
++        }
+         FrameRows::Native(_) => Vec::new(),
+     };
+     // One parse for both arms below — the mapped-span walk and the fragmented
+@@ -3210,7 +3255,7 @@
+             // One forward walk per row through the shared range subtraction, so
+             // this rail and the mapping writer cannot come to disagree about
+             // which bytes are excluded.
+-            for (from, to) in crate::runtime::mapping_write::unskipped(
++            for (from, to) in crate::runtime::mapping_write::unskipped_iter(
+                 off as u64,
+                 (off + out_row.len()) as u64,
+                 skip,
+@@ -3244,9 +3289,11 @@
+             FrameRows::Native(native) => &native[at..at + src_stride],
+         };
+         let row_off = (y as u64).saturating_mul(bpr as u64);
+-        for (from, to) in
+-            crate::runtime::mapping_write::unskipped(row_off, row_off + out_row.len() as u64, skip)
+-        {
++        for (from, to) in crate::runtime::mapping_write::unskipped_iter(
++            row_off,
++            row_off + out_row.len() as u64,
++            skip,
++        ) {
+             let run_gva = gva.saturating_add(from);
+             let run = &out_row[(from - row_off) as usize..(to - row_off) as usize];
+             if let Err(err) = crate::runtime::gva_view::write_span_within(
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
+@@ -214,6 +214,7 @@
+             &planes[1],
+         )
+         .map_err(Refusal::LoadEncoding)?;
++        crate::runtime::drain::census::note_xr_upload_work(&upload);
+         crate::runtime::drain::note_store_route("apv_xr_render_load_n");
+         Ok(crate::protocol::pixel_format::ColorLoadSeed {
+             pixels: Arc::new(upload.into_parts().1),
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -1001,6 +1001,7 @@
+ ) -> Result<(Vec<u8>, SampledByteFormat), LinearLoadRefusal> {
+     let upload = reims_vgpu_vulkan::pixel::sampled_upload_bytes(format, bytes)
+         .map_err(|why| LinearLoadRefusal::XrUpload { reason: why.slug() })?;
++    crate::runtime::drain::census::note_xr_upload_work(&upload);
+     let (_, bytes) = upload.into_parts();
+     Ok((
+         bytes,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -2586,6 +2586,7 @@
+             return None;
+         }
+     };
++    crate::runtime::drain::census::note_xr_upload_work(&expanded);
+     let (storage, bytes) = expanded.into_parts();
+     if storage != reims_vgpu_vulkan::pixel::StorageImageFormat::Rgba32Float {
+         crate::observe::Emit::decline(
+@@ -2705,6 +2706,7 @@
+                 return None;
+             }
+         };
++        crate::runtime::drain::census::note_xr_upload_work(&expanded);
+         let (_, pixels) = expanded.into_parts();
+         crate::runtime::drain::note_store_route("native_xr_render_load_n");
+         return Some(pixel_format::ColorLoadSeed {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+@@ -50,6 +50,10 @@
+ /// exactly when it is cheap to install and exactly when nobody remembers to.
+ #[derive(Debug)]
+ pub enum SurfaceWriteRefusal {
++    /// Host storage was refused before publishing guest currency.
++    HostAllocation { bytes: usize },
++    /// Source row geometry overflows the host byte address space.
++    SourceExtent { stride: u32, height: u32 },
+     /// A zero or over-large rect. `MAX_SCANOUT_DIM` is the bound.
+     Geometry { width: u32, height: u32 },
+     /// The source's row pitch cannot hold `width` BGRA8 texels.
+@@ -106,6 +110,8 @@
+ impl crate::observe::decline::Decline for SurfaceWriteRefusal {
+     fn slug(&self) -> &'static str {
+         match self {
++            Self::HostAllocation { .. } => "surface_write_host_allocation",
++            Self::SourceExtent { .. } => "surface_write_source_extent",
+             Self::Geometry { .. } => "surface_write_geometry",
+             Self::SourceStride { .. } => "surface_write_source_stride",
+             Self::NativeSourceStride { .. } => "surface_write_native_source_stride",
+@@ -128,6 +134,11 @@
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::HostAllocation { bytes } => vec![("bytes", bytes.to_string())],
++            Self::SourceExtent { stride, height } => vec![
++                ("stride", stride.to_string()),
++                ("height", height.to_string()),
++            ],
+             Self::Geometry { width, height } => vec![
+                 ("geom", format!("{width}x{height}")),
+                 ("max", MAX_SCANOUT_DIM.to_string()),
+@@ -476,35 +487,52 @@
+ /// differently — one pokes a host view in place, the other stages a frame and
+ /// hands runs to the mapper — and the only thing they must agree on is *which
+ /// bytes are excluded*. Two open-coded walks would be two chances to disagree.
++/// Allocation-free subtraction of sorted disjoint exclusions. Seek past
++/// exclusions before this row once; later calls do not scan that prefix again.
++pub(crate) fn unskipped_iter(start: u64, end: u64, skip: SkipRanges<'_>) -> Unskipped<'_> {
++    let first = skip.partition_point(|&(_, hi)| hi <= start);
++    Unskipped {
++        cursor: start,
++        end,
++        skip: &skip[first..],
++    }
++}
++
++pub(crate) struct Unskipped<'a> {
++    cursor: u64,
++    end: u64,
++    skip: SkipRanges<'a>,
++}
++
++impl Iterator for Unskipped<'_> {
++    type Item = (u64, u64);
++    fn next(&mut self) -> Option<Self::Item> {
++        while self.cursor < self.end {
++            let from = self.cursor;
++            let Some((&(lo, hi), rest)) = self.skip.split_first() else {
++                self.cursor = self.end;
++                return Some((from, self.end));
++            };
++            if lo >= self.end {
++                self.cursor = self.end;
++                return Some((from, self.end));
++            }
++            self.skip = rest;
++            self.cursor = self.cursor.max(hi);
++            if lo > from {
++                return Some((from, lo.min(self.end)));
++            }
++        }
++        None
++    }
++}
++
++impl std::iter::FusedIterator for Unskipped<'_> {}
++
++// Retain the existing collected fixture interface. Product writers stream.
++#[cfg(test)]
+ pub(crate) fn unskipped(start: u64, end: u64, skip: SkipRanges<'_>) -> Vec<(u64, u64)> {
+-    if skip.is_empty() {
+-        return if start < end {
+-            vec![(start, end)]
+-        } else {
+-            vec![]
+-        };
+-    }
+-    let mut out = Vec::new();
+-    let mut cur = start;
+-    for &(s, e) in skip {
+-        if e <= cur {
+-            continue;
+-        }
+-        if s >= end {
+-            break;
+-        }
+-        if s > cur {
+-            out.push((cur, s.min(end)));
+-        }
+-        cur = cur.max(e);
+-        if cur >= end {
+-            return out;
+-        }
+-    }
+-    if cur < end {
+-        out.push((cur, end));
+-    }
+-    out
++    unskipped_iter(start, end, skip).collect()
+ }
+ 
+ /// Write a tight BGRA8 image into the mapping's guest pages.
+@@ -724,6 +752,15 @@
+     Invalidate,
+ }
+ 
++fn write_storage(bytes: usize) -> Result<Vec<u8>, SurfaceWriteRefusal> {
++    let mut storage = Vec::new();
++    storage
++        .try_reserve_exact(bytes)
++        .map_err(|_| SurfaceWriteRefusal::HostAllocation { bytes })?;
++    storage.resize(bytes, 0);
++    Ok(storage)
++}
++
+ #[allow(
+     clippy::too_many_arguments,
+     reason = "the geometry the frame is in, its owner when it has one, plus the \
+@@ -778,6 +815,35 @@
+             },
+         );
+     };
++    // Admit the whole source before settling debt or writing the first row.
++    let Some(source_need) = (height as usize)
++        .checked_sub(1)
++        .and_then(|rows| rows.checked_mul(src_stride as usize))
++        .and_then(|prefix| {
++            (width as usize)
++                .checked_mul(RGBA8_BPP as usize)
++                .and_then(|row| prefix.checked_add(row))
++        })
++        .filter(|&bytes| bytes <= isize::MAX as usize)
++    else {
++        return refuse(
++            mapping_id,
++            SurfaceWriteRefusal::SourceExtent {
++                stride: src_stride,
++                height,
++            },
++        );
++    };
++    if src.len() < source_need {
++        return refuse(
++            mapping_id,
++            SurfaceWriteRefusal::SourceShort {
++                need: source_need,
++                have: src.len(),
++                row: height - 1,
++            },
++        );
++    }
+     // Deferred-writeback flush-on-access: land pending resident content in
+     // these pages before touching them.
+     //
+@@ -815,13 +881,29 @@
+     };
+     let tight = tight as usize;
+ 
+-    let mut row = vec![0u8; tight];
+-    let mut rgba = if format == MTL_FORMAT_BGRA8_UNORM
+-        || format == pixel_format::MTL_FORMAT_BGRA8_UNORM_SRGB
+-    {
++    let bgra_destination =
++        format == MTL_FORMAT_BGRA8_UNORM || format == pixel_format::MTL_FORMAT_BGRA8_UNORM_SRGB;
++    let direct_rows = bgra_destination && tight == (mw as usize) * RGBA8_BPP as usize;
++    let mut row = if direct_rows {
++        crate::runtime::drain::note_store_route_n(
++            "surface_row_scratch_bytes_avoided",
++            tight as u64,
++        );
++        Vec::new()
++    } else {
++        match write_storage(tight) {
++            Ok(bytes) => bytes,
++            Err(why) => return refuse(mapping_id, why),
++        }
++    };
++    let mut rgba = if bgra_destination {
+         None
+     } else {
+-        Some(vec![0u8; (mw as usize) * (RGBA8_BPP as usize)])
++        let bytes = (mw as usize) * RGBA8_BPP as usize;
++        Some(match write_storage(bytes) {
++            Ok(bytes) => bytes,
++            Err(why) => return refuse(mapping_id, why),
++        })
+     };
+     // Whether a row can go straight from `src` to the guest without passing
+     // through `row`.
+@@ -852,7 +934,6 @@
+     // the staged path still runs. That also keeps `row`'s reuse across rows
+     // safe — a short source row would otherwise leave the previous row's bytes
+     // in its tail.
+-    let direct_rows = rgba.is_none() && tight == (mw as usize) * (RGBA8_BPP as usize);
+     // Parsed once for both staged arms below. `Option` rather than an early
+     // refusal because `direct_rows` converts nothing, so a format with no arm is
+     // not that path's problem. See `pixel_format::Rgba8ToRow`.
+@@ -904,7 +985,7 @@
+             // The row's destination in mapping-offset space, so the skip list —
+             // which is in that space — is subtracted before any pointer exists.
+             let row_off = base_off.saturating_add((y as u64).saturating_mul(bpr as u64));
+-            for (lo, hi) in unskipped(row_off, row_off.saturating_add(tight as u64), skip) {
++            for (lo, hi) in unskipped_iter(row_off, row_off.saturating_add(tight as u64), skip) {
+                 let within = (lo - row_off) as usize;
+                 let len = (hi - lo) as usize;
+                 let dst = unsafe { base.add((y as usize).saturating_mul(bpr) + within) };
+@@ -950,7 +1031,10 @@
+             if direct_rows && bpr == src_stride as usize && src.len() >= frame_len {
+                 std::borrow::Cow::Borrowed(&src[..frame_len])
+             } else {
+-                let mut frame = vec![0u8; frame_len];
++                let mut frame = match write_storage(frame_len) {
++                    Ok(bytes) => bytes,
++                    Err(why) => return refuse(mapping_id, why),
++                };
+                 for y in 0..mh {
+                     let src_off = (y as usize) * (src_stride as usize);
+                     let src_row_len = (mw as usize) * (RGBA8_BPP as usize);
+@@ -1029,7 +1113,7 @@
+         let mut runs: Vec<(u64, u64)> = Vec::new();
+         for y in 0..mh {
+             let row_lo = base_off.saturating_add((y as u64).saturating_mul(bpr as u64));
+-            for (lo, hi) in unskipped(row_lo, row_lo.saturating_add(tight as u64), skip) {
++            for (lo, hi) in unskipped_iter(row_lo, row_lo.saturating_add(tight as u64), skip) {
+                 match runs.last_mut() {
+                     // A packed pitch makes consecutive rows adjacent; coalescing
+                     // keeps that frame the single run it was before the split,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -1075,7 +1075,9 @@
+             // Preserve the existing eight-bit compatibility route. It
+             // needs owned bytes for its channel-order transformation;
+             // this branch does not claim a staging-copy saving.
+-            let copied = readback.into_owned();
++            let copied = readback
++                .into_owned()
++                .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
+             CopiedFrame::Rgba8(
+                 copied
+                     .into_rgba8()
+@@ -1087,7 +1089,7 @@
+         // same bytes as the direct rail when that rail's format contract
+         // accepts them; a failed host-memory import must not quantize R16Float
+         // or RG16Float simply because the older render Store table omits them.
+-        let readback = crate::backend::vulkan::engine::read_target_texels(identity)
++        let readback = crate::backend::vulkan::engine::read_target_texels_consumable(identity)
+             .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
+         let storage_layout = readback.texel.storage_layout();
+         if readback.texel.matches_byte_destination(c0.format) {
+@@ -1109,16 +1111,35 @@
+                     crate::runtime::drain::note_store_route("gva_bgra_channel_roundtrip_avoided_n");
+                 }
+             }
+-            CopiedFrame::Native(readback.pixels)
++            CopiedFrame::Native(
++                readback
++                    .into_owned()
++                    .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?
++                    .pixels,
++            )
+         } else {
+             crate::runtime::drain::note_store_route("gva_colour_conversion_selected_n");
+-            CopiedFrame::Rgba8(
+-                readback
+-                    .narrow_to_rgba8()
+-                    .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?
+-                    .into_rgba8()
+-                    .ok_or(GvaWritebackDecline::FormatNeedsConversion { format: c0.format })?,
+-            )
++            let native_conversion = !storage_layout.is_four_byte_color();
++            let leased = readback.is_leased();
++            let source_bytes = readback.bytes().len();
++            let started = std::time::Instant::now();
++            let bytes = readback
++                .into_rgba8()
++                .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
++            crate::runtime::drain::note_store_route_us(
++                "gva_colour_convert_us",
++                started.elapsed().as_micros() as u64,
++            );
++            if leased && native_conversion {
++                crate::runtime::drain::note_store_route("gva_colour_convert_leased_n");
++                crate::runtime::drain::note_store_route_n(
++                    "gva_colour_source_copy_bytes_avoided",
++                    source_bytes as u64,
++                );
++            } else {
++                crate::runtime::drain::note_store_route("gva_colour_convert_owned_n");
++            }
++            CopiedFrame::Rgba8(bytes)
+         }
+     };
+     let rows = match &frame {
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+@@ -14,9 +14,73 @@
+ pub struct SampledUpload {
+     format: StorageImageFormat,
+     bytes: Vec<u8>,
++    work: Option<XrUploadWork>,
++}
++
++/// Scalar decoding performed in this one upload. Adjacent reuse never names
++/// a guest resource or persists beyond these original source bytes.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub struct XrUploadWork {
++    pub decoded_texels: u64,
++    pub reused_texels: u64,
++}
++
++/// One preallocated output; one expanded texel cached on the stack. Keys are
++/// immutable original storage bytes, including both planes on planar routes.
++struct XrUploadBuilder<'a> {
++    bytes: Vec<u8>,
++    previous: Option<(&'a [u8], &'a [u8])>,
++    expanded: [u8; 16],
++    work: XrUploadWork,
++}
++
++impl<'a> XrUploadBuilder<'a> {
++    fn new(length: usize) -> Result<Self, SampledUploadRefusal> {
++        let mut bytes = Vec::new();
++        bytes
++            .try_reserve_exact(length)
++            .map_err(|_| SampledUploadRefusal::AllocationFailed)?;
++        Ok(Self {
++            bytes,
++            previous: None,
++            expanded: [0; 16],
++            work: XrUploadWork::default(),
++        })
++    }
++
++    fn append(
++        &mut self,
++        key: (&'a [u8], &'a [u8]),
++        decode: impl FnOnce() -> Result<[f32; 4], SampledUploadRefusal>,
++    ) -> Result<(), SampledUploadRefusal> {
++        if self.previous == Some(key) {
++            self.work.reused_texels += 1;
++        } else {
++            let values = decode()?;
++            for (lane, value) in self.expanded.chunks_exact_mut(4).zip(values) {
++                lane.copy_from_slice(&value.to_le_bytes());
++            }
++            self.previous = Some(key);
++            self.work.decoded_texels += 1;
++        }
++        self.bytes.extend_from_slice(&self.expanded);
++        Ok(())
++    }
++
++    fn finish(self) -> SampledUpload {
++        SampledUpload {
++            format: StorageImageFormat::Rgba32Float,
++            bytes: self.bytes,
++            work: Some(self.work),
++        }
++    }
+ }
+ 
+ impl SampledUpload {
++    pub fn work(&self) -> Option<XrUploadWork> {
++        self.work
++    }
++
+     pub fn into_parts(self) -> (StorageImageFormat, Vec<u8>) {
+         (self.format, self.bytes)
+     }
+@@ -122,10 +186,7 @@
+     let length = (rgb.len() / 4)
+         .checked_mul(16)
+         .ok_or(SampledUploadRefusal::ExpandedSizeOverflow)?;
+-    let mut decoded = Vec::new();
+-    decoded
+-        .try_reserve_exact(length)
+-        .map_err(|_| SampledUploadRefusal::AllocationFailed)?;
++    let mut decoded = XrUploadBuilder::new(length)?;
+     let colour = planar_colour_values(format);
+     static ALPHA: OnceLock<[f32; 256]> = OnceLock::new();
+     let alpha_values = ALPHA.get_or_init(|| {
+@@ -138,18 +199,19 @@
+         })
+     });
+     for (rgb, alpha) in rgb.chunks_exact(4).zip(alpha.chunks_exact(4)) {
+-        let codes = format
+-            .component_codes(rgb, alpha)
+-            .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
+-        for code in codes.rgb {
+-            decoded.extend_from_slice(&colour[usize::from(code)].to_le_bytes());
+-        }
+-        decoded.extend_from_slice(&alpha_values[usize::from(codes.alpha)].to_le_bytes());
+-    }
+-    Ok(SampledUpload {
+-        format: StorageImageFormat::Rgba32Float,
+-        bytes: decoded,
+-    })
++        decoded.append((rgb, alpha), || {
++            let codes = format
++                .component_codes(rgb, alpha)
++                .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
++            Ok([
++                colour[usize::from(codes.rgb[0])],
++                colour[usize::from(codes.rgb[1])],
++                colour[usize::from(codes.rgb[2])],
++                alpha_values[usize::from(codes.alpha)],
++            ])
++        })?;
++    }
++    Ok(decoded.finish())
+ }
+ 
+ /// Native IOSurface storage is BGR10 plus one alpha byte per texel. There is
+@@ -187,31 +249,29 @@
+     let length = (alpha.len() / alpha_stride)
+         .checked_mul(16)
+         .ok_or(SampledUploadRefusal::ExpandedSizeOverflow)?;
+-    let mut bytes = Vec::new();
+-    bytes
+-        .try_reserve_exact(length)
+-        .map_err(|_| SampledUploadRefusal::AllocationFailed)?;
++    let mut bytes = XrUploadBuilder::new(length)?;
+     let colour = if format.is_srgb() {
+         srgb_values()
+     } else {
+         linear_values()
+     };
+     for (rgb, alpha) in rgb.chunks_exact(4).zip(alpha.chunks_exact(alpha_stride)) {
+-        let codes = if apv {
+-            format.component_codes(rgb, alpha)
+-        } else {
+-            format.surface_component_codes(rgb, alpha)
+-        }
+-        .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
+-        for code in codes.rgb {
+-            bytes.extend_from_slice(&colour[usize::from(code)].to_le_bytes());
+-        }
+-        bytes.extend_from_slice(&(f32::from(codes.alpha) / 255.0).to_le_bytes());
+-    }
+-    Ok(SampledUpload {
+-        format: StorageImageFormat::Rgba32Float,
+-        bytes,
+-    })
++        bytes.append((rgb, alpha), || {
++            let codes = if apv {
++                format.component_codes(rgb, alpha)
++            } else {
++                format.surface_component_codes(rgb, alpha)
++            }
++            .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
++            Ok([
++                colour[usize::from(codes.rgb[0])],
++                colour[usize::from(codes.rgb[1])],
++                colour[usize::from(codes.rgb[2])],
++                f32::from(codes.alpha) / 255.0,
++            ])
++        })?;
++    }
++    Ok(bytes.finish())
+ }
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+@@ -518,6 +578,7 @@
+         return Ok(SampledUpload {
+             format: sampled_image(mtl).map_err(SampledUploadRefusal::Format)?,
+             bytes,
++            work: None,
+         });
+     };
+     let stride = xr.bytes_per_texel();
+@@ -527,26 +588,24 @@
+     let length = (bytes.len() / stride)
+         .checked_mul(16)
+         .ok_or(SampledUploadRefusal::ExpandedSizeOverflow)?;
+-    let mut decoded = Vec::new();
+-    decoded
+-        .try_reserve_exact(length)
+-        .map_err(|_| SampledUploadRefusal::AllocationFailed)?;
++    let mut decoded = XrUploadBuilder::new(length)?;
+     let linear = linear_values();
+     let colour = if xr.is_srgb() { srgb_values() } else { linear };
+     for texel in bytes.chunks_exact(stride) {
+-        let codes = xr
+-            .component_codes(texel)
+-            .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
+-        for &code in &codes[..3] {
+-            decoded.extend_from_slice(&colour[usize::from(code)].to_le_bytes());
+-        }
+-        // Alpha is linear even in an sRGB texture, and Metal clamps it.
+-        decoded.extend_from_slice(&linear[usize::from(codes[3])].clamp(0.0, 1.0).to_le_bytes());
+-    }
+-    Ok(SampledUpload {
+-        format: StorageImageFormat::Rgba32Float,
+-        bytes: decoded,
+-    })
++        decoded.append((texel, &[]), || {
++            let codes = xr
++                .component_codes(texel)
++                .ok_or(SampledUploadRefusal::IncompleteXrTexel)?;
++            // Alpha remains linear and clamped even for sRGB storage.
++            Ok([
++                colour[usize::from(codes[0])],
++                colour[usize::from(codes[1])],
++                colour[usize::from(codes[2])],
++                linear[usize::from(codes[3])].clamp(0.0, 1.0),
++            ])
++        })?;
++    }
++    Ok(decoded.finish())
+ }
+ 
+ #[cfg(test)]
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -37,7 +37,7 @@
+     render_store_planar_xr_surface_bytes, render_store_planar_xr_surface_encoding,
+     sampled_planar_xr_surface_upload_bytes, sampled_planar_xr_upload_bytes, sampled_upload_bytes,
+     InterleavedXrStoreEncoding, PlanarXrStoreEncoding, RenderStoreRefusal, SampledUpload,
+-    SampledUploadRefusal,
++    SampledUploadRefusal, XrUploadWork,
+ };
+ 
+ use reims_vgpu_core::pixel_format::{

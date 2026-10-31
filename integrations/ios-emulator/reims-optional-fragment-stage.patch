@@ -1,0 +1,1660 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
+@@ -237,6 +237,10 @@
+ 
+     /// This running rail closes native RGB10/alpha8 render, Load and Store.
+     /// A compiled Vulkan feature alone says nothing about the selected rail.
++    fn supports_absent_fragment_function(&self) -> bool {
++        false
++    }
++
+     fn supports_native_xr_rendering(&self) -> bool {
+         false
+     }
+@@ -1254,6 +1258,15 @@
+ }
+ 
+ impl Backend for SelectedBackend {
++    fn supports_absent_fragment_function(&self) -> bool {
++        match self {
++            #[cfg(feature = "backend-metal")]
++            Self::Metal(b) => b.supports_absent_fragment_function(),
++            #[cfg(feature = "backend-vulkan")]
++            Self::Vulkan(b) => b.supports_absent_fragment_function(),
++        }
++    }
++
+     fn supports_native_xr_rendering(&self) -> bool {
+         match self {
+             #[cfg(feature = "backend-metal")]
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/binding_usage.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/binding_usage.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/binding_usage.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/binding_usage.rs
+@@ -292,10 +292,12 @@
+ pub(crate) fn render(
+     vertex: &ShaderReflection,
+     plan: &VertexBindPlan,
+-    fragment: &ShaderReflection,
++    fragment: Option<&ShaderReflection>,
+ ) -> (PublishedUsage, [Option<UnpublishableStage>; 2]) {
+     let v = vertex_usage(vertex, plan);
+-    let f = stage_usage(fragment);
++    let f = fragment
++        .map(stage_usage)
++        .unwrap_or_else(|| Ok(BindingUsage::new(Vec::new(), Vec::new())));
+     let refusals = [v.as_ref().err().copied(), f.as_ref().err().copied()];
+     (PublishedUsage::render(v.ok(), f.ok()), refusals)
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
+@@ -844,7 +844,7 @@
+ #[derive(Clone, Debug, Eq, PartialEq, Hash)]
+ pub(crate) struct PipelineKey {
+     pub vert: Digest128,
+-    pub frag: Digest128,
++    pub frag: Option<Digest128>,
+     pub attrs: AttrsId,
+     /// What this pipeline is identified by as far as the primitive type is
+     /// concerned — the guest's exact type on a host that bakes it, its
+@@ -2436,7 +2436,7 @@
+         // answer how wide this shader's stage-in reads are, and only on a host
+         // that substitutes a vertex format; see the resolution loop below.
+         vert_spirv: &[u32],
+-        frag_module: vk::ShaderModule,
++        frag_module: Option<vk::ShaderModule>,
+         // Read only by the driver breadcrumb: a graphics compile consumes both
+         // stages and nothing outside the driver can say which one it choked on,
+         // so both go to disk across the call.
+@@ -2700,16 +2700,18 @@
+         }
+ 
+         let main_c = super::context::main_entry();
+-        let stages = [
+-            vk::PipelineShaderStageCreateInfo::default()
+-                .stage(vk::ShaderStageFlags::VERTEX)
+-                .module(vert_module)
+-                .name(&main_c),
+-            vk::PipelineShaderStageCreateInfo::default()
+-                .stage(vk::ShaderStageFlags::FRAGMENT)
+-                .module(frag_module)
+-                .name(&main_c),
+-        ];
++        let mut stages = vec![vk::PipelineShaderStageCreateInfo::default()
++            .stage(vk::ShaderStageFlags::VERTEX)
++            .module(vert_module)
++            .name(&main_c)];
++        if let Some(module) = frag_module {
++            stages.push(
++                vk::PipelineShaderStageCreateInfo::default()
++                    .stage(vk::ShaderStageFlags::FRAGMENT)
++                    .module(module)
++                    .name(&main_c),
++            );
++        }
+         // Both lists were rebuilt here from the attributes with the step function
+         // matched a second and a third time. They are built once, in the loop
+         // that already refused every step function without a rate, so the two
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs
+@@ -15,6 +15,9 @@
+ /// A specific pipeline/stage preparation failure before engine request validation.
+ #[derive(Clone, Debug, PartialEq, Eq)]
+ pub enum DrawPreparationDecline {
++    FragmentlessUnsupported {
++        feature: &'static str,
++    },
+     NativeXrLoadMissing {
+         slot: u32,
+         mapping_id: u32,
+@@ -238,6 +241,7 @@
+ impl Decline for DrawPreparationDecline {
+     fn slug(&self) -> &'static str {
+         match self {
++            Self::FragmentlessUnsupported { .. } => "draw_prepare_fragmentless_unsupported",
+             Self::NativeXrLoadMissing { .. } => "draw_prepare_native_xr_load_missing",
+             Self::NativeXrStoreFailed { .. } => "draw_prepare_native_xr_store_failed",
+             Self::XrClearSeed { .. } => "draw_prepare_xr_clear_seed",
+@@ -365,6 +369,7 @@
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::FragmentlessUnsupported { feature } => vec![("feature", feature.to_string())],
+             Self::NativeXrLoadMissing { slot, mapping_id }
+             | Self::NativeXrStoreFailed { slot, mapping_id } => vec![
+                 ("slot", slot.to_string()),
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -1434,7 +1434,11 @@
+             DrawValidationDecline::EmptyVertexSpirv,
+         ));
+     }
+-    if req.frag_spirv.is_empty() {
++    if req
++        .frag_spirv
++        .as_ref()
++        .is_some_and(|words| words.is_empty())
++    {
+         return Err(DrawError::DrawValidation(
+             DrawValidationDecline::EmptyFragmentSpirv,
+         ));
+@@ -3200,11 +3204,16 @@
+     phase.enter(super::draw_phase::Phase::PipelineShader);
+     let (vert_digest, vert_module) =
+         caches.get_or_create_shader_memoized(ctx, &req.vert_spirv, counters, pools)?;
+-    let fragment = caches
+-        .color_quantization
+-        .shader(&req.frag_spirv, super::color_quantization::formats(req)?)?;
+-    let (frag_digest, frag_module) =
+-        caches.get_or_create_shader_memoized(ctx, &fragment, counters, pools)?;
++    let (frag_digest, frag_module) = if let Some(words) = &req.frag_spirv {
++        let fragment = caches
++            .color_quantization
++            .shader(words, super::color_quantization::formats(req)?)?;
++        let (digest, module) =
++            caches.get_or_create_shader_memoized(ctx, &fragment, counters, pools)?;
++        (Some(digest), Some(module))
++    } else {
++        (None, None)
++    };
+     phase.enter(super::draw_phase::Phase::PipelineLayoutPass);
+     let layout = caches.get_or_create_layout(ctx, pools.layout_bindings(), None, counters)?;
+     let (dsl, pipeline_layout) = (layout.dsl, layout.pipeline_layout);
+@@ -3348,10 +3357,14 @@
+         frag: frag_digest,
+         attrs: attr_keys,
+         topology: topology_key,
+-        blend: super::color_quantization::pipeline_blend(
+-            req.color_attachment.and_then(|a| a.xr_format()),
+-            req.blend,
+-        ),
++        blend: if req.frag_spirv.is_none() {
++            None
++        } else {
++            super::color_quantization::pipeline_blend(
++                req.color_attachment.and_then(|a| a.xr_format()),
++                req.blend,
++            )
++        },
+         secondary_blend: {
+             let mut per_slot = [None; MAX_SECONDARY_ATTACH];
+             for (slot, target) in req
+@@ -3360,23 +3373,35 @@
+                 .take(MAX_SECONDARY_ATTACH)
+                 .enumerate()
+             {
+-                per_slot[slot] = super::color_quantization::pipeline_blend(
+-                    target.attachment.xr_format(),
+-                    target.blend,
+-                );
++                per_slot[slot] = if req.frag_spirv.is_none() {
++                    None
++                } else {
++                    super::color_quantization::pipeline_blend(
++                        target.attachment.xr_format(),
++                        target.blend,
++                    )
++                };
+             }
+             per_slot
+         },
+         color_write_mask: {
+             let mut per_slot = [ColorWriteMask::default(); 1 + MAX_SECONDARY_ATTACH];
+-            per_slot[0] = req.color_write_mask;
++            per_slot[0] = if req.frag_spirv.is_some() {
++                req.color_write_mask
++            } else {
++                ColorWriteMask::NONE
++            };
+             for (slot, target) in req
+                 .secondary_targets
+                 .iter()
+                 .take(MAX_SECONDARY_ATTACH)
+                 .enumerate()
+             {
+-                per_slot[slot + 1] = target.color_write_mask;
++                per_slot[slot + 1] = if req.frag_spirv.is_some() {
++                    target.color_write_mask
++                } else {
++                    ColorWriteMask::NONE
++                };
+             }
+             per_slot
+         },
+@@ -3399,7 +3424,9 @@
+         vert_module,
+         &req.vert_spirv,
+         frag_module,
+-        &req.frag_spirv,
++        req.frag_spirv
++            .as_ref()
++            .map_or(&[], |words| words.as_slice()),
+         pipeline_layout,
+         render_pass,
+         counters,
+@@ -6213,7 +6240,7 @@
+         if !changes {
+             continue;
+         }
+-        for words in [&req.vert_spirv, &req.frag_spirv] {
++        for words in std::iter::once(&req.vert_spirv).chain(req.frag_spirv.iter()) {
+             match crate::runtime::spirv_bind::declares_builtin(words, builtin) {
+                 Some(false) => {}
+                 Some(true) => {
+@@ -7627,7 +7654,7 @@
+             width: w,
+             height: h,
+             vert_spirv: std::sync::Arc::new(vec![0]),
+-            frag_spirv: std::sync::Arc::new(vec![0]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0])),
+             sampled_images: vec![SampledImageResource {
+                 binding: 32,
+                 array_element: 0,
+@@ -7675,7 +7702,7 @@
+             width: w,
+             height: h,
+             vert_spirv: std::sync::Arc::new(vec![0]),
+-            frag_spirv: std::sync::Arc::new(vec![0]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0])),
+             target_guest_seed: Some(super::super::types::GuestTargetSeed {
+                 source: GuestRunSource {
+                     runs: std::sync::Arc::new(vec![GuestRun::whole(0x1000, covered)
+@@ -8083,7 +8110,7 @@
+             width: 16,
+             height: 16,
+             vert_spirv: std::sync::Arc::new(vec![0x0723_0203]),
+-            frag_spirv: std::sync::Arc::new(vec![0x0723_0203]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0x0723_0203])),
+             ..DrawRequest::default()
+         }
+     }
+@@ -8618,7 +8645,7 @@
+             width: 8,
+             height: 8,
+             vert_spirv: std::sync::Arc::new(vec![0]),
+-            frag_spirv: std::sync::Arc::new(vec![0]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0])),
+             storage_buffers: vec![super::super::types::StorageBufferResource {
+                 binding: 0,
+                 content,
+@@ -8632,7 +8659,7 @@
+             width: 8,
+             height: 8,
+             vert_spirv: std::sync::Arc::new(vec![0]),
+-            frag_spirv: std::sync::Arc::new(vec![0]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0])),
+             indexed: Some(super::super::types::IndexedDrawResource {
+                 index_type: super::super::types::IndexType::U16,
+                 index_count: 3,
+@@ -8710,7 +8737,7 @@
+             width: 8,
+             height: 8,
+             vert_spirv: std::sync::Arc::new(vec![0]),
+-            frag_spirv: std::sync::Arc::new(vec![0]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0])),
+             vertex_count: 3,
+             base_instance: 2,
+             ..DrawRequest::default()
+@@ -8742,7 +8769,7 @@
+             width: 8,
+             height: 8,
+             vert_spirv: std::sync::Arc::new(vec![0]),
+-            frag_spirv: std::sync::Arc::new(vec![0]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0])),
+             vertex_count: 3,
+             ..DrawRequest::default()
+         };
+@@ -8791,13 +8818,13 @@
+             width: 8,
+             height: 8,
+             vert_spirv: std::sync::Arc::new(Vec::new()),
+-            frag_spirv: std::sync::Arc::new(vec![0]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0])),
+             ..DrawRequest::default()
+         };
+         assert_eq!(validation_slug(&req), "vk_draw_validate_empty_vertex_spirv");
+ 
+         req.vert_spirv = std::sync::Arc::new(vec![0]);
+-        req.frag_spirv = std::sync::Arc::new(Vec::new());
++        req.frag_spirv = Some(std::sync::Arc::new(Vec::new()));
+         assert_eq!(
+             validation_slug(&req),
+             "vk_draw_validate_empty_fragment_spirv"
+@@ -8981,7 +9008,7 @@
+     fn framebuffer_fetch_validates_sparse_targets_and_draw_parameter_semantics() {
+         let mut req = DrawRequest {
+             vert_spirv: std::sync::Arc::new(vec![0x07230203, 0x00010500, 0, 8, 0]),
+-            frag_spirv: std::sync::Arc::new(vec![0x07230203, 0x00010500, 0, 8, 0]),
++            frag_spirv: Some(std::sync::Arc::new(vec![0x07230203, 0x00010500, 0, 8, 0])),
+             color_inputs: super::super::types::ColorInputs::PRIMARY,
+             vertex_count: 6,
+             ..Default::default()
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -504,7 +504,8 @@
+     /// Shared from the runtime translation cache — the engine never mutates
+     /// module words; `Arc` avoids a full-module copy per draw.
+     pub vert_spirv: std::sync::Arc<Vec<u32>>,
+-    pub frag_spirv: std::sync::Arc<Vec<u32>>,
++    /// None is a native absent stage, not an empty shader.
++    pub frag_spirv: Option<std::sync::Arc<Vec<u32>>>,
+     /// Statically used uniform-constant bindings derived once from the exact
+     /// executable variants above. The engine compares these with each draw's
+     /// layout before it lets the host compile the pipeline.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
+@@ -151,6 +151,10 @@
+ }
+ 
+ impl Backend for VulkanBackend {
++    fn supports_absent_fragment_function(&self) -> bool {
++        true
++    }
++
+     fn supports_native_xr_rendering(&self) -> bool {
+         true
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/pipeline_resolve.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/pipeline_resolve.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/pipeline_resolve.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/pipeline_resolve.rs
+@@ -265,7 +265,7 @@
+     pub pipeline_object: Option<crate::backend::vulkan::engine::PipelineObjectIdentity>,
+     pub desc: Arc<RenderPipelineDescriptor>,
+     pub vertex: Arc<CachedShader>,
+-    pub fragment: Arc<CachedShader>,
++    pub fragment: Option<Arc<CachedShader>>,
+     /// Derived from `desc` and memoized with it — see [`VertexBindPlan`].
+     pub bind_plan: Arc<VertexBindPlan>,
+ }
+@@ -313,10 +313,10 @@
+             Vec::new(),
+             reflection(ShaderStage::Vertex),
+         )),
+-        fragment: Arc::new(CachedShader::new(
++        fragment: Some(Arc::new(CachedShader::new(
+             Vec::new(),
+             reflection(ShaderStage::Fragment),
+-        )),
++        ))),
+     })
+ }
+ 
+@@ -523,7 +523,10 @@
+     let (usage, refusals) = crate::backend::vulkan::binding_usage::render(
+         &resolved.vertex.reflection,
+         &resolved.bind_plan,
+-        &resolved.fragment.reflection,
++        resolved
++            .fragment
++            .as_ref()
++            .map(|shader| shader.reflection.as_ref()),
+     );
+     for refusal in refusals.into_iter().flatten() {
+         // A stage that cannot be published is a stage left at `Unknown`, which
+@@ -607,27 +610,10 @@
+         task_id,
+         function_ref: desc.vertex_func_ref,
+     })?;
+-    let f_mtlb = load_mtlb(
+-        state,
+-        host,
+-        task_id,
+-        desc.fragment_func_ref,
+-        AirLoadRail::Draw,
+-    )
+-    .ok_or(DrawPreparationDecline::FragmentMtlbMissing {
+-        task_id,
+-        function_ref: desc.fragment_func_ref,
+-    })?;
+     enter(Phase::PipelineAir);
+     let v_air = crate::runtime::mtlb::extract_air(&v_mtlb).map_err(|reason| {
+         DrawPreparationDecline::VertexAirExtract {
+             function_ref: desc.vertex_func_ref,
+-            reason,
+-        }
+-    })?;
+-    let f_air = crate::runtime::mtlb::extract_air(&f_mtlb).map_err(|reason| {
+-        DrawPreparationDecline::FragmentAirExtract {
+-            function_ref: desc.fragment_func_ref,
+             reason,
+         }
+     })?;
+@@ -641,15 +627,36 @@
+         pipeline_ref,
+         reason,
+     })?;
+-    let fragment = crate::runtime::m2v_cache::translate_cached_reflected(
+-        f_air,
+-        metal2vulkan::passes::Stage::Fragment,
+-        pipeline_ref,
+-    )
+-    .map_err(|reason| DrawPreparationDecline::FragmentTranslate {
+-        pipeline_ref,
+-        reason,
+-    })?;
++    let fragment = if let Some(reference) = desc.fragment_function.reference() {
++        enter(Phase::PipelineMtlb);
++        let f_mtlb = load_mtlb(state, host, task_id, reference.get(), AirLoadRail::Draw).ok_or(
++            DrawPreparationDecline::FragmentMtlbMissing {
++                task_id,
++                function_ref: reference.get(),
++            },
++        )?;
++        enter(Phase::PipelineAir);
++        let f_air = crate::runtime::mtlb::extract_air(&f_mtlb).map_err(|reason| {
++            DrawPreparationDecline::FragmentAirExtract {
++                function_ref: reference.get(),
++                reason,
++            }
++        })?;
++        enter(Phase::PipelineXlate);
++        Some(
++            crate::runtime::m2v_cache::translate_cached_reflected(
++                f_air,
++                metal2vulkan::passes::Stage::Fragment,
++                pipeline_ref,
++            )
++            .map_err(|reason| DrawPreparationDecline::FragmentTranslate {
++                pipeline_ref,
++                reason,
++            })?,
++        )
++    } else {
++        None
++    };
+     // Both stages are SPIR-V now. What is left is this rail building the
+     // pipeline object out of them, which is `Compiling`.
+     crate::runtime::draw::advance_pipeline(
+@@ -660,6 +667,10 @@
+         PipelineState::Compiling,
+     );
+     let bind_plan = Arc::new(VertexBindPlan::build(&desc));
++    if fragment.is_none() {
++        note_store_route("fragmentless_pipeline_resolved");
++        crate::observe::off(format!("render_fragmentless_pipeline task={task_id} pipe={pipeline_ref} vertex={} colors={} samples={} rasterization=enabled", desc.vertex_func_ref, desc.color_attachments.len(), desc.raster_sample_count.max(1)));
++    }
+     Ok(ResolvedRenderPipeline {
+         pipeline_object: None,
+         desc: Arc::new(desc),
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
+@@ -839,7 +839,8 @@
+     /// the two and the one that describes the bytes actually present.
+     pub serialized_payload_len: u32,
+     pub vertex_func_ref: u32,
+-    pub fragment_func_ref: u32,
++    pub fragment_function: reims_vgpu_protocol::render_pipeline::FragmentFunction,
++    pub rasterization: reims_vgpu_protocol::render_pipeline::Rasterization,
+     /// Object-stage function ref (mesh SPI shape: tag `0x01`).
+     ///
+     /// Zero on classic pipelines. Mesh-only/dual-export fixtures may leave this
+@@ -3106,7 +3107,8 @@
+ /// boot's classic pipelines that carry `0x03` — an instrument built to find
+ /// unread fields hiding one behind a tag its *other* branch reads. Which tags
+ /// count as consumed is a property of the branch taken, so it is chosen there.
+-const CLASSIC_PIPELINE_TAGS_CONSUMED: [u8; 9] = [
++const CLASSIC_PIPELINE_TAGS_CONSUMED: [u8; 10] = [
++    0x07, // Native classic rasterizationEnabled, default true when omitted.
+     PIPELINE_TAG_VERTEX_FUNC,
+     PIPELINE_TAG_FRAGMENT_FUNC,
+     PIPELINE_TAG_VERTEX_DESCRIPTOR_OFFSET,
+@@ -3291,7 +3293,9 @@
+ ///   it observes is the one its own draw named.
+ ///
+ /// **`rasterizationEnabled` and `alphaToCoverageEnabled` are deliberately not
+-/// here.** They are two of the three the old doc named as silently defaulted,
++/// benign.** The classic decoder now consumes and checks rasterizationEnabled.
++/// Disabled rasterization remains a typed backend refusal. Alpha-to-coverage
++/// remains unknown and refused. They are two of the three the old doc named as silently defaulted,
+ /// and neither has appeared in this block on a driven boot. If one arrives it
+ /// must refuse rather than be waved through. The third,
+ /// [`PIPELINE_TAG_RASTER_SAMPLE_COUNT`], is now read — it is consumed on both
+@@ -3751,6 +3755,47 @@
+     })
+ }
+ 
++impl RenderPipelineDescriptor {
++    /// Derived legacy rail input, never the authority for optional-stage presence.
++    pub fn fragment_func_ref(&self) -> u32 {
++        self.fragment_function
++            .reference()
++            .map_or(0, |reference| reference.get())
++    }
++}
++
++fn unique_pipeline_value<'a>(
++    bytes: &'a [u8],
++    fields: &[CompactTlv],
++    tag: u8,
++) -> Result<Option<&'a [u8]>, DecodeStatus> {
++    let mut matches = fields.iter().filter(|field| field.tag == tag);
++    let Some(field) = matches.next() else {
++        return Ok(None);
++    };
++    if matches.next().is_some() {
++        return Err(DecodeStatus::ErrUnsupported(
++            "res_render_pipeline_duplicate_stage_field",
++        ));
++    }
++    bytes
++        .get(field.value_offset..field.value_offset + usize::from(field.length))
++        .map(Some)
++        .ok_or(DecodeStatus::ErrShort(
++            "res_render_pipeline_stage_value_short",
++        ))
++}
++
++fn pipeline_stage_refusal(refusal: reims_vgpu_protocol::render_pipeline::Refusal) -> DecodeStatus {
++    use reims_vgpu_protocol::render_pipeline::Refusal;
++    DecodeStatus::ErrUnsupported(match refusal {
++        Refusal::FunctionWidth => "res_render_pipeline_fragment_width",
++        Refusal::FunctionReferenceZero => "res_render_pipeline_fragment_reference_zero",
++        Refusal::RasterizationWidth => "res_render_pipeline_rasterization_width",
++        Refusal::RasterizationValue => "res_render_pipeline_rasterization_value",
++    })
++}
++
+ pub fn decode_render_pipeline_descriptor(
+     bytes: &[u8],
+ ) -> Result<RenderPipelineDescriptor, DecodeStatus> {
+@@ -3773,7 +3818,7 @@
+     let (fields, consumed) = decode_compact_tlv_record(bytes, SERIALIZER_OBJECT_FIRST_TLVS)?;
+     let tag01 = compact_tlv_u32(&fields, PIPELINE_TAG_VERTEX_FUNC).unwrap_or(0);
+     let tag02 = compact_tlv_u32(&fields, PIPELINE_TAG_FRAGMENT_FUNC).unwrap_or(0);
+-    let tag03 = compact_tlv_u32(&fields, PIPELINE_TAG_MESH_FRAGMENT_FUNC).unwrap_or(0);
++
+     // A property of the descriptor rather than of either role map, so it is read
+     // before the shape is chosen and both branches carry it. Zero is the absent
+     // case and means single-sampled; see the field's doc.
+@@ -3796,7 +3841,12 @@
+         )?;
+         out.object_func_ref = tag01;
+         out.mesh_func_ref = tag02;
+-        out.fragment_func_ref = tag03;
++        let value = unique_pipeline_value(bytes, &fields, PIPELINE_TAG_MESH_FRAGMENT_FUNC)?.ok_or(
++            DecodeStatus::ErrUnsupported("res_render_mesh_fragment_absence_unresolved"),
++        )?;
++        out.fragment_function =
++            reims_vgpu_protocol::render_pipeline::FragmentFunction::decode(Some(value))
++                .map_err(pipeline_stage_refusal)?;
+         out.vertex_func_ref = 0;
+         out.color_attachment_offset = off;
+         out.has_color_attachment_offset = true;
+@@ -3809,7 +3859,14 @@
+             &fields,
+         )?;
+         out.vertex_func_ref = tag01;
+-        out.fragment_func_ref = tag02;
++        out.fragment_function = reims_vgpu_protocol::render_pipeline::FragmentFunction::decode(
++            unique_pipeline_value(bytes, &fields, PIPELINE_TAG_FRAGMENT_FUNC)?,
++        )
++        .map_err(pipeline_stage_refusal)?;
++        out.rasterization = reims_vgpu_protocol::render_pipeline::Rasterization::decode(
++            unique_pipeline_value(bytes, &fields, 0x07)?,
++        )
++        .map_err(pipeline_stage_refusal)?;
+         out.object_func_ref = 0;
+         out.mesh_func_ref = 0;
+         // The classic role of `0x03`: where the serialized `vertexDescriptor`
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
+@@ -1841,7 +1841,7 @@
+     st32(&mut b[25..], 1);
+     let p = decode_render_pipeline_descriptor(&b).unwrap();
+     assert_eq!(p.vertex_func_ref, 2);
+-    assert_eq!(p.fragment_func_ref, 1);
++    assert_eq!(p.fragment_func_ref(), 1);
+     assert_eq!(p.object_func_ref, 0);
+     assert_eq!(p.mesh_func_ref, 0);
+     assert_eq!(p.object_id, 9);
+@@ -1885,7 +1885,7 @@
+     let d = decode_render_pipeline_descriptor(&b)
+         .expect("a depth-stencil pipeline is decoded, not refused");
+     assert_eq!(d.vertex_func_ref, 7);
+-    assert_eq!(d.fragment_func_ref, 8);
++    assert_eq!(d.fragment_func_ref(), 8);
+     assert_eq!(
+         d.raster_sample_count, 4,
+         "the guest's requested sample count is read rather than defaulted"
+@@ -1973,7 +1973,10 @@
+     let explicit = render_pipeline_desc(9, &explicit_fields);
+     let baseline = decode_render_pipeline_descriptor(&baseline).unwrap();
+     let mut explicit = decode_render_pipeline_descriptor(&explicit).unwrap();
+-    assert_eq!(explicit.serialized_payload_len, baseline.serialized_payload_len + 6);
++    assert_eq!(
++        explicit.serialized_payload_len,
++        baseline.serialized_payload_len + 6
++    );
+     explicit.serialized_payload_len = baseline.serialized_payload_len;
+     assert_eq!(baseline, explicit);
+ 
+@@ -2042,7 +2045,7 @@
+     let cap = crate::observe::FailCapture::start();
+     let d = decode_render_pipeline_descriptor(&b)
+         .expect("an alpha-test/logic-op pipeline is decoded, not refused");
+-    assert_eq!((d.vertex_func_ref, d.fragment_func_ref), (11, 12));
++    assert_eq!((d.vertex_func_ref, d.fragment_func_ref()), (11, 12));
+     assert!(
+         !cap.lines()
+             .iter()
+@@ -2367,7 +2370,7 @@
+     let p = decode_render_pipeline_descriptor(&b)
+         .expect("an identified property this device does not apply is not a refusal");
+     assert_eq!(p.vertex_func_ref, 7);
+-    assert_eq!(p.fragment_func_ref, 8);
++    assert_eq!(p.fragment_func_ref(), 8);
+ 
+     let lines = cap.lines();
+     let dropped: Vec<&String> = lines
+@@ -2540,7 +2543,7 @@
+     let p = decode_render_pipeline_descriptor(&b).unwrap();
+     assert_eq!(p.object_func_ref, 4);
+     assert_eq!(p.mesh_func_ref, 5);
+-    assert_eq!(p.fragment_func_ref, 3);
++    assert_eq!(p.fragment_func_ref(), 3);
+     assert_eq!(p.vertex_func_ref, 0);
+     assert!(p.has_color_attachment_offset);
+     assert_eq!(p.color_attachment_offset, 24);
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/icb.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/icb.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/icb.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/icb.rs
+@@ -614,12 +614,12 @@
+             state,
+             host,
+             req.task_id,
+-            pipeline.fragment_func_ref,
++            pipeline.fragment_func_ref(),
+             AirLoadRail::Draw,
+         ) else {
+             refuse("fragment_mtlb_missing");
+             return Err(MetalIcbInheritanceDecline::FragmentMtlbMissing {
+-                function_ref: pipeline.fragment_func_ref,
++                function_ref: pipeline.fragment_func_ref(),
+             });
+         };
+         advance(reims_vgpu_core::pipeline::PipelineState::Compiling);
+@@ -631,7 +631,7 @@
+         })?;
+         let flib = device.new_library_with_data(&frag).map_err(|error| {
+             MetalIcbInheritanceDecline::FragmentLibraryLoad {
+-                function_ref: pipeline.fragment_func_ref,
++                function_ref: pipeline.fragment_func_ref(),
+                 detail: format!("{error:?}"),
+             }
+         })?;
+@@ -645,7 +645,7 @@
+         }
+         if fnames.len() != 1 {
+             return Err(MetalIcbInheritanceDecline::FragmentFunctionCount {
+-                function_ref: pipeline.fragment_func_ref,
++                function_ref: pipeline.fragment_func_ref(),
+                 count: fnames.len(),
+             });
+         }
+@@ -657,7 +657,7 @@
+         })?;
+         let ff = flib.get_function(&fnames[0], None).map_err(|error| {
+             MetalIcbInheritanceDecline::FragmentFunctionGet {
+-                function_ref: pipeline.fragment_func_ref,
++                function_ref: pipeline.fragment_func_ref(),
+                 detail: format!("{error:?}"),
+             }
+         })?;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/mod.rs
+@@ -339,12 +339,13 @@
+         state,
+         host,
+         req.task_id,
+-        pipeline.fragment_func_ref,
++        pipeline.fragment_func_ref(),
+         AirLoadRail::Draw,
+     ) else {
+         crate::observe::fail(format!(
+             "metal_draw MissingMtlb frag_func={} pipe={}",
+-            pipeline.fragment_func_ref, req.pipeline_ref
++            pipeline.fragment_func_ref(),
++            req.pipeline_ref
+         ));
+         crate::runtime::draw::refuse_pipeline(
+             state,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -44,7 +44,7 @@
+     OBJECT_TYPE_MAPPER_REF_TEXTURE, OBJECT_TYPE_SERIALIZER_OBJECT, OBJECT_TYPE_TEXTURE,
+     OBJECT_TYPE_TEXTURE_GENERATE_MIPMAPS, OBJECT_TYPE_TEXTURE_VIEW,
+     TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE, TEXTURE_VIEW_OPCODE_BUFFER_TEXTURE_WIDE,
+-    TEXTURE_VIEW_OPCODE_SIMPLE, TEXTURE_VIEW_OPCODE_RANGED, TEXTURE_VIEW_OPCODE_SWIZZLE,
++    TEXTURE_VIEW_OPCODE_RANGED, TEXTURE_VIEW_OPCODE_SIMPLE, TEXTURE_VIEW_OPCODE_SWIZZLE,
+ };
+ use crate::runtime::gva_mem;
+ use crate::runtime::host::{HostMemory, HostOps};
+@@ -902,31 +902,29 @@
+             return None;
+         }
+     };
+-    // This backend path currently requires both stages. Metal permits an
+-    // absent fragment function for depth/stencil and visibility work; absence
+-    // alone does not establish a malformed guest pipeline. Preserve the typed
+-    // refusal until the wire-to-optional-stage contract and both rails support
+-    // that work. Public contract: MTLRenderPipelineDescriptor.fragmentFunction.
+     if p.vertex_func_ref == 0 {
+         report.reason(task_id, pipeline_ref, "vertex_func_zero", "");
+         return None;
+     }
+-    if p.fragment_func_ref == 0 {
++    // Rasterization-disabled work needs a separate backend representation. Do
++    // not execute it with rasterization enabled while adding optional stages.
++    if p.rasterization == reims_vgpu_protocol::render_pipeline::Rasterization::Disabled {
+         report.reason(
+             task_id,
+             pipeline_ref,
+-            "fragment_func_zero",
+-            &format!(
+-                "scope=backend_required_fragment vertex={} object={} mesh={} \
+-                 samples={} colors={} color0_format_known={} color0_format={:#x}",
+-                p.vertex_func_ref,
+-                p.object_func_ref,
+-                p.mesh_func_ref,
+-                p.raster_sample_count,
+-                p.color_attachments.len(),
+-                p.color0.has_pixel_format,
+-                p.color0.pixel_format,
+-            ),
++            "rasterization_disabled_unsupported",
++            "",
++        );
++        return None;
++    }
++    if p.fragment_function.reference().is_none()
++        && !crate::backend::selected().supports_absent_fragment_function()
++    {
++        report.reason(
++            task_id,
++            pipeline_ref,
++            "fragment_function_absent_unsupported",
++            "",
+         );
+         return None;
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -7674,6 +7674,31 @@
+     let pd = &resolved.desc;
+     let v_shader = resolved.vertex.clone();
+     let f_shader = resolved.fragment.clone();
++    if f_shader.is_none() {
++        use metal2vulkan::reflect::{ResourceAccess as A, ResourceKind as K};
++        if v_shader.reflection.bindings.iter().any(|binding| {
++            matches!(
++                binding.kind,
++                K::Buffer | K::BufferAddressTable | K::EmbeddedArgBufferBuffer
++            ) && !matches!(binding.access, Some(A::Unused | A::ReadOnly))
++        }) {
++            return Err(DrawError::DrawPreparation(
++                DrawPreparationDecline::FragmentlessUnsupported {
++                    feature: "vertex_buffer_writeback",
++                },
++            ));
++        }
++        if req
++            .depth_bias
++            .is_some_and(|values| values.into_iter().any(|value| value != 0.0))
++        {
++            return Err(DrawError::DrawPreparation(
++                DrawPreparationDecline::FragmentlessUnsupported {
++                    feature: "depth_bias_contract",
++                },
++            ));
++        }
++    }
+ 
+     // Request construction obtains the attachment count from this immutable
+     // pipeline before LOAD/CLEAR and Store policy can inspect it. Keep the
+@@ -7722,9 +7747,12 @@
+     }
+ 
+     for (stage, shader, textures) in [
+-        ("vertex", &v_shader, &req.vertex_textures),
+-        ("fragment", &f_shader, &req.fragment_textures),
+-    ] {
++        ("vertex", Some(&v_shader), &req.vertex_textures),
++        ("fragment", f_shader.as_ref(), &req.fragment_textures),
++    ]
++    .into_iter()
++    .filter_map(|(stage, shader, textures)| shader.map(|shader| (stage, shader, textures)))
++    {
+         if let Some((index, descriptor)) =
+             crate::runtime::spirv_bind::first_non_sampled_texture_descriptor(&shader.reflection)
+         {
+@@ -7752,14 +7780,17 @@
+         (
+             "vertex",
+             metal2vulkan::reflect::ShaderStage::Vertex,
+-            &v_shader,
++            Some(&v_shader),
+         ),
+         (
+             "fragment",
+             metal2vulkan::reflect::ShaderStage::Fragment,
+-            &f_shader,
++            f_shader.as_ref(),
+         ),
+-    ] {
++    ]
++    .into_iter()
++    .filter_map(|(stage, expected, shader)| shader.map(|shader| (stage, expected, shader)))
++    {
+         if let Some(unsupported) = crate::runtime::spirv_bind::first_unsupported_vulkan_interface(
+             &shader.reflection,
+             expected_stage,
+@@ -7791,7 +7822,14 @@
+ 
+     crate::runtime::chain_phase::enter(crate::runtime::chain_phase::Phase::Pipeline);
+     let Some((w, h)) = req.colors.first().map(|c0| (c0.width, c0.height)) else {
+-        return Ok(M2vDrawSpan::None);
++        if f_shader.is_some() {
++            return Ok(M2vDrawSpan::None); // Existing color-backed producer scope.
++        }
++        return Err(DrawError::DrawPreparation(
++            DrawPreparationDecline::FragmentlessUnsupported {
++                feature: "no_color_geometry",
++            },
++        ));
+     };
+     // The bound is the device's own `maxImageDimension2D`, not a fixed number:
+     // a guest driving a 5K or 6K display names render targets past the Vulkan
+@@ -7816,7 +7854,7 @@
+     let v_variant = v_shader.variant(false, false);
+     let v_words = v_variant.words.clone();
+     #[allow(unused_mut)]
+-    let mut f_variant = f_shader.variant(false, false);
++    let mut f_variant = f_shader.as_ref().map(|shader| shader.variant(false, false));
+ 
+     {
+         use crate::runtime::spirv_bind::{
+@@ -7912,6 +7950,9 @@
+         let fragment_span =
+             crate::runtime::bind_phase::Span::open(crate::runtime::bind_phase::Part::FragmentLoad);
+         for b in req.fragment_buffers.iter() {
++            let Some(f_shader) = f_shader.as_ref() else {
++                break;
++            };
+             if b.buffer_ref == 0 {
+                 continue;
+             }
+@@ -8039,10 +8080,11 @@
+         // module then samples its textures through the vertex stage's filter,
+         // address mode and LOD clamp, with nothing refused and nothing counted.
+         let has_vtx_sampled = stage_uses_sampled_band(&req.vertex_textures, &req.vertex_samplers);
+-        let has_frag_sampled =
+-            stage_uses_sampled_band(&req.fragment_textures, &req.fragment_samplers);
+-        let reflected_sampled_collision =
+-            reflected_sampled_binding_collision(&v_shader.reflection, &f_shader.reflection);
++        let has_frag_sampled = f_shader.is_some()
++            && stage_uses_sampled_band(&req.fragment_textures, &req.fragment_samplers);
++        let reflected_sampled_collision = f_shader.as_ref().is_some_and(|shader| {
++            reflected_sampled_binding_collision(&v_shader.reflection, &shader.reflection)
++        });
+         let separate_sampled =
+             (has_vtx_sampled && has_frag_sampled) || buf_collide || reflected_sampled_collision;
+         // Sampled relocation first (archive order), then buffer band. The
+@@ -8051,9 +8093,11 @@
+         // sampled-with-buffer coupling is kept so the engine's image/sampler
+         // binding base mirrors one flag pair, not a third variant.
+         if separate_sampled || buf_collide {
+-            f_variant = f_shader.variant(separate_sampled, buf_collide);
+-        }
+-        let f_words = f_variant.words.clone();
++            f_variant = f_shader
++                .as_ref()
++                .map(|shader| shader.variant(separate_sampled, buf_collide));
++        }
++        let f_words = f_variant.as_ref().map(|variant| variant.words.clone());
+ 
+         // Non-stage-in vertex buffers + fragment buffers as storage buffers.
+         //
+@@ -8117,154 +8161,160 @@
+         // The guard below reports; its value is the population the repair after
+         // the texture loop acts on. Empty on every draw that binds what it
+         // samples, which is the hot path.
+-        let frag_unbound_used_textures: Vec<u32> = {
+-            // Membership predicates over the (tiny) provided-resource slices — the
+-            // scan allocates nothing on the all-bound hot path. Unsupported
+-            // reflected resource families have already been refused above.
+-            let unbound = frag_unbound_scan(
+-                &f_shader.reflection.bindings,
+-                |i| frag_storage.iter().any(|(x, _)| *x == i),
+-                |i| {
+-                    req.fragment_textures
+-                        .iter()
+-                        .any(|t| t.index == i && t.texture_ref != 0)
+-                },
+-                |i| {
+-                    req.fragment_samplers
+-                        .iter()
+-                        .any(|s| s.index == i && s.sampler_ref != 0)
+-                },
+-                // Same relocation the bind path applies, so the question is
+-                // asked of the binding the module would actually carry.
+-                |i| {
+-                    let base_off = if separate_sampled {
+-                        FRAG_SAMPLED_RESOURCE_BINDING_OFFSET
+-                    } else {
+-                        0
+-                    };
+-                    f_variant.descriptor_use(TEXTURE_BINDING_BASE + i + base_off)
+-                        != crate::runtime::spirv_bind::DescriptorUse::NotDeclared
+-                },
+-            );
+-            // Declaration is not the bar the specification sets — a layout must
+-            // contain a descriptor for every resource the shader *statically
+-            // uses*, and a declared-and-never-referenced variable is legal to
+-            // omit. The scan above asks the weaker question because it is the
+-            // cheap one and it runs per draw; this asks the real one, only for
+-            // the handful the scan already flagged, and counts each answer so a
+-            // boot says which population these firings belong to.
+-            let uses: Vec<_> = unbound
+-                .iter()
+-                .map(|gap| {
+-                    (
+-                        *gap,
+-                        frag_unbound_static_use(gap, &f_variant, separate_sampled),
+-                    )
+-                })
+-                .collect();
+-            for (_, use_) in &uses {
+-                crate::runtime::drain::note_store_route(use_.slug());
+-            }
+-            if let Some((gap, _)) = uses.iter().find(|(gap, use_)| {
+-                gap.class == crate::runtime::draw::vulkan::FragUnboundClass::Buffer
+-                    && use_.is_violation()
+-            }) {
+-                return Err(DrawError::DrawPreparation(
+-                    DrawPreparationDecline::UnboundStorageBuffer {
+-                        index: gap.metal_index,
+-                        binding: gap.metal_index + FRAG_BUFFER_BINDING_OFFSET,
++        let frag_unbound_used_textures: Vec<u32> =
++            if let (Some(f_shader), Some(f_variant)) = (&f_shader, &f_variant) {
++                // Membership predicates over the (tiny) provided-resource slices — the
++                // scan allocates nothing on the all-bound hot path. Unsupported
++                // reflected resource families have already been refused above.
++                let unbound = frag_unbound_scan(
++                    &f_shader.reflection.bindings,
++                    |i| frag_storage.iter().any(|(x, _)| *x == i),
++                    |i| {
++                        req.fragment_textures
++                            .iter()
++                            .any(|t| t.index == i && t.texture_ref != 0)
+                     },
+-                ));
+-            }
+-            if !unbound.is_empty() {
+-                // Cold path only: build the provided-index sets for the log detail.
+-                let bufs: std::collections::BTreeSet<u32> =
+-                    frag_storage.iter().map(|(i, _)| *i).collect();
+-                let texs: std::collections::BTreeSet<u32> = req
+-                    .fragment_textures
++                    |i| {
++                        req.fragment_samplers
++                            .iter()
++                            .any(|s| s.index == i && s.sampler_ref != 0)
++                    },
++                    // Same relocation the bind path applies, so the question is
++                    // asked of the binding the module would actually carry.
++                    |i| {
++                        let base_off = if separate_sampled {
++                            FRAG_SAMPLED_RESOURCE_BINDING_OFFSET
++                        } else {
++                            0
++                        };
++                        f_variant.descriptor_use(TEXTURE_BINDING_BASE + i + base_off)
++                            != crate::runtime::spirv_bind::DescriptorUse::NotDeclared
++                    },
++                );
++                // Declaration is not the bar the specification sets — a layout must
++                // contain a descriptor for every resource the shader *statically
++                // uses*, and a declared-and-never-referenced variable is legal to
++                // omit. The scan above asks the weaker question because it is the
++                // cheap one and it runs per draw; this asks the real one, only for
++                // the handful the scan already flagged, and counts each answer so a
++                // boot says which population these firings belong to.
++                let uses: Vec<_> = unbound
+                     .iter()
+-                    .filter(|t| t.texture_ref != 0)
+-                    .map(|t| t.index)
+-                    .collect();
+-                let smps: std::collections::BTreeSet<u32> = req
+-                    .fragment_samplers
+-                    .iter()
+-                    .filter(|s| s.sampler_ref != 0)
+-                    .map(|s| s.index)
+-                    .collect();
+-                // Each gap carries its own verdict, because a line that says
+-                // only "unbound=[tex0]" cannot be ranked: the same text is
+-                // written for a specification violation and for a variable the
+-                // module declares and never references.
+-                let detail = uses
+-                    .iter()
+-                    .map(|(gap, use_)| format!("{gap}:{}", use_.slug()))
+-                    .collect::<Vec<_>>()
+-                    .join(",");
+-                let violations = uses.iter().filter(|(_, u)| u.is_violation()).count();
+-                let resources = f_shader
+-                    .reflection
+-                    .bindings
+-                    .iter()
+-                    .filter(|binding| {
+-                        unbound
+-                            .iter()
+-                            .any(|gap| gap.metal_index == binding.metal_index)
+-                    })
+-                    .map(|binding| {
+-                        format!(
+-                            "{}:{:?}:param={:?}:descriptor={:?}:shape={:?}",
+-                            binding.metal_index,
+-                            binding.kind,
+-                            binding.param_index,
+-                            binding.descriptor,
+-                            binding.texture_shape
++                    .map(|gap| {
++                        (
++                            *gap,
++                            frag_unbound_static_use(gap, &f_variant, separate_sampled),
+                         )
+                     })
+-                    .collect::<Vec<_>>()
+-                    .join(";");
+-                let texture_refs = req
+-                    .fragment_textures
+-                    .iter()
+-                    .map(|texture| {
+-                        (
+-                            texture.index,
+-                            texture.texture_ref,
+-                            texture.resource.is_some(),
+-                        )
+-                    })
+-                    .collect::<Vec<_>>();
+-                let entry = f_shader
+-                    .reflection
+-                    .entry_point
+-                    .as_deref()
+-                    .map(|name| name.chars().take(128).collect::<String>());
+-                crate::observe::fail(format!(
+-                    "shader_resource_declared_unbound reason=frag_declared_descriptor_unbound \
++                    .collect();
++                for (_, use_) in &uses {
++                    crate::runtime::drain::note_store_route(use_.slug());
++                }
++                if let Some((gap, _)) = uses.iter().find(|(gap, use_)| {
++                    gap.class == crate::runtime::draw::vulkan::FragUnboundClass::Buffer
++                        && use_.is_violation()
++                }) {
++                    return Err(DrawError::DrawPreparation(
++                        DrawPreparationDecline::UnboundStorageBuffer {
++                            index: gap.metal_index,
++                            binding: gap.metal_index + FRAG_BUFFER_BINDING_OFFSET,
++                        },
++                    ));
++                }
++                if !unbound.is_empty() {
++                    // Cold path only: build the provided-index sets for the log detail.
++                    let bufs: std::collections::BTreeSet<u32> =
++                        frag_storage.iter().map(|(i, _)| *i).collect();
++                    let texs: std::collections::BTreeSet<u32> = req
++                        .fragment_textures
++                        .iter()
++                        .filter(|t| t.texture_ref != 0)
++                        .map(|t| t.index)
++                        .collect();
++                    let smps: std::collections::BTreeSet<u32> = req
++                        .fragment_samplers
++                        .iter()
++                        .filter(|s| s.sampler_ref != 0)
++                        .map(|s| s.index)
++                        .collect();
++                    // Each gap carries its own verdict, because a line that says
++                    // only "unbound=[tex0]" cannot be ranked: the same text is
++                    // written for a specification violation and for a variable the
++                    // module declares and never references.
++                    let detail = uses
++                        .iter()
++                        .map(|(gap, use_)| format!("{gap}:{}", use_.slug()))
++                        .collect::<Vec<_>>()
++                        .join(",");
++                    let violations = uses.iter().filter(|(_, u)| u.is_violation()).count();
++                    let resources = f_shader
++                        .reflection
++                        .bindings
++                        .iter()
++                        .filter(|binding| {
++                            unbound
++                                .iter()
++                                .any(|gap| gap.metal_index == binding.metal_index)
++                        })
++                        .map(|binding| {
++                            format!(
++                                "{}:{:?}:param={:?}:descriptor={:?}:shape={:?}",
++                                binding.metal_index,
++                                binding.kind,
++                                binding.param_index,
++                                binding.descriptor,
++                                binding.texture_shape
++                            )
++                        })
++                        .collect::<Vec<_>>()
++                        .join(";");
++                    let texture_refs = req
++                        .fragment_textures
++                        .iter()
++                        .map(|texture| {
++                            (
++                                texture.index,
++                                texture.texture_ref,
++                                texture.resource.is_some(),
++                            )
++                        })
++                        .collect::<Vec<_>>();
++                    let entry = f_shader
++                        .reflection
++                        .entry_point
++                        .as_deref()
++                        .map(|name| name.chars().take(128).collect::<String>());
++                    crate::observe::fail(format!(
++                        "shader_resource_declared_unbound reason=frag_declared_descriptor_unbound \
+                      task={} pipe={} unbound=[{detail}] violations={violations}/{} \
+                      provided_buf={bufs:?} provided_tex={texs:?} \
+                      provided_smp={smps:?} {}x{} fragment_entry={entry:?} \
+                      air_capture_hint={:?} resources=[{resources}] texture_refs={texture_refs:?}",
+-                    req.task_id,
+-                    req.pipeline_ref,
+-                    uses.len(),
+-                    w,
+-                    h,
+-                    f_shader.air_capture_hint,
+-                ));
+-            }
+-            // Textures only, and violations only. A buffer or sampler gap is
+-            // reported above and not repaired here: the sampler class already
+-            // provisions its own default further down, and a storage buffer gap
+-            // has no neutral this device can invent. `DeclaredUnused` is legal
+-            // to omit and must stay omitted, or the census this block exists to
+-            // keep cannot tell the two populations apart.
+-            frag_unbound_textures_to_neutralize(&uses)
+-        };
++                        req.task_id,
++                        req.pipeline_ref,
++                        uses.len(),
++                        w,
++                        h,
++                        f_shader.air_capture_hint,
++                    ));
++                }
++                // Textures only, and violations only. A buffer or sampler gap is
++                // reported above and not repaired here: the sampler class already
++                // provisions its own default further down, and a storage buffer gap
++                // has no neutral this device can invent. `DeclaredUnused` is legal
++                // to omit and must stay omitted, or the census this block exists to
++                // keep cannot tell the two populations apart.
++                frag_unbound_textures_to_neutralize(&uses)
++            } else {
++                Vec::new()
++            };
+ 
+         // The translator preserves Metal color locations as InputAttachmentIndex.
+         let mut frag_color_inputs = crate::backend::vulkan::engine::ColorInputs::NONE;
+-        for binding in &f_shader.reflection.bindings {
++        for binding in f_shader
++            .iter()
++            .flat_map(|shader| shader.reflection.bindings.iter())
++        {
+             if binding.kind == metal2vulkan::reflect::ResourceKind::ColorInput {
+                 frag_color_inputs = frag_color_inputs.with_slot(binding.metal_index).ok_or(
+                     DrawError::DrawPreparation(DrawPreparationDecline::ColorInputSlotOutOfRange {
+@@ -8310,7 +8360,10 @@
+                     0
+                 };
+                 let reflection = if frag_stage {
+-                    &f_shader.reflection
++                    let Some(shader) = f_shader.as_ref() else {
++                        return Ok(());
++                    };
++                    &shader.reflection
+                 } else {
+                     &v_shader.reflection
+                 };
+@@ -8784,7 +8837,7 @@
+             for t in req.vertex_textures.iter() {
+                 push_tex(t.index, t.texture_ref, t.resource.as_ref(), false)?;
+             }
+-            for t in req.fragment_textures.iter() {
++            for t in req.fragment_textures.iter().filter(|_| f_shader.is_some()) {
+                 push_tex(t.index, t.texture_ref, t.resource.as_ref(), true)?;
+             }
+         }
+@@ -8802,7 +8855,11 @@
+         //
+         // Cold path: the vector is empty on every draw that binds what it
+         // samples, so this costs one `is_empty` on the hot path.
+-        for &index in &frag_unbound_used_textures {
++        for (f_shader, index) in f_shader.iter().flat_map(|shader| {
++            frag_unbound_used_textures
++                .iter()
++                .map(move |index| (shader, *index))
++        }) {
+             use crate::runtime::spirv_bind::{ReflectedSampledKind, SampledImageKind};
+             let base_off = if separate_sampled {
+                 FRAG_SAMPLED_RESOURCE_BINDING_OFFSET
+@@ -8956,7 +9013,7 @@
+                     push_smp(s.index, s.sampler_ref, s.lod_clamp, false)?;
+                 }
+             }
+-            for s in req.fragment_samplers.iter() {
++            for s in req.fragment_samplers.iter().filter(|_| f_shader.is_some()) {
+                 if s.sampler_ref != 0 {
+                     push_smp(s.index, s.sampler_ref, s.lod_clamp, true)?;
+                 }
+@@ -8970,7 +9027,13 @@
+             let _s = crate::runtime::sampled_phase::Span::open(
+                 crate::runtime::sampled_phase::Part::Reflect,
+             );
+-            for (variant, stage) in [(&v_variant, "vertex"), (&f_variant, "fragment")] {
++            for (variant, stage) in [
++                (Some(&v_variant), "vertex"),
++                (f_variant.as_ref(), "fragment"),
++            ]
++            .into_iter()
++            .filter_map(|(variant, stage)| variant.map(|variant| (variant, stage)))
++            {
+                 for reflected in variant.samplers.iter() {
+                     if sampler_binds.insert(reflected.binding) {
+                         let binding = reflected.binding;
+@@ -9895,6 +9958,11 @@
+             ) {
+                 Ok(ds) => Some(ds),
+                 Err(reason) => {
++                    if f_shader.is_none() {
++                        return Err(DrawError::DrawPreparation(
++                            DrawPreparationDecline::FragmentlessUnsupported { feature: reason },
++                        ));
++                    }
+                     // The guest bound a depth-stencil state (`ds_ref != 0`) that we
+                     // could not resolve/decode: the draw silently renders with the
+                     // depth test DISABLED (wrong occlusion for 3D content). Every
+@@ -9973,6 +10041,13 @@
+                                         })
+                                     }
+                                     _ => {
++                                        if f_shader.is_none() {
++                                            return Err(DrawError::DrawPreparation(
++                                                DrawPreparationDecline::FragmentlessUnsupported {
++                                                    feature: "stencil_op_unmapped",
++                                                },
++                                            ));
++                                        }
+                                         // Dedup on the *specific* slug, so an
+                                         // unknown compare and an unknown pass op
+                                         // on the same pipeline both get a line
+@@ -10007,6 +10082,13 @@
+                             });
+                         }
+                         None => {
++                            if f_shader.is_none() {
++                                return Err(DrawError::DrawPreparation(
++                                    DrawPreparationDecline::FragmentlessUnsupported {
++                                        feature: "depth_compare_unmapped",
++                                    },
++                                ));
++                            }
+                             // Unknown wire stays unknown: no depth rather than a
+                             // guessed compare direction.
+                             if degrade_log_first(req.pipeline_ref, "depth_compare_unmapped") {
+@@ -10130,8 +10212,9 @@
+         // construction excludes every storage buffer.
+         // Memoized on the `Arc`, because this is a per-draw walk of the whole
+         // module and the words behind an `Arc` cannot change.
+-        let frag_declared_bindings =
+-            crate::runtime::spirv_bind::declared_binding_numbers_memoized(&f_words);
++        let frag_declared_bindings = f_words.as_ref().map_or_else(Default::default, |words| {
++            crate::runtime::spirv_bind::declared_binding_numbers_memoized(words)
++        });
+         let frag_layout_bindings: Vec<u32> = resources
+             .storage_buffers
+             .iter()
+@@ -10241,7 +10324,7 @@
+             sampler_count: resources.samplers.len() as u32,
+             pipeline_ref: req.pipeline_ref,
+             vert_words: v_words.len() as u32,
+-            frag_words: f_words.len() as u32,
++            frag_words: f_words.as_ref().map_or(0, |words| words.len() as u32),
+             width: w,
+             height: h,
+             vertex_count,
+@@ -10264,8 +10347,14 @@
+         crate::runtime::chain_phase::enter(crate::runtime::chain_phase::Phase::Assemble);
+         resources.vert_spirv = v_words;
+         resources.frag_spirv = f_words;
++        if resources.frag_spirv.is_none() {
++            crate::runtime::drain::note_store_route("fragmentless_draw_prepared");
++        }
+         resources.vert_used_descriptor_bindings = v_variant.used_descriptor_bindings.clone();
+-        resources.frag_used_descriptor_bindings = f_variant.used_descriptor_bindings.clone();
++        resources.frag_used_descriptor_bindings =
++            f_variant.as_ref().map_or_else(Default::default, |variant| {
++                variant.used_descriptor_bindings.clone()
++            });
+         resources.width = w;
+         resources.height = h;
+         resources.vertex_count = vertex_count;
+@@ -14730,7 +14819,7 @@
+     host: &M,
+     task_id: u32,
+     pipeline_ref: u32,
+-) -> Result<(Vec<u8>, Vec<u8>), DrawPreparationDecline> {
++) -> Result<(Vec<u8>, Option<Vec<u8>>), DrawPreparationDecline> {
+     let pd = load_render_pipeline(state, host, task_id, pipeline_ref).ok_or(
+         DrawPreparationDecline::PipelineMissing {
+             task_id,
+@@ -14743,17 +14832,18 @@
+             function_ref: pd.vertex_func_ref,
+         },
+     )?;
+-    let f_mtlb = load_mtlb(
+-        state,
+-        host,
+-        task_id,
+-        pd.fragment_func_ref,
+-        AirLoadRail::Draw,
+-    )
+-    .ok_or(DrawPreparationDecline::FragmentMtlbMissing {
+-        task_id,
+-        function_ref: pd.fragment_func_ref,
+-    })?;
++    let f_mtlb = pd
++        .fragment_function
++        .reference()
++        .map(|reference| {
++            load_mtlb(state, host, task_id, reference.get(), AirLoadRail::Draw).ok_or(
++                DrawPreparationDecline::FragmentMtlbMissing {
++                    task_id,
++                    function_ref: reference.get(),
++                },
++            )
++        })
++        .transpose()?;
+     Ok((v_mtlb, f_mtlb))
+ }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/vulkan.rs
+@@ -72,7 +72,10 @@
+         // reports it precisely, and there is no asynchronous work to await.
+         let (Ok(v_air), Ok(f_air)) = (
+             crate::runtime::mtlb::extract_air(&v_mtlb),
+-            crate::runtime::mtlb::extract_air(&f_mtlb),
++            f_mtlb
++                .as_deref()
++                .map(crate::runtime::mtlb::extract_air)
++                .transpose(),
+         ) else {
+             crate::runtime::drain::note_store_route("preflight_air_unextractable");
+             continue;
+@@ -84,11 +87,13 @@
+             v_air,
+             metal2vulkan::passes::Stage::Vertex,
+             pipeline_ref,
+-        ) & crate::runtime::m2v_cache::ensure_cached_async(
+-            f_air,
+-            metal2vulkan::passes::Stage::Fragment,
+-            pipeline_ref,
+-        );
++        ) & f_air.map_or(true, |air| {
++            crate::runtime::m2v_cache::ensure_cached_async(
++                air,
++                metal2vulkan::passes::Stage::Fragment,
++                pipeline_ref,
++            )
++        });
+         note_preflight_part(
+             PreflightPart::Cache,
+             cache_started.elapsed().as_nanos() as u64,
+@@ -130,7 +135,7 @@
+     task_id: u32,
+     pipeline_ref: u32,
+     v_air: &[u8],
+-    f_air: &[u8],
++    f_air: Option<&[u8]>,
+ ) {
+     use crate::backend::vulkan::pipeline_resolve::VertexBindPlan;
+ 
+@@ -157,11 +162,15 @@
+             metal2vulkan::passes::Stage::Vertex,
+             pipeline_ref,
+         ),
+-        crate::runtime::m2v_cache::translate_cached_reflected(
+-            f_air,
+-            metal2vulkan::passes::Stage::Fragment,
+-            pipeline_ref,
+-        ),
++        f_air
++            .map(|air| {
++                crate::runtime::m2v_cache::translate_cached_reflected(
++                    air,
++                    metal2vulkan::passes::Stage::Fragment,
++                    pipeline_ref,
++                )
++            })
++            .transpose(),
+     ) else {
+         // Cached a moment ago and not now: the entry failed or was forgotten
+         // between the two calls. Nothing is owed — the draw path reports the
+@@ -174,7 +183,7 @@
+     let (usage, refusals) = crate::backend::vulkan::binding_usage::render(
+         &vertex.reflection,
+         &plan,
+-        &fragment.reflection,
++        fragment.as_ref().map(|shader| shader.reflection.as_ref()),
+     );
+     for refusal in refusals.into_iter().flatten() {
+         crate::runtime::drain::note_store_route(refusal.slug());
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/icb/metal.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/icb/metal.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/icb/metal.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/icb/metal.rs
+@@ -473,7 +473,7 @@
+             Ok(mtlb)
+         };
+ 
+-        if rp.fragment_func_ref == 0 {
++        if rp.fragment_func_ref() == 0 {
+             return Err(IcbStatus::Missing("icb_frc_no_fragment_function"));
+         }
+         if is_mesh {
+@@ -486,7 +486,7 @@
+             return Err(IcbStatus::Missing("icb_frc_no_vertex_function"));
+         }
+ 
+-        let frag = load_fn(rp.fragment_func_ref)?;
++        let frag = load_fn(rp.fragment_func_ref())?;
+         let flib = device
+             .new_library_with_data(&frag)
+             .map_err(|_| IcbStatus::MetalFailed("icb_frc_fragment_library_load"))?;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/icb/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/icb/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/icb/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/icb/tests.rs
+@@ -2766,7 +2766,7 @@
+     let pdesc = make_stagein_render_pipeline_desc(2, 3);
+     let decoded = decode_render_pipeline_descriptor(&pdesc).expect("classic pipeline");
+     assert_eq!(decoded.vertex_func_ref, 2);
+-    assert_eq!(decoded.fragment_func_ref, 3);
++    assert_eq!(decoded.fragment_func_ref(), 3);
+     assert_eq!(decoded.object_func_ref, 0);
+     assert_eq!(decoded.mesh_func_ref, 0);
+     assert!(!decoded.has_color_attachment_offset || decoded.color_attachment_offset != 0);
+@@ -2863,7 +2863,7 @@
+     let decoded = decode_render_pipeline_descriptor(&pdesc).expect("mesh pipeline decode");
+     assert_eq!(decoded.object_func_ref, 2);
+     assert_eq!(decoded.mesh_func_ref, 4);
+-    assert_eq!(decoded.fragment_func_ref, 3);
++    assert_eq!(decoded.fragment_func_ref(), 3);
+     assert_eq!(decoded.vertex_func_ref, 0);
+     put_object(
+         &mut host,
+@@ -2946,7 +2946,7 @@
+     let decoded = decode_render_pipeline_descriptor(&pdesc).expect("mesh SPI pipeline");
+     assert_eq!(decoded.object_func_ref, 2);
+     assert_eq!(decoded.mesh_func_ref, 4);
+-    assert_eq!(decoded.fragment_func_ref, 3);
++    assert_eq!(decoded.fragment_func_ref(), 3);
+     assert_eq!(decoded.vertex_func_ref, 0);
+     assert!(decoded.has_color_attachment_offset); // tag 0x14 shape
+     put_object(
+@@ -3952,7 +3952,7 @@
+     let pdesc = make_stagein_render_pipeline_desc(2, 3);
+     let rp = decode_render_pipeline_descriptor(&pdesc).expect("stagein pipeline");
+     assert_eq!(rp.vertex_func_ref, 2);
+-    assert_eq!(rp.fragment_func_ref, 3);
++    assert_eq!(rp.fragment_func_ref(), 3);
+     assert_eq!(rp.vertex_attributes.len(), 1);
+     let a = &rp.vertex_attributes[0];
+     assert_eq!(a.location, 0);
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
+@@ -218,7 +218,7 @@
+ ) -> DrawRequest {
+     DrawRequest {
+         vert_spirv: std::sync::Arc::new(vert.to_vec()),
+-        frag_spirv: std::sync::Arc::new(frag.to_vec()),
++        frag_spirv: Some(std::sync::Arc::new(frag.to_vec())),
+         width: W,
+         height: H,
+         vertex_count: 3,
+@@ -1145,7 +1145,7 @@
+ 
+     let mut req = DrawRequest {
+         vert_spirv: std::sync::Arc::new(vert),
+-        frag_spirv: std::sync::Arc::new(frag),
++        frag_spirv: Some(std::sync::Arc::new(frag)),
+         width: W,
+         height: H,
+         vertex_count: 6,
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -153,7 +153,7 @@
+ fn engine_req(vert: &[u32], frag: &[u32], w: u32, h: u32) -> DrawRequest {
+     DrawRequest {
+         vert_spirv: std::sync::Arc::new(vert.to_vec()),
+-        frag_spirv: std::sync::Arc::new(frag.to_vec()),
++        frag_spirv: Some(std::sync::Arc::new(frag.to_vec())),
+         width: w,
+         height: h,
+         vertex_count: 3,
+@@ -4606,14 +4606,14 @@
+     }
+     // Reuse the same images through a LOAD pass with a different sparse set.
+     req.color_inputs = engine::ColorInputs::NONE.with_slot(2).unwrap();
+-    req.frag_spirv = std::sync::Arc::new(framebuffer_fetch_glsl(
++    req.frag_spirv = Some(std::sync::Arc::new(framebuffer_fetch_glsl(
+         "fragment",
+         r#"#version 450
+ layout(input_attachment_index=2,set=0,binding=194) uniform subpassInput color2;
+ layout(location=0) out vec4 color;
+ void main() { color=vec4(subpassLoad(color2).r+4.0,0.0,0.0,1.0); }
+ "#,
+-    ));
++    )));
+     for target in &mut req.secondary_targets {
+         target.load = true;
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/lib.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/lib.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/lib.rs
+@@ -134,6 +134,7 @@
+ pub mod pixel_format;
+ pub mod present;
+ pub mod render;
++pub mod render_pipeline;
+ pub mod residency;
+ pub mod resource_state;
+ pub mod sampler;
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/render_pipeline.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/render_pipeline.rs
+new file mode 100644
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/render_pipeline.rs
+@@ -0,0 +1,63 @@
++//! Classic Metal render-pipeline optional stages and rasterization.
++//!
++//! The native Metal 27 serializer omits tag 2 for fragmentFunction == nil.
++//! A non-nil function always publishes a four-byte functionRef, including zero:
++//! presence with zero is therefore not the absence contract. Mesh role remapping
++//! is handled by the descriptor adapter and does not inherit classic omission.
++
++use core::num::NonZeroU32;
++
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub enum FragmentFunction {
++    #[default]
++    Absent,
++    Present(NonZeroU32),
++}
++
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub enum Rasterization {
++    #[default]
++    Enabled,
++    Disabled,
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum Refusal {
++    FunctionWidth,
++    FunctionReferenceZero,
++    RasterizationWidth,
++    RasterizationValue,
++}
++
++impl FragmentFunction {
++    pub fn decode(value: Option<&[u8]>) -> Result<Self, Refusal> {
++        let Some(value) = value else {
++            return Ok(Self::Absent);
++        };
++        let bytes: [u8; 4] = value.try_into().map_err(|_| Refusal::FunctionWidth)?;
++        NonZeroU32::new(u32::from_le_bytes(bytes))
++            .map(Self::Present)
++            .ok_or(Refusal::FunctionReferenceZero)
++    }
++
++    pub const fn reference(self) -> Option<NonZeroU32> {
++        match self {
++            Self::Absent => None,
++            Self::Present(reference) => Some(reference),
++        }
++    }
++}
++
++impl Rasterization {
++    pub fn decode(value: Option<&[u8]>) -> Result<Self, Refusal> {
++        let Some(value) = value else {
++            return Ok(Self::Enabled);
++        };
++        let bytes: [u8; 4] = value.try_into().map_err(|_| Refusal::RasterizationWidth)?;
++        match u32::from_le_bytes(bytes) {
++            0 => Ok(Self::Disabled),
++            1 => Ok(Self::Enabled),
++            _ => Err(Refusal::RasterizationValue),
++        }
++    }
++}

@@ -1,0 +1,34 @@
+accel/tcg: jump-cache page buckets scale with the target page.
+
+qemu-tcg-jump-cache partitions its 2^16 entries into 128 page buckets of
+512 (one entry per two instructions of a 4 KiB page). With 16 KiB target
+pages (qemu-arm-target-page-16k, tomacco-page-bits=14) a bucket covers four
+times the code with the same 512 entries, and code-dense dispatch misses:
+tests/engine/branch-bench.S "wide" (BLR to 8192 leaves in 64 KiB) went from
+57 to 81 ns per call, while 4 KiB-page phases were unchanged.
+
+TB_JMP_PAGE_BITS becomes MAX(TB_JMP_CACHE_BITS - 7, TARGET_PAGE_BITS - 3):
+512 entries per bucket up to 4 KiB pages (unchanged, also for today's 1 KiB
+tomacco-vphone pages), 2048 in 32 buckets at 16 KiB. The value is fixed once
+the target page is decided; the C hash, the page clear in cputlb.c and the
+inline probe of qemu-arm-jump-probe (translate-a64.c, at translation time)
+all read the same macro, so they stay one function.
+
+diff --git a/accel/tcg/tb-hash.h b/accel/tcg/tb-hash.h
+--- a/accel/tcg/tb-hash.h
++++ b/accel/tcg/tb-hash.h
+@@ -34,8 +34,13 @@
+ /*
+  * 512 entries per 4 KiB page (one per two instructions): hot guest pages
+  * hold ~200 block starts. 128 page buckets in a 2^16-entry cache.
++ * A larger target page (qemu-arm-target-page-16k) keeps one entry per two
++ * instructions: 2048 entries in each of 32 buckets for 16 KiB pages, so the
++ * same code still finds as many entries (a fixed 512 per 16 KiB page made
++ * tests/engine/branch-bench.S's "wide" phase 57 -> 81 ns). Up to 4 KiB
++ * pages it is 512, as before. Translated probes read the same macro.
+  */
+-#define TB_JMP_PAGE_BITS (TB_JMP_CACHE_BITS - 7)
++#define TB_JMP_PAGE_BITS MAX(TB_JMP_CACHE_BITS - 7, TARGET_PAGE_BITS - 3)
+ #define TB_JMP_PAGE_SIZE (1 << TB_JMP_PAGE_BITS)
+ #define TB_JMP_ADDR_MASK (TB_JMP_PAGE_SIZE - 1)
+ #define TB_JMP_PAGE_MASK (TB_JMP_CACHE_SIZE - TB_JMP_PAGE_SIZE)

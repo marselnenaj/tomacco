@@ -1,0 +1,42 @@
+# Corresponding source
+
+These binaries are built from **Tomacco @TOMACCO_VERSION@**, commit
+@TOMACCO_COMMIT@.
+
+Tomacco's own source code is licensed under GPL-2.0-or-later. The
+distributed binaries are conveyed under GPL-3.0-or-later, because they include
+Apache-2.0 components (see [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md)).
+The text of the GPL version 3 is in `COPYING.GPL-3.0` next to this file; the
+GPL version 2 is in [LICENSE](../LICENSE).
+
+## Where to get it
+
+The complete corresponding source for these binaries is offered with the
+release at
+<https://github.com/marselnenaj/tomacco/releases/tag/v@TOMACCO_VERSION@>:
+
+- `tomacco-@TOMACCO_VERSION@-source.tar.gz`, with its SHA-256 beside it in
+  a `.sha256` file: every file Tomacco tracks at the tag
+  `v@TOMACCO_VERSION@`, with the build files (`CMakeLists.txt`, `Cargo.toml`,
+  `Cargo.lock`, `build.rs`) and the installer (`install.py`);
+- in the same tarball, under `vendor/`, every Rust crate the control program
+  `tomaccoctl` is built from, vendored with `cargo vendor` at the versions
+  `Cargo.lock` pins, including the SQLite amalgamation that `libsqlite3-sys`
+  bundles, and the `.cargo/config.toml` that builds from them without a
+  network;
+- `SOURCE_RELEASE.md` at the top of the tarball, which lists what it does not
+  hold, with where to get each: the upstream commits the recipes in
+  `share/tomacco` fetch and build from.
+
+The source stays available there for at least three years after the last
+binaries of this release were distributed. If the link stops working, ask for
+the source in the project's issue tracker
+(<https://github.com/marselnenaj/tomacco/issues>); you get it at no more
+than the cost of physically performing the transfer.
+
+Qt and FFmpeg are not part of these binaries. The desktop links them from your
+system, and your distribution provides their source. No iOS
+engine, Apple software or other third-party program is distributed with
+Tomacco, and the tarball holds no Apple data; the recipes in
+`share/tomacco` download and build those on your machine from the
+upstream sources they name, and you supply your own iOS restore image.

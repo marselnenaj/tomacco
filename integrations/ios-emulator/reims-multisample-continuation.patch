@@ -1,0 +1,152 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -7879,6 +7879,61 @@
+     }
+ }
+ 
++/// What a draw resolving a multisample source must look like before anything
++/// is staged for it: one resolving colour target in slot zero, resolved by a
++/// resolve-only store.
++///
++/// A record that *starts* its guest encoder by loading the multisample source
++/// asks for an image this rail cannot import -- the source is a scratch image
++/// that lives only while an encoder is open. A record that *continues* the
++/// encoder loads what the records before it rendered, which is exactly what
++/// that scratch holds: the engine keeps it open for the whole encoder and
++/// resolves after the last draw (`one_multisample_encoder_resolves_after_its_last_draw`).
++/// The record loop gives every record after the first the pass's LOAD, so
++/// refusing a continued record refused every multisample pass of more than one
++/// draw -- iOS's wallpaper among them, whose passes were then cleared instead.
++fn multisample_admission(
++    req: &DrawEncodeRequest,
++) -> Result<(), crate::backend::vulkan::engine::reason::DrawReason> {
++    use crate::backend::vulkan::engine::reason::DrawReason;
++    use reims_vgpu_protocol::pass_action::MTL_STORE_ACTION_MULTISAMPLE_RESOLVE;
++    let resolving_colors = req
++        .colors
++        .iter()
++        .filter(|color| color.multisample_source_ref != 0)
++        .count();
++    if resolving_colors != 0
++        && (resolving_colors != 1
++            || req
++                .colors
++                .first()
++                .is_none_or(|color| color.multisample_source_ref == 0))
++    {
++        return Err(DrawReason::MultisampleResolveShapeUnsupported {
++            color_targets: req.colors.len() as u32,
++            depth: req.depth_attach.is_some(),
++            color_input: false,
++        });
++    }
++    if let Some(color) = req
++        .colors
++        .first()
++        .filter(|color| color.multisample_source_ref != 0)
++    {
++        if color.store_action != MTL_STORE_ACTION_MULTISAMPLE_RESOLVE {
++            return Err(DrawReason::MultisampleStoreActionUnsupported {
++                store_action: color.store_action,
++            });
++        }
++        if color.load_action == MTL_LOAD_ACTION_LOAD && !req.continues_render_pass {
++            return Err(DrawReason::MultisampleLoadActionUnsupported {
++                load_action: color.load_action,
++            });
++        }
++    }
++    Ok(())
++}
++
+ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -9786,47 +9841,7 @@
+                 .is_some_and(|color| color.multisample_source_ref != 0),
+             ..crate::backend::vulkan::engine::DrawRequest::default()
+         };
+-        let resolving_colors = req
+-            .colors
+-            .iter()
+-            .filter(|color| color.multisample_source_ref != 0)
+-            .count();
+-        if resolving_colors != 0
+-            && (resolving_colors != 1
+-                || req
+-                    .colors
+-                    .first()
+-                    .is_none_or(|color| color.multisample_source_ref == 0))
+-        {
+-            return Err(DrawError::Unsupported(
+-                crate::backend::vulkan::engine::reason::DrawReason::MultisampleResolveShapeUnsupported {
+-                    color_targets: req.colors.len() as u32,
+-                    depth: req.depth_attach.is_some(),
+-                    color_input: false,
+-                },
+-            ));
+-        }
+-        if let Some(color) = req
+-            .colors
+-            .first()
+-            .filter(|color| color.multisample_source_ref != 0)
+-        {
+-            use reims_vgpu_protocol::pass_action::MTL_STORE_ACTION_MULTISAMPLE_RESOLVE;
+-            if color.store_action != MTL_STORE_ACTION_MULTISAMPLE_RESOLVE {
+-                return Err(DrawError::Unsupported(
+-                    crate::backend::vulkan::engine::reason::DrawReason::MultisampleStoreActionUnsupported {
+-                        store_action: color.store_action,
+-                    },
+-                ));
+-            }
+-            if color.load_action == MTL_LOAD_ACTION_LOAD {
+-                return Err(DrawError::Unsupported(
+-                    crate::backend::vulkan::engine::reason::DrawReason::MultisampleLoadActionUnsupported {
+-                        load_action: color.load_action,
+-                    },
+-                ));
+-            }
+-        }
++        multisample_admission(req).map_err(DrawError::Unsupported)?;
+         resources.viewports = req
+             .viewports
+             .iter()
+@@ -14443,6 +14458,38 @@
+         assert_eq!(depth.clear_value, 0.25);
+     }
+ 
++    /// The record loop gives every record after the first its pass's LOAD. On a
++    /// multisample pass that is the encoder continuing, which the engine keeps
++    /// open; only an encoder that starts by loading is refused.
++    #[test]
++    fn a_continued_multisample_record_loads_what_its_encoder_rendered() {
++        use crate::backend::vulkan::engine::reason::DrawReason;
++        use reims_vgpu_protocol::pass_action::{
++            MTL_STORE_ACTION_MULTISAMPLE_RESOLVE, MTL_STORE_ACTION_STORE,
++        };
++
++        let mut req = DrawEncodeRequest::default();
++        req.colors.push(ColorRtRequest {
++            width: 8,
++            height: 8,
++            multisample_source_ref: 42,
++            load_action: MTL_LOAD_ACTION_LOAD,
++            store_action: MTL_STORE_ACTION_MULTISAMPLE_RESOLVE,
++            ..Default::default()
++        });
++        assert!(matches!(
++            multisample_admission(&req),
++            Err(DrawReason::MultisampleLoadActionUnsupported { .. })
++        ));
++        req.continues_render_pass = true;
++        assert!(multisample_admission(&req).is_ok());
++        req.colors[0].store_action = MTL_STORE_ACTION_STORE;
++        assert!(matches!(
++            multisample_admission(&req),
++            Err(DrawReason::MultisampleStoreActionUnsupported { .. })
++        ));
++    }
++
+     /// A record continuing a serialized pass loads what the records before it
+     /// wrote, on both halves — the rule is the pass's, not the bound state's.
+     #[test]

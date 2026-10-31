@@ -1,0 +1,426 @@
+diff --git c/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs w/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+index 8247622..e7e6e1b 100644
+--- c/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ w/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -5,6 +5,33 @@ use crate::extent::BlockGeometry;
+ 
+ use alloc::{sync::Arc, vec::Vec};
+ 
++/// Texture-write rounding requested by a pipeline. These are the ordinals
++/// used by the device-info key 41 mask and the render/compute descriptor tags.
++/// `Default` leaves conversion to the device; neither explicit mode is an
++/// alias for it. Shader arithmetic rounding is a separate contract.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++#[repr(u32)]
++pub enum TextureWriteRoundingMode {
++    Default = 0,
++    TowardZero = 1,
++    NearestEven = 2,
++}
++
++impl TextureWriteRoundingMode {
++    pub const fn from_ordinal(value: u32) -> Option<Self> {
++        match value {
++            0 => Some(Self::Default),
++            1 => Some(Self::TowardZero),
++            2 => Some(Self::NearestEven),
++            _ => None,
++        }
++    }
++
++    pub const fn capability_bit(self) -> u32 {
++        1 << self as u32
++    }
++}
++
+ pub const COMPONENT_COUNT: usize = 4;
+ pub const COMPONENT_R: usize = 0;
+ pub const COMPONENT_G: usize = 1;
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/heap_placement.rs w/reims-vgpu/crates/reims-vgpu/src/backend/heap_placement.rs
+index 0eecb26..4b7824a 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/heap_placement.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/backend/heap_placement.rs
+@@ -22,6 +22,20 @@
+ 
+ use crate::runtime::heap_query::{QueryError, SizeAndAlign, TextureDescriptor};
+ 
++/// Whether this host has the provider used below for the guest heap ABI.
++/// This is independent of the selected rendering rail: macOS Vulkan still
++/// asks the Metal driver, while Linux must not advertise a provider it lacks.
++pub fn texture_placement_available() -> bool {
++    #[cfg(target_os = "macos")]
++    {
++        metal::Device::system_default().is_some()
++    }
++    #[cfg(not(target_os = "macos"))]
++    {
++        false
++    }
++}
++
+ #[cfg(target_os = "macos")]
+ pub fn heap_texture_size_and_align(desc: &TextureDescriptor) -> Result<SizeAndAlign, QueryError> {
+     use crate::protocol::texture_shape::TextureKind;
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/metal/device.rs w/reims-vgpu/crates/reims-vgpu/src/backend/metal/device.rs
+index 82928eb..e7e2a08 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/metal/device.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/backend/metal/device.rs
+@@ -191,6 +191,7 @@ impl Backend for MetalBackend {
+             max_threads_per_threadgroup: [u32::MAX; 3],
+             max_threadgroup_memory_bytes: u32::MAX,
+             native_fp16: true,
++            heap_texture_placement: crate::backend::heap_placement::texture_placement_available(),
+         }
+     }
+ 
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs w/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+index 9244c31..9a3beff 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -2571,6 +2571,7 @@ pub fn device_info_limits() -> crate::model::DeviceInfoLimits {
+             max_threads_per_threadgroup: ctx.features.max_compute_workgroup_size,
+             max_threadgroup_memory_bytes: ctx.features.max_compute_shared_memory_bytes,
+             native_fp16: ctx.features.float16,
++            heap_texture_placement: crate::backend::heap_placement::texture_placement_available(),
+         })
+         .unwrap_or(crate::model::DeviceInfoLimits {
+             max_sample_count: 1,
+@@ -2578,6 +2579,7 @@ pub fn device_info_limits() -> crate::model::DeviceInfoLimits {
+             max_threads_per_threadgroup: VULKAN_MIN_COMPUTE_WORKGROUP_SIZE,
+             max_threadgroup_memory_bytes: VULKAN_MIN_COMPUTE_SHARED_MEMORY_BYTES,
+             native_fp16: false,
++            heap_texture_placement: crate::backend::heap_placement::texture_placement_available(),
+         })
+ }
+ 
+diff --git c/reims-vgpu/crates/reims-vgpu/src/model/regs.rs w/reims-vgpu/crates/reims-vgpu/src/model/regs.rs
+index 11c7ab1..9e30aa3 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/model/regs.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/model/regs.rs
+@@ -1172,12 +1172,10 @@ pub const DEVICE_INFO_KEY_LINEAR_TEXTURE_ALIGN: u32 = 13;
+ /// key alone turns heaps on and neither alone turns them off; what key 14
+ /// separately means, if anything, is **not established**.
+ ///
+-/// `f` is the term that decides today. [`PROTOCOL_VERSION_MAX`] records that a
+-/// stock guest lands on rung 4, where the guest's own switch leaves `metalHeaps`
+-/// off — so this key, [`DEVICE_INFO_KEY_HEAP_TEXTURES`] and
+-/// [`DEVICE_INFO_KEY_HEAP_BUFFER_GRANULARITY`] are all inert at the rung this
+-/// device negotiates, on both pathways. They are what the guest would read if a
+-/// later rung turned heaps on, not what it reads now.
++/// Older guests request rung 4, where `f` is false. A current iOS driver asks
++/// for a newer version and negotiates 62, where `f` is true: key 16 must then
++/// reflect whether a guest heap-placement provider actually exists. Key 14
++/// remains unchanged because its separate meaning has not been established.
+ pub const DEVICE_INFO_KEY_HEAPS: u32 = 14;
+ 
+ /// Wire key 15 — the granularity `heapBufferSizeAndAlignWithLength:options:`
+@@ -1193,6 +1191,8 @@ pub const DEVICE_INFO_KEY_HEAP_BUFFER_GRANULARITY: u32 = 15;
+ /// Zero makes the guest's `[MTLHeap newTextureWithDescriptor:]` return nil
+ /// outright, so this is the key that decides whether heap textures exist at all.
+ /// Also the second term of `supportsHeaps`; see [`DEVICE_INFO_KEY_HEAPS`].
++/// Reduced by the placement provider's availability, not by Vulkan image
++/// memory requirements. Those requirements are not the guest heap ABI.
+ pub const DEVICE_INFO_KEY_HEAP_TEXTURES: u32 = 16;
+ 
+ /// Wire key 17 — `supportsBufferWithIOSurface`, gated on a protocol-version
+@@ -1300,6 +1300,7 @@ pub struct DeviceInfoLimits {
+     pub max_threads_per_threadgroup: [u32; 3],
+     pub max_threadgroup_memory_bytes: u32,
+     pub native_fp16: bool,
++    pub heap_texture_placement: bool,
+ }
+ 
+ /// The device-info reply for this host: GPU-dependent keys reduced to what
+@@ -1328,6 +1329,7 @@ pub fn device_info_caps(limits: &DeviceInfoLimits, version: u32) -> Vec<(u32, u3
+                 DEVICE_INFO_KEY_MAX_THREADS_D => limits.max_threads_per_threadgroup[2],
+                 DEVICE_INFO_KEY_THREADGROUP_MEMORY => limits.max_threadgroup_memory_bytes,
+                 DEVICE_INFO_KEY_NATIVE_FP16 => u32::from(limits.native_fp16),
++                DEVICE_INFO_KEY_HEAP_TEXTURES => u32::from(limits.heap_texture_placement),
+                 DEVICE_INFO_KEY_DUAL_PLANE_TEXTURES => {
+                     return (key, u32::from(protocol_dual_plane_textures(version)));
+                 }
+@@ -1460,7 +1462,10 @@ pub const DEVICE_INFO_CAPS: &[(u32, u32)] = &[
+     (DEVICE_INFO_KEY_MAX_PREDICATED_NESTING, 16),
+     (DEVICE_INFO_KEY_GPU_FAMILY_CLAMPED, DEVICE_INFO_GPU_FAMILY),
+     (DEVICE_INFO_KEY_MIN_LINEAR_TEXTURE_ALIGN, 256),
+-    (DEVICE_INFO_KEY_TEXTURE_WRITE_ROUNDING, 7),
++    (
++        DEVICE_INFO_KEY_TEXTURE_WRITE_ROUNDING,
++        DEVICE_INFO_TEXTURE_WRITE_ROUNDING_MODES,
++    ),
+     (DEVICE_INFO_KEY_SUPPORT_FLAGS_2025, 2),
+     (
+         DEVICE_INFO_KEY_HOST_GPU_FAMILIES,
+@@ -1550,7 +1555,14 @@ pub const DEVICE_INFO_KEY_GPU_FAMILY_CLAMPED: u32 = 37;
+ pub const DEVICE_INFO_KEY_ARGUMENT_BUFFERS_TIER: u32 = 38;
+ pub const DEVICE_INFO_KEY_ARGUMENT_BUFFERS_MAX_SAMPLERS: u32 = 39;
+ pub const DEVICE_INFO_KEY_MIN_LINEAR_TEXTURE_ALIGN: u32 = 40;
++/// Bit `mode` is `supportsTextureWriteRoundingMode:mode`. Omitting this key
++/// is unsafe: the guest's absent-key fallback advertises all three modes.
+ pub const DEVICE_INFO_KEY_TEXTURE_WRITE_ROUNDING: u32 = 41;
++/// Both descriptor decoders accept device-default texture conversion only.
++/// Explicit toward-zero and nearest-even need their own conversion lowering;
++/// a host shader arithmetic feature does not implement texture-write rounding.
++pub const DEVICE_INFO_TEXTURE_WRITE_ROUNDING_MODES: u32 =
++    crate::protocol::pixel_format::TextureWriteRoundingMode::Default.capability_bit();
+ /// Bit 0 `IndirectCommandBuffers`, bit 1 `ArgumentBuffers2025`, bit 2
+ /// `EnhancedRenderICBs`. Reaches macOS 26 and no older rail.
+ pub const DEVICE_INFO_KEY_SUPPORT_FLAGS_2025: u32 = 42;
+@@ -1804,6 +1816,7 @@ mod tests {
+             max_threads_per_threadgroup: [4096, 4096, 4096],
+             max_threadgroup_memory_bytes: 262_144,
+             native_fp16: true,
++            heap_texture_placement: true,
+         };
+         assert_eq!(
+             device_info_caps(&generous, VERSION_WITH_DUAL_PLANE),
+@@ -1826,6 +1839,7 @@ mod tests {
+             max_threads_per_threadgroup: [4096, 4096, 4096],
+             max_threadgroup_memory_bytes: 262_144,
+             native_fp16: true,
++            heap_texture_placement: true,
+         };
+         let key12 = |version: u32| -> u32 {
+             device_info_caps(&host, version)
+@@ -1882,6 +1896,7 @@ mod tests {
+             max_threads_per_threadgroup: [128, 128, 64],
+             max_threadgroup_memory_bytes: 16384,
+             native_fp16: false,
++            heap_texture_placement: false,
+         };
+         let served: std::collections::BTreeMap<u32, u32> =
+             device_info_caps(&floor, VERSION_WITH_DUAL_PLANE)
+@@ -1894,13 +1909,14 @@ mod tests {
+         assert_eq!(served[&DEVICE_INFO_KEY_MAX_THREADS_D], 64);
+         assert_eq!(served[&DEVICE_INFO_KEY_THREADGROUP_MEMORY], 16384);
+         assert_eq!(served[&DEVICE_INFO_KEY_NATIVE_FP16], 0);
++        assert_eq!(served[&DEVICE_INFO_KEY_HEAP_TEXTURES], 0);
+ 
+         // Keys that describe the protocol rather than the GPU are untouched by
+         // any host: reducing the serializer version or the primitive-type mask
+         // would be answering a question the host GPU was never asked.
+         let table: std::collections::BTreeMap<u32, u32> =
+             DEVICE_INFO_CAPS.iter().copied().collect();
+-        for key in [7u32, 8, 10, 11, 12, 13, 14, 15, 16, 17] {
++        for key in [7u32, 8, 10, 11, 12, 13, 14, 15, 17] {
+             assert_eq!(
+                 served[&key], table[&key],
+                 "key {key} must not depend on host"
+diff --git c/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
+index a062025..3895a61 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
+@@ -2967,7 +2967,7 @@ pub fn decode_sampler_descriptor(bytes: &[u8]) -> Result<SamplerDescriptor, Deco
+ /// boot's classic pipelines that carry `0x03` — an instrument built to find
+ /// unread fields hiding one behind a tag its *other* branch reads. Which tags
+ /// count as consumed is a property of the branch taken, so it is chosen there.
+-const CLASSIC_PIPELINE_TAGS_CONSUMED: [u8; 8] = [
++const CLASSIC_PIPELINE_TAGS_CONSUMED: [u8; 9] = [
+     PIPELINE_TAG_VERTEX_FUNC,
+     PIPELINE_TAG_FRAGMENT_FUNC,
+     PIPELINE_TAG_VERTEX_DESCRIPTOR_OFFSET,
+@@ -2976,6 +2976,7 @@ const CLASSIC_PIPELINE_TAGS_CONSUMED: [u8; 8] = [
+     PIPELINE_TAG_MAX_TESSELLATION_FACTOR,
+     PIPELINE_TAG_TESSELLATION_FACTOR_STEP_FUNCTION,
+     PIPELINE_TAG_TESSELLATION_OUTPUT_WINDING_ORDER,
++    RENDER_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING,
+ ];
+ 
+ /// Tags [`decode_render_pipeline_descriptor`] reads on the **mesh** shape.
+@@ -2998,11 +2999,46 @@ const MESH_PIPELINE_TAGS_CONSUMED: [u8; 5] = [
+ /// because a union would report a render tag as *consumed* on a compute
+ /// pipeline that has no reader for it — an instrument built to find unread
+ /// fields must not hide one behind a tag its other caller reads.
+-const COMPUTE_PIPELINE_TAGS_CONSUMED: [u8; 2] = [
++const COMPUTE_PIPELINE_TAGS_CONSUMED: [u8; 3] = [
+     PIPELINE_TAG_KERNEL_FUNC,
+     PIPELINE_TAG_COMPUTE_STAGE_INPUT_OFFSET,
++    COMPUTE_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING,
+ ];
+ 
++/// The same four-byte texture-write rounding ordinal at distinct serializer
++/// property indices. The mesh serializer is a different property list and is
++/// not admitted by either declaration.
++const RENDER_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING: u8 = 0x1e;
++const COMPUTE_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING: u8 = 0x0a;
++
++/// Default is a real mode, including when explicitly serialized. Refuse an
++/// explicit conversion mode before building the pipeline; accepting the tag
++/// as benign would silently render with the wrong conversion semantics.
++fn validate_texture_write_rounding(fields: &[CompactTlv], tag: u8) -> Result<(), DecodeStatus> {
++    use crate::protocol::pixel_format::TextureWriteRoundingMode;
++    for field in fields.iter().filter(|field| field.tag == tag) {
++        if !field.has_u32 {
++            return Err(DecodeStatus::ErrUnsupported(
++                "res_pipeline_texture_rounding_width",
++            ));
++        }
++        match TextureWriteRoundingMode::from_ordinal(field.value_u32) {
++            Some(TextureWriteRoundingMode::Default) => {}
++            Some(TextureWriteRoundingMode::TowardZero | TextureWriteRoundingMode::NearestEven) => {
++                return Err(DecodeStatus::ErrUnsupported(
++                    "res_pipeline_texture_rounding_unimplemented",
++                ));
++            }
++            None => {
++                return Err(DecodeStatus::ErrUnsupported(
++                    "res_pipeline_texture_rounding_unknown",
++                ));
++            }
++        }
++    }
++    Ok(())
++}
++
+ /// `MTLRenderPipelineDescriptor.label`, a four-byte reference into the record's
+ /// string area.
+ ///
+@@ -3626,6 +3662,7 @@ pub fn decode_render_pipeline_descriptor(
+         out.color_attachment_offset = off;
+         out.has_color_attachment_offset = true;
+     } else {
++        validate_texture_write_rounding(&fields, RENDER_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING)?;
+         note_pipeline_tlv_fields(
+             "render",
+             &CLASSIC_PIPELINE_TAGS_CONSUMED,
+@@ -5038,6 +5075,7 @@ pub fn decode_compute_pipeline_descriptor(
+     // declared length.
+     note_serializer_object_payload_len("compute", header.serialized_payload_len, declared);
+     let (fields, consumed) = decode_compact_tlv_record(bytes, SERIALIZER_OBJECT_FIRST_TLVS)?;
++    validate_texture_write_rounding(&fields, COMPUTE_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING)?;
+     note_pipeline_tlv_fields(
+         "compute",
+         &COMPUTE_PIPELINE_TAGS_CONSUMED,
+diff --git c/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
+index 5081a54..b98b0b0 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/tests.rs
+@@ -1915,6 +1915,106 @@ fn render_pipeline_desc(object_id: u32, fields: &[(u8, u32)]) -> Vec<u8> {
+     b
+ }
+ 
++#[test]
++fn texture_rounding_advertisement_agrees_with_both_pipeline_decoders() {
++    use crate::model::DEVICE_INFO_TEXTURE_WRITE_ROUNDING_MODES;
++    for mode in [0, 1, 2, 3, 31, 32, u32::MAX] {
++        let render = render_pipeline_desc(
++            9,
++            &[
++                (PIPELINE_TAG_VERTEX_FUNC, 2),
++                (RENDER_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING, mode),
++            ],
++        );
++        let mut compute = render_pipeline_desc(
++            10,
++            &[
++                (PIPELINE_TAG_KERNEL_FUNC, 3),
++                (COMPUTE_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING, mode),
++            ],
++        );
++        st32(&mut compute, SERIALIZER_OBJECT_COMPUTE_PIPELINE);
++        let advertised = mode < 32 && DEVICE_INFO_TEXTURE_WRITE_ROUNDING_MODES & (1 << mode) != 0;
++        assert_eq!(
++            decode_render_pipeline_descriptor(&render).is_ok(),
++            advertised,
++            "render mode {mode}"
++        );
++        assert_eq!(
++            decode_compute_pipeline_descriptor(&compute).is_ok(),
++            advertised,
++            "compute mode {mode}"
++        );
++        let expected = match mode {
++            0 => continue,
++            1 | 2 => "res_pipeline_texture_rounding_unimplemented",
++            _ => "res_pipeline_texture_rounding_unknown",
++        };
++        assert_eq!(
++            decode_render_pipeline_descriptor(&render),
++            Err(DecodeStatus::ErrUnsupported(expected))
++        );
++        assert_eq!(
++            decode_compute_pipeline_descriptor(&compute),
++            Err(DecodeStatus::ErrUnsupported(expected))
++        );
++    }
++}
++
++#[test]
++fn explicit_default_texture_rounding_preserves_the_pipeline() {
++    let render_fields = [
++        (PIPELINE_TAG_VERTEX_FUNC, 2),
++        (PIPELINE_TAG_FRAGMENT_FUNC, 3),
++    ];
++    let baseline = render_pipeline_desc(9, &render_fields);
++    let mut explicit_fields = render_fields.to_vec();
++    explicit_fields.push((RENDER_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING, 0));
++    let explicit = render_pipeline_desc(9, &explicit_fields);
++    let baseline = decode_render_pipeline_descriptor(&baseline).unwrap();
++    let mut explicit = decode_render_pipeline_descriptor(&explicit).unwrap();
++    assert_eq!(explicit.serialized_payload_len, baseline.serialized_payload_len + 6);
++    explicit.serialized_payload_len = baseline.serialized_payload_len;
++    assert_eq!(baseline, explicit);
++
++    let mut baseline = render_pipeline_desc(10, &[(PIPELINE_TAG_KERNEL_FUNC, 3)]);
++    let mut explicit = render_pipeline_desc(
++        10,
++        &[
++            (PIPELINE_TAG_KERNEL_FUNC, 3),
++            (COMPUTE_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING, 0),
++        ],
++    );
++    st32(&mut baseline, SERIALIZER_OBJECT_COMPUTE_PIPELINE);
++    st32(&mut explicit, SERIALIZER_OBJECT_COMPUTE_PIPELINE);
++    assert_eq!(
++        decode_compute_pipeline_descriptor(&baseline).unwrap(),
++        decode_compute_pipeline_descriptor(&explicit).unwrap()
++    );
++}
++
++#[test]
++fn malformed_texture_rounding_is_not_treated_as_default() {
++    for tag in [
++        RENDER_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING,
++        COMPUTE_PIPELINE_TAG_TEXTURE_WRITE_ROUNDING,
++    ] {
++        let field = CompactTlv {
++            tag,
++            length: 1,
++            value_u32: 0,
++            has_u32: false,
++            ..Default::default()
++        };
++        assert_eq!(
++            validate_texture_write_rounding(&[field], tag),
++            Err(DecodeStatus::ErrUnsupported(
++                "res_pipeline_texture_rounding_width"
++            ))
++        );
++    }
++}
++
+ /// A pipeline carrying Metal's legacy alpha-test and logic-op **values** decodes.
+ ///
+ /// The regression this pins is a game's whole canvas. Asphalt 8 on a macos-13
+diff --git c/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+index f239bc9..9db74c5 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+@@ -3386,7 +3386,7 @@ fn reply_device_info<H: HostMemory + HostOps>(
+         .map(|((key, answer), (_, table))| format!("key{key}={answer}(was {table})"))
+         .collect();
+     crate::observe::off(format!(
+-        "device_info version={} key_table_len={} above_ceiling={} holes=[{}] tail={} dual_plane={} host_samples={} host_d24s8={} host_threads={}x{}x{} host_tg_mem={} host_fp16={} derived=[{}]",
++        "device_info version={} key_table_len={} above_ceiling={} holes=[{}] tail={} dual_plane={} host_samples={} host_d24s8={} host_threads={}x{}x{} host_tg_mem={} host_fp16={} heap_texture_placement={} texture_rounding_mask={:#x} derived=[{}]",
+         version,
+         key_table_len,
+         above_ceiling,
+@@ -3404,6 +3404,8 @@ fn reply_device_info<H: HostMemory + HostOps>(
+         limits.max_threads_per_threadgroup[2],
+         limits.max_threadgroup_memory_bytes,
+         u8::from(limits.native_fp16),
++        u8::from(limits.heap_texture_placement),
++        crate::model::DEVICE_INFO_TEXTURE_WRITE_ROUNDING_MODES,
+         derived.join(" ")
+     ));
+     // The reply is built once, in the layout's owner, and written once.

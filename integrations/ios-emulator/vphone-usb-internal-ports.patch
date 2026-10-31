@@ -1,0 +1,36 @@
+diff --git i/hw/usb/hcd-xhci.c w/hw/usb/hcd-xhci.c
+index d342aa2..4b681d5 100644
+--- i/hw/usb/hcd-xhci.c
++++ w/hw/usb/hcd-xhci.c
+@@ -2642,6 +2642,10 @@ static void xhci_port_update(XHCIPort *port, int is_detach)
+ 
+     assert(port);
+     port->portsc = PORTSC_PP;
++    if (port->xhci->ports_non_removable) {
++        /* xHCI PORTSC.DR: a device attached to this port is non-removable. */
++        port->portsc |= PORTSC_DR;
++    }
+     if (!is_detach && xhci_port_have_device(port)) {
+         port->portsc |= PORTSC_CCS;
+         switch (port->uport->dev->speed) {
+@@ -3656,6 +3660,8 @@ static const Property xhci_properties[] = {
+                     XHCI_FLAG_ENABLE_STREAMS, true),
+     DEFINE_PROP_UINT32("p2",    XHCIState, numports_2, 4),
+     DEFINE_PROP_UINT32("p3",    XHCIState, numports_3, 4),
++    DEFINE_PROP_BOOL("ports-non-removable", XHCIState, ports_non_removable,
++                     false),
+     DEFINE_PROP_LINK("host",    XHCIState, hostOpaque, TYPE_DEVICE,
+                      DeviceState *),
+ };
+diff --git i/hw/usb/hcd-xhci.h w/hw/usb/hcd-xhci.h
+index 5cb9e06..e575d9b 100644
+--- i/hw/usb/hcd-xhci.h
++++ w/hw/usb/hcd-xhci.h
+@@ -187,6 +187,7 @@ typedef struct XHCIState {
+     /* properties */
+     uint32_t numports_2;
+     uint32_t numports_3;
++    bool ports_non_removable;
+     uint32_t numintrs;
+     uint32_t numslots;
+     uint32_t flags;

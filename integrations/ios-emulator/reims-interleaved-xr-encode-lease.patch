@@ -1,0 +1,307 @@
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+@@ -440,6 +440,25 @@
+     layout: TexelLayout,
+     bytes: &[u8],
+ ) -> Result<Vec<u8>, RenderStoreRefusal> {
++    render_store_interleaved_xr_encoding(mtl, layout, bytes).map(|encoded| encoded.bytes)
++}
++
++/// Owned packed XR bytes and the scalar work performed to produce them.
++/// Reuse is confined to bit-identical adjacent source texels in this call.
++pub struct InterleavedXrStoreEncoding {
++    pub bytes: Vec<u8>,
++    pub encoded_texels: u64,
++    pub reused_texels: u64,
++}
++
++/// Encode packed XR storage without repeating the scalar conversion for
++/// identical adjacent source bits. Signed zero and NaN payloads are compared
++/// as bytes; each changed texel still uses the original scalar codec.
++pub fn render_store_interleaved_xr_encoding(
++    mtl: u16,
++    layout: TexelLayout,
++    bytes: &[u8],
++) -> Result<InterleavedXrStoreEncoding, RenderStoreRefusal> {
+     let xr = XrFormat::from_mtl(mtl).ok_or(RenderStoreRefusal::NotXr)?;
+     let source_stride = float_source_stride(layout)?;
+     if !bytes.len().is_multiple_of(source_stride) {
+@@ -452,7 +471,16 @@
+     packed
+         .try_reserve_exact(size)
+         .map_err(|_| RenderStoreRefusal::AllocationFailed)?;
++    let mut previous_source = None;
++    let mut previous_texel = [0; 8];
++    let mut encoded_texels = 0;
++    let mut reused_texels = 0;
+     for source in bytes.chunks_exact(source_stride) {
++        if previous_source == Some(source) {
++            packed.extend_from_slice(&previous_texel[..xr.bytes_per_texel()]);
++            reused_texels += 1;
++            continue;
++        }
+         let values = source_values(source);
+         let mut texel = [0; 8];
+         let codes = [
+@@ -462,9 +490,16 @@
+             xr_colour_code(values[3].clamp(0.0, 1.0), false),
+         ];
+         xr.write_component_codes(codes, &mut texel[..xr.bytes_per_texel()]);
++        previous_source = Some(source);
++        previous_texel = texel;
++        encoded_texels += 1;
+         packed.extend_from_slice(&texel[..xr.bytes_per_texel()]);
+     }
+-    Ok(packed)
++    Ok(InterleavedXrStoreEncoding {
++        bytes: packed,
++        encoded_texels,
++        reused_texels,
++    })
+ }
+ 
+ /// Decode tightly packed guest levels, preserving their order and all colour
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -33,10 +33,11 @@
+ mod xr_upload;
+ pub use xr_upload::{
+     attachment_planar_xr_upload_bytes, quantized_xr_render_values, quantized_xr_values,
+-    render_store_bytes, render_store_planar_xr_encoding, render_store_planar_xr_surface_bytes,
+-    render_store_planar_xr_surface_encoding, sampled_planar_xr_surface_upload_bytes,
+-    sampled_planar_xr_upload_bytes, sampled_upload_bytes, PlanarXrStoreEncoding,
+-    RenderStoreRefusal, SampledUpload, SampledUploadRefusal,
++    render_store_bytes, render_store_interleaved_xr_encoding, render_store_planar_xr_encoding,
++    render_store_planar_xr_surface_bytes, render_store_planar_xr_surface_encoding,
++    sampled_planar_xr_surface_upload_bytes, sampled_planar_xr_upload_bytes, sampled_upload_bytes,
++    InterleavedXrStoreEncoding, PlanarXrStoreEncoding, RenderStoreRefusal, SampledUpload,
++    SampledUploadRefusal,
+ };
+ 
+ use reims_vgpu_core::pixel_format::{
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -129,18 +129,26 @@
+             return Err(R::SourceShape);
+         }
+         let started = std::time::Instant::now();
+-        let packed = reims_vgpu_vulkan::pixel::render_store_bytes(
++        let encoded = reims_vgpu_vulkan::pixel::render_store_interleaved_xr_encoding(
+             format,
+             TexelLayout::Rgba32Float,
+             source.bytes(),
+         )
+         .map_err(R::Encode)?;
+-        if packed.len() != target.packed_bytes() {
++        if encoded.bytes.len() != target.packed_bytes() {
+             return Err(R::SourceShape);
+         }
+         crate::runtime::drain::note_store_route_us(
+             "interleaved_xr_encode_us",
+             started.elapsed().as_micros() as u64,
++        );
++        crate::runtime::drain::note_store_route_n(
++            "interleaved_xr_encode_texels_n",
++            encoded.encoded_texels,
++        );
++        crate::runtime::drain::note_store_route_n(
++            "interleaved_xr_encode_reused_texels_n",
++            encoded.reused_texels,
+         );
+         if source.is_leased() {
+             crate::runtime::drain::note_store_route("interleaved_xr_store_leased_n");
+@@ -151,7 +159,7 @@
+         } else {
+             crate::runtime::drain::note_store_route("interleaved_xr_store_copied_n");
+         }
+-        packed
++        encoded.bytes
+     };
+     let bytes =
+         crate::runtime::mapping_write::write_captured_native_image(state, host, target, &packed)
+@@ -1020,76 +1028,98 @@
+     let resident_layout =
+         crate::backend::vulkan::translate::pixel::texel_layout_of(identity.resident_format());
+     let xr = crate::protocol::pixel_format::XrFormat::from_mtl(c0.format).is_some();
+-    let native = xr
+-        || resident_layout.is_some_and(|layout| {
++    // Only independently owned bytes reach guest settlement/publication.
++    // In particular, the XR staging lease ends after conversion and before
++    // land_gva_frame_bytes can take the engine lock to settle another writer.
++    enum CopiedFrame {
++        Native(Vec<u8>),
++        Rgba8(Vec<u8>),
++    }
++    let frame = if xr {
++        let readback = crate::backend::vulkan::engine::read_target_texels_consumable(identity)
++            .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
++        if let Some(layout) = readback.texel.native_layout() {
++            let started = std::time::Instant::now();
++            let encoded = reims_vgpu_vulkan::pixel::render_store_interleaved_xr_encoding(
++                c0.format,
++                layout,
++                readback.bytes(),
++            )
++            .map_err(|reason| {
++                crate::observe::fail(format!(
++                    "gva_store_xr reason={} fmt={:#x} layout={layout:?}",
++                    reason.slug(),
++                    c0.format
++                ));
++                GvaWritebackDecline::FormatNeedsConversion { format: c0.format }
++            })?;
++            crate::runtime::drain::note_store_route_us(
++                "gva_xr_encode_us",
++                started.elapsed().as_micros() as u64,
++            );
++            crate::runtime::drain::note_store_route_n(
++                "gva_xr_encode_texels_n",
++                encoded.encoded_texels,
++            );
++            crate::runtime::drain::note_store_route_n(
++                "gva_xr_encode_reused_texels_n",
++                encoded.reused_texels,
++            );
++            if readback.is_leased() {
++                crate::runtime::drain::note_store_route("gva_xr_store_leased_n");
++                crate::runtime::drain::note_store_route_n(
++                    "gva_xr_cpu_copy_bytes_avoided",
++                    readback.bytes().len() as u64,
++                );
++            } else {
++                crate::runtime::drain::note_store_route("gva_xr_store_copied_n");
++            }
++            CopiedFrame::Native(encoded.bytes)
++        } else {
++            // Preserve the existing eight-bit compatibility route. It
++            // needs owned bytes for its channel-order transformation;
++            // this branch does not claim a staging-copy saving.
++            let copied = readback.into_owned();
++            CopiedFrame::Rgba8(
++                copied
++                    .into_rgba8()
++                    .ok_or(GvaWritebackDecline::FormatNeedsConversion { format: c0.format })?,
++            )
++        }
++    } else {
++        let native = resident_layout.is_some_and(|layout| {
+             crate::protocol::pixel_format::store_texel_order(c0.format) == Some(layout)
+         });
+-    let readback = if native {
+-        crate::backend::vulkan::engine::read_target_texels(identity)
+-    } else {
+-        crate::backend::vulkan::engine::read_target(identity)
+-    }
+-    .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
+-    // Two ways to land a frame, and which one is decided by what the readback
+-    // actually holds rather than by what this rail wishes it held.
+-    //
+-    // A native frame is the resident's own texel, carried out because no
+-    // eight-bit narrowing of it exists. It lands verbatim **only** when the
+-    // destination is that same layout — `store_texel_order`'s question, the one
+-    // the GPU-direct arm has always asked. That is what lets a destination with
+-    // no eight-bit form take the copying rail at all, so a host without the
+-    // guest-RAM import serves it instead of losing every frame of it.
+-    let extent = match readback.texel.native_layout() {
+-        Some(layout) => {
+-            let encoded;
+-            let bytes = if xr {
+-                encoded = reims_vgpu_vulkan::pixel::render_store_bytes(
+-                    c0.format,
+-                    layout,
+-                    &readback.pixels,
+-                )
+-                .map_err(|reason| {
+-                    crate::observe::fail(format!(
+-                        "gva_store_xr reason={} fmt={:#x} layout={layout:?}",
+-                        reason.slug(),
+-                        c0.format
+-                    ));
+-                    GvaWritebackDecline::FormatNeedsConversion { format: c0.format }
+-                })?;
+-                &encoded
+-            } else if crate::protocol::pixel_format::store_texel_order(c0.format) == Some(layout) {
+-                &readback.pixels
+-            } else {
+-                return Err(GvaWritebackDecline::FormatNeedsConversion { format: c0.format });
+-            };
++        let readback = if native {
++            crate::backend::vulkan::engine::read_target_texels(identity)
++        } else {
++            crate::backend::vulkan::engine::read_target(identity)
++        }
++        .map_err(|inner| GvaWritebackDecline::CopiedReadRefused { inner })?;
++        match readback.texel.native_layout() {
++            Some(layout)
++                if crate::protocol::pixel_format::store_texel_order(c0.format) == Some(layout) =>
++            {
++                CopiedFrame::Native(readback.pixels)
++            }
++            Some(_) => {
++                return Err(GvaWritebackDecline::FormatNeedsConversion { format: c0.format })
++            }
++            None => CopiedFrame::Rgba8(
++                readback
++                    .into_rgba8()
++                    .ok_or(GvaWritebackDecline::FormatNeedsConversion { format: c0.format })?,
++            ),
++        }
++    };
++    let rows = match &frame {
++        CopiedFrame::Native(bytes) => {
+             crate::runtime::drain::note_store_route("gva_flush_copied_native");
+-            land_gva_frame_bytes(
+-                state,
+-                host,
+-                task_id,
+-                c0,
+-                texture_ref,
+-                crate::runtime::draw::FrameRows::Native(bytes),
+-                pages,
+-                skip,
+-            )?
+-        }
+-        None => {
+-            let Some(rgba) = readback.into_rgba8() else {
+-                return Err(GvaWritebackDecline::FormatNeedsConversion { format: c0.format });
+-            };
+-            land_gva_frame_bytes(
+-                state,
+-                host,
+-                task_id,
+-                c0,
+-                texture_ref,
+-                crate::runtime::draw::FrameRows::Rgba8(&rgba),
+-                pages,
+-                skip,
+-            )?
+-        }
++            crate::runtime::draw::FrameRows::Native(bytes)
++        }
++        CopiedFrame::Rgba8(bytes) => crate::runtime::draw::FrameRows::Rgba8(bytes),
+     };
++    let extent = land_gva_frame_bytes(state, host, task_id, c0, texture_ref, rows, pages, skip)?;
+     crate::backend::vulkan::engine::note_resident_content_copied_out(identity);
+     crate::runtime::drain::note_store_route("gva_flush_copied");
+     Ok(extent)
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -5543,6 +5543,18 @@
+     pub fn is_leased(&self) -> bool {
+         matches!(self.storage, ReadbackResult::Leased(_))
+     }
++
++    /// Consume into owned bytes for a channel-order transformation. A copied
++    /// readback transfers its vector; a staging lease is copied once and
++    /// released before the owned result returns.
++    pub fn into_owned(self) -> TargetReadback {
++        let Self { storage, texel } = self;
++        let pixels = match storage {
++            ReadbackResult::Copied(bytes) => bytes,
++            ReadbackResult::Leased(lease) => lease.bytes().to_vec(),
++        };
++        TargetReadback { pixels, texel }
++    }
+ }
+ 
+ /// Read native-width texels for immediate conversion without an extra CPU

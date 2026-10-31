@@ -1,0 +1,244 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
+@@ -580,6 +580,15 @@
+         (existed, debts)
+     }
+ 
++    /// Each live plane of this resource: its guest address and generation, which
++    /// together with geometry and format name the rail's residents for it.
++    fn gva_generations(&self, key: GvaResourceKey) -> Vec<(u64, u64)> {
++        self.gva_resources
++            .range(key.planes())
++            .map(|(plane, resource)| (plane.gva, resource.generation))
++            .collect()
++    }
++
+     /// The one plane debt this resource owes, or `None` when it owes zero or
+     /// several.
+     ///
+@@ -1389,6 +1398,7 @@
+     let keys = state.pending_writebacks.gvas_for_task(task_id);
+     let mut retired = 0;
+     for key in keys {
++        end_gva_residents(state, rail, key);
+         let (_, debts) = state.pending_writebacks.retire_gva_resource(key);
+         retired += 1;
+         for debt in debts {
+@@ -1407,9 +1417,10 @@
+         task_id,
+         texture_ref,
+     };
++    let rail = crate::backend::selected();
++    end_gva_residents(state, rail, key);
+     let (existed, debts) = state.pending_writebacks.retire_gva_resource(key);
+     let owed = !debts.is_empty();
+-    let rail = crate::backend::selected();
+     for debt in debts {
+         release_gva(rail, debt);
+     }
+@@ -1432,6 +1443,23 @@
+         && a.format == b.format
+ }
+ 
++/// Tell `rail` this resource is gone. Its generations are never used again, so
++/// without this every resident made for them stays until an allocation is
++/// refused: 3,300 images and 21 GiB after two rounds of 18 app launches.
++fn end_gva_residents<B: crate::backend::Backend>(
++    state: &DeviceState,
++    rail: B,
++    key: GvaResourceKey,
++) {
++    let mut ended = 0;
++    for (gva, generation) in state.pending_writebacks.gva_generations(key) {
++        ended += rail.end_gva_generation(gva, generation);
++    }
++    if ended != 0 {
++        crate::runtime::drain::note_store_route_n("gva_residents_ended", ended as u64);
++    }
++}
++
+ /// End `rail`'s hold on the resident this debt was armed against, without
+ /// writing its pixels anywhere.
+ ///
+@@ -2112,6 +2140,30 @@
+         assert_eq!(pending.get_gva(key).map(|debt| debt.generation), Some(8));
+     }
+ 
++    /// A resource's planes are named while they live and not after.
++    #[test]
++    fn a_retired_resource_names_no_generations() {
++        let mut pending = PendingWritebacks::default();
++        let key = GvaResourceKey {
++            task_id: 3,
++            texture_ref: 19,
++        };
++        let other = GvaResourceKey {
++            task_id: 3,
++            texture_ref: 20,
++        };
++        let first = pending.ensure_gva_resource(key, 0x1000, 64, None);
++        let second = pending.ensure_gva_resource(key, 0x2000, 64, None);
++        let kept = pending.ensure_gva_resource(other, 0x3000, 64, None);
++        assert_eq!(
++            pending.gva_generations(key),
++            vec![(0x1000, first), (0x2000, second)]
++        );
++        pending.retire_gva_resource(key);
++        assert_eq!(pending.gva_generations(key), Vec::new());
++        assert_eq!(pending.gva_generations(other), vec![(0x3000, kept)]);
++    }
++
+     /// The pages an owed GVA plane covers are what the reach alarm compares a
+     /// read against, and an unowed or unbacked plane contributes none.
+     ///
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
+@@ -1067,6 +1067,12 @@
+     /// resident is only still alive because the debt was keeping it so.
+     fn abandon_resident(&self, _target: &ResidentTarget) {}
+ 
++    /// The guest resource behind this GVA generation is gone. Returns how many
++    /// of this rail's residents that ended; it destroys none of them here.
++    fn end_gva_generation(&self, _gva: u64, _generation: u64) -> usize {
++        0
++    }
++
+     /// This rail's name for the resident holding one deferred GVA frame.
+     ///
+     /// Derived rather than carried, unlike [`Backend::pay_surface_writeback`]'s
+@@ -1953,6 +1959,15 @@
+         }
+     }
+ 
++    fn end_gva_generation(&self, gva: u64, generation: u64) -> usize {
++        match self {
++            #[cfg(all(feature = "backend-metal", target_os = "macos"))]
++            Self::Metal(b) => b.end_gva_generation(gva, generation),
++            #[cfg(feature = "backend-vulkan")]
++            Self::Vulkan(b) => b.end_gva_generation(gva, generation),
++        }
++    }
++
+     fn gva_resident(&self, debt: &GvaWritebackDebt) -> Option<ResidentTarget> {
+         match self {
+             #[cfg(all(feature = "backend-metal", target_os = "macos"))]
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
+@@ -564,6 +564,10 @@
+         }
+     }
+ 
++    fn end_gva_generation(&self, gva: u64, generation: u64) -> usize {
++        engine::end_gva_generation(gva, generation)
++    }
++
+     fn gva_resident(
+         &self,
+         debt: &GvaWritebackDebt,
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -2524,6 +2524,11 @@
+     guard.pools.registry_note_content_copied_out(identity)
+ }
+ 
++/// See [`ResourcePools::end_gva_generation`].
++pub fn end_gva_generation(gva: u64, generation: u64) -> usize {
++    lock_engine().pools.end_gva_generation(gva, generation)
++}
++
+ /// Whether this backend may leave guest-visible content only in GPU-resident
+ /// engine state.
+ ///
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
+@@ -2278,6 +2278,33 @@
+         self.window_published.contains(identity)
+     }
+ 
++    /// The guest resource behind this GVA generation is gone, so nothing can
++    /// name these residents again: the key holds the generation, and generations
++    /// are not reused. Marks them for [`Self::retire_released_residents`], which
++    /// runs between draws; retiring here could free an image a draw holds. A sole
++    /// copy has no reader left, so its pixels are no reason to keep it. A resident
++    /// a lease still holds is released when the lease ends, as any other.
++    pub(crate) fn end_gva_generation(&mut self, gva: u64, generation: u64) -> usize {
++        let ended: Vec<TargetIdentity> = self
++            .registry_order
++            .iter()
++            .filter(|identity| {
++                matches!(identity, TargetIdentity::Gva { gva: address, generation: current, .. }
++                    if *address == gva && *current == generation)
++            })
++            .cloned()
++            .collect();
++        for identity in &ended {
++            self.set_sole_copy(identity, false);
++            if let Some(slot) = self.registry.get_mut(identity) {
++                if slot.resource_owner_count == 0 {
++                    slot.resource_released = true;
++                }
++            }
++        }
++        ended.len()
++    }
++
+     fn released_resident_keys(&self, max: usize) -> Vec<TargetIdentity> {
+         self.registry_order
+             .iter()
+@@ -4625,6 +4652,56 @@
+         assert_eq!(pools.recoverable_residents(), vec![surf(3), surf(4)]);
+     }
+ 
++    fn gva_target(gva: u64, generation: u64) -> TargetIdentity {
++        TargetIdentity::Gva {
++            gva,
++            width: 16,
++            height: 16,
++            generation,
++            format: translate::pixel::SCANOUT_FORMAT,
++        }
++    }
++
++    /// Only the generation that ended goes, sole copy or not; what is pinned or
++    /// on the window waits, and what a lease holds stays until the lease ends.
++    #[test]
++    fn a_gva_resident_is_collected_once_its_generation_has_ended() {
++        let mut pools = ResourcePools::new();
++        let ended = gva_target(0x1000, 7);
++        let other_generation = gva_target(0x1000, 8);
++        let other_address = gva_target(0x2000, 7);
++        for identity in [&ended, &other_generation, &other_address] {
++            admit(&mut pools, identity.clone(), 0, 0);
++            pools.registry_mark_ready(identity);
++        }
++        assert!(pools.released_resident_keys(9).is_empty());
++        assert_eq!(pools.end_gva_generation(0x1000, 7), 1);
++        assert_eq!(pools.released_resident_keys(9), vec![ended.clone()]);
++        assert_eq!(pools.registry_levels().current.count, 3);
++
++        let pinned = gva_target(0x3000, 9);
++        admit(&mut pools, pinned.clone(), 0, 1);
++        assert_eq!(pools.end_gva_generation(0x3000, 9), 1);
++        assert_eq!(pools.released_resident_keys(9), vec![ended.clone()]);
++
++        let shown = gva_target(0x4000, 10);
++        admit(&mut pools, shown.clone(), 0, 0);
++        pools.note_window_published(Some(&shown));
++        assert_eq!(pools.end_gva_generation(0x4000, 10), 1);
++        assert_eq!(pools.released_resident_keys(9), vec![ended]);
++    }
++
++    #[test]
++    fn a_gva_resident_under_a_lease_is_not_released_by_its_generation_ending() {
++        let mut pools = ResourcePools::new();
++        let leased = gva_target(0x1000, 7);
++        admit(&mut pools, leased.clone(), 0, 0);
++        pools.registry.get_mut(&leased).unwrap().resource_owner_count = 1;
++        assert_eq!(pools.end_gva_generation(0x1000, 7), 1);
++        assert!(!pools.registry.get(&leased).unwrap().resource_released);
++        assert!(pools.released_resident_keys(9).is_empty());
++    }
++
+     /// Only an out-of-memory result is worth a reclaim and a retry.
+     ///
+     /// The retry exists because out-of-memory describes how much is in use at an

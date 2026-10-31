@@ -1,0 +1,37 @@
+--- a/target/arm/cpu.h
++++ b/target/arm/cpu.h
+@@ -1096,6 +1096,9 @@
+      * unknown system registers instead of silently skipping instructions. */
+     bool tomacco_strict_sysregs;
+ 
++    /* Enable FP/Advanced SIMD after a PSCI CPU_ON reset for the vphone APs. */
++    bool tomacco_ap_reset_fpen;
++
+     /* QOM property to indicate we should use the back-compat QARMA5 default */
+     bool backcompat_pauth_default_use_qarma5;
+ 
+--- a/target/arm/cpu.c
++++ b/target/arm/cpu.c
+@@ -692,6 +692,14 @@
+ 
+     trace_arm_emulate_firmware_reset(arm_cpu_mp_affinity(cpu), target_el);
+ 
++    /* XNU's AP entry executes Advanced SIMD before enabling CPACR_EL1 itself.
++     * Normal system-mode reset leaves FPEN clear, so a vphone CPU_ON would
++     * take an undefined-instruction exception on its first vector load. */
++    if (target_el == 1 && cpu->tomacco_ap_reset_fpen && env->aarch64) {
++        env->cp15.cpacr_el1 = FIELD_DP64(env->cp15.cpacr_el1,
++                                         CPACR_EL1, FPEN, 3);
++    }
++
+     /*
+      * Check we have the EL we're aiming for. If that is the
+      * highest implemented EL, then cpu_reset has already done
+@@ -2487,6 +2495,7 @@
+ 
+ static const Property arm_cpu_properties[] = {
+     DEFINE_PROP_BOOL("tomacco-strict-sysregs", ARMCPU, tomacco_strict_sysregs, false),
++    DEFINE_PROP_BOOL("tomacco-ap-reset-fpen", ARMCPU, tomacco_ap_reset_fpen, false),
+     DEFINE_PROP_UINT64("midr", ARMCPU, midr, 0),
+     DEFINE_PROP_UINT64("mp-affinity", ARMCPU,
+                         mp_affinity, ARM64_AFFINITY_INVALID),

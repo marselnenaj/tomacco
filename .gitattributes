@@ -1,0 +1,4 @@
+# Patch context includes original indentation and space-prefixed blank lines.
+integrations/ios-emulator/*.patch -whitespace
+# Preserve the upstream license notice byte for byte.
+integrations/ios-emulator/LICENSE -whitespace

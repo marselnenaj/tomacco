@@ -1,0 +1,104 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -2570,34 +2570,47 @@
+ /// What this Vulkan device can execute, for the GPU-dependent half of the
+ /// guest's device-info reply.
+ ///
+-/// Before a device is resolved the answer is the Vulkan 1.2 floor rather than
+-/// the reply table's own values: the served reply is only ever *reduced* by
+-/// this, so a boot that answers before the device is up must not be the one
+-/// that promises the most.
++/// The guest asks once, while its driver starts, and keeps the answer for the
++/// boot. An iOS guest asks about two seconds in, before its first draw has
++/// brought the device up, so an answer read only from an already-resolved
++/// device was the floor for every such boot -- one sample, 128 threads and
++/// 16 KB of threadgroup memory, no half precision, on a host offering 8x, 1024,
++/// 64 KB and fp16 -- and a guest that renders multisampled without asking
++/// (VectorKit's map tiles) was then refused by its own Metal validation. So the
++/// device is brought up here, through the same `ensure` a draw uses.
++///
++/// When bring-up fails the answer is the Vulkan 1.2 floor rather than the reply
++/// table's own values: the served reply is only ever *reduced* by this, so a
++/// boot without a device must not be the one that promises the most.
+ pub fn device_info_limits() -> crate::model::DeviceInfoLimits {
+     use crate::backend::vulkan::caps::device_features::{
+         VULKAN_MIN_COMPUTE_SHARED_MEMORY_BYTES, VULKAN_MIN_COMPUTE_WORKGROUP_SIZE,
+     };
+-    lock_engine()
+-        .owner
+-        .ctx
+-        .as_ref()
+-        .map(|ctx| crate::model::DeviceInfoLimits {
++    let heap_texture_placement = crate::backend::heap_placement::texture_placement_available();
++    let mut guard = lock_engine();
++    let EngineState {
++        ref mut owner,
++        ref counters,
++        ..
++    } = &mut *guard;
++    match owner.ensure(counters) {
++        Ok(ctx) => crate::model::DeviceInfoLimits {
+             max_sample_count: ctx.features.max_sample_count,
+             d24_stencil8: ctx.features.d24_unorm_s8_attachment,
+             max_threads_per_threadgroup: ctx.features.max_compute_workgroup_size,
+             max_threadgroup_memory_bytes: ctx.features.max_compute_shared_memory_bytes,
+             native_fp16: ctx.features.float16,
+-            heap_texture_placement: crate::backend::heap_placement::texture_placement_available(),
+-        })
+-        .unwrap_or(crate::model::DeviceInfoLimits {
++            heap_texture_placement,
++        },
++        Err(_) => crate::model::DeviceInfoLimits {
+             max_sample_count: 1,
+             d24_stencil8: false,
+             max_threads_per_threadgroup: VULKAN_MIN_COMPUTE_WORKGROUP_SIZE,
+             max_threadgroup_memory_bytes: VULKAN_MIN_COMPUTE_SHARED_MEMORY_BYTES,
+             native_fp16: false,
+-            heap_texture_placement: crate::backend::heap_placement::texture_placement_available(),
+-        })
++            heap_texture_placement,
++        },
++    }
+ }
+ 
+ /// `(maxTotalThreadsPerThreadgroup, threadExecutionWidth)` for this host, as
+@@ -6909,3 +6922,39 @@
+         assert_eq!(packed.len(), 4);
+     }
+ }
++
++#[cfg(test)]
++mod device_info_limits_tests {
++    use super::*;
++
++    /// The guest keeps its device-info reply for the whole boot and asks for it
++    /// before its first draw, so the reply has to come from the device even
++    /// when no draw has brought one up. Run alone, this test starts with no
++    /// device in the process, which is the boot's situation; in a full run an
++    /// earlier test may already have resolved one. Skips without a device.
++    #[test]
++    fn the_device_info_reply_is_the_devices_before_any_draw() {
++        let limits = device_info_limits();
++        let mut guard = lock_engine();
++        let EngineState {
++            ref mut owner,
++            ref counters,
++            ..
++        } = &mut *guard;
++        let Ok(ctx) = owner.ensure(counters) else {
++            eprintln!("skip: no Vulkan device");
++            return;
++        };
++        assert_eq!(limits.max_sample_count, ctx.features.max_sample_count);
++        assert_eq!(limits.d24_stencil8, ctx.features.d24_unorm_s8_attachment);
++        assert_eq!(
++            limits.max_threads_per_threadgroup,
++            ctx.features.max_compute_workgroup_size
++        );
++        assert_eq!(
++            limits.max_threadgroup_memory_bytes,
++            ctx.features.max_compute_shared_memory_bytes
++        );
++        assert_eq!(limits.native_fp16, ctx.features.float16);
++    }
++}

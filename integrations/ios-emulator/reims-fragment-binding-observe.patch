@@ -1,0 +1,207 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/m2v_cache.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/m2v_cache.rs
+@@ -268,6 +268,10 @@
+ pub struct CachedShader {
+     pub spirv: Vec<u8>,
+     pub reflection: Arc<ShaderReflection>,
++    /// Optional diagnostic filename hint from this translation's AIR capture.
++    /// The filename's noncryptographic digest is not an identity or cache key;
++    /// callers must check retained bytes before attributing an artifact.
++    pub air_capture_hint: Option<AirCaptureHint>,
+     /// The same module as u32 words, materialized once — draw paths clone the
+     /// `Arc`, never re-collect per draw (was a full-module copy ×2 per draw).
+     pub words: Arc<Vec<u32>>,
+@@ -280,6 +284,13 @@
+     /// the module and those two flags, so each variant is computed once per
+     /// shader lifetime instead of mutating a fresh copy per draw.
+     frag_reloc: Mutex<FragmentRelocationCache>,
++}
++
++#[derive(Debug)]
++pub struct AirCaptureHint {
++    pub file_name: String,
++    pub air_bytes: usize,
++    pub translated_spirv_words: usize,
+ }
+ 
+ /// One binding numbering of a translated module, beside the reflected
+@@ -418,6 +429,7 @@
+         Self {
+             spirv,
+             reflection,
++            air_capture_hint: None,
+             words: Arc::new(words),
+             base: OnceLock::new(),
+             frag_reloc: Mutex::new(HashMap::new()),
+@@ -782,12 +794,12 @@
+ /// here is best-effort, and a failure is reported once and then ignored. This
+ /// runs after the translation it describes, so it cannot change what that
+ /// translation produced or whether it was cached.
+-fn capture_air(air: &[u8], stage: Stage, spirv: &[u8]) {
++fn capture_air(air: &[u8], stage: Stage, spirv: &[u8]) -> Option<AirCaptureHint> {
+     if !matches!(
+         crate::config::switch(crate::config::AIR_CAPTURE),
+         crate::config::Switch::On
+     ) {
+-        return;
++        return None;
+     }
+     let dir = air_capture_dir();
+     if let Err(e) = std::fs::create_dir_all(&dir) {
+@@ -795,7 +807,7 @@
+             "air_capture reason=mkdir_failed dir={} err={e}",
+             dir.display()
+         ));
+-        return;
++        return None;
+     }
+     // The AIR digest disambiguates two shaders whose modules happen to be the
+     // same length; the word count is what a quarantine or validator line
+@@ -806,18 +818,29 @@
+     let words = spirv.len() / 4;
+     let name = format!("{}-w{words}-{digest:016x}.air", stage_name(stage));
+     let path = dir.join(&name);
++    let hint = AirCaptureHint {
++        file_name: name.clone(),
++        air_bytes: air.len(),
++        translated_spirv_words: words,
++    };
+     if path.exists() {
+-        return;
++        return Some(hint);
+     }
+     match std::fs::write(&path, air) {
+-        Ok(()) => crate::observe::fail(format!(
+-            "air_capture ok stage={} air_bytes={} spirv_words={words} file={name}",
+-            stage_name(stage),
+-            air.len()
+-        )),
+-        Err(e) => crate::observe::fail(format!(
+-            "air_capture reason=write_failed file={name} err={e}"
+-        )),
++        Ok(()) => {
++            crate::observe::fail(format!(
++                "air_capture ok stage={} air_bytes={} spirv_words={words} file={name}",
++                stage_name(stage),
++                air.len()
++            ));
++            Some(hint)
++        }
++        Err(e) => {
++            crate::observe::fail(format!(
++                "air_capture reason=write_failed file={name} err={e}"
++            ));
++            None
++        }
+     }
+ }
+ 
+@@ -840,8 +863,10 @@
+     let (spirv, reflection) =
+         metal2vulkan::translate_reflected(path.to_str().unwrap_or(name), stage, &tmp)
+             .map_err(|e| translate_decline(stage, e.to_string()))?;
+-    capture_air(air, stage, &spirv);
+-    finish_translated(spirv, reflection, stage)
++    let hint = capture_air(air, stage, &spirv);
++    let mut shader = finish_translated(spirv, reflection, stage)?;
++    shader.air_capture_hint = hint;
++    Ok(shader)
+ }
+ 
+ fn translate_kernel_air(air: &[u8], local_size: [u32; 3]) -> M2vResult<CachedShader> {
+@@ -864,14 +889,16 @@
+     .map_err(|e| M2vCacheDecline::KernelTranslate {
+         detail: e.to_string(),
+     })?;
+-    capture_air(air, Stage::Kernel, &spirv);
++    let hint = capture_air(air, Stage::Kernel, &spirv);
+     if reflection.local_size != Some(local_size) {
+         return Err(M2vCacheDecline::KernelLocalSizeMismatch {
+             requested: local_size,
+             reflected: reflection.local_size,
+         });
+     }
+-    finish_translated(spirv, reflection, Stage::Kernel)
++    let mut shader = finish_translated(spirv, reflection, Stage::Kernel)?;
++    shader.air_capture_hint = hint;
++    Ok(shader)
+ }
+ 
+ /// Post-emit ABI reconciliation + package the translated shader with its reflection.
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -8108,9 +8108,12 @@
+         // storage), so a vertex check would false-fire. Standard directly-bound
+         // kinds only; ColorInput / ThreadgroupBuffer reach the shader by other
+         // paths, while storage textures were declined before bind preparation.
+-        // Verified non-flooding: 0 fires across a full x86 boot (desktop convergence
+-        // + Safari + CSS gradients + a 23-binding compositor shader), so any fire is
+-        // a genuine bind gap, not expected control flow.
++        // A missing table entry is not by itself proof of a malformed Metal
++        // draw: native tables default to nil and a shader may access a declared
++        // resource only on a branch this draw does not take. Preserve the
++        // Vulkan declaration/use distinction and report the actual binding
++        // population without inferring executed sampling or an iOS cause from
++        // an earlier x86 workload.
+         // The guard below reports; its value is the population the repair after
+         // the texture loop acts on. Empty on every draw that binds what it
+         // samples, which is the hot path.
+@@ -8199,15 +8202,55 @@
+                     .collect::<Vec<_>>()
+                     .join(",");
+                 let violations = uses.iter().filter(|(_, u)| u.is_violation()).count();
++                let resources = f_shader
++                    .reflection
++                    .bindings
++                    .iter()
++                    .filter(|binding| {
++                        unbound
++                            .iter()
++                            .any(|gap| gap.metal_index == binding.metal_index)
++                    })
++                    .map(|binding| {
++                        format!(
++                            "{}:{:?}:param={:?}:descriptor={:?}:shape={:?}",
++                            binding.metal_index,
++                            binding.kind,
++                            binding.param_index,
++                            binding.descriptor,
++                            binding.texture_shape
++                        )
++                    })
++                    .collect::<Vec<_>>()
++                    .join(";");
++                let texture_refs = req
++                    .fragment_textures
++                    .iter()
++                    .map(|texture| {
++                        (
++                            texture.index,
++                            texture.texture_ref,
++                            texture.resource.is_some(),
++                        )
++                    })
++                    .collect::<Vec<_>>();
++                let entry = f_shader
++                    .reflection
++                    .entry_point
++                    .as_deref()
++                    .map(|name| name.chars().take(128).collect::<String>());
+                 crate::observe::fail(format!(
+                     "shader_resource_declared_unbound reason=frag_declared_descriptor_unbound \
+-                     pipe={} unbound=[{detail}] violations={violations}/{} \
++                     task={} pipe={} unbound=[{detail}] violations={violations}/{} \
+                      provided_buf={bufs:?} provided_tex={texs:?} \
+-                     provided_smp={smps:?} {}x{}",
++                     provided_smp={smps:?} {}x{} fragment_entry={entry:?} \
++                     air_capture_hint={:?} resources=[{resources}] texture_refs={texture_refs:?}",
++                    req.task_id,
+                     req.pipeline_ref,
+                     uses.len(),
+                     w,
+-                    h
++                    h,
++                    f_shader.air_capture_hint,
+                 ));
+             }
+             // Textures only, and violations only. A buffer or sampler gap is

@@ -1,0 +1,24 @@
+--- a/src/passes/resources/collapse.rs
++++ b/src/passes/resources/collapse.rs
+@@ -46,7 +46,21 @@
+     // Threadgroup memory params are true Workgroup variables, not resource descriptors.
+     let mut workgroup_vars: Vec<Word> = vec![];
+ 
++    // Inspect the unchanged bodies once, before interface loads or splices.
++    // A handle with no operand references needs no descriptor load. Injecting
++    // one would manufacture a static resource use that the AIR body did not
++    // have, forcing a binding even for an entirely unused entry argument.
++    // Keep any referenced handle, including aliases, queries and helper-call
++    // arguments; metadata names and air.arg_unused are not admission rules.
++    let body_refs = crate::passes::module_cleanup::function_referenced_ids(&ctx.module);
+     for (pid, b) in bindings {
++        if matches!(
++            &b,
++            ParamBinding::Image { .. } | ParamBinding::Sampler { .. }
++        ) && !body_refs.contains(&pid)
++        {
++            continue;
++        }
+         match b {
+             ParamBinding::LoadVar { var, ty } => {
+                 let lid = ctx.module.fresh_id();

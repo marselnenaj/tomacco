@@ -1,0 +1,234 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -904,6 +904,10 @@
+     Rgba8Sint,
+     Rgba8Unorm,
+     Bgra8Unorm,
++    /// Sampled-only sRGB views. RGB is decoded by the sampler; alpha stays
++    /// linear. These never pass `storage_image` or its storage selector.
++    Rgba8Srgb,
++    Bgra8Srgb,
+     Rg16Float,
+     R8Unorm,
+     /// Metal `A8Unorm`: one byte, presenting `(0, 0, 0, a)`.
+@@ -1022,6 +1026,8 @@
+             | Self::Rgba8Sint
+             | Self::Rgba8Unorm
+             | Self::Bgra8Unorm
++            | Self::Rgba8Srgb
++            | Self::Bgra8Srgb
+             | Self::R32Uint
+             | Self::R32Sint
+             | Self::R32Float
+@@ -1122,23 +1128,21 @@
+ 
+ /// The engine's storage-image format for a Metal pixel format.
+ ///
+-/// Used by the compute rails for both storage bindings and sampled textures
+-/// staged through the storage selector. The four single-channel-wide formats
++/// Used by the compute storage rail. Sampled textures use [`sampled_image`].
++/// The four single-channel-wide formats
+ /// below never had a storage selector — the contract's selector enum has no
+ /// ordinal for them — so they are answered directly rather than being declined
+ /// by a narrowing they were never in.
+ ///
+ /// # Why this rail keeps an enum where the others took a `VkFormat`
+ ///
+-/// The colour-attachment and sampled rails resolve to a real `VkFormat` so an
+-/// sRGB format is expressible on them. This one does not, and the reason is not
+-/// inertia:
++/// The shared enum can describe sRGB sampled textures, but this storage
++/// admission must not accept them:
+ ///
+ /// * **No sRGB format reaches it.** `pixel_format::storage_selector` has no
+ ///   sRGB arm, so an sRGB format declines here with
+ ///   [`Refusal::NoStorageImageFormat`] rather than downgrading — which
+-///   is why `srgb_census` names six rails and none of them is this one. Widening
+-///   the vocabulary would therefore make no colour space newly reachable.
++///   preserves the distinction between sampling and storing a texel.
+ /// * **The shader side cannot name one either.** A storage image's view format
+ ///   must be class-compatible with the format the SPIR-V module declares, and
+ ///   the SPIR-V image-format operand has no sRGB member at all
+@@ -1216,6 +1220,8 @@
+         // `storage_image_components` supplies — the same one the draw rail
+         // already binds it through.
+         pf::MTL_FORMAT_A8_UNORM => StorageImageFormat::A8Unorm,
++        pf::MTL_FORMAT_RGBA8_UNORM_SRGB => StorageImageFormat::Rgba8Srgb,
++        pf::MTL_FORMAT_BGRA8_UNORM_SRGB => StorageImageFormat::Bgra8Srgb,
+         pf::MTL_FORMAT_R16_UNORM => StorageImageFormat::R16Unorm,
+         pf::MTL_FORMAT_RG16_UNORM => StorageImageFormat::Rg16Unorm,
+         pf::MTL_FORMAT_RG16_UINT => StorageImageFormat::Rg16Uint,
+@@ -1240,6 +1246,8 @@
+         StorageImageFormat::Rgba8Sint => vk::Format::R8G8B8A8_SINT,
+         StorageImageFormat::Rgba8Unorm => vk::Format::R8G8B8A8_UNORM,
+         StorageImageFormat::Bgra8Unorm => vk::Format::B8G8R8A8_UNORM,
++        StorageImageFormat::Rgba8Srgb => vk::Format::R8G8B8A8_SRGB,
++        StorageImageFormat::Bgra8Srgb => vk::Format::B8G8R8A8_SRGB,
+         StorageImageFormat::Rg16Float => vk::Format::R16G16_SFLOAT,
+         StorageImageFormat::Rg16Uint => vk::Format::R16G16_UINT,
+         StorageImageFormat::R8Unorm => vk::Format::R8_UNORM,
+@@ -2217,6 +2225,28 @@
+         }
+     }
+ 
++    #[test]
++    fn compute_sampled_srgb_keeps_transfer_function_and_channel_order() {
++        for (mtl, expected) in [
++            (
++                p::MTL_FORMAT_RGBA8_UNORM_SRGB,
++                StorageImageFormat::Rgba8Srgb,
++            ),
++            (
++                p::MTL_FORMAT_BGRA8_UNORM_SRGB,
++                StorageImageFormat::Bgra8Srgb,
++            ),
++        ] {
++            let format = sampled_image(mtl).unwrap();
++            assert_eq!(format, expected);
++            assert_eq!(format.vk_format(), translate(mtl).unwrap().vk);
++            assert_ne!(format.vk_format(), translate(mtl).unwrap().linear_vk);
++            assert_eq!(format.bytes_per_texel(), 4);
++            assert_eq!(storage_image_components(format), IDENTITY);
++            assert_eq!(storage_image(mtl), Err(Refusal::NoStorageImageFormat(mtl)));
++        }
++    }
++
+     /// A guest texture the graphics rail will sample is one the compute rail
+     /// will sample, for every `MTLPixelFormat` value there is.
+     ///
+@@ -2239,13 +2269,9 @@
+     /// [`StorageImageFormat::R8Unorm`], and [`storage_image_components`] is the
+     /// plan the sampled view binds.
+     ///
+-    /// - The two `*_SRGB` orders would have to bind their linear sibling, which
+-    ///   is the [`TranslateReason::SrgbDowngraded`] loss
+-    ///   [`sampled_pixels`] hands its caller. This rail's `Result` has nowhere
+-    ///   to record it, and
+-    ///   [`storage_image`] refuses sRGB for the same reason with its own test
+-    ///   pinning that. Admitting it silently here would break the symmetry the
+-    ///   crate relies on, so it waits for the rail to gain a warning channel.
++    /// The two `*_SRGB` orders now retain their transfer function in distinct
++    /// sampled-only enum members and bind real sRGB image views. The storage
++    /// selector still refuses both, as required for image stores.
+     ///
+     /// - The **BC block-compressed families** cannot cross this rail at all,
+     ///   and that is structural rather than pending a channel. A
+@@ -2269,8 +2295,6 @@
+     #[test]
+     fn a_texture_the_graphics_rail_samples_is_not_refused_by_the_compute_one() {
+         const EXCEPTIONS: &[(u16, &str)] = &[
+-            (p::MTL_FORMAT_RGBA8_UNORM_SRGB, "would downgrade unrecorded"),
+-            (p::MTL_FORMAT_BGRA8_UNORM_SRGB, "would downgrade unrecorded"),
+             (
+                 p::MTL_FORMAT_BC1_RGBA,
+                 "no block-compressed storage image exists",
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
+@@ -1058,6 +1058,74 @@
+     );
+ }
+ 
++/// Compute sampling must decode sRGB RGB channels once, preserve alpha, and
++/// preserve the guest's channel order. The expected values come from the sRGB
++/// transfer function, independent of the format admission table.
++#[test]
++fn compute_sampled_srgb_decodes_rgb_and_preserves_alpha() {
++    let _g = engine_test_session();
++    let Some(words) = assemble_spvasm(SAMPLED_IMAGE_FETCH_KERNEL, "sampled_srgb") else {
++        return;
++    };
++    for (format, bgra, srgb) in [
++        (StorageImageFormat::Rgba8Srgb, false, true),
++        (StorageImageFormat::Bgra8Srgb, true, true),
++        (StorageImageFormat::Rgba8Unorm, false, false),
++        (StorageImageFormat::Bgra8Unorm, true, false),
++    ] {
++        for rgba in [[128u8, 64, 32, 127], [0, 10, 11, 255], [255, 192, 128, 0]] {
++            let mut packed = rgba;
++            if bgra {
++                packed.swap(0, 2);
++            }
++            let request = ComputeRequest {
++                spirv: words.clone(),
++                entry: "main".into(),
++                dispatch: engine::ComputeDispatch::Workgroups([1, 1, 1]),
++                storage_buffers: vec![ComputeBufferResource {
++                    binding: 0,
++                    bytes: vec![0; 16],
++                    writable: true,
++                }],
++                sampled_images: vec![ComputeSampledImageResource {
++                    mip_levels: 1,
++                    binding: 32,
++                    array_element: 0,
++                    descriptor_count: 1,
++                    format,
++                    width: 1,
++                    height: 1,
++                    source: ComputeSampledSource::Bytes(packed.to_vec()),
++                }],
++                samplers: vec![],
++                storage_images: vec![],
++            };
++            let Some(output) = engine_or_skip("compute sRGB sampling", &request) else {
++                return;
++            };
++            assert!(output.images.is_empty());
++            assert_eq!(output.buffers[0].bytes.len(), 16);
++            for (channel, raw) in output.buffers[0].bytes.as_chunks::<4>().0.iter().enumerate() {
++                let actual = f32::from_le_bytes(*raw);
++                let encoded = f32::from(rgba[channel]) / 255.0;
++                let expected = if srgb && channel < 3 {
++                    if encoded <= 0.04045 {
++                        encoded / 12.92
++                    } else {
++                        ((encoded + 0.055) / 1.055).powf(2.4)
++                    }
++                } else {
++                    encoded
++                };
++                assert!(
++                    (actual - expected).abs() < 0.001,
++                    "{format:?} {rgba:?} channel {channel}: {actual} != {expected}"
++                );
++            }
++        }
++    }
++}
++
+ /// Sampled inputs must use SAMPLED_IMAGE descriptors and remain input-only.
+ #[test]
+ fn compute_sampled_image_fetch_preserves_float_bits() {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+@@ -1644,6 +1644,8 @@
+         | V::R16Float
+         | V::Rgba8Unorm
+         | V::Bgra8Unorm
++        | V::Rgba8Srgb
++        | V::Bgra8Srgb
+         | V::Rg16Float
+         | V::R8Unorm
+         | V::Rg8Unorm
+@@ -1669,6 +1671,9 @@
+     use crate::backend::vulkan::engine::StorageImageFormat as V;
+     use crate::runtime::spirv_bind::ImageFormat as S;
+ 
++    if matches!(guest, V::Rgba8Srgb | V::Bgra8Srgb) {
++        return Err("spirv_sampled_only_format_as_storage");
++    }
+     let Some(shader_engine) = spirv_image_format_to_engine_storage(shader) else {
+         return Err("spirv_storage_format_unsupported");
+     };
+@@ -1783,6 +1788,8 @@
+         // `storage_selector` has no entry for it, so no guest storage binding
+         // can name it and its view mapping would be illegal on one.
+         | V::A8Unorm
++        | V::Rgba8Srgb
++        | V::Bgra8Srgb
+         | V::Rg11b10Float => {
+             return Err("spirv_sampled_only_format_as_storage");
+         }

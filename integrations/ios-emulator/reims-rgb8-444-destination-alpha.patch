@@ -1,0 +1,338 @@
+reims-vgpu: a 542 (`_RB4`) attachment reads destination alpha as one.
+
+Metal: a pixel format that stores no alpha reads one: as the destination
+alpha of a blend factor, as a framebuffer fetch and as a sample. 542 is
+such a format (two windows: green, then blue/red; `[Blue, Red, Green, One]`
+read swizzle).
+Before: 542 rendered into an RGBA8 resident that kept whatever alpha the
+clear or the fragment shader wrote, so a `destinationAlpha` or
+`oneMinusDestinationAlpha` factor, or a fetch of the target, saw that value
+instead of one.
+Now: `rail::resident_alpha_unstored` names the formats whose resident is
+wider than their storage; `ColorAttachmentFormat` pins their clear's alpha
+to one (`ColorClearValue::with_alpha_one`) and builds
+`ColorAttachmentState::alpha_unstored`, whose `write_mask` removes alpha from
+the declared `MTLColorWriteMask` (`ColorWriteMask::without_alpha`) for the
+pipeline key. The resident's alpha is therefore one from the clear or the
+joined Load on, and fixed-function blending reads one.
+Tests: `translate::pixel::tests::an_rgb8_444_attachment_pins_its_unstored_alpha_to_one`
+(unit: clear alpha one, ALL less alpha; BGRA8 keeps both);
+`vk_engine_parity::an_rgb8_444_blend_reads_destination_alpha_as_one` on RADV
+(primary and secondary): two coincident triangles with source factor
+`destinationAlpha` over a clear of alpha 0.5, the shader writing alpha 0.25,
+store (255, 128, 0); before, (64, 32, 0), the clear's and then the first
+triangle's alpha.
+
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/blend.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/blend.rs
+index 4821dae..a3663f9 100644
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/blend.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/blend.rs
+@@ -322,6 +322,16 @@ impl ColorWriteMask {
+     pub const fn writes_nothing(self) -> bool {
+         self.bits == MTL_COLOR_WRITE_MASK_NONE
+     }
++
++    /// This mask with alpha cleared: what a draw may write to an attachment
++    /// whose format stores no alpha, so the channel its resident keeps there
++    /// goes on reading one.
++    #[must_use]
++    pub const fn without_alpha(self) -> Self {
++        Self {
++            bits: self.bits & !MTL_COLOR_WRITE_MASK_ALPHA,
++        }
++    }
+ }
+ 
+ /// One colour attachment's blend declaration as the fields arrived.
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+index b2578d8..a03d773 100644
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -756,6 +756,16 @@ pub fn color_attachment(mtl: u16) -> Result<(vk::Format, ColorNumericType), Refu
+     Ok((format, numeric))
+ }
+ 
++/// Whether a colour-renderable Metal format stores no alpha while the resident
++/// [`color_attachment`] renders it into does. Metal reads such a format's
++/// alpha as one: as a destination blend factor, as a framebuffer fetch and as
++/// a sample. The resident must therefore hold one there whatever the fragment
++/// shader writes, which its owner enforces through the clear and the write
++/// mask. Formats whose Vulkan format has no alpha either need nothing here.
++pub fn resident_alpha_unstored(mtl: u16) -> bool {
++    pixel_format::PlanarRgb8Format::from_mtl(mtl).is_some()
++}
++
+ /// An XR attachment's stored interpretation, retained beside its Float32
+ /// resident. A native surface has RGB10 plus alpha8 in distinct memory planes;
+ /// public BGRA10 has XR10 alpha and public BGR10 has no stored alpha.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+index 0982dff..298aedc 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -3493,9 +3493,12 @@ pub(crate) unsafe fn execute_draw_inner(
+             per_slot
+         },
+         color_write_mask: {
++            // The attachment narrows the declared mask where its format stores
++            // no alpha, so the resident's alpha keeps reading one.
+             let mut per_slot = [ColorWriteMask::default(); 1 + MAX_SECONDARY_ATTACH];
+             per_slot[0] = if req.frag_spirv.is_some() {
+-                req.color_write_mask
++                req.color_attachment
++                    .map_or(req.color_write_mask, |a| a.write_mask(req.color_write_mask))
+             } else {
+                 ColorWriteMask::NONE
+             };
+@@ -3506,7 +3509,7 @@ pub(crate) unsafe fn execute_draw_inner(
+                 .enumerate()
+             {
+                 per_slot[slot + 1] = if req.frag_spirv.is_some() {
+-                    target.color_write_mask
++                    target.attachment.write_mask(target.color_write_mask)
+                 } else {
+                     ColorWriteMask::NONE
+                 };
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+index 4ccf892..4591853 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -414,6 +414,16 @@ impl ColorClearValue {
+             Self::Sint(int32) => vk::ClearColorValue { int32 },
+         }
+     }
++
++    /// This clear with its alpha replaced by one: the clear of a resident
++    /// whose guest format stores no alpha and reads one.
++    pub(crate) fn with_alpha_one(self) -> Self {
++        match self {
++            Self::Float([r, g, b, _]) => Self::Float([r, g, b, 1.0]),
++            Self::Uint([r, g, b, _]) => Self::Uint([r, g, b, 1]),
++            Self::Sint([r, g, b, _]) => Self::Sint([r, g, b, 1]),
++        }
++    }
+ }
+ 
+ impl Default for ColorClearValue {
+@@ -432,6 +442,8 @@ pub struct ColorAttachmentState {
+     format: vk::Format,
+     clear: ColorClearValue,
+     xr: Option<reims_vgpu_vulkan::pixel::XrRenderFormat>,
++    /// The guest format stores no alpha; the resident's alpha reads one.
++    alpha_unstored: bool,
+ }
+ 
+ impl ColorAttachmentState {
+@@ -440,6 +452,20 @@ impl ColorAttachmentState {
+             format,
+             clear,
+             xr: None,
++            alpha_unstored: false,
++        }
++    }
++
++    /// An attachment whose guest format stores no alpha while its resident
++    /// does. Metal reads one there, as a destination blend factor, a
++    /// framebuffer fetch or a sample, so the resident is cleared to one and
++    /// [`Self::write_mask`] never lets a draw write its alpha.
++    pub(crate) fn alpha_unstored(format: vk::Format, clear: ColorClearValue) -> Self {
++        Self {
++            format,
++            clear: clear.with_alpha_one(),
++            xr: None,
++            alpha_unstored: true,
+         }
+     }
+ 
+@@ -451,6 +477,17 @@ impl ColorAttachmentState {
+             format: vk::Format::R32G32B32A32_SFLOAT,
+             clear,
+             xr: Some(format),
++            alpha_unstored: false,
++        }
++    }
++
++    /// The write mask the pipeline uses for this attachment: the declared
++    /// `MTLColorWriteMask`, less alpha where the guest format stores none.
++    pub(crate) fn write_mask(self, declared: ColorWriteMask) -> ColorWriteMask {
++        if self.alpha_unstored {
++            declared.without_alpha()
++        } else {
++            declared
+         }
+     }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+index c3f453f..e06c60a 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+@@ -117,6 +117,7 @@ pub fn color_attachment(
+             vk,
+             numeric,
+             xr: rail::XrRenderFormat::from_mtl(mtl),
++            alpha_unstored: rail::resident_alpha_unstored(mtl),
+         },
+         None,
+     ))
+@@ -134,6 +135,9 @@ pub struct ColorAttachmentFormat {
+     pub vk: vk::Format,
+     numeric: pixel_format::ColorNumericType,
+     xr: Option<rail::XrRenderFormat>,
++    /// The resident carries an alpha channel the guest format does not store.
++    /// Metal reads one there, so the clear and the attachment state pin it.
++    alpha_unstored: bool,
+ }
+ 
+ impl ColorAttachmentFormat {
+@@ -145,6 +149,9 @@ impl ColorAttachmentFormat {
+                 xr,
+                 components.map(|v| v as f32),
+             )),
++            None if self.alpha_unstored => {
++                ColorClearValue::from_components(self.numeric, components).with_alpha_one()
++            }
+             None => ColorClearValue::from_components(self.numeric, components),
+         }
+     }
+@@ -154,6 +161,9 @@ impl ColorAttachmentFormat {
+     pub fn with_clear(self, components: [f64; 4]) -> ColorAttachmentState {
+         match self.xr {
+             Some(xr) => ColorAttachmentState::xr(xr, self.clear_value(components)),
++            None if self.alpha_unstored => {
++                ColorAttachmentState::alpha_unstored(self.vk, self.clear_value(components))
++            }
+             None => ColorAttachmentState::new(self.vk, self.clear_value(components)),
+         }
+     }
+@@ -400,6 +410,35 @@ mod tests {
+         }
+     }
+ 
++    /// 542 stores no alpha and Metal reads one for it, so its RGBA8 resident
++    /// is cleared to one at alpha and never written there, whatever the clear
++    /// or the shader says. A format that stores alpha keeps both.
++    #[test]
++    fn an_rgb8_444_attachment_pins_its_unstored_alpha_to_one() {
++        use reims_vgpu_core::blend::{ColorWriteMask, MTL_COLOR_WRITE_MASK_ALPHA};
++        let clear = [0.2, 0.4, 0.6, 0.25];
++        let (attachment, _) = color_attachment(p::MTL_FORMAT_RGB8_444_2P).unwrap();
++        let pinned = ColorClearValue::Float([0.2f64 as f32, 0.4f64 as f32, 0.6f64 as f32, 1.0]);
++        assert_eq!(attachment.clear_value(clear), pinned);
++        let state = attachment.with_clear(clear);
++        assert_eq!(state.clear(), pinned);
++        let all_but_alpha = ColorWriteMask::new(0xf & !MTL_COLOR_WRITE_MASK_ALPHA).unwrap();
++        assert_eq!(state.write_mask(ColorWriteMask::ALL), all_but_alpha);
++        assert_eq!(state.write_mask(all_but_alpha), all_but_alpha);
++        assert_eq!(
++            state.write_mask(ColorWriteMask::new(MTL_COLOR_WRITE_MASK_ALPHA).unwrap()),
++            ColorWriteMask::NONE
++        );
++
++        let (stored, _) = color_attachment(p::MTL_FORMAT_BGRA8_UNORM).unwrap();
++        let kept =
++            ColorClearValue::Float([0.2f64 as f32, 0.4f64 as f32, 0.6f64 as f32, 0.25f64 as f32]);
++        assert_eq!(stored.clear_value(clear), kept);
++        let state = stored.with_clear(clear);
++        assert_eq!(state.clear(), kept);
++        assert_eq!(state.write_mask(ColorWriteMask::ALL), ColorWriteMask::ALL);
++    }
++
+     #[test]
+     fn xr_render_targets_use_a_linear_float_resident_and_keep_guest_width() {
+         for format in [
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index a10ba5e..ec9a32f 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -5629,3 +5629,92 @@ void main() {{ vec4 xr=vec4({:?},{:?},{:?},{:?}); primary={}; secondary=xr; }}
+         }
+     }
+ }
++
++/// `_RB4` stores no alpha, and Metal reads one for a format without alpha:
++/// a destination-alpha blend factor is one. The RGBA8 resident is cleared to
++/// one at alpha and no draw writes it, so a `destinationAlpha` source factor
++/// scales the second of two coincident triangles by one rather than by the
++/// clear's alpha or by the alpha the first triangle wrote. As a secondary it
++/// is the same attachment.
++#[test]
++fn an_rgb8_444_blend_reads_destination_alpha_as_one() {
++    use reims_vgpu_core::blend::MTL_BLEND_FACTOR_DESTINATION_ALPHA;
++    use reims_vgpu_protocol::pixel_format::{
++        PlanarRgb8Format, TexelLayout, MTL_FORMAT_RGB8_444_2P,
++    };
++    let _g = engine_test_session();
++    let v = framebuffer_fetch_glsl("vertex", FETCH_VERTEX);
++    let f = framebuffer_fetch_glsl(
++        "fragment",
++        "#version 450
++layout(location=0) out vec4 primary;
++layout(location=1) out vec4 secondary;
++void main() { primary=vec4(1.0,0.5,0.0,0.25); secondary=primary; }
++",
++    );
++    // RGB = source * destination alpha; alpha = source alpha. With the clear's
++    // 0.5 and the shader's 0.25 reaching the resident, the second triangle
++    // would store (64, 32, 0); with Metal's constant one it stores (255, 128, 0).
++    let by_destination_alpha = BlendStateResource {
++        src_rgb: MTL_BLEND_FACTOR_DESTINATION_ALPHA,
++        dst_rgb: MTL_BLEND_FACTOR_ZERO,
++        op_rgb: MTL_BLEND_OPERATION_ADD,
++        src_alpha: MTL_BLEND_FACTOR_ONE,
++        dst_alpha: MTL_BLEND_FACTOR_ZERO,
++        op_alpha: MTL_BLEND_OPERATION_ADD,
++    };
++    let format = PlanarRgb8Format::from_mtl(MTL_FORMAT_RGB8_444_2P).unwrap();
++    for slot in 0..2u64 {
++        let identity = TargetIdentity::Surface {
++            id: 0x5420 + slot as u32,
++            width: 8,
++            height: 8,
++            generation: 1,
++            format: ash::vk::Format::R8G8B8A8_UNORM,
++        };
++        let attachment = color_attachment(MTL_FORMAT_RGB8_444_2P, [0.2, 0.4, 0.6, 0.5]);
++        let mut req = engine_req(&v, &f, 8, 8);
++        req.vertex_count = 6;
++        if slot == 0 {
++            req.target_identity = Some(identity.clone());
++            req.color_attachment = Some(attachment);
++            req.blend = Some(by_destination_alpha);
++            req.color_write_mask = engine::ColorWriteMask::ALL;
++            req.skip_readback = true;
++        } else {
++            req.secondary_targets.push(SecondaryColorTarget {
++                identity: identity.clone(),
++                width: 8,
++                height: 8,
++                attachment,
++                load: false,
++                seed: None,
++                blend: Some(by_destination_alpha),
++                color_write_mask: engine::ColorWriteMask::ALL,
++            });
++        }
++        engine::execute_draw_request(engine_device(), &req).expect("_RB4 blend");
++        let readback = engine::read_target_texels(&identity).unwrap();
++        let layout = readback.texel.storage_layout();
++        assert!(
++            matches!(layout, TexelLayout::Rgba8 | TexelLayout::Bgra8),
++            "slot {slot}: {layout:?}"
++        );
++        let (mut green, mut blue_red) = (vec![0; 64], vec![0; 128]);
++        assert!(format.split_texels(layout, &readback.pixels, &mut green, &mut blue_red));
++        assert_eq!(green, vec![128; 64], "slot {slot}");
++        assert_eq!(blue_red, [0, 255].repeat(64), "slot {slot}");
++        // The resident's own alpha (byte 3 in either order) stayed one through
++        // the clear and both triangles: what a framebuffer fetch of this
++        // target reads.
++        assert!(
++            readback
++                .pixels
++                .as_chunks::<4>()
++                .0
++                .iter()
++                .all(|texel| texel[3] == 255),
++            "slot {slot}: resident alpha left one"
++        );
++    }
++}

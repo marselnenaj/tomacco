@@ -1,0 +1,25 @@
+diff --git a/include/xnu/boot/xnuboot.h b/include/xnu/boot/xnuboot.h
+--- a/include/xnu/boot/xnuboot.h
++++ b/include/xnu/boot/xnuboot.h
+@@ -47,6 +47,9 @@
+     char *cl4, *exclave_integrity, *exclave_trustcache;
+     mmap_file_t cl4_f, exclave_integrity_f, exclave_trustcache_f;
+
++    /* Where the boot's one trust-cache module lies in guest RAM, and its size. */
++    uint64_t tc_module_phys, tc_module_bytes;
++
+     uint64_t dram_base, dram_size;
+     bool has_mte;
+     bool preserve_kernel;
+diff --git a/hw/arm/xnuboot_sptm.c b/hw/arm/xnuboot_sptm.c
+--- a/hw/arm/xnuboot_sptm.c
++++ b/hw/arm/xnuboot_sptm.c
+@@ -398,6 +398,8 @@
+     // TrustCache
+     {
+         tc_base_phys = blob_head;
++        info->tc_module_phys = tc_base_phys + sizeof(trust_cache_offsets_t);
++        info->tc_module_bytes = info->tc_f.len;
+         blob_head += tc_size_rounded;
+         END_ENTRY("TrustCache");
+     }

@@ -1,0 +1,584 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -3045,6 +3045,150 @@
+     true
+ }
+ 
++/// A defined colour narrowing. Construction is the single format admission
++/// point, so consumers can refuse unsupported layouts before allocating.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum Rgba8Narrowing {
++    Rgba8,
++    Bgra8,
++    Rgba16Float,
++    R16Float,
++    Rg16Float,
++    R8,
++    Bgr10a2Unorm,
++}
++
++impl Rgba8Narrowing {
++    pub fn for_layout(layout: TexelLayout) -> Option<Self> {
++        match layout {
++            TexelLayout::Rgba8 => Some(Self::Rgba8),
++            TexelLayout::Bgra8 => Some(Self::Bgra8),
++            TexelLayout::Rgba16Float => Some(Self::Rgba16Float),
++            TexelLayout::R16Float => Some(Self::R16Float),
++            TexelLayout::Rg16Float => Some(Self::Rg16Float),
++            TexelLayout::R8 => Some(Self::R8),
++            TexelLayout::Bgr10a2Unorm => Some(Self::Bgr10a2Unorm),
++            TexelLayout::Rg8
++            | TexelLayout::R32Float
++            | TexelLayout::R16Unorm
++            | TexelLayout::Rg16Unorm
++            | TexelLayout::Rg16Uint
++            | TexelLayout::Rgba32Float
++            | TexelLayout::Rgba16Unorm
++            | TexelLayout::Rgb10a2Unorm
++            | TexelLayout::Rg11b10Float => None,
++            // Nothing reads a BC resident back: there is no BC render target to read
++            // back from, and a sampled BC image is never the source of a readback.
++            TexelLayout::Bc1Rgba
++            | TexelLayout::Bc2Rgba
++            | TexelLayout::Bc3Rgba
++            | TexelLayout::Bc4RUnorm
++            | TexelLayout::Bc4RSnorm
++            | TexelLayout::Bc5RgUnorm
++            | TexelLayout::Bc5RgSnorm
++            | TexelLayout::Bc6hRgbFloat
++            | TexelLayout::Bc6hRgbUfloat
++            | TexelLayout::Bc7Rgba => None,
++        }
++    }
++
++    pub fn source_layout(self) -> TexelLayout {
++        match self {
++            Self::Rgba8 => TexelLayout::Rgba8,
++            Self::Bgra8 => TexelLayout::Bgra8,
++            Self::Rgba16Float => TexelLayout::Rgba16Float,
++            Self::R16Float => TexelLayout::R16Float,
++            Self::Rg16Float => TexelLayout::Rg16Float,
++            Self::R8 => TexelLayout::R8,
++            Self::Bgr10a2Unorm => TexelLayout::Bgr10a2Unorm,
++        }
++    }
++
++    pub fn convert(self, src: &[u8], pixels: u32, dst_rgba: &mut [u8]) -> bool {
++        let layout = self.source_layout();
++        let px = pixels as usize;
++        let Some(src_len) = px.checked_mul(layout.bytes_per_texel() as usize) else {
++            return false;
++        };
++        let Some(dst_len) = px.checked_mul(RGBA8_BPP as usize) else {
++            return false;
++        };
++        if src.len() < src_len || dst_rgba.len() < dst_len {
++            return false;
++        }
++        match self {
++            Self::Rgba8 => dst_rgba[..dst_len].copy_from_slice(&src[..dst_len]),
++            Self::Bgra8 => {
++                for i in 0..px {
++                    let (s, d) = (i * 4, i * 4);
++                    dst_rgba[d] = src[s + COMPONENT_B];
++                    dst_rgba[d + 1] = src[s + COMPONENT_G];
++                    dst_rgba[d + 2] = src[s + COMPONENT_R];
++                    dst_rgba[d + 3] = src[s + COMPONENT_A];
++                }
++            }
++            Self::Rgba16Float => {
++                let lut = f16_to_unorm8_lut();
++                for i in 0..px {
++                    let (s, d) = (i * RGBA16F_BPP as usize, i * RGBA8_BPP as usize);
++                    for c in 0..4 {
++                        let h = u16::from_le_bytes([src[s + c * 2], src[s + c * 2 + 1]]);
++                        dst_rgba[d + c] = lut[h as usize];
++                    }
++                }
++            }
++            // The one- and two-channel float attachments, filled out to RGBA8 the
++            // way a shader sampling them reads them: the channels the source does
++            // not carry are zero, and alpha is opaque. `expand_rgba8_to_texel` is
++            // the inverse and drops exactly those channels again.
++            Self::R16Float | Self::Rg16Float => {
++                let lut = f16_to_unorm8_lut();
++                let chans = (layout.bytes_per_texel() / 2) as usize;
++                for i in 0..px {
++                    let (s, d) = (
++                        i * layout.bytes_per_texel() as usize,
++                        i * RGBA8_BPP as usize,
++                    );
++                    for c in 0..chans {
++                        let h = u16::from_le_bytes([src[s + c * 2], src[s + c * 2 + 1]]);
++                        dst_rgba[d + c] = lut[h as usize];
++                    }
++                    for c in chans..3 {
++                        dst_rgba[d + c] = 0;
++                    }
++                    dst_rgba[d + COMPONENT_A] = UNORM8_MAX;
++                }
++            }
++            // The single-channel eight-bit attachment, filled out the way a shader
++            // sampling it reads it and the way `texel_to_rgba8`'s `R8_UNORM` arm
++            // already does: the channels it does not carry are zero and alpha is
++            // opaque. `expand_rgba8_to_texel` is the inverse and drops exactly those.
++            Self::R8 => {
++                for (i, &s) in src[..px].iter().enumerate() {
++                    let d = i * RGBA8_BPP as usize;
++                    dst_rgba[d + COMPONENT_R] = s;
++                    dst_rgba[d + COMPONENT_G] = 0;
++                    dst_rgba[d + COMPONENT_B] = 0;
++                    dst_rgba[d + COMPONENT_A] = UNORM8_MAX;
++                }
++            }
++            // The packed ten-bit colour word, read back the way a shader sampling
++            // it reads it: each channel truncated to its top eight bits and the
++            // two-bit alpha replicated out. `expand_rgba8_to_texel` is the inverse.
++            // This is the *fallback* rail — a host with no guest-RAM import, where
++            // refusing would lose the frame outright rather than quantize it.
++            Self::Bgr10a2Unorm => {
++                for i in 0..px {
++                    let (s, d) = (i * RGBA8_BPP as usize, i * RGBA8_BPP as usize);
++                    let word = u32::from_le_bytes([src[s], src[s + 1], src[s + 2], src[s + 3]]);
++                    dst_rgba[d..d + COMPONENT_COUNT].copy_from_slice(&bgr10a2_word_to_rgba8(word));
++                }
++            }
++        }
++        true
++    }
++}
++
+ /// Read `layout`'s texels back as a semantic-RGBA8 frame — the inverse of
+ /// [`expand_rgba8_to_texel`], for the host readback rails.
+ ///
+@@ -3065,107 +3209,7 @@
+     pixels: u32,
+     dst_rgba: &mut [u8],
+ ) -> bool {
+-    let px = pixels as usize;
+-    let Some(src_len) = px.checked_mul(layout.bytes_per_texel() as usize) else {
+-        return false;
+-    };
+-    let Some(dst_len) = px.checked_mul(RGBA8_BPP as usize) else {
+-        return false;
+-    };
+-    if src.len() < src_len || dst_rgba.len() < dst_len {
+-        return false;
+-    }
+-    match layout {
+-        TexelLayout::Rgba8 => dst_rgba[..dst_len].copy_from_slice(&src[..dst_len]),
+-        TexelLayout::Bgra8 => {
+-            for i in 0..px {
+-                let (s, d) = (i * 4, i * 4);
+-                dst_rgba[d] = src[s + COMPONENT_B];
+-                dst_rgba[d + 1] = src[s + COMPONENT_G];
+-                dst_rgba[d + 2] = src[s + COMPONENT_R];
+-                dst_rgba[d + 3] = src[s + COMPONENT_A];
+-            }
+-        }
+-        TexelLayout::Rgba16Float => {
+-            let lut = f16_to_unorm8_lut();
+-            for i in 0..px {
+-                let (s, d) = (i * RGBA16F_BPP as usize, i * RGBA8_BPP as usize);
+-                for c in 0..4 {
+-                    let h = u16::from_le_bytes([src[s + c * 2], src[s + c * 2 + 1]]);
+-                    dst_rgba[d + c] = lut[h as usize];
+-                }
+-            }
+-        }
+-        // The one- and two-channel float attachments, filled out to RGBA8 the
+-        // way a shader sampling them reads them: the channels the source does
+-        // not carry are zero, and alpha is opaque. `expand_rgba8_to_texel` is
+-        // the inverse and drops exactly those channels again.
+-        TexelLayout::R16Float | TexelLayout::Rg16Float => {
+-            let lut = f16_to_unorm8_lut();
+-            let chans = (layout.bytes_per_texel() / 2) as usize;
+-            for i in 0..px {
+-                let (s, d) = (
+-                    i * layout.bytes_per_texel() as usize,
+-                    i * RGBA8_BPP as usize,
+-                );
+-                for c in 0..chans {
+-                    let h = u16::from_le_bytes([src[s + c * 2], src[s + c * 2 + 1]]);
+-                    dst_rgba[d + c] = lut[h as usize];
+-                }
+-                for c in chans..3 {
+-                    dst_rgba[d + c] = 0;
+-                }
+-                dst_rgba[d + COMPONENT_A] = UNORM8_MAX;
+-            }
+-        }
+-        // The single-channel eight-bit attachment, filled out the way a shader
+-        // sampling it reads it and the way `texel_to_rgba8`'s `R8_UNORM` arm
+-        // already does: the channels it does not carry are zero and alpha is
+-        // opaque. `expand_rgba8_to_texel` is the inverse and drops exactly those.
+-        TexelLayout::R8 => {
+-            for (i, &s) in src[..px].iter().enumerate() {
+-                let d = i * RGBA8_BPP as usize;
+-                dst_rgba[d + COMPONENT_R] = s;
+-                dst_rgba[d + COMPONENT_G] = 0;
+-                dst_rgba[d + COMPONENT_B] = 0;
+-                dst_rgba[d + COMPONENT_A] = UNORM8_MAX;
+-            }
+-        }
+-        // The packed ten-bit colour word, read back the way a shader sampling
+-        // it reads it: each channel truncated to its top eight bits and the
+-        // two-bit alpha replicated out. `expand_rgba8_to_texel` is the inverse.
+-        // This is the *fallback* rail — a host with no guest-RAM import, where
+-        // refusing would lose the frame outright rather than quantize it.
+-        TexelLayout::Bgr10a2Unorm => {
+-            for i in 0..px {
+-                let (s, d) = (i * RGBA8_BPP as usize, i * RGBA8_BPP as usize);
+-                let word = u32::from_le_bytes([src[s], src[s + 1], src[s + 2], src[s + 3]]);
+-                dst_rgba[d..d + COMPONENT_COUNT].copy_from_slice(&bgr10a2_word_to_rgba8(word));
+-            }
+-        }
+-        TexelLayout::Rg8
+-        | TexelLayout::R32Float
+-        | TexelLayout::R16Unorm
+-        | TexelLayout::Rg16Unorm
+-        | TexelLayout::Rg16Uint
+-        | TexelLayout::Rgba32Float
+-        | TexelLayout::Rgba16Unorm
+-        | TexelLayout::Rgb10a2Unorm
+-        | TexelLayout::Rg11b10Float => return false,
+-        // Nothing reads a BC resident back: there is no BC render target to read
+-        // back from, and a sampled BC image is never the source of a readback.
+-        TexelLayout::Bc1Rgba
+-        | TexelLayout::Bc2Rgba
+-        | TexelLayout::Bc3Rgba
+-        | TexelLayout::Bc4RUnorm
+-        | TexelLayout::Bc4RSnorm
+-        | TexelLayout::Bc5RgUnorm
+-        | TexelLayout::Bc5RgSnorm
+-        | TexelLayout::Bc6hRgbFloat
+-        | TexelLayout::Bc6hRgbUfloat
+-        | TexelLayout::Bc7Rgba => return false,
+-    }
+-    true
++    Rgba8Narrowing::for_layout(layout).is_some_and(|plan| plan.convert(src, pixels, dst_rgba))
+ }
+ 
+ /// Preserve encoded values, like the RGBA8/sRGB byte paths. Clamp only at the
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
+@@ -131,6 +131,28 @@
+     /// The reference did not survive its own bound. Carries the check that
+     /// refused, from [`crate::runtime::guest_ram`].
+     Bound { inner: GuestRamError },
++}
++
++impl HostRamDecline {
++    /// Memory pressure can change while this same import stays alive. Other
++    /// refusals describe this pointer or device and remain memoizable.
++    fn cacheable(self) -> bool {
++        let result = match self {
++            Self::CreateBuffer { result }
++            | Self::AllocateMemory { result }
++            | Self::BindBuffer { result }
++            | Self::NoImportableMemoryType {
++                refusal: ImportTypeRefusal::PointerDeclined { result },
++                ..
++            } => Some(result),
++            _ => None,
++        };
++        !matches!(
++            result,
++            Some(vk::Result::ERROR_OUT_OF_HOST_MEMORY)
++                | Some(vk::Result::ERROR_OUT_OF_DEVICE_MEMORY)
++        )
++    }
+ }
+ 
+ impl Decline for HostRamDecline {
+@@ -237,8 +259,9 @@
+     live: HashMap<u64, LiveImport>,
+     /// `true` for RAMBlock-coordinate imports, `false` for packed task aliases.
+     kinds: HashMap<u64, bool>,
+-    /// Driver refusals are properties of this pointer/device pair. Holding the
+-    /// answer prevents every draw from repeating a failed allocation.
++    /// Stable refusals describe this pointer/device pair and prevent repeated
++    /// failed allocations. Memory pressure is excluded; retirement clears the
++    /// decision with its guest allocation lifetime.
+     declined: HashMap<u64, HostRamDecline>,
+ }
+ 
+@@ -367,6 +390,8 @@
+         import_id: crate::runtime::guest_ram::ImportId,
+     ) -> ParentRetire {
+         let key = import_id.get();
++        // The guest lifetime ended; failed decisions have no live children.
++        self.declined.remove(&key);
+         let Some(entry) = self.live.get_mut(&key) else {
+             return ParentRetire::NotImported;
+         };
+@@ -393,15 +418,34 @@
+             return Err(HostRamDecline::Retired { import_id: key });
+         }
+         if let Some(live) = self.live.get(&key) {
++            crate::runtime::drain::note_store_route("host_ram_import_live_hit");
+             return Ok((live.allocation, false));
+         }
+         if let Some(decline) = self.declined.get(&key) {
++            crate::runtime::drain::note_store_route("host_ram_import_decline_hit");
+             return Err(*decline);
+         }
++        crate::runtime::drain::note_store_route("host_ram_import_attempt");
++        let started = std::time::Instant::now();
+         let made = match unsafe { import_ramblock(ctx, import) } {
+             Ok(made) => made,
+             Err(decline) => {
+-                self.declined.insert(key, decline);
++                let cached = decline.cacheable();
++                if cached {
++                    self.declined.insert(key, decline);
++                }
++                crate::runtime::drain::note_store_route(if cached {
++                    "host_ram_import_stable_decline"
++                } else {
++                    "host_ram_import_memory_pressure"
++                });
++                crate::observe::Emit::decline("host_ram_import_refused", &decline)
++                    .field("id", key)
++                    .field("host_base", format_args!("0x{:x}", import.host_base()))
++                    .field("bytes", import.len())
++                    .field("cached", cached)
++                    .field("total_us", started.elapsed().as_micros())
++                    .off();
+                 return Err(decline);
+             }
+         };
+@@ -415,6 +459,7 @@
+             },
+         );
+         self.kinds.insert(key, import.gpa_base().is_some());
++        crate::runtime::drain::note_store_route("host_ram_import_created");
+         Ok((made, true))
+     }
+ 
+@@ -526,8 +571,15 @@
+     // guest's bytes instead, and no `vkAllocateMemory` the specification forbids
+     // is ever issued — which is the difference between the two drivers this was
+     // reported on, one of which returns success and then loses the device.
+-    let pick =
+-        picked.map_err(|refusal| HostRamDecline::NoImportableMemoryType { host_base, refusal })?;
++    let pick = picked.map_err(|refusal| {
++        let decline = HostRamDecline::NoImportableMemoryType { host_base, refusal };
++        crate::observe::Emit::decline("host_ram_import_probe", &decline)
++            .field("id", import.id().get())
++            .field("bytes", size)
++            .field("probe_us", probe_us)
++            .off();
++        decline
++    })?;
+     let memory_type_index = pick.index;
+     let alloc_started = Instant::now();
+ 
+@@ -568,8 +620,21 @@
+             .allocation_size(size)
+             .memory_type_index(memory_type_index)
+             .push_next(&mut host_import);
+-        let memory = unsafe { ctx.device.allocate_memory(&allocate, None) }
+-            .map_err(|result| HostRamDecline::AllocateMemory { result })?;
++        let memory_started = Instant::now();
++        let memory_result = unsafe { ctx.device.allocate_memory(&allocate, None) };
++        let memory_us = memory_started.elapsed().as_micros();
++        let memory = memory_result.map_err(|result| {
++            let decline = HostRamDecline::AllocateMemory { result };
++            crate::observe::Emit::decline("host_ram_import_allocate", &decline)
++                .field("id", import.id().get())
++                .field("bytes", size)
++                .field("mtype", memory_type_index)
++                .field("probe_us", probe_us)
++                .field("allocate_us", memory_us)
++                .off();
++            decline
++        })?;
++        crate::observe::off(format!("host_ram_import_allocate id={} bytes={size} mtype={memory_type_index} allocate_us={memory_us} ok=true", import.id().get()));
+ 
+         match unsafe { ctx.device.bind_buffer_memory(buffer, memory, 0) } {
+             Ok(()) => Ok(ImportedHostRam {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -3457,7 +3457,16 @@
+         let Some(layout) = self.texel.native_layout() else {
+             return Ok(self);
+         };
+-        let pixels = self.pixels.len() as u64 / u64::from(layout.bytes_per_texel());
++        let width = u64::from(layout.bytes_per_texel());
++        if !(self.pixels.len() as u64).is_multiple_of(width) {
++            return Err(DrawError::TargetRead(
++                reason::TargetReadDecline::SourceShape {
++                    expected: (self.pixels.len() as u64 / width + 1) * width,
++                    actual: self.pixels.len() as u64,
++                },
++            ));
++        }
++        let pixels = self.pixels.len() as u64 / width;
+         let (pixels, texel) = narrow_readback_to_rgba8(
+             self.pixels,
+             layout,
+@@ -3591,8 +3600,7 @@
+             },
+         ));
+     }
+-    let rb_size =
+-        (snap.width as u64) * (snap.height as u64) * u64::from(RESIDENT_READ_BYTES_PER_TEXEL);
++    let rb_size = target_readback_extent(snap.width, snap.height, RESIDENT_READ_BYTES_PER_TEXEL)?;
+     let read_access = pools::ResidentAccess::transfer_read(snap.guest_backing.is_some());
+     unsafe {
+         let delivered = copy_image_level0_to_host_delivered(
+@@ -5144,6 +5152,33 @@
+     .map(|bytes| bytes as u64)
+ }
+ 
++/// Host byte extents are checked before allocating or issuing image copies.
++fn readback_byte_extent(pixels: u64, bytes_per_texel: u32) -> Result<usize, DrawError> {
++    pixels
++        .checked_mul(u64::from(bytes_per_texel))
++        .and_then(|bytes| usize::try_from(bytes).ok())
++        .filter(|bytes| *bytes <= isize::MAX as usize)
++        .ok_or(DrawError::TargetRead(
++            reason::TargetReadDecline::ByteExtent {
++                pixels,
++                bytes_per_texel,
++            },
++        ))
++}
++
++fn target_readback_extent(width: u32, height: u32, bytes_per_texel: u32) -> Result<u64, DrawError> {
++    let pixels = u64::from(width) * u64::from(height);
++    if width == 0 || height == 0 {
++        return Err(DrawError::TargetRead(
++            reason::TargetReadDecline::ByteExtent {
++                pixels,
++                bytes_per_texel,
++            },
++        ));
++    }
++    readback_byte_extent(pixels, bytes_per_texel).map(|bytes| bytes as u64)
++}
++
+ /// The Vulkan spelling of a layout, for a decline that has only the layout.
+ fn readback_vk_format(layout: TexelLayout) -> ash::vk::Format {
+     crate::backend::vulkan::translate::pixel::vk_texel_layout(layout)
+@@ -5188,13 +5223,38 @@
+     pixels: u64,
+     bgra: bool,
+ ) -> Result<(Vec<u8>, ReadbackTexel), DrawError> {
++    let expected = readback_byte_extent(pixels, layout.bytes_per_texel())?;
++    if out.len() != expected {
++        return Err(DrawError::TargetRead(
++            reason::TargetReadDecline::SourceShape {
++                expected: expected as u64,
++                actual: out.len() as u64,
++            },
++        ));
++    }
+     if layout.is_four_byte_color() {
+         return Ok((out, ReadbackTexel::eight_bit(bgra)));
+     }
+-    let count = u32::try_from(pixels).unwrap_or(u32::MAX);
+-    let mut narrowed = vec![0u8; (pixels * u64::from(RESIDENT_READ_BYTES_PER_TEXEL)) as usize];
+-    if !crate::protocol::pixel_format::narrow_texel_to_rgba8(layout, &out, count, &mut narrowed) {
++    let Some(plan) = crate::protocol::pixel_format::Rgba8Narrowing::for_layout(layout) else {
++        crate::runtime::drain::note_store_route("target_read_narrow_allocation_avoided");
+         return Ok((out, ReadbackTexel::Native(layout)));
++    };
++    let count = u32::try_from(pixels).map_err(|_| {
++        DrawError::TargetRead(reason::TargetReadDecline::ColourPixelCount { pixels })
++    })?;
++    let bytes = readback_byte_extent(pixels, RESIDENT_READ_BYTES_PER_TEXEL)?;
++    let mut narrowed = Vec::new();
++    narrowed
++        .try_reserve_exact(bytes)
++        .map_err(|_| DrawError::TargetRead(reason::TargetReadDecline::HostAllocation { bytes }))?;
++    narrowed.resize(bytes, 0);
++    if !plan.convert(&out, count, &mut narrowed) {
++        return Err(DrawError::TargetRead(
++            reason::TargetReadDecline::SourceShape {
++                expected: expected as u64,
++                actual: out.len() as u64,
++            },
++        ));
+     }
+     // Visible, because it is a fidelity loss and not just a slow path: the
+     // frame this returns carries eight bits of a channel the guest asked for
+@@ -5643,8 +5703,7 @@
+     // Asked for at the resident's own width — the copy is a raw image→buffer
+     // move and reads the image format's texel — and narrowed below if that is
+     // not what the caller can read.
+-    let pixels = (snap.width as u64) * (snap.height as u64);
+-    let rb_size = pixels * u64::from(layout.bytes_per_texel());
++    let rb_size = target_readback_extent(snap.width, snap.height, layout.bytes_per_texel())?;
+     let read_access = pools::ResidentAccess::transfer_read(snap.guest_backing.is_some());
+     unsafe {
+         let storage = copy_image_level0_to_host_delivered(
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
+@@ -542,6 +542,14 @@
+ /// left is the readback that replaced them.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum TargetReadDecline {
++    /// Host serialization cannot represent the requested byte extent.
++    ByteExtent { pixels: u64, bytes_per_texel: u32 },
++    /// The completed source does not contain exactly the declared texels.
++    SourceShape { expected: u64, actual: u64 },
++    /// The colour codec accepts a bounded u32 pixel count.
++    ColourPixelCount { pixels: u64 },
++    /// Host allocation failed before any guest bytes were published.
++    HostAllocation { bytes: usize },
+     /// The readback's identity is not in the resident registry.
+     ///
+     /// It carries both generations because the bare variant could not be
+@@ -600,6 +608,10 @@
+ impl Decline for TargetReadDecline {
+     fn slug(&self) -> &'static str {
+         match self {
++            Self::ByteExtent { .. } => "read_target_byte_extent",
++            Self::SourceShape { .. } => "read_target_source_shape",
++            Self::ColourPixelCount { .. } => "read_target_colour_pixel_count",
++            Self::HostAllocation { .. } => "read_target_host_allocation",
+             Self::UnknownIdentity { .. } => "read_target_unknown_identity",
+             Self::NoReadyContent => "read_target_no_ready_content",
+             Self::MultisampleImage { .. } => "read_target_multisample_image",
+@@ -609,6 +621,19 @@
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::ByteExtent {
++                pixels,
++                bytes_per_texel,
++            } => vec![
++                ("pixels", pixels.to_string()),
++                ("bytes_per_texel", bytes_per_texel.to_string()),
++            ],
++            Self::SourceShape { expected, actual } => vec![
++                ("expected", expected.to_string()),
++                ("actual", actual.to_string()),
++            ],
++            Self::ColourPixelCount { pixels } => vec![("pixels", pixels.to_string())],
++            Self::HostAllocation { bytes } => vec![("bytes", bytes.to_string())],
+             Self::UnknownIdentity {
+                 asked,
+                 held,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -80,6 +80,12 @@
+     /// (no loader, no device, no graphics queue, below the API floor) carry no
+     /// result and are correctly permanent.
+     pub fn out_of_memory(&self) -> bool {
++        if matches!(
++            self,
++            Self::TargetRead(super::reason::TargetReadDecline::HostAllocation { .. })
++        ) {
++            return true;
++        }
+         let result = match self {
+             Self::VkCall(c) => Some(c.result),
+             Self::Init(d) => d.vk_result(),

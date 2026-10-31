@@ -1,0 +1,65 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+@@ -123,6 +123,10 @@
+ #[derive(Clone, Debug, Default)]
+ struct StreamAccum {
+     pipeline_ref: u32,
++    /// How many complete pass descriptions this encoder received. A failed
++    /// target needs this denominator to distinguish a declared attachment
++    /// from state retained after a later descriptor removed it.
++    pass_descriptors: u32,
+     /// Every colour attachment whose `load_action` is `Clear`, in stream order.
+     ///
+     /// Membership is the **load** action alone, because this is the pass's
+@@ -3618,6 +3622,7 @@
+     };
+     match record {
+         RenderRecord::WriteDescriptor(r) => {
++            acc.pass_descriptors = acc.pass_descriptors.saturating_add(1);
+             let descriptor = r.descriptor;
+             let target_extent = (
+                 descriptor.render_target_width.get(),
+@@ -5260,9 +5265,14 @@
+         if first_draw.is_some() && first_req.is_none() {
+             let refs: Vec<u32> = acc.color_slots.iter().map(|(_, a)| a.texture_ref).collect();
+             crate::observe::fail(format!(
+-                "metal_draw mrt_request fail task={task_id} pipe={} slots={refs:?} di=0/{}",
++                "metal_draw mrt_request fail task={task_id} pipe={} slots={refs:?} di=0/{} \
++                 descriptors={} depth={:?} stencil={:?} colors={:?}",
+                 first_draw.map(|pd| pd.pipeline_ref).unwrap_or(0),
+-                draw_list.len()
++                draw_list.len(),
++                acc.pass_descriptors,
++                acc.depth_attach,
++                acc.stencil_attach,
++                acc.color_slots,
+             ));
+             out.metal_draws_fail = out.metal_draws_fail.saturating_add(1);
+             dirty_color_targets(state, host, task_id, &acc.color_targets);
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+@@ -1231,6 +1231,24 @@
+     if entry.object_type != OBJECT_TYPE_TEXTURE
+         && entry.object_type != OBJECT_TYPE_TEXTURE_GENERATE_MIPMAPS
+     {
++        // A paired depth/stencil object bound as a color target is not an XR
++        // admission opportunity. Preserve the first refused object's decoded
++        // storage geometry so the pass and the resource can be compared,
++        // without adding descriptor reads to successfully resolved targets.
++        if entry.object_type == crate::runtime::decode::resource::OBJECT_TYPE_DUAL_PLANE_TEXTURE
++            && crate::observe::first_sight(
++                "rt_paired_object_refused",
++                u64::from(task_id) << 32 | u64::from(resolved_ref),
++            )
++        {
++            let descriptor = objects::read_descriptor(state, host, task_id, &entry).map(|bytes| {
++                crate::runtime::decode::resource::decode_dual_plane_texture_descriptor(&bytes)
++            });
++            crate::observe::fail(format!(
++                "rt_paired_object_refused task={task_id} ref={texture_ref} base={resolved_ref} \
++                 entry={entry:?} descriptor={descriptor:?}",
++            ));
++        }
+         return Err(C::WrongType {
+             object_type: entry.object_type,
+         }

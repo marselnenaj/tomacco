@@ -1,0 +1,842 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+@@ -6,9 +6,10 @@
+ use super::{mapper_ref_texture_sample_window, vouch_for_write, SurfaceWriteRefusal};
+ use crate::model::{scanout_extent_ok, DeviceState, MappingEntry};
+ use crate::protocol::pixel_format;
+-use crate::runtime::host::{HostMemory, HostOps};
++use crate::runtime::host::{GuestRamRegionsError, HostMemory, HostOps};
+ use crate::runtime::mapper::{
+-    self, MappingRectCopy, MappingStorageIdentity, RectBatchRefusal, RectStride, RunCopy,
++    self, MappingRectCopy, MappingRectPreparation, MappingRectWindow, MappingStorageIdentity,
++    PreparedMappingRectTransfer, RectBatchRefusal, RectStride, RectViewSource, RunCopy,
+ };
+ 
+ #[derive(Debug)]
+@@ -16,6 +17,140 @@
+     Surface(SurfaceWriteRefusal),
+     Transfer(RectBatchRefusal),
+     SourceLength { need: usize, have: usize },
++    RamRegions(GuestRamRegionsError),
++    LiveInternal,
++}
++
++pub(crate) enum NativeImageSourcePlan {
++    StableViews,
++    PublishedRam(Vec<reims_vgpu_memory::GuestRamRegion>),
++}
++
++/// An owned source, never a borrowed staging slice. Implementations expose
++/// bytes without engine/host callbacks and end their lease on Drop. Keeping
++/// this trait crate-private excludes borrowed slices from the publication API.
++pub(crate) trait NativeImageSource {
++    fn native_bytes(&self) -> &[u8];
++}
++
++impl NativeImageSource for Vec<u8> {
++    fn native_bytes(&self) -> &[u8] {
++        self
++    }
++}
++
++/// Exclusive device/host transaction with every guest view already prepared.
++/// The source may be acquired afterward; no host or engine API is used while
++/// copying it. Source ownership ends before view release or publication.
++pub(crate) struct PreparedNativeImageWrite<'a, M: HostMemory + HostOps> {
++    state: &'a mut DeviceState,
++    transfer: PreparedMappingRectTransfer<'a, M>,
++    mapping_id: u32,
++    offset: u64,
++    rect: RectStride,
++}
++
++impl<M: HostMemory + HostOps> PreparedNativeImageWrite<'_, M> {
++    pub(crate) fn write_from<S: NativeImageSource>(
++        mut self,
++        source: S,
++    ) -> Result<usize, NativeImageWriteRefusal> {
++        use NativeImageWriteRefusal as R;
++        let bytes = self.rect.packed();
++        // This block copies or reads guest memory only. Neither source
++        // failure nor success may release host views while a lease is held.
++        let result = {
++            let src = source.native_bytes();
++            if src.len() != bytes {
++                Err(R::SourceLength {
++                    need: bytes,
++                    have: src.len(),
++                })
++            } else if let Err(why) = self.transfer.check_backing(self.state) {
++                Err(R::Transfer(why))
++            } else {
++                let copy = RunCopy::write_rect(src, self.rect)
++                    .ok_or(R::Transfer(RectBatchRefusal::Window { index: 0 }));
++                match copy {
++                    Ok(copy) => self
++                        .transfer
++                        .copy(&mut [MappingRectCopy::new(self.offset, copy)])
++                        .map_err(R::Transfer),
++                    Err(why) => Err(why),
++                }
++            }
++        };
++        drop(source);
++        if matches!(&result, Err(R::Transfer(RectBatchRefusal::PagesNotOurs))) {
++            self.state.invalidate_mapping_pages(self.mapping_id);
++        }
++        result?;
++        self.state.note_host_wrote_mapping(self.mapping_id);
++        self.transfer.complete(self.state, |state, host| {
++            state.mark_mapping_written(self.mapping_id);
++            crate::runtime::surface_cache::forget(state, self.mapping_id);
++            mapper::stamp_guest_write_gen(state, host, self.mapping_id);
++        });
++        crate::runtime::drain::note_store_route("native_image_captured_write_n");
++        Ok(bytes)
++    }
++}
++
++/// Settle every guest write before preparing stable CPU aliases, then retain
++/// the original captured identity through source readback.
++/// Readback submits only reads; exclusive DeviceState prevents a later Store
++/// from being queued before this transaction publishes or drops.
++pub(crate) fn prepare_native_image_write<'a, M: HostMemory + HostOps>(
++    state: &'a mut DeviceState,
++    host: &'a mut M,
++    target: NativeImageWriteTarget,
++    plan: NativeImageSourcePlan,
++) -> Result<PreparedNativeImageWrite<'a, M>, NativeImageWriteRefusal> {
++    use NativeImageWriteRefusal as R;
++    let mapping_id = target.mapping_id;
++    if state
++        .mappings
++        .get(&mapping_id)
++        .is_none_or(|m| m.mapping_internal != 0)
++    {
++        return Err(R::LiveInternal);
++    }
++    mapper::ensure_resolved_for_scanout(state, host, mapping_id);
++    crate::runtime::writeback_debt::settle_for_mapping(
++        state,
++        host,
++        mapping_id,
++        crate::runtime::render_writeback::SettleSite::MappingNativeImageWrite,
++    );
++    crate::runtime::render_writeback::settle_guest_writes(
++        crate::runtime::render_writeback::SettleSite::MappingNativeImageWrite,
++    );
++    let vouched = vouch_for_write(state, host, mapping_id, "prepared_native_image")
++        .ok_or(R::Surface(SurfaceWriteRefusal::PagesNotOurs))?;
++    let source = match &plan {
++        NativeImageSourcePlan::StableViews => RectViewSource::HostViews,
++        NativeImageSourcePlan::PublishedRam(regions) => RectViewSource::PublishedRam(regions),
++    };
++    let transfer = mapper::prepare_mapping_rects(
++        state,
++        host,
++        mapping_id,
++        true,
++        MappingRectPreparation {
++            identity: &target.identity,
++            vouched: &vouched,
++            source,
++            windows: &[MappingRectWindow::new(target.offset, target.rect.span())],
++        },
++    )
++    .map_err(R::Transfer)?;
++    Ok(PreparedNativeImageWrite {
++        state,
++        transfer,
++        mapping_id,
++        offset: target.offset,
++        rect: target.rect,
++    })
+ }
+ 
+ impl crate::observe::Decline for NativeImageWriteRefusal {
+@@ -24,6 +159,8 @@
+             Self::Surface(why) => why.slug(),
+             Self::Transfer(why) => why.slug(),
+             Self::SourceLength { .. } => "native_image_source_length",
++            Self::RamRegions(why) => why.slug(),
++            Self::LiveInternal => "native_image_prepared_live_internal",
+         }
+     }
+     fn fields(&self) -> Vec<(&'static str, String)> {
+@@ -33,6 +170,8 @@
+             Self::SourceLength { need, have } => {
+                 vec![("need", need.to_string()), ("have", have.to_string())]
+             }
++            Self::RamRegions(why) => why.fields(),
++            Self::LiveInternal => Vec::new(),
+         }
+     }
+     fn owner(&self) -> &'static str {
+@@ -40,17 +179,20 @@
+             Self::Surface(why) => why.owner(),
+             Self::Transfer(why) => why.owner(),
+             Self::SourceLength { .. } => std::any::type_name::<Self>(),
++            Self::RamRegions(why) => why.owner(),
++            Self::LiveInternal => std::any::type_name::<Self>(),
+         }
+     }
+ }
+ 
+ /// The declared whole-image view and original storage incarnation. This owner
+-/// retains only metadata; a staging lease must end before the writer is called.
++/// retains only metadata; a staging lease must end before publication.
+ pub struct NativeImageWriteTarget {
+     mapping_id: u32,
+     identity: MappingStorageIdentity,
+     offset: u64,
+     rect: RectStride,
++    live_internal: bool,
+ }
+ 
+ impl NativeImageWriteTarget {
+@@ -112,11 +254,36 @@
+             identity: MappingStorageIdentity::capture(mapping_id, mapping).map_err(R::Transfer)?,
+             offset,
+             rect,
++            live_internal: mapping.mapping_internal != 0,
+         })
+     }
+ 
+     pub fn packed_bytes(&self) -> usize {
+         self.rect.packed()
++    }
++
++    pub(crate) fn prepared_source_plan(
++        &self,
++        host: &mut impl HostOps,
++    ) -> Result<NativeImageSourcePlan, NativeImageWriteRefusal> {
++        if self.live_internal {
++            return Err(NativeImageWriteRefusal::LiveInternal);
++        }
++        if host.map_pages_stable() {
++            return Ok(NativeImageSourcePlan::StableViews);
++        }
++        // A separate published capability: these are QEMU's stable RAMBlock
++        // CPU addresses, not permission to retain packed map_pages aliases or
++        // import those aliases into the GPU.
++        let regions = host
++            .guest_ram_regions()
++            .map_err(NativeImageWriteRefusal::RamRegions)?;
++        if regions.is_empty() {
++            return Err(NativeImageWriteRefusal::RamRegions(
++                GuestRamRegionsError::NoRam,
++            ));
++        }
++        Ok(NativeImageSourcePlan::PublishedRam(regions))
+     }
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+@@ -20,6 +20,7 @@
+ mod planar_xr;
+ pub use planar_xr::*;
+ mod native_image;
++pub(crate) use native_image::{prepare_native_image_write, NativeImageSource};
+ pub use native_image::{
+     write_captured_native_image, NativeImageWriteRefusal, NativeImageWriteTarget,
+ };
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+@@ -8,7 +8,7 @@
+ 
+ use super::{mapping_page_gpas, PagesVouched, RunCopy};
+ use crate::model::{DeviceState, MappingEntry};
+-use crate::runtime::guest_ram::GuestRun;
++use crate::runtime::guest_ram::{GuestRamRegion, GuestRun};
+ use crate::runtime::host::{HostMemory, HostOps};
+ 
+ #[derive(Debug)]
+@@ -22,6 +22,8 @@
+     Overlap { first: usize, second: usize },
+     Map { offset: u64, pages: usize },
+     HostBound { offset: u64 },
++    RamWindow { gpa: u64, len: u64 },
++    RamAmbiguous { gpa: u64 },
+ }
+ 
+ impl crate::observe::Decline for RectBatchRefusal {
+@@ -36,6 +38,8 @@
+             Self::Overlap { .. } => "mapping_rect_batch_overlap",
+             Self::Map { .. } => "mapping_rect_batch_map",
+             Self::HostBound { .. } => "mapping_rect_batch_host_bound",
++            Self::RamWindow { .. } => "mapping_rect_batch_ram_window",
++            Self::RamAmbiguous { .. } => "mapping_rect_batch_ram_ambiguous",
+         }
+     }
+ 
+@@ -50,6 +54,10 @@
+                 vec![("offset", offset.to_string()), ("pages", pages.to_string())]
+             }
+             Self::HostBound { offset } => vec![("offset", offset.to_string())],
++            Self::RamWindow { gpa, len } => {
++                vec![("gpa", format!("{gpa:#x}")), ("len", len.to_string())]
++            }
++            Self::RamAmbiguous { gpa } => vec![("gpa", format!("{gpa:#x}"))],
+             _ => Vec::new(),
+         }
+     }
+@@ -121,9 +129,25 @@
+         Self { offset, copy }
+     }
+ 
+-    fn end(&self) -> Option<u64> {
+-        self.offset
+-            .checked_add(u64::try_from(self.copy.len()).ok()?)
++    fn window(&self) -> MappingRectWindow {
++        MappingRectWindow::new(self.offset, self.copy.len())
++    }
++}
++
++/// Source-independent guest window. Only preparation can turn it into a
++/// retained host view; a later source must match this exact offset and span.
++#[derive(Clone, Copy, PartialEq, Eq)]
++pub(crate) struct MappingRectWindow {
++    offset: u64,
++    len: usize,
++}
++
++impl MappingRectWindow {
++    pub(crate) fn new(offset: u64, len: usize) -> Self {
++        Self { offset, len }
++    }
++    fn end(self) -> Option<u64> {
++        self.offset.checked_add(u64::try_from(self.len).ok()?)
+     }
+ }
+ 
+@@ -131,6 +155,21 @@
+     bytes: GuestRun,
+     offset: u64,
+     owned: bool,
++}
++
++/// VM-lifetime RAM spans are independent of packed map_pages aliases.
++/// PublishedRam permits only bounded CPU access, never a GPU import.
++#[derive(Clone, Copy)]
++pub(crate) enum RectViewSource<'a> {
++    HostViews,
++    PublishedRam(&'a [GuestRamRegion]),
++}
++
++pub(crate) struct MappingRectPreparation<'a> {
++    pub identity: &'a MappingStorageIdentity,
++    pub vouched: &'a PagesVouched,
++    pub source: RectViewSource<'a>,
++    pub windows: &'a [MappingRectWindow],
+ }
+ 
+ /// Local view owner. Any preparation error releases the already acquired views
+@@ -141,12 +180,19 @@
+     runs: Vec<MappedRun>,
+ }
+ 
+-impl<H: HostOps> Drop for Views<'_, H> {
+-    fn drop(&mut self) {
++impl<H: HostOps> Views<'_, H> {
++    fn release(&mut self) {
+         for run in self.runs.iter().rev().filter(|run| run.owned) {
+             self.host
+                 .unmap_pages(run.bytes.host_ptr(), run.bytes.len() as usize);
+         }
++        self.runs.clear();
++    }
++}
++
++impl<H: HostOps> Drop for Views<'_, H> {
++    fn drop(&mut self) {
++        self.release();
+     }
+ }
+ 
+@@ -156,33 +202,124 @@
+     bytes: GuestRun,
+ }
+ 
+-/// Move disjoint rectangles of one settled mapping as one publication unit.
+-///
+-/// All windows, proofs, views and piece bounds are prepared before the first
+-/// byte moves. Failure therefore neither writes a prefix nor returns a partial
+-/// read. Success on the write direction invalidates both windows; the surface
+-/// owner advances its content generation once after this function returns.
+-/// This is not an atomic store with respect to concurrently running guest CPUs.
+-pub(crate) fn copy_mapping_rects<H: HostMemory + HostOps>(
++/// Retained guest views and a fully bounded copy plan. `copy` calls no host
++/// operation, publication or engine API. View release and currency publication
++/// belong to `complete`, after an owned staging source has been dropped.
++pub(crate) struct PreparedMappingRectTransfer<'a, H: HostOps> {
++    views: Views<'a, H>,
++    pieces: Vec<Piece>,
++    windows: Vec<MappingRectWindow>,
++    mapping_id: u32,
++    writing: bool,
++}
++
++impl<H: HostMemory + HostOps> PreparedMappingRectTransfer<'_, H> {
++    /// Read-only re-walk after a GPU wait. This performs no mapping, engine
++    /// access or invalidation; a caller ends its source lease before retiring
++    /// storage on Drifted. MappingInternal needs a separate live resolver and
++    /// is excluded from the prepared-source route by its owner.
++    pub(crate) fn check_backing(&self, state: &DeviceState) -> Result<(), RectBatchRefusal> {
++        match super::backing_pages_witness(state, self.views.host, self.mapping_id) {
++            super::BackingWitness::Drifted => Err(RectBatchRefusal::PagesNotOurs),
++            super::BackingWitness::Verified => {
++                crate::runtime::drain::note_store_route("native_image_postread_vouched_n");
++                Ok(())
++            }
++            super::BackingWitness::Unwitnessed(_) => {
++                // Preserve the existing explicitly unwitnessed backing policy.
++                // This is coverage debt, never a successful live re-walk.
++                crate::runtime::drain::note_store_route("native_image_postread_unwitnessed_n");
++                Ok(())
++            }
++        }
++    }
++    /// All source shapes are checked before any byte moves. No allocation or
++    /// host callback occurs while the source may hold a GPU staging lease.
++    pub(crate) fn copy(
++        &mut self,
++        copies: &mut [MappingRectCopy<'_>],
++    ) -> Result<(), RectBatchRefusal> {
++        use RectBatchRefusal as R;
++        if copies.len() != self.windows.len() {
++            return Err(R::Empty);
++        }
++        for (index, (copy, window)) in copies.iter().zip(&self.windows).enumerate() {
++            if copy.window() != *window {
++                return Err(R::Window { index });
++            }
++            if copy.copy.is_write() != self.writing {
++                return Err(R::MixedDirections);
++            }
++        }
++        // No fallible operation below. RunCopy validated each packed source;
++        // preparation checked every host span and its complete coverage.
++        for piece in &self.pieces {
++            // SAFETY: all views remain owned until complete/Drop, and each
++            // source span and bounded GuestRun were checked above/preparation.
++            unsafe {
++                copies[piece.copy_index].copy.apply(
++                    piece.bytes.host_ptr(),
++                    0,
++                    piece.buffer_offset,
++                    piece.bytes.len() as usize,
++                );
++            }
++        }
++        Ok(())
++    }
++
++    /// End views before storage/cache publication. The caller must end any
++    /// staging lease before this method, including on a failed source check.
++    pub(crate) fn complete<T>(
++        mut self,
++        state: &mut DeviceState,
++        publish: impl FnOnce(&mut DeviceState, &mut H) -> T,
++    ) -> T {
++        self.views.release();
++        if self.writing {
++            for window in &self.windows {
++                let end = window.offset + window.len as u64; // preparation checked
++                state.invalidate_storage_residency_window(self.mapping_id, window.offset, end);
++                super::note_mapping_write_footprint(
++                    state,
++                    self.mapping_id,
++                    window.offset,
++                    window.len as u64,
++                );
++            }
++        }
++        publish(state, self.views.host)
++    }
++}
++
++/// Prepare all disjoint guest windows and host views without borrowing a source.
++/// Identity is checked before and after revalidation/view acquisition. The
++/// caller retains exclusive DeviceState access until completion; guest CPUs
++/// may run. No CPU view may escape this synchronous transaction.
++pub(crate) fn prepare_mapping_rects<'a, H: HostMemory + HostOps>(
+     state: &mut DeviceState,
+-    host: &mut H,
++    host: &'a mut H,
+     mapping_id: u32,
+-    identity: &MappingStorageIdentity,
+-    vouched: &PagesVouched,
+-    copies: &mut [MappingRectCopy<'_>],
+-) -> Result<(), RectBatchRefusal> {
++    writing: bool,
++    plan: MappingRectPreparation<'_>,
++) -> Result<PreparedMappingRectTransfer<'a, H>, RectBatchRefusal> {
+     use RectBatchRefusal as R;
+-    let writing = copies.first().ok_or(R::Empty)?.copy.is_write();
+-    for (index, copy) in copies.iter().enumerate() {
+-        if copy.copy.is_write() != writing {
+-            return Err(R::MixedDirections);
+-        }
+-        if copy.copy.len() == 0 || copy.copy.len() > isize::MAX as usize || copy.end().is_none() {
++    let MappingRectPreparation {
++        identity,
++        vouched,
++        source,
++        windows,
++    } = plan;
++    if windows.is_empty() {
++        return Err(R::Empty);
++    }
++    for (index, window) in windows.iter().enumerate() {
++        if window.len == 0 || window.len > isize::MAX as usize || window.end().is_none() {
+             return Err(R::Window { index });
+         }
+-        for (other_index, other) in copies[..index].iter().enumerate() {
+-            if copy.offset < other.end().ok_or(R::Window { index: other_index })?
+-                && other.offset < copy.end().ok_or(R::Window { index })?
++        for (other_index, other) in windows[..index].iter().enumerate() {
++            if window.offset < other.end().ok_or(R::Window { index: other_index })?
++                && other.offset < window.end().ok_or(R::Window { index })?
+             {
+                 return Err(R::Overlap {
+                     first: other_index,
+@@ -194,7 +331,10 @@
+     if !identity.covers(state, mapping_id) || !vouched.covers(state, mapping_id) {
+         return Err(R::StorageChanged);
+     }
+-    let contig = super::ensure_contig_view(state, host, mapping_id);
++    let contig = match source {
++        RectViewSource::HostViews => super::ensure_contig_view(state, host, mapping_id),
++        RectViewSource::PublishedRam(_) => None,
++    };
+     let mut views = Views {
+         host,
+         runs: Vec::new(),
+@@ -217,7 +357,7 @@
+         let mapping_span = (gpas.len() as u64)
+             .checked_mul(page_size)
+             .ok_or(R::HostBound { offset: 0 })?;
+-        for (index, copy) in copies.iter().enumerate() {
++        for (index, copy) in windows.iter().enumerate() {
+             if copy.end().ok_or(R::Window { index })? > mapping_span {
+                 return Err(R::Window { index });
+             }
+@@ -234,7 +374,7 @@
+             let end = (run.end as u64)
+                 .checked_mul(page_size)
+                 .ok_or(R::HostBound { offset })?;
+-            if !copies
++            if !windows
+                 .iter()
+                 .any(|copy| copy.offset < end && copy.end().is_some_and(|e| offset < e))
+             {
+@@ -245,6 +385,39 @@
+                 .checked_mul(page_len)
+                 .filter(|&n| n <= isize::MAX as usize)
+                 .ok_or(R::HostBound { offset })?;
++            if let RectViewSource::PublishedRam(regions) = source {
++                let first_gpa = gpas[run.start];
++                let mut done = 0u64;
++                while done < total as u64 {
++                    let gpa = first_gpa.checked_add(done).ok_or(R::HostBound { offset })?;
++                    // Stop at every published boundary, including the start
++                    // of an overlapping region. The next iteration refuses
++                    // ambiguous ownership before any source bytes are copied.
++                    let prefix = regions
++                        .iter()
++                        .filter(|r| r.gpa_base > gpa)
++                        .map(|r| r.gpa_base - gpa)
++                        .min()
++                        .unwrap_or(total as u64 - done)
++                        .min(total as u64 - done);
++                    let mut matches = regions.iter().filter_map(|r| r.cpu_run_prefix(gpa, prefix));
++                    let bytes = matches.next().ok_or(R::RamWindow {
++                        gpa,
++                        len: total as u64 - done,
++                    })?;
++                    if matches.next().is_some() {
++                        return Err(R::RamAmbiguous { gpa });
++                    }
++                    views.runs.try_reserve(1).map_err(|_| R::Allocation)?;
++                    views.runs.push(MappedRun {
++                        bytes,
++                        offset: offset + done,
++                        owned: false,
++                    });
++                    done += bytes.len();
++                }
++                continue;
++            }
+             let ptr = views.host.map_pages(&gpas[run], page_len).ok_or(R::Map {
+                 offset,
+                 pages: page_count,
+@@ -266,13 +439,13 @@
+     let mut pieces = Vec::new();
+     pieces
+         .try_reserve_exact(
+-            copies
++            windows
+                 .len()
+                 .checked_mul(views.runs.len())
+                 .ok_or(R::Allocation)?,
+         )
+         .map_err(|_| R::Allocation)?;
+-    for (copy_index, copy) in copies.iter().enumerate() {
++    for (copy_index, copy) in windows.iter().enumerate() {
+         let end = copy.end().ok_or(R::Window { index: copy_index })?;
+         let mut covered = 0u64;
+         for run in &views.runs {
+@@ -300,36 +473,64 @@
+                 bytes,
+             });
+         }
+-        if covered != copy.copy.len() as u64 {
++        if covered != copy.len as u64 {
+             return Err(R::Window { index: copy_index });
+         }
+     }
+-    // No fallible operation below. Each copy's packed-row bound was established
+-    // by RunCopy's constructor; each host span is a bounded live GuestRun.
++
++    let mut retained_windows = Vec::new();
++    retained_windows
++        .try_reserve_exact(windows.len())
++        .map_err(|_| R::Allocation)?;
++    retained_windows.extend_from_slice(windows);
++    Ok(PreparedMappingRectTransfer {
++        views,
++        pieces,
++        windows: retained_windows,
++        mapping_id,
++        writing,
++    })
++}
++
++/// Move disjoint rectangles of one settled mapping as one publication unit.
++/// Bounds/views are prepared before copying; currency follows view release.
++/// The split source-independent preparation also serves leased native Stores.
++pub(crate) fn copy_mapping_rects<H: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut H,
++    mapping_id: u32,
++    identity: &MappingStorageIdentity,
++    vouched: &PagesVouched,
++    copies: &mut [MappingRectCopy<'_>],
++) -> Result<(), RectBatchRefusal> {
++    use RectBatchRefusal as R;
++    let writing = copies.first().ok_or(R::Empty)?.copy.is_write();
++    let mut windows = Vec::new();
++    windows
++        .try_reserve_exact(copies.len())
++        .map_err(|_| R::Allocation)?;
++    for copy in copies.iter() {
++        if copy.copy.is_write() != writing {
++            return Err(R::MixedDirections);
++        }
++        windows.push(copy.window());
++    }
++    let mut prepared = prepare_mapping_rects(
++        state,
++        host,
++        mapping_id,
++        writing,
++        MappingRectPreparation {
++            identity,
++            vouched,
++            source: RectViewSource::HostViews,
++            windows: &windows,
++        },
++    )?;
++    prepared.copy(copies)?;
+     if writing {
+         state.note_host_wrote_mapping(mapping_id);
+     }
+-    for piece in pieces {
+-        // SAFETY: the transaction retains each view until after every piece;
+-        // GuestRun checked its host bound and the enclosing copy's span is covered.
+-        unsafe {
+-            copies[piece.copy_index].copy.apply(
+-                piece.bytes.host_ptr(),
+-                0,
+-                piece.buffer_offset,
+-                piece.bytes.len() as usize,
+-            );
+-        }
+-    }
+-    // Release all transient CPU views before publishing content or stamping the
+-    // dirty witness. A host that copies on unmap must finish that work first.
+-    drop(views);
+-    if writing {
+-        for copy in copies {
+-            let end = copy.offset + copy.copy.len() as u64; // checked in preparation
+-            state.invalidate_storage_residency_window(mapping_id, copy.offset, end);
+-            super::note_mapping_write_footprint(state, mapping_id, copy.offset, end - copy.offset);
+-        }
+-    }
++    prepared.complete(state, |_, _| ());
+     Ok(())
+ }
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -20,7 +20,10 @@
+ 
+ mod rect_batch;
+ pub use rect_batch::RectBatchRefusal;
+-pub(crate) use rect_batch::{copy_mapping_rects, MappingRectCopy, MappingStorageIdentity};
++pub(crate) use rect_batch::{
++    copy_mapping_rects, prepare_mapping_rects, MappingRectCopy, MappingRectPreparation,
++    MappingRectWindow, MappingStorageIdentity, PreparedMappingRectTransfer, RectViewSource,
++};
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ enum MapperDecline {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -54,7 +54,7 @@
+ }
+ 
+ /// Preserve RGBA16Float's native range and half bits. This compatibility route
+-/// owns the readback copy, so the staging owner ends before guest settlement.
++/// consumes owned staging on stable views; copying hosts keep owned readback.
+ fn store_native_float_surface<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -82,19 +82,82 @@
+         MTL_FORMAT_RGBA16_FLOAT,
+     )
+     .map_err(R::Mapping)?;
+-    let readback = crate::backend::vulkan::engine::read_target_texels(identity).map_err(R::Read)?;
+-    if readback.texel.native_layout() != Some(TexelLayout::Rgba16Float)
+-        || readback.pixels.len() != target.packed_bytes()
+-    {
+-        return Err(R::SourceShape);
+-    }
+-    let bytes = crate::runtime::mapping_write::write_captured_native_image(
+-        state,
+-        host,
+-        target,
+-        &readback.pixels,
+-    )
+-    .map_err(R::Mapping)?;
++    let expected_bytes = target.packed_bytes();
++    let bytes = match target.prepared_source_plan(host) {
++        Ok(plan) => {
++            let writer = crate::runtime::mapping_write::prepare_native_image_write(
++                state, host, target, plan,
++            )
++            .map_err(R::Mapping)?;
++            let read_started = std::time::Instant::now();
++            let readback = crate::backend::vulkan::engine::read_target_texels_consumable(identity)
++                .map_err(R::Read)?;
++            crate::runtime::drain::note_store_route_us(
++                "native_float_readback_us",
++                read_started.elapsed().as_micros() as u64,
++            );
++            if readback.texel.native_layout() != Some(TexelLayout::Rgba16Float)
++                || readback.bytes().len() != expected_bytes
++            {
++                // The source was declared after the writer: Drop ends its
++                // staging lease before failed preparation releases guest views.
++                return Err(R::SourceShape);
++            }
++            let leased = readback.is_leased();
++            let publish_started = std::time::Instant::now();
++            // Ownership, never readback.bytes(), crosses this boundary. The
++            // writer drops the source before view release/currency publication.
++            let bytes = writer.write_from(readback).map_err(R::Mapping)?;
++            crate::runtime::drain::note_store_route_us(
++                "native_float_publish_us",
++                publish_started.elapsed().as_micros() as u64,
++            );
++            if leased {
++                crate::runtime::drain::note_store_route("native_float_store_leased_n");
++                crate::runtime::drain::note_store_route_n(
++                    "native_float_cpu_copy_bytes_avoided",
++                    bytes as u64,
++                );
++            } else {
++                // Uncached staging retains the same readback's copying fallback.
++                crate::runtime::drain::note_store_route("native_float_store_copied_n");
++            }
++            bytes
++        }
++        Err(why) => {
++            // Capability routing only. The original captured target is retained
++            // and read once; a remap/shape failure is never retried into new pages.
++            crate::observe::Emit::decline("native_float_lease_declined", &why)
++                .field("mapping", mapping_id)
++                .fail_once(u64::from(mapping_id));
++            crate::runtime::drain::note_store_route("native_float_store_owned_route_n");
++            let read_started = std::time::Instant::now();
++            let readback =
++                crate::backend::vulkan::engine::read_target_texels(identity).map_err(R::Read)?;
++            crate::runtime::drain::note_store_route_us(
++                "native_float_readback_us",
++                read_started.elapsed().as_micros() as u64,
++            );
++            if readback.texel.native_layout() != Some(TexelLayout::Rgba16Float)
++                || readback.pixels.len() != expected_bytes
++            {
++                return Err(R::SourceShape);
++            }
++            let publish_started = std::time::Instant::now();
++            let bytes = crate::runtime::mapping_write::write_captured_native_image(
++                state,
++                host,
++                target,
++                &readback.pixels,
++            )
++            .map_err(R::Mapping)?;
++            crate::runtime::drain::note_store_route_us(
++                "native_float_publish_us",
++                publish_started.elapsed().as_micros() as u64,
++            );
++            bytes
++        }
++    };
+     crate::runtime::drain::note_store_route("native_float_render_store_n");
+     crate::runtime::drain::note_store_route_n("native_float_store_bytes_n", bytes as u64);
+     Ok(bytes)
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -5522,6 +5522,14 @@
+     pub texel: ReadbackTexel,
+ }
+ 
++// This owner, not a borrowed staging slice, crosses the prepared Store API.
++// Its Drop ends the staging lease before guest view release/publication.
++impl crate::runtime::mapping_write::NativeImageSource for ConsumableTargetTexels {
++    fn native_bytes(&self) -> &[u8] {
++        self.bytes()
++    }
++}
++
+ impl ConsumableTargetTexels {
+     /// The resident's native bytes. The borrow cannot outlive this owner.
+     pub fn bytes(&self) -> &[u8] {
+--- a/reims-vgpu/crates/reims-vgpu-memory/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-memory/src/lib.rs
+@@ -219,6 +219,22 @@
+     pub len: u64,
+ }
+ 
++impl GuestRamRegion {
++    /// A bounded CPU window over the stable VM-lifetime RAM span published by
++    /// HostOps. Clip only at this region's end; a caller may continue in a
++    /// different region instead of joining a physical or host-address gap.
++    /// This establishes neither GPU import nor packed page-alias support.
++    pub fn cpu_run_prefix(&self, gpa: u64, max_len: u64) -> Option<GuestRun> {
++        let end = self.gpa_base.checked_add(self.len)?;
++        if max_len == 0 || gpa < self.gpa_base || gpa >= end || self.len > isize::MAX as u64 {
++            return None;
++        }
++        let base = usize::try_from(self.host_va).ok()?;
++        base.checked_add(usize::try_from(self.len).ok()?)?;
++        GuestRun::in_mapping(base, self.len, gpa - self.gpa_base, max_len.min(end - gpa))
++    }
++}
++
+ /// Identity of one live import.
+ ///
+ /// Process-monotonic and never reused, which is load-bearing rather than

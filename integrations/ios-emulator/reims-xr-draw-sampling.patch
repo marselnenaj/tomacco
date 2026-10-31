@@ -1,0 +1,298 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -1254,6 +1254,9 @@
+     /// privately because the layout above is what the bytes are *in*: deriving
+     /// one of these from the other is exactly the confusion this type ends.
+     source: Option<u16>,
++    /// Whether the values still carry the source's transfer function. A float
++    /// upload may already have decoded it before filtering.
++    encoded: bool,
+ }
+ 
+ impl SampledByteFormat {
+@@ -1265,6 +1268,17 @@
+         Self {
+             layout,
+             source: Some(source),
++            encoded: true,
++        }
++    }
++
++    /// Values decoded into linear light before upload. Keep their provenance
++    /// without asking the sampler to decode the source transfer function twice.
++    pub const fn linearized_from_source(layout: TexelLayout, source: u16) -> Self {
++        Self {
++            layout,
++            source: Some(source),
++            encoded: false,
+         }
+     }
+ 
+@@ -1276,6 +1290,7 @@
+         Self {
+             layout,
+             source: None,
++            encoded: false,
+         }
+     }
+ 
+@@ -1291,7 +1306,8 @@
+     /// either honours it — where the answer is the layout's sRGB spelling — or
+     /// reports it, where naming the guest format is the whole value of the line.
+     pub fn srgb_source(self) -> Option<u16> {
+-        self.source.filter(|&source| is_srgb(source))
++        self.source
++            .filter(|&source| self.encoded && is_srgb(source))
+     }
+ }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/model/state.rs b/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/model/state.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+@@ -2817,19 +2817,13 @@
+     /// content change. Padding is included so a write anywhere in the span is
+     /// observed by the byte-compare.
+     pub native: Vec<u8>,
+-    /// Tight upload bytes of `native`, in whatever layout [`Self::layout`]
++    /// Tight upload bytes of `native`, in whatever format [`Self::byte_format`]
+     /// names: converted RGBA8, or the guest's own texels kept exactly.
+     pub rgba: std::sync::Arc<Vec<u8>>,
+-    /// What [`Self::rgba`] holds, so the memo hit re-states the layout the
+-    /// miss-fill chose.
+-    ///
+-    /// This was a `bgra8: bool`, and it could only spell two of the layouts the
+-    /// loader can now produce — so a half-float image stored on the miss would
+-    /// have come back out of a hit described as `Rgba8`: eight-byte texels bound
+-    /// into a four-byte image, which is a length the engine refuses and, if it
+-    /// had not, garbage. A `bool` standing in for an enum is the one shape
+-    /// `rustc` cannot tell you has gone short.
+-    pub layout: crate::protocol::pixel_format::TexelLayout,
++    /// The layout and transfer state chosen on fill. XR uploads already hold
++    /// linear light: retaining only their layout would make an sRGB memo hit
++    /// request a second transfer-function decode.
++    pub byte_format: crate::protocol::pixel_format::SampledByteFormat,
+     /// Content generation: bumps only when the native bytes change.
+     pub generation: u64,
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -2817,7 +2817,7 @@
+             // The ref-texture view path re-derives this from the view's own pixel
+             // format on every call, hit or miss, so storing it is a statement of
+             // what the bytes are rather than the source anything reads.
+-            layout: byte_format.layout(),
++            byte_format,
+             generation,
+         },
+         entry_bytes,
+@@ -5178,9 +5178,36 @@
+     bpr: u64,
+     sample_fmt: u16,
+     tight: u64,
+-) -> Option<(Vec<u8>, TexelLayout)> {
++) -> Option<(Vec<u8>, SampledByteFormat)> {
+     let native = native_uploads_for(sample_fmt);
+     let bpr = bpr as usize;
++    // XR has no bit-compatible Vulkan format. Gather the declared guest rows
++    // and use the same signed, extended-range decode as compute sampling.
++    // The memo retains the linearized format along with the converted bytes,
++    // so hits avoid conversion and never apply sRGB a second time.
++    if linear_xr_upload_enabled(sample_fmt, native) {
++        let row_bytes = usize::try_from(tight).ok()?;
++        let rows = (h as usize).checked_mul(planes as usize)?;
++        let mut packed = Vec::new();
++        packed
++            .try_reserve_exact(row_bytes.checked_mul(rows)?)
++            .ok()?;
++        for row in 0..rows {
++            let start = row.checked_mul(bpr)?;
++            packed.extend_from_slice(scratch.get(start..start.checked_add(row_bytes)?)?);
++        }
++        return match decode_linear_xr_upload(sample_fmt, packed) {
++            Ok(upload) => Some(upload),
++            Err(why) => {
++                use crate::observe::Decline;
++                crate::observe::fail(format!(
++                    "linear_sample_xr_decode reason={} fmt={sample_fmt:#x}",
++                    why.slug()
++                ));
++                None
++            }
++        };
++    }
+     // Both the row width and the row *count* are the upload layout's own, which
+     // for a block-compressed layout is a row of blocks and a quarter of the
+     // texel height. Spelled `tight_row_bytes` / `tight_row_count` rather than
+@@ -5199,7 +5226,7 @@
+             out.get_mut(dst..dst + row_bytes)?
+                 .copy_from_slice(scratch.get(src..src + row_bytes)?);
+         }
+-        return Some((out, fmt));
++        return Some((out, SampledByteFormat::from_source(fmt, sample_fmt)));
+     }
+     let out_row = (w as usize).checked_mul(RGBA8_BPP as usize)?;
+     let rows = (h as usize).checked_mul(planes as usize)?;
+@@ -5223,7 +5250,10 @@
+             return None;
+         }
+     }
+-    Some((out, TexelLayout::Rgba8))
++    Some((
++        out,
++        SampledByteFormat::from_source(TexelLayout::Rgba8, sample_fmt),
++    ))
+ }
+ 
+ /// Which native sampled layouts the CPU byte rails may hand the engine for this
+@@ -5256,7 +5286,9 @@
+     // decides — the compressed families, the half-float layouts, and the
+     // four-channel float one whose omission from the old proxy cost every draw
+     // that sampled it.
+-    if native_bind_is_host_gated(sample_format) {
++    if pixel_format::XrFormat::from_mtl(sample_format).is_some()
++        || native_bind_is_host_gated(sample_format)
++    {
+         return native_uploads_asking_host();
+     }
+     NativeUploads::BGRA8
+@@ -5450,7 +5482,7 @@
+         // Vec equality is length + byte memcmp with early exit on change.
+         Some(m) if m.native == scratch => {
+             crate::runtime::drain::note_store_route("lin_memo_hit");
+-            Some((m.rgba.clone(), m.generation, m.layout))
++            Some((m.rgba.clone(), m.generation, m.byte_format))
+         }
+         Some(_) => {
+             crate::runtime::drain::note_store_route("lin_memo_changed");
+@@ -5465,10 +5497,7 @@
+                 key: gva,
+                 generation,
+             }),
+-            // The memo stores the layout it converted to; the transfer function
+-            // is `sample_fmt`'s and is re-derived on hit and miss alike, so a
+-            // retained entry cannot carry a stale one.
+-            SampledByteFormat::from_source(fmt, sample_fmt),
++            fmt,
+         ));
+     }
+     // First sight or native bytes changed: convert fresh, new generation.
+@@ -5486,7 +5515,7 @@
+         crate::model::GuestLinearMemo {
+             native: scratch,
+             rgba: rgba.clone(),
+-            layout: fmt,
++            byte_format: fmt,
+             generation,
+         },
+         entry_bytes,
+@@ -5497,7 +5526,7 @@
+             key: gva,
+             generation,
+         }),
+-        SampledByteFormat::from_source(fmt, sample_fmt),
++        fmt,
+     ))
+ }
+ 
+@@ -14613,7 +14642,7 @@
+             // This rail converts every format to RGBA8 unconditionally — the
+             // loop above is `convert_row_to_rgba8` with no native arm — so the
+             // layout is fixed rather than chosen.
+-            layout: crate::protocol::pixel_format::TexelLayout::Rgba8,
++            byte_format: SampledByteFormat::from_source(TexelLayout::Rgba8, sample_fmt),
+             generation,
+         },
+         entry_bytes,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -612,6 +612,8 @@
+     PaddedRowUnreadable { row: u32 },
+     /// The format has a bytes-per-pixel but no row conversion to RGBA8.
+     RowConvertUnsupported { format: u16 },
++    #[cfg(feature = "backend-vulkan")]
++    XrUpload { reason: &'static str },
+     /// Two faces of one cube texture read back in different layouts.
+     ///
+     /// One descriptor names one pixel format, so the six faces cannot legally
+@@ -646,6 +648,8 @@
+             Self::TightImageUnreadable => "linear_load_tight_image_unreadable",
+             Self::PaddedRowUnreadable { .. } => "linear_load_padded_row_unreadable",
+             Self::RowConvertUnsupported { .. } => "linear_load_row_convert_unsupported",
++            #[cfg(feature = "backend-vulkan")]
++            Self::XrUpload { reason } => reason,
+             #[cfg(feature = "backend-vulkan")]
+             Self::CubeFaceLayoutMismatch { .. } => "linear_load_cube_face_layout_mismatch",
+         }
+@@ -962,6 +966,29 @@
+     })
+ }
+ 
++/// XR is expanded before filtering, on callers that carry float32 uploads.
++/// The flag is the host's measured RGBA32Float filtering capability; Metal's
++/// byte loader requests NONE and continues through its existing path.
++pub(crate) fn linear_xr_upload_enabled(format: u16, native: NativeUploads) -> bool {
++    cfg!(feature = "backend-vulkan")
++        && native.float32
++        && pixel_format::XrFormat::from_mtl(format).is_some()
++}
++
++#[cfg(feature = "backend-vulkan")]
++pub(crate) fn decode_linear_xr_upload(
++    format: u16,
++    bytes: Vec<u8>,
++) -> Result<(Vec<u8>, SampledByteFormat), LinearLoadRefusal> {
++    let upload = reims_vgpu_vulkan::pixel::sampled_upload_bytes(format, bytes)
++        .map_err(|why| LinearLoadRefusal::XrUpload { reason: why.slug() })?;
++    let (_, bytes) = upload.into_parts();
++    Ok((
++        bytes,
++        SampledByteFormat::linearized_from_source(TexelLayout::Rgba32Float, format),
++    ))
++}
++
+ // Eight, because the last one is the caller's identity and the whole point of
+ // it is that this leaf cannot derive it. Grouping the descriptor selectors into
+ // a struct would hide which of them a call site varies, which is what the
+@@ -1117,11 +1144,12 @@
+     // `need_rgba` is the RGBA8 figure. The tight-row check is the same
+     // agreement one step earlier — a source row that is not exactly one tight
+     // row of the upload layout cannot be copied straight through.
+-    if let Some(fmt) = linear_native_upload_format(sample_fmt, native)
+-        .filter(|fmt| fmt.tight_row_bytes(w) == Some(tight))
+-    {
++    let xr_upload = linear_xr_upload_enabled(sample_fmt, native);
++    let native_layout = linear_native_upload_format(sample_fmt, native)
++        .filter(|fmt| fmt.tight_row_bytes(w) == Some(tight));
++    if native_layout.is_some() || xr_upload {
+         let row_bytes = tight as usize;
+-        let rows = (fmt.tight_row_count(h) as usize)
++        let rows = (storage_rows as usize)
+             .checked_mul(planes as usize)
+             .ok_or(R::SizeOverflow)?;
+         let out_len = row_bytes.checked_mul(rows).ok_or(R::SizeOverflow)?;
+@@ -1147,6 +1175,11 @@
+                 row: u32::try_from(row_index).unwrap_or(u32::MAX),
+             })?;
+         }
++        #[cfg(feature = "backend-vulkan")]
++        if xr_upload {
++            return decode_linear_xr_upload(sample_fmt, rgba);
++        }
++        let fmt = native_layout.ok_or(R::RowConvertUnsupported { format: sample_fmt })?;
+         return Ok((rgba, SampledByteFormat::from_source(fmt, sample_fmt)));
+     }
+     // The ordinal is parsed once, above the row loop, and the parse *is* the
+@@ -1225,6 +1258,10 @@
+     let mut bytes = vec![0u8; native_len];
+     if !read(&mut bytes) {
+         return Err(R::TightImageUnreadable);
++    }
++    #[cfg(feature = "backend-vulkan")]
++    if linear_xr_upload_enabled(sample_format, native) {
++        return decode_linear_xr_upload(sample_format, bytes);
+     }
+     // A format whose guest bytes are already the upload bytes is returned as
+     // read, and the layout says what they are. This is decided from the format

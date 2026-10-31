@@ -1,0 +1,348 @@
+diff --git c/VERSION w/VERSION
+index 4d6651d..0328dd7 100644
+--- c/VERSION
++++ w/VERSION
+@@ -1 +1 @@
+-ChefKissInferno-1.0.0rc1_QEMU-10.2.2_10.1.3_hybrid
++TomaccoIOSResearch-0.1_QEMU-10.2.2_10.1.3_hybrid
+diff --git c/hw/arm/apple-silicon/boot.c w/hw/arm/apple-silicon/boot.c
+index 2e56568..7cdb515 100644
+--- c/hw/arm/apple-silicon/boot.c
++++ w/hw/arm/apple-silicon/boot.c
+@@ -552,7 +552,7 @@ void apple_boot_populate_dt(AppleDTNode *root, AppleBootInfo *info,
+ 
+     apple_dt_set_prop_u64(child, "dram-base", info->dram_base);
+     apple_dt_set_prop_u64(child, "dram-size", info->dram_size);
+-    apple_dt_set_prop_str(child, "firmware-version", "ChefKiss Inferno");
++    apple_dt_set_prop_str(child, "firmware-version", "Tomacco iOS Research");
+     apple_dt_set_prop_str(child, "system-firmware-version", QEMU_VERSION);
+ 
+     apple_dt_set_prop_u32(child, "nvram-total-size", info->nvram_size);
+diff --git c/hw/arm/apple-silicon/t8030.c w/hw/arm/apple-silicon/t8030.c
+index 565f02e..fb4a098 100644
+--- c/hw/arm/apple-silicon/t8030.c
++++ w/hw/arm/apple-silicon/t8030.c
+@@ -2832,8 +2832,19 @@ static void t8030_init(MachineState *machine)
+     case 26:
+         t8030->sio_protocol = 10;
+         break;
++    case 27:
++#ifdef TOMACCO_IOS_BOOT_PROBE
++        warn_report("iOS 27 kernel bring-up only; no guest compatibility claim");
++        t8030->sio_protocol = 10;
++        break;
++#else
++        error_setg(&error_fatal, "iOS 27 is not a qualified guest");
++        return;
++#endif
+     default:
+-        assert_not_reached();
++        error_setg(&error_fatal, "Unsupported iOS major version %u",
++                   BUILD_VERSION_MAJOR(build_version));
++        return;
+     }
+ 
+     if (t8030->securerom_filename == NULL) {
+diff --git c/hw/display/apple_displaypipe_v4.c w/hw/display/apple_displaypipe_v4.c
+index 8e77db8..08156ea 100644
+--- c/hw/display/apple_displaypipe_v4.c
++++ w/hw/display/apple_displaypipe_v4.c
+@@ -738,99 +738,10 @@ static void adp_v4_draw_boot_splash_timer(void *opaque)
+ // Please see `ui/icons/CKBrandingNotice.md`
+ static void adp_v4_read_and_draw_boot_splash(AppleDisplayPipeV4State *adp)
+ {
+-    char *path;
+-    FILE *fp;
+-    uint8_t sig[8] = { 0 };
+-    png_structp png_ptr;
+-    png_infop info_ptr;
+-    ADPV4DrawBootSplashContext *ctx;
+-    uint32_t *data;
+-    png_bytep *row_ptrs;
+-    uint32_t disp_width;
+-    uint32_t disp_height;
+-
+-    path = get_relocated_path(CONFIG_QEMU_ICONDIR
+-                              "/hicolor/512x512/apps/CKQEMUBootSplash@2x.png");
+-    assert_nonnull(path);
+-    fp = fopen(path, "rb");
+-    if (fp == NULL) {
+-        error_setg(&error_abort, "Missing emulator branding: %s.", path);
+-        return;
+-    }
+-    fread(sig, sizeof(sig), 1, fp);
+-    if (png_sig_cmp(sig, 0, sizeof(sig)) != 0) {
+-        error_setg(&error_abort, "Invalid emulator branding: %s.", path);
+-        return;
+-    }
+-    g_free(path);
+-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+-    assert_nonnull(png_ptr);
+-    info_ptr = png_create_info_struct(png_ptr);
+-    assert_nonnull(info_ptr);
+-    png_init_io(png_ptr, fp);
+-    png_set_sig_bytes(png_ptr, sizeof(sig));
+-
+-    png_read_info(png_ptr, info_ptr);
+-
+-    ctx = g_new(ADPV4DrawBootSplashContext, 1);
+-    ctx->width = png_get_image_width(png_ptr, info_ptr);
+-    ctx->height = png_get_image_height(png_ptr, info_ptr);
+-    ctx->image =
+-        pixman_image_create_bits(PIXMAN_a8b8g8r8, ctx->width, ctx->height, NULL,
+-                                 ctx->width * sizeof(uint32_t));
+-    data = pixman_image_get_data(ctx->image);
+-
+-    png_read_update_info(png_ptr, info_ptr);
+-
+-    row_ptrs = g_new(png_bytep, ctx->height);
+-    for (size_t y = 0; y < ctx->height; y++) {
+-        row_ptrs[y] = (png_bytep)(data + (y * ctx->width));
+-    }
+-
+-    png_read_image(png_ptr, row_ptrs);
+-
+-    g_free(row_ptrs);
+-    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+-    fclose(fp);
+-
+-    disp_width = qemu_console_get_width(adp->console, 0);
+-    disp_height = qemu_console_get_height(adp->console, 0);
+-
+-    ctx->adp = adp;
+-    ctx->dest_width = (double)disp_width / 1.5;
+-    ctx->dest_x = (disp_width / 2) - (ctx->dest_width / 2);
+-    ctx->dest_y = (disp_height / 2) - (ctx->dest_width / 2);
+-    ctx->disp_image = qemu_console_surface(adp->console)->image;
+-
+-    pixman_image_set_filter(ctx->image, PIXMAN_FILTER_BEST, NULL, 0);
+-    pixman_transform_init_identity(&ctx->transform);
+-    pixman_transform_scale(
+-        &ctx->transform, NULL,
+-        pixman_double_to_fixed((double)ctx->width / ctx->dest_width),
+-        pixman_double_to_fixed((double)ctx->height / ctx->dest_width));
+-    pixman_image_set_transform(ctx->image, &ctx->transform);
+-
+-    pixman_rectangle16_t rect = {
+-        .x = 0,
+-        .y = 0,
+-        .width = disp_width,
+-        .height = disp_height,
+-    };
+-    pixman_color_t color = QEMU_PIXMAN_COLOR_BLACK;
+-
+-    pixman_image_fill_rectangles(PIXMAN_OP_SRC, ctx->disp_image, &color, 1,
+-                                 &rect);
+-
+-    adp_v4_draw_boot_splash(ctx);
+-
+-    adp->boot_splash_timer =
+-        timer_new_ns(QEMU_CLOCK_VIRTUAL, adp_v4_draw_boot_splash_timer, ctx);
+-
+-    // Workaround for `-v` removing the boot splash.
+-    timer_mod(adp->boot_splash_timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) +
+-                                          (NANOSECONDS_PER_SECOND / 2));
++    /* Unofficial derivative: guest framebuffer remains blank until iOS draws. */
+ }
+ 
++
+ static void adp_v4_reset_hold(Object *obj, ResetType type)
+ {
+     AppleDisplayPipeV4State *adp = APPLE_DISPLAY_PIPE_V4(obj);
+diff --git c/include/hw/arm/apple-silicon/boot.h w/include/hw/arm/apple-silicon/boot.h
+index e80c3d0..d6ce147 100644
+--- c/include/hw/arm/apple-silicon/boot.h
++++ w/include/hw/arm/apple-silicon/boot.h
+@@ -21,7 +21,9 @@
+ #define HW_ARM_APPLE_SILICON_BOOT_H
+ 
+ // #define ENABLE_BASEBAND
++#ifndef TOMACCO_IOS_BOOT_PROBE
+ #define ENABLE_DATA_ENCRYPTION
++#endif
+ 
+ #include "qemu/osdep.h"
+ #include "exec/hwaddr.h"
+diff --git c/meson.build w/meson.build
+index 9bbd0d7..7b3ca2c 100644
+--- c/meson.build
++++ w/meson.build
+@@ -2671,13 +2671,13 @@ config_host_data.set('CONFIG_PTHREAD_SETNAME_NP_W_TID', cc.links(osdep_prefix +
+   {
+     pthread_t thread;
+     pthread_create(&thread, 0, f, 0);
+-    pthread_setname_np(thread, "ChefKiss Inferno");
++    pthread_setname_np(thread, "Tomacco iOS Research");
+     return 0;
+   }''', dependencies: threads))
+ config_host_data.set('CONFIG_PTHREAD_SETNAME_NP_WO_TID', cc.links(osdep_prefix + '''
+   #include <pthread.h>
+ 
+-  static void *f(void *p) { pthread_setname_np("ChefKiss Inferno"); return NULL; }
++  static void *f(void *p) { pthread_setname_np("Tomacco iOS Research"); return NULL; }
+   int main(void)
+   {
+     pthread_t thread;
+@@ -2693,7 +2693,7 @@ config_host_data.set('CONFIG_PTHREAD_SET_NAME_NP', cc.links(osdep_prefix + '''
+   {
+     pthread_t thread;
+     pthread_create(&thread, 0, f, 0);
+-    pthread_set_name_np(thread, "ChefKiss Inferno");
++    pthread_set_name_np(thread, "Tomacco iOS Research");
+     return 0;
+   }''', dependencies: threads))
+ config_host_data.set('CONFIG_PTHREAD_CONDATTR_SETCLOCK', cc.links(osdep_prefix + '''
+diff --git c/system/vl.c w/system/vl.c
+index 481cba9..cf11963 100644
+--- c/system/vl.c
++++ w/system/vl.c
+@@ -861,7 +861,7 @@ static MachineClass *find_default_machine(GSList *machines)
+ static void version(void)
+ {
+     printf("QEMU emulator version " QEMU_FULL_VERSION "\n"
+-           QEMU_COPYRIGHT "\n\n" "ChefKiss Inferno\n"
++           QEMU_COPYRIGHT "\n\n" "Tomacco iOS Research\n"
+            "Copyright (c) 2023-2026 Visual Ehrmanntraut and Inferno team");
+ }
+ 
+diff --git c/ui/cocoa.m w/ui/cocoa.m
+index 0a7ff79..32d1c31 100644
+--- c/ui/cocoa.m
++++ w/ui/cocoa.m
+@@ -1187,9 +1187,9 @@ - (void) grabMouse
+     COCOA_DEBUG("QemuCocoaView: grabMouse\n");
+ 
+     if (qemu_name)
+-        [[self window] setTitle:[NSString stringWithFormat:@"ChefKiss Inferno %s - (Press  " UC_CTRL_KEY " " UC_ALT_KEY " G  to release Mouse)", qemu_name]];
++        [[self window] setTitle:[NSString stringWithFormat:@"Tomacco iOS Research %s - (Press  " UC_CTRL_KEY " " UC_ALT_KEY " G  to release Mouse)", qemu_name]];
+     else
+-        [[self window] setTitle:@"ChefKiss Inferno - (Press  " UC_CTRL_KEY " " UC_ALT_KEY " G  to release Mouse)"];
++        [[self window] setTitle:@"Tomacco iOS Research - (Press  " UC_CTRL_KEY " " UC_ALT_KEY " G  to release Mouse)"];
+     [self hideCursor];
+     CGAssociateMouseAndMouseCursorPosition(isAbsoluteEnabled);
+     isMouseGrabbed = TRUE; // while isMouseGrabbed = TRUE, QemuCocoaApp sends all events to [cocoaView handleEvent:]
+@@ -1200,9 +1200,9 @@ - (void) ungrabMouse
+     COCOA_DEBUG("QemuCocoaView: ungrabMouse\n");
+ 
+     if (qemu_name)
+-        [[self window] setTitle:[NSString stringWithFormat:@"ChefKiss Inferno %s", qemu_name]];
++        [[self window] setTitle:[NSString stringWithFormat:@"Tomacco iOS Research %s", qemu_name]];
+     else
+-        [[self window] setTitle:@"ChefKiss Inferno"];
++        [[self window] setTitle:@"Tomacco iOS Research"];
+     [self unhideCursor];
+     CGAssociateMouseAndMouseCursorPosition(TRUE);
+     isMouseGrabbed = FALSE;
+@@ -1309,7 +1309,7 @@ - (id) init
+         }
+         [window setAcceptsMouseMovedEvents:YES];
+         [window setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+-        [window setTitle:qemu_name ? [NSString stringWithFormat:@"ChefKiss Inferno %s", qemu_name] : @"ChefKiss Inferno"];
++        [window setTitle:qemu_name ? [NSString stringWithFormat:@"Tomacco iOS Research %s", qemu_name] : @"Tomacco iOS Research"];
+         [window setContentView:cocoaView];
+         [window makeKeyAndOrderFront:self];
+         [window center];
+@@ -1655,8 +1655,8 @@ - (IBAction) do_about_menu_item: (id) sender
+     NSString *icon_path = [NSString stringWithUTF8String:icon_path_c];
+     g_free(icon_path_c);
+     NSImage *icon = [[NSImage alloc] initWithContentsOfFile:icon_path];
+-    NSString *version = @"ChefKiss Inferno emulator version " QEMU_FULL_VERSION;
+-    NSString *copyright = @QEMU_COPYRIGHT "\n\nChefKiss Inferno\nCopyright (c) 2023-2026 Visual Ehrmanntraut and Inferno team";
++    NSString *version = @"Tomacco iOS Research emulator version " QEMU_FULL_VERSION;
++    NSString *copyright = @QEMU_COPYRIGHT "\n\nTomacco iOS Research\nCopyright (c) 2023-2026 Visual Ehrmanntraut and Inferno team";
+     NSDictionary *options;
+     if (icon) {
+         options = @{
+diff --git c/ui/dbus.c w/ui/dbus.c
+index 5929b36..43a9dec 100644
+--- c/ui/dbus.c
++++ w/ui/dbus.c
+@@ -247,7 +247,7 @@ dbus_display_complete(UserCreatable *uc, Error **errp)
+         (GDestroyNotify)g_array_unref, consoles);
+     g_steal_pointer(&consoles);
+     g_object_set(dd->iface,
+-                 "name", qemu_name ?: "ChefKiss Inferno " QEMU_VERSION,
++                 "name", qemu_name ?: "Tomacco iOS Research " QEMU_VERSION,
+                  "uuid", uuid,
+                  "console-ids", console_ids,
+                  NULL);
+diff --git c/ui/gtk.c w/ui/gtk.c
+index 3493780..e5c5aa5 100644
+--- c/ui/gtk.c
++++ w/ui/gtk.c
+@@ -223,9 +223,9 @@ static void gd_update_caption(GtkDisplayState *s)
+     int i;
+ 
+     if (qemu_name) {
+-        prefix = g_strdup_printf("ChefKiss Inferno (%s)", qemu_name);
++        prefix = g_strdup_printf("Tomacco iOS Research (%s)", qemu_name);
+     } else {
+-        prefix = g_strdup_printf("ChefKiss Inferno");
++        prefix = g_strdup_printf("Tomacco iOS Research");
+     }
+ 
+     if (s->ptr_owner != NULL &&
+diff --git c/ui/icons/meson.build w/ui/icons/meson.build
+index a44d200..fae3e33 100644
+--- c/ui/icons/meson.build
++++ w/ui/icons/meson.build
+@@ -12,6 +12,3 @@ install_data('qemu_32x32.bmp',
+ install_data('qemu.svg',
+              install_dir: qemu_icondir / 'hicolor' / 'scalable' / 'apps')
+ 
+-install_data('CKQEMUBootSplash_512x512@2x.png',
+-             rename: 'CKQEMUBootSplash@2x.png',
+-             install_dir: qemu_icondir / 'hicolor' / '512x512' / 'apps')
+diff --git c/ui/sdl2.c w/ui/sdl2.c
+index 5c4d5f0..769dd2f 100644
+--- c/ui/sdl2.c
++++ w/ui/sdl2.c
+@@ -199,12 +199,12 @@ static void sdl_update_caption(struct sdl2_console *scon)
+     }
+ 
+     if (qemu_name) {
+-        snprintf(win_title, sizeof(win_title), "ChefKiss Inferno (%s-%d)%s", qemu_name,
++        snprintf(win_title, sizeof(win_title), "Tomacco iOS Research (%s-%d)%s", qemu_name,
+                  scon->idx, status);
+-        snprintf(icon_title, sizeof(icon_title), "ChefKiss Inferno (%s)", qemu_name);
++        snprintf(icon_title, sizeof(icon_title), "Tomacco iOS Research (%s)", qemu_name);
+     } else {
+-        snprintf(win_title, sizeof(win_title), "ChefKiss Inferno%s", status);
+-        snprintf(icon_title, sizeof(icon_title), "ChefKiss Inferno");
++        snprintf(win_title, sizeof(win_title), "Tomacco iOS Research%s", status);
++        snprintf(icon_title, sizeof(icon_title), "Tomacco iOS Research");
+     }
+ 
+     if (scon->real_window) {
+diff --git c/ui/spice-core.c w/ui/spice-core.c
+index 5505078..50e9c4a 100644
+--- c/ui/spice-core.c
++++ w/ui/spice-core.c
+@@ -819,7 +819,7 @@ static void qemu_spice_init(void)
+ 
+     qemu_opt_foreach(opts, add_channel, &tls_port, &error_fatal);
+ 
+-    spice_server_set_name(spice_server, qemu_name ?: "ChefKiss Inferno " QEMU_VERSION);
++    spice_server_set_name(spice_server, qemu_name ?: "Tomacco iOS Research " QEMU_VERSION);
+     spice_server_set_uuid(spice_server, (unsigned char *)&qemu_uuid);
+ 
+     seamless_migration = qemu_opt_get_bool(opts, "seamless-migration", 0);
+diff --git c/ui/vnc.c w/ui/vnc.c
+index 096d02e..8b8edf7 100644
+--- c/ui/vnc.c
++++ w/ui/vnc.c
+@@ -2756,12 +2756,12 @@ static int protocol_client_init(VncState *vs, uint8_t *data, size_t len)
+     pixel_format_message(vs);
+ 
+     if (qemu_name) {
+-        size = snprintf(buf, sizeof(buf), "ChefKiss Inferno (%s)", qemu_name);
++        size = snprintf(buf, sizeof(buf), "Tomacco iOS Research (%s)", qemu_name);
+         if (size > sizeof(buf)) {
+             size = sizeof(buf);
+         }
+     } else {
+-        size = snprintf(buf, sizeof(buf), "ChefKiss Inferno");
++        size = snprintf(buf, sizeof(buf), "Tomacco iOS Research");
+     }
+ 
+     vnc_write_u32(vs, size);

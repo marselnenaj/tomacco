@@ -1,0 +1,2785 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
+@@ -53,6 +53,10 @@
+     TargetSeedLength {
+         actual: usize,
+         expected: usize,
++    },
++    TargetSeedFormat {
++        source: vk::Format,
++        target: vk::Format,
+     },
+     TargetGuestSeedFormat {
+         source: vk::Format,
+@@ -231,6 +235,7 @@
+             Self::NonFiniteViewport => "vk_draw_validate_non_finite_viewport",
+             Self::NonPositiveViewport { .. } => "vk_draw_validate_non_positive_viewport",
+             Self::NonFiniteBlendConstants => "vk_draw_validate_non_finite_blend_constants",
++            Self::TargetSeedFormat { .. } => "vk_draw_validate_target_seed_format",
+             Self::TargetSeedLength { .. } => "vk_draw_validate_target_seed_length",
+             Self::TargetGuestSeedFormat { .. } => "vk_draw_validate_target_guest_seed_format",
+             Self::TargetGuestSeedRowStride { .. } => {
+@@ -347,7 +352,8 @@
+                 ("actual", actual.to_string()),
+                 ("expected", expected.to_string()),
+             ],
+-            Self::TargetGuestSeedFormat { source, target } => vec![
++            Self::TargetSeedFormat { source, target }
++            | Self::TargetGuestSeedFormat { source, target } => vec![
+                 ("source", format!("{source:?}")),
+                 ("target", format!("{target:?}")),
+             ],
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -20,8 +20,8 @@
+ use super::stage_phase;
+ use super::types::{
+     BufferContent, ColorWriteMask, DrawError, DrawOutput, DrawRequest, ResidentReclaim,
+-    SampledSource, ScissorResource, SeedOrder, TargetIdentity, VertexStepFunction,
+-    ViewportResource, VisibilityResultMode,
++    SampledSource, ScissorResource, TargetIdentity, VertexStepFunction, ViewportResource,
++    VisibilityResultMode,
+ };
+ use super::vk_call::{VkCall, VkOp};
+ 
+@@ -1467,35 +1467,22 @@
+             DrawValidationDecline::NonFiniteBlendConstants,
+         ));
+     }
+-    if let Some(target) = &req.target_rgba8 {
+-        // The seed is one tightly-packed RGBA8 slice of the target, and the
+-        // length is checked rather than taken. `w as usize * h as usize` widens
+-        // its operands, which reads as safe and is — but only just: two u32
+-        // maxima multiply to a hair under u64::MAX, so the bytes-per-texel is a
+-        // third factor that overflows. A refusal rather than a clamp, because
+-        // this length is what the next line compares the buffer against and a
+-        // wrapped one would let a short buffer match.
+-        let Some(expected) = reims_vgpu_protocol::extent::tight_image_bytes(
+-            req.width,
+-            req.height,
+-            crate::protocol::pixel_format::RGBA8_BPP as usize,
+-        ) else {
+-            return Err(DrawError::DrawValidation(
+-                DrawValidationDecline::UnrepresentableImageBytes {
+-                    width: req.width,
+-                    height: req.height,
+-                    layers: 1,
+-                    bytes_per_texel: crate::protocol::pixel_format::RGBA8_BPP,
+-                },
+-            ));
+-        };
+-        if target.len() != expected {
+-            return Err(DrawError::DrawValidation(
+-                DrawValidationDecline::TargetSeedLength {
+-                    actual: target.len(),
+-                    expected,
+-                },
+-            ));
++    if let Some(seed) = &req.target_cpu_seed {
++        let format = req
++            .target_identity
++            .as_ref()
++            .map(|identity| identity.resident_format())
++            .unwrap_or(super::super::translate::pixel::RESIDENT_RGBA_FORMAT);
++        validate_color_load_seed(seed, req.width, req.height, format)?;
++    }
++    for secondary in &req.secondary_targets {
++        if let Some(seed) = &secondary.seed {
++            validate_color_load_seed(
++                seed,
++                secondary.width,
++                secondary.height,
++                secondary.attachment.format(),
++            )?;
+         }
+     }
+     if let Some(seed) = &req.target_guest_seed {
+@@ -1578,7 +1565,7 @@
+                 },
+             ));
+         }
+-        if req.target_rgba8.is_some() || req.load_from_target || req.seed_from_target.is_some() {
++        if req.target_cpu_seed.is_some() || req.load_from_target || req.seed_from_target.is_some() {
+             return Err(DrawError::DrawValidation(
+                 DrawValidationDecline::SeedConflictsGuestSeed,
+             ));
+@@ -1590,7 +1577,7 @@
+                 DrawValidationDecline::SeedMissingTargetIdentity,
+             ));
+         }
+-        if req.target_rgba8.is_some() || req.target_guest_seed.is_some() {
++        if req.target_cpu_seed.is_some() || req.target_guest_seed.is_some() {
+             return Err(DrawError::DrawValidation(
+                 DrawValidationDecline::SeedConflictsCpuSeed,
+             ));
+@@ -2881,7 +2868,7 @@
+         reads_back: !req.skip_readback,
+         has_query: req.occlusion_query.is_some(),
+         no_identity: req.target_identity.is_none(),
+-        cpu_seed: req.target_rgba8.is_some(),
++        cpu_seed: req.target_cpu_seed.is_some(),
+         gpu_seed: req.seed_from_target.is_some() || req.target_guest_seed.is_some(),
+         no_open_batch: matches!(fit, BatchFit::None),
+         batch_full: matches!(fit, BatchFit::Full),
+@@ -3040,7 +3027,7 @@
+     let seed_bytes: Option<&[u8]> = if load_uses_gpu_content {
+         None
+     } else {
+-        req.target_rgba8.as_ref().map(|v| v.as_slice())
++        req.target_cpu_seed.as_ref().map(|v| v.pixels.as_slice())
+     };
+     // Three questions, not one: can this device offer prior contents, and if
+     // not, did the guest ask for a clear or merely permit undefined contents?
+@@ -3168,7 +3155,7 @@
+                 ));
+             }
+             if !req.skip_readback
+-                || req.target_rgba8.is_some()
++                || req.target_cpu_seed.is_some()
+                 || req.target_guest_seed.is_some()
+                 || req.load_guest_target_backing
+             {
+@@ -3522,86 +3509,46 @@
+         pools.stage_storage_bind(resource.binding, slot, resource.content.len() as u64);
+     }
+ 
+-    // Target seed staging (CPU import only — not LoadFromTarget).
+-    //
+-    // A seed is always eight bits per channel; the attachment need not be. A
+-    // buffer→image copy converts nothing and reads the *image's* texel width
+-    // per pixel, so staging an RGBA8 seed under a wider attachment would read
+-    // past the slot and seed the frame with whatever followed it. The wide arm
+-    // below restates the seed as the attachment's texels first; the four-byte
+-    // arm is unchanged, which is every attachment this device had until render
+-    // targets began following the guest's declared format.
+     phase.enter(super::draw_phase::Phase::StageSeed);
+-    let seed_wide = seed_bytes.and_then(|rgba8| {
+-        let layout = crate::backend::vulkan::translate::pixel::texel_layout_of(color0_format)?;
+-        // Four-byte *colour*, not four bytes. A seed is eight-bit RGBA, and a
+-        // four-byte texel that is not one of the two colour orders — a packed
+-        // ten-bit word, an integer pair — cannot be staged as though it were:
+-        // the copy converts nothing, so the attachment would be seeded with the
+-        // seed's bytes reinterpreted. The wide arm below restates the seed in
+-        // the attachment's texel, or refuses by name when it cannot.
+-        if layout.is_four_byte_color() {
+-            return None;
+-        }
+-        Some((rgba8, layout))
+-    });
+-    let seed_slot = if let Some((rgba8, layout)) = seed_wide {
+-        // The seed's own order first, because `expand_rgba8_to_texel` reads
+-        // semantic RGBA8 — the same normalization the four-byte arm folds into
+-        // its copy, done here as a step because a widening pass cannot also
+-        // exchange in place.
+-        let mut semantic;
+-        let src = if matches!(req.target_seed_order, SeedOrder::Bgra8) {
+-            semantic = rgba8.to_vec();
+-            for px in semantic.chunks_exact_mut(4) {
+-                px.swap(0, 2);
+-            }
+-            &semantic[..]
+-        } else {
+-            rgba8
+-        };
+-        let pixels = req.width.saturating_mul(req.height);
+-        let mut wide = vec![0u8; (pixels as usize) * (layout.bytes_per_texel() as usize)];
+-        if !crate::protocol::pixel_format::expand_rgba8_to_texel(layout, src, pixels, &mut wide) {
+-            return Err(DrawError::DrawExecution(
+-                DrawExecutionDecline::SeedFormatUnwritable {
+-                    format: color0_format,
+-                },
+-            ));
+-        }
+-        let slot = {
+-            let _s = stage_phase::Span::open(stage_phase::Part::Acquire);
+-            pools.acquire_staging(ctx, wide.len() as u64, counters)?
+-        };
+-        {
+-            let _s = stage_phase::Span::moving(stage_phase::Part::Bytes, wide.len() as u64);
+-            pools.write_staging(ctx, &slot, &wide)?;
+-        }
+-        counters.note_seed_upload(wide.len() as u64);
+-        Some(slot)
+-    } else if let Some(rgba8) = seed_bytes {
+-        let slot = {
+-            let _s = stage_phase::Span::open(stage_phase::Part::Acquire);
+-            pools.acquire_staging(ctx, rgba8.len() as u64, counters)?
+-        };
+-        // Vulkan buffer→image copies do not perform format conversion, so the
+-        // staged bytes must already be in the attachment's physical order —
+-        // otherwise partial draws preserve an exact R/B-exchanged seed outside
+-        // their damaged geometry. The attachment is BGRA when `output_bgra`; the
+-        // seed states its own order. Exchange exactly when they disagree, inside
+-        // the copy that has to happen anyway.
+-        if matches!(req.target_seed_order, SeedOrder::Bgra8) != output_bgra {
+-            let _s = stage_phase::Span::moving(stage_phase::Part::Swap, rgba8.len() as u64);
+-            pools.write_staging_swap_rb(ctx, &slot, rgba8)?;
+-        } else {
+-            let _s = stage_phase::Span::moving(stage_phase::Part::Bytes, rgba8.len() as u64);
+-            pools.write_staging(ctx, &slot, rgba8)?;
+-        }
+-        counters.note_seed_upload(rgba8.len() as u64);
+-        Some(slot)
++    let seed_slot = if seed_bytes.is_some() {
++        req.target_cpu_seed
++            .as_ref()
++            .map(|seed| unsafe {
++                stage_color_load_seed(
++                    ctx,
++                    pools,
++                    counters,
++                    seed,
++                    req.width,
++                    req.height,
++                    color0_format,
++                )
++            })
++            .transpose()?
+     } else {
+         None
+     };
++    let secondary_seed_slots = req
++        .secondary_targets
++        .iter()
++        .map(|secondary| {
++            secondary
++                .seed
++                .as_ref()
++                .map(|seed| unsafe {
++                    stage_color_load_seed(
++                        ctx,
++                        pools,
++                        counters,
++                        seed,
++                        secondary.width,
++                        secondary.height,
++                        secondary.attachment.format(),
++                    )
++                })
++                .transpose()
++        })
++        .collect::<Result<Vec<_>, _>>()?;
+     // A secondary MRT attachment is bound + rendered as attachment N of an
+     // ad-hoc framebuffer built here. The primary slot 0 keeps its own single-RT
+     // framebuffer (consistent with single-RT draws to the same target), so the
+@@ -5003,7 +4950,9 @@
+     // must wait for that prior read (WAR). A freshly-created secondary tracks
+     // UNDEFINED and needs no barrier — the render pass discards on CLEAR.
+     for (secondary_index, (_id, image, access)) in mrt_secondaries.iter().enumerate() {
+-        if *access == super::pools::ResidentAccess::Untouched {
++        if *access == super::pools::ResidentAccess::Untouched
++            && secondary_seed_slots[secondary_index].is_none()
++        {
+             continue;
+         }
+         let attachment_index = secondary_index + 1;
+@@ -5025,6 +4974,61 @@
+                 vk::AccessFlags::empty()
+             };
+         unsafe { outside_pass.before_record(PassObstacle::MrtLayout, pools, &ctx.device, cb) };
++        if let Some(seed) = &secondary_seed_slots[secondary_index] {
++            let (source_stage, source_access) = access.source_scope();
++            let before = [vk::ImageMemoryBarrier::default()
++                .src_access_mask(source_access)
++                .dst_access_mask(vk::AccessFlags::TRANSFER_WRITE)
++                .old_layout(vk::ImageLayout::UNDEFINED)
++                .new_layout(vk::ImageLayout::TRANSFER_DST_OPTIMAL)
++                .image(*image)
++                .subresource_range(super::color_subresource_range())];
++            ctx.device.cmd_pipeline_barrier(
++                cb,
++                source_stage,
++                vk::PipelineStageFlags::TRANSFER,
++                vk::DependencyFlags::empty(),
++                &[],
++                &[],
++                &before,
++            );
++            let secondary = &req.secondary_targets[secondary_index];
++            let copy = [vk::BufferImageCopy::default()
++                .image_subresource(super::color_subresource_layers())
++                .image_extent(vk::Extent3D {
++                    width: secondary.width,
++                    height: secondary.height,
++                    depth: 1,
++                })];
++            ctx.device.cmd_copy_buffer_to_image(
++                cb,
++                seed.buffer,
++                *image,
++                vk::ImageLayout::TRANSFER_DST_OPTIMAL,
++                &copy,
++            );
++            let after = [vk::ImageMemoryBarrier::default()
++                .src_access_mask(vk::AccessFlags::TRANSFER_WRITE)
++                .dst_access_mask(dst_access)
++                .old_layout(vk::ImageLayout::TRANSFER_DST_OPTIMAL)
++                .new_layout(pass_key.color_layout(attachment_index))
++                .image(*image)
++                .subresource_range(super::color_subresource_range())];
++            ctx.device.cmd_pipeline_barrier(
++                cb,
++                vk::PipelineStageFlags::TRANSFER,
++                dst_stage,
++                if feedback {
++                    vk::DependencyFlags::FEEDBACK_LOOP_EXT
++                } else {
++                    vk::DependencyFlags::empty()
++                },
++                &[],
++                &[],
++                &after,
++            );
++            continue;
++        }
+         let (src_stage, src_access) = access.source_scope();
+         let barrier = [vk::ImageMemoryBarrier::default()
+             .src_access_mask(src_access)
+@@ -6015,6 +6019,119 @@
+     Ok(Some(samples[0]))
+ }
+ 
++/// Validate the declared texel and complete image footprint of a CPU Load.
++fn validate_color_load_seed(
++    target: &crate::protocol::pixel_format::ColorLoadSeed,
++    width: u32,
++    height: u32,
++    target_format: vk::Format,
++) -> Result<(), DrawError> {
++    let source_format = super::super::translate::pixel::vk_texel_layout(target.layout);
++    if !target.layout.is_four_byte_color() && source_format != target_format {
++        return Err(DrawError::DrawValidation(
++            DrawValidationDecline::TargetSeedFormat {
++                source: source_format,
++                target: target_format,
++            },
++        ));
++    }
++    let Some(expected) = reims_vgpu_protocol::extent::tight_image_bytes(
++        width,
++        height,
++        target.layout.bytes_per_texel() as usize,
++    ) else {
++        return Err(DrawError::DrawValidation(
++            DrawValidationDecline::UnrepresentableImageBytes {
++                width,
++                height,
++                layers: 1,
++                bytes_per_texel: target.layout.bytes_per_texel(),
++            },
++        ));
++    };
++    if target.pixels.len() != expected {
++        return Err(DrawError::DrawValidation(
++            DrawValidationDecline::TargetSeedLength {
++                actual: target.pixels.len(),
++                expected,
++            },
++        ));
++    }
++    Ok(())
++}
++
++/// Stage attachment contents at their declared physical width. Native seeds
++/// are validated against the destination before any image or buffer is touched.
++unsafe fn stage_color_load_seed(
++    ctx: &super::context::DeviceContext,
++    pools: &mut ResourcePools,
++    counters: &EngineCounters,
++    seed: &crate::protocol::pixel_format::ColorLoadSeed,
++    width: u32,
++    height: u32,
++    target_format: vk::Format,
++) -> Result<BufferSlot, DrawError> {
++    validate_color_load_seed(seed, width, height, target_format)?;
++    use crate::protocol::pixel_format::{expand_rgba8_to_texel, TexelLayout};
++    let Some(layout) = super::super::translate::pixel::texel_layout_of(target_format) else {
++        return Err(DrawError::DrawExecution(
++            DrawExecutionDecline::SeedFormatUnwritable {
++                format: target_format,
++            },
++        ));
++    };
++    let mut converted = Vec::new();
++    let bytes = if seed.layout.is_four_byte_color() && !layout.is_four_byte_color() {
++        let mut semantic;
++        let rgba = if seed.layout == TexelLayout::Bgra8 {
++            semantic = seed.pixels.as_ref().clone();
++            for pixel in semantic.as_chunks_mut::<4>().0 {
++                pixel.swap(0, 2);
++            }
++            semantic.as_slice()
++        } else {
++            seed.pixels.as_slice()
++        };
++        let Some(pixels) = width.checked_mul(height) else {
++            return Err(DrawError::DrawExecution(
++                DrawExecutionDecline::SeedFormatUnwritable {
++                    format: target_format,
++                },
++            ));
++        };
++        let Some(len) = reims_vgpu_protocol::extent::tight_image_bytes(
++            width,
++            height,
++            layout.bytes_per_texel() as usize,
++        ) else {
++            return Err(DrawError::DrawExecution(
++                DrawExecutionDecline::SeedFormatUnwritable {
++                    format: target_format,
++                },
++            ));
++        };
++        converted.resize(len, 0);
++        if !expand_rgba8_to_texel(layout, rgba, pixels, &mut converted) {
++            return Err(DrawError::DrawExecution(
++                DrawExecutionDecline::SeedFormatUnwritable {
++                    format: target_format,
++                },
++            ));
++        }
++        converted.as_slice()
++    } else {
++        seed.pixels.as_slice()
++    };
++    let slot = pools.acquire_staging(ctx, bytes.len() as u64, counters)?;
++    if seed.layout.is_four_byte_color() && layout.is_four_byte_color() && seed.layout != layout {
++        pools.write_staging_swap_rb(ctx, &slot, bytes)?;
++    } else {
++        pools.write_staging(ctx, &slot, bytes)?;
++    }
++    counters.note_seed_upload(bytes.len() as u64);
++    Ok(slot)
++}
++
+ /// The attachment views of a draw's own framebuffer, in the order the render
+ /// pass declares them: the primary colour slot, then the secondaries, then
+ /// depth.
+@@ -6061,7 +6178,7 @@
+         // Read before `registry_ensure_attachment` rather than after, because
+         // ensuring is what creates the resident: asking afterwards cannot tell a
+         // slot born in this call from one the guest has been rendering into.
+-        if sec.load && !prior.is_some_and(|s| s.content_ready) {
++        if sec.load && sec.seed.is_none() && !prior.is_some_and(|s| s.content_ready) {
+             return Err(DrawError::DrawExecution(
+                 DrawExecutionDecline::LoadSecondaryContentNotReady {
+                     identity: sec.identity.clone(),
+@@ -7635,6 +7752,7 @@
+         attachment: super::super::types::ColorAttachmentState,
+     ) -> super::super::types::SecondaryColorTarget {
+         super::super::types::SecondaryColorTarget {
++            seed: None,
+             identity: super::super::types::TargetIdentity::Surface {
+                 id: 1,
+                 width: 16,
+@@ -7657,7 +7775,7 @@
+     /// The primary's entry was a hard-coded transparent black, so the only way
+     /// to honour a colour was to allocate a whole-attachment RGBA8 image of it,
+     /// exchange its channels and stage it to the GPU — per draw, for a constant.
+-    /// That also set `target_rgba8`, which is what a preserving `color0_load` means, so the
++    /// That also set `target_cpu_seed`, which is what a preserving `color0_load` means, so the
+     /// pass resolved to LOAD and a draw asking to discard its attachment loaded
+     /// it instead.
+     ///
+@@ -8081,6 +8199,29 @@
+     /// copy reads. This is the shape produced by IOSurface rows whose BPR is
+     /// wider than their visible texels.
+     #[test]
++    fn r32_cpu_load_validates_layout_and_length_even_when_texel_widths_match() {
++        use crate::protocol::pixel_format::{ColorLoadSeed, TexelLayout};
++        let mut req = guest_run_req(4, 2, 32, 0);
++        req.target_identity = Some(TargetIdentity::Gva {
++            gva: 0x208000,
++            width: 4,
++            height: 2,
++            generation: 1,
++            format: vk::Format::R32_SFLOAT,
++        });
++        req.target_cpu_seed = Some(ColorLoadSeed {
++            pixels: std::sync::Arc::new(vec![0; 32]),
++            layout: TexelLayout::R32Float,
++        });
++        assert!(validate_v1(&req).is_ok());
++        req.target_cpu_seed.as_mut().unwrap().pixels = std::sync::Arc::new(vec![0; 31]);
++        assert_eq!(validation_slug(&req), "vk_draw_validate_target_seed_length");
++        req.target_cpu_seed.as_mut().unwrap().pixels = std::sync::Arc::new(vec![0; 32]);
++        req.target_cpu_seed.as_mut().unwrap().layout = TexelLayout::Rg16Uint;
++        assert_eq!(validation_slug(&req), "vk_draw_validate_target_seed_format");
++    }
++
++    #[test]
+     fn a_guest_target_seed_validates_its_native_format_stride_and_coverage() {
+         // Two four-texel rows at six texels per row: one 24-byte stride plus
+         // the final row's 16 visible bytes. Trailing padding is not part of the
+@@ -8108,7 +8249,7 @@
+         );
+ 
+         let mut conflicting = guest_target_seed_req(4, 2, 40, 40, 6);
+-        conflicting.target_rgba8 = Some(std::sync::Arc::new(vec![0; 4 * 2 * 4]));
++        conflicting.target_cpu_seed = Some(vec![0; 4 * 2 * 4].into());
+         assert_eq!(
+             validation_slug(&conflicting),
+             "vk_draw_validate_seed_conflicts_guest_seed"
+@@ -8147,7 +8288,7 @@
+         let mut req = guest_run_req(1240, 622, 1240 * 622 * 4, 0);
+         req.width = u32::MAX;
+         req.height = u32::MAX;
+-        req.target_rgba8 = Some(std::sync::Arc::new(vec![0u8; 4]));
++        req.target_cpu_seed = Some(vec![0u8; 4].into());
+         assert_eq!(
+             validation_slug(&req),
+             "vk_draw_validate_unrepresentable_image_bytes"
+@@ -8163,10 +8304,10 @@
+     #[test]
+     fn a_representable_geometry_still_has_its_seed_length_checked() {
+         let mut req = guest_run_req(4, 4, 4 * 4 * 4, 0);
+-        req.target_rgba8 = Some(std::sync::Arc::new(vec![0u8; 4 * 4 * 4]));
++        req.target_cpu_seed = Some(vec![0u8; 4 * 4 * 4].into());
+         assert!(validate_v1(&req).is_ok(), "an exactly-sized seed is fine");
+ 
+-        req.target_rgba8 = Some(std::sync::Arc::new(vec![0u8; 4 * 4 * 4 - 1]));
++        req.target_cpu_seed = Some(vec![0u8; 4 * 4 * 4 - 1].into());
+         assert_eq!(
+             validation_slug(&req),
+             "vk_draw_validate_target_seed_length",
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -78,7 +78,7 @@
+     GuestTargetMemory, GuestTargetSeed, IndexType, IndexedDrawResource, PipelineObjectIdentity,
+     PrimitiveTopology, SampledByteOrigin, SampledContentIdentity, SampledImageResource,
+     SampledSource, SamplerCompareFunction, SamplerResource, ScissorResource, SecondaryColorTarget,
+-    SeedOrder, StencilFaceOps, StencilOp, StencilState, StorageBufferResource, StorageImageFormat,
++    StencilFaceOps, StencilOp, StencilState, StorageBufferResource, StorageImageFormat,
+     TargetIdentity, TargetKeyDivergence, VertexAttributeFormat, VertexAttributeResource,
+     VertexStepFunction, ViewportResource, VisibilityResultMode, WindowPresentSource,
+     COLOR_INPUT_BINDING,
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -503,28 +503,17 @@
+     pub storage_buffers: Vec<StorageBufferResource>,
+     pub sampled_images: Vec<SampledImageResource>,
+     pub samplers: Vec<SamplerResource>,
+-    /// CPU Load seed for the color target, in the order
+-    /// [`DrawRequest::target_seed_order`] names.
+-    ///
+-    /// Shared rather than owned so a caller holding the frame behind an `Arc` —
+-    /// `surface_cache` does — can seed a draw with a refcount instead of a
+-    /// whole-framebuffer copy.
+-    pub target_rgba8: Option<std::sync::Arc<Vec<u8>>>,
++    /// CPU Load contents with the texel layout that interprets their bytes.
++    /// Shared cache allocations stay shared; native floating-point contents
++    /// never travel through an eight-bit colour carrier.
++    pub target_cpu_seed: Option<crate::protocol::pixel_format::ColorLoadSeed>,
+     /// Guest-page form of the same LOAD seed. Mutually exclusive with
+-    /// [`Self::target_rgba8`], [`Self::load_from_target`] and
++    /// [`Self::target_cpu_seed`], [`Self::load_from_target`] and
+     /// [`Self::seed_from_target`]. The engine imports/gathers these bytes in
+     /// the draw command buffer and falls back to their host aliases if import
+     /// is unavailable, so the runtime never needs to allocate a framebuffer to
+     /// express the surface's own contents.
+     pub target_guest_seed: Option<GuestTargetSeed>,
+-    /// Byte order of the CPU seed above, relative to the attachment it seeds.
+-    ///
+-    /// The attachment's order is [`TargetIdentity::is_bgra`] and nothing else.
+-    /// When the two disagree the exchange is folded into the copy
+-    /// into the mapped staging span, which has to happen regardless — so a
+-    /// caller whose pixels are already in guest scanout order never has to
+-    /// materialize a converted frame to seed a draw with them.
+-    pub target_seed_order: SeedOrder,
+     pub blend: Option<BlendStateResource>,
+     /// `setBlendColorRed:green:blue:alpha:`, which the four
+     /// `MTLBlendFactorBlendColor` factors read.
+@@ -581,7 +570,7 @@
+     /// Load the live GPU image for [`DrawRequest::target_identity`] instead of
+     /// seeding the attachment from the CPU. Requires that resident to exist.
+     ///
+-    /// This, [`Self::target_rgba8`], [`Self::target_guest_seed`],
++    /// This, [`Self::target_cpu_seed`], [`Self::target_guest_seed`],
+     /// [`Self::color0_declared`] and [`DrawRequest::color_attachment`] are the
+     /// whole load action, and they are ordered: `load_from_target` wins, else
+     /// exactly one seed is copied, else `color0_declared` decides between
+@@ -799,6 +788,8 @@
+ /// registry resident so a later draw can sample it.
+ #[derive(Debug, Clone)]
+ pub struct SecondaryColorTarget {
++    /// CPU contents to upload before a preserving pass opens.
++    pub seed: Option<crate::protocol::pixel_format::ColorLoadSeed>,
+     /// Residency identity — the key a later draw uses to bind this attachment
+     /// as a sampled `SampledSource::Target`.
+     pub identity: TargetIdentity,
+@@ -2174,24 +2165,6 @@
+     }
+ }
+ 
+-/// Byte order of a CPU load seed, relative to the attachment it seeds.
+-///
+-/// Vulkan buffer→image copies perform no format conversion, so the staged bytes
+-/// must already be in the attachment's physical order. Stating the seed's own
+-/// order — rather than assuming one — lets the exchange fold into the copy into
+-/// the mapped staging span instead of being paid as a separate converted frame:
+-/// `surface_cache` holds guest scanout order and the pooled target is RGBA, so
+-/// the runtime used to allocate, copy and swizzle a whole framebuffer per seeded
+-/// draw purely to restate the pixels it already had.
+-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+-pub enum SeedOrder {
+-    /// Semantic RGBA8 — R, G, B, A in memory.
+-    #[default]
+-    Rgba8,
+-    /// Guest scanout order — B, G, R, A in memory.
+-    Bgra8,
+-}
+-
+ /// Where a sampled image's content comes from.
+ #[derive(Debug)]
+ pub enum SampledSource {
+@@ -2456,6 +2429,7 @@
+         );
+ 
+         req.secondary_targets.push(SecondaryColorTarget {
++            seed: None,
+             identity: surface(2),
+             width: 64,
+             height: 64,
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+@@ -37,11 +37,11 @@
+ 
+ pub use rail::{
+     bytes_per_texel, has_bgra_order, has_identity_components, is_rgba_float, is_srgb,
+-    resident_color,
+-    sample_view_format, srgb_texel_layout, storage_format, storage_image_components,
+-    storage_image_from_selector, stored_bytes_agree, texel_layout_of, verbatim_texel,
+-    vk_block_geometry, vk_component_mapping, vk_storage_image, vk_texel_layout, PixelFormat,
+-    ResidentFormat, TransferFunction, RESIDENT_RGBA_FORMAT, SCANOUT_FORMAT, TRANSIENT_DEPTH_FORMAT,
++    resident_color, sample_view_format, srgb_texel_layout, storage_format,
++    storage_image_components, storage_image_from_selector, stored_bytes_agree, texel_layout_of,
++    verbatim_texel, vk_block_geometry, vk_component_mapping, vk_storage_image, vk_texel_layout,
++    PixelFormat, ResidentFormat, TransferFunction, RESIDENT_RGBA_FORMAT, SCANOUT_FORMAT,
++    TRANSIENT_DEPTH_FORMAT,
+ };
+ 
+ /// This device's name for a decline the rail crate made in its own vocabulary.
+@@ -537,8 +537,8 @@
+         // rail) and no render-target width, which is the pair this asserts:
+         // having a layout is not being a colour attachment.
+         assert_eq!(
+-            color_attachment(p::MTL_FORMAT_R32_FLOAT).unwrap_err(),
+-            TranslateReason::NoColorAttachmentFormat(p::MTL_FORMAT_R32_FLOAT)
++            color_attachment(p::MTL_FORMAT_RG8_UNORM).unwrap_err(),
++            TranslateReason::NoColorAttachmentFormat(p::MTL_FORMAT_RG8_UNORM)
+         );
+         assert_eq!(
+             color_attachment(0xffff).unwrap_err(),
+@@ -750,6 +750,7 @@
+                 // one-byte texel had never been a render target here.
+                 p::MTL_FORMAT_R8_UNORM,
+                 p::MTL_FORMAT_R16_FLOAT,
++                p::MTL_FORMAT_R32_FLOAT,
+                 p::MTL_FORMAT_RG16_FLOAT,
+                 p::MTL_FORMAT_RGBA8_UNORM,
+                 p::MTL_FORMAT_RGBA8_UNORM_SRGB,
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/icb.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/icb.rs
+@@ -849,9 +849,17 @@
+         else {
+             return EncodeStatus::BadArgs("icb_color_target_degenerate_geometry");
+         };
++        if c.target_seed
++            .as_ref()
++            .is_some_and(|seed| seed.layout != TexelLayout::Rgba8)
++        {
++            crate::observe::fail("metal_draw reason=icb_native_color_seed_unsupported");
++            return EncodeStatus::BadArgs("icb_native_color_seed_unsupported");
++        }
+         let mut seed = c
+-            .target_seed_rgba
+-            .clone()
++            .target_seed
++            .as_ref()
++            .map(|seed| seed.pixels.as_ref().clone())
+             .unwrap_or_else(|| vec![0u8; nbytes]);
+         if seed.len() < nbytes {
+             seed.resize(nbytes, 0);
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/metal/mod.rs
+@@ -234,12 +234,28 @@
+         ));
+         return (EncodeStatus::BadArgs("draw_mtl_bind_slot_past_table"), None);
+     }
++    if req.colors.iter().any(|color| {
++        color
++            .target_seed
++            .as_ref()
++            .is_some_and(|seed| seed.layout != TexelLayout::Rgba8)
++    }) {
++        crate::observe::fail("metal_draw reason=draw_mtl_native_color_seed_unsupported");
++        return (
++            EncodeStatus::BadArgs("draw_mtl_native_color_seed_unsupported"),
++            None,
++        );
++    }
+     // Move multi-MiB Load seeds out **before** cloning color metadata so multi-draw
+     // chain frames are not duplicated (clone of empty Option is cheap).
+     let mut color_seeds: Vec<Option<Vec<u8>>> = req
+         .colors
+         .iter_mut()
+-        .map(|c| c.target_seed_rgba.take())
++        .map(|c| {
++            c.target_seed
++                .take()
++                .map(|seed| std::sync::Arc::unwrap_or_clone(seed.pixels))
++        })
+         .collect();
+     let color_list: Vec<ColorRtRequest> = req.colors.clone();
+     let width = color_list[0].width;
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -513,7 +513,7 @@
+     pub load_action: u16,
+     pub store_action: u16,
+     pub clear_color: [f64; 4],
+-    pub target_seed_rgba: Option<Vec<u8>>,
++    pub target_seed: Option<pixel_format::ColorLoadSeed>,
+     /// Multisample attachment discarded into this request's single-sample
+     /// target at pass end. Zero for an ordinary colour attachment.
+     pub multisample_source_ref: u32,
+@@ -642,7 +642,7 @@
+     /// keys off it.
+     ///
+     /// **A `true` here obliges the encode side to produce content one way or the
+-    /// other.** `colors[0].target_seed_rgba` is `None` and the attachment still
++    /// other.** `colors[0].target_seed` is `None` and the attachment still
+     /// says LOAD, so an encode that neither chains nor re-seeds hands the pass an
+     /// undefined attachment. The re-seed is not theoretical: the generation this
+     /// was decided on is recomputed after the request is built, and a page set
+@@ -2348,7 +2348,7 @@
+         load_action: 0,
+         store_action: MTL_STORE_ACTION_STORE,
+         clear_color: [0.0; 4],
+-        target_seed_rgba: None,
++        target_seed: None,
+         multisample_source_ref: 0,
+     };
+     Some(DrawEncodeRequest {
+@@ -2542,11 +2542,11 @@
+             load_action = MTL_LOAD_ACTION_CLEAR;
+             clear_color = cl.clear_color;
+             if mapping_id == 0 {
+-                seed = Some(solid_rgba8(mw, mh, &cl.clear_color));
++                seed = Some(solid_rgba8(mw, mh, &cl.clear_color).into());
+             }
+         } else if att.load_action == MTL_LOAD_ACTION_CLEAR {
+             if mapping_id == 0 {
+-                seed = Some(solid_rgba8(mw, mh, &att.clear_color));
++                seed = Some(solid_rgba8(mw, mh, &att.clear_color).into());
+             }
+         } else if att.load_action == MTL_LOAD_ACTION_LOAD && mapping_id == 0 {
+             // # This arm compares an ordinal, and the contract term is wider
+@@ -2567,7 +2567,7 @@
+             // `gva_load_from_resident` false, and every downstream door is then
+             // shut to it -- `honour_gva_load_elision` returns on the flag, the
+             // seed block's mapping door is guarded by `mapping_id != 0`, and
+-            // `target_seed_rgba` is `None`. `PassKey::single` reads "no seed",
++            // `target_seed` is `None`. `PassKey::single` reads "no seed",
+             // `caches.rs` resolves that to `vk::AttachmentLoadOp::CLEAR`, and
+             // every texel outside the draw's scissor becomes `target_clear` --
+             // untouched at `[0.0; 4]`, transparent black, because that variable
+@@ -2714,7 +2714,19 @@
+                 let elided = elided && colors.is_empty();
+                 gva_load_from_resident = elided;
+                 if !elided {
+-                    seed = seed_color_load(state, host, task_id, att.texture_ref, gva, mw, mh);
++                    seed = seed_color_load(
++                        state,
++                        host,
++                        task_id,
++                        GvaSpan {
++                            texture_ref: att.texture_ref,
++                            gva,
++                            row_stride: bpr,
++                            width: mw,
++                            height: mh,
++                            format: mfmt,
++                        },
++                    );
+                     if seed.is_none() {
+                         crate::observe::fail(format!(
+                             "color LOAD seed miss ref={} {}x{} fmt={:#x} gva={:#x} (archive: still encode)",
+@@ -2737,7 +2749,7 @@
+             load_action,
+             store_action: att.store_action,
+             clear_color,
+-            target_seed_rgba: seed,
++            target_seed: seed,
+             multisample_source_ref,
+         });
+     }
+@@ -3355,15 +3367,59 @@
+ /// place is deleted. This used to run only on the alias-reject fallback
+ /// (unaligned offset or row stride, span out of range, no device), which is why
+ /// it is already a complete path and not a new one.
++fn seed_native_color_load<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    task_id: u32,
++    span: GvaSpan,
++) -> Option<pixel_format::ColorLoadSeed> {
++    let layout = pixel_format::store_texel_order(span.format)?;
++    let (tight, len) = reims_vgpu_protocol::extent::tight_image_layout(
++        span.width,
++        span.height,
++        layout.bytes_per_texel(),
++    )?;
++    if span.gva == 0 || span.row_stride < tight {
++        return None;
++    }
++    // Deferred Stores must reach guest RAM before a CPU Load reads it. The
++    // settled native rows remain authoritative; an RGBA8 display cache cannot
++    // stand in for a floating-point render target.
++    crate::runtime::writeback_debt::pay_for_texture(state, host, task_id, span.texture_ref);
++    crate::runtime::render_writeback::settle_guest_writes(
++        crate::runtime::render_writeback::SettleSite::LinearTextureSeed,
++    );
++    let mut pixels = vec![0; len];
++    for (y, row) in pixels.chunks_exact_mut(tight as usize).enumerate() {
++        let offset = (y as u64).checked_mul(u64::from(span.row_stride))?;
++        let address = span.gva.checked_add(offset)?;
++        if !crate::runtime::gva_view::read_span(state, host, task_id, address, row) {
++            return None;
++        }
++    }
++    Some(pixel_format::ColorLoadSeed {
++        pixels: std::sync::Arc::new(pixels),
++        layout,
++    })
++}
++
+ fn seed_color_load<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+     task_id: u32,
+-    texture_ref: u32,
+-    target_gva: u64,
+-    width: u32,
+-    height: u32,
+-) -> Option<Vec<u8>> {
++    span: GvaSpan,
++) -> Option<pixel_format::ColorLoadSeed> {
++    let GvaSpan {
++        texture_ref,
++        gva: target_gva,
++        width,
++        height,
++        format,
++        ..
++    } = span;
++    if format == pixel_format::MTL_FORMAT_R32_FLOAT {
++        return seed_native_color_load(state, host, task_id, span);
++    }
+     // Discrete GPU: exact target GVA is the strongest identity across object-ref
+     // recycling. Fall back to the normal texture namespace, never the
+     // unrelated backing record_id namespace. Guest memory is last.
+@@ -3559,7 +3615,7 @@
+             None
+         };
+         if let Some(bgra) = cached {
+-            return Some(swap_rb_channels(bgra));
++            return Some(swap_rb_channels(bgra).into());
+         }
+         // The third door, and the only one a target with no address of its own
+         // can reach. Both doors above are keyed on `target_gva`, so a rail whose
+@@ -3580,7 +3636,7 @@
+         if let Some(seed) =
+             seed_from_published_surface(state, host, task_id, texture_ref, width, height)
+         {
+-            return Some(seed);
++            return Some(seed.into());
+         }
+     }
+     // normal-texture (or texture-view base) linear GVA → convert to RGBA8.
+@@ -3610,7 +3666,7 @@
+         NativeUploads::NONE,
+         crate::runtime::render_writeback::SettleSite::LinearTextureSeed,
+     )?;
+-    Some(rgba)
++    Some(rgba.into())
+ }
+ 
+ /// This device's own last publication of a mapper-ref-texture surface, when the
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -1448,12 +1448,12 @@
+         "a CLEAR has no prior content to be current"
+     );
+     req.colors[0].load_action = MTL_LOAD_ACTION_LOAD;
+-    req.colors[0].target_seed_rgba = Some(vec![0u8; 128 * 64 * 4]);
++    req.colors[0].target_seed = Some(vec![0u8; 128 * 64 * 4].into());
+     assert!(
+         mapper_ref_texture_load_currency_query(&state, &req).is_none(),
+         "an explicit seed was already selected by RT provenance"
+     );
+-    req.colors[0].target_seed_rgba = None;
++    req.colors[0].target_seed = None;
+     req.colors[0].store_action = reims_vgpu_protocol::pass_action::MTL_STORE_ACTION_DONT_CARE;
+     assert!(
+         mapper_ref_texture_load_currency_query(&state, &req).is_none(),
+@@ -1783,7 +1783,7 @@
+     );
+     // CPU seed still wins when present (record after a non-resident hop).
+     let seed = vec![0u8; 8 * 8 * 4];
+-    req.colors[0].target_seed_rgba = Some(seed);
++    req.colors[0].target_seed = Some(seed.into());
+     assert!(matches!(
+         fragment_attachment_alias_sample(&req, 0, 42),
+         Some((8, 8, AttachmentAliasSample::Seed(_, _)))
+@@ -1809,7 +1809,7 @@
+             width: 2,
+             height: 1,
+             load_action: MTL_LOAD_ACTION_LOAD,
+-            target_seed_rgba: Some(seed.clone()),
++            target_seed: Some(seed.clone().into()),
+             ..Default::default()
+         }],
+         ..Default::default()
+@@ -1821,7 +1821,7 @@
+     let AttachmentAliasSample::Seed(actual, _) = sample else {
+         panic!("Load alias must use the chained seed");
+     };
+-    assert_eq!(actual, seed);
++    assert_eq!(actual.pixels.as_ref(), &seed);
+     assert!(fragment_attachment_alias_sample(&req, 1, texture_ref).is_none());
+     assert!(fragment_attachment_alias_sample(&req, 0, texture_ref + 1).is_none());
+ 
+@@ -1834,7 +1834,11 @@
+     req.colors[0].clear_color = [0.25, 0.5, 0.75, 1.0];
+     assert_eq!(
+         fragment_attachment_alias_sample(&req, 0, texture_ref),
+-        Some((2, 1, AttachmentAliasSample::Clear([0.25, 0.5, 0.75, 1.0])))
++        Some((
++            2,
++            1,
++            AttachmentAliasSample::Clear([0.25, 0.5, 0.75, 1.0], req.colors[0].format)
++        ))
+     );
+ }
+ 
+@@ -2788,7 +2792,7 @@
+     // drop the pass — that freezes lagging dual-mid on stale logo.
+     let req = req.expect("Load seed miss must still encode (archive NULL seed)");
+     assert!(
+-        req.colors[0].target_seed_rgba.is_none(),
++        req.colors[0].target_seed.is_none(),
+         "seed miss leaves seed None (Metal Clear invent, full Store)"
+     );
+     assert_eq!(req.colors[0].load_action, MTL_LOAD_ACTION_LOAD);
+@@ -4085,13 +4089,17 @@
+         &mut state,
+         &mut host,
+         task_id,
+-        texture_ref,
+-        target_gva,
+-        w,
+-        h,
++        GvaSpan {
++            texture_ref,
++            gva: target_gva,
++            row_stride: w * 4,
++            width: w,
++            height: h,
++            format: MTL_FORMAT_BGRA8_UNORM,
++        },
+     )
+     .expect("exact GVA cache seed");
+-    assert_eq!(seed, vec![0, 0, 0, 255, 0, 0, 0, 255]);
++    assert_eq!(*seed.pixels, vec![0, 0, 0, 255, 0, 0, 0, 255]);
+ 
+     // A different address with no GVA entry of its own must NOT be handed the
+     // ref entry: those pixels were produced over `target_gva`, and serving them
+@@ -4102,10 +4110,14 @@
+             &mut state,
+             &mut host,
+             task_id,
+-            texture_ref,
+-            target_gva + 0x1000,
+-            w,
+-            h,
++            GvaSpan {
++                texture_ref,
++                gva: target_gva + 0x1000,
++                row_stride: w * 4,
++                width: w,
++                height: h,
++                format: MTL_FORMAT_BGRA8_UNORM
++            }
+         )
+         .is_none(),
+         "a ref entry produced at another address is not this attachment's prior content"
+@@ -4118,13 +4130,17 @@
+         &mut state,
+         &mut host,
+         task_id,
+-        texture_ref,
+-        target_gva,
+-        w,
+-        h,
++        GvaSpan {
++            texture_ref,
++            gva: target_gva,
++            row_stride: w * 4,
++            width: w,
++            height: h,
++            format: MTL_FORMAT_BGRA8_UNORM,
++        },
+     )
+     .expect("texture-ref cache seed at the address that produced it");
+-    assert_eq!(texture_seed, vec![0, 180, 0, 255, 0, 180, 0, 255]);
++    assert_eq!(*texture_seed.pixels, vec![0, 180, 0, 255, 0, 180, 0, 255]);
+ }
+ 
+ /// A colour LOAD seed for a mapper-ref-texture attachment is served from this
+@@ -4247,10 +4263,22 @@
+     // been armed, so the strict standard refuses and the guest's pages answer.
+     // This is the whole reason the standard is a parameter: the permissive one
+     // serves here, and a rail that never stamps would serve here every time.
+-    let unwatched = seed_color_load(&mut state, &mut host, task_id, texture_ref, 0, w, h)
+-        .expect("the guest's own pages are always a seed");
+-    assert_eq!(
+-        &unwatched[..4],
++    let unwatched = seed_color_load(
++        &mut state,
++        &mut host,
++        task_id,
++        GvaSpan {
++            texture_ref,
++            gva: 0,
++            row_stride: w * 4,
++            width: w,
++            height: h,
++            format: MTL_FORMAT_BGRA8_UNORM,
++        },
++    )
++    .expect("the guest's own pages are always a seed");
++    assert_eq!(
++        &unwatched.pixels[..4],
+         &GUEST_RGBA,
+         "an unstamped surface has no witness to spend, and the cache must not be served"
+     );
+@@ -4264,10 +4292,22 @@
+         .get_mut(&mid)
+         .expect("mapped above")
+         .guest_write_gen_at_store = host.guest_write_gen(token).expect("a live token has one");
+-    let served = seed_color_load(&mut state, &mut host, task_id, texture_ref, 0, w, h)
+-        .expect("a published frame under a clean witness is the attachment's prior content");
+-    assert_eq!(
+-        &served[..4],
++    let served = seed_color_load(
++        &mut state,
++        &mut host,
++        task_id,
++        GvaSpan {
++            texture_ref,
++            gva: 0,
++            row_stride: w * 4,
++            width: w,
++            height: h,
++            format: MTL_FORMAT_BGRA8_UNORM,
++        },
++    )
++    .expect("a published frame under a clean witness is the attachment's prior content");
++    assert_eq!(
++        &served.pixels[..4],
+         &PUBLISHED_RGBA,
+         "with the witness clean the device's own publication is the surface, and \
+          re-reading the guest's pages is the cost this door exists to remove"
+@@ -4276,10 +4316,22 @@
+     // Leg 3 — repainted. The guest CPU stores into the surface with no device
+     // operation at all, so this witness is the only thing that sees it.
+     host.guest_wrote_page(page_gpa);
+-    let repainted = seed_color_load(&mut state, &mut host, task_id, texture_ref, 0, w, h)
+-        .expect("a repainted surface still seeds, from its own pages");
+-    assert_eq!(
+-        &repainted[..4],
++    let repainted = seed_color_load(
++        &mut state,
++        &mut host,
++        task_id,
++        GvaSpan {
++            texture_ref,
++            gva: 0,
++            row_stride: w * 4,
++            width: w,
++            height: h,
++            format: MTL_FORMAT_BGRA8_UNORM,
++        },
++    )
++    .expect("a repainted surface still seeds, from its own pages");
++    assert_eq!(
++        &repainted.pixels[..4],
+         &GUEST_RGBA,
+         "the cache is a frame the guest has since painted over; serving it would \
+          composite this pass onto a stale layer and store the result back"
+@@ -4291,7 +4343,7 @@
+ ///
+ /// `mrt_draw_request` sets [`DrawEncodeRequest::gva_load_from_resident`] when the
+ /// engine still holds what the render Store published into the target's guest
+-/// pages, and it pays for that by leaving `colors[0].target_seed_rgba` as `None`
++/// pages, and it pays for that by leaving `colors[0].target_seed` as `None`
+ /// while the attachment still says `MTL_LOAD_ACTION_LOAD`. The attachment is then
+ /// only as defined as the encode side makes it: `honour_gva_load_elision` either
+ /// chains off the resident or reads the seed back, and a pass that does neither
+@@ -4396,7 +4448,7 @@
+             format: MTL_FORMAT_BGRA8_UNORM,
+             load_action: MTL_LOAD_ACTION_LOAD,
+             store_action: MTL_STORE_ACTION_STORE,
+-            target_seed_rgba: None,
++            target_seed: None,
+             ..Default::default()
+         }],
+         ..Default::default()
+@@ -4436,11 +4488,11 @@
+     // The property, and the reason the counter alone is not enough: the seed is
+     // back, and it holds the guest's pixels rather than an empty buffer.
+     let seed = req.colors[0]
+-        .target_seed_rgba
++        .target_seed
+         .as_ref()
+         .expect("a LOAD whose elision was not honoured must have its seed restored");
+     assert_eq!(
+-        seed.len(),
++        seed.pixels.len(),
+         4 * 2 * 4,
+         "the restored seed must cover the whole attachment"
+     );
+@@ -4450,12 +4502,16 @@
+     // deliberate — it pins that these bytes came through the seed path and not
+     // from some other buffer that happened to be the right length.
+     assert_eq!(
+-        &seed[..4],
++        &seed.pixels[..4],
+         &[3, 5, 7, 255],
+         "the restored seed must be the attachment's own guest texels"
+     );
+     assert!(
+-        seed.chunks_exact(4).all(|px| px == [3, 5, 7, 255]),
++        seed.pixels
++            .as_chunks::<4>()
++            .0
++            .iter()
++            .all(|px| *px == [3, 5, 7, 255]),
+         "every texel of the re-read attachment, not just the first row"
+     );
+ }
+@@ -5313,7 +5369,17 @@
+ 
+     let mut host = crate::runtime::host::FakeHost::new();
+     let secs = build_secondary_targets(
+-        &mut state, &mut host, 1, &colors, &pipeline, &primary, 64, 64,
++        &mut state,
++        &mut host,
++        &DrawEncodeRequest {
++            task_id: 1,
++            colors: colors.to_vec(),
++            ..Default::default()
++        },
++        &pipeline,
++        &primary,
++        64,
++        64,
+     )
+     .expect("a contiguous, geometry-matching, resolvable secondary builds");
+     assert_eq!(secs.len(), 1, "one secondary attachment expected");
+@@ -5351,7 +5417,17 @@
+     };
+     let mut host = crate::runtime::host::FakeHost::new();
+     let secs = build_secondary_targets(
+-        &mut state, &mut host, 1, &colors, &unblended, &primary, 64, 64,
++        &mut state,
++        &mut host,
++        &DrawEncodeRequest {
++            task_id: 1,
++            colors: colors.to_vec(),
++            ..Default::default()
++        },
++        &unblended,
++        &primary,
++        64,
++        64,
+     )
+     .expect("the same secondary builds whether or not its slot blends");
+     assert_eq!(secs.len(), 1);
+@@ -5428,8 +5504,11 @@
+         build_secondary_targets(
+             &mut state,
+             &mut host,
+-            1,
+-            &[slot0.clone(), slot1.clone()],
++            &DrawEncodeRequest {
++                task_id: 1,
++                colors: vec![slot0.clone(), slot1.clone()],
++                ..Default::default()
++            },
+             &pipeline,
+             &primary,
+             64,
+@@ -5507,8 +5586,11 @@
+     let single = build_secondary_targets(
+         &mut state,
+         &mut host,
+-        1,
+-        std::slice::from_ref(&slot0),
++        &DrawEncodeRequest {
++            task_id: 1,
++            colors: vec![slot0.clone()],
++            ..Default::default()
++        },
+         &pipeline,
+         &primary,
+         64,
+@@ -5564,7 +5646,17 @@
+     let mut build = |colors: &[ColorRtRequest]| {
+         let mut host = crate::runtime::host::FakeHost::new();
+         build_secondary_targets(
+-            &mut state, &mut host, 1, colors, &pipeline, &primary, 64, 64,
++            &mut state,
++            &mut host,
++            &DrawEncodeRequest {
++                task_id: 1,
++                colors: colors.to_vec(),
++                ..Default::default()
++            },
++            &pipeline,
++            &primary,
++            64,
++            64,
+         )
+     };
+ 
+@@ -6306,7 +6398,7 @@
+         load_action: MTL_LOAD_ACTION_LOAD,
+         store_action: MTL_STORE_ACTION_STORE,
+         clear_color: [0.0; 4],
+-        target_seed_rgba: None,
++        target_seed: None,
+         multisample_source_ref: 0,
+     };
+ 
+@@ -6514,7 +6606,7 @@
+         load_action: MTL_LOAD_ACTION_LOAD,
+         store_action: MTL_STORE_ACTION_STORE,
+         clear_color: [0.0; 4],
+-        target_seed_rgba: None,
++        target_seed: None,
+         multisample_source_ref: 0,
+     };
+     // Full height, left half only: the partial store the Load seed forces, and
+@@ -6703,7 +6795,11 @@
+     host.write_gpa(desc_kva, &desc).expect("seed descriptor");
+ 
+     state.mapper_device_kva = mapper;
+-    assert!(state.attach_mapping_internal(mid, internal, crate::protocol::iosurface_pages::MapperLayout::Compact));
++    assert!(state.attach_mapping_internal(
++        mid,
++        internal,
++        crate::protocol::iosurface_pages::MapperLayout::Compact
++    ));
+     {
+         let m = state.mappings.get(&mid).expect("mapping");
+         assert!(m.mapped && m.mapping_internal != 0);
+@@ -7520,7 +7616,7 @@
+ 
+     let mut c0 = ColorRtRequest {
+         load_action: MTL_LOAD_ACTION_LOAD,
+-        target_seed_rgba: None,
++        target_seed: None,
+         ..Default::default()
+     };
+     assert!(
+@@ -7547,7 +7643,7 @@
+     // DontCare exactly as on LOAD: the two gates are independent and widening
+     // the action must not widen this one.
+     c0.load_action = MTL_LOAD_ACTION_DONT_CARE;
+-    c0.target_seed_rgba = Some(vec![0u8; 4]);
++    c0.target_seed = Some(vec![0u8; 4].into());
+     assert!(
+         !mapper_ref_texture_load_is_a_seed_candidate(&c0),
+         "an explicit provenance seed still excludes the resident candidate"
+@@ -7817,13 +7913,16 @@
+         // The attachment's own texels, as `seed_color_load` would return them:
+         // BGRA in guest pages becomes RGBA here, so [7,5,3,255] reads back as
+         // [3,5,7,255].
+-        let carries_attachment = c0
+-            .target_seed_rgba
+-            .as_ref()
+-            .is_some_and(|s| s.chunks_exact(4).all(|px| px == [3u8, 5, 7, 255]));
++        let carries_attachment = c0.target_seed.as_ref().is_some_and(|s| {
++            s.pixels
++                .as_chunks::<4>()
++                .0
++                .iter()
++                .all(|px| *px == [3u8, 5, 7, 255])
++        });
+         (
+             carries_attachment || req.gva_load_from_resident,
+-            c0.target_seed_rgba.is_some(),
++            c0.target_seed.is_some(),
+         )
+     };
+ 
+@@ -8155,3 +8254,107 @@
+         );
+     }
+ }
++
++#[test]
++fn r32_native_load_reads_padded_rows_and_observes_a_guest_write() {
++    use crate::protocol::endian::st32;
++    use crate::protocol::gva::{DIRECTORY_DEPTH, DIRECTORY_ROOT_PFN};
++    use crate::protocol::pixel_format::MTL_FORMAT_R32_FLOAT;
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++    let mut host = FakeHost::new();
++    let dir_pfn = 2u32;
++    let root_pfn = 3u32;
++    let dir_gpa = (dir_pfn as u64) << PAGE_SHIFT_ARM64E;
++    let root_gpa = (root_pfn as u64) << PAGE_SHIFT_ARM64E;
++    host.map_range(dir_gpa, 0x20, 0);
++    host.map_range(root_gpa, 0x4000, 0);
++    let mut d = [0u8; 8];
++    st32(&mut d[DIRECTORY_ROOT_PFN as usize..], root_pfn);
++    st32(&mut d[DIRECTORY_DEPTH as usize..], 1);
++    assert!(host.write_gpa(dir_gpa, &d).is_ok());
++    for i in 0..4u32 {
++        let pfn = 4 + i;
++        host.map_range((pfn as u64) << PAGE_SHIFT_ARM64E, 0x4000, 0);
++        let mut pte = [0u8; 4];
++        st32(&mut pte, pfn);
++        assert!(host.write_gpa(root_gpa + (i as u64) * 4, &pte).is_ok());
++    }
++    state.define_task(1, 0x1000, dir_pfn);
++    assert!(state.set_object_list(1, 0, 32));
++
++    let gva = 1u64 << PAGE_SHIFT_ARM64E;
++    let raw = [
++        (-3.25f32).to_le_bytes(),
++        0x7fc12345u32.to_le_bytes(),
++        0x80000000u32.to_le_bytes(),
++        65537.0f32.to_le_bytes(),
++    ]
++    .concat();
++    let mut padded = vec![0xa5; 24];
++    padded[..8].copy_from_slice(&raw[..8]);
++    padded[16..24].copy_from_slice(&raw[8..]);
++    write_task_gva_arm64e(&mut host, &state.tasks[1], gva, &padded);
++    let span = GvaSpan {
++        texture_ref: 6,
++        gva,
++        row_stride: 16,
++        width: 2,
++        height: 2,
++        format: MTL_FORMAT_R32_FLOAT,
++    };
++    let seed = seed_color_load(&mut state, &mut host, 1, span).unwrap();
++    assert_eq!(seed.layout, TexelLayout::R32Float);
++    assert_eq!(*seed.pixels, raw);
++    write_task_gva_arm64e(
++        &mut host,
++        &state.tasks[1],
++        gva + 16,
++        &7.125f32.to_le_bytes(),
++    );
++    let fresh = seed_color_load(&mut state, &mut host, 1, span).unwrap();
++    assert_eq!(&fresh.pixels[8..12], &7.125f32.to_le_bytes());
++    assert_eq!(&fresh.pixels[..8], &raw[..8]);
++    assert!(seed_color_load(
++        &mut state,
++        &mut host,
++        1,
++        GvaSpan {
++            row_stride: 7,
++            ..span
++        }
++    )
++    .is_none());
++}
++
++#[test]
++fn r32_sampled_cpu_upload_retains_float_bits_and_obeys_its_own_capability() {
++    use crate::protocol::pixel_format::MTL_FORMAT_R32_FLOAT;
++    let bytes = [(-4.125f32).to_le_bytes(), 1.00001f32.to_le_bytes()].concat();
++    assert_eq!(
++        linear_native_upload_format(MTL_FORMAT_R32_FLOAT, NativeUploads::BGRA8),
++        None
++    );
++    let mut native = NativeUploads::BGRA8;
++    native.r32_float = true;
++    let (loaded, format) = load_tight_linear_rgba_with(
++        2,
++        1,
++        1,
++        MTL_FORMAT_R32_FLOAT,
++        native,
++        "test_r32_native",
++        |dst| {
++            dst.copy_from_slice(&bytes);
++            true
++        },
++    )
++    .unwrap();
++    assert_eq!(format.layout(), TexelLayout::R32Float);
++    assert_eq!(loaded, bytes);
++    native.r32_float = false;
++    native.float32 = true;
++    assert_eq!(
++        linear_native_upload_format(MTL_FORMAT_R32_FLOAT, native),
++        None
++    );
++}
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/texture_view.rs
+@@ -826,6 +826,8 @@
+     /// `SAMPLED_IMAGE_FILTER_LINEAR`, so the filter is measured rather than
+     /// assumed.
+     pub float32: bool,
++    /// R32Float has its own linear-filter capability; it cannot inherit RGBA32Float's.
++    pub r32_float: bool,
+ }
+ 
+ impl NativeUploads {
+@@ -836,6 +838,7 @@
+         float16: false,
+         block_compressed: false,
+         float32: false,
++        r32_float: false,
+     };
+ 
+     /// Native BGRA8 only — the answer this parameter carried when it was a
+@@ -852,6 +855,7 @@
+         float16: false,
+         block_compressed: false,
+         float32: false,
++        r32_float: false,
+     };
+ 
+     /// Every native layout the loaders can produce — every gate open at once.
+@@ -876,6 +880,7 @@
+         float16: true,
+         block_compressed: true,
+         float32: true,
++        r32_float: true,
+     };
+ }
+ 
+@@ -919,6 +924,9 @@
+     sample_format: u16,
+     native: NativeUploads,
+ ) -> Option<TexelLayout> {
++    if sample_format == pixel_format::MTL_FORMAT_R32_FLOAT {
++        return native.r32_float.then_some(TexelLayout::R32Float);
++    }
+     use pixel_format::SampledClass;
+     // The compressed families are answered before the sampled class, because
+     // that vocabulary has no block in it and because the answer here is not an
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -234,18 +234,19 @@
+                 // resource-validity protocol asks for that separately. The
+                 // live resource retains its transfer backing until explicit
+                 // discard or delete; the debt records only content ownership.
+-                let landed = crate::backend::vulkan::gva_window(&identity).is_some_and(|window| {
+-                    req.colors.first().is_some_and(|c0| {
+-                        crate::runtime::writeback_debt::arm_gva(
+-                            crate::backend::vulkan::VulkanBackend,
+-                            state,
+-                            host,
+-                            req.task_id,
+-                            c0,
+-                            window,
+-                        )
+-                    })
+-                });
++                let landed = crate::backend::vulkan::engine::deferred_gpu_only_content_allowed()
++                    && crate::backend::vulkan::gva_window(&identity).is_some_and(|window| {
++                        req.colors.first().is_some_and(|c0| {
++                            crate::runtime::writeback_debt::arm_gva(
++                                crate::backend::vulkan::VulkanBackend,
++                                state,
++                                host,
++                                req.task_id,
++                                c0,
++                                window,
++                            )
++                        })
++                    });
+                 if landed {
+                     note_mapper_ref_texture_store_route("gva_resident_authoritative");
+                     gva_store_armed = true;
+@@ -255,7 +256,30 @@
+                     // run exactly as it does for a Store that never skipped its
+                     // readback. `read_resident_chain` fail-logs a lost resident.
+                     note_mapper_ref_texture_store_route("gva_store_sync");
+-                    draw_rgba = read_resident_chain(req, &identity);
++                    if let Some(c0) = req
++                        .colors
++                        .first()
++                        .filter(|c| c.format == pixel_format::MTL_FORMAT_R32_FLOAT)
++                    {
++                        match crate::runtime::render_writeback::vulkan::store_gva_frame(
++                            state,
++                            host,
++                            req.task_id,
++                            &identity,
++                            c0,
++                            c0.texture_ref,
++                            sync_store_pages.as_ref(),
++                            &[],
++                        ) {
++                            Ok(_) => gva_store_armed = true,
++                            Err(reason) => {
++                                crate::observe::Emit::decline("gva_store_native", &reason).fail();
++                                return (EncodeStatus::BadArgs("gva_store_native_failed"), None);
++                            }
++                        }
++                    } else {
++                        draw_rgba = read_resident_chain(req, &identity);
++                    }
+                     crate::observe::line(format!(
+                         "linux_m2v_draw ok resident_gva_store pipe={} {}x{} gva={:#x} rgba={}",
+                         req.pipeline_ref,
+@@ -912,7 +936,7 @@
+ ///
+ /// A serialized Metal render stream may read `color(0)` through texture slot 0
+ /// while several draws remain in one render pass. For GVA targets, records 2+
+-/// carry the prior draw in `target_seed_rgba`; reloading guest pages here would
++/// carry the prior draw in `target_seed`; reloading guest pages here would
+ /// expose the pre-pass image to the shader even though attachment Load sees the
+ /// chained image.
+ #[derive(Clone, Copy, Debug, PartialEq)]
+@@ -923,7 +947,7 @@
+     /// reads is the one written here — this device stores that value directly
+     /// and binds it linear. No attachment format is carried because none is
+     /// needed: the round trip cancels.
+-    Clear([f64; 4]),
++    Clear([f64; 4], u16),
+     /// The attachment's prior contents, read back out of its guest pages, plus
+     /// the format they were **stored** in.
+     ///
+@@ -931,7 +955,7 @@
+     /// bytes rather than a decoded value: an sRGB attachment holds encoded ones,
+     /// and a bind that samples them linear hands the shader an undecoded value
+     /// the next attachment write then encodes a second time.
+-    Seed(&'a [u8], u16),
++    Seed(&'a pixel_format::ColorLoadSeed, u16),
+     /// Records 2+ of a resident GVA chain: the prior record's content lives
+     /// on the engine-resident target, not in a CPU seed. Bound as a resident
+     /// sampled source (the engine snapshots on self-alias).
+@@ -949,21 +973,20 @@
+             && color.mapping_id == 0
+             && color.target_gva != 0
+     })?;
+-    let need = (color.width as usize)
+-        .checked_mul(color.height as usize)?
+-        .checked_mul(RGBA8_BPP as usize)?;
+     match color.load_action {
+         MTL_LOAD_ACTION_CLEAR => Some((
+             color.width,
+             color.height,
+-            AttachmentAliasSample::Clear(color.clear_color),
++            AttachmentAliasSample::Clear(color.clear_color, color.format),
+         )),
+         MTL_LOAD_ACTION_LOAD => {
+-            if let Some(seed) = color
+-                .target_seed_rgba
+-                .as_deref()
+-                .filter(|seed| seed.len() == need)
+-            {
++            if let Some(seed) = color.target_seed.as_ref().filter(|seed| {
++                reims_vgpu_protocol::extent::tight_image_bytes(
++                    color.width,
++                    color.height,
++                    seed.layout.bytes_per_texel() as usize,
++                ) == Some(seed.pixels.len())
++            }) {
+                 return Some((
+                     color.width,
+                     color.height,
+@@ -2083,7 +2106,7 @@
+ /// prior contents.
+ ///
+ /// This is not a degradation the caller absorbs. `exec` resolves the pass load
+-/// action as "explicit `load_op` > `target_rgba8` > **Clear**", so a seed of
++/// action as "explicit `load_op` > `target_cpu_seed` > **Clear**", so a seed of
+ /// `None` makes `PassKey::single(load = false)` and the render pass begins with
+ /// `LoadOp::CLEAR` against the hardcoded `[0,0,0,0]` primary clear value. The
+ /// guest asked for its surface to be preserved and got a transparent-black wipe,
+@@ -2093,7 +2116,7 @@
+ /// axis-aligned rectangles at layer boundaries.
+ ///
+ /// It had no report of any kind. `surface_cache::get_shared` returns `Option` and
+-/// the arm simply left `target_rgba8` unset, so the loss was invisible on the
++/// the arm simply left `target_cpu_seed` unset, so the loss was invisible on the
+ /// always-on channel. Measured on one x86/Vulkan boot before the guest-pages rung
+ /// existed: **121 distinct (mapping, geometry) wipes** in ~170 s, four of them at
+ /// the full 1920x1080 composite extent, against 0 in the idle phase.
+@@ -2162,10 +2185,7 @@
+ enum MapperRefTextureLoadSeed {
+     /// Host-owned bytes from the render cache, or the universal converted
+     /// fallback when the native guest-page view cannot be described.
+-    Host(
+-        std::sync::Arc<Vec<u8>>,
+-        crate::backend::vulkan::engine::SeedOrder,
+-    ),
++    Host(pixel_format::ColorLoadSeed),
+     /// The mapping's native texels as bounded guest-RAM runs. The engine imports
+     /// them when possible and uses the runs themselves for its CPU fallback.
+     Guest(crate::backend::vulkan::engine::GuestTargetSeed),
+@@ -2382,6 +2402,75 @@
+     })
+ }
+ 
++fn read_mapper_native_color_seed<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++    target_format: ash::vk::Format,
++) -> Option<pixel_format::ColorLoadSeed> {
++    if !mapper::ensure_resolved_for_scanout(state, host, mapping_id) {
++        return None;
++    }
++    let (layout, window) = {
++        let mapping = state.mappings.get(&mapping_id)?;
++        if !mapping.mapped
++            || !mapping.has_geom
++            || mapping.width != width
++            || mapping.height != height
++        {
++            return None;
++        }
++        let layout = pixel_format::store_texel_order(mapping.format)?;
++        if translate::pixel::vk_texel_layout(layout) != target_format {
++            return None;
++        }
++        let (base_off, bpr, span_end) = mapping_write::mapper_ref_texture_sample_window(
++            mapping,
++            width,
++            height,
++            mapping.format,
++        )?;
++        (
++            layout,
++            mapping_write::SurfaceWindow {
++                base_off,
++                bpr,
++                span_end,
++                bpp: layout.bytes_per_texel(),
++            },
++        )
++    };
++    let (tight, len) =
++        reims_vgpu_protocol::extent::tight_image_layout(width, height, layout.bytes_per_texel())?;
++    crate::runtime::writeback_debt::pay_for_mapping(state, host, mapping_id);
++    crate::runtime::render_writeback::settle_guest_writes(
++        crate::runtime::render_writeback::SettleSite::LinearTextureSeed,
++    );
++    let mut pixels = vec![0; len];
++    if !mapping_write::read_rect_raw_at(
++        state,
++        host,
++        mapping_id,
++        window,
++        mapping_write::Rect {
++            origin_x: 0,
++            origin_y: 0,
++            width,
++            height,
++        },
++        &mut pixels,
++        tight,
++    ) {
++        return None;
++    }
++    Some(pixel_format::ColorLoadSeed {
++        pixels: std::sync::Arc::new(pixels),
++        layout,
++    })
++}
++
+ fn resolve_mapper_ref_texture_load_seed<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -2390,7 +2479,6 @@
+     h: u32,
+     target_format: ash::vk::Format,
+ ) -> Option<MapperRefTextureLoadSeed> {
+-    use crate::backend::vulkan::engine::SeedOrder;
+     // The cache is the other host-side copy of these pages, and it sits above
+     // the only rung that reads the pages themselves — so a stale hit here is
+     // never corrected by anything below it. It takes the same witness the
+@@ -2415,12 +2503,17 @@
+     if guest_replaced {
+         crate::runtime::drain::note_store_route("t11seed_cache_refused_guest_wrote");
+     }
+-    let cached = (!guest_replaced)
+-        .then(|| crate::runtime::surface_cache::get_shared(state, mapping_id, w, h))
+-        .flatten();
++    let cached = (!guest_replaced
++        && translate::pixel::texel_layout_of(target_format)
++            .is_some_and(TexelLayout::is_four_byte_color))
++    .then(|| crate::runtime::surface_cache::get_shared(state, mapping_id, w, h))
++    .flatten();
+     let served = if let Some(bgra) = cached {
+         Some((
+-            MapperRefTextureLoadSeed::Host(bgra, SeedOrder::Bgra8),
++            MapperRefTextureLoadSeed::Host(pixel_format::ColorLoadSeed {
++                pixels: bgra,
++                layout: TexelLayout::Bgra8,
++            }),
+             MapperRefTextureSeedRung::Cache,
+         ))
+     } else {
+@@ -2432,15 +2525,22 @@
+                 )
+             })
+             .or_else(|| {
++                read_mapper_native_color_seed(state, host, mapping_id, w, h, target_format).map(
++                    |seed| {
++                        (
++                            MapperRefTextureLoadSeed::Host(seed),
++                            MapperRefTextureSeedRung::GuestPages,
++                        )
++                    },
++                )
++            })
++            .or_else(|| {
+                 load_mapper_ref_texture_mapping_rgba(state, host, mapping_id, None)
+                     .map(|(_, _, r)| r)
+                     .filter(|rgba| rgba.len() == (w as usize) * (h as usize) * 4)
+                     .map(|rgba| {
+                         (
+-                            MapperRefTextureLoadSeed::Host(
+-                                std::sync::Arc::new(rgba),
+-                                SeedOrder::Rgba8,
+-                            ),
++                            MapperRefTextureLoadSeed::Host(rgba.into()),
+                             MapperRefTextureSeedRung::GuestPages,
+                         )
+                     })
+@@ -4307,7 +4407,7 @@
+ /// engine still holds what the render Store published into these pages?
+ ///
+ /// Answering `true` **obliges the encode side** to chain or to re-seed:
+-/// `colors[0].target_seed_rgba` goes out `None` while the attachment still says
++/// `colors[0].target_seed` goes out `None` while the attachment still says
+ /// LOAD, so a pass that does neither loads an undefined attachment.
+ /// `try_metal2vulkan_draw` owns that obligation.
+ ///
+@@ -5171,6 +5271,7 @@
+ fn native_uploads_asking_host() -> NativeUploads {
+     use crate::backend::vulkan::engine;
+     NativeUploads {
++        r32_float: engine::supports_sampled_layout_linear_filter(TexelLayout::R32Float),
+         // One flag for both half-float layouts, so the answer is the
+         // conjunction: a host that filters one and not the other keeps neither
+         // on the native rail. Nothing on record separates them — both carry
+@@ -5922,7 +6023,7 @@
+     // whose prior content lives in the engine resident takes the
+     // `chain_load_from_target` arm above: it deliberately resolves no CPU seed,
+     // sets `LoadOp::LoadFromTarget`, and preserves the attachment. Scoring
+-    // `target_rgba8.is_some()` alone put every one of those in the unseeded
++    // `target_cpu_seed.is_some()` alone put every one of those in the unseeded
+     // bucket and produced a 519 715-strong "defect" that was the rail working.
+     //
+     //   load_seeded   — LOAD and a seed was resolved. The rest is the old frame.
+@@ -6562,8 +6663,7 @@
+ pub(super) fn build_secondary_targets<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+-    task_id: u32,
+-    colors: &[ColorRtRequest],
++    req: &DrawEncodeRequest,
+     pipeline: &crate::runtime::decode::resource::RenderPipelineDescriptor,
+     primary: &crate::backend::vulkan::engine::TargetIdentity,
+     fb_w: u32,
+@@ -6574,6 +6674,7 @@
+ > {
+     use crate::backend::vulkan::engine::{SecondaryColorTarget, TargetIdentity};
+     use crate::runtime::census::present_proxy::SecondaryMrtRefusal;
++    let (task_id, colors) = (req.task_id, &req.colors);
+     if colors.len() <= 1 {
+         return Ok(Vec::new());
+     }
+@@ -6793,6 +6894,24 @@
+                 op_alpha: a.op_alpha,
+             });
+         out.push(SecondaryColorTarget {
++            seed: if load && !req.chain_from_resident {
++                c.target_seed.clone().or_else(|| {
++                    (c.mapping_id != 0)
++                        .then(|| {
++                            read_mapper_native_color_seed(
++                                state,
++                                host,
++                                c.mapping_id,
++                                c.width,
++                                c.height,
++                                attachment.format(),
++                            )
++                        })
++                        .flatten()
++                })
++            } else {
++                None
++            },
+             identity,
+             width: c.width,
+             height: c.height,
+@@ -6840,7 +6959,7 @@
+ /// LOAD off the engine resident, or put the CPU seed back.
+ ///
+ /// `mrt_draw_request` skipped the seed because the engine still held what the
+-/// render Store published into these guest pages, so `colors[0].target_seed_rgba`
++/// render Store published into these guest pages, so `colors[0].target_seed`
+ /// arrives `None` while the attachment still says `MTL_LOAD_ACTION_LOAD`. **That
+ /// makes producing content here an obligation, not an optimisation**: an encode
+ /// that neither chains nor re-seeds hands the pass an undefined attachment, and
+@@ -6899,10 +7018,14 @@
+                 state,
+                 host,
+                 req.task_id,
+-                tex_ref,
+-                gva,
+-                cw,
+-                ch,
++                GvaSpan {
++                    texture_ref: tex_ref,
++                    gva,
++                    width: cw,
++                    height: ch,
++                    row_stride: c0.row_stride,
++                    format: c0.format,
++                },
+             );
+             if seed.is_none() {
+                 crate::observe::fail(format!(
+@@ -6913,7 +7036,7 @@
+                 ));
+             }
+             if let Some(c0) = req.colors.first_mut() {
+-                c0.target_seed_rgba = seed;
++                c0.target_seed = seed;
+             }
+             None
+         }
+@@ -7650,13 +7773,16 @@
+                         .flatten();
+                     if let Some((aw, ah, alias)) = attachment_alias {
+                         match alias {
+-                            AttachmentAliasSample::Clear(clear) => (
++                            AttachmentAliasSample::Clear(clear, format) => (
+                                 aw,
+                                 ah,
+                                 SampledSourceRequest::Bytes(
+-                                    std::sync::Arc::new(solid_rgba8(aw, ah, &clear)),
++                                    std::sync::Arc::new(if format == pixel_format::MTL_FORMAT_R32_FLOAT {
++                                        pixel_format::solid_clear_image(format, aw, ah, &clear)
++                                            .expect("an admitted clear with resolved extent").pixels().to_vec()
++                                    } else { solid_rgba8(aw, ah, &clear) }),
+                                     None,
+-                                    SampledByteFormat::synthesised(TexelLayout::Rgba8),
++                                    SampledByteFormat::synthesised(if format == pixel_format::MTL_FORMAT_R32_FLOAT { TexelLayout::R32Float } else { TexelLayout::Rgba8 }),
+                                     crate::backend::vulkan::engine::SampledByteOrigin::AttachmentAlias,
+                                 ),
+                             ),
+@@ -7664,9 +7790,9 @@
+                                 aw,
+                                 ah,
+                                 SampledSourceRequest::Bytes(
+-                                    std::sync::Arc::new(seed.to_vec()),
++                                    seed.pixels.clone(),
+                                     None,
+-                                    SampledByteFormat::from_source(TexelLayout::Rgba8, stored),
++                                    SampledByteFormat::from_source(seed.layout, stored),
+                                     crate::backend::vulkan::engine::SampledByteOrigin::AttachmentAlias,
+                                 ),
+                             ),
+@@ -8251,10 +8377,9 @@
+         //
+         // CLEAR is not a seed. It travels as `target_clear` and the render pass
+         // does it, which is what `MTLLoadActionClear` asks for.
+-        let mut target_rgba8: Option<std::sync::Arc<Vec<u8>>> = None;
++        let mut target_cpu_seed = None;
+         let mut target_guest_seed = None;
+         let mut target_clear = [0.0f64; 4];
+-        let mut seed_order = crate::backend::vulkan::engine::SeedOrder::Rgba8;
+         let gpu_only_content_allowed =
+             crate::backend::vulkan::engine::deferred_gpu_only_content_allowed();
+         // Records 2+ of a resident render-pass chain load the prior record's
+@@ -8502,12 +8627,17 @@
+                     // that layer being dropped, and everything outside the
+                     // geometry this pass draws goes blank.
+                     let mut seed_door = "none";
+-                    if let Some(seed) = c0.target_seed_rgba.as_ref() {
++                    if let Some(seed) = c0.target_seed.as_ref() {
+                         seed_door = "color_seed";
+-                        if seed.len() == (w as usize) * (h as usize) * 4 {
++                        if reims_vgpu_protocol::extent::tight_image_bytes(
++                            w,
++                            h,
++                            seed.layout.bytes_per_texel() as usize,
++                        ) == Some(seed.pixels.len())
++                        {
+                             // seed_color_load selected this by RT provenance.
+                             // Black/transparent bytes are valid attachment data.
+-                            target_rgba8 = Some(std::sync::Arc::new(seed.clone()));
++                            target_cpu_seed = Some(seed.clone());
+                         }
+                     } else if c0.mapping_id != 0 {
+                         seed_door = "mapping";
+@@ -8528,9 +8658,8 @@
+                             h,
+                             target_format,
+                         ) {
+-                            Some(MapperRefTextureLoadSeed::Host(bytes, order)) => {
+-                                target_rgba8 = Some(bytes);
+-                                seed_order = order;
++                            Some(MapperRefTextureLoadSeed::Host(seed)) => {
++                                target_cpu_seed = Some(seed);
+                             }
+                             Some(MapperRefTextureLoadSeed::Guest(seed)) => {
+                                 target_guest_seed = Some(seed)
+@@ -8558,7 +8687,7 @@
+                         w,
+                         h,
+                         req.pipeline_ref,
+-                        target_rgba8.is_some() || target_guest_seed.is_some(),
++                        target_cpu_seed.is_some() || target_guest_seed.is_some(),
+                         seed_door,
+                     );
+                     if matches!(declared, LoadAction::DontCare) {
+@@ -8571,7 +8700,7 @@
+                         // says how often the widening pays or what it costs.
+                         // `note_load_seed_outcome`'s own counters cannot serve:
+                         // they are the LOAD-only signal below.
+-                        let served = target_rgba8.is_some() || target_guest_seed.is_some();
++                        let served = target_cpu_seed.is_some() || target_guest_seed.is_some();
+                         crate::runtime::drain::note_store_route(if served {
+                             "dontcare_seed_served"
+                         } else {
+@@ -8596,7 +8725,7 @@
+                         // retire the one counter that names the defect.
+                         note_load_seed_outcome(
+                             seed_door,
+-                            target_rgba8.is_some() || target_guest_seed.is_some(),
++                            target_cpu_seed.is_some() || target_guest_seed.is_some(),
+                             c0,
+                             w,
+                             h,
+@@ -8745,7 +8874,7 @@
+                 w,
+                 h,
+                 req.colors.first().map(|c| c.load_action),
+-                target_rgba8.is_some() || target_guest_seed.is_some(),
++                target_cpu_seed.is_some() || target_guest_seed.is_some(),
+                 chain_load_from_target,
+                 // Guest-visible backing is a mapper-ref-texture mapping or a task GVA, and
+                 // the two are exclusive — `ColorRtRequest::target_gva` documents
+@@ -8834,9 +8963,8 @@
+                 )
+             })
+             .unwrap_or(true);
+-        resources.target_rgba8 = target_rgba8;
++        resources.target_cpu_seed = target_cpu_seed;
+         resources.target_guest_seed = target_guest_seed;
+-        resources.target_seed_order = seed_order;
+         // A Store reads back; anything else skips it.
+         //
+         // A Store used to have a second option: when the host's page aliases
+@@ -8871,7 +8999,11 @@
+                 }
+             }
+         }
+-        if gpu_only_content_allowed && store_is_store && writeback_guest {
++        let native_color = req
++            .colors
++            .first()
++            .is_some_and(|color| color.format == pixel_format::MTL_FORMAT_R32_FLOAT);
++        if (gpu_only_content_allowed || native_color) && store_is_store && writeback_guest {
+             if let Some(identity) = gva_chain_identity(req) {
+                 // Only the eligibility call can still vary here: the enclosing
+                 // `&&` already established `store_is_store && writeback_guest`.
+@@ -8975,7 +9107,7 @@
+                 ));
+             }
+             resources.load_from_target = true;
+-            resources.target_rgba8 = None;
++            resources.target_cpu_seed = None;
+         }
+         // The backing belongs only to the mapper-ref-texture surface identity it was
+         // resolved from. A GVA or render-chain namespace may legitimately own
+@@ -8991,7 +9123,7 @@
+                     // attachment starts at a colour nothing asked for.
+                     reims_vgpu_protocol::pass_action::LoadAction::from_declared(color.load_action)
+                         .preserves_prior_contents()
+-                        && color.target_seed_rgba.is_none()
++                        && color.target_seed.is_none()
+                 });
+         }
+         // Mapper-ref-texture Load used to have a GPU rail here — ~170 lines of front-frame
+@@ -9011,6 +9143,21 @@
+         // alone, so gating the mask on blending would drop it exactly where the
+         // guest is replacing rather than compositing.
+         crate::runtime::chain_phase::enter(crate::runtime::chain_phase::Phase::Assemble);
++        if native_color
++            && resources
++                .target_identity
++                .as_ref()
++                .map(|id| id.resident_format())
++                != Some(ash::vk::Format::R32_SFLOAT)
++        {
++            return Err(DrawError::Unsupported(
++                crate::backend::vulkan::engine::reason::DrawReason::ColorAttachmentFormat(
++                    translate::TranslateReason::NoColorAttachmentFormat(
++                        pixel_format::MTL_FORMAT_R32_FLOAT,
++                    ),
++                ),
++            ));
++        }
+         resources.color_write_mask = pd.color0.write_mask;
+         // The encoder's blend colour, unconditionally: it is one value per
+         // draw whether or not any attachment names a constant factor. The
+@@ -9305,7 +9452,7 @@
+                 req.colors.len(),
+                 color_target_diag(&req.colors),
+                 fixed_state_gap,
+-                (resources.target_rgba8.is_some() || resources.target_guest_seed.is_some()) as u8,
++                (resources.target_cpu_seed.is_some() || resources.target_guest_seed.is_some()) as u8,
+                 resources.indexed.is_some() as u8,
+                 resources.indexed.as_ref().map(|i| i.index_count).unwrap_or(0),
+                 attr_meta,
+@@ -9511,16 +9658,7 @@
+         // on a resident primary; an `Ok(empty)` is the guest's own single-RT
+         // draw and is byte-identical to the classic path.
+         if let Some(primary_id) = resources.target_identity.clone() {
+-            let secs = build_secondary_targets(
+-                state,
+-                host,
+-                req.task_id,
+-                &req.colors,
+-                pd,
+-                &primary_id,
+-                w,
+-                h,
+-            );
++            let secs = build_secondary_targets(state, host, req, pd, &primary_id, w, h);
+             // Second half of the census: `built` vs `refused` separates "the
+             // guest issued an MRT draw and we render every attachment" from
+             // "it issued one and an attachment could not be built", which the
+@@ -10065,7 +10203,7 @@
+ pub(super) fn mapper_ref_texture_load_is_a_seed_candidate(c0: &ColorRtRequest) -> bool {
+     reims_vgpu_protocol::pass_action::LoadAction::from_declared(c0.load_action)
+         .preserves_prior_contents()
+-        && c0.target_seed_rgba.is_none()
++        && c0.target_seed.is_none()
+ }
+ 
+ /// The `(resident, mapping epoch)` pair a record's mapper-ref-texture LOAD has to compare to
+@@ -10957,7 +11095,7 @@
+     /// The second half is the one that would have caught the original defect's
+     /// mirror image. Pricing a draw whose prior contents *were* preserved would
+     /// report the rail working as if it were the loss — which is exactly what
+-    /// scoring `target_rgba8.is_some()` alone did to the LOAD population, and
++    /// scoring `target_cpu_seed.is_some()` alone did to the LOAD population, and
+     /// it produced a 519 715-strong "defect" that was not one.
+     #[test]
+     fn a_dontcare_partial_draw_is_priced_by_the_area_it_destroyed() {
+@@ -11890,7 +12028,7 @@
+         };
+         assert!(mapper_ref_texture_load_is_a_seed_candidate(&c0));
+ 
+-        c0.target_seed_rgba = Some(vec![0u8; 4]);
++        c0.target_seed = Some(vec![0u8; 4].into());
+         assert!(!mapper_ref_texture_load_is_a_seed_candidate(&c0));
+     }
+ 
+@@ -11908,7 +12046,7 @@
+     /// A mapper-ref-texture `LOAD` whose host cache misses seeds from the surface's own
+     /// guest pages, and only refuses when those cannot serve the extent.
+     ///
+-    /// Without the guest-pages rung this returns `None`, `target_rgba8` stays
++    /// Without the guest-pages rung this returns `None`, `target_cpu_seed` stays
+     /// unset, and `exec` resolves the pass load action to `Clear` against the
+     /// hardcoded `[0,0,0,0]` — so the guest's request to preserve its surface
+     /// became a transparent-black wipe that the matching Store published. One
+@@ -12295,7 +12433,7 @@
+             .get_mut(&mid)
+             .expect("mapped above")
+             .guest_write_gen_at_store = host.guest_write_gen(token).expect("a live token has one");
+-        let MapperRefTextureLoadSeed::Host(bytes, order) = resolve_mapper_ref_texture_load_seed(
++        let MapperRefTextureLoadSeed::Host(seed) = resolve_mapper_ref_texture_load_seed(
+             &mut state,
+             &mut host,
+             mid,
+@@ -12306,8 +12444,8 @@
+         .expect("an unwritten surface may be seeded from the cache") else {
+             panic!("the fresh cache must stay above the guest-page rung");
+         };
+-        assert_eq!(order, crate::backend::vulkan::engine::SeedOrder::Bgra8);
+-        assert_eq!(&bytes[..4], &[0xAA, 0xBB, 0xCC, 0xFF]);
++        assert_eq!(seed.layout, TexelLayout::Bgra8);
++        assert_eq!(&seed.pixels[..4], &[0xAA, 0xBB, 0xCC, 0xFF]);
+ 
+         // The guest CPU repaints the surface. No device operation, so the
+         // content epoch does not move and this is the only witness that sees it.
+@@ -12433,7 +12571,7 @@
+             px.copy_from_slice(&[0xAA, 0xBB, 0xCC, 0xFF]);
+         }
+         crate::runtime::surface_cache::store(&mut state, mid, w, h, cached);
+-        let MapperRefTextureLoadSeed::Host(bytes, order) = resolve_mapper_ref_texture_load_seed(
++        let MapperRefTextureLoadSeed::Host(seed) = resolve_mapper_ref_texture_load_seed(
+             &mut state,
+             &mut host,
+             mid,
+@@ -12444,8 +12582,8 @@
+         .expect("a warm cache must serve") else {
+             panic!("a live cache is the freshest rung");
+         };
+-        assert_eq!(order, crate::backend::vulkan::engine::SeedOrder::Bgra8);
+-        assert_eq!(&bytes[..4], &[0xAA, 0xBB, 0xCC, 0xFF]);
++        assert_eq!(seed.layout, TexelLayout::Bgra8);
++        assert_eq!(&seed.pixels[..4], &[0xAA, 0xBB, 0xCC, 0xFF]);
+ 
+         // An extent the surface is not latched at cannot be served by either rung,
+         // and refusing is right: a seed of the wrong length is rejected by the
+@@ -13179,7 +13317,17 @@
+ 
+         let mut gen_of = |host: &mut FakeHost| {
+             let secs = super::build_secondary_targets(
+-                &mut state, host, 1, &colors, &pipeline, &primary, 8, 8,
++                &mut state,
++                host,
++                &DrawEncodeRequest {
++                    task_id: 1,
++                    colors: colors.to_vec(),
++                    ..Default::default()
++                },
++                &pipeline,
++                &primary,
++                8,
++                8,
+             )
+             .expect("slot 1 is a resolvable secondary");
+             assert_eq!(secs.len(), 1, "slot 1 is a resolvable secondary");
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/mod.rs
+@@ -5260,7 +5260,7 @@
+                         }
+                         MultiDrawChainSource::Cpu => {
+                             if let Some(c0) = req.colors.first_mut() {
+-                                c0.target_seed_rgba = chain_rgba.take();
++                                c0.target_seed = chain_rgba.take().map(Into::into);
+                             }
+                         }
+                         MultiDrawChainSource::Missing => {
+@@ -5617,7 +5617,7 @@
+             load_action: MTL_LOAD_ACTION_LOAD,
+             store_action: c.store_action,
+             clear_color: c.clear_color,
+-            target_seed_rgba: None,
++            target_seed: None,
+             multisample_source_ref: c.multisample_source_ref,
+         })
+         .collect();
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/tests.rs
+@@ -2739,13 +2739,13 @@
+             load_action: MTL_LOAD_ACTION_CLEAR,
+             store_action: MTL_STORE_ACTION_STORE,
+             clear_color: [0.1, 0.2, 0.3, 1.0],
+-            target_seed_rgba: Some(vec![0xbb; 16]),
++            target_seed: Some(vec![0xbb; 16].into()),
+             multisample_source_ref: 0,
+         }],
+         ..Default::default()
+     };
+     let template = render_pass_attachment_template(&first);
+-    assert!(template.colors[0].target_seed_rgba.is_none());
++    assert!(template.colors[0].target_seed.is_none());
+     assert_eq!(template.colors[0].load_action, MTL_LOAD_ACTION_LOAD);
+     assert_eq!(template.colors[0].mapping_id, 3);
+     assert_eq!(
+@@ -2778,7 +2778,10 @@
+     assert_eq!(req.colors.len(), 1);
+     assert_eq!(req.colors[0].mapping_id, 3);
+     assert_eq!(
+-        first.colors[0].target_seed_rgba.as_ref().map(Vec::len),
++        first.colors[0]
++            .target_seed
++            .as_ref()
++            .map(|seed| seed.pixels.len()),
+         Some(16)
+     );
+ }
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/icb/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/icb/tests.rs
+@@ -767,7 +767,7 @@
+             height: 4,
+             format: crate::protocol::pixel_format::MTL_FORMAT_BGRA8_UNORM,
+             store_action: MTL_STORE_ACTION_STORE,
+-            target_seed_rgba: Some(vec![0u8; 4 * 4 * 4]),
++            target_seed: Some(vec![0u8; 4 * 4 * 4].into()),
+             ..Default::default()
+         }],
+         ..Default::default()
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -1016,6 +1016,46 @@
+         }
+     }
+ 
++    #[test]
++    fn r32_copying_store_keeps_native_bits_and_row_padding() {
++        let (mut host, mut state) = fixture();
++        let mut target = request();
++        target.format = crate::protocol::pixel_format::MTL_FORMAT_R32_FLOAT;
++        target.row_stride = 24;
++        let words = [
++            0x80000000u32,
++            0x7fc12345,
++            0xc0500000,
++            0x47800080,
++            1,
++            0x3dfcd6ea,
++            0x7f800000,
++            0xff800000,
++        ];
++        let native: Vec<u8> = words.iter().flat_map(|value| value.to_le_bytes()).collect();
++        let gpa = (DATA_BASE_PFN + 1) << PAGE_SHIFT_ARM64E;
++        assert!(host.write_gpa(gpa, &[0xa5; 48]).is_ok());
++        let pages = StoreTargetPages::from_ordered(&[gpa], 48);
++        let extent = land_gva_frame_bytes(
++            &mut state,
++            &mut host,
++            1,
++            &target,
++            0,
++            crate::runtime::draw::FrameRows::Native(&native),
++            &pages,
++            &[],
++        )
++        .unwrap();
++        assert_eq!(extent, 40);
++        let mut result = [0; 48];
++        assert!(host.read_gpa(gpa, &mut result).is_ok());
++        assert_eq!(&result[..16], &native[..16]);
++        assert_eq!(&result[24..40], &native[16..]);
++        assert_eq!(&result[16..24], &[0xa5; 8]);
++        assert_eq!(&result[40..], &[0xa5; 8]);
++    }
++
+     /// The copying arm may not widen the licence the direct arm was given.
+     ///
+     /// A GVA carries no page list of its own, so the supplied one is the entire
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -1246,7 +1246,7 @@
+     let (v, f) = triangle_spirv();
+     let mut req = engine_req(&v, &f, 8, 8);
+     // Fullscreen triangle covers everything; seed is Load base then overdrawn.
+-    req.target_rgba8 = Some(std::sync::Arc::new([10, 20, 30, 255].repeat(8 * 8)));
++    req.target_cpu_seed = Some(([10, 20, 30, 255].repeat(8 * 8)).into());
+     if let Some(px) = draw_or_skip("load_seed", &req) {
+         assert_fullscreen_fragment_color("load_seed", &px, 8, 8);
+     }
+@@ -1257,7 +1257,7 @@
+     let _g = engine_test_session();
+     let (v, f) = triangle_spirv();
+     let mut req = engine_req(&v, &f, 8, 8);
+-    req.target_rgba8 = Some(std::sync::Arc::new([0, 0, 0, 255].repeat(8 * 8)));
++    req.target_cpu_seed = Some(([0, 0, 0, 255].repeat(8 * 8)).into());
+     req.blend = Some(BlendStateResource {
+         src_rgb: MTL_BLEND_FACTOR_SOURCE_ALPHA,
+         dst_rgb: MTL_BLEND_FACTOR_ONE_MINUS_SOURCE_ALPHA,
+@@ -1292,7 +1292,7 @@
+     let (v, f) = triangle_spirv();
+     let scaled = |constant: [f32; 4]| -> Option<Vec<u8>> {
+         let mut req = engine_req(&v, &f, 8, 8);
+-        req.target_rgba8 = Some(std::sync::Arc::new([0, 0, 0, 255].repeat(8 * 8)));
++        req.target_cpu_seed = Some(([0, 0, 0, 255].repeat(8 * 8)).into());
+         req.blend = Some(BlendStateResource {
+             src_rgb: MTL_BLEND_FACTOR_BLEND_COLOR,
+             dst_rgb: MTL_BLEND_FACTOR_ZERO,
+@@ -2969,7 +2969,7 @@
+     let mut req = engine_req(&vert, &frag, w, h);
+     req.target_identity = Some(identity.clone());
+     req.skip_readback = true;
+-    req.target_rgba8 = Some(std::sync::Arc::new(seed_rgba.repeat((w * h) as usize)));
++    req.target_cpu_seed = Some((seed_rgba.repeat((w * h) as usize)).into());
+     req.scissors = vec![ScissorResource {
+         x: 0,
+         y: 0,
+@@ -3092,7 +3092,7 @@
+     let seed = [17u8, 91, 203, 7];
+ 
+     let mut req = engine_req(&vert, &frag, w, h);
+-    req.target_rgba8 = Some(std::sync::Arc::new(seed.repeat((w * h) as usize)));
++    req.target_cpu_seed = Some((seed.repeat((w * h) as usize)).into());
+     req.color_write_mask = ColorWriteMask::new(1).expect("MTLColorWriteMaskAlpha");
+     let masked = match engine::execute_draw_request(engine_device(), &req) {
+         Ok(out) => out.pixels,
+@@ -3161,7 +3161,10 @@
+     ];
+     let outside = ((h / 2) * w + w / 2) as usize * 4;
+ 
+-    let read_back = |order: engine::SeedOrder, bytes: [u8; 4], id: u32| -> Option<Vec<u8>> {
++    let read_back = |order: reims_vgpu_protocol::pixel_format::TexelLayout,
++                     bytes: [u8; 4],
++                     id: u32|
++     -> Option<Vec<u8>> {
+         let identity = TargetIdentity::Surface {
+             id,
+             width: w,
+@@ -3172,8 +3175,8 @@
+         let mut req = engine_req(&vert, &frag, w, h);
+         req.target_identity = Some(identity.clone());
+         req.skip_readback = true;
+-        req.target_rgba8 = Some(std::sync::Arc::new(bytes.repeat((w * h) as usize)));
+-        req.target_seed_order = order;
++        req.target_cpu_seed = Some((bytes.repeat((w * h) as usize)).into());
++        req.target_cpu_seed.as_mut().unwrap().layout = order;
+         req.scissors = vec![ScissorResource {
+             x: 0,
+             y: 0,
+@@ -3201,10 +3204,18 @@
+         )
+     };
+ 
+-    let Some(rgba_arm) = read_back(engine::SeedOrder::Rgba8, semantic_rgba, 91) else {
++    let Some(rgba_arm) = read_back(
++        reims_vgpu_protocol::pixel_format::TexelLayout::Rgba8,
++        semantic_rgba,
++        91,
++    ) else {
+         return;
+     };
+-    let Some(bgra_arm) = read_back(engine::SeedOrder::Bgra8, scanout_bgra, 92) else {
++    let Some(bgra_arm) = read_back(
++        reims_vgpu_protocol::pixel_format::TexelLayout::Bgra8,
++        scanout_bgra,
++        92,
++    ) else {
+         return;
+     };
+     assert_eq!(
+@@ -3232,7 +3243,7 @@
+     let seed: Vec<u8> = (0..(w * h)).flat_map(|_| [128u8, 128, 128, 255]).collect();
+     // GPU path: Load seed + One/OMSA blend (fullscreen frag writes opaque color).
+     let mut gpu = engine_req(&v, &f, w, h);
+-    gpu.target_rgba8 = Some(std::sync::Arc::new(seed.clone()));
++    gpu.target_cpu_seed = Some((seed.clone()).into());
+     gpu.blend = Some(BlendStateResource {
+         src_rgb: MTL_BLEND_FACTOR_ONE,
+         dst_rgb: MTL_BLEND_FACTOR_ONE_MINUS_SOURCE_ALPHA,
+@@ -3269,7 +3280,7 @@
+ /// Class A zero-copy wipe lock: after a skip_readback Store (no CPU pixels,
+ /// host_cache would be empty/evicted), the next pass must LoadFromTarget so
+ /// progressive multi-pass content stays on the resident image. Engine Clear
+-/// (the default when neither `load_from_target` nor `target_rgba8` is set)
++/// (the default when neither `load_from_target` nor `target_cpu_seed` is set)
+ /// would black the target.
+ #[test]
+ fn skip_readback_store_then_load_from_target_preserves_content() {
+@@ -3304,7 +3315,7 @@
+     store2.target_identity = Some(identity.clone());
+     store2.load_from_target = true;
+     store2.skip_readback = true;
+-    store2.target_rgba8 = None;
++    store2.target_cpu_seed = None;
+     engine::execute_draw_request(engine_device(), &store2).expect("store2 LoadFromTarget");
+     let px = engine::read_target(&identity)
+         .expect("read_target after progressive Stores")
+@@ -3364,7 +3375,7 @@
+         Err(e) => panic!("chain d1: {e}"),
+     };
+     let mut d2_cpu = engine_req(&v, &f, 16, 16);
+-    d2_cpu.target_rgba8 = Some(std::sync::Arc::new(p1.clone()));
++    d2_cpu.target_cpu_seed = Some((p1.clone()).into());
+     let p2_cpu = semantic_rgba(
+         &engine::execute_draw_request(engine_device(), &d2_cpu).expect("cpu seed chain"),
+     );
+@@ -3436,7 +3447,7 @@
+     // Arm A — the round trip this rail removes: seed from host bytes, draw a
+     // corner, read back, re-upload those pixels as the next pass's seed.
+     let mut d1 = engine_req(&v, &f, w, h);
+-    d1.target_rgba8 = Some(std::sync::Arc::new(prior.clone()));
++    d1.target_cpu_seed = Some((prior.clone()).into());
+     d1.scissors = vec![dot(0, 0)];
+     let p1 = match engine::execute_draw_request(engine_device(), &d1) {
+         Ok(o) => semantic_rgba(&o),
+@@ -3447,7 +3458,7 @@
+         Err(e) => panic!("readback chain d1: {e}"),
+     };
+     let mut d2_cpu = engine_req(&v, &f, w, h);
+-    d2_cpu.target_rgba8 = Some(std::sync::Arc::new(p1.clone()));
++    d2_cpu.target_cpu_seed = Some((p1.clone()).into());
+     d2_cpu.scissors = vec![dot(8, 8)];
+     let p2_cpu = semantic_rgba(
+         &engine::execute_draw_request(engine_device(), &d2_cpu).expect("cpu seed after readback"),
+@@ -3474,7 +3485,7 @@
+     };
+     let mut g1 = engine_req(&v, &f, w, h);
+     g1.target_identity = Some(identity.clone());
+-    g1.target_rgba8 = Some(std::sync::Arc::new(prior));
++    g1.target_cpu_seed = Some((prior).into());
+     g1.scissors = vec![dot(0, 0)];
+     g1.skip_readback = false;
+     let p1_resident = semantic_rgba(
+@@ -3489,7 +3500,7 @@
+     let mut g2 = engine_req(&v, &f, w, h);
+     g2.target_identity = Some(identity.clone());
+     g2.load_from_target = true;
+-    g2.target_rgba8 = None;
++    g2.target_cpu_seed = None;
+     g2.scissors = vec![dot(8, 8)];
+     g2.skip_readback = false;
+     let p2_gpu = semantic_rgba(
+@@ -3525,12 +3536,12 @@
+         Err(e) => panic!("gva_chain d1: {e}"),
+     };
+     let mut d2 = engine_req(&v, &f, 16, 16);
+-    d2.target_rgba8 = Some(std::sync::Arc::new(p1));
++    d2.target_cpu_seed = Some((p1).into());
+     let p2 = engine::execute_draw_request(engine_device(), &d2)
+         .expect("cpu d2")
+         .pixels;
+     let mut d3 = engine_req(&v, &f, 16, 16);
+-    d3.target_rgba8 = Some(std::sync::Arc::new(p2));
++    d3.target_cpu_seed = Some((p2).into());
+     let p3_cpu = engine::execute_draw_request(engine_device(), &d3)
+         .expect("cpu d3")
+         .pixels;
+@@ -3908,6 +3919,7 @@
+     let mut mrt = engine_req(&v, &f, 16, 16);
+     mrt.target_identity = Some(primary.clone());
+     mrt.secondary_targets.push(SecondaryColorTarget {
++        seed: None,
+         identity: secondary.clone(),
+         width: 16,
+         height: 16,
+@@ -3999,6 +4011,7 @@
+     let mut mrt = engine_req(&v, &f, 32, 32);
+     mrt.target_identity = Some(primary.clone());
+     mrt.secondary_targets.push(SecondaryColorTarget {
++        seed: None,
+         identity: mask.clone(),
+         width: 32,
+         height: 32,
+@@ -4068,6 +4081,7 @@
+         let mut req = engine_req(&v, &f, w, h);
+         req.target_identity = Some(primary);
+         req.secondary_targets.push(SecondaryColorTarget {
++            seed: None,
+             identity: secondary.clone(),
+             width: w,
+             height: h,
+@@ -4168,9 +4182,7 @@
+     let mut req = engine_req(&v, &f, w, h);
+     req.color_input = true;
+     // Seed (64, 128, 191, 255) → expect ~(191, 127, 64, 255).
+-    req.target_rgba8 = Some(std::sync::Arc::new(
+-        [64, 128, 191, 255].repeat((w * h) as usize),
+-    ));
++    req.target_cpu_seed = Some([64, 128, 191, 255].repeat((w * h) as usize).into());
+     let Some(px) = draw_or_skip("framebuffer_fetch", &req) else {
+         return;
+     };
+@@ -4204,7 +4216,7 @@
+ /// those. Sweeping the geometry varies both together and the intercept falls out.
+ ///
+ /// Measured on the x86 dev host (Intel ARL iGPU), 40 draws per point, all caches
+-/// warmed first, no `target_rgba8` so no seed upload is included:
++/// warmed first, no `target_cpu_seed` so no seed upload is included:
+ ///
+ /// | geometry | MB | us/draw | us/MB |
+ /// |---|---|---|---|
+@@ -4349,3 +4361,139 @@
+         "a draw since the stamp clears it — the slot is still there"
+     );
+ }
++
++#[test]
++fn r32_color_clear_load_draw_and_blend_preserve_native_precision() {
++    use reims_vgpu_core::blend::ColorWriteMask;
++    use reims_vgpu_protocol::pixel_format::{ColorLoadSeed, TexelLayout, MTL_FORMAT_R32_FLOAT};
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let identity = TargetIdentity::Gva {
++        gva: 0x208000,
++        width: 4,
++        height: 2,
++        generation: 1,
++        format: ash::vk::Format::R32_SFLOAT,
++    };
++    let mut req = engine_req(&v, &f, 4, 2);
++    req.target_identity = Some(identity.clone());
++    req.color_attachment = Some(color_attachment(
++        MTL_FORMAT_R32_FLOAT,
++        [-3.25, 0.0, 0.0, 0.0],
++    ));
++    req.skip_readback = true;
++    req.color_write_mask = ColorWriteMask::NONE;
++    engine::execute_draw_request(engine_device(), &req)
++        .expect("R32 clear must execute on the Vulkan test host");
++    let clear = engine::read_target(&identity).unwrap();
++    assert_eq!(
++        clear.texel,
++        engine::ReadbackTexel::Native(TexelLayout::R32Float)
++    );
++    assert_eq!(clear.pixels, (-3.25f32).to_le_bytes().repeat(8));
++
++    // The copy and Load path must retain even bits that no RGBA8 conversion
++    // represents: signed zero, extended range, a NaN payload and a subnormal.
++    let bits = [
++        0x80000000u32,
++        0x40200000,
++        0xc0480000,
++        0x7f800000,
++        0xff800000,
++        0x7fc12345,
++        1,
++        0x3dfcd6ea,
++    ];
++    let raw: Vec<u8> = bits.iter().flat_map(|word| word.to_le_bytes()).collect();
++    req.target_cpu_seed = Some(ColorLoadSeed {
++        pixels: std::sync::Arc::new(raw.clone()),
++        layout: TexelLayout::R32Float,
++    });
++    engine::execute_draw_request(engine_device(), &req).expect("native CPU seed");
++    assert_eq!(engine::read_target(&identity).unwrap().pixels, raw);
++
++    req.color_write_mask = ColorWriteMask::ALL;
++    req.scissors = vec![engine::ScissorResource {
++        x: 0,
++        y: 0,
++        width: 2,
++        height: 2,
++    }];
++    req.target_cpu_seed = Some(ColorLoadSeed {
++        pixels: std::sync::Arc::new(2.5f32.to_le_bytes().repeat(8)),
++        layout: TexelLayout::R32Float,
++    });
++    req.blend = Some(BlendStateResource {
++        src_rgb: MTL_BLEND_FACTOR_ONE,
++        dst_rgb: MTL_BLEND_FACTOR_ONE,
++        op_rgb: MTL_BLEND_OPERATION_ADD,
++        src_alpha: MTL_BLEND_FACTOR_ONE,
++        dst_alpha: MTL_BLEND_FACTOR_ZERO,
++        op_alpha: MTL_BLEND_OPERATION_ADD,
++    });
++    engine::execute_draw_request(engine_device(), &req).expect("R32 fragment blend");
++    let pixels = engine::read_target(&identity).unwrap().pixels;
++    let values: Vec<f32> = pixels
++        .as_chunks::<4>()
++        .0
++        .iter()
++        .map(|p| f32::from_le_bytes(*p))
++        .collect();
++    assert_eq!(values, [2.75, 2.75, 2.5, 2.5, 2.75, 2.75, 2.5, 2.5]);
++    req.target_cpu_seed = None;
++    req.load_from_target = true;
++    engine::execute_draw_request(engine_device(), &req).expect("resident R32 load");
++    let pixels = engine::read_target(&identity).unwrap().pixels;
++    let values: Vec<f32> = pixels
++        .as_chunks::<4>()
++        .0
++        .iter()
++        .map(|p| f32::from_le_bytes(*p))
++        .collect();
++    assert_eq!(values, [3.0, 3.0, 2.5, 2.5, 3.0, 3.0, 2.5, 2.5]);
++}
++
++#[test]
++fn r32_secondary_load_can_seed_a_new_resident_and_then_preserve_it() {
++    use reims_vgpu_core::blend::ColorWriteMask;
++    use reims_vgpu_protocol::pixel_format::{ColorLoadSeed, TexelLayout, MTL_FORMAT_R32_FLOAT};
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let primary = TargetIdentity::Surface {
++        id: 208,
++        width: 4,
++        height: 2,
++        generation: 1,
++        format: SURFACE_TEST_FORMAT,
++    };
++    let secondary = TargetIdentity::Gva {
++        gva: 0x209000,
++        width: 4,
++        height: 2,
++        generation: 1,
++        format: ash::vk::Format::R32_SFLOAT,
++    };
++    let mut req = engine_req(&v, &f, 4, 2);
++    req.target_identity = Some(primary);
++    let raw = (-14.125f32).to_le_bytes().repeat(8);
++    req.secondary_targets.push(SecondaryColorTarget {
++        seed: Some(ColorLoadSeed {
++            pixels: std::sync::Arc::new(raw.clone()),
++            layout: TexelLayout::R32Float,
++        }),
++        identity: secondary.clone(),
++        width: 4,
++        height: 2,
++        attachment: color_attachment(MTL_FORMAT_R32_FLOAT, [0.0; 4]),
++        load: true,
++        blend: None,
++        color_write_mask: ColorWriteMask::NONE,
++    });
++    engine::execute_draw_request(engine_device(), &req)
++        .expect("first secondary LOAD has native bytes");
++    assert_eq!(engine::read_target(&secondary).unwrap().pixels, raw);
++    req.secondary_targets[0].seed = None;
++    engine::execute_draw_request(engine_device(), &req)
++        .expect("second secondary LOAD has resident bytes");
++    assert_eq!(engine::read_target(&secondary).unwrap().pixels, raw);
++}
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -3,7 +3,7 @@
+ use crate::endian::{ld16, st16};
+ use crate::extent::BlockGeometry;
+ 
+-use alloc::vec::Vec;
++use alloc::{sync::Arc, vec::Vec};
+ 
+ pub const COMPONENT_COUNT: usize = 4;
+ pub const COMPONENT_R: usize = 0;
+@@ -796,6 +796,7 @@
+                 | Self::Bgra8
+                 | Self::R8
+                 | Self::R16Float
++                | Self::R32Float
+                 | Self::Rg16Float
+                 | Self::Rgba16Float
+                 | Self::Bgr10a2Unorm
+@@ -2027,6 +2028,7 @@
+         | MTL_FORMAT_RGBA16_FLOAT
+         | MTL_FORMAT_RG16_FLOAT
+         | MTL_FORMAT_R16_FLOAT
++        | MTL_FORMAT_R32_FLOAT
+         | MTL_FORMAT_R8_UNORM
+         | MTL_FORMAT_BGR10A2_UNORM => ColorNumericType::Float,
+         MTL_FORMAT_RG16_UINT => ColorNumericType::Uint,
+@@ -2090,6 +2092,7 @@
+         MTL_FORMAT_RGBA8_UNORM | MTL_FORMAT_RGBA8_UNORM_SRGB => TexelLayout::Rgba8,
+         MTL_FORMAT_BGRA8_UNORM | MTL_FORMAT_BGRA8_UNORM_SRGB => TexelLayout::Bgra8,
+         MTL_FORMAT_RGBA16_FLOAT => TexelLayout::Rgba16Float,
++        MTL_FORMAT_R32_FLOAT => TexelLayout::R32Float,
+         // The packed ten-bit colour word. Admitted because the byte copy is the
+         // only rail that can land it without loss: the CPU converter reaches
+         // [`rgba8_to_texel`], whose arm for this format requantizes each channel
+@@ -2244,6 +2247,24 @@
+     Native,
+ }
+ 
++/// Tightly packed colour-attachment contents, including their physical texel.
++/// A four-byte R32Float pixel is not an RGBA8 pixel. Keeping the layout with
++/// the allocation makes both CPU and GPU Load paths validate that distinction.
++#[derive(Clone, Debug, PartialEq, Eq)]
++pub struct ColorLoadSeed {
++    pub pixels: Arc<Vec<u8>>,
++    pub layout: TexelLayout,
++}
++
++impl From<Vec<u8>> for ColorLoadSeed {
++    fn from(pixels: Vec<u8>) -> Self {
++        Self {
++            pixels: Arc::new(pixels),
++            layout: TexelLayout::Rgba8,
++        }
++    }
++}
++
+ /// A clear-only render result ready to be published into guest memory.
+ ///
+ /// The encoding and bytes are produced together from the admitted render-target
+@@ -2285,6 +2306,14 @@
+ ) -> Option<ClearImage> {
+     let numeric = render_target_numeric_type(format)?;
+     match numeric.clear_components(*clear) {
++        ClearComponents::Float(components) if format == MTL_FORMAT_R32_FLOAT => {
++            solid_native_clear_image(
++                format,
++                width,
++                height,
++                &components[COMPONENT_R].to_le_bytes(),
++            )
++        }
+         ClearComponents::Float(_) => {
+             let row_bytes = width.checked_mul(RGBA8_BPP)?;
+             let pixels = solid_rgba8(width, height, clear);
+@@ -3726,7 +3755,7 @@
+         // Sampled but not renderable, so "has a layout" is not "is a colour
+         // attachment" — the distinction `sampled_pixels` and this table each own
+         // one half of.
+-        assert_eq!(render_target_bpp(MTL_FORMAT_R32_FLOAT), None);
++        assert_eq!(render_target_bpp(MTL_FORMAT_R32_FLOAT), Some(R32F_BPP));
+         assert_eq!(render_target_bpp(MTL_FORMAT_RG8_UNORM), None);
+     }
+ 
+@@ -3777,7 +3806,7 @@
+         }
+         // A guard on the walk itself: an admission set that silently emptied
+         // would satisfy every assertion above.
+-        assert_eq!(admitted, 10, "the admitted colour render target formats");
++        assert_eq!(admitted, 11, "the admitted colour render target formats");
+     }
+ 
+     /// An integer texel has no semantic eight-bit solid colour.
+@@ -3827,7 +3856,7 @@
+                 .unwrap_or_else(|| panic!("render target {format:#x} cannot publish its clear"));
+             assert_eq!(image.pixels().len(), image.row_bytes() as usize * 2);
+         }
+-        assert_eq!(admitted, 10, "the admitted colour render target formats");
++        assert_eq!(admitted, 11, "the admitted colour render target formats");
+ 
+         let integer = solid_clear_image(MTL_FORMAT_RG16_UINT, 2, 2, &clear)
+             .expect("RG16Uint is an admitted render target");
+@@ -3849,6 +3878,23 @@
+             [0u16.to_le_bytes(), 1u16.to_le_bytes()].concat(),
+             "the CPU rail must narrow the same uint32 carrier as the GPU clear"
+         );
++    }
++
++    #[test]
++    fn r32_clear_keeps_signed_and_extended_float_values_in_native_rows() {
++        for value in [-0.0, -3.25, 0.123456789, 1.00001, 65_537.0, f64::INFINITY] {
++            let image =
++                solid_clear_image(MTL_FORMAT_R32_FLOAT, 3, 2, &[value, 9.0, 8.0, 7.0]).unwrap();
++            assert_eq!(image.encoding(), ClearImageEncoding::Native);
++            assert_eq!(image.row_bytes(), 12);
++            assert_eq!(image.pixels(), (value as f32).to_le_bytes().repeat(6));
++        }
++        assert!(TexelLayout::R32Float.is_render_target_layout());
++        assert_eq!(
++            store_texel_order(MTL_FORMAT_R32_FLOAT),
++            Some(TexelLayout::R32Float)
++        );
++        assert!(!solid_color_reaches_texel(MTL_FORMAT_R32_FLOAT));
+     }
+ 
+     /// The byte copy must carry the integer target, because nothing else can.
+@@ -4801,6 +4847,15 @@
+                 Some(order.bytes_per_texel()),
+                 "{fmt:#x} is a Store destination this device will not render into"
+             );
++            if order == TexelLayout::R32Float {
++                assert_eq!(fmt, MTL_FORMAT_R32_FLOAT);
++                assert_eq!(
++                    sampled_class(fmt),
++                    None,
++                    "R32 is a native Vulkan sampled layout, not a CPU unorm conversion"
++                );
++                continue;
++            }
+             // The sampled table is the independent statement of the same byte
+             // layout, so a disagreement here is one of the two being wrong.
+             assert_eq!(

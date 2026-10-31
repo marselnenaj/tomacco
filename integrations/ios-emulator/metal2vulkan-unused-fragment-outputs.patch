@@ -1,0 +1,142 @@
+--- a/src/fragment_color.rs
++++ b/src/fragment_color.rs
+@@ -153,6 +153,89 @@
+             None
+         }
+     })
++}
++
++// A missing direct Location is evidence of absence only when every colour
++// output has a closed, single-location declaration. Groups, member locations,
++// aggregates and wider vectors can otherwise conceal the requested location.
++fn prove_output_absent(module: &Module, location: u32) -> Result<(), ColorQuantizationRefusal> {
++    let refusal = || ColorQuantizationRefusal::OutputDecoration(location);
++    if module.annotations.iter().any(|inst| {
++        matches!(
++            inst.class.opcode,
++            Op::GroupDecorate | Op::GroupMemberDecorate
++        ) || (inst.class.opcode == Op::MemberDecorate
++            && inst.operands.get(2) == Some(&Operand::Decoration(Decoration::Location)))
++    }) {
++        return Err(refusal());
++    }
++    for variable in &module.types_global_values {
++        if variable.class.opcode != Op::Variable
++            || variable.operands.first() != Some(&Operand::StorageClass(StorageClass::Output))
++        {
++            continue;
++        }
++        let target = variable.result_id.ok_or_else(refusal)?;
++        let builtin = module.annotations.iter().any(|inst| {
++            inst.class.opcode == Op::Decorate
++                && id(inst.operands.first()) == Some(target)
++                && inst.operands.get(1) == Some(&Operand::Decoration(Decoration::BuiltIn))
++                && matches!(inst.operands.get(2), Some(Operand::BuiltIn(_)))
++        });
++        if builtin && direct_decoration(module, target, Decoration::Location).is_none() {
++            continue;
++        }
++        let declared_location =
++            direct_decoration(module, target, Decoration::Location).ok_or_else(refusal)?;
++        if builtin
++            || declared_location == location
++            || direct_decoration(module, target, Decoration::Index).unwrap_or(0) != 0
++            || module.annotations.iter().any(|inst| {
++                inst.class.opcode == Op::Decorate
++                    && id(inst.operands.first()) == Some(target)
++                    && inst.operands.get(1) == Some(&Operand::Decoration(Decoration::Component))
++            })
++        {
++            return Err(refusal());
++        }
++        let pointer = variable
++            .result_type
++            .and_then(|ty| declared_type(module, ty))
++            .ok_or_else(refusal)?;
++        if pointer.class.opcode != Op::TypePointer
++            || pointer.operands.first() != Some(&Operand::StorageClass(StorageClass::Output))
++        {
++            return Err(refusal());
++        }
++        let value = id(pointer.operands.get(1))
++            .and_then(|ty| declared_type(module, ty))
++            .ok_or_else(refusal)?;
++        let scalar = if value.class.opcode == Op::TypeVector {
++            if !matches!(value.operands.get(1), Some(Operand::LiteralBit32(2..=4))) {
++                return Err(refusal());
++            }
++            id(value.operands.first())
++                .and_then(|ty| declared_type(module, ty))
++                .ok_or_else(refusal)?
++        } else {
++            value
++        };
++        if !matches!(scalar.class.opcode, Op::TypeFloat | Op::TypeInt)
++            || !matches!(
++                scalar.operands.first(),
++                Some(Operand::LiteralBit32(16 | 32))
++            )
++        {
++            return Err(refusal());
++        }
++    }
++    Ok(())
++}
++
++#[derive(Clone, Copy, PartialEq, Eq)]
++enum OutputSelection {
++    Required,
++    Present,
+ }
+ 
+ /// Replace selected fragment outputs with decoded, quantized RGBA32Float.
+@@ -171,6 +254,28 @@
+ pub fn quantize_fragment_color_outputs(
+     bytes: &[u8],
+     encodings: &[FragmentColorEncoding],
++) -> Result<Vec<u8>, ColorQuantizationRefusal> {
++    quantize_outputs(bytes, encodings, OutputSelection::Required)
++}
++
++/// Quantize the declared outputs of attached colour targets.
++///
++/// Unlike `quantize_fragment_color_outputs`, an encoding may describe an
++/// attachment for which the fragment shader declares no output. It is skipped
++/// only after the parsed module proves that location absent. Unknown aggregate,
++/// grouped, component or dual-source declarations return a typed refusal.
++/// Present outputs retain the strict rewrite and caller obligations above.
++pub fn quantize_present_fragment_color_outputs(
++    bytes: &[u8],
++    encodings: &[FragmentColorEncoding],
++) -> Result<Vec<u8>, ColorQuantizationRefusal> {
++    quantize_outputs(bytes, encodings, OutputSelection::Present)
++}
++
++fn quantize_outputs(
++    bytes: &[u8],
++    encodings: &[FragmentColorEncoding],
++    selection: OutputSelection,
+ ) -> Result<Vec<u8>, ColorQuantizationRefusal> {
+     if encodings.is_empty() {
+         return Ok(bytes.to_vec());
+@@ -235,6 +340,10 @@
+             })
+             .collect();
+         if candidates.is_empty() {
++            if selection == OutputSelection::Present {
++                prove_output_absent(&module, encoding.location)?;
++                continue;
++            }
+             return Err(ColorQuantizationRefusal::OutputMissing(encoding.location));
+         }
+         if candidates.len() != 1 {
+@@ -329,6 +438,9 @@
+             half,
+             replacement: 0,
+         });
++    }
++    if outputs.is_empty() {
++        return Ok(bytes.to_vec());
+     }
+     let mut builder = Builder::new(&mut module);
+     let float4 = builder.global(

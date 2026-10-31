@@ -1,0 +1,26 @@
+Tomacco
+Copyright (C) 2026 Marsel Nenaj and Tomacco contributors.
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program (the file LICENSE); if not, see <https://www.gnu.org/licenses/>.
+
+SPDX-License-Identifier: GPL-2.0-or-later
+
+Distributed binaries include Apache-2.0 components and are therefore conveyed
+under the GNU General Public License, version 3 or later (GPL-3.0-or-later),
+as the "or any later version" option allows. The GPL version 3 text is
+installed as COPYING.GPL-3.0 and is also in
+integrations/ios-emulator/COPYING_GPL-3.0. docs/SOURCE.md.in (installed as
+SOURCE.md) says where the corresponding source is offered.
+
+Third-party components, patches and device models keep their own copyright
+notices and licenses. They are listed in THIRD_PARTY_NOTICES.md.

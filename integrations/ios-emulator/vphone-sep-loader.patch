@@ -1,0 +1,52 @@
+diff --git a/hw/arm/xnuboot_sptm.c b/hw/arm/xnuboot_sptm.c
+--- a/hw/arm/xnuboot_sptm.c
++++ b/hw/arm/xnuboot_sptm.c
+@@ -572,6 +572,35 @@
+     }
+     prepare_boot_ramfile(info, rd_base_phys);
+ 
++    if (info->sep_image_size) {
++        size_t length = info->sep_image_size;
++        /* seputil submits the entire IMG4, not just the raw ELFour image.
++         * Reserve space for a 1 MiB manifest and 64 KiB of container metadata. */
++        if (!info->sep_image) {
++            length += 0x110000;
++        }
++        g_autofree uint8_t *empty = info->sep_image ? NULL : g_malloc0(length);
++        if (adt_get_prop_len(map, "SEPFW") != 16 ||
++            blob_head < info->dram_base ||
++            blob_head - info->dram_base > info->dram_size ||
++            length > info->dram_size - (blob_head - info->dram_base)) {
++            error_setg(&error_fatal, "SEP firmware requires a prepared SEPFW region within AP RAM");
++            return;
++        }
++        if (address_space_write(&address_space_memory, blob_head,
++                                MEMTXATTRS_UNSPECIFIED,
++                                info->sep_image ? info->sep_image : empty, length) != MEMTX_OK) {
++            error_setg(&error_fatal, "Cannot load SEP firmware into AP RAM");
++            return;
++        }
++        set_adt_mmap(map, "SEPFW", blob_head, length);
++        fprintf(stderr, "TOMACCO_SEPFW_%s base=0x%" HWADDR_PRIx " bytes=%zu\n",
++                info->sep_image ? "LOADED" : "RESERVED",
++                blob_head, length);
++        blob_head += ROUND_NEXT_PAGE(length);
++        blob_tail = blob_head;
++    }
++
+ #undef PUSH_SEG
+ #undef END_ENTRY
+ #undef SKIP
+diff --git a/include/xnu/boot/xnuboot.h b/include/xnu/boot/xnuboot.h
+--- a/include/xnu/boot/xnuboot.h
++++ b/include/xnu/boot/xnuboot.h
+@@ -50,6 +50,9 @@
+     uint64_t dram_base, dram_size;
+     bool has_mte;
+     bool preserve_kernel;
++    /* Validated image, borrowed during arm_load_xnu(); NULL reserves zeroed AP memory. */
++    const uint8_t *sep_image;
++    size_t sep_image_size;
+     bool boot_media;
+     /* Explicit owner-only working copy; never the source ramdisk inode. */
+     char *boot_storage;

@@ -1,0 +1,81 @@
+{
+  "input_sha256": "fa07057bf34f33af1ec26681ad0c87c13e5aaa548a300740eddb0e92876e5f95",
+  "output_sha256": "b5d1edba3be9ee9223d76d045350380eb927ef6b78064f1a77633be4477bf9e6",
+  "scope": "Experimental 64-bit RAMDisk byte counts in ioctl and block strategy",
+  "instructions": [
+    {
+      "address": "0xfffffff00ad6f79c",
+      "offset": 64403356,
+      "before": "0xb093109",
+      "after": "0x8b093109"
+    },
+    {
+      "address": "0xfffffff00ad6f7a0",
+      "offset": 64403360,
+      "before": "0x51000529",
+      "after": "0xd1000529"
+    },
+    {
+      "address": "0xfffffff00ad6f7a4",
+      "offset": 64403364,
+      "before": "0x1ac80928",
+      "after": "0x9ac80928"
+    },
+    {
+      "address": "0xfffffff00ad6fa20",
+      "offset": 64404000,
+      "before": "0x53144d29",
+      "after": "0xd374cd29"
+    }
+  ],
+  "firmware": "27.0.1",
+  "build": "24A446",
+  "device": "iPhone17,3",
+  "source": "https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/dev/memdev.c",
+  "application": "Apply only to a copied kernel with the exact input hash and expected instruction words. Original firmware must remain unchanged.",
+  "qualified": {
+    "block_device_root_mount": true,
+    "userspace_start_attempted": true,
+    "launchd_early_boot_completed_with_assembled_cryptex": true,
+    "full_ios_boot": false,
+    "graphical_apps": false,
+    "txm_association_retry_resolved": true,
+    "springboard_process_started": true,
+    "springboard_gui": false,
+    "temporary_guest_data_write": true
+  },
+  "limitations": [
+    "Research-only widening of ioctl block count and block strategy bounds; other RAMDisk paths are not qualified",
+    "Does not supply Cryptex staging, persistent block-device emulation, SEP or GPU",
+    "Early probe: SpringBoard SIGTRAP/reboot. Bootstrap probe: writable tmpfs, 3 protected seed entries denied, persona initialization and native display unresolved; data is not persistent."
+  ],
+  "device_tree_research": {
+    "source_sha256": "203302c0d60c0aa5f915f5d9a2b469f4c7870591cd7eed60248a55d283e52407",
+    "output_sha256": "d1f6d4d9ad08b57f57e34e32f31bbfdd5cb6586daec46a1e80d47c3a090d475e",
+    "changes": [
+      {
+        "property": "sepfw-load-at-boot",
+        "offset": 2824,
+        "before": 1,
+        "after": 0
+      },
+      {
+        "property": "txm-secure-channel",
+        "offset": 13440,
+        "before": 1,
+        "after": 0
+      }
+    ]
+  },
+  "bootstrap_research": {
+    "source": "research-init.c",
+    "linker_interface": "research-libSystem.tbd",
+    "builder": "tools/build_ios_research_bootstrap.py",
+    "seed_file_bytes": 668198,
+    "entries": 229,
+    "denied_entries": 3,
+    "actual_guest_write_bytes": 47,
+    "persistent_data": false,
+    "graphical_apps_qualified": false
+  }
+}

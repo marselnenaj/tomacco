@@ -1,0 +1,636 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+index 13bb22a..3cf4b5e 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -1068,6 +1068,108 @@ fn guest_target_load(
+     }
+ }
+ 
++/// Whether this request's colour 0 is a multisample source at the start of
++/// its guest encoder.
++///
++/// The draw side asks the same question of its own request
++/// (`runtime::draw::vulkan::multisample_source_begins_undefined`) and walks no
++/// seed door for it; this is the engine's half, which decides what the pass
++/// begins with. `continues_render_pass` is the whole distinction: a continued
++/// record's LOAD is the scratch this engine kept open for its encoder.
++pub(crate) fn multisample_source_begins_undefined(req: &DrawRequest) -> bool {
++    req.multisample_resolve && !req.continues_render_pass
++}
++
++/// What a pass may begin its colour 0 with, resolved once from the request.
++///
++/// The request's chain and seed fields are ordered --
++/// [`DrawRequest::load_from_target`] states the order -- and [`Self::resolve`]
++/// reads them in it. It also applies the one rule that overrides all of them:
++/// a multisample source at the start of its encoder
++/// ([`multisample_source_begins_undefined`]) begins undefined, or cleared when
++/// the guest asked for a clear, whatever the request offers.
++///
++/// Every one of those fields names the *resolve target*: `load_from_target`
++/// the resident the draw side chains from, the two seeds its bytes,
++/// `seed_from_target` a resident to copy into it, `load_guest_target_backing`
++/// its imported allocation. The attachment the pass begins is the multisample
++/// scratch, which Metal discards at every resolve-only store and which no guest
++/// storage describes, so there are no prior contents for a LOAD to read on the
++/// device either. Honouring the fields would LOAD whatever an earlier pass left
++/// in a pooled scratch, or copy the resolve target's bytes into it at the wrong
++/// sample count -- and `load_from_target` on a resident nothing has rendered
++/// yet was answered with `LoadTargetContentNotReady`, which refused the first
++/// record of every multisample encoder the guest opened with a LOAD
++/// (`an_encoder_starting_by_loading_its_multisample_source_begins_it_undefined`).
++/// The fields are ignored rather than refused: they are correct descriptions of
++/// the resolve target, and the one rail that needs that target -- the resolve
++/// itself -- reads none of them.
++#[derive(Clone, Copy)]
++struct Color0Sources<'a> {
++    /// Load the live resident of [`DrawRequest::target_identity`].
++    load_from_target: bool,
++    /// CPU seed bytes to stage, borrowed from the request.
++    cpu_seed: Option<&'a [u8]>,
++    /// Guest-page seed.
++    guest_seed: Option<&'a super::types::GuestTargetSeed>,
++    /// Present-boundary copy from another resident.
++    seed_from_target: Option<&'a TargetIdentity>,
++    /// Load the imported guest allocation the target is created over, when it
++    /// is.
++    load_guest_target_backing: bool,
++    /// What the pass begins with, given the above and what the guest declared.
++    load: Color0Load,
++}
++
++impl<'a> Color0Sources<'a> {
++    fn resolve(req: &'a DrawRequest) -> Self {
++        let source_begins_undefined = multisample_source_begins_undefined(req);
++        let load_from_target = req.load_from_target && !source_begins_undefined;
++        // The seed is borrowed from `req`, never copied to the heap: see the
++        // measurement at the call site.
++        let cpu_seed = if load_from_target || source_begins_undefined {
++            None
++        } else {
++            req.target_cpu_seed
++                .as_ref()
++                .map(|seed| seed.pixels.as_slice())
++        };
++        let guest_seed = if source_begins_undefined {
++            None
++        } else {
++            req.target_guest_seed.as_ref()
++        };
++        let seed_from_target = if source_begins_undefined {
++            None
++        } else {
++            req.seed_from_target.as_ref()
++        };
++        let load_guest_target_backing = req.load_guest_target_backing && !source_begins_undefined;
++        let load = if load_from_target
++            || cpu_seed.is_some()
++            || guest_seed.is_some()
++            || seed_from_target.is_some()
++        {
++            Color0Load::Preserve
++        } else if req
++            .color0_declared
++            .is_some_and(|declared| declared.preserves_prior_contents())
++        {
++            Color0Load::Undefined
++        } else {
++            Color0Load::Clear
++        };
++        Self {
++            load_from_target,
++            cpu_seed,
++            guest_seed,
++            seed_from_target,
++            load_guest_target_backing,
++            load,
++        }
++    }
++}
++
+ enum PreparedSampled {
+     Upload {
+         binding: u32,
+@@ -3034,8 +3136,11 @@ pub(crate) unsafe fn execute_draw_inner(
+             super::reason::DrawReason::UsedBindingAbsentFromLayout { binding, fragment },
+         ));
+     }
+-    // Resolve load action: resident > guest/host seed > Clear black.
+-    let mut load_uses_gpu_content = req.load_from_target;
++    // Resolve load action: resident > guest/host seed > Clear black -- unless
++    // colour 0 is a multisample source at the start of its encoder, which
++    // takes none of those. [`Color0Sources`] applies both rules.
++    let sources = Color0Sources::resolve(req);
++    let mut load_uses_gpu_content = sources.load_from_target;
+     // output_bgra (computed with the batch decision above): BGRA output only
+     // on the resident path (pooled targets stay RGBA); the whole
+     // pass/pipeline/image chain then agrees on B8G8R8A8 so a raw image→buffer
+@@ -3048,30 +3153,13 @@ pub(crate) unsafe fn execute_draw_inner(
+     // the `output_bgra` arm could swizzle in place; that swizzle now happens
+     // during the single copy into the mapped staging span, so the pixels are
+     // touched once either way.
+-    let seed_bytes: Option<&[u8]> = if load_uses_gpu_content {
+-        None
+-    } else {
+-        req.target_cpu_seed.as_ref().map(|v| v.pixels.as_slice())
+-    };
++    let seed_bytes: Option<&[u8]> = sources.cpu_seed;
+     // Three questions, not one: can this device offer prior contents, and if
+     // not, did the guest ask for a clear or merely permit undefined contents?
+     // The second question used to have no representation here, so both answers
+     // resolved to `CLEAR` and an unseeded preserving pass was cleared to a
+     // colour the guest never supplied. See [`Color0Load`].
+-    let color0_load = if load_uses_gpu_content
+-        || seed_bytes.is_some()
+-        || req.target_guest_seed.is_some()
+-        || req.seed_from_target.is_some()
+-    {
+-        Color0Load::Preserve
+-    } else if req
+-        .color0_declared
+-        .is_some_and(|declared| declared.preserves_prior_contents())
+-    {
+-        Color0Load::Undefined
+-    } else {
+-        Color0Load::Clear
+-    };
++    let color0_load = sources.load;
+     let mut pass_key = PassKey::single(color0_load, color0_format);
+     pass_key.host_accessible_color0 = req.guest_target_memory.is_some();
+     for (i, sec) in req.secondary_targets.iter().enumerate() {
+@@ -3737,7 +3825,7 @@ pub(crate) unsafe fn execute_draw_inner(
+             )?;
+             target_guest_backed = t.memory.is_guest_imported();
+             target_guest_footprint = t.memory.guest_footprint();
+-            target_loads_guest_backing = target_guest_backed && req.load_guest_target_backing;
++            target_loads_guest_backing = target_guest_backed && sources.load_guest_target_backing;
+             if target_loads_guest_backing {
+                 // The imported image *is* the guest seed. The pass key already
+                 // uses LOAD whenever a seed was supplied; switching the source
+@@ -3882,7 +3970,7 @@ pub(crate) unsafe fn execute_draw_inner(
+     // command buffer; the copy into the attachment is deliberately recorded
+     // only after the shared gather block below has filled it.
+     let target_guest_texels =
+-        match guest_target_load(target_loads_guest_backing, req.target_guest_seed.as_ref()) {
++        match guest_target_load(target_loads_guest_backing, sources.guest_seed) {
+             GuestTargetLoad::SharedBacking(seed) => {
+                 crate::runtime::drain::note_store_route("target_load_shared_backing");
+                 crate::runtime::drain::note_store_route_n(
+@@ -3936,7 +4024,7 @@ pub(crate) unsafe fn execute_draw_inner(
+         vk::Image,
+         super::pools::ResidentAccess,
+         super::pools::ResidentAccess,
+-    )> = if let Some(seed_identity) = &req.seed_from_target {
++    )> = if let Some(seed_identity) = sources.seed_from_target {
+         let slot = pools.registry_get(seed_identity).ok_or_else(|| {
+             DrawError::DrawExecution(DrawExecutionDecline::SeedResidentMissing {
+                 identity: seed_identity.clone(),
+@@ -4984,7 +5072,7 @@ pub(crate) unsafe fn execute_draw_inner(
+     // fallback. All three expose one buffer range and therefore share the same
+     // target transition and copy.
+     if !target_loads_guest_backing {
+-        if let (Some(source), Some(seed)) = (&target_guest_texels, &req.target_guest_seed) {
++        if let (Some(source), Some(seed)) = (&target_guest_texels, sources.guest_seed) {
+             unsafe { outside_pass.before_record(PassObstacle::Seed, pools, &ctx.device, cb) };
+             let (src_stage, src_access) =
+                 target_prior_access(target_snapshotted, target_access, target_guest_backed)
+@@ -5848,7 +5936,7 @@ pub(crate) unsafe fn execute_draw_inner(
+         // attachment first: a CLEAR clears the render area, which is the full
+         // target, and both seed forms fill it.
+         let rewrites_whole_attachment =
+-            !load_uses_gpu_content || seed_bytes.is_some() || req.seed_from_target.is_some();
++            !load_uses_gpu_content || seed_bytes.is_some() || sources.seed_from_target.is_some();
+         // `any`, not the union: one scissor reaching the whole attachment is
+         // enough for this draw to have written anywhere in it. A set of rects
+         // that only covers the target *together* reads as partial here, which
+@@ -5994,7 +6082,7 @@ pub(crate) unsafe fn execute_draw_inner(
+         }
+     }
+     if let Some((_, _, next_access)) = seed_from_resolved {
+-        if let Some(seed_identity) = &req.seed_from_target {
++        if let Some(seed_identity) = sources.seed_from_target {
+             pools.registry_note_access(seed_identity, next_access);
+         }
+     }
+@@ -6967,6 +7055,68 @@ mod tests {
+         }
+     }
+ 
++    /// A multisample source at the start of its encoder begins undefined
++    /// whatever the request offers it -- the chain, every seed and the guest
++    /// backing all describe the resolve target -- and cleared when the guest
++    /// asked for a clear. A continued record keeps every door: its LOAD is the
++    /// scratch the engine held open for its encoder.
++    #[test]
++    fn a_multisample_encoder_start_begins_its_source_undefined_whatever_it_is_offered() {
++        use reims_vgpu_protocol::pass_action::LoadAction;
++        let mut req = DrawRequest {
++            multisample_resolve: true,
++            load_from_target: true,
++            load_guest_target_backing: true,
++            seed_from_target: Some(sampled_identity()),
++            target_cpu_seed: Some(vec![0u8; 4].into()),
++            color0_declared: Some(LoadAction::Load),
++            ..DrawRequest::default()
++        };
++        let sources = Color0Sources::resolve(&req);
++        assert_eq!(sources.load, Color0Load::Undefined);
++        assert!(
++            !sources.load_from_target
++                && sources.cpu_seed.is_none()
++                && sources.guest_seed.is_none()
++                && sources.seed_from_target.is_none()
++                && !sources.load_guest_target_backing,
++            "no door reaches the multisample source"
++        );
++        req.color0_declared = Some(LoadAction::DontCare);
++        assert_eq!(Color0Sources::resolve(&req).load, Color0Load::Undefined);
++        req.color0_declared = Some(LoadAction::Clear);
++        assert_eq!(Color0Sources::resolve(&req).load, Color0Load::Clear);
++        req.color0_declared = None;
++        assert_eq!(
++            Color0Sources::resolve(&req).load,
++            Color0Load::Clear,
++            "an unstated action keeps its historical clear"
++        );
++
++        req.color0_declared = Some(LoadAction::Load);
++        req.continues_render_pass = true;
++        let continued = Color0Sources::resolve(&req);
++        assert_eq!(continued.load, Color0Load::Preserve);
++        assert!(
++            continued.load_from_target
++                && continued.load_guest_target_backing
++                && continued.seed_from_target.is_some(),
++            "a continued record loads what its encoder rendered"
++        );
++        assert!(
++            continued.cpu_seed.is_none(),
++            "the resident wins over the seed, as it always did"
++        );
++
++        req.continues_render_pass = false;
++        req.multisample_resolve = false;
++        req.load_from_target = false;
++        req.seed_from_target = None;
++        let seeded = Color0Sources::resolve(&req);
++        assert_eq!(seeded.load, Color0Load::Preserve);
++        assert_eq!(seeded.cpu_seed.map(<[u8]>::len), Some(4));
++    }
++
+     /// A serialized target reference is admitted without a preparation-side
+     /// registry query; the engine transaction remains responsible for every
+     /// mutable resident condition.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
+index a9b897e..bdf7000 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
+@@ -106,12 +106,6 @@ pub enum DrawReason {
+     MultisampleStoreActionUnsupported {
+         store_action: u16,
+     },
+-    /// A multisample source asks to load prior contents. The current scratch
+-    /// rail can preserve an already-open encoder, but cannot import a
+-    /// multisample image from guest linear storage at encoder start.
+-    MultisampleLoadActionUnsupported {
+-        load_action: u16,
+-    },
+     MultisampleResolveShapeUnsupported {
+         color_targets: u32,
+         depth: bool,
+@@ -356,7 +350,6 @@ impl crate::observe::Decline for DrawReason {
+             Self::MultisampleStoreActionUnsupported { .. } => {
+                 "multisample_store_action_unsupported"
+             }
+-            Self::MultisampleLoadActionUnsupported { .. } => "multisample_load_action_unsupported",
+             Self::MultisampleResolveShapeUnsupported { .. } => {
+                 "multisample_resolve_shape_unsupported"
+             }
+@@ -449,9 +442,6 @@ impl std::fmt::Display for DrawReason {
+             Self::MultisampleStoreActionUnsupported { store_action } => {
+                 write!(f, " store_action={store_action}")
+             }
+-            Self::MultisampleLoadActionUnsupported { load_action } => {
+-                write!(f, " load_action={load_action}")
+-            }
+             Self::MultisampleResolveShapeUnsupported {
+                 color_targets,
+                 depth,
+@@ -705,7 +695,6 @@ mod tests {
+             limit: 1,
+         },
+         DrawReason::MultisampleStoreActionUnsupported { store_action: 3 },
+-        DrawReason::MultisampleLoadActionUnsupported { load_action: 1 },
+         DrawReason::MultisampleResolveShapeUnsupported {
+             color_targets: 2,
+             depth: false,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+index 8d048f4..5f1a59b 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -7883,15 +7883,24 @@ pub(super) fn honour_gva_load_elision<M: HostMemory + HostOps>(
+ /// is staged for it: one resolving colour target in slot zero, resolved by a
+ /// resolve-only store.
+ ///
+-/// A record that *starts* its guest encoder by loading the multisample source
+-/// asks for an image this rail cannot import -- the source is a scratch image
+-/// that lives only while an encoder is open. A record that *continues* the
+-/// encoder loads what the records before it rendered, which is exactly what
+-/// that scratch holds: the engine keeps it open for the whole encoder and
++/// The load action is not admitted here, because no load action on a
++/// resolving colour is unsupported. A record that *continues* the encoder
++/// loads what the records before it rendered, which is exactly what the
++/// scratch source holds: the engine keeps it open for the whole encoder and
+ /// resolves after the last draw (`one_multisample_encoder_resolves_after_its_last_draw`).
+ /// The record loop gives every record after the first the pass's LOAD, so
+ /// refusing a continued record refused every multisample pass of more than one
+ /// draw -- iOS's wallpaper among them, whose passes were then cleared instead.
++/// A record that *starts* the encoder by loading the source was refused too,
++/// as `multisample_load_action_unsupported`, on the reading that the scratch
++/// could not be imported from guest storage. Nothing needs importing: Metal
++/// discards a multisample source at every resolve-only store, so what such a
++/// LOAD reads is undefined on the device as well, and the source has no guest
++/// storage to import from. The attachment begins undefined instead --
++/// [`multisample_source_begins_undefined`] names the case, no seed door is
++/// walked for it, and the engine elects `Color0Load::Undefined` from the
++/// declared action
++/// (`an_encoder_starting_by_loading_its_multisample_source_begins_it_undefined`).
+ fn multisample_admission(
+     req: &DrawEncodeRequest,
+ ) -> Result<(), crate::backend::vulkan::engine::reason::DrawReason> {
+@@ -7925,15 +7934,33 @@ fn multisample_admission(
+                 store_action: color.store_action,
+             });
+         }
+-        if color.load_action == MTL_LOAD_ACTION_LOAD && !req.continues_render_pass {
+-            return Err(DrawReason::MultisampleLoadActionUnsupported {
+-                load_action: color.load_action,
+-            });
+-        }
+     }
+     Ok(())
+ }
+ 
++/// Whether this record's colour 0 is a multisample source with no prior
++/// contents this rail could offer it: a resolving attachment at the start of
++/// its guest encoder.
++///
++/// Every door a LOAD walks -- the provenance seed, the APV pair, the mapper
++/// seed, the GVA elision and the resident chain -- names the *resolve target*:
++/// a resolving colour's `texture_ref`, `mapping_id` and `target_seed` describe
++/// the single-sample destination, never the multisample source, which has no
++/// CPU-visible storage at all. Metal discards that source once its resolve-only
++/// store runs, so an encoder that starts by loading it reads undefined contents
++/// on the device too. The lawful translation begins the attachment undefined
++/// (`Color0Load::Undefined`, elected by the engine from the declared action)
++/// and spends nothing on a seed that could only reach the wrong image. A
++/// continued record is the other case: the engine keeps the source open for the
++/// whole encoder and its LOAD is what the records before it rendered.
++fn multisample_source_begins_undefined(req: &DrawEncodeRequest) -> bool {
++    !req.continues_render_pass
++        && req
++            .colors
++            .first()
++            .is_some_and(|color| color.multisample_source_ref != 0)
++}
++
+ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -9380,6 +9407,20 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+         let mut target_cpu_seed = None;
+         let mut target_guest_seed = None;
+         let mut target_clear = [0.0f64; 4];
++        // A resolving colour 0 at the start of its encoder walks none of the
++        // doors below. Each of them -- the resident chain, the GVA elision, the
++        // mapper currency, the provenance seed, the APV pair, the mapping seed
++        // and the guest backing -- serves the *resolve target*, the
++        // single-sample resident that `texture_ref`, `mapping_id` and
++        // `target_gva` name. The attachment this pass begins is the multisample
++        // source, which Metal discards at every resolve-only store and which no
++        // guest storage describes, so its only lawful beginning is undefined,
++        // or the guest's clear. The engine elects that from `color0_declared`.
++        // A door walked here would arm a LOAD of the resolve target's resident
++        // (`LoadTargetContentNotReady` on a fresh one) or a seed copy at the
++        // wrong sample count, and the mapping door's read of the surface would
++        // be a whole-frame guest read for nothing.
++        let source_begins_undefined = multisample_source_begins_undefined(req);
+         let gpu_only_content_allowed =
+             crate::backend::vulkan::engine::deferred_gpu_only_content_allowed();
+         // Records 2+ of a resident render-pass chain load the prior record's
+@@ -9397,7 +9438,10 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+             mapper_ref_texture_guest_target_backing(state, host, req);
+         let mapper_ref_texture_resident_target =
+             mapper_ref_texture_store_identity(state, req, writeback_guest);
+-        if req.chain_from_resident && render_chain_identity(state, req).is_some() {
++        if req.chain_from_resident
++            && !source_begins_undefined
++            && render_chain_identity(state, req).is_some()
++        {
+             // The serialized chain names the resident it intends to load;
+             // existence and readiness are engine state and are validated
+             // atomically with target acquisition by `execute_draw_request`.
+@@ -9408,8 +9452,11 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+         // Colour0's LOAD seed was skipped by `mrt_draw_request` because the
+         // engine still held what the render Store published into its guest
+         // pages. Honour that here, or put the seed back.
+-        let mut gva_load_identity =
+-            honour_gva_load_elision(state, host, req, &mut chain_load_from_target);
++        let mut gva_load_identity = if source_begins_undefined {
++            None
++        } else {
++            honour_gva_load_elision(state, host, req, &mut chain_load_from_target)
++        };
+         // Mapper-ref-texture composite Load. A retained guest-allocation target is the
+         // guest's texture resource itself, so its LOAD is authoritative without
+         // comparing two copies. A device-allocation target is a mirror: only
+@@ -9494,7 +9541,7 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+         // 41 389 against `mapper_ref_texture_seed_provided` 242, at a mean 1.43 M texels per
+         // elision, so revalidating by re-reading would move ~237 GB of guest
+         // memory a session. The bitmap answers the same question in a word.
+-        if !chain_load_from_target {
++        if !chain_load_from_target && !source_begins_undefined {
+             if let Some((identity, mapping_epoch)) =
+                 mapper_ref_texture_load_currency_query(state, req)
+             {
+@@ -9608,6 +9655,12 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+             // `passbegin_clear` ran exactly `color0_declared_dontcare` above
+             // the clears the guest actually asked for.
+             match declared {
++                LoadAction::Load | LoadAction::DontCare if source_begins_undefined => {
++                    // The multisample source begins undefined. No door is
++                    // walked and none of the LOAD-only instruments below fire:
++                    // `load_seed_lost` names a layer's previous frame being
++                    // dropped, and this source never had one.
++                }
+                 LoadAction::Load | LoadAction::DontCare if chain_load_from_target => {
+                     // Resident target carries the chain; no CPU seed bytes.
+                 }
+@@ -9752,6 +9805,7 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+                     reims_vgpu_protocol::pass_action::LoadAction::Load
+                 )
+                 && !chain_load_from_target
++                && !source_begins_undefined
+                 && target_cpu_seed.is_none()
+                 && target_guest_seed.is_none()
+             {
+@@ -10157,6 +10211,7 @@ fn try_metal2vulkan_draw<M: HostMemory + HostOps>(
+         if resources.target_identity == mapper_ref_texture_render_identity(state, req) {
+             resources.guest_target_memory = mapper_ref_texture_guest_backing;
+             resources.load_guest_target_backing = resources.guest_target_memory.is_some()
++                && !source_begins_undefined
+                 && req.colors.first().is_some_and(|color| {
+                     // Same admission as `mapper_ref_texture_load_is_a_seed_candidate`, and
+                     // for the same reason: a DontCare that this device can
+@@ -14460,7 +14515,11 @@ mod vulkan_split_tests {
+ 
+     /// The record loop gives every record after the first its pass's LOAD. On a
+     /// multisample pass that is the encoder continuing, which the engine keeps
+-    /// open; only an encoder that starts by loading is refused.
++    /// open. An encoder that *starts* by loading its multisample source is
++    /// admitted too: the source has no prior contents on the device either
++    /// (Metal discards it at every resolve-only store), so the attachment
++    /// begins undefined instead of being refused. Only the store action still
++    /// refuses, because a stored multisample source is a different rail.
+     #[test]
+     fn a_continued_multisample_record_loads_what_its_encoder_rendered() {
+         use crate::backend::vulkan::engine::reason::DrawReason;
+@@ -14477,10 +14536,10 @@ mod vulkan_split_tests {
+             store_action: MTL_STORE_ACTION_MULTISAMPLE_RESOLVE,
+             ..Default::default()
+         });
+-        assert!(matches!(
+-            multisample_admission(&req),
+-            Err(DrawReason::MultisampleLoadActionUnsupported { .. })
+-        ));
++        assert!(
++            multisample_admission(&req).is_ok(),
++            "an encoder starting with LOAD on its multisample source begins undefined, not refused"
++        );
+         req.continues_render_pass = true;
+         assert!(multisample_admission(&req).is_ok());
+         req.colors[0].store_action = MTL_STORE_ACTION_STORE;
+@@ -14490,6 +14549,43 @@ mod vulkan_split_tests {
+         ));
+     }
+ 
++    /// Which records begin their multisample source undefined: exactly a
++    /// resolving colour 0 at the start of its encoder. A continued record loads
++    /// the open scratch, and an ordinary attachment walks the seed doors.
++    #[test]
++    fn only_an_encoder_start_begins_its_multisample_source_undefined() {
++        use reims_vgpu_protocol::pass_action::MTL_STORE_ACTION_MULTISAMPLE_RESOLVE;
++
++        let mut req = DrawEncodeRequest::default();
++        assert!(
++            !multisample_source_begins_undefined(&req),
++            "no colour at all"
++        );
++        req.colors.push(ColorRtRequest {
++            width: 8,
++            height: 8,
++            load_action: MTL_LOAD_ACTION_LOAD,
++            ..Default::default()
++        });
++        assert!(
++            !multisample_source_begins_undefined(&req),
++            "an ordinary attachment has prior contents a door can serve"
++        );
++        req.colors[0].multisample_source_ref = 42;
++        req.colors[0].store_action = MTL_STORE_ACTION_MULTISAMPLE_RESOLVE;
++        assert!(multisample_source_begins_undefined(&req));
++        req.colors[0].load_action = MTL_LOAD_ACTION_CLEAR;
++        assert!(
++            multisample_source_begins_undefined(&req),
++            "the doors are skipped for a clear too; the engine clears the scratch itself"
++        );
++        req.continues_render_pass = true;
++        assert!(
++            !multisample_source_begins_undefined(&req),
++            "a continued record loads what its encoder rendered"
++        );
++    }
++
+     /// A record continuing a serialized pass loads what the records before it
+     /// wrote, on both halves — the rule is the pass's, not the bound state's.
+     #[test]
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
+index ccef74f..446bbed 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_batch.rs
+@@ -430,6 +430,75 @@ fn one_multisample_encoder_resolves_after_its_last_draw() {
+     }
+ }
+ 
++/// An encoder that *starts* by loading its multisample source begins that
++/// attachment undefined. The source is discard-only scratch: Metal throws it
++/// away at every resolve-only store and it has no CPU-visible storage, so no
++/// prior contents exist for the load to read, on the device or here. The chain
++/// door the draw side may still arm (`load_from_target`, which names the
++/// resolve *target*) must not turn into a LOAD of the scratch -- nor into the
++/// `LoadTargetContentNotReady` refusal a fresh target used to answer it with.
++/// What the encoder renders still resolves after its last draw.
++#[test]
++fn an_encoder_starting_by_loading_its_multisample_source_begins_it_undefined() {
++    let _guard = engine_test_lock().lock().unwrap();
++    let (vert, frag) = triangle_spirv();
++    let identity = TargetIdentity::Surface {
++        id: 990_106,
++        width: W,
++        height: H,
++        generation: 1,
++        format: SURFACE_TEST_FORMAT,
++    };
++
++    let before = engine::counter_snapshot();
++    let mut first = batch_req(&vert, &frag, &identity, true, half_scissor(true));
++    first.raster_sample_count = 4;
++    first.color_sample_count = 4;
++    first.multisample_resolve = true;
++    first.render_pass_continues = true;
++    first.color0_declared = Some(reims_vgpu_protocol::pass_action::LoadAction::Load);
++    match engine::execute_draw_request(engine_device(), &first) {
++        Ok(_) => {}
++        Err(e) => {
++            let msg = e.to_string();
++            if skip_if_no_gpu(&msg) {
++                eprintln!("skipping: {msg}");
++                return;
++            }
++            panic!("multisample encoder starting with a load: {msg}");
++        }
++    }
++
++    let mut second = batch_req(&vert, &frag, &identity, true, half_scissor(false));
++    second.raster_sample_count = 4;
++    second.color_sample_count = 4;
++    second.multisample_resolve = true;
++    second.continues_render_pass = true;
++    second.color0_declared = Some(reims_vgpu_protocol::pass_action::LoadAction::Load);
++    engine::execute_draw_request(engine_device(), &second)
++        .expect("multisample encoder second draw");
++
++    let px = engine::read_target(&identity)
++        .expect("close and resolve the multisample encoder")
++        .into_rgba8()
++        .expect("an eight-bit colour readback");
++    let delta = engine::counter_snapshot().delta_since(&before);
++    assert_eq!(
++        delta.render_pass_continuations, 1,
++        "the resolve must occur after both draws in one pass: {delta:?}"
++    );
++    for y in [0u32, H / 2, H - 1] {
++        for x in [W / 4, 3 * W / 4] {
++            let i = ((y * W + x) * 4) as usize;
++            assert!(
++                is_frag_color(&px[i..i + 4]),
++                "resolved encoder at ({x},{y}) = {:?}",
++                &px[i..i + 4]
++            );
++        }
++    }
++}
++
+ /// A stored multisample texture is itself the resource. It remains resident
+ /// between encoders; the second encoder loads that image instead of requiring
+ /// an implicit resolve or a linear image-to-buffer copy.

@@ -1,0 +1,51 @@
+diff --git a/target/arm/tcg/translate-a64.c b/target/arm/tcg/translate-a64.c
+--- a/target/arm/tcg/translate-a64.c
++++ b/target/arm/tcg/translate-a64.c
+@@ -3636,6 +3636,19 @@
+     }
+ }
+ 
++/*
++ * A Load-Acquire (LDAR, LDAXR, LDAXP) may not be observed before an earlier
++ * Store-Release (RCsc). Store-Release orders only what precedes it and
++ * Load-Acquire only what follows, so on a host that lets a load pass an
++ * earlier store (x86) nothing else keeps that pair in order. AArch64
++ * compilers emit seq_cst loads and stores as exactly this pair, without a
++ * DMB. Load-AcquirePC (LDAPR) is RCpc and needs no such barrier.
++ */
++static void gen_load_acquire_rcsc_barrier(void)
++{
++    tcg_gen_mb(TCG_MO_ST_LD | TCG_BAR_SC);
++}
++
+ static bool trans_STXR(DisasContext *s, arg_stxr *a)
+ {
+     if (a->rn == 31) {
+@@ -3653,6 +3666,9 @@
+     if (a->rn == 31) {
+         gen_check_sp_alignment(s);
+     }
++    if (a->lasr) {
++        gen_load_acquire_rcsc_barrier();
++    }
+     gen_load_exclusive(s, a->rt, a->rt2, a->rn, a->sz, false);
+     if (a->lasr) {
+         tcg_gen_mb(TCG_MO_ALL | TCG_BAR_LDAQ);
+@@ -3703,6 +3719,7 @@
+     memop = check_ordered_align(s, a->rn, 0, false, a->sz);
+     clean_addr = gen_mte_check1(s, cpu_reg_sp(s, a->rn),
+                                 false, a->rn != 31, memop);
++    gen_load_acquire_rcsc_barrier();
+     do_gpr_ld(s, cpu_reg(s, a->rt), clean_addr, memop, false, true,
+               a->rt, iss_sf, a->lasr);
+     tcg_gen_mb(TCG_MO_ALL | TCG_BAR_LDAQ);
+@@ -3726,6 +3743,9 @@
+     if (a->rn == 31) {
+         gen_check_sp_alignment(s);
+     }
++    if (a->lasr) {
++        gen_load_acquire_rcsc_barrier();
++    }
+     gen_load_exclusive(s, a->rt, a->rt2, a->rn, a->sz, true);
+     if (a->lasr) {
+         tcg_gen_mb(TCG_MO_ALL | TCG_BAR_LDAQ);

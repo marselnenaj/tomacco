@@ -1,0 +1,49 @@
+// Wire-compatible subset of Meta's MIT-licensed idb companion protocol.
+// Upstream field numbers are retained. See THIRD_PARTY.md.
+syntax = "proto3";
+package idb;
+service CompanionService {
+  rpc describe(TargetDescriptionRequest) returns (TargetDescriptionResponse) {}
+  rpc video_stream(stream VideoStreamRequest) returns (stream VideoStreamResponse) {}
+  rpc hid(stream HIDEvent) returns (HIDResponse) {}
+  rpc screenshot(ScreenshotRequest) returns (ScreenshotResponse) {}
+  rpc accessibility_info(AccessibilityInfoRequest) returns (AccessibilityInfoResponse) {}
+  rpc accessibility_action(AccessibilityActionRequest) returns (AccessibilityActionResponse) {}
+}
+message Empty {}
+message Payload { oneof source { string file_path = 1; bytes data = 2; string url = 3; } }
+message TargetDescriptionRequest { bool fetch_diagnostics = 1; }
+message ScreenDimensions { uint64 width = 1; uint64 height = 2; double density = 3; uint64 width_points = 4; uint64 height_points = 5; }
+message TargetDescription { string udid = 1; string name = 2; ScreenDimensions screen_dimensions = 3; string state = 4; string target_type = 5; string os_version = 6; string architecture = 7; }
+message TargetDescriptionResponse { TargetDescription target_description = 1; }
+message VideoStreamRequest {
+  message Start { string file_path=1; uint64 fps=2; int32 format=3; double compression_quality=4; double scale_factor=5; double avg_bitrate=6; double key_frame_rate=7; }
+  oneof control { Start start=1; Empty stop=2; }
+}
+message VideoStreamResponse { oneof output { bytes log_output=1; Payload payload=2; } }
+message Point { double x=1; double y=2; }
+message HIDEvent {
+  message Touch { Point point=1; }
+  message Button { int32 button=1; }
+  message Key { uint64 keycode=1; }
+  message PressAction { oneof action { Touch touch=1; Button button=2; Key key=3; } }
+  message Press { PressAction action=1; int32 direction=2; }
+  message Swipe { Point start=1; Point end=2; double delta=5; double duration=6; }
+  message Pinch { Point center=1; double scale=2; double duration=3; double radius=4; }
+  message Orientation { int32 orientation=1; }
+  message Hinge { double angle=1; }
+  oneof event { Press press=1; Swipe swipe=2; Pinch pinch=4; Orientation orientation=5; Empty shake=6; Hinge hinge=8; }
+}
+message HIDResponse {}
+message ScreenshotRequest { int32 format=1; }
+message ScreenshotResponse { bytes image_data=1; string image_format=2; }
+message AccessibilityInfoRequest { Point point=2; int32 format=3; }
+message AccessibilityInfoResponse { string json=1; }
+message AccessibilityActionRequest {
+  oneof target { string marker=1; Point point=2; }
+  int32 match_key=3;
+  uint32 depth=4;
+  message SetValue { string value=1; }
+  oneof action { SetValue set_value=7; }
+}
+message AccessibilityActionResponse {}

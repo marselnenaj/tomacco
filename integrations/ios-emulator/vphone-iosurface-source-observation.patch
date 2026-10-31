@@ -1,0 +1,371 @@
+diff --git a/target/arm/tcg/op_helper.c b/target/arm/tcg/op_helper.c
+--- a/target/arm/tcg/op_helper.c
++++ b/target/arm/tcg/op_helper.c
+@@ -30,6 +30,177 @@
+ #include "qemu/log.h"
+ #include "trace.h"
+ #include "vphone-fault.h"
++#include "vphone-surface-source.h"
++#ifndef CONFIG_USER_ONLY
++#include "qemu/rcu.h"
++#include "system/memory.h"
++#endif
++
++/* A process-start opt-in: changing tracing at runtime cannot silently change
++ * translated instruction paths. The flag enables evidence, not CPU features. */
++bool tomacco_surface_source_enabled(void)
++{
++    static gsize configured;
++    if (g_once_init_enter(&configured)) {
++        const char *value = getenv("TOMACCO_IOS_SURFACE_SOURCE_TRACE");
++        g_once_init_leave(&configured, value && strcmp(value, "1") == 0 ? 2 : 1);
++    }
++    return configured == 2;
++}
++
++uint64_t tomacco_surface_source_runtime_pc;
++
++void tomacco_surface_source_bind_kernel(uint64_t original_base,
++                                      uint64_t loaded_base)
++{
++    if (!tomacco_surface_source_enabled()) {
++        return;
++    }
++    uint64_t entry = 0;
++    bool valid = tomacco_surface_kernel_entry(original_base, loaded_base, &entry);
++    __atomic_store_n(&tomacco_surface_source_runtime_pc, valid ? entry : 0,
++                     __ATOMIC_RELEASE);
++    trace_tomacco_arm_iosurface_source_kernel(original_base, loaded_base,
++                                             valid ? entry : 0, valid);
++}
++
++#ifndef CONFIG_USER_ONLY
++/* Standard debug translation, followed by direct ordinary-RAM reads. No MMIO
++ * target load, guest page write, register write or architectural exception
++ * occurs here. Reject holes, device RAM and partial/unmapped target spans.
++ * Original page-table debug walking retains QEMU's existing behavior. */
++static bool tomacco_surface_read_ram(CPUState *cpu, uint64_t address,
++                                     uint8_t *bytes, size_t length)
++{
++    RCU_READ_LOCK_GUARD();
++    if (length == 0 || address > UINT64_MAX - length) {
++        return false;
++    }
++    while (length) {
++        TranslateForDebugResult result;
++        if (!cpu_translate_for_debug(cpu, address, &result)) {
++            return false;
++        }
++        unsigned bits = MIN(result.lg_page_size, TARGET_PAGE_BITS);
++        if (bits == 0 || bits >= 63) {
++            return false;
++        }
++        uint64_t page = UINT64_C(1) << bits;
++        size_t amount = MIN(length, page - (result.physaddr & (page - 1)));
++        AddressSpace *as = cpu_get_address_space(cpu,
++                                cpu_asidx_from_attrs(cpu, result.attrs));
++        MemoryRegionSection section = memory_region_find(as->root,
++                                                          result.physaddr, amount);
++        bool available = section.mr &&
++                         section.offset_within_address_space == result.physaddr &&
++                         int128_get64(section.size) == amount &&
++                         memory_region_is_ram(section.mr) &&
++                         !memory_region_is_ram_device(section.mr);
++        if (available) {
++            memcpy(bytes, (uint8_t *)memory_region_get_ram_ptr(section.mr) +
++                          section.offset_within_region, amount);
++        }
++        if (section.mr) {
++            memory_region_unref(section.mr);
++        }
++        if (!available) {
++            return false;
++        }
++        address += amount;
++        bytes += amount;
++        length -= amount;
++    }
++    return true;
++}
++
++static const char *tomacco_surface_code_contract(CPUState *cpu, uint64_t slide)
++{
++    static const struct {
++        uint64_t address;
++        unsigned length;
++        uint8_t bytes[48];
++    } guards[] = {
++        { UINT64_C(0xfffffe0007ed60a4), 48, { 0x7f, 0x23, 0x3, 0xd5, 0xff, 0x83, 0x1, 0xd1, 0xf8, 0x5f, 0x2, 0xa9, 0xf6, 0x57, 0x3, 0xa9, 0xf4, 0x4f, 0x4, 0xa9, 0xfd, 0x7b, 0x5, 0xa9, 0xfd, 0x43, 0x1, 0x91, 0xf3, 0x3, 0x2, 0xaa, 0xf4, 0x3, 0x1, 0xaa, 0xe0, 0x3, 0x2, 0xaa, 0x38, 0xc2, 0x23, 0x94, 0xf5, 0x3, 0x0, 0xaa } },
++        { UINT64_C(0xfffffe00087c694c), 12, { 0x5f, 0x24, 0x3, 0xd5, 0x0, 0x10, 0x40, 0xb9, 0xc0, 0x3, 0x5f, 0xd6 } },
++        { UINT64_C(0xfffffe00087c6940), 12, { 0x5f, 0x24, 0x3, 0xd5, 0x0, 0x80, 0x40, 0xb9, 0xc0, 0x3, 0x5f, 0xd6 } },
++        { UINT64_C(0xfffffe00087cfa14), 16, { 0x7f, 0x23, 0x3, 0xd5, 0xff, 0x83, 0x1, 0xd1, 0xfa, 0x67, 0x1, 0xa9, 0xf8, 0x5f, 0x2, 0xa9 } },
++        { UINT64_C(0xfffffe00087cfb20), 8, { 0x81, 0x12, 0x40, 0xb9, 0x61, 0x3a, 0x0, 0xb9 } },
++        { UINT64_C(0xfffffe00087d032c), 8, { 0xa8, 0x3a, 0x40, 0xb9, 0x68, 0x19, 0x0, 0xb9 } },
++    };
++    uint8_t bytes[48];
++    for (unsigned i = 0; i < G_N_ELEMENTS(guards); ++i) {
++        if (guards[i].address > UINT64_MAX - guards[i].length ||
++            slide > UINT64_MAX - guards[i].address - guards[i].length) {
++            return "contract-code-address-overflow";
++        }
++        if (!tomacco_surface_read_ram(cpu, guards[i].address + slide,
++                                    bytes, guards[i].length)) {
++            return "contract-code-ram-unavailable";
++        }
++        if (memcmp(bytes, guards[i].bytes, guards[i].length)) {
++            return "contract-code-mismatch";
++        }
++    }
++    return NULL;
++}
++#endif
++
++void HELPER(tomacco_surface_source)(CPUARMState *env)
++{
++#ifndef CONFIG_USER_ONLY
++    static unsigned attempts, targets, census, refusals;
++    if (!tomacco_surface_source_enabled() || !env->aarch64 ||
++        arm_current_el(env) != 1 ||
++        !trace_event_get_state_backends(TRACE_TOMACCO_ARM_IOSURFACE_SOURCE) ||
++        !trace_event_get_state_backends(TRACE_TOMACCO_ARM_IOSURFACE_SOURCE_SHAPE) ||
++        __atomic_load_n(&targets, __ATOMIC_RELAXED) >= 8) {
++        return;
++    }
++    unsigned attempt = tomacco_surface_source_slot(&attempts, 128);
++    if (!attempt) {
++        return;
++    }
++    CPUState *cpu = env_cpu(env);
++    uint64_t entry = __atomic_load_n(&tomacco_surface_source_runtime_pc,
++                                    __ATOMIC_ACQUIRE);
++    const char *reason = entry >= TOMACCO_SURFACE_PRODUCER_PC ?
++        tomacco_surface_code_contract(cpu, entry - TOMACCO_SURFACE_PRODUCER_PC) :
++        "kernel-placement-unavailable";
++    uint64_t object = env->xregs[2], descriptor = env->xregs[1];
++    uint8_t bytes[TOMACCO_SURFACE_OBJECT_BYTES];
++    TomaccoSurfaceSource source;
++    if (!reason && (!object || (object & 7) ||
++                   object > UINT64_MAX - TOMACCO_SURFACE_OBJECT_BYTES)) {
++        reason = "object-pointer-invalid";
++    }
++    if (!reason && !tomacco_surface_read_ram(cpu, object, bytes, sizeof(bytes))) {
++        reason = "object-ram-unavailable";
++    }
++    if (!reason && !tomacco_surface_source_decode(bytes, sizeof(bytes), &source)) {
++        reason = "object-shape-invalid";
++    }
++    if (reason) {
++        if (tomacco_surface_source_slot(&refusals, 4)) {
++            trace_tomacco_arm_iosurface_source_refused(cpu->cpu_index, attempt, reason);
++        }
++        return;
++    }
++    bool target = source.pixel_format == TOMACCO_SURFACE_TARGET_FORMAT;
++    unsigned event = tomacco_surface_source_slot(target ? &targets : &census,
++                                                target ? 8 : 4);
++    if (event) {
++        trace_tomacco_arm_iosurface_source(cpu->cpu_index, attempt, event, target,
++                                          object, descriptor, source.native_id,
++                                          source.pixel_format, source.planes);
++        trace_tomacco_arm_iosurface_source_shape(cpu->cpu_index, attempt,
++                                          source.width, source.height,
++                                          env->cp15.ttbr0_el[1]);
++    }
++#else
++    (void)env;
++#endif
++}
++
+ 
+ void HELPER(tomacco_sysreg_fault)(CPUARMState *env, uint64_t pc, uint32_t insn)
+ {
+diff --git a/target/arm/tcg/translate-a64.c b/target/arm/tcg/translate-a64.c
+--- a/target/arm/tcg/translate-a64.c
++++ b/target/arm/tcg/translate-a64.c
+@@ -29,6 +29,7 @@
+ #include "qemu/log.h"
+ #include "semihosting/semihost.h"
+ #include "cpregs.h"
++#include "vphone-surface-source.h"
+ 
+ static TCGv_i64 cpu_X[32];
+ static TCGv_i64 cpu_gcspr[4];
+@@ -11208,6 +11209,14 @@
+         disas_sme_fa64(s, insn);
+     }
+ 
++    /* Only the pinned original descriptor entry, after higher-priority
++     * exception checks. Default runs emit no additional TCG helper. */
++    if (tomacco_surface_source_pc(pc, s->current_el, insn,
++             __atomic_load_n(&tomacco_surface_source_runtime_pc, __ATOMIC_ACQUIRE)) &&
++        tomacco_surface_source_enabled()) {
++        gen_helper_tomacco_surface_source(tcg_env);
++    }
++
+     if (!disas_a64(s, insn) &&
+         !disas_sme(s, insn) &&
+         !disas_sve(s, insn) &&
+diff --git a/target/arm/tcg/helper-defs.h b/target/arm/tcg/helper-defs.h
+--- a/target/arm/tcg/helper-defs.h
++++ b/target/arm/tcg/helper-defs.h
+@@ -1,6 +1,7 @@
+ /* SPDX-License-Identifier: GPL-2.0-or-later */
+ 
+ DEF_HELPER_3(tomacco_sysreg_fault, void, env, i64, i32)
++DEF_HELPER_FLAGS_1(tomacco_surface_source, TCG_CALL_NO_WG, void, env)
+ 
+ DEF_HELPER_FLAGS_1(sxtb16, TCG_CALL_NO_RWG_SE, i32, i32)
+ DEF_HELPER_FLAGS_1(uxtb16, TCG_CALL_NO_RWG_SE, i32, i32)
+diff --git a/target/arm/tcg/trace-events b/target/arm/tcg/trace-events
+--- a/target/arm/tcg/trace-events
++++ b/target/arm/tcg/trace-events
+@@ -22,3 +22,9 @@
+ 
+ # Original EL0 traps: observational, process-wide capture budget 128.
+ tomacco_arm_user_exception(unsigned cpu, uint64_t pc, uint64_t syndrome, unsigned exception, unsigned target_el, unsigned sequence) "cpu=%u pc=0x%" PRIx64 " syndrome=0x%" PRIx64 " exception=%u target_el=%u sequence=%u"
++
++# Original descriptor-entry fields, opt-in and bounded; no pixel/generation oracle.
++tomacco_arm_iosurface_source_kernel(uint64_t original_base, uint64_t loaded_base, uint64_t entry, bool valid) "original_base=0x%" PRIx64 " loaded_base=0x%" PRIx64 " entry=0x%" PRIx64 " placement_valid=%d source=loader-sptm-stride"
++tomacco_arm_iosurface_source(unsigned cpu, unsigned attempt, unsigned event, bool target, uint64_t object, uint64_t descriptor, uint32_t surface_id, uint32_t format, unsigned planes) "cpu=%u attempt=%u event=%u target=%d phase=descriptor-entry object=0x%" PRIx64 " descriptor=0x%" PRIx64 " native_id=%" PRIu32 " format=0x%08" PRIx32 " planes=%u generation_bound=false"
++tomacco_arm_iosurface_source_shape(unsigned cpu, unsigned attempt, uint64_t width, uint64_t height, uint64_t ttbr0) "cpu=%u attempt=%u width=%" PRIu64 " height=%" PRIu64 " ttbr0=0x%" PRIx64
++tomacco_arm_iosurface_source_refused(unsigned cpu, unsigned attempt, const char *reason) "cpu=%u attempt=%u reason=%s"
+diff --git a/hw/arm/xnuboot_sptm.c b/hw/arm/xnuboot_sptm.c
+--- a/hw/arm/xnuboot_sptm.c
++++ b/hw/arm/xnuboot_sptm.c
+@@ -20,6 +20,7 @@
+ #include "xnu/patch.h"
+ #include "xnu/macho.h"
+ #include "exclave-bundle.h"
++#include "target/arm/tcg/vphone-surface-source.h"
+ 
+ // #define DEBUG_MEMORY_LAYOUT
+ 
+@@ -645,6 +646,11 @@
+ #endif // ! LINEUP_BOOTKC_NICELY
+ 
+     args.physBase = info->dram_base;
++    /* Observe the same existing SPTM placement used below for debugging.
++     * Never change boot args, kernel bytes or the chosen load address. */
++    tomacco_surface_source_bind_kernel(bkc_mi.virtlo,
++        args.virtBase - args.physBase + sptm_mi.physlo +
++        2 * SPTM_EXPECTED_STRIDE);
+     args.memSizeActual = info->dram_size;
+     if (info->has_mte) {
+         args.memSize = (31 * info->dram_size) / 32;
+diff --git a/target/arm/tcg/vphone-surface-source.h b/target/arm/tcg/vphone-surface-source.h
+new file mode 100644
+--- /dev/null
++++ b/target/arm/tcg/vphone-surface-source.h
+@@ -0,0 +1,112 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++#ifndef TOMACCO_VPHONE_SURFACE_SOURCE_H
++#define TOMACCO_VPHONE_SURFACE_SOURCE_H
++
++#include <stdbool.h>
++#include <stddef.h>
++#include <stdint.h>
++
++#define TOMACCO_SURFACE_PRODUCER_PC UINT64_C(0xfffffe0007ed60a4)
++#define TOMACCO_SURFACE_PRODUCER_INSN UINT32_C(0xd503237f)
++#define TOMACCO_SURFACE_KERNEL_BASE UINT64_C(0xfffffe0007004000)
++#define TOMACCO_SURFACE_LAST_GUARD_END UINT64_C(0xfffffe00087d0334)
++#define TOMACCO_SURFACE_OBJECT_BYTES 0x9c
++#define TOMACCO_SURFACE_TARGET_FORMAT UINT32_C(0x5f524234)
++
++/* Original kernel -> client+0x38 -> response+0x18 -> user client+0x88
++ * -> IOSurfaceGetID. These are native IDs, not mapper/object-list references.
++ * This observes object fields at descriptor entry, before descriptor writes.
++ * It establishes no channel order, numeric encoding or generation binding. */
++typedef struct TomaccoSurfaceSource {
++    uint32_t native_id;
++    uint32_t pixel_format;
++    uint32_t planes;
++    uint64_t width;
++    uint64_t height;
++} TomaccoSurfaceSource;
++
++static inline uint32_t tomacco_surface_u32(const uint8_t *p)
++{
++    return (uint32_t)p[0] | (uint32_t)p[1] << 8 |
++           (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24;
++}
++
++static inline uint64_t tomacco_surface_u64(const uint8_t *p)
++{
++    return (uint64_t)tomacco_surface_u32(p) |
++           (uint64_t)tomacco_surface_u32(p + 4) << 32;
++}
++
++/* The loader supplies the actual placement; no masked-PC search or guessed
++ * address is accepted. Refuse unsupported bases and every guard-span overflow.
++ * Failure leaves the output unchanged. Runtime code guards still corroborate
++ * this placement before any object field is captured. */
++static inline bool tomacco_surface_kernel_entry(uint64_t original_base,
++                                               uint64_t loaded_base,
++                                               uint64_t *entry)
++{
++    if (!entry || original_base != TOMACCO_SURFACE_KERNEL_BASE ||
++        loaded_base < original_base || (loaded_base & 0x3fff)) {
++        return false;
++    }
++    uint64_t slide = loaded_base - original_base;
++    if (slide > UINT64_MAX - TOMACCO_SURFACE_LAST_GUARD_END) {
++        return false;
++    }
++    *entry = TOMACCO_SURFACE_PRODUCER_PC + slide;
++    return true;
++}
++
++static inline bool tomacco_surface_source_pc(uint64_t pc, unsigned el,
++                                             uint32_t instruction,
++                                             uint64_t expected_pc)
++{
++    return expected_pc && pc == expected_pc && el == 1 &&
++           instruction == TOMACCO_SURFACE_PRODUCER_INSN;
++}
++
++static inline bool tomacco_surface_source_decode(const uint8_t *bytes,
++                                                size_t length,
++                                                TomaccoSurfaceSource *out)
++{
++    if (!bytes || !out || length < TOMACCO_SURFACE_OBJECT_BYTES) {
++        return false;
++    }
++    TomaccoSurfaceSource value = {
++        .native_id = tomacco_surface_u32(bytes + 0x10),
++        .pixel_format = tomacco_surface_u32(bytes + 0x80),
++        .planes = tomacco_surface_u32(bytes + 0x98),
++        .width = tomacco_surface_u64(bytes + 0x58),
++        .height = tomacco_surface_u64(bytes + 0x60),
++    };
++    /* Preserve valid zero/nonplanar values and the full native ID bits. */
++    if (value.planes > 7 || value.width > 0xffffff ||
++        value.height > 0xffffff) {
++        return false;
++    }
++    *out = value;
++    return true;
++}
++
++/* Saturating process-wide capture slots. No overflow can reopen the budget. */
++static inline unsigned tomacco_surface_source_slot(unsigned *counter,
++                                                   unsigned limit)
++{
++    unsigned value = __atomic_load_n(counter, __ATOMIC_RELAXED);
++    while (value < limit) {
++        if (__atomic_compare_exchange_n(counter, &value, value + 1, false,
++                                         __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
++            return value + 1;
++        }
++    }
++    return 0;
++}
++
++bool tomacco_surface_source_enabled(void);
++void tomacco_surface_source_bind_kernel(uint64_t original_base,
++                                      uint64_t loaded_base);
++/* Published once during loader initialization, before vCPU execution. Zero
++ * disables entry selection. Atomic reads preserve the startup binding. */
++extern uint64_t tomacco_surface_source_runtime_pc;
++
++#endif

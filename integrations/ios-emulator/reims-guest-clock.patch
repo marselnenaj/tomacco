@@ -1,0 +1,137 @@
+diff --git a/qemu/hw/display/reims-vgpu-shim.c b/qemu/hw/display/reims-vgpu-shim.c
+--- a/qemu/hw/display/reims-vgpu-shim.c
++++ b/qemu/hw/display/reims-vgpu-shim.c
+@@ -19,7 +19,10 @@
+ uint64_t reims_vgpu_shim_mono_ns(void *ctx)
+ {
+     (void)ctx;
+-    return (uint64_t)qemu_clock_get_ns(QEMU_CLOCK_HOST);
++    /* Guest display cadence must share the ARM timer's virtual clock. Host
++     * wall time keeps advancing during pause and can outrun an icount guest.
++     * Window polling and GPU completion deadlines retain their host clocks. */
++    return (uint64_t)qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+ }
+ 
+ /*
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+@@ -7190,7 +7190,8 @@
+     host: &mut H,
+     last_us: &std::sync::atomic::AtomicU64,
+ ) {
+-    signal_display_vbl_at(state, host, last_us, crate::observe::elapsed_us());
++    let now_us = host.mono_ns() / 1_000;
++    signal_display_vbl_at(state, host, last_us, now_us);
+ }
+ 
+ /// The engine's own counters, over the window `drain_duty` just reported.
+@@ -7475,10 +7476,9 @@
+     last_us: &std::sync::atomic::AtomicU64,
+     now_us: u64,
+ ) {
+-    // The limiter paces in microseconds because 120 Hz is not expressible in
+-    // whole milliseconds; the census windows in milliseconds so its `t=` stays
+-    // on the same scale as every other always-on line.
+-    let now_ms = now_us / 1_000;
++    // VBL cadence uses guest time. Diagnostics retain their host-time
++    // windows, including when the guest is paused or runs below real time.
++    let now_ms = crate::observe::elapsed_ms() as u64;
+     let mut mask_le = [0u8; 4];
+     if host
+         .read_gpa(gpa + DISPLAY_SHARED_ENABLE_MASK, &mut mask_le)
+@@ -7559,10 +7559,9 @@
+     last_us: &std::sync::atomic::AtomicU64,
+     now_us: u64,
+ ) {
+-    // The limiter paces in microseconds because 120 Hz is not expressible in
+-    // whole milliseconds; the census windows in milliseconds so its `t=` stays
+-    // on the same scale as every other always-on line.
+-    let now_ms = now_us / 1_000;
++    // VBL cadence uses guest time. Diagnostics retain their host-time
++    // windows, including when the guest is paused or runs below real time.
++    let now_ms = crate::observe::elapsed_ms() as u64;
+     if state.display.shared_gpa == 0 || !state.display.online_acked {
+         note_vbl(VBL_NOT_ONLINE, now_ms);
+         return;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/device/mod.rs b/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
+@@ -758,6 +758,7 @@
+     }
+     let mut scratch = VecDeque::new();
+     let mut host = QemuHost::new(&ops, &mut scratch, &slot.prompt_actions);
++    let now_us = host.mono_ns() / 1_000;
+     // One body decides what a refresh tick writes, and both poll arms call it.
+     // This arm used to carry its own copy, and the copy had already lost a term:
+     // it never read the enable word at all, so it set a pending bit the guest's
+@@ -772,7 +773,7 @@
+         &slot.intr_disp,
+         page_size as usize,
+         &slot.vbl_last_us,
+-        crate::observe::elapsed_us(),
++        now_us,
+     );
+ }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/host.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/host.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/host.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/host.rs
+@@ -425,6 +425,9 @@
+ /// Services the device cannot provide itself (time, wake, action enqueue,
+ /// guest CPU / KVA access for the IOSurface mapper path).
+ pub trait HostOps {
++    /// The guest's monotonic device clock. QEMU supplies CLOCK_VIRTUAL so
++    /// display events pause with the VM and follow its instruction clock.
++    /// Host maintenance/profiling uses its own wall-time source instead.
+     fn mono_ns(&self) -> u64;
+     fn enqueue(&mut self, action: HostAction);
+     fn schedule_bh(&mut self);
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
+@@ -7610,3 +7610,44 @@
+         ));
+     }
+ }
++
++
++#[test]
++fn display_vbl_tracks_guest_time_across_pause_resume_and_slow_emulation() {
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++    let mut host = FakeHost::new();
++    let last_us = std::sync::atomic::AtomicU64::new(0);
++    let gpa = 0x7c000000u64;
++    host.map_range(gpa, PAGE_SIZE_ARM64E as usize, 0);
++    host.put_u32(gpa + DISPLAY_SHARED_ENABLE_MASK, DISPLAY_VBL_EVENT_MASK);
++    state.display.shared_gpa = gpa;
++    state.display.online_acked = true;
++    let interval_ns = display_vbl_interval_us() * 1_000;
++    host.mono_ns = 5_000_000_000;
++    signal_display_vbl(&mut state, &mut host, &last_us);
++    assert_eq!(host.actions.len(), 1, "the guest clock starts the first VBL");
++    // Host polling continues during pause. It cannot advance the device clock.
++    for _ in 0..1_000 {
++        signal_display_vbl(&mut state, &mut host, &last_us);
++    }
++    assert_eq!(host.actions.len(), 1, "a paused VM receives no new VBL");
++    host.mono_ns += interval_ns - 1;
++    signal_display_vbl(&mut state, &mut host, &last_us);
++    assert_eq!(host.actions.len(), 1);
++    host.mono_ns += 1;
++    signal_display_vbl(&mut state, &mut host, &last_us);
++    assert_eq!(host.actions.len(), 2, "resume observes the full guest interval");
++    host.mono_ns += interval_ns * 100;
++    signal_display_vbl(&mut state, &mut host, &last_us);
++    for _ in 0..100 {
++        signal_display_vbl(&mut state, &mut host, &last_us);
++    }
++    assert_eq!(host.actions.len(), 3, "no catch-up burst after a long stall");
++    // Eight host polls per interval emulate a guest running at 1/8 host speed.
++    let base = host.mono_ns;
++    for n in 1..=80 {
++        host.mono_ns = base + interval_ns * n / 8;
++        signal_display_vbl(&mut state, &mut host, &last_us);
++    }
++    assert_eq!(host.actions.len(), 13, "ten guest intervals produce ten VBLs");
++}

@@ -1,0 +1,722 @@
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -26,6 +26,7 @@
+ mod fc_air_specialize;
+ mod fc_specialize;
+ pub(crate) mod float16;
++pub mod fragment_color;
+ mod layout;
+ pub mod linked_functions;
+ pub mod meta;
+--- a/docs/HOWTO.md
++++ b/docs/HOWTO.md
+@@ -63,6 +63,25 @@
+ Do not use either option as a workaround for an unrelated translation failure.
+ 
+ ## 3. Translate from Rust
++
++### Quantize pipeline colour outputs
++
++`fragment_color::quantize_fragment_color_outputs` can specialize an already
++translated fragment module for a caller-owned numeric attachment encoding.
++Use checked `AffineColorEncoding` values and one `FragmentColorEncoding` per
++selected location. The pass replaces direct float16/float32 RGBA outputs with
++Float32 outputs containing the decoded rounded integer values. It preserves
++unrelated interfaces and descriptor bindings; normal returns write the new
++outputs, while discarded invocations do not.
++
++This pass does not implement blending. Disable fixed-function blending at the
++selected locations and supply canonical clear/load contents. Quantization must
++follow the blend when blending is required. The caller must validate the returned
++module for its Vulkan environment, check Float32 attachment support, preserve
++attachment write masks, and handle MSAA resolve quantization separately.
++Unsupported output types, pointer escapes, grouped/component decorations, or
++multiple entry points return `ColorQuantizationRefusal`. No device format names
++or memory-plane policy enter this API.
+ 
+ Use `translate_reflected` for an `.air`/`.ll` path and
+ `translate_sanitized_native_reflected` when sanitized LLVM IR is already in memory. All translation
+--- /dev/null
++++ b/src/fragment_color.rs
+@@ -0,0 +1,681 @@
++//! Pipeline-owned quantization of fragment colour outputs.
++//!
++//! This module describes numeric encodings, not device formats or memory planes.
++//! The caller must disable fixed-function blending for the rewritten outputs.
++//! Blending belongs before quantization and is not synthesized by this pass.
++
++use crate::spirv_module::{load_bytes, Instruction, Module, Operand};
++use spirv::{Capability, Decoration, ExecutionModel, GlslStd450Op as Glsl, Op, StorageClass, Word};
++use std::collections::HashMap;
++use std::fmt;
++
++/// Transfer between shader linear values and the quantizer's encoded values.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum ColorTransfer {
++    /// No transfer function.
++    Linear,
++    /// The sign-preserving extension of the sRGB transfer function.
++    ExtendedSrgb,
++}
++
++/// An affine integer encoding with a checked, inclusive code interval.
++///
++/// Encoding uses `roundEven(scale * encode(linear) + zero)`, then saturates to
++/// `[minimum, maximum]`. Decoding reverses the affine and transfer functions.
++/// NaN encodes as linear zero. Infinity saturates to the appropriate endpoint.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct AffineColorEncoding {
++    scale: u16,
++    zero: u16,
++    minimum: u16,
++    maximum: u16,
++    transfer: ColorTransfer,
++}
++
++impl AffineColorEncoding {
++    /// Construct an encoding containing zero and at least one code interval.
++    pub fn checked(
++        scale: u16,
++        zero: u16,
++        minimum: u16,
++        maximum: u16,
++        transfer: ColorTransfer,
++    ) -> Result<Self, ColorQuantizationRefusal> {
++        if scale == 0 || minimum >= maximum || zero < minimum || zero > maximum {
++            return Err(ColorQuantizationRefusal::InvalidEncoding);
++        }
++        Ok(Self {
++            scale,
++            zero,
++            minimum,
++            maximum,
++            transfer,
++        })
++    }
++}
++
++/// The interpretation of one RGBA output channel.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum ColorChannelEncoding {
++    /// Encode and decode a shader value through a finite integer interval.
++    Affine(AffineColorEncoding),
++    /// An absent stored channel that always reads as one.
++    ConstantOne,
++}
++
++/// Numeric encoding for one location's primary, four-component colour output.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct FragmentColorEncoding {
++    /// SPIR-V `Location`, independent of descriptor binding numbers.
++    pub location: u32,
++    /// Encodings in shader RGBA order.
++    pub channels: [ColorChannelEncoding; 4],
++}
++
++/// A structural refusal to rewrite an output without changing its semantics.
++#[derive(Debug)]
++pub enum ColorQuantizationRefusal {
++    InvalidEncoding,
++    PlanShape,
++    ResourceLimit,
++    Module(String),
++    EntryPoint,
++    OutputMissing(u32),
++    OutputShape(u32),
++    OutputDecoration(u32),
++    OutputPointerUse(u32),
++}
++
++impl fmt::Display for ColorQuantizationRefusal {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        match self {
++            Self::InvalidEncoding => write!(f, "fragment_color_invalid_encoding"),
++            Self::PlanShape => write!(f, "fragment_color_plan_shape"),
++            Self::ResourceLimit => write!(f, "fragment_color_resource_limit"),
++            Self::Module(reason) => write!(f, "fragment_color_module: {reason}"),
++            Self::EntryPoint => write!(f, "fragment_color_entry_point"),
++            Self::OutputMissing(slot) => write!(f, "fragment_color_output_missing location={slot}"),
++            Self::OutputShape(slot) => write!(f, "fragment_color_output_shape location={slot}"),
++            Self::OutputDecoration(slot) => {
++                write!(f, "fragment_color_output_decoration location={slot}")
++            }
++            Self::OutputPointerUse(slot) => {
++                write!(f, "fragment_color_output_pointer_use location={slot}")
++            }
++        }
++    }
++}
++
++impl std::error::Error for ColorQuantizationRefusal {}
++
++struct Output {
++    encoding: FragmentColorEncoding,
++    original: Word,
++    value_type: Word,
++    half: bool,
++    replacement: Word,
++}
++
++fn id(operand: Option<&Operand>) -> Option<Word> {
++    match operand {
++        Some(Operand::IdRef(value)) => Some(*value),
++        _ => None,
++    }
++}
++
++fn instruction(
++    op: Op,
++    ty: Option<Word>,
++    result: Option<Word>,
++    operands: Vec<Operand>,
++) -> Instruction {
++    Instruction::new(op, ty, result, operands)
++}
++
++fn declared_type(module: &Module, ty: Word) -> Option<&Instruction> {
++    module
++        .types_global_values
++        .iter()
++        .find(|value| value.result_id == Some(ty))
++}
++
++fn direct_decoration(module: &Module, target: Word, decoration: Decoration) -> Option<u32> {
++    module.annotations.iter().find_map(|inst| {
++        if inst.class.opcode == Op::Decorate
++            && id(inst.operands.first()) == Some(target)
++            && inst.operands.get(1) == Some(&Operand::Decoration(decoration))
++        {
++            match inst.operands.get(2) {
++                Some(Operand::LiteralBit32(v)) => Some(*v),
++                _ => None,
++            }
++        } else {
++            None
++        }
++    })
++}
++
++/// Replace selected fragment outputs with decoded, quantized RGBA32Float.
++///
++/// The original shader writes invocation-private variables at its original
++/// precision. Each normal return in the sole fragment entry point quantizes
++/// those values into new stage outputs. Kill/terminate paths receive no stores;
++/// depth/stencil tests and attachment write masks remain fixed-function work.
++/// Descriptor bindings, unrelated outputs, and execution modes are unchanged.
++///
++/// Only direct loads/stores of four-component float16/float32 output variables
++/// are accepted. Aggregate, component, group-decorated and escaping pointers
++/// return a typed refusal. The caller owns pipeline admission, disables blend
++/// on these locations, preserves canonical clear/load values, and validates
++/// the returned module in its target environment before creating a pipeline.
++pub fn quantize_fragment_color_outputs(
++    bytes: &[u8],
++    encodings: &[FragmentColorEncoding],
++) -> Result<Vec<u8>, ColorQuantizationRefusal> {
++    if encodings.is_empty() {
++        return Ok(bytes.to_vec());
++    }
++    if encodings.len() > 8
++        || encodings.iter().any(|e| e.location >= 8)
++        || encodings
++            .iter()
++            .enumerate()
++            .any(|(i, e)| encodings[..i].iter().any(|p| p.location == e.location))
++    {
++        return Err(ColorQuantizationRefusal::PlanShape);
++    }
++    if bytes.len() > 8 * 1024 * 1024 {
++        return Err(ColorQuantizationRefusal::ResourceLimit);
++    }
++    let mut module =
++        load_bytes(bytes).map_err(|e| ColorQuantizationRefusal::Module(format!("{e:?}")))?;
++    if module.entry_points.len() != 1
++        || module.entry_points[0].operands.first()
++            != Some(&Operand::ExecutionModel(ExecutionModel::Fragment))
++    {
++        return Err(ColorQuantizationRefusal::EntryPoint);
++    }
++    let entry =
++        id(module.entry_points[0].operands.get(1)).ok_or(ColorQuantizationRefusal::EntryPoint)?;
++    let entry_index = module
++        .functions
++        .iter()
++        .position(|f| f.def.as_ref().and_then(|d| d.result_id) == Some(entry))
++        .ok_or(ColorQuantizationRefusal::EntryPoint)?;
++    let returns = module.functions[entry_index]
++        .blocks
++        .iter()
++        .flat_map(|b| &b.instructions)
++        .filter(|i| i.class.opcode == Op::Return)
++        .count();
++    // The expression builder needs fewer than 180 ids per RGBA return, plus
++    // fixed declarations. Guard fresh_id before modifying the owned module.
++    let added_ids = returns
++        .checked_mul(encodings.len())
++        .and_then(|v| v.checked_mul(180))
++        .and_then(|v| v.checked_add(128))
++        .ok_or(ColorQuantizationRefusal::ResourceLimit)?;
++    if u64::from(module.id_bound()) + added_ids as u64 >= 0x3f_ffff {
++        return Err(ColorQuantizationRefusal::ResourceLimit);
++    }
++    let mut outputs = Vec::with_capacity(encodings.len());
++    for &encoding in encodings {
++        let candidates: Vec<_> = module
++            .types_global_values
++            .iter()
++            .filter(|inst| {
++                inst.class.opcode == Op::Variable
++                    && inst.operands.first() == Some(&Operand::StorageClass(StorageClass::Output))
++                    && inst.result_id.is_some_and(|target| {
++                        direct_decoration(&module, target, Decoration::Location)
++                            == Some(encoding.location)
++                            && direct_decoration(&module, target, Decoration::Index).unwrap_or(0)
++                                == 0
++                    })
++            })
++            .collect();
++        if candidates.is_empty() {
++            return Err(ColorQuantizationRefusal::OutputMissing(encoding.location));
++        }
++        if candidates.len() != 1 {
++            return Err(ColorQuantizationRefusal::OutputShape(encoding.location));
++        }
++        let variable = candidates[0];
++        let original = variable
++            .result_id
++            .ok_or(ColorQuantizationRefusal::OutputShape(encoding.location))?;
++        let pointer = variable
++            .result_type
++            .and_then(|ty| declared_type(&module, ty))
++            .ok_or(ColorQuantizationRefusal::OutputShape(encoding.location))?;
++        if pointer.class.opcode != Op::TypePointer
++            || pointer.operands.first() != Some(&Operand::StorageClass(StorageClass::Output))
++        {
++            return Err(ColorQuantizationRefusal::OutputShape(encoding.location));
++        }
++        let value_type = id(pointer.operands.get(1))
++            .ok_or(ColorQuantizationRefusal::OutputShape(encoding.location))?;
++        let vector = declared_type(&module, value_type)
++            .ok_or(ColorQuantizationRefusal::OutputShape(encoding.location))?;
++        if vector.class.opcode != Op::TypeVector
++            || vector.operands.get(1) != Some(&Operand::LiteralBit32(4))
++        {
++            return Err(ColorQuantizationRefusal::OutputShape(encoding.location));
++        }
++        let scalar = id(vector.operands.first())
++            .and_then(|ty| declared_type(&module, ty))
++            .ok_or(ColorQuantizationRefusal::OutputShape(encoding.location))?;
++        if scalar.class.opcode != Op::TypeFloat {
++            return Err(ColorQuantizationRefusal::OutputShape(encoding.location));
++        }
++        let half = match scalar.operands.first() {
++            Some(Operand::LiteralBit32(16)) => true,
++            Some(Operand::LiteralBit32(32)) => false,
++            _ => return Err(ColorQuantizationRefusal::OutputShape(encoding.location)),
++        };
++        if half
++            && !module
++                .capabilities
++                .iter()
++                .any(|i| i.operands.first() == Some(&Operand::Capability(Capability::Float16)))
++        {
++            // StorageInputOutput16 alone does not authorize invocation-private
++            // half variables or the arithmetic conversion used below.
++            return Err(ColorQuantizationRefusal::OutputShape(encoding.location));
++        }
++        if !module.entry_points[0].operands[3..].contains(&Operand::IdRef(original)) {
++            return Err(ColorQuantizationRefusal::OutputShape(encoding.location));
++        }
++        for annotation in &module.annotations {
++            if annotation.class.opcode == Op::GroupDecorate
++                && annotation.operands[1..].contains(&Operand::IdRef(original))
++            {
++                return Err(ColorQuantizationRefusal::OutputDecoration(
++                    encoding.location,
++                ));
++            }
++            if id(annotation.operands.first()) == Some(original)
++                && (annotation.class.opcode != Op::Decorate
++                    || !matches!(
++                        annotation.operands.get(1),
++                        Some(Operand::Decoration(
++                            Decoration::Location | Decoration::Index | Decoration::RelaxedPrecision
++                        ))
++                    ))
++            {
++                return Err(ColorQuantizationRefusal::OutputDecoration(
++                    encoding.location,
++                ));
++            }
++        }
++        for function in &module.functions {
++            for inst in function.all_inst_iter() {
++                for (operand_index, operand) in inst.operands.iter().enumerate() {
++                    if operand == &Operand::IdRef(original)
++                        && !(operand_index == 0
++                            && matches!(inst.class.opcode, Op::Store | Op::Load))
++                    {
++                        return Err(ColorQuantizationRefusal::OutputPointerUse(
++                            encoding.location,
++                        ));
++                    }
++                }
++            }
++        }
++        outputs.push(Output {
++            encoding,
++            original,
++            value_type,
++            half,
++            replacement: 0,
++        });
++    }
++    let mut builder = Builder::new(&mut module);
++    let float4 = builder.global(
++        Op::TypeVector,
++        None,
++        vec![Operand::IdRef(builder.float), Operand::LiteralBit32(4)],
++    );
++    let output_pointer = builder.global(
++        Op::TypePointer,
++        None,
++        vec![
++            Operand::StorageClass(StorageClass::Output),
++            Operand::IdRef(float4),
++        ],
++    );
++    for output in &mut outputs {
++        let private_pointer = builder.global(
++            Op::TypePointer,
++            None,
++            vec![
++                Operand::StorageClass(StorageClass::Private),
++                Operand::IdRef(output.value_type),
++            ],
++        );
++        let original = builder
++            .module
++            .types_global_values
++            .iter_mut()
++            .find(|v| v.result_id == Some(output.original))
++            .ok_or(ColorQuantizationRefusal::OutputShape(
++                output.encoding.location,
++            ))?;
++        original.result_type = Some(private_pointer);
++        original.operands[0] = Operand::StorageClass(StorageClass::Private);
++        output.replacement = builder.module.fresh_id();
++        builder.module.types_global_values.push(instruction(
++            Op::Variable,
++            Some(output_pointer),
++            Some(output.replacement),
++            vec![Operand::StorageClass(StorageClass::Output)],
++        ));
++        builder.module.annotations.push(instruction(
++            Op::Decorate,
++            None,
++            None,
++            vec![
++                Operand::IdRef(output.replacement),
++                Operand::Decoration(Decoration::Location),
++                Operand::LiteralBit32(output.encoding.location),
++            ],
++        ));
++    }
++    builder.module.annotations.retain(|inst| {
++        !(inst.class.opcode == Op::Decorate
++            && outputs
++                .iter()
++                .any(|o| id(inst.operands.first()) == Some(o.original))
++            && matches!(
++                inst.operands.get(1),
++                Some(Operand::Decoration(
++                    Decoration::Location | Decoration::Index
++                ))
++            ))
++    });
++    let all_globals_interface = builder
++        .module
++        .header
++        .as_ref()
++        .is_some_and(|h| h.version >= 0x0001_0400);
++    if !all_globals_interface {
++        builder.module.entry_points[0]
++            .operands
++            .retain(|o| !outputs.iter().any(|v| o == &Operand::IdRef(v.original)));
++    }
++    builder.module.entry_points[0]
++        .operands
++        .extend(outputs.iter().map(|o| Operand::IdRef(o.replacement)));
++    // Build before insertion so module id allocation never conflicts with a
++    // mutable borrow of its function/block. Owned blocks are consumed below.
++    let mut epilogues = Vec::with_capacity(returns);
++    for _ in 0..returns {
++        let mut code = Vec::new();
++        for output in &outputs {
++            let source = builder.emit(
++                &mut code,
++                Op::Load,
++                output.value_type,
++                vec![Operand::IdRef(output.original)],
++            );
++            let source = if output.half {
++                builder.emit(
++                    &mut code,
++                    Op::FConvert,
++                    float4,
++                    vec![Operand::IdRef(source)],
++                )
++            } else {
++                source
++            };
++            let mut channels = Vec::with_capacity(4);
++            for (index, &encoding) in output.encoding.channels.iter().enumerate() {
++                let source = builder.emit(
++                    &mut code,
++                    Op::CompositeExtract,
++                    builder.float,
++                    vec![Operand::IdRef(source), Operand::LiteralBit32(index as u32)],
++                );
++                channels.push(Operand::IdRef(
++                    builder.quantize(&mut code, source, encoding),
++                ));
++            }
++            let value = builder.emit(&mut code, Op::CompositeConstruct, float4, channels);
++            code.push(instruction(
++                Op::Store,
++                None,
++                None,
++                vec![Operand::IdRef(output.replacement), Operand::IdRef(value)],
++            ));
++        }
++        epilogues.push(code);
++    }
++    let mut epilogues = epilogues.into_iter();
++    // Consume the owned functions without temporarily replacing an IR owner
++    // with an empty module or losing a function on a fallible operation.
++    module.functions = module
++        .functions
++        .into_iter()
++        .enumerate()
++        .map(|(index, mut function)| {
++            if index == entry_index {
++                function.blocks = function
++                    .blocks
++                    .into_iter()
++                    .map(|mut block| {
++                        let mut rewritten = Vec::with_capacity(block.instructions.len());
++                        for inst in block.instructions {
++                            if inst.class.opcode == Op::Return {
++                                rewritten.extend(
++                                    epilogues.next().expect("one epilogue per counted return"),
++                                );
++                            }
++                            rewritten.push(inst);
++                        }
++                        block.instructions = rewritten;
++                        block
++                    })
++                    .collect();
++            }
++            function
++        })
++        .collect();
++    // A changed variable's new pointer type must precede it. Preserve order
++    // within both groups, moving only global variables behind declarations.
++    let (mut declarations, variables): (Vec<_>, Vec<_>) = module
++        .types_global_values
++        .into_iter()
++        .partition(|i| i.class.opcode != Op::Variable);
++    declarations.extend(variables);
++    module.types_global_values = declarations;
++    Ok(module
++        .assemble()
++        .into_iter()
++        .flat_map(Word::to_le_bytes)
++        .collect())
++}
++
++struct Builder<'a> {
++    module: &'a mut Module,
++    float: Word,
++    boolean: Word,
++    glsl: Word,
++    constants: HashMap<u32, Word>,
++}
++
++impl<'a> Builder<'a> {
++    fn new(module: &'a mut Module) -> Self {
++        let mut builder = Self {
++            module,
++            float: 0,
++            boolean: 0,
++            glsl: 0,
++            constants: HashMap::new(),
++        };
++        builder.float = builder.global(Op::TypeFloat, None, vec![Operand::LiteralBit32(32)]);
++        builder.boolean = builder.global(Op::TypeBool, None, vec![]);
++        builder.glsl = if let Some(id) = builder
++            .module
++            .ext_inst_imports
++            .iter()
++            .find(|i| i.operands.first() == Some(&Operand::LiteralString("GLSL.std.450".into())))
++            .and_then(|i| i.result_id)
++        {
++            id
++        } else {
++            let id = builder.module.fresh_id();
++            builder.module.ext_inst_imports.push(instruction(
++                Op::ExtInstImport,
++                None,
++                Some(id),
++                vec![Operand::LiteralString("GLSL.std.450".into())],
++            ));
++            id
++        };
++        builder
++    }
++
++    fn global(&mut self, op: Op, ty: Option<Word>, operands: Vec<Operand>) -> Word {
++        if let Some(id) = self
++            .module
++            .types_global_values
++            .iter()
++            .find(|i| i.class.opcode == op && i.result_type == ty && i.operands == operands)
++            .and_then(|i| i.result_id)
++        {
++            return id;
++        }
++        let id = self.module.fresh_id();
++        self.module
++            .types_global_values
++            .push(instruction(op, ty, Some(id), operands));
++        id
++    }
++
++    fn constant(&mut self, value: f32) -> Word {
++        if let Some(&id) = self.constants.get(&value.to_bits()) {
++            return id;
++        }
++        let id = self.global(
++            Op::Constant,
++            Some(self.float),
++            vec![Operand::LiteralBit32(value.to_bits())],
++        );
++        self.constants.insert(value.to_bits(), id);
++        id
++    }
++
++    fn emit(
++        &mut self,
++        code: &mut Vec<Instruction>,
++        op: Op,
++        ty: Word,
++        operands: Vec<Operand>,
++    ) -> Word {
++        let id = self.module.fresh_id();
++        code.push(instruction(op, Some(ty), Some(id), operands));
++        id
++    }
++
++    fn ext(&mut self, code: &mut Vec<Instruction>, op: Glsl, args: &[Word]) -> Word {
++        let mut operands = vec![
++            Operand::IdRef(self.glsl),
++            Operand::LiteralExtInstInteger(op as u32),
++        ];
++        operands.extend(args.iter().copied().map(Operand::IdRef));
++        self.emit(code, Op::ExtInst, self.float, operands)
++    }
++
++    fn binary(&mut self, code: &mut Vec<Instruction>, op: Op, a: Word, b: Word) -> Word {
++        self.emit(
++            code,
++            op,
++            self.float,
++            vec![Operand::IdRef(a), Operand::IdRef(b)],
++        )
++    }
++
++    fn transfer(&mut self, code: &mut Vec<Instruction>, source: Word, encode: bool) -> Word {
++        let magnitude = self.ext(code, Glsl::FAbs, &[source]);
++        let (threshold, slope, exponent) = if encode {
++            (0.0031308, 12.92, 1.0 / 2.4)
++        } else {
++            (0.04045, 1.0 / 12.92, 2.4)
++        };
++        let threshold = self.constant(threshold);
++        let slope = self.constant(slope);
++        let exponent = self.constant(exponent);
++        let a = self.constant(1.055);
++        let b = self.constant(0.055);
++        let low = self.binary(code, Op::FMul, magnitude, slope);
++        let high = if encode {
++            let power = self.ext(code, Glsl::Pow, &[magnitude, exponent]);
++            let scaled = self.binary(code, Op::FMul, power, a);
++            self.binary(code, Op::FSub, scaled, b)
++        } else {
++            let shifted = self.binary(code, Op::FAdd, magnitude, b);
++            let scaled = self.binary(code, Op::FDiv, shifted, a);
++            self.ext(code, Glsl::Pow, &[scaled, exponent])
++        };
++        let condition = self.emit(
++            code,
++            Op::FOrdLessThanEqual,
++            self.boolean,
++            vec![Operand::IdRef(magnitude), Operand::IdRef(threshold)],
++        );
++        let value = self.emit(
++            code,
++            Op::Select,
++            self.float,
++            vec![
++                Operand::IdRef(condition),
++                Operand::IdRef(low),
++                Operand::IdRef(high),
++            ],
++        );
++        let sign = self.ext(code, Glsl::FSign, &[source]);
++        self.binary(code, Op::FMul, value, sign)
++    }
++
++    fn quantize(
++        &mut self,
++        code: &mut Vec<Instruction>,
++        source: Word,
++        encoding: ColorChannelEncoding,
++    ) -> Word {
++        let ColorChannelEncoding::Affine(encoding) = encoding else {
++            return self.constant(1.0);
++        };
++        let zero_value = self.constant(0.0);
++        let nan = self.emit(code, Op::IsNan, self.boolean, vec![Operand::IdRef(source)]);
++        let source = self.emit(
++            code,
++            Op::Select,
++            self.float,
++            vec![
++                Operand::IdRef(nan),
++                Operand::IdRef(zero_value),
++                Operand::IdRef(source),
++            ],
++        );
++        let source = if encoding.transfer == ColorTransfer::ExtendedSrgb {
++            self.transfer(code, source, true)
++        } else {
++            source
++        };
++        let scale = self.constant(f32::from(encoding.scale));
++        let zero = self.constant(f32::from(encoding.zero));
++        let minimum = self.constant(f32::from(encoding.minimum));
++        let maximum = self.constant(f32::from(encoding.maximum));
++        let scaled = self.ext(code, Glsl::Fma, &[source, scale, zero]);
++        let rounded = self.ext(code, Glsl::RoundEven, &[scaled]);
++        let saturated = self.ext(code, Glsl::FClamp, &[rounded, minimum, maximum]);
++        let shifted = self.binary(code, Op::FSub, saturated, zero);
++        let linear = self.binary(code, Op::FDiv, shifted, scale);
++        if encoding.transfer == ColorTransfer::ExtendedSrgb {
++            self.transfer(code, linear, false)
++        } else {
++            linear
++        }
++    }
++}

@@ -1,0 +1,998 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
+@@ -1073,6 +1073,13 @@
+         0
+     }
+ 
++    /// These `(mapping, map_generation)` pairs ended, so no draw can name their
++    /// residents again. Returns how many of this rail's residents that ended; it
++    /// destroys none of them here.
++    fn end_surface_generations(&self, _ended: &[(u32, u32)]) -> usize {
++        0
++    }
++
+     /// This rail's name for the resident holding one deferred GVA frame.
+     ///
+     /// Derived rather than carried, unlike [`Backend::pay_surface_writeback`]'s
+@@ -1968,6 +1975,15 @@
+         }
+     }
+ 
++    fn end_surface_generations(&self, ended: &[(u32, u32)]) -> usize {
++        match self {
++            #[cfg(all(feature = "backend-metal", target_os = "macos"))]
++            Self::Metal(b) => b.end_surface_generations(ended),
++            #[cfg(feature = "backend-vulkan")]
++            Self::Vulkan(b) => b.end_surface_generations(ended),
++        }
++    }
++
+     fn gva_resident(&self, debt: &GvaWritebackDebt) -> Option<ResidentTarget> {
+         match self {
+             #[cfg(all(feature = "backend-metal", target_os = "macos"))]
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/census.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/census.rs
+@@ -194,7 +194,8 @@
+         "registry_pressure (levels, not per-interval) current={}/{}mib \
+          recoverable={}/{}mib pinned={}/{}mib peak={} peak_mib={} \
+          resident_samples={} resample_peak_ms={}/{} \
+-         slab_mib={}/{} sole_copy={}/{}mib cs_sole_copy={}/{}mib",
++         slab_mib={}/{} sole_copy={}/{}mib cs_sole_copy={}/{}mib \
++         over_budget={}/{}mib soft_budget_mib={}",
+         now.registry_current_count,
+         now.registry_current_bytes >> 20,
+         now.registry_recoverable_count,
+@@ -212,6 +213,9 @@
+         now.registry_sole_copy_peak_bytes >> 20,
+         now.compute_storage_sole_copy_peak,
+         now.compute_storage_sole_copy_peak_bytes >> 20,
++        now.registry_over_budget_count,
++        now.registry_over_budget_bytes >> 20,
++        now.registry_soft_budget_bytes >> 20,
+     ));
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/counters.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/counters.rs
+@@ -859,6 +859,11 @@
+         /// Current residents held by one or more deferred-work pins.
+         registry_pinned_count,
+         registry_pinned_bytes,
++        /// Residents retired for age above the soft budget since the pools began,
++        /// and the budget. See `ResourcePools::over_budget_resident_keys`.
++        registry_over_budget_count,
++        registry_over_budget_bytes,
++        registry_soft_budget_bytes,
+         /// High-water mark of the non-pinned resident population, in slots.
+         ///
+         /// The demand, with no ceiling to read it against: this population is
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -2195,6 +2195,7 @@
+         ..
+     } = &mut *guard;
+     if let Some(ctx) = owner.ctx.as_ref() {
++        pools.registry_touch_at(identity, now_ms);
+         unsafe {
+             pools.advance_registry_maintenance(ctx, counters, now_ms);
+         }
+@@ -2377,7 +2378,10 @@
+ }
+ 
+ pub fn resident_content_backing(identity: &TargetIdentity) -> ResidentContentBacking {
+-    let guard = lock_engine();
++    let mut guard = lock_engine();
++    // A draw decides here to sample a resident and takes the lock again to bind
++    // it. Fresh, it cannot be the over-budget retirement's choice in between.
++    guard.pools.note_resident_used(identity);
+     guard
+         .pools
+         .registry_get(identity)
+@@ -2529,6 +2533,11 @@
+     lock_engine().pools.end_gva_generation(gva, generation)
+ }
+ 
++/// See [`ResourcePools::end_surface_generations`].
++pub fn end_surface_generations(ended: &[(u32, u32)]) -> usize {
++    lock_engine().pools.end_surface_generations(ended)
++}
++
+ /// Whether this backend may leave guest-visible content only in GPU-resident
+ /// engine state.
+ ///
+@@ -6063,6 +6072,10 @@
+     snap.registry_recoverable_bytes = levels.recoverable.bytes;
+     snap.registry_pinned_count = levels.pinned.count as u64;
+     snap.registry_pinned_bytes = levels.pinned.bytes;
++    let (over_budget, over_budget_bytes, soft_budget) = eng.pools.registry_over_budget_stats();
++    snap.registry_over_budget_count = over_budget;
++    snap.registry_over_budget_bytes = over_budget_bytes;
++    snap.registry_soft_budget_bytes = soft_budget;
+     let (sole_peak, sole_peak_bytes) = eng.pools.registry_sole_copy_stats();
+     snap.registry_sole_copy_peak = sole_peak;
+     snap.registry_sole_copy_peak_bytes = sole_peak_bytes;
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
+@@ -1,13 +1,29 @@
+ //! Guest-identity keyed render and storage residents.
+ //!
+ //! A live entry outlives submissions and remains resident until its serialized
+-//! resource ends, its identity is explicitly replaced, or allocation pressure
+-//! requires recovery. Fences govern in-flight safety; elapsed time does not end
++//! resource ends, its identity is explicitly replaced, allocation pressure
++//! requires recovery, or maintenance finds it unused and recoverable above the
++//! soft budget. Fences govern in-flight safety; elapsed time alone does not end
+ //! resource lifetime.
+ 
+ use super::*;
+ use crate::backend::vulkan::engine::types::TargetKeyDivergence;
+ 
++/// [`RESIDENT_SOFT_BUDGET_MAX`], or half the largest device-local heap if less.
++///
++/// A device reporting no such heap has nothing to take half of.
++fn resident_soft_budget(memory: &vk::PhysicalDeviceMemoryProperties) -> u64 {
++    memory.memory_heaps[..memory.memory_heap_count as usize]
++        .iter()
++        .filter(|heap| heap.flags.contains(vk::MemoryHeapFlags::DEVICE_LOCAL))
++        .map(|heap| heap.size / 2)
++        .max()
++        .filter(|half| *half != 0)
++        .map_or(RESIDENT_SOFT_BUDGET_MAX, |half| {
++            half.min(RESIDENT_SOFT_BUDGET_MAX)
++        })
++}
++
+ /// Band observed intervals between sampled uses. This is a reuse-distance
+ /// diagnostic only; no residency decision reads it.
+ fn resident_resample_band(idle_ms: u64) -> &'static str {
+@@ -1201,15 +1217,15 @@
+                     counters
+                         .gpu_load_hits
+                         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+-                    let touch = self.idle_clock_ms;
++                    self.note_resident_used(&identity);
+                     let slot = self.registry.get_mut(&identity).unwrap();
+-                    slot.last_touch_ms = touch;
+                     return Ok((slot, attachment));
+                 }
+                 // Same image, new pass or new interpretation → recreate
+                 // framebuffer only.
+                 let view = attachment;
+                 let old_fb = slot.owed_framebuffer();
++                self.note_resident_used(&identity);
+                 let attachments = [view];
+                 let framebuffer = ctx
+                     .device
+@@ -1594,6 +1610,7 @@
+                 let view =
+                     unsafe { self.registry_view(ctx, &identity, format.declared(), counters)? }
+                         .expect("the slot reused on the line above is still registered");
++                self.note_resident_used(&identity);
+                 return Ok((image, view));
+             }
+             // Geometry / gen / allocation mismatch → destroy and recreate.
+@@ -2285,13 +2302,32 @@
+     /// copy has no reader left, so its pixels are no reason to keep it. A resident
+     /// a lease still holds is released when the lease ends, as any other.
+     pub(crate) fn end_gva_generation(&mut self, gva: u64, generation: u64) -> usize {
++        self.end_residents(|identity| {
++            matches!(identity, TargetIdentity::Gva { gva: address, generation: current, .. }
++                if *address == gva && *current == generation)
++        })
++    }
++
++    /// [`Self::end_gva_generation`] for surfaces: the mapping's generation moved,
++    /// which every writer of its page list does, so these residents' keys cannot
++    /// be built again and the pages their pixels were for are gone. Every
++    /// geometry and format of the generation goes.
++    pub(crate) fn end_surface_generations(&mut self, ended: &[(u32, u32)]) -> usize {
++        let ended: std::collections::HashSet<(u32, u64)> = ended
++            .iter()
++            .map(|&(mapping, generation)| (mapping, u64::from(generation)))
++            .collect();
++        self.end_residents(|identity| {
++            matches!(identity, TargetIdentity::Surface { id, generation, .. }
++                if ended.contains(&(*id, *generation)))
++        })
++    }
++
++    fn end_residents(&mut self, is_ended: impl Fn(&TargetIdentity) -> bool) -> usize {
+         let ended: Vec<TargetIdentity> = self
+             .registry_order
+             .iter()
+-            .filter(|identity| {
+-                matches!(identity, TargetIdentity::Gva { gva: address, generation: current, .. }
+-                    if *address == gva && *current == generation)
+-            })
++            .filter(|identity| is_ended(identity))
+             .cloned()
+             .collect();
+         for identity in &ended {
+@@ -2333,6 +2369,91 @@
+         victims.len()
+     }
+ 
++    /// What maintenance gives back above `budget`: unused for
++    /// [`RESIDENT_SOFT_BUDGET_MIN_AGE_MS`], least recently used first, at most
++    /// `max`, and no more than brings the population to `budget`.
++    ///
++    /// Bytes are the census's `current`, so its line reads directly against the
++    /// budget. Residents already released are left out of the sum, since
++    /// [`Self::retire_released_residents`] is taking them.
++    ///
++    /// The candidates are [`Self::recoverable_residents`]: not pinned, not on the
++    /// window, not the only copy of their pixels. Colour is re-read from guest
++    /// pages. Depth is not, since no rail writes it back: a pass that wanted to
++    /// load a depth buffer retired here clears it, and says so through
++    /// `note_depth_load_without_content`. See [`Self::registry_mark_depth_ready`].
++    ///
++    /// Maintenance is the one safe caller. It holds the engine lock between draws
++    /// and every draw holds it throughout, so no recording holds these handles;
++    /// [`Self::reclaim_for_allocation_retry`] has what happened to a sweep that
++    /// ran inside a draw.
++    fn over_budget_resident_keys(&self, budget: u64, max: usize) -> Vec<TargetIdentity> {
++        let mut excess = self
++            .registry
++            .values()
++            .filter(|slot| !slot.released_and_collectable())
++            .map(Self::slot_attachment_bytes)
++            .sum::<u64>()
++            .saturating_sub(budget);
++        if excess == 0 {
++            return Vec::new();
++        }
++        let now = self.idle_clock_ms;
++        let mut aged: Vec<(u64, u64, TargetIdentity)> = self
++            .recoverable_residents()
++            .into_iter()
++            .filter_map(|identity| {
++                let slot = self.registry.get(&identity)?;
++                (slot.resource_owner_count == 0
++                    && !slot.resource_released
++                    && now.saturating_sub(slot.last_touch_ms) >= RESIDENT_SOFT_BUDGET_MIN_AGE_MS)
++                    .then(|| {
++                        (
++                            slot.last_touch_ms,
++                            Self::slot_attachment_bytes(slot),
++                            identity,
++                        )
++                    })
++            })
++            .collect();
++        // Stable, so equal ages keep admission order.
++        aged.sort_by_key(|(touched, _, _)| *touched);
++        let mut victims = Vec::new();
++        for (_, bytes, identity) in aged {
++            if excess == 0 || victims.len() == max {
++                break;
++            }
++            excess = excess.saturating_sub(bytes);
++            victims.push(identity);
++        }
++        victims
++    }
++
++    /// Retire what [`Self::over_budget_resident_keys`] chooses. Called only from
++    /// [`Self::advance_registry_maintenance`].
++    pub(super) unsafe fn retire_over_budget_residents(
++        &mut self,
++        ctx: &DeviceContext,
++        counters: &EngineCounters,
++        max: usize,
++    ) -> usize {
++        let budget = resident_soft_budget(&ctx.memory_properties);
++        self.registry_soft_budget_bytes = budget;
++        let victims = self.over_budget_resident_keys(budget, max);
++        for identity in &victims {
++            if let Some(old) =
++                self.retire_resident(ctx, identity, ResidentReclaim::OverBudget, counters)
++            {
++                Self::fold_totals(
++                    &mut self.registry_over_budget,
++                    Self::slot_attachment_bytes(&old),
++                    true,
++                );
++            }
++        }
++        victims.len()
++    }
++
+     /// Mark a resident ready after a draw stored into it.
+     ///
+     /// Record that this resident's current pixels have been copied somewhere
+@@ -2919,9 +3040,12 @@
+             Self::high_water(self.registry_sole_copy_peak, self.registry_sole_copy);
+     }
+ 
+-    /// Test seam for advancing one resident's idle age without running the
+-    /// device-touching reclaim operation.
+-    #[cfg(test)]
++    /// A use of this resident now, by the registry's own clock.
++    pub(crate) fn note_resident_used(&mut self, identity: &TargetIdentity) {
++        self.registry_touch_at(identity, self.idle_clock_ms);
++    }
++
++    /// A use of this resident at `now_ms`, for a caller ahead of the clock.
+     pub(crate) fn registry_touch_at(&mut self, identity: &TargetIdentity, now_ms: u64) {
+         if now_ms > self.idle_clock_ms {
+             self.idle_clock_ms = now_ms;
+@@ -2988,10 +3112,8 @@
+     /// resident had been sitting untouched before the read.
+     ///
+     /// Sampling is a real use even when no draw renders back into the target.
+-    /// Refresh the timestamp so reuse-distance diagnostics describe all GPU
+-    /// access, including compositor backdrops. No residency decision reads this
+-    /// timestamp: live targets end through resource lifetime or, when safe,
+-    /// allocation-pressure recovery.
++    /// Refresh the timestamp so reuse-distance diagnostics and the soft budget
++    /// see all GPU access, including compositor backdrops.
+     pub(crate) fn registry_note_sampled_use(&mut self, identity: &TargetIdentity) {
+         let touch = self.idle_clock_ms;
+         if let Some(slot) = self.registry.get_mut(identity) {
+@@ -4489,7 +4611,7 @@
+             pools.registry_mark_ready(&surf(1));
+             pools.registry_touch_at(&surf(1), 10);
+             match cause {
+-                ResidentReclaim::AllocationReclaimed => assert!(
++                ResidentReclaim::AllocationReclaimed | ResidentReclaim::OverBudget => assert!(
+                     pools.recoverable_residents().is_empty(),
+                     "a device out of memory refuses the next allocation rather \
+                      than destroying a client's only render target"
+@@ -4702,6 +4824,213 @@
+         assert!(pools.released_resident_keys(9).is_empty());
+     }
+ 
++    fn surface_target(id: u32, generation: u64, width: u32) -> TargetIdentity {
++        TargetIdentity::Surface {
++            id,
++            width,
++            height: 16,
++            generation,
++            format: translate::pixel::SCANOUT_FORMAT,
++        }
++    }
++
++    /// Only the generation that ended goes, at every size it was drawn at and sole
++    /// copy or not: the pages those pixels were for are gone. What is pinned or on
++    /// the window waits, and what a lease holds stays until the lease ends.
++    #[test]
++    fn a_surface_resident_is_collected_once_its_generation_has_ended() {
++        let mut pools = ResourcePools::new();
++        let ended = surface_target(5, 7, 16);
++        let ended_resized = surface_target(5, 7, 32);
++        let next_generation = surface_target(5, 8, 16);
++        let other_mapping = surface_target(6, 7, 16);
++        let gva_with_those_numbers = gva_target(5, 7);
++        for identity in [
++            &ended,
++            &ended_resized,
++            &next_generation,
++            &other_mapping,
++            &gva_with_those_numbers,
++        ] {
++            admit(&mut pools, identity.clone(), 0, 0);
++            pools.registry_mark_ready(identity);
++        }
++        assert_eq!(pools.end_surface_generations(&[(5, 7)]), 2);
++        assert_eq!(
++            pools.released_resident_keys(9),
++            vec![ended.clone(), ended_resized.clone()]
++        );
++        assert_eq!(
++            pools.registry_sole_copy.count, 3,
++            "the live residents' sole copies stay"
++        );
++
++        let pinned = surface_target(7, 1, 16);
++        admit(&mut pools, pinned.clone(), 0, 1);
++        let shown = surface_target(8, 1, 16);
++        admit(&mut pools, shown.clone(), 0, 0);
++        pools.note_window_published(Some(&shown));
++        let leased = surface_target(9, 1, 16);
++        admit(&mut pools, leased.clone(), 0, 0);
++        pools
++            .registry
++            .get_mut(&leased)
++            .unwrap()
++            .resource_owner_count = 1;
++        assert_eq!(pools.end_surface_generations(&[(7, 1), (8, 1), (9, 1)]), 3);
++        assert_eq!(
++            pools.released_resident_keys(9),
++            vec![ended, ended_resized],
++            "pinned, on the window, or leased: none of them is collected yet"
++        );
++        assert!(!pools.registry.get(&leased).unwrap().resource_released);
++
++        assert!(pools.pin_resident_target(&pinned, false));
++        assert!(pools.released_resident_keys(9).contains(&pinned));
++    }
++
++    #[test]
++    fn the_soft_budget_is_half_the_card_up_to_a_limit() {
++        let mut memory = vk::PhysicalDeviceMemoryProperties::default();
++        assert_eq!(resident_soft_budget(&memory), RESIDENT_SOFT_BUDGET_MAX);
++        memory.memory_heap_count = 2;
++        memory.memory_heaps[0] = vk::MemoryHeap {
++            size: 64 << 30,
++            flags: vk::MemoryHeapFlags::empty(),
++        };
++        memory.memory_heaps[1] = vk::MemoryHeap {
++            size: 4 << 30,
++            flags: vk::MemoryHeapFlags::DEVICE_LOCAL,
++        };
++        assert_eq!(resident_soft_budget(&memory), 2 << 30);
++        memory.memory_heaps[1].size = 16 << 30;
++        assert_eq!(resident_soft_budget(&memory), RESIDENT_SOFT_BUDGET_MAX);
++    }
++
++    /// Above the budget the oldest recoverable residents go, least recently used
++    /// first and no more than it takes. Nothing pinned, leased, on the window,
++    /// recently used or holding the only copy of its pixels is a candidate.
++    #[test]
++    fn the_soft_budget_takes_the_oldest_recoverable_residents_only() {
++        let now = RESIDENT_SOFT_BUDGET_MIN_AGE_MS * 10;
++        let mut pools = ResourcePools::new();
++        pools.idle_clock_ms = now;
++        let second_oldest = surf(1);
++        let oldest = surf(2);
++        let third_oldest = surf(3);
++        admit(&mut pools, second_oldest.clone(), 200, 0);
++        admit(&mut pools, oldest.clone(), 100, 0);
++        admit(&mut pools, third_oldest.clone(), 300, 0);
++
++        admit(
++            &mut pools,
++            surf(4),
++            now - RESIDENT_SOFT_BUDGET_MIN_AGE_MS + 1,
++            0,
++        );
++        admit(&mut pools, surf(5), 0, 1);
++        let shown = surf(6);
++        admit(&mut pools, shown.clone(), 0, 0);
++        pools.note_window_published(Some(&shown));
++        let leased = surf(7);
++        admit(&mut pools, leased.clone(), 0, 0);
++        pools
++            .registry
++            .get_mut(&leased)
++            .unwrap()
++            .resource_owner_count = 1;
++        let sole_copy = surf(8);
++        admit(&mut pools, sole_copy.clone(), 0, 0);
++        pools.registry_mark_ready(&sole_copy);
++
++        let everything = pools.registry_levels().current.bytes;
++        let each = everything / 8;
++        assert!(pools.over_budget_resident_keys(everything, 9).is_empty());
++        assert_eq!(
++            pools.over_budget_resident_keys(everything - 1, 9),
++            vec![oldest.clone()],
++        );
++        assert_eq!(
++            pools.over_budget_resident_keys(everything - each - 1, 9),
++            vec![oldest.clone(), second_oldest.clone()],
++        );
++        assert_eq!(
++            pools.over_budget_resident_keys(0, 2),
++            vec![oldest.clone(), second_oldest.clone()],
++            "at most what one pass is allowed"
++        );
++        assert_eq!(
++            pools.over_budget_resident_keys(0, 99),
++            vec![oldest.clone(), second_oldest, third_oldest],
++            "the rest stay however far above the budget the population is"
++        );
++
++        // A resident released this moment is on its way out by the other door,
++        // and its bytes are not an excess.
++        assert_eq!(pools.end_surface_generations(&[(2, 1)]), 1);
++        assert_eq!(pools.released_resident_keys(9), vec![oldest.clone()]);
++        assert!(pools
++            .over_budget_resident_keys(everything - each, 9)
++            .is_empty());
++        assert!(!pools.over_budget_resident_keys(0, 99).contains(&oldest));
++    }
++
++    /// A use puts a resident back among the young, whichever door it came through.
++    #[test]
++    fn a_resident_in_use_is_not_old_enough_for_the_soft_budget() {
++        let now = RESIDENT_SOFT_BUDGET_MIN_AGE_MS * 10;
++        let mut pools = ResourcePools::new();
++        pools.idle_clock_ms = now;
++        admit(&mut pools, surf(1), 0, 0);
++        admit(&mut pools, surf(2), 0, 0);
++        admit(&mut pools, surf(3), 0, 0);
++        pools.note_resident_used(&surf(1));
++        pools.registry_note_sampled_use(&surf(2));
++        assert_eq!(pools.over_budget_resident_keys(0, 9), vec![surf(3)]);
++    }
++
++    /// The sweep has one caller, between draws. Inside a draw it would free images
++    /// the draw holds: see `reclaim_for_allocation_retry`.
++    #[test]
++    fn only_maintenance_retires_over_budget() {
++        const CALL: &str = concat!(".retire_over_budget", "_residents(");
++        for (name, source, calls) in [
++            (
++                "images_and_registry.rs",
++                include_str!("images_and_registry.rs"),
++                0,
++            ),
++            ("mod.rs", include_str!("mod.rs"), 0),
++            ("teardown.rs", include_str!("teardown.rs"), 0),
++            (
++                "sampled_working_set.rs",
++                include_str!("sampled_working_set.rs"),
++                0,
++            ),
++            (
++                "buffer_gather_working_set.rs",
++                include_str!("buffer_gather_working_set.rs"),
++                0,
++            ),
++            (
++                "submission_and_buffers.rs",
++                include_str!("submission_and_buffers.rs"),
++                1,
++            ),
++        ] {
++            assert_eq!(source.matches(CALL).count(), calls, "{name}");
++        }
++        let maintenance = include_str!("submission_and_buffers.rs");
++        let start = maintenance
++            .find("unsafe fn advance_registry_maintenance")
++            .expect("the maintenance pass");
++        let end = start
++            + maintenance[start..]
++                .find("unsafe fn advance_graveyard_maintenance")
++                .expect("the function after it");
++        assert_eq!(maintenance[start..end].matches(CALL).count(), 1);
++    }
++
+     /// Only an out-of-memory result is worth a reclaim and a retry.
+     ///
+     /// The retry exists because out-of-memory describes how much is in use at an
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/mod.rs
+@@ -484,6 +484,10 @@
+     idle_clock_ms: u64,
+     /// Wall-clock ms of the last maintenance pass.
+     last_maintenance_ms: u64,
++    /// Residents [`Self::retire_over_budget_residents`] has retired, cumulative.
++    registry_over_budget: NonPinnedTotals,
++    /// The soft budget that pass last read from the device's heaps.
++    registry_soft_budget_bytes: u64,
+     /// Consecutive maintenance passes without upload activity.
+     /// The HOST_VISIBLE buffer pool trim (a full `vkAllocateMemory` re-alloc on
+     /// the upload hot path when it refills) only fires once this crosses
+@@ -2335,8 +2339,9 @@
+     /// Sampled and staging images are written on other paths, but they are not
+     /// registry residents and hold no identity a later draw could resolve.
+     pub gpu_only_content: bool,
+-    /// Value of `ResourcePools::idle_clock_ms` at this target's last use,
+-    /// retained for reuse-distance diagnostics. It is not a lifetime deadline.
++    /// Value of `ResourcePools::idle_clock_ms` at this target's last use. Not a
++    /// lifetime deadline: only above the soft budget does its age choose what
++    /// maintenance gives back, and only among what the guest's pages also hold.
+     pub last_touch_ms: u64,
+ }
+ 
+@@ -2520,9 +2525,17 @@
+ }
+ 
+ /// Delay before periodic maintenance begins. Maintenance releases dead resource
+-/// objects and already-free pool storage; it never uses age to remove a live
+-/// resident.
++/// objects and already-free pool storage; age removes a live resident only above
++/// [`RESIDENT_SOFT_BUDGET_MAX`], and only one the guest's pages also hold.
+ pub(crate) const IDLE_MAINTENANCE_START_MS: u64 = 2000;
++/// The most resident attachment bytes maintenance leaves alone, on a card of
++/// twice this or more. Half the card below that.
++const RESIDENT_SOFT_BUDGET_MAX: u64 = 4 << 30;
++/// How long a resident must have gone unused before the soft budget may take it.
++///
++/// Longer than any one frame's work by far, because a draw decides from one lock
++/// hold what it will bind in another.
++const RESIDENT_SOFT_BUDGET_MIN_AGE_MS: u64 = 30_000;
+ /// Minimum wall-clock spacing between bounded maintenance passes. The poll path
+ /// runs far more often; throttling avoids repeated free-pool work under the
+ /// engine lock.
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/submission_and_buffers.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/submission_and_buffers.rs
+@@ -319,6 +319,8 @@
+             compute_storage_sole_copy_peak: NonPinnedTotals::default(),
+             idle_clock_ms: 0,
+             last_maintenance_ms: 0,
++            registry_over_budget: NonPinnedTotals::default(),
++            registry_soft_budget_bytes: 0,
+             settled_maintenance_passes: 0,
+             cmd_pool: vk::CommandPool::null(),
+             desc_arena: DescriptorArena::empty(),
+@@ -346,9 +348,10 @@
+         }
+     }
+     /// Advance the registry clock and report whether a bounded maintenance pass
+-    /// is due. The pass may release objects already outside every live resource
+-    /// (dead direct images and free-pool entries), but elapsed time is never an
+-    /// authority to destroy a live resident.
++    /// is due. The pass releases objects already outside every live resource
++    /// (dead direct images and free-pool entries). Elapsed time alone is no
++    /// authority to destroy a live resident; see
++    /// [`Self::over_budget_resident_keys`] for the one case it chooses among them.
+     pub(super) fn plan_idle_maintenance(&mut self, now_ms: u64) -> bool {
+         if now_ms > self.idle_clock_ms {
+             self.idle_clock_ms = now_ms;
+@@ -595,8 +598,12 @@
+ 
+     /// Run periodic maintenance for objects that are already outside live
+     /// resource ownership. Live render, sampled, and compute residents leave
+-    /// only through explicit lifetime changes or allocation-pressure recovery;
+-    /// an idle interval is not a resource-state transition.
++    /// through explicit lifetime changes or allocation-pressure recovery; render
++    /// residents the guest's pages also hold leave here too, above the soft
++    /// budget.
++    ///
++    /// One allowance per pass for the two retirements. They feed the recycle
++    /// pools, which the trim below empties at that same rate.
+     pub(crate) unsafe fn advance_registry_maintenance(
+         &mut self,
+         ctx: &DeviceContext,
+@@ -606,7 +613,12 @@
+         if !self.plan_idle_maintenance(now_ms) {
+             return;
+         }
+-        self.retire_released_residents(ctx, counters, IDLE_RECYCLE_TRIM_PER_PASS);
++        let released = self.retire_released_residents(ctx, counters, IDLE_RECYCLE_TRIM_PER_PASS);
++        self.retire_over_budget_residents(
++            ctx,
++            counters,
++            IDLE_RECYCLE_TRIM_PER_PASS.saturating_sub(released),
++        );
+         let trim_buffers = self.note_maintenance_settled();
+         self.trim_recycle_pools(&ctx.device, IDLE_RECYCLE_TRIM_PER_PASS, trim_buffers);
+         self.trim_dead_guest_sampled(&ctx.device, IDLE_RECYCLE_TRIM_PER_PASS);
+@@ -1110,6 +1122,16 @@
+         )
+     }
+ 
++    /// `(retired_slots, retired_bytes, soft_budget_bytes)` of
++    /// [`Self::retire_over_budget_residents`].
++    pub(crate) fn registry_over_budget_stats(&self) -> (u64, u64, u64) {
++        (
++            self.registry_over_budget.count as u64,
++            self.registry_over_budget.bytes,
++            self.registry_soft_budget_bytes,
++        )
++    }
++
+     /// `(sole_copy_peak_slots, sole_copy_peak_bytes)` — what protecting
+     /// unreproducible content costs, in the two quantities that have to be read
+     /// together.
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -1999,6 +1999,10 @@
+     /// or replaced. The guest ended the resource lifetime, so the host object no
+     /// longer participates in allocation-pressure recovery.
+     ResourceReleased,
++    /// Maintenance gave it back for age, above the soft budget, on the same
++    /// predicate as [`Self::AllocationReclaimed`]. See
++    /// `ResourcePools::over_budget_resident_keys`.
++    OverBudget,
+ }
+ 
+ impl ResidentReclaim {
+@@ -2007,6 +2011,7 @@
+             Self::AllocationReclaimed => "allocation_reclaimed",
+             Self::Recreated => "recreated",
+             Self::ResourceReleased => "resource_released",
++            Self::OverBudget => "over_budget",
+         }
+     }
+ }
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
+@@ -568,6 +568,10 @@
+         engine::end_gva_generation(gva, generation)
+     }
+ 
++    fn end_surface_generations(&self, ended: &[(u32, u32)]) -> usize {
++        engine::end_surface_generations(ended)
++    }
++
+     fn gva_resident(
+         &self,
+         debt: &GvaWritebackDebt,
+--- a/reims-vgpu/crates/reims-vgpu/src/model/state.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+@@ -3423,6 +3423,10 @@
+     /// Backend parent allocations detached with `retired_views`. The runtime
+     /// retires the GPU import before releasing the host view it aliases.
+     pub retired_guest_imports: Vec<crate::runtime::guest_ram::ImportId>,
++    /// `(mapping, map_generation)` of each generation a bump ended, awaiting
++    /// `mapper::flush_retired_views`. A surface resident's key holds the
++    /// generation, so no draw can name those residents again.
++    pub ended_surface_generations: Vec<(u32, u32)>,
+     /// Guest-write tokens whose page list is gone, awaiting release through
+     /// `HostOps::untrack_guest_writes`. Drained by
+     /// `mapper::flush_retired_views` alongside `retired_views`, for the same
+@@ -3604,6 +3608,7 @@
+             draining_mask: 0,
+             retired_views: Vec::new(),
+             retired_guest_imports: Vec::new(),
++            ended_surface_generations: Vec::new(),
+             retired_guest_write_tokens: Vec::new(),
+             retired_linear_residents: Vec::new(),
+             pending_writebacks: crate::runtime::writeback_debt::PendingWritebacks::default(),
+@@ -5300,12 +5305,16 @@
+ 
+     /// Bump [`MappingEntry::map_generation`] (never 0 after first bump).
+     ///
+-    /// The bump orphans any generation-keyed resident for the mapping.
+-    pub fn bump_map_generation(e: &mut MappingEntry) {
++    /// The bump orphans any generation-keyed resident for the mapping. Returns
++    /// the generation that ended, which every product caller queues on
++    /// [`Self::ended_surface_generations`].
++    pub fn bump_map_generation(e: &mut MappingEntry) -> u32 {
++        let ended = e.map_generation;
+         e.map_generation = e.map_generation.wrapping_add(1);
+         if e.map_generation == 0 {
+             e.map_generation = 1;
+         }
++        ended
+     }
+ 
+     /// Drop compute storage-residency mirror entries whose byte window
+@@ -5358,7 +5367,8 @@
+         e.page_entries.clear();
+         e.page_table_kva = 0;
+         e.condemned_entries = None;
+-        Self::bump_map_generation(e);
++        let ended = Self::bump_map_generation(e);
++        self.ended_surface_generations.push((mapping_id, ended));
+         let (retired, retired_import) = Self::take_mapping_view(e);
+         let retired_token = Self::take_guest_write_token(e);
+         if let Some(v) = retired {
+@@ -5485,7 +5495,8 @@
+             e.condemned_entries = None;
+             e.mapping_internal = 0;
+             e.device_desc.clear();
+-            Self::bump_map_generation(e);
++            let ended = Self::bump_map_generation(e);
++            self.ended_surface_generations.push((mapping_id, ended));
+             e.has_geom = false;
+             e.width = 0;
+             e.height = 0;
+@@ -5543,7 +5554,8 @@
+         e.device_desc.clear();
+         e.content_generation = 0;
+         e.surface_content_epoch = 0;
+-        Self::bump_map_generation(e);
++        let ended = Self::bump_map_generation(e);
++        self.ended_surface_generations.push((mapping_id, ended));
+         // New MappingInternal ⇒ new surface; force device-desc re-resolve.
+         e.has_geom = false;
+         e.width = 0;
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/planar_xr.rs
+@@ -130,7 +130,8 @@
+             (p.gva, p.layout.row_stride, p.layout.width, p.layout.height).hash(&mut hash);
+         }
+         pages.hash(&mut hash);
+-        let generation = hash.finish().max(1);
++        let generation =
++            crate::runtime::writeback_debt::page_hash_generation(hash.finish()).max(1);
+         let footprint = GuestPageFootprint::new(pages.into(), page).ok_or(Refusal::Pages)?;
+         let target = Arc::new(Self {
+             level,
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -12069,7 +12069,7 @@
+     for p in pages {
+         hash ^= p.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+     }
+-    hash
++    crate::runtime::writeback_debt::page_hash_generation(hash)
+ }
+ 
+ /// Host-texture identity of this draw's color0 GVA resource.
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -634,7 +634,8 @@
+             });
+         }
+         if pages_changed {
+-            DeviceState::bump_map_generation(m);
++            let ended = DeviceState::bump_map_generation(m);
++            state.ended_surface_generations.push((mapping_id, ended));
+         }
+         // The guest-physical footprint this incarnation authorises us to write.
+         //
+@@ -1628,6 +1629,15 @@
+     // first. Existing child images and recorded buffers hold it through their
+     // fence-safe retirement; only then is the matching host view unmapped.
+     let backend = crate::backend::selected();
++    // Only marks them; retiring here could free an image a draw holds, and this
++    // is reached from inside draw preparation.
++    if !state.ended_surface_generations.is_empty() {
++        let ended = backend.end_surface_generations(&state.ended_surface_generations);
++        state.ended_surface_generations.clear();
++        if ended != 0 {
++            crate::runtime::drain::note_store_route_n("surface_residents_ended", ended as u64);
++        }
++    }
+     let backend_owned: std::collections::HashSet<_> = state
+         .retired_guest_imports
+         .drain(..)
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/revalidate_tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/revalidate_tests.rs
+@@ -247,6 +247,35 @@
+     ));
+ }
+ 
++/// Each door that bumps a generation queues the one it ended, and the flush that
++/// releases retired views takes the queue with it.
++#[test]
++fn a_bumped_surface_generation_is_queued_until_the_views_are_flushed() {
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_X86);
++    state.map_surface(5);
++    assert!(state.ended_surface_generations.is_empty());
++    let born = state.mappings[&5].map_generation;
++    state.invalidate_mapping_pages(5);
++    let invalidated = state.mappings[&5].map_generation;
++    assert_ne!(invalidated, born);
++    assert!(state.unmap_surface(5));
++    let unmapped = state.mappings[&5].map_generation;
++    assert_ne!(unmapped, invalidated);
++    assert!(state.attach_mapping_internal(
++        5,
++        0x1000,
++        crate::protocol::iosurface_pages::MapperLayout::Compact
++    ));
++    assert_eq!(
++        state.ended_surface_generations,
++        vec![(5, born), (5, invalidated), (5, unmapped)],
++    );
++
++    let mut host = FakeHost::new();
++    flush_retired_views(&mut state, &mut host);
++    assert!(state.ended_surface_generations.is_empty());
++}
++
+ #[test]
+ fn invalidate_mapping_pages_bumps_map_generation_and_clears() {
+     let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_X86);
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs
+@@ -827,6 +827,17 @@
+     (state, host, page_gpa)
+ }
+ 
++/// Adopting a new page list ends the generation that named the old one.
++#[test]
++fn resolving_new_pages_queues_the_generation_they_ended() {
++    let (mut state, host, _) = span_fixture(0x1e8a0);
++    let before = state.mappings[&3].map_generation;
++    state.ended_surface_generations.clear();
++    assert!(resolve_mapping_backing(&mut state, &host, 3));
++    assert_ne!(state.mappings[&3].map_generation, before);
++    assert_eq!(state.ended_surface_generations, vec![(3, before)]);
++}
++
+ #[test]
+ fn extended_capture_carries_layout_through_resolve_and_unmap() {
+     let (mut state, mut host, _) = span_fixture(0x1e8a0);
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/objects/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/objects/mod.rs
+@@ -3865,7 +3865,8 @@
+         let changed = prior != entries;
+         let replaced = !prior.is_empty() && changed;
+         if changed {
+-            crate::model::DeviceState::bump_map_generation(m);
++            let ended = crate::model::DeviceState::bump_map_generation(m);
++            state.ended_surface_generations.push((surface_id, ended));
+         }
+         if replaced {
+             // Recycled-mid backing-refresh census — not a drop. Off the curated
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/objects/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/objects/tests.rs
+@@ -1055,6 +1055,7 @@
+             "force-resolve must follow the moved translation"
+         );
+         assert_eq!(m.map_generation, 2, "page move bumps map_generation");
++        assert_eq!(state.ended_surface_generations.last(), Some(&(3, 1)));
+     }
+     // Unchanged translation: force keeps the table without a rebuild.
+     assert!(resolve_backing_force(&mut state, &host, 3));
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
+@@ -324,6 +324,8 @@
+ /// task-local reference a pass rendered into — see [`GvaPlaneKey`] for why the
+ /// plane and not the reference. In either representation, a second Store into
+ /// the same thing replaces the first rather than queueing another frame.
++///
++/// Generations it mints carry [`GVA_RESOURCE_GENERATION`].
+ #[derive(Debug, Default)]
+ pub struct PendingWritebacks {
+     debts: std::collections::BTreeMap<u32, WritebackDebt>,
+@@ -486,11 +488,12 @@
+                 return resource.generation;
+             }
+         }
+-        self.next_gva_generation = self.next_gva_generation.wrapping_add(1);
++        self.next_gva_generation =
++            self.next_gva_generation.wrapping_add(1) & !GVA_RESOURCE_GENERATION;
+         if self.next_gva_generation == 0 {
+             self.next_gva_generation = 1;
+         }
+-        let generation = self.next_gva_generation;
++        let generation = GVA_RESOURCE_GENERATION | self.next_gva_generation;
+         self.gva_resources.insert(
+             plane,
+             GvaResourceState {
+@@ -1443,6 +1446,19 @@
+         && a.format == b.format
+ }
+ 
++/// The bit every generation minted for a named GVA resource carries and no
++/// page-set hash does.
++///
++/// A resident's key holds one of the two, and deleting a resource ends residents
++/// by address and generation. Without this a hash equal to a live counter value
++/// at one address would have the delete take a target it does not own.
++pub(crate) const GVA_RESOURCE_GENERATION: u64 = 1 << 63;
++
++/// A page-set hash as a resident generation: outside the counter's half.
++pub(crate) fn page_hash_generation(hash: u64) -> u64 {
++    hash & !GVA_RESOURCE_GENERATION
++}
++
+ /// Tell `rail` this resource is gone. Its generations are never used again, so
+ /// without this every resident made for them stays until an allocation is
+ /// refused: 3,300 images and 21 GiB after two rounds of 18 app launches.
+@@ -1708,12 +1724,11 @@
+ ///   happens-before and it is read rather than re-derived.
+ /// * **The mapping's generation moved.** The guest remapped the surface, so the
+ ///   identity this debt was armed under names a resident that is now an orphan,
+-///   and the pages it would be written into belong to something else. There is
+-///   no way to name that orphan from here — the current generation resolves to a
+-///   different identity — so its `gpu_only_content` outlives it and one image
+-///   leaks per occurrence. `wbdebt_generation_moved` is how a boot says how many;
+-///   a reading above single digits is the signal to carry the arm's whole
+-///   identity rather than the four integers that re-derive it.
++///   and the pages it would be written into belong to something else. Nothing is
++///   owed. The bump queued that generation, and
++///   [`crate::runtime::mapper::flush_retired_views`] ends the orphan's
++///   `gpu_only_content` with it. `wbdebt_generation_moved` is how a boot says how
++///   many.
+ fn pay<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+@@ -2140,6 +2155,28 @@
+         assert_eq!(pending.get_gva(key).map(|debt| debt.generation), Some(8));
+     }
+ 
++    /// Deleting a resource ends residents by address and generation, so a hash at
++    /// that address must not be able to equal a counter value.
++    #[test]
++    fn a_resource_generation_is_never_a_page_hash_generation() {
++        let mut pending = PendingWritebacks::default();
++        let key = GvaResourceKey {
++            task_id: 3,
++            texture_ref: 19,
++        };
++        let first = pending.ensure_gva_resource(key, 0x1000, 64, None);
++        assert_ne!(first & GVA_RESOURCE_GENERATION, 0);
++        assert_ne!(page_hash_generation(first), first);
++        assert_eq!(page_hash_generation(u64::MAX) & GVA_RESOURCE_GENERATION, 0);
++
++        pending.next_gva_generation = !GVA_RESOURCE_GENERATION;
++        assert_eq!(
++            pending.ensure_gva_resource(key, 0x2000, 64, None),
++            GVA_RESOURCE_GENERATION | 1,
++            "the counter wraps inside its own half"
++        );
++    }
++
+     /// A resource's planes are named while they live and not after.
+     #[test]
+     fn a_retired_resource_names_no_generations() {

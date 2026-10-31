@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.marselnenaj.tomacco",
+  "name": "Tomacco",
+  "version": "1.0.0",
+  "author": "Tomacco",
+  "license": "GPL-2.0-or-later",
+  "description": "Mobile builds, devices and agent sessions in the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "MobilePanel.qml"
+  },
+  "barWidget": {
+    "displayName": "Tomacco",
+    "description": "Live devices, emulators, device window, screenshots, jobs and projects.",
+    "category": "Development",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "notifyBuilds": true
+    },
+    "schema": [
+      {
+        "key": "notifyBuilds",
+        "type": "boolean",
+        "label": "Notify when a build finishes"
+      }
+    ]
+  }
+}

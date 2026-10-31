@@ -1,0 +1,85 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/render_target.rs
+@@ -437,8 +437,15 @@
+         width: u32,
+         height: u32,
+     },
+-    /// The mapping's format is not one Metal can render into.
+-    MapperRefTextureFormat { mapping_id: u32, fmt: u16 },
++    /// This renderer has no attachment representation for the mapping format.
++    /// Preserve the actual surface/plane geometry at the refusal boundary:
++    /// paired IOSurface storage cannot be inferred from APV texture geometry.
++    MapperRefTextureFormat {
++        mapping_id: u32,
++        fmt: u16,
++        surface: Option<crate::protocol::iosurface_pages::DeviceSurfaceRecord>,
++        planes: [Option<crate::protocol::iosurface_pages::DevicePlaneRecord>; 2],
++    },
+ 
+     /// The ref-texture entry's descriptor bytes could not be read.
+     RefTextureDescRead,
+@@ -608,9 +615,45 @@
+                 v.push(("has_geom", has_geom.to_string()));
+                 v.push(("dims", format!("{width}x{height}")));
+             }
+-            C::MapperRefTextureFormat { mapping_id, fmt } => {
++            C::MapperRefTextureFormat {
++                mapping_id,
++                fmt,
++                surface,
++                planes,
++            } => {
+                 v.push(("mid", mapping_id.to_string()));
+                 v.push(("fmt", format!("{fmt:#x}")));
++                if let Some(surface) = surface {
++                    v.push(("surface_format", format!("{:#x}", surface.pixel_format)));
++                    v.push(("surface_base", surface.base_offset.to_string()));
++                    v.push(("allocation", surface.alloc_size.to_string()));
++                    v.push(("plane_count", surface.plane_count.to_string()));
++                    v.push((
++                        "surface_dims",
++                        format!("{}x{}", surface.width, surface.height),
++                    ));
++                    v.push(("surface_stride", surface.bytes_per_row.to_string()));
++                    v.push(("surface_bpe", surface.bytes_per_element.to_string()));
++                } else {
++                    v.push(("surface", "unavailable".to_owned()));
++                }
++                for (index, plane) in planes.into_iter().enumerate() {
++                    if let Some(plane) = plane {
++                        v.push((
++                            if index == 0 { "plane0" } else { "plane1" },
++                            format!(
++                                "{}x{}:offset={}:base={}:size={}:stride={}:bpe={}",
++                                plane.width,
++                                plane.height,
++                                plane.plane_offset,
++                                plane.plane_base,
++                                plane.plane_size,
++                                plane.bytes_per_row,
++                                plane.bytes_per_element,
++                            ),
++                        ));
++                    }
++                }
+             }
+             C::RefTextureDescDecode { len } => v.push(("desc_len", len.to_string())),
+             C::BackingMipView { surface_id, level } => {
+@@ -885,7 +928,16 @@
+         };
+         let fmt = effective_view_sample_format(base_fmt, view_fmt_override).unwrap_or(base_fmt);
+         if pixel_format::render_target_bpp(fmt).is_none() {
+-            return Err(C::MapperRefTextureFormat { mapping_id, fmt }.at(resolved_ref));
++            use crate::protocol::iosurface_pages::{decode_device_surface, device_desc_plane};
++            return Err(C::MapperRefTextureFormat {
++                mapping_id,
++                fmt,
++                surface: decode_device_surface(&m.device_desc),
++                planes: std::array::from_fn(|index| {
++                    device_desc_plane(&m.device_desc, index as u32).map(|(plane, _)| plane)
++                }),
++            }
++            .at(resolved_ref));
+         }
+         return Ok(ResolvedRenderTarget {
+             mapping_id,

@@ -1,0 +1,38 @@
+diff --git a/validation/src/bin/corpus-triage.rs b/validation/src/bin/corpus-triage.rs
+--- a/validation/src/bin/corpus-triage.rs
++++ b/validation/src/bin/corpus-triage.rs
+@@ -74,13 +74,27 @@
+ }
+ 
+ fn reserve_allocation(bytes: usize) -> bool {
+-    let reserved = LIVE_ALLOCATED_BYTES
+-        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |live| {
+-            live.checked_add(bytes)
+-                .filter(|next| *next <= ALLOCATION_LIMIT_BYTES.load(Ordering::Relaxed))
+-        })
+-        .ok();
+-    reserved.is_some()
++    // Keep the original atomic budget reservation on the declared Rust MSRV.
++    // `fetch_update` is deprecated on new Rust, while its renamed replacement
++    // is not available to the older toolchains this crate still supports.
++    let mut live = LIVE_ALLOCATED_BYTES.load(Ordering::Relaxed);
++    loop {
++        let Some(next) = live
++            .checked_add(bytes)
++            .filter(|next| *next <= ALLOCATION_LIMIT_BYTES.load(Ordering::Relaxed))
++        else {
++            return false;
++        };
++        match LIVE_ALLOCATED_BYTES.compare_exchange_weak(
++            live,
++            next,
++            Ordering::Relaxed,
++            Ordering::Relaxed,
++        ) {
++            Ok(_) => return true,
++            Err(current) => live = current,
++        }
++    }
+ }
+ 
+ fn enable_translation_memory_budget() {

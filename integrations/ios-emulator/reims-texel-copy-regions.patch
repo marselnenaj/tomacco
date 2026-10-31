@@ -1,0 +1,449 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-paging/src/regions.rs b/reims-vgpu/crates/reims-vgpu-paging/src/regions.rs
+index 01a4b64..f6e249f 100644
+--- a/reims-vgpu/crates/reims-vgpu-paging/src/regions.rs
++++ b/reims-vgpu/crates/reims-vgpu-paging/src/regions.rs
+@@ -93,34 +93,60 @@ pub struct WindowRegion {
+     pub height: u32,
+ }
+ 
+-/// Geometry a window's bytes are laid out under, in the frame's own terms.
+-///
+-/// `pitch_bytes` is the guest's row stride and `width_texels` the frame's
+-/// width; they differ exactly when the guest's rows carry padding. Both are
+-/// taken rather than derived so this module never has to guess which of the two
+-/// a caller meant — the two have been conflated before, and a copy that reads
+-/// `pitch` as `width` writes the padding.
++/// Geometry and texel width are one contract. The byte pitch alone cannot
++/// describe the source image's columns when texels are wider than four bytes.
+ #[derive(Clone, Copy, Debug)]
+ pub struct WindowGeometry {
+     pub pitch_bytes: u64,
+     pub width_texels: u32,
+     pub height_texels: u32,
++    pub bytes_per_texel: u32,
+ }
+ 
+-/// Bytes per texel. This rail is BGRA8 only — the device's `mapping_write`
+-/// refuses any other format by name before reaching here, so widening this is
+-/// a format decision made there and not a constant to generalise on spec.
+-const BYTES_PER_TEXEL: u64 = 4;
++/// A rectangle cannot faithfully represent the requested byte window.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum RegionPlanError {
++    ZeroTexelBytes,
++    PitchTooSmall,
++    PitchNotTexels,
++    ExtentOverflow,
++    RangeNotTexels,
++}
++
++impl RegionPlanError {
++    pub const fn slug(self) -> &'static str {
++        match self {
++            Self::ZeroTexelBytes => "image_regions_zero_texel_bytes",
++            Self::PitchTooSmall => "image_regions_pitch_too_small",
++            Self::PitchNotTexels => "image_regions_pitch_not_texels",
++            Self::ExtentOverflow => "image_regions_extent_overflow",
++            Self::RangeNotTexels => "image_regions_range_not_texels",
++        }
++    }
++}
+ 
+ impl WindowGeometry {
+-    /// One past the last byte the frame's texels occupy: the last texel of the
+-    /// last row, with no trailing padding.
+-    pub fn extent_end(&self) -> u64 {
+-        if self.height_texels == 0 || self.width_texels == 0 {
+-            return 0;
++    /// Validate the layout and return the last texel's exclusive byte bound.
++    /// No partial texel, wrapped extent or row overlap can produce a copy plan.
++    pub fn extent_end(&self) -> Result<u64, RegionPlanError> {
++        let texel = u64::from(self.bytes_per_texel);
++        if texel == 0 {
++            return Err(RegionPlanError::ZeroTexelBytes);
+         }
+-        u64::from(self.height_texels - 1) * self.pitch_bytes
+-            + u64::from(self.width_texels) * BYTES_PER_TEXEL
++        if self.height_texels == 0 || self.width_texels == 0 {
++            return Ok(0);
++        }
++        let row = u64::from(self.width_texels) * texel;
++        if self.pitch_bytes < row {
++            return Err(RegionPlanError::PitchTooSmall);
++        }
++        if !self.pitch_bytes.is_multiple_of(texel) {
++            return Err(RegionPlanError::PitchNotTexels);
++        }
++        u64::from(self.height_texels - 1)
++            .checked_mul(self.pitch_bytes)
++            .and_then(|prefix| prefix.checked_add(row))
++            .ok_or(RegionPlanError::ExtentOverflow)
+     }
+ }
+ 
+@@ -135,20 +161,23 @@ impl WindowGeometry {
+ /// and two fragments, so merging is the difference between three rectangles per
+ /// run and four, over five hundred runs. It is only valid because the copy
+ /// descriptor carries the row stride separately — the caller must set its
+-/// buffer row length to `pitch_bytes / 4` for a merged rectangle to name the
++/// buffer row length to `pitch_bytes / bytes_per_texel` for a merged rectangle to name the
+ /// bytes this function thinks it names.
+-pub fn plan_regions(geom: &WindowGeometry, start: u64, end: u64) -> Vec<WindowRegion> {
++pub fn plan_regions(
++    geom: &WindowGeometry,
++    start: u64,
++    end: u64,
++) -> Result<Vec<WindowRegion>, RegionPlanError> {
+     let mut out = Vec::new();
+-    if geom.pitch_bytes == 0 || geom.width_texels == 0 || geom.height_texels == 0 {
+-        return out;
+-    }
+-    let row_texel_bytes = u64::from(geom.width_texels) * BYTES_PER_TEXEL;
+-    // Never past the frame: a window longer than the texels it describes must
+-    // not turn its tail into rows that do not exist.
+-    let end = end.min(geom.extent_end());
++    let end = end.min(geom.extent_end()?);
+     if start >= end {
+-        return out;
++        return Ok(out);
+     }
++    let texel = u64::from(geom.bytes_per_texel);
++    if !start.is_multiple_of(texel) || !end.is_multiple_of(texel) {
++        return Err(RegionPlanError::RangeNotTexels);
++    }
++    let row_texel_bytes = u64::from(geom.width_texels) * texel;
+     let first_row = start / geom.pitch_bytes;
+     let last_row = (end - 1) / geom.pitch_bytes;
+ 
+@@ -164,8 +193,8 @@ pub fn plan_regions(geom: &WindowGeometry, start: u64, end: u64) -> Vec<WindowRe
+         if seg_start >= seg_end {
+             continue;
+         }
+-        let x = (seg_start - row_start) / BYTES_PER_TEXEL;
+-        let width = (seg_end - seg_start) / BYTES_PER_TEXEL;
++        let x = (seg_start - row_start) / texel;
++        let width = (seg_end - seg_start) / texel;
+         if width == 0 {
+             continue;
+         }
+@@ -200,7 +229,7 @@ pub fn plan_regions(geom: &WindowGeometry, start: u64, end: u64) -> Vec<WindowRe
+             height: 1,
+         });
+     }
+-    out
++    Ok(out)
+ }
+ 
+ #[cfg(test)]
+@@ -208,8 +237,116 @@ mod tests {
+     use super::*;
+     use alloc::vec;
+ 
++    const BYTES_PER_TEXEL: u64 = 4;
++
++    #[test]
++    fn every_texel_width_preserves_fragmented_page_bounds_padding_and_coverage() {
++        for bytes in [1u32, 2, 4, 8, 16] {
++            for (width, height) in [(1, 31), (17, 257), (1170, 31)] {
++                for padding in [0, 6, 48] {
++                    let geom = WindowGeometry {
++                        pitch_bytes: u64::from(width + padding) * u64::from(bytes),
++                        width_texels: width,
++                        height_texels: height,
++                        bytes_per_texel: bytes,
++                    };
++                    for page in [4096u64, 16384] {
++                        for head in [0, u64::from(bytes), page - u64::from(bytes)] {
++                            let mut seen = vec![0u8; width as usize * height as usize];
++                            let mut start = 0;
++                            let mut end = page - head;
++                            let extent = geom.extent_end().unwrap();
++                            while start < extent {
++                                end = end.min(extent);
++                                for region in plan_regions(&geom, start, end).unwrap() {
++                                    assert_eq!(
++                                        region.window_offset,
++                                        u64::from(region.y) * geom.pitch_bytes
++                                            + u64::from(region.x) * u64::from(bytes)
++                                    );
++                                    let last = region.window_offset
++                                        + u64::from(region.height - 1) * geom.pitch_bytes
++                                        + u64::from(region.width) * u64::from(bytes);
++                                    assert!(
++                                        region.window_offset >= start && last <= end,
++                                        "{bytes}-byte texel, {region:?}, run={start}..{end}"
++                                    );
++                                    assert!(region.x + region.width <= width);
++                                    assert!(region.y + region.height <= height);
++                                    for y in region.y..region.y + region.height {
++                                        for x in region.x..region.x + region.width {
++                                            seen[(y * width + x) as usize] += 1;
++                                        }
++                                    }
++                                }
++                                start = end;
++                                end += page;
++                            }
++                            assert!(
++                                seen.iter().all(|&count| count == 1),
++                                "lost or duplicated texel: {geom:?}, page={page}, head={head}"
++                            );
++                        }
++                    }
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn malformed_geometry_and_partial_texels_have_typed_refusals() {
++        let g = WindowGeometry {
++            pitch_bytes: 32,
++            width_texels: 3,
++            height_texels: 2,
++            bytes_per_texel: 8,
++        };
++        assert_eq!(
++            plan_regions(&g, 1, 16),
++            Err(RegionPlanError::RangeNotTexels)
++        );
++        assert_eq!(
++            plan_regions(&g, 0, 15),
++            Err(RegionPlanError::RangeNotTexels)
++        );
++        assert_eq!(
++            WindowGeometry {
++                bytes_per_texel: 0,
++                ..g
++            }
++            .extent_end(),
++            Err(RegionPlanError::ZeroTexelBytes)
++        );
++        assert_eq!(
++            WindowGeometry {
++                pitch_bytes: 16,
++                ..g
++            }
++            .extent_end(),
++            Err(RegionPlanError::PitchTooSmall)
++        );
++        assert_eq!(
++            WindowGeometry {
++                pitch_bytes: 25,
++                ..g
++            }
++            .extent_end(),
++            Err(RegionPlanError::PitchNotTexels)
++        );
++        assert_eq!(
++            WindowGeometry {
++                pitch_bytes: u64::MAX - 7,
++                height_texels: 3,
++                ..g
++            }
++            .extent_end(),
++            Err(RegionPlanError::ExtentOverflow)
++        );
++    }
++
+     fn tight(width: u32, height: u32) -> WindowGeometry {
+         WindowGeometry {
++            bytes_per_texel: 4,
+             pitch_bytes: u64::from(width) * BYTES_PER_TEXEL,
+             width_texels: width,
+             height_texels: height,
+@@ -225,7 +362,7 @@ mod tests {
+     #[test]
+     fn a_full_tight_frame_is_a_single_rectangle() {
+         let g = tight(1920, 1080);
+-        let regions = plan_regions(&g, 0, g.extent_end());
++        let regions = plan_regions(&g, 0, g.extent_end().unwrap()).unwrap();
+         assert_eq!(
+             regions,
+             vec![WindowRegion {
+@@ -256,9 +393,9 @@ mod tests {
+             let g = tight(w, h);
+             let mut seen = vec![0u32; (w as usize) * (h as usize)];
+             let mut offset = 0u64;
+-            while offset < g.extent_end() {
+-                let end = (offset + RUN).min(g.extent_end());
+-                for r in plan_regions(&g, offset, end) {
++            while offset < g.extent_end().unwrap() {
++                let end = (offset + RUN).min(g.extent_end().unwrap());
++                for r in plan_regions(&g, offset, end).unwrap() {
+                     for row in r.y..r.y + r.height {
+                         for col in r.x..r.x + r.width {
+                             seen[(row as usize) * (w as usize) + col as usize] += 1;
+@@ -285,11 +422,12 @@ mod tests {
+     #[test]
+     fn each_rectangles_offset_names_the_byte_its_first_texel_sits_at() {
+         let g = WindowGeometry {
++            bytes_per_texel: 4,
+             pitch_bytes: 7808, // 1920 texels plus 128 bytes of padding
+             width_texels: 1920,
+             height_texels: 64,
+         };
+-        for r in plan_regions(&g, 5000, 40_000) {
++        for r in plan_regions(&g, 5000, 40_000).unwrap() {
+             let expected = u64::from(r.y) * g.pitch_bytes + u64::from(r.x) * BYTES_PER_TEXEL;
+             assert_eq!(
+                 r.window_offset, expected,
+@@ -308,11 +446,12 @@ mod tests {
+     #[test]
+     fn a_padded_pitch_never_covers_the_padding() {
+         let g = WindowGeometry {
++            bytes_per_texel: 4,
+             pitch_bytes: 4096,
+             width_texels: 1000, // 4000 bytes of texels, 96 bytes of padding
+             height_texels: 8,
+         };
+-        let regions = plan_regions(&g, 0, g.extent_end());
++        let regions = plan_regions(&g, 0, g.extent_end().unwrap()).unwrap();
+         assert!(!regions.is_empty());
+         for r in &regions {
+             assert!(
+@@ -322,7 +461,7 @@ mod tests {
+         }
+         // A range lying wholly inside one row's padding covers nothing at all,
+         // rather than covering a zero-width rectangle the driver would reject.
+-        assert!(plan_regions(&g, 4000, 4096).is_empty());
++        assert!(plan_regions(&g, 4000, 4096).unwrap().is_empty());
+     }
+ 
+     /// A range past the frame's last texel contributes nothing.
+@@ -333,10 +472,10 @@ mod tests {
+     #[test]
+     fn the_tail_past_the_last_row_is_not_turned_into_a_row() {
+         let g = tight(64, 4);
+-        let past = g.extent_end();
+-        assert!(plan_regions(&g, past, past + 4096).is_empty());
++        let past = g.extent_end().unwrap();
++        assert!(plan_regions(&g, past, past + 4096).unwrap().is_empty());
+         // And a range straddling the end stops at it.
+-        let regions = plan_regions(&g, past - 8, past + 4096);
++        let regions = plan_regions(&g, past - 8, past + 4096).unwrap();
+         let covered: u64 = regions
+             .iter()
+             .map(|r| u64::from(r.width) * u64::from(r.height) * BYTES_PER_TEXEL)
+@@ -349,16 +488,20 @@ mod tests {
+     #[test]
+     fn degenerate_geometry_plans_nothing() {
+         let zero_pitch = WindowGeometry {
++            bytes_per_texel: 4,
+             pitch_bytes: 0,
+             width_texels: 4,
+             height_texels: 4,
+         };
+-        assert!(plan_regions(&zero_pitch, 0, 64).is_empty());
+-        assert!(plan_regions(&tight(0, 4), 0, 64).is_empty());
+-        assert!(plan_regions(&tight(4, 0), 0, 64).is_empty());
++        assert_eq!(
++            plan_regions(&zero_pitch, 0, 64),
++            Err(RegionPlanError::PitchTooSmall)
++        );
++        assert!(plan_regions(&tight(0, 4), 0, 64).unwrap().is_empty());
++        assert!(plan_regions(&tight(4, 0), 0, 64).unwrap().is_empty());
+         // An inverted or empty range is not a copy.
+         let g = tight(16, 16);
+-        assert!(plan_regions(&g, 100, 100).is_empty());
+-        assert!(plan_regions(&g, 200, 100).is_empty());
++        assert!(plan_regions(&g, 100, 100).unwrap().is_empty());
++        assert!(plan_regions(&g, 200, 100).unwrap().is_empty());
+     }
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
+index 6776d87..52aab0c 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
+@@ -669,6 +669,10 @@ pub enum GuestWriteDecline {
+     /// independently-derived numbers, and a disagreement between them is a
+     /// frame that would land under the wrong pitch.
+     WindowTooSmall { need: u64, have: u64 },
++    /// Byte ranges must form whole texels at the actual image texel width.
++    Regions {
++        reason: reims_vgpu_paging::regions::RegionPlanError,
++    },
+     /// The import itself declined; the inner reason names the step.
+     Import { inner: HostRamDecline },
+ }
+@@ -682,6 +686,7 @@ impl Decline for GuestWriteDecline {
+             Self::ResidentFormatMismatch { .. } => "gpu_writeback_resident_format_mismatch",
+             Self::GeometryMoved { .. } => "gpu_writeback_geometry_moved",
+             Self::WindowTooSmall { .. } => "gpu_writeback_window_too_small",
++            Self::Regions { reason } => reason.slug(),
+             // The inner decline's own slug, so a driver that refuses the pointer
+             // and a range that is too short stay as distinguishable here as they
+             // are at the import site.
+@@ -710,6 +715,7 @@ impl Decline for GuestWriteDecline {
+             Self::WindowTooSmall { need, have } => {
+                 vec![("need", need.to_string()), ("have", have.to_string())]
+             }
++            Self::Regions { .. } => Vec::new(),
+             Self::Import { inner } => inner.fields(),
+         }
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+index 9a3beff..81a4b79 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -3690,6 +3690,7 @@ impl GuestPageTarget {
+             pitch_bytes: self.pitch_bytes(),
+             width_texels: self.width,
+             height_texels: self.height,
++            bytes_per_texel: self.bytes_per_texel() as u32,
+         }
+     }
+ 
+@@ -3856,7 +3857,7 @@ pub fn copy_target_to_guest_pages(
+         // imported pages, so these bytes are the host readback this rail elides
+         // rather than one it paid.
+         counters.note_target_read(
+-            u64::from(dst.width) * u64::from(dst.height) * 4,
++            u64::from(dst.width) * u64::from(dst.height) * dst.bytes_per_texel(),
+             TargetReadDelivery::GuestPagesOnGpu,
+         );
+     }
+@@ -4662,7 +4663,9 @@ unsafe fn plan_guest_copies(
+         let base = bound.offset + bound.head;
+         let start = run.window_offset;
+         let end = start.saturating_add(run.guest.requested());
+-        for r in reims_vgpu_paging::regions::plan_regions(&geom, start, end) {
++        let regions = reims_vgpu_paging::regions::plan_regions(&geom, start, end)
++            .map_err(|reason| DrawError::GuestPageWrite(GuestWriteDecline::Regions { reason }))?;
++        for r in regions {
+             let region = ash::vk::BufferImageCopy::default()
+                 // The rectangle's own offset is in window bytes; `- start`
+                 // re-bases it onto this run, which is what `base` names.
+@@ -6282,6 +6285,32 @@ mod engine_lock_census_tests {
+ mod guest_page_target_tests {
+     use super::*;
+ 
++    #[test]
++    fn padded_half_float_panel_never_copies_past_a_guest_page_run() {
++        let mut dst = target(1170, 2532, 1176);
++        dst.format = ash::vk::Format::R16G16B16A16_SFLOAT;
++        let geom = dst.geometry();
++        let mut covered = 0u64;
++        for start in (0..dst.extent_end()).step_by(16 * 1024) {
++            let end = (start + 16 * 1024).min(dst.extent_end());
++            for rect in reims_vgpu_paging::regions::plan_regions(&geom, start, end).unwrap() {
++                let copied_end = rect.window_offset
++                    + u64::from(rect.height - 1) * 9408
++                    + u64::from(rect.width) * 8;
++                assert!(
++                    rect.window_offset >= start && copied_end <= end,
++                    "rectangle {rect:?} writes to {copied_end} outside guest run {start}..{end}"
++                );
++                assert_eq!(
++                    rect.window_offset,
++                    u64::from(rect.y) * 9408 + u64::from(rect.x) * 8
++                );
++                covered += u64::from(rect.width) * u64::from(rect.height) * 8;
++            }
++        }
++        assert_eq!(covered, 1170 * 2532 * 8);
++    }
++
+     #[test]
+     fn synchronization_settles_only_the_identical_shared_allocation() {
+         let backing = GuestTargetBacking {

@@ -1,0 +1,374 @@
+reims-vgpu: shader-evaluated blending on XR formats 551, 552, 553 and 555.
+
+Metal: blending is available on every XR format. The AGX software blend
+clamps the fragment's linear source to the format's published range before
+the binary16 blend steps: the recovered PBE15 payload of 550/554,
+0xbf40c0be..0x3fa0201d, is the documented decimal range -0.752941..1.25098
+(the decoded codes 0 and 1022, rounded), not the exact code endpoints.
+Before: `source_clamp` admitted only 550 and 554; a blended draw on 551, 552,
+553 or 555 was refused with `vk_xr_blend_format_unqualified`.
+Now: the clamp follows the rule the recovered payload follows. The sRGB
+spellings 551, 553 and 555 clamp the linear source to their own published
+range -0.5271..1.66894 (their decoded codes 0 and 1022, as the xr_upload
+tables already cite from Apple's prose); 552 shares 554's colour range; every
+XR alpha clamps to 0..1. Arithmetic, destination read and RTNE encoding are
+unchanged. The refusal variant is removed; blend-colour and dual-source
+factors keep `vk_xr_blend_factor_unsupported`.
+Tests: `color_quantization::tests::source_over_on_every_xr_format_moves_into_the_shader_and_reads_its_target`,
+`the_srgb_spellings_clamp_to_their_own_published_range_in_linear_light`
+(unit); `vk_engine_parity::framebuffer_fetch_blends_every_remaining_xr_format_with_its_published_clamp`
+on RADV (refused before): source-over twice over a clear stores codes
+873/868/923 on the sRGB formats and 847/836/962 on 552; an opaque linear 2.0
+stores 1022 (1023 unclamped) and 1.5 beside it stores 993 on an sRGB target
+(947 with the linear formats' clamp bits).
+
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
+index 2b2f3c8..22c709e 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
+@@ -20,7 +20,7 @@ use metal2vulkan::fragment_color::{
+     ColorChannelEncoding, ColorQuantizationRefusal, ColorTransfer, DestinationInput,
+     FragmentColorEncoding, OutputPrecision, ProgrammableBlend, SourceClamp,
+ };
+-use reims_vgpu_core::pixel_format::{PlanarXrFormat, XrFormat};
++use reims_vgpu_core::pixel_format::XrFormat;
+ use reims_vgpu_vulkan::pixel::XrRenderFormat;
+ 
+ use super::draw_validation::DrawValidationDecline;
+@@ -62,24 +62,27 @@ pub(super) fn pipeline_blend(
+     blend.filter(|_| format.is_none()).map(|b| b.key())
+ }
+ 
+-/// The original PBE source clamp of an XR format, where one is established.
++/// The PBE source clamp of an XR format: its published value range.
+ ///
+ /// Formats 550 and 554 share PBE-source enum 15, whose clamp payload is
+ /// `0xbf40c0be..0x3fa0201d` for colour and `0..1` for alpha (AGX compiler
+ /// format table). Those bits
+ /// are the documented decimal range `-0.752941..1.25098`, slightly inside the
+-/// exact code-0 and code-1022 values. The other XR formats have no recovered
+-/// clamp and keep their blend refusal.
+-fn source_clamp(format: XrRenderFormat) -> Option<[SourceClamp; 4]> {
+-    match format {
+-        XrRenderFormat::NativeSurface(PlanarXrFormat::Rgb10Alpha8)
+-        | XrRenderFormat::Interleaved(XrFormat::Bgr10) => {}
+-        _ => return None,
+-    }
+-    let colour =
+-        SourceClamp::checked(f32::from_bits(0xbf40_c0be), f32::from_bits(0x3fa0_201d)).ok()?;
+-    let alpha = SourceClamp::checked(0.0, 1.0).ok()?;
+-    Some([colour, colour, colour, alpha])
++/// exact code-0 and code-1022 values: the payload is the range Apple publishes
++/// for the format. The sRGB spellings publish `-0.5271..1.66894`, their own
++/// code-0 and code-1022 values in linear light, and clamp the linear source to
++/// that range; no separate compiler payload is recovered for them, the rule is
++/// the one the recovered payload follows. BGRA10 shares BGR10's colour range.
++/// Every XR alpha clamps to `0..1`.
++fn source_clamp(format: XrRenderFormat) -> Result<[SourceClamp; 4], ColorQuantizationRefusal> {
++    let (minimum, maximum) = if format.is_srgb() {
++        (-0.5271, 1.66894)
++    } else {
++        (f32::from_bits(0xbf40_c0be), f32::from_bits(0x3fa0_201d))
++    };
++    let colour = SourceClamp::checked(minimum, maximum)?;
++    let alpha = SourceClamp::checked(0.0, 1.0)?;
++    Ok([colour, colour, colour, alpha])
+ }
+ 
+ /// The first declared blend term the shader cannot evaluate.
+@@ -138,7 +141,7 @@ fn equation(
+     })
+ }
+ 
+-/// The shader blend of one XR slot, admitted from the format's original clamp
++/// The shader blend of one XR slot, admitted from the format's published clamp
+ /// and the declared factors.
+ fn programmable_blend(
+     slot: u32,
+@@ -146,7 +149,9 @@ fn programmable_blend(
+     blend: BlendKey,
+ ) -> Result<ProgrammableBlend, DrawValidationDecline> {
+     let source_clamp =
+-        source_clamp(format).ok_or(DrawValidationDecline::XrBlendFormatUnqualified { slot })?;
++        source_clamp(format).map_err(|e| DrawValidationDecline::XrFragmentOutput {
++            reason: e.to_string(),
++        })?;
+     let refused = |term| match term {
+         UnsupportedTerm::Factor(ordinal) => {
+             DrawValidationDecline::XrBlendFactorUnsupported { slot, ordinal }
+@@ -377,6 +382,7 @@ mod tests {
+     use super::*;
+     use crate::backend::vulkan::engine::types::{ColorAttachmentState, ColorClearValue};
+     use reims_vgpu_core::blend::{BlendFactor, BlendOperation};
++    use reims_vgpu_core::pixel_format::PlanarXrFormat;
+ 
+     fn blend(src: BlendFactor, dst: BlendFactor) -> BlendStateResource {
+         BlendStateResource {
+@@ -408,9 +414,19 @@ mod tests {
+ 
+     const NATIVE: XrRenderFormat = XrRenderFormat::NativeSurface(PlanarXrFormat::Rgb10Alpha8);
+ 
++    /// 550, 551, 552, 553, 554 and 555.
++    const EVERY_FORMAT: [XrRenderFormat; 6] = [
++        NATIVE,
++        XrRenderFormat::NativeSurface(PlanarXrFormat::Rgb10Alpha8Srgb),
++        XrRenderFormat::Interleaved(XrFormat::Bgra10),
++        XrRenderFormat::Interleaved(XrFormat::Bgra10Srgb),
++        XrRenderFormat::Interleaved(XrFormat::Bgr10),
++        XrRenderFormat::Interleaved(XrFormat::Bgr10Srgb),
++    ];
++
+     #[test]
+-    fn source_over_on_a_clamped_xr_format_moves_into_the_shader_and_reads_its_target() {
+-        for format in [NATIVE, XrRenderFormat::Interleaved(XrFormat::Bgr10)] {
++    fn source_over_on_every_xr_format_moves_into_the_shader_and_reads_its_target() {
++        for format in EVERY_FORMAT {
+             let req = xr_draw(
+                 format,
+                 Some(blend(BlendFactor::One, BlendFactor::OneMinusSourceAlpha)),
+@@ -440,21 +456,7 @@ mod tests {
+     }
+ 
+     #[test]
+-    fn unqualified_formats_and_unrepresentable_factors_keep_typed_refusals() {
+-        use reims_vgpu_core::pixel_format::XrFormat as F;
+-        let source_over = Some(blend(BlendFactor::One, BlendFactor::OneMinusSourceAlpha));
+-        for format in [
+-            XrRenderFormat::Interleaved(F::Bgra10),
+-            XrRenderFormat::Interleaved(F::Bgra10Srgb),
+-            XrRenderFormat::Interleaved(F::Bgr10Srgb),
+-            XrRenderFormat::NativeSurface(PlanarXrFormat::Rgb10Alpha8Srgb),
+-        ] {
+-            assert_eq!(
+-                decline(&xr_draw(format, source_over)),
+-                "vk_xr_blend_format_unqualified",
+-                "{format:?}"
+-            );
+-        }
++    fn unrepresentable_factors_and_unknown_operations_keep_typed_refusals() {
+         for factor in [
+             BlendFactor::BlendColor,
+             BlendFactor::OneMinusBlendAlpha,
+@@ -475,15 +477,40 @@ mod tests {
+ 
+     #[test]
+     fn the_original_pbe15_clamp_is_the_documented_decimal_xr_range() {
+-        let [red, _, _, alpha] = source_clamp(NATIVE).unwrap();
+-        // Apple's published range, not the exact code endpoints: -384/510 and
+-        // 638/510 round to bits three ulps further out.
+-        let documented = SourceClamp::checked(-0.752941, 1.25098).unwrap();
+-        assert_eq!(red, documented);
+-        assert_ne!(
+-            red,
+-            SourceClamp::checked(-384.0 / 510.0, 638.0 / 510.0).unwrap()
+-        );
+-        assert_eq!(alpha, SourceClamp::checked(0.0, 1.0).unwrap());
++        for format in [
++            NATIVE,
++            XrRenderFormat::Interleaved(XrFormat::Bgr10),
++            XrRenderFormat::Interleaved(XrFormat::Bgra10),
++        ] {
++            let [red, green, blue, alpha] = source_clamp(format).unwrap();
++            // Apple's published range, not the exact code endpoints: -384/510
++            // and 638/510 round to bits three ulps further out.
++            let documented = SourceClamp::checked(-0.752941, 1.25098).unwrap();
++            assert_eq!(red, documented, "{format:?}");
++            assert_eq!([green, blue], [documented; 2]);
++            assert_ne!(
++                red,
++                SourceClamp::checked(-384.0 / 510.0, 638.0 / 510.0).unwrap()
++            );
++            assert_eq!(alpha, SourceClamp::checked(0.0, 1.0).unwrap());
++        }
++    }
++
++    #[test]
++    fn the_srgb_spellings_clamp_to_their_own_published_range_in_linear_light() {
++        for format in [
++            XrRenderFormat::NativeSurface(PlanarXrFormat::Rgb10Alpha8Srgb),
++            XrRenderFormat::Interleaved(XrFormat::Bgra10Srgb),
++            XrRenderFormat::Interleaved(XrFormat::Bgr10Srgb),
++        ] {
++            let [red, green, blue, alpha] = source_clamp(format).unwrap();
++            // Code 0 decodes to -0.5271151 and code 1022 to 1.6689452: the
++            // published decimals, as the PBE15 payload is for the linear range.
++            let documented = SourceClamp::checked(-0.5271, 1.66894).unwrap();
++            assert_eq!(red, documented, "{format:?}");
++            assert_eq!([green, blue], [documented; 2]);
++            assert_ne!(red, source_clamp(NATIVE).unwrap()[0]);
++            assert_eq!(alpha, SourceClamp::checked(0.0, 1.0).unwrap());
++        }
+     }
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
+index de1fdc2..b8f39bd 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
+@@ -44,11 +44,6 @@ pub enum DrawValidationDecline {
+     },
+     EmptyVertexSpirv,
+     EmptyFragmentSpirv,
+-    /// An XR format whose original source clamp is not recovered; its
+-    /// blend cannot be evaluated before quantization.
+-    XrBlendFormatUnqualified {
+-        slot: u32,
+-    },
+     /// A blend-colour, dual-source or unknown factor on an XR target. Its
+     /// operand is not part of the shader that evaluates the blend.
+     XrBlendFactorUnsupported {
+@@ -270,7 +265,6 @@ impl Decline for DrawValidationDecline {
+             Self::ZeroTargetGeometry { .. } => "vk_draw_validate_zero_target_geometry",
+             Self::EmptyVertexSpirv => "vk_draw_validate_empty_vertex_spirv",
+             Self::EmptyFragmentSpirv => "vk_draw_validate_empty_fragment_spirv",
+-            Self::XrBlendFormatUnqualified { .. } => "vk_xr_blend_format_unqualified",
+             Self::XrBlendFactorUnsupported { .. } => "vk_xr_blend_factor_unsupported",
+             Self::XrBlendOperationUnknown { .. } => "vk_xr_blend_operation_unknown",
+             Self::XrResolveRequiresQuantization { .. } => "vk_xr_resolve_requires_quantization",
+@@ -576,7 +570,6 @@ impl Decline for DrawValidationDecline {
+                 ("lod_min", f32::from_bits(*lod_min_bits).to_string()),
+                 ("lod_max", f32::from_bits(*lod_max_bits).to_string()),
+             ],
+-            Self::XrBlendFormatUnqualified { slot } => vec![("slot", slot.to_string())],
+             Self::XrBlendFactorUnsupported { slot, ordinal }
+             | Self::XrBlendOperationUnknown { slot, ordinal } => {
+                 vec![("slot", slot.to_string()), ("ordinal", ordinal.to_string())]
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index 7fd2ea0..a10ba5e 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -5497,3 +5497,135 @@ void main() { primary=vec4(0.51875,0.75,-0.25,0.51875); }
+         }
+     }
+ }
++
++/// Blending on the four remaining XR spellings. The sRGB formats clamp the
++/// linear source to their published range `-0.5271..1.66894`, BGRA10 to
++/// BGR10's `-0.752941..1.25098` and every alpha to `0..1`; the blend then runs
++/// in binary16 steps and the RTNE encoder stores the result. A linear `1.5`
++/// on an sRGB target stores code 993 (the linear formats' clamp would store
++/// 947) and the `2.0` beside it stores 1022 (unclamped: 1023).
++#[test]
++fn framebuffer_fetch_blends_every_remaining_xr_format_with_its_published_clamp() {
++    use reims_vgpu_protocol::pixel_format::{
++        MTL_FORMAT_BGR10_XR_SRGB, MTL_FORMAT_BGRA10_XR, MTL_FORMAT_BGRA10_XR_SRGB,
++        MTL_FORMAT_RGB10A8_2P_XR10_SRGB,
++    };
++    use reims_vgpu_vulkan::pixel::{quantized_xr_render_values, XrRenderFormat};
++    let _g = engine_test_session();
++    let v = framebuffer_fetch_glsl("vertex", FETCH_VERTEX);
++    let clear = [0.5, 0.0, 1.0, 0.5];
++    let clamp = |format: XrRenderFormat, channel: usize, value: f32| -> f32 {
++        let (minimum, maximum) = if channel == 3 {
++            (0.0, 1.0)
++        } else if format.is_srgb() {
++            (-0.5271, 1.66894)
++        } else {
++            (f32::from_bits(0xbf40_c0be), f32::from_bits(0x3fa0_201d))
++        };
++        value.max(minimum).min(maximum)
++    };
++    // Two coincident triangles blend twice over the clear; one opaque
++    // triangle exposes the clamp. The reference colour codes guard the cases.
++    let srgb_cases = [
++        ([0.592f32, 0.634, 0.696, 0.6], 6, [873, 868, 923]),
++        ([2.0, 1.5, -0.9, 1.0], 3, [1022, 993, 0]),
++    ];
++    let linear_cases = [
++        ([0.592f32, 0.634, 0.696, 0.6], 6, [847, 836, 962]),
++        ([1.3, -0.9, 0.3, 1.0], 3, [1022, 0, 537]),
++    ];
++    let slots = [
++        (0u64, MTL_FORMAT_RGB10A8_2P_XR10_SRGB, 0),
++        (1, MTL_FORMAT_RGB10A8_2P_XR10_SRGB, 1),
++        (2, MTL_FORMAT_BGRA10_XR, 0),
++        (3, MTL_FORMAT_BGRA10_XR_SRGB, 0),
++        (4, MTL_FORMAT_BGR10_XR_SRGB, 0),
++        (5, MTL_FORMAT_BGR10_XR_SRGB, 1),
++    ];
++    for (n, mtl, slot) in slots {
++        let format = XrRenderFormat::from_mtl(mtl).unwrap();
++        let cases = if format.is_srgb() {
++            srgb_cases
++        } else {
++            linear_cases
++        };
++        for (m, (source, vertex_count, reference)) in cases.into_iter().enumerate() {
++            let f = framebuffer_fetch_glsl(
++                "fragment",
++                &format!(
++                    "#version 450
++layout(location=0) out vec4 primary;
++layout(location=1) out vec4 secondary;
++void main() {{ vec4 xr=vec4({:?},{:?},{:?},{:?}); primary={}; secondary=xr; }}
++",
++                    source[0],
++                    source[1],
++                    source[2],
++                    source[3],
++                    if slot == 0 { "xr" } else { "vec4(0,0,0,1)" }
++                ),
++            );
++            let identity = TargetIdentity::Gva {
++                gva: 0x2d9000 + n * 0x2000 + m as u64 * 0x1000,
++                width: 8,
++                height: 8,
++                generation: 1,
++                format: ash::vk::Format::R32G32B32A32_SFLOAT,
++            };
++            let source_over = BlendStateResource {
++                src_rgb: MTL_BLEND_FACTOR_ONE,
++                dst_rgb: MTL_BLEND_FACTOR_ONE_MINUS_SOURCE_ALPHA,
++                op_rgb: MTL_BLEND_OPERATION_ADD,
++                src_alpha: MTL_BLEND_FACTOR_ONE,
++                dst_alpha: MTL_BLEND_FACTOR_ONE_MINUS_SOURCE_ALPHA,
++                op_alpha: MTL_BLEND_OPERATION_ADD,
++            };
++            let mut req = engine_req(&v, &f, 8, 8);
++            req.vertex_count = vertex_count;
++            if slot == 0 {
++                req.target_identity = Some(identity.clone());
++                req.color_attachment = Some(color_attachment(mtl, clear));
++                req.blend = Some(source_over);
++                req.color_write_mask = engine::ColorWriteMask::ALL;
++                req.skip_readback = true;
++            } else {
++                req.secondary_targets.push(SecondaryColorTarget {
++                    identity: identity.clone(),
++                    width: 8,
++                    height: 8,
++                    attachment: color_attachment(mtl, clear),
++                    load: false,
++                    seed: None,
++                    blend: Some(source_over),
++                    color_write_mask: engine::ColorWriteMask::ALL,
++                });
++            }
++            engine::execute_draw_request(engine_device(), &req)
++                .unwrap_or_else(|e| panic!("{format:?} slot {slot} case {m}: {e:?}"));
++
++            // Clamp, round to binary16, blend in rounded steps, then quantize.
++            let s: [f32; 4] = std::array::from_fn(|c| binary16(clamp(format, c, source[c])));
++            let mut d = quantized_xr_render_values(format, clear.map(|v| v as f32));
++            for _ in 0..vertex_count / 3 {
++                let inverse = binary16(1.0 - s[3]);
++                let blended: [f32; 4] =
++                    std::array::from_fn(|c| binary16(s[c] + binary16(binary16(d[c]) * inverse)));
++                d = quantized_xr_render_values(format, blended);
++            }
++            let expected = xr_stored_codes(format, d);
++            assert_eq!(expected[..3], reference, "{format:?}: reference changed");
++            let actual = engine::read_target_texels(&identity).unwrap().pixels;
++            assert_eq!(actual.len(), 64 * 16);
++            for texel in actual.as_chunks::<16>().0 {
++                let texel: [f32; 4] = std::array::from_fn(|c| {
++                    f32::from_le_bytes(texel[c * 4..c * 4 + 4].try_into().unwrap())
++                });
++                assert_eq!(
++                    xr_stored_codes(format, texel),
++                    expected,
++                    "{format:?} slot {slot} case {m}: {texel:?}"
++                );
++            }
++        }
++    }
++}

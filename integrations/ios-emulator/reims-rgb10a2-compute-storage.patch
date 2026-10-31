@@ -1,0 +1,626 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -637,6 +637,8 @@
+     Rg8Unorm = 10,
+     Rgba32Uint = 11,
+     R32Uint = 12,
++    /// Native packed normalized compute output; host storage support is optional.
++    Rgb10a2Unorm = 13,
+ }
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+@@ -2118,6 +2120,7 @@
+     Some(match format {
+         MTL_FORMAT_R8_UNORM => StorageImageSelector::R8Unorm,
+         MTL_FORMAT_R32_UINT => StorageImageSelector::R32Uint,
++        MTL_FORMAT_RGB10A2_UNORM => StorageImageSelector::Rgb10a2Unorm,
+         MTL_FORMAT_RG8_UNORM => StorageImageSelector::Rg8Unorm,
+         MTL_FORMAT_R16_FLOAT => StorageImageSelector::R16Float,
+         MTL_FORMAT_RG16_FLOAT => StorageImageSelector::Rg16Float,
+@@ -4939,6 +4942,7 @@
+         let expected: &[(u16, u32)] = &[
+             (MTL_FORMAT_R8_UNORM, R8_BPP),
+             (MTL_FORMAT_R32_UINT, R32_BPP),
++            (MTL_FORMAT_RGB10A2_UNORM, 4),
+             (MTL_FORMAT_RG8_UNORM, RG8_BPP),
+             (MTL_FORMAT_R16_FLOAT, R16F_BPP),
+             (MTL_FORMAT_RG16_FLOAT, RG16F_BPP),
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -1030,13 +1030,10 @@
+     /// it sits here rather than in the storage selector.
+     Rgba16Unorm,
+     /// Ten bits per colour channel and two of alpha in one packed word, red in
+-    /// the low bits (`MTLPixelFormatRGB10A2Unorm`); **sampled-image only**.
+-    ///
+-    /// Here for [`Self::R16Unorm`]'s reason: Vulkan mandates
+-    /// `A2B10G10R10_UNORM_PACK32` for `SAMPLED_IMAGE` and
+-    /// `SAMPLED_IMAGE_FILTER_LINEAR` and mandates nothing for `STORAGE_IMAGE`,
+-    /// so it is reachable through `translate::pixel::sampled_image` and not
+-    /// through [`storage_image`].
++    /// the low bits (`MTLPixelFormatRGB10A2Unorm`). Compute storage preserves
++    /// that packed word; it requires measured host STORAGE_IMAGE and transfer
++    /// support, checked before image allocation. The shader uses SPIR-V
++    /// `Rgb10A2`, whose compatible format is `A2B10G10R10_UNORM_PACK32`.
+     Rgb10a2Unorm,
+     /// [`Self::Rgb10a2Unorm`] with the colour channels the other way round in
+     /// the word (`MTLPixelFormatBGR10A2Unorm`); **sampled-image only**.
+@@ -1171,6 +1168,7 @@
+         S::Rg8Unorm => StorageImageFormat::Rg8Unorm,
+         S::Rgba32Uint => StorageImageFormat::Rgba32Uint,
+         S::R32Uint => StorageImageFormat::R32Uint,
++        S::Rgb10a2Unorm => StorageImageFormat::Rgb10a2Unorm,
+     }
+ }
+ 
+@@ -1274,7 +1272,6 @@
+         pf::MTL_FORMAT_RG16_UNORM => StorageImageFormat::Rg16Unorm,
+         pf::MTL_FORMAT_RG16_UINT => StorageImageFormat::Rg16Uint,
+         pf::MTL_FORMAT_RGBA16_UNORM => StorageImageFormat::Rgba16Unorm,
+-        pf::MTL_FORMAT_RGB10A2_UNORM => StorageImageFormat::Rgb10a2Unorm,
+         pf::MTL_FORMAT_BGR10A2_UNORM => StorageImageFormat::Bgr10a2Unorm,
+         pf::MTL_FORMAT_RG11B10_FLOAT => StorageImageFormat::Rg11b10Float,
+         _ => return storage_image(mtl),
+@@ -2535,3 +2532,23 @@
+         assert!(checked > 30, "only {checked} uncompressed formats reached");
+     }
+ }
++
++#[cfg(test)]
++mod rgb10a2_storage_tests {
++    use super::*;
++    #[test]
++    fn rgb10a2_storage_and_sampled_binds_share_the_exact_packed_layout() {
++        use reims_vgpu_core::pixel_format as p;
++        let format = storage_image(p::MTL_FORMAT_RGB10A2_UNORM).unwrap();
++        assert_eq!(format, StorageImageFormat::Rgb10a2Unorm);
++        assert_eq!(sampled_image(p::MTL_FORMAT_RGB10A2_UNORM), Ok(format));
++        assert_eq!(format.vk_format(), vk::Format::A2B10G10R10_UNORM_PACK32);
++        assert_eq!(format.bytes_per_texel(), 4);
++        assert_eq!(
++            verbatim_texel(p::MTL_FORMAT_RGB10A2_UNORM),
++            Some((vk::Format::A2B10G10R10_UNORM_PACK32, 4))
++        );
++        assert!(storage_image(p::MTL_FORMAT_BGR10A2_UNORM).is_err());
++        assert!(storage_image(p::MTL_FORMAT_RGB10A2_UINT).is_err());
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/metal/format.rs b/reims-vgpu/crates/reims-vgpu/src/backend/metal/format.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/metal/format.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/metal/format.rs
+@@ -58,6 +58,7 @@
+         S::Rg8Unorm => (MTLPixelFormat::RG8Unorm, 2),
+         S::Rgba32Uint => (MTLPixelFormat::RGBA32Uint, 16),
+         S::R32Uint => (MTLPixelFormat::R32Uint, 4),
++        S::Rgb10a2Unorm => (MTLPixelFormat::RGB10A2Unorm, 4),
+     }
+ }
+ 
+@@ -176,6 +177,12 @@
+                 MTLPixelFormat::R32Uint,
+                 4,
+                 pf::MTL_FORMAT_R32_UINT,
++            ),
++            (
++                S::Rgb10a2Unorm,
++                MTLPixelFormat::RGB10A2Unorm,
++                4,
++                pf::MTL_FORMAT_RGB10A2_UNORM,
+             ),
+         ];
+         for (selector, metal, bytes, mtl) in cases {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/device_features.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/device_features.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/device_features.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/device_features.rs
+@@ -33,6 +33,14 @@
+ use ash::vk;
+ 
+ use crate::protocol::pixel_format::TexelLayout;
++
++fn rgb10a2_storage_supported(features: vk::FormatFeatureFlags) -> bool {
++    features.contains(
++        vk::FormatFeatureFlags::STORAGE_IMAGE
++            | vk::FormatFeatureFlags::TRANSFER_SRC
++            | vk::FormatFeatureFlags::TRANSFER_DST,
++    )
++}
+ 
+ /// How this device can satisfy `MTLSamplerAddressModeMirrorClampToEdge`.
+ ///
+@@ -227,6 +235,9 @@
+     /// spec-mandatory — only `R8G8B8A8_UNORM` is — so the BGRA composite path
+     /// needs this *and* `storage_image_write_without_format`.
+     pub bgra8_storage: bool,
++    /// Optimal RGB10A2 images support storage plus both upload/readback transfers.
++    /// This is a per-format capability, independent of extended shader formats.
++    pub rgb10a2_storage: bool,
+     /// For each [`TexelLayout`], indexed by [`TexelLayout::index`], whether its
+     /// Vulkan format is usable as a sampled image with **linear** filtering
+     /// under optimal tiling.
+@@ -512,6 +523,20 @@
+         self.storage_image_write_without_format && self.bgra8_storage
+     }
+ 
++    /// Optional packed storage is checked at the image owner's boundary.
++    /// Sampled binds do not ask this storage-only question.
++    pub fn compute_storage_format_supported(
++        &self,
++        format: reims_vgpu_vulkan::pixel::StorageImageFormat,
++    ) -> bool {
++        use reims_vgpu_vulkan::pixel::StorageImageFormat as F;
++        match format {
++            F::Rgb10a2Unorm => self.rgb10a2_storage,
++            // Existing storage admissions keep their capability policies.
++            _ => true,
++        }
++    }
++
+     /// The `vk::PhysicalDeviceFeatures` to enable, derived from what is
+     /// supported **and** what the backend actually binds.
+     ///
+@@ -687,6 +712,7 @@
+             storage_image_write_without_format,
+             storage_image_read_without_format,
+             bgra8_storage,
++            rgb10a2_storage,
+             texture_compression_bc,
+             sampled_linear_filter,
+             color_attachment,
+@@ -750,7 +776,7 @@
+              storage_image_extended_formats={storage_image_extended_formats} \
+              storage_image_write_without_format={storage_image_write_without_format} \
+              storage_image_read_without_format={storage_image_read_without_format} \
+-             bgra8_storage={bgra8_storage} no_linear_filter={} no_blendable_attachment={} \
++             bgra8_storage={bgra8_storage} rgb10a2_storage={rgb10a2_storage} no_linear_filter={} no_blendable_attachment={} \
+              storage16={storage16} storage8={storage8} float16={float16} int8={int8} \
+              shader_output_viewport_index={shader_output_viewport_index} \
+              timeline_semaphore={timeline_semaphore} \
+@@ -848,6 +874,13 @@
+     }
+     .optimal_tiling_features
+     .contains(vk::FormatFeatureFlags::STORAGE_IMAGE);
++
++    let rgb10a2_storage = rgb10a2_storage_supported(
++        unsafe {
++            instance.get_physical_device_format_properties(pd, vk::Format::A2B10G10R10_UNORM_PACK32)
++        }
++        .optimal_tiling_features,
++    );
+ 
+     // One probe per sampled texel layout, so the native rails decline a layout
+     // this host cannot filter instead of sampling it wrong. Derived from
+@@ -1041,6 +1074,7 @@
+         storage_image_read_without_format: supported.shader_storage_image_read_without_format
+             == vk::TRUE,
+         bgra8_storage,
++        rgb10a2_storage,
+         sampled_linear_filter,
+         color_attachment,
+         storage16: supported_16.storage_buffer16_bit_access == vk::TRUE,
+@@ -1058,6 +1092,29 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++
++    #[test]
++    fn rgb10a2_storage_requires_each_format_usage_not_just_shader_features() {
++        use reims_vgpu_vulkan::pixel::StorageImageFormat as F;
++        let required = vk::FormatFeatureFlags::STORAGE_IMAGE
++            | vk::FormatFeatureFlags::TRANSFER_SRC
++            | vk::FormatFeatureFlags::TRANSFER_DST;
++        assert!(rgb10a2_storage_supported(required));
++        for missing in [
++            vk::FormatFeatureFlags::STORAGE_IMAGE,
++            vk::FormatFeatureFlags::TRANSFER_SRC,
++            vk::FormatFeatureFlags::TRANSFER_DST,
++        ] {
++            assert!(!rgb10a2_storage_supported(required & !missing));
++        }
++        let mut features = all_supported();
++        features.rgb10a2_storage = false;
++        assert!(features.storage_image_extended_formats);
++        assert!(!features.compute_storage_format_supported(F::Rgb10a2Unorm));
++        assert!(features.compute_storage_format_supported(F::Rgba8Unorm));
++        features.rgb10a2_storage = true;
++        assert!(features.compute_storage_format_supported(F::Rgb10a2Unorm));
++    }
+ 
+     fn all_supported() -> DeviceFeatures {
+         DeviceFeatures {
+@@ -1091,6 +1148,7 @@
+             storage_image_write_without_format: true,
+             storage_image_read_without_format: true,
+             bgra8_storage: true,
++            rgb10a2_storage: true,
+             sampled_linear_filter: [true; TexelLayout::ALL.len()],
+             color_attachment: [true; TexelLayout::ALL.len()],
+             storage16: true,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/images_and_registry.rs
+@@ -136,6 +136,11 @@
+         key: StorageImageKey,
+         counters: &EngineCounters,
+     ) -> Result<StorageImageSlot, DrawError> {
++        if !key.sampled_only && !ctx.features.compute_storage_format_supported(key.format) {
++            return Err(DrawError::Unsupported(
++                reason::DrawReason::StorageImageFormatUnsupported { format: key.format },
++            ));
++        }
+         if let Some(slot) = self.storage_image_free.take(&key) {
+             self.storage_image_live.push(StorageImageSlot {
+                 image: slot.image,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/reason.rs
+@@ -259,6 +259,10 @@
+     StorageImageNeedsComponentMapping {
+         format: crate::backend::vulkan::engine::types::StorageImageFormat,
+     },
++    /// Required optimal storage/transfer usage is unavailable for this format.
++    StorageImageFormatUnsupported {
++        format: crate::backend::vulkan::engine::types::StorageImageFormat,
++    },
+     /// No device-local memory type for a shared optimal-image slab.
+     NoDeviceLocalMemoryForSlab {
+         memory_type_bits: u32,
+@@ -383,6 +387,7 @@
+             Self::StorageImageNeedsComponentMapping { .. } => {
+                 "storage_image_needs_component_mapping"
+             }
++            Self::StorageImageFormatUnsupported { .. } => "storage_image_format_unsupported",
+             Self::NoDeviceLocalMemoryForSlab { .. } => "no_device_local_memory_for_slab",
+             Self::NoDeviceLocalMemoryForMrtSecondary { .. } => {
+                 "no_device_local_memory_for_mrt_secondary"
+@@ -477,6 +482,7 @@
+                 write!(f, " memory_type_bits={memory_type_bits:#x}")
+             }
+             Self::QueueCannotPresent { queue_family } => write!(f, " queue_family={queue_family}"),
++            Self::StorageImageFormatUnsupported { format } => write!(f, " format={format:?}"),
+             Self::DescriptorArrayUnsupported {
+                 binding,
+                 count,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/spirv_bind.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/spirv_bind.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/spirv_bind.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/spirv_bind.rs
+@@ -251,6 +251,8 @@
+     Rgba8Uint,
+     Rgba8Sint,
+     Rgba8Unorm,
++    /// SPIR-V `Rgb10A2` (11), compatible with A2B10G10R10_UNORM_PACK32.
++    Rgb10a2Unorm,
+     Rg16Float,
+     R8Unorm,
+     Rg8Unorm,
+@@ -291,6 +293,7 @@
+             4 => Self::Rgba8Unorm,
+             7 => Self::Rg16Float,
+             9 => Self::R16Float,
++            11 => Self::Rgb10a2Unorm,
+             13 => Self::Rg8Unorm,
+             15 => Self::R8Unorm,
+             23 => Self::Rgba8Sint,
+@@ -310,6 +313,7 @@
+             Self::Rgba8Unorm => 4,
+             Self::Rg16Float => 7,
+             Self::R16Float => 9,
++            Self::Rgb10a2Unorm => 11,
+             Self::Rg8Unorm => 13,
+             Self::R8Unorm => 15,
+             Self::Rgba8Sint => 23,
+@@ -5623,3 +5627,14 @@
+         assert_eq!(sampler_bindings(&words), vec![66]);
+     }
+ }
++
++#[cfg(test)]
++mod rgb10a2_storage_tests {
++    use super::*;
++    #[test]
++    fn rgb10a2_format_roundtrips_and_requires_extended_storage_formats() {
++        assert_eq!(ImageFormat::from_raw(11), ImageFormat::Rgb10a2Unorm);
++        assert_eq!(ImageFormat::Rgb10a2Unorm.raw(), 11);
++        assert!(storage_format_is_extended(11));
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/vulkan.rs
+@@ -1523,13 +1523,15 @@
+     // take a snapshot around a known workload, not to a per-dispatch line that
+     // would pay a global engine lock to print them.
+     crate::observe::line(format!(
+-        "compute_linux ok pipe={} wg=[{wg_x},{wg_y},{wg_z}] nbuf={} bro={} brw={} bunused={} ntex={}",
++        "compute_linux ok pipe={} wg=[{wg_x},{wg_y},{wg_z}] nbuf={} bro={} brw={} bunused={} ntex={} rgb10a2_storage_bindings={}",
+         acc.pipeline_ref,
+         staged_bufs.len(),
+         buffer_readonly_count,
+         buffer_writable_count,
+         buffer_unused_count,
+         staged_tex.len(),
++        storage_formats.iter().filter(|(_, format, _, _)|
++            *format == crate::backend::vulkan::engine::StorageImageFormat::Rgb10a2Unorm).count(),
+     ));
+     ComputeStatus::Ok
+ }
+@@ -1713,6 +1715,7 @@
+         S::Rgba8Uint => V::Rgba8Uint,
+         S::Rgba8Sint => V::Rgba8Sint,
+         S::Rgba8Unorm => V::Rgba8Unorm,
++        S::Rgb10a2Unorm => V::Rgb10a2Unorm,
+         S::Rg16Float => V::Rg16Float,
+         S::R8Unorm => V::R8Unorm,
+         S::Rg8Unorm => V::Rg8Unorm,
+@@ -1797,6 +1800,7 @@
+                 | S::Rg16Float
+                 | S::R8Unorm
+                 | S::Rg8Unorm
++                | S::Rgb10a2Unorm
+         );
+         if normalized_color_store {
+             return Ok(if write_without_format {
+@@ -1823,6 +1827,7 @@
+         | S::Rg16Float
+         | S::R8Unorm
+         | S::Rg8Unorm => 0,
++        S::Rgb10a2Unorm => 0,
+         S::Rgba32Uint | S::Rgba16Uint | S::Rgba8Uint | S::R32ui => 1,
+         S::Rgba8Sint => 2,
+         // A shader that itself declared `Unknown` (format-less) storage is not a
+@@ -1853,6 +1858,8 @@
+     if guest.bytes_per_texel() == shader_engine.bytes_per_texel()
+         && shader_class != 0
+         && guest_numeric_class(guest) == 0
++        // No native raw integer view has established RGB10A2 semantics.
++        && guest != V::Rgb10a2Unorm
+     {
+         return Ok(shader);
+     }
+@@ -1877,7 +1884,6 @@
+         // The packed 32-bit colour formats join them: Vulkan mandates no
+         // `STORAGE_IMAGE` support for any of the three, and one of them is not
+         // in the mandatory table at all.
+-        | V::Rgb10a2Unorm
+         | V::Bgr10a2Unorm
+         // `A8Unorm` joins them by contract rather than by capability:
+         // `storage_selector` has no entry for it, so no guest storage binding
+@@ -1889,6 +1895,7 @@
+             return Err("spirv_sampled_only_format_as_storage");
+         }
+         V::Rgba32Float => (0, S::Rgba32Float),
++        V::Rgb10a2Unorm => (0, S::Rgb10a2Unorm),
+         V::Rgba16Float => (0, S::Rgba16Float),
+         V::R16Float => (0, S::R16Float),
+         // Bgra8Unorm normally returns above (Unknown/B8G8R8A8 view, or the
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/tests.rs
+@@ -1960,6 +1960,48 @@
+         spirv_image_format_to_engine_storage(S::R32ui),
+         Some(V::R32Uint)
+     );
++}
++
++#[cfg(feature = "backend-vulkan")]
++#[test]
++fn rgb10a2_storage_specializes_normalized_values_to_the_native_word() {
++    use crate::backend::vulkan::engine::StorageImageFormat as V;
++    use crate::runtime::spirv_bind::ImageFormat as S;
++    assert_eq!(
++        pixel_format::storage_selector(pixel_format::MTL_FORMAT_RGB10A2_UNORM),
++        Some(pixel_format::StorageImageSelector::Rgb10a2Unorm)
++    );
++    assert_eq!(
++        selector_to_engine_storage(pixel_format::StorageImageSelector::Rgb10a2Unorm),
++        V::Rgb10a2Unorm
++    );
++    assert_eq!(
++        spirv_image_format_to_engine_storage(S::Rgb10a2Unorm),
++        Some(V::Rgb10a2Unorm)
++    );
++    for shader in [
++        S::Rgba8Unorm,
++        S::Rgba16Float,
++        S::Rgba32Float,
++        S::R32Float,
++        S::Rg16Float,
++        S::Rgb10a2Unorm,
++    ] {
++        for without_format in [false, true] {
++            assert_eq!(
++                specialized_storage_image_format(V::Rgb10a2Unorm, shader, without_format),
++                Ok(S::Rgb10a2Unorm)
++            );
++        }
++    }
++    for shader in [S::Rgba8Uint, S::Rgba32Uint, S::Rgba8Sint] {
++        assert_eq!(
++            specialized_storage_image_format(V::Rgb10a2Unorm, shader, true),
++            Err("spirv_guest_numeric_class_mismatch")
++        );
++    }
++    assert!(pixel_format::storage_selector(pixel_format::MTL_FORMAT_BGR10A2_UNORM).is_none());
++    assert!(pixel_format::storage_selector(0x21e).is_none());
+ }
+ 
+ /// `metal2vulkan` lowers a generic `texture2d<float, access::write>` to SPIR-V
+@@ -3555,3 +3597,58 @@
+     assert_eq!(acc.textures.len(), 1);
+     assert_eq!(acc.textures[0].index, 0);
+ }
++
++#[test]
++fn rgb10a2_storage_stages_native_mapper_words() {
++    use crate::protocol::iosurface_pages::{PAGE_ENTRY_PFN_SHIFT, PAGE_ENTRY_VALID};
++    use crate::protocol::pixel_format::MTL_FORMAT_RGB10A2_UNORM;
++    use crate::runtime::decode::resource::{list_object_entry_offset, OBJECT_LIST_ENTRY_LEN};
++
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++    let mut host = FakeHost::new();
++    gva_mem::define_task_pages_arm64e(&mut host, &mut state, 4, 8);
++    assert!(state.set_object_list(1, 0, 32));
++
++    let sid = 3u32;
++    let ref_texture_ref = 10u32;
++    // Pre-mapped backing record (CI storage target) with one valid page.
++    let pfn = 0x20u32;
++    let gpa = (pfn as u64) << PAGE_SHIFT_ARM64E;
++    host.map_range(gpa, 0x4000, 0x5a);
++    let entry = (pfn << PAGE_ENTRY_PFN_SHIFT) | PAGE_ENTRY_VALID;
++    assert!(state.map_surface(sid));
++    {
++        let m = state.mappings.get_mut(&sid).unwrap();
++        m.mapped = true;
++        m.mapping_internal = 1;
++        m.page_entries = vec![entry];
++    }
++    assert!(state.set_mapping_geom(sid, 4, 4, MTL_FORMAT_RGB10A2_UNORM));
++
++    // Object-list: ref-texture at ref 10 → surface_id=3 (mapping already seeded).
++    let desc_gva = (4u64 + 2) << PAGE_SHIFT_ARM64E; // data pfn base 4 + 2
++    let ref_texture_desc = RefTextureBuilder::new(sid, 0, 0, 0).with_len(16);
++    let ref_texture_desc = ref_texture_desc.bytes();
++    write_task_gva_arm64e(&mut host, &state.tasks[1], desc_gva, ref_texture_desc);
++    let off = list_object_entry_offset(ref_texture_ref, 32).unwrap();
++    let mut list_entry = [0u8; OBJECT_LIST_ENTRY_LEN];
++    let packed = (objects::OBJECT_TYPE_REF_TEXTURE as u32) | ((16u32) << 8);
++    st32(&mut list_entry[0..], packed);
++    list_entry[4..12].copy_from_slice(&desc_gva.to_le_bytes());
++    write_task_gva_arm64e(&mut host, &state.tasks[1], off, &list_entry);
++
++    let staged =
++        stage_texture_raw::<NeutralStage, _>(&mut state, &mut host, 1, ref_texture_ref, 32, true)
++            .expect("ref-texture→surface stage must succeed after ensure");
++    assert_eq!((staged.width, staged.height), (4, 4));
++    assert_eq!(
++        staged.storage_selector,
++        Some(pixel_format::StorageImageSelector::Rgb10a2Unorm)
++    );
++    assert_eq!(staged.bytes.len(), 4 * 4 * 4);
++    assert!(staged.bytes.iter().all(|&b| b == 0x5a));
++    assert!(matches!(
++        staged.writeback,
++        TextureWriteback::MapperRefTexture { mapping_id: 3, .. }
++    ));
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_compute.rs
+@@ -189,6 +189,115 @@
+ 
+ fn storage_image_write_red_kernel(spirv_image_format: &str) -> String {
+     KERNEL_TEMPLATE.replace("{FMT}", spirv_image_format)
++}
++
++/// Read and update nonuniform packed ten-bit texels through the shipped
++/// compute entry. Small code differences cannot survive an RGBA8 round trip.
++#[test]
++fn rgb10a2_storage_read_write_preserves_codes_and_resident_generation() {
++    let _g = engine_test_session();
++    let asm = storage_image_write_red_kernel("Rgb10A2")
++        .replace("OpCapability StorageImageWriteWithoutFormat",
++            "OpCapability StorageImageExtendedFormats")
++        .replace("               OpDecorate %img NonReadable\n", "")
++        .replace("%img_ty = OpTypeImage", "    %step = OpConstant %float 0.0019550342\n    %delta = OpConstantComposite %v4float %step %float_0 %float_0 %float_0\n%img_ty = OpTypeImage")
++        .replace("               OpImageWrite %img_l %coord %red",
++            "    %value = OpImageRead %v4float %img_l %coord\n    %added = OpFAdd %v4float %value %delta\n               OpImageWrite %img_l %coord %added");
++    let Some(words) = assemble_spvasm(&asm, "rgb10a2_native") else {
++        return;
++    };
++    let (w, h) = (147u32, 317u32);
++    let packed: Vec<u32> = (0..w * h)
++        .map(|i| {
++            (7 + (i % 200) * 2)
++                | ((511 + i % 251) << 10)
++                | ((999 - (i % 200) * 3) << 20)
++                | ((i % 4) << 30)
++        })
++        .collect();
++    let seed: Vec<u8> = packed.iter().flat_map(|word| word.to_le_bytes()).collect();
++    let identity = ComputeStorageResidencyKey {
++        mapping_id: 113,
++        map_generation: 3,
++        surface_offset: 0,
++        surface_bpr: w * 4,
++        span_end: seed.len() as u64,
++        width: w,
++        height: h,
++        pixel_format: 0x5a,
++        texture_ref: 0,
++    };
++    let mut req = ComputeRequest {
++        spirv: words,
++        entry: "main".into(),
++        dispatch: engine::ComputeDispatch::Workgroups([w, h, 1]),
++        storage_images: vec![ComputeStorageImageResource {
++            destination: Default::default(),
++            binding: 0,
++            array_element: 0,
++            descriptor_count: 1,
++            format: StorageImageFormat::Rgb10a2Unorm,
++            width: w,
++            height: h,
++            bytes: seed,
++            residency: Some(ComputeStorageResidency {
++                identity,
++                seed_generation: 1,
++                output_generation: 2,
++            }),
++            seed_skipped: false,
++        }],
++        ..Default::default()
++    };
++    let first = match engine::execute_compute_request(engine_device(), &req) {
++        Ok(out) => out,
++        Err(error)
++            if skip_if_no_gpu(&error.to_string())
++                || error
++                    .to_string()
++                    .contains("storage_image_format_unsupported") =>
++        {
++            eprintln!("SKIP rgb10a2 optional host storage: {error}");
++            return;
++        }
++        Err(error) => panic!("RGB10A2 native compute: {error}"),
++    };
++    let assert_words = |bytes: &[u8], increment: u32| {
++        assert_eq!(bytes.len(), packed.len() * 4);
++        for (index, raw) in bytes.chunks_exact(4).enumerate() {
++            assert_eq!(
++                u32::from_le_bytes(raw.try_into().unwrap()),
++                packed[index] + increment,
++                "native packed texel {index}, red increment {increment}"
++            );
++        }
++    };
++    assert_words(
++        first.images[0]
++            .bytes()
++            .expect("native packed Host readback"),
++        2,
++    );
++    engine::reset_draw_counters();
++    req.storage_images[0].bytes.fill(0);
++    req.storage_images[0].seed_skipped = true;
++    req.storage_images[0].residency = Some(ComputeStorageResidency {
++        identity,
++        seed_generation: 2,
++        output_generation: 3,
++    });
++    let warm = engine::execute_compute_request(engine_device(), &req).expect("packed resident hit");
++    assert_words(
++        warm.images[0]
++            .bytes()
++            .expect("retained native packed readback"),
++        4,
++    );
++    assert_eq!(
++        engine::counter_snapshot().compute_storage_seed_uploads,
++        0,
++        "the zero placeholder must not overwrite the resident"
++    );
+ }
+ 
+ const KERNEL_TEMPLATE: &str = r#"

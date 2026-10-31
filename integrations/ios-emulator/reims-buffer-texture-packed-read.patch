@@ -1,0 +1,530 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -1124,6 +1124,13 @@
+     pub(super) size: u64,
+ }
+ 
++/// A shader names a maximum byte reach; a texture names complete strided rows.
++/// The shared reader owns allocation bounds, coherence and result allocation.
++enum BufferReadExtent {
++    AtMost(Option<u64>),
++    Rows(mapper::RectStride),
++}
++
+ /// The slug for each way a buffer ref fails to yield a span.
+ ///
+ /// Five refusals, one per condition, in the vocabulary `observe::ladder`
+@@ -1237,7 +1244,7 @@
+ /// here — none of which a render Store ever writes — do not start paying for a
+ /// wait they never owed.
+ ///
+-/// `extent_cap` is the shader's proven reach, exactly as
++/// `BufferReadExtent::AtMost` carries the shader's proven reach, exactly as
+ /// `try_buffer_zero_copy_resolved` takes it, and it is not optional polish here.
+ /// This is where a narrowed bind *lands*: capping the span drops it under the
+ /// zero-copy floor, so the rail declines and the bind falls through to this
+@@ -1253,7 +1260,7 @@
+     buffer_ref: u32,
+     backing: &BufferBacking,
+     offset: u64,
+-    extent_cap: Option<u64>,
++    extent: BufferReadExtent,
+ ) -> Option<Vec<u8>> {
+     let (gva, size) = (backing.gva, backing.size);
+     if offset >= size {
+@@ -1266,27 +1273,46 @@
+     // object larger than what is left of the allocation is the shader and the
+     // guest contradicting each other, and only one of them owns these pages.
+     let full = size - offset;
+-    let avail = match extent_cap {
+-        Some(cap) => full.min(cap),
+-        None => full,
++    let rect = match extent {
++        BufferReadExtent::AtMost(cap) => {
++            let avail = cap.map_or(full, |cap| full.min(cap));
++            let Some(rect) = mapper::RectStride::new(avail, avail, 1) else {
++                crate::observe::fail(format!(
++                    "load_buffer fail reason=draw_buffer_host_extent task={task_id} ref={buffer_ref} avail={avail}"
++                ));
++                return None;
++            };
++            rect
++        }
++        BufferReadExtent::Rows(rect) => rect,
+     };
++    let avail = rect.span() as u64;
++    if avail > full {
++        crate::observe::fail(format!(
++            "load_buffer fail reason=draw_buffer_rect_footprint task={task_id} ref={buffer_ref} span={avail} avail={full}"
++        ));
++        return None;
++    }
+     if avail < full {
+         crate::runtime::drain::note_store_route("cpu_buffer_extent_narrowed");
+         crate::runtime::drain::note_store_route_n("cpu_buffer_extent_saved_bytes", full - avail);
+     }
+-    let Some(want) = host_alloc_len(avail).filter(|&n| n > 0) else {
++    // Keep the existing span bound on the page walk, even when the destination
++    // is smaller because no row padding is copied.
++    let Some(read_span) = host_alloc_len(avail).filter(|&n| n > 0) else {
+         crate::observe::fail(format!(
+             "load_buffer fail reason=draw_buffer_host_extent task={task_id} ref={buffer_ref} avail={avail}"
+         ));
+         return None;
+     };
++    let want = rect.packed();
+     let Some(read_gva) = gva.checked_add(offset) else {
+         crate::observe::fail(format!(
+             "load_buffer fail reason=draw_buffer_gva_overflow task={task_id} ref={buffer_ref} gva={gva:#x} off={offset}"
+         ));
+         return None;
+     };
+-    let read_span = want as u64;
++    let read_span = read_span as u64;
+     if read_gva.checked_add(read_span).is_none() {
+         crate::observe::fail(format!(
+             "load_buffer fail reason=draw_buffer_gva_overflow task={task_id} ref={buffer_ref} gva={read_gva:#x} span={read_span}"
+@@ -1314,21 +1340,46 @@
+         return None;
+     }
+     buf.resize(want, 0);
+-    // Use device page_shift (x86=12); unshifted helper defaults to arm14 and fails.
+-    if gva_mem::read_task_gva_by_id(
+-        host,
+-        &state.tasks,
+-        task_id,
+-        read_gva,
+-        &mut buf,
+-        state.page_shift,
+-    )
+-    .is_err()
+-    {
+-        crate::observe::fail(format!(
+-            "load_buffer gva read fail task={task_id} gva={gva:#x}+{offset} want={want} shift={}",
+-            state.page_shift
+-        ));
++    let read = if rect.span() == rect.packed() {
++        // The linear buffer path retains its existing CPU read and page geometry.
++        gva_mem::read_task_gva_by_id(
++            host,
++            &state.tasks,
++            task_id,
++            read_gva,
++            &mut buf,
++            state.page_shift,
++        )
++    } else {
++        // Prepare and revalidate every physical run before copying directly
++        // into the tight result. No temporary strided image or packing pass.
++        match crate::runtime::gva_view::read_rect(state, host, task_id, read_gva, rect, &mut buf) {
++            Err(crate::runtime::host::MemError::MapPagesRefused) => {
++                // A host may provide GPA reads without temporary aliases. This
++                // exact failure is copy-free. Guest walk, remap, RAM and bounds
++                // errors remain refusals; they never select this fallback.
++                crate::runtime::drain::note_store_route("draw_buffer_rect_cpu_fallback");
++                rect.rows().try_for_each(|(row_offset, destination)| {
++                    gva_mem::read_task_gva_by_id(
++                        host,
++                        &state.tasks,
++                        task_id,
++                        read_gva + row_offset as u64,
++                        &mut buf[destination],
++                        state.page_shift,
++                    )
++                })
++            }
++            result => result,
++        }
++    };
++    if let Err(why) = read {
++        crate::observe::Emit::decline("draw_buffer_read", &why)
++            .field("task", task_id)
++            .field("ref", buffer_ref)
++            .field("gva", format_args!("{read_gva:#x}"))
++            .field("span", read_span)
++            .fail();
+         return None;
+     }
+     Some(buf)
+@@ -1347,7 +1398,15 @@
+     // No shader in scope here — these callers read a buffer outside a draw's
+     // bind set, so there is no reflection to bound them and the whole span is
+     // the only answer.
+-    read_buffer_bytes_resolved(state, host, task_id, buffer_ref, &backing, offset, None)
++    read_buffer_bytes_resolved(
++        state,
++        host,
++        task_id,
++        buffer_ref,
++        &backing,
++        offset,
++        BufferReadExtent::AtMost(None),
++    )
+ }
+ 
+ /// If `texture_ref` is a texture-view object whose descriptor is a buffer-backed
+@@ -1627,10 +1686,16 @@
+         ));
+         return None;
+     }
+-    // The descriptor owns the reach: include inter-row padding, exclude the
+-    // final row's padding and every unrelated byte after the texture. Buffer
+-    // debt payment and disjointness-narrowed settling still belong to the
+-    // shared CPU reader, using the exact span it will read.
++    let Some(rect) = mapper::RectStride::new(bpr, u64::from(tight), u64::from(h)) else {
++        crate::observe::fail(format!(
++            "buftex fail reason=buftex_host_extent ref={texture_ref} buf={} span={span}",
++            bt.buffer_ref
++        ));
++        return None;
++    };
++    // The descriptor bounds the complete walk, while the result holds only
++    // texels. The shared reader pays and settles this same allocation before
++    // a prepared rectangle transfer skips the inter-row padding.
+     let raw = read_buffer_bytes_resolved(
+         state,
+         host,
+@@ -1638,33 +1703,24 @@
+         bt.buffer_ref,
+         &backing,
+         bt.offset,
+-        Some(span),
++        BufferReadExtent::Rows(rect),
+     )?;
+     crate::runtime::drain::note_store_route("buftex_bounded_read");
+-    crate::runtime::drain::note_store_route_n("buftex_source_read_bytes", span);
++    crate::runtime::drain::note_store_route_n("buftex_source_read_bytes", rect.packed() as u64);
+     crate::runtime::drain::note_store_route_n("buftex_tail_skipped_bytes", avail - span);
+-    // Tight rows already have the requested layout; retain this allocation
+-    // instead of allocating and copying a second identical image.
+-    if bpr == u64::from(tight) || h == 1 {
+-        crate::runtime::drain::note_store_route("buftex_packing_copy_avoided");
+-        return Some((w, h, fmt, raw));
+-    }
+-    let row_bytes = usize::try_from(tight).ok()?;
+-    let stride = usize::try_from(bpr).ok()?;
+-    let mut packed = Vec::new();
+-    let packed_bytes = row_bytes.checked_mul(h as usize)?;
+-    if packed.try_reserve_exact(packed_bytes).is_err() {
+-        crate::observe::fail(format!(
+-            "buftex fail reason=buftex_host_allocation ref={texture_ref} buf={} want={packed_bytes}",
+-            bt.buffer_ref
+-        ));
+-        return None;
+-    }
+-    for row in 0..h as usize {
+-        let start = row.checked_mul(stride)?;
+-        packed.extend_from_slice(raw.get(start..start.checked_add(row_bytes)?)?);
+-    }
+-    Some((w, h, fmt, packed))
++    crate::runtime::drain::note_store_route("buftex_packing_copy_avoided");
++    if rect.span() > rect.packed() {
++        crate::runtime::drain::note_store_route("buftex_strided_read");
++        crate::runtime::drain::note_store_route_n(
++            "buftex_padding_read_bytes_avoided",
++            span - rect.packed() as u64,
++        );
++        crate::runtime::drain::note_store_route_n(
++            "buftex_second_copy_bytes_avoided",
++            rect.packed() as u64,
++        );
++    }
++    Some((w, h, fmt, raw))
+ }
+ 
+ /// The colour seed / Metal callers keep their RGBA8 contract. Vulkan sampled
+@@ -2259,12 +2315,9 @@
+         // This recovery API carries only raw pixels and current attachment
+         // names. It has neither the original buffer owner nor the destination
+         // pages captured before rendering, so it cannot authorize publication.
+-        crate::observe::Emit::decline(
+-            "writeback_chain_rgba",
+-            &BufferTargetDecline::Recovery(fmt),
+-        )
+-        .field("ref", att.texture_ref)
+-        .fail();
++        crate::observe::Emit::decline("writeback_chain_rgba", &BufferTargetDecline::Recovery(fmt))
++            .field("ref", att.texture_ref)
++            .fail();
+         return false;
+     }
+     if gva != 0 {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -4569,7 +4569,13 @@
+         }
+     }
+     let bytes = read_buffer_bytes_resolved(
+-        state, host, task_id, buffer_ref, backing, offset, extent_cap,
++        state,
++        host,
++        task_id,
++        buffer_ref,
++        backing,
++        offset,
++        BufferReadExtent::AtMost(extent_cap),
+     )?;
+     Some(crate::backend::vulkan::engine::BufferContent::from(bytes))
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -11,6 +11,101 @@
+ use crate::runtime::host::FakeHost;
+ #[cfg(feature = "backend-vulkan")]
+ use crate::runtime::mapper::{mapping_guest_write_verdict, GuestWriteVerdict};
++
++mod buffer_packed_read_contract {
++    use super::*;
++    use crate::protocol::endian::st32;
++    use crate::protocol::gva::{DIRECTORY_DEPTH, DIRECTORY_ROOT_PFN};
++
++    fn fixture(shift: u32) -> (DeviceState, FakeHost, BufferBacking, mapper::RectStride) {
++        let page = 1u64 << shift;
++        let mut host = FakeHost::new();
++        host.map_range(2 * page, page as usize, 0);
++        host.map_range(3 * page, page as usize, 0);
++        let mut directory = [0u8; 8];
++        st32(&mut directory[DIRECTORY_ROOT_PFN as usize..], 3);
++        st32(&mut directory[DIRECTORY_DEPTH as usize..], 1);
++        host.write_gpa(2 * page, &directory).unwrap();
++        for (index, pfn) in [(1u64, 16u32), (2, 48)] {
++            let mut pte = [0u8; 4];
++            st32(&mut pte, pfn);
++            host.write_gpa(3 * page + index * 4, &pte).unwrap();
++            host.map_range(u64::from(pfn) * page, page as usize, 0xa5);
++            host.write_gpa(
++                u64::from(pfn) * page + 4,
++                if index == 1 {
++                    &[1, 2, 3, 4, 5, 6, 7, 8]
++                } else {
++                    &[9, 10, 11, 12, 13, 14, 15, 16]
++                },
++            )
++            .unwrap();
++        }
++        let mut state = DeviceState::new(DeviceId(1), shift);
++        state.define_task(1, 0x1000, 2);
++        (
++            state,
++            host,
++            BufferBacking {
++                gva: page,
++                size: page + 12,
++            },
++            mapper::RectStride::new(page, 8, 2).unwrap(),
++        )
++    }
++
++    #[test]
++    fn buffer_packed_read_uses_fragmented_runs_with_explicit_page_geometry() {
++        for shift in [PAGE_SHIFT_X86, PAGE_SHIFT_ARM64E] {
++            let (mut state, mut host, backing, rect) = fixture(shift);
++            let bytes = read_buffer_bytes_resolved(
++                &mut state,
++                &mut host,
++                1,
++                7,
++                &backing,
++                4,
++                BufferReadExtent::Rows(rect),
++            )
++            .unwrap();
++            assert_eq!(bytes, (1..=16).collect::<Vec<u8>>(), "page shift {shift}");
++            assert_eq!(
++                host.map_pages_calls, 2,
++                "one import per disjoint physical run"
++            );
++            assert_eq!(host.unmap_pages_calls, 2);
++        }
++    }
++
++    #[test]
++    fn buffer_packed_read_does_not_fallback_after_guest_walk_or_ram_refusal() {
++        use crate::runtime::drain::store_route_count;
++        for shift in [PAGE_SHIFT_X86, PAGE_SHIFT_ARM64E] {
++            for missing in [false, true] {
++                let (mut state, mut host, backing, rect) = fixture(shift);
++                let page = 1u64 << shift;
++                if missing {
++                    host.write_gpa(3 * page + 8, &[0; 4]).unwrap();
++                } else {
++                    host.mark_non_ram(48 * page, page);
++                }
++                let before = store_route_count("draw_buffer_rect_cpu_fallback");
++                assert!(read_buffer_bytes_resolved(
++                    &mut state,
++                    &mut host,
++                    1,
++                    7,
++                    &backing,
++                    4,
++                    BufferReadExtent::Rows(rect)
++                )
++                .is_none());
++                assert_eq!(host.map_pages_calls, 0);
++                assert_eq!(store_route_count("draw_buffer_rect_cpu_fallback"), before);
++            }
++        }
++    }
++}
+ 
+ #[cfg(feature = "backend-vulkan")]
+ mod buffer_target_contract {
+@@ -96,6 +191,120 @@
+             clear_black_attachment(7),
+             0,
+         )
++    }
++
++    #[test]
++    fn buffer_sample_packed_read_preserves_float_bits_and_observes_guest_writes() {
++        use crate::runtime::drain::store_route_count;
++
++        let (mut rig, descriptor) = fixture();
++        let raw = [0xc0500000u32, 0x7fc12345, 0x80000000, 0x47800080]
++            .into_iter()
++            .flat_map(u32::to_le_bytes)
++            .collect::<Vec<_>>();
++        let mut padded = vec![0xa5; 40];
++        padded[8..16].copy_from_slice(&raw[..8]);
++        padded[24..32].copy_from_slice(&raw[8..]);
++        write_task_gva_arm64e(
++            &mut rig.host,
++            &rig.state.tasks[1],
++            StoreRig::gva(1),
++            &padded,
++        );
++        let before = store_route_count("buftex_source_read_bytes");
++        let (w, h, format, pixels) =
++            load_buffer_texture_rows(&mut rig.state, &mut rig.host, 1, 7, &descriptor).unwrap();
++        assert_eq!((w, h, format), (2, 2, pixel_format::MTL_FORMAT_R32_FLOAT));
++        assert_eq!(pixels, raw);
++        assert_eq!(
++            store_route_count("buftex_source_read_bytes") - before,
++            16,
++            "read only the sixteen texel bytes, not the eight inter-row padding bytes"
++        );
++        assert!(
++            rig.host.map_pages_calls > 0,
++            "a strided read uses the prepared rectangle transfer"
++        );
++        assert_eq!(rig.host.map_pages_calls, rig.host.unmap_pages_calls);
++
++        write_task_gva_arm64e(
++            &mut rig.host,
++            &rig.state.tasks[1],
++            StoreRig::gva(1) + 24,
++            &7.125f32.to_le_bytes(),
++        );
++        let (_, _, _, fresh) =
++            load_buffer_texture_rows(&mut rig.state, &mut rig.host, 1, 7, &descriptor).unwrap();
++        assert_eq!(&fresh[..8], &raw[..8]);
++        assert_eq!(&fresh[8..12], &7.125f32.to_le_bytes());
++        assert_eq!(
++            pixels, raw,
++            "a later read cannot overwrite the first returned allocation"
++        );
++    }
++
++    #[test]
++    fn buffer_sample_packed_read_checks_footprint_before_mapping() {
++        let (mut rig, mut descriptor) = fixture();
++        descriptor.offset = 17;
++        assert!(
++            load_buffer_texture_rows(&mut rig.state, &mut rig.host, 1, 7, &descriptor).is_none()
++        );
++        assert_eq!(rig.host.map_pages_calls, 0);
++        descriptor.offset = 8;
++        descriptor.bytes_per_row = 7;
++        assert!(
++            load_buffer_texture_rows(&mut rig.state, &mut rig.host, 1, 7, &descriptor).is_none()
++        );
++        assert_eq!(rig.host.map_pages_calls, 0);
++    }
++
++    #[test]
++    fn buffer_sample_packed_read_keeps_the_cpu_only_host_fallback() {
++        use crate::runtime::host::{HostAction, MemError};
++        struct CpuOnly(FakeHost);
++        impl HostMemory for CpuOnly {
++            fn read_gpa(&self, gpa: u64, dst: &mut [u8]) -> Result<(), MemError> {
++                self.0.read_gpa(gpa, dst)
++            }
++            fn write_gpa(&mut self, gpa: u64, src: &[u8]) -> Result<(), MemError> {
++                self.0.write_gpa(gpa, src)
++            }
++        }
++        impl HostOps for CpuOnly {
++            fn mono_ns(&self) -> u64 {
++                self.0.mono_ns()
++            }
++            fn enqueue(&mut self, action: HostAction) {
++                self.0.enqueue(action);
++            }
++            fn schedule_bh(&mut self) {
++                self.0.schedule_bh();
++            }
++            fn is_ram_gpa(&self, gpa: u64) -> bool {
++                self.0.is_ram_gpa(gpa)
++            }
++            // The default map_pages is unavailable; GPA reads still work.
++        }
++        let (mut rig, descriptor) = fixture();
++        let mut padded = vec![0xa5; 40];
++        padded[8..16].copy_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
++        padded[24..32].copy_from_slice(&[9, 10, 11, 12, 13, 14, 15, 16]);
++        write_task_gva_arm64e(
++            &mut rig.host,
++            &rig.state.tasks[1],
++            StoreRig::gva(1),
++            &padded,
++        );
++        let before = crate::runtime::drain::store_route_count("draw_buffer_rect_cpu_fallback");
++        let mut host = CpuOnly(rig.host);
++        let (_, _, _, pixels) =
++            load_buffer_texture_rows(&mut rig.state, &mut host, 1, 7, &descriptor).unwrap();
++        assert_eq!(pixels, (1..=16).collect::<Vec<u8>>());
++        assert_eq!(
++            crate::runtime::drain::store_route_count("draw_buffer_rect_cpu_fallback") - before,
++            1
++        );
+     }
+ 
+     #[test]
+@@ -7888,7 +8097,13 @@
+     // deliberate: the payment is owed *before* the bytes are touched, so a
+     // failing read must not be able to excuse a skipped one.
+     let _ = read_buffer_bytes_resolved(
+-        &mut state, &mut host, task_id, buffer_ref, &backing, 0, None,
++        &mut state,
++        &mut host,
++        task_id,
++        buffer_ref,
++        &backing,
++        0,
++        BufferReadExtent::AtMost(None),
+     );
+ 
+     assert!(
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -2350,6 +2350,15 @@
+     pub(crate) fn packed(&self) -> usize {
+         self.row_count * self.row_bytes
+     }
++
++    /// Guest offsets and packed destination ranges, bounded by construction.
++    /// Used by CPU readers when the host cannot provide temporary page views.
++    pub(crate) fn rows(&self) -> impl Iterator<Item = (usize, std::ops::Range<usize>)> + '_ {
++        (0..self.row_count).map(|row| {
++            let packed = row * self.row_bytes;
++            (row * self.row_stride, packed..packed + self.row_bytes)
++        })
++    }
+ }
+ 
+ pub(crate) enum RunCopy<'a> {

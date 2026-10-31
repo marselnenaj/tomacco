@@ -1,0 +1,23 @@
+diff --git a/hw/arm/meson.build b/hw/arm/meson.build
+--- a/hw/arm/meson.build
++++ b/hw/arm/meson.build
+@@ -122,4 +122,4 @@
+   capture: true,
+ ))
+ 
+-arm_common_ss.add(when: 'CONFIG_TOMACCO_VPHONE', if_true: files('vphone-research.c', 'vphone-sep.c', 'vphone-asmf.c', 'vphone-vstr.c'))
++arm_common_ss.add(when: 'CONFIG_TOMACCO_VPHONE', if_true: files('vphone-research.c', 'vphone-sep.c', 'vphone-asmf.c', 'vphone-vstr.c', 'vphone-usb.c'))
+diff --git a/hw/virtio/virtio.c b/hw/virtio/virtio.c
+--- a/hw/virtio/virtio.c
++++ b/hw/virtio/virtio.c
+@@ -203,6 +203,10 @@
+ 
+ static const char *virtio_id_to_name(uint16_t device_id)
+ {
++    /* Apple's private USB device is outside the standard VirtIO ID table. */
++    if (device_id == 0x1a01) {
++        return "tomacco-vphone-usb";
++    }
+     assert(device_id < G_N_ELEMENTS(virtio_device_names));
+     const char *name = virtio_device_names[device_id];
+     assert(name != NULL);

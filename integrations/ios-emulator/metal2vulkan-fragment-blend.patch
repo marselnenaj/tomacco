@@ -1,0 +1,972 @@
+diff --git a/docs/HOWTO.md b/docs/HOWTO.md
+index 3ea802e..ec1fe99 100644
+--- a/docs/HOWTO.md
++++ b/docs/HOWTO.md
+@@ -74,9 +74,17 @@ Float32 outputs containing the decoded rounded integer values. It preserves
+ unrelated interfaces and descriptor bindings; normal returns write the new
+ outputs, while discarded invocations do not.
+ 
+-This pass does not implement blending. Disable fixed-function blending at the
+-selected locations and supply canonical clear/load contents. Quantization must
+-follow the blend when blending is required. The caller must validate the returned
++Disable fixed-function blending at the selected locations and supply canonical
++clear/load contents. Quantization must follow the blend when blending is
++required: `blend_and_quantize_present_fragment_color_outputs` takes one
++`BlendedFragmentColor` per location, and a location with a `ProgrammableBlend`
++reads its destination from a single-sample input attachment
++(`InputAttachmentIndex` = location, caller-chosen set and binding), clamps the
++source per channel, evaluates the Metal factors and operation in Float32 or in
++individually rounded binary16 steps, and only then quantizes. Blend-colour and
++dual-source factors are not representable. The caller owns the input
++attachment and must order the destination read after every earlier write to
++that location, including earlier primitives of the same draw. The caller must validate the returned
+ module for its Vulkan environment, check Float32 attachment support, preserve
+ attachment write masks, and handle MSAA resolve quantization separately.
+ Unsupported output types, pointer escapes, grouped/component decorations, or
+diff --git a/src/fragment_color.rs b/src/fragment_color.rs
+index 4a70e4e..a9842c2 100644
+--- a/src/fragment_color.rs
++++ b/src/fragment_color.rs
+@@ -2,10 +2,15 @@
+ //!
+ //! This module describes numeric encodings, not device formats or memory planes.
+ //! The caller must disable fixed-function blending for the rewritten outputs.
+-//! Blending belongs before quantization and is not synthesized by this pass.
++//! Blending belongs before quantization. A caller that declares a
++//! [`ProgrammableBlend`] for a location receives it synthesized from the
++//! destination input attachment; otherwise no blend is applied.
+ 
+ use crate::spirv_module::{load_bytes, Instruction, Module, Operand};
+-use spirv::{Capability, Decoration, ExecutionModel, GlslStd450Op as Glsl, Op, StorageClass, Word};
++use spirv::{
++    Capability, Decoration, Dim, ExecutionModel, GlslStd450Op as Glsl, ImageFormat, Op,
++    StorageClass, Word,
++};
+ use std::collections::HashMap;
+ use std::fmt;
+ 
+@@ -72,10 +77,126 @@ pub struct FragmentColorEncoding {
+     pub channels: [ColorChannelEncoding; 4],
+ }
+ 
++/// One side of a programmable blend equation, with Metal's meaning.
++///
++/// Blend-colour and dual-source factors are deliberately absent: their
++/// operands are neither the fragment's colour output nor the destination.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum BlendFactor {
++    Zero,
++    One,
++    SourceColor,
++    OneMinusSourceColor,
++    SourceAlpha,
++    OneMinusSourceAlpha,
++    DestinationColor,
++    OneMinusDestinationColor,
++    DestinationAlpha,
++    OneMinusDestinationAlpha,
++    /// `min(As, 1 - Ad)` for RGB and one for alpha.
++    SourceAlphaSaturated,
++}
++
++/// How the two weighted terms of a blend equation combine.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum BlendOperation {
++    Add,
++    /// Source minus destination.
++    Subtract,
++    /// Destination minus source.
++    ReverseSubtract,
++    /// `min(S, D)`; the factors do not apply.
++    Min,
++    /// `max(S, D)`; the factors do not apply.
++    Max,
++}
++
++/// One channel group's blend equation.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct BlendEquation {
++    pub source: BlendFactor,
++    pub destination: BlendFactor,
++    pub operation: BlendOperation,
++}
++
++/// The arithmetic in which a programmable blend is evaluated.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub enum BlendArithmetic {
++    /// Float32 throughout.
++    Float32,
++    /// A sequence of individually rounded binary16 operations: the clamped
++    /// source, the destination, each derived factor, each product and the
++    /// combined value are rounded with `OpQuantizeToF16`. Fused multiply-add
++    /// contraction is not modelled.
++    Binary16,
++}
++
++/// An inclusive, finite interval applied to one source channel before
++/// blending: `min(max(value, minimum), maximum)` with the NaN-ignoring
++/// `NMax`/`NMin` operations.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct SourceClamp {
++    minimum: u32,
++    maximum: u32,
++}
++
++impl SourceClamp {
++    pub fn checked(minimum: f32, maximum: f32) -> Result<Self, ColorQuantizationRefusal> {
++        if !minimum.is_finite() || !maximum.is_finite() || minimum > maximum {
++            return Err(ColorQuantizationRefusal::InvalidBlend);
++        }
++        Ok(Self {
++            minimum: minimum.to_bits(),
++            maximum: maximum.to_bits(),
++        })
++    }
++
++    fn minimum(self) -> f32 {
++        f32::from_bits(self.minimum)
++    }
++
++    fn maximum(self) -> f32 {
++        f32::from_bits(self.maximum)
++    }
++}
++
++/// The single-sample input attachment that holds a location's destination.
++///
++/// Its `InputAttachmentIndex` is the output location. An existing declaration
++/// with that index is reused only when its set, binding and image shape agree.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct DestinationInput {
++    pub set: u32,
++    pub binding: u32,
++}
++
++/// Blending synthesized ahead of a location's quantization.
++///
++/// The caller owns ordering: every earlier fragment's write to this location
++/// must be visible to the destination read, including writes from earlier
++/// primitives of the same draw.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct ProgrammableBlend {
++    pub color: BlendEquation,
++    pub alpha: BlendEquation,
++    /// Source clamps in shader RGBA order.
++    pub source_clamp: [SourceClamp; 4],
++    pub arithmetic: BlendArithmetic,
++    pub destination: DestinationInput,
++}
++
++/// One location's encoding and the optional blend evaluated before it.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct BlendedFragmentColor {
++    pub encoding: FragmentColorEncoding,
++    pub blend: Option<ProgrammableBlend>,
++}
++
+ /// A structural refusal to rewrite an output without changing its semantics.
+ #[derive(Debug)]
+ pub enum ColorQuantizationRefusal {
+     InvalidEncoding,
++    InvalidBlend,
+     PlanShape,
+     ResourceLimit,
+     Module(String),
+@@ -84,12 +205,14 @@ pub enum ColorQuantizationRefusal {
+     OutputShape(u32),
+     OutputDecoration(u32),
+     OutputPointerUse(u32),
++    DestinationInput(u32),
+ }
+ 
+ impl fmt::Display for ColorQuantizationRefusal {
+     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+         match self {
+             Self::InvalidEncoding => write!(f, "fragment_color_invalid_encoding"),
++            Self::InvalidBlend => write!(f, "fragment_color_invalid_blend"),
+             Self::PlanShape => write!(f, "fragment_color_plan_shape"),
+             Self::ResourceLimit => write!(f, "fragment_color_resource_limit"),
+             Self::Module(reason) => write!(f, "fragment_color_module: {reason}"),
+@@ -102,6 +225,9 @@ impl fmt::Display for ColorQuantizationRefusal {
+             Self::OutputPointerUse(slot) => {
+                 write!(f, "fragment_color_output_pointer_use location={slot}")
+             }
++            Self::DestinationInput(slot) => {
++                write!(f, "fragment_color_destination_input location={slot}")
++            }
+         }
+     }
+ }
+@@ -110,10 +236,13 @@ impl std::error::Error for ColorQuantizationRefusal {}
+ 
+ struct Output {
+     encoding: FragmentColorEncoding,
++    blend: Option<ProgrammableBlend>,
+     original: Word,
+     value_type: Word,
+     half: bool,
+     replacement: Word,
++    /// The destination input attachment variable of a blended output.
++    destination: Word,
+ }
+ 
+ fn id(operand: Option<&Operand>) -> Option<Word> {
+@@ -255,7 +384,17 @@ pub fn quantize_fragment_color_outputs(
+     bytes: &[u8],
+     encodings: &[FragmentColorEncoding],
+ ) -> Result<Vec<u8>, ColorQuantizationRefusal> {
+-    quantize_outputs(bytes, encodings, OutputSelection::Required)
++    quantize_outputs(bytes, &unblended(encodings), OutputSelection::Required)
++}
++
++fn unblended(encodings: &[FragmentColorEncoding]) -> Vec<BlendedFragmentColor> {
++    encodings
++        .iter()
++        .map(|&encoding| BlendedFragmentColor {
++            encoding,
++            blend: None,
++        })
++        .collect()
+ }
+ 
+ /// Quantize the declared outputs of attached colour targets.
+@@ -269,23 +408,41 @@ pub fn quantize_present_fragment_color_outputs(
+     bytes: &[u8],
+     encodings: &[FragmentColorEncoding],
+ ) -> Result<Vec<u8>, ColorQuantizationRefusal> {
+-    quantize_outputs(bytes, encodings, OutputSelection::Present)
++    quantize_outputs(bytes, &unblended(encodings), OutputSelection::Present)
++}
++
++/// Blend, then quantize, the declared outputs of attached colour targets.
++///
++/// Output selection and the caller obligations are those of
++/// `quantize_present_fragment_color_outputs`. A location with a
++/// [`ProgrammableBlend`] reads its destination through the declared input
++/// attachment at each normal return, clamps and blends the source with it in
++/// the declared arithmetic, and quantizes the result. A location whose output
++/// the module proves absent is skipped and reads nothing. The caller must
++/// provide the input attachment, disable fixed-function blending for every
++/// location here, and order the destination read after every earlier write.
++pub fn blend_and_quantize_present_fragment_color_outputs(
++    bytes: &[u8],
++    outputs: &[BlendedFragmentColor],
++) -> Result<Vec<u8>, ColorQuantizationRefusal> {
++    quantize_outputs(bytes, outputs, OutputSelection::Present)
+ }
+ 
+ fn quantize_outputs(
+     bytes: &[u8],
+-    encodings: &[FragmentColorEncoding],
++    plan: &[BlendedFragmentColor],
+     selection: OutputSelection,
+ ) -> Result<Vec<u8>, ColorQuantizationRefusal> {
+-    if encodings.is_empty() {
++    if plan.is_empty() {
+         return Ok(bytes.to_vec());
+     }
+-    if encodings.len() > 8
+-        || encodings.iter().any(|e| e.location >= 8)
+-        || encodings
+-            .iter()
+-            .enumerate()
+-            .any(|(i, e)| encodings[..i].iter().any(|p| p.location == e.location))
++    if plan.len() > 8
++        || plan.iter().any(|e| e.encoding.location >= 8)
++        || plan.iter().enumerate().any(|(i, e)| {
++            plan[..i]
++                .iter()
++                .any(|p| p.encoding.location == e.encoding.location)
++        })
+     {
+         return Err(ColorQuantizationRefusal::PlanShape);
+     }
+@@ -313,18 +470,22 @@ fn quantize_outputs(
+         .flat_map(|b| &b.instructions)
+         .filter(|i| i.class.opcode == Op::Return)
+         .count();
+-    // The expression builder needs fewer than 180 ids per RGBA return, plus
+-    // fixed declarations. Guard fresh_id before modifying the owned module.
++    // The expression builder needs fewer than 180 ids per RGBA return, and a
++    // blend fewer than 200 more, plus fixed declarations. Guard fresh_id
++    // before modifying the owned module.
++    let per_return = plan
++        .iter()
++        .map(|o| if o.blend.is_some() { 380 } else { 180 })
++        .sum::<usize>();
+     let added_ids = returns
+-        .checked_mul(encodings.len())
+-        .and_then(|v| v.checked_mul(180))
+-        .and_then(|v| v.checked_add(128))
++        .checked_mul(per_return)
++        .and_then(|v| v.checked_add(160))
+         .ok_or(ColorQuantizationRefusal::ResourceLimit)?;
+     if u64::from(module.id_bound()) + added_ids as u64 >= 0x3f_ffff {
+         return Err(ColorQuantizationRefusal::ResourceLimit);
+     }
+-    let mut outputs = Vec::with_capacity(encodings.len());
+-    for &encoding in encodings {
++    let mut outputs = Vec::with_capacity(plan.len());
++    for &BlendedFragmentColor { encoding, blend } in plan {
+         let candidates: Vec<_> = module
+             .types_global_values
+             .iter()
+@@ -433,10 +594,12 @@ fn quantize_outputs(
+         }
+         outputs.push(Output {
+             encoding,
++            blend,
+             original,
+             value_type,
+             half,
+             replacement: 0,
++            destination: 0,
+         });
+     }
+     if outputs.is_empty() {
+@@ -518,12 +681,30 @@ fn quantize_outputs(
+     builder.module.entry_points[0]
+         .operands
+         .extend(outputs.iter().map(|o| Operand::IdRef(o.replacement)));
++    let mut destination_images = Vec::with_capacity(outputs.len());
++    for output in &mut outputs {
++        let Some(blend) = output.blend else {
++            destination_images.push(0);
++            continue;
++        };
++        let (variable, image) =
++            builder.destination_input(output.encoding.location, blend.destination)?;
++        output.destination = variable;
++        destination_images.push(image);
++        if all_globals_interface
++            && !builder.module.entry_points[0].operands[3..].contains(&Operand::IdRef(variable))
++        {
++            builder.module.entry_points[0]
++                .operands
++                .push(Operand::IdRef(variable));
++        }
++    }
+     // Build before insertion so module id allocation never conflicts with a
+     // mutable borrow of its function/block. Owned blocks are consumed below.
+     let mut epilogues = Vec::with_capacity(returns);
+     for _ in 0..returns {
+         let mut code = Vec::new();
+-        for output in &outputs {
++        for (output, &destination_image) in outputs.iter().zip(&destination_images) {
+             let source = builder.emit(
+                 &mut code,
+                 Op::Load,
+@@ -540,17 +721,27 @@ fn quantize_outputs(
+             } else {
+                 source
+             };
+-            let mut channels = Vec::with_capacity(4);
+-            for (index, &encoding) in output.encoding.channels.iter().enumerate() {
+-                let source = builder.emit(
++            let mut values = [0; 4];
++            for (index, value) in values.iter_mut().enumerate() {
++                *value = builder.emit(
+                     &mut code,
+                     Op::CompositeExtract,
+                     builder.float,
+                     vec![Operand::IdRef(source), Operand::LiteralBit32(index as u32)],
+                 );
+-                channels.push(Operand::IdRef(
+-                    builder.quantize(&mut code, source, encoding),
+-                ));
++            }
++            if let Some(blend) = output.blend {
++                let image = builder.emit(
++                    &mut code,
++                    Op::Load,
++                    destination_image,
++                    vec![Operand::IdRef(output.destination)],
++                );
++                values = builder.blend(&mut code, blend, values, image, float4);
++            }
++            let mut channels = Vec::with_capacity(4);
++            for (&value, &encoding) in values.iter().zip(&output.encoding.channels) {
++                channels.push(Operand::IdRef(builder.quantize(&mut code, value, encoding)));
+             }
+             let value = builder.emit(&mut code, Op::CompositeConstruct, float4, channels);
+             code.push(instruction(
+@@ -607,6 +798,13 @@ fn quantize_outputs(
+         .collect())
+ }
+ 
++/// The rounded operands one blend's factors are derived from.
++struct BlendTerms {
++    source: [Word; 4],
++    destination: [Word; 4],
++    binary16: bool,
++}
++
+ struct Builder<'a> {
+     module: &'a mut Module,
+     float: Word,
+@@ -707,6 +905,269 @@ impl<'a> Builder<'a> {
+         )
+     }
+ 
++    /// Resolve or declare the input attachment holding `location`'s
++    /// destination. Returns the variable and its image type.
++    fn destination_input(
++        &mut self,
++        location: u32,
++        input: DestinationInput,
++    ) -> Result<(Word, Word), ColorQuantizationRefusal> {
++        let refusal = || ColorQuantizationRefusal::DestinationInput(location);
++        // Group decorations can attach an index, set or binding to any id;
++        // without resolving them neither reuse nor absence is provable.
++        if self.module.annotations.iter().any(|inst| {
++            matches!(
++                inst.class.opcode,
++                Op::GroupDecorate | Op::GroupMemberDecorate | Op::DecorationGroup
++            )
++        }) {
++            return Err(refusal());
++        }
++        let image = self.global(
++            Op::TypeImage,
++            None,
++            vec![
++                Operand::IdRef(self.float),
++                Operand::Dim(Dim::DimSubpassData),
++                Operand::LiteralBit32(0),
++                Operand::LiteralBit32(0),
++                Operand::LiteralBit32(0),
++                Operand::LiteralBit32(2),
++                Operand::ImageFormat(ImageFormat::Unknown),
++            ],
++        );
++        let pointer = self.global(
++            Op::TypePointer,
++            None,
++            vec![
++                Operand::StorageClass(StorageClass::UniformConstant),
++                Operand::IdRef(image),
++            ],
++        );
++        let indexed: Vec<Word> = self
++            .module
++            .annotations
++            .iter()
++            .filter(|inst| {
++                inst.class.opcode == Op::Decorate
++                    && inst.operands.get(1)
++                        == Some(&Operand::Decoration(Decoration::InputAttachmentIndex))
++                    && inst.operands.get(2) == Some(&Operand::LiteralBit32(location))
++            })
++            .filter_map(|inst| id(inst.operands.first()))
++            .collect();
++        let at_binding = |module: &Module, target: Word| {
++            direct_decoration(module, target, Decoration::DescriptorSet) == Some(input.set)
++                && direct_decoration(module, target, Decoration::Binding) == Some(input.binding)
++        };
++        let variable = match indexed.as_slice() {
++            [] => {
++                if self.module.types_global_values.iter().any(|inst| {
++                    inst.class.opcode == Op::Variable
++                        && inst
++                            .result_id
++                            .is_some_and(|target| at_binding(self.module, target))
++                }) {
++                    return Err(refusal());
++                }
++                let variable = self.module.fresh_id();
++                self.module.types_global_values.push(instruction(
++                    Op::Variable,
++                    Some(pointer),
++                    Some(variable),
++                    vec![Operand::StorageClass(StorageClass::UniformConstant)],
++                ));
++                for (decoration, value) in [
++                    (Decoration::InputAttachmentIndex, location),
++                    (Decoration::DescriptorSet, input.set),
++                    (Decoration::Binding, input.binding),
++                ] {
++                    self.module.annotations.push(instruction(
++                        Op::Decorate,
++                        None,
++                        None,
++                        vec![
++                            Operand::IdRef(variable),
++                            Operand::Decoration(decoration),
++                            Operand::LiteralBit32(value),
++                        ],
++                    ));
++                }
++                variable
++            }
++            &[variable] => {
++                let declared = self
++                    .module
++                    .types_global_values
++                    .iter()
++                    .find(|inst| inst.result_id == Some(variable))
++                    .ok_or_else(refusal)?;
++                if declared.class.opcode != Op::Variable
++                    || declared.result_type != Some(pointer)
++                    || !at_binding(self.module, variable)
++                {
++                    return Err(refusal());
++                }
++                variable
++            }
++            _ => return Err(refusal()),
++        };
++        if !self.module.capabilities.iter().any(|inst| {
++            inst.operands.first() == Some(&Operand::Capability(Capability::InputAttachment))
++        }) {
++            self.module.capabilities.push(instruction(
++                Op::Capability,
++                None,
++                None,
++                vec![Operand::Capability(Capability::InputAttachment)],
++            ));
++        }
++        Ok((variable, image))
++    }
++
++    fn round(&mut self, code: &mut Vec<Instruction>, value: Word, binary16: bool) -> Word {
++        if binary16 {
++            self.emit(
++                code,
++                Op::QuantizeToF16,
++                self.float,
++                vec![Operand::IdRef(value)],
++            )
++        } else {
++            value
++        }
++    }
++
++    fn one_minus(&mut self, code: &mut Vec<Instruction>, value: Word, binary16: bool) -> Word {
++        let one = self.constant(1.0);
++        let difference = self.binary(code, Op::FSub, one, value);
++        self.round(code, difference, binary16)
++    }
++
++    /// `value * factor` for one channel; `One` and `Zero` need no product.
++    fn weighted(
++        &mut self,
++        code: &mut Vec<Instruction>,
++        terms: &BlendTerms,
++        value: Word,
++        factor: BlendFactor,
++        channel: usize,
++    ) -> Word {
++        let BlendTerms {
++            source,
++            destination,
++            binary16,
++        } = *terms;
++        let factor = match factor {
++            BlendFactor::Zero => return self.constant(0.0),
++            BlendFactor::One => return value,
++            BlendFactor::SourceColor => source[channel],
++            BlendFactor::OneMinusSourceColor => self.one_minus(code, source[channel], binary16),
++            BlendFactor::SourceAlpha => source[3],
++            BlendFactor::OneMinusSourceAlpha => self.one_minus(code, source[3], binary16),
++            BlendFactor::DestinationColor => destination[channel],
++            BlendFactor::OneMinusDestinationColor => {
++                self.one_minus(code, destination[channel], binary16)
++            }
++            BlendFactor::DestinationAlpha => destination[3],
++            BlendFactor::OneMinusDestinationAlpha => self.one_minus(code, destination[3], binary16),
++            BlendFactor::SourceAlphaSaturated => {
++                if channel == 3 {
++                    return value;
++                }
++                let inverse = self.one_minus(code, destination[3], binary16);
++                self.ext(code, Glsl::NMin, &[source[3], inverse])
++            }
++        };
++        let product = self.binary(code, Op::FMul, value, factor);
++        self.round(code, product, binary16)
++    }
++
++    /// Evaluate `blend` for one fragment's RGBA `source` against the
++    /// destination read from `image`.
++    fn blend(
++        &mut self,
++        code: &mut Vec<Instruction>,
++        blend: ProgrammableBlend,
++        source: [Word; 4],
++        image: Word,
++        float4: Word,
++    ) -> [Word; 4] {
++        let binary16 = blend.arithmetic == BlendArithmetic::Binary16;
++        let mut clamped = [0; 4];
++        for (channel, value) in clamped.iter_mut().enumerate() {
++            let bounds = blend.source_clamp[channel];
++            let minimum = self.constant(bounds.minimum());
++            let maximum = self.constant(bounds.maximum());
++            let raised = self.ext(code, Glsl::NMax, &[source[channel], minimum]);
++            let limited = self.ext(code, Glsl::NMin, &[raised, maximum]);
++            *value = self.round(code, limited, binary16);
++        }
++        let int = self.global(
++            Op::TypeInt,
++            None,
++            vec![Operand::LiteralBit32(32), Operand::LiteralBit32(1)],
++        );
++        let int2 = self.global(
++            Op::TypeVector,
++            None,
++            vec![Operand::IdRef(int), Operand::LiteralBit32(2)],
++        );
++        let origin = self.global(Op::ConstantNull, Some(int2), vec![]);
++        let texel = self.emit(
++            code,
++            Op::ImageRead,
++            float4,
++            vec![Operand::IdRef(image), Operand::IdRef(origin)],
++        );
++        let mut destination = [0; 4];
++        for (channel, value) in destination.iter_mut().enumerate() {
++            let component = self.emit(
++                code,
++                Op::CompositeExtract,
++                self.float,
++                vec![Operand::IdRef(texel), Operand::LiteralBit32(channel as u32)],
++            );
++            *value = self.round(code, component, binary16);
++        }
++        let terms = BlendTerms {
++            source: clamped,
++            destination,
++            binary16,
++        };
++        let mut result = [0; 4];
++        for (channel, value) in result.iter_mut().enumerate() {
++            let equation = if channel < 3 {
++                blend.color
++            } else {
++                blend.alpha
++            };
++            let (s, d) = (clamped[channel], destination[channel]);
++            let (op, reversed) = match equation.operation {
++                BlendOperation::Min => {
++                    *value = self.ext(code, Glsl::NMin, &[s, d]);
++                    continue;
++                }
++                BlendOperation::Max => {
++                    *value = self.ext(code, Glsl::NMax, &[s, d]);
++                    continue;
++                }
++                BlendOperation::Add => (Op::FAdd, false),
++                BlendOperation::Subtract => (Op::FSub, false),
++                BlendOperation::ReverseSubtract => (Op::FSub, true),
++            };
++            let a = self.weighted(code, &terms, s, equation.source, channel);
++            let b = self.weighted(code, &terms, d, equation.destination, channel);
++            let combined = if reversed {
++                self.binary(code, op, b, a)
++            } else {
++                self.binary(code, op, a, b)
++            };
++            *value = self.round(code, combined, binary16);
++        }
++        result
++    }
++
+     fn transfer(&mut self, code: &mut Vec<Instruction>, source: Word, encode: bool) -> Word {
+         let magnitude = self.ext(code, Glsl::FAbs, &[source]);
+         let (threshold, slope, exponent) = if encode {
+@@ -791,3 +1252,295 @@ impl<'a> Builder<'a> {
+         }
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    const XR: AffineColorEncoding = AffineColorEncoding {
++        scale: 510,
++        zero: 384,
++        minimum: 0,
++        maximum: 1023,
++        transfer: ColorTransfer::Linear,
++    };
++
++    const SOURCE_OVER: BlendEquation = BlendEquation {
++        source: BlendFactor::One,
++        destination: BlendFactor::OneMinusSourceAlpha,
++        operation: BlendOperation::Add,
++    };
++
++    /// A fragment shader writing one constant RGBA32F colour to location 0.
++    /// `prelude` declares extra globals; `interface` extends the entry point.
++    fn fragment(env: &str, prelude: &str, interface: &str) -> Vec<u8> {
++        let text = format!(
++            "OpCapability Shader
++             {prelude_capabilities}
++             %glsl = OpExtInstImport \"GLSL.std.450\"
++             OpMemoryModel Logical GLSL450
++             OpEntryPoint Fragment %main \"main\" %color {interface}
++             OpExecutionMode %main OriginUpperLeft
++             OpDecorate %color Location 0
++             {prelude_decorations}
++             %void = OpTypeVoid
++             %fn = OpTypeFunction %void
++             %float = OpTypeFloat 32
++             %v4float = OpTypeVector %float 4
++             %out = OpTypePointer Output %v4float
++             %color = OpVariable %out Output
++             {prelude_types}
++             %half = OpConstant %float 0.5
++             %value = OpConstantComposite %v4float %half %half %half %half
++             %main = OpFunction %void None %fn
++             %entry = OpLabel
++             OpStore %color %value
++             OpReturn
++             OpFunctionEnd
++             ",
++            prelude_capabilities = if prelude.is_empty() {
++                ""
++            } else {
++                "OpCapability InputAttachment"
++            },
++            prelude_decorations = prelude.split('|').next().unwrap_or(""),
++            prelude_types = prelude.split('|').nth(1).unwrap_or(""),
++        );
++        let dir = std::env::temp_dir().join(format!(
++            "m2v-fragment-blend-{}-{}",
++            std::process::id(),
++            std::time::SystemTime::now()
++                .duration_since(std::time::UNIX_EPOCH)
++                .unwrap()
++                .as_nanos()
++        ));
++        std::fs::create_dir_all(&dir).unwrap();
++        let source = dir.join("fragment.spvasm");
++        let binary = dir.join("fragment.spv");
++        std::fs::write(&source, text).unwrap();
++        let assembled = crate::tools::run(
++            "spirv-as",
++            &[
++                "--target-env",
++                env,
++                source.to_str().unwrap(),
++                "-o",
++                binary.to_str().unwrap(),
++            ],
++        );
++        let bytes = assembled.and_then(|_| std::fs::read(&binary).map_err(|e| e.to_string()));
++        let _ = std::fs::remove_dir_all(&dir);
++        bytes.expect("fixture assembles")
++    }
++
++    fn validate(bytes: &[u8]) {
++        let dir =
++            std::env::temp_dir().join(format!("m2v-fragment-blend-val-{}", std::process::id()));
++        let result = crate::tools::spirv_val_bytes(bytes, &dir);
++        let _ = std::fs::remove_dir(&dir);
++        result.expect("rewritten module validates");
++    }
++
++    fn plan(color: BlendEquation, alpha: BlendEquation, binding: u32) -> BlendedFragmentColor {
++        let rgb = SourceClamp::checked(-0.752_941_2, 1.250_980_4).unwrap();
++        let unit = SourceClamp::checked(0.0, 1.0).unwrap();
++        BlendedFragmentColor {
++            encoding: FragmentColorEncoding {
++                location: 0,
++                channels: [ColorChannelEncoding::Affine(XR); 4],
++            },
++            blend: Some(ProgrammableBlend {
++                color,
++                alpha,
++                source_clamp: [rgb, rgb, rgb, unit],
++                arithmetic: BlendArithmetic::Binary16,
++                destination: DestinationInput { set: 0, binding },
++            }),
++        }
++    }
++
++    fn destination_variables(module: &Module) -> Vec<Word> {
++        module
++            .annotations
++            .iter()
++            .filter(|inst| {
++                inst.class.opcode == Op::Decorate
++                    && inst.operands.get(1)
++                        == Some(&Operand::Decoration(Decoration::InputAttachmentIndex))
++                    && inst.operands.get(2) == Some(&Operand::LiteralBit32(0))
++            })
++            .filter_map(|inst| id(inst.operands.first()))
++            .collect()
++    }
++
++    fn body_ops(module: &Module) -> Vec<Op> {
++        module
++            .functions
++            .iter()
++            .flat_map(|f| f.all_inst_iter())
++            .map(|inst| inst.class.opcode)
++            .collect()
++    }
++
++    #[test]
++    fn blended_output_reads_its_declared_destination_in_both_interface_rules() {
++        for (env, all_globals) in [("vulkan1.0", false), ("vulkan1.2", true)] {
++            let bytes = fragment(env, "", "");
++            let out = blend_and_quantize_present_fragment_color_outputs(
++                &bytes,
++                &[plan(SOURCE_OVER, SOURCE_OVER, 192)],
++            )
++            .unwrap();
++            validate(&out);
++            let module = load_bytes(&out).unwrap();
++            let variables = destination_variables(&module);
++            assert_eq!(variables.len(), 1, "{env}");
++            let variable = variables[0];
++            assert_eq!(
++                direct_decoration(&module, variable, Decoration::DescriptorSet),
++                Some(0)
++            );
++            assert_eq!(
++                direct_decoration(&module, variable, Decoration::Binding),
++                Some(192)
++            );
++            assert!(module.capabilities.iter().any(|inst| {
++                inst.operands.first() == Some(&Operand::Capability(Capability::InputAttachment))
++            }));
++            assert_eq!(
++                module.entry_points[0].operands[3..].contains(&Operand::IdRef(variable)),
++                all_globals,
++                "{env}: the destination joins the interface exactly when SPIR-V 1.4 requires it"
++            );
++            let ops = body_ops(&module);
++            assert_eq!(ops.iter().filter(|&&op| op == Op::ImageRead).count(), 1);
++            assert!(ops.contains(&Op::QuantizeToF16));
++        }
++    }
++
++    #[test]
++    fn an_existing_destination_input_is_reused_only_at_the_declared_binding() {
++        let prelude = "OpDecorate %fetch InputAttachmentIndex 0
++                       OpDecorate %fetch DescriptorSet 0
++                       OpDecorate %fetch Binding 192
++                       |%image = OpTypeImage %float SubpassData 0 0 0 2 Unknown
++                       %image_ptr = OpTypePointer UniformConstant %image
++                       %fetch = OpVariable %image_ptr UniformConstant";
++        let bytes = fragment("vulkan1.2", prelude, "%fetch");
++        let out = blend_and_quantize_present_fragment_color_outputs(
++            &bytes,
++            &[plan(SOURCE_OVER, SOURCE_OVER, 192)],
++        )
++        .unwrap();
++        validate(&out);
++        assert_eq!(destination_variables(&load_bytes(&out).unwrap()).len(), 1);
++
++        let refused = blend_and_quantize_present_fragment_color_outputs(
++            &bytes,
++            &[plan(SOURCE_OVER, SOURCE_OVER, 195)],
++        );
++        assert!(matches!(
++            refused,
++            Err(ColorQuantizationRefusal::DestinationInput(0))
++        ));
++    }
++
++    #[test]
++    fn a_new_destination_cannot_take_an_occupied_binding() {
++        let prelude = "OpDecorate %other DescriptorSet 0
++                       OpDecorate %other Binding 192
++                       |%image = OpTypeImage %float 2D 0 0 0 1 Unknown
++                       %sampled = OpTypeSampledImage %image
++                       %sampled_ptr = OpTypePointer UniformConstant %sampled
++                       %other = OpVariable %sampled_ptr UniformConstant";
++        let bytes = fragment("vulkan1.2", prelude, "%other");
++        assert!(matches!(
++            blend_and_quantize_present_fragment_color_outputs(
++                &bytes,
++                &[plan(SOURCE_OVER, SOURCE_OVER, 192)],
++            ),
++            Err(ColorQuantizationRefusal::DestinationInput(0))
++        ));
++    }
++
++    #[test]
++    fn every_factor_and_operation_produces_a_valid_module() {
++        use BlendFactor as F;
++        let factors = [
++            F::Zero,
++            F::One,
++            F::SourceColor,
++            F::OneMinusSourceColor,
++            F::SourceAlpha,
++            F::OneMinusSourceAlpha,
++            F::DestinationColor,
++            F::OneMinusDestinationColor,
++            F::DestinationAlpha,
++            F::OneMinusDestinationAlpha,
++            F::SourceAlphaSaturated,
++        ];
++        let operations = [
++            BlendOperation::Add,
++            BlendOperation::Subtract,
++            BlendOperation::ReverseSubtract,
++            BlendOperation::Min,
++            BlendOperation::Max,
++        ];
++        let bytes = fragment("vulkan1.2", "", "");
++        for (index, &factor) in factors.iter().enumerate() {
++            let color = BlendEquation {
++                source: factor,
++                destination: factors[factors.len() - 1 - index],
++                operation: operations[index % operations.len()],
++            };
++            let alpha = BlendEquation {
++                source: factors[(index + 3) % factors.len()],
++                destination: factor,
++                operation: operations[(index + 2) % operations.len()],
++            };
++            let out = blend_and_quantize_present_fragment_color_outputs(
++                &bytes,
++                &[plan(color, alpha, 192)],
++            )
++            .unwrap_or_else(|e| panic!("{color:?}/{alpha:?}: {e}"));
++            validate(&out);
++        }
++    }
++
++    #[test]
++    fn float32_arithmetic_rounds_nothing_and_an_unblended_plan_is_the_quantizer() {
++        let bytes = fragment("vulkan1.2", "", "");
++        let mut float = plan(SOURCE_OVER, SOURCE_OVER, 192);
++        if let Some(blend) = &mut float.blend {
++            blend.arithmetic = BlendArithmetic::Float32;
++        }
++        let out = blend_and_quantize_present_fragment_color_outputs(&bytes, &[float]).unwrap();
++        validate(&out);
++        assert!(!body_ops(&load_bytes(&out).unwrap()).contains(&Op::QuantizeToF16));
++
++        let encoding = float.encoding;
++        assert_eq!(
++            blend_and_quantize_present_fragment_color_outputs(
++                &bytes,
++                &[BlendedFragmentColor {
++                    encoding,
++                    blend: None
++                }]
++            )
++            .unwrap(),
++            quantize_present_fragment_color_outputs(&bytes, &[encoding]).unwrap()
++        );
++    }
++
++    #[test]
++    fn a_source_clamp_must_be_a_finite_ordered_interval() {
++        assert!(SourceClamp::checked(0.0, 1.0).is_ok());
++        assert!(SourceClamp::checked(1.0, 1.0).is_ok());
++        for (minimum, maximum) in [(1.0, 0.0), (f32::NAN, 1.0), (0.0, f32::INFINITY)] {
++            assert!(matches!(
++                SourceClamp::checked(minimum, maximum),
++                Err(ColorQuantizationRefusal::InvalidBlend)
++            ));
++        }
++    }
++}

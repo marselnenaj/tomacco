@@ -1,0 +1,155 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/m2v_cache.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/m2v_cache.rs
+@@ -343,6 +343,10 @@
+     /// also makes relocation agreement structural rather than a call-site
+     /// convention.
+     pub used_descriptor_bindings: Arc<[u32]>,
++    /// Every declaration's original four-state verdict, in sorted binding
++    /// order. The module is immutable and relocation creates another variant;
++    /// draws must not reconstruct the same declaration/use analysis.
++    descriptor_uses: Box<[(u32, crate::runtime::spirv_bind::DescriptorUse)]>,
+ }
+ 
+ impl ShaderVariant {
+@@ -350,18 +354,36 @@
+         words: Arc<Vec<u32>>,
+         samplers: Arc<[crate::runtime::spirv_bind::ReflectedSamplerDescriptor]>,
+     ) -> Arc<Self> {
+-        let used_descriptor_bindings = crate::runtime::spirv_bind::declared_binding_numbers(&words)
++        let descriptor_uses = crate::runtime::spirv_bind::declared_binding_numbers(&words)
+             .into_iter()
+-            .filter(|binding| {
+-                crate::runtime::spirv_bind::descriptor_static_use(&words, *binding).is_violation()
++            .map(|binding| {
++                (
++                    binding,
++                    crate::runtime::spirv_bind::descriptor_static_use(&words, binding),
++                )
+             })
++            .collect::<Vec<_>>()
++            .into_boxed_slice();
++        let used_descriptor_bindings = descriptor_uses
++            .iter()
++            .filter(|(_, use_)| use_.is_violation())
++            .map(|(binding, _)| *binding)
+             .collect::<Vec<_>>()
+             .into();
+         Arc::new(Self {
+             words,
+             samplers,
+             used_descriptor_bindings,
++            descriptor_uses,
+         })
++    }
++
++    pub fn descriptor_use(&self, binding: u32) -> crate::runtime::spirv_bind::DescriptorUse {
++        self.descriptor_uses
++            .binary_search_by_key(&binding, |(key, _)| *key)
++            .ok()
++            .map(|index| self.descriptor_uses[index].1)
++            .unwrap_or(crate::runtime::spirv_bind::DescriptorUse::NotDeclared)
+     }
+ }
+ 
+@@ -1063,8 +1085,10 @@
+                             crate::observe::fail(format!(
+                                 "m2v_reflect_divergence pipe={} stage=Vertex kind=vertex_builtins reflect_instance={} emit_instance={} reflect_vertex={} emit_vertex={}",
+                                 task.pipeline_ref,
+-                                vb.uses_instance_index as u8, emit_instance as u8,
+-                                vb.uses_vertex_index as u8, emit_vertex as u8
++                                vb.uses_instance_index as u8,
++                                emit_instance as u8,
++                                vb.uses_vertex_index as u8,
++                                emit_vertex as u8
+                             ));
+                         }
+                         // Decoded vertex-builtin usage census (not an error);
+@@ -1183,7 +1207,7 @@
+             Some(Entry::Loading) => {
+                 return Err(M2vCacheDecline::TranslationPending {
+                     stage: stage_name(stage),
+-                })
++                });
+             }
+             None => {}
+         }
+@@ -1234,7 +1258,10 @@
+                 crate::observe::verbose(|| {
+                     format!(
+                         "linux_m2v_translate_hit pipe={pipeline_ref} stage=Kernel tg=[{},{},{}] spv={} hits={hits} misses={misses}",
+-                        local_size[0], local_size[1], local_size[2], shader.spirv.len()
++                        local_size[0],
++                        local_size[1],
++                        local_size[2],
++                        shader.spirv.len()
+                     )
+                 });
+                 return Ok(shader);
+@@ -1244,7 +1271,7 @@
+                 return Err(e);
+             }
+             Some(Entry::Loading) => {
+-                return Err(M2vCacheDecline::TranslationPending { stage: "kernel" })
++                return Err(M2vCacheDecline::TranslationPending { stage: "kernel" });
+             }
+             None => {}
+         }
+@@ -1261,7 +1288,10 @@
+         drop(c);
+         crate::observe::fail(format!(
+             "linux_m2v_translate ok pipe={pipeline_ref} stage=Kernel tg=[{},{},{}] spv={} hits={hits} misses={misses}",
+-            local_size[0], local_size[1], local_size[2], shader.spirv.len()
++            local_size[0],
++            local_size[1],
++            local_size[2],
++            shader.spirv.len()
+         ));
+     }
+     Ok(shader)
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -8139,10 +8139,8 @@
+                     } else {
+                         0
+                     };
+-                    crate::runtime::spirv_bind::declares_descriptor(
+-                        &f_words,
+-                        TEXTURE_BINDING_BASE + i + base_off,
+-                    )
++                    f_variant.descriptor_use(TEXTURE_BINDING_BASE + i + base_off)
++                        != crate::runtime::spirv_bind::DescriptorUse::NotDeclared
+                 },
+             );
+             // Declaration is not the bar the specification sets — a layout must
+@@ -8157,7 +8155,7 @@
+                 .map(|gap| {
+                     (
+                         *gap,
+-                        frag_unbound_static_use(gap, &f_words, separate_sampled),
++                        frag_unbound_static_use(gap, &f_variant, separate_sampled),
+                     )
+                 })
+                 .collect();
+@@ -14362,11 +14360,11 @@
+ /// downgrading a class nobody has measured.
+ fn frag_unbound_static_use(
+     gap: &FragUnbound,
+-    f_words: &[u32],
++    shader: &crate::runtime::m2v_cache::ShaderVariant,
+     separate_sampled: bool,
+ ) -> crate::runtime::spirv_bind::DescriptorUse {
+     use crate::runtime::spirv_bind::{
+-        self, DescriptorUse, FRAG_SAMPLED_RESOURCE_BINDING_OFFSET, TEXTURE_BINDING_BASE,
++        DescriptorUse, FRAG_SAMPLED_RESOURCE_BINDING_OFFSET, TEXTURE_BINDING_BASE,
+     };
+     if gap.class != FragUnboundClass::Texture {
+         return DescriptorUse::Used;
+@@ -14376,7 +14374,7 @@
+     } else {
+         0
+     };
+-    spirv_bind::descriptor_static_use(f_words, TEXTURE_BINDING_BASE + gap.metal_index + base_off)
++    shader.descriptor_use(TEXTURE_BINDING_BASE + gap.metal_index + base_off)
+ }
+ 
+ pub(super) fn reflected_sampled_binding_collision(

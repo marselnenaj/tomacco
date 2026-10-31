@@ -1,0 +1,2853 @@
+reims-vgpu: render Stores whose readback does not block the drain.
+
+Before: on the copying rail (every Store on the Linux phone host, whose
+shared guest RAM RADV will not import) a render Store recorded the copy of
+its resident into a staging buffer, waited the fence on the drain worker,
+and then wrote the guest's pages. Under heavy load: drain busy
+808 ms/s, ~460 ms of it in that wait (`readback_split fence_us`), the GPU
+busy 17 ms/s - submission and wake latency, sat out holding the device lock
+and the QEMU main loop.
+Now: the surface Store arm (`M2vDrawSpan::ResidentSurfaceStore`, the eager
+`CopyNow` plan and native planar surfaces) submits the same copy
+(`engine::prefetch_target_readback`: same barrier, same slot acquisition,
+appended to the open batch) and keeps the staging slot as a lease that no
+ring entry owns, with the completion-timeline point of its submission. The
+Store body itself - `store_render_frame` on every rail, the
+`stamp_guest_write_gen` and `publish_surface_store` milestones - runs later
+(`runtime::async_store`), unchanged; the target readers consume the
+prefetched copy for that identity instead of recording a new one.
+Ordering: (1) a completion word due behind an unlanded Store is parked in
+`drain::publish_word` and published, in order and folded per slot, once
+every Store deferred before it has landed, so the guest never sees a
+completion before the pixels and never frees or recycles the surface
+(the hazard of the earlier deferred window, which landed after stamps);
+(2) every writeback-debt payment site lands first: a mapping-named access
+(`pay_for_mapping`, hence every `settle_for_mapping`, the skipping BGRA
+writer) through the newest Store into that mapping or into any page it
+shares, a texture-named or unnamed one (`pay_for_texture`, `pay_all`) all
+of them; blits, compute records and presents land all of them; (3) every
+packet except `EXEC_INDIRECT2`/`NOP` lands all of them first, as do a
+`REPLACE_PHYSICAL` at its arrival and a mapper ring request; a Store that is
+not deferred lands all of them before it runs, and a draw into a surface
+with a deferred Store lands it first. Landing is in Store order and
+re-resolves the destination from the mapping table then.
+Liveness: each drain pass starts and ends by landing what is ready; the end
+asks the stamp completion thread (new wake entries, `install_drain_wake`)
+to schedule the drain at the oldest copy's timeline point, else lands all;
+the device poll reschedules a drain that still owes anything; a Store older
+than 250 ms is landed waiting. Teardown returns prefetched leases before
+it waits for leases. `REIMS_VGPU_ASYNC_READBACK=off` restores the
+synchronous Store.
+Census (`store_routes`): async_store_deferred, async_store_declined_*,
+async_store_land_<site>{,_us} for ready/packet/redraw/mapping/texture/
+unnamed/command/capacity/declined/no_wake/stale, async_store_age_us,
+async_store_word_parked/released/folded, async_store_word_park_us,
+async_store_wake_armed/unavailable, async_store_poll_reschedule,
+async_store_lost, async_readback_consume_wait_us,
+async_readback_copied_at_prefetch, async_readback_abandoned_teardown.
+Tests: unit `runtime::async_store::tests` (9: word waits for exactly the
+Stores before it, no overtaking, per-slot folding, domains never fold,
+mapping depth, page overlap, aliasing reach, dense order, in-progress Store
+still holds its words),
+`runtime::drain::tests::async_store_words` (3, real publish path: parked
+word reaches the stamp page only when the Store lands; a drain pass lands
+and releases; idle publishes at once), `engine::async_readback::tests` (2),
+`stamp_completion::drain_wake_tests` (2), `draw::vulkan`
+`async_store_eligibility_tests` (1); GPU `vk_engine_parity::
+a_prefetched_store_readback_is_the_frame_of_its_store_and_is_read_once` on
+RADV NAVI21 (a draw recorded after the prefetch does not reach it, copied
+and leased readers each consume it once, the next reader sees the resident
+as drawn since, an unread prefetch drops).
+
+diff --git a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+index 5a36df3..d9092f0 100644
+--- a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -536,6 +536,20 @@ pub const COMPUTE_SCATTER: &str = "REIMS_VGPU_COMPUTE_SCATTER";
+ /// census, the reader argument and the standing alarm.
+ pub const LAZY_WRITEBACK: &str = "REIMS_VGPU_LAZY_WRITEBACK";
+ 
++/// `off` narrows an eager render Store back to waiting for its readback on the
++/// drain worker, instead of submitting the copy and finishing the guest
++/// writeback on a later drain pass once the copy's timeline point is reached.
++///
++/// The asynchronous form writes the same bytes into the same pages; what it
++/// moves is *when*, inside a window the guest cannot observe: every deferred
++/// Store lands before any completion stamp is published, before any packet
++/// other than a command-buffer submission runs, before any host reader or
++/// writer of guest pages (the writeback-debt payment sites), and before any
++/// later draw into the same surface. `crate::runtime::async_store` states the
++/// ordering argument. It exists so a torn frame or a stall is attributable to
++/// one of the two rails without rebuilding.
++pub const ASYNC_READBACK: &str = "REIMS_VGPU_ASYNC_READBACK";
++
+ /// `off` narrows the idle drain back to returning every empty image-slab block
+ /// to the driver on each fired pass, instead of only once idle has settled.
+ ///
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
+index 3d8c1c3..4fb29bd 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/mod.rs
+@@ -152,6 +152,16 @@ use std::sync::Arc;
+ /// exactly what this seam exists to prevent.
+ pub type StampAnnounce = Arc<dyn Fn(u32) + Send + Sync>;
+ 
++/// How a rail's completion thread asks for the drain worker to run again —
++/// the vocabulary of [`Backend::install_drain_wake`].
++///
++/// No argument: the drain decides for itself what became ready. It exists for
++/// the async readback rail ([`crate::runtime::async_store`]), whose render
++/// Stores finish their guest writeback on a later drain pass once the copy's
++/// timeline point is reached, and which would otherwise wait for the next
++/// guest doorbell or the device poll to be run again.
++pub type DrainWake = Arc<dyn Fn() + Send + Sync>;
++
+ /// What the device executes guest work through.
+ ///
+ /// `pub(crate)`: this is the device's internal seam, and its vocabulary is the
+@@ -544,6 +554,11 @@ pub(crate) trait Backend: Copy {
+     /// announce from and drops it.
+     fn install_stamp_announce(&self, _announce: StampAnnounce) {}
+ 
++    /// Install the hook a rail's completion thread calls to have the drain run
++    /// again (see [`DrainWake`]). Resolved by device id like the announce hook,
++    /// and dropped by a rail with no completion thread.
++    fn install_drain_wake(&self, _wake: DrainWake) {}
++
+     // --- What the guest is told the GPU can do ------------------------------
+     //
+     // `CmdGetDeviceInfo` and `CmdGetComputeInfo` are asked **once** per boot and
+@@ -1705,6 +1720,15 @@ impl Backend for SelectedBackend {
+         }
+     }
+ 
++    fn install_drain_wake(&self, wake: DrainWake) {
++        match self {
++            #[cfg(feature = "backend-metal")]
++            Self::Metal(b) => b.install_drain_wake(wake),
++            #[cfg(feature = "backend-vulkan")]
++            Self::Vulkan(b) => b.install_drain_wake(wake),
++        }
++    }
++
+     fn device_info_limits(&self) -> DeviceInfoLimits {
+         match self {
+             #[cfg(feature = "backend-metal")]
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/async_readback.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/async_readback.rs
+new file mode 100644
+index 0000000..f0cb35e
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/async_readback.rs
+@@ -0,0 +1,221 @@
++//! Readbacks submitted at a render Store and consumed later, so the drain does
++//! not wait on the GPU at the Store.
++//!
++//! # What this is for
++//!
++//! On a host whose guest RAM cannot be imported (the Linux phone host: shared
++//! `memory-backend-ram`, RADV refuses the host-pointer import) every render
++//! Store takes the copying rail: copy the resident into a staging buffer, wait
++//! the fence, map, and write the guest's pages on the CPU. Heavy
++//! minutes spent 460 ms of every drain second in that fence wait while the GPU
++//! itself was busy 17 ms a second, so nearly all of it was submission and wake
++//! latency the drain sat out holding the device lock (and, on this machine, the
++//! QEMU main loop's BQL).
++//!
++//! `runtime::async_store` decides *when* a Store's guest writeback may happen
++//! later; this half is the engine's part. [`super::prefetch_target_readback`]
++//! records and submits the copy exactly where the synchronous Store would have,
++//! and keeps the staging slot as a lease that belongs to no ring entry, so the
++//! ring retiring (and resetting) the slot's fence cannot touch it. Completion
++//! is the FIFO completion timeline point of the submission that carries the
++//! copy, which any thread may wait or poll and which is never reset.
++//!
++//! The Store itself runs later through the same code as before.
++//! `read_target_leased` / `read_target_texels_*` take the prefetched copy for
++//! their identity instead of recording a new one, wait its point (normally
++//! already reached), and hand the bytes on through the same lease or copy they
++//! always returned. So every Store rail, and every byte it writes, is
++//! unchanged; only the moment the bytes reach guest RAM moves.
++//!
++//! # Why the bytes are the Store's bytes
++//!
++//! The copy is recorded at the Store, behind the draws that produced the frame,
++//! with the same `ALL_COMMANDS -> TRANSFER` barrier the synchronous rail
++//! records. Anything recorded later — a draw into the same resident, a clear —
++//! is later in queue order and cannot reach the staging buffer. The runtime
++//! additionally lands a pending Store before any later draw into its surface,
++//! so the registry bookkeeping a Store does at the end (`finish`'s epoch stamp,
++//! the sole-copy release) still describes the resident as it is.
++//!
++//! # Lifetime
++//!
++//! A prefetched slot is a readback lease, and teardown waits for every lease
++//! (`pools::teardown`) forever rather than unmap a live borrow. A prefetch held
++//! across tranches would therefore hang a teardown on the drain thread, so
++//! [`super::pools::ResourcePools::destroy_all`] drops every prefetch (returning
++//! its lease) before that wait. A Store that later finds its prefetch gone
++//! records a fresh copy, which on a torn-down device fails like any other
++//! readback of a resident that no longer exists.
++
++use super::pools::{self, BufferSlot, ReadbackLease};
++use super::{ReadbackTexel, TargetIdentity};
++
++/// How many Stores may have a submitted, unconsumed readback at once.
++///
++/// Each holds one full-surface staging slot out of the pool (24 MB for the
++/// phone's RGBA16F composite). Four covers a frame's Stores on every workload
++/// measured on the phone (one composite plus a few layers between two
++/// completion stamps); past it the runtime lands the oldest Store first.
++pub(crate) const MAX_IN_FLIGHT: usize = 4;
++
++/// Where a prefetched frame is until its Store consumes it.
++#[derive(Debug)]
++pub(crate) enum PrefetchStorage {
++    /// The staging slot itself, leased out of the pool. Returned on drop.
++    Lease(LeaseHold),
++    /// The slot could not be leased (uncached or unmappable readback memory),
++    /// so the copy was waited at the prefetch and copied out, exactly as the
++    /// synchronous rail would have. Correct, and no faster.
++    Bytes(Vec<u8>),
++}
++
++/// A readback lease that is returned when dropped unless taken.
++#[derive(Debug)]
++pub(crate) struct LeaseHold(Option<ReadbackLease>);
++
++impl LeaseHold {
++    pub(crate) fn new(lease: ReadbackLease) -> Self {
++        Self(Some(lease))
++    }
++
++    /// Hand the lease on; the taker owes its return from here.
++    pub(crate) fn take(&mut self) -> Option<ReadbackLease> {
++        self.0.take()
++    }
++}
++
++impl Drop for LeaseHold {
++    fn drop(&mut self) {
++        if let Some(lease) = self.0.take() {
++            pools::return_readback_lease(lease.token);
++        }
++    }
++}
++
++/// One submitted readback waiting for its Store.
++pub(crate) struct Prefetched {
++    pub identity: TargetIdentity,
++    /// Bytes the copy wrote: the resident's level 0 at its own texel width.
++    pub rb_size: u64,
++    pub texel: ReadbackTexel,
++    /// The resident's format, for the refusal a four-byte reader owes a wider
++    /// resident.
++    pub format: ash::vk::Format,
++    /// The slot the copy wrote, for the invalidate a non-coherent reader owes.
++    pub slot: BufferSlot,
++    pub storage: PrefetchStorage,
++    /// The completion-timeline point of the submission carrying the copy.
++    pub point: u64,
++}
++
++impl std::fmt::Debug for Prefetched {
++    // `BufferSlot` names raw handles and carries no `Debug`; the slot's size is
++    // the only part of it a log line can use.
++    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        f.debug_struct("Prefetched")
++            .field("identity", &self.identity)
++            .field("rb_size", &self.rb_size)
++            .field("texel", &self.texel)
++            .field("slot_size", &self.slot.size)
++            .field("bytes", &self.is_bytes())
++            .field("point", &self.point)
++            .finish()
++    }
++}
++
++impl Prefetched {
++    pub(crate) fn is_bytes(&self) -> bool {
++        matches!(self.storage, PrefetchStorage::Bytes(_))
++    }
++
++    /// The timeline point this prefetch still waits for, `None` once its bytes
++    /// are already in host memory.
++    pub(crate) fn pending_point(&self) -> Option<u64> {
++        (!self.is_bytes()).then_some(self.point)
++    }
++}
++
++/// The prefetch for `identity`, removed from the pool, if there is one.
++pub(crate) fn take(list: &mut Vec<Prefetched>, identity: &TargetIdentity) -> Option<Prefetched> {
++    let index = list.iter().position(|p| &p.identity == identity)?;
++    Some(list.remove(index))
++}
++
++/// The oldest point among the prefetches still in flight, which is the point
++/// the drain wants to be woken at: the runtime lands in Store order.
++pub(crate) fn earliest_point(list: &[Prefetched]) -> Option<u64> {
++    earliest_of(list.iter().map(Prefetched::pending_point))
++}
++
++fn earliest_of(points: impl IntoIterator<Item = Option<u64>>) -> Option<u64> {
++    points.into_iter().flatten().min()
++}
++
++/// Whether the timeline has reached `point`. A bytes prefetch is complete.
++pub(crate) fn reached(counter: u64, p: &Prefetched) -> bool {
++    p.is_bytes() || counter >= p.point
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn slot(size: u64) -> BufferSlot {
++        BufferSlot {
++            buffer: ash::vk::Buffer::null(),
++            memory: ash::vk::DeviceMemory::null(),
++            size,
++            mapped: 0,
++            coherent: true,
++            cached: true,
++            backing: pools::BufferBacking::Dedicated,
++        }
++    }
++
++    fn identity(id: u32) -> TargetIdentity {
++        TargetIdentity::Surface {
++            id,
++            width: 4,
++            height: 2,
++            generation: 1,
++            format: ash::vk::Format::B8G8R8A8_UNORM,
++        }
++    }
++
++    fn bytes(id: u32, point: u64) -> Prefetched {
++        Prefetched {
++            identity: identity(id),
++            rb_size: 32,
++            texel: ReadbackTexel::Bgra8,
++            format: ash::vk::Format::B8G8R8A8_UNORM,
++            slot: slot(64),
++            storage: PrefetchStorage::Bytes(vec![0; 32]),
++            point,
++        }
++    }
++
++    #[test]
++    fn a_store_takes_only_the_prefetch_of_its_own_identity_and_only_once() {
++        let mut list = vec![bytes(1, 0), bytes(2, 0)];
++        assert!(take(&mut list, &identity(3)).is_none());
++        let two = take(&mut list, &identity(2)).expect("named");
++        assert_eq!(two.identity, identity(2));
++        assert!(take(&mut list, &identity(2)).is_none(), "consumed once");
++        assert_eq!(list.len(), 1);
++    }
++
++    /// The wake point is the oldest Store's, because the drain lands in Store
++    /// order and cannot use a later copy before an earlier one; a copied-out
++    /// prefetch is already complete and asks for no wake.
++    #[test]
++    fn the_wake_point_is_the_oldest_copy_still_in_flight() {
++        let list = vec![bytes(1, 0), bytes(2, 0)];
++        assert_eq!(earliest_point(&list), None, "bytes need no wake");
++        assert!(
++            reached(0, &list[0]),
++            "bytes are complete whatever the counter"
++        );
++        assert_eq!(earliest_of([Some(9), None, Some(4), Some(7)]), Some(4));
++        assert_eq!(earliest_of([None, None]), None);
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+index 6bd9f8c..9ff0084 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -7,6 +7,7 @@
+ 
+ #![allow(unsafe_op_in_unsafe_fn)]
+ 
++mod async_readback;
+ mod buffer_slab;
+ mod caches;
+ mod color_quantization;
+@@ -2995,6 +2996,7 @@ pub fn read_resident_bgra(identity: &TargetIdentity, need: usize) -> Option<Vec<
+ /// `reason=vk_readback_submit` that could have come from either the present
+ /// drain or a deferred compute flush names neither, which is the collapse the
+ /// typed [`VkOp`] vocabulary exists to prevent.
++#[derive(Clone, Copy)]
+ struct ReadbackOps {
+     reset_cb: VkOp,
+     begin_cb: VkOp,
+@@ -3119,6 +3121,85 @@ unsafe fn copy_image_level0_to_host_delivered(
+     delivery: ReadbackDelivery,
+ ) -> Result<ReadbackResult, DrawError> {
+     let submit_started = std::time::Instant::now();
++    let SubmittedImageReadback {
++        fence,
++        readback,
++        mut lease,
++    } = submit_image_level0_readback(
++        ctx,
++        pools,
++        counters,
++        image,
++        old_layout,
++        read_layout,
++        src_access,
++        width,
++        height,
++        rb_size,
++        ops,
++        delivery,
++        false,
++    )?;
++    // Split three ways rather than timed as a whole: the submit and the copy
++    // scale with the surface, the fence does not scale with anything we control,
++    // and the fix for one is not the fix for the others.
++    use crate::runtime::drain::{note_readback_phase, ReadbackPhase};
++    note_readback_phase(
++        ReadbackPhase::Submit,
++        submit_started.elapsed().as_micros() as u64,
++    );
++    let fence_started = std::time::Instant::now();
++    pools.wait_entry_fence(ctx, counters, fence)?;
++    note_readback_phase(
++        ReadbackPhase::Fence,
++        fence_started.elapsed().as_micros() as u64,
++    );
++    // The three queries this command buffer wrote are read when its ring slot
++    // retires, by `readback_span_read`, which is the one place a slot's fence is
++    // known signalled. They used to be read here, against this call's own fence
++    // — correct for this writer and not for the guest-page writeback, which
++    // shares the probe and does not wait.
++    let map_started = std::time::Instant::now();
++    let out = deliver_completed_readback(ctx, &readback, &mut lease, rb_size, ops);
++    note_readback_phase(ReadbackPhase::Map, map_started.elapsed().as_micros() as u64);
++    out
++}
++
++/// A copy [`submit_image_level0_readback`] recorded and submitted.
++struct SubmittedImageReadback {
++    fence: ash::vk::Fence,
++    readback: pools::BufferSlot,
++    lease: ReadbackLeaseGuard,
++}
++
++/// The first half of [`copy_image_level0_to_host_delivered`]: record the copy
++/// and submit it, without waiting.
++///
++/// `on_timeline` puts a standalone copy on the FIFO completion timeline
++/// (`submit_guest_work`) instead of the plain ordered submit, so a reader that
++/// waits the copy later can wait a monotonic timeline point rather than this
++/// ring slot's fence, which the ring resets when it retires the slot
++/// (`async_readback`). A copy appended to the open batch is on that timeline
++/// already. Queue order is the same either way.
++#[allow(
++    clippy::too_many_arguments,
++    reason = "the image, how to read it, and where to deliver it"
++)]
++unsafe fn submit_image_level0_readback(
++    ctx: &context::DeviceContext,
++    pools: &mut pools::ResourcePools,
++    counters: &EngineCounters,
++    image: ash::vk::Image,
++    old_layout: ash::vk::ImageLayout,
++    read_layout: ash::vk::ImageLayout,
++    src_access: ash::vk::AccessFlags,
++    width: u32,
++    height: u32,
++    rb_size: u64,
++    ops: ReadbackOps,
++    delivery: ReadbackDelivery,
++    on_timeline: bool,
++) -> Result<SubmittedImageReadback, DrawError> {
+     // The slot is claimed *after* the entry, and the order is load-bearing.
+     //
+     // `begin_entry` submits any open draw batch first, and that flush runs
+@@ -3177,7 +3258,7 @@ unsafe fn copy_image_level0_to_host_delivered(
+     // `readback_free` when the entry retires, under a borrow still reading it.
+     // A leased slot belongs to no ring entry — the copy's fence is waited below
+     // and the lease is returned explicitly.
+-    let mut lease = ReadbackLeaseGuard::new(if delivery == ReadbackDelivery::Lease {
++    let lease = ReadbackLeaseGuard::new(if delivery == ReadbackDelivery::Lease {
+         pools.lease_readback()
+     } else {
+         None
+@@ -3303,32 +3384,34 @@ unsafe fn copy_image_level0_to_host_delivered(
+             .end_command_buffer(cb)
+             .map_err(|e| DrawError::VkCall(VkCall::new(ops.end_cb, e)))?;
+         let cbs = [cb];
+-        ctx.submit_queue_work(&cbs, &[], &[], &[], fence)
+-            .map_err(|e| DrawError::VkCall(VkCall::new(ops.submit, e)))?;
++        if on_timeline {
++            ctx.submit_guest_work(&cbs, fence)
++                .map_err(|e| DrawError::VkCall(VkCall::new(ops.submit, e)))?;
++        } else {
++            ctx.submit_queue_work(&cbs, &[], &[], &[], fence)
++                .map_err(|e| DrawError::VkCall(VkCall::new(ops.submit, e)))?;
++        }
+         let sealed = pools.seal_entry(Vec::new(), Vec::new());
+         pools.finish_entry_async(&ctx.device, sealed);
+     }
+-    // Split three ways rather than timed as a whole: the submit and the copy
+-    // scale with the surface, the fence does not scale with anything we control,
+-    // and the fix for one is not the fix for the others.
+-    use crate::runtime::drain::{note_readback_phase, ReadbackPhase};
+-    note_readback_phase(
+-        ReadbackPhase::Submit,
+-        submit_started.elapsed().as_micros() as u64,
+-    );
+-    let fence_started = std::time::Instant::now();
+-    pools.wait_entry_fence(ctx, counters, fence)?;
+-    note_readback_phase(
+-        ReadbackPhase::Fence,
+-        fence_started.elapsed().as_micros() as u64,
+-    );
+-    // The three queries this command buffer wrote are read when its ring slot
+-    // retires, by `readback_span_read`, which is the one place a slot's fence is
+-    // known signalled. They used to be read here, against this call's own fence
+-    // — correct for this writer and not for the guest-page writeback, which
+-    // shares the probe and does not wait.
+-    let map_started = std::time::Instant::now();
+-    let out = match lease.disarm() {
++    Ok(SubmittedImageReadback {
++        fence,
++        readback,
++        lease,
++    })
++}
++
++/// The last half of [`copy_image_level0_to_host_delivered`], for a copy whose
++/// completion the caller has already waited: hand the staging slot on as a
++/// lease, or copy it out.
++unsafe fn deliver_completed_readback(
++    ctx: &context::DeviceContext,
++    readback: &pools::BufferSlot,
++    lease: &mut ReadbackLeaseGuard,
++    rb_size: u64,
++    ops: ReadbackOps,
++) -> Result<ReadbackResult, DrawError> {
++    match lease.disarm() {
+         // The mapping is already established for the slot's lifetime, so all
+         // this owes is the invalidate a non-coherent readback owes any reader.
+         // What `ReadbackPhase::Map` measures on this arm is therefore that call
+@@ -3353,10 +3436,10 @@ unsafe fn copy_image_level0_to_host_delivered(
+             )
+             .fail_once(0);
+             pools::return_readback_lease(lease.token);
+-            pools::read_back_slot(ctx, &readback, rb_size, ops.map, ops.invalidate)
++            pools::read_back_slot(ctx, readback, rb_size, ops.map, ops.invalidate)
+                 .map(ReadbackResult::Copied)
+         }
+-        Some(lease) => match pools::invalidate_slot_for_read(ctx, &readback, ops.invalidate) {
++        Some(lease) => match pools::invalidate_slot_for_read(ctx, readback, ops.invalidate) {
+             Ok(()) => Ok(ReadbackResult::Leased(ReadbackBufferLease {
+                 token: lease.token,
+                 ptr: lease.ptr,
+@@ -3367,11 +3450,9 @@ unsafe fn copy_image_level0_to_host_delivered(
+                 Err(e)
+             }
+         },
+-        None => pools::read_back_slot(ctx, &readback, rb_size, ops.map, ops.invalidate)
++        None => pools::read_back_slot(ctx, readback, rb_size, ops.map, ops.invalidate)
+             .map(ReadbackResult::Copied),
+-    };
+-    note_readback_phase(ReadbackPhase::Map, map_started.elapsed().as_micros() as u64);
+-    out
++    }
+ }
+ 
+ /// A resident target's pixels plus the physical channel order they came out in.
+@@ -3590,6 +3671,37 @@ pub fn read_target_leased(identity: &TargetIdentity) -> Result<Option<LeasedFram
+     } = &mut *guard;
+     let ctx = owner.ensure(counters)?;
+     unsafe { pools.ensure_init(ctx, counters)? };
++    // The prefetched copy of an async Store, when there is one. It answers the
++    // same three questions this rail asks below, from what it recorded at the
++    // copy: a wider resident is refused, a copied-out frame sends the caller to
++    // the copying path (which consumes it), and a lease is lent as one.
++    if let Some(prefetched) = pools
++        .async_readbacks
++        .iter()
++        .find(|p| &p.identity == identity)
++    {
++        if !prefetched.texel.storage_layout().is_four_byte_color() {
++            return Err(DrawError::TargetRead(
++                reason::TargetReadDecline::TexelNotFourBytes {
++                    format: prefetched.format,
++                },
++            ));
++        }
++        if prefetched.is_bytes() {
++            return Ok(None);
++        }
++        let prefetched = async_readback::take(&mut pools.async_readbacks, identity)
++            .expect("found above under the same lock");
++        let bgra = prefetched.texel == ReadbackTexel::Bgra8;
++        return Ok(
++            match unsafe {
++                complete_prefetched_readback(ctx, counters, prefetched, ReadbackDelivery::Lease)?
++            } {
++                ReadbackResult::Leased(buffer) => Some(LeasedFrame { buffer, bgra }),
++                ReadbackResult::Copied(_) => None,
++            },
++        );
++    }
+     // The leased rail hands the caller a pointer into the mapped readback slot,
+     // so unlike `read_target_inner` it has nowhere to narrow a wide resident to
+     // — the bytes the caller reads are the slot's. Bounded rather than
+@@ -5765,6 +5877,14 @@ fn read_target_texels_delivered(
+     } = &mut *guard;
+     let ctx = owner.ensure(counters)?;
+     unsafe { pools.ensure_init(ctx, counters)? };
++    // A Store whose copy was submitted ahead of it (`async_readback`) reads
++    // that copy: it holds the frame as of the Store, recorded where this
++    // function would have recorded it, and it may still be in flight.
++    if let Some(prefetched) = async_readback::take(&mut pools.async_readbacks, identity) {
++        let texel = prefetched.texel;
++        let storage = unsafe { complete_prefetched_readback(ctx, counters, prefetched, delivery)? };
++        return Ok(ConsumableTargetTexels { storage, texel });
++    }
+     let (snap, layout) = readback_snapshot(pools, identity)?;
+     // Asked for at the resident's own width — the copy is a raw image→buffer
+     // move and reads the image format's texel — and narrowed below if that is
+@@ -5797,6 +5917,297 @@ fn read_target_texels_delivered(
+     }
+ }
+ 
++/// What [`prefetch_target_readback`] did with one Store's readback.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum ReadbackPrefetch {
++    /// The copy is recorded and submitted; the Store may run later and will
++    /// read it.
++    Submitted,
++    /// Nothing was recorded, for the named reason. The Store must run now, the
++    /// synchronous way.
++    Declined(&'static str),
++}
++
++/// Record and submit `identity`'s full readback now, for a render Store whose
++/// guest writeback will run later (`runtime::async_store`).
++///
++/// Exactly the copy `read_target_texels_delivered` records — same barrier,
++/// same slot acquisition, appended to the open batch when one is recording —
++/// but not waited: the staging slot is kept as a lease and the submission's
++/// completion-timeline point is recorded beside it. The next readback of this
++/// identity through any of the target readers consumes it.
++///
++/// Declines rather than recording anything when this device has no
++/// completion timeline (nothing could wait the copy off the ring), when the
++/// identity already has a prefetch (the runtime lands a Store before its
++/// surface is drawn again, so this is a caller defect to refuse rather than
++/// a frame to overwrite), or when [`async_readback::MAX_IN_FLIGHT`] copies
++/// are already outstanding.
++pub fn prefetch_target_readback(identity: &TargetIdentity) -> Result<ReadbackPrefetch, DrawError> {
++    use crate::runtime::drain::{note_readback_phase, ReadbackPhase};
++    let mut guard = lock_engine();
++    let EngineState {
++        ref mut owner,
++        ref mut pools,
++        ref counters,
++        ..
++    } = &mut *guard;
++    let ctx = owner.ensure(counters)?;
++    unsafe { pools.ensure_init(ctx, counters)? };
++    let Some(completion) = ctx.stamp_completion.as_ref() else {
++        return Ok(ReadbackPrefetch::Declined("no_timeline"));
++    };
++    if pools
++        .async_readbacks
++        .iter()
++        .any(|p| &p.identity == identity)
++    {
++        return Ok(ReadbackPrefetch::Declined("already_prefetched"));
++    }
++    if pools.async_readbacks.len() >= async_readback::MAX_IN_FLIGHT {
++        return Ok(ReadbackPrefetch::Declined("in_flight_cap"));
++    }
++    let (snap, layout) = readback_snapshot(pools, identity)?;
++    let rb_size = target_readback_extent(snap.width, snap.height, layout.bytes_per_texel())?;
++    let read_access = pools::ResidentAccess::transfer_read(snap.guest_backing.is_some());
++    let texel = if layout.is_four_byte_color() {
++        ReadbackTexel::eight_bit(snap.bgra())
++    } else {
++        ReadbackTexel::Native(layout)
++    };
++    let ops = target_readback_ops();
++    let submit_started = std::time::Instant::now();
++    let SubmittedImageReadback {
++        fence,
++        readback,
++        mut lease,
++    } = unsafe {
++        submit_image_level0_readback(
++            ctx,
++            pools,
++            counters,
++            snap.image,
++            snap.layout,
++            read_access.layout(),
++            RESIDENT_READ_SRC_ACCESS,
++            snap.width,
++            snap.height,
++            rb_size,
++            ops,
++            ReadbackDelivery::Lease,
++            true,
++        )?
++    };
++    note_readback_phase(
++        ReadbackPhase::Submit,
++        submit_started.elapsed().as_micros() as u64,
++    );
++    // Both under the lock that recorded the copy, as the synchronous reader
++    // does after its wait: the tracked layout has to follow the barrier just
++    // recorded, before any later command records one of its own.
++    pools.registry_note_access(identity, read_access);
++    counters.note_target_read(rb_size, TargetReadDelivery::Host);
++    // This submission's own point: reservations happen only under the engine
++    // lock, in submission order, and nothing has reserved since.
++    let point = completion.reserved_point();
++    let storage = match lease.disarm() {
++        Some(held) if pools::slot_span_fits(rb_size, held.slot_size) => {
++            async_readback::PrefetchStorage::Lease(async_readback::LeaseHold::new(held))
++        }
++        // No lease to keep (uncached or unmapped readback memory), or one too
++        // small to lend: finish the readback the synchronous way now. The
++        // slot is owned by the ring entry the copy was sealed into and is only
++        // safe to read before that entry retires, which is now.
++        other => {
++            let mut guard_lease = ReadbackLeaseGuard::new(other);
++            let fence_started = std::time::Instant::now();
++            unsafe { pools.wait_entry_fence(ctx, counters, fence)? };
++            note_readback_phase(
++                ReadbackPhase::Fence,
++                fence_started.elapsed().as_micros() as u64,
++            );
++            let pixels = match unsafe {
++                deliver_completed_readback(ctx, &readback, &mut guard_lease, rb_size, ops)?
++            } {
++                ReadbackResult::Copied(pixels) => pixels,
++                ReadbackResult::Leased(lent) => lent.bytes().to_vec(),
++            };
++            crate::runtime::drain::note_store_route("async_readback_copied_at_prefetch");
++            async_readback::PrefetchStorage::Bytes(pixels)
++        }
++    };
++    pools.async_readbacks.push(async_readback::Prefetched {
++        identity: identity.clone(),
++        rb_size,
++        texel,
++        format: snap.format,
++        slot: readback,
++        storage,
++        point,
++    });
++    Ok(ReadbackPrefetch::Submitted)
++}
++
++/// Wait `prefetched`'s copy and hand its bytes on in the form `delivery` asks
++/// for. The wait is normally already over: the runtime lands a Store when its
++/// point has been reached, or when an ordering point forces it, which is the
++/// only case this blocks.
++unsafe fn complete_prefetched_readback(
++    ctx: &context::DeviceContext,
++    counters: &EngineCounters,
++    prefetched: async_readback::Prefetched,
++    delivery: ReadbackDelivery,
++) -> Result<ReadbackResult, DrawError> {
++    use crate::runtime::drain::{note_readback_phase, ReadbackPhase};
++    let async_readback::Prefetched {
++        rb_size,
++        slot,
++        storage,
++        point,
++        ..
++    } = prefetched;
++    let mut held = match storage {
++        async_readback::PrefetchStorage::Bytes(pixels) => {
++            return Ok(ReadbackResult::Copied(pixels));
++        }
++        async_readback::PrefetchStorage::Lease(held) => held,
++    };
++    let fence_started = std::time::Instant::now();
++    unsafe { wait_completion_point(ctx, counters, point)? };
++    let waited = fence_started.elapsed().as_micros() as u64;
++    note_readback_phase(ReadbackPhase::Fence, waited);
++    crate::runtime::drain::note_store_route_us("async_readback_consume_wait_us", waited);
++    let map_started = std::time::Instant::now();
++    unsafe { pools::invalidate_slot_for_read(ctx, &slot, target_readback_ops().invalidate)? };
++    let lease = held.take().expect("a held prefetch lease is taken once");
++    let out = match delivery {
++        ReadbackDelivery::Lease => ReadbackResult::Leased(ReadbackBufferLease {
++            token: lease.token,
++            ptr: lease.ptr,
++            len: rb_size as usize,
++        }),
++        ReadbackDelivery::Copy => {
++            // SAFETY: the slot is mapped for its lifetime, `fits` was checked
++            // when the lease was kept, and its copy has completed above.
++            let pixels =
++                unsafe { std::slice::from_raw_parts(lease.ptr as *const u8, rb_size as usize) }
++                    .to_vec();
++            pools::return_readback_lease(lease.token);
++            ReadbackResult::Copied(pixels)
++        }
++    };
++    note_readback_phase(ReadbackPhase::Map, map_started.elapsed().as_micros() as u64);
++    Ok(out)
++}
++
++/// Block until the completion timeline reaches `point`.
++///
++/// In slices, so a queue owner that failed the submission carrying the point —
++/// which would then never be signalled — is noticed rather than waited out.
++unsafe fn wait_completion_point(
++    ctx: &context::DeviceContext,
++    counters: &EngineCounters,
++    point: u64,
++) -> Result<(), DrawError> {
++    let Some(completion) = ctx.stamp_completion.as_ref() else {
++        // A prefetch is only ever recorded with a timeline; a context without
++        // one is a different device, whose teardown already dropped it.
++        return Ok(());
++    };
++    let semaphores = [completion.semaphore()];
++    let values = [point];
++    let info = ash::vk::SemaphoreWaitInfo::default()
++        .semaphores(&semaphores)
++        .values(&values);
++    const SLICE_NS: u64 = 50_000_000;
++    let mut waited = 0u64;
++    loop {
++        if let Some(error) = ctx.queue_failure() {
++            return Err(prefetch_wait_error(counters, error));
++        }
++        match unsafe { ctx.device.wait_semaphores(&info, SLICE_NS) } {
++            Ok(()) => return Ok(()),
++            Err(ash::vk::Result::TIMEOUT) if waited < context::FENCE_TIMEOUT_NS => {
++                waited = waited.saturating_add(SLICE_NS);
++            }
++            Err(e) => return Err(prefetch_wait_error(counters, e)),
++        }
++    }
++}
++
++fn prefetch_wait_error(counters: &EngineCounters, e: ash::vk::Result) -> DrawError {
++    if e == ash::vk::Result::TIMEOUT {
++        counters.fence_timeouts.fetch_add(1, Ordering::Relaxed);
++        DrawError::FenceTimeout
++    } else if e == ash::vk::Result::ERROR_DEVICE_LOST {
++        DrawError::DeviceLost(device_lost::DeviceLostDecline::Driver {
++            op: device_lost::DeviceLostOp::PoolsWaitFencesEntry,
++            result: e,
++        })
++    } else {
++        DrawError::VkCall(VkCall::new(VkOp::PoolsWaitFencesEntry, e))
++    }
++}
++
++/// Whether `identity`'s prefetched copy has completed: `Some(true)` when a
++/// Store may land without waiting, `Some(false)` while the copy is in flight,
++/// `None` when there is no prefetch (consumed, or dropped by a teardown — the
++/// Store then reads a fresh copy and should not be held for one).
++pub fn async_readback_ready(identity: &TargetIdentity) -> Option<bool> {
++    let guard = lock_engine();
++    let prefetched = guard
++        .pools
++        .async_readbacks
++        .iter()
++        .find(|p| &p.identity == identity)?;
++    if prefetched.pending_point().is_none() {
++        return Some(true);
++    }
++    let Some(ctx) = guard.owner.ctx.as_ref() else {
++        return Some(true);
++    };
++    let Some(completion) = ctx.stamp_completion.as_ref() else {
++        return Some(true);
++    };
++    // A queue owner that failed a submission may never signal its point; the
++    // landing's own wait is what reports that, so it must be allowed to run.
++    if ctx.queue_failure().is_some() {
++        return Some(true);
++    }
++    // A failed read of the counter is a device problem the landing's own wait
++    // will report; answering "ready" sends it there instead of holding the
++    // Store for a counter that cannot be read.
++    let counter = unsafe {
++        ctx.device
++            .get_semaphore_counter_value(completion.semaphore())
++    }
++    .unwrap_or(u64::MAX);
++    Some(async_readback::reached(counter, prefetched))
++}
++
++/// Ask the completion thread to run the drain once the oldest prefetched copy
++/// lands. `false` when nothing could be armed (no prefetch in flight, no
++/// completion thread); the caller then lands its Stores itself.
++pub fn arm_async_readback_wake() -> bool {
++    let guard = lock_engine();
++    let Some(point) = async_readback::earliest_point(&guard.pools.async_readbacks) else {
++        return false;
++    };
++    guard
++        .owner
++        .ctx
++        .as_ref()
++        .and_then(|ctx| ctx.stamp_completion.as_ref())
++        .is_some_and(|completion| completion.wake_drain_at(point))
++}
++
++/// Drop `identity`'s prefetch without reading it, returning its staging slot.
++/// For a Store that landed (or failed) without consuming it.
++pub fn drop_async_readback(identity: &TargetIdentity) -> bool {
++    let mut guard = lock_engine();
++    async_readback::take(&mut guard.pools.async_readbacks, identity).is_some()
++}
++
+ fn read_target_inner(identity: &TargetIdentity) -> Result<TargetReadback, DrawError> {
+     read_target_texels(identity)?.narrow_to_rgba8()
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/mod.rs
+index d7e70b2..f24f43e 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/mod.rs
+@@ -345,6 +345,11 @@ pub(crate) struct ResourcePools {
+     /// second acquire, because either one lets a GPU copy overwrite bytes a
+     /// live borrow is still reading.
+     readback_leased: Vec<LeasedReadback>,
++    /// Readbacks a render Store submitted ahead of its guest writeback, each
++    /// holding one of the leases above until that Store consumes it. See
++    /// [`super::async_readback`]; [`Self::destroy_all`] drops them before it
++    /// waits for the leases, or a teardown would wait on itself.
++    pub(crate) async_readbacks: Vec<super::async_readback::Prefetched>,
+     /// Transient sampled-image pool, keyed by exact image and view geometry.
+     sampled_free: FreePool<SampledKey, SampledSlot>,
+     sampled_live: Vec<SampledSlot>,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/submission_and_buffers.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/submission_and_buffers.rs
+index 8cc7c0d..5d81e54 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/submission_and_buffers.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/submission_and_buffers.rs
+@@ -287,6 +287,7 @@ impl ResourcePools {
+             readback_live: None,
+             readback_multi_live: Vec::new(),
+             readback_leased: Vec::new(),
++            async_readbacks: Vec::new(),
+             sampled_free: FreePool::new(SAMPLED_FREE_CAP_PER_KEY, SAMPLED_FREE_CAP_TOTAL),
+             sampled_live: Vec::new(),
+             attachment_snapshot_free: FreePool::new(
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/teardown.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/teardown.rs
+index 7e74d41..4a88ff3 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/teardown.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/teardown.rs
+@@ -103,6 +103,20 @@ impl ResourcePools {
+         // borrow. Holders take no engine lock, so they can return the token
+         // while teardown waits. Report a delayed return once, then retain the
+         // backing until the last CPU reader actually releases it.
++        // A prefetched Store readback is a lease this thread itself holds, and
++        // it is held across drain tranches rather than for one consumer's
++        // scope. Every fence was waited above, so its copy has landed; giving
++        // the lease back here is what lets the wait below terminate. The Store
++        // that would have consumed it reads a fresh copy (or finds the
++        // resident gone) when it lands.
++        let abandoned = self.async_readbacks.len();
++        self.async_readbacks.clear();
++        if abandoned != 0 {
++            crate::runtime::drain::note_store_route_n(
++                "async_readback_abandoned_teardown",
++                abandoned as u64,
++            );
++        }
+         let lease_deadline = std::time::Instant::now() + LEASE_QUIESCE;
+         let mut delayed_reported = false;
+         while readback_leases_outstanding() != 0 {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/stamp_completion.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/stamp_completion.rs
+index 11b0915..3b7d4b8 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/stamp_completion.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/stamp_completion.rs
+@@ -192,8 +192,55 @@ enum CompletionPoint {
+ struct PendingQueue {
+     waiting: std::collections::VecDeque<Waiting>,
+     per_fifo: [usize; crate::model::MAX_CHANNELS],
++    /// Timeline points at which the drain worker asked to be woken
++    /// ([`StampCompletion::wake_drain_at`]). Not stamps: nothing is published
++    /// for them and no FIFO owns them, so they take no `per_fifo` capacity and
++    /// never set the pending masks the drain reads before a CPU stamp.
++    wakes: Vec<u64>,
+ }
+ 
++/// Remove every wake request the timeline has reached and say whether any was.
++///
++/// One drain wakeup covers all of them: the drain lands every async Store whose
++/// readback is complete when it runs, so firing once per request would only
++/// schedule empty drains.
++fn take_due_wakes(wakes: &mut Vec<u64>, reached: u64) -> bool {
++    let before = wakes.len();
++    wakes.retain(|&point| point > reached);
++    wakes.len() != before
++}
++
++/// The drain worker's wake hook, installed by the device layer like
++/// [`HOOK`] and for the same reason: the engine must not know what a bound
++/// device is. Called from the completion thread with no lock of this module
++/// held; the hook only schedules the device's drain, it never runs it.
++static WAKE_HOOK: std::sync::Mutex<Option<crate::backend::DrainWake>> = std::sync::Mutex::new(None);
++
++/// Install the hook a reached wake point calls. Idempotent; the last caller wins.
++pub fn install_drain_wake(hook: crate::backend::DrainWake) {
++    *WAKE_HOOK.lock().unwrap_or_else(|e| e.into_inner()) = Some(hook);
++}
++
++fn wake_drain() {
++    let hook = WAKE_HOOK
++        .lock()
++        .unwrap_or_else(|e| e.into_inner())
++        .as_ref()
++        .map(Arc::clone);
++    match hook {
++        Some(hook) => hook(),
++        // The device layer's 4 ms poll still reschedules a drain that owes
++        // async Stores, so a missing hook costs latency and not a hang.
++        None => crate::runtime::drain::census::note_store_route("async_store_wake_no_hook"),
++    }
++}
++
++/// How long one wake wait may block before the thread re-checks for stamps
++/// that arrived meanwhile. Short, because a stamp queued behind a wake wait
++/// would otherwise sit out the slice; a wake is armed only while an async
++/// Store's readback is in flight, which is a few milliseconds.
++const WAKE_SLICE_NS: u64 = 1_000_000;
++
+ impl PendingQueue {
+     fn is_full(&self, index: usize) -> bool {
+         self.per_fifo[index] == FIFO_PENDING_STAMP_CAPACITY
+@@ -415,6 +462,44 @@ impl StampCompletion {
+             .map(|value| (self.semaphore, value))
+     }
+ 
++    /// The completion timeline itself, for a reader on the engine-locked side
++    /// that waits or polls a point it reserved (`async_readback`). Waiting and
++    /// reading the counter are not externally synchronized against anything
++    /// this thread does; only signalling is, and only the queue signals.
++    pub(crate) fn semaphore(&self) -> vk::Semaphore {
++        self.semaphore
++    }
++
++    /// The highest point reserved so far.
++    ///
++    /// Read under the engine lock immediately after a FIFO-owned submission
++    /// returned, this is that submission's own point: reservations happen only
++    /// under the same lock, in submission order.
++    pub(crate) fn reserved_point(&self) -> u64 {
++        self.shared.next_value.load(Ordering::Acquire)
++    }
++
++    /// Wake the drain worker once the timeline reaches `point`.
++    ///
++    /// For the async readback rail: a render Store's copy is submitted and the
++    /// drain goes on, and something has to run the drain again when the copy
++    /// lands so the Store's guest writeback and the completion stamps parked
++    /// behind it are published. Never blocks. `false` when the thread is
++    /// stopping, which the caller answers by landing the Store itself.
++    pub(crate) fn wake_drain_at(&self, point: u64) -> bool {
++        if self.shared.stop.load(Ordering::Acquire) {
++            return false;
++        }
++        {
++            let mut queue = self.shared.queue.lock().unwrap_or_else(|e| e.into_inner());
++            if !queue.wakes.contains(&point) {
++                queue.wakes.push(point);
++            }
++        }
++        self.shared.wake.notify_one();
++        true
++    }
++
+     /// Retire one FIFO completion after `timeline` completes.
+     pub(crate) fn wait_for_stamp(
+         &self,
+@@ -557,6 +642,10 @@ impl StampCompletion {
+ /// condvar while there is not, so it costs nothing when the guest is idle and
+ /// adds no latency when it is not.
+ fn run(device: &ash::Device, semaphore: vk::Semaphore, shared: &Shared) {
++    enum Next {
++        Stamp(Waiting),
++        Wake(u64),
++    }
+     loop {
+         let next = {
+             let mut queue = shared.queue.lock().unwrap_or_else(|e| e.into_inner());
+@@ -566,9 +655,15 @@ fn run(device: &ash::Device, semaphore: vk::Semaphore, shared: &Shared) {
+                 }
+                 if let Some(front) = queue.waiting.front().cloned() {
+                     if matches!(front.point, CompletionPoint::Submitted(_)) {
+-                        break Some(front);
++                        break Next::Stamp(front);
+                     }
+                 }
++                // Only when no submitted stamp is ahead: a stamp's own wait
++                // covers every wake at or below its point, and the wakes are
++                // swept after it below.
++                if let Some(point) = queue.wakes.iter().copied().min() {
++                    break Next::Wake(point);
++                }
+                 let (guard, _) = shared
+                     .wake
+                     .wait_timeout(queue, std::time::Duration::from_millis(250))
+@@ -576,8 +671,41 @@ fn run(device: &ash::Device, semaphore: vk::Semaphore, shared: &Shared) {
+                 queue = guard;
+             }
+         };
+-        let Some(waiting) = next else {
+-            return;
++        let waiting = match next {
++            Next::Stamp(waiting) => waiting,
++            Next::Wake(point) => {
++                let semaphores = [semaphore];
++                let values = [point];
++                let info = vk::SemaphoreWaitInfo::default()
++                    .semaphores(&semaphores)
++                    .values(&values);
++                let reached = match unsafe { device.wait_semaphores(&info, WAKE_SLICE_NS) } {
++                    Ok(()) => unsafe { device.get_semaphore_counter_value(semaphore) }
++                        .unwrap_or(point)
++                        .max(point),
++                    // Not reached yet: loop, so a stamp queued meanwhile is
++                    // not held behind this wait.
++                    Err(vk::Result::TIMEOUT) => continue,
++                    // A device error is not an answer about this point, but the
++                    // drain is the only party that can act on it: wake it, and
++                    // let its forced landing surface the loss, rather than
++                    // spinning here on a timeline that will never move.
++                    Err(e) => {
++                        if e == vk::Result::ERROR_DEVICE_LOST {
++                            super::device_lost::note_device_lost_seen();
++                        }
++                        point
++                    }
++                };
++                let due = {
++                    let mut queue = shared.queue.lock().unwrap_or_else(|e| e.into_inner());
++                    take_due_wakes(&mut queue.wakes, reached)
++                };
++                if due {
++                    wake_drain();
++                }
++                continue;
++            }
+         };
+         let semaphores = [semaphore];
+         let CompletionPoint::Submitted(timeline) = waiting.point else {
+@@ -639,6 +767,18 @@ fn run(device: &ash::Device, semaphore: vk::Semaphore, shared: &Shared) {
+         if stopping {
+             return;
+         }
++        // Wakes the stamp's own wait already carried past. Checked here so a
++        // FIFO that keeps a stamp at the front cannot starve a wake behind it.
++        let due = {
++            let mut queue = shared.queue.lock().unwrap_or_else(|e| e.into_inner());
++            !queue.wakes.is_empty() && {
++                let counter = unsafe { device.get_semaphore_counter_value(semaphore) }.unwrap_or(0);
++                take_due_wakes(&mut queue.wakes, counter)
++            }
++        };
++        if due {
++            wake_drain();
++        }
+     }
+ }
+ 
+@@ -1315,3 +1455,41 @@ mod tests {
+         );
+     }
+ }
++
++#[cfg(test)]
++mod drain_wake_tests {
++    use super::*;
++
++    /// A wake fires once the timeline reaches its point and not before, and one
++    /// sweep removes every request the counter has passed.
++    #[test]
++    fn a_reached_point_takes_every_wake_at_or_below_it_and_no_other() {
++        let mut wakes = vec![7, 3, 9];
++        assert!(
++            !take_due_wakes(&mut wakes, 2),
++            "nothing is due below the first point"
++        );
++        assert_eq!(wakes, vec![7, 3, 9]);
++        assert!(take_due_wakes(&mut wakes, 7));
++        assert_eq!(wakes, vec![9], "3 and 7 are both reached by 7");
++        assert!(!take_due_wakes(&mut wakes, 8));
++        assert!(take_due_wakes(&mut wakes, u64::MAX));
++        assert!(wakes.is_empty());
++    }
++
++    /// Wake requests are not stamps: they take no FIFO capacity and do not set
++    /// the masks a CPU stamp consults before it may publish.
++    #[test]
++    fn a_wake_request_owns_no_fifo_capacity() {
++        let mut queue = PendingQueue::default();
++        queue.wakes.push(5);
++        for slot in 0..crate::model::MAX_CHANNELS {
++            assert!(!queue.has_pending(slot));
++            assert!(!queue.is_full(slot));
++        }
++        assert!(
++            queue.pop_front().is_none(),
++            "a wake is never popped as a stamp"
++        );
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
+index ba95c20..7bdc5cc 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/mod.rs
+@@ -421,6 +421,10 @@ impl Backend for VulkanBackend {
+         engine::stamp_completion::install_announce(announce);
+     }
+ 
++    fn install_drain_wake(&self, wake: crate::backend::DrainWake) {
++        engine::stamp_completion::install_drain_wake(wake);
++    }
++
+     fn maintain(&self, now_ms: u64) {
+         engine::maintain_resources(now_ms);
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/device/mod.rs b/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
+index 0da8a53..877fa54 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/device/mod.rs
+@@ -272,6 +272,15 @@ pub fn device_create(ops: Option<ReimsVgpuHostOps>, page_shift: u32) -> Option<u
+     crate::backend::selected().install_stamp_announce(std::sync::Arc::new(move |index: u32| {
+         announce_stamp_interrupt(id, index)
+     }));
++    // The async readback rail's way back to the drain: a render Store whose
++    // copy has landed owes its guest writeback and the stamps parked behind it,
++    // and only a drain pass can pay them. Resolved by id for the same reason
++    // as the announce hook above.
++    crate::backend::selected().install_drain_wake(std::sync::Arc::new(move || {
++        if let Some(slot) = device_slot(id) {
++            schedule_device(&slot);
++        }
++    }));
+     Some(id)
+ }
+ 
+@@ -698,6 +707,16 @@ pub fn device_poll(id: u64) -> bool {
+     // could not see the very channels the doorbell rail is responsible for.
+     crate::runtime::drain::fold_rung_child_doorbells(&mut device.state);
+     crate::runtime::drain::publish_stranded_fifos(&mut device.state, &mut host);
++    // The async readback rail's backstop. Its completion thread wakes the
++    // drain the moment a Store's copy lands; this re-schedules a drain that
++    // still owes Stores or parked stamps in case that wake was skipped (a
++    // drain that returned early on a pending present, a missing hook, a
++    // stopped completion thread), so the worst case is one poll period and
++    // never a guest asleep on a stamp until its one-second deadline.
++    if crate::runtime::async_store::owes_drain(&device.state) {
++        crate::runtime::drain::note_store_route("async_store_poll_reschedule");
++        host.schedule_bh();
++    }
+     crate::runtime::drain::try_display_online(&mut device.state, &mut host);
+     // After ONLINE, pulse VBL so the guest compositor has a display time base
+     //. Missing VBL → clear-only dual-mid present thrash.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/model/state.rs b/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+index 4350236..7fb606e 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/model/state.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+@@ -3431,6 +3431,10 @@ pub struct DeviceState {
+     /// Empty unless [`crate::config::LAZY_WRITEBACK`] is on, and empty on the
+     /// `backend-metal` arm, which arms nothing.
+     pub pending_writebacks: crate::runtime::writeback_debt::PendingWritebacks,
++    /// Render Stores whose readback is submitted and whose guest write is
++    /// still owed, and the completion words parked behind them. See
++    /// [`crate::runtime::async_store`], which owns every transition.
++    pub async_stores: crate::runtime::async_store::AsyncStores,
+     /// GVA render target → a hash of the guest physical pages its engine
+     /// resident was last armed over.
+     ///
+@@ -3593,6 +3597,7 @@ impl DeviceState {
+             retired_guest_write_tokens: Vec::new(),
+             retired_linear_residents: Vec::new(),
+             pending_writebacks: crate::runtime::writeback_debt::PendingWritebacks::default(),
++            async_stores: crate::runtime::async_store::AsyncStores::default(),
+             completion_stamp_seq: 0,
+             stamp_ledger: Default::default(),
+             gva_resident_backing: std::collections::BTreeMap::new(),
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/async_store.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/async_store.rs
+new file mode 100644
+index 0000000..f20dad7
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/async_store.rs
+@@ -0,0 +1,846 @@
++//! Render Stores whose readback does not block the drain.
++//!
++//! # What changes
++//!
++//! On a host that cannot import guest RAM every render Store reads its
++//! resident back through a staging buffer and writes the guest's pages on the
++//! CPU, and the drain worker used to wait the GPU for that readback in the
++//! middle of the Store: heavy minutes spent ~460 ms of every drain
++//! second there, holding the device lock and the QEMU main loop, while the GPU
++//! was busy 17 ms a second.
++//!
++//! With this rail a surface Store submits its copy (`engine::prefetch_target_readback`)
++//! and returns. The rest of the Store — the guest-page write through the same
++//! `store_render_frame` rail as before, the publish milestones — runs later,
++//! here, when the copy's completion-timeline point has been reached: on a later
++//! drain pass woken by the completion thread, or earlier when an ordering point
++//! below forces it. The bytes written and the pages they land in are the same;
++//! only the moment moves.
++//!
++//! # The ordering argument
++//!
++//! A Store's guest writeback was observable at three kinds of place, and each
++//! one now lands every deferred Store that precedes it:
++//!
++//! 1. **The guest learning the work completed.** The guest may read a surface
++//!    with its CPU after, and only after, the completion stamp of the command
++//!    buffer that rendered it (`writeback_debt`'s doc: iOS reads icon surfaces
++//!    after completion without naming them). So a completion word that becomes
++//!    due while any Store deferred before it is unlanded is *parked*
++//!    ([`park_word`]) and published, in order, when those Stores have landed.
++//!    This is the same promise the GPU-ordered stamp rail makes, kept by the
++//!    drain instead of a queue point: the word is never in the page before the
++//!    pixels are. Because the guest cannot know the Store finished, it also
++//!    cannot have freed or recycled the surface's pages — the hazard that sank
++//!    the earlier deferred window, which landed *after* stamps
++//!    (`render_writeback`'s "it corrupts the guest's page tables").
++//! 2. **Device-side readers and writers of guest pages.** Every one already
++//!    pays the lazy writeback ledger first (`writeback_debt::pay_for_mapping`,
++//!    `pay_for_texture`, `pay_all`, and through them every `settle_*`), so
++//!    those sites land here first: a mapping-named access lands through the
++//!    newest Store into that mapping *or into any page it shares* (two mapping
++//!    ids can name one allocation), a texture-named or unnamed access lands
++//!    all of them. Blits and compute records land all of them before they run,
++//!    and so does a present, after its rescue drains and before it freezes the
++//!    presented pages.
++//! 3. **Anything that can change what a Store would do.** Every packet other
++//!    than a command-buffer submission (`EXEC_INDIRECT2`) and a NOP lands all of
++//!    them first, so no map, unmap, delete, synchronize or display packet runs
++//!    between a Store and its write; a re-point (`REPLACE_PHYSICAL`) lands them
++//!    at its arrival, where it moves the pages, and so does a mapper ring
++//!    request. A Store that is not deferred lands all of them before it runs.
++//!    A draw into a surface with a deferred Store lands it first, so the
++//!    resident still holds exactly the Store's frame when the Store's
++//!    bookkeeping (`finish`'s epoch stamp, sole-copy release) runs, and a
++//!    second Store into one surface is never reordered behind the first.
++//!
++//! Landing is always in Store order, so two Stores whose pages alias land in
++//! the order the guest issued them. The copy itself was recorded at the Store,
++//! behind the draws that produced the frame and ahead of anything later, so
++//! the staging buffer holds the Store's frame whatever the drain did since;
++//! later GPU commands that read the resident are queue-ordered after the copy
++//! exactly as before.
++//!
++//! Each landing re-resolves its destination from the mapping table *then*
++//! (the "defer the decision, not the plan" shape `render_writeback` names as
++//! the one its four panics do not rule out). Nothing above ever lets a packet
++//! that could change that table run in between.
++//!
++//! # Liveness
++//!
++//! A deferred Store must not wait for unrelated guest activity: a guest asleep
++//! on a parked word sends nothing. So the end of every tranche lands what is
++//! ready and asks the completion thread to wake the drain at the oldest copy's
++//! timeline point ([`after_tranche`]); without a completion thread it lands
++//! everything at once, which is the synchronous rail. The device poll
++//! reschedules a drain that still owes anything ([`owes_drain`]) as a backstop.
++//!
++//! `REIMS_VGPU_ASYNC_READBACK=off` restores the synchronous Store.
++
++use std::collections::VecDeque;
++
++use crate::model::DeviceState;
++use crate::runtime::host::{HostMemory, HostOps};
++use crate::runtime::resident_target::ResidentTarget;
++
++/// Deferred Stores at once. Matches the engine's in-flight cap, which is what
++/// bounds the staging memory held out of the pool.
++pub const MAX_PENDING: usize = 4;
++
++/// How long a deferred Store may wait for its copy before a drain pass lands
++/// it regardless, waiting if it must. A copy takes a few milliseconds; this
++/// only bounds the cases that are not a copy in flight — a submission whose
++/// point the queue will never signal, a wake that was lost — so that no
++/// completion word can be parked indefinitely.
++pub const STALE_AFTER: std::time::Duration = std::time::Duration::from_millis(250);
++
++/// Whether this process defers Stores at all. Read once, for the reason
++/// `lazy_writeback_enabled` is: a boot that flipped it midway would be two
++/// devices in one log.
++pub fn enabled() -> bool {
++    use std::sync::OnceLock;
++    static ON: OnceLock<bool> = OnceLock::new();
++    *ON.get_or_init(|| {
++        let (state, value) = crate::config::read(crate::config::ASYNC_READBACK);
++        let on = !matches!(state, crate::config::Switch::Off);
++        crate::observe::off(format!(
++            "async_readback on={on} switch={state:?} value={}",
++            value.unwrap_or_else(|| "<unset>".into())
++        ));
++        on
++    })
++}
++
++/// One surface Store whose copy is submitted and whose guest write is owed.
++#[derive(Clone, Debug)]
++pub struct PendingStore {
++    /// Store order. Dense: the n-th deferred Store is `n`.
++    pub seq: u64,
++    /// The resident the draw rendered into, verbatim — never re-derived, for
++    /// the reason `WritebackDebt::target` records.
++    pub target: ResidentTarget,
++    pub mapping_id: u32,
++    pub width: u32,
++    pub height: u32,
++    /// The colour attachment's declared format, for the publish milestones.
++    pub format: u16,
++    /// The guest pages the Store will write, ascending and deduplicated, as
++    /// the mapping named them when it was deferred; `None` when they could not
++    /// all be named, which overlaps everything. The mapping cannot change
++    /// before the Store lands (every packet that could change it lands it
++    /// first), so this is also where it will land.
++    pub pages: Option<std::sync::Arc<[u64]>>,
++    pub deferred_at: std::time::Instant,
++}
++
++/// Whether two ascending page lists share a page. Either side unknown shares
++/// everything: an unnamed reader cannot be ruled out, and neither can a Store
++/// whose destination could not be named.
++fn pages_overlap(a: Option<&[u64]>, b: Option<&[u64]>) -> bool {
++    let (Some(a), Some(b)) = (a, b) else {
++        return true;
++    };
++    let (Some(&a_lo), Some(&a_hi), Some(&b_lo), Some(&b_hi)) =
++        (a.first(), a.last(), b.first(), b.last())
++    else {
++        // An empty list names no page, so it reaches none.
++        return false;
++    };
++    if a_hi < b_lo || b_hi < a_lo {
++        return false;
++    }
++    let (mut i, mut j) = (0, 0);
++    while i < a.len() && j < b.len() {
++        match a[i].cmp(&b[j]) {
++            std::cmp::Ordering::Less => i += 1,
++            std::cmp::Ordering::Greater => j += 1,
++            std::cmp::Ordering::Equal => return true,
++        }
++    }
++    false
++}
++
++/// A mapping's pages as [`PendingStore::pages`] holds them.
++fn sorted_pages(state: &DeviceState, mapping_id: u32) -> Option<std::sync::Arc<[u64]>> {
++    let mut pages = state.mapping_reach_pages(mapping_id)?;
++    pages.sort_unstable();
++    pages.dedup();
++    Some(pages.into())
++}
++
++/// A completion word that became due behind deferred Stores.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct ParkedWord {
++    /// Every Store with a smaller `seq` must land before this word.
++    pub after: u64,
++    /// The publishing domain, as `drain::publish_word` takes it: the root FIFO
++    /// or a child channel.
++    pub domain: u32,
++    pub slot: u32,
++    pub value: u32,
++}
++
++/// Why a landing happened, for the census. Every forced site is named, so a
++/// boot says which ordering point is costing the overlap.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum LandSite {
++    /// The copy was complete when the drain looked: no wait.
++    Ready,
++    /// A packet other than a submission.
++    Packet,
++    /// A draw into the surface the Store targets.
++    Redraw,
++    /// A host reader or writer naming the mapping.
++    Mapping,
++    /// A texture-named reader; it may alias any surface's pages.
++    Texture,
++    /// A reader that names nothing.
++    Unnamed,
++    /// A blit or compute record.
++    Command,
++    /// The in-flight cap.
++    Capacity,
++    /// A later Store could not be deferred and must not overtake.
++    Declined,
++    /// No wake could be armed at the end of a tranche.
++    NoWake,
++    /// Deferred longer than [`STALE_AFTER`].
++    Stale,
++}
++
++impl LandSite {
++    fn route(self) -> &'static str {
++        match self {
++            Self::Ready => "async_store_land_ready",
++            Self::Packet => "async_store_land_packet",
++            Self::Redraw => "async_store_land_redraw",
++            Self::Mapping => "async_store_land_mapping",
++            Self::Texture => "async_store_land_texture",
++            Self::Unnamed => "async_store_land_unnamed",
++            Self::Command => "async_store_land_command",
++            Self::Capacity => "async_store_land_capacity",
++            Self::Declined => "async_store_land_declined",
++            Self::NoWake => "async_store_land_no_wake",
++            Self::Stale => "async_store_land_stale",
++        }
++    }
++
++    fn route_us(self) -> &'static str {
++        match self {
++            Self::Ready => "async_store_land_ready_us",
++            Self::Packet => "async_store_land_packet_us",
++            Self::Redraw => "async_store_land_redraw_us",
++            Self::Mapping => "async_store_land_mapping_us",
++            Self::Texture => "async_store_land_texture_us",
++            Self::Unnamed => "async_store_land_unnamed_us",
++            Self::Command => "async_store_land_command_us",
++            Self::Capacity => "async_store_land_capacity_us",
++            Self::Declined => "async_store_land_declined_us",
++            Self::NoWake => "async_store_land_no_wake_us",
++            Self::Stale => "async_store_land_stale_us",
++        }
++    }
++}
++
++/// The deferred Stores and the words parked behind them.
++#[derive(Debug, Default)]
++pub struct AsyncStores {
++    pending: VecDeque<PendingStore>,
++    parked: VecDeque<(ParkedWord, std::time::Instant)>,
++    next_seq: u64,
++    /// Set while a landing runs. A Store's own write settles its mapping, which
++    /// reaches the hooks here again; those must not land a *later* Store ahead
++    /// of the one in progress.
++    landing: bool,
++}
++
++impl AsyncStores {
++    /// Nothing deferred and nothing parked: every hook returns at once.
++    pub fn is_idle(&self) -> bool {
++        self.pending.is_empty() && self.parked.is_empty()
++    }
++
++    pub fn pending_len(&self) -> usize {
++        self.pending.len()
++    }
++
++    /// Record a Store whose copy has been submitted.
++    pub fn defer(
++        &mut self,
++        target: ResidentTarget,
++        mapping_id: u32,
++        width: u32,
++        height: u32,
++        format: u16,
++        pages: Option<std::sync::Arc<[u64]>>,
++    ) -> u64 {
++        let seq = self.next_seq;
++        self.next_seq += 1;
++        self.pending.push_back(PendingStore {
++            seq,
++            target,
++            mapping_id,
++            width,
++            height,
++            format,
++            pages,
++            deferred_at: std::time::Instant::now(),
++        });
++        seq
++    }
++
++    /// Park a completion word if anything is deferred or parked ahead of it.
++    ///
++    /// Also when only words are parked: a later word may not overtake an
++    /// earlier one, whichever slot it is for, or a guest that reads two slots
++    /// could see the second FIFO complete before work the first one ordered.
++    pub fn park(&mut self, domain: u32, slot: u32, value: u32) -> bool {
++        if self.is_idle() {
++            return false;
++        }
++        self.parked.push_back((
++            ParkedWord {
++                after: self.next_seq,
++                domain,
++                slot,
++                value,
++            },
++            std::time::Instant::now(),
++        ));
++        true
++    }
++
++    /// The first Store not yet landed, which every parked word compares with.
++    fn landed_up_to(&self) -> u64 {
++        self.pending.front().map_or(self.next_seq, |p| p.seq)
++    }
++
++    /// How many Stores from the front must land for `mapping_id`'s newest
++    /// deferred Store to have landed; zero when it has none.
++    pub fn depth_through(&self, mapping_id: u32) -> usize {
++        self.pending
++            .iter()
++            .rposition(|p| p.mapping_id == mapping_id)
++            .map_or(0, |i| i + 1)
++    }
++
++    /// How many Stores from the front must land before a host reader or
++    /// writer of `mapping_id`'s pages `reach` may touch them: through the last
++    /// Store into that mapping or into any page it shares with `reach`.
++    /// Mapping ids are not page identities (two mappings can name one
++    /// allocation), so the pages are compared too.
++    pub fn depth_reaching(&self, mapping_id: u32, reach: Option<&[u64]>) -> usize {
++        self.pending
++            .iter()
++            .rposition(|p| p.mapping_id == mapping_id || pages_overlap(p.pages.as_deref(), reach))
++            .map_or(0, |i| i + 1)
++    }
++
++    /// The parked words every Store ahead of which has landed, in order, with
++    /// repeated words for one slot folded into its last value.
++    ///
++    /// Folding is what the page would hold anyway one statement later, and it
++    /// keeps the page from ever showing an older value than the ordering plane
++    /// already published for that slot (`stamp_publish_behind`). The guest's
++    /// wait is `target - current <= 0`, so the newest value satisfies every
++    /// wait an older one would have. Returns the parked ages beside them.
++    pub fn take_releasable(&mut self) -> Vec<(ParkedWord, std::time::Duration)> {
++        let landed = self.landed_up_to();
++        let mut out: Vec<(ParkedWord, std::time::Duration)> = Vec::new();
++        while let Some((word, _)) = self.parked.front() {
++            if word.after > landed {
++                break;
++            }
++            let (word, at) = self.parked.pop_front().expect("front checked");
++            let age = at.elapsed();
++            match out
++                .iter_mut()
++                .find(|(w, _)| w.domain == word.domain && w.slot == word.slot)
++            {
++                Some(entry) => {
++                    entry.0.value = word.value;
++                    crate::runtime::drain::note_store_route("async_store_word_folded");
++                }
++                None => out.push((word, age)),
++            }
++        }
++        out
++    }
++}
++
++/// Whether the drain still owes a Store's write or a parked word, so the
++/// device poll must make sure a drain runs.
++pub fn owes_drain(state: &DeviceState) -> bool {
++    !state.async_stores.is_idle()
++}
++
++/// Park the completion word `drain::publish_word` was about to publish, if
++/// Stores deferred before it have not landed. `true` when the caller must not
++/// publish it now.
++pub fn park_word(state: &mut DeviceState, domain: u32, slot: u32, value: u32) -> bool {
++    let parked = state.async_stores.park(domain, slot, value);
++    if parked {
++        crate::runtime::drain::note_store_route("async_store_word_parked");
++    }
++    parked
++}
++
++/// Land the Stores whose copies are complete, without waiting, and publish the
++/// words they were holding. For the start and end of a drain pass.
++pub fn service<M: HostMemory + HostOps>(state: &mut DeviceState, host: &mut M) {
++    if state.async_stores.is_idle() {
++        return;
++    }
++    land_stale(state, host);
++    land(state, host, None, LandSite::Ready, false);
++}
++
++/// Land, waiting, every Store at the front that has been deferred longer than
++/// [`STALE_AFTER`]. Returns how many words that published.
++fn land_stale<M: HostMemory + HostOps>(state: &mut DeviceState, host: &mut M) -> usize {
++    let stale = state
++        .async_stores
++        .pending
++        .iter()
++        .take_while(|p| p.deferred_at.elapsed() >= STALE_AFTER)
++        .count();
++    if stale == 0 {
++        return 0;
++    }
++    land(state, host, Some(stale), LandSite::Stale, true)
++}
++
++/// Land every deferred Store, waiting where a copy is still in flight.
++pub fn land_all<M: HostMemory + HostOps>(state: &mut DeviceState, host: &mut M, site: LandSite) {
++    if state.async_stores.is_idle() {
++        return;
++    }
++    land(state, host, None, site, true);
++}
++
++/// Land every deferred Store a host access to `mapping_id`'s guest pages can
++/// observe: through its own newest Store and the newest one whose pages it
++/// shares, in Store order.
++pub fn land_for_mapping_pages<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    site: LandSite,
++) {
++    if state.async_stores.is_idle() || state.async_stores.pending.is_empty() {
++        return;
++    }
++    let reach = sorted_pages(state, mapping_id);
++    let depth = state
++        .async_stores
++        .depth_reaching(mapping_id, reach.as_deref());
++    if depth == 0 {
++        // See `land_through_mapping`: nothing at all happens on this arm.
++        return;
++    }
++    land(state, host, Some(depth), site, true);
++}
++
++/// Land every deferred Store up to and including `mapping_id`'s newest one.
++pub fn land_through_mapping<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    mapping_id: u32,
++    site: LandSite,
++) {
++    if state.async_stores.is_idle() {
++        return;
++    }
++    let depth = state.async_stores.depth_through(mapping_id);
++    if depth == 0 {
++        // Nothing of this mapping's is owed, so nothing happens here at all:
++        // this is the hook every named writer reaches, some of them while they
++        // hold a staging lease, and publishing a word can reach the engine.
++        // Words wait for the next landing or drain pass, which release them.
++        return;
++    }
++    land(state, host, Some(depth), site, true);
++}
++
++/// Land the oldest Store, for a caller at the in-flight cap.
++pub fn land_oldest<M: HostMemory + HostOps>(state: &mut DeviceState, host: &mut M) {
++    if state.async_stores.pending.is_empty() {
++        return;
++    }
++    land(state, host, Some(1), LandSite::Capacity, true);
++}
++
++/// The end of a drain pass: land what is ready, then either have the drain
++/// woken when the oldest copy lands or, failing that, land everything now.
++///
++/// `true` when it published a parked word. A packet of another FIFO may be
++/// held on that word (cross-FIFO waits are decided from the stamp page), and
++/// this pass has already offered its held packets, so the caller schedules
++/// another pass rather than leave it for the guest's next doorbell.
++pub fn after_tranche<M: HostMemory + HostOps>(state: &mut DeviceState, host: &mut M) -> bool {
++    if state.async_stores.is_idle() {
++        return false;
++    }
++    let mut released = land_stale(state, host);
++    released += land(state, host, None, LandSite::Ready, false);
++    if !state.async_stores.pending.is_empty() {
++        if rail::arm_wake() {
++            crate::runtime::drain::note_store_route("async_store_wake_armed");
++        } else {
++            crate::runtime::drain::note_store_route("async_store_wake_unavailable");
++            released += land(state, host, None, LandSite::NoWake, true);
++        }
++    }
++    released != 0
++}
++
++/// Land up to `count` Stores from the front (all with `None`), stopping at
++/// the first copy still in flight unless `wait`, then publish the words that
++/// became due. Returns how many words were published.
++fn land<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    count: Option<usize>,
++    site: LandSite,
++    wait: bool,
++) -> usize {
++    if state.async_stores.landing {
++        return 0;
++    }
++    state.async_stores.landing = true;
++    let started = std::time::Instant::now();
++    let mut landed = 0usize;
++    while count.is_none_or(|n| landed < n) {
++        let Some(front) = state.async_stores.pending.front() else {
++            break;
++        };
++        if !wait && !rail::ready(&front.target) {
++            break;
++        }
++        // Left at the front while it lands, and taken off only after its pages
++        // hold the frame: a hook its own write reaches must still see it owed,
++        // or a word parked behind it would be released before its pixels.
++        let store = front.clone();
++        crate::runtime::drain::note_store_route_us(
++            "async_store_age_us",
++            store.deferred_at.elapsed().as_micros() as u64,
++        );
++        let landed_ok = rail::land(state, host, &store);
++        let popped = state.async_stores.pending.pop_front();
++        debug_assert_eq!(
++            popped.map(|p| p.seq),
++            Some(store.seq),
++            "landing is in Store order"
++        );
++        if !landed_ok {
++            // The Store's rail named its own refusal on the failure channel;
++            // this says it was a deferred one, which is a different
++            // investigation from a Store refused where it was issued.
++            crate::runtime::drain::note_store_route("async_store_lost");
++            crate::observe::fail(format!(
++                "async_store_lost mapping={} {}x{} site={site:?} target={:?}",
++                store.mapping_id, store.width, store.height, store.target
++            ));
++        }
++        landed += 1;
++    }
++    state.async_stores.landing = false;
++    if landed != 0 {
++        crate::runtime::drain::note_store_route_n(site.route(), landed as u64);
++        crate::runtime::drain::note_store_route_us(
++            site.route_us(),
++            started.elapsed().as_micros() as u64,
++        );
++    }
++    release_words(state, host)
++}
++
++fn release_words<M: HostMemory + HostOps>(state: &mut DeviceState, host: &mut M) -> usize {
++    // Never from inside a landing: the Store in progress is still owed.
++    if state.async_stores.parked.is_empty() || state.async_stores.landing {
++        return 0;
++    }
++    let words = state.async_stores.take_releasable();
++    let released = words.len();
++    for (word, age) in words {
++        crate::runtime::drain::note_store_route("async_store_word_released");
++        crate::runtime::drain::note_store_route_us(
++            "async_store_word_park_us",
++            age.as_micros() as u64,
++        );
++        crate::runtime::drain::publish_word_now(state, host, word.domain, word.slot, word.value);
++    }
++    released
++}
++
++/// The rail-specific half: whether a Store's copy has landed, how to run the
++/// Store, and how to be woken. Only the Vulkan rail defers anything.
++#[cfg(feature = "backend-vulkan")]
++mod rail {
++    use super::*;
++
++    pub(super) fn ready(target: &ResidentTarget) -> bool {
++        target
++            .get::<crate::backend::vulkan::engine::TargetIdentity>()
++            .and_then(crate::backend::vulkan::engine::async_readback_ready)
++            .unwrap_or(true)
++    }
++
++    pub(super) fn land<M: HostMemory + HostOps>(
++        state: &mut DeviceState,
++        host: &mut M,
++        store: &PendingStore,
++    ) -> bool {
++        crate::runtime::draw::vulkan::land_async_surface_store(state, host, store)
++    }
++
++    pub(super) fn arm_wake() -> bool {
++        crate::backend::vulkan::engine::arm_async_readback_wake()
++    }
++}
++
++#[cfg(not(feature = "backend-vulkan"))]
++mod rail {
++    use super::*;
++
++    pub(super) fn ready(_target: &ResidentTarget) -> bool {
++        true
++    }
++
++    pub(super) fn land<M: HostMemory + HostOps>(
++        _state: &mut DeviceState,
++        _host: &mut M,
++        _store: &PendingStore,
++    ) -> bool {
++        false
++    }
++
++    pub(super) fn arm_wake() -> bool {
++        false
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[derive(Debug, PartialEq, Eq)]
++    struct Fake(u32);
++    impl crate::runtime::resident_target::RailTarget for Fake {
++        fn same_target(&self, other: &dyn crate::runtime::resident_target::RailTarget) -> bool {
++            other.as_any().downcast_ref::<Self>() == Some(self)
++        }
++        fn as_any(&self) -> &dyn std::any::Any {
++            self
++        }
++    }
++
++    fn defer(s: &mut AsyncStores, mapping_id: u32) -> u64 {
++        s.defer(
++            ResidentTarget::new(Fake(mapping_id)),
++            mapping_id,
++            4,
++            2,
++            0,
++            None,
++        )
++    }
++
++    fn defer_on(s: &mut AsyncStores, mapping_id: u32, pages: &[u64]) -> u64 {
++        s.defer(
++            ResidentTarget::new(Fake(mapping_id)),
++            mapping_id,
++            4,
++            2,
++            0,
++            Some(pages.to_vec().into()),
++        )
++    }
++
++    #[test]
++    fn page_lists_overlap_exactly_when_they_share_a_page_or_one_is_unknown() {
++        assert!(pages_overlap(Some(&[1, 5, 9]), Some(&[2, 5])));
++        assert!(!pages_overlap(Some(&[1, 5, 9]), Some(&[2, 6, 8])));
++        assert!(
++            !pages_overlap(Some(&[1, 2]), Some(&[7, 8])),
++            "disjoint spans"
++        );
++        assert!(
++            !pages_overlap(Some(&[]), Some(&[1])),
++            "an empty list reaches nothing"
++        );
++        assert!(
++            pages_overlap(None, Some(&[1])),
++            "an unnamed Store reaches everything"
++        );
++        assert!(
++            pages_overlap(Some(&[1]), None),
++            "an unnamed reader cannot be ruled out"
++        );
++    }
++
++    /// Two mappings can name one allocation, so a reader of one lands a Store
++    /// into the other when they share a page, and only then — and everything
++    /// ahead of that Store with it, in Store order.
++    #[test]
++    fn a_reader_lands_through_the_newest_store_into_its_mapping_or_its_pages() {
++        let mut s = AsyncStores::default();
++        defer_on(&mut s, 7, &[0x10, 0x11]);
++        defer_on(&mut s, 8, &[0x20, 0x21]);
++        defer_on(&mut s, 9, &[0x30]);
++        assert_eq!(s.depth_reaching(8, Some(&[0x20, 0x21])), 2, "its own Store");
++        assert_eq!(
++            s.depth_reaching(5, Some(&[0x30, 0x40])),
++            3,
++            "an aliasing Store"
++        );
++        assert_eq!(s.depth_reaching(5, Some(&[0x40])), 0, "nothing shared");
++        assert_eq!(
++            s.depth_reaching(5, None),
++            3,
++            "an unnamed reader reaches all"
++        );
++        defer(&mut s, 6);
++        assert_eq!(
++            s.depth_reaching(5, Some(&[0x40])),
++            4,
++            "an unnamed Store is reached"
++        );
++    }
++
++    fn land_front(s: &mut AsyncStores) -> PendingStore {
++        s.pending.pop_front().expect("a Store to land")
++    }
++
++    /// With nothing deferred a word publishes at once, which is the
++    /// synchronous rail's timing exactly.
++    #[test]
++    fn an_idle_rail_parks_nothing() {
++        let mut s = AsyncStores::default();
++        assert!(s.is_idle());
++        assert!(!s.park(1, 3, 10));
++        assert!(s.is_idle());
++    }
++
++    /// The guest must not see a completion before the pixels of a Store that
++    /// preceded it: the word waits for exactly the Stores deferred before it.
++    #[test]
++    fn a_word_waits_for_every_store_deferred_before_it_and_no_later_one() {
++        let mut s = AsyncStores::default();
++        defer(&mut s, 7);
++        defer(&mut s, 8);
++        assert!(s.park(1, 3, 10), "behind two Stores");
++        defer(&mut s, 9);
++        assert!(s.take_releasable().is_empty(), "nothing has landed");
++        land_front(&mut s);
++        assert!(
++            s.take_releasable().is_empty(),
++            "one Store ahead is still owed"
++        );
++        land_front(&mut s);
++        let released = s.take_releasable();
++        assert_eq!(released.len(), 1, "Store 9 came after the word");
++        assert_eq!(released[0].0.value, 10);
++        assert_eq!(s.pending_len(), 1);
++    }
++
++    /// A word parks behind earlier parked words even with no Store pending,
++    /// so words publish in the order the device decided them.
++    #[test]
++    fn a_later_word_never_overtakes_an_earlier_one() {
++        let mut s = AsyncStores::default();
++        defer(&mut s, 7);
++        assert!(s.park(1, 3, 10));
++        land_front(&mut s);
++        assert!(s.park(2, 4, 20), "an earlier word is still parked");
++        let released = s.take_releasable();
++        assert_eq!(
++            released
++                .iter()
++                .map(|(w, _)| (w.slot, w.value))
++                .collect::<Vec<_>>(),
++            vec![(3, 10), (4, 20)]
++        );
++        assert!(s.is_idle());
++        assert!(!s.park(2, 4, 21), "idle again: publish now");
++    }
++
++    /// Two words for one slot become one publication of the newer value, and
++    /// words for other slots keep their place.
++    #[test]
++    fn repeated_words_for_one_slot_fold_into_the_newest_value() {
++        let mut s = AsyncStores::default();
++        defer(&mut s, 7);
++        assert!(s.park(1, 3, 10));
++        assert!(s.park(0, 0, 5));
++        assert!(s.park(1, 3, 11));
++        land_front(&mut s);
++        let released: Vec<_> = s.take_releasable().into_iter().map(|(w, _)| w).collect();
++        assert_eq!(released.len(), 2);
++        assert_eq!(
++            (released[0].domain, released[0].slot, released[0].value),
++            (1, 3, 11)
++        );
++        assert_eq!(
++            (released[1].domain, released[1].slot, released[1].value),
++            (0, 0, 5)
++        );
++    }
++
++    /// A word for one slot of the root FIFO and one of a child channel are two
++    /// different words even when the slot numbers agree.
++    #[test]
++    fn words_of_two_domains_never_fold() {
++        let mut s = AsyncStores::default();
++        defer(&mut s, 7);
++        assert!(s.park(0, 0, 5));
++        assert!(s.park(1, 0, 6));
++        land_front(&mut s);
++        assert_eq!(s.take_releasable().len(), 2);
++    }
++
++    /// Landing for a mapping lands every Store ahead of its newest one too, in
++    /// Store order, so aliasing pages see the guest's order of writes.
++    #[test]
++    fn a_mapping_lands_through_its_newest_store_and_everything_ahead() {
++        let mut s = AsyncStores::default();
++        defer(&mut s, 7);
++        defer(&mut s, 8);
++        defer(&mut s, 7);
++        defer(&mut s, 9);
++        assert_eq!(s.depth_through(7), 3);
++        assert_eq!(s.depth_through(8), 2);
++        assert_eq!(s.depth_through(9), 4);
++        assert_eq!(s.depth_through(5), 0);
++    }
++
++    /// A Store being landed stays owed until its write is done, so a word
++    /// parked behind it cannot be released by a hook that write reaches.
++    #[test]
++    fn a_store_in_progress_still_holds_the_words_behind_it() {
++        let mut s = AsyncStores::default();
++        defer(&mut s, 7);
++        assert!(s.park(1, 3, 10));
++        // `land` clones the front, writes, and only then pops: in between,
++        // the word is not releasable.
++        let _in_progress = s.pending.front().cloned().expect("front");
++        assert!(s.take_releasable().is_empty());
++        s.pending.pop_front();
++        assert_eq!(s.take_releasable().len(), 1);
++    }
++
++    /// Store order is dense and strictly increasing; a word compares against
++    /// the first unlanded Store, or against the next number when none is left.
++    #[test]
++    fn store_order_is_dense_and_the_landed_mark_follows_the_front() {
++        let mut s = AsyncStores::default();
++        assert_eq!(s.landed_up_to(), 0);
++        assert_eq!(defer(&mut s, 1), 0);
++        assert_eq!(defer(&mut s, 2), 1);
++        assert_eq!(s.landed_up_to(), 0);
++        land_front(&mut s);
++        assert_eq!(s.landed_up_to(), 1);
++        land_front(&mut s);
++        assert_eq!(s.landed_up_to(), 2);
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/blit_exec/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/blit_exec/mod.rs
+index 1093278..7242204 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/blit_exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/blit_exec/mod.rs
+@@ -4331,6 +4331,13 @@ pub fn execute_blit<M: HostMemory + HostOps>(
+     task_id: u32,
+     record: &BlitRecord,
+ ) -> BlitStatus {
++    // A blit may read or write a surface's resident or pages under any
++    // identity; every deferred Store lands first (`runtime::async_store`).
++    crate::runtime::async_store::land_all(
++        state,
++        host,
++        crate::runtime::async_store::LandSite::Command,
++    );
+     // One clock over the whole dispatch, attributed by the arm that ran.
+     //
+     // The per-loop clocks added alongside this are the ones that say *why* an
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/mod.rs
+index 947100e..7206191 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/compute_exec/mod.rs
+@@ -792,6 +792,13 @@ pub fn apply_record<M: HostMemory + HostOps>(
+     record: &ComputeRecord<'_>,
+     seg: &mut crate::runtime::compute_session::ComputeSegment,
+ ) -> Option<ComputeStatus> {
++    // A dispatch may read or write a surface's resident or pages under any
++    // identity; every deferred Store lands first (`runtime::async_store`).
++    crate::runtime::async_store::land_all(
++        state,
++        host,
++        crate::runtime::async_store::LandSite::Command,
++    );
+     let started = std::time::Instant::now();
+     let out = apply_record_inner(state, host, task_id, record, seg);
+     crate::runtime::drain::note_drain_phase(crate::runtime::drain::DrainPhase::Compute, started);
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+index e288e01..79b282f 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+@@ -2097,6 +2097,29 @@ fn publish_word<H: HostMemory + HostOps>(
+     domain: u32,
+     slot: u32,
+     value: u32,
++) {
++    // A completion is the guest's licence to read what the work wrote, so a
++    // word that falls due while render Stores deferred before it still owe
++    // their guest writes waits for them (`runtime::async_store`). The model
++    // has already published it to the ordering plane, exactly as it does for a
++    // word the GPU-ordered rail takes: the page lagging the plane is that
++    // rail's normal `Behind` window, and device-internal waits are decided by
++    // the plane.
++    if crate::runtime::async_store::park_word(state, domain, slot, value) {
++        return;
++    }
++    publish_word_now(state, host, domain, slot, value);
++}
++
++/// [`publish_word`] without the async Store check: for a word whose preceding
++/// Stores have landed, and for the parked words `runtime::async_store`
++/// releases in order.
++pub(crate) fn publish_word_now<H: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut H,
++    domain: u32,
++    slot: u32,
++    value: u32,
+ ) {
+     if domain == crate::runtime::ingress::Fifo::ROOT.domain().0 {
+         if write_root_stamp(state, host, value) {
+@@ -2158,6 +2181,14 @@ fn arrival_work<H: HostMemory + HostOps>(
+             arrived.submission = submission;
+         }
+         CHILD_OP_REPLACE_PHYSICAL => {
++            // The re-point moves a resource's pages at arrival, ahead of its
++            // ordering position, so the deferred Stores land before it rather
++            // than before the packet runs (`runtime::async_store`).
++            crate::runtime::async_store::land_all(
++                state,
++                host,
++                crate::runtime::async_store::LandSite::Packet,
++            );
+             arrived.repointed = repoint_at_arrival(state, host, &packet.payload);
+         }
+         _ => {}
+@@ -4043,6 +4074,13 @@ fn process_root_packet<H: HostMemory + HostOps>(
+ ) {
+     note_packet_class(reims_vgpu_protocol::packets::Channel::Root, packet.opcode);
+     note_lifetime_task_definition(state, reims_vgpu_protocol::packets::Channel::Root, packet);
++    // Every root packet is control — task, mapping and device state — so every
++    // deferred Store lands before it can change what that Store would write.
++    crate::runtime::async_store::land_all(
++        state,
++        host,
++        crate::runtime::async_store::LandSite::Packet,
++    );
+     match packet.opcode {
+         // The two device-info opcodes, one arm. They differ only in which form
+         // their payload is — the newer one prepends a parse ceiling — and
+@@ -4880,6 +4918,14 @@ fn present_named_mapping<H: HostMemory + HostOps>(
+         ));
+     }
+ 
++    // The rescue drains above can run other channels' submissions, whose
++    // Stores may be deferred; the present freezes guest pages below, so every
++    // one of them lands first (`runtime::async_store`).
++    crate::runtime::async_store::land_all(
++        state,
++        host,
++        crate::runtime::async_store::LandSite::Packet,
++    );
+     state.present.present_mapping = mapping;
+     state.present.host_mapping = mapping;
+     state.present.valid = true;
+@@ -6101,6 +6147,18 @@ fn process_child_packet<H: HostMemory + HostOps>(
+     note_packet_domain_definition(state, channel_id, packet.opcode);
+     note_packet_class(reims_vgpu_protocol::packets::Channel::Child, packet.opcode);
+     note_lifetime_task_definition(state, reims_vgpu_protocol::packets::Channel::Child, packet);
++    // Only a command-buffer submission may run between a deferred Store and its
++    // guest write: its draws, blits and dispatches reach every ordering point
++    // through the settle sites and their own hooks. Everything else — maps,
++    // unmaps, re-points, deletes, synchronizes, display presents — lands every
++    // deferred Store first (`runtime::async_store`).
++    if !matches!(packet.opcode, CHILD_OP_EXEC_INDIRECT2 | CHILD_OP_NOP) {
++        crate::runtime::async_store::land_all(
++            state,
++            host,
++            crate::runtime::async_store::LandSite::Packet,
++        );
++    }
+     match packet.opcode {
+         CHILD_OP_DEFINE_TASK2 => {
+             apply_define_task2(state, host, &packet.payload, Some(channel_id));
+@@ -7037,6 +7095,14 @@ pub fn drain_iosfc<H: HostMemory + HostOps>(state: &mut DeviceState, host: &mut
+         state.pending.iosfc = false;
+         return;
+     }
++    // Mapper requests map and unmap surface pages outside the FIFOs, so they
++    // are an ordering point like any non-submission packet: every deferred
++    // Store lands before one can change where a Store's frame would go.
++    crate::runtime::async_store::land_all(
++        state,
++        host,
++        crate::runtime::async_store::LandSite::Packet,
++    );
+ 
+     // Process requests between consumer and producer when ring is programmed.
+     //
+@@ -8116,6 +8182,21 @@ pub(crate) fn fold_rung_child_doorbells(state: &mut DeviceState) {
+ }
+ 
+ pub fn drain_pending<H: HostMemory + HostOps>(state: &mut DeviceState, host: &mut H) {
++    // Stores whose copies landed since the last pass, and the completion words
++    // they were holding, before any new work: a guest asleep on one of those
++    // words is what this pass may have been woken for.
++    crate::runtime::async_store::service(state, host);
++    drain_pending_work(state, host);
++    // Whatever is still in flight either gets a wake at its timeline point or
++    // lands now; nothing deferred may wait for the guest's next doorbell. A
++    // word published here may release a packet this pass already held, so the
++    // next pass is scheduled now rather than at the guest's next doorbell.
++    if crate::runtime::async_store::after_tranche(state, host) {
++        host.schedule_bh();
++    }
++}
++
++fn drain_pending_work<H: HostMemory + HostOps>(state: &mut DeviceState, host: &mut H) {
+     // A queued present action is part of the ordered device timeline. QEMU
+     // cannot paint it while this worker owns the device lock, so later worker
+     // wakeups must leave guest work queued until scanout consumes the action.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
+index accd7c8..9de612b 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/tests.rs
+@@ -7799,3 +7799,81 @@ fn display_vbl_tracks_guest_time_across_pause_resume_and_slow_emulation() {
+     }
+     assert_eq!(host.actions.len(), 13, "ten guest intervals produce ten VBLs");
+ }
++
++/// The async readback rail's guest-visible promise, on the real publication
++/// path: a completion word that falls due behind a deferred render Store does
++/// not reach the stamp page until that Store has landed, and then it does,
++/// with its interrupt. See `runtime::async_store`.
++mod async_store_words {
++    use super::*;
++    use crate::runtime::async_store::{self, LandSite};
++    use crate::runtime::resident_target::{RailTarget, ResidentTarget};
++
++    /// A target no rail can read, so its landing is a refused (lost) Store
++    /// without touching a device. A refused Store still lands: the word it was
++    /// holding must not be held forever behind a frame that will never come.
++    #[derive(Debug, PartialEq, Eq)]
++    struct Unreadable;
++    impl RailTarget for Unreadable {
++        fn same_target(&self, other: &dyn RailTarget) -> bool {
++            other.as_any().downcast_ref::<Self>().is_some()
++        }
++        fn as_any(&self) -> &dyn std::any::Any {
++            self
++        }
++    }
++
++    fn stamp_page() -> (DeviceState, FakeHost, u64) {
++        let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_X86);
++        let mut host = FakeHost::new();
++        let stamp_pfn = 0x40u32;
++        let stamp_gpa = state.pfn_gpa(stamp_pfn);
++        host.map_range(stamp_gpa, state.page_size() as usize, 0);
++        state.gfx.fifo_base_page = stamp_pfn;
++        (state, host, stamp_gpa)
++    }
++
++    #[test]
++    fn a_word_behind_a_deferred_store_reaches_the_page_only_when_the_store_lands() {
++        let (mut state, mut host, stamp_gpa) = stamp_page();
++        state
++            .async_stores
++            .defer(ResidentTarget::new(Unreadable), 77, 4, 2, 0, None);
++        publish_word(&mut state, &mut host, 5, 1, 22);
++        assert_eq!(host.get_u32(stamp_gpa + 4), 0, "parked behind the Store");
++        assert!(host.actions.is_empty(), "and not announced either");
++        // A second word for the same slot folds into the newer value.
++        publish_word(&mut state, &mut host, 5, 1, 23);
++        async_store::land_all(&mut state, &mut host, LandSite::Packet);
++        assert_eq!(host.get_u32(stamp_gpa + 4), 23);
++        assert!(state.async_stores.is_idle());
++        // Idle again: the next word publishes at once, as on the synchronous rail.
++        publish_word(&mut state, &mut host, 5, 1, 24);
++        assert_eq!(host.get_u32(stamp_gpa + 4), 24);
++    }
++
++    /// A drain pass never ends owing a Store whose copy is complete, so a guest
++    /// asleep on the parked word is not left waiting for its own next doorbell.
++    #[test]
++    fn a_drain_pass_lands_a_ready_store_and_releases_its_word() {
++        let (mut state, mut host, stamp_gpa) = stamp_page();
++        state
++            .async_stores
++            .defer(ResidentTarget::new(Unreadable), 77, 4, 2, 0, None);
++        publish_word(&mut state, &mut host, 5, 1, 22);
++        assert_eq!(host.get_u32(stamp_gpa + 4), 0);
++        drain_pending(&mut state, &mut host);
++        assert_eq!(host.get_u32(stamp_gpa + 4), 22);
++        assert!(!async_store::owes_drain(&state));
++    }
++
++    /// A word with nothing deferred ahead of it is published where it falls
++    /// due, so with no Store in flight this rail changes no timing at all.
++    #[test]
++    fn an_idle_rail_publishes_every_word_at_once() {
++        let (mut state, mut host, stamp_gpa) = stamp_page();
++        publish_word(&mut state, &mut host, 5, 2, 9);
++        assert_eq!(host.get_u32(stamp_gpa + 8), 9);
++        assert!(state.async_stores.is_idle());
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+index 8cc454b..080f3fc 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -123,6 +123,18 @@ pub fn encode_draw_chain<M: HostMemory + HostOps>(
+     // clock: `drain_duty`'s `draw_us` brackets exactly this function, and the
+     // whole reading is that the phases sum to it.
+     let _phase = crate::runtime::chain_phase::ChainTimer::start();
++    // A surface with a deferred Store is about to be drawn into again: land
++    // that Store (and every one ahead of it) first, so its bookkeeping still
++    // describes the resident and two Stores into one surface keep their order.
++    // See `runtime::async_store`.
++    for color in req.colors.iter().filter(|c| c.mapping_id != 0) {
++        crate::runtime::async_store::land_through_mapping(
++            state,
++            host,
++            color.mapping_id,
++            crate::runtime::async_store::LandSite::Redraw,
++        );
++    }
+     let colors: Vec<ColorRtRequest> = req.colors.clone();
+     let Some((pass_w, pass_h)) = colors.first().map(|c0| (c0.width, c0.height)) else {
+         return (EncodeStatus::BadArgs("draw_vk_no_color_target"), None);
+@@ -353,19 +365,27 @@ pub fn encode_draw_chain<M: HostMemory + HostOps>(
+                     .colors
+                     .first()
+                     .map(|c0| (c0.mapping_id, c0.width, c0.height, c0.format));
+-                let stored = c0_store
+-                    .map(|(mid, cw, ch, _)| {
+-                        store_surface_resident(state, host, &identity, mid, cw, ch, guest_store)
+-                    })
+-                    .unwrap_or(false);
++                // The async readback rail first: submit the copy and owe the
++                // guest write (and the publishes below) to `runtime::async_store`,
++                // which lands it before anything can observe the difference.
++                let deferred = c0_store.is_some_and(|(mid, cw, ch, fmt)| {
++                    defer_surface_store(state, host, &identity, mid, cw, ch, fmt, &guest_store)
++                });
++                let stored = deferred
++                    || c0_store
++                        .map(|(mid, cw, ch, _)| {
++                            store_surface_resident(state, host, &identity, mid, cw, ch, guest_store)
++                        })
++                        .unwrap_or(false);
+                 match (stored, c0_store) {
+                     (true, Some((mid, cw, ch, fmt))) => {
+                         note_mapper_ref_texture_store_route("surface_resident");
+                         // The same two publishes the `Owned` rail performs at arm
+                         // time, for the same reason: `dense_frame_seq` gates
+                         // `present_unbacked`, and a route that skipped it would
+-                        // make that gate structurally dead.
+-                        {
++                        // make that gate structurally dead. A deferred Store
++                        // publishes when it lands, after its pages hold the frame.
++                        if !deferred {
+                             let _span =
+                                 crate::runtime::chain_phase::CostSpan::new("t11_publish_us");
+                             publish_surface_store(state, host, mid, cw, ch, fmt);
+@@ -12205,6 +12225,181 @@ fn store_surface_resident<M: HostMemory + HostOps>(
+     // below succeeds, and leaving it un-reset on a refused write would fold this
+     // pass into the next Store's reading.
+     note_pass_scissor_union(width, height);
++    store_surface_resident_after_union(
++        state,
++        host,
++        identity,
++        mapping_id,
++        width,
++        height,
++        guest_store,
++    )
++}
++
++/// Whether a surface Store may take the async readback rail: exactly the two
++/// plans that end in `store_render_frame` at the Store — a native planar
++/// surface, and the eager copy. A lazy debt and a guest-backed resident keep
++/// their own rails, which wait on nothing.
++fn async_store_eligible(planar: bool, lazy_enabled: bool, guest_backed: bool) -> bool {
++    planar || surface_store_plan(lazy_enabled, guest_backed) == SurfaceStorePlan::CopyNow
++}
++
++#[cfg(test)]
++mod async_store_eligibility_tests {
++    use super::async_store_eligible;
++
++    /// Exactly the two Store plans that read back at the Store may defer the
++    /// readback; a lazy debt and a guest-backed resident wait on nothing.
++    #[test]
++    fn only_a_store_that_reads_back_at_the_store_may_defer_its_readback() {
++        // The phone's plan: lazy off, copied resident.
++        assert!(async_store_eligible(false, false, false));
++        // A native planar surface stores eagerly whatever the other two say.
++        assert!(async_store_eligible(true, true, true));
++        assert!(async_store_eligible(true, false, true));
++        // Lazy on: the debt rail already defers, and copies nothing at the Store.
++        assert!(!async_store_eligible(false, true, false));
++        // Guest-backed: the Store is the draw into guest memory; no readback.
++        assert!(!async_store_eligible(false, false, true));
++        assert!(!async_store_eligible(false, true, true));
++    }
++}
++
++/// Submit this Store's readback and owe its guest write to
++/// [`crate::runtime::async_store`], instead of waiting for the copy here.
++///
++/// `true` when the Store is deferred and the caller owes nothing further now.
++/// `false` sends the caller down the synchronous Store, after every Store
++/// deferred before this one has landed, so a refusal never reorders writes.
++#[allow(
++    clippy::too_many_arguments,
++    reason = "the Store's identity, its surface and what it publishes"
++)]
++fn defer_surface_store<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++    format: u16,
++    guest_store: &GuestStoreStatus,
++) -> bool {
++    use crate::runtime::async_store::{self, LandSite};
++    if !async_store::enabled() {
++        return false;
++    }
++    // Every Store that is not deferred runs now, so every Store deferred
++    // before it lands first: a refusal here must never reorder two writes.
++    let eligible = state.mappings.get(&mapping_id).is_some_and(|mapping| {
++        // An unmapped surface: the synchronous Store names that refusal itself.
++        mapping.mapped
++            && !mapping.page_entries.is_empty()
++            && async_store_eligible(
++                pixel_format::PlanarSurfaceFormat::from_mtl(mapping.format).is_some(),
++                crate::runtime::writeback_debt::lazy_writeback_enabled(),
++                guest_store.guest_backed,
++            )
++    });
++    if !eligible {
++        async_store::land_all(state, host, LandSite::Declined);
++        return false;
++    }
++    if state.async_stores.pending_len() >= async_store::MAX_PENDING {
++        async_store::land_oldest(state, host);
++    }
++    let declined = match crate::backend::vulkan::engine::prefetch_target_readback(identity) {
++        Ok(crate::backend::vulkan::engine::ReadbackPrefetch::Submitted) => {
++            note_pass_scissor_union(width, height);
++            let pages = {
++                let mut pages = state.mapping_reach_pages(mapping_id);
++                if let Some(pages) = pages.as_mut() {
++                    pages.sort_unstable();
++                    pages.dedup();
++                }
++                pages.map(std::sync::Arc::<[u64]>::from)
++            };
++            state.async_stores.defer(
++                crate::runtime::resident_target::ResidentTarget::new(identity.clone()),
++                mapping_id,
++                width,
++                height,
++                format,
++                pages,
++            );
++            crate::runtime::drain::note_store_route("async_store_deferred");
++            return true;
++        }
++        Ok(crate::backend::vulkan::engine::ReadbackPrefetch::Declined(why)) => why,
++        Err(error) => {
++            crate::observe::Emit::decline("async_store_prefetch", &error)
++                .field("mapping", mapping_id)
++                .fail_once(u64::from(mapping_id));
++            "prefetch_failed"
++        }
++    };
++    crate::runtime::drain::note_store_route(match declined {
++        "no_timeline" => "async_store_declined_no_timeline",
++        "already_prefetched" => "async_store_declined_already_prefetched",
++        "in_flight_cap" => "async_store_declined_in_flight_cap",
++        _ => "async_store_declined_prefetch_failed",
++    });
++    async_store::land_all(state, host, LandSite::Declined);
++    false
++}
++
++/// Run a deferred surface Store now: the Store body `store_surface_resident`
++/// would have run at the draw, minus the scissor census it already took, then
++/// the publishes the draw would have made after it.
++///
++/// Its readback is the copy [`defer_surface_store`] submitted, which the
++/// target readers consume for this identity; a Store that refused before
++/// reading it drops it here so its staging slot goes back to the pool.
++pub(crate) fn land_async_surface_store<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    store: &crate::runtime::async_store::PendingStore,
++) -> bool {
++    let Some(identity) = store
++        .target
++        .get::<crate::backend::vulkan::engine::TargetIdentity>()
++    else {
++        return false;
++    };
++    let stored = store_surface_resident_after_union(
++        state,
++        host,
++        identity,
++        store.mapping_id,
++        store.width,
++        store.height,
++        GuestStoreStatus::default(),
++    );
++    if crate::backend::vulkan::engine::drop_async_readback(identity) {
++        crate::runtime::drain::note_store_route("async_store_prefetch_unconsumed");
++    }
++    if stored {
++        publish_surface_store(
++            state,
++            host,
++            store.mapping_id,
++            store.width,
++            store.height,
++            store.format,
++        );
++    }
++    stored
++}
++
++fn store_surface_resident_after_union<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++    mapping_id: u32,
++    width: u32,
++    height: u32,
++    guest_store: GuestStoreStatus,
++) -> bool {
+     if state
+         .mappings
+         .get(&mapping_id)
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+index 73b9039..c31bc5b 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+@@ -865,6 +865,15 @@ fn write_bgra8_inner<M: HostMemory + HostOps>(
+             crate::runtime::render_writeback::SettleSite::MappingBgra8Write,
+         );
+     } else {
++        // A deferred eager Store is not a lazy debt to supersede: it is a
++        // write the guest's command stream ordered before this one, so it
++        // lands first, as it would have at its Store.
++        crate::runtime::async_store::land_for_mapping_pages(
++            state,
++            host,
++            mapping_id,
++            crate::runtime::async_store::LandSite::Mapping,
++        );
+         crate::runtime::writeback_debt::supersede_for_mapping(
+             state,
+             mapping_id,
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+index 12b7029..e4de973 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+@@ -84,6 +84,8 @@ pub mod host_writes;
+ /// Serializer-object ICB (0x36) materialization, host command fills, execute writeback.
+ pub mod icb;
+ 
++/// Render Stores whose readback does not block the drain worker.
++pub mod async_store;
+ /// Metal draw encode + writeback when MTLBs resolve.
+ // See the note on `backend::metal`: `Status` is a 264-byte `Copy` payload
+ // carried on failure paths, and boxing it would cost the refusal vocabulary
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
+index 0a5822d..5950fbd 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/writeback_debt.rs
+@@ -726,6 +726,14 @@ pub fn pay_for_mapping<M: HostMemory + HostOps>(
+     host: &mut M,
+     mapping_id: u32,
+ ) {
++    // A deferred eager Store into this mapping is owed before its pages are
++    // read or written, exactly as a lazy debt is; see `runtime::async_store`.
++    crate::runtime::async_store::land_for_mapping_pages(
++        state,
++        host,
++        mapping_id,
++        crate::runtime::async_store::LandSite::Mapping,
++    );
+     if state.pending_writebacks.is_empty() {
+         return;
+     }
+@@ -757,6 +765,11 @@ pub fn pay_for_mapping<M: HostMemory + HostOps>(
+ /// rail must not do. [`note_unnamed_reach`] is the instrument that says whether
+ /// it would be worth it; read its doc before building one.
+ pub fn pay_all<M: HostMemory + HostOps>(state: &mut DeviceState, host: &mut M) {
++    crate::runtime::async_store::land_all(
++        state,
++        host,
++        crate::runtime::async_store::LandSite::Unnamed,
++    );
+     if state.pending_writebacks.is_empty() {
+         return;
+     }
+@@ -988,6 +1001,14 @@ pub fn pay_for_texture<M: HostMemory + HostOps>(
+     task_id: u32,
+     texture_ref: u32,
+ ) {
++    // A texture reference may name a surface's pages under another identity
++    // (three references over the compositor's scanout allocation on an
++    // ordinary boot), so a deferred eager Store cannot be ruled out by name.
++    crate::runtime::async_store::land_all(
++        state,
++        host,
++        crate::runtime::async_store::LandSite::Texture,
++    );
+     if state.pending_writebacks.is_empty() {
+         return;
+     }
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index ec9a32f..56d5936 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -2419,6 +2419,142 @@ fn a_surface_resident_reads_back_in_guest_scanout_order() {
+     );
+ }
+ 
++/// An async Store's readback (`engine::prefetch_target_readback`) holds the
++/// frame as of the Store: a draw recorded into the same resident afterwards is
++/// later in queue order and must not reach it. The next reader of the identity
++/// consumes it exactly once, through either reader shape, and the reader after
++/// that reads the resident as it is now.
++///
++/// The frames are compared whole against two reference identities drawn the
++/// same two ways; the two draws differ, so the references must differ, which
++/// is asserted first or the test could not see the defect.
++#[test]
++fn a_prefetched_store_readback_is_the_frame_of_its_store_and_is_read_once() {
++    use reims_vgpu::protocol::pixel_format::MTL_FORMAT_BGRA8_UNORM;
++    use reims_vgpu_protocol::pass_action::LoadAction;
++    let _g = engine_test_session();
++    let (v, f) = triangle_spirv();
++    let (w, h) = (16u32, 16u32);
++    let surface = |id: u32| TargetIdentity::Surface {
++        id,
++        width: w,
++        height: h,
++        generation: 1,
++        format: SURFACE_TEST_FORMAT,
++    };
++    // The triangle covers the whole target, so the two frames are told apart
++    // by scaling the fragment colour with the blend constant
++    // (`src * blendColor + dst * 0`), not by a clear it would paint over.
++    let draw = |identity: &TargetIdentity, scale: [f32; 4]| {
++        let mut req = engine_req(&v, &f, w, h);
++        req.target_identity = Some(identity.clone());
++        req.skip_readback = true;
++        req.color_attachment = Some(color_attachment(
++            MTL_FORMAT_BGRA8_UNORM,
++            [0.0, 0.0, 0.0, 1.0],
++        ));
++        req.color0_declared = Some(LoadAction::Clear);
++        req.blend = Some(BlendStateResource {
++            src_rgb: MTL_BLEND_FACTOR_BLEND_COLOR,
++            dst_rgb: MTL_BLEND_FACTOR_ZERO,
++            op_rgb: MTL_BLEND_OPERATION_ADD,
++            src_alpha: MTL_BLEND_FACTOR_ONE,
++            dst_alpha: MTL_BLEND_FACTOR_ZERO,
++            op_alpha: MTL_BLEND_OPERATION_ADD,
++        });
++        req.blend_color = scale;
++        engine::execute_draw_request(engine_device(), &req).map(|_| ())
++    };
++    let red = [1.0, 1.0, 1.0, 1.0];
++    let green = [0.5, 0.5, 0.5, 1.0];
++    let (first_ref, second_ref) = (surface(4811), surface(4812));
++    match draw(&first_ref, red) {
++        Ok(()) => {}
++        Err(e) if skip_if_no_gpu(&e.to_string()) => {
++            eprintln!("SKIP prefetched store readback: {e}");
++            return;
++        }
++        Err(e) => panic!("reference draw: {e}"),
++    }
++    draw(&second_ref, green).expect("second reference draw");
++    let first = engine::read_target_texels(&first_ref)
++        .expect("first reference")
++        .pixels;
++    let second = engine::read_target_texels(&second_ref)
++        .expect("second reference")
++        .pixels;
++    assert_ne!(
++        first, second,
++        "the two blend constants must leave different frames"
++    );
++
++    for leased in [false, true] {
++        let identity = surface(if leased { 4814 } else { 4813 });
++        draw(&identity, red).expect("the Store's draw");
++        match engine::prefetch_target_readback(&identity).expect("prefetch") {
++            engine::ReadbackPrefetch::Submitted => {}
++            engine::ReadbackPrefetch::Declined(why) => {
++                panic!("a device with a completion timeline declined the prefetch: {why}")
++            }
++        }
++        assert_eq!(
++            engine::prefetch_target_readback(&identity).expect("second prefetch"),
++            engine::ReadbackPrefetch::Declined("already_prefetched"),
++            "one Store, one copy"
++        );
++        // The next frame into the same resident, recorded after the copy.
++        draw(&identity, green).expect("the later draw");
++        assert!(
++            engine::async_readback_ready(&identity).is_some(),
++            "the prefetch is held until a reader takes it"
++        );
++        let stored = if leased {
++            let frame = engine::read_target_leased(&identity)
++                .expect("leased read")
++                .expect("a cached host lends the prefetched slot");
++            assert!(frame.bgra, "a Surface resident reads back in scanout order");
++            frame.bytes().to_vec()
++        } else {
++            engine::read_target_texels(&identity)
++                .expect("copied read")
++                .pixels
++        };
++        assert_eq!(
++            stored, first,
++            "the Store's frame, not the later draw's (leased={leased})"
++        );
++        assert!(
++            engine::async_readback_ready(&identity).is_none(),
++            "consumed exactly once"
++        );
++        let now = engine::read_target_texels(&identity)
++            .expect("fresh read")
++            .pixels;
++        assert_eq!(
++            now, second,
++            "a reader after the Store reads the resident as drawn since"
++        );
++        assert!(
++            !engine::drop_async_readback(&identity),
++            "nothing left to drop"
++        );
++    }
++
++    // A prefetch nobody reads is dropped and its staging slot returned.
++    let identity = surface(4815);
++    draw(&identity, red).expect("draw");
++    assert_eq!(
++        engine::prefetch_target_readback(&identity).expect("prefetch"),
++        engine::ReadbackPrefetch::Submitted
++    );
++    assert!(
++        engine::arm_async_readback_wake(),
++        "a copy in flight can be waited for"
++    );
++    assert!(engine::drop_async_readback(&identity));
++    assert!(engine::async_readback_ready(&identity).is_none());
++}
++
+ #[test]
+ fn a_bgra_resident_draw_reads_back_identically_twice() {
+     let _g = engine_test_session();

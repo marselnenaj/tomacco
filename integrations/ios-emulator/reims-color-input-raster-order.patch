@@ -1,0 +1,458 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/color_input.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/color_input.rs
+new file mode 100644
+index 0000000..180a2d4
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/color_input.rs
+@@ -0,0 +1,91 @@
++//! Ordering between color-attachment writes and framebuffer input reads.
++//!
++//! `VK_EXT_rasterization_order_attachment_access` supplies the framebuffer-local
++//! dependency for previous fragments, including fragments of the same draw.
++//! It requires both the subpass and color-blend pipeline flags. Without its
++//! advertised and enabled color feature, the executor orders whole primitives
++//! with explicit barriers instead.
++//!
++//! Contract: <https://docs.vulkan.org/refpages/latest/refpages/source/VkPipelineColorBlendStateCreateFlagBits.html>
++
++use ash::vk;
++
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub enum ColorInputOrdering {
++    #[default]
++    PrimitiveCommands,
++    RasterizationOrderExt,
++}
++
++impl ColorInputOrdering {
++    pub fn from_supported(extension_advertised: bool, color_access_supported: bool) -> Self {
++        if extension_advertised && color_access_supported {
++            Self::RasterizationOrderExt
++        } else {
++            Self::PrimitiveCommands
++        }
++    }
++
++    pub fn requires_primitive_commands(self) -> bool {
++        self == Self::PrimitiveCommands
++    }
++
++    pub fn subpass_flags(self, has_color_inputs: bool) -> vk::SubpassDescriptionFlags {
++        if has_color_inputs && self == Self::RasterizationOrderExt {
++            vk::SubpassDescriptionFlags::RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_EXT
++        } else {
++            vk::SubpassDescriptionFlags::empty()
++        }
++    }
++
++    pub fn pipeline_flags(self, has_color_inputs: bool) -> vk::PipelineColorBlendStateCreateFlags {
++        if has_color_inputs && self == Self::RasterizationOrderExt {
++            vk::PipelineColorBlendStateCreateFlags::RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXT
++        } else {
++            vk::PipelineColorBlendStateCreateFlags::empty()
++        }
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn raster_order_requires_both_extension_and_color_feature() {
++        for extension in [false, true] {
++            for feature in [false, true] {
++                let ordering = ColorInputOrdering::from_supported(extension, feature);
++                assert_eq!(
++                    ordering.requires_primitive_commands(),
++                    !(extension && feature)
++                );
++            }
++        }
++        assert!(ColorInputOrdering::default().requires_primitive_commands());
++    }
++
++    #[test]
++    fn subpass_and_pipeline_flags_move_together_only_for_input_reads() {
++        for ordering in [
++            ColorInputOrdering::PrimitiveCommands,
++            ColorInputOrdering::RasterizationOrderExt,
++        ] {
++            for inputs in [false, true] {
++                let enabled = inputs && !ordering.requires_primitive_commands();
++                assert_eq!(
++                    ordering.subpass_flags(inputs).contains(
++                        vk::SubpassDescriptionFlags::RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_EXT
++                    ),
++                    enabled
++                );
++                assert_eq!(
++                    ordering.pipeline_flags(inputs).contains(
++                        vk::PipelineColorBlendStateCreateFlags::RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXT
++                    ),
++                    enabled
++                );
++            }
++        }
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu-vulkan/src/lib.rs b/reims-vgpu/crates/reims-vgpu-vulkan/src/lib.rs
+index b7351b9..c6d4f47 100644
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/lib.rs
+@@ -92,6 +92,7 @@ pub mod bindings;
+ pub mod blend;
+ pub mod buffer;
+ pub mod census;
++pub mod color_input;
+ pub mod depth_stencil;
+ pub mod descriptor;
+ pub mod device;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/device_features.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/device_features.rs
+index 8b55eef..32a8577 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/device_features.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/device_features.rs
+@@ -31,6 +31,7 @@
+ //!    derived from what the backend binds cannot be checked.
+ 
+ use ash::vk;
++use reims_vgpu_vulkan::color_input::ColorInputOrdering;
+ 
+ use crate::protocol::pixel_format::TexelLayout;
+ 
+@@ -323,6 +324,9 @@ pub struct DeviceFeatures {
+     /// attachment self-sampling contract; hosts without it keep the snapshot
+     /// copy rail.
+     pub attachment_feedback_loop_layout: bool,
++    /// Ordering for framebuffer input reads. The native rung is selected only
++    /// from the advertised EXT color feature and enabled on this same device.
++    pub color_input_ordering: ColorInputOrdering,
+     /// `VK_EXT_image_drm_format_modifier`, used only for the explicit linear
+     /// plane layout that gives a shared guest target its declared row pitch.
+     /// This is an extension capability rather than a device feature bit: when
+@@ -641,6 +645,15 @@ impl DeviceFeatures {
+             .attachment_feedback_loop_layout(self.attachment_feedback_loop_layout)
+     }
+ 
++    pub fn enabled_color_input_ordering(
++        &self,
++    ) -> vk::PhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT<'static> {
++        vk::PhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT::default()
++            .rasterization_order_color_attachment_access(
++                !self.color_input_ordering.requires_primitive_commands(),
++            )
++    }
++
+     /// The `VK_EXT_extended_dynamic_state` feature struct to chain, for the
+     /// rung that took the extension. Chained only when the flag is set —
+     /// asking a device for a feature it declined fails `vkCreateDevice`.
+@@ -726,6 +739,7 @@ impl DeviceFeatures {
+             mirror_clamp_to_edge,
+             image_robustness,
+             attachment_feedback_loop_layout,
++            color_input_ordering,
+             image_drm_format_modifier,
+             dual_src_blend,
+             independent_blend,
+@@ -757,6 +771,7 @@ impl DeviceFeatures {
+             "vk_features robust_buffer_access={robust_buffer_access} \
+              image_robustness={image_robustness:?} \
+              attachment_feedback_loop_layout={attachment_feedback_loop_layout} \
++             color_input_ordering={color_input_ordering:?} \
+              image_drm_format_modifier={image_drm_format_modifier} \
+              sampler_anisotropy={sampler_anisotropy} max_sampler_anisotropy={max_sampler_anisotropy} \
+              max_image_dimension_2d={max_image_dimension_2d} \
+@@ -809,6 +824,9 @@ impl DeviceFeatures {
+         if self.attachment_feedback_loop_layout {
+             out.push(vk::EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_NAME.as_ptr());
+         }
++        if !self.color_input_ordering.requires_primitive_commands() {
++            out.push(vk::EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_NAME.as_ptr());
++        }
+         if self.image_drm_format_modifier {
+             out.push(vk::EXT_IMAGE_DRM_FORMAT_MODIFIER_NAME.as_ptr());
+         }
+@@ -967,6 +985,19 @@ pub unsafe fn query(
+             false
+         };
+     let image_drm_format_modifier = has_extension(vk::EXT_IMAGE_DRM_FORMAT_MODIFIER_NAME);
++    let color_input_ordering = if has_extension(vk::EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_NAME)
++    {
++        let mut ordering =
++            vk::PhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT::default();
++        let mut chained = vk::PhysicalDeviceFeatures2::default().push_next(&mut ordering);
++        unsafe { instance.get_physical_device_features2(pd, &mut chained) };
++        ColorInputOrdering::from_supported(
++            true,
++            ordering.rasterization_order_color_attachment_access == vk::TRUE,
++        )
++    } else {
++        ColorInputOrdering::default()
++    };
+ 
+     // The same rule as `attachment_feedback_loop_layout` above: a structure
+     // that exists only with its extension is chained only on a device that
+@@ -1013,6 +1044,7 @@ pub unsafe fn query(
+         robust_buffer_access: supported.robust_buffer_access == vk::TRUE,
+         image_robustness,
+         attachment_feedback_loop_layout,
++        color_input_ordering,
+         image_drm_format_modifier,
+         sampler_anisotropy: supported.sampler_anisotropy == vk::TRUE,
+         dual_src_blend: supported.dual_src_blend == vk::TRUE,
+@@ -1161,6 +1193,7 @@ mod tests {
+             mirror_clamp_to_edge: MirrorClampToEdge::Core12,
+             image_robustness: ImageRobustness::Core13,
+             attachment_feedback_loop_layout: true,
++            color_input_ordering: ColorInputOrdering::RasterizationOrderExt,
+             image_drm_format_modifier: true,
+             dual_src_blend: true,
+             independent_blend: true,
+@@ -1456,6 +1489,38 @@ mod tests {
+         assert!(!off.required_extensions().contains(&name));
+     }
+ 
++    #[test]
++    fn color_input_ordering_feature_and_extension_move_together() {
++        let name = vk::EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_NAME.as_ptr();
++        for ordering in [
++            ColorInputOrdering::PrimitiveCommands,
++            ColorInputOrdering::RasterizationOrderExt,
++        ] {
++            let features = DeviceFeatures {
++                color_input_ordering: ordering,
++                ..Default::default()
++            };
++            let enabled = features.enabled_color_input_ordering();
++            let native = !ordering.requires_primitive_commands();
++            assert_eq!(
++                enabled.rasterization_order_color_attachment_access == vk::TRUE,
++                native
++            );
++            assert_eq!(
++                enabled.rasterization_order_depth_attachment_access,
++                vk::FALSE
++            );
++            assert_eq!(
++                enabled.rasterization_order_stencil_attachment_access,
++                vk::FALSE
++            );
++            assert_eq!(features.required_extensions().contains(&name), native);
++            assert!(features
++                .report_line()
++                .contains(&format!("color_input_ordering={ordering:?}")));
++        }
++    }
++
+     #[test]
+     fn explicit_drm_layout_names_its_extension_only_when_available() {
+         let name = vk::EXT_IMAGE_DRM_FORMAT_MODIFIER_NAME.as_ptr();
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
+index 4c54f56..f7ccddf 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
+@@ -2285,6 +2285,11 @@ impl ObjectCaches {
+             })
+             .collect();
+         let mut subpass_desc = vk::SubpassDescription::default()
++            .flags(
++                ctx.features
++                    .color_input_ordering
++                    .subpass_flags(!key.color_inputs.is_empty()),
++            )
+             .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
+             .color_attachments(&color_ref);
+         if !resolve_ref.is_empty() {
+@@ -2836,7 +2841,15 @@ impl ObjectCaches {
+         // `reims_vgpu_vulkan::blend` performs it, above.
+         let blend_att: Vec<vk::PipelineColorBlendAttachmentState> =
+             blend_plans.iter().map(|p| p.native()).collect();
+-        let blend = vk::PipelineColorBlendStateCreateInfo::default().attachments(&blend_att);
++        // The ordering rung is fixed for this device/cache lifetime. Input
++        // slots already partition pass and pipeline compatibility.
++        let blend = vk::PipelineColorBlendStateCreateInfo::default()
++            .flags(
++                ctx.features
++                    .color_input_ordering
++                    .pipeline_flags(!key.pass.0.color_inputs.is_empty()),
++            )
++            .attachments(&blend_att);
+         // Depth-stencil state: attached ONLY when the pass carries a depth
+         // attachment (Vulkan requires the pipeline's depth-stencil state to be
+         // consistent with the subpass). Without it the color-only pipeline is
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
+index 40e3581..d648580 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
+@@ -1223,6 +1223,7 @@ impl DeviceContext {
+         // asking for a feature a device declined fails `vkCreateDevice`.
+         let mut en_image_robustness = features.enabled_image_robustness();
+         let mut en_attachment_feedback = features.enabled_attachment_feedback_loop_layout();
++        let mut en_color_input_ordering = features.enabled_color_input_ordering();
+         let mut en_extended_dynamic_state = features.enabled_extended_dynamic_state();
+         let mut en_extended_dynamic_state3 = features.enabled_extended_dynamic_state3();
+         let mut dci = vk::DeviceCreateInfo::default()
+@@ -1242,6 +1243,9 @@ impl DeviceContext {
+         if features.attachment_feedback_loop_layout {
+             dci = dci.push_next(&mut en_attachment_feedback);
+         }
++        if !features.color_input_ordering.requires_primitive_commands() {
++            dci = dci.push_next(&mut en_color_input_ordering);
++        }
+         if features.extended_dynamic_state {
+             dci = dci.push_next(&mut en_extended_dynamic_state);
+         }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+index 002443b..93718c1 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -3519,7 +3519,11 @@ pub(crate) unsafe fn execute_draw_inner(
+     // data. A direct import binds the guest's pages; a scattered window is
+     // gathered once by this command buffer; only incapable hosts CPU-stage it.
+     phase.enter(super::draw_phase::Phase::StageIndex);
+-    let strip_fetch = if is_ordered_fetch_strip(req) {
++    let primitive_color_fetch = ctx
++        .features
++        .color_input_ordering
++        .requires_primitive_commands();
++    let strip_fetch = if primitive_color_fetch && is_ordered_fetch_strip(req) {
+         Some(super::strip_fetch::StripFetchIndices::from_validated(req)?)
+     } else {
+         None
+@@ -3634,7 +3638,10 @@ pub(crate) unsafe fn execute_draw_inner(
+     // slot's cached framebuffer was built against. One predicate, because the
+     // two answers it feeds have to agree: which pass the slot is ensured under,
+     // and whether the draw builds (and later disposes) a framebuffer of its own.
+-    let color_fetch_width = if strip_fetch.is_some() {
++    // Native raster ordering covers overlapping fragments of the original
++    // command, including strips and instances, without CPU index expansion.
++    // The preflight keeps the existing admission boundary on both rungs.
++    let color_fetch_width = if !primitive_color_fetch || strip_fetch.is_some() {
+         None
+     } else {
+         ordered_color_fetch_width(req)?
+@@ -5468,6 +5475,9 @@ pub(crate) unsafe fn execute_draw_inner(
+     }
+     phase.enter(super::draw_phase::Phase::RecordDraw);
+     unsafe { pools.bind_vertex_buffers(&ctx.device, cb, counters) };
++    if !req.color_inputs.is_empty() && !primitive_color_fetch {
++        crate::runtime::drain::note_store_route("color_fetch_raster_order_draws_recorded_n");
++    }
+     if let Some(strip) = &strip_fetch {
+         if let Some(ibuf) = &index_slot {
+             ctx.device
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+index f1a63da..d234146 100644
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -4861,55 +4861,66 @@ layout(location=0) flat in uint instance;
+ layout(input_attachment_index=1,set=0,binding=193) uniform subpassInput previous;
+ layout(location=0) out vec4 primary;
+ layout(location=1) out float secondary;
+-void main() { secondary=subpassLoad(previous).r+float(instance)/64.0; primary=vec4(secondary,0,0,1); }
++void main() { secondary=subpassLoad(previous).r*2.0+float(instance)/64.0; primary=vec4(secondary,0,0,1); }
+ "#,
+     );
+-    for indexed in [false, true] {
+-        let identity = TargetIdentity::Gva {
+-            gva: 0x219000 + u64::from(indexed) * 0x1000,
+-            width: 8,
+-            height: 8,
+-            generation: 1,
+-            format: ash::vk::Format::R32_SFLOAT,
+-        };
+-        let mut req = engine_req(&v, &f, 8, 8);
+-        req.vertex_count = 6;
+-        req.first_vertex = 7;
+-        req.base_instance = 3;
+-        req.instance_count = Some(2);
+-        req.color_inputs = engine::ColorInputs::NONE.with_slot(1).unwrap();
+-        req.secondary_targets.push(SecondaryColorTarget {
+-            identity: identity.clone(),
+-            width: 8,
+-            height: 8,
+-            attachment: color_attachment(MTL_FORMAT_R32_FLOAT, [0.0; 4]),
+-            load: false,
+-            seed: None,
+-            blend: None,
+-            color_write_mask: engine::ColorWriteMask::ALL,
+-        });
+-        if indexed {
+-            req.indexed = Some(IndexedDrawResource {
+-                content: BufferContent::Bytes(std::sync::Arc::new(
+-                    [7u16, 8, 9, 7, 8, 9]
+-                        .iter()
+-                        .flat_map(|v| v.to_le_bytes())
+-                        .collect(),
+-                )),
+-                index_type: IndexType::U16,
+-                index_count: 6,
+-                vertex_offset: 5,
++    use reims_vgpu_core::topology::PrimitiveType;
++    for (topology, source_indices) in [
++        (PrimitiveType::Triangle, &[7u16, 8, 9, 7, 8, 9][..]),
++        (PrimitiveType::TriangleStrip, &[7u16, 8, 9, 7][..]),
++    ] {
++        for indexed in [false, true] {
++            let identity = TargetIdentity::Gva {
++                gva: 0x219000
++                    + u64::from(topology.ordinal()) * 0x10000
++                    + u64::from(indexed) * 0x1000,
++                width: 8,
++                height: 8,
++                generation: 1,
++                format: ash::vk::Format::R32_SFLOAT,
++            };
++            let mut req = engine_req(&v, &f, 8, 8);
++            req.vertex_count = source_indices.len() as u32;
++            req.primitive_topology.0 = topology;
++            req.first_vertex = 7;
++            req.base_instance = 3;
++            req.instance_count = Some(2);
++            req.color_inputs = engine::ColorInputs::NONE.with_slot(1).unwrap();
++            req.secondary_targets.push(SecondaryColorTarget {
++                identity: identity.clone(),
++                width: 8,
++                height: 8,
++                attachment: color_attachment(MTL_FORMAT_R32_FLOAT, [0.0; 4]),
++                load: false,
++                seed: None,
++                blend: None,
++                color_write_mask: engine::ColorWriteMask::ALL,
+             });
++            if indexed {
++                req.indexed = Some(IndexedDrawResource {
++                    content: BufferContent::Bytes(std::sync::Arc::new(
++                        source_indices
++                            .iter()
++                            .flat_map(|v| v.to_le_bytes())
++                            .collect(),
++                    )),
++                    index_type: IndexType::U16,
++                    index_count: source_indices.len() as u32,
++                    vertex_offset: 5,
++                });
++            }
++            engine::execute_draw_request(engine_device(), &req)
++                .expect("ordered overlapping framebuffer fetch");
++            // Two identical triangles in instance 3, then two in instance 4.
++            // The recurrence is noncommutative: missing primitive visibility or
++            // interleaving the instances cannot produce the same result.
++            let expected = (48.0f32 / 64.0).to_le_bytes().repeat(64);
++            assert_eq!(
++                engine::read_target(&identity).unwrap().pixels,
++                expected,
++                "topology={topology:?} indexed={indexed}"
++            );
+         }
+-        engine::execute_draw_request(engine_device(), &req)
+-            .expect("ordered overlapping framebuffer fetch");
+-        // Two identical triangles in instance 3, then two in instance 4.
+-        let expected = (14.0f32 / 64.0).to_le_bytes().repeat(64);
+-        assert_eq!(
+-            engine::read_target(&identity).unwrap().pixels,
+-            expected,
+-            "indexed={indexed}"
+-        );
+     }
+ }
+ 

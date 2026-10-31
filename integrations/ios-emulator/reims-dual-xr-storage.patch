@@ -1,0 +1,491 @@
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -170,6 +170,117 @@
+ pub const MTL_FORMAT_BGRA10_XR_SRGB: u16 = 553;
+ pub const MTL_FORMAT_BGR10_XR: u16 = 554;
+ pub const MTL_FORMAT_BGR10_XR_SRGB: u16 = 555;
++
++/// Private extended XR formats, stored as RGB and alpha in separate planes.
++/// Metal's format query maps these ordinals to RGB10A8_2P_XR10 and its sRGB
++/// companion. APVPixelFormatGetInfoForDevice describes two equally sized planes,
++/// each with four bytes per element (three components, then one component).
++/// The host's format-specific compute paging resolves the RGB plane to
++/// BGR10_XR (or BGR10_XR_sRGB) and the alpha plane to private ARGB8Unorm.
++/// Its merge shader consumes the ARGB view's red channel (storage byte 1),
++/// using half-float reads. The inverse broadcasts alpha to every ARGB channel.
++/// Neither ordinal is a single-plane BGR10_XR alias.
++pub const MTL_FORMAT_RGB10A8_2P_XR10: u16 = 550;
++pub const MTL_FORMAT_RGB10A8_2P_XR10_SRGB: u16 = 551;
++
++/// Private ARGB8 normalized view used for the APV XR alpha plane. This name
++/// and ordinal describe the host view, not a standalone upload converter.
++/// In particular it is not R32Float, whose ordinal is [`MTL_FORMAT_R32_FLOAT`].
++pub const MTL_FORMAT_ARGB8_UNORM: u16 = 84;
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum PlanarXrFormat {
++    Rgb10Alpha8,
++    Rgb10Alpha8Srgb,
++}
++
++/// Component codes in APV's two XR storage planes. RGB uses XR's ten-bit
++/// encoding; alpha is eight-bit normalized and never uses the XR transfer.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct PlanarXrCodes {
++    pub rgb: [u16; 3],
++    pub alpha: u8,
++}
++
++impl PlanarXrFormat {
++    pub const fn from_mtl(format: u16) -> Option<Self> {
++        match format {
++            MTL_FORMAT_RGB10A8_2P_XR10 => Some(Self::Rgb10Alpha8),
++            MTL_FORMAT_RGB10A8_2P_XR10_SRGB => Some(Self::Rgb10Alpha8Srgb),
++            _ => None,
++        }
++    }
++
++    pub const fn is_srgb(self) -> bool {
++        matches!(self, Self::Rgb10Alpha8Srgb)
++    }
++
++    pub const fn name(self) -> &'static str {
++        match self {
++            Self::Rgb10Alpha8 => "RGB10A8_2P_XR10",
++            Self::Rgb10Alpha8Srgb => "RGB10A8_2P_XR10_sRGB",
++        }
++    }
++
++    /// Native views selected by the host's XR-specific compute paging. The
++    /// RGB view expands XR and applies sRGB when requested; the alpha view
++    /// always remains normalized, without a color transfer function.
++    pub const fn apv_plane_pixel_formats(self) -> [u16; 2] {
++        let rgb = match self {
++            Self::Rgb10Alpha8 => MTL_FORMAT_BGR10_XR,
++            Self::Rgb10Alpha8Srgb => MTL_FORMAT_BGR10_XR_SRGB,
++        };
++        [rgb, MTL_FORMAT_ARGB8_UNORM]
++    }
++
++    pub const fn rgb_format(self) -> XrFormat {
++        match self {
++            Self::Rgb10Alpha8 => XrFormat::Bgr10,
++            Self::Rgb10Alpha8Srgb => XrFormat::Bgr10Srgb,
++        }
++    }
++
++    /// Both native views use 32-bit storage elements. The second is an ARGB
++    /// texel carrying the alpha code in its red byte, not a float32 value.
++    pub const fn apv_plane_bytes_per_element(self) -> [u8; 2] {
++        [4, 4]
++    }
++
++    /// Decode storage codes before transfer expansion and the host merge's
++    /// half-float intermediate. The ARGB read swizzle selects bytes [1,2,3,0]
++    /// as RGBA; the merge takes its red component. The other three bytes are
++    /// not required to agree with it on upload.
++    pub fn component_codes(self, rgb: &[u8], alpha: &[u8]) -> Option<PlanarXrCodes> {
++        if alpha.len() != 4 {
++            return None;
++        }
++        let codes = self.rgb_format().component_codes(rgb)?;
++        Some(PlanarXrCodes {
++            rgb: [codes[0], codes[1], codes[2]],
++            alpha: alpha[1],
++        })
++    }
++
++    /// Pack the inverse paging shader's storage result. RGB padding is clear;
++    /// the normalized alpha value is broadcast to all four ARGB bytes, as the
++    /// host shader writes it. Validate both extents and all codes before writes.
++    pub fn write_component_codes(
++        self,
++        codes: PlanarXrCodes,
++        rgb: &mut [u8],
++        alpha: &mut [u8],
++    ) -> bool {
++        if rgb.len() != 4 || alpha.len() != 4 || codes.rgb.iter().any(|&code| code > 1023) {
++            return false;
++        }
++        let [r, g, b] = codes.rgb;
++        if !self.rgb_format().write_component_codes([r, g, b, 894], rgb) {
++            return false;
++        }
++        alpha.fill(codes.alpha);
++        true
++    }
++}
+ 
+ /// Extended-range texels have no bit-compatible Vulkan normalized format.
+ /// Keep their packing and transfer function together until an upload decodes
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/decode/resource/mod.rs
+@@ -128,21 +128,14 @@
+ /// sizes the dimension array as `planeCount * (24 + 36 * levels)`. See
+ /// [`decode_dual_plane_texture_descriptor`] for what that means byte by byte.
+ ///
+-/// Live on the arm rail only, and live *now*: the host gates the tag on the
+-/// dual-plane device-info bit, which
+-/// [`crate::model::regs::protocol_dual_plane_textures`] answers `true` for at
+-/// [`crate::model::regs::PROTOCOL_VERSION_MAX`]. A guest told the feature is on
+-/// builds every biplanar video texture this way, so refusing to decode the tag
+-/// is not a way to avoid it.
+-///
+-/// **Decoded here, executed nowhere.** No rail lists this tag in the `want`
+-/// slice it passes to `objects::resolve_descriptor`, so a bind of one still
+-/// refuses with `WrongType { got: 12 }`. That is deliberate: one biplanar Metal
+-/// texture fed from two guest plane regions is a backend feature, not a decode
+-/// arm, and presenting plane 0 as if it were a whole texture would sample luma
+-/// as colour — a wrong frame rather than a missing one. What decoding buys is
+-/// that the refusal is now *informed*: the geometry and pixel format of the
+-/// thing being refused are recovered and reported.
++/// The dual-plane device-info bit admits this tag on the arm rail. It covers
++/// RGB/alpha XR and depth/stencil as well as video: two planes alone do not
++/// determine the component encoding.
++///
++/// Sampling and attachment binds still refuse `WrongType { got: 12 }`.
++/// Whole-texture blits can copy the private XR pair as opaque storage through
++/// `DualPlaneTextureDescriptor::xr_level`; they validate and transfer both
++/// planes. Decoding never aliases one plane to an ordinary colour texture.
+ pub const OBJECT_TYPE_DUAL_PLANE_TEXTURE: u8 = 12;
+ 
+ /// Serializer-object first dword subtypes.
+@@ -2366,9 +2359,10 @@
+ /// Both planes are the same texture: they share the object header's allocation
+ /// and handle and the one format trailer, and differ only in the geometry each
+ /// dimension block states. Nothing here reduces the pair to a single
+-/// `TextureDescriptor` — plane 0 of a 4:2:0 pair is a full-size single-channel
+-/// image and plane 1 is a half-size two-channel one, so either alone is a
+-/// truthful description of something the guest did not ask for.
++/// `TextureDescriptor`. The iOS guest also uses equal-sized RGB/alpha XR and
++/// depth/stencil planes: the plane count does not imply video subsampling.
++/// Selecting either plane alone would describe something the guest did not
++/// ask for.
+ #[derive(Clone, Debug, PartialEq)]
+ pub struct DualPlaneTextureDescriptor {
+     /// Plane 0 then plane 1, in the order the descriptor lays them out.
+@@ -2379,6 +2373,146 @@
+     /// The object's pixel format, from the trailer both planes share.
+     pub fn pixel_format(&self) -> u16 {
+         self.planes[0].pixel_format
++    }
++
++    pub fn xr_format(&self) -> Option<crate::protocol::pixel_format::PlanarXrFormat> {
++        crate::protocol::pixel_format::PlanarXrFormat::from_mtl(self.pixel_format())
++    }
++
++    /// Resolve both APV XR planes at one mip, preserving their independent
++    /// offsets and row strides. This admits raw storage transfers only; it
++    /// does not interpret RGB or alpha component codes.
++    pub fn xr_level(
++        &self,
++        level: u32,
++        page_shift: u32,
++    ) -> Result<PlanarXrLevel, PlanarXrLayoutRefusal> {
++        use PlanarXrLayoutRefusal as Refusal;
++        let format = self.xr_format().ok_or(Refusal::FormatUnknown)?;
++        let base_gva = self.planes[0]
++            .allocation_base_gva(page_shift)
++            .ok_or(Refusal::Allocation)?;
++        let allocation_size = self.planes[0].allocation_size;
++        if allocation_size == 0
++            || self.planes.iter().any(|plane| {
++                plane.allocation_base_gva(page_shift) != Some(base_gva)
++                    || plane.allocation_size != allocation_size
++                    || plane.pixel_format != self.pixel_format()
++            })
++        {
++            return Err(Refusal::Allocation);
++        }
++        if self
++            .planes
++            .iter()
++            .any(|plane| plane.sample_count != Some(1))
++        {
++            return Err(Refusal::Samples);
++        }
++        let widths = format.apv_plane_bytes_per_element();
++        if self
++            .planes
++            .iter()
++            .zip(widths)
++            .any(|(plane, width)| plane.bytes_per_element != width)
++        {
++            return Err(Refusal::ElementWidth);
++        }
++        let layouts = [
++            *self.planes[0].level(level).ok_or(Refusal::MipLevel)?,
++            *self.planes[1].level(level).ok_or(Refusal::MipLevel)?,
++        ];
++        if layouts[0].width == 0
++            || layouts[0].height == 0
++            || layouts[0].width != layouts[1].width
++            || layouts[0].height != layouts[1].height
++            || layouts[0].planes() != layouts[1].planes()
++        {
++            return Err(Refusal::Geometry);
++        }
++        let mut planes = [PlanarXrPlane::default(); 2];
++        for (index, layout) in layouts.into_iter().enumerate() {
++            let tight_row = layout
++                .width
++                .checked_mul(u32::from(widths[index]))
++                .ok_or(Refusal::Bounds)?;
++            if layout.row_stride < u64::from(tight_row) {
++                return Err(Refusal::RowStride);
++            }
++            let span = layout.slice_read_span(tight_row).ok_or(Refusal::Bounds)?;
++            let end = layout.offset.checked_add(span).ok_or(Refusal::Bounds)?;
++            if end > allocation_size {
++                return Err(Refusal::Bounds);
++            }
++            let gva = base_gva.checked_add(layout.offset).ok_or(Refusal::Bounds)?;
++            gva.checked_add(span).ok_or(Refusal::Bounds)?;
++            planes[index] = PlanarXrPlane {
++                gva,
++                layout,
++                tight_row,
++                touched_span: span,
++            };
++        }
++        // The planes are separate pieces of the one allocation. Overlap would
++        // make a two-plane transfer overwrite another plane's source bytes.
++        let [a, b] = planes;
++        if a.layout.offset < b.layout.offset + b.touched_span
++            && b.layout.offset < a.layout.offset + a.touched_span
++        {
++            return Err(Refusal::PlaneOverlap);
++        }
++        Ok(PlanarXrLevel {
++            format,
++            base_gva,
++            allocation_size,
++            planes,
++        })
++    }
++}
++
++/// The shared allocation and both bounded storage extents of one XR mip.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct PlanarXrLevel {
++    pub format: crate::protocol::pixel_format::PlanarXrFormat,
++    pub base_gva: u64,
++    pub allocation_size: u64,
++    pub planes: [PlanarXrPlane; 2],
++}
++
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub struct PlanarXrPlane {
++    pub gva: u64,
++    pub layout: TextureLevelLayout,
++    pub tight_row: u32,
++    pub touched_span: u64,
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum PlanarXrLayoutRefusal {
++    FormatUnknown,
++    Allocation,
++    Samples,
++    ElementWidth,
++    MipLevel,
++    Geometry,
++    RowStride,
++    Bounds,
++    PlaneOverlap,
++}
++
++impl PlanarXrLayoutRefusal {
++    pub const fn slug(self) -> &'static str {
++        match self {
++            Self::FormatUnknown => "dual_xr_format_unknown",
++            Self::Allocation => "dual_xr_allocation",
++            Self::Samples => "dual_xr_samples",
++            Self::ElementWidth => "dual_xr_element_width",
++            Self::MipLevel => "dual_xr_mip_level",
++            Self::Geometry => "dual_xr_geometry",
++            Self::RowStride => "dual_xr_row_stride",
++            Self::Bounds => "dual_xr_bounds",
++            Self::PlaneOverlap => "dual_xr_plane_overlap",
++        }
+     }
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu/src/model/regs.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/model/regs.rs
+@@ -1304,7 +1304,8 @@
+ /// two-plane pixel format makes its texture object allocate three sub-resources
+ /// and a doubled descriptor array instead of two. So answering a version that
+ /// does not have the feature that it does is not cosmetic — it changes the
+-/// shape of every biplanar video texture the guest builds.
++/// shape of every dual-plane texture the guest builds, including RGB/alpha XR
++/// and split depth/stencil textures. It is not a video-format capability alone.
+ ///
+ /// The rung set is the guest's own switch, and it is **not monotonic**: the
+ /// feature appears at 31, is explicitly turned back off at 40, and returns at
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/blit_exec/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/blit_exec/mod.rs
+@@ -43,9 +43,10 @@
+ use crate::protocol::pixel_format::BlitAspect;
+ use crate::protocol::pixel_format::{self, MTL_FORMAT_BGRA8_UNORM};
+ use crate::runtime::decode::resource::{
+-    decode_buffer_descriptor, decode_iosurface_texture_descriptor, decode_texture_descriptor,
+-    decode_texture_view_descriptor, texture_view_type_is_3d, texture_view_type_supported,
+-    texture_view_type_uses_slices, Descriptor as ResourceDescriptor, OBJECT_TYPE_BUFFER,
++    decode_buffer_descriptor, decode_dual_plane_texture_descriptor,
++    decode_iosurface_texture_descriptor, decode_texture_descriptor, decode_texture_view_descriptor,
++    texture_view_type_is_3d, texture_view_type_supported, texture_view_type_uses_slices,
++    Descriptor as ResourceDescriptor, OBJECT_TYPE_BUFFER, OBJECT_TYPE_DUAL_PLANE_TEXTURE,
+     OBJECT_TYPE_MAPPER_REF_TEXTURE, OBJECT_TYPE_TEXTURE, OBJECT_TYPE_TEXTURE_GENERATE_MIPMAPS,
+     OBJECT_TYPE_TEXTURE_VIEW, TEXTURE_VIEW_MTL_TYPE_2D,
+ };
+@@ -3830,6 +3831,119 @@
+     Ok(())
+ }
+ 
++/// The whole-texture transfer owns the plane pair. A private XR texture is
++/// never resolved as plane zero of an ordinary texture: both descriptors and
++/// every requested mip are validated before either destination plane is written.
++/// Component encoding is deliberately opaque here; equal formats copy bytes.
++fn try_copy_planar_xr_levels<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    task_id: u32,
++    cmd: &TextureSlices,
++) -> Option<BlitStatus> {
++    let src_entry = objects::lookup_list_entry(state, host, task_id, cmd.source_ref)?;
++    let dst_entry = objects::lookup_list_entry(state, host, task_id, cmd.dest_ref)?;
++    if src_entry.object_type != OBJECT_TYPE_DUAL_PLANE_TEXTURE
++        && dst_entry.object_type != OBJECT_TYPE_DUAL_PLANE_TEXTURE
++    {
++        return None;
++    }
++    Some((|| {
++        if src_entry.object_type != OBJECT_TYPE_DUAL_PLANE_TEXTURE
++            || dst_entry.object_type != OBJECT_TYPE_DUAL_PLANE_TEXTURE
++        {
++            return br(BlitFailure::Unsupported, "dual_xr_endpoint_type");
++        }
++        // This arm does not reinterpret views, arrays or depth packing. Slice
++        // zero of a single 2D image has no array stride to infer.
++        if cmd.source_slice != 0 || cmd.dest_slice != 0 || cmd.slice_count != 1 {
++            return br(BlitFailure::Unsupported, "dual_xr_slice_range");
++        }
++        for texture_ref in [cmd.source_ref, cmd.dest_ref] {
++            note_blit_endpoint_debt(state, task_id, texture_ref);
++            crate::runtime::writeback_debt::pay_for_texture(state, host, task_id, texture_ref);
++        }
++        let Some(src_bytes) = objects::read_descriptor(state, host, task_id, &src_entry) else {
++            return br(BlitFailure::MissingResource, "dual_xr_source_descriptor");
++        };
++        let Some(dst_bytes) = objects::read_descriptor(state, host, task_id, &dst_entry) else {
++            return br(
++                BlitFailure::MissingResource,
++                "dual_xr_destination_descriptor",
++            );
++        };
++        let Ok(src) = decode_dual_plane_texture_descriptor(&src_bytes) else {
++            return br(BlitFailure::Unsupported, "dual_xr_source_decode");
++        };
++        let Ok(dst) = decode_dual_plane_texture_descriptor(&dst_bytes) else {
++            return br(BlitFailure::Unsupported, "dual_xr_destination_decode");
++        };
++        let mut levels = Vec::new();
++        for delta in 0..cmd.level_count {
++            let Some(src_level) = cmd.source_level.checked_add(delta) else {
++                return br(BlitFailure::Bounds, "dual_xr_source_level_overflow");
++            };
++            let Some(dst_level) = cmd.dest_level.checked_add(delta) else {
++                return br(BlitFailure::Bounds, "dual_xr_destination_level_overflow");
++            };
++            let sl = match src.xr_level(u32::from(src_level), state.page_shift) {
++                Ok(level) => level,
++                Err(reason) => return br(BlitFailure::Unsupported, reason.slug()),
++            };
++            let dl = match dst.xr_level(u32::from(dst_level), state.page_shift) {
++                Ok(level) => level,
++                Err(reason) => return br(BlitFailure::Unsupported, reason.slug()),
++            };
++            if sl.format != dl.format {
++                return br(BlitFailure::Unsupported, "dual_xr_format_mismatch");
++            }
++            for (sp, dp) in sl.planes.iter().zip(&dl.planes) {
++                if sp.layout.planes() != 1 || dp.layout.planes() != 1 {
++                    return br(BlitFailure::Unsupported, "dual_xr_volume");
++                }
++                if sp.layout.width != dp.layout.width || sp.layout.height != dp.layout.height {
++                    return br(BlitFailure::Bounds, "dual_xr_copy_geometry");
++                }
++            }
++            // Refuse aliased allocations, including different handles naming
++            // overlapping VA ranges. Per-row copying is not a memmove and must
++            // not let an earlier plane or mip overwrite a later source.
++            let Some(src_end) = sl.base_gva.checked_add(sl.allocation_size) else {
++                return br(BlitFailure::Bounds, "dual_xr_allocation_end");
++            };
++            let Some(dst_end) = dl.base_gva.checked_add(dl.allocation_size) else {
++                return br(BlitFailure::Bounds, "dual_xr_allocation_end");
++            };
++            if sl.base_gva < dst_end && dl.base_gva < src_end {
++                return br(BlitFailure::Overlap, "dual_xr_copy_overlap");
++            }
++            levels.push((sl, dl));
++        }
++        for (sl, dl) in levels {
++            for (sp, dp) in sl.planes.iter().zip(&dl.planes) {
++                if let Err(status) = copy_row_region(
++                    host,
++                    state,
++                    task_id,
++                    sp.gva,
++                    sp.layout.row_stride,
++                    sp.touched_span,
++                    dp.gva,
++                    dp.layout.row_stride,
++                    dp.touched_span,
++                    u64::from(sp.tight_row),
++                    u64::from(sp.layout.height),
++                    1,
++                ) {
++                    return status;
++                }
++            }
++        }
++        crate::runtime::drain::note_store_route("dual_xr_whole_copy_n");
++        BlitStatus::Ok
++    })())
++}
++
+ /// Zero `slice_count` or `level_count` is a Metal no-op ([`BlitStatus::ZeroExtent`]).
+ fn exec_copy_texture_to_texture_slice_level<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+@@ -3894,7 +4008,13 @@
+             cmd.source_slice,
+         ) {
+             Ok(t) => t,
+-            Err(st) => return st,
++            Err(st) => {
++                // The ordinary resolver rejects two-plane storage as a type,
++                // so only its refusal path asks the whole-copy owner whether
++                // this command names an opaque XR pair. Ordinary copies keep
++                // their existing object lookup count.
++                return try_copy_planar_xr_levels(state, host, task_id, cmd).unwrap_or(st);
++            }
+         };
+         let dst0 = match resolve_texture_backing(
+             state,
+@@ -3905,7 +4025,13 @@
+             cmd.dest_slice,
+         ) {
+             Ok(t) => t,
+-            Err(st) => return st,
++            Err(st) => {
++                // The ordinary resolver rejects two-plane storage as a type,
++                // so only its refusal path asks the whole-copy owner whether
++                // this command names an opaque XR pair. Ordinary copies keep
++                // their existing object lookup count.
++                return try_copy_planar_xr_levels(state, host, task_id, cmd).unwrap_or(st);
++            }
+         };
+         if src0.bpp() != dst0.bpp() {
+             return br(BlitFailure::Unsupported, "sl_bpp_mismatch");

@@ -1,0 +1,273 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -161,6 +161,15 @@
+ /// channels the other way round in the word — `VK_FORMAT_A2R10G10B10_UNORM_PACK32`
+ /// exactly, as `BGRA8Unorm` is to `RGBA8Unorm` one storage shape up.
+ pub const MTL_FORMAT_BGR10A2_UNORM: u16 = 0x5e;
++/// Extended-range display formats: `(code - 384) / 510`, not ordinary UNORM.
++/// BGRA uses the upper ten bits of each little-endian 16-bit lane; BGR packs
++/// three components into 32 bits with no alpha. CPU scanout narrows to SDR;
++/// GPU sampling/rendering needs a separate, faithful conversion.
++/// https://developer.apple.com/documentation/metal/mtlpixelformat/bgra10_xr
++pub const MTL_FORMAT_BGRA10_XR: u16 = 552;
++pub const MTL_FORMAT_BGRA10_XR_SRGB: u16 = 553;
++pub const MTL_FORMAT_BGR10_XR: u16 = 554;
++pub const MTL_FORMAT_BGR10_XR_SRGB: u16 = 555;
+ /// `MTLPixelFormatRGBA16Unorm`. Its ordinal sits between two this table
+ /// already carries — `RGBA16Uint` at `0x71` and `RGBA16Float` at `0x73` — and
+ /// its absence was a decode gap rather than a rail gap: `bytes_per_pixel`
+@@ -1369,12 +1378,15 @@
+         | MTL_FORMAT_RG11B10_FLOAT
+         | MTL_FORMAT_BGR10A2_UNORM
+         | MTL_FORMAT_DEPTH32_FLOAT
++        | MTL_FORMAT_BGR10_XR
++        | MTL_FORMAT_BGR10_XR_SRGB
+         | MTL_FORMAT_DEPTH24_UNORM_STENCIL8
+         | MTL_FORMAT_X24_STENCIL8 => RGBA8_BPP,
+         // Depth32Float_Stencil8 / X32_Stencil8: 64-bit cells on Apple Silicon
+         // (40-bit logical DS + pad; Metal allocates 8 B/texel for this family).
+         MTL_FORMAT_DEPTH32_FLOAT_STENCIL8 | MTL_FORMAT_X32_STENCIL8 => 8,
+         MTL_FORMAT_RGBA16_UNORM | MTL_FORMAT_RGBA16_UINT | MTL_FORMAT_RGBA16_FLOAT => RGBA16_BPP,
++        MTL_FORMAT_BGRA10_XR | MTL_FORMAT_BGRA10_XR_SRGB => RGBA16_BPP,
+         MTL_FORMAT_RGBA32_UINT | MTL_FORMAT_RGBA32_FLOAT => RGBA32_BPP,
+         _ => return None,
+     })
+@@ -1778,6 +1790,8 @@
+         format,
+         MTL_FORMAT_RGBA8_UNORM_SRGB
+             | MTL_FORMAT_BGRA8_UNORM_SRGB
++            | MTL_FORMAT_BGR10_XR_SRGB
++            | MTL_FORMAT_BGRA10_XR_SRGB
+             // The four BC families Apple gives an sRGB spelling. The fold this
+             // predicate exists beside is the same one: `block_compressed_layout`
+             // maps both spellings of each onto one layout, so the qualifier is
+@@ -2897,6 +2911,35 @@
+     true
+ }
+ 
++/// Preserve encoded values, like the RGBA8/sRGB byte paths. Clamp only at the
++/// SDR capture boundary; round half steps upwards. Shader sampling must not
++/// use this narrowing conversion to represent extended-range values.
++#[inline]
++fn xr10_to_unorm8(code: u16) -> u8 {
++    code.saturating_sub(384).min(510).div_ceil(2) as u8
++}
++
++#[inline]
++fn bgr10_xr_to_rgba8(src: &[u8]) -> [u8; 4] {
++    let word = u32::from_le_bytes([src[0], src[1], src[2], src[3]]);
++    [
++        xr10_to_unorm8(((word >> 20) & 1023) as u16),
++        xr10_to_unorm8(((word >> 10) & 1023) as u16),
++        xr10_to_unorm8((word & 1023) as u16),
++        UNORM8_MAX,
++    ]
++}
++
++#[inline]
++fn bgra10_xr_to_rgba8(src: &[u8]) -> [u8; 4] {
++    [
++        xr10_to_unorm8(ld16(&src[4..6]) >> 6),
++        xr10_to_unorm8(ld16(&src[2..4]) >> 6),
++        xr10_to_unorm8(ld16(&src[0..2]) >> 6),
++        xr10_to_unorm8(ld16(&src[6..8]) >> 6),
++    ]
++}
++
+ pub fn texel_to_rgba8(format: u16, src: &[u8]) -> Option<[u8; 4]> {
+     let bpp = bytes_per_pixel(format)? as usize;
+     if src.len() < bpp {
+@@ -2939,6 +2982,12 @@
+             rgba[COMPONENT_R] = lut[ld16(&src[0..2]) as usize];
+             rgba[COMPONENT_G] = lut[ld16(&src[2..4]) as usize];
+             rgba[COMPONENT_A] = UNORM8_MAX;
++        }
++        MTL_FORMAT_BGR10_XR | MTL_FORMAT_BGR10_XR_SRGB => {
++            rgba = bgr10_xr_to_rgba8(src);
++        }
++        MTL_FORMAT_BGRA10_XR | MTL_FORMAT_BGRA10_XR_SRGB => {
++            rgba = bgra10_xr_to_rgba8(src);
+         }
+         _ => return None,
+     }
+@@ -3047,7 +3096,15 @@
+ /// original width is still known: past the conversion every texel is four bytes
+ /// and nothing downstream can tell a narrowed one from a native one.
+ pub fn narrows_to_unorm8(format: u16) -> bool {
+-    matches!(format, MTL_FORMAT_RGBA16_FLOAT | MTL_FORMAT_RG16_FLOAT)
++    matches!(
++        format,
++        MTL_FORMAT_RGBA16_FLOAT
++            | MTL_FORMAT_RG16_FLOAT
++            | MTL_FORMAT_BGR10_XR
++            | MTL_FORMAT_BGR10_XR_SRGB
++            | MTL_FORMAT_BGRA10_XR
++            | MTL_FORMAT_BGRA10_XR_SRGB
++    )
+ }
+ 
+ /// One guest pixel format, parsed into the conversion from a **row** of its
+@@ -3127,6 +3184,10 @@
+     /// Two `float16` channels → R,G; blue zero, alpha opaque. Lossy for
+     /// [`Self::Rgba16Float`]'s reason.
+     Rg16Float,
++    /// Three packed XR10 components; opaque alpha, narrowed to SDR.
++    Bgr10Xr,
++    /// Four XR10 components in padded 16-bit lanes, narrowed to SDR.
++    Bgra10Xr,
+ }
+ 
+ impl RowToRgba8 {
+@@ -3148,6 +3209,8 @@
+             MTL_FORMAT_BGRA8_UNORM | MTL_FORMAT_BGRA8_UNORM_SRGB => Self::Bgra8,
+             MTL_FORMAT_RGBA16_FLOAT => Self::Rgba16Float,
+             MTL_FORMAT_RG16_FLOAT => Self::Rg16Float,
++            MTL_FORMAT_BGR10_XR | MTL_FORMAT_BGR10_XR_SRGB => Self::Bgr10Xr,
++            MTL_FORMAT_BGRA10_XR | MTL_FORMAT_BGRA10_XR_SRGB => Self::Bgra10Xr,
+             _ => return None,
+         })
+     }
+@@ -3162,8 +3225,8 @@
+         match self {
+             Self::A8 | Self::R8 => 1,
+             Self::Rg8 => RG8_BPP,
+-            Self::Rgba8 | Self::Bgra8 | Self::Rg16Float => RGBA8_BPP,
+-            Self::Rgba16Float => RGBA16F_BPP,
++            Self::Rgba8 | Self::Bgra8 | Self::Rg16Float | Self::Bgr10Xr => RGBA8_BPP,
++            Self::Rgba16Float | Self::Bgra10Xr => RGBA16F_BPP,
+         }
+     }
+ 
+@@ -3193,6 +3256,16 @@
+         // `i * bpp` would reintroduce both.
+         match self {
+             Self::Rgba8 => dst.copy_from_slice(src),
++            Self::Bgr10Xr => {
++                for (s, d) in src.as_chunks::<4>().0.iter().zip(dst.as_chunks_mut::<4>().0) {
++                    d.copy_from_slice(&bgr10_xr_to_rgba8(s));
++                }
++            }
++            Self::Bgra10Xr => {
++                for (s, d) in src.as_chunks::<8>().0.iter().zip(dst.as_chunks_mut::<4>().0) {
++                    d.copy_from_slice(&bgra10_xr_to_rgba8(s));
++                }
++            }
+             Self::Bgra8 => {
+                 for (s, d) in src.chunks_exact(4).zip(dst.chunks_exact_mut(4)) {
+                     d[COMPONENT_R] = s[2];
+@@ -5993,3 +6066,114 @@
+         assert!(broken.is_empty(), "{broken:#?}");
+     }
+ }
++
++#[cfg(test)]
++mod xr_scanout_tests {
++    use super::*;
++
++    const FORMATS: [u16; 4] = [
++        MTL_FORMAT_BGR10_XR,
++        MTL_FORMAT_BGR10_XR_SRGB,
++        MTL_FORMAT_BGRA10_XR,
++        MTL_FORMAT_BGRA10_XR_SRGB,
++    ];
++
++    fn encode(format: u16, bgra: [u16; 4], padding: bool) -> Vec<u8> {
++        if matches!(format, MTL_FORMAT_BGR10_XR | MTL_FORMAT_BGR10_XR_SRGB) {
++            let word = bgra[0] as u32
++                | (bgra[1] as u32) << 10
++                | (bgra[2] as u32) << 20
++                | if padding { 3 << 30 } else { 0 };
++            word.to_le_bytes().to_vec()
++        } else {
++            bgra.iter()
++                .flat_map(|v| ((v << 6) | if padding { 63 } else { 0 }).to_le_bytes())
++                .collect()
++        }
++    }
++
++    #[test]
++    fn xr_capture_matches_reference_for_every_component_code() {
++        for format in FORMATS {
++            for code in 0..1024u16 {
++                // Each component exercises a different code, including alpha.
++                let bgra = [code, 1023 - code, (code + 341) % 1024, (code + 683) % 1024];
++                let reference =
++                    |c: u16| (((c as f64 - 384.0) / 510.0).clamp(0.0, 1.0) * 255.0).round() as u8;
++                let alpha = if bytes_per_pixel(format) == Some(4) {
++                    255
++                } else {
++                    reference(bgra[3])
++                };
++                let expected = [
++                    reference(bgra[2]),
++                    reference(bgra[1]),
++                    reference(bgra[0]),
++                    alpha,
++                ];
++                for padding in [false, true] {
++                    assert_eq!(
++                        texel_to_rgba8(format, &encode(format, bgra, padding)),
++                        Some(expected),
++                        "format={format} code={code}"
++                    );
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn xr_opaque_white_black_and_midpoint_are_not_unorm10() {
++        for format in FORMATS {
++            assert_eq!(
++                texel_to_rgba8(format, &encode(format, [384, 639, 894, 894], false)),
++                Some([255, 128, 0, 255])
++            );
++            assert!(narrows_to_unorm8(format));
++            assert_eq!(
++                is_srgb(format),
++                matches!(format, MTL_FORMAT_BGR10_XR_SRGB | MTL_FORMAT_BGRA10_XR_SRGB)
++            );
++            // Capture support must not accidentally admit an unconverted GPU texture.
++            assert!(sampled_class(format).is_none());
++            assert!(storage_selector(format).is_none());
++            assert!(render_target_bpp(format).is_none());
++        }
++    }
++
++    #[test]
++    fn xr_rows_respect_source_padding_and_destination_bounds() {
++        for format in FORMATS {
++            let mut src = encode(format, [384, 384, 894, 894], true);
++            src.extend(encode(format, [894, 384, 384, 639], true));
++            let source_len = src.len();
++            src.extend([0xab; 17]); // Row stride padding is not another pixel.
++            let mut dst = [0xcc; 12];
++            assert!(convert_row_to_rgba8(format, &src, 2, &mut dst));
++            let alpha = if bytes_per_pixel(format) == Some(4) {
++                255
++            } else {
++                128
++            };
++            assert_eq!(&dst[..8], &[255, 0, 0, 255, 0, 0, 255, alpha]);
++            assert_eq!(&dst[8..], &[0xcc; 4]);
++            dst.fill(0xcc);
++            assert!(!convert_row_to_rgba8(
++                format,
++                &src[..source_len - 1],
++                2,
++                &mut dst
++            ));
++            assert_eq!(dst, [0xcc; 12]);
++            assert!(!convert_row_to_rgba8(format, &src, 2, &mut dst[..7]));
++            assert_eq!(dst, [0xcc; 12]);
++            assert_eq!(
++                texel_to_rgba8(
++                    format,
++                    &src[..bytes_per_pixel(format).unwrap() as usize - 1]
++                ),
++                None
++            );
++        }
++    }
++}

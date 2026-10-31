@@ -1,0 +1,317 @@
+diff --git a/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/iosurface_pages.rs
+@@ -864,11 +864,32 @@
+     (index as u64) * MAPPER_REQUEST_ENTRY_LEN as u64
+ }
+ 
+-pub fn mapper_request_published_entry_offset(producer: u32) -> Option<u64> {
++/// Byte offset of the slot that carries request `index`.
++///
++/// The guest's producer and this device's consumer are free-running request
++/// counts, and the array they index holds `capacity` entries, the value the
++/// guest programs into the capacity register. Request `index` lives in slot
++/// `index % capacity`. Reading the count itself as the slot walks off the end
++/// of the array at the `capacity`-th request: every long session did, and from
++/// then on each MAP and UNMAP was decoded from whatever memory follows the
++/// array, so the device lost every surface lifecycle event for the rest of the
++/// boot (about 515 maps and as many unmaps fill the 1024 entries an iOS 27
++/// guest programs).
++///
++/// `None` for a capacity of zero: no slot can be named until the guest
++/// programs one.
++pub fn mapper_request_slot_offset(index: u32, capacity: u32) -> Option<u64> {
++    (capacity != 0).then(|| mapper_request_entry_offset(index % capacity))
++}
++
++/// Slot offset of the entry that the producer count `producer` has just
++/// published, which is request `producer - 1`. `None` before the first
++/// request, and wherever [`mapper_request_slot_offset`] names no slot.
++pub fn mapper_request_published_slot_offset(producer: u32, capacity: u32) -> Option<u64> {
+     if producer == 0 {
+         None
+     } else {
+-        Some(mapper_request_entry_offset(producer - 1))
++        mapper_request_slot_offset(producer - 1, capacity)
+     }
+ }
+ 
+@@ -1821,4 +1842,27 @@
+             Err(PlanarXrSurfaceRefusal::SurfaceGeometry)
+         );
+     }
++
++    /// A request count past the array's end names the slot the guest wrote,
++    /// counted modulo the programmed capacity, never the memory after the array.
++    #[test]
++    fn a_mapper_request_count_wraps_at_the_programmed_capacity() {
++        let len = MAPPER_REQUEST_ENTRY_LEN as u64;
++        assert_eq!(mapper_request_slot_offset(0, 1024), Some(0));
++        assert_eq!(mapper_request_slot_offset(1023, 1024), Some(1023 * len));
++        assert_eq!(mapper_request_slot_offset(1024, 1024), Some(0));
++        assert_eq!(mapper_request_slot_offset(1030, 1024), Some(6 * len));
++        assert_eq!(mapper_request_slot_offset(u32::MAX, 1024), Some(1023 * len));
++        assert_eq!(
++            mapper_request_slot_offset(7, 0),
++            None,
++            "no capacity, no slot"
++        );
++
++        assert_eq!(mapper_request_published_slot_offset(0, 1024), None);
++        assert_eq!(mapper_request_published_slot_offset(1, 1024), Some(0));
++        assert_eq!(mapper_request_published_slot_offset(1025, 1024), Some(0));
++        assert_eq!(mapper_request_published_slot_offset(1026, 1024), Some(len));
++        assert_eq!(mapper_request_published_slot_offset(5, 0), None);
++    }
+ }
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/mod.rs
+@@ -14,8 +14,8 @@
+ };
+ use crate::protocol::info_reply::{self, ReplyBounds};
+ use crate::protocol::iosurface_pages::{
+-    MAPPER_REQUEST_ENTRY_LEN, MAPPER_REQUEST_MAP, MAPPER_REQUEST_MAPPING_ID, MAPPER_REQUEST_TYPE,
+-    MAPPER_REQUEST_UNMAP,
++    mapper_request_slot_offset, MAPPER_REQUEST_ENTRY_LEN, MAPPER_REQUEST_MAP,
++    MAPPER_REQUEST_MAPPING_ID, MAPPER_REQUEST_TYPE, MAPPER_REQUEST_UNMAP,
+ };
+ use crate::protocol::packets::Channel as WireChannel;
+ use crate::protocol::present::{
+@@ -6976,6 +6976,54 @@
+     state.draining_channel = prev_channel;
+ }
+ 
++/// The mapper request counts name entries this device cannot locate.
++///
++/// Both arms skip requests, which is a loss of guest surface lifecycle events,
++/// so each says how many and from which counts.
++pub(crate) enum MapperRingDecline {
++    /// The guest published requests before programming the array's capacity,
++    /// so no request has a slot.
++    CapacityUnset { producer: u32, consumer: u32 },
++    /// The guest's count is further ahead of this device's than the array
++    /// holds, so the slots no longer carry the requests between them.
++    CountsDesynced {
++        producer: u32,
++        consumer: u32,
++        capacity: u32,
++    },
++}
++
++impl crate::observe::Decline for MapperRingDecline {
++    fn slug(&self) -> &'static str {
++        match self {
++            Self::CapacityUnset { .. } => "mapper_ring_capacity_unset",
++            Self::CountsDesynced { .. } => "mapper_ring_counts_desynced",
++        }
++    }
++
++    fn fields(&self) -> Vec<(&'static str, String)> {
++        match *self {
++            Self::CapacityUnset { producer, consumer } => vec![
++                ("producer", producer.to_string()),
++                ("consumer", consumer.to_string()),
++                ("skipped", producer.wrapping_sub(consumer).to_string()),
++            ],
++            Self::CountsDesynced {
++                producer,
++                consumer,
++                capacity,
++            } => vec![
++                ("producer", producer.to_string()),
++                ("consumer", consumer.to_string()),
++                ("capacity", capacity.to_string()),
++                ("skipped", producer.wrapping_sub(consumer).to_string()),
++            ],
++        }
++    }
++}
++
++crate::observe::decline_display!(MapperRingDecline);
++
+ /// Drain iosfc mapper producer→consumer handshake.
+ ///
+ /// Prefer calling this on the **iosfc producer MMIO path** (publishing vCPU)
+@@ -6991,11 +7039,36 @@
+     }
+ 
+     // Process requests between consumer and producer when ring is programmed.
+-    if state.iosfc.ring_base != 0 && producer > consumer {
+-        let start = consumer;
+-        let end = producer;
+-        for idx in start..end {
+-            let entry_off = (idx as u64) * MAPPER_REQUEST_ENTRY_LEN as u64;
++    //
++    // Both are free-running request counts, so the distance between them is
++    // the number of published requests whatever either has wrapped through,
++    // and each request is read from its slot in the `capacity`-entry array —
++    // see `mapper_request_slot_offset` for what reading the count as the slot
++    // cost.
++    let capacity = state.iosfc.capacity;
++    let published = producer.wrapping_sub(consumer);
++    if state.iosfc.ring_base != 0 && (capacity == 0 || published > capacity) {
++        // No slot can be named, or the guest's count is further ahead than the
++        // array holds — a reset count or a consumer that is not this ring's.
++        // The slots do not hold the requests the counts name, so catch up
++        // rather than decode them, and say what was skipped.
++        let decline = if capacity == 0 {
++            MapperRingDecline::CapacityUnset { producer, consumer }
++        } else {
++            MapperRingDecline::CountsDesynced {
++                producer,
++                consumer,
++                capacity,
++            }
++        };
++        crate::observe::Emit::decline("mapper_ring", &decline).fail();
++        consumer = producer;
++    } else if state.iosfc.ring_base != 0 {
++        for _ in 0..published {
++            let idx = consumer;
++            let Some(entry_off) = mapper_request_slot_offset(idx, capacity) else {
++                break;
++            };
+             let mut e = [0u8; MAPPER_REQUEST_ENTRY_LEN];
+             if host
+                 .read_gpa(state.iosfc.ring_base + entry_off, &mut e)
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -10,7 +10,7 @@
+ use crate::model::{DeviceState, MapperCapture};
+ use crate::protocol::iosurface_pages::{
+     self, build_table_plan, decode_device_surface, decode_mapper_request_entry, guest_kernel_va,
+-    mapper_request_published_entry_offset, mapping_span_bound, read_internal_desc_ptr,
++    mapper_request_published_slot_offset, mapping_span_bound, read_internal_desc_ptr,
+     read_mapper_identity, read_mapper_internal, validate_mapper_internal, MapperLayout,
+     PagesMemory, DEVICE_DESC_LEN, MAPPER_CAPTURE_REG_MAPPER_DEVICE,
+     MAPPER_CAPTURE_REG_REQUEST_TYPE, MAPPER_REQUEST_ENTRY_LEN, MAPPER_REQUEST_MAP,
+@@ -206,7 +206,7 @@
+     if producer == 0 || state.iosfc.ring_base == 0 {
+         return None;
+     }
+-    let entry_off = mapper_request_published_entry_offset(producer)?;
++    let entry_off = mapper_request_published_slot_offset(producer, state.iosfc.capacity)?;
+     let mut e = [0u8; MAPPER_REQUEST_ENTRY_LEN];
+     host.read_gpa(state.iosfc.ring_base + entry_off, &mut e)
+         .ok()?;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mmio.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mmio.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mmio.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mmio.rs
+@@ -276,7 +276,15 @@
+ ) {
+     match offset {
+         IOSFC_REG_RING_BASE => state.iosfc.ring_base = data,
+-        IOSFC_REG_CAPACITY => state.iosfc.capacity = data as u32,
++        IOSFC_REG_CAPACITY => {
++            state.iosfc.capacity = data as u32;
++            // Once per programming: the array's size decides every slot the
++            // mapper drain reads, so a session's log has to say what it was.
++            crate::observe::off(format!(
++                "iosfc_ring capacity={:#x} ring_base={:#x}",
++                state.iosfc.capacity, state.iosfc.ring_base
++            ));
++        }
+         IOSFC_REG_DESC_TABLE => state.iosfc.desc_table = data,
+         IOSFC_REG_PRODUCER => {
+             let producer = data as u32;
+diff --git a/reims-vgpu/crates/reims-vgpu/src/model/mod.rs b/reims-vgpu/crates/reims-vgpu/src/model/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/model/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/model/mod.rs
+@@ -691,6 +691,66 @@
+         );
+     }
+ 
++    /// A session publishes more surface requests than the array holds, and the
++    /// requests past its end are read from the slots the guest wrote them to.
++    ///
++    /// Reading the count as the slot decoded the 1025th request of every long
++    /// session from the memory after the array, which lost every MAP and UNMAP
++    /// from then on.
++    #[test]
++    fn mapper_requests_past_the_array_end_are_read_from_their_slots() {
++        use crate::protocol::iosurface_pages::{MAPPER_REQUEST_MAP, MAPPER_REQUEST_UNMAP};
++        let mut d = dev();
++        let mut h = FakeHost::new();
++        let base = 0x8000_0000u64;
++        let capacity = 4u32;
++        h.map_range(base, 0x1000, 0);
++        d.iosfc_write(&mut h, IOSFC_REG_RING_BASE, base, MMIO_U64);
++        d.iosfc_write(&mut h, IOSFC_REG_CAPACITY, u64::from(capacity), MMIO_U32);
++        let mut published = 0u32;
++        let mut publish = |d: &mut Device, h: &mut FakeHost, kind: u32, mapping_id: u32| {
++            let slot = base + u64::from(published % capacity) * 16;
++            let _ = h.write_gpa(slot, &kind.to_le_bytes());
++            let _ = h.write_gpa(slot + 4, &mapping_id.to_le_bytes());
++            published += 1;
++            d.iosfc_write(h, IOSFC_REG_PRODUCER, u64::from(published), MMIO_U32);
++        };
++        for id in 7..11 {
++            publish(&mut d, &mut h, MAPPER_REQUEST_MAP, id);
++        }
++        // The array is full; these two land in slots 0 and 1 again.
++        publish(&mut d, &mut h, MAPPER_REQUEST_UNMAP, 7);
++        publish(&mut d, &mut h, MAPPER_REQUEST_MAP, 11);
++
++        assert_eq!(d.state.iosfc.consumer, 6);
++        assert!(
++            !d.state.mappings[&7].mapped,
++            "the unmap past the end applied"
++        );
++        assert!(d.state.mappings[&11].mapped, "the map past the end applied");
++        assert!(
++            d.fails().is_empty(),
++            "no request decoded from outside the array"
++        );
++    }
++
++    /// A count further ahead than the array holds names no slot this device
++    /// can trust, so it is caught up rather than decoded.
++    #[test]
++    fn mapper_counts_further_apart_than_the_array_are_not_decoded() {
++        let mut d = dev();
++        let mut h = FakeHost::new();
++        let base = 0x8000_0000u64;
++        h.map_range(base, 0x1000, 0);
++        d.iosfc_write(&mut h, IOSFC_REG_RING_BASE, base, MMIO_U64);
++        d.iosfc_write(&mut h, IOSFC_REG_CAPACITY, 4, MMIO_U32);
++        let _ = h.write_gpa(base, &1u32.to_le_bytes());
++        let _ = h.write_gpa(base + 4, &7u32.to_le_bytes());
++        d.iosfc_write(&mut h, IOSFC_REG_PRODUCER, 9, MMIO_U32);
++        assert_eq!(d.state.iosfc.consumer, 9);
++        assert!(!d.state.mappings.contains_key(&7));
++    }
++
+     #[test]
+     fn present_and_cursor_model() {
+         let mut d = dev();
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/tests.rs
+@@ -654,6 +654,9 @@
+     let mut host = FakeHost::new();
+     let ring = 0x7000_0000u64;
+     state.iosfc.ring_base = ring;
++    // The guest programs the array's capacity beside its base; a capture
++    // reads the published request's slot through it.
++    state.iosfc.capacity = 1024;
+ 
+     // producer=1 → entry 0: MAP mapping_id=7
+     let mut entry = [0u8; 16];
+@@ -728,6 +731,7 @@
+     let mut host = FakeHost::new();
+     let ring = 0x7100_0000u64;
+     state.iosfc.ring_base = ring;
++    state.iosfc.capacity = 1024;
+ 
+     // producer=1 → entry 0: MAP mapping_id=9
+     let mut entry = [0u8; 16];
+@@ -842,6 +846,7 @@
+     host.map_range(ring, request.len(), 0);
+     host.write_gpa(ring, &request).unwrap();
+     state.iosfc.ring_base = ring;
++    state.iosfc.capacity = 1024;
+     host.set_xreg(19, KVA + 0x1000);
+     host.set_xreg(20, MAPPER_REQUEST_MAP as u64);
+     host.set_xreg(21, KVA);

@@ -1,0 +1,67 @@
+diff --git i/hw/virtio/vhost.c w/hw/virtio/vhost.c
+index 371dca1..2de7b7a 100644
+--- i/hw/virtio/vhost.c
++++ w/hw/virtio/vhost.c
+@@ -651,6 +651,13 @@ static bool vhost_section(struct vhost_dev *dev, MemoryRegionSection *section)
+          */
+         handled_dirty = (1 << DIRTY_MEMORY_MIGRATION) |
+             (1 << DIRTY_MEMORY_CODE);
++        /* The renderer also tracks ordinary RAM. A userspace backend which
++         * logs every DMA write can share those pages; removing them would
++         * leave no memory table when the VM resumes after a pause. */
++        if (dev->vhost_ops->backend_type == VHOST_BACKEND_TYPE_USER &&
++            vhost_dev_has_feature_ex(dev, VHOST_F_LOG_ALL)) {
++            handled_dirty |= 1 << DIRTY_MEMORY_VGA;
++        }
+ 
+         if (dirty_mask & ~handled_dirty) {
+             trace_vhost_reject_section(mr->name, 1);
+@@ -1291,7 +1298,10 @@ static void vhost_log_global_stop(MemoryListener *listener)
+ {
+     int r;
+ 
+-    r = vhost_migration_log(listener, false);
++    /* Display logging remains active independently of migration. */
++    struct vhost_dev *dev = container_of(listener, struct vhost_dev,
++                                        memory_listener);
++    r = vhost_migration_log(listener, dev->display_log_enabled);
+     if (r < 0) {
+         /* Not fatal, so report it, but take no further action */
+         warn_report("vhost: Failed to stop logging");
+@@ -1302,7 +1312,23 @@ static void vhost_log_start(MemoryListener *listener,
+                             MemoryRegionSection *section,
+                             int old, int new)
+ {
+-    /* FIXME: implement */
++    struct vhost_dev *dev = container_of(listener, struct vhost_dev,
++                                        memory_listener);
++    int r;
++
++    if (!(new & (1 << DIRTY_MEMORY_VGA)) ||
++        dev->vhost_ops->backend_type != VHOST_BACKEND_TYPE_USER ||
++        !vhost_dev_has_feature_ex(dev, VHOST_F_LOG_ALL)) {
++        return;
++    }
++    r = vhost_migration_log(listener, true);
++    if (r < 0) {
++        error_report("vhost: cannot track display RAM writes: %s", strerror(-r));
++        exit(EXIT_FAILURE);
++    }
++    /* Retain the small shared bitmap for the device lifetime. This also
++     * covers overlapping display clients without migration disabling it. */
++    dev->display_log_enabled = true;
+ }
+ 
+ static void vhost_log_stop(MemoryListener *listener,
+diff --git i/include/hw/virtio/vhost.h w/include/hw/virtio/vhost.h
+index 684bafc..631054e 100644
+--- i/include/hw/virtio/vhost.h
++++ w/include/hw/virtio/vhost.h
+@@ -110,6 +110,7 @@ struct vhost_dev {
+     /* @started: is the vhost device started? */
+     bool started;
+     bool log_enabled;
++    bool display_log_enabled;
+     uint64_t log_size;
+     Error *migration_blocker;
+     const VhostOps *vhost_ops;

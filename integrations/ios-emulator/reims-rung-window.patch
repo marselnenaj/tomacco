@@ -1,0 +1,185 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/observe/ladder.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/observe/ladder.rs
+@@ -204,7 +204,7 @@
+ ///
+ /// `key` is the rail's own name for the ref it failed to resolve (`func_ref`,
+ /// `pipe_ref`), which is the part that legitimately differs.
+-#[derive(Clone, Copy)]
++#[derive(Clone, Copy, Eq, PartialEq)]
+ pub struct RungReport {
+     event: &'static str,
+     key: &'static str,
+@@ -217,6 +217,51 @@
+ 
+     /// Report one of the first three rungs, with the datum it carries.
+     pub fn rung(self, task_id: u32, ref_: u32, rung: crate::runtime::objects::LadderRung) {
++        crate::runtime::drain::note_store_route_n("object_resolution_refusal_n", 1);
++        let key = RungKey {
++            report: self,
++            task_id,
++            ref_,
++            rung,
++        };
++        let mut retired = None;
++        if let Ok(mut pending) = RUNG_WINDOW.lock() {
++            if let Some(entry) = pending.iter_mut().find(|entry| entry.key == key) {
++                entry.repeated += 1;
++                entry.last_us = crate::observe::elapsed_us();
++                crate::runtime::drain::note_store_route_n(
++                    "object_resolution_refusal_coalesced_n",
++                    1,
++                );
++                return;
++            }
++            // Diagnostic storage only: publish the old count before reusing
++            // its slot. No guest resource or refusal is discarded.
++            if pending.len() == RUNG_WINDOW_CAPACITY {
++                retired = Some(pending.remove(0));
++                crate::runtime::drain::note_store_route_n("object_resolution_window_full_n", 1);
++            }
++            let now = crate::observe::elapsed_us();
++            pending.push(PendingRung {
++                key,
++                repeated: 0,
++                first_us: now,
++                last_us: now,
++            });
++        }
++        if let Some(entry) = retired {
++            entry.emit_repeats();
++        }
++        self.rung_line(task_id, ref_, rung, "");
++    }
++
++    fn rung_line(
++        self,
++        task_id: u32,
++        ref_: u32,
++        rung: crate::runtime::objects::LadderRung,
++        summary: &str,
++    ) {
+         use crate::runtime::objects::LadderRung;
+         let detail = match rung {
+             LadderRung::NoListEntry => String::new(),
+@@ -226,6 +271,13 @@
+             // already a field of every line this reports on.
+             LadderRung::NoTaskSpace => String::new(),
+         };
++        let detail = if summary.is_empty() {
++            detail
++        } else if detail.is_empty() {
++            summary.to_owned()
++        } else {
++            format!("{detail} {summary}")
++        };
+         self.reason(task_id, ref_, ladder_slugs!("")(rung), &detail);
+     }
+ 
+@@ -240,6 +292,67 @@
+             line.push_str(detail);
+         }
+         crate::observe::fail(line);
++    }
++}
++
++// One immediate line per exact identity, followed by exact repetition counts
++// on the existing census cadence. Typed rung equality keeps different lengths
++// and wrong-type tags distinct without allocating strings on the repeat path.
++const RUNG_WINDOW_CAPACITY: usize = 128;
++static RUNG_WINDOW: std::sync::Mutex<Vec<PendingRung>> = std::sync::Mutex::new(Vec::new());
++
++#[derive(Clone, Copy, Eq, PartialEq)]
++struct RungKey {
++    report: RungReport,
++    task_id: u32,
++    ref_: u32,
++    rung: crate::runtime::objects::LadderRung,
++}
++
++struct PendingRung {
++    key: RungKey,
++    repeated: u64,
++    first_us: u64,
++    last_us: u64,
++}
++
++impl PendingRung {
++    fn emit_repeats(self) {
++        if self.repeated != 0 {
++            let key = self.key;
++            key.report.rung_line(
++                key.task_id,
++                key.ref_,
++                key.rung,
++                &format!(
++                    "summary=true repeated={} first_us={} last_us={}",
++                    self.repeated, self.first_us, self.last_us
++                ),
++            );
++        }
++    }
++}
++
++/// Finish the diagnostic window without holding its mutex during log IO.
++/// Task retirement also calls this before an id can describe a new namespace.
++pub(crate) fn flush_rung_window(task_id: Option<u32>) {
++    let entries = {
++        let Ok(mut pending) = RUNG_WINDOW.lock() else {
++            return;
++        };
++        let mut entries = Vec::new();
++        let mut index = 0;
++        while index < pending.len() {
++            if task_id.is_none_or(|id| pending[index].key.task_id == id) {
++                entries.push(pending.swap_remove(index));
++            } else {
++                index += 1;
++            }
++        }
++        entries
++    };
++    for entry in entries {
++        entry.emit_repeats();
+     }
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
+@@ -2862,6 +2862,7 @@
+                 win_ms: DRAIN_DUTY.last_window_ms(),
+             },
+         );
++        crate::observe::ladder::flush_rung_window(None);
+         if let Some(routes) = take_store_routes() {
+             crate::observe::off(routes);
+         }
+--- a/reims-vgpu/crates/reims-vgpu/src/model/state.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/model/state.rs
+@@ -1,10 +1,10 @@
+ //! Device-owned state: registers, rings, tasks, mapper, present, fail log.
+ 
+ use crate::model::{LruBytesMemo, GFX_MMIO_SIZE, MAX_CHANNELS};
++use crate::protocol::iosurface_pages::MapperLayout;
+ use crate::runtime::decode::resource::{
+     DecodeStatus as ResourceDecodeStatus, Descriptor, ListObjectEntry, SamplerDescriptor,
+ };
+-use crate::protocol::iosurface_pages::MapperLayout;
+ use reims_vgpu_core::access::BackingId;
+ use reims_vgpu_core::identity::{ObjectListRef, ResourceId};
+ use reims_vgpu_core::namespace::Teardown;
+@@ -4065,6 +4065,7 @@
+         // this id is losing, and after a redefine they describe whatever the
+         // guest has since done with them.
+         self.node_guard.remove(&task_id);
++        crate::observe::ladder::flush_rung_window(Some(task_id));
+         self.retire_task_linear_residents(task_id);
+         self.host_linear_textures.retain(|&(t, _), _| t != task_id);
+         // New directory ⇒ old GVA HostOps views alias the wrong PT — retire.
+@@ -4134,6 +4135,7 @@
+         // holding a page set that describes memory it has given back.
+         self.map_audit.remove(&task_id);
+         self.node_guard.remove(&task_id);
++        crate::observe::ladder::flush_rung_window(Some(task_id));
+         self.tasks.remove(task_id);
+         true
+     }

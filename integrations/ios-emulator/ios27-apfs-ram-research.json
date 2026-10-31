@@ -1,0 +1,83 @@
+{
+  "format": 1,
+  "firmware": "27.0.1",
+  "build": "24A446",
+  "device": "iPhone17,3",
+  "scope": "Disposable unencrypted APFS RAM-volume research; not SEP or persistent storage emulation",
+  "kernel": {
+    "input_sha256": "b5d1edba3be9ee9223d76d045350380eb927ef6b78064f1a77633be4477bf9e6",
+    "output_sha256": "804fb527299af904d6f228acfabd96b81375fcbe7a92a86bd98caf15d8076c11",
+    "instructions": [
+      {
+        "address": "0xfffffff00a09c5b0",
+        "offset": 50955696,
+        "before": "0x39026274",
+        "after": "0x3902627f",
+        "purpose": "Allow KDIRAMBackingStore to use the existing IOMemoryDescriptor writeBytes path"
+      }
+    ]
+  },
+  "device_tree": {
+    "input_sha256": "f31d099f196214ccba3fe457518d7e8d12ad7d9c1215880ef8b67d8f9d60739f",
+    "output_sha256": "ee89a2dcae2967eb8c47e124f7a689c784e38d3494d678e6bddd79e460df1cc4",
+    "edits": [
+      {
+        "offset": 2824,
+        "before": "01000000",
+        "after": "00000000"
+      },
+      {
+        "offset": 13440,
+        "before": "01000000",
+        "after": "00000000"
+      },
+      {
+        "offset": 14520,
+        "before": "0000000002000000",
+        "after": "0000000008000000"
+      },
+      {
+        "offset": 324112,
+        "before": "03000000",
+        "after": "04000000"
+      },
+      {
+        "offset": 324248,
+        "before": "",
+        "after": "446f4e6f745573655345500000000000000000000000000000000000000000000400000001000000"
+      }
+    ],
+    "properties": {
+      "/chosen/dram-size": 34359738368,
+      "/chosen/sepfw-load-at-boot": 0,
+      "/chosen/txm-secure-channel": 0,
+      "/filesystems/DoNotUseSEP": 1
+    }
+  },
+  "single_data_tree": {
+    "input_sha256": "ee89a2dcae2967eb8c47e124f7a689c784e38d3494d678e6bddd79e460df1cc4",
+    "output_sha256": "ad9116fda6c0bb360e10b3e92dfc2621c44bcf2659ca76e27143554e8898f4de",
+    "edits": [
+      {
+        "offset": 324112,
+        "before": "04000000",
+        "after": "03000000"
+      },
+      {
+        "offset": 324168,
+        "before": "652d6170667300000000000000000000000000000000000000000000000000000400000001000000",
+        "after": ""
+      }
+    ],
+    "removed_properties": ["/filesystems/e-apfs"],
+    "purpose": "Use Apple's existing non-split Data layout; no changes to usermanagerd or its persona manifest"
+  },
+  "root_authentication_changed": false,
+  "enabled_in_product_guest_jobs": false,
+  "limitations": [
+    "Exact pinned input bytes required; only copied files are written",
+    "DoNotUseSEP selects Apple's insecure APFS test mode; it does not implement encryption or SEP",
+    "Without an explicit file-backed working image, guest changes remain in RAM and are lost when the emulator exits",
+    "A mounted Data volume does not qualify persona initialization, full boot or graphical applications"
+  ]
+}

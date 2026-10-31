@@ -1,0 +1,468 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -425,11 +425,31 @@
+ pub struct ColorAttachmentState {
+     format: vk::Format,
+     clear: ColorClearValue,
++    xr: Option<reims_vgpu_core::pixel_format::XrFormat>,
+ }
+ 
+ impl ColorAttachmentState {
+     pub(crate) fn new(format: vk::Format, clear: ColorClearValue) -> Self {
+-        Self { format, clear }
++        Self {
++            format,
++            clear,
++            xr: None,
++        }
++    }
++
++    pub(crate) fn xr(
++        format: reims_vgpu_core::pixel_format::XrFormat,
++        clear: ColorClearValue,
++    ) -> Self {
++        Self {
++            format: vk::Format::R32G32B32A32_SFLOAT,
++            clear,
++            xr: Some(format),
++        }
++    }
++
++    pub(crate) fn xr_format(self) -> Option<reims_vgpu_core::pixel_format::XrFormat> {
++        self.xr
+     }
+ 
+     pub fn format(self) -> vk::Format {
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
+@@ -1267,6 +1267,7 @@
+     /// to, so a repeat bind of the same module does not walk it three times to
+     /// find that out.
+     shader_digests: ShaderDigestIndex,
++    pub(super) color_quantization: super::color_quantization::ColorQuantizationCache,
+ }
+ 
+ struct ObjectVariantIndex<K, V> {
+@@ -1729,10 +1730,12 @@
+             samplers: ObjectCache::new(),
+             compute_pipelines: ObjectCache::new(),
+             shader_digests: ShaderDigestIndex::default(),
++            color_quantization: Default::default(),
+         }
+     }
+ 
+     pub(crate) unsafe fn destroy_all(&mut self, device: &ash::Device) {
++        self.color_quantization.clear();
+         // This index borrows handles owned by `pipelines`; forget those echoes
+         // before destroying the authoritative objects.
+         self.pipeline_objects.clear();
+@@ -1785,6 +1788,7 @@
+     }
+ 
+     pub(crate) fn clear_logical(&mut self) {
++        self.color_quantization.clear();
+         // Before the modules it indexes, so no window exists where a front-index
+         // hit names a digest whose module has already gone.
+         self.shader_digests.clear();
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -9,6 +9,7 @@
+ 
+ mod buffer_slab;
+ mod caches;
++mod color_quantization;
+ mod compute_execution;
+ mod compute_validation;
+ mod context;
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -1420,6 +1420,7 @@
+ }
+ 
+ pub(crate) fn validate_v1(req: &DrawRequest) -> Result<(), DrawError> {
++    super::color_quantization::formats(req)?;
+     if req.width == 0 || req.height == 0 {
+         return Err(DrawError::DrawValidation(
+             DrawValidationDecline::ZeroTargetGeometry {
+@@ -3199,8 +3200,11 @@
+     phase.enter(super::draw_phase::Phase::PipelineShader);
+     let (vert_digest, vert_module) =
+         caches.get_or_create_shader_memoized(ctx, &req.vert_spirv, counters, pools)?;
++    let fragment = caches
++        .color_quantization
++        .shader(&req.frag_spirv, super::color_quantization::formats(req)?)?;
+     let (frag_digest, frag_module) =
+-        caches.get_or_create_shader_memoized(ctx, &req.frag_spirv, counters, pools)?;
++        caches.get_or_create_shader_memoized(ctx, &fragment, counters, pools)?;
+     phase.enter(super::draw_phase::Phase::PipelineLayoutPass);
+     let layout = caches.get_or_create_layout(ctx, pools.layout_bindings(), None, counters)?;
+     let (dsl, pipeline_layout) = (layout.dsl, layout.pipeline_layout);
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
+@@ -44,6 +44,16 @@
+     },
+     EmptyVertexSpirv,
+     EmptyFragmentSpirv,
++    XrBlendRequiresQuantization {
++        slot: u32,
++    },
++    XrResolveRequiresQuantization {
++        slot: u32,
++        samples: u32,
++    },
++    XrFragmentOutput {
++        reason: String,
++    },
+     ColorInputMissingTarget {
+         slot: u32,
+         targets: usize,
+@@ -248,6 +258,11 @@
+             Self::ZeroTargetGeometry { .. } => "vk_draw_validate_zero_target_geometry",
+             Self::EmptyVertexSpirv => "vk_draw_validate_empty_vertex_spirv",
+             Self::EmptyFragmentSpirv => "vk_draw_validate_empty_fragment_spirv",
++            Self::XrBlendRequiresQuantization { .. } => {
++                "vk_xr_blend_requires_fragment_quantization"
++            }
++            Self::XrResolveRequiresQuantization { .. } => "vk_xr_resolve_requires_quantization",
++            Self::XrFragmentOutput { .. } => "vk_xr_fragment_output",
+             Self::ColorInputMissingTarget { .. } => "vk_draw_validate_color_input_missing_target",
+             Self::ColorInputTopology { .. } => "vk_draw_validate_color_input_topology",
+             Self::ColorInputHostLimit { .. } => "vk_draw_validate_color_input_host_limit",
+@@ -549,6 +564,11 @@
+                 ("lod_min", f32::from_bits(*lod_min_bits).to_string()),
+                 ("lod_max", f32::from_bits(*lod_max_bits).to_string()),
+             ],
++            Self::XrBlendRequiresQuantization { slot } => vec![("slot", slot.to_string())],
++            Self::XrResolveRequiresQuantization { slot, samples } => {
++                vec![("slot", slot.to_string()), ("samples", samples.to_string())]
++            }
++            Self::XrFragmentOutput { reason } => vec![("detail", reason.clone())],
+             Self::EmptyVertexSpirv
+             | Self::EmptyFragmentSpirv
+             | Self::NonFiniteViewport
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/translate/pixel.rs
+@@ -112,7 +112,14 @@
+     mtl: u16,
+ ) -> Result<(ColorAttachmentFormat, Option<TranslateReason>), TranslateReason> {
+     let (vk, numeric) = rail::color_attachment(mtl).map_err(declined)?;
+-    Ok((ColorAttachmentFormat { vk, numeric }, None))
++    Ok((
++        ColorAttachmentFormat {
++            vk,
++            numeric,
++            xr: pixel_format::XrFormat::from_mtl(mtl),
++        },
++        None,
++    ))
+ }
+ 
+ /// A colour-renderable Metal format translated together with the numeric type
+@@ -126,19 +133,28 @@
+ pub struct ColorAttachmentFormat {
+     pub vk: vk::Format,
+     numeric: pixel_format::ColorNumericType,
++    xr: Option<pixel_format::XrFormat>,
+ }
+ 
+ impl ColorAttachmentFormat {
+     /// Lower Metal's double-precision clear carrier using this attachment's
+     /// declared numeric interpretation.
+     pub fn clear_value(self, components: [f64; 4]) -> ColorClearValue {
+-        ColorClearValue::from_components(self.numeric, components)
++        match self.xr {
++            Some(xr) => {
++                ColorClearValue::Float(rail::quantized_xr_values(xr, components.map(|v| v as f32)))
++            }
++            None => ColorClearValue::from_components(self.numeric, components),
++        }
+     }
+ 
+     /// Bind this format to its clear value without exposing two independently
+     /// mutable fields to the engine request.
+     pub fn with_clear(self, components: [f64; 4]) -> ColorAttachmentState {
+-        ColorAttachmentState::new(self.vk, self.clear_value(components))
++        match self.xr {
++            Some(xr) => ColorAttachmentState::xr(xr, self.clear_value(components)),
++            None => ColorAttachmentState::new(self.vk, self.clear_value(components)),
++        }
+     }
+ }
+ 
+@@ -366,8 +382,8 @@
+             );
+             let resident_bpp = bytes_per_texel(allocation);
+             if p::XrFormat::from_mtl(mtl).is_some() {
+-                assert_eq!(allocation, vk::Format::R16G16B16A16_SFLOAT);
+-                assert_eq!(resident_bpp, Some(8));
++                assert_eq!(allocation, vk::Format::R32G32B32A32_SFLOAT);
++                assert_eq!(resident_bpp, Some(16));
+             } else {
+                 assert_eq!(
+                     resident_bpp,
+@@ -388,7 +404,7 @@
+         ] {
+             let (attachment, loss) = color_attachment(format).expect("XR is renderable");
+             assert_eq!(loss, None);
+-            assert_eq!(attachment.vk, vk::Format::R16G16B16A16_SFLOAT);
++            assert_eq!(attachment.vk, vk::Format::R32G32B32A32_SFLOAT);
+             assert_eq!(
+                 p::render_target_bpp(format),
+                 p::bytes_per_pixel(format),
+@@ -396,8 +412,8 @@
+             );
+             assert_eq!(
+                 bytes_per_texel(attachment.vk),
+-                Some(8),
+-                "the Vulkan resident holds linear RGBA16F for blending"
++                Some(16),
++                "the Vulkan resident holds canonical linear RGBA32F"
+             );
+         }
+     }
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel.rs
+@@ -32,7 +32,7 @@
+ 
+ mod xr_upload;
+ pub use xr_upload::{
+-    render_store_bytes, render_store_planar_xr_surface_bytes,
++    quantized_xr_values, render_store_bytes, render_store_planar_xr_surface_bytes,
+     sampled_planar_xr_surface_upload_bytes, sampled_planar_xr_upload_bytes, sampled_upload_bytes,
+     RenderStoreRefusal, SampledUpload, SampledUploadRefusal,
+ };
+@@ -729,11 +729,12 @@
+ /// renderable format a single edit there rather than a pair of edits that a
+ /// commit can half-land.
+ pub fn color_attachment(mtl: u16) -> Result<(vk::Format, ColorNumericType), Refusal> {
+-    // XR10 has no bit-compatible Vulkan format. Keep its live resident in
+-    // linear half-float so blending and sampling match Metal's linear shader
+-    // values; the Store rail encodes the guest's XR10 bytes afterwards.
++    // XR10 has no bit-compatible Vulkan format. Its Float32 resident carries
++    // decoded canonical XR values; the engine quantizes unblended fragment
++    // outputs, and refuses blending until rounding after blend is available.
++    // Half-float would introduce an extra quantization before the XR encoder.
+     let format = if pixel_format::XrFormat::from_mtl(mtl).is_some() {
+-        vk::Format::R16G16B16A16_SFLOAT
++        vk::Format::R32G32B32A32_SFLOAT
+     } else {
+         translate(mtl)?.vk
+     };
+--- a/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
++++ b/reims-vgpu/crates/reims-vgpu-vulkan/src/pixel/xr_upload.rs
+@@ -231,6 +231,29 @@
+         .mul_add(510.0, 384.0)
+         .round_ties_even()
+         .clamp(0.0, 1023.0) as u16
++}
++
++/// Canonical shader values after a public XR attachment clear or write.
++/// RGB preserves the format's extended range. Alpha is linear and clamped;
++/// an absent BGR alpha channel reads as one. This is also the clear contract
++/// for a Float32 resident whose fragment shader performs the same quantization.
++pub fn quantized_xr_values(format: XrFormat, values: [f32; 4]) -> [f32; 4] {
++    let colours = if format.is_srgb() {
++        srgb_values()
++    } else {
++        linear_values()
++    };
++    [
++        colours[usize::from(xr_colour_code(values[0], format.is_srgb()))],
++        colours[usize::from(xr_colour_code(values[1], format.is_srgb()))],
++        colours[usize::from(xr_colour_code(values[2], format.is_srgb()))],
++        match format {
++            XrFormat::Bgr10 | XrFormat::Bgr10Srgb => 1.0,
++            XrFormat::Bgra10 | XrFormat::Bgra10Srgb => {
++                linear_values()[usize::from(xr_colour_code(values[3].clamp(0.0, 1.0), false))]
++            }
++        },
++    ]
+ }
+ 
+ fn float_source_stride(layout: TexelLayout) -> Result<usize, RenderStoreRefusal> {
+--- a/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
++++ b/reims-vgpu/crates/reims-vgpu-protocol/src/pixel_format.rs
+@@ -327,7 +327,7 @@
+ /// Extended-range texels have no bit-compatible Vulkan normalized format.
+ /// Keep their packing and transfer function together until an upload decodes
+ /// them. In particular, a BGR texel's two high bits are not an alpha channel.
+-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+ pub enum XrFormat {
+     Bgr10,
+     Bgr10Srgb,
+@@ -2191,11 +2191,10 @@
+ /// only lossy rail in the set. The byte copy is what normally runs and it is
+ /// exact.
+ ///
+-/// XR render targets are the exception to the same-width resident rule: the
+-/// shader renders into a linear `RGBA16_FLOAT` resident so filtering and
+-/// blending stay in linear light, then the Store encoder writes Apple's
+-/// packed XR10 representation to guest memory. The guest allocation remains
+-/// four or eight bytes per pixel; the Vulkan resident is eight bytes.
++/// XR render targets keep their declared packed guest representation: four
++/// bytes for BGR and eight for BGRA. A rail without a native XR attachment
++/// must retain canonical decoded values and quantize after each fragment blend,
++/// plus clears and resolves; choosing its resident width is rail policy.
+ ///
+ /// `RG8_UNORM` is deliberately *not* here. No guest has been observed declaring
+ /// a two-channel eight-bit render target, and admitting a format costs three
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/color_quantization.rs
+@@ -0,0 +1,156 @@
++//! Public XR fragment quantization, retained by the original shader lifetime.
++//! The native paired-plane renderer remains a separate admission contract.
++
++use std::collections::HashMap;
++use std::sync::{Arc, Weak};
++
++use metal2vulkan::fragment_color::{
++    AffineColorEncoding, ColorChannelEncoding, ColorTransfer, FragmentColorEncoding,
++};
++use reims_vgpu_core::pixel_format::XrFormat;
++
++use super::draw_validation::DrawValidationDecline;
++use super::types::{DrawError, DrawRequest};
++
++type Formats = [Option<XrFormat>; 8];
++type ShaderWords = Arc<Vec<u32>>;
++
++/// The attachment's semantic format survives lowering to the Float32 image.
++/// A renderer lacking quantization after blend must decline before GPU work.
++pub(super) fn formats(req: &DrawRequest) -> Result<Formats, DrawError> {
++    let mut formats = [None; 8];
++    let primary = req.color_attachment.and_then(|a| a.xr_format());
++    for (slot, (format, blend)) in std::iter::once((primary, req.blend.is_some()))
++        .chain(
++            req.secondary_targets
++                .iter()
++                .map(|s| (s.attachment.xr_format(), s.blend.is_some())),
++        )
++        .enumerate()
++    {
++        let Some(format) = format else {
++            continue;
++        };
++        if slot >= formats.len() {
++            return Err(DrawError::DrawValidation(
++                DrawValidationDecline::XrFragmentOutput {
++                    reason: "fragment_color_plan_shape".into(),
++                },
++            ));
++        }
++        if blend {
++            return Err(DrawError::DrawValidation(
++                DrawValidationDecline::XrBlendRequiresQuantization { slot: slot as u32 },
++            ));
++        }
++        let samples = req.raster_sample_count.max(1);
++        if samples > 1 {
++            return Err(DrawError::DrawValidation(
++                DrawValidationDecline::XrResolveRequiresQuantization {
++                    slot: slot as u32,
++                    samples,
++                },
++            ));
++        }
++        formats[slot] = Some(format);
++    }
++    Ok(formats)
++}
++
++struct Entry {
++    source: Weak<Vec<u32>>,
++    result: Result<ShaderWords, DrawError>,
++}
++
++#[derive(Default)]
++pub(super) struct ColorQuantizationCache {
++    entries: HashMap<(usize, Formats), Entry>,
++}
++
++impl ColorQuantizationCache {
++    pub(super) fn clear(&mut self) {
++        self.entries.clear();
++    }
++
++    pub(super) fn shader(
++        &mut self,
++        source: &ShaderWords,
++        formats: Formats,
++    ) -> Result<ShaderWords, DrawError> {
++        if formats.iter().all(Option::is_none) {
++            return Ok(source.clone());
++        }
++        let key = (Arc::as_ptr(source) as usize, formats);
++        if let Some(entry) = self.entries.get(&key) {
++            // A reused allocation address cannot revive an expired shader.
++            if entry
++                .source
++                .upgrade()
++                .is_some_and(|held| Arc::ptr_eq(&held, source))
++            {
++                crate::runtime::drain::note_store_route("xr_fragment_quantize_reused_n");
++                return entry.result.clone();
++            }
++        }
++        // Only expired input lifetimes may lose a retained transformation.
++        // No live guest shader is evicted to meet an arbitrary capacity bound.
++        self.entries
++            .retain(|_, entry| entry.source.strong_count() != 0);
++        let result = rewrite(source, formats);
++        self.entries.insert(
++            key,
++            Entry {
++                source: Arc::downgrade(source),
++                result: result.clone(),
++            },
++        );
++        crate::runtime::drain::note_store_route("xr_fragment_quantize_new_n");
++        result
++    }
++}
++
++fn rewrite(source: &[u32], formats: Formats) -> Result<ShaderWords, DrawError> {
++    let refused = |reason: String| {
++        DrawError::DrawValidation(DrawValidationDecline::XrFragmentOutput { reason })
++    };
++    let mut encodings = Vec::new();
++    for (location, format) in formats.into_iter().enumerate() {
++        let Some(format) = format else {
++            continue;
++        };
++        let transfer = if format.is_srgb() {
++            ColorTransfer::ExtendedSrgb
++        } else {
++            ColorTransfer::Linear
++        };
++        let colour = ColorChannelEncoding::Affine(
++            AffineColorEncoding::checked(510, 384, 0, 1023, transfer)
++                .map_err(|e| refused(e.to_string()))?,
++        );
++        let alpha = match format {
++            XrFormat::Bgr10 | XrFormat::Bgr10Srgb => ColorChannelEncoding::ConstantOne,
++            XrFormat::Bgra10 | XrFormat::Bgra10Srgb => ColorChannelEncoding::Affine(
++                AffineColorEncoding::checked(510, 384, 384, 894, ColorTransfer::Linear)
++                    .map_err(|e| refused(e.to_string()))?,
++            ),
++        };
++        encodings.push(FragmentColorEncoding {
++            location: location as u32,
++            channels: [colour, colour, colour, alpha],
++        });
++    }
++    let bytes: Vec<_> = source.iter().flat_map(|w| w.to_le_bytes()).collect();
++    let bytes = metal2vulkan::fragment_color::quantize_fragment_color_outputs(&bytes, &encodings)
++        .map_err(|e| refused(e.to_string()))?;
++    // Validation is part of shader construction, never a selection or repair
++    // loop. A rejected module cannot enter the positive cache or the driver.
++    let scratch =
++        std::env::temp_dir().join(format!("reims-vgpu-xr-fragment-{}", std::process::id()));
++    metal2vulkan::tools::spirv_val_bytes(&bytes, &scratch).map_err(refused)?;
++    Ok(Arc::new(
++        bytes
++            .chunks_exact(4)
++            .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
++            .collect(),
++    ))
++}

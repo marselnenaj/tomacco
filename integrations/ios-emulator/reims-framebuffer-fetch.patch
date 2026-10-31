@@ -1,0 +1,1170 @@
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/caches.rs
+@@ -13,7 +13,8 @@
+ use super::digest::Digest128;
+ use super::pools::{DeferredHandle, ResourcePools};
+ use super::types::{
+-    BlendKey, ColorWriteMask, DrawError, SamplerStateKey, VertexAttributeFormat, VertexStepFunction,
++    BlendKey, ColorInputs, ColorWriteMask, DrawError, SamplerStateKey, VertexAttributeFormat,
++    VertexStepFunction,
+ };
+ use super::vk_call::{VkCall, VkOp};
+ 
+@@ -546,11 +547,9 @@
+     /// pass); the depth attachment is always appended AFTER color + secondaries
+     /// so slot 0 stays the primary color (the zero-copy readback assumes this).
+     pub depth: Option<DepthAttachKey>,
+-    /// Attachment 0 is ALSO referenced as a subpass input (framebuffer fetch).
+-    /// Both references use GENERAL layout and the subpass carries a BY_REGION
+-    /// self-dependency — the Vulkan feedback-loop form MoltenVK lowers to Metal
+-    /// programmable blending. `false` keeps the pass byte-identical.
+-    pub color_input: bool,
++    /// Color slots also referenced as subpass inputs. Sparse slot positions,
++    /// their layouts, and the framebuffer-local dependency are cache identity.
++    pub color_inputs: ColorInputs,
+     /// Bit N says colour attachment N is also sampled through
+     /// `VK_EXT_attachment_feedback_loop_layout`. The decoded render pass has at
+     /// most eight colour attachments, so the wire-derived attachment table is
+@@ -573,7 +572,7 @@
+             secondary: [SecondaryAttachKey::default(); MAX_SECONDARY_ATTACH],
+             secondary_count: 0,
+             depth: None,
+-            color_input: false,
++            color_inputs: ColorInputs::NONE,
+             feedback_colors: 0,
+             sample_count: 1,
+             multisample_resolve: false,
+@@ -646,7 +645,7 @@
+     pub(crate) fn color_layout(self, index: usize) -> vk::ImageLayout {
+         if self.color_feedback(index) {
+             color_feedback_layout()
+-        } else if index == 0 && (self.color_input || self.host_accessible_color0) {
++        } else if self.color_inputs.contains(index) || (index == 0 && self.host_accessible_color0) {
+             vk::ImageLayout::GENERAL
+         } else {
+             // The same layout the pass exits at, so an ordinary pass performs no
+@@ -772,7 +771,7 @@
+             secondary,
+             secondary_count,
+             depth,
+-            color_input,
++            color_inputs,
+             feedback_colors,
+             sample_count,
+             multisample_resolve,
+@@ -793,7 +792,7 @@
+         if host_accessible_color0 != them.host_accessible_color0 {
+             return Some(PassCompatField::HostAccessibleColor0);
+         }
+-        if color_input != them.color_input {
++        if color_inputs != them.color_inputs {
+             return Some(PassCompatField::ColorInput);
+         }
+         if feedback_colors != them.feedback_colors {
+@@ -1490,6 +1489,17 @@
+ /// here — colour writes to attachment reads and writes — already orders the
+ /// previous draw's store against this pass's `loadOp`, with no barrier from the
+ /// draw. Weakening its source scope would silently make that skip unsound.
++pub(crate) fn color_input_dependency() -> vk::SubpassDependency {
++    vk::SubpassDependency::default()
++        .src_subpass(0)
++        .dst_subpass(0)
++        .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
++        .dst_stage_mask(vk::PipelineStageFlags::FRAGMENT_SHADER)
++        .src_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
++        .dst_access_mask(vk::AccessFlags::INPUT_ATTACHMENT_READ)
++        .dependency_flags(vk::DependencyFlags::BY_REGION)
++}
++
+ fn external_dependencies(
+     has_depth: bool,
+     color_input: bool,
+@@ -2255,16 +2265,28 @@
+                 .attachment(index)
+                 .layout(vk::ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+         });
+-        let input_ref = [vk::AttachmentReference::default()
+-            .attachment(0)
+-            .layout(key.color_layout(0))];
++        // InputAttachmentIndex is an index into this array, not a dense ordinal
++        // of the slots actually read. Preserve holes, including a missing slot 0.
++        let input_ref: Vec<_> = (0..=key.color_inputs.slots().last().unwrap_or(0))
++            .map(|slot| {
++                if key.color_inputs.contains(slot as usize) {
++                    vk::AttachmentReference::default()
++                        .attachment(slot)
++                        .layout(key.color_layout(slot as usize))
++                } else {
++                    vk::AttachmentReference::default()
++                        .attachment(vk::ATTACHMENT_UNUSED)
++                        .layout(vk::ImageLayout::UNDEFINED)
++                }
++            })
++            .collect();
+         let mut subpass_desc = vk::SubpassDescription::default()
+             .pipeline_bind_point(vk::PipelineBindPoint::GRAPHICS)
+             .color_attachments(&color_ref);
+         if !resolve_ref.is_empty() {
+             subpass_desc = subpass_desc.resolve_attachments(&resolve_ref);
+         }
+-        if key.color_input {
++        if !key.color_inputs.is_empty() {
+             subpass_desc = subpass_desc.input_attachments(&input_ref);
+         }
+         if let Some(depth_ref) = &depth_ref {
+@@ -2274,22 +2296,15 @@
+         // Framebuffer-fetch feedback loop: the same-pixel color-write →
+         // input-read ordering within the one subpass. BY_REGION keeps it
+         // framebuffer-local (the form MoltenVK lowers to tile-memory fetch).
+-        let fetch_dep = vk::SubpassDependency::default()
+-            .src_subpass(0)
+-            .dst_subpass(0)
+-            .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
+-            .dst_stage_mask(vk::PipelineStageFlags::FRAGMENT_SHADER)
+-            .src_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
+-            .dst_access_mask(vk::AccessFlags::INPUT_ATTACHMENT_READ)
+-            .dependency_flags(vk::DependencyFlags::BY_REGION);
++        let fetch_dep = color_input_dependency();
+         let mut deps: Vec<vk::SubpassDependency> = external_dependencies(
+             key.depth.is_some(),
+-            key.color_input,
++            !key.color_inputs.is_empty(),
+             key.host_accessible_color0,
+             pass_exit_scope_narrow(),
+         )
+         .to_vec();
+-        if key.color_input {
++        if !key.color_inputs.is_empty() {
+             deps.push(fetch_dep);
+         }
+         deps.push(color_feedback_self_dependency(key.color_layout(0)));
+@@ -3198,7 +3213,7 @@
+         assert_ne!(clear.compatibility(), different_format.compatibility());
+ 
+         let mut different_subpass = load;
+-        different_subpass.color_input = true;
++        different_subpass.color_inputs = ColorInputs::PRIMARY;
+         assert_ne!(clear.compatibility(), different_subpass.compatibility());
+ 
+         let mut different_depth = load;
+@@ -3273,7 +3288,7 @@
+             ),
+             (
+                 "color input",
+-                |k| k.color_input = true,
++                |k| k.color_inputs = ColorInputs::PRIMARY,
+                 Some(PassCompatField::ColorInput),
+             ),
+             // Feedback is a property of the draw, and it makes two passes
+@@ -3335,7 +3350,7 @@
+         assert_ne!(plain.compatibility(), transported.compatibility());
+ 
+         let mut input = transported;
+-        input.color_input = true;
++        input.color_inputs = ColorInputs::PRIMARY;
+         assert_ne!(
+             plain.framebuffer_compatibility(),
+             input.framebuffer_compatibility()
+@@ -4251,7 +4266,11 @@
+         key.host_accessible_color0 = true;
+         for color_input in [false, true] {
+             for feedback in [false, true] {
+-                key.color_input = color_input;
++                key.color_inputs = if color_input {
++                    ColorInputs::PRIMARY
++                } else {
++                    ColorInputs::NONE
++                };
+                 key.feedback_colors = u8::from(feedback);
+                 assert_eq!(
+                     key.color_layout(0),
+@@ -4283,7 +4302,7 @@
+     #[test]
+     fn feedback_attachment_layout_is_derived_consistently_from_the_mask() {
+         let mut key = PassKey::single(Color0Load::Preserve, vk::Format::R8G8B8A8_UNORM);
+-        key.color_input = true;
++        key.color_inputs = ColorInputs::PRIMARY;
+         key.feedback_colors = (1 << 0) | (1 << 3);
+ 
+         for index in 0..=MAX_SECONDARY_ATTACH {
+@@ -4365,12 +4384,12 @@
+     fn pass_dependency_count(key: PassKey) -> usize {
+         external_dependencies(
+             key.depth.is_some(),
+-            key.color_input,
++            !key.color_inputs.is_empty(),
+             key.host_accessible_color0,
+             pass_exit_scope_narrow(),
+         )
+         .len()
+-            + usize::from(key.color_input)
++            + usize::from(!key.color_inputs.is_empty())
+             + 1
+     }
+ 
+@@ -4458,4 +4477,28 @@
+             );
+         }
+     }
+-}
++
++    #[test]
++    fn framebuffer_fetch_slots_are_pass_identity_and_keep_their_own_layouts() {
++        let mut left = PassKey::single(Color0Load::Preserve, vk::Format::R8G8B8A8_UNORM);
++        left.secondary_count = 2;
++        left.color_inputs = ColorInputs::NONE.with_slot(1).unwrap();
++        let mut right = left;
++        right.color_inputs = ColorInputs::NONE.with_slot(2).unwrap();
++        assert_ne!(left.compatibility(), right.compatibility());
++        assert_ne!(
++            left.framebuffer_compatibility(),
++            right.framebuffer_compatibility()
++        );
++        assert_eq!(left.color_layout(1), vk::ImageLayout::GENERAL);
++        assert_eq!(right.color_layout(2), vk::ImageLayout::GENERAL);
++        assert_eq!(
++            color_input_dependency().src_access_mask,
++            vk::AccessFlags::COLOR_ATTACHMENT_WRITE
++        );
++        assert_eq!(
++            color_input_dependency().dst_access_mask,
++            vk::AccessFlags::INPUT_ATTACHMENT_READ
++        );
++    }
++}
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
+@@ -666,6 +666,8 @@
+     /// physical device, and the previous code re-queried it through the loader
+     /// on every single allocation.
+     pub memory_properties: vk::PhysicalDeviceMemoryProperties,
++    /// Queried input-attachment table and descriptor limit.
++    pub input_attachment_limit: u32,
+     /// `VK_EXT_external_memory_host` entry points, loaded only where
+     /// [`HostGpuCaps::host_pointer`] resolved to `Supported` — which is also the
+     /// only rung on which the extension was enabled, so loading it on any other
+@@ -1468,6 +1470,10 @@
+             pipeline_cache,
+             vertex_divisor,
+             storage_buffer_offset_align: storage_buffer_offset_alignment(&props.limits),
++            input_attachment_limit: props
++                .limits
++                .max_per_stage_descriptor_input_attachments
++                .min(props.limits.max_descriptor_set_input_attachments),
+             max_storage_buffer_range: u64::from(props.limits.max_storage_buffer_range),
+             vertex_formats,
+             max_sampler_anisotropy: features.max_sampler_anisotropy,
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_preparation.rs
+@@ -96,7 +96,7 @@
+         buffer_index: u32,
+         reason: TranslateReason,
+     },
+-    ColorInputMrtUnsupported {
++    ColorInputSlotOutOfRange {
+         destination_index: u32,
+     },
+     AttachmentAliasIdentityMissing {
+@@ -291,7 +291,7 @@
+                 }
+                 _ => "draw_prepare_vertex_step_function_unsupported",
+             },
+-            Self::ColorInputMrtUnsupported { .. } => "draw_prepare_color_input_mrt_unsupported",
++            Self::ColorInputSlotOutOfRange { .. } => "draw_prepare_color_input_slot_out_of_range",
+             Self::AttachmentAliasIdentityMissing { .. } => {
+                 "draw_prepare_attachment_alias_identity_missing"
+             }
+@@ -481,7 +481,7 @@
+                 fields.extend(reason.fields());
+                 fields
+             }
+-            Self::ColorInputMrtUnsupported { destination_index } => {
++            Self::ColorInputSlotOutOfRange { destination_index } => {
+                 vec![("destination_index", destination_index.to_string())]
+             }
+             Self::AttachmentAliasIdentityMissing { index, texture_ref } => vec![
+@@ -767,7 +767,7 @@
+                 buffer_index: 1,
+                 reason: TranslateReason::VertexStepFunctionPerPatch(3),
+             },
+-            DrawPreparationDecline::ColorInputMrtUnsupported {
++            DrawPreparationDecline::ColorInputSlotOutOfRange {
+                 destination_index: 1,
+             },
+             DrawPreparationDecline::AttachmentAliasIdentityMissing {
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/draw_validation.rs
+@@ -44,6 +44,22 @@
+     },
+     EmptyVertexSpirv,
+     EmptyFragmentSpirv,
++    ColorInputMissingTarget {
++        slot: u32,
++        targets: usize,
++    },
++    ColorInputTopology {
++        primitive: u32,
++    },
++    ColorInputHostLimit {
++        required: u32,
++        limit: u32,
++    },
++    ColorInputBuiltin {
++        builtin: u32,
++    },
++    ColorInputMalformedSpirv,
++    ColorInputDrawRangeOverflow,
+     NonFiniteViewport,
+     NonPositiveViewport {
+         width_bits: u32,
+@@ -232,6 +248,12 @@
+             Self::ZeroTargetGeometry { .. } => "vk_draw_validate_zero_target_geometry",
+             Self::EmptyVertexSpirv => "vk_draw_validate_empty_vertex_spirv",
+             Self::EmptyFragmentSpirv => "vk_draw_validate_empty_fragment_spirv",
++            Self::ColorInputMissingTarget { .. } => "vk_draw_validate_color_input_missing_target",
++            Self::ColorInputTopology { .. } => "vk_draw_validate_color_input_topology",
++            Self::ColorInputHostLimit { .. } => "vk_draw_validate_color_input_host_limit",
++            Self::ColorInputBuiltin { .. } => "vk_draw_validate_color_input_draw_builtin",
++            Self::ColorInputMalformedSpirv => "vk_draw_validate_color_input_malformed_spirv",
++            Self::ColorInputDrawRangeOverflow => "vk_draw_validate_color_input_draw_range_overflow",
+             Self::NonFiniteViewport => "vk_draw_validate_non_finite_viewport",
+             Self::NonPositiveViewport { .. } => "vk_draw_validate_non_positive_viewport",
+             Self::NonFiniteBlendConstants => "vk_draw_validate_non_finite_blend_constants",
+@@ -298,6 +320,16 @@
+ 
+     fn fields(&self) -> Vec<(&'static str, String)> {
+         match self {
++            Self::ColorInputHostLimit { required, limit } => vec![
++                ("required", required.to_string()),
++                ("limit", limit.to_string()),
++            ],
++            Self::ColorInputMissingTarget { slot, targets } => {
++                vec![("slot", slot.to_string()), ("targets", targets.to_string())]
++            }
++            Self::ColorInputTopology { primitive } => vec![("primitive", primitive.to_string())],
++            Self::ColorInputBuiltin { builtin } => vec![("builtin", builtin.to_string())],
++            Self::ColorInputMalformedSpirv | Self::ColorInputDrawRangeOverflow => vec![],
+             Self::VertexGuestRunsRowStride {
+                 location,
+                 row_length_texels,
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/exec.rs
+@@ -1438,6 +1438,7 @@
+             DrawValidationDecline::EmptyFragmentSpirv,
+         ));
+     }
++    ordered_color_fetch_width(req)?;
+     // Every viewport, not just the first: a NaN in slot 3 reaches
+     // `vkCmdSetViewport` exactly as one in slot 0 does, and the driver's
+     // behaviour on it is undefined either way.
+@@ -2958,9 +2959,19 @@
+             count: 1,
+         });
+     }
+-    if req.color_input {
++    if let Some(last) = req.color_inputs.slots().last() {
++        if last >= ctx.input_attachment_limit {
++            return Err(DrawError::DrawValidation(
++                DrawValidationDecline::ColorInputHostLimit {
++                    required: last + 1,
++                    limit: ctx.input_attachment_limit,
++                },
++            ));
++        }
++    }
++    for slot in req.color_inputs.slots() {
+         layout_bindings.push(BindingSig {
+-            binding: super::types::COLOR_INPUT_BINDING,
++            binding: super::types::COLOR_INPUT_BINDING + slot,
+             ty: vk::DescriptorType::INPUT_ATTACHMENT.as_raw() as u32,
+             stages: vk::ShaderStageFlags::FRAGMENT.as_raw(),
+             count: 1,
+@@ -3065,7 +3076,7 @@
+         };
+     }
+     pass_key.secondary_count = req.secondary_targets.len() as u8;
+-    pass_key.color_input = req.color_input;
++    pass_key.color_inputs = req.color_inputs;
+     for resource in &req.sampled_images {
+         if let Some(index) =
+             feedback_color_index(req, resource, ctx.features.attachment_feedback_loop_layout)
+@@ -3137,12 +3148,12 @@
+                 },
+             ));
+         }
+-        if !req.secondary_targets.is_empty() || req.color_input {
++        if !req.secondary_targets.is_empty() || !req.color_inputs.is_empty() {
+             return Err(DrawError::Unsupported(
+                 super::reason::DrawReason::MultisampleResolveShapeUnsupported {
+                     color_targets: 1u32.saturating_add(req.secondary_targets.len() as u32),
+                     depth: req.depth.is_some(),
+-                    color_input: req.color_input,
++                    color_input: !req.color_inputs.is_empty(),
+                 },
+             ));
+         }
+@@ -3567,7 +3578,8 @@
+     // slot's cached framebuffer was built against. One predicate, because the
+     // two answers it feeds have to agree: which pass the slot is ensured under,
+     // and whether the draw builds (and later disposes) a framebuffer of its own.
+-    let ordinary_ad_hoc_framebuffer = is_mrt || req.depth.is_some() || req.color_input;
++    let color_fetch_width = ordered_color_fetch_width(req)?;
++    let ordinary_ad_hoc_framebuffer = is_mrt || req.depth.is_some() || !req.color_inputs.is_empty();
+     let ad_hoc_framebuffer = ordinary_ad_hoc_framebuffer || req.multisample_resolve;
+     let (primary_pass, primary_pass_compatibility) = if ad_hoc_framebuffer {
+         let mut color_only = PassKey::single(pass_key.color0_load, pass_key.color0_format);
+@@ -3586,6 +3598,7 @@
+         super::types::TargetIdentity,
+         vk::Image,
+         super::pools::ResidentAccess,
++        vk::ImageView,
+     )> = Vec::new();
+     // This draw's depth attachment, when it has one. The framebuffer is always
+     // this draw's own and is always disposed after submit; the image behind it
+@@ -4231,7 +4244,18 @@
+     // Framebuffer fetch: the input attachment IS the color target's view;
+     // derive the same layout as the subpass reference. A draw that also
+     // samples the target upgrades both from GENERAL to the feedback layout.
+-    let color_input_layout = pass_key.color_layout(0);
++    let color_input_views: Vec<_> = req
++        .color_inputs
++        .slots()
++        .map(|slot| {
++            let view = if slot == 0 {
++                target_view
++            } else {
++                mrt_secondaries[slot as usize - 1].3
++            };
++            (slot, view, pass_key.color_layout(slot as usize))
++        })
++        .collect();
+     // This draw's bindings, as this device's own list rather than as Vulkan's
+     // write structures.
+     //
+@@ -4254,7 +4278,7 @@
+         storage_binds,
+         &sampled,
+         &sampler_handles,
+-        req.color_input.then_some((target_view, color_input_layout)),
++        &color_input_views,
+     );
+     if let Some(dset) = dset {
+         // An allocated set is fresh out of the pool and carries nothing, so
+@@ -4949,7 +4973,7 @@
+     // prior draw) must transition back to color-attachment use, and the write
+     // must wait for that prior read (WAR). A freshly-created secondary tracks
+     // UNDEFINED and needs no barrier — the render pass discards on CLEAR.
+-    for (secondary_index, (_id, image, access)) in mrt_secondaries.iter().enumerate() {
++    for (secondary_index, (_id, image, access, _view)) in mrt_secondaries.iter().enumerate() {
+         if *access == super::pools::ResidentAccess::Untouched
+             && secondary_seed_slots[secondary_index].is_none()
+         {
+@@ -4960,7 +4984,13 @@
+         if feedback && req.continues_render_pass && pools.open_pass_echoes(&echo) {
+             continue;
+         }
++        let fetch = req.color_inputs.contains(attachment_index);
+         let dst_stage = vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT
++            | if fetch {
++                vk::PipelineStageFlags::FRAGMENT_SHADER
++            } else {
++                vk::PipelineStageFlags::empty()
++            }
+             | if feedback {
+                 vk::PipelineStageFlags::VERTEX_SHADER | vk::PipelineStageFlags::FRAGMENT_SHADER
+             } else {
+@@ -4968,6 +4998,11 @@
+             };
+         let dst_access = vk::AccessFlags::COLOR_ATTACHMENT_READ
+             | vk::AccessFlags::COLOR_ATTACHMENT_WRITE
++            | if fetch {
++                vk::AccessFlags::INPUT_ATTACHMENT_READ
++            } else {
++                vk::AccessFlags::empty()
++            }
+             | if feedback {
+                 vk::AccessFlags::SHADER_READ
+             } else {
+@@ -5377,23 +5412,54 @@
+         (Some(indexed), Some(ibuf)) => {
+             ctx.device
+                 .cmd_bind_index_buffer(cb, ibuf.buffer, ibuf.offset, indexed.index_type.vk());
+-            ctx.device.cmd_draw_indexed(
+-                cb,
+-                indexed.index_count,
+-                req.instance_count.unwrap_or(1),
+-                0,
+-                indexed.vertex_offset,
+-                req.base_instance,
+-            );
++            if let Some(width) = color_fetch_width {
++                for instance in 0..req.instance_count.unwrap_or(1) {
++                    for primitive in 0..indexed.index_count / width {
++                        color_fetch_barrier(&ctx.device, cb);
++                        ctx.device.cmd_draw_indexed(
++                            cb,
++                            width,
++                            1,
++                            primitive * width,
++                            indexed.vertex_offset,
++                            req.base_instance + instance,
++                        );
++                    }
++                }
++            } else {
++                ctx.device.cmd_draw_indexed(
++                    cb,
++                    indexed.index_count,
++                    req.instance_count.unwrap_or(1),
++                    0,
++                    indexed.vertex_offset,
++                    req.base_instance,
++                );
++            }
+         }
+         _ => {
+-            ctx.device.cmd_draw(
+-                cb,
+-                req.vertex_count,
+-                req.instance_count.unwrap_or(1),
+-                req.first_vertex,
+-                req.base_instance,
+-            );
++            if let Some(width) = color_fetch_width {
++                for instance in 0..req.instance_count.unwrap_or(1) {
++                    for primitive in 0..req.vertex_count / width {
++                        color_fetch_barrier(&ctx.device, cb);
++                        ctx.device.cmd_draw(
++                            cb,
++                            width,
++                            1,
++                            req.first_vertex + primitive * width,
++                            req.base_instance + instance,
++                        );
++                    }
++                }
++            } else {
++                ctx.device.cmd_draw(
++                    cb,
++                    req.vertex_count,
++                    req.instance_count.unwrap_or(1),
++                    req.first_vertex,
++                    req.base_instance,
++                );
++            }
+         }
+     }
+     // Back to the remainder: the query end, the pass-close decision and
+@@ -5694,7 +5760,8 @@
+     // carrying the color-write→shader-read dependency. (The ad-hoc MRT
+     // framebuffer is disposed below, after `finish_entry_async` — see there.)
+     if is_mrt {
+-        for (secondary_index, (identity, _image, _old)) in mrt_secondaries.iter().enumerate() {
++        for (secondary_index, (identity, _image, _old, _view)) in mrt_secondaries.iter().enumerate()
++        {
+             let attachment_index = secondary_index + 1;
+             if pass_key.color_feedback(attachment_index) {
+                 pools.registry_mark_ready_with_access(
+@@ -6020,6 +6087,97 @@
+ }
+ 
+ /// Validate the declared texel and complete image footprint of a CPU Load.
++/// Core Vulkan input attachments need explicit write-to-read ordering. Metal
++/// framebuffer fetch also orders overlapping primitives within a draw. On this
++/// baseline path, emit one complete list primitive per draw and put a BY_REGION
++/// barrier before each. First vertex/index and instance values remain original.
++/// Strips and PrimitiveId require a distinct lowering, so refuse them visibly.
++fn ordered_color_fetch_width(req: &DrawRequest) -> Result<Option<u32>, DrawError> {
++    use reims_vgpu_core::topology::PrimitiveType;
++    if req.color_inputs.is_empty() {
++        return Ok(None);
++    }
++    let targets = 1 + req.secondary_targets.len();
++    for slot in req.color_inputs.slots() {
++        if slot as usize >= targets {
++            return Err(DrawError::DrawValidation(
++                DrawValidationDecline::ColorInputMissingTarget { slot, targets },
++            ));
++        }
++    }
++    let width = match req.primitive_topology.0 {
++        PrimitiveType::Point => 1,
++        PrimitiveType::Line => 2,
++        PrimitiveType::Triangle => 3,
++        primitive => {
++            return Err(DrawError::DrawValidation(
++                DrawValidationDecline::ColorInputTopology {
++                    primitive: primitive.ordinal(),
++                },
++            ))
++        }
++    };
++    // SPIR-V draw parameters whose value subdivision would change. VertexIndex
++    // and InstanceIndex are preserved by each command's original offsets.
++    for (builtin, changes) in [
++        (7, true),
++        (4424, req.indexed.is_none()),
++        (4425, req.instance_count.unwrap_or(1) > 1),
++    ] {
++        if !changes {
++            continue;
++        }
++        for words in [&req.vert_spirv, &req.frag_spirv] {
++            match crate::runtime::spirv_bind::declares_builtin(words, builtin) {
++                Some(false) => {}
++                Some(true) => {
++                    return Err(DrawError::DrawValidation(
++                        DrawValidationDecline::ColorInputBuiltin { builtin },
++                    ))
++                }
++                None => {
++                    return Err(DrawError::DrawValidation(
++                        DrawValidationDecline::ColorInputMalformedSpirv,
++                    ))
++                }
++            }
++        }
++    }
++    if req
++        .base_instance
++        .checked_add(req.instance_count.unwrap_or(1).saturating_sub(1))
++        .is_none()
++        || (req.indexed.is_none()
++            && req
++                .first_vertex
++                .checked_add(req.vertex_count.saturating_sub(1))
++                .is_none())
++    {
++        return Err(DrawError::DrawValidation(
++            DrawValidationDecline::ColorInputDrawRangeOverflow,
++        ));
++    }
++    Ok(Some(width))
++}
++
++unsafe fn color_fetch_barrier(device: &ash::Device, cb: vk::CommandBuffer) {
++    let dependency = super::caches::color_input_dependency();
++    let barrier = [vk::MemoryBarrier::default()
++        .src_access_mask(dependency.src_access_mask)
++        .dst_access_mask(dependency.dst_access_mask)];
++    unsafe {
++        device.cmd_pipeline_barrier(
++            cb,
++            dependency.src_stage_mask,
++            dependency.dst_stage_mask,
++            dependency.dependency_flags,
++            &barrier,
++            &[],
++            &[],
++        )
++    };
++}
++
+ fn validate_color_load_seed(
+     target: &crate::protocol::pixel_format::ColorLoadSeed,
+     width: u32,
+@@ -6158,6 +6316,7 @@
+         super::types::TargetIdentity,
+         vk::Image,
+         super::pools::ResidentAccess,
++        vk::ImageView,
+     )>,
+ ) -> Result<Vec<vk::ImageView>, DrawError> {
+     let mut views = vec![primary_view];
+@@ -6196,7 +6355,7 @@
+             counters,
+         )?;
+         views.push(view);
+-        mrt_secondaries.push((sec.identity.clone(), img, old_access));
++        mrt_secondaries.push((sec.identity.clone(), img, old_access, view));
+     }
+     views.extend(depth_view);
+     Ok(views)
+@@ -6284,7 +6443,7 @@
+     storage_slots: &[(u32, BoundBuffer, u64)],
+     sampled: &[PreparedSampled],
+     sampler_handles: &[(u32, vk::Sampler)],
+-    color_input: Option<(vk::ImageView, vk::ImageLayout)>,
++    color_inputs: &[(u32, vk::ImageView, vk::ImageLayout)],
+ ) {
+     out.extend(storage_slots.iter().map(|(binding, bound, len)| {
+         super::pools::PushDescriptorBinding::Buffer {
+@@ -6318,9 +6477,9 @@
+             layout: vk::ImageLayout::UNDEFINED,
+         }
+     }));
+-    if let Some((view, layout)) = color_input {
++    for &(slot, view, layout) in color_inputs {
+         out.push(super::pools::PushDescriptorBinding::Image {
+-            binding: super::types::COLOR_INPUT_BINDING,
++            binding: super::types::COLOR_INPUT_BINDING + slot,
+             array_element: 0,
+             ty: vk::DescriptorType::INPUT_ATTACHMENT,
+             sampler: vk::Sampler::null(),
+@@ -8731,4 +8890,71 @@
+         }
+         assert_eq!(checked, COMPARES.len() * OPS.len() * 2);
+     }
++
++    #[test]
++    fn framebuffer_fetch_validates_sparse_targets_and_draw_parameter_semantics() {
++        let mut req = DrawRequest {
++            vert_spirv: std::sync::Arc::new(vec![0x07230203, 0x00010500, 0, 8, 0]),
++            frag_spirv: std::sync::Arc::new(vec![0x07230203, 0x00010500, 0, 8, 0]),
++            color_inputs: super::super::types::ColorInputs::PRIMARY,
++            vertex_count: 6,
++            ..Default::default()
++        };
++        assert_eq!(ordered_color_fetch_width(&req).unwrap(), Some(3));
++        let sparse = super::super::types::ColorInputs::NONE.with_slot(7).unwrap();
++        assert_eq!(sparse.slots().collect::<Vec<_>>(), vec![7]);
++        assert!(sparse.with_slot(8).is_none());
++        assert!(sparse.with_slot(u32::MAX).is_none());
++        req.color_inputs = sparse;
++        assert!(matches!(
++            ordered_color_fetch_width(&req),
++            Err(DrawError::DrawValidation(
++                DrawValidationDecline::ColorInputMissingTarget {
++                    slot: 7,
++                    targets: 1
++                }
++            ))
++        ));
++        req.color_inputs = super::super::types::ColorInputs::PRIMARY;
++        req.first_vertex = u32::MAX;
++        assert!(matches!(
++            ordered_color_fetch_width(&req),
++            Err(DrawError::DrawValidation(
++                DrawValidationDecline::ColorInputDrawRangeOverflow
++            ))
++        ));
++        req.first_vertex = 0;
++        req.primitive_topology.0 = reims_vgpu_core::topology::PrimitiveType::TriangleStrip;
++        assert!(matches!(
++            ordered_color_fetch_width(&req),
++            Err(DrawError::DrawValidation(
++                DrawValidationDecline::ColorInputTopology { primitive: 4 }
++            ))
++        ));
++        req.primitive_topology = Default::default();
++        for builtin in [7, 4424, 4425] {
++            req.instance_count = Some(2);
++            req.vert_spirv = std::sync::Arc::new(vec![
++                0x07230203,
++                0x00010500,
++                0,
++                8,
++                0,
++                (4 << 16) | 71,
++                1,
++                11,
++                builtin,
++            ]);
++            assert!(
++                matches!(ordered_color_fetch_width(&req),Err(DrawError::DrawValidation(DrawValidationDecline::ColorInputBuiltin { builtin: actual })) if actual==builtin)
++            );
++        }
++        req.vert_spirv = std::sync::Arc::new(vec![0x07230203, 0x00010500, 0, 8, 0, 0]);
++        assert!(matches!(
++            ordered_color_fetch_width(&req),
++            Err(DrawError::DrawValidation(
++                DrawValidationDecline::ColorInputMalformedSpirv
++            ))
++        ));
++    }
+ }
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -69,10 +69,10 @@
+ pub(crate) use host_ram::GuestWriteDecline;
+ pub use types::viewport_slot_count;
+ pub use types::{
+-    BlendStateResource, BufferContent, ColorAttachmentState, ColorClearValue, ColorWriteMask,
+-    ComputeBufferResource, ComputeDispatch, ComputeDispatchPayload, ComputeDispatchRegion,
+-    ComputeImageDestination, ComputeImageResult, ComputeOutput, ComputeRequest,
+-    ComputeResidentSampleBind, ComputeSampledImageResource, ComputeSampledSource,
++    BlendStateResource, BufferContent, ColorAttachmentState, ColorClearValue, ColorInputs,
++    ColorWriteMask, ComputeBufferResource, ComputeDispatch, ComputeDispatchPayload,
++    ComputeDispatchRegion, ComputeImageDestination, ComputeImageResult, ComputeOutput,
++    ComputeRequest, ComputeResidentSampleBind, ComputeSampledImageResource, ComputeSampledSource,
+     ComputeStorageImageResource, ComputeStorageResidency, DepthState, DrawError, DrawOutput,
+     DrawRequest, GuestRun, GuestRunSource, GuestSampledBacking, GuestTargetBacking,
+     GuestTargetMemory, GuestTargetSeed, IndexType, IndexedDrawResource, PipelineObjectIdentity,
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/types.rs
+@@ -438,6 +438,33 @@
+ 
+     pub(crate) fn clear(self) -> ColorClearValue {
+         self.clear
++    }
++}
++
++/// Color attachment slots read by the fragment shader. The Metal render-pass
++/// table has eight slots; no unvalidated ordinal can escape this constructor.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
++pub struct ColorInputs(u8);
++
++impl ColorInputs {
++    pub const NONE: Self = Self(0);
++    pub const PRIMARY: Self = Self(1);
++
++    pub fn with_slot(self, slot: u32) -> Option<Self> {
++        (slot < crate::runtime::render_pass::PASS_MAX_COLOR_ATTACHMENTS as u32)
++            .then(|| Self(self.0 | (1u8 << slot)))
++    }
++
++    pub const fn is_empty(self) -> bool {
++        self.0 == 0
++    }
++
++    pub fn contains(self, slot: usize) -> bool {
++        slot < u8::BITS as usize && self.0 & (1u8 << slot) != 0
++    }
++
++    pub fn slots(self) -> impl Iterator<Item = u32> {
++        (0..u8::BITS).filter(move |slot| self.contains(*slot as usize))
+     }
+ }
+ 
+@@ -650,13 +677,11 @@
+     /// buffer, byte-identical to the pre-depth 2D path. Set only for a draw that
+     /// bound a non-trivial `MTLDepthStencilState` (see `runtime::draw`).
+     pub depth: Option<DepthState>,
+-    /// Fragment shader reads its destination pixel (Metal framebuffer fetch:
+-    /// an `air.render_target` INPUT param, translated as a `SubpassData` image
+-    /// at [`COLOR_INPUT_BINDING`]). The engine then references attachment 0 as
+-    /// a subpass input (GENERAL layout, BY_REGION self-dependency) and writes
+-    /// an INPUT_ATTACHMENT descriptor pointing at the color target's view.
+-    /// `false` (default) keeps the pass byte-identical to the pre-fetch engine.
+-    pub color_input: bool,
++    /// Fragment framebuffer-fetch slots. Each Metal color location N maps to
++    /// SubpassData input N and descriptor COLOR_INPUT_BINDING + N. The engine
++    /// keeps sparse locations and orders overlapping list primitives explicitly.
++    /// An empty set retains the ordinary color-only pass.
++    pub color_inputs: ColorInputs,
+     /// The preceding engine request belongs to this draw's Metal render
+     /// encoder. Used only when its Vulkan pass is still open and identical.
+     pub continues_render_pass: bool,
+@@ -2699,7 +2724,7 @@
+         assert!(draw.target_identity.is_none());
+         assert!(draw.depth.is_none());
+         assert!(!draw.skip_readback);
+-        assert!(!draw.color_input);
++        assert!(draw.color_inputs.is_empty());
+ 
+         let compute = ComputeRequest::default();
+         assert_eq!(compute.dispatch, ComputeDispatch::Workgroups([0, 0, 0]));
+--- a/reims-vgpu/crates/reims-vgpu/src/model/regs.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/model/regs.rs
+@@ -1138,21 +1138,14 @@
+ /// the narrow one. Framebuffer read is not that: the Vulkan arm implements the
+ /// attachment-0 fetch through a subpass input attachment, which is Vulkan 1.0
+ /// core and needs no capability; the Metal arm serves an Apple GPU, whose
+-/// families all have it. What is missing is only the fetch of a *secondary* MRT
+-/// attachment, which `runtime::draw::vulkan` refuses by name as
+-/// `draw_prepare_color_input_mrt_unsupported`.
+-///
+-/// So the gap is this device's to close, not to hide, and a `0` here would be
+-/// the worse answer twice over: it would take away the fetch that works, and it
+-/// would describe a GPU the guest is not running on. **The rule the pair
+-/// establishes: narrow an advertisement when the host can never do the thing;
+-/// leave it and name the refusal when the host can do it and this device has
+-/// not finished the path.** A boolean cannot say "attachment 0 only", and
+-/// inventing a narrower answer than the wire has room for is not fidelity.
+-///
+-/// `draw_prepare_color_input_mrt_unsupported` has never fired on any archived
+-/// boot of this rig, driven or idle. That is the reading that makes leaving it
+-/// open affordable rather than a bet.
++/// families all have it. The Vulkan engine carries all eight color-input slots
++/// and orders list primitives with explicit framebuffer-local barriers. Shapes
++/// requiring a different lowering (strips, PrimitiveId, multisample fetch) fail
++/// by their typed reason rather than binding the wrong destination.
++///
++/// The iPhone setup renderer reads secondary attachments, including R32Float.
++/// Its negotiated framebuffer-read capability must therefore describe the
++/// actual operation, not silently force all reads to attachment zero.
+ pub const DEVICE_INFO_KEY_FRAMEBUFFER_READ: u32 = 7;
+ 
+ /// Wire key 8 — `isRGB10A2GammaSupported`. A byte, like key 7.
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -7635,29 +7635,17 @@
+             frag_unbound_textures_to_neutralize(&uses)
+         };
+ 
+-        // Framebuffer fetch (`air.render_target` INPUT param `dest_N` →
+-        // reflection `ColorInput` at binding 96+N): the engine supports the
+-        // attachment-0 fetch as a Vulkan subpass input. `dest_N>0` (fetching a
+-        // secondary MRT attachment) has no engine path yet — fail visibly, never
+-        // execute a shader whose destination read would be unbound.
+-        let frag_color_input = {
+-            use metal2vulkan::reflect::ResourceKind;
+-            let mut fetch0 = false;
+-            for rb in &f_shader.reflection.bindings {
+-                if rb.kind == ResourceKind::ColorInput {
+-                    if rb.metal_index == 0 {
+-                        fetch0 = true;
+-                    } else {
+-                        return Err(DrawError::DrawPreparation(
+-                            DrawPreparationDecline::ColorInputMrtUnsupported {
+-                                destination_index: rb.metal_index,
+-                            },
+-                        ));
+-                    }
+-                }
++        // The translator preserves Metal color locations as InputAttachmentIndex.
++        let mut frag_color_inputs = crate::backend::vulkan::engine::ColorInputs::NONE;
++        for binding in &f_shader.reflection.bindings {
++            if binding.kind == metal2vulkan::reflect::ResourceKind::ColorInput {
++                frag_color_inputs = frag_color_inputs.with_slot(binding.metal_index).ok_or(
++                    DrawError::DrawPreparation(DrawPreparationDecline::ColorInputSlotOutOfRange {
++                        destination_index: binding.metal_index,
++                    }),
++                )?;
+             }
+-            fetch0
+-        };
++        }
+         crate::runtime::chain_phase::enter(crate::runtime::chain_phase::Phase::Sampled);
+         // The four `sampled_phase` spans below divide this phase's `sampled_us`,
+         // the same way `bind_phase` divides `binds_us`. Counted here rather than
+@@ -8945,7 +8933,7 @@
+         resources.vertex_attributes = attrs;
+         resources.storage_buffers = storage;
+         resources.sampled_images = images;
+-        resources.color_input = frag_color_input;
++        resources.color_inputs = frag_color_inputs;
+         resources.continues_render_pass = req.continues_render_pass;
+         resources.render_pass_continues = req.render_pass_continues;
+         resources.samplers = samplers;
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/spirv_bind.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/spirv_bind.rs
+@@ -444,6 +444,22 @@
+     Some(out)
+ }
+ 
++/// Whether the translated module declares a built-in, including a struct member
++/// or a decoration group. Malformed modules are not safe to subdivide into draws.
++pub(crate) fn declares_builtin(words: &[u32], builtin: u32) -> Option<bool> {
++    let decoded = instructions(words)?;
++    Some(decoded.iter().any(|instruction| {
++        let operands = &words[instruction.at + 1..instruction.at + instruction.word_count];
++        match instruction.opcode {
++            OP_DECORATE => operands.len() == 3 && operands[1] == 11 && operands[2] == builtin,
++            OP_MEMBER_DECORATE => {
++                operands.len() == 4 && operands[2] == 11 && operands[3] == builtin
++            }
++            _ => false,
++        }
++    }))
++}
++
+ /// The one descriptor variable declaring `wanted_binding` in `storage_class`,
+ /// with the module's id bound.
+ ///
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -4180,7 +4180,7 @@
+     let f = translate_words("render_frag_fetch.air", Stage::Fragment);
+     let (w, h) = (16u32, 16u32);
+     let mut req = engine_req(&v, &f, w, h);
+-    req.color_input = true;
++    req.color_inputs = engine::ColorInputs::PRIMARY;
+     // Seed (64, 128, 191, 255) → expect ~(191, 127, 64, 255).
+     req.target_cpu_seed = Some([64, 128, 191, 255].repeat((w * h) as usize).into());
+     let Some(px) = draw_or_skip("framebuffer_fetch", &req) else {
+@@ -4497,3 +4497,194 @@
+         .expect("second secondary LOAD has resident bytes");
+     assert_eq!(engine::read_target(&secondary).unwrap().pixels, raw);
+ }
++
++// Test-owned GLSL, compiled locally; no captured shader or SPIR-V is embedded.
++// These native conformance cases require glslc and an executable Vulkan device.
++fn framebuffer_fetch_glsl(stage: &str, source: &str) -> Vec<u32> {
++    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++    let nonce = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++    let path = std::env::temp_dir().join(format!("reims-fetch-{}-{nonce}", std::process::id()));
++    std::fs::create_dir(&path).expect("unique shader directory");
++    struct Cleanup(std::path::PathBuf);
++    impl Drop for Cleanup {
++        fn drop(&mut self) {
++            let _ = std::fs::remove_dir_all(&self.0);
++        }
++    }
++    let _cleanup = Cleanup(path.clone());
++    let input = path.join("source.glsl");
++    let output = path.join("shader.spv");
++    std::fs::write(&input, source).unwrap();
++    let result = std::process::Command::new("glslc")
++        .args(["--target-env=vulkan1.2", &format!("-fshader-stage={stage}")])
++        .arg(&input)
++        .arg("-o")
++        .arg(&output)
++        .output()
++        .expect("glslc must be installed");
++    assert!(
++        result.status.success(),
++        "{}",
++        String::from_utf8_lossy(&result.stderr)
++    );
++    let bytes = std::fs::read(output).unwrap();
++    metal2vulkan::tools::spirv_val_bytes(&bytes, &path).expect("Vulkan 1.2 shader validation");
++    bytes
++        .as_chunks::<4>()
++        .0
++        .iter()
++        .map(|w| u32::from_le_bytes(*w))
++        .collect()
++}
++
++const FETCH_VERTEX: &str = r#"#version 450
++layout(location=0) flat out uint instance;
++void main() {
++    vec2 p[3] = vec2[](vec2(-1,-1),vec2(3,-1),vec2(-1,3));
++    gl_Position=vec4(p[gl_VertexIndex % 3],0,1);
++    instance=gl_InstanceIndex;
++}"#;
++
++#[test]
++fn framebuffer_fetch_reads_two_native_secondary_slots_with_a_primary_hole() {
++    use reims_vgpu_protocol::pixel_format::{MTL_FORMAT_R32_FLOAT, MTL_FORMAT_RGBA16_FLOAT};
++    let _g = engine_test_session();
++    let v = framebuffer_fetch_glsl("vertex", FETCH_VERTEX);
++    let f = framebuffer_fetch_glsl(
++        "fragment",
++        r#"#version 450
++layout(input_attachment_index=1,set=0,binding=193) uniform subpassInput color1;
++layout(input_attachment_index=2,set=0,binding=194) uniform subpassInput color2;
++layout(location=0) out vec4 color;
++void main() { color=vec4(subpassLoad(color1).rg,subpassLoad(color2).r+4.0,1.0); }
++"#,
++    );
++    let mut req = engine_req(&v, &f, 8, 8);
++    req.color_inputs = engine::ColorInputs::NONE
++        .with_slot(1)
++        .unwrap()
++        .with_slot(2)
++        .unwrap();
++    for (n, format, mtl, clear) in [
++        (
++            1,
++            ash::vk::Format::R16G16B16A16_SFLOAT,
++            MTL_FORMAT_RGBA16_FLOAT,
++            [0.25, 0.5, 0.0, 1.0],
++        ),
++        (
++            2,
++            ash::vk::Format::R32_SFLOAT,
++            MTL_FORMAT_R32_FLOAT,
++            [-3.25, 0.0, 0.0, 0.0],
++        ),
++    ] {
++        req.secondary_targets.push(SecondaryColorTarget {
++            identity: TargetIdentity::Gva {
++                gva: 0x209000 + n * 0x1000,
++                width: 8,
++                height: 8,
++                generation: 1,
++                format,
++            },
++            width: 8,
++            height: 8,
++            attachment: color_attachment(mtl, clear),
++            load: false,
++            seed: None,
++            blend: None,
++            color_write_mask: engine::ColorWriteMask::NONE,
++        });
++    }
++    let out = engine::execute_draw_request(engine_device(), &req).expect("native sparse MRT fetch");
++    let pixels = semantic_rgba(&out);
++    for pixel in pixels.as_chunks::<4>().0 {
++        assert!(
++            near(pixel[0], 64) && near(pixel[1], 128) && near(pixel[2], 191) && pixel[3] == 255,
++            "{pixel:?}"
++        );
++    }
++    // Reuse the same images through a LOAD pass with a different sparse set.
++    req.color_inputs = engine::ColorInputs::NONE.with_slot(2).unwrap();
++    req.frag_spirv = std::sync::Arc::new(framebuffer_fetch_glsl(
++        "fragment",
++        r#"#version 450
++layout(input_attachment_index=2,set=0,binding=194) uniform subpassInput color2;
++layout(location=0) out vec4 color;
++void main() { color=vec4(subpassLoad(color2).r+4.0,0.0,0.0,1.0); }
++"#,
++    ));
++    for target in &mut req.secondary_targets {
++        target.load = true;
++    }
++    let out = engine::execute_draw_request(engine_device(), &req).expect("sparse resident fetch");
++    assert!(semantic_rgba(&out)
++        .as_chunks::<4>()
++        .0
++        .iter()
++        .all(|p| near(p[0], 191) && p[1] == 0 && p[2] == 0 && p[3] == 255));
++}
++
++#[test]
++fn framebuffer_fetch_orders_overlapping_primitives_and_instances_including_indexed_draws() {
++    use reims_vgpu_protocol::pixel_format::MTL_FORMAT_R32_FLOAT;
++    let _g = engine_test_session();
++    let v = framebuffer_fetch_glsl("vertex", FETCH_VERTEX);
++    let f = framebuffer_fetch_glsl(
++        "fragment",
++        r#"#version 450
++layout(location=0) flat in uint instance;
++layout(input_attachment_index=1,set=0,binding=193) uniform subpassInput previous;
++layout(location=0) out vec4 primary;
++layout(location=1) out float secondary;
++void main() { secondary=subpassLoad(previous).r+float(instance)/64.0; primary=vec4(secondary,0,0,1); }
++"#,
++    );
++    for indexed in [false, true] {
++        let identity = TargetIdentity::Gva {
++            gva: 0x219000 + u64::from(indexed) * 0x1000,
++            width: 8,
++            height: 8,
++            generation: 1,
++            format: ash::vk::Format::R32_SFLOAT,
++        };
++        let mut req = engine_req(&v, &f, 8, 8);
++        req.vertex_count = 6;
++        req.first_vertex = 7;
++        req.base_instance = 3;
++        req.instance_count = Some(2);
++        req.color_inputs = engine::ColorInputs::NONE.with_slot(1).unwrap();
++        req.secondary_targets.push(SecondaryColorTarget {
++            identity: identity.clone(),
++            width: 8,
++            height: 8,
++            attachment: color_attachment(MTL_FORMAT_R32_FLOAT, [0.0; 4]),
++            load: false,
++            seed: None,
++            blend: None,
++            color_write_mask: engine::ColorWriteMask::ALL,
++        });
++        if indexed {
++            req.indexed = Some(IndexedDrawResource {
++                content: BufferContent::Bytes(std::sync::Arc::new(
++                    [7u16, 8, 9, 7, 8, 9]
++                        .iter()
++                        .flat_map(|v| v.to_le_bytes())
++                        .collect(),
++                )),
++                index_type: IndexType::U16,
++                index_count: 6,
++                vertex_offset: 5,
++            });
++        }
++        engine::execute_draw_request(engine_device(), &req)
++            .expect("ordered overlapping framebuffer fetch");
++        // Two identical triangles in instance 3, then two in instance 4.
++        let expected = (14.0f32 / 64.0).to_le_bytes().repeat(64);
++        assert_eq!(
++            engine::read_target(&identity).unwrap().pixels,
++            expected,
++            "indexed={indexed}"
++        );
++    }
++}

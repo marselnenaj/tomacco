@@ -1,0 +1,391 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/exec/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/exec/tests.rs
+@@ -2729,6 +2729,7 @@
+         colors: vec![draw::ColorRtRequest {
+             #[cfg(feature = "backend-vulkan")]
+             paired_xr: None,
++            buffer_texture: None,
+             slot: 0,
+             texture_ref: 11,
+             mapping_id: 3,
+@@ -6723,6 +6724,7 @@
+             pipeline_ref,
+             clears,
+             color_slots,
++            pass_descriptors,
+             color_targets,
+             draws,
+             saw_draw,
+@@ -6757,6 +6759,7 @@
+             ("pipeline_ref", format!("{pipeline_ref:?}")),
+             ("clears", format!("{clears:?}")),
+             ("color_slots", format!("{color_slots:?}")),
++            ("pass_descriptors", format!("{pass_descriptors:?}")),
+             ("color_targets", format!("{color_targets:?}")),
+             ("draws", format!("{draws:?}")),
+             ("saw_draw", format!("{saw_draw:?}")),
+@@ -7648,6 +7651,9 @@
+         out: &mut out,
+         acc: &mut acc,
+         compute: None,
++        cursor: StreamCursor::new(),
++        finish_ns: 0,
++        render_encoders_finished: 0,
+     };
+     // No `begin_segment`. The record's bytes are never read, because the sink
+     // refuses before reaching the handler.
+@@ -7661,13 +7667,12 @@
+ }
+ 
+ #[test]
+-fn a_segment_opened_over_an_open_compute_segment_commits_it_and_says_so() {
++fn a_segment_opened_over_an_open_compute_segment_refuses_without_losing_it() {
+     let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
+     let mut host = FakeHost::new();
+     let mut out = ExecResult::default();
+     let mut acc = StreamAccum::default();
+     let task_id = 0x5731_0102;
+-    let before = sink_body().len();
+     let mut sink = StreamSink {
+         state: &mut state,
+         host: &mut host,
+@@ -7675,19 +7680,26 @@
+         out: &mut out,
+         acc: &mut acc,
+         compute: None,
+-    };
+-    sink.begin_segment(SegmentKind::Compute);
++        cursor: StreamCursor::new(),
++        finish_ns: 0,
++        render_encoders_finished: 0,
++    };
++    sink.begin_segment(SegmentKind::Compute, SegmentLifetime::SELF_CONTAINED)
++        .expect("first encoder opens");
+     assert!(sink.compute.is_some(), "a compute segment opens an encoder");
+-    sink.begin_segment(SegmentKind::Render);
++    assert_eq!(
++        sink.begin_segment(SegmentKind::Render, SegmentLifetime::SELF_CONTAINED),
++        Err(reims_vgpu_core::stream::StreamRefusal::EncoderStillOpen(
++            SegmentKind::Compute
++        )),
++        "a second begin must propagate the cursor's typed lifetime refusal"
++    );
+     assert!(
+-        sink.compute.is_none(),
+-        "the unended compute segment is committed rather than carried into the render one"
+-    );
+-    let added = sink_body().split_off(before);
+-    assert!(
+-        added.contains("exec_segment_unended") && added.contains(&format!("task={task_id}")),
+-        "opening a segment over an open compute segment must be named: {added}"
+-    );
++        sink.compute.is_some(),
++        "refusal must preserve the unfinished compute encoder"
++    );
++    assert_eq!(sink.render_encoders_finished, 0);
++    assert_eq!(sink.finish_ns, 0, "an invalid begin must not commit work");
+ }
+ 
+ /// A submission is executed from the buffers it was read with.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/tests.rs
+@@ -11,6 +11,216 @@
+ use crate::runtime::host::FakeHost;
+ #[cfg(feature = "backend-vulkan")]
+ use crate::runtime::mapper::{mapping_guest_write_verdict, GuestWriteVerdict};
++
++#[cfg(feature = "backend-vulkan")]
++mod buffer_target_contract {
++    use super::super::buffer_target::{BufferTargetDecline as D, BufferTextureTarget};
++    use super::*;
++    use crate::runtime::decode::resource::{
++        ListObjectEntry, LINEAR_DESC_HANDLE, LINEAR_DESC_MIN_LEN, LINEAR_DESC_SIZE,
++        OBJECT_TYPE_BUFFER,
++    };
++    use std::sync::Arc;
++
++    fn fixture() -> (StoreRig, BufferTextureDescriptor) {
++        let mut rig = StoreRig::new(4);
++        let mut bytes = vec![0; LINEAR_DESC_MIN_LEN];
++        crate::protocol::endian::st64(&mut bytes[LINEAR_DESC_SIZE..], 40);
++        crate::protocol::endian::st64(&mut bytes[LINEAR_DESC_HANDLE..], 1);
++        let entry = ListObjectEntry {
++            object_type: OBJECT_TYPE_BUFFER,
++            descriptor_length: bytes.len() as u32,
++            descriptor_gva: 0x200,
++        };
++        write_task_gva_arm64e(&mut rig.host, &rig.state.tasks[1], 0x200, &bytes);
++        for (reference, resource) in [
++            (6, crate::model::TaskResource::new(entry, bytes.into())),
++            // The target owner receives an already decoded buffer-texture
++            // descriptor; this resource supplies its retained logical lifetime.
++            (
++                7,
++                crate::model::TaskResource::new(
++                    ListObjectEntry {
++                        object_type: OBJECT_TYPE_TEXTURE_VIEW,
++                        ..Default::default()
++                    },
++                    Arc::from([]),
++                ),
++            ),
++        ] {
++            let name = rig
++                .state
++                .declare_object(1, reference, reims_vgpu_core::lifecycle::Storage::NoBytes)
++                .unwrap()
++                .id;
++            rig.state
++                .task_resources
++                .register(1, name, Arc::new(resource));
++        }
++        let descriptor = BufferTextureDescriptor {
++            new_texture_ref: 7,
++            buffer_ref: 6,
++            offset: 8,
++            bytes_per_row: 16,
++            desc: crate::runtime::heap_query::TextureDescriptor {
++                texture_type: 2,
++                framebuffer_only: false,
++                is_drawable: false,
++                allow_gpu_optimized_contents: false,
++                usage: 0,
++                pixel_format: pixel_format::MTL_FORMAT_R32_FLOAT,
++                width: 2,
++                height: 2,
++                depth: 1,
++                mipmap_level_count: 1,
++                sample_count: 1,
++                array_length: 1,
++                resource_options: 0,
++                protection_options: 0,
++                swizzle: None,
++            },
++        };
++        (rig, descriptor)
++    }
++
++    fn resolve(
++        rig: &StoreRig,
++        descriptor: BufferTextureDescriptor,
++    ) -> Result<ResolvedRenderTarget, D> {
++        BufferTextureTarget::resolve(
++            &rig.state,
++            &rig.host,
++            1,
++            7,
++            descriptor,
++            clear_black_attachment(7),
++            0,
++        )
++    }
++
++    #[test]
++    fn buffer_target_checks_pitch_usage_shape_and_complete_parent_footprint() {
++        let (rig, descriptor) = fixture();
++        let target = resolve(&rig, descriptor).unwrap();
++        assert_eq!(
++            target.target_gva,
++            StoreRig::gva(1) + 8,
++            "apply buffer offset exactly once"
++        );
++        assert_eq!((target.row_stride, target.width, target.height), (16, 2, 2));
++        for pitch in [0, 7, u64::from(u32::MAX) + 1] {
++            assert!(matches!(
++                resolve(
++                    &rig,
++                    BufferTextureDescriptor {
++                        bytes_per_row: pitch,
++                        ..descriptor
++                    }
++                ),
++                Err(D::Stride { .. })
++            ));
++        }
++        for offset in [9, u64::MAX] {
++            assert!(matches!(
++                resolve(
++                    &rig,
++                    BufferTextureDescriptor {
++                        offset,
++                        ..descriptor
++                    }
++                ),
++                Err(D::Footprint { .. })
++            ));
++        }
++        let mut changed = descriptor;
++        changed.desc.usage = 1;
++        assert!(matches!(resolve(&rig, changed), Err(D::Usage(1))));
++        changed.desc.usage = 4;
++        assert!(resolve(&rig, changed).is_ok());
++        changed.desc.sample_count = 2;
++        assert!(matches!(resolve(&rig, changed), Err(D::Shape(_))));
++    }
++
++    #[test]
++    fn buffer_target_load_keeps_float_bits_skips_padding_and_observes_alias_writes() {
++        let (mut rig, descriptor) = fixture();
++        let target = resolve(&rig, descriptor).unwrap().buffer_texture.unwrap();
++        let raw = [
++            (-3.25f32).to_le_bytes(),
++            0x7fc12345u32.to_le_bytes(),
++            0x80000000u32.to_le_bytes(),
++            65537.0f32.to_le_bytes(),
++        ]
++        .concat();
++        let mut padded = vec![0xa5; 40];
++        padded[8..16].copy_from_slice(&raw[..8]);
++        padded[24..32].copy_from_slice(&raw[8..]);
++        write_task_gva_arm64e(
++            &mut rig.host,
++            &rig.state.tasks[1],
++            StoreRig::gva(1),
++            &padded,
++        );
++        let seed = target.seed(&mut rig.state, &mut rig.host, 1).unwrap();
++        assert_eq!(seed.layout, pixel_format::TexelLayout::R32Float);
++        assert_eq!(seed.pixels.as_slice(), raw);
++        write_task_gva_arm64e(
++            &mut rig.host,
++            &rig.state.tasks[1],
++            StoreRig::gva(1) + 24,
++            &7.125f32.to_le_bytes(),
++        );
++        let fresh = target.seed(&mut rig.state, &mut rig.host, 1).unwrap();
++        assert_eq!(&fresh.pixels[8..12], &7.125f32.to_le_bytes());
++        assert_eq!(&fresh.pixels[..8], &raw[..8]);
++    }
++
++    #[test]
++    fn buffer_target_retains_logical_parent_after_namespace_deletion() {
++        let (mut rig, descriptor) = fixture();
++        let parent = objects::resolve_resource(&rig.state, &rig.host, 1, 6).unwrap();
++        let weak = Arc::downgrade(&parent);
++        drop(parent);
++        let target = resolve(&rig, descriptor).unwrap();
++        assert!(rig.state.delete_object(1, 6));
++        assert!(
++            weak.upgrade().is_some(),
++            "the pass still owns the parent descriptor"
++        );
++        drop(target);
++        assert!(
++            weak.upgrade().is_none(),
++            "no unrelated owner may retain a deleted parent"
++        );
++    }
++
++    #[test]
++    fn buffer_target_publication_invalidates_parent_texture_and_outer_view() {
++        let (mut rig, descriptor) = fixture();
++        let target = resolve(&rig, descriptor).unwrap().buffer_texture.unwrap();
++        let before = [6, 7, 8].map(|reference| rig.state.buffer_write_gen.stamp(1, reference));
++        target.published(&mut rig.state, 1, 8);
++        for (reference, stamp) in [6, 7, 8].into_iter().zip(before) {
++            assert_ne!(rig.state.buffer_write_gen.stamp(1, reference), stamp);
++        }
++    }
++
++    #[test]
++    fn buffer_target_rejects_unqualified_wider_standalone_clear() {
++        let (rig, mut descriptor) = fixture();
++        assert!(resolve(&rig, descriptor)
++            .unwrap()
++            .buffer_texture
++            .unwrap()
++            .clear_is_exact());
++        descriptor.desc.pixel_format = pixel_format::MTL_FORMAT_RGBA16_FLOAT;
++        assert!(!resolve(&rig, descriptor)
++            .unwrap()
++            .buffer_texture
++            .unwrap()
++            .clear_is_exact());
++    }
++}
+ 
+ #[cfg(feature = "backend-vulkan")]
+ #[test]
+@@ -6388,6 +6598,7 @@
+     let c0 = ColorRtRequest {
+         #[cfg(feature = "backend-vulkan")]
+         paired_xr: None,
++        buffer_texture: None,
+         slot: 0,
+         texture_ref: 7,
+         mapping_id: 0,
+@@ -6598,6 +6809,7 @@
+     let target = ColorRtRequest {
+         #[cfg(feature = "backend-vulkan")]
+         paired_xr: None,
++        buffer_texture: None,
+         slot: 0,
+         texture_ref: 7,
+         mapping_id: 0,
+diff --git a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+--- a/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
++++ b/reims-vgpu/crates/reims-vgpu/tests/vk_engine_parity.rs
+@@ -752,14 +752,13 @@
+     let (v, f) = triangle_spirv();
+     let (w, h) = (64u32, 64u32);
+ 
+-    // The fixture triangle covers its viewport, so its three edges lie on the
+-    // viewport's own border. At full size that border is the target's, and a
+-    // one-pixel wireframe of it rasterizes nothing: the line's half-pixel
+-    // extent straddles the edge of the image. Inset the viewport by a half
+-    // pixel and the same edges fall on pixel centres inside the target, where
+-    // both a thin line and a wide one can be counted. The scissor stays the
+-    // full target, so nothing clips what a wider line adds.
+-    let inset = 8.5f32;
++    // Inset the oversized triangle's viewport so its original edges are
++    // inside the target and both thin and wide lines remain observable.
++    // Keep clipping boundaries off pixel centres: at half-pixel boundaries,
++    // viewport area is not a valid oracle for the number of covered samples.
++    // The quarter-pixel inset gives every sample an unambiguous inside/outside
++    // answer. The full-target scissor leaves room for wider lines.
++    let inset = 8.25f32;
+     let run = |wireframe: bool, width: Option<f32>| -> Result<Vec<u8>, String> {
+         let mut req = engine_req(&v, &f, w, h);
+         req.viewports = vec![ViewportResource {
+@@ -805,11 +804,16 @@
+     let filled = run(false, None).expect("a filled draw needs no capability");
+     let thin_covered = covered(&thin);
+     let filled_covered = covered(&filled);
+-    assert_eq!(
+-        filled_covered,
+-        ((w as f32 - 2.0 * inset) * (h as f32 - 2.0 * inset)) as usize,
+-        "the fixture triangle covers its viewport and nothing outside it"
+-    );
++    for (index, pixel) in filled.chunks_exact(4).enumerate() {
++        let x = (index % w as usize) as f32 + 0.5;
++        let y = (index / w as usize) as f32 + 0.5;
++        let inside = x > inset && x < w as f32 - inset && y > inset && y < h as f32 - inset;
++        assert_eq!(
++            pixel[1] > 32,
++            inside,
++            "filled sample ({x}, {y}) must agree with the inset viewport"
++        );
++    }
+     assert!(
+         thin_covered > 0 && thin_covered < filled_covered,
+         "a wireframe must draw its edges and nothing else ({thin_covered} of \
+@@ -844,8 +848,7 @@
+     );
+     let ignored = run(false, Some(absurd)).expect("a filled draw uses no line width");
+     assert_eq!(
+-        covered(&ignored),
+-        filled_covered,
++        ignored, filled,
+         "a filled draw must rasterize identically whatever width preceded it"
+     );
+ }
+@@ -4793,6 +4796,7 @@
+             [0.8, 0.1, 0.3, 1.0],
+         ),
+         load: false,
++        seed: None,
+         blend: None,
+         color_write_mask: Default::default(),
+     });

@@ -1,0 +1,30 @@
+diff --git a/hw/vmapple/aes.c b/hw/vmapple/aes.c
+--- a/hw/vmapple/aes.c
++++ b/hw/vmapple/aes.c
+@@ -492,7 +492,14 @@
+ 
+     switch (offset) {
+     case 0:
+-        res = 0;
++        /* No UID/GID/scrambler secrets are provisioned on this board.
++         * AppleS8000AES samples these disable bits before choosing its
++         * software-key path. Advertising zero incorrectly claims that the
++         * hardware keys exist, then makes the first key command fail.
++         * 23E5207q: _keySelectionForHandle and disableHardwareKey use
++         * bits 0..3 for handles 2000, 1000, 1001 and 3000 respectively.
++         * These bits cannot be cleared by a guest write or a warm reset. */
++        res = 0xf;
+         break;
+     default:
+         qemu_log_mask(LOG_UNIMP,
+@@ -511,6 +518,10 @@
+     trace_aes_2_write(offset, val);
+ 
+     switch (offset) {
++    case 0:
++        /* Write-one-to-disable: all four unavailable slots are already
++         * disabled. A zero write must never re-enable one. */
++        break;
+     default:
+         qemu_log_mask(LOG_UNIMP,
+                       "%s: Unknown AES MMIO 2 offset %"PRIx64", data %"PRIx64"\n",

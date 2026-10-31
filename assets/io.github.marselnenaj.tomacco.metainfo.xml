@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Software-center listing; the id is the desktop entry's name. -->
+<component type="desktop-application">
+  <id>io.github.marselnenaj.tomacco</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0-or-later</project_license>
+  <name>Tomacco</name>
+  <summary>Give your agent a phone</summary>
+  <summary xml:lang="de">Gib deinem Agenten ein Telefon</summary>
+  <developer id="io.github.marselnenaj">
+    <name>Marsel Nenaj</name>
+  </developer>
+  <description>
+    <p>
+      Tomacco: Give your agent a phone. Build, run and test iOS and Android
+      apps from Linux. No Mac needed. Made for Omarchy.
+    </p>
+    <p xml:lang="de">
+      Tomacco: Gib deinem Agenten ein Telefon. iOS- und Android-Apps unter
+      Linux bauen, starten und testen. Kein Mac nötig. Gemacht für Omarchy.
+    </p>
+    <p>
+      Tomacco builds, runs, inspects and tests mobile apps from a Linux
+      workstation. The desktop and its command-line control plane share one
+      typed set of operations, so a coding agent and a person at the desktop
+      drive the same builds, devices and debug sessions.
+    </p>
+    <p xml:lang="de">
+      Tomacco baut, startet, untersucht und testet mobile Apps auf einem
+      Linux-Rechner. Die Oberfläche und ihre Kommandozeile teilen dieselben
+      Operationen, sodass ein Coding-Agent und ein Mensch am Desktop dieselben
+      Builds, Geräte und Debug-Sitzungen steuern.
+    </p>
+    <ul>
+      <li>Android apps in Kotlin, Java, C/C++ and Flutter on USB devices, wireless devices and the Android Emulator</li>
+      <li xml:lang="de">Android-Apps in Kotlin, Java, C/C++ und Flutter auf USB-Geräten, drahtlosen Geräten und im Android Emulator</li>
+      <li>Swift on Android with a native Swift core and an Android interface</li>
+      <li xml:lang="de">Swift auf Android mit nativem Swift-Kern und Android-Oberfläche</li>
+      <li>iOS apps built on Linux and run on a paired iPhone, without a Mac</li>
+      <li xml:lang="de">iOS-Apps unter Linux bauen und auf einem gekoppelten iPhone starten, ohne Mac</li>
+      <li>An experimental iOS research VM that runs your own iOS image on Linux</li>
+      <li xml:lang="de">Eine experimentelle iOS-Forschungs-VM, die ein selbst bereitgestelltes iOS-Image unter Linux ausführt</li>
+      <li>A local MCP server for coding agents</li>
+      <li xml:lang="de">Ein lokaler MCP-Server für Coding-Agenten</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.marselnenaj.tomacco.desktop</launchable>
+  <url type="homepage">https://github.com/marselnenaj/tomacco</url>
+  <url type="bugtracker">https://github.com/marselnenaj/tomacco/issues</url>
+  <url type="vcs-browser">https://github.com/marselnenaj/tomacco</url>
+  <categories>
+    <category>Development</category>
+    <category>IDE</category>
+  </categories>
+  <provides>
+    <binary>tomacco</binary>
+    <binary>tomaccoctl</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.0.0" date="2026-10-30">
+      <url type="details">https://github.com/marselnenaj/tomacco/blob/v1.0.0/docs/RELEASE_NOTES.md</url>
+    </release>
+  </releases>
+</component>

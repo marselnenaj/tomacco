@@ -1,0 +1,364 @@
+reims-vgpu: census of where `sampled_phase resolve_us` goes, by rung.
+
+`resolve_us` is the largest column of a Home-swipe drain second (247-308
+ms/s against ~400 sampled draws on a running device) and is one scope around
+the sampled ladder. Route counters say which rung served
+(`gvaw_no_entry`, `zc_lin_no_alias`, `lin_memo_hit`, `buftex_*`); nothing
+said what each rung cost or how many guest bytes it moved.
+Now: `runtime::resolve_split` spans (nested in ResolveSource, not a
+partition) charge time, count and bytes to the GVA-resident probe, the
+zero-copy probe, the memo's writeback settle, its whole-span guest re-read,
+its compare, its convert-on-miss, and the buffer-texture row read; one
+`sampled_resolve_split` line per census second after `sampled_phase`.
+Measurement only: no route, no byte and no ordering changes.
+Test: runtime::resolve_split::tests.
+
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
+index a1f0bd7..9efa07b 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/drain/census/mod.rs
+@@ -3009,6 +3009,11 @@ fn emit_sampled_phase() {
+          reflect_us={}",
+         w.sampled, w.lookup_us, w.alias_us, w.resolve_us, w.samplers_us, w.reflect_us,
+     ));
++    // Inside `resolve_us`, by rung. Its own window, emitted beside the column
++    // it divides so the two are read over the same second.
++    if let Some(line) = crate::runtime::resolve_split::take_line() {
++        crate::observe::off(line);
++    }
+ }
+ 
+ /// Count a drain wake-up that returned before taking the device lock.
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+index 8cc454b..cd512fa 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -1294,8 +1294,14 @@ pub(super) fn resolve_sampled_source<M: HostMemory + HostOps>(
+         // Buffer-backed samples carry native rows when this host can filter
+         // their layout. This admits packed ten-bit colour and preserves float
+         // LUT values without adding them to the deliberately lossy RGBA8 rail.
+-        let (w, h, source, bytes) =
+-            load_buffer_texture_rows(state, host, task_id, texture_ref, &bt)?;
++        let (w, h, source, bytes) = {
++            let mut span = crate::runtime::resolve_split::Span::open(
++                crate::runtime::resolve_split::Part::BufferRows,
++            );
++            let rows = load_buffer_texture_rows(state, host, task_id, texture_ref, &bt);
++            span.bytes(rows.as_ref().map_or(0, |rows| rows.3.len()));
++            rows
++        }?;
+         let native = translate::pixel::sampled_pixels(source)
+             .ok()
+             .filter(|(_, _, components)| pixel_format::swizzle_is_identity(components))
+@@ -2098,20 +2104,30 @@ pub(super) fn resolve_sampled_source<M: HostMemory + HostOps>(
+             // nothing to gather and — the point of the rung — no writeback to
+             // wait for. See [`try_gva_resident_sample`].
+             if may_bind_resident {
+-                if let Some((w, h, src)) =
++                let served = {
++                    let _span = crate::runtime::resolve_split::Span::open(
++                        crate::runtime::resolve_split::Part::GvaResident,
++                    );
+                     try_gva_resident_sample(state, host, task_id, texture_ref, tex)
+-                {
++                };
++                if let Some((w, h, src)) = served {
+                     return Some((w, h, 0, src));
+                 }
+             }
+-            if let Some((w, h, src)) = try_linear_sample_zero_copy(
+-                state,
+-                host,
+-                task_id,
+-                texture_ref,
+-                tex,
+-                resolved_resource.as_ref()?.lifetime_ref(),
+-            ) {
++            let served = {
++                let _span = crate::runtime::resolve_split::Span::open(
++                    crate::runtime::resolve_split::Part::ZeroCopy,
++                );
++                try_linear_sample_zero_copy(
++                    state,
++                    host,
++                    task_id,
++                    texture_ref,
++                    tex,
++                    resolved_resource.as_ref()?.lifetime_ref(),
++                )
++            };
++            if let Some((w, h, src)) = served {
+                 return Some((w, h, 0, src));
+             }
+             if let Some((w, h, rgba, identity, byte_format)) =
+@@ -6196,15 +6212,22 @@ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+     // one this reader cannot rule out.
+     // Census, pay, settle — the whole obligation of a CPU read of one named
+     // resource's guest bytes. See `writeback_debt::settle_for_texture`.
+-    crate::runtime::writeback_debt::settle_for_texture(
+-        state,
+-        host,
+-        task_id,
+-        texture_ref,
+-        gva,
+-        span,
+-        crate::runtime::render_writeback::SettleSite::LinearMemoRead,
+-    );
++    {
++        let _span = crate::runtime::resolve_split::Span::open(
++            crate::runtime::resolve_split::Part::MemoSettle,
++        );
++        crate::runtime::writeback_debt::settle_for_texture(
++            state,
++            host,
++            task_id,
++            texture_ref,
++            gva,
++            span,
++            crate::runtime::render_writeback::SettleSite::LinearMemoRead,
++        );
++    }
++    let mut read_span =
++        crate::runtime::resolve_split::Span::open(crate::runtime::resolve_split::Part::MemoRead);
+     let mut scratch = std::mem::take(&mut state.guest_linear_scratch);
+     scratch.resize(native_len, 0);
+     let read = gva_mem::read_task_gva_by_id(
+@@ -6215,6 +6238,8 @@ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+         &mut scratch,
+         state.page_shift,
+     );
++    read_span.bytes(native_len);
++    drop(read_span);
+     if read.is_err() {
+         state.guest_linear_scratch = scratch;
+         return None;
+@@ -6250,6 +6275,8 @@ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+     // answer is workload-dependent — a guest that rewrites its planes every
+     // frame would push `changed` up and invert the conclusion — so this is a
+     // ratio worth re-reading, not a settled fact worth deleting.
++    let compare_span =
++        crate::runtime::resolve_split::Span::open(crate::runtime::resolve_split::Part::MemoCompare);
+     let hit = match state.guest_linear_memo.get_touch(&key) {
+         None => {
+             crate::runtime::drain::note_store_route("lin_memo_absent");
+@@ -6265,6 +6292,7 @@ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+             None
+         }
+     };
++    drop(compare_span);
+     if let Some((rgba, generation, fmt)) = hit {
+         state.guest_linear_scratch = scratch;
+         return Some((
+@@ -6276,6 +6304,9 @@ fn load_linear_guest_memoized<M: HostMemory + HostOps>(
+             fmt,
+         ));
+     }
++    let mut convert_span =
++        crate::runtime::resolve_split::Span::open(crate::runtime::resolve_split::Part::MemoConvert);
++    convert_span.bytes(native_len);
+     // First sight or native bytes changed: convert fresh, new generation.
+     let Some((rgba, fmt)) =
+         native_scratch_to_upload(&scratch, w, h, planes, bpr, sample_fmt, tight)
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+index 12b7029..e1ccc4b 100644
+--- i/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+@@ -125,6 +125,8 @@ pub mod render_writeback;
+ pub mod resident_target;
+ /// The guest's per-resource validity quad, from both of its producers.
+ pub mod resource_validity;
++/// Which sampled rung `sampled_phase`'s `resolve_us` goes to, and its bytes.
++pub mod resolve_split;
+ /// The split of [`chain_phase`]'s largest *undivided* column, `sampled_us`.
+ pub mod sampled_phase;
+ /// Guest surface → host BGRA8 for the QEMU console.
+diff --git i/reims-vgpu/crates/reims-vgpu/src/runtime/resolve_split.rs w/reims-vgpu/crates/reims-vgpu/src/runtime/resolve_split.rs
+new file mode 100644
+index 0000000..1f032ec
+--- /dev/null
++++ w/reims-vgpu/crates/reims-vgpu/src/runtime/resolve_split.rs
+@@ -0,0 +1,184 @@
++//! Inside `sampled_phase`'s `resolve_us`: which rung of the sampled ladder the
++//! time goes to, and how many guest bytes each one moved.
++//!
++//! # Why
++//!
++//! `resolve_us` is the largest single column of the drain on a Home-screen
++//! swipe — 247-308 ms in a busy second, against ~400 sampled draws — and it is
++//! one scope around [`crate::runtime::draw`]'s `resolve_sampled_source`, which
++//! is a ladder. On the vphone's census every linear bind tries, in order, the
++//! GVA-resident rung (`gvaw_no_entry`), the zero-copy gather (`zc_lin_no_alias`)
++//! and then the guest memo (`lin_memo_hit`), which settles the span's
++//! writeback debt, re-reads the whole span out of guest memory and compares it
++//! byte for byte with its copy; a buffer-backed texture (`buftex_*`) reads its
++//! rows instead. Route counters say which rung served. None of them says what
++//! each rung *cost*, so a fix aimed at one of them is a guess.
++//!
++//! These spans nest inside `ResolveSource` and do not partition it: what is
++//! left of `resolve_us` after their sum is the ladder's own lookups and the
++//! surface rungs above the linear ones.
++//!
++//! # Reading it
++//!
++//! `memo_read_mib` over `memo_n` is the mean span a memo bind re-reads; if
++//! `memo_read_us + memo_cmp_us` is most of `resolve_us`, the cost is the
++//! re-read of unchanged texels, and the lever is a witness that lets a bind
++//! skip it. If `gva_resident_us` or `zero_copy_us` is large while the rung
++//! declines (`gvaw_no_entry`, `zc_lin_no_alias`), the cost is a probe that
++//! cannot serve this workload.
++
++use std::sync::atomic::{AtomicU64, Ordering};
++use std::time::Instant;
++
++use crate::observe::phase_clock::{charge_ns, to_us};
++
++/// One rung, or one step of the guest memo.
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
++pub enum Part {
++    /// `try_gva_resident_sample`, served or declined.
++    GvaResident = 0,
++    /// `try_linear_sample_zero_copy`, served or declined.
++    ZeroCopy = 1,
++    /// `writeback_debt::settle_for_texture` ahead of the memo's read.
++    MemoSettle = 2,
++    /// The memo's whole-span guest read; bytes are the span.
++    MemoRead = 3,
++    /// The memo lookup and its byte-for-byte compare.
++    MemoCompare = 4,
++    /// A memo miss: the pixel-format conversion and the insert.
++    MemoConvert = 5,
++    /// `load_buffer_texture_rows`; bytes are the rows it returned.
++    BufferRows = 6,
++}
++
++const PARTS: usize = Part::BufferRows as usize + 1;
++
++static NS: [AtomicU64; PARTS] = [const { AtomicU64::new(0) }; PARTS];
++static COUNT: [AtomicU64; PARTS] = [const { AtomicU64::new(0) }; PARTS];
++static BYTES: [AtomicU64; PARTS] = [const { AtomicU64::new(0) }; PARTS];
++
++/// Charges one scope's wall clock, one count and its bytes to a [`Part`].
++pub struct Span {
++    part: Part,
++    started: Instant,
++    bytes: u64,
++}
++
++impl Span {
++    pub fn open(part: Part) -> Self {
++        Self {
++            part,
++            started: Instant::now(),
++            bytes: 0,
++        }
++    }
++
++    /// The bytes this scope moved, charged when it closes.
++    pub fn bytes(&mut self, bytes: usize) {
++        self.bytes = bytes as u64;
++    }
++}
++
++impl Drop for Span {
++    fn drop(&mut self) {
++        let i = self.part as usize;
++        NS[i].fetch_add(charge_ns(self.started.elapsed()), Ordering::Relaxed);
++        COUNT[i].fetch_add(1, Ordering::Relaxed);
++        BYTES[i].fetch_add(self.bytes, Ordering::Relaxed);
++    }
++}
++
++fn take(part: Part) -> (u64, u64, u64) {
++    let i = part as usize;
++    (
++        to_us(NS[i].swap(0, Ordering::Relaxed)),
++        COUNT[i].swap(0, Ordering::Relaxed),
++        BYTES[i].swap(0, Ordering::Relaxed),
++    )
++}
++
++fn mib(bytes: u64) -> String {
++    format!("{:.1}", bytes as f64 / f64::from(1u32 << 20))
++}
++
++/// Take and clear the window; `None` when no span closed in it.
++pub fn take_line() -> Option<String> {
++    let gva = take(Part::GvaResident);
++    let zc = take(Part::ZeroCopy);
++    let settle = take(Part::MemoSettle);
++    let read = take(Part::MemoRead);
++    let cmp = take(Part::MemoCompare);
++    let convert = take(Part::MemoConvert);
++    let rows = take(Part::BufferRows);
++    let any = [gva, zc, settle, read, cmp, convert, rows]
++        .iter()
++        .any(|&(_, n, _)| n != 0);
++    any.then(|| {
++        format!(
++            "sampled_resolve_split gva_resident_us={} gva_resident_n={} zero_copy_us={} \
++             zero_copy_n={} memo_settle_us={} memo_read_us={} memo_read_mib={} memo_n={} \
++             memo_cmp_us={} memo_convert_us={} memo_convert_n={} memo_convert_mib={} \
++             buftex_us={} buftex_n={} buftex_mib={} (nested in sampled_phase resolve_us)",
++            gva.0,
++            gva.1,
++            zc.0,
++            zc.1,
++            settle.0,
++            read.0,
++            mib(read.2),
++            read.1,
++            cmp.0,
++            convert.0,
++            convert.1,
++            mib(convert.2),
++            rows.0,
++            rows.1,
++            mib(rows.2),
++        )
++    })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn field(line: &str, name: &str) -> f64 {
++        line.split(&format!(" {name}="))
++            .nth(1)
++            .and_then(|rest| rest.split(' ').next())
++            .and_then(|v| v.parse().ok())
++            .unwrap_or_else(|| panic!("{name} in {line}"))
++    }
++
++    /// The counters are process-wide and other tests drive the sampled ladder,
++    /// so this asserts floors rather than equalities: what it charged must be
++    /// there, under the right names, and taking the window must clear it.
++    #[test]
++    fn a_window_charges_each_part_its_own_time_and_bytes_and_resets() {
++        let _ = take_line();
++        {
++            let mut s = Span::open(Part::MemoRead);
++            s.bytes(64 << 20);
++            std::thread::sleep(std::time::Duration::from_millis(2));
++        }
++        {
++            let mut s = Span::open(Part::BufferRows);
++            s.bytes(32 << 20);
++        }
++        let _ = Span::open(Part::ZeroCopy);
++        let line = take_line().expect("spans closed");
++        assert!(field(&line, "memo_read_mib") >= 64.0, "{line}");
++        assert!(field(&line, "memo_n") >= 1.0, "{line}");
++        assert!(field(&line, "memo_read_us") >= 1_500.0, "{line}");
++        assert!(field(&line, "buftex_mib") >= 32.0, "{line}");
++        assert!(field(&line, "buftex_n") >= 1.0, "{line}");
++        assert!(field(&line, "zero_copy_n") >= 1.0, "{line}");
++        let after = take_line();
++        assert!(
++            after
++                .as_deref()
++                .is_none_or(|l| field(l, "memo_read_mib") < 64.0),
++            "taking the window clears it: {after:?}"
++        );
++    }
++}

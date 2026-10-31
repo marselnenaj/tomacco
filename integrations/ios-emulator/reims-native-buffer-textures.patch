@@ -1,0 +1,144 @@
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/mod.rs
+@@ -1490,13 +1490,13 @@
+ /// every early-return here logs a fail-visible reason (the buffer is unresolved,
+ /// the format is unknown, or the span overruns the buffer) — those are real
+ /// dropped-draw causes, not speculative "not ready yet" polls.
+-fn load_buffer_texture_rgba<M: HostMemory + HostOps>(
++fn load_buffer_texture_rows<M: HostMemory + HostOps>(
+     state: &mut DeviceState,
+     host: &mut M,
+     task_id: u32,
+     texture_ref: u32,
+     bt: &BufferTextureDescriptor,
+-) -> Option<(u32, u32, Vec<u8>)> {
++) -> Option<(u32, u32, u16, Vec<u8>)> {
+     let (w, h) = (bt.desc.width, bt.desc.height);
+     if w == 0 || h == 0 {
+         crate::observe::fail(format!(
+@@ -1530,7 +1530,9 @@
+         ));
+         return None;
+     }
+-    let span = bpr.checked_mul(h as u64)?;
++    let span = bpr
++        .checked_mul(u64::from(h - 1))?
++        .checked_add(u64::from(tight))?;
+     // A buffer-backed texture is two contract references over one allocation:
+     // the texture-view texture object the guest binds and samples, and the buffer
+     // buffer that owns the storage. A synchronize names the former and a debt
+@@ -1549,6 +1551,30 @@
+         ));
+         return None;
+     }
++    let row_bytes = usize::try_from(tight).ok()?;
++    let stride = usize::try_from(bpr).ok()?;
++    let mut packed = Vec::new();
++    packed
++        .try_reserve_exact(row_bytes.checked_mul(h as usize)?)
++        .ok()?;
++    for row in 0..h as usize {
++        let start = row.checked_mul(stride)?;
++        packed.extend_from_slice(raw.get(start..start.checked_add(row_bytes)?)?);
++    }
++    Some((w, h, fmt, packed))
++}
++
++/// The colour seed / Metal callers keep their RGBA8 contract. Vulkan sampled
++/// binds consume the checked native rows above and carry their own format.
++fn load_buffer_texture_rgba<M: HostMemory + HostOps>(
++    state: &mut DeviceState,
++    host: &mut M,
++    task_id: u32,
++    texture_ref: u32,
++    bt: &BufferTextureDescriptor,
++) -> Option<(u32, u32, Vec<u8>)> {
++    let (w, h, fmt, raw) = load_buffer_texture_rows(state, host, task_id, texture_ref, bt)?;
++    let tight = pixel_format::tight_row_bytes(w, fmt)? as usize;
+     note_sampled_narrowing("buftex_narrowed", texture_ref, fmt, w, h);
+     let Some(row_rail) = pixel_format::RowToRgba8::for_format(fmt) else {
+         crate::observe::fail(format!(
+@@ -1560,10 +1586,8 @@
+     let row_pixels = w as usize;
+     let dst_row = row_pixels.checked_mul(RGBA8_BPP as usize)?;
+     let mut rgba = vec![0u8; dst_row.checked_mul(h as usize)?];
+-    let tight = tight as usize;
+-    let bpr = bpr as usize;
+     for y in 0..h as usize {
+-        let src = &raw[y * bpr..y * bpr + tight];
++        let src = &raw[y * tight..(y + 1) * tight];
+         let dst = &mut rgba[y * dst_row..(y + 1) * dst_row];
+         if !row_rail.convert(src, w, dst) {
+             crate::observe::fail(format!(
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/draw/vulkan.rs
+@@ -1191,19 +1191,60 @@
+     if let Some(bt) =
+         buffer_texture_descriptor(state, host, task_id, texture_ref, resource.as_deref())
+     {
+-        // The opcode-9 descriptor's own pixel format. The loader converts to
+-        // RGBA8 order and decodes nothing, so the transfer function the guest
+-        // declared is still the one these bytes carry.
+-        let source = bt.desc.pixel_format;
+-        let (w, h, rgba) = load_buffer_texture_rgba(state, host, task_id, texture_ref, &bt)?;
++        // Buffer-backed samples carry native rows when this host can filter
++        // their layout. This admits packed ten-bit colour and preserves float
++        // LUT values without adding them to the deliberately lossy RGBA8 rail.
++        let (w, h, source, bytes) =
++            load_buffer_texture_rows(state, host, task_id, texture_ref, &bt)?;
++        let native = translate::pixel::sampled_pixels(source)
++            .ok()
++            .filter(|(_, _, components)| pixel_format::swizzle_is_identity(components))
++            .map(|(layout, _, _)| layout)
++            .filter(|&layout| {
++                crate::backend::vulkan::engine::supports_sampled_layout_linear_filter(layout)
++            });
++        let upload = if let Some(layout) = native {
++            Ok((bytes, SampledByteFormat::from_source(layout, source)))
++        } else if linear_xr_upload_enabled(source, native_uploads_for(source)) {
++            decode_linear_xr_upload(source, bytes)
++        } else {
++            // Feed the rows already read to the shared converter: no second
++            // buffer lookup or guest-memory read on this fallback.
++            load_tight_linear_rgba_with(
++                w,
++                h,
++                1,
++                source,
++                NativeUploads::NONE,
++                "buftex_narrowed",
++                |dst| {
++                    if dst.len() != bytes.len() {
++                        return false;
++                    }
++                    dst.copy_from_slice(&bytes);
++                    true
++                },
++            )
++        };
++        let (bytes, byte_format) = match upload {
++            Ok(upload) => upload,
++            Err(why) => {
++                crate::observe::Emit::decline("buffer_texture_upload", &why)
++                    .field("task", task_id)
++                    .field("ref", texture_ref)
++                    .field("fmt", format!("{source:#x}"))
++                    .fail_once((u64::from(task_id) << 32) | u64::from(texture_ref));
++                return None;
++            }
++        };
+         return Some((
+             w,
+             h,
+             0,
+             SampledSourceRequest::Bytes(
+-                std::sync::Arc::new(rgba),
++                std::sync::Arc::new(bytes),
+                 None,
+-                SampledByteFormat::from_source(TexelLayout::Rgba8, source),
++                byte_format,
+                 crate::backend::vulkan::engine::SampledByteOrigin::BufferBackedTexture,
+             ),
+         ));

@@ -1,0 +1,88 @@
+--- a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -1323,6 +1323,32 @@
+         .map_err(str::to_owned)
+ }
+ 
++/// Optional directory for this process's renderer logs. This affects only
++/// observation; it cannot select or widen an execution path.
++pub const LOG_DIRECTORY: &str = "REIMS_VGPU_LOG_DIRECTORY";
++
++#[derive(Debug)]
++pub enum LogDirectory {
++    Unset,
++    Directory(std::path::PathBuf),
++    Refused(std::ffi::OsString),
++}
++
++pub fn log_directory() -> LogDirectory {
++    match std::env::var_os(LOG_DIRECTORY) {
++        None => LogDirectory::Unset,
++        Some(value) if value.is_empty() => LogDirectory::Unset,
++        Some(value) => {
++            let path = std::path::PathBuf::from(&value);
++            if path.is_absolute() {
++                LogDirectory::Directory(path)
++            } else {
++                LogDirectory::Refused(value)
++            }
++        }
++    }
++}
++
+ /// What one variable says, including the two ways it says nothing usable.
+ ///
+ /// Four states rather than a `bool` because "unset", "explicitly on" and
+@@ -1517,6 +1543,12 @@
+             .unwrap_or_else(|| "unset".to_owned());
+         out.push_str(&format!(" {}={raw}", short.to_ascii_lowercase()));
+     }
++    let directory = match log_directory() {
++        LogDirectory::Unset => "unset".to_owned(),
++        LogDirectory::Directory(path) => format!("{:?}", path),
++        LogDirectory::Refused(value) => format!("refused({value:?})"),
++    };
++    out.push_str(&format!(" log_directory={directory}"));
+     out
+ }
+ 
+--- a/reims-vgpu/crates/reims-vgpu-observe/src/sink.rs
++++ b/reims-vgpu/crates/reims-vgpu-observe/src/sink.rs
+@@ -112,18 +112,35 @@
+     format!("/tmp/reims-vgpu-{kind}-test-{}.log", std::process::id())
+ }
+ 
++#[cfg(not(any(test, feature = "testing")))]
++fn product_log_path(kind: &str) -> String {
++    match reims_vgpu_config::log_directory() {
++        reims_vgpu_config::LogDirectory::Directory(directory) => directory
++            .join(format!("{kind}.log"))
++            .to_string_lossy()
++            .into_owned(),
++        reims_vgpu_config::LogDirectory::Refused(value) => {
++            // Resolving the sink cannot log through the unresolved sink. Keep
++            // the fallback usable and report this operator refusal directly.
++            eprintln!("vgpu_log_directory_refused reason=path_not_absolute value={value:?}");
++            format!("/tmp/reims-vgpu-{kind}.log")
++        }
++        reims_vgpu_config::LogDirectory::Unset => format!("/tmp/reims-vgpu-{kind}.log"),
++    }
++}
++
+ pub fn fail_log_path() -> &'static str {
+     #[cfg(any(test, feature = "testing"))]
+     return FAIL_PATH.get_or_init(|| test_path("fail"));
+     #[cfg(not(any(test, feature = "testing")))]
+-    FAIL_PATH.get_or_init(|| "/tmp/reims-vgpu-fail.log".to_string())
++    FAIL_PATH.get_or_init(|| product_log_path("fail"))
+ }
+ 
+ pub fn draw_log_path() -> &'static str {
+     #[cfg(any(test, feature = "testing"))]
+     return DRAW_PATH.get_or_init(|| test_path("draw"));
+     #[cfg(not(any(test, feature = "testing")))]
+-    DRAW_PATH.get_or_init(|| "/tmp/reims-vgpu-draw.log".to_string())
++    DRAW_PATH.get_or_init(|| product_log_path("draw"))
+ }
+ 
+ /// Test-harness support: point the always-on sinks at per-process files so a
