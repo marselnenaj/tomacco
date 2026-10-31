@@ -20,6 +20,11 @@ tomacco --device duo --fold open --orientation landscape
 Open **Tomacco** in the application menu to enter the native project workspace. Explicit URL, folder or device arguments open the visual
 layout lab instead (see [Visual layout lab](#visual-layout-lab)).
 
+Tomacco remembers the last eight project folders you opened. The start screen
+shows the three newest besides the open one under **Recent** (*Zuletzt*), and
+the command palette (Ctrl+K) finds all of them as **Open recent project**
+(*Zuletzt geöffnetes Projekt … öffnen*). Folders that no longer exist are left out.
+
 ## Languages
 
 The desktop speaks English and German. It follows the desktop language: German when

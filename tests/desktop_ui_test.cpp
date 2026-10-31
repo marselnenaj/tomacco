@@ -1977,7 +1977,7 @@ for line in sys.stdin:
     void apps_dropped_on_the_device_install_there() {
         // Files dragged onto the device view: APKs install on an Android device, one IPA on an iPhone, through
         // device.install. Other app files are explained; files that are no app pass on.
-        QVERIFY(QMetaObject::invokeMethod(workspace,"close"));
+        open("runtime");
         window->resize(1380,970);QTest::qWait(50);
         auto *view=object("nativeWorkspace");QVERIFY(view);
         auto *area=item("nativeAppDrop");QVERIFY(area);
@@ -2043,7 +2043,7 @@ for line in sys.stdin:
     void screenshots_are_saved_and_copied() {
         // A capture of the live device is saved by the control plane and then put on the clipboard;
         // without a device the reason is shown. The palette and the shortcut sheet name it.
-        QVERIFY(QMetaObject::invokeMethod(workspace,"close"));
+        open("runtime");
         auto *view=object("nativeWorkspace");QVERIFY(view);
         view->setProperty("live",QVariantMap{});view->setProperty("requests",QVariantMap{});
         QVERIFY(QMetaObject::invokeMethod(view,"capture"));
@@ -2068,6 +2068,51 @@ for line in sys.stdin:
             if(command.toMap().value("id").toString()=="screenshot")listed=command.toMap().value("key").toString()=="Ctrl+Shift+S";
         QVERIFY(listed);
         view->setProperty("notice",QString());view->setProperty("failed",false);view->setProperty("requests",QVariantMap{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void recent_projects_reopen_from_the_start_screen_and_the_palette() {
+        // Every project opened is remembered, newest first, without duplicates or folders that are gone;
+        // the start screen and the palette offer the others again.
+        open("runtime");
+        window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        const auto original=directory.filePath("project");
+        QTRY_VERIFY(backend->recentProjects().contains(QFileInfo(original).canonicalFilePath()));
+        QTemporaryDir other;QVERIFY(other.isValid());
+        const auto first=other.filePath("first"),second=other.filePath("second"),gone=other.filePath("gone");
+        for(const auto &folder:{first,second,gone})QVERIFY(QDir().mkpath(folder));
+        QFile pubspec(second+"/pubspec.yaml");QVERIFY(pubspec.open(QIODevice::WriteOnly));pubspec.write("name: second_app\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");pubspec.close();
+        QSignalSpy changed(backend.get(),&Backend::recentProjectsChanged);
+        backend->rememberProject(first);backend->rememberProject(gone);backend->rememberProject(second);backend->rememberProject(first);
+        QCOMPARE(changed.size(),4);
+        QVERIFY(QDir(gone).removeRecursively());
+        auto recent=backend->recentProjects();
+        QCOMPARE(recent.mid(0,2),(QStringList{QFileInfo(first).canonicalFilePath(),QFileInfo(second).canonicalFilePath()}));
+        QVERIFY(!recent.contains(gone));QCOMPARE(recent.count(QFileInfo(first).canonicalFilePath()),1);
+        backend->rememberProject(first);QCOMPARE(changed.size(),4);
+        backend->rememberProject(other.filePath("missing"));QCOMPARE(changed.size(),4);
+        // The start screen names the newest ones; the open project is not among them.
+        QTRY_VERIFY(item("heroRecent-0") && item("heroRecent-1"));
+        auto *button=item("heroRecent-0");QVERIFY(button->isVisible());
+        QCOMPARE(button->property("text").toString(),QString("first"));
+        QCOMPARE(item("heroRecent-1")->property("text").toString(),QString("second"));
+        for(int index=0;index<3;++index)
+            if(auto *shown=item(qPrintable(QString("heroRecent-%1").arg(index))))QVERIFY(shown->property("tip").toString()!=original);
+        // The palette finds them by name and opens one.
+        auto *palette=object("commandPalette");QVERIFY(palette);
+        QVERIFY(QMetaObject::invokeMethod(palette,"open"));
+        QTRY_VERIFY(item("commandSearch") && item("commandSearch")->hasActiveFocus());
+        type("second");
+        QTRY_COMPARE(palette->property("results").value<QJSValue>().property(0).property("title").toString(),QString("Open recent project second"));
+        QTest::keyClick(window,Qt::Key_Return);
+        const auto path=[&]{return mapOf(workspace->property("project")).value("path").toString();};
+        QTRY_COMPARE_WITH_TIMEOUT(QFileInfo(path()).canonicalFilePath(),QFileInfo(second).canonicalFilePath(),patient(10000));
+        QCOMPARE(backend->recentProjects().first(),QFileInfo(second).canonicalFilePath());
+        // Back to the project the other scenarios use, and only it is remembered from here.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"openProject",Q_ARG(QVariant,original)));
+        QTRY_COMPARE_WITH_TIMEOUT(path(),original,patient(10000));
+        for(const auto &folder:backend->recentProjects())if(folder!=QFileInfo(original).canonicalFilePath())backend->forgetProject(folder);
+        QTRY_VERIFY(!item("heroRecent-0") || !item("heroRecent-0")->isVisible());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void german_interface_switches_live() {

@@ -420,6 +420,8 @@ Rectangle {
         {id:"release",label:"Release",icon:"release",key:"9"},
         {id:"tools",label:qsTr("Agents"),icon:"agent",key:"0",group:qsTr("AUTOMATION")}
     ]
+    // Project folders opened before, but the open one, to reopen from the start screen and the palette.
+    readonly property var recentProjects: Studio.recentProjects.filter(p=>p!==projectPath).map(p=>({path:p,name:AppFiles.name(p)}))
     // What the palette offers besides the views and the agent tools.
     readonly property var commands: [
         {id:"open-project",title:qsTr("Open project"),detail:qsTr("Command"),icon:"files",key:qsTr("Ctrl")+"+O",run:()=>projectFolder.open()},
@@ -431,7 +433,7 @@ Rectangle {
         {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
         {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()}
-    ]
+    ].concat(recentProjects.map(p=>({id:"recent:"+p.path,title:qsTr("Open recent project %1").arg(p.name),detail:p.path,search:p.name,icon:"files",key:"",run:()=>workspace.openProject(p.path)})))
     function navigate(section) { if(section==="runtime")workspace.close();else workspace.showTab(section) }
     function copyContext() {Studio.copy(JSON.stringify({project:projectPath,runtime:live,cli:Agent.cliPath,mcp:{command:Agent.cliPath,args:["mcp"]}},null,2));notice=qsTr("Project and runtime context copied");failed=false}
     // The panel is open by default where there is room; in a narrow window it
@@ -662,6 +664,8 @@ Rectangle {
                             errorText:display.error
                             secondaryText:view.projectPath?"":qsTr("Open a project")
                             onSecondary:projectFolder.open()
+                            recent:view.recentProjects
+                            onRecentChosen:path=>view.workspace.openProject(path)
                             steps:[
                                 {key:"project",label:qsTr("Project"),detail:workspace.project.name || qsTr("Open a project"),done:!!view.projectPath},
                                 {key:"device",label:qsTr("Device"),detail:view.deviceName || qsTr("Choose a device"),done:view.hasTarget},

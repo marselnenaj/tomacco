@@ -163,7 +163,7 @@ Rectangle {
             } else if(operation==="project.inspect") {
                 if(JSON.parse(context.signature).path!==projectPath.text)return
                 projectPath.text=value.path
-                panel.project=value; if(panel.revealPath) { fileWorkspace.openFile(panel.revealPath,panel.revealLine);panel.revealPath="" } panel.status=value.name+" · "+value.kinds.join(" / ")
+                panel.project=value; Studio.rememberProject(value.path); if(panel.revealPath) { fileWorkspace.openFile(panel.revealPath,panel.revealLine);panel.revealPath="" } panel.status=value.name+" · "+value.kinds.join(" / ")
                 if(value.configuration.applicationId) bundleId.text=value.configuration.applicationId
                 if(value.platforms.length) platform.currentIndex=Math.max(0,["android","ios","web","linux"].indexOf(value.platforms[0]))
             } else if(operation==="device.list") {

@@ -26,6 +26,8 @@ class Backend final : public QObject {
     Q_PROPERTY(bool dark READ dark NOTIFY appearanceChanged)
     // For the About dialog.
     Q_PROPERTY(QString qtVersion READ qtVersion CONSTANT)
+    // Project folders opened before, newest first; folders that are gone are left out.
+    Q_PROPERTY(QStringList recentProjects READ recentProjects NOTIFY recentProjectsChanged)
     Q_PROPERTY(QUrl sourceUrl READ sourceUrl CONSTANT)
 public:
     explicit Backend(QString initialUrl, QObject *parent=nullptr, bool autoProbe=true);
@@ -45,6 +47,10 @@ public:
     // (qml/Theme.js lists the same families); loads the bundled fonts. Call it before QML is loaded.
     static void applyInterfaceFont();
     QString qtVersion() const;
+    QStringList recentProjects() const;
+    // Puts a project folder at the front of the recent ones (at most eight are kept).
+    Q_INVOKABLE void rememberProject(const QString &path);
+    Q_INVOKABLE void forgetProject(const QString &path);
     // The release this build's version names, where its corresponding source
     // is offered (docs/SOURCE.md.in); the repository when no version is set.
     QUrl sourceUrl() const;
@@ -88,6 +94,7 @@ signals:
     void message(const QString &text);
     void languageChanged();
     void appearanceChanged();
+    void recentProjectsChanged();
 private:
     static QString s_uiLanguage;
     // A probe result is the tool's output or one of these states, which are

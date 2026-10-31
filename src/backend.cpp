@@ -231,6 +231,29 @@ QString Backend::screenshotPath(const QString &model) {
     auto safe=model; safe.replace(QRegularExpression("[^A-Za-z0-9_-]"),"-");
     return directory+"/"+safe+"-"+QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz")+".png";
 }
+QStringList Backend::recentProjects() const {
+    QStringList existing;
+    for(const auto &path: m_settings.value("recentProjects").toStringList())
+        if(QFileInfo(path).isDir()) existing.append(path);
+    return existing;
+}
+void Backend::rememberProject(const QString &path) {
+    const QFileInfo folder(path);
+    if(path.isEmpty() || !folder.isDir()) return;
+    const auto canonical=folder.canonicalFilePath();
+    auto stored=m_settings.value("recentProjects").toStringList();
+    if(!stored.isEmpty() && stored.first()==canonical) return;
+    stored.removeAll(canonical);
+    stored.prepend(canonical);
+    m_settings.setValue("recentProjects",stored.mid(0,8));
+    emit recentProjectsChanged();
+}
+void Backend::forgetProject(const QString &path) {
+    auto stored=m_settings.value("recentProjects").toStringList();
+    if(!stored.removeAll(path)) return;
+    m_settings.setValue("recentProjects",stored);
+    emit recentProjectsChanged();
+}
 QString Backend::qtVersion() const { return QString::fromLatin1(qVersion()); }
 QUrl Backend::sourceUrl() const {
     const QString repository=QStringLiteral("https://github.com/marselnenaj/tomacco");

@@ -2198,6 +2198,10 @@ xtool setup</translation>
 <context>
     <name>NativeWorkspace</name>
     <message>
+        <source>Open recent project %1</source>
+        <translation>Zuletzt geöffnetes Projekt %1 öffnen</translation>
+    </message>
+    <message>
         <source>Connect a device to take a screenshot.</source>
         <translation>Verbinde ein Gerät, um einen Screenshot aufzunehmen.</translation>
     </message>
@@ -4531,6 +4535,13 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     <message>
         <source>Drop to install on %1</source>
         <translation>Zum Installieren auf %1 ablegen</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceHero</name>
+    <message>
+        <source>Recent</source>
+        <translation>Zuletzt</translation>
     </message>
 </context>
 </TS>
