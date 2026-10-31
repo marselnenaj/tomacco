@@ -4,6 +4,14 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+- **Container image.** `packaging/container/Dockerfile` builds a headless image with `tomaccoctl`
+  from the signed release package, a JDK, Gradle and the Android SDK, and an `-emulator` variant
+  with the emulator and an x86_64 system image; `docker run -i --rm IMAGE mcp` is an MCP server.
+  `tools/build_container.py` builds and checks it, and `make_release.py --container` builds it for
+  a release and prints the push commands without running them. See [Container image](docs/container.md).
+
 ## 1.1.0
 
 `tomaccoctl` now has one typed API of 193 operations.

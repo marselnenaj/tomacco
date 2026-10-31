@@ -74,6 +74,22 @@ Everything else the portable desktop loads (glibc, libstdc++, OpenGL, X11,
 Wayland, fontconfig, FreeType, GLib, D-Bus, NSS, ALSA, zlib) comes from the
 system, as for the regular package.
 
+## In the container image
+
+`packaging/container/Dockerfile` builds an image that is not distributed yet; whoever builds it
+gets the components below, and would have to meet their licenses to pass the image on. Tomacco's
+own part is `tomaccoctl` from the signed release package, with this file and the license in
+`/usr/share/doc/tomacco/`.
+
+| Component | Version and origin | License |
+| --- | --- | --- |
+| Ubuntu 24.04 base image and its packages: OpenJDK 17, curl, unzip, OpenSSL, Git, tini; in the emulator variant the X11, OpenGL, NSS, PulseAudio, ALSA and libpng runtime libraries | Ubuntu's archive at build time | Each package's own license, in `/usr/share/doc/PACKAGE/copyright` in the image; OpenJDK is GPL-2.0-only with the Classpath Exception |
+| Gradle | 9.3.1 from <https://services.gradle.org/distributions/> | Apache-2.0 |
+| Android SDK command-line tools, Platform-Tools, Platform 36, Build-Tools 36.0.0; in the emulator variant the Android Emulator and the Google APIs x86_64 system image for API 36 | Google's repository, <https://dl.google.com/android/repository/> | The Android Software Development Kit License Agreement, <https://developer.android.com/studio/terms>, and the notices in each package's `NOTICE.txt`. The build requires `ACCEPT_ANDROID_SDK_LICENSE=1`: whoever builds the image accepts this license. The Google APIs system image contains Google software under the same agreement. |
+
+The Android SDK license restricts redistribution of the SDK. Publishing an image that contains it
+needs a check of that license first.
+
 ## Libraries linked by the desktop at run time (not bundled)
 
 | Component | Used for | License | Notes |

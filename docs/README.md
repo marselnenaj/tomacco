@@ -11,6 +11,7 @@ operations, so a person and a coding agent can do the same things.
 | Install Tomacco and get a first success | [Getting started](getting-started.md) |
 | Have my coding agent set everything up | [Agent setup](agent-setup.md) |
 | Connect a coding agent over MCP or the JSON CLI | [Agents](agents.md) |
+| Run tomaccoctl headless in Docker, for an agent, a server or CI | [Container image](container.md) |
 | Copy a short sequence: build and run, screenshot and UI test, iOS build, virtual iPhone deploy | [Recipes](recipes.md) |
 | Use the desktop app: device window, shortcuts, Omarchy panel, layout lab | [Desktop](desktop.md) |
 | Build and run an Android app, Swift on Android included | [Android](android.md) |
