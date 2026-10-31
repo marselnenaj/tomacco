@@ -1334,7 +1334,7 @@
   {
     "name": "device.info",
     "title": "Device information",
-    "description": "Read Android properties/display settings or iOS device information.",
+    "description": "Read Android properties/display settings or iOS device information. For Android, health sums up the device in the same call, read-only: Android version, SDK and security patch, battery level, state, health and temperature, free and total storage on /data, screen size and density in pixels and dp, and uptime in seconds; a part the device does not report is null.",
     "inputSchema": {
       "type": "object",
       "properties": {

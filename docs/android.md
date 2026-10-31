@@ -226,6 +226,17 @@ running app, so launch the app first.
 tomaccoctl call device.logs '{"platform":"android","device":"emulator-5554","bundle_id":"dev.example.newapp","duration":30}'
 ```
 
+`device.info` reads a device's properties and, under `health`, what matters at a
+glance in one read-only call: Android version, SDK level and security patch, battery
+level, state, health and temperature, free and total storage on `/data`, screen size
+and density in pixels and dp (an override from `android.display` counts), and uptime in
+seconds. A part the device does not report, such as the battery of a device without
+one, is `null`.
+
+```sh
+tomaccoctl call device.info '{"platform":"android","device":"emulator-5554"}'
+```
+
 ## Device settings for tests
 
 `android.settings` sets what changes an app's look and motion, so UI tests and

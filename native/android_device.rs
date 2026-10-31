@@ -44,6 +44,143 @@ fn densities(output: &str) -> (Value, Value) {
     (pick("Physical density:"), pick("Override density:"))
 }
 
+/// `dumpsys battery`: level in percent, charge state, health, temperature and
+/// which charger is connected. Null when Android reports no battery level.
+fn battery(output: &str) -> Value {
+    let fields: std::collections::BTreeMap<&str, &str> = output
+        .lines()
+        .filter_map(|l| l.trim().split_once(':'))
+        .map(|(k, v)| (k.trim(), v.trim()))
+        .collect();
+    let number = |key: &str| fields.get(key).and_then(|v| v.parse::<i64>().ok());
+    let Some(level) = number("level") else {
+        return Value::Null;
+    };
+    let scale = number("scale").filter(|v| *v > 0).unwrap_or(100);
+    let status = match number("status") {
+        Some(2) => "charging",
+        Some(3) => "discharging",
+        Some(4) => "not-charging",
+        Some(5) => "full",
+        _ => "unknown",
+    };
+    let health = match number("health") {
+        Some(2) => "good",
+        Some(3) => "overheat",
+        Some(4) => "dead",
+        Some(5) => "over-voltage",
+        Some(6) => "failure",
+        Some(7) => "cold",
+        _ => "unknown",
+    };
+    let plugged: Vec<&str> = [
+        ("AC powered", "ac"),
+        ("USB powered", "usb"),
+        ("Wireless powered", "wireless"),
+        ("Dock powered", "dock"),
+    ]
+    .iter()
+    .filter(|(key, _)| fields.get(key) == Some(&"true"))
+    .map(|(_, name)| *name)
+    .collect();
+    json!({
+        "level": (level * 100 + scale / 2) / scale,
+        "status": status,
+        "health": health,
+        "temperature_celsius": number("temperature").map(|t| t as f64 / 10.0),
+        "plugged": plugged,
+        "present": fields.get("present").map(|v| *v == "true"),
+    })
+}
+
+/// The `df -k` line of one mount: total, used and free bytes.
+fn storage(output: &str) -> Value {
+    output
+        .lines()
+        .skip(1)
+        .filter_map(|line| {
+            let fields: Vec<_> = line.split_whitespace().collect();
+            let numbers: Vec<u64> = fields
+                .get(1..4)?
+                .iter()
+                .map(|v| v.parse().ok())
+                .collect::<Option<_>>()?;
+            Some(json!({
+                "path": fields.last().copied().unwrap_or(""),
+                "total_bytes": numbers[0] * 1024,
+                "used_bytes": numbers[1] * 1024,
+                "free_bytes": numbers[2] * 1024,
+            }))
+        })
+        .last()
+        .unwrap_or(Value::Null)
+}
+
+/// Seconds since boot, the first number of `/proc/uptime`.
+fn uptime(output: &str) -> Value {
+    output
+        .split_whitespace()
+        .next()
+        .and_then(|v| v.parse::<f64>().ok())
+        .map(|v| json!(v.floor() as u64))
+        .unwrap_or(Value::Null)
+}
+
+/// What a device's state is at a glance, from its properties, `wm size`,
+/// `wm density`, `dumpsys battery`, `df -k /data` and `/proc/uptime`. A part
+/// the device does not report is null.
+pub fn health(device: &str, properties: &Value, size: &str, density: &str) -> Value {
+    let read = |args: &[&str]| stdout(device, args).unwrap_or_default();
+    let property = |key: &str| {
+        properties[key]
+            .as_str()
+            .filter(|v| !v.is_empty())
+            .map(Value::from)
+            .unwrap_or(Value::Null)
+    };
+    let (physical_size, override_size) = sizes(size);
+    let (physical_density, override_density) = densities(density);
+    let shown_size = if override_size.is_null() {
+        physical_size.clone()
+    } else {
+        override_size.clone()
+    };
+    let shown_density = if override_density.is_null() {
+        physical_density.clone()
+    } else {
+        override_density.clone()
+    };
+    let dp = match (shown_size.as_array(), shown_density.as_u64()) {
+        (Some(pixels), Some(dpi)) if dpi > 0 => json!(
+            pixels
+                .iter()
+                .map(|p| (p.as_u64().unwrap_or(0) as f64 * 160.0 / dpi as f64).round() as u64)
+                .collect::<Vec<_>>()
+        ),
+        _ => Value::Null,
+    };
+    json!({
+        "android": {
+            "version": property("ro.build.version.release"),
+            "sdk": properties["ro.build.version.sdk"].as_str().and_then(|v| v.parse::<u64>().ok()),
+            "security_patch": property("ro.build.version.security_patch"),
+            "build": property("ro.build.display.id"),
+        },
+        "model": property("ro.product.model"),
+        "manufacturer": property("ro.product.manufacturer"),
+        "battery": battery(&read(&["dumpsys", "battery"])),
+        "storage": storage(&read(&["df", "-k", "/data"])),
+        "screen": {
+            "size": shown_size,
+            "density": shown_density,
+            "size_dp": dp,
+            "physical_size": physical_size,
+            "physical_density": physical_density,
+        },
+        "uptime_seconds": uptime(&read(&["cat", "/proc/uptime"])),
+    })
+}
+
 /// The orientation named by Android's rotation settings.
 fn orientation(accelerometer: &str, rotation: &str) -> &'static str {
     if accelerometer.trim() == "1" {
@@ -546,6 +683,29 @@ pub fn each_worker(request: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn health_reads_battery_storage_and_uptime() {
+        let dump = "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  status: 2\n  health: 2\n  present: true\n  level: 87\n  scale: 100\n  temperature: 250\n";
+        let value = battery(dump);
+        assert_eq!(value["level"], 87);
+        assert_eq!(value["status"], "charging");
+        assert_eq!(value["health"], "good");
+        assert_eq!(value["temperature_celsius"], 25.0);
+        assert_eq!(value["plugged"], json!(["usb"]));
+        assert_eq!(value["present"], true);
+        assert_eq!(battery("level: 1\nscale: 2\nstatus: 5")["level"], 50);
+        assert_eq!(battery("level: 1\nscale: 2\nstatus: 5")["status"], "full");
+        assert!(battery("Can't find service: battery").is_null());
+        let df = "Filesystem     1K-blocks    Used Available Use% Mounted on\n/dev/block/dm-5   6082636 2105092   3961160  35% /data\n";
+        assert_eq!(
+            storage(df),
+            json!({"path":"/data","total_bytes":6082636u64*1024,"used_bytes":2105092u64*1024,"free_bytes":3961160u64*1024})
+        );
+        assert!(storage("df: /data: Permission denied").is_null());
+        assert_eq!(uptime("12345.67 23456.78\n"), 12345);
+        assert!(uptime("").is_null());
+    }
 
     #[test]
     fn display_size_density_and_orientation_are_read() {

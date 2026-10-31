@@ -915,6 +915,28 @@ class AndroidControlTests(Isolated):
             dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app"})
         self.assertEqual(stopped.exception.code, "app_not_running")
 
+    def test_device_info_sums_up_health_in_one_read_only_call(self):
+        self.replies(**{"getprop": "[ro.build.version.release]: [16]\n[ro.build.version.sdk]: [36]\n[ro.build.version.security_patch]: [2026-09-05]\n[ro.product.model]: [Pixel 9]\n",
+                        "wm size": "Physical size: 1080x2400\n", "wm density": "Physical density: 420\nOverride density: 480\n",
+                        "dumpsys battery": "Current Battery Service state:\n  AC powered: true\n  status: 3\n  health: 2\n  present: true\n  level: 42\n  scale: 100\n  temperature: 312\n",
+                        "df -k": "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/block/dm-5 6000000 2000000 4000000 34% /data\n",
+                        "/proc/uptime": "3600.25 7000.00\n"})
+        health = dispatch("device.info", {"platform": "android", "device": "emulator-5554"})["health"]
+        self.assertEqual(health["android"], {"version": "16", "sdk": 36, "security_patch": "2026-09-05", "build": None})
+        self.assertEqual((health["battery"]["level"], health["battery"]["status"], health["battery"]["temperature_celsius"], health["battery"]["plugged"]),
+                         (42, "discharging", 31.2, ["ac"]))
+        self.assertEqual(health["storage"]["free_bytes"], 4000000 * 1024)
+        self.assertEqual(health["screen"], {"size": [1080, 2400], "density": 480, "size_dp": [360, 800], "physical_size": [1080, 2400], "physical_density": 420})
+        self.assertEqual(health["uptime_seconds"], 3600)
+        self.assertEqual(health["model"], "Pixel 9")
+        # Only reads: nothing is set, and a part the device does not answer is null.
+        self.assertFalse(any(args[:2] in (["settings", "put"],) or args[:1] == ["wm"] and len(args) > 2 for args in self.shell_calls()))
+        self.replies(**{"getprop": "[ro.build.version.sdk]: [30]\n", "wm size": "Physical size: 720x1280\n", "wm density": "Physical density: 320\n",
+                        "dumpsys battery": "FAIL:Can't find service: battery\n", "df -k": "FAIL:df: denied\n", "/proc/uptime": "FAIL:no\n"})
+        health = dispatch("device.info", {"platform": "android", "device": "emulator-5554"})["health"]
+        self.assertEqual((health["battery"], health["storage"], health["uptime_seconds"], health["android"]["version"]), (None, None, None, None))
+        self.assertEqual(health["screen"]["size_dp"], [360, 640])
+
     def test_device_settings_apply_only_what_is_asked_and_read_everything_back(self):
         state = {"ro.build.version.sdk": "36\n", "uimode night": "Night mode: yes\n", "get system font_scale": "1.3\n",
                  "get global window_animation_scale": "0\n", "get global transition_animation_scale": "0.0\n",

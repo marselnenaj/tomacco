@@ -158,9 +158,15 @@ fn info(platform: &str, device: &str) -> Result {
     for caps in re.captures_iter(s(&output, "stdout")) {
         props[&caps[1]] = json!(&caps[2]);
     }
-    Ok(
-        json!({"id":device,"properties":props,"display":run(sh(device,&["wm","size"])?)?["stdout"],"density":run(sh(device,&["wm","density"])?)?["stdout"]}),
-    )
+    let display = run(sh(device, &["wm", "size"])?)?["stdout"].clone();
+    let density = run(sh(device, &["wm", "density"])?)?["stdout"].clone();
+    let health = crate::android_device::health(
+        device,
+        &props,
+        display.as_str().unwrap_or(""),
+        density.as_str().unwrap_or(""),
+    );
+    Ok(json!({"id":device,"properties":props,"display":display,"density":density,"health":health}))
 }
 fn launch_command(device: &str, id: &str) -> Result<Vec<String>> {
     bundle(id)?;
