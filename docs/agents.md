@@ -189,7 +189,8 @@ tool makes those. Stop and tell the user when the IM4M is what is missing, rathe
 - `ios.emulator.control` is input and frames, on the `guest_job` of `ios.virtual.status`. Poll it with `action:"frame"` and
   `transport:"file"` to watch the guest; see [touch and gestures](virtual-ios/usage.md#touch-and-gestures).
 - `ios.virtual.screenshot {path, frame}` saves the screen as a PNG, with `frame` `rounded` or `device` for round corners or a
-  plain bezel; see [screenshots](virtual-ios/usage.md#screenshots).
+  plain bezel. `ios.virtual.record {path, seconds, fps}` is a job that records it to an MP4 with ffmpeg; see
+  [screenshots and recordings](virtual-ios/usage.md#screenshots-and-recordings).
 - `ios.virtual.configure {model}` selects the iPhone for the next start. `ios.virtual.status` has the ids, and also reports
   the current run's `running_panel` as `WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM`.
 - `ios.virtual.status` reports the time-zone outcome as `time_zone`, and `installed_applications` (bundle identifier to the

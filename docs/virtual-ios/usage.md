@@ -148,7 +148,7 @@ tomaccoctl call ios.emulator.control '{"job_id":"GUEST_JOB","action":"frame","tr
 A phone without a Home button is unlocked with a slow drag up from the bottom edge, as in the second example. The start
 does that by itself.
 
-## Screenshots
+## Screenshots and recordings
 
 ```sh
 tomaccoctl call ios.virtual.screenshot '{"path":"/absolute/phone.png"}'
@@ -161,6 +161,18 @@ the Home-button phone keeps square corners. `device` also draws a plain black be
 picture of the phone, with circular corners rather than Apple's continuous curves. Over MCP the PNG comes back inline
 when it is at most 4 MiB. The framing and the PNG writer have unit tests; a screenshot of a live phone has not been
 taken with it yet.
+
+```sh
+tomaccoctl call ios.virtual.record '{"path":"/absolute/phone.mp4","seconds":20,"fps":10}'
+tomaccoctl call job.wait '{"job_id":"RECORD_JOB","seconds":60}'
+```
+
+`ios.virtual.record` is a job that records the screen for `seconds` (up to 600) into an H.264 MP4, with ffmpeg, which must
+be installed. It asks for a frame `fps` times a second (up to 30) and repeats the last picture when nothing changed or a
+poll was slow, so the video lasts as long as the recording. The guest itself draws only about 10 changed frames a second,
+so a higher `fps` mostly repeats pictures; the result's `frames_distinct` says how many differed. A phone that stops ends
+the recording early with what it has. The pacing has unit tests, and an MP4 was made from synthetic frames with a real
+ffmpeg and checked with ffprobe; a live phone has not been recorded with it yet.
 
 ## Deploy your own app
 

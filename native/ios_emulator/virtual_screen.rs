@@ -247,6 +247,76 @@ pub fn screenshot(a: &Value) -> Result {
     )
 }
 
+/// The bounds of a recording: seconds, and frames per second.
+const RECORD_SECONDS: (u64, u64) = (1, 600);
+const RECORD_FPS: (u64, u64) = (1, 30);
+
+/// Checks a recording's arguments: an `.mp4` path, and seconds and frames
+/// per second within their bounds (defaults 10 and 10).
+fn recording(a: &Value) -> Result<(PathBuf, u64, u64)> {
+    let target = output_path(s(a, "path"))?;
+    if target
+        .extension()
+        .is_none_or(|extension| !extension.eq_ignore_ascii_case("mp4"))
+    {
+        return Err(Error::new(
+            "invalid_path",
+            "The recording is an MP4 video; name a file ending in .mp4",
+        ));
+    }
+    let seconds = a["seconds"].as_u64().unwrap_or(10);
+    let fps = a["fps"].as_u64().unwrap_or(10);
+    if !(RECORD_SECONDS.0..=RECORD_SECONDS.1).contains(&seconds)
+        || !(RECORD_FPS.0..=RECORD_FPS.1).contains(&fps)
+    {
+        return Err(Error::new(
+            "invalid_argument",
+            "seconds must be 1 to 600 and fps 1 to 30",
+        ));
+    }
+    Ok((target, seconds, fps))
+}
+
+/// Records the running phone's screen for `seconds` into an MP4 as a job
+/// (tools/ios_virtual_record.py): its frames, polled `fps` times a second
+/// through `ios.emulator.control`, encoded by ffmpeg as they come.
+pub fn record(a: &Value) -> Result {
+    let (target, seconds, fps) = recording(a)?;
+    let ffmpeg = toolchain::find("ffmpeg")?;
+    let (job, _) = virtual_phone::running_guest()?;
+    let argv = vec![
+        toolchain::find("python3")?,
+        research::script("ios_virtual_record.py")?
+            .to_string_lossy()
+            .into_owned(),
+        "--cli".into(),
+        crate::core::own_executable()?
+            .to_string_lossy()
+            .into_owned(),
+        "--job".into(),
+        job.clone(),
+        "--output".into(),
+        target.to_string_lossy().into_owned(),
+        "--seconds".into(),
+        seconds.to_string(),
+        "--fps".into(),
+        fps.to_string(),
+        "--ffmpeg".into(),
+        ffmpeg,
+    ];
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let mut submitted = jobs::submit(
+        "Record virtual iOS device screen",
+        json!({"cwd":home()?,"timeout":seconds + 180,"exclusive":"ios-virtual-record","single_active":true,
+            "operation_key":{"operation":"ios.virtual.record","arguments":{"path":target,"seconds":seconds,"fps":fps}},
+            "steps":[{"argv":argv,"artifacts":[target]}]}),
+    )?;
+    submitted["guest_job"] = json!(job);
+    Ok(submitted)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -371,5 +441,28 @@ mod tests {
         // The Home-button phone has square corners.
         assert_eq!(geometry("", 750), (0.0, 30.0));
         assert_eq!(geometry("no-such-model", 750), (0.0, 30.0));
+    }
+
+    #[test]
+    fn a_recording_is_an_mp4_of_bounded_length_and_rate() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("clip.mp4");
+        let (target, seconds, fps) = recording(&json!({"path":path})).unwrap();
+        assert_eq!((target, seconds, fps), (path.clone(), 10, 10));
+        assert_eq!(
+            recording(&json!({"path":path,"seconds":600,"fps":30}))
+                .unwrap()
+                .1,
+            600
+        );
+        for refused in [
+            json!({"path":root.path().join("clip.mov")}),
+            json!({"path":path,"seconds":0}),
+            json!({"path":path,"seconds":601}),
+            json!({"path":path,"fps":31}),
+            json!({"path":path,"fps":0}),
+        ] {
+            assert!(recording(&refused).is_err(), "{refused}");
+        }
     }
 }

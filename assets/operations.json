@@ -7066,6 +7066,44 @@
     }
   },
   {
+    "name": "ios.virtual.record",
+    "title": "Record virtual iOS device screen",
+    "description": "Record the running virtual iPhone's screen for seconds into an H.264 MP4 at path, as a durable job: the frames ios.emulator.control frame with transport file gives a viewer, polled fps times a second and encoded by ffmpeg as they come (ffmpeg must be installed). A frame that has not changed, or a poll slower than one frame, repeats the last picture, so the video lasts as long as the recording; the guest itself draws about 10 changed frames a second on this host. The job's result names the file and counts frames_written, frames_captured and frames_distinct; a phone that stops ends the recording early with what it has (ended_early). Follow it with job.wait and job.logs. One recording at a time. Refused with ios_virtual_not_running when the phone is off.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the MP4 to write, ending in .mp4; an existing file is replaced when the recording succeeds."
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600,
+          "default": 10,
+          "description": "How long to record."
+        },
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 10,
+          "description": "Frames per second of the video, and how often a frame is asked for."
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "update.check",
     "title": "Check for updates",
     "description": "Report the current version, the latest release, its notes link and whether an update applies. Without manual it uses the network at most once a day, and never when updates.mode is off. With manual, which means the user asked, it asks GitHub now, also when off. Installs nothing.",

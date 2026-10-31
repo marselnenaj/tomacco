@@ -1635,6 +1635,20 @@ class VirtualPhoneOperations(Isolated):
             dispatch("ios.virtual.screenshot", {"path": str(target), "frame": "photo"})
         self.assertFalse(target.exists())
 
+    def test_a_recording_needs_a_running_phone_and_an_mp4_path(self):
+        directory = self.profile()
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        with self.assertRaises(StudioError) as error:
+            dispatch("ios.virtual.record", {"path": str(self.root / "clip.mov")})
+        self.assertEqual(error.exception.code, "invalid_path")
+        for arguments in ({"seconds": 0}, {"seconds": 601}, {"fps": 31}):
+            with self.assertRaises(StudioError):
+                dispatch("ios.virtual.record", {"path": str(self.root / "clip.mp4"), **arguments})
+        with self.assertRaises(StudioError) as error:
+            dispatch("ios.virtual.record", {"path": str(self.root / "clip.mp4"), "seconds": 5})
+        self.assertIn(error.exception.code, ("ios_virtual_not_running", "tool_missing"))
+        self.assertEqual([job for job in jobs.listing(20) if "Record" in job["label"]], [])
+
     def test_the_device_model_is_a_setting_of_its_own_and_reaches_the_start(self):
         with self.assertRaises(StudioError) as error:
             dispatch("ios.virtual.configure", {"model": "16"})

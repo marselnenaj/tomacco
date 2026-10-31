@@ -3565,6 +3565,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Bildschirmfoto des virtuellen iOS-Geräts</translation>
     </message>
     <message>
+        <source>Record virtual iOS device screen</source>
+        <translation>Bildschirm des virtuellen iOS-Geräts aufnehmen</translation>
+    </message>
+    <message>
         <source>Stream device audio</source>
         <translation>Geräteton übertragen</translation>
     </message>
