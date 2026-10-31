@@ -90,7 +90,7 @@ DOCUMENTS = {
     "integrations/ios-emulator/COPYING_GPL-3.0": "COPYING.GPL-3.0",
     "docs/README.md": "guides.md", "docs/RELEASE_NOTES.md": "RELEASE_NOTES.md",
     **{f"docs/{name}.md": f"{name}.md" for name in
-       ("getting-started", "agents", "desktop", "android", "iphone", "troubleshooting", "legal", "privacy",
+       ("getting-started", "agents", "recipes", "desktop", "android", "iphone", "troubleshooting", "legal", "privacy",
         "research-engines")},
     "docs/virtual-ios/README.md": "virtual-ios.md",
     **{f"docs/virtual-ios/{name}.md": f"virtual-ios-{name}.md" for name in ("setup", "usage", "troubleshooting")},
