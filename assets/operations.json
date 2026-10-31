@@ -582,6 +582,38 @@
     }
   },
   {
+    "name": "project.dependency_updates",
+    "title": "Check dependency updates",
+    "description": "Compare the versions a Gradle build declares, in gradle/libs.versions.toml and its build files, with the newest versions in Maven metadata from Google Maven, Maven Central and the Gradle Plugin Portal. Read-only, as a job whose report.json lists each dependency and plugin with its source line, latest stable and latest version and a status. Answers offline at once when no repository host resolves.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local filesystem path",
+          "minLength": 1
+        },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 10,
+          "description": "Maven repository base URLs (https:// or file:///) to ask in order instead of the defaults"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "project.import_xcode",
     "title": "Import Xcode project",
     "description": "Write an xtool adapter package for an .xcodeproj with the pinned omarchy-apple-dev xcodeproj2xtool.py, by default in omarchy-xtool beside the project. Returns what the generator could not map as warnings. Build the adapter with project.execute. Needs only ios.toolkit_install's checkout.",

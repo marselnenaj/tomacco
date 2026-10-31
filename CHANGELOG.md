@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 188 operations.
+`tomaccoctl` now has one typed API of 189 operations.
 
 ### Added
 
@@ -69,6 +69,9 @@ operations and their JSON results.
     target; the iOS target answers `macos_required` with what it needs.
   - `project.create` with `kind` `compose`: a Kotlin and Jetpack Compose starter with a versions
     catalog and one Compose UI test, which passed on an Android 16 emulator.
+  - `project.dependency_updates` compares a Gradle build's catalog and build-file versions with
+    Google Maven, Maven Central and Gradle Plugin Portal metadata, read-only, as a job with
+    `report.json`; it answers `offline` at once without a network.
 - **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
   logs and old test reports in the data directory. A dry run by default.
 - **iPhone.**

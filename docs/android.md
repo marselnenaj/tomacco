@@ -123,6 +123,24 @@ of the iOS app, such as `iosApp/iosApp.xcodeproj`.
 
 Tested on fixture projects only; no Kotlin Multiplatform app was built here.
 
+## Dependency updates
+
+`project.dependency_updates` compares the versions a Gradle build declares with Maven
+metadata, without running Gradle or changing a file. It reads `gradle/libs.versions.toml`
+and the build files, asks Google Maven, Maven Central and the Gradle Plugin Portal in
+that order, and returns a job whose `report.json` lists every dependency and plugin with
+its source line, latest stable and latest version and a status: `update_available`,
+`prerelease_update_available`, `up_to_date`, `managed` (no version, such as libraries
+under a BOM), `dynamic`, `unresolved` (`$variable`), `not_found` or `unreachable`.
+
+```sh
+tomaccoctl call project.dependency_updates '{"path":"/absolute/NewApp"}' --wait
+```
+
+Without a network it answers `offline` at once. `repositories` replaces the defaults
+with your own `https://` or `file:///` repositories. It ran against the Compose starter
+online.
+
 ## Inspect an APK or AAB
 
 `android.package_inspect` reads a package file without a device: package name, version

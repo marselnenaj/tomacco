@@ -3867,6 +3867,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Build-Plan ansehen</translation>
     </message>
     <message>
+        <source>Check dependency updates</source>
+        <translation>Abhängigkeits-Updates prüfen</translation>
+    </message>
+    <message>
         <source>Virtual iOS device: status</source>
         <translation>Virtuelles iOS-Gerät: Zustand</translation>
     </message>

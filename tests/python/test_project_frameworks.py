@@ -1,5 +1,5 @@
 """project.inspect and project.run for React Native, Expo, Capacitor and Kotlin Multiplatform
-projects, with stand-in tools and fixture projects."""
+projects, and project.dependency_updates, with stand-in tools and fixture projects."""
 import json
 import os
 import sys
@@ -162,6 +162,63 @@ class FrameworkTests(Isolated):
         with self.assertRaises(StudioError) as refused:
             dispatch("project.plan", {"path": str(root), "platform": "ios"})
         self.assertEqual(refused.exception.code, "macos_required")
+
+
+class DependencyUpdateTests(Isolated):
+    def metadata(self, repository, group, artifact, versions):
+        directory = repository / group.replace(".", "/") / artifact
+        directory.mkdir(parents=True)
+        listed = "".join(f"<version>{v}</version>" for v in versions)
+        (directory / "maven-metadata.xml").write_text(
+            f"<metadata><groupId>{group}</groupId><artifactId>{artifact}</artifactId><versioning><versions>{listed}</versions></versioning></metadata>")
+
+    def test_a_gradle_build_is_compared_with_repository_metadata(self):
+        root = self.root / "App"
+        for relative, text in (("settings.gradle.kts", 'include(":app")\n'),
+                               ("gradle/libs.versions.toml", '[versions]\ncore = "1.12.0"\n[libraries]\ncore = { module = "androidx.core:core-ktx", version.ref = "core" }\nui = { group = "androidx.compose.ui", name = "ui" }\nmissing = "com.nowhere:thing:1.0"\n[plugins]\napp = { id = "com.android.application", version = "9.1.1" }\n'),
+                               ("app/build.gradle.kts", 'dependencies { implementation("com.squareup.okio:okio:3.9.0") }\n')):
+            (root / relative).parent.mkdir(parents=True, exist_ok=True)
+            (root / relative).write_text(text)
+        google, central = self.root / "google", self.root / "central"
+        self.metadata(google, "androidx.core", "core-ktx", ["1.12.0", "1.13.0", "1.14.0-alpha01"])
+        self.metadata(google, "com.android.application", "com.android.application.gradle.plugin", ["9.0.0", "9.1.1"])
+        self.metadata(central, "com.squareup.okio", "okio", ["3.9.0", "3.10.0"])
+        before = sorted(p.relative_to(root) for p in root.rglob("*"))
+        job = dispatch("project.dependency_updates", {"path": str(root), "repositories": [google.as_uri(), central.as_uri()]})
+        done = jobs.wait(job["id"], 60)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        report_path = next(a["path"] for a in done["result"]["artifacts"] if a["path"].endswith("report.json"))
+        report = json.loads(Path(report_path).read_text())
+        entries = {d["name"]: d for d in report["dependencies"]}
+        self.assertEqual(entries["core"]["status"], "update_available")
+        self.assertEqual(entries["core"]["latest_stable"], "1.13.0")
+        self.assertEqual(entries["core"]["latest"], "1.14.0-alpha01")
+        self.assertEqual(entries["core"]["source"], "gradle/libs.versions.toml:4")
+        self.assertEqual(entries["core"]["repository"], google.as_uri())
+        self.assertEqual(entries["app"]["status"], "up_to_date")
+        self.assertEqual(entries["com.squareup.okio:okio"]["latest_stable"], "3.10.0")
+        self.assertEqual(entries["com.squareup.okio:okio"]["repository"], central.as_uri())
+        self.assertEqual(entries["ui"]["status"], "managed")
+        self.assertEqual(entries["missing"]["status"], "not_found")
+        self.assertEqual(report["summary"], {"managed": 1, "not_found": 1, "up_to_date": 1, "update_available": 2})
+        self.assertEqual(sorted(p.relative_to(root) for p in root.rglob("*")), before)
+
+    def test_offline_and_unsupported_projects_are_refused_at_once(self):
+        root = self.root / "App"
+        root.mkdir()
+        (root / "build.gradle").write_text("dependencies { implementation 'a.b:c:1.0' }\n")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("project.dependency_updates", {"path": str(root), "repositories": ["https://repository.invalid/m2"]})
+        self.assertEqual(refused.exception.code, "offline")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("project.dependency_updates", {"path": str(root), "repositories": ["http://plain.example/m2"]})
+        self.assertEqual(refused.exception.code, "invalid_argument")
+        web = self.root / "Web"
+        web.mkdir()
+        (web / "package.json").write_text("{}")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("project.dependency_updates", {"path": str(web)})
+        self.assertEqual(refused.exception.code, "action_unsupported")
 
 
 if __name__ == "__main__":

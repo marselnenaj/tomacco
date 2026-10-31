@@ -235,6 +235,7 @@ pub struct CatalogEntry {
     pub module: String,
     pub version: String,
     pub version_ref: String,
+    pub line: usize,
 }
 
 /// One TOML value of the catalog subset: a string or an inline table.
@@ -274,7 +275,7 @@ pub fn parse_catalog(text: &str) -> Catalog {
     let mut catalog = Catalog::default();
     let mut section = String::new();
     let entry = Regex::new(r#"^\s*("?)([\w.-]+)("?)\s*=\s*(.+?)\s*$"#).unwrap();
-    for raw in text.lines() {
+    for (index, raw) in text.lines().enumerate() {
         let line = match raw.find(" #") {
             Some(at) if !raw[..at].contains('"') || raw[..at].matches('"').count() % 2 == 0 => {
                 &raw[..at]
@@ -308,6 +309,7 @@ pub fn parse_catalog(text: &str) -> Catalog {
             "libraries" | "plugins" => {
                 let mut item = CatalogEntry {
                     key,
+                    line: index + 1,
                     ..Default::default()
                 };
                 if let Some(s) = string {
@@ -353,6 +355,16 @@ pub fn parse_catalog(text: &str) -> Catalog {
 }
 
 impl Catalog {
+    pub fn version_of(&self, entry: &CatalogEntry) -> String {
+        if entry.version_ref.is_empty() {
+            entry.version.clone()
+        } else {
+            self.versions
+                .get(&entry.version_ref)
+                .cloned()
+                .unwrap_or_default()
+        }
+    }
     fn version_by_accessor(&self, path: &str) -> Option<String> {
         self.versions
             .iter()
@@ -1081,7 +1093,8 @@ mod tests {
         assert_eq!(catalog.libraries[1].version, "3.9.0");
         assert_eq!(catalog.libraries[2].module, "com.google:gson");
         assert_eq!(catalog.libraries[3].version, "2024.01.00");
-        assert_eq!(catalog.plugins[0].version_ref, "agp");
+        assert_eq!(catalog.version_of(&catalog.plugins[0]), "8.7.3");
+        assert_eq!(catalog.libraries[2].line, 9);
         assert_eq!(catalog.plugins[1].module, "org.example.plugin");
         assert_eq!(catalog.plugins[1].version, "1.0");
         assert_eq!(catalog.version_by_accessor("android.minSdk").unwrap(), "24");

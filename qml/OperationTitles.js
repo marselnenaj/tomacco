@@ -26,6 +26,7 @@ var titles = {
     "project.plan": QT_TRANSLATE_NOOP("Operations", "View build plan"),
     "project.execute": QT_TRANSLATE_NOOP("Operations", "Start build / test"),
     "project.run": QT_TRANSLATE_NOOP("Operations", "Build & run on device"),
+    "project.dependency_updates": QT_TRANSLATE_NOOP("Operations", "Check dependency updates"),
     "job.list": QT_TRANSLATE_NOOP("Operations", "Jobs"),
     "job.get": QT_TRANSLATE_NOOP("Operations", "Job status"),
     "job.logs": QT_TRANSLATE_NOOP("Operations", "Live logs"),

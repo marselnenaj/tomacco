@@ -12,6 +12,7 @@ mod core;
 mod crashes;
 mod dap;
 mod debugger;
+mod dependencies;
 mod desktop;
 mod devices;
 mod files;
@@ -323,6 +324,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             ios_emulator::pmp::worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing PMP request"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_dependency_updates") => {
+            dependencies::worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing dependency request"))?,
             )?;
             return Ok(0);
         }
