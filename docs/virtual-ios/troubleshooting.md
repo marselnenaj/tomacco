@@ -61,6 +61,18 @@ tomaccoctl call ios.emulator.guest '{"job_id":"GUEST_JOB","operation":"logs","ar
 tomaccoctl call ios.emulator.guest '{"job_id":"GUEST_JOB","operation":"crash_reports","argument":"MyApp"}'
 ```
 
+To keep an app's reports as files on the host, for example for `ios.crash_symbolicate`:
+
+```sh
+tomaccoctl call ios.virtual.crash_reports '{"process":"MyApp","directory":"/absolute/crashes"}'
+tomaccoctl call ios.crash_symbolicate '{"report":"/absolute/crashes/mobile/MyApp-2026-10-31-120000.ips","binaries":["/absolute/MyApp.app/MyApp"]}'
+```
+
+Each report lands in `mobile/` or `root/` under the directory, after the CrashReporter directory it came from, and the
+reply lists its `path`, `sha256` and the `pid` and `capture_time` read from it. The guest hands over at most three reports
+per directory and 512 KiB in all, so `collection_complete:false` means some were left out, and an empty list does not
+prove that nothing crashed. The saving has unit tests; it has not been run against a live phone yet.
+
 `logs development` shows the adapter's `active` line with `entries`, and an `entry` line per further identifier.
 That tells an inactive signing library from a refused bundle.
 

@@ -2,7 +2,7 @@
   {
     "name": "doctor",
     "title": "Check toolchain",
-    "description": "Report tool versions, paths, SDK and KVM readiness, and next_steps: what is left to set up, in order.",
+    "description": "Report tool versions, paths, SDK and KVM readiness, and next_steps: what is left to set up, in order. Without a virtual iOS device profile, its step names the next stage of the setup chain (next_stage) and carries the whole chain in order (stage, what, done true, false or null when only the person's files or a later check can tell, how, ask_first). With a profile, steps name only what stops the next start: a profile ios.virtual.status refuses, too little disk space, a failed last start, or apps the last start did not install.",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -2293,6 +2293,29 @@
     "annotations": {
       "readOnlyHint": false,
       "openWorldHint": true
+    }
+  },
+  {
+    "name": "ios.ipa_inspect",
+    "title": "Inspect iOS app",
+    "description": "Read what an .ipa archive or .app directory says about itself, without a device or an Apple tool: bundle_id, version, build, minimum_os, device_family, architectures, the executable's code signature (signed, ad_hoc, identifier, team_id and the signing certificate's common_name, organizational_unit, not_after and sha1), its embedded entitlements, and provisioning_profile, a summary of embedded.mobileprovision (name, uuid, team_id, team_name, expires, expired, days_left, kind development/ad-hoc/app-store/enterprise, devices count, certificates, bundle_id_matches, signing_certificate_included) or null. warnings names an expired profile, a profile for another bundle or team, a signer the profile does not list, a missing arm64 slice and an unsigned executable. Nothing is verified cryptographically: the files are read as they claim to be. Reads files only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path of an .ipa archive or an .app directory",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -5702,6 +5725,38 @@
     }
   },
   {
+    "name": "ios.crash_reports",
+    "title": "iPhone crash reports",
+    "description": "List the crash reports of the USB-connected iPhone whose names match pattern (a glob; iOS names a report <process>-<date>.ips, so MyApp* selects one app's), with go-ios crash ls; with directory, also copy them there with go-ios crash cp and return copied: each new or changed file's name, path, bytes and sha256, ready for ios.crash_symbolicate. go-ios moves pending reports into the readable area first; reports are not deleted from the phone.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pattern": {
+          "type": "string",
+          "default": "*",
+          "description": "Report name glob, for example MyApp*"
+        },
+        "directory": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute host directory to copy the matching reports into; created if missing. Empty: only list them."
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "ios.emulator.inspect",
     "description": "Inspect a local Darwin/SPTM restore-shell or Inferno kernel-probe engine and matching firmware. Prepared images are confined and hash-verified. Neither backend runs graphical iOS apps.",
     "inputSchema": {
@@ -7548,6 +7603,21 @@
     }
   },
   {
+    "name": "ios.virtual.apps",
+    "title": "Apps of virtual iOS device",
+    "description": "List the apps of the configured virtual iOS device in one place: the owned diagnostic, every app profile.json lists (bundle path, bundle_id, name, display_name, entitlements) with version, build and minimum_os read from its bundle's Info.plist on the host now (bundle_readable false with bundle_error when the bundle is gone; null when it could not be read at all; bundle_id_changed when the bundle now names another identifier), and any app the current run has installed that the profile no longer lists (listed false). installed and installed_cdhash are the current run's record of what a start or ios.virtual.deploy installed; they do not say whether the bundle changed since, which the next start checks itself. opens_at_start marks the app the start opens. Reads files only; no guest is asked.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.virtual.start",
     "title": "Start virtual iOS device",
     "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB.",
@@ -7582,6 +7652,28 @@
     "annotations": {
       "readOnlyHint": false,
       "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "ios.virtual.cleanup",
+    "title": "Clean up virtual iOS device disk copies",
+    "description": "Delete older disk copies of the configured virtual iOS device from the profile's installs directory, or with dry_run (the default) only report what would go. Only copies the start recorded as its own (state.json created) that lie directly in installs and are named guest-install* are candidates; the verified base, the current run and a start's attempt are always kept (kept, with the reason). Each copy's files are locked before it is deleted, so a copy a running guest holds is refused with the reason. A guest-install* directory the state does not record is listed under unrecorded and never deleted. copies lists each candidate with path, bytes (allocated on disk; blocks a reflinked copy shares with its base are counted in full) and removed; reclaimable_bytes is their sum and freed_bytes what was deleted. A real cleanup is refused with ios_virtual_busy while a start or stop runs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "dry_run": {
+          "type": "boolean",
+          "default": true,
+          "description": "Only report; delete nothing. false deletes the candidates."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
       "openWorldHint": false
     }
   },
@@ -7653,6 +7745,35 @@
     "annotations": {
       "readOnlyHint": false,
       "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "ios.virtual.crash_reports",
+    "title": "Save crash reports of virtual iOS device",
+    "description": "Read the running virtual iPhone's crash reports whose file names start with process (an app's executable name, or any report name prefix) through the guest service, as ios.emulator.guest crash_reports does, and keep each complete one as a file on the host at directory/<owner>/<name> (owner mobile or root). reports lists every match: owner, name, path, bytes, sha256, saved, and the pid, process, capture_time and incident_id parsed from its bytes; a report the guest could not read whole, or with a name or owner that is not a plain report name, has saved false, no path and the reason. Pass a saved path to ios.crash_symbolicate. The guest returns at most three reports per directory and 512 KiB of content in all, by descending file name, which is not crash time; collection_complete false means some were left out, and an empty list never proves that nothing crashed. Reports are never removed from the guest. Without directory, a new directory in Tomacco's data directory is used. Refused with ios_virtual_not_running when the phone is off.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "process": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "description": "Report name prefix, usually the app's executable name"
+        },
+        "directory": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute host directory for the reports; created if missing. Empty: a new directory in Tomacco's data directory."
+        }
+      },
+      "required": [
+        "process"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
       "openWorldHint": false
     }
   },

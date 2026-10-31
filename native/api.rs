@@ -88,10 +88,11 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         | "ios.flutter_setup"
         | "ios.flutter_build"
         | "ios.crash_symbolicate"
+        | "ios.ipa_inspect"
         | "ios.store_ship"
         | "project.import_xcode"
         | "project.app" => crate::apple_dev::handle(name, &a),
-        "ios.doctor" | "ios.prepare" | "ios.wda_prepare" | "ios.apps" => {
+        "ios.doctor" | "ios.prepare" | "ios.wda_prepare" | "ios.apps" | "ios.crash_reports" => {
             crate::iphone_setup::handle(name, &a)
         }
         "ios.emulator.inspect" => crate::ios_emulator::inspect(&a),
@@ -116,6 +117,9 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "ios.emulator.pmp" => crate::ios_emulator::pmp::start(&a),
         "ios.emulator.memory" => crate::ios_emulator::pmp::memory(&a),
         "ios.virtual.status" => crate::ios_emulator::virtual_phone::status(&a),
+        "ios.virtual.apps" => crate::ios_emulator::virtual_phone::apps(&a),
+        "ios.virtual.cleanup" => crate::ios_emulator::virtual_phone::cleanup(&a),
+        "ios.virtual.crash_reports" => crate::ios_emulator::crash_reports::collect(&a),
         "ios.virtual.configure" => crate::ios_emulator::virtual_phone::configure(&a),
         "ios.virtual.start" => crate::ios_emulator::virtual_phone::start(&a),
         "ios.virtual.stop" => crate::ios_emulator::virtual_phone::stop(&a),

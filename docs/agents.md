@@ -203,7 +203,11 @@ tomaccoctl call project.create '{"path":"/absolute/MyiOSApp","kind":"xtool","nam
 tomaccoctl call project.execute '{"path":"/absolute/MyiOSApp","platform":"ios","format":"ipa","sign":true}'
 tomaccoctl call runtime.start '{"platform":"ios","device":"ACTUAL_UDID","runner_bundle_id":"INSTALLED_RUNNER_ID"}'
 tomaccoctl call project.run '{"path":"/absolute/MyiOSApp","platform":"ios","device":"ACTUAL_UDID"}'
+tomaccoctl call ios.ipa_inspect '{"path":"/absolute/MyiOSApp.ipa"}'
 ```
+
+`ios.ipa_inspect` needs no device: read its `warnings` before an install fails on an expired profile or the wrong
+bundle id. It reads what the files claim and verifies no signature.
 
 This route builds xtool's SwiftPM format; `project.import_xcode` writes it for an `.xcodeproj`. Tomacco neither ships nor downloads the SDK.
 Read Xcode's license first.
@@ -218,6 +222,7 @@ omarchy-apple-dev, which nothing fetches until `ios.toolkit_install` is called. 
 ```sh
 tomaccoctl call ios.toolkit_install '{}'
 tomaccoctl call project.import_xcode '{"project":"/absolute/MyApp.xcodeproj"}'
+tomaccoctl call ios.crash_reports '{"device":"ACTUAL_UDID","pattern":"MyApp*","directory":"/absolute/crashes"}'
 tomaccoctl call ios.crash_symbolicate '{"report":"/absolute/crash.ips","binaries":["/absolute/MyApp.app/MyApp"]}'
 tomaccoctl call ios.toolkit_install '{"toolchain":true,"xcode_xip":"/absolute/Xcode.xip"}'
 tomaccoctl call ios.store_ship '{"path":"/absolute/MyiOSApp"}'
@@ -271,8 +276,11 @@ tool makes those. Stop and tell the user when the IM4M is what is missing, rathe
   the current run's `running_panel` as `WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM`.
 - `ios.virtual.status` reports the time-zone outcome as `time_zone`, and `installed_applications` (bundle identifier to the
   cdhash on the current run's volume) next to `applications`, the profile's own bundles.
+- `ios.virtual.apps` joins both in one list, with each bundle's `version`, `build` and `minimum_os` read on the host,
+  `installed`, `opens_at_start`, and installed apps the profile no longer lists (`listed:false`). It asks no guest.
 - During a start, `phase_elapsed_seconds`, `phases` and, while `preparing`, `copy_progress` show where it is. `start_disk.enough`
   false means the next start will be refused with `ios_virtual_disk_space`; its remedy says how much to free.
+  `ios.virtual.cleanup` (a dry run unless `dry_run:false`) deletes older disk copies; ask the user before deleting.
 - A window for the phone: `preview.configure` with `ios_guest:{detached:true}`. Asked while no guest is running, the request is
   kept for ten minutes. `workspace.ios_research.guest.detach_pending` in the returned state tells whether it is still waiting.
 
@@ -284,7 +292,8 @@ logs), `setup`, `setup_finish`, `restart_ui`, `flush`, `effects`, `screen_state`
 `keyboard_layout`. `tomaccoctl schema` has each argument. Some that need more words:
 
 - `crash_reports` takes any report-name prefix, so a developer's app's reports are read like iOS's, and tomaccoctl projects
-  `crash_report_identities` from the report's own process name. A run's reports reach the next run's disk only when that run became
+  `crash_report_identities` from the report's own process name. `ios.virtual.crash_reports {process, directory}` saves the same
+  reports as files on the host and lists their paths for `ios.crash_symbolicate`. A run's reports reach the next run's disk only when that run became
   the base, so read them during the run.
 - `logs quiet` reads tomacco-quiet's record: the services it unloaded, its locationd guard's questions and the processes it ended.
 - `time_zone Area/City` sets the guest's zone through iOS's own tzlink service, and answers `previous_link` and `link`.

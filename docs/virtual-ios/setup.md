@@ -15,6 +15,12 @@ IM4M with the command in step 4 before proceeding to the restore runtime.
 python3 tools/ios_virtual_profile.py --check
 ```
 
+`tomaccoctl doctor` gives a coarser view without your files: its `virtual_ios` step names the
+next stage of the chain (`next_stage`) and lists every stage under `chain`, with `done` true for
+the engine and helper builds it finds in the checkout's `.tooling`. Stages that depend on your
+images say `null`, because only the check above can tell. With a profile configured, it names
+what stops the next start instead, such as too little disk space. These steps have unit tests only.
+
 ## What no tool does for you
 
 Tomacco distributes no Apple images. You obtain and prepare these inputs yourself:

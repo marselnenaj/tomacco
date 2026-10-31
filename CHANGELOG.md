@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 183 operations.
+`tomaccoctl` now has one typed API of 188 operations.
 
 ### Added
 
@@ -54,12 +54,28 @@ operations and their JSON results.
     older than the test job.
 - **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
   logs and old test reports in the data directory. A dry run by default.
+- **iPhone.**
+  - `ios.ipa_inspect` reads an `.ipa` or `.app` without a device: bundle id, version,
+    minimum iOS, entitlements, the signing certificate and a summary of the embedded
+    provisioning profile, with warnings such as an expired profile. Unit-tested only, on
+    synthetic files.
+  - `ios.crash_reports` lists a USB-connected iPhone's crash reports with go-ios and copies
+    them to a directory, returning paths for `ios.crash_symbolicate`. Unit-tested only; no
+    phone was connected.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.
   - `ios.virtual.status` reports phase times, copy progress and whether the disk has
     room for the next start.
   - None of these four has been run on a live phone yet.
+  - `ios.virtual.apps` lists the phone's apps in one place: each listed app's version from
+    its bundle on the host, whether the current run has it installed, the one the start
+    opens, and installed apps the profile no longer lists. Unit-tested only.
+  - `ios.virtual.crash_reports` keeps an app's crash reports from the running phone as files
+    on the host, with paths for `ios.crash_symbolicate`. Unit-tested only.
+  - `ios.virtual.cleanup` deletes older disk copies in the profile's `installs`, with a dry run
+    by default that reports the bytes it would free. It never touches the verified base, the
+    current run or a copy a guest holds. Unit-tested only.
 - **Desktop.**
   - Drop an `.apk`, `.ipa` or `.app` on the device view to install it, or drop a
     project folder on the window to open it.
@@ -74,6 +90,10 @@ operations and their JSON results.
   - [Recipes](docs/recipes.md) and an [FAQ](docs/faq.md).
 
 ### Changed
+
+- `doctor`'s `next_steps` for the virtual iOS device name the next stage of its setup chain and
+  carry the whole chain in order, with what is already built; with a profile they name what
+  stops the next start (disk space, a failed start, apps not installed). Unit-tested only.
 
 - `ios.virtual.start` refuses up front, before deleting or copying anything, when the
   disk lacks room for the copy.

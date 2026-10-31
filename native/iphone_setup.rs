@@ -102,6 +102,128 @@ pub fn launch_installed(a: &Value) -> Result {
     )
 }
 
+/// A go-ios crash-report pattern: a glob over report names, never a way up.
+fn crash_pattern(value: &str) -> Result<&str> {
+    let pattern = if value.is_empty() { "*" } else { value };
+    if pattern.len() > 128
+        || pattern.contains("..")
+        || pattern.starts_with(['/', '-'])
+        || !pattern
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || b"._-*?/".contains(&c))
+    {
+        return Err(Error::new(
+            "invalid_argument",
+            "pattern is a report name glob of up to 128 ASCII letters, digits, '.', '_', '-', '*', '?' or '/', without '..'",
+        ));
+    }
+    Ok(pattern)
+}
+
+/// The report names `ios crash ls` printed: its JSON line `{"files":[...]}`,
+/// or else one name per line.
+fn crash_listing(stdout: &str) -> Vec<String> {
+    for line in stdout.lines().rev() {
+        if let Ok(value) = serde_json::from_str::<Value>(line.trim()) {
+            if let Some(files) = value["files"].as_array() {
+                return files
+                    .iter()
+                    .filter_map(|file| file.as_str().map(str::to_string))
+                    .collect();
+            }
+        }
+    }
+    stdout
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('{'))
+        .map(str::to_string)
+        .collect()
+}
+
+/// Every regular file under a directory, by path, with its size and mtime;
+/// links are not followed.
+fn files_under(directory: &Path) -> std::collections::BTreeMap<PathBuf, (u64, i64)> {
+    use std::os::unix::fs::MetadataExt;
+    let mut found = std::collections::BTreeMap::new();
+    let mut pending = vec![directory.to_path_buf()];
+    while let Some(folder) = pending.pop() {
+        for entry in fs::read_dir(&folder).into_iter().flatten().flatten() {
+            let Ok(meta) = fs::symlink_metadata(entry.path()) else {
+                continue;
+            };
+            if meta.is_dir() {
+                pending.push(entry.path());
+            } else if meta.is_file() {
+                found.insert(entry.path(), (meta.len(), meta.mtime()));
+            }
+        }
+    }
+    found
+}
+
+/// The files a copy added or replaced in a directory, with size and SHA-256.
+fn copied_reports(
+    before: &std::collections::BTreeMap<PathBuf, (u64, i64)>,
+    after: &std::collections::BTreeMap<PathBuf, (u64, i64)>,
+) -> Vec<Value> {
+    after
+        .iter()
+        .filter(|(path, stamp)| before.get(*path) != Some(*stamp))
+        .map(|(path, (bytes, _))| {
+            let sha256 = fs::read(path).ok().map(|data| digest(&data));
+            json!({"name":path.file_name().map(|name| name.to_string_lossy().into_owned()),
+                "path":path,"bytes":bytes,"sha256":sha256})
+        })
+        .collect()
+}
+
+/// Crash reports of a USB-connected iPhone through go-ios: the names that
+/// match `pattern`, and with `directory` the files copied there.
+fn crash_reports(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "iPhone UDID", Some("[A-Fa-f0-9-]{16,64}"))?;
+    let pattern = crash_pattern(s(a, "pattern"))?;
+    let go_ios = tc::find("go-ios")?;
+    let udid = format!("--udid={device}");
+    let listed = tc::run(
+        &argv(&[&go_ios, "crash", "ls", pattern, &udid]),
+        60,
+        None,
+        true,
+    )?;
+    let names = crash_listing(s(&listed, "stdout"));
+    let mut result =
+        json!({"device":device,"pattern":pattern,"reports":names,"directory":null,"copied":[]});
+    if s(a, "directory").is_empty() {
+        return Ok(result);
+    }
+    let directory = path(s(a, "directory"), false, false)?;
+    if directory.exists() && !directory.is_dir() {
+        return Err(Error::new(
+            "invalid_path",
+            "directory names a file; name a directory for the reports",
+        ));
+    }
+    private_dir(&directory)?;
+    let before = files_under(&directory);
+    tc::run(
+        &argv(&[
+            &go_ios,
+            "crash",
+            "cp",
+            pattern,
+            &directory.to_string_lossy(),
+            &udid,
+        ]),
+        300,
+        None,
+        true,
+    )?;
+    result["directory"] = json!(directory);
+    result["copied"] = json!(copied_reports(&before, &files_under(&directory)));
+    Ok(result)
+}
+
 fn check(name: &str, ready: bool, detail: impl Into<String>, remedy: &str) -> Value {
     json!({"name":name,"ready":ready,"detail":detail.into(),"remedy":if ready{""}else{remedy}})
 }
@@ -154,6 +276,7 @@ fn swift_toolchain() -> Result {
 pub fn handle(op: &str, a: &Value) -> Result {
     match op {
         "ios.doctor" => doctor(a),
+        "ios.crash_reports" => crash_reports(a),
         "ios.apps" => {
             identifier(s(a, "device"), "iPhone UDID", Some("[A-Fa-f0-9-]{16,64}"))?;
             let value = tc::run(
@@ -441,4 +564,58 @@ pub fn worker(file: &str) -> Result<()> {
         },
     )?;
     result.map(|_| ())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn crash_patterns_are_globs_over_names_only() {
+        assert_eq!(crash_pattern("").unwrap(), "*");
+        for good in ["MyApp*", "MyApp-2026-10-31*.ips", "Retired/*", "?yApp*"] {
+            assert_eq!(crash_pattern(good).unwrap(), good);
+        }
+        for bad in [
+            "../x",
+            "/etc/*",
+            "-rf",
+            "a b",
+            "a;b",
+            "ä*",
+            &"a".repeat(129),
+        ] {
+            assert!(crash_pattern(bad).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn the_listing_is_read_from_the_json_line_or_line_by_line() {
+        let stdout = "time=\"x\" level=info msg=\"connecting\"\n{\"files\":[\"MyApp-2026-10-31-120000.ips\",\"Retired/MyApp-old.ips\"],\"length\":2}\n";
+        assert_eq!(
+            crash_listing(stdout),
+            vec!["MyApp-2026-10-31-120000.ips", "Retired/MyApp-old.ips"]
+        );
+        assert_eq!(
+            crash_listing("{\"files\":[],\"length\":0}"),
+            Vec::<String>::new()
+        );
+        assert_eq!(crash_listing("a.ips\n\nb.ips\n"), vec!["a.ips", "b.ips"]);
+    }
+
+    #[test]
+    fn copied_reports_are_the_new_or_changed_files_with_digests() {
+        let root = tempfile::tempdir().unwrap();
+        fs::write(root.path().join("old.ips"), b"old").unwrap();
+        let before = files_under(root.path());
+        fs::create_dir(root.path().join("Retired")).unwrap();
+        fs::write(root.path().join("Retired/new.ips"), b"new").unwrap();
+        std::os::unix::fs::symlink("/etc/hostname", root.path().join("link.ips")).unwrap();
+        let rows = copied_reports(&before, &files_under(root.path()));
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0]["name"], "new.ips");
+        assert_eq!(rows[0]["path"], json!(root.path().join("Retired/new.ips")));
+        assert_eq!(rows[0]["bytes"], 3);
+        assert_eq!(rows[0]["sha256"], digest(b"new"));
+    }
 }

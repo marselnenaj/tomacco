@@ -116,6 +116,26 @@ To only make an IPA, use `project.execute`:
 tomaccoctl call project.execute '{"path":"/absolute/MyiOSApp","platform":"ios","format":"ipa","sign":true}'
 ```
 
+### Look inside an IPA
+
+`ios.ipa_inspect` reads an `.ipa` or an `.app` directory without a phone, with Python's
+standard library only:
+
+```sh
+tomaccoctl call ios.ipa_inspect '{"path":"/absolute/MyiOSApp.ipa"}'
+```
+
+It returns the bundle id, version, build, minimum iOS, architectures, the executable's
+signature (ad hoc or not, signing identifier, team, the signing certificate's name, expiry
+and SHA-1), the entitlements in that signature, and a summary of `embedded.mobileprovision`:
+name, team, expiry, kind (development, ad hoc, App Store or enterprise), number of devices
+and whether it covers the bundle id and lists the signing certificate. `warnings` names what
+would stop an install, such as an expired profile.
+
+It reads what the files claim. It checks no signature, so it cannot tell you a bundle is
+genuine. It has unit tests on synthetic files only; no IPA from xtool or Xcode has been read
+with it yet.
+
 ## Flutter, Xcode projects, crash reports and the App Store
 
 These call a pinned commit of Joshua Warren's MIT-licensed
@@ -187,6 +207,18 @@ match by `LC_UUID`, not by name.
 ```sh
 tomaccoctl call ios.crash_symbolicate '{"report":"/absolute/crash.ips","binaries":["/absolute/MyApp.app/MyApp"]}'
 ```
+
+To get the reports off a USB-connected iPhone, `ios.crash_reports` lists them with go-ios and, given a
+directory, copies them there. iOS names a report after its process and date, so `MyApp*` selects one
+app's. `copied` lists each file's `path` and `sha256`. This needs only go-ios, not the checkout above.
+
+```sh
+tomaccoctl call ios.crash_reports '{"device":"ACTUAL_UDID","pattern":"MyApp*"}'
+tomaccoctl call ios.crash_reports '{"device":"ACTUAL_UDID","pattern":"MyApp*","directory":"/absolute/crashes"}'
+```
+
+`ios.crash_reports` has unit tests only: no iPhone was connected while it was written, so its reading of
+go-ios's output has not met a real phone.
 
 **Flutter (untested in Tomacco).** Install Flutter yourself first. `ios.flutter_setup` is needed
 once per Flutter version: it downloads about 7 GB from Google's servers, runs prebuilt

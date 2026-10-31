@@ -2,9 +2,10 @@
 step and the apps installed on the run's volume; control-plane tests, no
 guest is booted."""
 import json
+from pathlib import Path
 
 from test_product import Isolated
-from native_client import dispatch
+from native_client import StudioError, dispatch
 
 
 class VirtualIphoneStatusRecordTests(Isolated):
@@ -58,3 +59,78 @@ class VirtualIphoneStatusRecordTests(Isolated):
         status = dispatch("ios.virtual.configure", {"directory": str(before)})
         self.assertEqual((status["phases"], status["phase_started"], status["phase_elapsed_seconds"]), ([], None, None))
 
+
+
+class VirtualIphoneAppsTests(Isolated):
+    """ios.virtual.apps joins the profile's list, each bundle's Info.plist on
+    the host and the run's installed record; no guest is asked."""
+    RESEARCH = VirtualIphoneStatusRecordTests.RESEARCH
+    profile = VirtualIphoneStatusRecordTests.profile
+
+    def test_versions_installed_state_and_the_app_the_start_opens(self):
+        import plistlib
+        bundle = self.root / "Sample.app"
+        bundle.mkdir()
+        (bundle / "Info.plist").write_bytes(plistlib.dumps({
+            "CFBundleIdentifier": "io.example.sample", "CFBundleShortVersionString": "1.3",
+            "CFBundleVersion": "9", "MinimumOSVersion": "17.0", "CFBundleExecutable": "Sample"}))
+        directory = self.profile("apps", {"applications": {"io.example.sample": "00" * 20,
+                                                           "io.example.removed": "11" * 20}})
+        profile = json.loads((directory / "profile.json").read_text())
+        profile["applications"] = [
+            {"bundle": str(bundle), "bundle_id": "io.example.sample", "name": "Sample.app", "display_name": "Sample"},
+            {"bundle": str(self.root / "Gone.app"), "bundle_id": "io.example.gone", "name": "Gone.app",
+             "display_name": "Gone"}]
+        profile["application"] = "io.example.sample"
+        (directory / "profile.json").write_text(json.dumps(profile))
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        reply = dispatch("ios.virtual.apps")
+        rows = {row["bundle_id"]: row for row in reply["applications"]}
+        self.assertEqual(list(rows), [self.RESEARCH, "io.example.sample", "io.example.gone", "io.example.removed"])
+        sample = rows["io.example.sample"]
+        self.assertEqual((sample["version"], sample["build"], sample["minimum_os"]), ("1.3", "9", "17.0"))
+        self.assertTrue(sample["installed"])
+        self.assertTrue(sample["opens_at_start"])
+        self.assertFalse(rows["io.example.gone"]["bundle_readable"])
+        self.assertIn("does not exist", rows["io.example.gone"]["bundle_error"])
+        self.assertFalse(rows["io.example.removed"]["listed"])
+        self.assertFalse(reply["guest_running"])
+
+    def test_crash_reports_need_a_running_phone_and_a_report_name(self):
+        directory = self.profile("crashes", {})
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        with self.assertRaises(StudioError) as refused:
+            dispatch("ios.virtual.crash_reports", {"process": "MyApp", "directory": str(self.root / "out")})
+        self.assertEqual(refused.exception.code, "ios_virtual_not_running")
+        self.assertFalse((self.root / "out").exists(), "nothing is created for a phone that is off")
+        for name in ("../etc", ".hidden", "-x", "a b"):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("ios.virtual.crash_reports", {"process": name})
+            self.assertEqual(refused.exception.code, "invalid_argument", name)
+
+    def test_cleanup_reports_first_and_deletes_only_older_recorded_copies(self):
+        directory = self.profile("cleanup", {})
+        installs = directory / "installs"
+        copies = []
+        for name in ("guest-install-1", "guest-install-2", "guest-install-3", "guest-install-stray"):
+            (installs / name).mkdir()
+            (installs / name / "system.raw").write_bytes(b"\1" * 8192)
+            copies.append(str(installs / name))
+        state = json.loads((directory / "state.json").read_text())
+        state.update(install=copies[2], verified={"install": copies[1]}, created=copies[:3])
+        (directory / "state.json").write_text(json.dumps(state))
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        plan = dispatch("ios.virtual.cleanup")
+        self.assertTrue(plan["dry_run"])
+        self.assertEqual([row["path"] for row in plan["copies"]], [copies[0]])
+        self.assertGreaterEqual(plan["reclaimable_bytes"], 8192)
+        self.assertEqual(plan["freed_bytes"], 0)
+        self.assertEqual({row["reason"] for row in plan["kept"]}, {"verified-base", "current-run"})
+        self.assertEqual([row["path"] for row in plan["unrecorded"]], [copies[3]])
+        self.assertTrue((installs / "guest-install-1").exists(), "a dry run deletes nothing")
+        done = dispatch("ios.virtual.cleanup", {"dry_run": False})
+        self.assertTrue(done["copies"][0]["removed"])
+        self.assertEqual(done["freed_bytes"], plan["reclaimable_bytes"])
+        self.assertFalse((installs / "guest-install-1").exists())
+        for kept in copies[1:]:
+            self.assertTrue(Path(kept).exists(), kept)

@@ -3305,8 +3305,16 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Flutter-App für iOS erstellen</translation>
     </message>
     <message>
+        <source>iPhone crash reports</source>
+        <translation>Absturzberichte des iPhones</translation>
+    </message>
+    <message>
         <source>Read crash report</source>
         <translation>Absturzbericht lesen</translation>
+    </message>
+    <message>
+        <source>Inspect iOS app</source>
+        <translation>iOS-App untersuchen</translation>
     </message>
     <message>
         <source>Prepare for App Store</source>
@@ -3687,6 +3695,18 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Screenshot of virtual iOS device</source>
         <translation>Bildschirmfoto des virtuellen iOS-Geräts</translation>
+    </message>
+    <message>
+        <source>Apps of virtual iOS device</source>
+        <translation>Apps des virtuellen iOS-Geräts</translation>
+    </message>
+    <message>
+        <source>Save crash reports of virtual iOS device</source>
+        <translation>Absturzberichte des virtuellen iOS-Geräts sichern</translation>
+    </message>
+    <message>
+        <source>Clean up virtual iOS device disk copies</source>
+        <translation>Plattenkopien des virtuellen iOS-Geräts aufräumen</translation>
     </message>
     <message>
         <source>Record virtual iOS device screen</source>
