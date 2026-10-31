@@ -2,7 +2,7 @@
 
 # `testing` operations
 
-9 operations. Generated from `assets/operations.json`; [all areas](README.md).
+11 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### testing.find
 
@@ -70,20 +70,60 @@ tomaccoctl call testing.action '{"device":"<device>","selector":{"text":"<text>"
 
 **Run native tests**
 
-Run a JSON native Android scenario across devices with device locks, JUnit, JSON reports and failure screenshots.
+Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.
 
 Annotations: writes, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `path` | string | yes |  |  |
+| `path` | string | yes |  | Absolute path of a scenario JSON, or of a directory whose .json files are scenarios, run in name order |
 | `directory` | string | yes |  |  |
 | `devices` | array of string | yes |  | 1 to 32 items |
+| `shard` | boolean |  | `false` | Split the scenarios across the devices, each scenario once, on the next free device, instead of running every scenario on every device. At most parallelism devices are used. |
 | `parallelism` | integer |  | `2` | 1 to 8 |
 | `timeout` | integer |  | `3600` | 10 to 86400 |
+| `retries` | integer |  | `0` | 0 to 5; Run a failed scenario again up to this many times per device; a scenario's own retries field takes precedence. A pass after a failure is flaky in report.json, with every attempt listed. |
 
 ```sh
 tomaccoctl call testing.run '{"path":"<path>","directory":"<directory>","devices":["<device>"]}'
+```
+
+### testing.record
+
+**Record UI test**
+
+Record a UI test on an Android device. Between start and stop, the taps, swipes, text and keys sent to the device through android.input, runtime.input (the desktop's live display included) and testing.action become testing.run scenario steps. A tap becomes a click on the element under it, named by resource ID, description or text (with index when that is shared), when the UI hierarchy read just before the tap names one; otherwise a tap at pixel coordinates. Reading the hierarchy makes each tap slower while recording. stop writes the scenario to path; status counts the steps; discard throws the recording away. Input a scenario cannot express, such as a rotation, is listed under skipped.
+
+Annotations: writes, not idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Android serial from device.list |
+| `action` | string | yes |  | one of `start`, `status`, `stop`, `discard` |
+| `name` | string |  |  | up to 150 characters; The scenario's name, set at start |
+| `path` | string |  |  | Absolute path of the scenario JSON that stop writes |
+| `overwrite` | boolean |  | `false` | Let stop replace an existing file at path |
+
+```sh
+tomaccoctl call testing.record '{"device":"<device>","action":"start"}'
+```
+
+### testing.lint
+
+**Check UI test scenario**
+
+Check a testing.run scenario without acting on the device: its format, and each step against the current Android screen (or a saved android.hierarchy XML). findings name the step and a code: not_found (no element here matches; a warning, since an earlier step may open the screen it is on), ambiguous (several match: an error for click, long_click and fill, which need one), disabled, present (an element expected absent is there), off_screen (a tap or swipe point outside the screen) and invalid_key. steps lists each step's match count. A scenario that does not parse answers valid false with the error. passed is false when any finding is an error.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute path of the scenario JSON |
+| `device` | string |  |  | non-empty; Android serial from device.list; reads the current screen |
+| `hierarchy` | string |  |  | non-empty; Absolute path of a saved android.hierarchy XML instead of a device |
+
+```sh
+tomaccoctl call testing.lint '{"path":"<path>"}'
 ```
 
 ### testing.visual_diff

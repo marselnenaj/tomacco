@@ -2,7 +2,7 @@
 
 # `project` operations
 
-9 operations. Generated from `assets/operations.json`; [all areas](README.md).
+10 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### project.inspect
 
@@ -122,6 +122,30 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call project.run '{"path":"<path>","platform":"android","device":"<device>"}'
+```
+
+### project.watch
+
+**Watch and rerun app**
+
+Watch a project's source files and, whenever they change and have stayed unchanged for debounce_ms, build, install and launch the app again with project.run, as a durable job; it also runs the app once at the start. Build output, dependency and tool directories (build, .gradle, .dart_tool, node_modules, Pods, .git and others) are ignored. For a Flutter project it starts one Flutter session and sends it Hot Reload on each change, starting a new session when that one has ended. Each cycle writes one line to the job's log: the files that changed and how the run ended. Cancel the job to stop watching; runs it started are cancelled with it.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute local filesystem path |
+| `platform` | string | yes |  | one of `android`, `ios` |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string |  | `""` | Android application ID for Gradle projects (default: the variant's ID read from the build files, or tomacco.json's applicationId), or exact installed iPhone bundle ID to resolve ambiguous xtool signing mappings. Omit for automatic iPhone detection. |
+| `configuration` | string |  | `"debug"` | one of `debug`, `release` |
+| `variant` | string |  | `""` | Gradle build variant to install, such as freeDebug. Required when the app has product flavors; otherwise the configuration's build type. |
+| `debounce_ms` | integer |  | `800` | 100 to 10000; How long the files must stay unchanged before a cycle starts, in milliseconds |
+| `ignore` | array of string |  |  | up to 50 items; More directory names to leave out, besides build, .gradle, .dart_tool, node_modules, Pods, .git and other build and tool directories |
+| `timeout` | integer |  | `86400` | 60 to 86400; Seconds after which the watch ends |
+
+```sh
+tomaccoctl call project.watch '{"path":"<path>","platform":"android","device":"<device>"}'
 ```
 
 ### project.dependency_updates

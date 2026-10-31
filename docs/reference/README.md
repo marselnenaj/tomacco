@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 193 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 196 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -228,6 +228,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`project.plan`](project.md#projectplan) | View build plan | read-only |
 | [`project.execute`](project.md#projectexecute) | Start build / test | writes |
 | [`project.run`](project.md#projectrun) | Build & run on device | writes |
+| [`project.watch`](project.md#projectwatch) | Watch and rerun app | writes |
 | [`project.dependency_updates`](project.md#projectdependency_updates) | Check dependency updates | read-only |
 | [`project.import_xcode`](project.md#projectimport_xcode) | Import Xcode project | writes |
 | [`project.app`](project.md#projectapp) | Find built iOS app | read-only |
@@ -295,6 +296,8 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`testing.find`](testing.md#testingfind) | Find Android element | read-only |
 | [`testing.action`](testing.md#testingaction) | Operate Android element | writes |
 | [`testing.run`](testing.md#testingrun) | Run native tests | writes |
+| [`testing.record`](testing.md#testingrecord) | Record UI test | writes |
+| [`testing.lint`](testing.md#testinglint) | Check UI test scenario | read-only |
 | [`testing.visual_diff`](testing.md#testingvisual_diff) | Compare with baseline image | writes |
 | [`testing.accessibility`](testing.md#testingaccessibility) | Check Android accessibility | read-only |
 | [`testing.crashes`](testing.md#testingcrashes) | Find Android crashes | read-only |

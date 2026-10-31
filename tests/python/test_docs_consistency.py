@@ -61,6 +61,10 @@ class ConsistencyTests(unittest.TestCase):
                     r"\b(\d+) operations in all\b", r"API of (\d+) operations")
         found = 0
         for path in guides():
+            # The release notes describe the last release, whose count can be
+            # lower until the next release rewrites them.
+            if path.endswith("RELEASE_NOTES.md"):
+                continue
             document = flat(path)
             for pattern in patterns:
                 for number in re.findall(pattern, document):
