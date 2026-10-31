@@ -120,6 +120,11 @@ is. Interrupting `--wait` leaves the job running.
   active request reuses its job, and different work in the same project answers `workspace_busy` with
   the active job. A Flutter run holds the lock until it exits. Keep independent projects in separate
   directories. Commands you run outside Tomacco are not covered.
+- **Finding jobs.** `job.list` returns the newest jobs first and takes `state` (a list), `operation`
+  (a prefix of the operation that started the job, such as `project.`), `project` (an absolute
+  directory the job locks or runs in), `since` (seconds since 1970) and `limit`. For the next page,
+  pass the id of the last job as `before`. Jobs started by earlier versions have no recorded
+  operation, so an `operation` filter leaves them out.
 - **Timeline.** `job.events` lists a job's state changes, phase changes and cancellation requests in
   order, each with a `time` in seconds since 1970; a state that ended carries `exit_code` and
   `error`. Pass the returned `next_after` as `after` to read only what is new. Jobs created by an

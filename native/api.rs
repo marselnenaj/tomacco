@@ -83,6 +83,7 @@ pub fn arguments(name: &str, args: &Value) -> Result {
 pub fn dispatch(name: &str, args: &Value) -> Result {
     check_cancelled()?;
     let a = arguments(name, args)?;
+    let _request = jobs::Request::enter(name);
     match name {
         "doctor" => toolchain::doctor().map(crate::setup::with_next_steps),
         "settings.get" => toolchain::settings(),
@@ -95,7 +96,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "catalog.remove" => catalog::remove(s(&a, "profile_id")),
         // Job records and logs hold commands, environments and tool output:
         // what leaves the process has recognised secrets masked.
-        "job.list" => jobs::listing(n(&a, "limit")).map(redacted),
+        "job.list" => jobs::list(&a).map(redacted),
         "job.get" => jobs::get(s(&a, "job_id")).map(redacted),
         "job.logs" => jobs::logs(&a).map(redacted),
         "job.wait" => jobs::wait(s(&a, "job_id"), n(&a, "seconds")).map(redacted),

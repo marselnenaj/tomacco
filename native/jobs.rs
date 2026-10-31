@@ -359,21 +359,113 @@ pub fn active(except: &str) -> Result<Vec<Value>> {
     Ok(found)
 }
 pub fn listing(limit: u64) -> Result {
+    list(&json!({ "limit": limit }))
+}
+/// The newest jobs first, narrowed by `state`, `operation` (a prefix of the
+/// operation that started the job), `project` (a directory the job works in
+/// or locks), `since` (created at or after, seconds since 1970) and `before`
+/// (the next page: jobs created before that job).
+pub fn list(a: &Value) -> Result {
     let db = database()?;
-    retrying(Instant::now() + READ_RETRY, || {
-        let rows = db
-            .prepare("SELECT * FROM jobs ORDER BY created DESC LIMIT ?")?
-            .query_map([limit as i64], row)?
-            .collect::<std::result::Result<Vec<_>, _>>()?;
-        Ok(json!(
-            rows.into_iter()
-                .map(|r| public(&db, r))
-                .collect::<Result<Vec<_>>>()?
-        ))
-    })
+    retrying(Instant::now() + READ_RETRY, || query(&db, a))
+}
+fn like_prefix(value: &str) -> String {
+    let mut escaped = String::new();
+    for c in value.chars() {
+        if matches!(c, '\\' | '%' | '_') {
+            escaped.push('\\');
+        }
+        escaped.push(c);
+    }
+    escaped + "%"
+}
+fn query(db: &Connection, a: &Value) -> Result {
+    let mut clauses = Vec::new();
+    let mut values: Vec<rusqlite::types::Value> = Vec::new();
+    let states = strings(&a["state"]);
+    if !states.is_empty() {
+        clauses.push(format!("state IN ({})", vec!["?"; states.len()].join(",")));
+        values.extend(states.iter().cloned().map(Into::into));
+    }
+    if !s(a, "operation").is_empty() {
+        clauses.push("json_extract(spec,'$.operation') LIKE ? ESCAPE '\\'".into());
+        values.push(like_prefix(s(a, "operation")).into());
+    }
+    if !s(a, "project").is_empty() {
+        let project = expand(s(a, "project"));
+        if !project.is_absolute() {
+            return Err(Error::new(
+                "invalid_argument",
+                "project must be an absolute path",
+            ));
+        }
+        let project = project.to_string_lossy().trim_end_matches('/').to_string();
+        clauses.push("(json_extract(spec,'$.exclusive')=? OR json_extract(spec,'$.cwd')=? OR json_extract(spec,'$.cwd') LIKE ? ESCAPE '\\')".into());
+        values.push(project.clone().into());
+        values.push(project.clone().into());
+        values.push(like_prefix(&format!("{project}/")).into());
+    }
+    if let Some(since) = a["since"].as_f64() {
+        clauses.push("created>=?".into());
+        values.push(since.into());
+    }
+    if !s(a, "before").is_empty() {
+        let before = get_row(db, s(a, "before"))?;
+        let created = before.value["created"].as_f64().unwrap_or(0.0);
+        clauses.push("(created<? OR (created=? AND id<?))".into());
+        values.push(created.into());
+        values.push(created.into());
+        values.push(s(a, "before").to_string().into());
+    }
+    let filter = if clauses.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", clauses.join(" AND "))
+    };
+    values.push((a["limit"].as_u64().unwrap_or(30) as i64).into());
+    let rows = db
+        .prepare(&format!(
+            "SELECT * FROM jobs {filter} ORDER BY created DESC, id DESC LIMIT ?"
+        ))?
+        .query_map(rusqlite::params_from_iter(values), row)?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    let mut jobs = Vec::new();
+    for row in rows {
+        let job = public(db, row)?;
+        // A job whose worker died is recorded as failed while it is read.
+        if states.is_empty() || states.iter().any(|state| state == s(&job, "state")) {
+            jobs.push(job);
+        }
+    }
+    Ok(json!(jobs))
+}
+thread_local! {
+    static REQUEST: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+/// The operation this thread is answering, for the jobs it submits. Nested
+/// operations restore the outer one when they end.
+pub struct Request(Option<String>);
+impl Request {
+    pub fn enter(operation: &str) -> Self {
+        Request(REQUEST.with(|r| r.replace(Some(operation.to_string()))))
+    }
+}
+impl Drop for Request {
+    fn drop(&mut self) {
+        let previous = self.0.take();
+        REQUEST.with(|r| *r.borrow_mut() = previous);
+    }
+}
+fn requested_operation() -> Option<String> {
+    REQUEST.with(|r| r.borrow().clone())
 }
 pub fn submit(label: &str, mut spec: Value) -> Result {
     check_cancelled()?;
+    if spec.get("operation").is_none() {
+        if let Some(operation) = requested_operation() {
+            spec["operation"] = json!(operation);
+        }
+    }
     if let Ok(parent) = std::env::var("TOMACCO_PARENT_JOB") {
         if !parent.is_empty() {
             identifier(&parent, "parent job", Some("[a-f0-9]{32}"))?;
@@ -1353,6 +1445,105 @@ mod database_tests {
             .unwrap();
         let value = timeline(&db, &id, 0, 100).unwrap();
         assert_eq!(value["events"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn listing_filters_by_state_operation_project_and_time_and_pages() {
+        let root = tempfile::tempdir().unwrap();
+        let db = open(root.path()).unwrap();
+        let add = |id: &str, state: &str, age: f64, spec: Value| {
+            db.execute(
+                "INSERT INTO jobs(id,label,state,created,updated,spec) VALUES(?,?,?,?,?,?)",
+                params![
+                    id,
+                    "test",
+                    state,
+                    1000.0 - age,
+                    1000.0 - age,
+                    spec.to_string()
+                ],
+            )
+            .unwrap();
+        };
+        let (a, b_, c, d, e) = (
+            "a".repeat(32),
+            "b".repeat(32),
+            "c".repeat(32),
+            "d".repeat(32),
+            "e".repeat(32),
+        );
+        add(
+            &a,
+            "succeeded",
+            50.0,
+            json!({"steps":[],"operation":"project.execute","cwd":"/work/app","exclusive":"/work/app"}),
+        );
+        add(
+            &b_,
+            "failed",
+            40.0,
+            json!({"steps":[],"operation":"project.run","cwd":"/work/app/android","exclusive":"/work/app"}),
+        );
+        add(
+            &c,
+            "failed",
+            30.0,
+            json!({"steps":[],"operation":"android.sdk_install","cwd":"/data"}),
+        );
+        add(
+            &d,
+            "succeeded",
+            20.0,
+            json!({"steps":[],"operation":"project_x.other","cwd":"/work/app2"}),
+        );
+        add(&e, "cancelled", 10.0, json!({"steps":[]}));
+        let ids = |a: Value| -> Vec<String> {
+            query(&db, &a)
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|j| s(j, "id")[..1].to_string())
+                .collect()
+        };
+        assert_eq!(ids(json!({"limit":30})), ["e", "d", "c", "b", "a"]);
+        assert_eq!(ids(json!({"limit":30,"state":["failed"]})), ["c", "b"]);
+        // The prefix is literal: "_" is no wildcard.
+        assert_eq!(ids(json!({"limit":30,"operation":"project."})), ["b", "a"]);
+        assert_eq!(ids(json!({"limit":30,"operation":"project_"})), ["d"]);
+        // A project matches its lock, its directory and below, not a sibling.
+        assert_eq!(ids(json!({"limit":30,"project":"/work/app/"})), ["b", "a"]);
+        assert_eq!(ids(json!({"limit":30,"since":970.0})), ["e", "d", "c"]);
+        assert_eq!(
+            ids(json!({"limit":30,"state":["failed","succeeded"],"since":955.0})),
+            ["d", "c", "b"]
+        );
+        // Pages follow each other without gaps or repeats.
+        assert_eq!(ids(json!({"limit":2})), ["e", "d"]);
+        assert_eq!(ids(json!({"limit":2,"before":d})), ["c", "b"]);
+        assert_eq!(ids(json!({"limit":2,"before":b_})), ["a"]);
+        assert!(query(&db, &json!({"limit":2,"project":"relative"})).is_err());
+        assert_eq!(
+            query(&db, &json!({"limit":2,"before":"f".repeat(32)}))
+                .unwrap_err()
+                .code,
+            "job_not_found"
+        );
+    }
+
+    #[test]
+    fn a_job_records_the_operation_that_submitted_it() {
+        assert_eq!(requested_operation(), None);
+        {
+            let _outer = Request::enter("project.run");
+            assert_eq!(requested_operation().as_deref(), Some("project.run"));
+            {
+                let _inner = Request::enter("android.launch");
+                assert_eq!(requested_operation().as_deref(), Some("android.launch"));
+            }
+            assert_eq!(requested_operation().as_deref(), Some("project.run"));
+        }
+        assert_eq!(requested_operation(), None);
     }
 
     #[test]
