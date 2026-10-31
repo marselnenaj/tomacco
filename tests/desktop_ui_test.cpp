@@ -2700,6 +2700,40 @@ for line in sys.stdin:
         view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});view->setProperty("showDeviceFrame",true);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void settings_export_and_import_through_a_file() {
+        // Settings offers both; an import takes effect at once in the open window.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *dialog=object("settingsDialog");QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("visible").toBool());
+        QVERIFY(item("exportSettingsButton"));QVERIFY(item("importSettingsButton"));
+        QVERIFY(QMetaObject::invokeMethod(dialog,"close"));QTRY_VERIFY(!dialog->property("visible").toBool());
+        QTemporaryDir files;QVERIFY(files.isValid());
+        const auto path=files.filePath("tomacco-settings.json");
+        view->setProperty("showTouches",true);view->setProperty("notifyJobs",false);view->setProperty("showDeviceFrame",false);
+        // Exported at once, before the views have stored the change themselves.
+        QVERIFY(QMetaObject::invokeMethod(view,"exportSettingsTo",Q_ARG(QVariant,path)));
+        QVERIFY(!view->property("settingsTransferFailed").toBool());
+        QCOMPARE(view->property("settingsTransfer").toString(),"Settings saved to "+path);
+        QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
+        const auto values=QJsonDocument::fromJson(file.readAll()).object().value("settings").toObject();file.close();
+        QCOMPARE(values.value("NativeDisplay/showTouches"),QJsonValue(true));QCOMPARE(values.value("Notifications/jobs"),QJsonValue(false));
+        QVERIFY(!values.contains("window/width"));QVERIFY(!values.contains("recentProjects"));
+        // Changed meanwhile; the import brings the exported choices back into the running views.
+        view->setProperty("showTouches",false);view->setProperty("notifyJobs",true);view->setProperty("showDeviceFrame",true);
+        QVERIFY(QMetaObject::invokeMethod(view,"importSettingsFrom",Q_ARG(QVariant,path)));
+        QVERIFY2(!view->property("settingsTransferFailed").toBool(),qPrintable(view->property("settingsTransfer").toString()));
+        QVERIFY(view->property("settingsTransfer").toString().endsWith("settings imported"));
+        QVERIFY(view->property("showTouches").toBool());QVERIFY(!view->property("notifyJobs").toBool());QVERIFY(!view->property("showDeviceFrame").toBool());
+        // A broken file is refused with the reason.
+        QVERIFY(file.open(QIODevice::WriteOnly|QIODevice::Truncate));file.write("{}");file.close();
+        QVERIFY(QMetaObject::invokeMethod(view,"importSettingsFrom",Q_ARG(QVariant,path)));
+        QVERIFY(view->property("settingsTransferFailed").toBool());
+        QCOMPARE(view->property("settingsTransfer").toString(),path+" is not a Tomacco settings file.");
+        view->setProperty("showTouches",false);view->setProperty("notifyJobs",true);view->setProperty("showDeviceFrame",true);
+        view->setProperty("settingsTransfer",QString());view->setProperty("settingsTransferFailed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void cleanupTestCase() {
         engine.reset();control.reset();backend.reset();
     }

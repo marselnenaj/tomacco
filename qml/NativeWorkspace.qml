@@ -191,6 +191,36 @@ Rectangle {
     // the device's pixels and as fractions (what tomaccoctl's touch input takes).
     property bool showTouches: false
     Settings {category:"NativeAudio";property alias forwardAudio:view.forwardAudio}
+    // Settings moved to or from another computer (Backend::exportSettings).
+    property string settingsTransfer: ""
+    property bool settingsTransferFailed: false
+    function exportSettingsTo(path) {
+        // The views' own values, which their Settings store a moment later.
+        let extra={"Notifications/jobs":notifyJobs,"NativeDisplay/showDeviceFrame":showDeviceFrame,"NativeDisplay/showActivity":showActivity,
+            "NativeDisplay/showTouches":showTouches,"NativeAudio/forwardAudio":forwardAudio}
+        if(runnerBundle)extra["NativeIphone/runnerBundle"]=runnerBundle
+        // The update choice is tomaccoctl's; it goes along unless a build or the environment fixes it.
+        if(updates.status.mode && !updates.forced)extra["updates/mode"]=updates.mode
+        const error=Studio.exportSettings(path,extra)
+        settingsTransferFailed=!!error
+        settingsTransfer=error || qsTr("Settings saved to %1").arg(path)
+    }
+    function importSettingsFrom(path) {
+        const result=Studio.importSettings(path)
+        settingsTransferFailed=!result.ok
+        if(!result.ok){settingsTransfer=result.error;return}
+        // The views keep their own copies of these; they take the imported values at once.
+        const flag=(key,current)=>String(Studio.setting(key,current))==="true"
+        notifyJobs=flag("Notifications/jobs",notifyJobs)
+        showDeviceFrame=flag("NativeDisplay/showDeviceFrame",showDeviceFrame)
+        showActivity=flag("NativeDisplay/showActivity",showActivity)
+        showTouches=flag("NativeDisplay/showTouches",showTouches)
+        forwardAudio=flag("NativeAudio/forwardAudio",forwardAudio)
+        runnerBundle=String(Studio.setting("NativeIphone/runnerBundle",runnerBundle))
+        const mode=result.extra["updates/mode"]
+        if(mode && !updates.forced && mode!==updates.mode)updates.setMode(mode)
+        settingsTransfer=qsTr("%n setting(s) imported","",result.applied)+(result.ignored?" · "+qsTr("%n ignored","",result.ignored):"")
+    }
     // A build, test or app start that ends while no Tomacco window is active is
     // reported on the desktop, unless turned off in the settings. Jobs shorter
     // than notifyAfterSeconds are left out; cancelled ones too, someone ended them.
@@ -843,8 +873,9 @@ Rectangle {
     CommandPalette {id:commandPalette;workspace:view.workspace;navigation:view.navigation;commands:view.commands;onNavigate:section=>view.navigate(section)}
     FolderDialog {id:projectFolder;title:qsTr("Open project");onAccepted:workspace.openProject(decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,"")))}
     StudioDialog {
-        id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,460);modal:true;standardButtons:Dialog.Close
-        contentItem:ColumnLayout {spacing:Theme.gapLg
+        id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,460);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
+        onOpened:view.settingsTransfer=""
+        contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapLg
             ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
                 Text {text:qsTr("Appearance");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 // System follows the desktop's dark or light preference at once.
@@ -877,8 +908,20 @@ Rectangle {
                 StudioCheckBox {objectName:"jobNotificationsToggle";Layout.fillWidth:true;text:qsTr("When a job ends in the background");checked:view.notifyJobs;onToggled:view.notifyJobs=checked}
             }
             UpdateSection {Layout.fillWidth:true;model:updates}
-        }
+            // Moving to another computer: the preferences as a JSON file.
+            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+                Text {text:qsTr("Another computer");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                Text {Layout.fillWidth:true;text:qsTr("Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+                Flow {Layout.fillWidth:true;spacing:Theme.gapSm
+                    StudioButton {objectName:"exportSettingsButton";text:qsTr("Export settings…");quiet:true;onClicked:settingsExport.open()}
+                    StudioButton {objectName:"importSettingsButton";text:qsTr("Import settings…");quiet:true;onClicked:settingsImport.open()}
+                }
+                Text {objectName:"settingsTransferResult";Layout.fillWidth:true;visible:!!text;text:view.settingsTransfer;color:view.settingsTransferFailed?Theme.danger:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            }
+        }}
     }
+    FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
+    FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     StudioDialog {
         id:shortcutsDialog;objectName:"shortcutsDialog";title:qsTr("Keyboard shortcuts");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,520);height:Math.min(view.height-Theme.gapXxxl,implicitHeight);modal:true;standardButtons:Dialog.Close
         contentItem:StudioScrollView {

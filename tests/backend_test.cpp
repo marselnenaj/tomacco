@@ -11,6 +11,8 @@
 #include <QCoreApplication>
 #include <QProcess>
 #include <QSignalSpy>
+#include <QJsonDocument>
+#include <QJsonObject>
 #ifdef TOMACCO_HAVE_DBUS
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -50,6 +52,8 @@ private slots:
         // Never the real data directory.
         QVERIFY(isolatedData.isValid());
         qputenv("TOMACCO_HOME",isolatedData.path().toUtf8());
+        // Nor the real settings.
+        qputenv("XDG_CONFIG_HOME",(isolatedData.path()+"/config").toUtf8());
     }
     void droppedFoldersOpenAsProjectsButFilesAndAppsDoNot() {
         QTemporaryDir root; QVERIFY(root.isValid());
@@ -124,6 +128,55 @@ private slots:
         QDBusConnection::disconnectFromBus("fake-notifications");
         daemon.terminate();daemon.waitForFinished(3000);
 #endif
+    }
+    void settingsMoveToAnotherMachineWithoutWhatBelongsToThisOne() {
+        QTemporaryDir root; QVERIFY(root.isValid());
+        QVERIFY(QSettings().fileName().startsWith(isolatedData.path()));
+        Backend backend(QString(),nullptr,false);
+        backend.setAppearance("dark");
+        backend.saveSetting("Notifications/jobs",false);backend.saveSetting("NativeDisplay/showTouches",true);
+        backend.saveSetting("NativeIphone/runnerBundle","com.example.runner");backend.saveSetting("device","pixel-11");
+        // This machine's: never exported.
+        backend.saveSetting("window/width",1200);backend.saveSetting("recentProjects",QStringList{"/home/someone/app"});
+        backend.saveSetting("jobs/origins","{}");backend.saveSetting("IosResearch/engine","/opt/engine");backend.saveSetting("lastUrl","http://localhost:5173");
+        const auto path=root.filePath("settings.json");
+        QCOMPARE(backend.exportSettings(path,{{"updates/mode","auto"},{"token","secret"}}),QString());
+        QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
+        const auto text=file.readAll();file.close();
+        const auto document=QJsonDocument::fromJson(text).object();
+        QCOMPARE(document.value("format").toString(),QString("tomacco-desktop-settings"));QCOMPARE(document.value("version").toInt(),1);
+        const auto values=document.value("settings").toObject();
+        QCOMPARE(values.value("appearance").toString(),QString("dark"));
+        QCOMPARE(values.value("Notifications/jobs"),QJsonValue(false));QCOMPARE(values.value("NativeDisplay/showTouches"),QJsonValue(true));
+        QCOMPARE(values.value("NativeIphone/runnerBundle").toString(),QString("com.example.runner"));
+        QCOMPARE(values.value("device").toString(),QString("pixel-11"));QCOMPARE(values.value("updates/mode").toString(),QString("auto"));
+        for(const auto *banned:{"window/width","recentProjects","jobs/origins","IosResearch/engine","lastUrl","token","secret","/home/someone","/opt/engine"})
+            QVERIFY2(!text.contains(banned),banned);
+        // On the other machine: each value is checked, the rest ignored.
+        QSettings().clear();
+        QJsonObject edited=values;
+        edited.insert("appearance","light");edited.insert("NativeDisplay/showActivity","yes");edited.insert("device","../../etc");
+        edited.insert("window/width",900);edited.insert("language","klingon");
+        write(path,QJsonDocument(QJsonObject{{"format","tomacco-desktop-settings"},{"version",1},{"settings",edited}}).toJson());
+        QSignalSpy appearance(&backend,&Backend::appearanceChanged);
+        const auto result=backend.importSettings(path);
+        QVERIFY(result.value("ok").toBool());
+        QCOMPARE(result.value("applied").toInt(),5);QCOMPARE(result.value("ignored").toInt(),4);
+        QCOMPARE(result.value("extra").toMap().value("updates/mode").toString(),QString("auto"));
+        QCOMPARE(backend.appearance(),QString("light"));QCOMPARE(appearance.size(),1);
+        QCOMPARE(backend.setting("Notifications/jobs").toBool(),false);QCOMPARE(backend.setting("NativeDisplay/showTouches").toBool(),true);
+        QCOMPARE(backend.setting("NativeIphone/runnerBundle").toString(),QString("com.example.runner"));
+        QVERIFY(!QSettings().contains("NativeDisplay/showActivity"));QVERIFY(!QSettings().contains("device"));
+        QVERIFY(!QSettings().contains("window/width"));QVERIFY(!QSettings().contains("language"));QVERIFY(!QSettings().contains("updates/mode"));
+        // Files that are no settings file, or from a newer version, change nothing.
+        write(path,"not json");QVERIFY(!backend.importSettings(path).value("ok").toBool());
+        write(path,R"({"format":"something-else","version":1,"settings":{"appearance":"dark"}})");QVERIFY(!backend.importSettings(path).value("ok").toBool());
+        write(path,R"({"format":"tomacco-desktop-settings","version":2,"settings":{"appearance":"dark"}})");
+        QVERIFY(backend.importSettings(path).value("error").toString().contains("newer"));
+        QVERIFY(!backend.importSettings(root.filePath("missing.json")).value("ok").toBool());
+        QCOMPARE(backend.appearance(),QString("light"));
+        QVERIFY(!backend.exportSettings(root.filePath("no/such/dir/settings.json")).isEmpty());
+        QSettings().clear();
     }
     void dataDirectoryIsTheVariableOrTheDefault() {
         QTemporaryDir home;

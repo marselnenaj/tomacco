@@ -129,6 +129,66 @@ QString Backend::probeLabel(const QString &value) {
     if(value==QLatin1String("@probe:unknown")) return tr("Unknown");
     return value;
 }
+// The preferences that move to another machine, each with its check. Paths,
+// window sizes, recent projects, job history and research settings belong to
+// this machine and stay; Tomacco keeps no credentials in its settings.
+static const QString settingsFormat=QStringLiteral("tomacco-desktop-settings");
+static bool portableSetting(const QString &key,const QJsonValue &value,QVariant *out) {
+    static const QStringList switches{QStringLiteral("Notifications/jobs"),QStringLiteral("NativeDisplay/showDeviceFrame"),QStringLiteral("NativeDisplay/showActivity"),
+        QStringLiteral("NativeDisplay/showTouches"),QStringLiteral("NativeAudio/forwardAudio")};
+    static const QRegularExpression identifier(QStringLiteral("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"));
+    if(switches.contains(key)) { if(!value.isBool()) return false; *out=value.toBool(); return true; }
+    const auto text=value.toString();
+    if(!value.isString()) return false;
+    if(key==QLatin1String("appearance") && QStringList{"system","dark","light"}.contains(text)) { *out=text; return true; }
+    if(key==QLatin1String("language") && languageChoices.contains(text)) { *out=text; return true; }
+    if((key==QLatin1String("NativeIphone/runnerBundle") || key==QLatin1String("device")) && identifier.match(text).hasMatch()) { *out=text; return true; }
+    if(key==QLatin1String("updates/mode") && QStringList{"off","notify","auto"}.contains(text)) { *out=text; return true; }
+    return false;
+}
+QString Backend::exportSettings(const QString &path,const QVariantMap &extra) {
+    QJsonObject values;
+    QVariant checked;
+    for(const auto &key:{"appearance","language","device","Notifications/jobs","NativeDisplay/showDeviceFrame","NativeDisplay/showActivity","NativeDisplay/showTouches","NativeAudio/forwardAudio","NativeIphone/runnerBundle"}) {
+        if(!m_settings.contains(key)) continue;
+        auto value=m_settings.value(key);
+        // QSettings keeps switches as the text "true" or "false".
+        const auto json=value.toString()==QLatin1String("true") || value.toString()==QLatin1String("false") ? QJsonValue(value.toString()==QLatin1String("true")) : QJsonValue::fromVariant(value);
+        if(portableSetting(key,json,&checked)) values.insert(key,json);
+    }
+    for(auto it=extra.cbegin();it!=extra.cend();++it)
+        if(portableSetting(it.key(),QJsonValue::fromVariant(it.value()),&checked)) values.insert(it.key(),QJsonValue::fromVariant(it.value()));
+    const QJsonObject document{{"format",settingsFormat},{"version",1},{"application",QStringLiteral("Tomacco")},{"settings",values}};
+    QFile file(path);
+    if(path.isEmpty() || !file.open(QIODevice::WriteOnly|QIODevice::Truncate)) return tr("%1 cannot be written.").arg(path);
+    file.write(QJsonDocument(document).toJson(QJsonDocument::Indented));
+    return file.error()==QFile::NoError ? QString() : tr("%1 cannot be written.").arg(path);
+}
+QVariantMap Backend::importSettings(const QString &path) {
+    const auto fail=[](const QString &reason){return QVariantMap{{"ok",false},{"error",reason}};};
+    QFile file(path);
+    if(path.isEmpty() || !file.open(QIODevice::ReadOnly)) return fail(tr("%1 cannot be read.").arg(path));
+    if(file.size()>256*1024) return fail(tr("%1 is too large for a settings file.").arg(path));
+    QJsonParseError error;
+    const auto document=QJsonDocument::fromJson(file.readAll(),&error).object();
+    if(error.error!=QJsonParseError::NoError || document.value("format").toString()!=settingsFormat || !document.value("settings").isObject())
+        return fail(tr("%1 is not a Tomacco settings file.").arg(path));
+    if(document.value("version").toInt()!=1) return fail(tr("%1 comes from a newer Tomacco; update this one first.").arg(path));
+    int applied=0,ignored=0;
+    QVariantMap extra;
+    const auto values=document.value("settings").toObject();
+    for(auto it=values.begin();it!=values.end();++it) {
+        QVariant value;
+        if(!portableSetting(it.key(),it.value(),&value)) { ++ignored; continue; }
+        ++applied;
+        if(it.key()==QLatin1String("updates/mode")) extra.insert(it.key(),value);
+        else if(it.key()==QLatin1String("language")) setLanguage(value.toString());
+        else if(it.key()==QLatin1String("appearance")) setAppearance(value.toString());
+        else m_settings.setValue(it.key(),value);
+    }
+    m_settings.sync();
+    return {{"ok",true},{"error",QString()},{"applied",applied},{"ignored",ignored},{"extra",extra}};
+}
 QVariant Backend::setting(const QString &key,const QVariant &fallback) { return m_settings.value(key,fallback); }
 void Backend::saveSetting(const QString &key,const QVariant &value) { m_settings.setValue(key,value); }
 bool Backend::allowedUrl(const QUrl &url) const {

@@ -47,6 +47,8 @@ operations and their JSON results.
     it can be turned off in Settings.
   - The live device view can mark touches and show the pointer's device pixel and
     screen fractions, for writing UI tests.
+  - Settings can be exported to a JSON file and imported on another computer, without
+    paths, window sizes or history.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.

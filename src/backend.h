@@ -80,6 +80,14 @@ public:
     // The data directory the control plane uses: TOMACCO_HOME, then the default.
     static QString dataDirectory();
     void setInitialUrl(const QString &value) { m_initial=value; }
+    // Writes the portable preferences (theme, language, notifications, device
+    // view choices; no paths, window sizes, history or credentials) and the
+    // extra values given (updates/mode) to a JSON file. An empty string on
+    // success, otherwise the reason.
+    Q_INVOKABLE QString exportSettings(const QString &path,const QVariantMap &extra={});
+    // Reads such a file and applies the values it may carry, each checked;
+    // anything else is ignored. Returns {ok, error, applied, ignored, extra}.
+    Q_INVOKABLE QVariantMap importSettings(const QString &path);
     Q_INVOKABLE QVariant setting(const QString &key, const QVariant &fallback={});
     Q_INVOKABLE void saveSetting(const QString &key, const QVariant &value);
     Q_INVOKABLE QUrl normalizeUrl(const QString &input);

@@ -315,6 +315,26 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Open</source>
         <translation>Öffnen</translation>
     </message>
+    <message>
+        <source>%1 cannot be written.</source>
+        <translation>%1 kann nicht geschrieben werden.</translation>
+    </message>
+    <message>
+        <source>%1 cannot be read.</source>
+        <translation>%1 kann nicht gelesen werden.</translation>
+    </message>
+    <message>
+        <source>%1 is too large for a settings file.</source>
+        <translation>%1 ist für eine Einstellungsdatei zu groß.</translation>
+    </message>
+    <message>
+        <source>%1 is not a Tomacco settings file.</source>
+        <translation>%1 ist keine Tomacco-Einstellungsdatei.</translation>
+    </message>
+    <message>
+        <source>%1 comes from a newer Tomacco; update this one first.</source>
+        <translation>%1 stammt von einem neueren Tomacco; aktualisiere zuerst dieses.</translation>
+    </message>
 </context>
 <context>
     <name>Colors</name>
@@ -3048,6 +3068,52 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Show touches and pointer coordinates</source>
         <translation>Berührungen und Zeigerkoordinaten zeigen</translation>
+    </message>
+    <message>
+        <source>Another computer</source>
+        <translation>Anderer Computer</translation>
+    </message>
+    <message>
+        <source>Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
+        <translation>Erscheinungsbild, Sprache, Benachrichtigungen, Updates und die Einstellungen der Geräteansicht, als JSON-Datei. Pfade, Fenstergrößen und Verlauf bleiben auf diesem Computer.</translation>
+    </message>
+    <message>
+        <source>Export settings…</source>
+        <translation>Einstellungen exportieren…</translation>
+    </message>
+    <message>
+        <source>Import settings…</source>
+        <translation>Einstellungen importieren…</translation>
+    </message>
+    <message>
+        <source>Export settings</source>
+        <translation>Einstellungen exportieren</translation>
+    </message>
+    <message>
+        <source>Import settings</source>
+        <translation>Einstellungen importieren</translation>
+    </message>
+    <message>
+        <source>Tomacco settings (*.json)</source>
+        <translation>Tomacco-Einstellungen (*.json)</translation>
+    </message>
+    <message>
+        <source>Settings saved to %1</source>
+        <translation>Einstellungen gespeichert in %1</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n setting(s) imported</source>
+        <translation>
+            <numerusform>%n Einstellung importiert</numerusform>
+            <numerusform>%n Einstellungen importiert</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n ignored</source>
+        <translation>
+            <numerusform>%n ignoriert</numerusform>
+            <numerusform>%n ignoriert</numerusform>
+        </translation>
     </message>
 </context>
 <context>

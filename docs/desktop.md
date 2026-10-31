@@ -61,6 +61,28 @@ start after installing, the previous one is restored by itself.
 An installation made by `install.py` can be updated. A source checkout, a system package or a directory you cannot write is left alone, and the section says so. Installing needs Python 3.9
 or newer, for the installer. [Privacy](privacy.md) says what the checks send.
 
+## Moving settings to another computer
+
+**Export settings…** and **Import settings…** under **Another computer** in
+**Settings** (*Einstellungen exportieren…*, *Einstellungen importieren…*) save
+and read a JSON file with the desktop's preferences: appearance, language,
+job notifications, the update choice, the device view's frame, activity panel,
+touches and sound forwarding, the WebDriverAgent bundle ID and the web
+preview's last device. Paths, window sizes, recent projects, job history and the
+iOS research settings belong to this computer and are left out; Tomacco keeps
+no passwords or tokens in its settings. An import checks every value, ignores
+what it does not know and says how many settings it took. The update choice is
+not exported or imported where a build or `TOMACCO_UPDATES` fixes it.
+
+```json
+{
+  "format": "tomacco-desktop-settings",
+  "version": 1,
+  "application": "Tomacco",
+  "settings": {"appearance": "dark", "language": "de", "Notifications/jobs": true}
+}
+```
+
 ## Navigation and shortcuts
 
 A rail on the left holds every view, with names and keys in a wide window and
