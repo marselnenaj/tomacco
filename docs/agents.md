@@ -543,6 +543,15 @@ parse answers `valid:false` with the error.
 tomaccoctl call testing.lint '{"path":"/absolute/add-counter.json","device":"emulator-5554"}'
 ```
 
+`path` can also be a directory: each `.json` file directly in it is a scenario, run in name order, and a malformed one is refused
+before anything runs. By default every device runs every scenario. `shard:true` splits them instead: each scenario runs once, on
+whichever device is free next, and the results are merged into one `report.json` (each result names its `scenario` and `device`) and
+one `junit.xml` (`classname` is the scenario). Only the first `parallelism` devices take part, so raise it to use more.
+
+```sh
+tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute/ui-results","devices":["emulator-5554","emulator-5556"],"shard":true,"parallelism":2,"retries":1}'
+```
+
 `retries` runs a failed scenario again on that device, up to five times; a scenario's own `retries` field takes precedence. Each
 device's result in `report.json` then lists its `attempts` (whether each passed, its error and the index of the step that failed), and
 `flaky:true` marks a pass after a failure; the report's `flaky` lists those devices. In `junit.xml` the earlier failures are

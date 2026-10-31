@@ -249,9 +249,52 @@ pub fn check_scenario(scenario: &Value) -> Result<()> {
     }
     Ok(())
 }
+/// The scenarios at path: one file, or every .json file directly in a
+/// directory, in name order.
+fn scenarios(at: &Path) -> Result<Vec<Value>> {
+    if !at.is_dir() {
+        let scenario = read_json(at, None)?;
+        check_scenario(&scenario)?;
+        return Ok(vec![scenario]);
+    }
+    let mut files: Vec<_> = fs::read_dir(at)?
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .filter(|file| file.is_file() && file.extension().is_some_and(|e| e == "json"))
+        .collect();
+    files.sort();
+    if files.is_empty() || files.len() > 200 {
+        return Err(Error::new(
+            "invalid_argument",
+            format!(
+                "A scenario directory holds 1 to 200 .json files; {} has {}",
+                at.display(),
+                files.len()
+            ),
+        ));
+    }
+    files
+        .iter()
+        .map(|file| {
+            let scenario = read_json(file, None)?;
+            check_scenario(&scenario).map_err(|error| {
+                let message = format!("{}: {}", file.display(), error.message);
+                Error::new(&error.code, message)
+            })?;
+            Ok(scenario)
+        })
+        .collect()
+}
 pub fn run(a: &Value) -> Result {
-    let scenario = read_json(&path(s(a, "path"), false, true)?, None)?;
-    check_scenario(&scenario)?;
+    let source = path(s(a, "path"), false, true)?;
+    let scenarios = scenarios(&source)?;
+    let name = if source.is_dir() {
+        source
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "scenarios".into())
+    } else {
+        s(&scenarios[0], "name").to_string()
+    };
     let devices = strings(&a["devices"]);
     let unique: std::collections::HashSet<_> = devices.iter().collect();
     if unique.len() != devices.len() {
@@ -268,10 +311,10 @@ pub fn run(a: &Value) -> Result {
         ));
     }
     private_dir(&output)?;
-    let spec = json!({"scenario":scenario,"devices":devices,"directory":output,"parallelism":a["parallelism"].as_u64().unwrap_or(2),"retries":a["retries"].as_u64().unwrap_or(0)});
+    let spec = json!({"name":name,"scenarios":scenarios,"devices":devices,"directory":output,"parallelism":a["parallelism"].as_u64().unwrap_or(2),"retries":a["retries"].as_u64().unwrap_or(0),"shard":b(a,"shard")});
     atomic_json(&output.join("run.json"), &spec)?;
     jobs::submit(
-        &format!("Native UI · {}", s(&scenario, "name")),
+        &format!("Native UI · {name}"),
         json!({"steps":[{"argv":[crate::core::own_executable()?,"_automation",output.join("run.json")],"artifacts":[output.join("report.json"),output.join("junit.xml")]}],"cwd":output,"timeout":a["timeout"].as_u64().unwrap_or(3600),"always_artifacts":["report.json","junit.xml","*.png"]}),
     )
 }
@@ -417,54 +460,61 @@ pub fn worker(file: &str) -> Result<()> {
     let spec = read_json(&path(file, false, true)?, None)?;
     let directory = path(s(&spec, "directory"), true, true)?;
     let devices = strings(&spec["devices"]);
-    let scenario = &spec["scenario"];
-    let retries = scenario["retries"]
-        .as_u64()
-        .unwrap_or(n(&spec, "retries"))
-        .min(5);
-    let mut results = Vec::new();
+    let scenarios = spec["scenarios"].as_array().cloned().unwrap_or_default();
+    let several = scenarios.len() > 1;
+    let name = s(&spec, "name");
     let parallel = n(&spec, "parallelism").clamp(1, 8) as usize;
-    for chunk in devices.chunks(parallel) {
-        thread::scope(|scope| {
-            let handles: Vec<_> = chunk
-                .iter()
-                .map(|device| {
-                    let directory = &directory;
-                    scope.spawn(move || {
-                        let tag = digest(device.as_bytes())[..12].to_string();
-                        with_retries(retries, |attempt| {
-                            let tag = if attempt == 1 {
-                                tag.clone()
-                            } else {
-                                format!("{tag}-a{attempt}")
-                            };
-                            run_device(device, scenario, directory, &tag)
-                        })
-                    })
-                })
-                .collect();
-            for handle in handles {
-                results.push(handle.join().unwrap_or_else(|_|json!({"passed":false,"error":{"code":"worker_panic","message":"Scenario worker failed"}})));
+    let shard = b(&spec, "shard");
+    let partial = std::sync::Mutex::new(Vec::new());
+    let results = schedule(
+        &devices,
+        scenarios.len(),
+        shard,
+        parallel,
+        |device, index| {
+            let scenario = &scenarios[index];
+            let retries = scenario["retries"]
+                .as_u64()
+                .unwrap_or(n(&spec, "retries"))
+                .min(5);
+            let mut tag = digest(device.as_bytes())[..12].to_string();
+            if several {
+                tag = format!("{tag}-s{index:03}");
             }
-        });
-        atomic_json(
-            &directory.join("report.json"),
-            &json!({"name":scenario["name"],"created":now(),"results":results,"complete":false}),
-        )?;
-    }
-    let passed = results.iter().all(|r| b(r, "passed"));
-    let flaky: Vec<&Value> = results
+            let mut result = with_retries(retries, |attempt| {
+                let tag = if attempt == 1 {
+                    tag.clone()
+                } else {
+                    format!("{tag}-a{attempt}")
+                };
+                run_device(device, scenario, &directory, &tag)
+            });
+            result["scenario"] = scenario["name"].clone();
+            result["scenario_index"] = json!(index);
+            let mut done = partial.lock().unwrap();
+            done.push(result.clone());
+            let _ = atomic_json(
+                &directory.join("report.json"),
+                &json!({"name":name,"created":now(),"results":*done,"complete":false}),
+            );
+            result
+        },
+    );
+    let passed = !results.is_empty() && results.iter().all(|r| b(r, "passed"));
+    let flaky: Vec<Value> = results
         .iter()
         .filter(|r| b(r, "flaky"))
-        .map(|r| &r["device"])
+        .map(|r| json!({"scenario":r["scenario"],"device":r["device"]}))
         .collect();
+    let names: Vec<&Value> = scenarios.iter().map(|s| &s["name"]).collect();
     atomic_write(
         &directory.join("junit.xml"),
-        junit(s(scenario, "name"), &results).as_bytes(),
+        junit(name, &results).as_bytes(),
     )?;
     atomic_json(
         &directory.join("report.json"),
-        &json!({"name":scenario["name"],"created":now(),"passed":passed,"complete":true,"retries":retries,"flaky":flaky,"results":results}),
+        &json!({"name":name,"created":now(),"passed":passed,"complete":true,"scenarios":names,"shard":shard,
+                "retries":spec["retries"],"flaky":flaky,"results":results}),
     )?;
     if !passed {
         return Err(Error::new(
@@ -473,6 +523,80 @@ pub fn worker(file: &str) -> Result<()> {
         ));
     }
     Ok(())
+}
+/// Runs `count` scenarios on the devices, at most `parallel` devices at a
+/// time. Without shard every device runs every scenario; with shard each
+/// scenario runs once, on whichever of the first `parallel` devices is free
+/// next. Results come in scenario order, then device order.
+fn schedule(
+    devices: &[String],
+    count: usize,
+    shard: bool,
+    parallel: usize,
+    run: impl Fn(&str, usize) -> Value + Sync,
+) -> Vec<Value> {
+    let failed = |device: &str, index: usize| json!({"device":device,"scenario_index":index,"passed":false,"error":{"code":"worker_panic","message":"Scenario worker failed"}});
+    let mut results: Vec<(usize, usize, Value)> = Vec::new();
+    if shard {
+        let queue = std::sync::Mutex::new((0..count).collect::<std::collections::VecDeque<_>>());
+        thread::scope(|scope| {
+            let handles: Vec<_> = devices
+                .iter()
+                .take(parallel)
+                .enumerate()
+                .map(|(position, device)| {
+                    let (queue, run) = (&queue, &run);
+                    scope.spawn(move || {
+                        let mut mine = Vec::new();
+                        loop {
+                            let Some(index) = queue.lock().unwrap().pop_front() else {
+                                break;
+                            };
+                            let result =
+                                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                                    run(device, index)
+                                }))
+                                .unwrap_or_else(|_| failed(device, index));
+                            mine.push((index, position, result));
+                        }
+                        mine
+                    })
+                })
+                .collect();
+            for handle in handles {
+                results.extend(handle.join().unwrap_or_default());
+            }
+        });
+    } else {
+        for (chunk_number, chunk) in devices.chunks(parallel).enumerate() {
+            thread::scope(|scope| {
+                let handles: Vec<_> = chunk
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, device)| {
+                        let run = &run;
+                        let position = chunk_number * parallel + offset;
+                        scope.spawn(move || {
+                            (0..count)
+                                .map(|index| {
+                                    let result = std::panic::catch_unwind(
+                                        std::panic::AssertUnwindSafe(|| run(device, index)),
+                                    )
+                                    .unwrap_or_else(|_| failed(device, index));
+                                    (index, position, result)
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                    })
+                    .collect();
+                for handle in handles {
+                    results.extend(handle.join().unwrap_or_default());
+                }
+            });
+        }
+    }
+    results.sort_by_key(|(index, position, _)| (*index, *position));
+    results.into_iter().map(|(_, _, result)| result).collect()
 }
 /// Runs a scenario until it passes or `retries` more attempts have failed.
 /// The last attempt's result is the result; `attempts` lists every one, and
@@ -781,6 +905,51 @@ mod tests {
         assert_eq!(xml.matches("<rerunFailure").count(), 2);
         assert_eq!(xml.matches("<failure ").count(), 1);
         roxmltree::Document::parse(&xml).unwrap();
+    }
+    #[test]
+    fn shards_split_scenarios_across_devices_and_a_matrix_runs_all_on_each() {
+        let devices: Vec<String> = ["a", "b", "c"].map(String::from).to_vec();
+        let ran = std::sync::Mutex::new(Vec::new());
+        let run = |device: &str, index: usize| {
+            ran.lock().unwrap().push((device.to_string(), index));
+            std::thread::sleep(std::time::Duration::from_millis(5));
+            json!({"device":device,"scenario_index":index,"passed":true})
+        };
+        let results = schedule(&devices, 5, true, 2, run);
+        assert_eq!(results.len(), 5);
+        let order: Vec<u64> = results
+            .iter()
+            .map(|r| r["scenario_index"].as_u64().unwrap())
+            .collect();
+        assert_eq!(order, [0, 1, 2, 3, 4]);
+        let mut ran_on: Vec<String> = ran.lock().unwrap().iter().map(|(d, _)| d.clone()).collect();
+        ran_on.sort();
+        ran_on.dedup();
+        // Only the first `parallel` devices take work.
+        assert_eq!(ran_on, ["a", "b"]);
+        ran.lock().unwrap().clear();
+        let results = schedule(&devices, 2, false, 2, run);
+        let pairs: Vec<(String, u64)> = results
+            .iter()
+            .map(|r| {
+                (
+                    s(r, "device").to_string(),
+                    r["scenario_index"].as_u64().unwrap(),
+                )
+            })
+            .collect();
+        let expected: Vec<(String, u64)> =
+            [("a", 0), ("b", 0), ("c", 0), ("a", 1), ("b", 1), ("c", 1)]
+                .map(|(d, i)| (d.to_string(), i))
+                .to_vec();
+        assert_eq!(pairs, expected);
+        // A scenario whose worker panics fails; the others still run.
+        let results = schedule(&devices[..1], 2, true, 1, |device: &str, index: usize| {
+            assert!(index != 0, "boom");
+            json!({"device":device,"scenario_index":index,"passed":true})
+        });
+        assert_eq!(results[0]["error"]["code"], "worker_panic");
+        assert_eq!(results[1]["passed"], true);
     }
     #[test]
     fn selectors_handle_escaping_ambiguity_and_index() {

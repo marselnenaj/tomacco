@@ -941,12 +941,41 @@ class AndroidControlTests(Isolated):
         done = jobs.wait(job["id"], 60 * PATIENCE)
         self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
         value = json.loads((report / "report.json").read_text())
-        self.assertEqual((value["passed"], value["flaky"], value["retries"]), (True, ["emulator-5554"], 1))
+        self.assertEqual((value["passed"], value["flaky"], value["retries"]), (True, [{"scenario": "Back", "device": "emulator-5554"}], 1))
         result = value["results"][0]
         self.assertTrue(result["flaky"])
         self.assertEqual([attempt["passed"] for attempt in result["attempts"]], [False, True])
         self.assertEqual(result["attempts"][0]["failed_step"], 0)
         self.assertIn("<flakyFailure", (report / "junit.xml").read_text())
+
+    def test_scenarios_are_sharded_across_devices_into_one_report(self):
+        scenarios = self.root / "scenarios"
+        scenarios.mkdir()
+        for number, key in enumerate(["KEYCODE_1", "KEYCODE_2", "KEYCODE_3"]):
+            (scenarios / f"{number}.json").write_text(json.dumps({"name": f"Press {number}", "steps": [{"action": "key", "key": key}]}))
+        devices = ["emulator-5554", "emulator-5556"]
+        run = lambda directory, **extra: jobs.wait(dispatch("testing.run", {"path": str(scenarios), "directory": str(self.root / directory),
+                                                                            "devices": devices, **extra})["id"], 60 * PATIENCE)
+        self.assertEqual(run("shard", shard=True)["state"], "succeeded")
+        value = json.loads((self.root / "shard/report.json").read_text())
+        self.assertEqual((value["passed"], value["shard"], value["scenarios"]), (True, True, ["Press 0", "Press 1", "Press 2"]))
+        self.assertEqual([r["scenario"] for r in value["results"]], ["Press 0", "Press 1", "Press 2"])
+        self.assertTrue({r["device"] for r in value["results"]} <= set(devices))
+        # Each scenario ran once, on the device its result names.
+        presses = [(call[1], call[-1]) for call in map(json.loads, (self.root / "adb-calls.jsonl").read_text().splitlines())
+                   if "keyevent" in call[-1]]
+        self.assertEqual(sorted(presses), sorted((r["device"], f"input keyevent KEYCODE_{n + 1}") for n, r in enumerate(value["results"])))
+        junit = (self.root / "shard/junit.xml").read_text()
+        self.assertIn('tests="3" failures="0"', junit)
+        self.assertIn('classname="Press 2"', junit)
+        # Without shard every device runs every scenario.
+        self.assertEqual(run("matrix")["state"], "succeeded")
+        value = json.loads((self.root / "matrix/report.json").read_text())
+        self.assertEqual(len(value["results"]), 6)
+        (scenarios / "broken.json").write_text(json.dumps({"name": "Broken", "steps": []}))
+        with self.assertRaises(StudioError) as broken:
+            run("broken", shard=True)
+        self.assertIn("broken.json", str(broken.exception))
 
     def test_unicode_text_names_what_it_needs_when_it_cannot_work(self):
         with self.assertRaises(StudioError) as missing:

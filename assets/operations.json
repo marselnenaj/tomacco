@@ -4162,12 +4162,13 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run a JSON native Android scenario across devices with device locks, JUnit, JSON reports and failure screenshots. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.",
+    "description": "Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "path": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute path of a scenario JSON, or of a directory whose .json files are scenarios, run in name order"
         },
         "directory": {
           "type": "string"
@@ -4180,6 +4181,11 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "shard": {
+          "type": "boolean",
+          "default": false,
+          "description": "Split the scenarios across the devices, each scenario once, on the next free device, instead of running every scenario on every device. At most parallelism devices are used."
         },
         "parallelism": {
           "type": "integer",

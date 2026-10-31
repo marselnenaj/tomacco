@@ -20,6 +20,9 @@ operations and their JSON results.
   - `testing.run` takes `retries`, or a scenario its own `retries`: a failed scenario runs again on that device.
     Each result lists its `attempts`, a pass after a failure is `flaky`, the report lists the flaky devices, and
     `junit.xml` writes the earlier failures as `flakyFailure` or `rerunFailure`.
+  - `testing.run` takes a directory of scenarios as `path`, and with `shard:true` splits them across the devices,
+    each scenario once on the next free device, into one report and one `junit.xml`. Without it every device runs
+    every scenario.
 
 ## 1.1.0
 
