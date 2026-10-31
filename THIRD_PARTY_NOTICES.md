@@ -30,8 +30,10 @@ Regenerate it when `Cargo.lock` changes.
   under `GPL-2.0-or-later`. `tomaccoctl` links only `libc`, `libm` and `libgcc_s`
   dynamically, and runs `openssl`, `curl`, `ssh`, `rsync` and the platform tools
   as separate programs.
-- **`tomacco` (Qt desktop).** It links Qt 6 and FFmpeg dynamically from
-  the system; the CMake package (`cpack`, TGZ) and `install.py` ship neither.
+- **`tomacco` (Qt desktop).** It links Qt 6 and FFmpeg dynamically. The
+  regular CMake package (`cpack`, TGZ) takes both from the system and ships
+  neither; the portable package bundles them (see
+  [below](#bundled-in-the-portable-package)).
   Qt 6 is offered under LGPL-3.0 and GPL (2.0 or 3.0, depending on the module).
   The FFmpeg libraries are LGPL-2.1-or-later in a default build. A build
   configured with `--enable-gpl` is GPL-2.0-or-later, and with
@@ -52,6 +54,25 @@ Regenerate it when `Cargo.lock` changes.
   own licenses. Tomacco does not redistribute them. Anyone who
   redistributes a built engine must meet that engine's license, see
   [Downloaded and built on request](#downloaded-and-built-on-request).
+
+## Bundled in the portable package
+
+`tools/build_portable.py` makes `tomacco-VERSION-Linux-x86_64-portable.tar.gz`,
+which ships these libraries in `lib/tomacco/runtime`, all as shared libraries
+a user can replace. The package's `share/doc/tomacco/PORTABLE.md` names the
+exact versions and FFmpeg's configuration, and installs with the LGPL texts
+(`COPYING.LGPL-2.1`, `COPYING.LGPL-3.0`) beside `COPYING.GPL-3.0`.
+
+| Component | Version and origin | License | Corresponding source |
+| --- | --- | --- | --- |
+| Qt 6 (the modules in the table below, plus Wayland client and the XCB platform plugin) and ICU 73.2 | 6.12.0, the official Qt binaries for Linux x86_64, unmodified; pinned in `packaging/portable/qt-archives.txt` | LGPL-3.0-only; ICU under the Unicode license (Unicode-DFS-2016) and the terms in its `LICENSE`, installed as `LICENSE.ICU` | <https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/> |
+| Qt WebEngine 6 with Qt WebChannel and Qt Positioning | 6.12.0, as above | LGPL-3.0-only; Chromium and its components under their own licenses | The software bills of materials Qt ships, with each component's license, are copied to `lib/tomacco/runtime/sbom/`; source as above |
+| FFmpeg: libavcodec, libavutil, libswscale | 9.0.2 from <https://ffmpeg.org/releases/>, built in `packaging/portable/Dockerfile` with only the H.264 and MJPEG decoders and parsers, without `--enable-gpl`, `--enable-version3`, `--enable-nonfree` or external libraries | LGPL-2.1-or-later | <https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz> (SHA-256 in the Dockerfile) |
+| xcb-util libraries: libxcb-cursor, libxcb-icccm, libxcb-image, libxcb-keysyms, libxcb-render-util, libxcb-util | Ubuntu 22.04's packages | MIT/X11 | Ubuntu's source packages |
+
+Everything else the portable desktop loads (glibc, libstdc++, OpenGL, X11,
+Wayland, fontconfig, FreeType, GLib, D-Bus, NSS, ALSA, zlib) comes from the
+system, as for the regular package.
 
 ## Libraries linked by the desktop at run time (not bundled)
 

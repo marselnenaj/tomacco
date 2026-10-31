@@ -70,7 +70,8 @@ Omarchy it also offers to install the system packages. The second shows what you
 can do and offers to install the Android SDK and connect your coding agents.
 
 Arch Linux and Omarchy are the tested platforms. For Debian, Ubuntu and Fedora, see
-[their package lists](docs/getting-started.md#debian-ubuntu-and-fedora). To read the script
+[which package to use](docs/getting-started.md#debian-ubuntu-and-fedora): releases can also offer a
+portable package that bundles Qt and FFmpeg. To read the script
 before running it, or to build from source, see [installation options](docs/getting-started.md#1-install).
 
 Then open a project:
@@ -307,7 +308,7 @@ because of their dependencies. The emulator patches keep their upstream licenses
 
 - **Binaries.** `tomaccoctl` links Apache-2.0 crates (`prost`, `sync_wrapper`),
   and the desktop links Qt 6 (LGPL-3.0) and, on Arch, a GPL-3.0 build of
-  FFmpeg. Distributed binaries are therefore conveyed under GPL version 3, as
+  FFmpeg. The portable package bundles Qt and an LGPL-only FFmpeg build. Distributed binaries are therefore conveyed under GPL version 3, as
   the "or later" option allows. Packages install its text as
   `COPYING.GPL-3.0`, and [SOURCE.md](docs/SOURCE.md.in) names the version
   and commit they were built from and where the corresponding source is

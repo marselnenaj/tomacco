@@ -48,6 +48,11 @@ PACKAGED = (ROOT / "share/tomacco/VERSION").is_file()
 # checkout it came from is gone. That copy only uninstalls, rolls back and
 # lists backups.
 INSTALLED = not PACKAGED and (ROOT / "VERSION").is_file() and (ROOT / "tomaccoctl").is_file()
+# A portable package (tools/build_portable.py) carries Qt, Qt WebEngine and
+# FFmpeg here. The installation keeps them in ~/.local/lib/tomacco/runtime, and
+# qt.conf beside the program points Qt at them.
+RUNTIME = Path("lib/tomacco/runtime")
+QT_CONF = "[Paths]\nPrefix=runtime\n"
 PACKAGE_PATHS = {
     "tools": "share/tomacco/tools",
     "examples/ios-restore-native": "share/tomacco/examples/ios-restore-native",
@@ -220,8 +225,11 @@ o.window({ class = "^io[.]github[.]marselnenaj[.]tomacco$", title = "^Tomacco â€
 '''
 
 
-def launcher_script(name, target):
+def launcher_script(name, target, portable=False):
     env = "export QT_QPA_PLATFORMTHEME=generic\nexport QT_QUICK_CONTROLS_STYLE=Basic\n" if name == "tomacco" else ""
+    if portable and name == "tomacco":
+        # The bundled Qt loads only its own plugins and QML modules.
+        env += "unset QT_PLUGIN_PATH QML_IMPORT_PATH QML2_IMPORT_PATH\n"
     return "#!/bin/sh\n" + MARKER + "\n" + env + "exec " + shlex.quote(str(target / name)) + ' "$@"\n'
 
 
@@ -357,13 +365,45 @@ class Installer:
         self.finish()
         return {"restored": identifier, "changed": len(self.changed), "backups": str(self.backup)}
 
-    def launchers(self):
+    def launchers(self, portable=False):
         target = self.user / ".local/lib/tomacco"
         for name in ("tomacco", "tomaccoctl"):
             launcher = self.user / ".local/bin" / name
             if launcher.exists() and MARKER not in launcher.read_text():
                 raise SystemExit(f"Refusing to replace another command: {launcher}")
-            self.write(Path(".local/bin") / name, launcher_script(name, target), 0o755)
+            self.write(Path(".local/bin") / name, launcher_script(name, target, portable), 0o755)
+
+    def runtime(self, source):
+        """Installs a portable package's bundled libraries, or none, and removes
+        what an earlier installation's runtime left that this one does not have:
+        a regular package must not find qt.conf pointing at another Qt. A file
+        changed since it was installed is kept."""
+        app = Path(".local/lib/tomacco")
+        keep = set()
+        if source is not None:
+            for path in sorted(p for p in source.rglob("*") if p.is_file()):
+                relative = app / "runtime" / path.relative_to(source)
+                self.write(relative, path.read_bytes(), 0o755 if os.access(path, os.X_OK) else 0o644)
+                keep.add(relative)
+            self.write(app / "qt.conf", QT_CONF)
+            keep.add(app / "qt.conf")
+        for recorded, entry in sorted(self.latest().items()):
+            relative = Path(recorded)
+            if relative in keep or entry.get("after") is None:
+                continue
+            if relative != app / "qt.conf" and not relative.is_relative_to(app / "runtime"):
+                continue
+            target = self.user / relative
+            if target.is_file() and not target.is_symlink() and \
+                    hashlib.sha256(target.read_bytes()).hexdigest() == entry["after"]["sha256"]:
+                self.remove(relative)
+        root = self.user / app / "runtime"
+        if root.is_dir() and not root.is_symlink():
+            for path in sorted((p for p in root.rglob("*") if p.is_dir() and not p.is_symlink()), key=lambda p: len(p.parts), reverse=True):
+                if not any(path.iterdir()):
+                    path.rmdir()
+            if not any(root.iterdir()):
+                root.rmdir()
 
     def widget_placed(self):
         """Whether the bar names the widget."""
@@ -577,11 +617,13 @@ def main():
     cli = args.cli or args.binary.resolve().parent / "tomaccoctl"
     if not cli.is_file() or cli.read_bytes()[:4] != b"\x7fELF":
         parser.error("Build the Rust control plane first, or pass --cli pointing to its native ELF binary.")
+    runtime = ROOT / RUNTIME if PACKAGED and (ROOT / RUNTIME).is_dir() else None
     installer = Installer(args.user_home)
-    installer.launchers()
+    installer.launchers(portable=runtime is not None)
     app = Path(".local/lib/tomacco")
     installer.write(app / "tomacco", args.binary.read_bytes(), 0o755)
     installer.write(app / "tomaccoctl", cli.read_bytes(), 0o755)
+    installer.runtime(runtime)
     for source in sorted(source_path("tools").glob("*.py")):
         installer.write(app / "tools" / source.name, source.read_bytes(), 0o755)
     for source in sorted(source_path("examples/ios-restore-native").iterdir()):

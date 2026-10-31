@@ -1,5 +1,6 @@
 build/
 build-product/
+build-portable/
 build-asan/
 config-temp/
 .tooling/

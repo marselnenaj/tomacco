@@ -36,6 +36,9 @@ tar -xzf tomacco-1.0.0-Linux-x86_64.tar.gz
 python3 tomacco-1.0.0-Linux-x86_64/install.py --omarchy
 ```
 
+Outside Arch, take the release's `-portable` package instead, where it has one; see
+[which package](#debian-ubuntu-and-fedora).
+
 **From a checkout.** You also need CMake, Ninja, a C++20 compiler, Rust/Cargo 1.89 or newer,
 protobuf and the FFmpeg development libraries. On Arch:
 
@@ -53,14 +56,31 @@ must be on your `PATH`. To upgrade, roll back or uninstall, see [Building](build
 
 ### Debian, Ubuntu and Fedora
 
-Only Arch Linux has been tested. The package names below come from each distribution's package
-index; installing them and building Tomacco there has not been tried.
+Only Arch Linux has been tested as a desktop. The package names below come from each distribution's
+package index; installing them and building Tomacco there has not been tried.
 
-**The release package may not start there.** The 1.0.0 desktop binary was built on Arch: its
-dynamic symbols require Qt 6.12 or newer, FFmpeg 9 (`libavcodec.so.63`) and glibc 2.39. Where the
-distribution has older Qt or FFmpeg, build from a checkout as below. `tomaccoctl` itself needs only
-glibc 2.39. `tomaccoctl doctor` checks whether the installed desktop loads here: its `desktop` entry lists missing
+**Which package.** A release has two packages:
+
+| Package | Built on | Needs | For |
+| --- | --- | --- | --- |
+| `tomacco-VERSION-Linux-x86_64.tar.gz` | Arch | The system's Qt 6.12 or newer, FFmpeg 9 (`libavcodec.so.63`), glibc 2.39 | Arch and Omarchy |
+| `tomacco-VERSION-Linux-x86_64-portable.tar.gz` | Ubuntu 22.04 | glibc 2.35 or newer; Qt 6.12 and FFmpeg are bundled | Other distributions, such as Debian 12, Ubuntu 22.04 and newer, Fedora |
+
+The 1.0.0 release has only the first. Its desktop will not start where the distribution's Qt or FFmpeg
+is older; build from a checkout there, as below. `tomaccoctl doctor` checks whether the installed desktop loads here: its `desktop` entry lists missing
 libraries and symbol versions, and `next_steps` then starts with what to do.
+
+**The portable package** installs like the other one: check it, unpack it, run its `install.py`.
+It is about 176 MB. It still uses the system's graphics, X11 or Wayland, font, D-Bus, NSS and ALSA
+libraries, which desktop installations have; `share/doc/tomacco/PORTABLE.md` in the package lists
+them. For the 1.0.0 sources, `tools/build_portable.py verify` ran it in clean containers of Debian 12,
+Ubuntu 22.04, Ubuntu 24.04 and Fedora 44: `tomaccoctl --version`, `tomaccoctl doctor`, the desktop's
+`--smoke-test` offscreen and on Xvfb, and an installation into a scratch home with `install.py`, all
+passed. It has not been run on a real desktop of those distributions. [Building](building.md#packaging)
+describes how it is made.
+
+On a bare container image the checks first installed the libraries listed as `APT_PACKAGES` and
+`DNF_PACKAGES` in `tools/build_portable.py`; a desktop installation normally has them already.
 
 **To build from a checkout** you need Qt 6.9 or newer with Quick, Quick Controls 2, WebEngine Quick,
 Network and SVG, the FFmpeg development libraries, OpenSSL, Python 3.11 or newer, CMake, Ninja, a

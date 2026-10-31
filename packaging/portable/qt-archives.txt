@@ -1,0 +1,13 @@
+# Qt 6.12.0 for Linux x86_64 from the official Qt online repository (built on
+# RHEL 9.6, glibc 2.34), and Qt WebEngine 6.12.0 from its extension repository.
+# Each line: SHA-256, then the path below https://download.qt.io/online/qtsdkrepository/linux_x64/.
+# The SHA-1 files the repository publishes beside each archive matched when these were pinned.
+943023b929d0c08eafe7341700b5ed7601284410b7afd6093f950be291d1d7cd  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_64/6.12.0-0-202609280346qtbase-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z
+0c719e17ea9fbd37aa615595149dca2578985656433f27bf2846cffe4b687d3e  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_64/6.12.0-0-202609280346qtdeclarative-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z
+22a7404505a2883c54556183f19adfff1cdbea30664e34bfd4171180802142e9  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_64/6.12.0-0-202609280346qtsvg-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z
+14c0dc4c8147cf9f7f64909b27ae5c9ab2aaa8ad6625bc2248c693c2a327ab5b  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_64/6.12.0-0-202609280346qtwayland-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z
+bd10fbbce93b076d9bc29576f41e9ccbaf3f7782625f9bebb418d2d9b9f97c47  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_64/6.12.0-0-202609280346qttranslations-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z
+1fdbcd67b1760f3a3f031c64637a9f19992aed2f35aa615e12a468f8c655d4da  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_64/6.12.0-0-202609280346icu-linux-Rhel8.6-x86_64.7z
+f49c3db711a80368dc967a0915659211ead6a53077c5019b5928b737250316b6  desktop/qt6_6120/qt6_6120/qt.qt6.6120.addons.qtpositioning.linux_gcc_64/6.12.0-0-202609280346qtpositioning-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z
+e82fa970a649ce33a16155efed4abefb211ae8af156bf17ab667175b08187b42  desktop/qt6_6120/qt6_6120/qt.qt6.6120.addons.qtwebchannel.linux_gcc_64/6.12.0-0-202609280346qtwebchannel-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z
+05c476fcd217d7eab5657d19791849bdff5770acfb87086690c679c7c8c92f84  extensions/qtwebengine/6120/x86_64/extensions.qtwebengine.6120.linux_gcc_64/6.12.0-0-202607081027qtwebengine-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z

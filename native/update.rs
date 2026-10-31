@@ -523,15 +523,32 @@ fn applies(current: &str, latest: &Version) -> bool {
     Version::parse(current).is_ok_and(|current| *latest > current)
 }
 
+/// The package this installation updates from: the portable one when it was
+/// installed from a portable package, the regular one otherwise.
 fn package_name(version: &Version) -> String {
+    let portable = std::env::current_exe()
+        .ok()
+        .and_then(|executable| executable.parent().map(is_portable))
+        .unwrap_or(false);
+    package_file(version, portable)
+}
+
+/// A portable package (`tools/build_portable.py`) bundles Qt and FFmpeg;
+/// install.py puts them in `runtime/` beside the program, with `qt.conf`.
+fn is_portable(library: &Path) -> bool {
+    library.join("runtime").is_dir() && library.join("qt.conf").is_file()
+}
+
+fn package_file(version: &Version, portable: bool) -> String {
     format!(
-        "{PACKAGE_PREFIX}-{version}-{}-{}.tar.gz",
+        "{PACKAGE_PREFIX}-{version}-{}-{}{}.tar.gz",
         if cfg!(target_os = "linux") {
             "Linux"
         } else {
             std::env::consts::OS
         },
-        std::env::consts::ARCH
+        std::env::consts::ARCH,
+        if portable { "-portable" } else { "" }
     )
 }
 

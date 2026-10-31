@@ -49,6 +49,13 @@ class Fake(make_release.Commands):
             package = build / "tomacco-1.2.3-Linux-x86_64.tar.gz"
             package.write_bytes(b"package")
             package.with_name(package.name + ".sha256").write_text(hashlib.sha256(b"package").hexdigest() + "  " + package.name + "\n")
+        if "tools/build_portable.py" in argv and "build" in argv:
+            output = self.root / argv[argv.index("--output") + 1]
+            output.mkdir(parents=True)
+            (output / "work").mkdir()
+            package = output / "tomacco-1.2.3-Linux-x86_64-portable.tar.gz"
+            package.write_bytes(b"portable")
+            package.with_name(package.name + ".sha256").write_text(hashlib.sha256(b"portable").hexdigest() + "  " + package.name + "\n")
         if "tools/build_source_release.py" in argv:
             dist = self.root / make_release.DIST
             dist.mkdir(exist_ok=True)
@@ -98,7 +105,9 @@ class MakeRelease(unittest.TestCase):
         code, commands, errors, _ = self.make("--key", str(self.key))
         self.assertEqual(code, 0, errors)
         words = [" ".join(argv) for argv in commands.runs]
-        order = ["build_release_notes.py", "cargo fmt --check", "cargo clippy", "ctest", "--target package", "build_source_release.py", "pkeyutl -sign", "gh release create"]
+        order = ["build_release_notes.py", "cargo fmt --check", "cargo clippy", "ctest", "--target package",
+                 "build_portable.py build", "build_portable.py verify build-portable/tomacco-1.2.3-Linux-x86_64-portable.tar.gz",
+                 "build_source_release.py", "pkeyutl -sign", "gh release create"]
         positions = [next(i for i, line in enumerate(words) if word in line) for word in order]
         self.assertEqual(positions, sorted(positions), words)
         release = commands.runs[-1]
@@ -112,6 +121,31 @@ class MakeRelease(unittest.TestCase):
         signature = self.root / "dist/tomacco-1.2.3-Linux-x86_64.tar.gz.sig"
         self.assertEqual(base64.b64decode(signature.read_bytes()), b"\x22" * 64)
         self.assertIn(str(signature.relative_to(self.root)), release)
+        # The portable package is released beside it: checksum, signature, and nothing of its build tree.
+        self.assertEqual(sorted(names), sorted([
+            "tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64.tar.gz.sha256", "tomacco-1.2.3-Linux-x86_64.tar.gz.sig",
+            "tomacco-1.2.3-Linux-x86_64-portable.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz.sha256",
+            "tomacco-1.2.3-Linux-x86_64-portable.tar.gz.sig", "tomacco-1.2.3-source.tar.gz", "tomacco-1.2.3-source.tar.gz.sha256"]))
+        signed = [argv[argv.index("-in") + 1] for argv in commands.runs if argv[:3] == ["openssl", "pkeyutl", "-sign"]]
+        self.assertEqual([Path(path).name for path in signed],
+                         ["tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz"])
+
+    def test_no_portable_leaves_the_portable_package_out(self):
+        code, commands, errors, _ = self.make("--key", str(self.key), "--no-portable")
+        self.assertEqual(code, 0, errors)
+        self.assertFalse(any("tools/build_portable.py" in argv for argv in commands.runs))
+        self.assertFalse(any("portable" in path.name for path in (self.root / "dist").iterdir()))
+
+    def test_a_portable_package_that_does_not_match_its_checksum_is_refused(self):
+        class Corrupting(Fake):
+            def run(self, argv):
+                super().run(argv)
+                if "tools/build_portable.py" in argv and "build" in argv:
+                    (self.root / make_release.PORTABLE / "tomacco-1.2.3-Linux-x86_64-portable.tar.gz").write_bytes(b"changed")
+        code, commands, errors, _ = self.make("--key", str(self.key), commands=Corrupting(self.root))
+        self.assertEqual(code, 1)
+        self.assertIn("portable.tar.gz does not match its checksum", errors)
+        self.assertFalse(any(argv[0] == "gh" for argv in commands.runs))
 
     def test_a_dry_run_only_prints(self):
         before = sorted(path.name for path in self.root.iterdir())
@@ -121,6 +155,8 @@ class MakeRelease(unittest.TestCase):
         self.assertEqual(sorted(path.name for path in self.root.iterdir()), before)
         self.assertIn("gh release create v1.2.3", " ".join(" ".join(argv) for argv in commands.runs))
         self.assertIn("Would sign", output)
+        self.assertIn("build-portable/tomacco-1.2.3-Linux-x86_64-portable.tar.gz", output)
+        self.assertIn("tools/build_portable.py verify", " ".join(" ".join(argv) for argv in commands.runs))
         self.assertNotIn(self.key.read_text(), output)
 
     def test_a_real_dry_run_starts_nothing(self):

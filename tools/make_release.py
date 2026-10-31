@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Make a draft release from a clean checkout of its tag: checks, package and
-source tarball with checksums, signature, then `gh release create --draft`.
-Publishing the draft stays a person's decision."""
+"""Make a draft release from a clean checkout of its tag: checks, package,
+portable package and source tarball with checksums, signatures, then
+`gh release create --draft`. Publishing the draft stays a person's decision."""
 import argparse
 import base64
 import hashlib
@@ -17,6 +17,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 KEY_ENVIRONMENT = "TOMACCO_RELEASE_SIGNING_KEY_FILE"
 BUILD = "build-product"
+# tools/build_portable.py's output: the package with Qt and FFmpeg bundled.
+PORTABLE = "build-portable"
 DIST = "dist"
 NOTES = "dist-notes/body.md"
 
@@ -116,9 +118,14 @@ def check_key(commands, root, key):
         raise Refused("This signing key does not belong to the public key in native/product.rs")
 
 
-def build(commands, root, tag):
+def portable_name(prefix, version):
+    return f"{prefix}-{version}-Linux-x86_64-portable.tar.gz"
+
+
+def build(commands, root, tag, portable=None):
+    """`portable` is the portable package's file name, or None to make none."""
     python = sys.executable
-    for argv in (
+    steps = [
         [python, "tools/build_release_notes.py", "--tag", tag, "--output", NOTES],
         ["cargo", "fmt", "--check"],
         ["cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"],
@@ -126,16 +133,22 @@ def build(commands, root, tag):
         ["cmake", "--build", BUILD],
         ["ctest", "--test-dir", BUILD, "--output-on-failure"],
         ["cmake", "--build", BUILD, "--target", "package"],
-        [python, "tools/build_source_release.py", "--output", DIST],
-    ):
+    ]
+    if portable:
+        # Built in its container, then started in clean containers of the
+        # distributions it is for.
+        steps += [[python, "tools/build_portable.py", "build", "--output", PORTABLE],
+                  [python, "tools/build_portable.py", "verify", f"{PORTABLE}/{portable}"]]
+    steps.append([python, "tools/build_source_release.py", "--output", DIST])
+    for argv in steps:
         commands.run(argv)
 
 
-def collect_package(root, prefix, version):
+def collect_package(root, prefix, version, directory=BUILD, pattern=None):
     """Moves the package and its checksum into dist, and returns the package."""
-    packages = sorted((root / BUILD).glob(f"{prefix}-{version}-Linux-*.tar.gz"))
+    packages = sorted((root / directory).glob(pattern or f"{prefix}-{version}-Linux-*.tar.gz"))
     if len(packages) != 1:
-        raise Refused(f"Expected one package in {BUILD}, found {len(packages)}")
+        raise Refused(f"Expected one package in {directory}, found {len(packages)}")
     package = packages[0]
     checksum = package.with_name(package.name + ".sha256")
     if not checksum.is_file():
@@ -186,15 +199,21 @@ def make(options, commands, root, environment):
     dist = root / DIST
     if dist.exists() and any(dist.iterdir()):
         raise Refused(f"{DIST}/ is not empty: everything in it would be published")
-    build(commands, root, tag)
     prefix = constant(root, "PACKAGE_PREFIX")
+    portable = None if options.no_portable else portable_name(prefix, version)
+    build(commands, root, tag, portable)
     if commands.dry_run:
         print(f"Would move {BUILD}/{prefix}-{version}-Linux-*.tar.gz and its checksum to {DIST}/, verify the checksums")
         print(f"Would sign the package with {key} into {DIST}/{prefix}-{version}-Linux-*.tar.gz.sig, and verify the signature")
+        if portable:
+            print(f"Would move {PORTABLE}/{portable} and its checksum to {DIST}/, and sign it into {DIST}/{portable}.sig the same way")
     else:
-        package = collect_package(root, prefix, version)
+        packages = [collect_package(root, prefix, version)]
+        if portable:
+            packages.append(collect_package(root, prefix, version, PORTABLE, portable))
         verify_checksums(root)
-        sign(commands, key, package)
+        for package in packages:
+            sign(commands, key, package)
     draft(commands, root, tag, version)
 
 
@@ -203,6 +222,8 @@ def main(arguments=None, commands=None, root=ROOT, environment=os.environ):
     parser.add_argument("--tag", help="The release's tag (default: v and the version in CMakeLists.txt)")
     parser.add_argument("--key", help=f"The signing key's path, outside this repository (or {KEY_ENVIRONMENT})")
     parser.add_argument("--dry-run", action="store_true", help="Only print what it would do")
+    parser.add_argument("--no-portable", action="store_true",
+                        help="Leave out the portable package (tools/build_portable.py, which needs Docker)")
     options = parser.parse_args(arguments)
     commands = commands or Commands(root, options.dry_run)
     try:

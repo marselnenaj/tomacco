@@ -105,6 +105,34 @@ makepkg
 For 1.0.0, `makepkg` built the package in about a minute and a half on the development host, and the packaged desktop passed
 `--smoke-test` offscreen. Installing it with pacman was not part of that check.
 
+**Portable package.** The regular package links the system's Qt and FFmpeg, so it runs only where those match the build host's
+(Arch). `tools/build_portable.py` builds `tomacco-VERSION-Linux-x86_64-portable.tar.gz`, which bundles them, in a container:
+
+```sh
+tools/build_portable.py build
+tools/build_portable.py verify build-portable/tomacco-1.0.0-Linux-x86_64-portable.tar.gz
+```
+
+`build` needs Docker and network access. It builds the image `tomacco-portable-builder:<digest>` from
+`packaging/portable/Dockerfile` on Ubuntu 22.04, whose glibc 2.35 is the oldest the package needs. The image pins every download by
+SHA-256: Qt 6.12.0 and Qt WebEngine from the official Qt binaries (`packaging/portable/qt-archives.txt`), FFmpeg 9.0.2 built as an
+LGPL-only library with only the H.264 and MJPEG decoders, CMake 4.4.5, and Rust 1.89.0 through rustup. The build copies the
+checkout's tracked and unignored files into `build-portable/work/`, builds there without tests, and adds `lib/tomacco/runtime`: Qt's
+libraries, plugins (xcb, Wayland, offscreen, TLS, image formats), QML modules, QtWebEngineProcess with its resources, FFmpeg, and
+the xcb helper libraries Qt's xcb plugin needs. The desktop finds them through its RUNPATH and `qt.conf`. The build stops if any file
+needs a newer glibc than 2.35 or a host library outside its list; that list is in the package's `share/doc/tomacco/PORTABLE.md`.
+
+`verify` unpacks the package in clean containers of Debian 12, Ubuntu 22.04, Ubuntu 24.04 and Fedora 44 (`--image` picks others).
+In each it installs the host libraries, runs `tomaccoctl --version` and `tomaccoctl doctor`, checks that every bundled library
+resolves, runs `tomacco --smoke-test` offscreen and on Xvfb, then installs with `install.py` into a scratch home, runs the
+installed launchers and uninstalls. `install.py` copies `lib/tomacco/runtime` to `~/.local/lib/tomacco/runtime` and writes
+`qt.conf` beside the program; installing a regular package later removes them. An installation from a portable package updates to
+the next release's portable package.
+
+For the 1.0.0 sources the package was about 176 MB (436 MB unpacked, 2182 files), and all checks passed in all four containers;
+`install.py` took 26 to 100 seconds there, most of it journalling each file. Nobody has run it on a desktop of those
+distributions yet.
+
 `install.py` and `cmake --install` install the same files, and the same documents into `share/doc/tomacco`: the guides and legal texts, in one flat directory, with
 links adjusted and `SOURCE.md` naming the version and commit. The list is `DOCUMENTS` in `install.py`. Links to anything else point at the release's copy on GitHub.
 
@@ -154,7 +182,7 @@ installation back. An uninstall also leaves your preferences (`~/.config/marseln
 
 ## Releases and updates
 
-A release holds the package, its `.sha256` and its `.sig`. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
+A release holds the package and the portable package, each with its `.sha256` and its `.sig`. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
 never offered as updates.
 
 Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against the public key compiled into `tomaccoctl`. A build without
@@ -179,8 +207,9 @@ A release is a draft until you publish it. Before tagging:
 1. Set the version in `CMakeLists.txt` and `Cargo.toml`, the `<release>` in the metainfo, and `CHANGELOG.md`.
 2. Update `docs/RELEASE_NOTES.md`. The tools refuse notes that still hold the comment `numbers: final measurement pending`.
 
-Releases are made locally, not by a workflow. From a clean checkout of the tag, `tools/make_release.py` runs the checks, builds the package and source tarball with their
-checksums, signs the package and creates a draft release whose body comes from `docs/RELEASE_NOTES.md`, with relative links pointing into the tag. It refuses a dirty tree, a checkout that is not
+Releases are made locally, not by a workflow. From a clean checkout of the tag, `tools/make_release.py` runs the checks, builds the package, the
+[portable package](#packaging) (built and verified with `tools/build_portable.py`; `--no-portable` leaves it out) and the source tarball with their
+checksums, signs both packages and creates a draft release whose body comes from `docs/RELEASE_NOTES.md`, with relative links pointing into the tag. It refuses a dirty tree, a checkout that is not
 the tag, and versions that disagree. With `--dry-run` it only prints what it would do.
 
 **Set by hand on GitHub.** The repository's social preview is `assets/readme/social-preview.png` (1280x640, the banner on a 2:1 canvas). Upload it under Settings, General,

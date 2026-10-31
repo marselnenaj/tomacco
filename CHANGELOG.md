@@ -20,6 +20,9 @@ operations and their JSON results.
   - "Did you mean" remedies for misspelt operations, argument keys and flags.
 - **Update and uninstall.** `tomaccoctl update [--check]` and `tomaccoctl uninstall`.
   The installer now keeps a copy of itself for uninstall and rollback.
+- **Portable package.** `tools/build_portable.py` builds a release package with Qt 6.12 and an
+  LGPL-only FFmpeg bundled, for glibc 2.35 and newer; `make_release.py` signs it beside the
+  regular package, and `install.py` and `tomaccoctl update` handle it.
 - **MCP prompts.** `setup`, `run-android-app` and `run-virtual-iphone`.
 - **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
   `tomacco://docs/NAME`, as Markdown of the installed version.
