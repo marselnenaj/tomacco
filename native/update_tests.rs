@@ -801,6 +801,24 @@ fn the_configured_key_is_empty_until_a_release_key_is_set_and_a_bad_one_counts_a
 }
 
 #[test]
+fn a_portable_installation_updates_from_the_portable_package() {
+    let version = Version::parse("1.2.3").unwrap();
+    assert_eq!(
+        package_file(&version, true),
+        format!(
+            "{PACKAGE_PREFIX}-1.2.3-Linux-{}-portable.tar.gz",
+            std::env::consts::ARCH
+        )
+    );
+    let library = tempfile::tempdir().unwrap();
+    assert!(!is_portable(library.path()));
+    fs::create_dir(library.path().join("runtime")).unwrap();
+    assert!(!is_portable(library.path()));
+    fs::write(library.path().join("qt.conf"), "[Paths]\nPrefix=runtime\n").unwrap();
+    assert!(is_portable(library.path()));
+}
+
+#[test]
 fn headers_give_the_last_status_and_any_location() {
     let proxied = "HTTP/1.1 200 Connection established\r\n\r\nHTTP/2 302\r\nLocation: https://github.com/x\r\n\r\n";
     let reply = parse_headers(proxied).unwrap();
