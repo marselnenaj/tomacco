@@ -15,6 +15,8 @@ operations and their JSON results.
 - **Command line.**
   - `tomaccoctl completions bash|zsh|fish`. Only the bash script has been run.
   - `tomaccoctl schema OPERATION` and `schema --names`.
+  - `tomaccoctl help OPERATION` and `call OPERATION --help` describe an operation in plain text: arguments with types,
+    choices, limits and defaults, and an example call generated from the schema.
   - `call … --wait` follows a job to its end, with its log on stderr.
   - Indented JSON in a terminal or with `--pretty`; output to a pipe is unchanged.
   - "Did you mean" remedies for misspelt operations, argument keys and flags.

@@ -7,6 +7,7 @@ use crate::core::*;
 const COMMANDS: &[(&str, &str)] = &[
     ("call", "Run one operation"),
     ("schema", "Print operation schemas"),
+    ("help", "Describe an operation"),
     ("setup", "Check and set up this machine"),
     ("doctor", "Check toolchains and devices"),
     ("mcp", "Serve operations over MCP stdio"),
@@ -34,7 +35,11 @@ _tomaccoctl() {{
             if [ "$COMP_CWORD" -eq 2 ] && [[ $cur != -* ]]; then
                 words=$("${{COMP_WORDS[0]}}" schema --names 2>/dev/null)
             else
-                words="--wait --pretty --compact"
+                words="--wait --help --pretty --compact"
+            fi ;;
+        help)
+            if [ "$COMP_CWORD" -eq 2 ]; then
+                words=$("${{COMP_WORDS[0]}}" schema --names 2>/dev/null)
             fi ;;
         schema)
             if [[ $cur != -* ]]; then
@@ -67,12 +72,14 @@ _tomaccoctl() {{
         return
     fi
     case $words[2] in
-    call|schema)
+    call|schema|help)
         if (( CURRENT == 3 )) && [[ $PREFIX != -* ]]; then
             operations=(${{(f)"$($words[1] schema --names 2>/dev/null)"}})
             compadd -a operations
         elif [[ $words[2] == call ]]; then
-            compadd -- --wait --pretty --compact
+            compadd -- --wait --help --pretty --compact
+        elif [[ $words[2] == help ]]; then
+            return
         else
             compadd -- --names --pretty --compact
         fi ;;
@@ -108,8 +115,9 @@ fi
                 ));
             }
             out.push_str(&format!(
-                "complete -c tomaccoctl -n '__fish_seen_subcommand_from call schema; and test (count (commandline -opc)) -eq 2' -a '(tomaccoctl schema --names 2>/dev/null)'
+                "complete -c tomaccoctl -n '__fish_seen_subcommand_from call schema help; and test (count (commandline -opc)) -eq 2' -a '(tomaccoctl schema --names 2>/dev/null)'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from call' -l wait -d 'Follow a job until it ends'
+complete -c tomaccoctl -n '__fish_seen_subcommand_from call' -l help -d 'Describe the operation'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from schema' -l names -d 'Only the operation names'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from call schema doctor' -l pretty -d 'Indented JSON'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from call schema doctor' -l compact -d 'One line of JSON'
@@ -197,6 +205,14 @@ mod tests {
             "--wait\n"
         );
         assert_eq!(complete(&["tomaccoctl", "schema", "--n"]), "--names\n");
+        assert_eq!(
+            complete(&["tomaccoctl", "help", "project."]),
+            "project.run\n"
+        );
+        assert_eq!(
+            complete(&["tomaccoctl", "call", "job.wait", "--h"]),
+            "--help\n"
+        );
         assert_eq!(complete(&["tomaccoctl", "completions", "f"]), "fish\n");
     }
 }

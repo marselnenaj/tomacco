@@ -12,6 +12,7 @@ mod core;
 mod crashes;
 mod dap;
 mod debugger;
+mod describe;
 mod desktop;
 mod devices;
 mod files;
@@ -246,6 +247,11 @@ Usage:
                     Print every operation with its argument schema (JSON),
                     only the named one, or with --names just the names, one
                     per line.
+  tomaccoctl help [OPERATION]
+                    Without an operation, print this help. With one, describe
+                    it for a person: what it does, its arguments with their
+                    types, choices and defaults, and an example call. The
+                    same as tomaccoctl call OPERATION --help.
   tomaccoctl setup [--yes]
                     Check this machine in plain text and offer to install the
                     Android SDK and connect your coding agents.
@@ -279,6 +285,16 @@ schema; long work runs as durable jobs (job.wait, job.cancel, job.list).
 Data lives in ~/.local/share/tomacco (TOMACCO_HOME overrides it).
 Documentation: docs/agents.md. License: GPL-2.0-or-later."
     )
+}
+/// `tomaccoctl help [OPERATION]`, and `call OPERATION --help`: the
+/// command-line help, or one operation described for a person.
+fn help_command(args: &[String], options: &Options) -> Result<String> {
+    options.check(&[])?;
+    match args {
+        [] => Ok(help() + "\n"),
+        [name] => describe::operation(name),
+        _ => Err(Error::new("invalid_request", "Expected one operation name")),
+    }
 }
 
 fn run(args: &[String], options: &Options) -> Result<i32> {
@@ -417,6 +433,10 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             let _ = write!(std::io::stdout(), "{}", completions::script(shell)?);
             return Ok(0);
         }
+        "help" => {
+            let _ = write!(std::io::stdout(), "{}", help_command(&args[1..], options)?);
+            return Ok(0);
+        }
         "doctor" => options
             .check(&[])
             .and_then(|()| api::dispatch("doctor", &json!({}))),
@@ -425,6 +445,10 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             let op = args
                 .get(1)
                 .ok_or_else(|| Error::new("invalid_request", "Missing operation name"))?;
+            if args[2..].iter().any(|arg| arg == "--help" || arg == "-h") {
+                let _ = write!(std::io::stdout(), "{}", help_command(&args[1..2], options)?);
+                return Ok(0);
+            }
             if args.len() > 3 {
                 return Err(Error::new(
                     "invalid_request",
@@ -582,6 +606,32 @@ mod tests {
         assert!(names.contains(&"ios.virtual.start"));
         assert!(reply(&["schema", "job.wait", "job.get"]).is_err());
         assert!(reply(&["schema", "job.wait", "--names"]).is_err());
+    }
+    #[test]
+    fn help_describes_the_commands_or_one_operation() {
+        let help = |words: &[&str]| {
+            let (args, options) = line(words);
+            help_command(&args[1..], &options)
+        };
+        assert!(
+            help(&["help"])
+                .unwrap()
+                .contains("tomaccoctl help [OPERATION]")
+        );
+        let text = help(&["help", "job.wait"]).unwrap();
+        assert!(text.starts_with("job.wait - Wait for job"));
+        assert!(text.contains("tomaccoctl call job.wait '"));
+        let error = help(&["help", "job.wiat"]).unwrap_err();
+        assert_eq!(error.code, "operation_not_found");
+        assert!(help(&["help", "job.wait", "job.get"]).is_err());
+        assert_eq!(
+            help(&["help", "job.wait", "--names"]).unwrap_err().message,
+            "Unknown option: --names"
+        );
+        // `call OPERATION --help` keeps --help for the operation.
+        let (args, options) = line(&["call", "job.wait", "--help"]);
+        assert_eq!(args, ["call", "job.wait", "--help"]);
+        assert!(options.check(&["--wait"]).is_ok());
     }
     #[test]
     fn call_arguments_come_inline_from_a_file_or_from_standard_input() {
