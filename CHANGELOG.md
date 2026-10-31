@@ -56,6 +56,8 @@ operations and their JSON results.
     older than the test job.
 - **Jobs.** `job.events` returns a job's state and phase changes and cancellation requests with
   their times, recorded by the job database for every job from now on.
+- **Jobs.** `android.sdk_install`, `ios.wda_prepare` and `android.connect` take an optional `retry`
+  (count and backoff); a job lists its attempts in its result.
 - **Jobs.** At most two builds run at once by default; more wait as `queued` with a `queued_reason`.
   `settings.configure` `jobs` sets the cap for builds and for Android emulators.
 - **Jobs.** `job.list` filters by state, operation, project and creation time, and pages with

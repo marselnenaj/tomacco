@@ -691,8 +691,21 @@ pub fn handle(op: &str, a: &Value) -> Result {
             ]);
             if !pairing.is_empty() {
                 args.push(identifier(pairing, "pairing code", Some(r"[0-9]{6}"))?.into());
+                // A pairing code works once: pairing is never repeated.
+                return run(args);
             }
-            run(args)
+            connect_retrying(
+                &a["retry"],
+                || run(args.clone()),
+                |seconds| {
+                    let end = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+                    while std::time::Instant::now() < end {
+                        check_cancelled()?;
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                    }
+                    Ok(())
+                },
+            )
         }
         "android.calibrate" => {
             let value = info("android", device)?;
@@ -1254,6 +1267,42 @@ fn avd_memory_mb(value: &str) -> Option<u64> {
     number.parse::<u64>().ok()?.checked_mul(multiplier)
 }
 
+/// `adb connect` again after a failure, as `retry` asks. adb reports some
+/// failures with exit status 0 and a message, so the message counts too.
+fn connect_retrying(
+    retry: &Value,
+    mut connect: impl FnMut() -> Result,
+    mut pause: impl FnMut(u64) -> Result<()>,
+) -> Result {
+    let mut attempt = 1;
+    loop {
+        let reply = connect();
+        let failed = match &reply {
+            Ok(value) => {
+                let text = format!("{} {}", s(value, "stdout"), s(value, "stderr")).to_lowercase();
+                ["failed to connect", "cannot connect", "unable to connect"]
+                    .iter()
+                    .any(|marker| text.contains(marker))
+            }
+            Err(_) => true,
+        };
+        let delay = jobs::retry_delay(retry, attempt).filter(|_| failed);
+        match (delay, reply) {
+            (Some(seconds), _) => {
+                pause(seconds)?;
+                attempt += 1;
+            }
+            (None, Ok(mut value)) => {
+                if retry.is_object() {
+                    value["attempts"] = json!(attempt);
+                }
+                return Ok(value);
+            }
+            (None, Err(error)) => return Err(error),
+        }
+    }
+}
+
 fn avd_settings_lock(name: &str) -> Result<Lock> {
     Lock::open(
         &home()?
@@ -1422,5 +1471,57 @@ mod tests {
                 .get("Current_network_status")
                 .is_none()
         );
+    }
+}
+
+#[cfg(test)]
+mod connect_tests {
+    use super::*;
+
+    #[test]
+    fn a_failed_connect_is_repeated_as_asked_and_a_success_ends_it() {
+        let reply = |index: usize| match index {
+            0 => Err(Error::new("command_failed", "adb exited 1")),
+            1 => Ok(json!({"stdout":"failed to connect to '10.0.0.2:5555': Connection refused"})),
+            _ => Ok(json!({"stdout":"connected to 10.0.0.2:5555"})),
+        };
+        let mut calls = 0;
+        let mut pauses = Vec::new();
+        let value = connect_retrying(
+            &json!({"count":3,"backoff_seconds":2}),
+            || {
+                calls += 1;
+                reply(calls - 1)
+            },
+            |seconds| {
+                pauses.push(seconds);
+                Ok(())
+            },
+        )
+        .unwrap();
+        assert_eq!(calls, 3);
+        assert_eq!(pauses, [2, 4]);
+        assert_eq!(value["attempts"], 3);
+        // Without retry, one attempt and the reply as it was.
+        let mut calls = 0;
+        let value = connect_retrying(
+            &Value::Null,
+            || {
+                calls += 1;
+                Ok(json!({"stdout":"failed to connect"}))
+            },
+            |_| panic!("no pause without retry"),
+        )
+        .unwrap();
+        assert_eq!(calls, 1);
+        assert!(value.get("attempts").is_none());
+        // The last failure is returned once the retries are used up.
+        let error = connect_retrying(
+            &json!({"count":1}),
+            || Err(Error::new("command_failed", "adb exited 1")),
+            |_| Ok(()),
+        )
+        .unwrap_err();
+        assert_eq!(error.code, "command_failed");
     }
 }

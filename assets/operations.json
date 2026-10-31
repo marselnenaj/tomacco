@@ -1839,6 +1839,27 @@
           "type": "string",
           "description": "",
           "default": ""
+        },
+        "retry": {
+          "type": "object",
+          "description": "Try again after a failure: count more attempts (at most 5), waiting backoff_seconds, doubled each time up to 600. Only adb connect is repeated, never pairing; the result says how many attempts it took.",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "backoff_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600,
+              "default": 5
+            }
+          },
+          "required": [
+            "count"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -1919,6 +1940,27 @@
         "accept_licenses": {
           "type": "boolean",
           "default": false
+        },
+        "retry": {
+          "type": "object",
+          "description": "Try again after a failure: count more attempts (at most 5), waiting backoff_seconds, doubled each time up to 600. A cancelled or timed-out job is not repeated; the job's result lists its attempts.",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "backoff_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600,
+              "default": 5
+            }
+          },
+          "required": [
+            "count"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -5783,6 +5825,27 @@
         "device": {
           "type": "string",
           "default": ""
+        },
+        "retry": {
+          "type": "object",
+          "description": "Try again after a failure: count more attempts (at most 5), waiting backoff_seconds, doubled each time up to 600. A cancelled or timed-out job is not repeated; the job's result lists its attempts.",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            },
+            "backoff_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 600,
+              "default": 5
+            }
+          },
+          "required": [
+            "count"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [],

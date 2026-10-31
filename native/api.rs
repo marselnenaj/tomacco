@@ -83,7 +83,7 @@ pub fn arguments(name: &str, args: &Value) -> Result {
 pub fn dispatch(name: &str, args: &Value) -> Result {
     check_cancelled()?;
     let a = arguments(name, args)?;
-    let _request = jobs::Request::enter(name);
+    let _request = jobs::Request::enter(name, &a["retry"]);
     match name {
         "doctor" => toolchain::doctor().map(crate::setup::with_next_steps),
         "settings.get" => toolchain::settings(),

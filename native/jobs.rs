@@ -443,14 +443,16 @@ fn query(db: &Connection, a: &Value) -> Result {
     Ok(json!(jobs))
 }
 thread_local! {
-    static REQUEST: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+    static REQUEST: std::cell::RefCell<Option<(String, Value)>> = const { std::cell::RefCell::new(None) };
 }
-/// The operation this thread is answering, for the jobs it submits. Nested
-/// operations restore the outer one when they end.
-pub struct Request(Option<String>);
+/// The operation this thread is answering, for the jobs it submits, and the
+/// `retry` its caller asked for (only operations whose schema has `retry`,
+/// where repeating the job is safe, accept one). Nested operations restore
+/// the outer one when they end.
+pub struct Request(Option<(String, Value)>);
 impl Request {
-    pub fn enter(operation: &str) -> Self {
-        Request(REQUEST.with(|r| r.replace(Some(operation.to_string()))))
+    pub fn enter(operation: &str, retry: &Value) -> Self {
+        Request(REQUEST.with(|r| r.replace(Some((operation.to_string(), retry.clone())))))
     }
 }
 impl Drop for Request {
@@ -460,13 +462,32 @@ impl Drop for Request {
     }
 }
 fn requested_operation() -> Option<String> {
-    REQUEST.with(|r| r.borrow().clone())
+    REQUEST.with(|r| r.borrow().as_ref().map(|(operation, _)| operation.clone()))
+}
+fn requested_retry() -> Option<Value> {
+    REQUEST.with(|r| {
+        r.borrow()
+            .as_ref()
+            .map(|(_, retry)| retry.clone())
+            .filter(|retry| n(retry, "count") > 0)
+            .map(|retry| {
+                json!({
+                    "count": n(&retry, "count").min(RETRY_LIMIT),
+                    "backoff_seconds": retry["backoff_seconds"].as_u64().unwrap_or(5).clamp(1, RETRY_PAUSE_LIMIT),
+                })
+            })
+    })
 }
 pub fn submit(label: &str, mut spec: Value) -> Result {
     check_cancelled()?;
     if spec.get("operation").is_none() {
         if let Some(operation) = requested_operation() {
             spec["operation"] = json!(operation);
+        }
+    }
+    if spec.get("retry").is_none() {
+        if let Some(retry) = requested_retry() {
+            spec["retry"] = retry;
         }
     }
     if let Ok(parent) = std::env::var("TOMACCO_PARENT_JOB") {
@@ -974,6 +995,22 @@ pub fn worker(id: &str) -> Result<()> {
     })?;
     Ok(())
 }
+/// The most retries a job may ask for, and the longest pause before one.
+const RETRY_LIMIT: u64 = 5;
+const RETRY_PAUSE_LIMIT: u64 = 600;
+/// The pause before attempt `attempt + 1` after attempt `attempt` failed,
+/// doubling from `backoff_seconds`, or None when no retry is left.
+pub fn retry_delay(retry: &Value, attempt: u64) -> Option<u64> {
+    if !retry.is_object() || attempt > n(retry, "count").min(RETRY_LIMIT) {
+        return None;
+    }
+    let backoff = retry["backoff_seconds"].as_u64().unwrap_or(5);
+    Some(
+        backoff
+            .saturating_mul(1 << (attempt - 1).min(16))
+            .min(RETRY_PAUSE_LIMIT),
+    )
+}
 fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i32, Value)> {
     let log_dir = home()?.join("jobs");
     private_dir(&log_dir)?;
@@ -1059,221 +1096,269 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
     } else {
         None
     };
-    for step in spec["steps"]
-        .as_array()
-        .ok_or_else(|| Error::new("invalid_job", "Missing steps"))?
-    {
-        if state != "succeeded" {
-            break;
-        }
-        if let Some(value) = interrupt(&log)? {
-            state = value.into();
-            break;
-        }
-        writeln!(log, "\n$ {}", step["argv"])?;
-        publish_phase(
-            if s(step, "phase") == "streaming" {
-                "streaming"
-            } else {
-                "building"
-            },
-            "",
-        )?;
-        let machine = s(step, "protocol") == "flutter-machine";
-        let mut event_file = File::open(log_dir.join(format!("{id}.log")))?;
-        event_file.seek(SeekFrom::End(0))?;
-        let mut event_buffer = String::new();
-        let mut app_id = String::new();
-        let mut phase = String::from("building");
-        let output = if !s(step, "output").is_empty() {
-            let target = PathBuf::from(s(step, "output"));
-            fs::create_dir_all(target.parent().unwrap())?;
-            Some(PartialOutput {
-                temporary: target.with_file_name(format!(
-                    "{}.{}.part",
-                    target.file_name().unwrap_or_default().to_string_lossy(),
-                    id
-                )),
-                target,
-            })
-        } else {
-            None
-        };
-        let args = strings(&step["argv"]);
-        let mut command = Command::new(
-            args.first()
-                .ok_or_else(|| Error::new("invalid_job", "Missing command"))?,
-        );
-        command
-            .args(&args[1..])
-            .current_dir(step["cwd"].as_str().unwrap_or(s(spec, "cwd")))
-            .process_group(0)
-            .env("TOMACCO_PARENT_JOB", id);
-        if let Some(env) = spec["env"].as_object() {
-            for (key, value) in env {
-                command.env(
-                    key,
-                    value.as_str().ok_or_else(|| {
-                        Error::new("invalid_job", "Environment values must be strings")
-                    })?,
-                );
+    let mut attempts = Vec::new();
+    let mut attempt = 1;
+    loop {
+        let attempt_started = now();
+        for step in spec["steps"]
+            .as_array()
+            .ok_or_else(|| Error::new("invalid_job", "Missing steps"))?
+        {
+            if state != "succeeded" {
+                break;
             }
-        }
-        command
-            .stdin(if step.get("input").is_some() || b(step, "interactive") {
-                Stdio::piped()
-            } else {
-                Stdio::null()
-            })
-            .stdout(if let Some(ref output) = output {
-                Stdio::from(File::create(&output.temporary)?)
-            } else {
-                Stdio::from(log.try_clone()?)
-            })
-            .stderr(Stdio::from(log.try_clone()?));
-        toolchain::parent_bound(&mut command);
-        let mut proc = ManagedChild(command.spawn()?);
-        if let Some(input) = step["input"].as_str() {
-            if let Some(mut stdin) = proc.0.stdin.take() {
-                let text = input.to_string();
-                thread::spawn(move || {
-                    let _ = stdin.write_all(text.as_bytes());
-                });
+            if let Some(value) = interrupt(&log)? {
+                state = value.into();
+                break;
             }
-        }
-        let capture_deadline = step["duration"]
-            .as_f64()
-            .filter(|n| n.is_finite() && *n >= 0.0 && *n <= 86400.0)
-            .map(|n| Instant::now() + Duration::from_secs_f64(n));
-        let mut captured = false;
-        loop {
-            if machine {
-                let mut bytes = Vec::new();
-                std::io::Read::by_ref(&mut event_file)
-                    .take(256 * 1024)
-                    .read_to_end(&mut bytes)?;
-                event_buffer.push_str(&String::from_utf8_lossy(&bytes));
-                while let Some(end) = event_buffer.find('\n') {
-                    let line: String = event_buffer.drain(..=end).collect();
-                    if let Ok(Value::Array(events)) = serde_json::from_str::<Value>(line.trim()) {
-                        for event in events {
-                            match s(&event, "event") {
-                                "app.start" => {
-                                    app_id = s(&event["params"], "appId").into();
-                                    publish_phase(&phase, &app_id)?;
+            writeln!(log, "\n$ {}", step["argv"])?;
+            publish_phase(
+                if s(step, "phase") == "streaming" {
+                    "streaming"
+                } else {
+                    "building"
+                },
+                "",
+            )?;
+            let machine = s(step, "protocol") == "flutter-machine";
+            let mut event_file = File::open(log_dir.join(format!("{id}.log")))?;
+            event_file.seek(SeekFrom::End(0))?;
+            let mut event_buffer = String::new();
+            let mut app_id = String::new();
+            let mut phase = String::from("building");
+            let output = if !s(step, "output").is_empty() {
+                let target = PathBuf::from(s(step, "output"));
+                fs::create_dir_all(target.parent().unwrap())?;
+                Some(PartialOutput {
+                    temporary: target.with_file_name(format!(
+                        "{}.{}.part",
+                        target.file_name().unwrap_or_default().to_string_lossy(),
+                        id
+                    )),
+                    target,
+                })
+            } else {
+                None
+            };
+            let args = strings(&step["argv"]);
+            let mut command = Command::new(
+                args.first()
+                    .ok_or_else(|| Error::new("invalid_job", "Missing command"))?,
+            );
+            command
+                .args(&args[1..])
+                .current_dir(step["cwd"].as_str().unwrap_or(s(spec, "cwd")))
+                .process_group(0)
+                .env("TOMACCO_PARENT_JOB", id);
+            if let Some(env) = spec["env"].as_object() {
+                for (key, value) in env {
+                    command.env(
+                        key,
+                        value.as_str().ok_or_else(|| {
+                            Error::new("invalid_job", "Environment values must be strings")
+                        })?,
+                    );
+                }
+            }
+            command
+                .stdin(if step.get("input").is_some() || b(step, "interactive") {
+                    Stdio::piped()
+                } else {
+                    Stdio::null()
+                })
+                .stdout(if let Some(ref output) = output {
+                    Stdio::from(File::create(&output.temporary)?)
+                } else {
+                    Stdio::from(log.try_clone()?)
+                })
+                .stderr(Stdio::from(log.try_clone()?));
+            toolchain::parent_bound(&mut command);
+            let mut proc = ManagedChild(command.spawn()?);
+            if let Some(input) = step["input"].as_str() {
+                if let Some(mut stdin) = proc.0.stdin.take() {
+                    let text = input.to_string();
+                    thread::spawn(move || {
+                        let _ = stdin.write_all(text.as_bytes());
+                    });
+                }
+            }
+            let capture_deadline = step["duration"]
+                .as_f64()
+                .filter(|n| n.is_finite() && *n >= 0.0 && *n <= 86400.0)
+                .map(|n| Instant::now() + Duration::from_secs_f64(n));
+            let mut captured = false;
+            loop {
+                if machine {
+                    let mut bytes = Vec::new();
+                    std::io::Read::by_ref(&mut event_file)
+                        .take(256 * 1024)
+                        .read_to_end(&mut bytes)?;
+                    event_buffer.push_str(&String::from_utf8_lossy(&bytes));
+                    while let Some(end) = event_buffer.find('\n') {
+                        let line: String = event_buffer.drain(..=end).collect();
+                        if let Ok(Value::Array(events)) = serde_json::from_str::<Value>(line.trim())
+                        {
+                            for event in events {
+                                match s(&event, "event") {
+                                    "app.start" => {
+                                        app_id = s(&event["params"], "appId").into();
+                                        publish_phase(&phase, &app_id)?;
+                                    }
+                                    "app.started" => {
+                                        phase = "ready".into();
+                                        publish_phase(&phase, &app_id)?;
+                                    }
+                                    "app.stop" => {
+                                        phase = "stopping".into();
+                                        publish_phase(&phase, &app_id)?;
+                                    }
+                                    _ => (),
                                 }
-                                "app.started" => {
-                                    phase = "ready".into();
-                                    publish_phase(&phase, &app_id)?;
-                                }
-                                "app.stop" => {
-                                    phase = "stopping".into();
-                                    publish_phase(&phase, &app_id)?;
-                                }
-                                _ => (),
                             }
                         }
                     }
+                    if event_buffer.len() > 256 * 1024 {
+                        event_buffer.clear();
+                    }
                 }
-                if event_buffer.len() > 256 * 1024 {
-                    event_buffer.clear();
+                if let Some(exit) = proc.0.try_wait()? {
+                    code = exit.code().unwrap_or(-1);
+                    break;
                 }
-            }
-            if let Some(exit) = proc.0.try_wait()? {
-                code = exit.code().unwrap_or(-1);
-                break;
-            }
-            if b(step, "interactive") {
-                // A contended poll is skipped; the inputs stay queued for the next.
-                let inputs = match (|| -> Result<Vec<(i64, String)>> {
-                    Ok(db
-                        .prepare("SELECT id,text FROM inputs WHERE job=? ORDER BY id")?
-                        .query_map([id], |r| Ok((r.get(0)?, r.get(1)?)))?
-                        .collect::<std::result::Result<Vec<_>, _>>()?)
-                })() {
-                    Err(error) if error.is_database_busy() => Vec::new(),
-                    other => other?,
-                };
-                for (input, text) in inputs {
-                    if let Some(stdin) = proc.0.stdin.as_mut() {
-                        let message = if machine {
-                            if app_id.is_empty() {
-                                continue;
-                            }
-                            match text.as_str() {
+                if b(step, "interactive") {
+                    // A contended poll is skipped; the inputs stay queued for the next.
+                    let inputs = match (|| -> Result<Vec<(i64, String)>> {
+                        Ok(db
+                            .prepare("SELECT id,text FROM inputs WHERE job=? ORDER BY id")?
+                            .query_map([id], |r| Ok((r.get(0)?, r.get(1)?)))?
+                            .collect::<std::result::Result<Vec<_>, _>>()?)
+                    })() {
+                        Err(error) if error.is_database_busy() => Vec::new(),
+                        other => other?,
+                    };
+                    for (input, text) in inputs {
+                        if let Some(stdin) = proc.0.stdin.as_mut() {
+                            let message = if machine {
+                                if app_id.is_empty() {
+                                    continue;
+                                }
+                                match text.as_str() {
                                 "r" | "R" => json!([{"id":input,"method":"app.restart","params":{"appId":app_id,"fullRestart":text=="R","pause":false}}]).to_string(),
                                 "q" => json!([{"id":input,"method":"app.stop","params":{"appId":app_id}}]).to_string(),
                                 _ => return Err(Error::new("invalid_input","Unknown Flutter command")),
                             }
-                        } else {
-                            text
-                        };
-                        let _ = writeln!(stdin, "{message}");
-                        let _ = stdin.flush();
+                            } else {
+                                text
+                            };
+                            let _ = writeln!(stdin, "{message}");
+                            let _ = stdin.flush();
+                        }
+                        retrying(Instant::now() + WORKER_RETRY, || {
+                            Ok(db.execute("DELETE FROM inputs WHERE id=?", [input])?)
+                        })?;
                     }
-                    retrying(Instant::now() + WORKER_RETRY, || {
-                        Ok(db.execute("DELETE FROM inputs WHERE id=?", [input])?)
-                    })?;
                 }
+                if let Some(value) = interrupt(&log)? {
+                    state = value.into();
+                    cancel_tree(db, id)?;
+                    if value == "failed" {
+                        result["error"] =
+                            json!("Log exceeded 32 MiB; use shorter captures or filters");
+                    }
+                    toolchain::stop(&mut proc.0);
+                    code = proc.0.wait()?.code().unwrap_or(-1);
+                    break;
+                }
+                if capture_deadline.is_some_and(|end| Instant::now() >= end) {
+                    toolchain::stop(&mut proc.0);
+                    captured = true;
+                    break;
+                }
+                thread::sleep(Duration::from_millis(50));
             }
-            if let Some(value) = interrupt(&log)? {
-                state = value.into();
-                cancel_tree(db, id)?;
-                if value == "failed" {
-                    result["error"] = json!("Log exceeded 32 MiB; use shorter captures or filters");
-                }
-                toolchain::stop(&mut proc.0);
-                code = proc.0.wait()?.code().unwrap_or(-1);
+            if captured {
+                code = 0;
+            }
+            if state == "succeeded" && code != 0 {
+                state = "failed".into();
+            }
+            drop(proc);
+            if state != "succeeded" {
                 break;
             }
-            if capture_deadline.is_some_and(|end| Instant::now() >= end) {
-                toolchain::stop(&mut proc.0);
-                captured = true;
-                break;
-            }
-            thread::sleep(Duration::from_millis(50));
-        }
-        if captured {
-            code = 0;
-        }
-        if state == "succeeded" && code != 0 {
-            state = "failed".into();
-        }
-        drop(proc);
-        if state != "succeeded" {
-            break;
-        }
-        if let Some(output) = output {
-            if fs::metadata(&output.temporary)?.len() < n(step, "minimum_bytes") {
-                return Err(Error::new(
-                    "invalid_artifact",
-                    "Captured artifact is empty or too small",
-                ));
-            }
-            if !s(step, "magic_hex").is_empty() {
-                let signature = s(step, "magic_hex");
-                if signature.len() > 64 || !signature.len().is_multiple_of(2) {
-                    return Err(Error::new("invalid_job", "Invalid artifact signature"));
-                }
-                let expected = (0..signature.len())
-                    .step_by(2)
-                    .map(|i| u8::from_str_radix(&signature[i..i + 2], 16))
-                    .collect::<std::result::Result<Vec<_>, _>>()
-                    .map_err(|_| Error::new("invalid_job", "Invalid artifact signature"))?;
-                let mut prefix = vec![0; expected.len()];
-                std::io::Read::read_exact(&mut File::open(&output.temporary)?, &mut prefix)?;
-                if prefix != expected {
+            if let Some(output) = output {
+                if fs::metadata(&output.temporary)?.len() < n(step, "minimum_bytes") {
                     return Err(Error::new(
                         "invalid_artifact",
-                        "Captured data does not match the expected file format",
+                        "Captured artifact is empty or too small",
                     ));
                 }
+                if !s(step, "magic_hex").is_empty() {
+                    let signature = s(step, "magic_hex");
+                    if signature.len() > 64 || !signature.len().is_multiple_of(2) {
+                        return Err(Error::new("invalid_job", "Invalid artifact signature"));
+                    }
+                    let expected = (0..signature.len())
+                        .step_by(2)
+                        .map(|i| u8::from_str_radix(&signature[i..i + 2], 16))
+                        .collect::<std::result::Result<Vec<_>, _>>()
+                        .map_err(|_| Error::new("invalid_job", "Invalid artifact signature"))?;
+                    let mut prefix = vec![0; expected.len()];
+                    std::io::Read::read_exact(&mut File::open(&output.temporary)?, &mut prefix)?;
+                    if prefix != expected {
+                        return Err(Error::new(
+                            "invalid_artifact",
+                            "Captured data does not match the expected file format",
+                        ));
+                    }
+                }
+                File::open(&output.temporary)?.sync_all()?;
+                fs::rename(&output.temporary, &output.target)?;
+                output_paths.insert(output.target.clone());
             }
-            File::open(&output.temporary)?.sync_all()?;
-            fs::rename(&output.temporary, &output.target)?;
-            output_paths.insert(output.target.clone());
+            output_paths.extend(strings(&step["artifacts"]).into_iter().map(PathBuf::from));
         }
-        output_paths.extend(strings(&step["artifacts"]).into_iter().map(PathBuf::from));
+        attempts.push(json!({"attempt":attempt,"state":state,"exit_code":code,"started":attempt_started,"ended":now()}));
+        let Some(delay) = retry_delay(&spec["retry"], attempt).filter(|_| state == "failed") else {
+            break;
+        };
+        writeln!(
+            log,
+            "\n[failed] exit={code}; attempt {} of {} in {delay} s",
+            attempt + 1,
+            1 + n(&spec["retry"], "count")
+        )?;
+        retrying(Instant::now() + WORKER_RETRY, || {
+            Ok(db.execute(
+                "INSERT INTO events(job,time,kind,value,detail) VALUES(?,?,'retry',?,?)",
+                params![
+                    id,
+                    now(),
+                    (attempt + 1).to_string(),
+                    json!({"exit_code":code,"delay_seconds":delay}).to_string()
+                ],
+            )?)
+        })?;
+        let resume = Instant::now() + Duration::from_secs(delay);
+        let mut stopped = None;
+        while Instant::now() < resume {
+            stopped = interrupt(&log)?;
+            if stopped.is_some() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
+        if let Some(value) = stopped {
+            state = value.into();
+            break;
+        }
+        state = "succeeded".into();
+        code = 0;
+        output_paths.clear();
+        attempt += 1;
+    }
+    if spec["retry"].is_object() {
+        result["attempts"] = json!(attempts);
     }
     writeln!(log, "\n[{state}] exit={code}")?;
     if state == "succeeded" {
@@ -1651,13 +1736,24 @@ mod database_tests {
     fn a_job_records_the_operation_that_submitted_it() {
         assert_eq!(requested_operation(), None);
         {
-            let _outer = Request::enter("project.run");
+            let _outer = Request::enter("project.run", &Value::Null);
             assert_eq!(requested_operation().as_deref(), Some("project.run"));
             {
-                let _inner = Request::enter("android.launch");
-                assert_eq!(requested_operation().as_deref(), Some("android.launch"));
+                let _inner = Request::enter(
+                    "android.sdk_install",
+                    &json!({"count":9,"backoff_seconds":0}),
+                );
+                assert_eq!(
+                    requested_operation().as_deref(),
+                    Some("android.sdk_install")
+                );
+                assert_eq!(
+                    requested_retry(),
+                    Some(json!({"count":5,"backoff_seconds":1}))
+                );
             }
             assert_eq!(requested_operation().as_deref(), Some("project.run"));
+            assert_eq!(requested_retry(), None);
         }
         assert_eq!(requested_operation(), None);
     }
@@ -1725,6 +1821,21 @@ mod database_tests {
         .unwrap();
         assert!(matches!(unlimited, Admission::Admitted(None)));
         drop(second);
+    }
+
+    #[test]
+    fn retries_pause_longer_each_time_and_stop_at_the_count() {
+        let retry = json!({"count":3,"backoff_seconds":4});
+        assert_eq!(
+            (1..=4).map(|a| retry_delay(&retry, a)).collect::<Vec<_>>(),
+            [Some(4), Some(8), Some(16), None]
+        );
+        assert_eq!(retry_delay(&Value::Null, 1), None);
+        assert_eq!(retry_delay(&json!({"count":0}), 1), None);
+        // Never more than five retries, never longer than ten minutes.
+        let greedy = json!({"count":50,"backoff_seconds":500});
+        assert_eq!(retry_delay(&greedy, 2), Some(RETRY_PAUSE_LIMIT));
+        assert_eq!(retry_delay(&greedy, 6), None);
     }
 
     #[test]
