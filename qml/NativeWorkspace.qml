@@ -98,11 +98,47 @@ Rectangle {
     property bool quitting: false
     // Bounds the wait for the session to stop before the app ends.
     Timer {id:quitTimer;interval:2500;onTriggered:view.quitApp()}
-    UpdateModel {id:updates;onRestartRequested:view.restartForUpdate()}
+    UpdateModel {id:updates;onRestartRequested:view.restartForUpdate();onBannerKindChanged:view.noteUpdate()}
+    // A new version found while no Tomacco window is active is also reported on
+    // the desktop, once per version.
+    function noteUpdate() {
+        if(updates.bannerKind!=="available" || appActive)return
+        if(String(Studio.setting("updates/notifiedVersion",""))===updates.latest)return
+        Studio.saveSetting("updates/notifiedVersion",updates.latest)
+        Studio.notify(qsTr("Tomacco %1 is available").arg(updates.latest),qsTr("Open Tomacco to see what's new and install it."),"update:"+updates.latest)
+    }
     // Unsaved edits stay and are shown; the new version starts only once they are dealt with.
+    // It opens with this project and view, at this window's size; device
+    // sessions belong to the control plane and keep running for it.
     function restartForUpdate() {
         if(workspace.hasUnsaved()){quitApp();return}
-        if(Studio.relaunch())closeSolo()
+        const w=view.Window.window
+        if(w && w.saveGeometry)w.saveGeometry()
+        const tab=workspace.opened?workspace.section:"runtime"
+        const tabs=["runtime","project","devices","jobs","tools","debug","testing","profiling","files","release"]
+        if(Studio.relaunch(projectPath,tabs.indexOf(tab)>=0?tab:"runtime"))quitApp()
+        else{notice=qsTr("Tomacco could not be started again. Close it and open it from the application menu.");failed=true}
+    }
+    // True when version a is newer than b ("1.2.0" > "1.1.0"; "1.2.0" > "1.2.0-rc.1").
+    function newerVersion(a,b) {
+        const parse=v=>{const parts=String(v).split("-");return {numbers:parts[0].split(".").map(x=>parseInt(x,10) || 0),pre:parts.length>1}}
+        const x=parse(a),y=parse(b)
+        for(let i=0;i<3;++i)if((x.numbers[i] || 0)!==(y.numbers[i] || 0))return (x.numbers[i] || 0)>(y.numbers[i] || 0)
+        return !x.pre && y.pre
+    }
+    // Shown once: the onboarding on the very first start, then what changed on
+    // the first start of each new version. fresh overrides Studio.firstStart (the tests use it).
+    function startupSheets(fresh) {
+        if(captureMode || smokeTest || initialDeviceOnly)return
+        const current=Qt.application.version
+        if(!current)return
+        const seen=String(Studio.setting("app/lastVersion",""))
+        if(seen===current)return
+        Studio.saveSetting("app/lastVersion",current)
+        if(fresh===undefined?Studio.firstStart:fresh){if(String(Studio.setting("onboarding/shown",false))!=="true")onboarding.open();return}
+        // No version recorded but settings exist: an update from a release before this one.
+        if(seen && !newerVersion(current,seen))return
+        whatsNew.open()
     }
     // Unsaved source edits live in the hidden main window; show it instead of
     // ending the app with them.
@@ -200,7 +236,7 @@ Rectangle {
             "NativeDisplay/showTouches":showTouches,"NativeAudio/forwardAudio":forwardAudio}
         if(runnerBundle)extra["NativeIphone/runnerBundle"]=runnerBundle
         // The update choice is tomaccoctl's; it goes along unless a build or the environment fixes it.
-        if(updates.status.mode && !updates.forced)extra["updates/mode"]=updates.mode
+        if(updates.status.mode && !updates.forced){extra["updates/mode"]=updates.mode;extra["updates/channel"]=updates.channel}
         const error=Studio.exportSettings(path,extra)
         settingsTransferFailed=!!error
         settingsTransfer=error || qsTr("Settings saved to %1").arg(path)
@@ -219,6 +255,8 @@ Rectangle {
         runnerBundle=String(Studio.setting("NativeIphone/runnerBundle",runnerBundle))
         const mode=result.extra["updates/mode"]
         if(mode && !updates.forced && mode!==updates.mode)updates.setMode(mode)
+        const channel=result.extra["updates/channel"]
+        if(channel && !updates.forced && channel!==updates.channel)updates.setChannel(channel)
         settingsTransfer=qsTr("%n setting(s) imported","",result.applied)+(result.ignored?" · "+qsTr("%n ignored","",result.ignored):"")
     }
     // A build, test or app start that ends while no Tomacco window is active is
@@ -246,6 +284,7 @@ Rectangle {
     Connections {
         target:Studio
         function onNotificationActivated(tag) {
+            if(tag.indexOf("update:")===0){view.showMainWindow();return}
             const job=view.workspace.jobs.find(x=>x.id===tag)
             view.showMainWindow()
             if(job)view.workspace.selectJob(job)
@@ -406,7 +445,7 @@ Rectangle {
     onAppleTargetChanged: {reconcileTarget();if(appleTarget==="simulator")loadApple()}
     onTargetsChanged: reconcileTarget()
     onTargetChanged: syncWorkspaceTarget()
-    Component.onCompleted: {refresh();showCliError()}
+    Component.onCompleted: {refresh();showCliError();Qt.callLater(startupSheets)}
     function showCliError() {if(Agent.cliError){notice=Agent.cliError;failed=true}}
     Connections {target:Agent;function onCliChanged() {view.showCliError()}}
     Timer {interval:1800;repeat:true;running:view.visible;triggeredOnStart:true;onTriggered:{view.request("runtime.list",{},{quiet:true});if(!workspace.opened)view.request("job.list",{},{quiet:true})}}
@@ -520,7 +559,8 @@ Rectangle {
         {id:"touches",title:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates"),detail:qsTr("Command"),icon:"testing",key:"",run:()=>{view.showTouches=!view.showTouches}},
         {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
-        {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()}
+        {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()},
+        {id:"onboarding",title:qsTr("Get started"),detail:qsTr("Command"),search:qsTr("Connect your coding agent"),icon:"agent",key:"",run:()=>onboarding.open()}
     ].concat(recentProjects.map(p=>({id:"recent:"+p.path,title:qsTr("Open recent project %1").arg(p.name),detail:p.path,search:p.name,icon:"files",key:"",run:()=>workspace.openProject(p.path)})))
     function navigate(section) { if(section==="runtime")workspace.close();else workspace.showTab(section) }
     function copyContext() {Studio.copy(JSON.stringify({project:projectPath,runtime:live,cli:Agent.cliPath,mcp:{command:Agent.cliPath,args:["mcp"]}},null,2));notice=qsTr("Project and runtime context copied");failed=false}
@@ -586,6 +626,7 @@ Rectangle {
             }
             Rectangle {anchors.bottom:parent.bottom;width:parent.width;height:1;color:Theme.subtle}
         }
+        UpdateBanner {Layout.fillWidth:true;Layout.preferredHeight:implicitHeight;model:updates}
         RowLayout {
             Layout.fillWidth:true;Layout.fillHeight:true;spacing:0
             // The rail: icons in a narrow window, icons, names and keys in a wide one.
@@ -922,6 +963,23 @@ Rectangle {
     }
     FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
+    OnboardingSheet {id:onboarding;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,560);height:Math.min(view.height-Theme.gapLg,implicitHeight)}
+    StudioDialog {
+        id:whatsNew;objectName:"whatsNewSheet";title:qsTr("What's new in %1").arg(Qt.application.version);anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,620);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
+        property string highlights:""
+        onAboutToShow:highlights=Studio.releaseHighlights(Qt.application.version)
+        contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapMd
+            Text {
+                objectName:"whatsNewText";Layout.fillWidth:true;visible:!!whatsNew.highlights;text:whatsNew.highlights;textFormat:Text.MarkdownText
+                color:Theme.text;font.pixelSize:Theme.fontBody;wrapMode:Text.WordWrap;lineHeight:1.3
+            }
+            Text {Layout.fillWidth:true;visible:!whatsNew.highlights;text:qsTr("Tomacco is now version %1. The release notes list what changed.").arg(Qt.application.version);color:Theme.muted;font.pixelSize:Theme.fontBody;wrapMode:Text.WordWrap}
+            Flow {Layout.fillWidth:true;spacing:Theme.gapXs
+                StudioButton {text:qsTr("Release notes");quiet:true;visible:!!Studio.documentPath("RELEASE_NOTES.md");onClicked:Studio.openDocument("RELEASE_NOTES.md")}
+                StudioButton {text:qsTr("On GitHub ↗");quiet:true;tip:Studio.sourceUrl.toString();onClicked:Studio.openExternal(Studio.sourceUrl)}
+            }
+        }}
+    }
     StudioDialog {
         id:shortcutsDialog;objectName:"shortcutsDialog";title:qsTr("Keyboard shortcuts");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,520);height:Math.min(view.height-Theme.gapXxxl,implicitHeight);modal:true;standardButtons:Dialog.Close
         contentItem:StudioScrollView {

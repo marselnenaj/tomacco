@@ -386,6 +386,14 @@
               ],
               "description": "off: no request unless the user asks. notify: check once a day and tell the user. auto: also install when idle."
             },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "stable",
+                "prerelease"
+              ],
+              "description": "stable (default): GitHub's latest release. prerelease: also releases GitHub marks as pre-releases."
+            },
             "token_file": {
               "type": "string",
               "description": "Owner-only file with a GitHub token, for a private repository; empty removes it"
@@ -8937,7 +8945,7 @@
   {
     "name": "update.check",
     "title": "Check for updates",
-    "description": "Report the current version, the latest release, its notes link and whether an update applies. Without manual it uses the network at most once a day, and never when updates.mode is off. With manual, which means the user asked, it asks GitHub now, also when off. Installs nothing.",
+    "description": "Report the current version, the latest release on updates.channel (stable, or prerelease to include pre-releases), its notes link and whether an update applies. Without manual it uses the network at most once a day, and never when updates.mode is off. With manual, which means the user asked, it asks GitHub now, also when off. Installs nothing.",
     "inputSchema": {
       "type": "object",
       "properties": {

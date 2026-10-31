@@ -13,9 +13,29 @@ ColumnLayout {
         model:[{id:"off",label:qsTr("Off")},{id:"notify",label:qsTr("Notify")},{id:"auto",label:qsTr("Automatic")}]
         onChosen:id=>section.model.setMode(id)
     }
+    // One line per choice, the chosen one stronger.
+    Repeater {
+        model:[{id:"off",text:qsTr("Off: nothing is sent unless you check now.")},
+            {id:"notify",text:qsTr("Notify: checks GitHub once a day and shows a new version at the top of the window.")},
+            {id:"auto",text:qsTr("Automatic: also installs it by itself when nothing is running, then offers a restart.")}]
+        delegate:Text {
+            required property var modelData
+            objectName:"updateModeHelp-"+modelData.id
+            Layout.fillWidth:true;wrapMode:Text.WordWrap;textFormat:Text.PlainText;font.pixelSize:Theme.fontSmall
+            readonly property bool chosen:section.model.mode===modelData.id
+            color:chosen?Theme.text:Theme.faint
+            text:modelData.text
+        }
+    }
+    Text {text:qsTr("Channel");color:Theme.muted;font.pixelSize:Theme.fontSmall;Layout.topMargin:Theme.gapXs}
+    StudioSegmented {
+        objectName:"updateChannelPicker";Layout.fillWidth:true;enabled:!section.model.forced;current:section.model.channel
+        model:[{id:"stable",label:qsTr("Stable")},{id:"prerelease",label:qsTr("Pre-release")}]
+        onChosen:id=>section.model.setChannel(id)
+    }
     Text {
         Layout.fillWidth:true;color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap
-        text:section.model.mode==="off"?qsTr("Nothing is sent unless you check now."):section.model.mode==="auto"?qsTr("Checks GitHub once a day and installs by itself when nothing is running."):qsTr("Checks GitHub once a day and tells you.")
+        text:section.model.channel==="prerelease"?qsTr("Also offers test versions before their release. They can have more bugs."):qsTr("Offers only finished releases.")
     }
     Text {objectName:"updateState";Layout.fillWidth:true;color:section.model.error?Theme.danger:Theme.text;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;textFormat:Text.PlainText;maximumLineCount:4;elide:Text.ElideRight;text:section.model.stateText()}
     Text {objectName:"updateBlocked";Layout.fillWidth:true;visible:!!text;color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;text:section.model.blockedText()}

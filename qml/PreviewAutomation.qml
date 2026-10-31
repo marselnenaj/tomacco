@@ -7,7 +7,7 @@ Item {
     required property var device
     required property var protocol
     function state() {
-        let result={session:Agent.session,device:app.currentModel.id,platform:app.currentModel.platform,workspace:app.workspaceState(),native:app.nativeState(),mode:app.nativeMode?"runtime":"preview",
+        let result={session:Agent.session,version:Qt.application.version,device:app.currentModel.id,platform:app.currentModel.platform,workspace:app.workspaceState(),native:app.nativeState(),mode:app.nativeMode?"runtime":"preview",
             device_category:app.deviceCategory,visible_devices:app.visibleDevices.map(d=>d.id),
             cutout:{type:device.cutout,notch:device.notchVisible,island:device.islandVisible,width:device.model.cutoutWidth || 0,height:device.model.cutoutHeight || 0},
             orientation:app.rotated?"landscape":"portrait",unfolded:app.foldedOpen,safe_area:app.safeMode,guides:app.guidesOn,
@@ -57,7 +57,9 @@ Item {
         function onPreviewRequest(id,method,args) {
             try {
                 if(method==="state") { Agent.complete(id,automation.state()); return }
-                if(method==="show") { app.showWorkspace(args.tab || "project", args.path || "", args.file || "", args.line || 1); Agent.complete(id,{shown:true,session:Agent.session,tab:args.tab || "project"}); return }
+                if(method==="show") { app.showWorkspace(args.tab || "project", args.path || "", args.file || "", args.line || 1); Agent.complete(id,{shown:true,session:Agent.session,version:Qt.application.version,tab:args.tab || "project"}); return }
+                // desktop.open replaces a desktop that is not the installed version; unsaved files keep it.
+                if(method==="quit") { const quitting=app.quitForReplacement(); Agent.complete(id,{quitting:quitting,unsaved:!quitting,version:Qt.application.version}); return }
                 if(method==="console") { Agent.complete(id,device.consoleMessages); return }
                 if(method==="errors") { automation.errors(id); return }
                 if(method==="navigate") {

@@ -165,6 +165,8 @@ private slots:
         qputenv("XDG_CACHE_HOME",directory.filePath("cache").toUtf8());
         QVERIFY(QDir().mkpath(directory.filePath("project")));
         QFile source(directory.filePath("project/pubspec.yaml"));QVERIFY(source.open(QIODevice::WriteOnly));source.write("name: tomacco_ui_test\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");source.close();
+        // This version has started here before: no sheet for a first start or a new version.
+        QSettings().setValue("app/lastVersion",QCoreApplication::applicationVersion());
         backend=std::make_unique<Backend>(QString());
         Backend::applyInterfaceFont();
         // The checks below read the English interface whatever the host's
@@ -2883,6 +2885,214 @@ for line in sys.stdin:
         QCOMPARE(workspace->property("selectedJob").toString(),QString("notify-on"));
         view->setProperty("appActive",true);
         workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    // What update.status says when a newer release can be installed.
+    static QVariantMap updateStatus(const QString &latest) {
+        return {{"mode","notify"},{"state","update_available"},{"update_available",true},{"latest",latest},
+            {"current",QCoreApplication::applicationVersion()},{"can_apply",true},{"notes_url","https://github.com/marselnenaj/tomacco/releases/tag/v"+latest},
+            {"install",QVariantMap{{"kind","user_install"}}}};
+    }
+    void clickItem(const char *name) {
+        auto *target=item(name);QVERIFY2(target,name);QTRY_VERIFY2(target->isVisible() && target->width()>0,name);
+        // A row that just changed lays itself out again before the next frame.
+        QTest::qWait(patient(100));
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,target->mapToScene(QPointF(target->width()/2,target->height()/2)).toPoint());
+    }
+    void update_banner_offers_a_new_version_once_and_later_puts_it_away() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *updates=object("updateModel");QVERIFY(updates);
+        auto *banner=item("updateBanner");QVERIFY(banner);
+        // The model's own checks and their answers would replace the status set here.
+        updates->setProperty("background",false);
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        QSettings().remove("updates");updates->setProperty("dismissed",QString());
+        QSignalSpy sent(backend.get(),&Backend::notificationSent);
+        QSignalSpy asked(updates,SIGNAL(asked(QString,QVariant)));
+        // Found while the window is in the background: the banner and one desktop notification.
+        view->setProperty("appActive",false);
+        updates->setProperty("status",updateStatus("9.0.0"));
+        QTRY_VERIFY(banner->isVisible());
+        // Laid out below the title bar, across the window.
+        QTRY_VERIFY(banner->width()==view->property("width").toDouble() && banner->height()>0 && banner->mapToScene(QPointF(0,0)).y()>0);
+        QVERIFY(object("updateBannerText")->property("text").toString().contains("9.0.0"));
+        QVERIFY(item("updateBannerNotes")->isVisible());
+        QVERIFY(object("statusUpdate")->property("visible").toBool());
+        QCOMPARE(sent.size(),1);QCOMPARE(sent.at(0).at(2).toString(),QString("update:9.0.0"));
+        // The same version again sends nothing more.
+        updates->setProperty("status",QVariantMap{});QTRY_VERIFY(!banner->isVisible());
+        updates->setProperty("status",updateStatus("9.0.0"));QTRY_VERIFY(banner->isVisible() && banner->width()>0);
+        QCOMPARE(sent.size(),1);
+        // Install asks tomaccoctl for update.apply, as the user's request.
+        view->setProperty("appActive",true);
+        const auto applied=[&]{for(const auto &call:asked)if(call.at(0).toString()=="update.apply")return mapOf(call.at(1));return QVariantMap{};};
+        asked.clear();
+        clickItem("updateBannerInstall");
+        QTRY_VERIFY(!applied().isEmpty());
+        QVERIFY(applied().value("manual").toBool());
+        // The forced-off control program refuses; its answer refreshes the status.
+        QTRY_VERIFY_WITH_TIMEOUT(!updates->property("working").toBool(),patient(15000));
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        // Later puts the banner away for this version only; the status line keeps its word.
+        updates->setProperty("status",updateStatus("9.0.0"));QTRY_VERIFY(banner->isVisible() && banner->width()>0);
+        clickItem("updateBannerLater");
+        QTRY_VERIFY(!banner->isVisible());
+        QCOMPARE(QSettings().value("updates/dismissedVersion").toString(),QString("9.0.0"));
+        QVERIFY(object("statusUpdate")->property("visible").toBool());
+        updates->setProperty("status",updateStatus("9.1.0"));
+        QTRY_VERIFY(banner->isVisible());
+        // Off: no banner, whatever a manual check found.
+        auto off=updateStatus("9.2.0");off["mode"]="off";updates->setProperty("status",off);
+        QTRY_VERIFY(!banner->isVisible());
+        updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    // What update.status says once a newer version is installed and this desktop is still the old one.
+    static QVariantMap installedStatus(const QString &version) {
+        return {{"mode","auto"},{"state","up_to_date"},{"update_available",false},{"latest",version},{"current",version},
+            {"can_apply",true},{"install",QVariantMap{{"kind","user_install"}}},{"last_install",QVariantMap{{"to",version}}}};
+    }
+    void a_background_install_asks_for_a_restart_and_settings_explain_each_mode() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *updates=object("updateModel");QVERIFY(updates);
+        auto *banner=item("updateBanner");QVERIFY(banner);
+        updates->setProperty("background",false);
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        QSettings().remove("updates");updates->setProperty("dismissed",QString());
+        QVERIFY(QCoreApplication::applicationVersion()!="9.9.0");
+        updates->setProperty("status",installedStatus("9.9.0"));
+        QTRY_VERIFY(banner->isVisible() && banner->width()>0);
+        QCOMPARE(updates->property("bannerKind").toString(),QString("restart"));
+        QVERIFY(object("updateBannerText")->property("text").toString().startsWith("Updated to 9.9.0"));
+        QVERIFY(item("updateBannerRestart")->isVisible());QVERIFY(!item("updateBannerInstall")->isVisible());
+        // Later puts the restart band away for this version.
+        clickItem("updateBannerLater");QTRY_VERIFY(!banner->isVisible());
+        QCOMPARE(QSettings().value("updates/dismissedVersion").toString(),QString("9.9.0"));
+        // The Settings explain every mode in a line of its own, the chosen one stronger.
+        auto *dialog=object("settingsDialog");QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("visible").toBool());
+        for(const auto *mode:{"off","notify","auto"}) {
+            auto *line=item(qPrintable(QString("updateModeHelp-")+mode));QVERIFY2(line,mode);
+            QVERIFY(!line->property("text").toString().isEmpty());
+            QCOMPARE(line->property("chosen").toBool(),QString(mode)=="auto");
+        }
+        QVERIFY(QMetaObject::invokeMethod(dialog,"close"));QTRY_VERIFY(!dialog->property("visible").toBool());
+        updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void restart_now_starts_the_installed_desktop_with_this_project_and_view() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *updates=object("updateModel");QVERIFY(updates);
+        auto *banner=item("updateBanner");QVERIFY(banner);
+        updates->setProperty("background",false);
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        QSettings().remove("updates");updates->setProperty("dismissed",QString());
+        // The re-exec is recorded, not run.
+        QString program;QStringList arguments;QProcessEnvironment environment;int starts=0;
+        backend->setStarter([&](const QString &p,const QStringList &a,const QProcessEnvironment &e){program=p;arguments=a;environment=e;++starts;return true;});
+        const auto cleanup=qScopeGuard([&]{backend->setStarter({});view->setProperty("quitting",false);updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);});
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showTab",Q_ARG(QVariant,"jobs")));
+        QTRY_COMPARE(workspace->property("section").toString(),QString("jobs"));
+        updates->setProperty("status",installedStatus("9.9.0"));
+        QTRY_VERIFY(banner->isVisible() && banner->width()>0);
+        const int before=quits;
+        clickItem("updateBannerRestart");
+        QTRY_COMPARE(starts,1);
+        QCOMPARE(program,Backend::relaunchProgram(QCoreApplication::applicationFilePath(),QDir::homePath()));
+        QCOMPARE(arguments.mid(arguments.indexOf("--project"),2),(QStringList{"--project",directory.filePath("project")}));
+        QCOMPARE(arguments.mid(arguments.indexOf("--workspace"),2),(QStringList{"--workspace","jobs"}));
+        QCOMPARE(environment.value("TOMACCO_RESTART_AFTER"),QString::number(QCoreApplication::applicationPid()));
+        // This desktop then ends, with its window's size kept for the new one.
+        QTRY_COMPARE(quits,before+1);
+        QVERIFY(QSettings().contains("window/width"));
+        // A start that fails keeps this desktop and says so.
+        view->setProperty("quitting",false);view->setProperty("notice",QString());
+        backend->setStarter([](const QString &,const QStringList &,const QProcessEnvironment &){return false;});
+        QVERIFY(QMetaObject::invokeMethod(updates,"restartRequested"));
+        QTRY_VERIFY(view->property("failed").toBool());
+        QCOMPARE(quits,before+1);
+        view->setProperty("notice",QString());view->setProperty("failed",false);
+        QVERIFY(QMetaObject::invokeMethod(workspace,"close"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void whats_new_shows_once_on_the_first_start_of_a_new_version() {
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *sheet=object("whatsNewSheet");QVERIFY(sheet);
+        QVERIFY(!sheet->property("visible").toBool());
+        // The same version again: nothing.
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,QVariant())));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());
+        // An older version started here before: the sheet, once.
+        QSettings().setValue("app/lastVersion","1.1.0");
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,QVariant())));
+        QTRY_VERIFY(sheet->property("visible").toBool());
+        QVERIFY(sheet->property("title").toString().contains(QCoreApplication::applicationVersion()));
+        QCOMPARE(QSettings().value("app/lastVersion").toString(),QCoreApplication::applicationVersion());
+        QVERIFY(QMetaObject::invokeMethod(sheet,"close"));QTRY_VERIFY(!sheet->property("visible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,QVariant())));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());
+        // Going back to an older version (a rollback) shows nothing.
+        QSettings().setValue("app/lastVersion","99.0.0");
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,QVariant())));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());
+        QVariant newer;
+        QVERIFY(QMetaObject::invokeMethod(view,"newerVersion",Q_RETURN_ARG(QVariant,newer),Q_ARG(QVariant,"1.2.0"),Q_ARG(QVariant,"1.2.0-rc.1")));QVERIFY(newer.toBool());
+        QVERIFY(QMetaObject::invokeMethod(view,"newerVersion",Q_RETURN_ARG(QVariant,newer),Q_ARG(QVariant,"1.10.0"),Q_ARG(QVariant,"1.9.3")));QVERIFY(newer.toBool());
+        QVERIFY(QMetaObject::invokeMethod(view,"newerVersion",Q_RETURN_ARG(QVariant,newer),Q_ARG(QVariant,"1.1.0"),Q_ARG(QVariant,"1.1.0")));QVERIFY(!newer.toBool());
+        QSettings().setValue("app/lastVersion",QCoreApplication::applicationVersion());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void onboarding_shows_once_on_the_first_start_and_from_the_palette() {
+        open("runtime");
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *sheet=object("onboardingSheet");QVERIFY(sheet);
+        auto *whatsNew=object("whatsNewSheet");QVERIFY(whatsNew);
+        QVERIFY(!sheet->property("visible").toBool());
+        // The very first start: no version recorded and no settings before.
+        QSettings().remove("app/lastVersion");QSettings().remove("onboarding/shown");
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,true)));
+        QTRY_VERIFY(sheet->property("visible").toBool());
+        QVERIFY(!whatsNew->property("visible").toBool());
+        QCOMPARE(QSettings().value("onboarding/shown").toString(),QString("true"));
+        // doctor's next steps, in plain words, or that nothing is left.
+        QTRY_VERIFY_WITH_TIMEOUT(!sheet->property("checking").toBool(),patient(60000));
+        const auto steps=sheet->property("steps").toStringList();
+        QCOMPARE(item("onboardingReady")->isVisible(),steps.isEmpty());
+        for(const auto &step:steps)QVERIFY2(!step.contains("tomaccoctl setup --yes") && !step.contains("pacman"),qPrintable(step));
+        // Connect copies the MCP configuration.
+        QGuiApplication::clipboard()->clear();
+        clickItem("onboardingConnect");
+        QTRY_VERIFY(QGuiApplication::clipboard()->text().contains("\"mcpServers\""));
+        QVERIFY(QGuiApplication::clipboard()->text().contains(control->cliPath()));
+        QVERIFY(item("onboardingCopied")->isVisible());
+        clickItem("onboardingSkip");QTRY_VERIFY(!sheet->property("visible").toBool());
+        // Not again by itself, nor as a new version's sheet.
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,true)));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());QVERIFY(!whatsNew->property("visible").toBool());
+        QSettings().remove("app/lastVersion");
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,true)));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());
+        // The palette opens it again.
+        QTest::keyClick(window,Qt::Key_K,Qt::ControlModifier);QTRY_VERIFY(item("commandSearch")->hasActiveFocus());
+        type("Get started");QTest::keyClick(window,Qt::Key_Return);
+        QTRY_VERIFY(sheet->property("visible").toBool());
+        QTRY_VERIFY_WITH_TIMEOUT(!sheet->property("checking").toBool(),patient(60000));
+        QVERIFY(QMetaObject::invokeMethod(sheet,"close"));QTRY_VERIFY(!sheet->property("visible").toBool());
+        QSettings().setValue("app/lastVersion",QCoreApplication::applicationVersion());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void the_session_names_its_version_and_quits_for_another_one() {
+        // desktop.open compares this with the installed version.
+        const auto state=previewCall("state").value("result").toMap();
+        QCOMPARE(state.value("version").toString(),QCoreApplication::applicationVersion());
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        const int before=quits;
+        const auto reply=previewCall("quit",{{"reason","replaced"}}).value("result").toMap();
+        QVERIFY(reply.value("quitting").toBool());QVERIFY(!reply.value("unsaved").toBool());
+        QTRY_COMPARE(quits,before+1);
+        view->setProperty("quitting",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void touches_and_coordinates_show_on_the_live_device() {

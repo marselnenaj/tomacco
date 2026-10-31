@@ -3195,6 +3195,38 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
             <numerusform>%n ignorate</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Tomacco %1 is available</source>
+        <translation>Tomacco %1 è disponibile</translation>
+    </message>
+    <message>
+        <source>Open Tomacco to see what&apos;s new and install it.</source>
+        <translation>Apri Tomacco per vedere le novità e installarla.</translation>
+    </message>
+    <message>
+        <source>Tomacco could not be started again. Close it and open it from the application menu.</source>
+        <translation>Non è stato possibile riavviare Tomacco. Chiudilo e aprilo dal menu delle applicazioni.</translation>
+    </message>
+    <message>
+        <source>What&apos;s new in %1</source>
+        <translation>Novità della versione %1</translation>
+    </message>
+    <message>
+        <source>Tomacco is now version %1. The release notes list what changed.</source>
+        <translation>Tomacco ora è alla versione %1. Le note di rilascio elencano le modifiche.</translation>
+    </message>
+    <message>
+        <source>On GitHub ↗</source>
+        <translation>Su GitHub ↗</translation>
+    </message>
+    <message>
+        <source>Get started</source>
+        <translation>Primi passi</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Collega il tuo agente di programmazione</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4905,18 +4937,6 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Automatici</translation>
     </message>
     <message>
-        <source>Nothing is sent unless you check now.</source>
-        <translation>Non viene inviato nulla a meno che tu non verifichi ora.</translation>
-    </message>
-    <message>
-        <source>Checks GitHub once a day and installs by itself when nothing is running.</source>
-        <translation>Controlla GitHub una volta al giorno e installa da solo quando non c'è nulla in esecuzione.</translation>
-    </message>
-    <message>
-        <source>Checks GitHub once a day and tells you.</source>
-        <translation>Controlla GitHub una volta al giorno e ti avvisa.</translation>
-    </message>
-    <message>
         <source>Check now</source>
         <translation>Verifica ora</translation>
     </message>
@@ -4936,6 +4956,38 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <source>Roll back</source>
         <translation>Ripristina</translation>
     </message>
+    <message>
+        <source>Channel</source>
+        <translation>Canale</translation>
+    </message>
+    <message>
+        <source>Stable</source>
+        <translation>Stabile</translation>
+    </message>
+    <message>
+        <source>Pre-release</source>
+        <translation>Pre-release</translation>
+    </message>
+    <message>
+        <source>Also offers test versions before their release. They can have more bugs.</source>
+        <translation>Offre anche versioni di prova prima del rilascio. Possono avere più bug.</translation>
+    </message>
+    <message>
+        <source>Offers only finished releases.</source>
+        <translation>Offre solo le versioni rilasciate.</translation>
+    </message>
+    <message>
+        <source>Off: nothing is sent unless you check now.</source>
+        <translation>Disattivati: non viene inviato nulla a meno che tu non verifichi ora.</translation>
+    </message>
+    <message>
+        <source>Notify: checks GitHub once a day and shows a new version at the top of the window.</source>
+        <translation>Notifica: controlla GitHub una volta al giorno e mostra una nuova versione in cima alla finestra.</translation>
+    </message>
+    <message>
+        <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
+        <translation>Automatici: gli aggiornamenti si installano anche da soli quando non c&apos;è nulla in esecuzione, poi viene proposto un riavvio.</translation>
+    </message>
 </context>
 <context>
     <name>AppDropArea</name>
@@ -4949,6 +5001,100 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Recent</source>
         <translation>Recenti</translation>
+    </message>
+</context>
+<context>
+    <name>UpdateBanner</name>
+    <message>
+        <source>Updated to %1 · Restart to use it</source>
+        <translation>Aggiornato a %1 · Riavvia per usarla</translation>
+    </message>
+    <message>
+        <source>Installing Tomacco %1…</source>
+        <translation>Installazione di Tomacco %1…</translation>
+    </message>
+    <message>
+        <source>Tomacco %1 is available</source>
+        <translation>Tomacco %1 è disponibile</translation>
+    </message>
+    <message>
+        <source>What&apos;s new ↗</source>
+        <translation>Novità ↗</translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation>Installa</translation>
+    </message>
+    <message>
+        <source>Restart now</source>
+        <translation>Riavvia ora</translation>
+    </message>
+    <message>
+        <source>Later</source>
+        <translation>Più tardi</translation>
+    </message>
+</context>
+<context>
+    <name>OnboardingSheet</name>
+    <message>
+        <source>Welcome to Tomacco</source>
+        <translation>Benvenuto in Tomacco</translation>
+    </message>
+    <message>
+        <source>This system lacks libraries the desktop needs. Your agent can still use Tomacco through tomaccoctl.</source>
+        <translation>A questo sistema mancano librerie necessarie al desktop. Il tuo agente può comunque usare Tomacco tramite tomaccoctl.</translation>
+    </message>
+    <message>
+        <source>Install Java (JDK 17 or newer) and Gradle to build Android apps.</source>
+        <translation>Installa Java (JDK 17 o successivo) e Gradle per compilare app Android.</translation>
+    </message>
+    <message>
+        <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
+        <translation>Installa l&apos;SDK Android e un emulatore. Vengono scaricati circa 5 GB.</translation>
+    </message>
+    <message>
+        <source>Set up iOS builds. This needs an Apple account.</source>
+        <translation>Configura le build iOS. Serve un account Apple.</translation>
+    </message>
+    <message>
+        <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
+        <translation>Facoltativo: l&apos;iPhone virtuale. Servono la tua immagine di ripristino dell&apos;iPhone, circa 100 GiB di spazio su disco e una scheda grafica da 16 GiB.</translation>
+    </message>
+    <message>
+        <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
+        <translation>Tomacco permette al tuo agente di programmazione di compilare, avviare e testare app Android e iOS su questo computer.</translation>
+    </message>
+    <message>
+        <source>Checking this computer…</source>
+        <translation>Verifica di questo computer…</translation>
+    </message>
+    <message>
+        <source>What is left to set up:</source>
+        <translation>Cosa resta da configurare:</translation>
+    </message>
+    <message>
+        <source>Everything for Android and iOS builds is in place.</source>
+        <translation>Tutto il necessario per le build Android e iOS è pronto.</translation>
+    </message>
+    <message>
+        <source>Your agent can do these steps for you. Connect it, then ask it to set Tomacco up.</source>
+        <translation>Il tuo agente può fare questi passi per te. Collegalo, poi chiedigli di configurare Tomacco.</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>Copiato</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Collega il tuo agente di programmazione</translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <translation>Salta</translation>
+    </message>
+    <message>
+        <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
+        <translation>La configurazione MCP è negli appunti. Incollala nelle impostazioni MCP del tuo agente.</translation>
     </message>
 </context>
 </TS>

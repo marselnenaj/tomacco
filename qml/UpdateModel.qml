@@ -5,14 +5,19 @@ import QtQuick
 // in the background, so that nothing here can delay the start.
 Item {
     id: model
+    objectName: "updateModel"
     visible: false
     property var status: ({})
     property bool checking: false
     property bool working: false
     property string error: ""
     signal restartRequested()
+    // Every request this model makes, for whoever wants to watch them (the tests do).
+    signal asked(string operation,var arguments)
     property var requests: ({})
     readonly property string mode: status.mode || "notify"
+    // stable: GitHub's latest release; prerelease: pre-releases too.
+    readonly property string channel: status.channel || "stable"
     readonly property bool forced: !!status.forced
     readonly property bool installing: !!status.job
     readonly property bool updateAvailable: status.update_available===true
@@ -22,10 +27,23 @@ Item {
     readonly property string latest: status.latest || ""
     // The control program is already the new version while this desktop is not.
     readonly property bool restartNeeded: !!status.install && status.install.kind==="user_install" && !!status.current && !!Qt.application.version && status.current!==Qt.application.version
+    // The version whose banner Later put away; a newer one shows it again.
+    property string dismissed: String(Studio.setting("updates/dismissedVersion",""))
+    // After an installation, by hand or by itself in auto mode, the banner asks for the restart.
+    readonly property string bannerKind: restartNeeded ? (status.current!==dismissed ? "restart" : "")
+        : !updateAvailable || latest===dismissed ? ""
+        : installing ? "installing"
+        : mode!=="off" ? "available" : ""
+    function later() {
+        dismissed=restartNeeded?status.current:latest
+        Studio.saveSetting("updates/dismissedVersion",dismissed)
+    }
     readonly property string notice: restartNeeded?qsTr("Updated · restart"):installing?qsTr("Installing update"):updateAvailable && mode!=="off"?qsTr("Update %1").arg(latest):""
 
-    function ask(operation,arguments,quiet) {
-        let id=Agent.request(operation,arguments||{});requests[id]={quiet:!!quiet};return id
+    function ask(operation,arguments,quiet,then) {
+        let id=Agent.request(operation,arguments||{});requests[id]={quiet:!!quiet,then:then||""}
+        asked(operation,arguments||{})
+        return id
     }
     function refresh() {ask("update.status",{},true)}
     function scheduledCheck() {ask("update.check",{},true)}
@@ -33,6 +51,8 @@ Item {
     function install() {working=true;error="";ask("update.apply",{manual:true})}
     function rollBack() {working=true;error="";ask("update.rollback",{})}
     function setMode(choice) {error="";ask("settings.configure",{updates:{mode:choice}})}
+    // A check from the other channel no longer counts, so a new one follows (none when off).
+    function setChannel(choice) {error="";ask("settings.configure",{updates:{channel:choice}},false,"check")}
 
     function checkText() {
         switch(status.state) {
@@ -65,9 +85,11 @@ Item {
         return checkText()
     }
 
-    Timer {interval:5000;running:true;onTriggered:model.scheduledCheck()}
+    // Whether the model checks by itself; the tests turn it off to set the status themselves.
+    property bool background: true
+    Timer {interval:5000;running:model.background;onTriggered:model.scheduledCheck()}
     // tomaccoctl decides whether a day has passed; asking costs no request before that.
-    Timer {interval:3600000;running:true;repeat:true;onTriggered:model.scheduledCheck()}
+    Timer {interval:3600000;running:model.background;repeat:true;onTriggered:model.scheduledCheck()}
     Timer {interval:2000;running:model.installing;repeat:true;onTriggered:model.refresh()}
     Connections {
         target:Agent
@@ -91,6 +113,7 @@ Item {
             }
             model.working=false
             model.refresh()
+            if(request.then==="check")model.scheduledCheck()
         }
     }
     Component.onCompleted:Qt.callLater(refresh)

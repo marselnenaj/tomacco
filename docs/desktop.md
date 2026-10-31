@@ -27,6 +27,14 @@ the command palette (Ctrl+K) finds all of them as **Open recent project**
 A project folder dragged from the file manager onto the window opens as the
 project and shows its overview; a single file or an `.app` bundle does not.
 
+### First start
+
+On the very first start the desktop shows **Welcome to Tomacco** (*Willkommen bei Tomacco*). It runs `doctor`
+and lists what is left to set up in plain words, such as the Android SDK or iOS builds, or says that everything
+is in place. **Connect your coding agent** (*Deinen Coding-Agenten verbinden*) copies the MCP configuration to
+paste into your agent's MCP settings; **Skip** (*Überspringen*) closes the sheet. It shows by itself only once;
+**Get started** (*Erste Schritte*) in the command palette (Ctrl+K) opens it again.
+
 ## Languages
 
 The desktop speaks English, German, French, Spanish and Italian. It follows the desktop language: the
@@ -51,11 +59,23 @@ The **Updates** part of **Settings** (Ctrl+,) chooses how Tomacco treats new rel
 | Choice | What it does |
 | --- | --- |
 | **Off** | No request at all. **Check now** still asks GitHub, once, when you press it. |
-| **Notify** (default) | Checks once a day while the desktop runs, and shows the new version in the status line. |
-| **Automatic** | Also installs it by itself while no job, device session or virtual iOS device runs. A version that failed or that you rolled back is not installed by itself again. |
+| **Notify** (default) | Checks once a day while the desktop runs, and shows the new version in a band at the top of the window and in the status line. |
+| **Automatic** | Also installs it by itself while no job, device session or virtual iOS device runs, then the band says **Updated to X** with **Restart now**. A version that failed or that you rolled back is not installed by itself again. |
+
+The section explains each choice in one line, the chosen one stronger. The band (*Tomacco X ist verfügbar*) has **What's new**, **Install** and **Later** (*Später*). Later
+hides the band for that version; the status line keeps its word, and a newer version brings the band
+back. When a new version is found while no Tomacco window is active, the desktop also sends one
+notification for that version (over D-Bus, as for [jobs](#notifications)); clicking it brings the window back.
+
+**Channel** (*Kanal*) chooses which releases count: **Stable** (*Stabil*, the default) only
+finished releases, **Pre-release** (*Vorabversion*) also those GitHub marks as pre-releases. Changing
+it starts a new check unless updates are off. `updates.channel` in `settings.configure` is the same choice.
 
 A check never delays the start and fails silently when you are offline; **Settings** shows how it ended. **What's new** opens the release's page, **Install** downloads, verifies and
-installs it, and **Restart** starts the new version once it is in place: the running app keeps working until then. **Roll back** returns to the version before. If the new version does not
+installs it, and **Restart** (or **Restart now** in the band) starts the new version once it is in place: the running app keeps working until then. The restart goes
+through the installed `tomacco` launcher, opens the same project and view at the same window size, and waits until the old window has
+closed, so agents reach the new one. With unsaved files nothing restarts; the window shows them first. On the first start of a new
+version a short **What's new in X** sheet (*Neu in X*) shows the highlights from the installed release notes, once. **Roll back** returns to the version before. If the new version does not
 start after installing, the previous one is restored by itself.
 
 An installation made by `install.py` can be updated. A source checkout, a system package or a directory you cannot write is left alone, and the section says so. Installing needs Python 3.9

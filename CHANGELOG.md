@@ -41,6 +41,23 @@ operations and their JSON results.
   from failures, with real results.
 - The issue form links troubleshooting and asks for an optional `tomaccoctl report` bundle; the pull request
   checklist follows CONTRIBUTING, and CONTRIBUTING says how the documentation is tested.
+- **Update banner.** A new version shows as a band at the top of the main window with **What's new**,
+  **Install** and **Later**; Later hides it for that version. Found while no Tomacco window is active, a
+  new version also sends one desktop notification. The word in the status line stays.
+- The **Updates** settings explain Off, Notify and Automatic in one line each. After an installation,
+  also one made by itself in Automatic mode, the banner says **Updated to X** and offers **Restart now**.
+- `desktop.open` replaces a desktop on the session that is not the installed version, such as the one
+  that ran while an update was installed, instead of raising its window; the result names it as
+  `replaced_version`. The desktop's `state` and `show` answers carry its `version`.
+- **Restart after an update.** **Restart now** starts the installed launcher with the same project, view and window
+  size, and the new desktop waits for the old one to end so it gets the agent session. The first start of a new
+  version shows a **What's new in X** sheet from the installed release notes, once.
+- **First start.** A short sheet runs `doctor` and lists what is left to set up in plain words, with
+  **Connect your coding agent** (copies the MCP configuration) and **Skip**. It shows once; **Get started**
+  in the command palette opens it again.
+- **Update channel.** `updates.channel` in `settings.configure` is `stable` (the default) or `prerelease`;
+  on `prerelease`, `update.check` and `update.apply` take the newest release including GitHub
+  pre-releases. The **Updates** settings offer the choice, and the settings export carries it.
 
 ### Changed
 

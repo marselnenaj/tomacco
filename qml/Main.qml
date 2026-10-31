@@ -106,6 +106,16 @@ ApplicationWindow {
         if(!nativeWorkspace.quitting && nativeWorkspace.deviceWindowVisible) {close.accepted=false;discardOnClose=false;nativeWorkspace.solo=true;return}
         if(!discardOnClose && workspace.hasUnsaved()) {close.accepted=false;unsavedClose.open()}
     }
+    // Another version of Tomacco takes over: the window's size is kept, and
+    // unsaved files keep this one open. The reply goes out before the app ends.
+    function quitForReplacement() {
+        if(workspace.hasUnsaved()) return false
+        saveGeometry()
+        nativeWorkspace.quitting=true
+        replacementQuit.start()
+        return true
+    }
+    Timer { id: replacementQuit; interval: 200; onTriggered: Qt.quit() }
     function selectDevice(index) {
         selectedIndex=index; finishIndex=0; foldedOpen=false
         deviceCategory=currentModel.platform || "ios"

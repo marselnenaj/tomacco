@@ -94,6 +94,39 @@ pub fn call(method: &str, params: Value, session: &str, timeout: u64) -> Result 
         }
     })
 }
+/// The process that serves a session's socket, from the kernel's peer
+/// credentials; None when nothing of this user answers there.
+pub fn peer_pid(session: &str) -> Option<u32> {
+    use std::os::fd::AsRawFd;
+    identifier(session, "session", Some("[A-Za-z0-9_-]{1,40}")).ok()?;
+    let path = socket_directory()
+        .ok()?
+        .join(format!("preview-{session}.sock"));
+    let meta = fs::symlink_metadata(&path).ok()?;
+    if meta.uid() != unsafe { libc::getuid() } || !meta.file_type().is_socket() {
+        return None;
+    }
+    let client = UnixStream::connect(&path).ok()?;
+    let mut credentials = libc::ucred {
+        pid: 0,
+        uid: 0,
+        gid: 0,
+    };
+    let mut length = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
+    // SAFETY: the descriptor is open for the call, and credentials and length
+    // describe a buffer of the size the kernel writes for SO_PEERCRED.
+    let done = unsafe {
+        libc::getsockopt(
+            client.as_raw_fd(),
+            libc::SOL_SOCKET,
+            libc::SO_PEERCRED,
+            (&mut credentials as *mut libc::ucred).cast(),
+            &mut length,
+        )
+    };
+    (done == 0 && credentials.pid > 0 && credentials.uid == unsafe { libc::getuid() })
+        .then_some(credentials.pid as u32)
+}
 pub fn sessions() -> Result {
     let mut values = Vec::new();
     for path in glob_paths(&format!(
