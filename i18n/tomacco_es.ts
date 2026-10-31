@@ -3691,6 +3691,14 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Leer resultados de pruebas</translation>
     </message>
     <message>
+        <source>What this computer can do</source>
+        <translation>Lo que puede hacer este ordenador</translation>
+    </message>
+    <message>
+        <source>Check dependency updates</source>
+        <translation>Comprobar actualizaciones de dependencias</translation>
+    </message>
+    <message>
         <source>Find Android crashes</source>
         <translation>Buscar fallos de Android</translation>
     </message>
