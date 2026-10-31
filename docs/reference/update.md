@@ -8,7 +8,7 @@
 
 **Check for updates**
 
-Report the current version, the latest release, its notes link and whether an update applies. Without manual it uses the network at most once a day, and never when updates.mode is off. With manual, which means the user asked, it asks GitHub now, also when off. Installs nothing.
+Report the current version, the latest release on updates.channel (stable, or prerelease to include pre-releases), its notes link and whether an update applies. Without manual it uses the network at most once a day, and never when updates.mode is off. With manual, which means the user asked, it asks GitHub now, also when off. Installs nothing.
 
 Annotations: read-only, idempotent, open world.
 

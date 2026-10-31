@@ -35,6 +35,7 @@ Annotations: writes, idempotent, open world.
 | `executables` | object |  |  | Tool name to absolute executable path |
 | `updates` | object |  |  | Update behaviour |
 | `updates.mode` | string |  |  | one of `off`, `notify`, `auto`; off: no request unless the user asks. notify: check once a day and tell the user. auto: also install when idle. |
+| `updates.channel` | string |  |  | one of `stable`, `prerelease`; stable (default): GitHub's latest release. prerelease: also releases GitHub marks as pre-releases. |
 | `updates.token_file` | string |  |  | Owner-only file with a GitHub token, for a private repository; empty removes it |
 | `jobs` | object |  |  | How many heavy jobs run at once; more wait as queued with a reason. 0 means no limit |
 | `jobs.max_builds` | integer |  |  | 0 to 64; Builds and deploys (project.execute, project.run except Flutter sessions, ios.flutter_build); 2 by default |
