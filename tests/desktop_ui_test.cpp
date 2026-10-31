@@ -2148,6 +2148,26 @@ for line in sys.stdin:
         backend->forgetProject(QFileInfo(folder).canonicalFilePath());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void the_window_reopens_at_its_last_size() {
+        // Closing stores the size, or that the window was maximised; the next start opens it that way.
+        open("runtime");
+        window->resize(700,540);QTest::qWait(50);
+        QVERIFY(QMetaObject::invokeMethod(window,"saveGeometry"));
+        QSettings settings;
+        QCOMPARE(settings.value("window/width").toInt(),700);QCOMPARE(settings.value("window/height").toInt(),540);
+        QCOMPARE(settings.value("window/maximized").toString(),QString("false"));
+        window->resize(1380,970);QTest::qWait(50);
+        // (No larger than the screen: the test's offscreen screen is 800×600.)
+        QVERIFY(QMetaObject::invokeMethod(window,"restoreGeometry"));
+        QTRY_COMPARE(window->width(),700);QTRY_COMPARE(window->height(),540);
+        // A stored size below the smallest window is ignored.
+        backend->saveSetting("window/width",200);backend->saveSetting("window/height",100);
+        QVERIFY(QMetaObject::invokeMethod(window,"restoreGeometry"));
+        QTest::qWait(50);QCOMPARE(window->width(),700);
+        window->resize(1380,970);QTest::qWait(50);
+        for(const auto *key:{"window/width","window/height","window/maximized"})settings.remove(key);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void german_interface_switches_live() {
         open("project");
         // The navigation is rebuilt in the new language, so its buttons are looked up each time.

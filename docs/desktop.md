@@ -69,6 +69,9 @@ Files, Builds & jobs and Agents run edge to edge. Apple and Android devices have
 separate categories. Narrow, tall windows are normal in a tiling window manager:
 the rail stays icons, the device bar's actions become icons, and the activity
 panel takes the whole stage while it is open. The smallest window is 560×480.
+The window opens at the size it had when it was last closed, at most as large
+as the screen, and maximised if it was; a tiling window manager still decides
+the size itself. `--capture` and `--smoke-test` keep the default size.
 
 | Action | Shortcut |
 | --- | --- |
