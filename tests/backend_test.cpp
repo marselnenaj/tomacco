@@ -140,7 +140,7 @@ private slots:
         backend.saveSetting("window/width",1200);backend.saveSetting("recentProjects",QStringList{"/home/someone/app"});
         backend.saveSetting("jobs/origins","{}");backend.saveSetting("IosResearch/engine","/opt/engine");backend.saveSetting("lastUrl","http://localhost:5173");
         const auto path=root.filePath("settings.json");
-        QCOMPARE(backend.exportSettings(path,{{"updates/mode","auto"},{"token","secret"}}),QString());
+        QCOMPARE(backend.exportSettings(path,{{"updates/mode","auto"},{"updates/channel","prerelease"},{"token","secret"}}),QString());
         QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
         const auto text=file.readAll();file.close();
         const auto document=QJsonDocument::fromJson(text).object();
@@ -150,6 +150,7 @@ private slots:
         QCOMPARE(values.value("Notifications/jobs"),QJsonValue(false));QCOMPARE(values.value("NativeDisplay/showTouches"),QJsonValue(true));
         QCOMPARE(values.value("NativeIphone/runnerBundle").toString(),QString("com.example.runner"));
         QCOMPARE(values.value("device").toString(),QString("pixel-11"));QCOMPARE(values.value("updates/mode").toString(),QString("auto"));
+        QCOMPARE(values.value("updates/channel").toString(),QString("prerelease"));
         for(const auto *banned:{"window/width","recentProjects","jobs/origins","IosResearch/engine","lastUrl","token","secret","/home/someone","/opt/engine"})
             QVERIFY2(!text.contains(banned),banned);
         // On the other machine: each value is checked, the rest ignored.
@@ -161,8 +162,9 @@ private slots:
         QSignalSpy appearance(&backend,&Backend::appearanceChanged);
         const auto result=backend.importSettings(path);
         QVERIFY(result.value("ok").toBool());
-        QCOMPARE(result.value("applied").toInt(),5);QCOMPARE(result.value("ignored").toInt(),4);
+        QCOMPARE(result.value("applied").toInt(),6);QCOMPARE(result.value("ignored").toInt(),4);
         QCOMPARE(result.value("extra").toMap().value("updates/mode").toString(),QString("auto"));
+        QCOMPARE(result.value("extra").toMap().value("updates/channel").toString(),QString("prerelease"));
         QCOMPARE(backend.appearance(),QString("light"));QCOMPARE(appearance.size(),1);
         QCOMPARE(backend.setting("Notifications/jobs").toBool(),false);QCOMPARE(backend.setting("NativeDisplay/showTouches").toBool(),true);
         QCOMPARE(backend.setting("NativeIphone/runnerBundle").toString(),QString("com.example.runner"));

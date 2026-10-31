@@ -43,6 +43,12 @@ class UpdateOperations(unittest.TestCase):
             self.assertEqual(self.call("settings.get")["result"]["updates"]["mode"], mode)
             self.assertEqual(self.call("update.status", forced=False)["result"]["mode"], mode)
         self.assertFalse(self.call("settings.configure", {"updates": {"mode": "sometimes"}})["ok"])
+        self.assertEqual(self.call("update.status", forced=False)["result"]["channel"], "stable")
+        for channel in ("prerelease", "stable"):
+            self.assertTrue(self.call("settings.configure", {"updates": {"channel": channel}})["ok"])
+            self.assertEqual(self.call("settings.get")["result"]["updates"]["channel"], channel)
+            self.assertEqual(self.call("update.status", forced=False)["result"]["channel"], channel)
+        self.assertFalse(self.call("settings.configure", {"updates": {"channel": "nightly"}})["ok"])
         self.assertFalse(self.call("settings.configure", {"updates": {"unknown": True}})["ok"])
         self.assertFalse(self.call("update.check", {"unknown": True})["ok"])
 

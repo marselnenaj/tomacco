@@ -222,6 +222,7 @@ fn a_downgrade_is_refused() {
         "3.0.0",
         scratch.path(),
         &mut None,
+        "stable",
     )
     .err()
     .unwrap();
@@ -259,6 +260,193 @@ fn drafts_and_prereleases_are_not_releases() {
     }
     assert!(parse_release(&release_json("nightly", false, false, &[])).is_err());
     assert!(parse_release(b"not json").is_err());
+}
+
+const RELEASES: &str = "https://api.github.com/repos/marselnenaj/tomacco/releases?per_page=30";
+
+fn release_list(entries: &[(&str, bool, bool)]) -> Vec<u8> {
+    let list: Vec<Value> = entries
+        .iter()
+        .map(|(tag, draft, prerelease)| {
+            serde_json::from_slice(&release_json(tag, *draft, *prerelease, &[])).unwrap()
+        })
+        .collect();
+    Value::from(list).to_string().into_bytes()
+}
+
+fn channel(name: &str) -> Mode {
+    mode_from(&json!({"updates":{"channel":name}}), None)
+}
+
+#[test]
+fn the_channel_is_stable_by_default_and_unknown_values_count_as_stable() {
+    assert_eq!(notify().channel, "stable");
+    assert_eq!(channel("prerelease").channel, "prerelease");
+    assert_eq!(channel("nightly").channel, "stable");
+}
+
+#[test]
+fn the_prerelease_channel_takes_the_highest_version_drafts_left_out() {
+    let body = release_list(&[
+        ("v2.1.0-rc.1", true, true),
+        ("v2.0.0", false, false),
+        ("v2.1.0-beta.2", false, true),
+        ("v2.1.0-beta.10", false, true),
+        ("nightly", false, true),
+        ("v1.9.0", false, false),
+    ]);
+    let chosen = select_release(&body, true).unwrap().unwrap();
+    assert_eq!(chosen.version.to_string(), "2.1.0-beta.10");
+    // A final release outranks its own pre-releases.
+    let body = release_list(&[("v2.1.0-rc.1", false, true), ("v2.1.0", false, false)]);
+    assert_eq!(
+        select_release(&body, true)
+            .unwrap()
+            .unwrap()
+            .version
+            .to_string(),
+        "2.1.0"
+    );
+    // The same list for the stable channel: only full releases.
+    let body = release_list(&[("v2.1.0-rc.1", false, true), ("v2.0.0", false, false)]);
+    assert_eq!(
+        select_release(&body, false)
+            .unwrap()
+            .unwrap()
+            .version
+            .to_string(),
+        "2.0.0"
+    );
+    // A tag with a pre-release part counts as one even when GitHub does not mark it.
+    let body = release_list(&[("v2.1.0-rc.1", false, false)]);
+    assert!(select_release(&body, false).unwrap().is_none());
+    assert!(select_release(&body, true).unwrap().is_some());
+    assert!(select_release(&release_list(&[]), true).unwrap().is_none());
+    assert!(select_release(b"{}", true).is_err());
+}
+
+#[test]
+fn each_channel_asks_its_own_endpoint_and_records_itself() {
+    let fake = Fake::default()
+        .page(LATEST, 200, &release_json("v2.0.0", false, false, &[]))
+        .page(
+            RELEASES,
+            200,
+            &release_list(&[("v2.1.0-rc.1", false, true), ("v2.0.0", false, false)]),
+        );
+    let stable = run_check(&fake, &notify(), true, &json!({})).unwrap();
+    assert_eq!(
+        (stable["latest"].as_str(), stable["channel"].as_str()),
+        (Some("2.0.0"), Some("stable"))
+    );
+    assert_eq!(stable["prerelease"], false);
+    let early = run_check(&fake, &channel("prerelease"), true, &json!({})).unwrap();
+    assert_eq!(
+        (early["latest"].as_str(), early["channel"].as_str()),
+        (Some("2.1.0-rc.1"), Some("prerelease"))
+    );
+    assert_eq!(early["prerelease"], true);
+    let asked: Vec<String> = fake.requests.borrow().iter().map(|r| r.0.clone()).collect();
+    assert_eq!(asked, vec![LATEST.to_string(), RELEASES.to_string()]);
+}
+
+#[test]
+fn a_changed_channel_makes_the_recorded_check_stale() {
+    let fake = Fake::default().page(
+        RELEASES,
+        200,
+        &release_list(&[("v2.1.0-rc.1", false, true)]),
+    );
+    // Checked an hour ago on the stable channel: not due again for stable,
+    // due at once for the pre-release channel.
+    let state = json!({"checked_at":1_000_000.0 - 3600.0,
+        "check":{"state":"up_to_date","channel":"stable"}});
+    assert!(run_check(&fake, &notify(), false, &state).is_none());
+    assert!(run_check(&fake, &channel("prerelease"), false, &state).is_some());
+    // A check recorded before channels existed was a stable one.
+    let old = json!({"checked_at":1_000_000.0 - 3600.0,"check":{"state":"up_to_date"}});
+    assert!(run_check(&fake, &notify(), false, &old).is_none());
+    // Off still sends nothing.
+    let off = mode_from(
+        &json!({"updates":{"mode":"off","channel":"prerelease"}}),
+        None,
+    );
+    assert!(run_check(&fake, &off, false, &state).is_none());
+}
+
+#[test]
+fn auto_installs_only_what_the_current_channel_found() {
+    let state =
+        json!({"check":{"latest":"2.1.0-rc.1","update_available":true,"channel":"prerelease"}});
+    let auto =
+        |channel: &str| mode_from(&json!({"updates":{"mode":"auto","channel":channel}}), None);
+    assert!(admit(&json!({"auto":true}), &auto("prerelease"), &state, "2.0.0").is_ok());
+    assert_eq!(
+        admit(&json!({"auto":true}), &auto("stable"), &state, "2.0.0")
+            .unwrap_err()
+            .code,
+        "update_not_available"
+    );
+}
+
+#[test]
+fn a_prerelease_installs_through_the_prerelease_channel_only() {
+    let version = "2.1.0-rc.1";
+    let name = package_name(&Version::parse(version).unwrap());
+    let package = b"package";
+    let signature = sign(package);
+    let signature_name = format!("{name}.sig");
+    let list = Value::from(vec![
+        serde_json::from_slice::<Value>(&release_json(
+            &format!("v{version}"),
+            false,
+            true,
+            &[name.as_str(), signature_name.as_str()],
+        ))
+        .unwrap(),
+    ])
+    .to_string();
+    let fake = Fake::default()
+        .page(RELEASES, 200, list.as_bytes())
+        .page(&format!("{DOWNLOADS}/{name}"), 200, package)
+        .page(&format!("{DOWNLOADS}/{signature_name}"), 200, &signature);
+    let scratch = tempfile::tempdir().unwrap();
+    let verified = download_and_verify(
+        &fake,
+        &github(Some(test_key())),
+        None,
+        "2.0.0",
+        scratch.path(),
+        &mut None,
+        "prerelease",
+    )
+    .unwrap();
+    assert_eq!(verified.version.to_string(), version);
+    // The stable channel asks for the latest release, which this fixture lacks.
+    let error = download_and_verify(
+        &fake,
+        &github(Some(test_key())),
+        None,
+        "2.0.0",
+        scratch.path(),
+        &mut None,
+        "stable",
+    )
+    .err()
+    .unwrap();
+    assert_eq!(error.code, "update_no_release");
+}
+
+#[test]
+fn configure_takes_a_known_channel_only() {
+    let mut config = json!({"updates":{"mode":"auto"}});
+    configure(&mut config, &json!({"channel":"prerelease"})).unwrap();
+    assert_eq!(
+        config["updates"],
+        json!({"mode":"auto","channel":"prerelease"})
+    );
+    assert!(configure(&mut config, &json!({"channel":"nightly"})).is_err());
+    assert_eq!(config["updates"]["channel"], "prerelease");
 }
 
 #[test]
@@ -419,6 +607,7 @@ fn verify_release(fake: &Fake) -> Result<Verified> {
         "1.0.0",
         scratch.path(),
         &mut None,
+        "stable",
     )
 }
 
@@ -480,6 +669,7 @@ fn a_build_without_the_key_refuses_and_says_so() {
         "1.0.0",
         scratch.path(),
         &mut None,
+        "stable",
     )
     .err()
     .unwrap();

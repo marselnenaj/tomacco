@@ -1,6 +1,7 @@
 //! Updates from the project's GitHub releases.
 //!
-//! `update.check` asks GitHub which release is the latest, `update.apply` is a
+//! `update.check` asks GitHub which release is the latest (or, on the
+//! `prerelease` channel, the newest release including pre-releases), `update.apply` is a
 //! durable job that downloads, verifies and installs it, and `update.rollback`
 //! undoes the last installation. A package is installed only when its detached
 //! Ed25519 signature verifies against the key compiled into this binary. The
@@ -43,6 +44,8 @@ const CHECK_INTERVAL: f64 = 24.0 * 3600.0;
 /// A check that failed, say offline, is asked again sooner than a day later.
 const RETRY_INTERVAL: f64 = 6.0 * 3600.0;
 const RELEASE_LIMIT: u64 = 2 * 1024 * 1024;
+/// How many recent releases the pre-release channel looks at.
+const RELEASE_PAGE: usize = 30;
 const SMALL_ASSET_LIMIT: u64 = 4096;
 const PACKAGE_LIMIT: u64 = 512 * 1024 * 1024;
 const UNPACKED_LIMIT: u64 = 2048 * 1024 * 1024;
@@ -450,11 +453,22 @@ enum Lookup {
     Failed(String),
 }
 
-fn release_url(endpoints: &Endpoints) -> String {
-    format!(
-        "{}/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest",
-        endpoints.api
-    )
+/// The two update channels: `stable` follows GitHub's latest release,
+/// `prerelease` also takes releases GitHub marks as pre-releases.
+pub const CHANNELS: &[&str] = &["stable", "prerelease"];
+
+fn release_url(endpoints: &Endpoints, channel: &str) -> String {
+    if channel == "prerelease" {
+        format!(
+            "{}/repos/{REPO_OWNER}/{REPO_NAME}/releases?per_page={RELEASE_PAGE}",
+            endpoints.api
+        )
+    } else {
+        format!(
+            "{}/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest",
+            endpoints.api
+        )
+    }
 }
 
 /// What the latest-release answer means. A draft or a pre-release is not a
@@ -462,16 +476,42 @@ fn release_url(endpoints: &Endpoints) -> String {
 fn parse_release(body: &[u8]) -> std::result::Result<Option<Release>, String> {
     let value: Value = serde_json::from_slice(body)
         .map_err(|_| "GitHub's answer was not valid JSON".to_string())?;
-    if value["draft"] != false || value["prerelease"] != false {
+    release_from(&value, false)
+}
+
+/// The release the pre-release channel offers from GitHub's list of releases:
+/// the highest version among those that are not drafts, pre-releases included.
+/// An entry whose tag is not a semantic version is passed over, not an error.
+fn select_release(body: &[u8], prerelease: bool) -> std::result::Result<Option<Release>, String> {
+    let value: Value = serde_json::from_slice(body)
+        .map_err(|_| "GitHub's answer was not valid JSON".to_string())?;
+    let list = value
+        .as_array()
+        .ok_or_else(|| "GitHub's list of releases was not a list".to_string())?;
+    Ok(list
+        .iter()
+        .take(RELEASE_PAGE)
+        .filter_map(|entry| release_from(entry, prerelease).ok().flatten())
+        .max_by(|a, b| a.version.cmp(&b.version)))
+}
+
+/// One release object, if the channel takes it. Drafts never count; a release
+/// GitHub marks as a pre-release, or whose version has a pre-release part,
+/// counts only for the pre-release channel.
+fn release_from(value: &Value, prerelease: bool) -> std::result::Result<Option<Release>, String> {
+    if value["draft"] != false || !value["prerelease"].is_boolean() {
         return Ok(None);
     }
-    let tag = s(&value, "tag_name");
+    if value["prerelease"] == true && !prerelease {
+        return Ok(None);
+    }
+    let tag = s(value, "tag_name");
     let version = Version::parse(tag.strip_prefix('v').unwrap_or(tag))
         .map_err(|_| format!("The latest release's tag {tag:?} is not a semantic version"))?;
-    if !version.pre.is_empty() {
+    if !version.pre.is_empty() && !prerelease {
         return Ok(None);
     }
-    let notes_url = s(&value, "html_url");
+    let notes_url = s(value, "html_url");
     Ok(Some(Release {
         version,
         notes_url: if notes_url.starts_with(&format!("https://{GITHUB_HOST}/")) {
@@ -479,19 +519,24 @@ fn parse_release(body: &[u8]) -> std::result::Result<Option<Release>, String> {
         } else {
             String::new()
         },
-        notes: s(&value, "body").chars().take(NOTES_LIMIT).collect(),
+        notes: s(value, "body").chars().take(NOTES_LIMIT).collect(),
         assets: value["assets"].as_array().cloned().unwrap_or_default(),
     }))
 }
 
-fn lookup(transport: &dyn Transport, endpoints: &Endpoints, token: Option<&str>) -> Lookup {
+fn lookup(
+    transport: &dyn Transport,
+    endpoints: &Endpoints,
+    token: Option<&str>,
+    channel: &str,
+) -> Lookup {
     let hosts = [endpoints.api_host.clone()];
     let mut body = Vec::new();
     let status = follow(
         transport,
         endpoints,
         &hosts,
-        &release_url(endpoints),
+        &release_url(endpoints, channel),
         "application/vnd.github+json",
         token,
         RELEASE_LIMIT,
@@ -499,7 +544,11 @@ fn lookup(transport: &dyn Transport, endpoints: &Endpoints, token: Option<&str>)
         &mut body,
     );
     match status {
-        Ok(200) => match parse_release(&body) {
+        Ok(200) => match if channel == "prerelease" {
+            select_release(&body, true)
+        } else {
+            parse_release(&body)
+        } {
             Ok(Some(release)) => Lookup::Found(release),
             Ok(None) => Lookup::NoRelease,
             Err(message) => Lookup::Failed(message),
@@ -831,6 +880,8 @@ struct Mode {
     effective: String,
     /// `build` or `environment` when that turned updates off.
     forced: Option<&'static str>,
+    /// `stable` or `prerelease`.
+    channel: String,
 }
 
 fn forced_by(build: Option<&str>, environment: Option<&str>) -> Option<&'static str> {
@@ -848,9 +899,14 @@ fn mode_from(settings: &Value, forced: Option<&'static str>) -> Mode {
         .as_str()
         .filter(|mode| ["off", "notify", "auto"].contains(mode))
         .unwrap_or("notify");
+    let channel = settings["updates"]["channel"]
+        .as_str()
+        .filter(|channel| CHANNELS.contains(channel))
+        .unwrap_or("stable");
     Mode {
         effective: if forced.is_some() { "off" } else { configured }.to_string(),
         forced,
+        channel: channel.to_string(),
     }
 }
 
@@ -902,6 +958,15 @@ pub fn configure(config: &mut Value, updates: &Value) -> Result<()> {
     }
     if let Some(mode) = updates["mode"].as_str() {
         config["updates"]["mode"] = json!(mode);
+    }
+    if let Some(channel) = updates["channel"].as_str() {
+        if !CHANNELS.contains(&channel) {
+            return Err(Error::new(
+                "invalid_request",
+                "updates.channel is stable or prerelease",
+            ));
+        }
+        config["updates"]["channel"] = json!(channel);
     }
     if let Some(file) = updates["token_file"].as_str() {
         if file.is_empty() {
@@ -958,9 +1023,9 @@ fn due(state: &Value, time: f64) -> bool {
     time - attempted >= wait
 }
 
-/// What a check found, for the state file and the reply.
-fn outcome(lookup: Lookup, current: &str) -> Value {
-    match lookup {
+/// What a check found, for the state file and the reply, with the channel it asked.
+fn outcome(lookup: Lookup, current: &str, channel: &str) -> Value {
+    let mut found = match lookup {
         Lookup::NoRelease => json!({"state":"no_release","update_available":false,
             "message":"No release is available yet."}),
         Lookup::Offline => json!({"state":"offline","update_available":false,
@@ -994,10 +1059,18 @@ fn outcome(lookup: Lookup, current: &str) -> Value {
                 )
             };
             json!({"state":state,"latest":release.version.to_string(),
+                "prerelease":!release.version.pre.is_empty(),
                 "update_available":available && package,
                 "notes_url":release.notes_url,"notes":release.notes,"message":message})
         }
-    }
+    };
+    found["channel"] = json!(channel);
+    found
+}
+
+/// The channel a recorded check asked; checks from before channels were stable.
+fn checked_channel(state: &Value) -> &str {
+    state["check"]["channel"].as_str().unwrap_or("stable")
 }
 
 /// The one place a check decides whether to use the network. `None`: no
@@ -1010,7 +1083,8 @@ fn check_needed(mode: &Mode, manual: bool, state: &Value, time: f64) -> bool {
     if manual {
         return true;
     }
-    mode.effective != "off" && due(state, time)
+    // A changed channel makes the recorded result stale.
+    mode.effective != "off" && (due(state, time) || checked_channel(state) != mode.channel)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1024,8 +1098,13 @@ fn check_with(
     time: f64,
     current: &str,
 ) -> Option<Value> {
-    check_needed(mode, manual, state, time)
-        .then(|| outcome(lookup(transport, endpoints, token), current))
+    check_needed(mode, manual, state, time).then(|| {
+        outcome(
+            lookup(transport, endpoints, token, &mode.channel),
+            current,
+            &mode.channel,
+        )
+    })
 }
 
 fn curl(endpoints: &Endpoints) -> Result<Curl> {
@@ -1058,7 +1137,8 @@ fn check(a: &Value) -> Result {
                 )
                 .unwrap_or_else(|| json!({})),
                 Err(error) => {
-                    json!({"state":"error","update_available":false,"message":error.message})
+                    json!({"state":"error","update_available":false,"message":error.message,
+                        "channel":mode.channel})
                 }
             },
         )
@@ -1081,7 +1161,8 @@ fn report() -> Result {
     let mode = mode()?;
     let endpoints = endpoints();
     let install = this_installation()?;
-    let mut check = if state["check"].is_object() {
+    // A check on the other channel says nothing about this one.
+    let mut check = if state["check"].is_object() && checked_channel(&state) == mode.channel {
         state["check"].clone()
     } else {
         json!({"state":"not_checked","update_available":false,"message":""})
@@ -1120,6 +1201,7 @@ fn report() -> Result {
         "product":PRODUCT_NAME,
         "current":current,
         "mode":mode.effective,
+        "channel":mode.channel,
         "forced":mode.forced,
         "signing_key_configured":endpoints.public_key.is_some(),
         "install":{"kind":install.kind,"message":install.message},
@@ -1260,7 +1342,10 @@ fn admit(a: &Value, mode: &Mode, state: &Value, current: &str) -> Result<()> {
         let newer = latest
             .and_then(|latest| Version::parse(latest).ok())
             .is_some_and(|latest| applies(current, &latest));
-        if !newer || state["check"]["update_available"] != true {
+        if !newer
+            || state["check"]["update_available"] != true
+            || checked_channel(state) != mode.channel
+        {
             return Err(Error::new(
                 "update_not_available",
                 "No newer version is known yet.",
@@ -1433,9 +1518,10 @@ fn download_and_verify(
     current: &str,
     scratch: &Path,
     attempted: &mut Option<Version>,
+    channel: &str,
 ) -> Result<Verified> {
     let key = endpoints.public_key.ok_or_else(missing_key)?;
-    let release = match lookup(transport, endpoints, token) {
+    let release = match lookup(transport, endpoints, token, channel) {
         Lookup::Found(release) => release,
         Lookup::NoRelease => {
             return Err(Error::new(
@@ -1771,6 +1857,7 @@ pub fn worker(request: &str) -> Result<()> {
         let endpoints = endpoints();
         let token = token()?;
         let transport = curl(&endpoints)?;
+        let channel = mode()?.channel;
         let verified = download_and_verify(
             &transport,
             &endpoints,
@@ -1778,6 +1865,7 @@ pub fn worker(request: &str) -> Result<()> {
             &current,
             &scratch,
             &mut attempted,
+            &channel,
         )?;
         let version = verified.version.to_string();
         let root = unpack_package(&verified, &scratch)?;

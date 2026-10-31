@@ -4924,6 +4924,26 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
         <source>Roll back</source>
         <translation>Revenir en arrière</translation>
     </message>
+    <message>
+        <source>Channel</source>
+        <translation>Canal</translation>
+    </message>
+    <message>
+        <source>Stable</source>
+        <translation>Stable</translation>
+    </message>
+    <message>
+        <source>Pre-release</source>
+        <translation>Préversion</translation>
+    </message>
+    <message>
+        <source>Also offers test versions before their release. They can have more bugs.</source>
+        <translation>Propose aussi des versions de test avant leur publication. Elles peuvent contenir plus de bogues.</translation>
+    </message>
+    <message>
+        <source>Offers only finished releases.</source>
+        <translation>Ne propose que les versions publiées.</translation>
+    </message>
 </context>
 <context>
     <name>AppDropArea</name>

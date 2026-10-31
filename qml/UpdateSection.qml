@@ -17,6 +17,16 @@ ColumnLayout {
         Layout.fillWidth:true;color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap
         text:section.model.mode==="off"?qsTr("Nothing is sent unless you check now."):section.model.mode==="auto"?qsTr("Checks GitHub once a day and installs by itself when nothing is running."):qsTr("Checks GitHub once a day and tells you.")
     }
+    Text {text:qsTr("Channel");color:Theme.muted;font.pixelSize:Theme.fontSmall;Layout.topMargin:Theme.gapXs}
+    StudioSegmented {
+        objectName:"updateChannelPicker";Layout.fillWidth:true;enabled:!section.model.forced;current:section.model.channel
+        model:[{id:"stable",label:qsTr("Stable")},{id:"prerelease",label:qsTr("Pre-release")}]
+        onChosen:id=>section.model.setChannel(id)
+    }
+    Text {
+        Layout.fillWidth:true;color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap
+        text:section.model.channel==="prerelease"?qsTr("Also offers test versions before their release. They can have more bugs."):qsTr("Offers only finished releases.")
+    }
     Text {objectName:"updateState";Layout.fillWidth:true;color:section.model.error?Theme.danger:Theme.text;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;textFormat:Text.PlainText;maximumLineCount:4;elide:Text.ElideRight;text:section.model.stateText()}
     Text {objectName:"updateBlocked";Layout.fillWidth:true;visible:!!text;color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;text:section.model.blockedText()}
     Flow {

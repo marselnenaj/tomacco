@@ -54,6 +54,10 @@ The **Updates** part of **Settings** (Ctrl+,) chooses how Tomacco treats new rel
 | **Notify** (default) | Checks once a day while the desktop runs, and shows the new version in the status line. |
 | **Automatic** | Also installs it by itself while no job, device session or virtual iOS device runs. A version that failed or that you rolled back is not installed by itself again. |
 
+**Channel** (*Kanal*) chooses which releases count: **Stable** (*Stabil*, the default) only
+finished releases, **Pre-release** (*Vorabversion*) also those GitHub marks as pre-releases. Changing
+it starts a new check unless updates are off. `updates.channel` in `settings.configure` is the same choice.
+
 A check never delays the start and fails silently when you are offline; **Settings** shows how it ended. **What's new** opens the release's page, **Install** downloads, verifies and
 installs it, and **Restart** starts the new version once it is in place: the running app keeps working until then. **Roll back** returns to the version before. If the new version does not
 start after installing, the previous one is restored by itself.

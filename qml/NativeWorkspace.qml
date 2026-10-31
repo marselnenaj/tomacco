@@ -200,7 +200,7 @@ Rectangle {
             "NativeDisplay/showTouches":showTouches,"NativeAudio/forwardAudio":forwardAudio}
         if(runnerBundle)extra["NativeIphone/runnerBundle"]=runnerBundle
         // The update choice is tomaccoctl's; it goes along unless a build or the environment fixes it.
-        if(updates.status.mode && !updates.forced)extra["updates/mode"]=updates.mode
+        if(updates.status.mode && !updates.forced){extra["updates/mode"]=updates.mode;extra["updates/channel"]=updates.channel}
         const error=Studio.exportSettings(path,extra)
         settingsTransferFailed=!!error
         settingsTransfer=error || qsTr("Settings saved to %1").arg(path)
@@ -219,6 +219,8 @@ Rectangle {
         runnerBundle=String(Studio.setting("NativeIphone/runnerBundle",runnerBundle))
         const mode=result.extra["updates/mode"]
         if(mode && !updates.forced && mode!==updates.mode)updates.setMode(mode)
+        const channel=result.extra["updates/channel"]
+        if(channel && !updates.forced && channel!==updates.channel)updates.setChannel(channel)
         settingsTransfer=qsTr("%n setting(s) imported","",result.applied)+(result.ignored?" · "+qsTr("%n ignored","",result.ignored):"")
     }
     // A build, test or app start that ends while no Tomacco window is active is

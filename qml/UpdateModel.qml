@@ -13,6 +13,8 @@ Item {
     signal restartRequested()
     property var requests: ({})
     readonly property string mode: status.mode || "notify"
+    // stable: GitHub's latest release; prerelease: pre-releases too.
+    readonly property string channel: status.channel || "stable"
     readonly property bool forced: !!status.forced
     readonly property bool installing: !!status.job
     readonly property bool updateAvailable: status.update_available===true
@@ -24,8 +26,8 @@ Item {
     readonly property bool restartNeeded: !!status.install && status.install.kind==="user_install" && !!status.current && !!Qt.application.version && status.current!==Qt.application.version
     readonly property string notice: restartNeeded?qsTr("Updated · restart"):installing?qsTr("Installing update"):updateAvailable && mode!=="off"?qsTr("Update %1").arg(latest):""
 
-    function ask(operation,arguments,quiet) {
-        let id=Agent.request(operation,arguments||{});requests[id]={quiet:!!quiet};return id
+    function ask(operation,arguments,quiet,then) {
+        let id=Agent.request(operation,arguments||{});requests[id]={quiet:!!quiet,then:then||""};return id
     }
     function refresh() {ask("update.status",{},true)}
     function scheduledCheck() {ask("update.check",{},true)}
@@ -33,6 +35,8 @@ Item {
     function install() {working=true;error="";ask("update.apply",{manual:true})}
     function rollBack() {working=true;error="";ask("update.rollback",{})}
     function setMode(choice) {error="";ask("settings.configure",{updates:{mode:choice}})}
+    // A check from the other channel no longer counts, so a new one follows (none when off).
+    function setChannel(choice) {error="";ask("settings.configure",{updates:{channel:choice}},false,"check")}
 
     function checkText() {
         switch(status.state) {
@@ -91,6 +95,7 @@ Item {
             }
             model.working=false
             model.refresh()
+            if(request.then==="check")model.scheduledCheck()
         }
     }
     Component.onCompleted:Qt.callLater(refresh)

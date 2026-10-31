@@ -4,6 +4,14 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Added
+
+- **Update channel.** `updates.channel` in `settings.configure` is `stable` (the default) or `prerelease`;
+  on `prerelease`, `update.check` and `update.apply` take the newest release including GitHub
+  pre-releases. The **Updates** settings offer the choice, and the settings export carries it.
+
 ## 1.1.0
 
 `tomaccoctl` now has one typed API of 193 operations.

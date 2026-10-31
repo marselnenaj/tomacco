@@ -145,6 +145,7 @@ static bool portableSetting(const QString &key,const QJsonValue &value,QVariant 
     if(key==QLatin1String("language") && languageChoices.contains(text)) { *out=text; return true; }
     if((key==QLatin1String("NativeIphone/runnerBundle") || key==QLatin1String("device")) && identifier.match(text).hasMatch()) { *out=text; return true; }
     if(key==QLatin1String("updates/mode") && QStringList{"off","notify","auto"}.contains(text)) { *out=text; return true; }
+    if(key==QLatin1String("updates/channel") && QStringList{"stable","prerelease"}.contains(text)) { *out=text; return true; }
     return false;
 }
 QString Backend::exportSettings(const QString &path,const QVariantMap &extra) {
@@ -182,7 +183,7 @@ QVariantMap Backend::importSettings(const QString &path) {
         QVariant value;
         if(!portableSetting(it.key(),it.value(),&value)) { ++ignored; continue; }
         ++applied;
-        if(it.key()==QLatin1String("updates/mode")) extra.insert(it.key(),value);
+        if(it.key().startsWith(QLatin1String("updates/"))) extra.insert(it.key(),value);
         else if(it.key()==QLatin1String("language")) setLanguage(value.toString());
         else if(it.key()==QLatin1String("appearance")) setAppearance(value.toString());
         else m_settings.setValue(it.key(),value);

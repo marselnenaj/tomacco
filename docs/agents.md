@@ -582,6 +582,8 @@ not available are null, not zero. A count of frames with jank tags is not the sa
 
 `update.check` reports `current`, `latest`, `notes_url`, `update_available` and a `state`: `up_to_date`, `update_available`, `no_release`, `no_package`, `offline`, `error` or `not_checked`.
 Without arguments it follows `updates.mode`, using the network at most once a day and never when off. Pass `manual` only when the user asked for a check.
+It asks for GitHub's latest release, or, with `updates.channel` set to `prerelease`, for the newest release including pre-releases; `channel` in the reply says which. A check from the other channel
+counts as `not_checked`.
 
 ```sh
 tomaccoctl call update.status '{}'
@@ -593,7 +595,7 @@ tomaccoctl call settings.configure '{"updates":{"mode":"off"}}'
 
 `update.apply` starts a durable job (download, signature check, install, health check, automatic rollback on failure). It is refused, with the reason in the error, while a job, a device display
 session or the virtual iOS device runs, for a source checkout, a system package or an unwritable installation, without Python, and with `updates.mode` off unless `manual` says the user asked.
-`update.rollback` restores the version before the last update. `settings.configure` takes `updates.mode` (`off`, `notify`, `auto`) and `updates.token_file`, an owner-only file. `TOMACCO_UPDATES=off`
+`update.rollback` restores the version before the last update. `settings.configure` takes `updates.mode` (`off`, `notify`, `auto`), `updates.channel` (`stable`, the default, or `prerelease`) and `updates.token_file`, an owner-only file. `TOMACCO_UPDATES=off`
 turns all of it off. After an update, restart `tomaccoctl mcp` to use the new version; the running server keeps working.
 From a terminal, `tomaccoctl update` runs the manual check and, when a release applies, `update.apply` and its job to the end.
 
