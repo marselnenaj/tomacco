@@ -176,6 +176,7 @@ var titles = {
     "ios.virtual.apps": QT_TRANSLATE_NOOP("Operations", "Apps of virtual iOS device"),
     "ios.virtual.start": QT_TRANSLATE_NOOP("Operations", "Start virtual iOS device"),
     "ios.virtual.stop": QT_TRANSLATE_NOOP("Operations", "Stop virtual iOS device"),
+    "ios.virtual.cleanup": QT_TRANSLATE_NOOP("Operations", "Clean up virtual iOS device disk copies"),
     "ios.virtual.deploy": QT_TRANSLATE_NOOP("Operations", "Install app on running virtual iOS device"),
     "ios.virtual.debug": QT_TRANSLATE_NOOP("Operations", "Debug process on virtual iOS device"),
     "ios.virtual.crash_reports": QT_TRANSLATE_NOOP("Operations", "Save crash reports of virtual iOS device"),

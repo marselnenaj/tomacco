@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 176 operations.
+`tomaccoctl` now has one typed API of 177 operations.
 
 ### Added
 
@@ -43,6 +43,9 @@ operations and their JSON results.
     opens, and installed apps the profile no longer lists. Unit-tested only.
   - `ios.virtual.crash_reports` keeps an app's crash reports from the running phone as files
     on the host, with paths for `ios.crash_symbolicate`. Unit-tested only.
+  - `ios.virtual.cleanup` deletes older disk copies in the profile's `installs`, with a dry run
+    by default that reports the bytes it would free. It never touches the verified base, the
+    current run or a copy a guest holds. Unit-tested only.
 - **Desktop.**
   - Drop an `.apk`, `.ipa` or `.app` on the device view to install it, or drop a
     project folder on the window to open it.

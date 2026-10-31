@@ -7098,6 +7098,28 @@
     }
   },
   {
+    "name": "ios.virtual.cleanup",
+    "title": "Clean up virtual iOS device disk copies",
+    "description": "Delete older disk copies of the configured virtual iOS device from the profile's installs directory, or with dry_run (the default) only report what would go. Only copies the start recorded as its own (state.json created) that lie directly in installs and are named guest-install* are candidates; the verified base, the current run and a start's attempt are always kept (kept, with the reason). Each copy's files are locked before it is deleted, so a copy a running guest holds is refused with the reason. A guest-install* directory the state does not record is listed under unrecorded and never deleted. copies lists each candidate with path, bytes (allocated on disk; blocks a reflinked copy shares with its base are counted in full) and removed; reclaimable_bytes is their sum and freed_bytes what was deleted. A real cleanup is refused with ios_virtual_busy while a start or stop runs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "dry_run": {
+          "type": "boolean",
+          "default": true,
+          "description": "Only report; delete nothing. false deletes the candidates."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.virtual.deploy",
     "title": "Install app on running virtual iOS device",
     "description": "One step from a built .app directory to the app on the running phone, without a reboot: inspect the bundle, sign a copy ad hoc, exchange spare entries of this boot's trust cache for its hashes while the guest is stopped for a moment, send it over the guest channel, name it to the signing adapter, install it through installd and open it. A durable job: follow job.logs, whose deploy events carry each step's seconds. The profile lists the app afterwards, so the next start stages it. Refused with ios_virtual_not_running when the phone is off: use ios.virtual.configure add_application and start it. A boot has 512 spare entries and the adapter's table of the boot takes 32 apps, frameworks and extensions.",

@@ -681,6 +681,151 @@ fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
         "reclaimable_bytes":reclaimable,"reflink":reflink,"enough":enough})
 }
 
+/// What a cleanup of the profile's `installs` would do: the disk copies the
+/// start recorded as its own (`created`) that are neither the verified base,
+/// the current run nor a start's attempt, and the reason each other copy is
+/// kept. A `guest-install*` directory the state does not record is listed
+/// as unrecorded and never removed: it may belong to another profile.
+fn cleanup_plan(profile: &Value, state: &Value) -> (Vec<PathBuf>, Vec<Value>, Vec<PathBuf>) {
+    let installs = PathBuf::from(s(profile, "installs"));
+    let mut protected: Vec<(PathBuf, &str)> = Vec::new();
+    if let Some(base) = state["verified"]["install"].as_str() {
+        protected.push((PathBuf::from(base), "verified-base"));
+    }
+    if text(state, "install") {
+        protected.push((PathBuf::from(s(state, "install")), "current-run"));
+    }
+    if let Some(attempt) = state["attempt"]["install"].as_str() {
+        protected.push((PathBuf::from(attempt), "start-attempt"));
+    }
+    let created: Vec<PathBuf> = state["created"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|path| path.as_str().map(PathBuf::from))
+        .collect();
+    let mut removable = Vec::new();
+    let mut kept: Vec<Value> = Vec::new();
+    for (path, reason) in &protected {
+        if fs::symlink_metadata(path).is_ok() && !kept.iter().any(|row| row["path"] == json!(path))
+        {
+            kept.push(json!({"path":path,"reason":reason}));
+        }
+    }
+    for path in &created {
+        if !protected.iter().any(|(kept, _)| kept == path) && owned_copy(&installs, path) {
+            removable.push(path.clone());
+        }
+    }
+    let mut unrecorded: Vec<PathBuf> = fs::read_dir(&installs)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| {
+            owned_copy(&installs, path)
+                && !created.contains(path)
+                && !protected.iter().any(|(kept, _)| kept == path)
+        })
+        .collect();
+    removable.sort();
+    removable.dedup();
+    unrecorded.sort();
+    (removable, kept, unrecorded)
+}
+
+/// Removes one disk copy the way the start does (`remove_install` in the
+/// script): every regular file in it is opened and locked first, so a copy
+/// whose disks a running guest holds is refused, and the directory must
+/// still be the same one when it goes. Err names why it was kept.
+fn remove_copy(installs: &Path, copy: &Path) -> std::result::Result<(), String> {
+    use std::os::fd::AsRawFd;
+    use std::os::unix::fs::OpenOptionsExt;
+    if !owned_copy(installs, copy) {
+        return Err("not a disk copy Tomacco made in installs".into());
+    }
+    let directory = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW)
+        .open(copy)
+        .map_err(|error| error.to_string())?;
+    let identity = directory.metadata().map_err(|error| error.to_string())?;
+    let mut held = Vec::new();
+    let entries = fs::read_dir(copy).map_err(|error| error.to_string())?;
+    for entry in entries.flatten() {
+        let name = entry.path();
+        let Ok(meta) = fs::symlink_metadata(&name) else {
+            continue;
+        };
+        if !meta.is_file() {
+            continue;
+        }
+        let file = OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+            .open(&name)
+            .map_err(|error| error.to_string())?;
+        let opened = file.metadata().map_err(|error| error.to_string())?;
+        if (opened.dev(), opened.ino()) != (meta.dev(), meta.ino()) {
+            return Err(format!("{} changed during cleanup", name.display()));
+        }
+        if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
+            return Err("in use by a running guest; stop it first".into());
+        }
+        held.push(file);
+    }
+    let now = fs::symlink_metadata(copy).map_err(|error| error.to_string())?;
+    if (now.dev(), now.ino()) != (identity.dev(), identity.ino()) {
+        return Err("the directory changed during cleanup".into());
+    }
+    fs::remove_dir_all(copy).map_err(|error| error.to_string())?;
+    drop(held);
+    Ok(())
+}
+
+/// Removes older disk copies from the profile's `installs`, or with
+/// `dry_run` (the default) only says what would go and how many bytes that
+/// frees. Only copies the start recorded as its own are touched; the
+/// verified base, the current run and a start's attempt are always kept.
+pub fn cleanup(a: &Value) -> Result {
+    let directory = directory()?;
+    let (profile, state) = records(&directory)?;
+    let dry_run = a["dry_run"].as_bool().unwrap_or(true);
+    let busy = jobs::active_exclusive(EXCLUSIVE)?;
+    if busy.is_some() && !dry_run {
+        return Err(Error::new(
+            "ios_virtual_busy",
+            "A start or stop is in progress; clean up when it has ended",
+        )
+        .details(json!({"job":busy})));
+    }
+    let installs = PathBuf::from(s(&profile, "installs"));
+    let (removable, kept, unrecorded) = cleanup_plan(&profile, &state);
+    let mut copies = Vec::new();
+    let (mut reclaimable, mut freed) = (0u64, 0u64);
+    for copy in &removable {
+        let bytes = allocated_bytes(copy);
+        reclaimable += bytes;
+        let mut row = json!({"path":copy,"bytes":bytes,"removed":false,"reason":null});
+        if !dry_run {
+            match remove_copy(&installs, copy) {
+                Ok(()) => {
+                    freed += bytes;
+                    row["removed"] = json!(true);
+                }
+                Err(reason) => row["reason"] = json!(reason),
+            }
+        }
+        copies.push(row);
+    }
+    Ok(
+        json!({"dry_run":dry_run,"installs":installs,"copies":copies,
+        "reclaimable_bytes":reclaimable,"freed_bytes":freed,"kept":kept,
+        "unrecorded":unrecorded.iter().map(|path| json!({"path":path,"bytes":allocated_bytes(path)})).collect::<Vec<_>>(),
+        "busy":busy.is_some()}),
+    )
+}
+
 fn gib(bytes: u64) -> String {
     format!("{:.1} GiB", bytes as f64 / (1u64 << 30) as f64)
 }
@@ -1283,6 +1428,84 @@ mod status_record_tests {
             installed_applications(&json!({"applications":["io.example.first"]})),
             json!({})
         );
+    }
+}
+
+#[cfg(test)]
+mod cleanup_tests {
+    use super::*;
+
+    fn copy(installs: &Path, name: &str) -> PathBuf {
+        let path = installs.join(name);
+        fs::create_dir_all(&path).unwrap();
+        fs::write(path.join("system.raw"), vec![1u8; 8192]).unwrap();
+        path
+    }
+
+    #[test]
+    fn only_recorded_copies_other_than_base_run_and_attempt_are_removable() {
+        let root = tempfile::tempdir().unwrap();
+        let installs = root.path().join("installs");
+        let (old, base, run, attempt, stray) = (
+            copy(&installs, "guest-install-1"),
+            copy(&installs, "guest-install-2"),
+            copy(&installs, "guest-install-3"),
+            copy(&installs, "guest-install-4"),
+            copy(&installs, "guest-install-9"),
+        );
+        let other = copy(root.path(), "guest-install-elsewhere");
+        let first = copy(root.path(), "first-install");
+        let profile = json!({"installs":installs});
+        let state = json!({"install":run,"verified":{"install":base},"attempt":{"install":attempt},
+            "created":[old,base,run,attempt,other,installs.join("guest-install-gone")]});
+        let (removable, kept, unrecorded) = cleanup_plan(&profile, &state);
+        assert_eq!(removable, vec![old.clone()]);
+        let reasons: Vec<_> = kept.iter().map(|row| row["reason"].clone()).collect();
+        assert_eq!(
+            reasons,
+            vec![
+                json!("verified-base"),
+                json!("current-run"),
+                json!("start-attempt")
+            ]
+        );
+        assert_eq!(unrecorded, vec![stray.clone()]);
+        // The first install outside installs is never even considered.
+        let state = json!({"install":first,"verified":{"install":first},"created":[]});
+        let (removable, kept, unrecorded) = cleanup_plan(&profile, &state);
+        assert!(removable.is_empty());
+        assert_eq!(kept, vec![json!({"path":first,"reason":"verified-base"})]);
+        assert_eq!(unrecorded.len(), 5);
+    }
+
+    #[test]
+    fn a_copy_whose_disk_is_locked_is_kept_and_a_free_one_goes() {
+        let root = tempfile::tempdir().unwrap();
+        let installs = root.path().join("installs");
+        let free = copy(&installs, "guest-install-1");
+        let busy = copy(&installs, "guest-install-2");
+        let held = File::open(busy.join("system.raw")).unwrap();
+        use std::os::fd::AsRawFd;
+        assert_eq!(
+            unsafe { libc::flock(held.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) },
+            0
+        );
+        let refused = remove_copy(&installs, &busy).unwrap_err();
+        assert!(refused.contains("in use"), "{refused}");
+        assert!(busy.join("system.raw").exists());
+        remove_copy(&installs, &free).unwrap();
+        assert!(!free.exists());
+        // Never a directory outside installs, or one not named as a copy.
+        let outside = copy(root.path(), "guest-install-3");
+        assert!(remove_copy(&installs, &outside).is_err());
+        let named = copy(&installs, "base");
+        assert!(remove_copy(&installs, &named).is_err());
+        assert!(outside.exists() && named.exists());
+        // A link named like a copy is not followed.
+        let link = installs.join("guest-install-link");
+        std::os::unix::fs::symlink(&named, &link).unwrap();
+        assert!(remove_copy(&installs, &link).is_err());
+        assert!(named.join("system.raw").exists());
     }
 }
 

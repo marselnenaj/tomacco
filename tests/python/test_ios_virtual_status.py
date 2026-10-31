@@ -2,6 +2,7 @@
 step and the apps installed on the run's volume; control-plane tests, no
 guest is booted."""
 import json
+from pathlib import Path
 
 from test_product import Isolated
 from native_client import StudioError, dispatch
@@ -106,3 +107,30 @@ class VirtualIphoneAppsTests(Isolated):
             with self.assertRaises(StudioError) as refused:
                 dispatch("ios.virtual.crash_reports", {"process": name})
             self.assertEqual(refused.exception.code, "invalid_argument", name)
+
+    def test_cleanup_reports_first_and_deletes_only_older_recorded_copies(self):
+        directory = self.profile("cleanup", {})
+        installs = directory / "installs"
+        copies = []
+        for name in ("guest-install-1", "guest-install-2", "guest-install-3", "guest-install-stray"):
+            (installs / name).mkdir()
+            (installs / name / "system.raw").write_bytes(b"\1" * 8192)
+            copies.append(str(installs / name))
+        state = json.loads((directory / "state.json").read_text())
+        state.update(install=copies[2], verified={"install": copies[1]}, created=copies[:3])
+        (directory / "state.json").write_text(json.dumps(state))
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        plan = dispatch("ios.virtual.cleanup")
+        self.assertTrue(plan["dry_run"])
+        self.assertEqual([row["path"] for row in plan["copies"]], [copies[0]])
+        self.assertGreaterEqual(plan["reclaimable_bytes"], 8192)
+        self.assertEqual(plan["freed_bytes"], 0)
+        self.assertEqual({row["reason"] for row in plan["kept"]}, {"verified-base", "current-run"})
+        self.assertEqual([row["path"] for row in plan["unrecorded"]], [copies[3]])
+        self.assertTrue((installs / "guest-install-1").exists(), "a dry run deletes nothing")
+        done = dispatch("ios.virtual.cleanup", {"dry_run": False})
+        self.assertTrue(done["copies"][0]["removed"])
+        self.assertEqual(done["freed_bytes"], plan["reclaimable_bytes"])
+        self.assertFalse((installs / "guest-install-1").exists())
+        for kept in copies[1:]:
+            self.assertTrue(Path(kept).exists(), kept)

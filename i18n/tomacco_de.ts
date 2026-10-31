@@ -3661,6 +3661,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Absturzberichte des virtuellen iOS-Geräts sichern</translation>
     </message>
     <message>
+        <source>Clean up virtual iOS device disk copies</source>
+        <translation>Plattenkopien des virtuellen iOS-Geräts aufräumen</translation>
+    </message>
+    <message>
         <source>Record virtual iOS device screen</source>
         <translation>Bildschirm des virtuellen iOS-Geräts aufnehmen</translation>
     </message>
