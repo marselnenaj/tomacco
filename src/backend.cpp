@@ -1,6 +1,12 @@
 #include "backend.h"
 #include <QClipboard>
 #include <QDateTime>
+#ifdef TOMACCO_HAVE_DBUS
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
+#endif
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
@@ -305,6 +311,39 @@ bool Backend::openJobLog(const QString &path) {
     const auto log=jobLogPath(path);
     if(log.isEmpty()) { emit message(tr("This job has no log file yet.")); return false; }
     return QDesktopServices::openUrl(QUrl::fromLocalFile(log));
+}
+bool Backend::notify(const QString &title,const QString &body,const QString &tag) {
+    emit notificationSent(title,body,tag);
+    if(qGuiApp && QGuiApplication::platformName()==QLatin1String("offscreen")) return false;
+#ifdef TOMACCO_HAVE_DBUS
+    auto bus=QDBusConnection::sessionBus();
+    if(!bus.isConnected()) return false;
+    const auto service=QStringLiteral("org.freedesktop.Notifications"),path=QStringLiteral("/org/freedesktop/Notifications");
+    if(!m_notificationsConnected)
+        m_notificationsConnected=bus.connect(service,path,service,QStringLiteral("ActionInvoked"),this,SLOT(notificationAction(uint,QString)));
+    auto call=QDBusMessage::createMethodCall(service,path,service,QStringLiteral("Notify"));
+    const QVariantMap hints{{QStringLiteral("desktop-entry"),QStringLiteral("io.github.marselnenaj.tomacco")}};
+    call<<QCoreApplication::applicationName()<<uint(0)<<QStringLiteral("io.github.marselnenaj.tomacco")<<title<<body
+        <<QStringList{QStringLiteral("default"),tr("Open")}<<hints<<int(-1);
+    auto *watcher=new QDBusPendingCallWatcher(bus.asyncCall(call),this);
+    connect(watcher,&QDBusPendingCallWatcher::finished,this,[this,tag](QDBusPendingCallWatcher *done){
+        QDBusPendingReply<uint> reply=*done;
+        if(reply.isValid()) {
+            m_notifications.insert(reply.value(),tag);
+            // Only the recent ones can still be clicked.
+            while(m_notifications.size()>32) m_notifications.erase(m_notifications.begin());
+        }
+        done->deleteLater();
+    });
+    return true;
+#else
+    Q_UNUSED(title) Q_UNUSED(body) Q_UNUSED(tag)
+    return false;
+#endif
+}
+void Backend::notificationAction(uint id,const QString &action) {
+    const auto tag=m_notifications.take(id);
+    if(!tag.isEmpty() && action==QLatin1String("default")) emit notificationActivated(tag);
 }
 void Backend::openExternal(const QUrl &url) { if(url.scheme()=="http" || url.scheme()=="https") QDesktopServices::openUrl(url); }
 void Backend::openScreenshots() { QDesktopServices::openUrl(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)+"/Tomacco")); }

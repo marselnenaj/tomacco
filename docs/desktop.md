@@ -135,6 +135,21 @@ Warnings shows warnings and errors. The level is guessed from words such as
 (`E/Tag`, ` W Tag:`). **Copy these lines** (*Diese Zeilen kopieren*) copies
 exactly the lines shown; without a filter the button copies the whole log.
 
+### Notifications
+
+A job that ran for at least 10 seconds and ends while no Tomacco window is
+active, such as a build, a test run or an app start, shows a desktop
+notification: **Completed after**, **Failed after** or **Timed out after** and
+the duration (*Fertig nach*, *Fehlgeschlagen nach*, *Zeitüberschreitung nach*).
+Its **Open** action (*Öffnen*) brings the window back with that job's log.
+Cancelled jobs, and jobs that end while you are in the window, stay quiet.
+Turn it off under **Notifications** in **Settings** (Ctrl+,): **When a job ends
+in the background** (*Wenn ein Auftrag im Hintergrund endet*). The desktop sends
+the notification to the desktop's notification service over D-Bus
+(`org.freedesktop.Notifications`); a build without Qt D-Bus sends none. On
+Omarchy the panel can notify about builds too; turn one of them off if you get
+both.
+
 ## Installing an app by dropping it
 
 Drag an app from the file manager onto the device view to install it on the

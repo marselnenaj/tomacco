@@ -9,6 +9,25 @@
 #include <QSettings>
 #include <QFileInfo>
 #include <QCoreApplication>
+#include <QProcess>
+#include <QSignalSpy>
+#ifdef TOMACCO_HAVE_DBUS
+#include <QDBusConnection>
+#include <QDBusMessage>
+
+// A stand-in for the desktop's notification service on a private bus.
+class FakeNotifications: public QObject {
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface","org.freedesktop.Notifications")
+public:
+    QVariantList last;
+public slots:
+    uint Notify(const QString &app,uint replaces,const QString &icon,const QString &summary,const QString &body,const QStringList &actions,const QVariantMap &hints,int timeout) {
+        last={app,replaces,icon,summary,body,actions,hints.value("desktop-entry"),timeout};
+        return 7;
+    }
+};
+#endif
 
 class BackendTest: public QObject {
     QTemporaryDir isolatedData;
@@ -61,6 +80,50 @@ private slots:
         QVERIFY(backend.jobLogPath(root.filePath("jobs/"+QString(32,'b')+".log")).isEmpty());
         QVERIFY(backend.jobLogPath(root.filePath("jobs/"+QString(32,'c')+".log")).isEmpty());
         QVERIFY(backend.jobLogPath(QString()).isEmpty());
+    }
+    void notificationsReachTheServiceAndComeBackWhenClicked() {
+#ifndef TOMACCO_HAVE_DBUS
+        QSKIP("Built without Qt D-Bus: the desktop sends no notifications");
+#else
+        // Never the user's own session bus: a private one, with a stand-in service.
+        QProcess daemon;
+        daemon.start("dbus-daemon",{"--session","--nofork","--print-address"});
+        if(!daemon.waitForStarted(3000))QSKIP("dbus-daemon is not installed");
+        QVERIFY(daemon.waitForReadyRead(5000));
+        const auto address=QString::fromUtf8(daemon.readLine()).trimmed();
+        QVERIFY(!address.isEmpty());
+        qputenv("DBUS_SESSION_BUS_ADDRESS",address.toUtf8());
+        {
+            auto service=QDBusConnection::connectToBus(address,"fake-notifications");
+            QVERIFY(service.isConnected());
+            FakeNotifications fake;
+            QVERIFY(service.registerObject("/org/freedesktop/Notifications",&fake,QDBusConnection::ExportAllSlots));
+            QVERIFY(service.registerService("org.freedesktop.Notifications"));
+            Backend backend(QString(),nullptr,false);
+            QSignalSpy sent(&backend,&Backend::notificationSent),clicked(&backend,&Backend::notificationActivated);
+            QVERIFY(backend.notify("Build Android","Completed after 1 min 2 s","job-1"));
+            QCOMPARE(sent.size(),1);
+            QTRY_COMPARE(fake.last.value(3).toString(),QString("Build Android"));
+            QCOMPARE(fake.last.value(4).toString(),QString("Completed after 1 min 2 s"));
+            QCOMPARE(fake.last.value(5).toStringList().value(0),QString("default"));
+            QCOMPARE(fake.last.value(6).toString(),QString("io.github.marselnenaj.tomacco"));
+            // The service names the notification it showed; a click on it comes back with the tag.
+            QTest::qWait(200);
+            auto signal=QDBusMessage::createSignal("/org/freedesktop/Notifications","org.freedesktop.Notifications","ActionInvoked");
+            signal<<uint(7)<<QString("default");
+            QVERIFY(service.send(signal));
+            QTRY_COMPARE(clicked.size(),1);
+            QCOMPARE(clicked.at(0).at(0).toString(),QString("job-1"));
+            // Another notification's click, or a second one, is not ours.
+            auto other=QDBusMessage::createSignal("/org/freedesktop/Notifications","org.freedesktop.Notifications","ActionInvoked");
+            other<<uint(7)<<QString("default");
+            QVERIFY(service.send(other));
+            QTest::qWait(200);
+            QCOMPARE(clicked.size(),1);
+        }
+        QDBusConnection::disconnectFromBus("fake-notifications");
+        daemon.terminate();daemon.waitForFinished(3000);
+#endif
     }
     void dataDirectoryIsTheVariableOrTheDefault() {
         QTemporaryDir home;

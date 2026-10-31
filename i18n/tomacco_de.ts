@@ -311,6 +311,10 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>This job has no log file yet.</source>
         <translation>Dieser Auftrag hat noch keine Protokolldatei.</translation>
     </message>
+    <message>
+        <source>Open</source>
+        <translation>Öffnen</translation>
+    </message>
 </context>
 <context>
     <name>Colors</name>
@@ -3008,6 +3012,26 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Open a project</source>
         <translation>Projekt öffnen</translation>
+    </message>
+    <message>
+        <source>Completed after %1</source>
+        <translation>Fertig nach %1</translation>
+    </message>
+    <message>
+        <source>Failed after %1</source>
+        <translation>Fehlgeschlagen nach %1</translation>
+    </message>
+    <message>
+        <source>Timed out after %1</source>
+        <translation>Zeitüberschreitung nach %1</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Benachrichtigungen</translation>
+    </message>
+    <message>
+        <source>When a job ends in the background</source>
+        <translation>Wenn ein Auftrag im Hintergrund endet</translation>
     </message>
 </context>
 <context>

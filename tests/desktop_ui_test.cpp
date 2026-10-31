@@ -55,6 +55,8 @@ static int patient(int milliseconds) { return milliseconds*patience(); }
 
 // The navigation rail and its border, which an open panel leaves beside it.
 static constexpr int Theme_railPlusBorder=60;
+// Half a checkbox's indicator: a click there toggles it.
+static constexpr int Theme_iconHalf=8;
 
 class DesktopUiTest : public QObject {
     Q_OBJECT
@@ -2585,6 +2587,55 @@ for line in sys.stdin:
         QSettings().remove("jobs/origins");workspace->setProperty("jobOrigins",QVariantMap{});
         workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
         workspace->setProperty("status",QString());workspace->setProperty("failed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void a_job_that_ends_in_the_background_is_notified() {
+        // A job that ran a while and ends while no window of the app is active becomes a desktop
+        // notification (here only the signal: the offscreen test platform sends none); clicking it
+        // opens the job. Short, cancelled and foreground jobs stay quiet, and the setting turns it off.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        QSignalSpy sent(backend.get(),&Backend::notificationSent);
+        view->setProperty("appActive",false);
+        const double now=QDateTime::currentSecsSinceEpoch();
+        const auto job=[&](const char *id,const char *state,double ran){return QVariantMap{{"id",id},{"label",QString("Job ")+id},{"state",state},{"created",now-ran},{"updated",now}};};
+        workspace->setProperty("jobs",QVariantList{job("notify-long","running",60),job("notify-short","running",3),job("notify-cancel","running",60),job("notify-timeout","queued",120)});
+        QCOMPARE(sent.size(),0);
+        workspace->setProperty("jobs",QVariantList{job("notify-long","succeeded",60),job("notify-short","failed",3),job("notify-cancel","cancelled",60),job("notify-timeout","timed_out",120)});
+        QCOMPARE(sent.size(),2);
+        QCOMPARE(sent.at(0).at(0).toString(),QString("Job notify-long"));
+        QCOMPARE(sent.at(0).at(1).toString(),QString("Completed after 1 min 0 s"));
+        QCOMPARE(sent.at(0).at(2).toString(),QString("notify-long"));
+        QCOMPARE(sent.at(1).at(1).toString(),QString("Timed out after 2 min 0 s"));
+        // A job seen only once it has ended was not watched running: no notification.
+        workspace->setProperty("jobs",QVariantList{job("notify-long","succeeded",60),job("notify-new","failed",60)});
+        QCOMPARE(sent.size(),2);
+        // In the foreground nothing is sent.
+        view->setProperty("appActive",true);
+        workspace->setProperty("jobs",QVariantList{job("notify-fg","running",60)});workspace->setProperty("jobs",QVariantList{job("notify-fg","failed",60)});
+        QCOMPARE(sent.size(),2);
+        // The setting turns it off, and is stored.
+        view->setProperty("appActive",false);
+        auto *dialog=object("settingsDialog");QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *toggle=item("jobNotificationsToggle");QVERIFY(toggle);QVERIFY(toggle->property("checked").toBool());
+        QTRY_VERIFY(toggle->height()>0);
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,toggle->mapToScene(QPointF(Theme_iconHalf,toggle->height()/2)).toPoint());
+        QTRY_VERIFY(!view->property("notifyJobs").toBool());
+        QTRY_COMPARE(QSettings().value("Notifications/jobs").toString(),QString("false"));
+        QVERIFY(QMetaObject::invokeMethod(dialog,"close"));QTRY_VERIFY(!dialog->property("visible").toBool());
+        workspace->setProperty("jobs",QVariantList{job("notify-off","running",60)});workspace->setProperty("jobs",QVariantList{job("notify-off","failed",60)});
+        QCOMPARE(sent.size(),2);
+        view->setProperty("notifyJobs",true);
+        workspace->setProperty("jobs",QVariantList{job("notify-on","running",60)});workspace->setProperty("jobs",QVariantList{job("notify-on","failed",60)});
+        QCOMPARE(sent.size(),3);QCOMPARE(sent.at(2).at(1).toString(),QString("Failed after 1 min 0 s"));
+        // Clicking the notification opens the job.
+        emit backend->notificationActivated("notify-on");
+        QTRY_COMPARE(workspace->property("section").toString(),QString("jobs"));
+        QVERIFY(workspace->property("opened").toBool());
+        QCOMPARE(workspace->property("selectedJob").toString(),QString("notify-on"));
+        view->setProperty("appActive",true);
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void cleanupTestCase() {

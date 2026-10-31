@@ -1,4 +1,5 @@
 #pragma once
+#include <QHash>
 #include <QObject>
 #include <QSettings>
 #include <QTcpServer>
@@ -90,6 +91,11 @@ public:
     // Puts the image saved at this path on the clipboard; false when it cannot be read.
     Q_INVOKABLE bool copyImage(const QString &path);
     Q_INVOKABLE void openExternal(const QUrl &url);
+    // Shows a desktop notification (org.freedesktop.Notifications) with an
+    // Open action; tag comes back with notificationActivated when it is
+    // clicked. False when no notification service is reachable. An offscreen
+    // run has no desktop to notify: it only emits notificationSent.
+    Q_INVOKABLE bool notify(const QString &title,const QString &body,const QString &tag);
     // Starts this program again from its path, for the new version an update installed there.
     Q_INVOKABLE bool relaunch();
     Q_INVOKABLE void openScreenshots();
@@ -102,12 +108,19 @@ signals:
     void languageChanged();
     void appearanceChanged();
     void recentProjectsChanged();
+    void notificationSent(const QString &title,const QString &body,const QString &tag);
+    void notificationActivated(const QString &tag);
+private slots:
+    // The notification service's ActionInvoked signal.
+    void notificationAction(uint id,const QString &action);
 private:
     static QString s_uiLanguage;
     // A probe result is the tool's output or one of these states, which are
     // translated when read so a language change also reaches them.
     static QString probeLabel(const QString &value);
     void acceptConnections();
+    QHash<uint,QString> m_notifications;
+    bool m_notificationsConnected=false;
     void probe(const QString &name, const QStringList &args, QString *destination);
     QSettings m_settings;
     QVariantList m_models;

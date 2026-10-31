@@ -188,6 +188,37 @@ Rectangle {
     onDetachedChanged: if(detached && detachedZoom<=0)deviceWindow.setZoom(Math.min(1,deviceWindow.fitZoom))
     Settings {category:"NativeDisplay";property alias showDeviceFrame:view.showDeviceFrame;property alias detachedZoom:view.detachedZoom}
     Settings {category:"NativeAudio";property alias forwardAudio:view.forwardAudio}
+    // A build, test or app start that ends while no Tomacco window is active is
+    // reported on the desktop, unless turned off in the settings. Jobs shorter
+    // than notifyAfterSeconds are left out; cancelled ones too, someone ended them.
+    property bool notifyJobs: true
+    Settings {category:"Notifications";property alias jobs:view.notifyJobs}
+    property bool appActive: Qt.application.state===Qt.ApplicationActive
+    readonly property int notifyAfterSeconds: 10
+    property var seenJobStates: ({})
+    function noteJobs(rows) {
+        let states={}
+        for(const job of rows) {
+            states[job.id]=job.state
+            const before=seenJobStates[job.id]
+            if(!before || ["queued","running"].indexOf(before)<0 || ["succeeded","failed","timed_out"].indexOf(job.state)<0) continue
+            if(!notifyJobs || appActive || (job.updated || 0)-(job.created || 0)<notifyAfterSeconds) continue
+            const outcome=job.state==="succeeded"?qsTr("Completed after %1"):job.state==="failed"?qsTr("Failed after %1"):qsTr("Timed out after %1")
+            Studio.notify(job.label,outcome.arg(workspace.jobDuration(job)),job.id)
+        }
+        seenJobStates=states
+    }
+    Connections {target:view.workspace;function onJobsChanged() {view.noteJobs(view.workspace.jobs)}}
+    // Clicking the notification brings the window back with the job's log.
+    Connections {
+        target:Studio
+        function onNotificationActivated(tag) {
+            const job=view.workspace.jobs.find(x=>x.id===tag)
+            view.showMainWindow()
+            if(job)view.workspace.selectJob(job)
+            view.workspace.showTab("jobs")
+        }
+    }
     readonly property string projectPath: workspace.project.path || ""
     function targetRows() {return targets.filter(x=>x.platform===platform && (platform!=="ios" || x.kind===appleTarget))}
     readonly property var visibleTargets: targetRows()
@@ -789,6 +820,10 @@ Rectangle {
                     ToolTip.visible:hovered;ToolTip.delay:550;ToolTip.text:qsTr("Interface language; System follows the desktop language")
                     Accessible.name:qsTr("Language")
                 }
+            }
+            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+                Text {text:qsTr("Notifications");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                StudioCheckBox {objectName:"jobNotificationsToggle";Layout.fillWidth:true;text:qsTr("When a job ends in the background");checked:view.notifyJobs;onToggled:view.notifyJobs=checked}
             }
             UpdateSection {Layout.fillWidth:true;model:updates}
         }

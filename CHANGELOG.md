@@ -43,6 +43,8 @@ operations and their JSON results.
   - A job's log can be filtered by text and by level, and the lines shown copied.
   - Builds & jobs shows each job's duration and project, filters running or failed
     jobs, opens the log file and runs again a job the desktop started.
+  - A desktop notification when a job ends while the window is in the background;
+    it can be turned off in Settings.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.
