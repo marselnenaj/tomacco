@@ -533,6 +533,12 @@ From a terminal, `tomaccoctl update` runs the manual check and, when a release a
 The layout lab is a separate Chromium surface, not a device. Start a session with `tomacco --url URL --preview-session NAME`, and discover it with `preview.sessions`.
 
 - `preview.configure` selects a profile, orientation, fold, chrome, safe-area metadata, guides and zoom.
+- `preview.configure` also sets what the page sees for `prefers-color-scheme` (`color_scheme`: `system`, `light`,
+  `dark`) and `prefers-reduced-motion` (`reduced_motion`: `system`, `reduce`, `no-preference`), and throttles or cuts
+  its network: `network:{preset:"slow-3g"}`, `{preset:"offline"}`, or `latency_ms`, `download_kbps` and `upload_kbps`;
+  `{preset:"none"}` turns throttling off. The settings belong to the session, last across reloads and are reported by
+  `preview.state`. They go through Chromium's DevTools protocol, so they cover the page's requests but not a service
+  worker's, and not WebSocket traffic.
 - `preview.ready` waits for the document, fonts and Flutter's first frame. A `wait_for` expression can wait for your own readiness.
 - `preview.inspect`, `preview.click`, `preview.fill`, `preview.evaluate`, `preview.console` and `preview.capture` interact with the page.
 - `preview.matrix` captures several profiles and orientations and restores the session. Besides one PNG per

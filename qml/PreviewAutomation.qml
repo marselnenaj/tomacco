@@ -4,6 +4,7 @@ Item {
     id: automation
     required property var app
     required property var device
+    required property var protocol
     function state() {
         let result={session:Agent.session,device:app.currentModel.id,platform:app.currentModel.platform,workspace:app.workspaceState(),native:app.nativeState(),mode:app.nativeMode?"runtime":"preview",
             device_category:app.deviceCategory,visible_devices:app.visibleDevices.map(d=>d.id),
@@ -12,6 +13,7 @@ Item {
             zoom:app.requestedZoom,url:device.browser.url.toString(),loading:device.browser.loading,error:device.loadError,
             viewport:{width:device.viewportWidth,height:device.viewportHeight},screen:{width:device.screenWidth,height:device.screenHeight},
             status_style:device.statusStyle,status_edge:device.barEdge,status_bar:device.showChrome,chrome_theme:device.chromeTheme,effective_chrome_theme:device.effectiveChromeTheme,density:device.model.dpr,engine:app.nativeMode?"Native device video / Qt":"Qt WebEngine / Chromium",nativeRuntime:app.nativeMode && app.nativeState().status==="live"}
+        Object.assign(result,protocol.state())
         if(app.nativeMode) {
             const native=result.native
             result.device=native.profile_id || native.device;result.platform=native.platform;result.device_category=native.platform
@@ -56,6 +58,7 @@ Item {
                     if(args.orientation!==undefined && ["portrait","landscape"].indexOf(args.orientation)<0) throw new Error("Invalid orientation")
                     if(args.unfolded===true && !app.devices[index].openWidth) throw new Error("This model is not foldable")
                     if(args.zoom!==undefined && (!isFinite(args.zoom) || args.zoom<0 || args.zoom>3)) throw new Error("Zoom outside 0–3")
+                    const media=protocol.parse(args)
                     if(index!==app.selectedIndex) app.selectDevice(index)
                     if(args.orientation!==undefined) app.rotated=args.orientation==="landscape"
                     if(args.unfolded!==undefined) app.foldedOpen=args.unfolded
@@ -64,6 +67,10 @@ Item {
                     if(args.zoom!==undefined) app.requestedZoom=args.zoom
                     if(args.status_bar!==undefined) device.showChrome=args.status_bar
                     if(args.chrome_theme!==undefined) device.chromeTheme=args.chrome_theme
+                    if(media.colorScheme!==undefined || media.reducedMotion!==undefined || media.network!==undefined) {
+                        protocol.update(media,function(failure) { if(failure) Agent.complete(id,null,failure); else Agent.complete(id,automation.state()) })
+                        return
+                    }
                     Qt.callLater(()=>Agent.complete(id,automation.state())); return
                 }
                 if(method==="reload") { device.browser.reload(); Agent.complete(id,{reloading:true}); return }

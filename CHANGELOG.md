@@ -99,6 +99,10 @@ operations and their JSON results.
 - **Web layout lab.**
   - `preview.matrix` also writes `contact-sheet.png`, all captures side by side at one
     scale and labelled with model and orientation.
+  - `preview.configure` and the lab's View panel set the page's `prefers-color-scheme`
+    and `prefers-reduced-motion`, per session, through the DevTools protocol.
+  - Network throttling and offline for the lab's page: Fast 3G, Slow 3G, offline or
+    your own latency and bandwidth, with `preview.configure` or the View panel.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.

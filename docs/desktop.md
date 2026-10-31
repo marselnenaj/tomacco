@@ -406,6 +406,22 @@ hidden, use automatic contrast or be switched between light/dark manually.
 Duo's side views use the compact ring indicator; open portrait uses a
 horizontal status bar. Android profiles use their own indicator shapes.
 
+### Color scheme, motion and network
+
+Under **View**, *Page color scheme* (*Farbschema der Seite*) makes the page see
+`prefers-color-scheme: light` or `dark`, *Reduce motion* (*Bewegung reduzieren*)
+`prefers-reduced-motion: reduce`, and *Network* (*Netzwerk*) slows its requests to
+Chromium DevTools' Fast 3G or Slow 3G or takes it offline. *System* and *No
+throttling* leave the page as the desktop has it. Agents set the same with
+`preview.configure` and can give their own latency and bandwidth.
+
+Qt WebEngine has no setting for these, so Tomacco sends them through the Chrome
+DevTools protocol of the web inspector's view. From the first change on, that
+view stays attached to the page while its window is hidden, and the page's
+`debugger` statements are skipped until you open the inspector. The settings last
+across reloads and navigation. Requests of service workers and WebSocket traffic
+are not throttled.
+
 ### App layout metadata
 
 Tomacco injects `window.__tomaccoViewport` before page scripts run,

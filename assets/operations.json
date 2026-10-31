@@ -2804,7 +2804,7 @@
   {
     "name": "preview.configure",
     "title": "Configure preview",
-    "description": "Set profile, orientation, fold state, insets, guides and zoom without reloading the page.",
+    "description": "Set profile, orientation, fold state, insets, guides, zoom, the page's color scheme and reduced-motion preference, and network throttling, without reloading the page.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2845,6 +2845,62 @@
           "type": "number",
           "minimum": 0,
           "maximum": 3
+        },
+        "color_scheme": {
+          "type": "string",
+          "enum": [
+            "system",
+            "light",
+            "dark"
+          ],
+          "description": "prefers-color-scheme the page sees; system follows the desktop"
+        },
+        "reduced_motion": {
+          "type": "string",
+          "enum": [
+            "system",
+            "reduce",
+            "no-preference"
+          ],
+          "description": "prefers-reduced-motion the page sees; system follows the desktop"
+        },
+        "network": {
+          "type": "object",
+          "description": "Throttle the page's requests or take it offline, through Chromium's DevTools network emulation. A preset sets every field; fields given with it override the preset. All zero and offline false turns throttling off.",
+          "properties": {
+            "preset": {
+              "type": "string",
+              "enum": [
+                "none",
+                "fast-3g",
+                "slow-3g",
+                "offline"
+              ],
+              "description": "Chromium DevTools' presets: fast-3g 562.5 ms, 1440/675 kbit/s; slow-3g 2000 ms, 400/400 kbit/s"
+            },
+            "offline": {
+              "type": "boolean"
+            },
+            "latency_ms": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 60000,
+              "description": "Added round-trip latency in milliseconds"
+            },
+            "download_kbps": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10000000,
+              "description": "Download limit in kbit/s; 0 is unlimited"
+            },
+            "upload_kbps": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10000000,
+              "description": "Upload limit in kbit/s; 0 is unlimited"
+            }
+          },
+          "additionalProperties": false
         },
         "session": {
           "type": "string",

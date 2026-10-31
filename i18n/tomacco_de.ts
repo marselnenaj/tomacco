@@ -2140,6 +2140,46 @@ xtool setup</translation>
         <translation>Ton</translation>
     </message>
     <message>
+        <source>Custom</source>
+        <translation>Benutzerdefiniert</translation>
+    </message>
+    <message>
+        <source>Fast 3G</source>
+        <translation>Schnelles 3G</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Netzwerk</translation>
+    </message>
+    <message>
+        <source>No throttling</source>
+        <translation>Ungedrosselt</translation>
+    </message>
+    <message>
+        <source>Offline</source>
+        <translation>Offline</translation>
+    </message>
+    <message>
+        <source>Page color scheme</source>
+        <translation>Farbschema der Seite</translation>
+    </message>
+    <message>
+        <source>Reduce motion</source>
+        <translation>Bewegung reduzieren</translation>
+    </message>
+    <message>
+        <source>Slow 3G</source>
+        <translation>Langsames 3G</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation>System</translation>
+    </message>
+    <message>
+        <source>The page sees prefers-reduced-motion: reduce</source>
+        <translation>Die Seite erhält prefers-reduced-motion: reduce</translation>
+    </message>
+    <message>
         <source>System bar color</source>
         <translation>Farbe der Systemleisten</translation>
     </message>

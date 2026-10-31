@@ -30,6 +30,11 @@
 #include <QAccessible>
 #include <QtWebEngineQuick/qtwebenginequickglobal.h>
 #include <QThread>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QElapsedTimer>
+#include <QCryptographicHash>
+#include <unistd.h>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -98,6 +103,52 @@ class DesktopUiTest : public QObject {
         auto *face=QAccessible::queryAccessibleInterface(item);
         return face?face->text(QAccessible::Name):QString();
     }
+    // One request on the preview socket, as tomaccoctl sends it: {result} or {error}.
+    QVariantMap previewCall(const QString &method,const QVariantMap &params={}) {
+        // Where Control puts it: the data directory's runtime/, or /tmp when that path is too long.
+        const auto data=QDir::cleanPath(QFileInfo(Backend::dataDirectory()).absoluteFilePath());
+        auto runtime=data+"/runtime";
+        if(runtime.toUtf8().size()+54>=104)runtime=QStringLiteral("/tmp/tomacco-%1-%2").arg(getuid()).arg(QString::fromLatin1(QCryptographicHash::hash(data.toUtf8(),QCryptographicHash::Sha256).toHex().left(16)));
+        QLocalSocket socket;socket.connectToServer(runtime+"/preview-ui-acceptance.sock");
+        if(!socket.waitForConnected(2000))return {{"error","not connected"}};
+        socket.write(QJsonDocument(QJsonObject{{"id",1},{"method",method},{"params",QJsonObject::fromVariantMap(params)}}).toJson(QJsonDocument::Compact)+"\n");socket.flush();
+        QElapsedTimer clock;clock.start();
+        while(!socket.canReadLine() && clock.elapsed()<patient(30000))QTest::qWait(10);
+        return QJsonDocument::fromJson(socket.readLine()).object().toVariantMap();
+    }
+    // A web server on 127.0.0.1 for the layout lab: a page at /, two bytes anywhere else.
+    struct PageServer {
+        QTcpServer server;
+        explicit PageServer(const QByteArray &page) {
+            QObject::connect(&server,&QTcpServer::newConnection,&server,[this,page]{
+                while(auto *socket=server.nextPendingConnection()) {
+                    QObject::connect(socket,&QTcpSocket::readyRead,socket,[socket,page]{
+                        const auto request=socket->readAll();if(!request.contains("\r\n\r\n"))return;
+                        const auto path=request.split(' ').value(1);
+                        const QByteArray body=path=="/"?page:path.startsWith("/missing")?QByteArray("gone"):QByteArray("ok");
+                        const QByteArray status=path.startsWith("/missing")?"404 Not Found":"200 OK";
+                        socket->write("HTTP/1.1 "+status+"\r\nContent-Type: "+(path=="/"?"text/html":"text/plain")+"\r\nCache-Control: no-store\r\nContent-Length: "+QByteArray::number(body.size())+"\r\nConnection: close\r\n\r\n"+body);
+                        socket->disconnectFromHost();
+                    });
+                    QObject::connect(socket,&QTcpSocket::disconnected,socket,&QObject::deleteLater);
+                }
+            });
+            server.listen(QHostAddress::LocalHost);
+        }
+        QString url(const QString &path="/") const { return QString("http://127.0.0.1:%1%2").arg(server.serverPort()).arg(path); }
+    };
+    // Navigates the lab and waits until the page has loaded.
+    bool openPage(const QString &url) {
+        if(previewCall("navigate",{{"url",url}}).contains("error"))return false;
+        QElapsedTimer clock;clock.start();
+        while(clock.elapsed()<patient(15000)) {
+            const auto state=previewCall("state").value("result").toMap();
+            if(state.value("url").toString()==url && !state.value("loading").toBool())return true;
+            QTest::qWait(50);
+        }
+        return false;
+    }
+    QVariant evaluate(const QString &script) { return previewCall("evaluate",{{"script",script}}).value("result"); }
     // A var property holds a JS value or, once set from C++ or from a reply, a plain map.
     static QVariantMap mapOf(const QVariant &value) {
         return value.metaType()==QMetaType::fromType<QJSValue>()?value.value<QJSValue>().toVariant().toMap():value.toMap();
@@ -889,6 +940,61 @@ private slots:
         }
         QVERIFY(QMetaObject::invokeMethod(window,"selectDuoState",Q_ARG(QVariant,false),Q_ARG(QVariant,false)));
         QVERIFY(QMetaObject::invokeMethod(window,"selectDevice",Q_ARG(QVariant,0)));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void layout_lab_emulates_media_and_network_per_session() {
+        PageServer web("<!doctype html><title>media</title><p>media");QVERIFY(web.server.isListening());
+        const bool wasNative=window->property("nativeMode").toBool();window->setProperty("nativeMode",false);
+        const auto first=previewCall("state");auto state=first.value("result").toMap();
+        QVERIFY2(first.contains("result"),qPrintable(QJsonDocument::fromVariant(first).toJson()));
+        QCOMPARE(state.value("color_scheme").toString(),QString("system"));QCOMPARE(state.value("reduced_motion").toString(),QString("system"));
+        QCOMPARE(state.value("network").toMap().value("preset").toString(),QString("none"));
+        QVERIFY(!state.value("emulation").toMap().value("attached").toBool());
+        QVERIFY(openPage(web.url()));
+        const QString media="[matchMedia('(prefers-color-scheme: dark)').matches,matchMedia('(prefers-color-scheme: light)').matches,matchMedia('(prefers-reduced-motion: reduce)').matches]";
+        auto reply=previewCall("configure",{{"color_scheme","dark"},{"reduced_motion","reduce"}});
+        QVERIFY2(!reply.contains("error"),qPrintable(reply.value("error").toMap().value("message").toString()));
+        QCOMPARE(reply.value("result").toMap().value("color_scheme").toString(),QString("dark"));
+        QVERIFY(reply.value("result").toMap().value("emulation").toMap().value("attached").toBool());
+        QCOMPARE(evaluate(media).toList(),(QVariantList{true,false,true}));
+        QVERIFY(!previewCall("configure",{{"color_scheme","light"}}).contains("error"));
+        QCOMPARE(evaluate(media).toList(),(QVariantList{false,true,true}));
+        // The page keeps it across a reload.
+        QVERIFY(openPage(web.url()+"?again"));
+        QCOMPARE(evaluate(media).toList(),(QVariantList{false,true,true}));
+        // Throttled: a request waits at least the added latency.
+        const QString timed="(()=>{const t=performance.now();const x=new XMLHttpRequest();x.open('GET','/data?'+Math.random(),false);x.send();return [x.status,Math.round(performance.now()-t)]})()";
+        reply=previewCall("configure",{{"network",QVariantMap{{"latency_ms",400}}}});
+        QVERIFY2(!reply.contains("error"),qPrintable(reply.value("error").toMap().value("message").toString()));
+        QCOMPARE(reply.value("result").toMap().value("network").toMap().value("preset").toString(),QString("custom"));
+        auto measured=evaluate(timed).toList();QCOMPARE(measured.value(0).toInt(),200);QVERIFY2(measured.value(1).toInt()>=380,qPrintable(measured.value(1).toString()));
+        QVERIFY(!previewCall("configure",{{"network",QVariantMap{{"preset","offline"}}}}).contains("error"));
+        QCOMPARE(evaluate("navigator.onLine"),QVariant(false));
+        QCOMPARE(evaluate("(()=>{try{const x=new XMLHttpRequest();x.open('GET','/data',false);x.send();return x.status}catch(e){return 'failed'}})()").toString(),QString("failed"));
+        // The desktop shows the same setting.
+        auto *network=object("pageNetwork");QVERIFY(network);QCOMPARE(network->property("currentText").toString(),QString("Offline"));
+        // A bad value is refused and changes nothing.
+        reply=previewCall("configure",{{"color_scheme","blue"}});
+        QVERIFY(reply.value("error").toMap().value("message").toString().contains("color_scheme"));
+        // The hidden inspector's debugger does not stop the page.
+        QCOMPARE(evaluate("(()=>{debugger;return 7})()").toInt(),7);
+        // Back to the desktop's own: the page is as before.
+        reply=previewCall("configure",{{"color_scheme","system"},{"reduced_motion","system"},{"network",QVariantMap{{"preset","none"}}}});
+        QVERIFY2(!reply.contains("error"),qPrintable(reply.value("error").toMap().value("message").toString()));
+        QCOMPARE(evaluate("navigator.onLine"),QVariant(true));
+        QCOMPARE(evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"),QVariant(false));
+        measured=evaluate(timed).toList();QCOMPARE(measured.value(0).toInt(),200);QVERIFY2(measured.value(1).toInt()<380,qPrintable(measured.value(1).toString()));
+        // The side panel sets it too.
+        auto *dark=item("pageSchemeDark");QVERIFY(dark);
+        QVERIFY(QMetaObject::invokeMethod(dark,"clicked"));
+        QTRY_COMPARE(previewCall("state").value("result").toMap().value("color_scheme").toString(),QString("dark"));
+        QTRY_COMPARE(evaluate("matchMedia('(prefers-color-scheme: dark)').matches"),QVariant(true));
+        QVERIFY(QMetaObject::invokeMethod(item("pageSchemeSystem"),"clicked"));
+        QTRY_COMPARE(evaluate("matchMedia('(prefers-color-scheme: dark)').matches"),QVariant(false));
+        QVERIFY(previewCall("state").value("result").toMap().value("emulation").toMap().value("error").toString().isEmpty());
+        previewCall("navigate",{{"url","tomacco://demo"}});window->setProperty("nativeMode",wasNative);
+        // These calls are not the activity panel's business in the tests after this one.
+        if(auto *panel=object("activityPanel"))panel->setProperty("calls",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void iphone_frames_follow_the_measured_geometry() {

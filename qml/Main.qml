@@ -381,6 +381,21 @@ ApplicationWindow {
                             model: [{id:"auto",label:qsTr("Auto")},{id:"light",label:qsTr("Light")},{id:"dark",label:qsTr("Dark")}]
                             onChosen: id=>phone.chromeTheme=id
                         }
+                        StudioSection { Layout.topMargin: Theme.gapXs; text: qsTr("Page color scheme") }
+                        StudioSegmented {
+                            Layout.fillWidth: true; current: pageProtocol.colorScheme
+                            model: [{id:"system",label:qsTr("System"),objectName:"pageSchemeSystem"},{id:"light",label:qsTr("Light"),objectName:"pageSchemeLight"},{id:"dark",label:qsTr("Dark"),objectName:"pageSchemeDark"}]
+                            onChosen: id=>pageProtocol.update({colorScheme:id})
+                        }
+                        StudioCheckBox { objectName: "pageReducedMotion"; text: qsTr("Reduce motion"); Layout.fillWidth: true; checked: pageProtocol.reducedMotion==="reduce"; ToolTip.visible: hovered; ToolTip.delay: 550; ToolTip.text: qsTr("The page sees prefers-reduced-motion: reduce"); onToggled: pageProtocol.update({reducedMotion:checked?"reduce":"system"}) }
+                        StudioSection { Layout.topMargin: Theme.gapXs; text: qsTr("Network") }
+                        StudioComboBox {
+                            objectName: "pageNetwork"; Layout.fillWidth: true; textRole: "label"; valueRole: "id"
+                            model: [{id:"none",label:qsTr("No throttling")},{id:"fast-3g",label:qsTr("Fast 3G")},{id:"slow-3g",label:qsTr("Slow 3G")},{id:"offline",label:qsTr("Offline")},{id:"custom",label:qsTr("Custom")}]
+                            currentIndex: model.findIndex(entry=>entry.id===pageProtocol.preset())
+                            onActivated: index=>{ if(model[index].id!=="custom")pageProtocol.update({network:pageProtocol.presets[model[index].id]}) }
+                            Accessible.name: qsTr("Network")
+                        }
                         Rectangle { Layout.fillWidth: true; Layout.topMargin: Theme.gapSm; Layout.bottomMargin: Theme.gapXs; implicitHeight: 1; color: Theme.subtle }
                         StudioSection { text: qsTr("TOOLS") }
                         StudioButton { text: qsTr("Web inspector"); iconName: "terminal"; quiet: true; alignLeft: true; Layout.fillWidth: true; tip: qsTr("Developer tools · F12"); onClicked: { devTools.visible=true; devTools.raise(); devTools.requestActivate() } }
@@ -460,12 +475,13 @@ ApplicationWindow {
     }
     Window {
         id: devTools; width: 1050; height: 720; visible: false; title: qsTr("Tomacco · Web inspector"); color: Theme.background
-        WebEngineView { anchors.fill: parent; inspectedView: devTools.visible ? phone.browser : null }
+        WebEngineView { id: inspectorView; objectName: "previewInspector"; anchors.fill: parent; inspectedView: devTools.visible || pageProtocol.attached ? phone.browser : null }
     }
+    PreviewProtocol { id: pageProtocol; inspector: inspectorView; inspectorShown: devTools.visible }
 
     NativeWorkspace {id:nativeWorkspace;anchors.fill:parent;visible:root.nativeMode;workspace:workspace;externalDeviceWindow:workspace.guestWindowVisible;onWebRequested:{workspace.close();root.nativeMode=false}}
     Connections { target: workspace; function onOpenedChanged() { if(workspace.opened)root.nativeMode=true } }
-    PreviewAutomation { app: root; device: phone }
+    PreviewAutomation { objectName: "previewAutomation"; app: root; device: phone; protocol: pageProtocol }
     Workspace { id: workspace; parent: nativeWorkspace.workspaceHost; anchors.fill: parent; visible: opened && root.nativeMode;
         guestSolo: nativeWorkspace.solo
         onGuestCloseRequested: nativeWorkspace.quitApp()

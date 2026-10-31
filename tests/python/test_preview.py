@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from native_client import dispatch
+from native_client import StudioError, dispatch
 
 
 def png(width, height, rgba):
@@ -128,6 +128,22 @@ class Matrix(PreviewCase):
         self.assertNotIn("contact_sheet", result)
         self.assertFalse((out / "contact-sheet.png").exists())
         self.assertTrue((out / "18pro-portrait.png").is_file())
+
+
+class Emulation(PreviewCase):
+    def test_media_and_network_settings_reach_the_desktop_as_given(self):
+        dispatch("preview.configure", {"color_scheme": "dark", "reduced_motion": "reduce", "network": {"preset": "slow-3g", "latency_ms": 100}})
+        method, params = self.preview.requests[-1]
+        self.assertEqual(method, "configure")
+        self.assertEqual(params, {"color_scheme": "dark", "reduced_motion": "reduce", "network": {"preset": "slow-3g", "latency_ms": 100}})
+
+    def test_bad_media_and_network_settings_are_refused_before_the_desktop(self):
+        for arguments in ({"color_scheme": "blue"}, {"reduced_motion": "less"}, {"network": {"preset": "5g"}},
+                          {"network": {"latency_ms": -1}}, {"network": {"jitter": 1}}):
+            with self.assertRaises(StudioError) as caught:
+                dispatch("preview.configure", arguments)
+            self.assertEqual(caught.exception.code, "invalid_argument", arguments)
+        self.assertEqual(self.preview.requests, [])
 
 
 if __name__ == "__main__":
