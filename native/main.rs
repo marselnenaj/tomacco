@@ -7,6 +7,7 @@ mod automation;
 mod catalog;
 mod completions;
 mod core;
+mod crashes;
 mod dap;
 mod debugger;
 mod desktop;

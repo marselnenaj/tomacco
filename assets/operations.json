@@ -3296,6 +3296,55 @@
     }
   },
   {
+    "name": "testing.crashes",
+    "title": "Find Android crashes",
+    "description": "Read logcat's crash, system and main buffers and return Java crashes (FATAL EXCEPTION), ANRs and native crashes (Fatal signal) as structured events with package, pid, exception, message, stack and reason. Window: since (epoch seconds on the device clock), the life of job_id, or the last lines lines.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list"
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Only events of this app and its processes"
+        },
+        "since": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Only events from this time on, in seconds since 1970 on the device clock"
+        },
+        "job_id": {
+          "type": "string",
+          "description": "Only events while this job ran, such as a project.run or testing.run job; uses the computer's clock, which an emulator shares"
+        },
+        "lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200000,
+          "default": 20000,
+          "description": "Without since or job_id, how many recent log lines to read"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to also write the result as JSON"
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "debug.start",
     "title": "Start debugger",
     "description": "Start or reuse a persistent JDWP Android/JVM, native Android LLDB, or local LLDB Swift/native debug session. Android sessions exclusively own their device until disconnected.",

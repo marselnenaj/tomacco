@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 175 operations.
+`tomaccoctl` now has one typed API of 176 operations.
 
 ### Added
 
@@ -34,6 +34,9 @@ operations and their JSON results.
     threshold, tolerance, ignored regions and a diff image.
   - `testing.accessibility` audits an Android screen: unlabelled clickable elements,
     touch targets under 48 dp and tiny text, as structured findings.
+  - `testing.crashes` reports Android crashes, ANRs and native crashes from logcat as
+    structured events, for an app, a time or a job's run. `testing.run` lists them per
+    device and fails on a crash of an app the scenario uses.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.

@@ -3525,6 +3525,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Native Tests ausführen</translation>
     </message>
     <message>
+        <source>Find Android crashes</source>
+        <translation>Android-Abstürze finden</translation>
+    </message>
+    <message>
         <source>Check Android accessibility</source>
         <translation>Android-Barrierefreiheit prüfen</translation>
     </message>

@@ -317,8 +317,41 @@ pub fn worker(file: &str) -> Result<()> {
     }
     Ok(())
 }
+/// The apps a scenario launches, stops or clears: a crash of one of them
+/// fails the run.
+fn scenario_apps(scenario: &Value) -> Vec<String> {
+    let mut apps: Vec<String> = scenario["steps"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|step| !s(step, "bundle_id").is_empty())
+        .map(|step| s(step, "bundle_id").to_string())
+        .collect();
+    apps.sort();
+    apps.dedup();
+    apps
+}
+fn app_crash(events: &[Value], apps: &[String]) -> Option<Error> {
+    let event = events
+        .iter()
+        .find(|e| apps.iter().any(|app| app == s(e, "package")))?;
+    let what = if event["kind"] == "anr" {
+        "stopped responding"
+    } else {
+        "crashed"
+    };
+    Some(
+        Error::new(
+            "app_crashed",
+            format!("{} {what} during the scenario", s(event, "package")),
+        )
+        .details(event.clone()),
+    )
+}
 fn run_device(device: &str, scenario: &Value, directory: &Path) -> Value {
     let started = Instant::now();
+    // The emulator shares this computer's clock; a second of margin.
+    let since = now() - 1.0;
     let mut steps = Vec::new();
     let result = (|| -> Result<()> {
         let lock = Lock::open(
@@ -379,7 +412,15 @@ fn run_device(device: &str, scenario: &Value, directory: &Path) -> Value {
         }
         Ok(())
     })();
-    json!({"device":device,"passed":result.is_ok(),"duration_seconds":started.elapsed().as_secs_f64(),"steps":steps,"error":result.err().map(|e|e.value())})
+    let (crashes, crashes_error) = match crate::crashes::on_device(device, "", since) {
+        Ok(events) => (events, Value::Null),
+        Err(error) => (Vec::new(), error.value()),
+    };
+    let result = result.and_then(|()| match app_crash(&crashes, &scenario_apps(scenario)) {
+        Some(error) => Err(error),
+        None => Ok(()),
+    });
+    json!({"device":device,"passed":result.is_ok(),"duration_seconds":started.elapsed().as_secs_f64(),"steps":steps,"error":result.err().map(|e|e.value()),"crashes":crashes,"crashes_error":crashes_error})
 }
 fn screenshot(device: &str, path: &Path) -> Result {
     let mut command = devices::adb(device)?;
@@ -398,6 +439,18 @@ fn screenshot(device: &str, path: &Path) -> Result {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn a_crash_of_a_scenario_app_fails_the_run() {
+        let scenario = json!({"name":"x","steps":[{"action":"launch","bundle_id":"dev.example.app"},{"action":"click","selector":{"text":"Go"}},{"action":"stop","bundle_id":"dev.example.app"}]});
+        let apps = scenario_apps(&scenario);
+        assert_eq!(apps, ["dev.example.app"]);
+        let other = json!({"kind":"crash","package":"com.android.systemui"});
+        assert!(app_crash(std::slice::from_ref(&other), &apps).is_none());
+        let anr = json!({"kind":"anr","package":"dev.example.app"});
+        let error = app_crash(&[other, anr], &apps).unwrap();
+        assert_eq!(error.code, "app_crashed");
+        assert!(error.message.contains("stopped responding"));
+    }
     #[test]
     fn selectors_handle_escaping_ambiguity_and_index() {
         let xml = r#"<hierarchy><node text="A &amp; B" resource-id="app:id/button" enabled="true" bounds="[0,10][20,30]"/><node text="A &amp; B" enabled="false" bounds="[30,10][60,30]"/></hierarchy>"#;

@@ -409,6 +409,19 @@ Native debugging is qualified on API 36 x86_64. ARM64 is built but not run on a 
 `testing.setup` installs a small instrumentation companion for Unicode, emoji and whole-field replacement, without changing the user's keyboard. `testing.run`
 runs JSON scenarios on a bounded parallel device matrix, returning JUnit results and capturing failures; `examples/native-navigation.json` shows the format.
 
+`testing.crashes` reads the device's crash, system and main logs and returns Java crashes (`FATAL EXCEPTION`), ANRs and native crashes
+(`Fatal signal`) as `events`: `kind` (`crash`, `anr` or `native_crash`), `time`, `package`, `process`, `pid`, and for a crash the
+`exception`, `message`, `stack` and `caused_by`, for an ANR the `reason`, for a native crash the `signal`. `bundle_id` keeps one app's
+events. `since` is a time in seconds since 1970 on the device's clock; `job_id` takes the window of a job, such as a `project.run`, on the
+computer's clock, which an emulator shares. Without either it reads the last `lines` log lines.
+
+```sh
+tomaccoctl call testing.crashes '{"device":"emulator-5554","bundle_id":"dev.example.newapp","job_id":"JOB_ID"}'
+```
+
+`testing.run` does the same for each device after its scenario: the device's result in `report.json` lists `crashes`, and a crash or ANR
+of an app the scenario launches, stops or clears fails it with `app_crashed`.
+
 `testing.visual_diff` compares a screenshot with an approved baseline PNG, pixel by pixel. It answers `changed_fraction` of the compared pixels,
 `changed_bounds` and `passed` (`changed_fraction` at most `threshold`), and with `diff` writes the baseline faded with changed pixels in red.
 `tolerance` ignores small colour differences per channel, and `ignore` leaves out regions such as the status bar clock. A missing baseline
