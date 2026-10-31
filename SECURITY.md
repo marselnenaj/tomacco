@@ -18,6 +18,16 @@ Only the latest release gets fixes.
   local process can make them do beyond what the operation states.
 - `install.py`, the release package and the handling of secrets and credentials.
 
+## How Tomacco keeps local data private
+
+- The data directory (`~/.local/share/tomacco`, or `TOMACCO_HOME`) is owner-only (0700). `tomaccoctl` tightens one an earlier
+  version or another program left open, and refuses one that belongs to another user. The installer creates it, and its backups,
+  owner-only as well.
+- Directories it creates for its own state are made 0700 in one step. Job logs, worker logs and the job database are 0600, since
+  they hold commands, environments and tool output; a log path that is a symbolic link is refused.
+- Runtime and debugger sockets live in owner-only directories, in `TMPDIR` or, when that path is too long for a socket, in a private
+  `XDG_RUNTIME_DIR` or `/tmp`.
+
 ## What is not
 
 The virtual iOS device is an experimental research runtime. It disables or

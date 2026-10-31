@@ -323,6 +323,16 @@ class JobTests(Isolated):
         done = jobs.wait(job["id"], 5)
         self.assertEqual((done["state"], done["exit_code"]), ("failed", 7))
 
+    def test_the_data_directory_and_job_logs_are_owner_only(self):
+        job = self.submit([{"argv": [sys.executable, "-c", "print('tool output')"]}])
+        done = jobs.wait(job["id"], 5)
+        self.assertEqual(done["state"], "succeeded", done)
+        state = self.root / "state"
+        self.assertEqual(state.stat().st_mode & 0o777, 0o700)
+        self.assertEqual((state / "jobs").stat().st_mode & 0o777, 0o700)
+        self.assertEqual(Path(done["log_path"]).stat().st_mode & 0o777, 0o600)
+        self.assertEqual((state / "jobs.sqlite3").stat().st_mode & 0o777, 0o600)
+
     def test_cancel_kills_descendants(self):
         marker = self.root / "should-not-exist"
         child = "import time;from pathlib import Path;time.sleep(2);Path(" + repr(str(marker)) + ").touch()"

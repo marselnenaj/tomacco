@@ -881,7 +881,7 @@ impl Console {
         let stream = UnixStream::connect(socket)?;
         stream.set_write_timeout(Some(Duration::from_secs(3)))?;
         let mut input = stream.try_clone()?;
-        let mut log = File::create(directory.join("console.log"))?;
+        let mut log = private_file(&directory.join("console.log"), false)?;
         let bytes = Arc::new(Mutex::new(Vec::<u8>::new()));
         let error = Arc::new(Mutex::new(None));
         let buffer = bytes.clone();
@@ -1069,7 +1069,10 @@ pub fn worker(specification: &str) -> Result<()> {
             });
         }
         let mut engine = Engine(command.spawn()?);
-        let log = Arc::new(Mutex::new((File::create(directory.join("engine.log"))?, 0)));
+        let log = Arc::new(Mutex::new((
+            private_file(&directory.join("engine.log"), false)?,
+            0,
+        )));
         let truncated = Arc::new(AtomicBool::new(false));
         let readers = [
             log_reader(

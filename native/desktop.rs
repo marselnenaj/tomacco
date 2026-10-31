@@ -1,7 +1,6 @@
 use crate::{core::*, jobs, preview, toolchain};
 use serde_json::{Value, json};
 use std::{
-    fs::OpenOptions,
     os::unix::process::CommandExt,
     process::{Command, Stdio},
     thread,
@@ -89,10 +88,7 @@ pub fn open(a: &Value) -> Result {
             Error::new("desktop_missing", "Tomacco desktop is not installed")
                 .remedy("Build with CMake and run python3 install.py")
         })?;
-    let log = OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open(home()?.join("desktop.log"))?;
+    let log = private_file(&home()?.join("desktop.log"), true)?;
     let mut command = Command::new(binary);
     command
         .args(["--preview-session", session, "--workspace", tab])

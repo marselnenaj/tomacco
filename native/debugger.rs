@@ -240,7 +240,7 @@ fn start(a: &Value) -> Result {
     spec["session"] = json!(id);
     spec["spec_digest"] = json!(spec_digest);
     atomic_json(&dir.join("spec.json"), &spec)?;
-    let stderr = fs::File::create(dir.join("worker.log"))?;
+    let stderr = private_file(&dir.join("worker.log"), false)?;
     let mut cmd = Command::new(crate::core::own_executable()?);
     cmd.args(["_debug_worker", &id])
         .stdin(Stdio::null())

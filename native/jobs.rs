@@ -3,7 +3,7 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde_json::{Value, json};
 use std::{
     collections::BTreeSet,
-    fs::{self, File, OpenOptions},
+    fs::{self, File},
     io::{Read, Seek, SeekFrom, Write},
     os::unix::fs::MetadataExt,
     os::unix::process::CommandExt,
@@ -699,12 +699,7 @@ pub fn worker(id: &str) -> Result<()> {
 fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i32, Value)> {
     let log_dir = home()?.join("jobs");
     private_dir(&log_dir)?;
-    let mut log = OpenOptions::new()
-        .create(true)
-        .truncate(true)
-        .read(true)
-        .write(true)
-        .open(log_dir.join(format!("{id}.log")))?;
+    let mut log = private_file(&log_dir.join(format!("{id}.log")), false)?;
     // Runtime services live with their owning process, rather than expiring
     // during a long development session. PID start tokens prevent PID reuse.
     let runtime_owner = spec

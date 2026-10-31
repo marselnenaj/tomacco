@@ -2,7 +2,7 @@
 use crate::{api, core::*, toolchain as tc};
 use serde_json::{Value, json};
 use std::{
-    fs::{self, File},
+    fs,
     io::{BufRead, BufReader, Read, Write},
     os::fd::AsRawFd,
     os::unix::{
@@ -123,7 +123,7 @@ impl Drop for ManagedProcess {
 }
 pub fn spawn(args: &[String], log: &Path) -> Result<ManagedProcess> {
     let mut command = Command::new(&args[0]);
-    let output = fs::OpenOptions::new().create(true).append(true).open(log)?;
+    let output = private_file(log, true)?;
     command
         .args(&args[1..])
         .stdin(Stdio::null())
@@ -350,7 +350,7 @@ fn start(a: &Value) -> Result {
     let mut state = json!({"session":id,"status":"starting","platform":a["platform"],"device":a["device"],"remote":a["remote"],"created":now(),"video_socket":socket.join(format!("{id}-v.sock")),"control_socket":socket.join(format!("{id}-c.sock")),"log_path":dir.join("worker.log"),"native_runtime":true,"packets":0,"video_bytes":0});
     atomic_json(&dir.join("spec.json"), a)?;
     atomic_json(&dir.join("state.json"), &state)?;
-    let output = File::create(dir.join("worker.log"))?;
+    let output = private_file(&dir.join("worker.log"), false)?;
     let mut command = Command::new(crate::core::own_executable()?);
     command
         .args(["_runtime_worker", &id])

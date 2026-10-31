@@ -388,12 +388,46 @@ pub fn output_path(value: &str) -> Result<PathBuf> {
     }
     Ok(p)
 }
+/// Creates a missing directory owner-only. The directory itself is made
+/// with mode 0700 in one step, so it is never open to others, whatever the
+/// umask; missing parents get the usual permissions. An existing directory
+/// is left as it is.
 pub fn private_dir(path: &Path) -> Result<()> {
-    if !path.exists() {
-        fs::create_dir_all(path)?;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
+    use std::os::unix::fs::DirBuilderExt;
+    if path.exists() {
+        return Ok(());
     }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    match fs::DirBuilder::new().mode(0o700).create(path) {
+        Ok(()) => (),
+        // Another process made it in the meantime.
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => return Ok(()),
+        Err(error) => return Err(error.into()),
+    }
+    // The umask can only have removed bits; this keeps the owner's.
+    fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
     Ok(())
+}
+/// Creates or truncates a file only its owner may read: logs that hold
+/// commands, environments and tool output. A file left with wider
+/// permissions by an earlier version is tightened.
+pub fn private_file(path: &Path, append: bool) -> Result<File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .read(!append)
+        .append(append)
+        .truncate(!append)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(path)?;
+    if file.metadata()?.permissions().mode() & 0o077 != 0 {
+        file.set_permissions(fs::Permissions::from_mode(0o600))?;
+    }
+    Ok(file)
 }
 pub fn read_json(path: &Path, default: Option<Value>) -> Result {
     if !path.exists() {
@@ -730,6 +764,41 @@ mod directory_tests {
         let file = parent.path().join("file");
         fs::write(&file, b"").unwrap();
         assert!(private_runtime_dir(&file).is_err());
+    }
+
+    #[test]
+    fn private_directories_and_logs_are_their_owners_alone() {
+        let parent = tempfile::tempdir().unwrap();
+        // SAFETY: umask only changes this process's file creation mask.
+        let previous = unsafe { libc::umask(0) };
+        let directory = parent.path().join("a/b/data");
+        let created = private_dir(&directory);
+        let log = private_file(&directory.join("job.log"), false);
+        unsafe { libc::umask(previous) };
+        created.unwrap();
+        assert_eq!(fs::metadata(&directory).unwrap().mode() & 0o777, 0o700);
+        let mut log = log.unwrap();
+        log.write_all(b"secret output").unwrap();
+        assert_eq!(
+            fs::metadata(directory.join("job.log")).unwrap().mode() & 0o777,
+            0o600
+        );
+        // An existing log from an older version is tightened and truncated.
+        let old = directory.join("old.log");
+        fs::write(&old, b"before").unwrap();
+        fs::set_permissions(&old, fs::Permissions::from_mode(0o644)).unwrap();
+        drop(private_file(&old, false).unwrap());
+        assert_eq!(fs::metadata(&old).unwrap().mode() & 0o777, 0o600);
+        assert_eq!(fs::read(&old).unwrap(), b"");
+        // Appending keeps what is there.
+        fs::write(&old, b"kept").unwrap();
+        private_file(&old, true).unwrap().write_all(b"+").unwrap();
+        assert_eq!(fs::read(&old).unwrap(), b"kept+");
+        // A link planted at a log path is not followed.
+        let link = directory.join("link.log");
+        std::os::unix::fs::symlink(&old, &link).unwrap();
+        assert!(private_file(&link, false).is_err());
+        assert_eq!(fs::read(&old).unwrap(), b"kept+");
     }
 
     #[test]

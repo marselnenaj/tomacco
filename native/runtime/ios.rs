@@ -106,7 +106,7 @@ cat >/dev/null
         &format!("sh -c {}", shell_quote(&script)),
     ]);
     let mut cmd = Command::new(&args[0]);
-    let output = File::create(dir.join("companion.log"))?;
+    let output = private_file(&dir.join("companion.log"), false)?;
     cmd.args(&args[1..])
         .stdin(Stdio::piped())
         .stdout(output.try_clone()?)
