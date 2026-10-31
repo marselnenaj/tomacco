@@ -87,6 +87,19 @@ This makes a TGZ and its SHA-256. A distribution package configures with `-DTOMA
 installs an update. It holds `bin/`, `lib/`, `share/` and `install.py`, which installs for one user what it finds beside it, with the options below.
 `tools/build_source_release.py` builds the corresponding-source tarball a release offers; see [SOURCE.md.in](SOURCE.md.in).
 
+**Arch package.** `packaging/arch/PKGBUILD` builds a system package from the release's source tarball, with `-DTOMACCO_DISABLE_UPDATES=ON`
+and the tarball's checksum pinned. For a new release, update `pkgver`, `sha256sums` (from the release's `.sha256`) and `_commit` (from the
+tarball's `SOURCE_RELEASE.md`), then refresh `.SRCINFO` and build:
+
+```sh
+cd packaging/arch
+makepkg --printsrcinfo > .SRCINFO
+makepkg
+```
+
+For 1.0.0, `makepkg` built the package in about a minute and a half on the development host, and the packaged desktop passed
+`--smoke-test` offscreen. Installing it with pacman was not part of that check.
+
 `install.py` and `cmake --install` install the same files, and the same documents into `share/doc/tomacco`: the guides and legal texts, in one flat directory, with
 links adjusted and `SOURCE.md` naming the version and commit. The list is `DOCUMENTS` in `install.py`. Links to anything else point at the release's copy on GitHub.
 
