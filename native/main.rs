@@ -4,6 +4,7 @@ mod apple;
 mod apple_dev;
 mod automation;
 mod catalog;
+mod completions;
 mod core;
 mod dap;
 mod debugger;
@@ -240,6 +241,9 @@ Usage:
   tomaccoctl doctor  Check the toolchains and devices this machine can use.
   tomaccoctl mcp     Serve the same operations to a coding agent over stdio
                     (Model Context Protocol; no network port).
+  tomaccoctl completions bash|zsh|fish
+                    Print a completion script for commands, flags and
+                    operation names, e.g. source <(tomaccoctl completions bash)
   tomaccoctl --version, -V
   tomaccoctl --help, -h
 
@@ -376,6 +380,17 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
                 return Ok(0);
             }
         },
+        "completions" => {
+            options.check(&[])?;
+            let [shell] = &args[1..] else {
+                return Err(Error::new(
+                    "invalid_request",
+                    format!("Name one shell: {}", completions::SHELLS.join(", ")),
+                ));
+            };
+            let _ = write!(std::io::stdout(), "{}", completions::script(shell)?);
+            return Ok(0);
+        }
         "doctor" => options
             .check(&[])
             .and_then(|()| api::dispatch("doctor", &json!({}))),

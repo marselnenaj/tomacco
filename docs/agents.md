@@ -61,6 +61,12 @@ When standard output is a terminal, the JSON is indented for reading. Through a 
 is one line, exactly as before. `--pretty` indents it anywhere, and `--compact` keeps one line at a
 terminal.
 
+For people typing commands, `tomaccoctl completions bash`, `zsh` or `fish` prints a completion script
+for the commands, their flags and the operation names after `call` and `schema`. Load it with
+`source <(tomaccoctl completions bash)`, the same for zsh, or `tomaccoctl completions fish | source`.
+The script asks `tomaccoctl schema --names` for the names, so it stays current after an update. The
+bash script is tested; the zsh and fish scripts have not been run in those shells yet.
+
 Use `TOMACCO_HOME=/absolute/test-state` to isolate job, toolchain, profile and emulator state. The
 desktop's **All tools** tab shows every operation and its schema.
 
