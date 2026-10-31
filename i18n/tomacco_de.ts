@@ -3237,6 +3237,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Laufzeit trennen</translation>
     </message>
     <message>
+        <source>Display orientation and size</source>
+        <translation>Ausrichtung und Größe des Displays</translation>
+    </message>
+    <message>
         <source>Download Mac artifact</source>
         <translation>Mac-Artefakt herunterladen</translation>
     </message>

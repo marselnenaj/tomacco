@@ -1,4 +1,5 @@
 mod android_debug;
+mod android_device;
 mod android_package;
 mod api;
 mod apple;

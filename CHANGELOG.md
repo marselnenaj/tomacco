@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 174 operations.
+`tomaccoctl` now has one typed API of 175 operations.
 
 ### Added
 
@@ -31,6 +31,8 @@ operations and their JSON results.
     SDK levels, permissions, ABIs and signing certificate digests.
   - `device.install` installs one `.aab` through bundletool, built for the selected
     device.
+  - `android.display` locks the screen orientation and overrides display size and
+    density, then reads them back; `reset` undoes them.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.

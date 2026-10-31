@@ -28,7 +28,7 @@
 Your coding agent can write an app. Tomacco lets it build that app, run it on a
 device, tap through the interface, inspect the result and try again.
 
-The agent and the **native Qt desktop** use the same **174 typed operations**
+The agent and the **native Qt desktop** use the same **175 typed operations**
 through MCP or the `tomaccoctl` JSON CLI. You can watch the live device, take over
 with touch and gestures, and share the same builds, logs and debugging session.
 The desktop supports English and German.

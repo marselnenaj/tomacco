@@ -901,6 +901,34 @@ class AndroidControlTests(Isolated):
         with self.assertRaises(StudioError):
             dispatch("android.settings", {"device": "emulator-5554", "font_scale": 3})
 
+    def test_display_orientation_size_and_density_are_set_and_read_back(self):
+        state = {"wm size": "Physical size: 1080x2400\nOverride size: 720x1600\n", "wm density": "Physical density: 420\nOverride density: 320\n",
+                 "accelerometer_rotation": "0\n", "user_rotation": "1\n"}
+        self.replies(**state)
+        display = lambda **a: dispatch("android.display", {"device": "emulator-5554", **a})
+        value = display(orientation="landscape", width=720, height=1600, density=320)
+        self.assertEqual((value["size"], value["density"], value["orientation"], value["changed"]),
+                         ({"physical": [1080, 2400], "override": [720, 1600]}, {"physical": 420, "override": 320}, "landscape",
+                          ["size", "density", "orientation"]))
+        shell = self.shell_calls()
+        for command in (["wm", "size", "720x1600"], ["wm", "density", "320"], ["settings", "put", "system", "accelerometer_rotation", "0"],
+                        ["settings", "put", "system", "user_rotation", "1"]):
+            self.assertIn(command, shell)
+        (self.root / "adb-calls.jsonl").unlink()
+        self.assertEqual(display()["changed"], [])
+        self.assertFalse(any(args[:2] == ["settings", "put"] or (args[0] == "wm" and args[2:]) for args in self.shell_calls()))
+        state.update({"wm size": "Physical size: 1080x2400\n", "wm density": "Physical density: 420\n", "accelerometer_rotation": "1\n"})
+        self.replies(**state)
+        value = display(reset=True)
+        self.assertEqual((value["size"]["override"], value["density"]["override"], value["orientation"]), (None, None, "auto"))
+        for command in (["wm", "size", "reset"], ["wm", "density", "reset"], ["settings", "put", "system", "accelerometer_rotation", "1"]):
+            self.assertIn(command, self.shell_calls())
+        with self.assertRaises(StudioError) as ignored:
+            display(orientation="portrait")
+        self.assertEqual(ignored.exception.code, "setting_not_applied")
+        for arguments in ({"width": 720}, {"density": 10}, {"orientation": "sideways"}):
+            with self.assertRaises(StudioError): display(**arguments)
+
     def test_emulator_snapshots_battery_network_and_location_go_through_the_console(self):
         self.replies(**{"avd snapshot list": "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001\nOK\n",
                         "power display": "AC: offline\nstatus: Discharging\nhealth: Good\npresent: true\ncapacity: 15\nOK\n",

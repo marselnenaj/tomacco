@@ -49,6 +49,7 @@ var titles = {
     "android.ports": QT_TRANSLATE_NOOP("Operations", "Connect dev server"),
     "android.permission": QT_TRANSLATE_NOOP("Operations", "App permission"),
     "android.settings": QT_TRANSLATE_NOOP("Operations", "Device settings for tests"),
+    "android.display": QT_TRANSLATE_NOOP("Operations", "Display orientation and size"),
     "android.connect": QT_TRANSLATE_NOOP("Operations", "Android over Wi-Fi"),
     "android.calibrate": QT_TRANSLATE_NOOP("Operations", "Read model from device"),
     "android.sdk_packages": QT_TRANSLATE_NOOP("Operations", "SDK packages"),

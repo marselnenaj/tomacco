@@ -135,8 +135,8 @@ For agents, the same device is reached by `runtime.input`, `runtime.capture` and
 `runtime.hierarchy`; see [display sessions](agents.md#display-sessions). Without a
 display session, use `device.capture`, `device.logs`, `android.hierarchy`,
 `android.input`, `android.record`, `android.mirror`, `android.ports`,
-`android.permission`, `android.deep_link`, `android.performance`, `android.settings`
-and `android.emulator`.
+`android.permission`, `android.deep_link`, `android.performance`, `android.settings`,
+`android.display` and `android.emulator`.
 
 `android.input` types ASCII text with `adb shell input text`. Other text, such as
 `Grüße` or emoji, cannot go that way, so Tomacco pastes it: it starts the configured
@@ -176,6 +176,26 @@ tomaccoctl call android.settings '{"device":"emulator-5554"}'
   per-app languages, which need Android 13 (API 33) or newer. An empty value returns
   the app to the device language. The language of the whole device is not changed:
   adb cannot do that without root.
+
+### Orientation, display size and density
+
+`android.display` locks the screen orientation and overrides the display size or
+density, for layouts on other screens without another emulator. The result reads
+all three back, and a value Android did not apply answers `setting_not_applied`.
+
+```sh
+tomaccoctl call android.display '{"device":"emulator-5554","orientation":"landscape"}'
+tomaccoctl call android.display '{"device":"emulator-5554","width":720,"height":1600,"density":320}'
+tomaccoctl call android.display '{"device":"emulator-5554","reset":true}'
+```
+
+- `orientation` is `portrait`, `landscape`, `reverse-portrait`, `reverse-landscape` or
+  `auto`. A locked orientation turns auto-rotate off; `auto` turns it on again. An app
+  that fixes its own orientation keeps it.
+- `width` and `height` go together, through `wm size`; `density` goes through
+  `wm density`. Both stay until `reset`, also across app restarts.
+- `reset` returns size and density to the device's own and rotation to the sensor,
+  before any other argument in the same call.
 
 ## Sound
 
