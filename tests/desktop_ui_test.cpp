@@ -156,6 +156,25 @@ class DesktopUiTest : public QObject {
     static QVariantMap mapOf(const QVariant &value) {
         return value.metaType()==QMetaType::fromType<QJSValue>()?value.value<QJSValue>().toVariant().toMap():value.toMap();
     }
+    // A stand-in adb for this test run's control plane, a shell script with
+    // this body; the guard it returns removes it from the settings again.
+    auto useFakeAdb(const QString &body) {
+        const auto fake=directory.filePath("fake-adb");
+        {QFile script(fake);script.open(QIODevice::WriteOnly|QIODevice::Truncate);
+         script.write(("#!/bin/sh\nd='"+directory.path()+"'\n"+body+"\nexit 0\n").toUtf8());script.close();
+         script.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ExeOwner);}
+        QSignalSpy replies(control.get(),&Control::apiFinished);
+        const int id=control->request("settings.configure",{{"executables",QVariantMap{{"adb",fake}}}});
+        QElapsedTimer clock;clock.start();
+        while(!std::any_of(replies.begin(),replies.end(),[&](const QList<QVariant> &r){return r.value(0).toInt()==id;}) && clock.elapsed()<patient(10000))QTest::qWait(20);
+        return qScopeGuard([this]{
+            QFile file(directory.filePath("state/settings.json"));
+            if(!file.open(QIODevice::ReadOnly))return;
+            auto value=QJsonDocument::fromJson(file.readAll()).object();file.close();
+            auto tools=value.value("executables").toObject();tools.remove("adb");value["executables"]=tools;
+            if(file.open(QIODevice::WriteOnly|QIODevice::Truncate))file.write(QJsonDocument(value).toJson());
+        });
+    }
 private slots:
     void initTestCase() {
         QVERIFY(directory.isValid());
@@ -644,20 +663,12 @@ private slots:
     }
     void wireless_pairing_shows_a_qr_code_and_falls_back_to_the_pairing_code() {
         // A stand-in adb: the phone offers the code's service once the test says it scanned it.
-        const auto fake=directory.filePath("pair-adb");
-        {QFile script(fake);QVERIFY(script.open(QIODevice::WriteOnly));
-         script.write(QString("#!/bin/sh\nd='%1'\ncase \"$1\" in\n"
+        auto fake=useFakeAdb("case \"$1\" in\n"
              " mdns) echo 'List of discovered mdns services'; [ -f \"$d/scanned\" ] && printf '%s\\t_adb-tls-pairing._tcp.\\t192.168.1.20:41235\\n' \"$(cat \"$d/scanned\")\"; [ -f \"$d/paired\" ] && printf 'adb-R5CT-AbCd\\t_adb-tls-connect._tcp.\\t192.168.1.20:37099\\n';;\n"
              " pair) touch \"$d/paired\"; echo \"Successfully paired to $2 [guid=adb-R5CT-AbCd]\";;\n"
              " connect) echo \"connected to $2\";;\n"
-             " devices) echo 'List of devices attached';;\nesac\nexit 0\n").arg(directory.path()).toUtf8());
-         script.close();QVERIFY(script.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ExeOwner));}
-        const auto settingsFile=directory.filePath("state/settings.json");
-        auto restore=qScopeGuard([&]{QFile file(settingsFile);if(file.open(QIODevice::ReadOnly)){auto value=QJsonDocument::fromJson(file.readAll()).object();file.close();auto tools=value.value("executables").toObject();tools.remove("adb");value["executables"]=tools;if(file.open(QIODevice::WriteOnly|QIODevice::Truncate))file.write(QJsonDocument(value).toJson());}
-            QFile::remove(directory.filePath("scanned"));QFile::remove(directory.filePath("paired"));});
-        {QSignalSpy replies(control.get(),&Control::apiFinished);
-         const int id=control->request("settings.configure",{{"executables",QVariantMap{{"adb",fake}}}});
-         QTRY_VERIFY_WITH_TIMEOUT(std::any_of(replies.begin(),replies.end(),[&](const QList<QVariant> &r){return r.value(0).toInt()==id;}),patient(10000));}
+             " devices) echo 'List of devices attached';;\nesac");
+        auto cleanup=qScopeGuard([&]{QFile::remove(directory.filePath("scanned"));QFile::remove(directory.filePath("paired"));});
         open("devices");workspace->setProperty("selectedPlatform","android");
         auto *library=object("androidDeviceLibrary");QVERIFY(library);
         auto *button=item("pairWifiButton");QVERIFY(button);QVERIFY(button->isVisible());
@@ -690,6 +701,58 @@ private slots:
         QCOMPARE(library->property("pairMessage").toString(),QString("Paired and connected · 192.168.1.20:37099"));
         QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
         QCOMPARE(library->property("pairState").toString(),QString());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void the_live_screen_is_recorded_until_stopped_and_the_video_shown() {
+        // Recordings go to the videos folder the desktop names, here a temporary one.
+        QTemporaryDir videos;QVERIFY(videos.isValid());
+        {QFile dirs(directory.filePath("config/user-dirs.dirs"));QVERIFY(QDir().mkpath(directory.filePath("config")));QVERIFY(dirs.open(QIODevice::WriteOnly));dirs.write(("XDG_VIDEOS_DIR=\""+videos.path()+"\"\n").toUtf8());}
+        auto dirs=qScopeGuard([&]{QFile::remove(directory.filePath("config/user-dirs.dirs"));});
+        // screenrecord runs until pkill interrupts it; pull writes the video.
+        auto fake=useFakeAdb("case \"$*\" in\n"
+             " *screenrecord\\ --time-limit*) i=0; while [ ! -f \"$d/interrupted\" ] && [ $i -lt 600 ]; do sleep 0.05; i=$((i+1)); done;;\n"
+             " *pkill*) touch \"$d/interrupted\";;\n"
+             " *\\ pull\\ *) printf 'mp4 video' > \"$5\";;\n"
+             " devices*) echo 'List of devices attached';;\nesac");
+        auto cleanup=qScopeGuard([&]{QFile::remove(directory.filePath("interrupted"));});
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *display=qobject_cast<NativeView *>(object("nativeDisplay"));QVERIFY(display);
+        view->setProperty("autoAttach",false);
+        QLocalServer video,controlSocket;
+        QVERIFY(video.listen(directory.filePath("record-video")));QVERIFY(controlSocket.listen(directory.filePath("record-input")));
+        QImage image(QSize(400,800),QImage::Format_RGB32);image.fill(QColor("#2fa84f"));
+        QByteArray bytes;{QBuffer output(&bytes);output.open(QIODevice::WriteOnly);image.save(&output,"JPEG");}
+        QByteArray packet(4,0);qToBigEndian(quint32(bytes.size()),packet.data());packet+=bytes;
+        connect(&video,&QLocalServer::newConnection,this,[&]{auto *socket=video.nextPendingConnection();socket->write(packet);connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        view->setProperty("targets",QVariantList{QVariantMap{{"id","emulator-5554"},{"name","Record test"},{"platform","android"},{"kind","emulator"}}});
+        const QVariantMap session{{"session","record-session"},{"platform","android"},{"device","emulator-5554"},{"codec","mjpeg"},{"video_socket",video.fullServerName()},{"control_socket",controlSocket.fullServerName()}};
+        QVERIFY(QMetaObject::invokeMethod(view,"attach",Q_ARG(QVariant,session)));
+        QTRY_COMPARE_WITH_TIMEOUT(display->sourceSize(),QSize(400,800),patient(3000));
+        auto *button=item("nativeRecord");QVERIFY(button);QTRY_VERIFY(button->isVisible());
+        QCOMPARE(accessibleName(button),QString("Record the screen"));
+        auto *recorder=object("nativeRecorder");QVERIFY(recorder);
+        QSignalSpy revealed(backend.get(),&Backend::fileRevealed);
+        QVERIFY(QMetaObject::invokeMethod(button,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(recorder->property("recording").toBool(),patient(10000));
+        QTRY_COMPARE(accessibleName(button),QString("Stop recording"));
+        const auto path=recorder->property("path").toString();
+        QVERIFY2(path.startsWith(videos.path()+"/Tomacco/Record-test-") && path.endsWith(".mp4"),qPrintable(path));
+        capture("native-recording");
+        QVERIFY(QMetaObject::invokeMethod(button,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!recorder->property("recording").toBool(),patient(20000));
+        QVERIFY2(!recorder->property("failed").toBool(),qPrintable(recorder->property("notice").toString()));
+        QCOMPARE(view->property("notice").toString(),QString("Recording saved · ")+path);
+        QFile saved(path);QVERIFY(saved.open(QIODevice::ReadOnly));QCOMPARE(saved.readAll(),QByteArray("mp4 video"));
+        QCOMPARE(revealed.size(),1);QCOMPARE(revealed.first().first().toString(),path);
+        view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});
+        // The virtual iPhone records through ios.virtual.record; with no phone running it says why.
+        auto *guest=object("iosGuestRecorder");QVERIFY(guest);
+        const QVariantMap phoneArgs{{"path",videos.filePath("phone.mp4")},{"seconds",600}};
+        QVERIFY(QMetaObject::invokeMethod(guest,"start",Q_ARG(QVariant,QString("ios.virtual.record")),Q_ARG(QVariant,phoneArgs)));
+        QTRY_VERIFY_WITH_TIMEOUT(guest->property("failed").toBool(),patient(10000));
+        QVERIFY(!guest->property("recording").toBool());QVERIFY(!guest->property("pending").toBool());
+        QVERIFY(!guest->property("notice").toString().isEmpty());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void iphone_setup_and_category_selection() {

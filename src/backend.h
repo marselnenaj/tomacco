@@ -107,6 +107,15 @@ public:
     // Starts this program again from its path, for the new version an update installed there.
     Q_INVOKABLE bool relaunch();
     Q_INVOKABLE void openScreenshots();
+    // Where a screen recording of this device goes: Videos/Tomacco/<model>-<time>.mp4.
+    Q_INVOKABLE QString recordingPath(const QString &model);
+    // A file for the latest picture of a device in the device grid, in the
+    // cache directory; the same file each time for the same device.
+    Q_INVOKABLE QString thumbnailPath(const QString &device);
+    // Shows a file selected in the file manager (org.freedesktop.FileManager1),
+    // or opens its folder; false when the file is missing. An offscreen run
+    // only emits fileRevealed.
+    Q_INVOKABLE bool revealFile(const QString &path);
     Q_INVOKABLE void testResult(const QVariantMap &result);
     Q_INVOKABLE void reloadModels();
 signals:
@@ -118,6 +127,7 @@ signals:
     void recentProjectsChanged();
     void notificationSent(const QString &title,const QString &body,const QString &tag);
     void notificationActivated(const QString &tag);
+    void fileRevealed(const QString &path);
 private slots:
     // The notification service's ActionInvoked signal.
     void notificationAction(uint id,const QString &action);

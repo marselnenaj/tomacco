@@ -707,12 +707,19 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "android.record" => {
             let target = output_path(s(a, "path"))?;
             fs::create_dir_all(target.parent().unwrap())?;
-            let remote = format!("/sdcard/tomacco-{}.mp4", uuid::Uuid::new_v4().simple());
+            let name = uuid::Uuid::new_v4().simple().to_string();
+            let remote = format!("/sdcard/tomacco-{name}.mp4");
             let mut pull = adb(device)?;
             pull.extend(argv(&["pull", &remote, &target.to_string_lossy()]));
+            // job.send stop interrupts screenrecord, which then finishes the
+            // file; the bracket keeps pkill from matching its own shell.
+            let stop = sh(
+                device,
+                &["pkill", "-INT", "-f", &format!("screenrecor[d].*{name}")],
+            )?;
             submit(
                 "Record Android screen",
-                json!([{"argv":sh(device,&["screenrecord","--time-limit",&n(a,"seconds").to_string(),&remote])?},{"argv":pull,"artifacts":[target]},{"argv":sh(device,&["rm","-f",&remote])?}]),
+                json!([{"argv":sh(device,&["screenrecord","--time-limit",&n(a,"seconds").to_string(),&remote])?,"stoppable":true,"stop_argv":stop},{"argv":pull,"artifacts":[target]},{"argv":sh(device,&["rm","-f",&remote])?}]),
                 n(a, "seconds") + 60,
                 json!({}),
             )

@@ -19,6 +19,10 @@ operations and their JSON results.
   with QR code** (also as PNG or SVG), then pairs and connects once the phone offers it through adb's mDNS discovery.
   **Connect via Wi-Fi** in the desktop shows the code, with the pairing code as the other way. Tested with a stand-in
   adb; the code decodes with zbar.
+- `job.send` `stop` ends a recording early and keeps it: `android.record` interrupts `screenrecord` and still pulls
+  the video, `ios.virtual.record` closes the MP4 with what it has (`stopped_early`).
+- **Desktop.** A record button beside the live Android device and the virtual iOS device starts and stops a screen
+  recording, saves it under `Videos/Tomacco` and shows it in the file manager.
 
 ## 1.1.0
 

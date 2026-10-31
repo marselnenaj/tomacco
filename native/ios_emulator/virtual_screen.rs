@@ -311,7 +311,7 @@ pub fn record(a: &Value) -> Result {
         "Record virtual iOS device screen",
         json!({"cwd":home()?,"timeout":seconds + 180,"exclusive":"ios-virtual-record","single_active":true,
             "operation_key":{"operation":"ios.virtual.record","arguments":{"path":target,"seconds":seconds,"fps":fps}},
-            "steps":[{"argv":argv,"artifacts":[target]}]}),
+            "steps":[{"argv":argv,"artifacts":[target],"stoppable":true}]}),
     )?;
     submitted["guest_job"] = json!(job);
     Ok(submitted)

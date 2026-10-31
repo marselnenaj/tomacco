@@ -706,6 +706,7 @@ ColumnLayout {
         StudioButton {objectName:"iosGuestPower";text:qsTr("Side button");visible:view.guest.power_button_supported===true;enabled:view.canInput;tip:qsTr("Wake or lock the display")+" · Ctrl+Shift+L";onClicked:view.send("power_button")}
         StudioButton {objectName:"iosGuestHome";text:"Home";enabled:view.canHome;tip:(view.modern?qsTr("Home button and swipe up from the bottom edge"):qsTr("Home button"))+" · Ctrl+Shift+H";onClicked:view.home()}
         StudioButton {text:"Screenshot";enabled:view.running;onClicked:view.send("screenshot")}
+        StudioButton {objectName:"iosGuestRecord";text:guestRecorder.recording?qsTr("Stop recording · %1 s").arg(guestRecorder.elapsed):qsTr("Record");iconName:guestRecorder.recording?"stop":"record";danger:guestRecorder.recording;enabled:(view.running || guestRecorder.recording) && !guestRecorder.pending && !guestRecorder.stopping;tip:guestRecorder.recording?qsTr("Stop and save the recording"):qsTr("Record the screen to a video, at most 10 minutes");onClicked:if(guestRecorder.recording)guestRecorder.stop();else guestRecorder.start("ios.virtual.record",{path:Studio.recordingPath("virtual-iphone"),seconds:600,fps:10})}
         StudioButton {objectName:"iosGuestDetach";text:view.detached?qsTr("Dock"):qsTr("Own window");iconName:"phone";selected:view.detached;enabled:view.running;tip:qsTr("Detach the virtual iOS device into its own window");onClicked:view.detached=!view.detached}
     }
     // The system gestures of a device without a Home button, one click or
@@ -731,5 +732,7 @@ ColumnLayout {
             }
         }
     }
-    Label {visible:!!view.inputNotice || !!view.appNotice || !!view.notice;Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:12;text:view.inputNotice || view.appNotice || view.notice}
+    // A recording of the screen through ios.virtual.record, saved under Videos/Tomacco.
+    ScreenRecorder {id:guestRecorder;objectName:"iosGuestRecorder"}
+    Label {objectName:"iosGuestNotice";visible:!!view.inputNotice || !!view.appNotice || !!guestRecorder.notice || !!view.notice;Layout.fillWidth:true;wrapMode:Text.Wrap;color:guestRecorder.failed && !view.inputNotice && !view.appNotice?Theme.danger:Theme.muted;font.pixelSize:12;text:view.inputNotice || view.appNotice || guestRecorder.notice || view.notice}
 }

@@ -217,6 +217,15 @@ into the focused field. This needs scrcpy configured and Android 7 (API 24) or n
 replaces what was on the device clipboard, and answers `text_unsupported` with a
 remedy when it cannot work.
 
+`android.record` records the screen as a job, for up to 180 seconds; `job.send` with
+`command` `stop` ends it early, and the video is still pulled to `path`. The stop
+interrupts `screenrecord` on the device, which then finishes the file.
+
+```sh
+tomaccoctl call android.record '{"device":"emulator-5554","path":"/absolute/clip.mp4","seconds":180}'
+tomaccoctl call job.send '{"job_id":"RECORD_JOB","command":"stop"}'
+```
+
 `device.logs` with `bundle_id` keeps only that app's lines. On Android 12 (API 31)
 and newer it filters by the app's user ID, so the capture can start before the app
 and continues across restarts. On older Android it follows the process ID of the

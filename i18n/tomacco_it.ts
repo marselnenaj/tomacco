@@ -443,6 +443,10 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <source>%1 comes from a newer Tomacco; update this one first.</source>
         <translation>%1 proviene da un Tomacco più recente; aggiorna prima questo.</translation>
     </message>
+    <message>
+        <source>The recordings folder could not be created.</source>
+        <translation>Non è stato possibile creare la cartella delle registrazioni.</translation>
+    </message>
 </context>
 <context>
     <name>Colors</name>
@@ -1225,6 +1229,22 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     <message>
         <source>Wake or lock the display</source>
         <translation>Riattiva o blocca il display</translation>
+    </message>
+    <message>
+        <source>Stop recording · %1 s</source>
+        <translation>Interrompi la registrazione · %1 s</translation>
+    </message>
+    <message>
+        <source>Record</source>
+        <translation>Registra</translation>
+    </message>
+    <message>
+        <source>Stop and save the recording</source>
+        <translation>Interrompi e salva la registrazione</translation>
+    </message>
+    <message>
+        <source>Record the screen to a video, at most 10 minutes</source>
+        <translation>Registra lo schermo in un video, al massimo 10 minuti</translation>
     </message>
 </context>
 <context>
@@ -3303,6 +3323,26 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
             <numerusform>%n ignorate</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Connect an Android device to record its screen.</source>
+        <translation>Collega un dispositivo Android per registrarne lo schermo.</translation>
+    </message>
+    <message>
+        <source>Stop recording</source>
+        <translation>Interrompi la registrazione</translation>
+    </message>
+    <message>
+        <source>Record the screen</source>
+        <translation>Registra lo schermo</translation>
+    </message>
+    <message>
+        <source>Stop and save the recording · %1 s</source>
+        <translation>Interrompi e salva la registrazione · %1 s</translation>
+    </message>
+    <message>
+        <source>Record the screen to a video, at most 3 minutes</source>
+        <translation>Registra lo schermo in un video, al massimo 3 minuti</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5053,6 +5093,29 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Recent</source>
         <translation>Recenti</translation>
+    </message>
+</context>
+<context>
+    <name>ScreenRecorder</name>
+    <message>
+        <source>Starting the recording…</source>
+        <translation>Avvio della registrazione…</translation>
+    </message>
+    <message>
+        <source>Saving the recording…</source>
+        <translation>Salvataggio della registrazione…</translation>
+    </message>
+    <message>
+        <source>Recording saved · %1</source>
+        <translation>Registrazione salvata · %1</translation>
+    </message>
+    <message>
+        <source>The recording did not finish · details under Builds &amp; jobs</source>
+        <translation>La registrazione non è stata completata · dettagli in Build e job</translation>
+    </message>
+    <message>
+        <source>Recording · press again to stop</source>
+        <translation>Registrazione in corso · premi di nuovo per interrompere</translation>
     </message>
 </context>
 </TS>

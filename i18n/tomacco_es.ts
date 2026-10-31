@@ -443,6 +443,10 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <source>%1 comes from a newer Tomacco; update this one first.</source>
         <translation>%1 procede de un Tomacco más reciente; actualiza primero este.</translation>
     </message>
+    <message>
+        <source>The recordings folder could not be created.</source>
+        <translation>No se pudo crear la carpeta de grabaciones.</translation>
+    </message>
 </context>
 <context>
     <name>Colors</name>
@@ -1225,6 +1229,22 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
     <message>
         <source>Wake or lock the display</source>
         <translation>Activar o bloquear la pantalla</translation>
+    </message>
+    <message>
+        <source>Stop recording · %1 s</source>
+        <translation>Detener la grabación · %1 s</translation>
+    </message>
+    <message>
+        <source>Record</source>
+        <translation>Grabar</translation>
+    </message>
+    <message>
+        <source>Stop and save the recording</source>
+        <translation>Detener y guardar la grabación</translation>
+    </message>
+    <message>
+        <source>Record the screen to a video, at most 10 minutes</source>
+        <translation>Grabar la pantalla en un vídeo, 10 minutos como máximo</translation>
     </message>
 </context>
 <context>
@@ -3303,6 +3323,26 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
             <numerusform>%n ignorados</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Connect an Android device to record its screen.</source>
+        <translation>Conecta un dispositivo Android para grabar su pantalla.</translation>
+    </message>
+    <message>
+        <source>Stop recording</source>
+        <translation>Detener la grabación</translation>
+    </message>
+    <message>
+        <source>Record the screen</source>
+        <translation>Grabar la pantalla</translation>
+    </message>
+    <message>
+        <source>Stop and save the recording · %1 s</source>
+        <translation>Detener y guardar la grabación · %1 s</translation>
+    </message>
+    <message>
+        <source>Record the screen to a video, at most 3 minutes</source>
+        <translation>Grabar la pantalla en un vídeo, 3 minutos como máximo</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5053,6 +5093,29 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
     <message>
         <source>Recent</source>
         <translation>Recientes</translation>
+    </message>
+</context>
+<context>
+    <name>ScreenRecorder</name>
+    <message>
+        <source>Starting the recording…</source>
+        <translation>Iniciando la grabación…</translation>
+    </message>
+    <message>
+        <source>Saving the recording…</source>
+        <translation>Guardando la grabación…</translation>
+    </message>
+    <message>
+        <source>Recording saved · %1</source>
+        <translation>Grabación guardada · %1</translation>
+    </message>
+    <message>
+        <source>The recording did not finish · details under Builds &amp; jobs</source>
+        <translation>La grabación no terminó · detalles en Compilaciones y tareas</translation>
+    </message>
+    <message>
+        <source>Recording · press again to stop</source>
+        <translation>Grabando · pulsa de nuevo para detener</translation>
     </message>
 </context>
 </TS>

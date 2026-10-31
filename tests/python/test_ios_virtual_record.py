@@ -5,10 +5,12 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import stat
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 for directory in ("tools", "tests"):
@@ -80,6 +82,19 @@ class Pacing(unittest.TestCase):
         summary = record(fetch, written.append, 10, 2, clock, clock.sleep)
         self.assertLess(len(written), 20)
         self.assertIn("ios_guest_stopped", summary["ended_early"])
+
+    def test_a_stop_ends_the_recording_early_and_keeps_what_it_has(self):
+        clock, written = Clock(), []
+        summary = record(lambda: b"x", written.append, 10, 5, clock, clock.sleep, stopped=lambda: len(written) >= 7)
+        self.assertEqual(len(written), 7)
+        self.assertTrue(summary["stopped_early"])
+        self.assertIsNone(summary["ended_early"])
+        # A stop at once still keeps the first picture; before any frame there is nothing to keep.
+        written = []
+        self.assertEqual(record(lambda: b"x", written.append, 10, 5, clock, clock.sleep, stopped=lambda: True)["frames_written"], 1)
+        with self.assertRaises(RecordingError):
+            record(lambda: None, written.append, 10, 5, clock, clock.sleep, stopped=lambda: True)
+        self.assertFalse(record(lambda: b"x", [].append, 1, 5, clock, clock.sleep)["stopped_early"])
 
     def test_ffmpeg_reads_ppm_from_stdin_and_writes_a_playable_mp4(self):
         command = ios_virtual_record.ffmpeg_command("/usr/bin/ffmpeg", 10, "/tmp/out.mp4")
@@ -157,6 +172,23 @@ class CliFrames(unittest.TestCase):
         self.assertEqual((probe["codec_name"], probe["width"], probe["height"], probe["nb_read_frames"]),
                          ("h264", 16, 8, "10"))
         self.assertEqual([path.name for path in output.parent.iterdir()], ["phone.mp4"])
+
+    @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "needs ffmpeg and ffprobe")
+    def test_an_interrupt_stops_the_recording_and_keeps_the_video(self):
+        output = self.root / "stopped.mp4"
+        recorder = subprocess.Popen([sys.executable, str(Path(ios_virtual_record.__file__)), "--cli", str(self.cli),
+                                     "--job", "a" * 32, "--output", str(output), "--seconds", "60", "--fps", "5",
+                                     "--ffmpeg", shutil.which("ffmpeg")],
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=os.environ)
+        time.sleep(1.5)
+        recorder.send_signal(signal.SIGINT)
+        stdout, stderr = recorder.communicate(timeout=60)
+        self.assertEqual(recorder.returncode, 0, stdout + stderr)
+        summary = json.loads(stdout.strip().splitlines()[-1])
+        self.assertEqual(summary["state"], "recorded")
+        self.assertTrue(summary["stopped_early"])
+        self.assertLess(summary["frames_written"], 60 * 5)
+        self.assertTrue(output.is_file())
 
     def test_a_phone_that_is_off_leaves_no_file(self):
         os.environ["FAKE_MODE"] = "ended"

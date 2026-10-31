@@ -224,6 +224,14 @@ coordinates. Presses still reach the device as before. The choice is
 stored. It applies to the Android and iPhone picture, docked or in its own
 window; the virtual iOS device has its own touch mark and no coordinates.
 
+## Screen recording
+
+The record button in the tool strip beside a live Android device records its screen
+with `android.record`, for up to three minutes; pressing it again stops the recording
+with `job.send` `stop`. The video is saved under `Videos/Tomacco` and shown in the file
+manager. The virtual iOS device has a **Record** button beside its picture that does
+the same through `ios.virtual.record`, for up to ten minutes.
+
 ## Device window
 
 The **Own window** button in the tool strip beside the device (*Eigenes Fenster*) moves the

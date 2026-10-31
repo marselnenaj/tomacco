@@ -1020,6 +1020,41 @@ class AndroidControlTests(Isolated):
             dispatch("android.pair", {"action": "services"})
         self.assertEqual(old.exception.code, "mdns_unavailable")
 
+    def test_a_recording_stops_early_on_request_and_keeps_the_video(self):
+        # screenrecord runs until pkill interrupts it; pull writes the file.
+        self.tool("adb", "import json,os,sys,time\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+                         "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
+                         "command=' '.join(a[2:])\n"
+                         "if 'screenrecord --time-limit' in command:\n"
+                         "    for _ in range(600):\n"
+                         "        if (root/'interrupted').exists(): sys.exit(0)\n"
+                         "        time.sleep(.05)\n"
+                         "    sys.exit(3)\n"
+                         "elif 'pkill' in command: (root/'interrupted').touch()\n"
+                         "elif a[2:3]==['pull']: Path(a[4]).write_bytes(b'mp4 video')\n")
+        target = self.root / "videos/clip.mp4"
+        job = dispatch("android.record", {"device": "emulator-5554", "path": str(target), "seconds": 180})
+        self.assertTrue(job["plan"]["steps"][0]["stoppable"])
+        with self.assertRaises(StudioError) as early:
+            dispatch("job.send", {"job_id": uuid.uuid4().hex, "command": "stop"})
+        deadline = time.monotonic() + 10 * PATIENCE
+        while jobs.get(job["id"])["state"] != "running":
+            self.assertLess(time.monotonic(), deadline)
+            time.sleep(.05)
+        self.assertEqual(dispatch("job.send", {"job_id": job["id"], "command": "stop"})["sent"], "stop")
+        done = jobs.wait(job["id"], 30)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        self.assertEqual(target.read_bytes(), b"mp4 video")
+        self.assertIn(str(target), [a["path"] for a in done["result"]["artifacts"]])
+        pkill = next(args for args in self.shell_calls() if args[:1] == ["pkill"])
+        self.assertEqual(pkill[:3], ["pkill", "-INT", "-f"])
+        self.assertRegex(pkill[3], r"^screenrecor\[d\]\.\*[0-9a-f]{32}$")
+        self.assertIn("[stop] ending early on request", jobs.logs(job["id"])["text"])
+        # Only a running recording can be stopped this way.
+        with self.assertRaises(StudioError) as finished:
+            dispatch("job.send", {"job_id": job["id"], "command": "stop"})
+        self.assertEqual(finished.exception.code, "not_stoppable")
+
     def test_device_settings_apply_only_what_is_asked_and_read_everything_back(self):
         state = {"ro.build.version.sdk": "36\n", "uimode night": "Night mode: yes\n", "get system font_scale": "1.3\n",
                  "get global window_animation_scale": "0\n", "get global transition_animation_scale": "0.0\n",
