@@ -51,7 +51,7 @@ struct Options {
     unknown: Vec<String>,
 }
 impl Options {
-    const FLAGS: &[&str] = &["--names", "--pretty", "--compact"];
+    const FLAGS: &[&str] = &["--names", "--pretty", "--compact", "--wait"];
     /// What every command that prints an envelope takes.
     const OUTPUT: &[&str] = &["--pretty", "--compact"];
     fn parse(args: Vec<String>) -> (Vec<String>, Options) {
@@ -150,6 +150,52 @@ fn schema(args: &[String], options: &Options) -> Result<Reply> {
         None => Ok(json!({"version":VERSION,"operations":api::manifest()})),
     }))
 }
+/// The id of a job record, as an operation that starts work returns it.
+fn job_id(result: &Value) -> Option<&str> {
+    let id = result["id"].as_str()?;
+    (id.len() == 32
+        && id.bytes().all(|c| c.is_ascii_hexdigit())
+        && result["state"].is_string()
+        && result["log_path"].is_string())
+    .then_some(id)
+}
+/// `call --wait`: follows a job to its end, writing its log to `log` as it
+/// grows. The job's last record is the result when it succeeded; any other
+/// end is an error that carries the record. Interrupting the CLI leaves the
+/// durable job running.
+fn follow(id: &str, call: impl Fn(&str, &Value) -> Result, log: &mut impl Write) -> Result {
+    let mut offset = 0;
+    loop {
+        let job = call("job.wait", &json!({"job_id":id,"seconds":2}))?;
+        // The log is read after the wait, so a job that has just ended has
+        // all of its text written before its result.
+        loop {
+            let read = call("job.logs", &json!({"job_id":id,"offset":offset}))?;
+            let text = s(&read, "text");
+            let _ = log.write_all(text.as_bytes());
+            offset = n(&read, "next_offset").max(offset);
+            if text.is_empty() || read["eof"] == true {
+                break;
+            }
+        }
+        let _ = log.flush();
+        let state = s(&job, "state");
+        if !jobs::TERMINAL.contains(&state) {
+            continue;
+        }
+        if state == "succeeded" {
+            return Ok(job);
+        }
+        return Err(Error::new(
+            &format!("job_{state}"),
+            format!("Job {id} ({}) ended {state}", s(&job, "label")),
+        )
+        .remedy(format!(
+            "Read the log above, or tomaccoctl call job.logs '{{\"job_id\":\"{id}\"}}'"
+        ))
+        .details(json!({"job":job})));
+    }
+}
 /// The arguments of `tomaccoctl call`: inline JSON, `@FILE`, or `@-` for
 /// standard input. Callers pass secrets' paths and whole source files; argv
 /// is world-readable in /proc and limited to 128 KiB per argument, so the
@@ -177,10 +223,13 @@ fn help() -> String {
         "tomaccoctl {VERSION} - the Tomacco control plane
 
 Usage:
-  tomaccoctl call OPERATION [JSON | @FILE | @-]
+  tomaccoctl call OPERATION [JSON | @FILE | @-] [--wait]
                     Run one operation; arguments inline, from a file or from
                     standard input. Prints one JSON envelope (ok, result or
-                    error) and exits 0 on success, 1 on failure.
+                    error) and exits 0 on success, 1 on failure. With --wait,
+                    an operation that starts a job is followed until the job
+                    ends: its log goes to standard error, the envelope holds
+                    the final job, and only a succeeded job exits 0.
   tomaccoctl schema [OPERATION | --names]
                     Print every operation with its argument schema (JSON),
                     only the named one, or with --names just the names, one
@@ -331,7 +380,7 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             .check(&[])
             .and_then(|()| api::dispatch("doctor", &json!({}))),
         "call" => {
-            options.check(&[])?;
+            options.check(&["--wait"])?;
             let op = args
                 .get(1)
                 .ok_or_else(|| Error::new("invalid_request", "Missing operation name"))?;
@@ -345,7 +394,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
                 args.get(2).map(String::as_str).unwrap_or("{}"),
                 std::io::stdin().lock(),
             )?;
-            api::dispatch(op, &arguments)
+            match api::dispatch(op, &arguments) {
+                Ok(result) if options.given("--wait") => match job_id(&result) {
+                    Some(id) => follow(id, api::dispatch, &mut std::io::stderr()),
+                    None => Ok(result),
+                },
+                result => result,
+            }
         }
         _ => Err(
             Error::new("invalid_request", format!("Unknown command: {}", args[0]))
@@ -407,6 +462,54 @@ mod tests {
         assert!(compact.check(&[]).is_ok());
         let (_, both) = line(&["schema", "--pretty", "--compact"]);
         assert!(both.check(&[]).is_err());
+    }
+    /// A job that runs for two waits, writing its log in pieces, then ends `end`.
+    fn fake_job(end: &'static str) -> impl Fn(&str, &Value) -> Result {
+        let waits = std::cell::Cell::new(0);
+        let log = "building\nlinking\ndone\n";
+        move |operation, arguments| {
+            assert_eq!(arguments["job_id"], "0123456789abcdef0123456789abcdef");
+            match operation {
+                "job.wait" => {
+                    waits.set(waits.get() + 1);
+                    let state = if waits.get() < 3 { "running" } else { end };
+                    Ok(json!({"id":arguments["job_id"],"label":"Build","state":state}))
+                }
+                "job.logs" => {
+                    // Ten bytes more of the log on each wait, five at a time.
+                    let offset = n(arguments, "offset") as usize;
+                    let written = (waits.get() * 10).min(log.len());
+                    let end = (offset + 5).min(written);
+                    Ok(json!({"text":&log[offset..end],"next_offset":end,"eof":end == written}))
+                }
+                _ => panic!("unexpected {operation}"),
+            }
+        }
+    }
+    #[test]
+    fn wait_follows_a_job_to_its_end_and_streams_its_log() {
+        let id = "0123456789abcdef0123456789abcdef";
+        let mut log = Vec::new();
+        let job = follow(id, fake_job("succeeded"), &mut log).unwrap();
+        assert_eq!(job["state"], "succeeded");
+        assert_eq!(String::from_utf8(log).unwrap(), "building\nlinking\ndone\n");
+        let mut log = Vec::new();
+        let error = follow(id, fake_job("failed"), &mut log).unwrap_err();
+        assert_eq!(error.code, "job_failed");
+        assert_eq!(error.details.unwrap()["job"]["state"], "failed");
+        assert_eq!(log.len(), 22);
+        // Only a job record is followed.
+        let record = json!({"id":id,"state":"queued","log_path":"/tmp/x.log"});
+        assert_eq!(job_id(&record), Some(id));
+        assert_eq!(job_id(&json!({"id":id,"state":"queued"})), None);
+        assert_eq!(
+            job_id(&json!({"id":"short","state":"queued","log_path":"/x"})),
+            None
+        );
+        let (_, options) = line(&["call", "project.run", "{}", "--wait"]);
+        assert!(options.check(&["--wait"]).is_ok());
+        let (_, options) = line(&["schema", "--wait"]);
+        assert!(options.check(&["--names"]).is_err());
     }
     #[test]
     fn schema_prints_every_operation_one_operation_or_the_names() {

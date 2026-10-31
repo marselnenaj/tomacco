@@ -79,6 +79,18 @@ tomaccoctl call job.get '{"job_id":"JOB_ID"}'
 read `job.logs` with `next_offset`, until the state is `succeeded`, `failed`, `cancelled` or
 `timed_out`. Then check the exit status and artifacts.
 
+From the CLI, `--wait` does that loop for you:
+
+```sh
+tomaccoctl call project.execute '{"path":"/absolute/project","platform":"android"}' --wait
+```
+
+The job's log goes to standard error as it grows, and standard output gets one envelope at the end. A
+job that succeeded is `{"ok":true,"result":JOB}` with exit status 0. One that ended `failed`,
+`cancelled` or `timed_out` is an error with code `job_failed`, `job_cancelled` or `job_timed_out`,
+the final job in `error.details.job`, and exit status 1. A result that is not a job is printed as it
+is. Interrupting `--wait` leaves the job running.
+
 - **Artifacts** carry an absolute path, size, SHA-256 and `modified_in_job`. An old output is not
   evidence of a new build after a failed job. Incremental builds can legitimately report
   `modified_in_job:false`.
