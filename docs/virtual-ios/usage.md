@@ -148,6 +148,20 @@ tomaccoctl call ios.emulator.control '{"job_id":"GUEST_JOB","action":"frame","tr
 A phone without a Home button is unlocked with a slow drag up from the bottom edge, as in the second example. The start
 does that by itself.
 
+## Screenshots
+
+```sh
+tomaccoctl call ios.virtual.screenshot '{"path":"/absolute/phone.png"}'
+tomaccoctl call ios.virtual.screenshot '{"path":"/absolute/phone-framed.png","frame":"device"}'
+```
+
+`ios.virtual.screenshot` saves the running phone's current screen as a PNG, from the same frame a viewer gets. `frame`
+`rounded` cuts the corners round with the radius of the model the phone runs as and makes outside them transparent;
+the Home-button phone keeps square corners. `device` also draws a plain black bezel around it: a drawing, not a
+picture of the phone, with circular corners rather than Apple's continuous curves. Over MCP the PNG comes back inline
+when it is at most 4 MiB. The framing and the PNG writer have unit tests; a screenshot of a live phone has not been
+taken with it yet.
+
 ## Deploy your own app
 
 To build a SwiftUI app for it on Linux, first import the SDK from an `Xcode.xip` you

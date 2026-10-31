@@ -1621,6 +1621,20 @@ class VirtualPhoneOperations(Isolated):
             self.skipTest("the installs filesystem clones files, so the copy needs no room")
         self.assertEqual([job for job in jobs.listing(20) if "virtual" in job["label"]], [])
 
+    def test_a_screenshot_needs_a_running_phone_and_a_png_path(self):
+        directory = self.profile()
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        target = self.root / "shots/phone.png"
+        with self.assertRaises(StudioError) as error:
+            dispatch("ios.virtual.screenshot", {"path": str(target), "frame": "device"})
+        self.assertEqual(error.exception.code, "ios_virtual_not_running")
+        with self.assertRaises(StudioError) as error:
+            dispatch("ios.virtual.screenshot", {"path": str(self.root / "phone.jpg")})
+        self.assertEqual(error.exception.code, "invalid_path")
+        with self.assertRaises(StudioError):
+            dispatch("ios.virtual.screenshot", {"path": str(target), "frame": "photo"})
+        self.assertFalse(target.exists())
+
     def test_the_device_model_is_a_setting_of_its_own_and_reaches_the_start(self):
         with self.assertRaises(StudioError) as error:
             dispatch("ios.virtual.configure", {"model": "16"})

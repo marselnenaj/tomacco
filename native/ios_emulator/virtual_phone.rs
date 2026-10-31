@@ -993,6 +993,22 @@ fn guest_control_debug_target(value: &str) -> bool {
         && !value.starts_with(['.', '-'])
 }
 
+/// The guest job of the running phone and the model it was started as
+/// (empty: the Home-button phone), or `ios_virtual_not_running`.
+pub(super) fn running_guest() -> Result<(String, String)> {
+    let (_, state) = records(&directory()?)?;
+    if !guest_is_running(&state) {
+        return Err(Error::new(
+            "ios_virtual_not_running",
+            "The phone is not running; start it with ios.virtual.start",
+        ));
+    }
+    Ok((
+        s(&state, "guest_job").to_string(),
+        s(&state, "model").to_string(),
+    ))
+}
+
 /// Whether the state's guest job is still on its way or running.
 fn guest_is_running(state: &Value) -> bool {
     state["guest_job"].as_str().is_some_and(|id| {

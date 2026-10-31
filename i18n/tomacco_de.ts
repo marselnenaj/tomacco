@@ -3561,6 +3561,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Prozess auf virtuellem iOS-Gerät debuggen</translation>
     </message>
     <message>
+        <source>Screenshot of virtual iOS device</source>
+        <translation>Bildschirmfoto des virtuellen iOS-Geräts</translation>
+    </message>
+    <message>
         <source>Stream device audio</source>
         <translation>Geräteton übertragen</translation>
     </message>

@@ -7032,6 +7032,40 @@
     }
   },
   {
+    "name": "ios.virtual.screenshot",
+    "title": "Screenshot of virtual iOS device",
+    "description": "Save the running virtual iPhone's current screen as a PNG at path, from the same frame ios.emulator.control frame with transport file gives a viewer. frame none (default) keeps the picture as it is; rounded cuts the screen's corners round with the radius of the model the phone runs as (square for the Home-button phone) and makes outside them transparent; device also puts a plain black bezel around it, a drawing with rounded outer corners and no buttons, not a picture of the phone. The corner radius is the circular arc of the device catalogue's value, not Apple's continuous curve. MCP returns a PNG of up to 4 MiB inline. Refused with ios_virtual_not_running when the phone is off.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the PNG to write, ending in .png; an existing file is replaced."
+        },
+        "frame": {
+          "type": "string",
+          "enum": [
+            "none",
+            "rounded",
+            "device"
+          ],
+          "default": "none",
+          "description": "none: the screen as it is; rounded: round, transparent corners; device: rounded screen inside a plain bezel."
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "update.check",
     "title": "Check for updates",
     "description": "Report the current version, the latest release, its notes link and whether an update applies. Without manual it uses the network at most once a day, and never when updates.mode is off. With manual, which means the user asked, it asks GitHub now, also when off. Installs nothing.",
