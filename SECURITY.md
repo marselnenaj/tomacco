@@ -20,6 +20,13 @@ Only the latest release gets fixes.
 
 ## How Tomacco keeps local data private
 
+- Operations take passwords, tokens and keys as paths of owner-only files (`password_file`, `key_password_file`,
+  `updates.token_file`, `credentials`, `key_path`), never as values, and refuse files others can read. Only the path is stored in
+  a job. When the path names no file, the error does not repeat what was given, in case it was the secret itself.
+- Errors, job records (`job.get`, `job.list`, `job.wait`, `desktop.status`) and job logs (`job.logs`) are returned with
+  recognised secrets masked as `[redacted]`: authorization headers and bearer tokens, credentials in URLs, signing passwords on a
+  command line, `password=`, `token=` and similar fields, PEM private keys, and GitHub, GitLab, Google, AWS and Slack token
+  formats. This masks known shapes and cannot recognise every secret. The log file on disk is not rewritten; it is owner-only.
 - The data directory (`~/.local/share/tomacco`, or `TOMACCO_HOME`) is owner-only (0700). `tomaccoctl` tightens one an earlier
   version or another program left open, and refuses one that belongs to another user. The installer creates it, and its backups,
   owner-only as well.

@@ -56,16 +56,18 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "doctor" => toolchain::doctor().map(crate::setup::with_next_steps),
         "settings.get" => toolchain::settings(),
         "settings.configure" => toolchain::configure(&a),
-        "desktop.status" => desktop::status(),
+        "desktop.status" => desktop::status().map(redacted),
         "desktop.open" => desktop::open(&a),
         "catalog.list" => catalog::profiles(s(&a, "platform")),
         "catalog.import" => catalog::import(&a),
         "catalog.export" => catalog::export(&a),
         "catalog.remove" => catalog::remove(s(&a, "profile_id")),
-        "job.list" => jobs::listing(n(&a, "limit")),
-        "job.get" => jobs::get(s(&a, "job_id")),
-        "job.logs" => jobs::logs(&a),
-        "job.wait" => jobs::wait(s(&a, "job_id"), n(&a, "seconds")),
+        // Job records and logs hold commands, environments and tool output:
+        // what leaves the process has recognised secrets masked.
+        "job.list" => jobs::listing(n(&a, "limit")).map(redacted),
+        "job.get" => jobs::get(s(&a, "job_id")).map(redacted),
+        "job.logs" => jobs::logs(&a).map(redacted),
+        "job.wait" => jobs::wait(s(&a, "job_id"), n(&a, "seconds")).map(redacted),
         "job.cancel" => jobs::cancel(s(&a, "job_id")),
         "job.send" => jobs::send(s(&a, "job_id"), s(&a, "command")),
         "project.inspect" => projects::inspect(s(&a, "path")),
@@ -138,6 +140,10 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         }
         _ => Err(Error::new("operation_not_found", name)),
     }
+}
+fn redacted(mut value: Value) -> Value {
+    crate::redact::value(&mut value);
+    value
 }
 pub fn envelope(value: Result) -> Value {
     match value {

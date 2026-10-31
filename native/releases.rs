@@ -8,7 +8,7 @@ use std::{
     path::{Path, PathBuf},
 };
 pub(crate) fn secret(value: &str) -> Result<PathBuf> {
-    let path = path(value, false, true)?;
+    let path = secret_path(value, "the password or token file")?;
     let m = fs::metadata(&path)?;
     if !m.is_file() || m.len() > 65536 {
         return Err(Error::new("invalid_secret", "Use a small password file"));

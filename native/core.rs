@@ -66,13 +66,16 @@ impl Error {
         self.details = Some(Box::new(value));
         self
     }
+    /// The error as clients see it, with any secret it quotes masked.
     pub fn value(&self) -> Value {
-        serde_json::to_value(self).expect("error is serializable")
+        let mut value = serde_json::to_value(self).expect("error is serializable");
+        crate::redact::value(&mut value);
+        value
     }
 }
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.message.fmt(f)
+        crate::redact::text(&self.message).fmt(f)
     }
 }
 impl std::error::Error for Error {}
@@ -387,6 +390,21 @@ pub fn output_path(value: &str) -> Result<PathBuf> {
         ));
     }
     Ok(p)
+}
+/// Resolves the path of a file that holds a secret (a password, a token, a
+/// key). Its error never quotes the value: a secret given where its file's
+/// path belongs must not be echoed into an error, a job record or an MCP
+/// transcript.
+pub fn secret_path(value: &str, label: &str) -> Result<PathBuf> {
+    path(value, false, true).map_err(|_| {
+        Error::new(
+            "path_not_found",
+            format!("No file at the path given for {label}"),
+        )
+        .remedy(format!(
+            "Give {label} the absolute path of an owner-only file that holds the secret, not the secret itself"
+        ))
+    })
 }
 /// Creates a missing directory owner-only. The directory itself is made
 /// with mode 0700 in one step, so it is never open to others, whatever the
@@ -764,6 +782,30 @@ mod directory_tests {
         let file = parent.path().join("file");
         fs::write(&file, b"").unwrap();
         assert!(private_runtime_dir(&file).is_err());
+    }
+
+    #[test]
+    fn errors_never_show_a_secret_they_quote() {
+        let error = Error::new(
+            "update_check_failed",
+            "curl: header = \"Authorization: Bearer ghp_0123456789abcdefABCDEF0123\"",
+        )
+        .remedy("Retry with password=hunter2-x")
+        .details(json!({"token":"abc","transport":"https://u:hunter3@example.com/"}));
+        let shown = format!("{} {}", error, error.value());
+        for secret in ["ghp_0123", "hunter2-x", "\"abc\"", "hunter3"] {
+            assert!(!shown.contains(secret), "{shown}");
+        }
+        // A path the error is about stays readable.
+        let missing = secret_path("hunter2-typed-here", "password_file").unwrap_err();
+        assert_eq!(missing.code, "path_not_found");
+        assert!(!missing.value().to_string().contains("hunter2-typed-here"));
+        assert!(
+            Error::new("path_not_found", "Path not found: /a/b/key.txt")
+                .value()
+                .to_string()
+                .contains("/a/b/key.txt")
+        );
     }
 
     #[test]

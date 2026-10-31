@@ -529,7 +529,7 @@ fn crash_symbolicate(a: &Value) -> Result {
 /// A .p8 key: an owner-only regular file. Only its path travels; its content
 /// is read by upstream's asc.py alone, to sign the App Store Connect token.
 fn store_key(value: &str) -> Result<PathBuf> {
-    let file = path(value, false, true)?;
+    let file = secret_path(value, "key_path")?;
     let metadata = fs::metadata(&file)?;
     if metadata.permissions().mode() & 0o077 != 0 {
         return Err(Error::new(

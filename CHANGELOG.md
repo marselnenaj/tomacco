@@ -56,6 +56,8 @@ operations and their JSON results.
 
 ### Fixed
 
+- Errors, job records and job logs mask recognised secrets (authorization headers, tokens, signing passwords, private keys) as
+  `[redacted]`, and a secret given where its file's path belongs is no longer repeated in the error.
 - Job logs and worker logs are created 0600 and the data directories 0700 in one step, whatever the umask; older logs are
   tightened when they are rewritten. The installer creates `~/.local/share/tomacco` and its backups owner-only.
 - Runtime and debugger sockets, the virtual iPhone's launcher and the tests no longer fail with a long `TMPDIR`

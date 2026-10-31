@@ -1048,6 +1048,35 @@ class ReleaseContractTests(Isolated):
         with self.assertRaises(StudioError): dispatch("release.version", {"path":str(self.root), "version":"2.0.0", "build_number":2})
         self.assertIn('providers.gradleProperty', gradle.read_text())
 
+    def test_a_secret_given_instead_of_its_file_is_not_echoed(self):
+        secret = "hunter2-correct-horse"
+        output = str(self.root / "release.p12")
+        requests = [
+            ("release.keystore", {"output": output, "password_file": secret, "alias": "fixture", "distinguished_name": "CN=Fixture"}),
+            ("play.commit", {"credentials": secret, "package": "dev.example.app", "edit_id": "e1"}),
+            ("settings.configure", {"updates": {"token_file": "ghp_" + "a" * 36}}),
+        ]
+        for operation, arguments in requests:
+            value = subprocess.run([binary(), "call", operation, json.dumps(arguments)], capture_output=True, text=True, timeout=60)
+            reply = json.loads(value.stdout)
+            self.assertFalse(reply["ok"], reply)
+            self.assertEqual(reply["error"]["code"], "path_not_found", reply)
+            self.assertNotIn(secret, value.stdout + value.stderr)
+            self.assertNotIn("ghp_aaaa", value.stdout + value.stderr)
+            self.assertIn("not the secret itself", reply["error"]["remedy"])
+
+    def test_job_records_and_logs_mask_secrets_a_tool_prints(self):
+        token = "ghp_" + "b" * 36
+        code = f"import sys;print('Authorization: Bearer {token}');print('password=hunter2-staple', file=sys.stderr)"
+        job = self.submit([{"argv": [sys.executable, "-c", code, "--token=" + token]}])
+        done = jobs.wait(job["id"], 5)
+        self.assertEqual(done["state"], "succeeded", done)
+        log = jobs.logs(job["id"])["text"]
+        self.assertIn("Authorization: [redacted]", log)
+        for record in (log, json.dumps(jobs.get(job["id"])), json.dumps(jobs.listing(5)), json.dumps(done)):
+            self.assertNotIn(token, record)
+            self.assertNotIn("hunter2-staple", record)
+
     def test_signing_cancel_and_worker_crash_remove_temporary_credentials(self):
         password=self.root/"password";password.write_text("private-fixture-password\n");password.chmod(0o600)
         self.tool("keytool", "import os,time\nfrom pathlib import Path\nPath(os.environ['TOMACCO_TEST_ROOT'],'signer.pid').write_text(str(os.getpid()))\ntime.sleep(60)\n")

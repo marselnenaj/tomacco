@@ -152,7 +152,7 @@ impl Client {
     }
 }
 pub fn handle(op: &str, a: &Value) -> Result {
-    let credentials = path(s(a, "credentials"), false, true)?;
+    let credentials = secret_path(s(a, "credentials"), "credentials")?;
     identifier(
         s(a, "package"),
         "application package",

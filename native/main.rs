@@ -22,6 +22,7 @@ mod preview;
 mod product;
 mod profiling;
 mod projects;
+mod redact;
 mod releases;
 mod remote;
 mod runtime;
