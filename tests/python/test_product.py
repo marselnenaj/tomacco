@@ -892,6 +892,70 @@ class AndroidControlTests(Isolated):
         self.assertEqual(refused.exception.code, "emulator_refused")
         self.assertIn("-read-only", str(refused.exception))
 
+class AndroidPackageTests(Isolated):
+    """android.package_inspect reads a package with stand-ins for the SDK tools."""
+    @staticmethod
+    def field(number, payload):
+        def varint(value):
+            out = bytearray()
+            while True:
+                out.append((value & 0x7F) | (0x80 if value > 0x7F else 0))
+                value >>= 7
+                if not value: return bytes(out)
+        return varint(number << 3 | 2) + varint(len(payload)) + payload
+
+    def element(self, name, attributes=(), children=()):
+        body = self.field(3, name.encode())
+        for key, value in attributes:
+            body += self.field(4, self.field(2, key.encode()) + self.field(3, value.encode()))
+        for child in children:
+            body += self.field(5, child)
+        return self.field(1, body)
+
+    def test_an_apk_is_read_through_aapt2_and_apksigner(self):
+        apk = self.root / "app.apk"
+        import zipfile
+        with zipfile.ZipFile(apk, "w") as archive:
+            archive.writestr("AndroidManifest.xml", b"")
+            archive.writestr("lib/x86_64/libcore.so", b"x")
+        self.tool("aapt2", "print(\"package: name='dev.test.app' versionCode='3' versionName='1.2' compileSdkVersion='36'\\nminSdkVersion:'26'\\n"
+                           "targetSdkVersion:'36'\\nuses-permission: name='android.permission.INTERNET'\\nnative-code: 'arm64-v8a'\")\n")
+        self.tool("apksigner", "print('Verifies\\nVerified using v2 scheme (APK Signature Scheme v2): true\\n"
+                               "Signer #1 certificate DN: CN=Test\\nSigner #1 certificate SHA-256 digest: 00ff')\n")
+        value = dispatch("android.package_inspect", {"path": str(apk)})
+        self.assertEqual((value["package"], value["version_code"], value["version_name"], value["min_sdk"], value["target_sdk"]),
+                         ("dev.test.app", 3, "1.2", 26, 36))
+        self.assertEqual(value["permissions"], ["android.permission.INTERNET"])
+        self.assertEqual(value["abis"], ["arm64-v8a", "x86_64"])
+        self.assertEqual(value["signing"], {"checked": True, "signed": True, "schemes": ["v2"],
+                                            "certificates": [{"subject": "CN=Test", "sha256": "00ff"}]})
+        self.tool("apksigner", "import sys;print('DOES NOT VERIFY\\nERROR: Missing META-INF/MANIFEST.MF');sys.exit(1)\n")
+        signing = dispatch("android.package_inspect", {"path": str(apk)})["signing"]
+        self.assertEqual((signing["signed"], signing["errors"]), (False, ["Missing META-INF/MANIFEST.MF"]))
+
+    def test_a_bundle_is_read_without_aapt2_and_its_signature_through_keytool(self):
+        import zipfile
+        manifest = self.element("manifest", [("package", "dev.test.bundle"), ("versionCode", "42"), ("versionName", "4.2")], [
+            self.element("uses-sdk", [("minSdkVersion", "24"), ("targetSdkVersion", "36")]),
+            self.element("uses-permission", [("name", "android.permission.CAMERA")])])
+        aab = self.root / "app.aab"
+        with zipfile.ZipFile(aab, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("base/manifest/AndroidManifest.xml", manifest)
+            archive.writestr("base/lib/arm64-v8a/libcore.so", b"x")
+            archive.writestr("base/dex/classes.dex", b"x")
+        self.tool("keytool", "print('Signer #1:\\nOwner: CN=Android Debug, O=Android, C=US\\nCertificate fingerprints:\\n  SHA256: 0A:FF')\n")
+        value = dispatch("android.package_inspect", {"path": str(aab)})
+        self.assertEqual((value["format"], value["package"], value["version_code"], value["min_sdk"], value["target_sdk"]),
+                         ("aab", "dev.test.bundle", 42, 24, 36))
+        self.assertEqual((value["permissions"], value["abis"], value["modules"]), (["android.permission.CAMERA"], ["arm64-v8a"], ["base"]))
+        self.assertEqual(value["signing"]["certificates"], [{"subject": "CN=Android Debug, O=Android, C=US", "sha256": "0aff"}])
+        for name, data in (("notes.txt", b"x"), ("broken.apk", b"not a zip")):
+            (self.root / name).write_bytes(data)
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.package_inspect", {"path": str(self.root / name)})
+            self.assertEqual(refused.exception.code, "invalid_artifact")
+
+
 class ProtocolTests(Isolated):
     def test_cli_schema_errors_and_file_arguments(self):
         schema = json.loads(subprocess.check_output([binary(), "schema"]))["result"]

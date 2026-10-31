@@ -16,6 +16,7 @@ pub const TOOLS: &[(&str, &[&str], &str)] = &[
     ("jarsigner", &["-help"], "Configure a JDK using java_home"),
     ("apksigner", &["version"], "Install Android SDK build-tools"),
     ("zipalign", &["-h"], "Install Android SDK build-tools"),
+    ("aapt2", &["version"], "Install Android SDK build-tools"),
     (
         "curl",
         &["--version"],
@@ -298,7 +299,7 @@ pub fn find_optional(name: &str) -> Result<Option<String>> {
         match name {
             "adb" => candidates.push(sdk.join("platform-tools/adb")),
             "emulator" => candidates.push(sdk.join("emulator/emulator")),
-            "apksigner" | "zipalign" => {
+            "apksigner" | "zipalign" | "aapt2" => {
                 let mut found = glob_paths(&format!(
                     "{}/build-tools/*/{name}",
                     glob::Pattern::escape(&sdk.to_string_lossy())

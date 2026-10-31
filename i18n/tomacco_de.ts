@@ -3277,6 +3277,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Hot Reload</translation>
     </message>
     <message>
+        <source>Inspect APK or AAB</source>
+        <translation>APK oder AAB untersuchen</translation>
+    </message>
+    <message>
         <source>Install iOS toolkit</source>
         <translation>iOS-Werkzeuge installieren</translation>
     </message>

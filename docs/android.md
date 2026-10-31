@@ -69,6 +69,26 @@ installed SDK platform, and the Android Gradle Plugin 9.1.1.
 - A Flutter run supports hot reload through `job.send`, and holds the project's
   workspace lock until it exits.
 
+## Inspect an APK or AAB
+
+`android.package_inspect` reads a package file without a device: package name, version
+name and code, minimum, target and compile SDK, permissions, native ABIs and the
+signing certificates with their SHA-256 digests.
+
+```sh
+tomaccoctl call android.package_inspect '{"path":"/absolute/NewApp/app/build/outputs/apk/debug/app-debug.apk"}'
+```
+
+- An APK is read with `aapt2 dump badging` and `apksigner verify --print-certs` from
+  the newest installed build-tools. An unsigned APK answers `signing.signed:false` with
+  apksigner's errors.
+- An AAB's compiled manifest is read directly, so no extra tool is needed. Its JAR
+  signature is read with `keytool` from the configured JDK.
+- If apksigner or keytool is missing, the rest is still reported and `signing.checked`
+  is `false` with the reason.
+- Checked on APKs with the API 36 build-tools. AAB reading is covered by unit tests on
+  generated bundles; no Gradle-built AAB has been read yet.
+
 ## See and control the device
 
 The desktop shows the device's own video stream, so the status bar, keyboard and

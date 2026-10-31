@@ -1850,6 +1850,29 @@
     }
   },
   {
+    "name": "android.package_inspect",
+    "title": "Inspect APK or AAB",
+    "description": "Read an APK or AAB without a device: package, version name and code, minimum, target and compile SDK, permissions, native ABIs and signing certificates with their SHA-256 digests. APKs go through aapt2 and apksigner from the SDK build-tools; an AAB's manifest is read directly and its signature through keytool. Reads the file only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute path of an .apk or .aab file",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.sdk_install",
     "title": "Import Apple SDK",
     "description": "Import the SDK from an Apple Xcode archive you downloaded yourself, with xtool. Tomacco downloads nothing from Apple. Read Xcode's license first.",

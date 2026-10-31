@@ -138,6 +138,9 @@ mode and an app's language, and reads them back:
 tomaccoctl call android.settings '{"device":"emulator-5554","dark_mode":"off","font_scale":1,"animations":false}'
 ```
 
+`android.package_inspect` reads what a built APK or AAB declares, without a device: package,
+version, SDK levels, permissions, ABIs and signing certificate digests.
+
 For the emulator's settings, `android.avd_configure` changes a stopped emulator:
 
 ```sh
