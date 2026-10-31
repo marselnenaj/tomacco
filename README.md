@@ -230,6 +230,7 @@ The [documentation index](docs/README.md) lists every guide. Common starting poi
 | Set up the experimental iOS runtime | [Virtual iOS](docs/virtual-ios/README.md) |
 | Contribute to the implementation | [Architecture](docs/architecture.md) · [Building and testing](docs/building.md) |
 | Check licensing, privacy and release status | [Legal notes](docs/legal.md) · [Privacy](docs/privacy.md) · [Release notes](docs/RELEASE_NOTES.md) |
+| Get short answers to common questions | [FAQ](docs/faq.md) |
 
 ## Built on the work of others
 

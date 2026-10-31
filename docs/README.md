@@ -26,6 +26,7 @@ operations, so a person and a coding agent can do the same things.
 | Understand the virtual machine, renderer and guest tools | [Virtual iOS: how it works](virtual-ios/how-it-works.md) |
 | Check what may be done with Apple software, and what is changed | [Legal notes](legal.md) |
 | See what leaves my machine | [Privacy](privacy.md) |
+| Get short answers: simulator or not, do I need a Mac, legality, hardware | [FAQ](faq.md) |
 | See what this release is, and its limits | [Release notes](RELEASE_NOTES.md) |
 | Run my own programs in a restore environment, or study PMP firmware | [Research engines](research-engines.md) |
 

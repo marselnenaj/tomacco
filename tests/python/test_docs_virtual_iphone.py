@@ -49,7 +49,7 @@ GUIDES = ("README.md", "docs/README.md", "docs/getting-started.md", "docs/deskto
           "docs/research-engines.md",
           "docs/virtual-ios/README.md", "docs/virtual-ios/setup.md", "docs/virtual-ios/usage.md",
           "docs/virtual-ios/troubleshooting.md", "docs/virtual-ios/how-it-works.md", "examples/README.md",
-          "docs/recipes.md")
+          "docs/recipes.md", "docs/faq.md")
 # A dotted name in a guide that looks like an operation and is a result's path instead.
 RESULT_PATHS = {"workspace.ios_research.guest.detach_pending"}
 OPERATION_AREAS = {entry["name"].split(".")[0] for entry in operation_entries() if "." in entry["name"]}
