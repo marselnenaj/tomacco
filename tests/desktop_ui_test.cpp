@@ -2183,7 +2183,7 @@ for line in sys.stdin:
         const auto label=[&](const char *name){auto *button=item(name);return button?button->property("text").toString():QString();};
         auto *picker=object("languagePicker");QVERIFY(picker);
         QCOMPARE(label("nav-files"),QString("Files"));
-        QCOMPARE(picker->property("currentIndex").toInt(),1);
+        QTRY_COMPARE(picker->property("currentIndex").toInt(),1);
         // English plural forms come from the plurals-only English file.
         QCOMPARE(QCoreApplication::translate("Main","%n model(s)",nullptr,1),QString("1 model"));
         QCOMPARE(QCoreApplication::translate("Main","%n model(s)",nullptr,3),QString("3 models"));
@@ -2192,7 +2192,7 @@ for line in sys.stdin:
         QCOMPARE(backend->language(),QString("de"));QCOMPARE(backend->uiLanguage(),QString("de"));
         QCOMPARE(QSettings().value("language").toString(),QString("de"));
         QTRY_COMPARE(label("nav-files"),QString("Dateien"));
-        QCOMPARE(picker->property("currentIndex").toInt(),2);
+        QTRY_COMPARE(picker->property("currentIndex").toInt(),2);
         QCOMPARE(object("languagePicker")->property("currentText").toString(),QString("Deutsch"));
         QCOMPARE(label("nav-runtime"),QString("Live-Gerät"));
         QCOMPARE(label("nav-jobs"),QString("Builds & Aufträge"));
@@ -2266,6 +2266,7 @@ for line in sys.stdin:
         capture("language-"+code);
         QVERIFY(QMetaObject::invokeMethod(picker,"activated",Q_ARG(int,1)));
         QTRY_COMPARE(label("nav-files"),QString("Files"));
+        QTRY_COMPARE(picker->property("currentIndex").toInt(),1);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void about_dialog_names_version_license_and_source() {
