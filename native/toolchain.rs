@@ -581,10 +581,11 @@ pub fn doctor() -> Result {
     let cancelled = cancellation();
     // Every tool's version check, and xtool's SDK status, at once: each one
     // only waits for its own process. Up to 16 at a time.
-    let mut results = in_parallel(TOOLS.len() + 1, 16, |index| {
+    let mut results = in_parallel(TOOLS.len() + 2, 16, |index| {
         with_cancellation(cancelled.clone(), || match TOOLS.get(index) {
             Some(&(name, args, remedy)) => tool_status(name, args, remedy),
-            None => ios_sdk_status(),
+            None if index == TOOLS.len() => ios_sdk_status(),
+            None => Ok(crate::desktop::load_check()),
         })
     })
     .into_iter()
@@ -592,6 +593,7 @@ pub fn doctor() -> Result {
         result.unwrap_or_else(|| Err(Error::new("tool_failed", "Doctor worker panicked")))
     })
     .collect::<Result<Vec<Value>>>()?;
+    let desktop = results.pop().unwrap_or(Value::Null);
     let ios = results.pop().unwrap_or(Value::Null);
     let tools = results;
     let kvm = fs::OpenOptions::new()
@@ -600,7 +602,7 @@ pub fn doctor() -> Result {
         .open("/dev/kvm")
         .is_ok();
     Ok(
-        json!({"tools":tools,"android_sdk":android_sdk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"android_ndk":android_ndk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"ios_sdk":ios,"kvm":{"exists":Path::new("/dev/kvm").exists(),"accessible":kvm},"settings":settings()?,"data_directory":home()?,"ios_runtime":"Apple Simulator requires macOS; Linux builds use xtool and a real device"}),
+        json!({"tools":tools,"android_sdk":android_sdk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"android_ndk":android_ndk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"ios_sdk":ios,"desktop":desktop,"kvm":{"exists":Path::new("/dev/kvm").exists(),"accessible":kvm},"settings":settings()?,"data_directory":home()?,"ios_runtime":"Apple Simulator requires macOS; Linux builds use xtool and a real device"}),
     )
 }
 

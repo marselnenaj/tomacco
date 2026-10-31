@@ -16,6 +16,7 @@ tomaccoctl doctor
 | --- | --- | --- |
 | `tomaccoctl: command not found` | `~/.local/bin` is not on `PATH`, or Tomacco is not installed. | Add it to `PATH`, or [install](getting-started.md#1-install). |
 | `desktop_missing` | `desktop.open` found no desktop. | Build with CMake and run `python3 install.py`. |
+| The desktop does not open; `doctor` has a `desktop` next step, or its `desktop` entry has `"loadable": false` | The system's dynamic loader cannot load it: `missing_libraries` and `missing_versions` say what is missing (`doctor` runs `ldd` on the desktop). The release desktop needs Qt 6.12 or newer, FFmpeg 9 (`libavcodec.so.63`) and glibc 2.39. | Update the system, or [build from a checkout](getting-started.md#debian-ubuntu-and-fedora) on it. `tomaccoctl` works without the desktop. |
 | `preview_unavailable`: "Cannot reach preview session" | No desktop session has that name. | Start `tomacco --preview-session NAME`. |
 | The device window has a border or blur on Omarchy | The Hyprland rule is missing. | Install with `--omarchy`. It is `~/.config/hypr/tomacco.lua`. |
 | A changed installed file is left after an uninstall | Files you changed are kept and listed, on purpose. | Delete them if you do not need them. |

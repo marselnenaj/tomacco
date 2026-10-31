@@ -10,6 +10,8 @@ operations and their JSON results.
 
 ### Added
 
+- `doctor` checks with the dynamic loader whether the desktop can start on this system, lists missing libraries and symbol
+  versions under `desktop`, and puts a step first in `next_steps` when it cannot.
 - **Command line.**
   - `tomaccoctl completions bash|zsh|fish`. Only the bash script has been run.
   - `tomaccoctl schema OPERATION` and `schema --names`.

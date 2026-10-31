@@ -1034,6 +1034,46 @@ class ProjectFilesTests(Isolated):
 
 
 
+class DoctorDesktopTests(Isolated):
+    """doctor asks the dynamic loader whether the desktop can start here."""
+
+    def doctor(self, ldd_output=None):
+        desktop = self.root / "tomacco"
+        desktop.write_text("#!/bin/sh\nexit 0\n")
+        desktop.chmod(0o755)
+        env = {**os.environ, "TOMACCO_BINARY": str(desktop)}
+        if ldd_output is not None:
+            tools = self.root / "fake-ldd"
+            tools.mkdir(exist_ok=True)
+            (tools / "ldd").write_text("#!/bin/sh\ncat <<'EOF'\n" + ldd_output + "EOF\nexit 1\n")
+            (tools / "ldd").chmod(0o755)
+            env["PATH"] = str(tools) + os.pathsep + env["PATH"]
+        value = subprocess.run([binary(), "call", "doctor", "{}"], capture_output=True, text=True, timeout=120, env=env)
+        reply = json.loads(value.stdout)
+        self.assertTrue(reply["ok"], reply)
+        return reply["result"], desktop
+
+    def test_missing_libraries_and_versions_become_the_first_next_step(self):
+        result, desktop = self.doctor(
+            "\tlibavcodec.so.63 => not found\n"
+            "/x/tomacco: /usr/lib/libQt6Core.so.6: version `Qt_6.12' not found (required by /x/tomacco)\n")
+        report = result["desktop"]
+        self.assertEqual(report["path"], str(desktop))
+        self.assertIs(report["loadable"], False, report)
+        self.assertEqual(report["missing_libraries"], ["libavcodec.so.63"])
+        self.assertEqual(report["missing_versions"], ["Qt_6.12 in libQt6Core.so.6"])
+        step = result["next_steps"][0]
+        self.assertEqual(step["goal"], "desktop", result["next_steps"])
+        self.assertIn("libavcodec.so.63", step["what"])
+        self.assertIn("Qt 6.12", step["how"])
+
+    def test_a_desktop_the_real_loader_accepts_has_no_step(self):
+        # The real ldd: a shell script is not a dynamic executable, so not refused.
+        result, _ = self.doctor()
+        self.assertNotEqual(result["desktop"]["loadable"], False, result["desktop"])
+        self.assertNotIn("desktop", [step["goal"] for step in result["next_steps"]])
+
+
 class ReleaseContractTests(Isolated):
     def test_version_preserves_comments_and_rejects_ambiguous_gradle(self):
         pubspec = self.root / "pubspec.yaml"
