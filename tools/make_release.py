@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Make a draft release from a clean checkout of its tag: checks, package,
 portable package and source tarball with checksums, signatures, then
-`gh release create --draft`. Publishing the draft stays a person's decision."""
+`gh release create --draft`. Publishing the draft stays a person's decision.
+
+With --container it also builds the headless image from the signed package
+(tools/build_container.py), checks it, and prints the `docker push` commands
+that would publish it. It never pushes."""
 import argparse
 import base64
 import hashlib
@@ -13,6 +17,8 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+import build_container
 
 ROOT = Path(__file__).resolve().parents[1]
 KEY_ENVIRONMENT = "TOMACCO_RELEASE_SIGNING_KEY_FILE"
@@ -221,6 +227,19 @@ def sign(commands, key, package):
     return signature
 
 
+def container(commands, version):
+    """Builds and checks the image from the signed package in dist/, then
+    prints how a person would publish it. Runs no push."""
+    python = sys.executable
+    image = build_container.image_name(version)
+    commands.run([python, "tools/build_container.py", "build", "--accept-android-sdk-license",
+                  "--version", version, "--packages", DIST, "--tag", image])
+    commands.run([python, "tools/build_container.py", "verify", image])
+    print("The image is built and checked locally. To publish it, a person would run (nothing was pushed):")
+    for argv in build_container.push_commands(image, version):
+        print("  " + shlex.join(argv))
+
+
 def draft(commands, root, tag, version):
     repository = f"{constant(root, 'REPO_OWNER')}/{constant(root, 'REPO_NAME')}"
     files = [str(path.relative_to(root)) for path in sorted((root / DIST).iterdir())] if not commands.dry_run else [f"{DIST}/*"]
@@ -235,6 +254,9 @@ def make(options, commands, root, environment):
     key = key_path(options.key, environment, root)
     check_key(commands, root, key)
     dist = root / DIST
+    if options.container and not options.accept_android_sdk_license:
+        raise Refused("--container builds an image with the Android SDK: add --accept-android-sdk-license "
+                      "to accept Google's Android SDK license (https://developer.android.com/studio/terms)")
     if dist.exists() and any(dist.iterdir()):
         raise Refused(f"{DIST}/ is not empty: everything in it would be published")
     prefix = constant(root, "PACKAGE_PREFIX")
@@ -262,6 +284,8 @@ def make(options, commands, root, environment):
         verify_checksums(root)
         for package in packages:
             sign(commands, key, package)
+    if options.container:
+        container(commands, version)
     draft(commands, root, tag, version)
 
 
@@ -274,6 +298,11 @@ def main(arguments=None, commands=None, root=ROOT, environment=os.environ):
                         help="Leave out the portable package (tools/build_portable.py, which needs Docker)")
     parser.add_argument("--with-qt-sources", action="store_true",
                         help=f"Also release the source tarballs of the Qt modules the portable package bundles ({QT_SOURCES})")
+    parser.add_argument("--container", action="store_true",
+                        help="Also build and check the headless image locally (tools/build_container.py) and print "
+                             "the docker push commands; it pushes nothing")
+    parser.add_argument("--accept-android-sdk-license", action="store_true",
+                        help="Accept Google's Android SDK license, which --container's image needs")
     options = parser.parse_args(arguments)
     commands = commands or Commands(root, options.dry_run)
     try:

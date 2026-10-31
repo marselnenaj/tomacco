@@ -5,6 +5,9 @@ on about ten minutes of your own time, plus any compile and SDK downloads.
 
 **Prefer not to do this yourself?** Give your coding agent [its setup guide](agent-setup.md).
 
+**On a server or in CI, without a desktop?** Build the [container image](container.md): `tomaccoctl` with
+a JDK, Gradle and the Android SDK, and optionally the emulator.
+
 ## 1. Install
 
 ```sh

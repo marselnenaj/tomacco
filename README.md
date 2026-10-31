@@ -149,6 +149,20 @@ plan with `capabilities`, wait on jobs, act on errors and treat destructive oper
 
 </details>
 
+### In a container
+
+For servers, CI and agents that should not install anything on the host, there is a headless
+image: `tomaccoctl` from the signed release package, a JDK, Gradle and the Android SDK, and in a
+`-emulator` variant the Android Emulator with one system image. It has no desktop and no virtual
+iPhone. Building it accepts Google's Android SDK license:
+
+```sh
+docker build --build-arg ACCEPT_ANDROID_SDK_LICENSE=1 -t tomacco-container:1.1.0 packaging/container
+claude mcp add --transport stdio --scope user tomacco -- docker run -i --rm -v tomacco-data:/data tomacco-container:1.1.0 mcp
+```
+
+[Container image](docs/container.md) covers the emulator, KVM, USB phones and what was tested.
+
 ## The virtual iOS device
 
 The experimental runtime boots **iOS 27 on an x86_64 Linux PC**: SpringBoard,
@@ -238,6 +252,7 @@ The [documentation index](docs/README.md) lists every guide. Common starting poi
 | --- | --- |
 | Install Tomacco and run a first app | [Getting started](docs/getting-started.md) · [Your first Android app](docs/tutorial-android.md) |
 | Connect an agent or automate a workflow | [Agents](docs/agents.md) · [Agent patterns](docs/agent-patterns.md) · [Operation reference](docs/reference/README.md) |
+| Run headless in Docker, for agents, servers and CI | [Container image](docs/container.md) |
 | Use the workspace and live device view | [Desktop](docs/desktop.md) |
 | Develop for Android or an iPhone | [Android](docs/android.md) · [iPhone](docs/iphone.md) |
 | Set up the experimental iOS runtime | [Virtual iOS](docs/virtual-ios/README.md) |

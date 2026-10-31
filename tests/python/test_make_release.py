@@ -216,6 +216,29 @@ class MakeRelease(unittest.TestCase):
         self.assertIn("portable.tar.gz does not match its checksum", errors)
         self.assertFalse(any(argv[0] == "gh" for argv in commands.runs))
 
+    def test_the_container_step_builds_and_checks_the_signed_package_and_pushes_nothing(self):
+        code, commands, errors, output = self.make("--key", str(self.key), "--container", "--accept-android-sdk-license")
+        self.assertEqual(code, 0, errors)
+        words = [" ".join(argv) for argv in commands.runs]
+        order = ["pkeyutl -sign", "build_container.py build", "build_container.py verify tomacco-container:1.2.3", "gh release create"]
+        positions = [next(i for i, line in enumerate(words) if word in line) for word in order]
+        self.assertEqual(positions, sorted(positions), words)
+        building = next(argv for argv in commands.runs if "tools/build_container.py" in argv and "build" in argv)
+        self.assertEqual(building[building.index("--packages") + 1], make_release.DIST)
+        self.assertIn("--accept-android-sdk-license", building)
+        self.assertFalse(any("docker" in argv[0] for argv in commands.runs), "make_release runs no docker command itself")
+        self.assertFalse(any("push" in argv for argv in commands.runs))
+        self.assertIn("docker push ghcr.io/marselnenaj/tomacco:1.2.3", output)
+        self.assertIn("nothing was pushed", output)
+
+    def test_the_container_step_needs_the_android_sdk_license_accepted(self):
+        self.assertRefused("--accept-android-sdk-license", "--key", str(self.key), "--container")
+
+    def test_without_container_no_image_is_built(self):
+        code, commands, errors, _ = self.make("--key", str(self.key))
+        self.assertEqual(code, 0, errors)
+        self.assertFalse(any("tools/build_container.py" in argv for argv in commands.runs))
+
     def test_a_dry_run_only_prints(self):
         before = sorted(path.name for path in self.root.iterdir())
         fake = Fake(self.root, dry_run=True)
