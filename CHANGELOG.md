@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 188 operations.
+`tomaccoctl` now has one typed API of 189 operations.
 
 ### Added
 
@@ -24,6 +24,20 @@ operations and their JSON results.
   LGPL-only FFmpeg bundled, for glibc 2.35 and newer; `make_release.py` signs it beside the
   regular package, and `install.py` and `tomaccoctl update` handle it.
 - **MCP prompts.** `setup`, `run-android-app` and `run-virtual-iphone`.
+- **MCP tool annotations.** Every operation now states `destructiveHint` and `idempotentHint` as well
+  as `readOnlyHint` and `openWorldHint`; before, MCP clients read 104 operations as destructive by
+  default. `testing.setup` and `testing.instrumentation` have titles.
+- **MCP structured results.** A tool result also comes as `structuredContent`; a result that is not
+  an object is wrapped as `{"result": ...}`, an error as `{"error": ...}`.
+- **MCP progress.** A tool call with a progress token gets `notifications/progress` once a second;
+  for `job.wait` with the job's state and latest log line.
+- **MCP logging.** After `logging/setLevel` `info`, `job.wait` sends its job's new log lines as
+  `notifications/message`.
+- `capabilities` says in one call what this computer can do right now: Android builds, emulator and
+  devices, iOS builds with xtool, iPhones and the virtual iPhone, each `ready` or with what it lacks.
+  Also the MCP resource `tomacco://capabilities`, with an `outputSchema`.
+- `tomaccoctl setup` also connects Gemini CLI, Cursor, VS Code and Zed, after asking, by adding
+  `tomacco` to their JSON settings. A file with comments or a link is left for the person to edit.
 - **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
   `tomacco://docs/NAME`, as Markdown of the installed version.
 - **Android.**

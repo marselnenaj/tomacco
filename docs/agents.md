@@ -9,8 +9,15 @@ preparation recipes do.
 
 ## Connect a client
 
-`tomaccoctl setup` connects Claude Code and Codex for you. By hand, register the absolute path of
-`tomaccoctl`:
+`tomaccoctl setup` connects Claude Code and Codex through their `mcp add` commands, and Gemini CLI,
+Cursor, VS Code and Zed by adding a `tomacco` entry to their JSON settings: `~/.gemini/settings.json`
+(`mcpServers`), `~/.cursor/mcp.json` (`mcpServers`), `~/.config/Code/User/mcp.json` (`servers`) and
+`~/.config/zed/settings.json` (`context_servers`), with `$XDG_CONFIG_HOME` in place of `~/.config` when it
+is set. It asks first for each agent it finds and keeps
+everything else in the file. A file with comments, such as Zed's usual settings, or a file that is a
+symbolic link is left alone; setup prints the entry to add by hand. Only the file handling is tested,
+on a scratch home directory; whether each agent then starts the server has not been checked here.
+By hand, register the absolute path of `tomaccoctl`:
 
 ```sh
 claude mcp add --transport stdio --scope user tomacco -- "$(command -v tomaccoctl)" mcp
@@ -24,6 +31,7 @@ stdio server: no network port and no token. The installer never changes client s
 
 Any MCP stdio client gets the same tools. The resources `tomacco://catalog`, `tomacco://jobs`,
 `tomacco://workspaces`, `tomacco://debug` and `tomacco://runtimes` expose profiles and recent work.
+`tomacco://capabilities` is the result of the `capabilities` operation.
 
 The guides are resources too, as Markdown of the installed version: `tomacco://docs/agents` (this guide),
 `tomacco://docs/recipes`, `tomacco://docs/getting-started`, `tomacco://docs/android`, `tomacco://docs/iphone`,
@@ -38,9 +46,19 @@ The server also offers three prompts, short recipes a client can show as command
 | `run-android-app` | `path` | Inspect the project, find or start an Android device, `project.run` it, wait for the job and capture the screen. |
 | `run-virtual-iphone` | `path` | Check the virtual iOS device, find or build the xtool app, deploy it to a running phone or configure and start one, then look at the screen. |
 
+- Every tool states all four MCP annotations: `readOnlyHint`, `destructiveHint`, `idempotentHint`
+  and `openWorldHint`. They come from each operation's `annotations` in `tomaccoctl schema`.
 - MCP requests can run at the same time.
 - `notifications/cancelled` stops that request. Cancelling `job.wait` leaves its job running; use
   `job.cancel` to cancel a build and its descendants.
+- A `tools/call` with `_meta.progressToken` gets `notifications/progress` once a second while it runs.
+  For `job.wait` the message is the job's state and its latest log line, and `total` is the wait in
+  seconds. A call that finishes within a second gets none.
+- After `logging/setLevel` with `info` or `debug`, a running `job.wait` sends each new line of its job's
+  log as `notifications/message`, level `info`, logger `job ID`. Secrets are masked as in `job.logs`.
+  Until the client sets a level, the server sends no log messages.
+- A tool result also comes as `structuredContent`: an object result as it is, any other result
+  as `{"result": ...}`, and an error as `{"error": {...}}`. The text content is unchanged.
 - Native screenshots up to 4 MiB are embedded as MCP images. Larger ones keep a path and digest.
 
 ## The contract
@@ -79,6 +97,13 @@ for the commands, their flags and the operation names after `call` and `schema`.
 `source <(tomaccoctl completions bash)`, the same for zsh, or `tomaccoctl completions fish | source`.
 The script asks `tomaccoctl schema --names` for the names, so it stays current after an update. The
 bash script is tested; the zsh and fish scripts have not been run in those shells yet.
+
+To plan, `tomaccoctl call capabilities` says in one call what this computer can do right now:
+`android.build`, `android.emulator` (with its AVDs), `android.devices`, `ios.build` (xtool),
+`ios.devices` and `ios.virtual_iphone` (configured, running, phase). Each has `ready` and `missing`, the
+names of what it lacks, such as `kvm` or `xtool`; `doctor`'s `next_steps` say how to set them up. It
+runs `doctor`'s tool checks, so it takes a few seconds. Over MCP its schema has an `outputSchema`, and the same result is the
+resource `tomacco://capabilities`.
 
 Use `TOMACCO_HOME=/absolute/test-state` to isolate job, toolchain, profile and emulator state. The
 desktop's **All tools** tab shows every operation and its schema.

@@ -3239,6 +3239,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Toolchain prüfen</translation>
     </message>
     <message>
+        <source>What this computer can do</source>
+        <translation>Was dieser Computer kann</translation>
+    </message>
+    <message>
         <source>Click element</source>
         <translation>Element anklicken</translation>
     </message>
@@ -3681,6 +3685,14 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Read test results</source>
         <translation>Testergebnisse lesen</translation>
+    </message>
+    <message>
+        <source>Install Android test helper</source>
+        <translation>Android-Testhelfer installieren</translation>
+    </message>
+    <message>
+        <source>Check Android test helper</source>
+        <translation>Android-Testhelfer prüfen</translation>
     </message>
     <message>
         <source>Find Android crashes</source>

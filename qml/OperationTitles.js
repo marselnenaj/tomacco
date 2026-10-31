@@ -8,6 +8,7 @@
 // tests/python/test_i18n.py keeps the table and the JSON in step.
 var titles = {
     "doctor": QT_TRANSLATE_NOOP("Operations", "Check toolchain"),
+    "capabilities": QT_TRANSLATE_NOOP("Operations", "What this computer can do"),
     "desktop.status": QT_TRANSLATE_NOOP("Operations", "Desktop status"),
     "desktop.open": QT_TRANSLATE_NOOP("Operations", "Open Tomacco"),
     "settings.get": QT_TRANSLATE_NOOP("Operations", "Settings"),
@@ -107,6 +108,8 @@ var titles = {
     "testing.accessibility": QT_TRANSLATE_NOOP("Operations", "Check Android accessibility"),
     "testing.crashes": QT_TRANSLATE_NOOP("Operations", "Find Android crashes"),
     "testing.results": QT_TRANSLATE_NOOP("Operations", "Read test results"),
+    "testing.setup": QT_TRANSLATE_NOOP("Operations", "Install Android test helper"),
+    "testing.instrumentation": QT_TRANSLATE_NOOP("Operations", "Check Android test helper"),
     "debug.start": QT_TRANSLATE_NOOP("Operations", "Start debugger"),
     "debug.list": QT_TRANSLATE_NOOP("Operations", "Debug sessions"),
     "debug.state": QT_TRANSLATE_NOOP("Operations", "Debugger status"),

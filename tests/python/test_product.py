@@ -1177,16 +1177,27 @@ class ProtocolTests(Isolated):
             {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "catalog.list"}},
             {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "device.install", "arguments": {}}},
             {"jsonrpc": "2.0", "id": 5, "method": "resources/read", "params": {"uri": "tomacco://catalog"}},
+            {"jsonrpc": "2.0", "id": 6, "method": "resources/read", "params": {"uri": "tomacco://capabilities"}},
         ]
         output = subprocess.check_output([binary(), "mcp"], input='bad\n' + '\n'.join(map(json.dumps, requests)) + '\n', text=True)
         replies = sorted([json.loads(line) for line in output.splitlines()], key=lambda r: -1 if r["id"] is None else r["id"])
         self.assertEqual(replies[0]["error"]["code"], -32700)
-        self.assertEqual([r["id"] for r in replies[1:]], [1, 2, 3, 4, 5])
+        self.assertEqual([r["id"] for r in replies[1:]], [1, 2, 3, 4, 5, 6])
         self.assertEqual(replies[1]["result"]["protocolVersion"], "2025-11-25")
         self.assertEqual(len(replies[2]["result"]["tools"]), len(json.loads((ROOT / "assets/operations.json").read_text())))
+        for tool in replies[2]["result"]["tools"]:
+            self.assertEqual(sorted(tool["annotations"]), ["destructiveHint", "idempotentHint", "openWorldHint", "readOnlyHint"], tool["name"])
         self.assertFalse(replies[3]["result"]["isError"])
+        # A list result is wrapped, since structured content is an object.
+        self.assertEqual(replies[3]["result"]["structuredContent"], {"result": json.loads(replies[3]["result"]["content"][0]["text"])})
         self.assertTrue(replies[4]["result"]["isError"])
+        self.assertEqual(replies[4]["result"]["structuredContent"], json.loads(replies[4]["result"]["content"][0]["text"]))
         self.assertIn("contents", replies[5]["result"])
+        capabilities = json.loads(replies[6]["result"]["contents"][0]["text"])
+        self.assertEqual(sorted(capabilities["ios"]), ["build", "devices", "virtual_iphone"])
+        self.assertIsInstance(capabilities["android"]["emulator"]["ready"], bool)
+        tool = next(t for t in replies[2]["result"]["tools"] if t["name"] == "capabilities")
+        self.assertEqual(tool["outputSchema"]["required"], ["android", "ios", "desktop"])
 
     def test_mcp_wait_does_not_block_other_requests_and_cancellation_preserves_job(self):
         import queue
@@ -1215,6 +1226,26 @@ class ProtocolTests(Isolated):
             if not process.stdin.closed:process.stdin.close()
             process.stdout.close();process.stderr.close()
             jobs.cancel(job["id"]);jobs.wait(job["id"],5)
+
+    def test_mcp_job_wait_reports_progress_and_log_lines_before_its_result(self):
+        job=self.submit([{"argv":[sys.executable,"-c","import time\nfor i in range(12):print('step',i,flush=True);time.sleep(0.4)"]}],timeout=40)
+        self.wait_log(job,"step 0")
+        requests=[{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25"}},
+                  {"jsonrpc":"2.0","id":3,"method":"logging/setLevel","params":{"level":"info"}},
+                  {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"job.wait","arguments":{"job_id":job["id"],"seconds":30},"_meta":{"progressToken":"wait-1"}}}]
+        output=subprocess.check_output([binary(),"mcp"],input="\n".join(map(json.dumps,requests))+"\n",text=True,timeout=40)
+        messages=[json.loads(line) for line in output.splitlines()]
+        result=next(i for i,m in enumerate(messages) if m.get("id")==2)
+        self.assertEqual(messages[result]["result"]["structuredContent"]["state"],"succeeded")
+        progress=[m["params"] for m in messages if m.get("method")=="notifications/progress"]
+        self.assertTrue(progress,messages)
+        self.assertTrue(all(i<result for i,m in enumerate(messages) if m.get("method")=="notifications/progress"))
+        self.assertEqual({p["progressToken"] for p in progress},{"wait-1"})
+        self.assertEqual([p["progress"] for p in progress],sorted({p["progress"] for p in progress}))
+        self.assertTrue(any("step" in p["message"] for p in progress),progress)
+        logged=[m["params"] for i,m in enumerate(messages) if m.get("method")=="notifications/message" and i<result]
+        self.assertTrue(logged,messages)
+        self.assertTrue(all(p["level"]=="info" and p["logger"]=="job "+job["id"] and p["data"].startswith("step ") for p in logged),logged)
 
     def test_long_socket_path_and_preview_readiness(self):
         data = self.root / ("nested-project-" * 12) / "state"

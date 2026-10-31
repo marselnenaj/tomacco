@@ -40,6 +40,146 @@ const AGENTS: [(&str, &str, &[&str]); 2] = [
     ("Codex", "codex", &["mcp", "add", "tomacco", "--"]),
 ];
 
+/// An agent whose MCP servers are listed in a JSON file Tomacco can add
+/// itself to: found when its configuration directory exists or one of its
+/// programs is on PATH.
+struct FileAgent {
+    name: &'static str,
+    programs: &'static [&'static str],
+    directory: PathBuf,
+    file: PathBuf,
+    /// The object in the file that holds one entry per server.
+    key: &'static str,
+    entry: fn(&str) -> Value,
+}
+
+/// The agents configured by file, under a HOME and an XDG config directory.
+fn file_agents(home: &Path, config: &Path) -> Vec<FileAgent> {
+    let plain = |program: &str| json!({"command":program,"args":["mcp"]});
+    let agent = |name, programs, directory: PathBuf, file: &str, key, entry| FileAgent {
+        name,
+        programs,
+        file: directory.join(file),
+        directory,
+        key,
+        entry,
+    };
+    vec![
+        agent(
+            "Gemini CLI",
+            &["gemini"],
+            home.join(".gemini"),
+            "settings.json",
+            "mcpServers",
+            plain,
+        ),
+        agent(
+            "Cursor",
+            &["cursor"],
+            home.join(".cursor"),
+            "mcp.json",
+            "mcpServers",
+            plain,
+        ),
+        agent(
+            "VS Code",
+            &["code"],
+            config.join("Code/User"),
+            "mcp.json",
+            "servers",
+            |program| json!({"type":"stdio","command":program,"args":["mcp"]}),
+        ),
+        agent(
+            "Zed",
+            &["zed", "zeditor"],
+            config.join("zed"),
+            "settings.json",
+            "context_servers",
+            |program| json!({"source":"custom","command":program,"args":["mcp"],"env":{}}),
+        ),
+    ]
+}
+
+#[derive(Debug, PartialEq)]
+enum Connection {
+    /// Neither its directory nor its program is here.
+    Absent,
+    Present,
+    Declined,
+    Added,
+    /// The file is not one Tomacco should rewrite; the reason, for the person.
+    ByHand(String),
+}
+
+/// Adds Tomacco to an agent's file after the person's yes. Other servers and
+/// settings stay as they are; a file with comments, a link or anything but a
+/// JSON object is left alone for the person to edit.
+fn connect_file_agent(
+    agent: &FileAgent,
+    program: &str,
+    found: bool,
+    answers: &Answers,
+) -> Result<Connection> {
+    if !found {
+        return Ok(Connection::Absent);
+    }
+    let file = agent.file.display();
+    let (mut settings, mode) = match std::fs::symlink_metadata(&agent.file) {
+        Ok(meta) if !meta.is_file() => {
+            return Ok(Connection::ByHand(format!(
+                "{file} is a link or not a regular file"
+            )));
+        }
+        Ok(meta) => {
+            let text = std::fs::read_to_string(&agent.file)?;
+            match serde_json::from_str::<Value>(&text) {
+                Ok(value) if value.is_object() => (value, Some(meta.permissions())),
+                _ => {
+                    return Ok(Connection::ByHand(format!(
+                        "{file} is not plain JSON; it may have comments"
+                    )));
+                }
+            }
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => (json!({}), None),
+        Err(error) => return Err(error.into()),
+    };
+    match settings.get(agent.key) {
+        Some(servers) if servers.get("tomacco").is_some() => return Ok(Connection::Present),
+        Some(servers) if !servers.is_object() => {
+            return Ok(Connection::ByHand(format!(
+                "{} in {file} is not an object",
+                agent.key
+            )));
+        }
+        _ => {}
+    }
+    if !answers.ask(&format!(
+        "Connect {} to {}? This adds tomacco to {file}.",
+        agent.name,
+        product::PRODUCT_NAME
+    )) {
+        return Ok(Connection::Declined);
+    }
+    if settings.get(agent.key).is_none() {
+        settings[agent.key] = json!({});
+    }
+    settings[agent.key]["tomacco"] = (agent.entry)(program);
+    std::fs::create_dir_all(&agent.directory)?;
+    let mut temporary = tempfile::NamedTempFile::new_in(&agent.directory)?;
+    let mut bytes = serde_json::to_vec_pretty(&settings)?;
+    bytes.push(b'\n');
+    temporary.write_all(&bytes)?;
+    temporary.as_file().sync_all()?;
+    if let Some(permissions) = mode {
+        std::fs::set_permissions(temporary.path(), permissions)?;
+    }
+    temporary
+        .persist(&agent.file)
+        .map_err(|error| Error::from(error.error))?;
+    Ok(Connection::Added)
+}
+
 fn tool<'a>(doctor: &'a Value, name: &str) -> Option<&'a Value> {
     doctor["tools"]
         .as_array()?
@@ -348,6 +488,29 @@ fn connect_agents(answers: &Answers) -> Result<()> {
                 "  failed   {name}: run `{command} {}` yourself",
                 args.join(" ")
             );
+        }
+    }
+    let home = PathBuf::from(
+        std::env::var_os("HOME").ok_or_else(|| Error::new("setup_failed", "HOME is not set"))?,
+    );
+    let config = std::env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .unwrap_or_else(|| home.join(".config"));
+    for agent in file_agents(&home, &config) {
+        let found = agent.directory.is_dir() || agent.programs.iter().any(|p| on_path(p));
+        let name = agent.name;
+        match connect_file_agent(&agent, &program, found, answers) {
+            Ok(Connection::Absent) => {}
+            Ok(Connection::Present) => println!("  ok       {name} is connected"),
+            Ok(Connection::Added) => println!("  ok       {name} is connected"),
+            Ok(Connection::Declined) => println!("  skipped  {name}"),
+            Ok(Connection::ByHand(reason)) => println!(
+                "  manual   {name}: {reason}. Add this under \"{}\" yourself: \"tomacco\": {}",
+                agent.key,
+                (agent.entry)(&program)
+            ),
+            Err(error) => println!("  failed   {name}: {}", error.message),
         }
     }
     Ok(())
@@ -773,6 +936,119 @@ mod tests {
                 .is_empty()
             );
         }
+    }
+
+    #[test]
+    fn agents_configured_by_file_are_connected_only_after_a_yes() {
+        use std::os::unix::fs::PermissionsExt;
+        let home = tempfile::tempdir().unwrap();
+        let config = home.path().join(".config");
+        let agents = file_agents(home.path(), &config);
+        let names: Vec<_> = agents.iter().map(|agent| agent.name).collect();
+        assert_eq!(names, ["Gemini CLI", "Cursor", "VS Code", "Zed"]);
+        let agent = |name: &str| agents.iter().find(|agent| agent.name == name).unwrap();
+        let no = Answers {
+            yes: false,
+            interactive: false,
+        };
+        let yes = Answers {
+            yes: true,
+            interactive: false,
+        };
+        let program = "/opt/tomacco/tomaccoctl";
+        // Not installed: nothing is asked or written.
+        for agent in &agents {
+            assert_eq!(
+                connect_file_agent(agent, program, false, &yes).unwrap(),
+                Connection::Absent
+            );
+        }
+        assert!(!home.path().join(".gemini").exists());
+
+        // Gemini CLI with its own settings and another server.
+        let gemini = agent("Gemini CLI");
+        std::fs::create_dir_all(&gemini.directory).unwrap();
+        let before = "{\"theme\":\"Dracula\",\"mcpServers\":{\"other\":{\"command\":\"x\"}}}";
+        std::fs::write(&gemini.file, before).unwrap();
+        std::fs::set_permissions(&gemini.file, std::fs::Permissions::from_mode(0o640)).unwrap();
+        assert_eq!(
+            connect_file_agent(gemini, program, true, &no).unwrap(),
+            Connection::Declined
+        );
+        assert_eq!(std::fs::read_to_string(&gemini.file).unwrap(), before);
+        assert_eq!(
+            connect_file_agent(gemini, program, true, &yes).unwrap(),
+            Connection::Added
+        );
+        let written: Value =
+            serde_json::from_str(&std::fs::read_to_string(&gemini.file).unwrap()).unwrap();
+        assert_eq!(written["theme"], "Dracula");
+        assert_eq!(written["mcpServers"]["other"]["command"], "x");
+        assert_eq!(
+            written["mcpServers"]["tomacco"],
+            json!({"command":program,"args":["mcp"]})
+        );
+        let mode = std::fs::metadata(&gemini.file)
+            .unwrap()
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o640);
+        // Connected already: left exactly as it is.
+        let after = std::fs::read_to_string(&gemini.file).unwrap();
+        assert_eq!(
+            connect_file_agent(gemini, program, true, &yes).unwrap(),
+            Connection::Present
+        );
+        assert_eq!(std::fs::read_to_string(&gemini.file).unwrap(), after);
+
+        // Found on PATH without a directory: the file is created.
+        let code = agent("VS Code");
+        assert_eq!(
+            connect_file_agent(code, program, true, &yes).unwrap(),
+            Connection::Added
+        );
+        let written: Value =
+            serde_json::from_str(&std::fs::read_to_string(&code.file).unwrap()).unwrap();
+        assert_eq!(
+            written,
+            json!({"servers":{"tomacco":{"type":"stdio","command":program,"args":["mcp"]}}})
+        );
+        assert!(code.file.starts_with(home.path().join(".config/Code/User")));
+
+        // Zed's settings usually have comments: not rewritten.
+        let zed = agent("Zed");
+        std::fs::create_dir_all(&zed.directory).unwrap();
+        let commented = "// Zed settings\n{\"vim_mode\": true}\n";
+        std::fs::write(&zed.file, commented).unwrap();
+        assert!(matches!(
+            connect_file_agent(zed, program, true, &yes).unwrap(),
+            Connection::ByHand(reason) if reason.contains("comments")
+        ));
+        assert_eq!(std::fs::read_to_string(&zed.file).unwrap(), commented);
+        std::fs::write(&zed.file, "{\"vim_mode\": true}").unwrap();
+        connect_file_agent(zed, program, true, &yes).unwrap();
+        let written: Value =
+            serde_json::from_str(&std::fs::read_to_string(&zed.file).unwrap()).unwrap();
+        assert_eq!(written["vim_mode"], true);
+        assert_eq!(written["context_servers"]["tomacco"]["source"], "custom");
+
+        // A link, as dotfile managers make, and a malformed server list.
+        let cursor = agent("Cursor");
+        std::fs::create_dir_all(&cursor.directory).unwrap();
+        let target = home.path().join("dotfiles-mcp.json");
+        std::fs::write(&target, "{}").unwrap();
+        std::os::unix::fs::symlink(&target, &cursor.file).unwrap();
+        assert!(matches!(
+            connect_file_agent(cursor, program, true, &yes).unwrap(),
+            Connection::ByHand(_)
+        ));
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "{}");
+        std::fs::remove_file(&cursor.file).unwrap();
+        std::fs::write(&cursor.file, "{\"mcpServers\":[]}").unwrap();
+        assert!(matches!(
+            connect_file_agent(cursor, program, true, &yes).unwrap(),
+            Connection::ByHand(reason) if reason.contains("not an object")
+        ));
     }
 
     #[test]

@@ -85,6 +85,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
     let a = arguments(name, args)?;
     match name {
         "doctor" => toolchain::doctor().map(crate::setup::with_next_steps),
+        "capabilities" => crate::capabilities::capabilities(),
         "settings.get" => toolchain::settings(),
         "settings.configure" => toolchain::configure(&a),
         "desktop.status" => desktop::status().map(redacted),
@@ -221,6 +222,37 @@ mod tests {
             assert_eq!(op["inputSchema"]["additionalProperties"], false);
         }
         assert!(names.len() >= 76);
+    }
+    #[test]
+    fn every_operation_has_a_title_and_all_four_tool_annotations() {
+        // MCP reads a missing destructiveHint as true and a missing
+        // idempotentHint as false, so each operation states all four.
+        for op in manifest().as_array().unwrap() {
+            let name = s(op, "name");
+            assert!(!s(op, "title").is_empty(), "{name} has no title");
+            let hints = op["annotations"].as_object().unwrap();
+            let keys: Vec<&str> = hints.keys().map(String::as_str).collect();
+            assert_eq!(
+                keys,
+                [
+                    "readOnlyHint",
+                    "destructiveHint",
+                    "idempotentHint",
+                    "openWorldHint"
+                ],
+                "{name}"
+            );
+            assert!(hints.values().all(Value::is_boolean), "{name}");
+            if hints["readOnlyHint"] == true {
+                assert_eq!(hints["destructiveHint"], false, "{name}");
+                assert_eq!(hints["idempotentHint"], true, "{name}");
+            }
+        }
+        let hint = |name: &str, key: &str| operation(name).unwrap()["annotations"][key] == true;
+        assert!(hint("job.cancel", "destructiveHint"));
+        assert!(hint("catalog.remove", "destructiveHint"));
+        assert!(!hint("project.create", "destructiveHint"));
+        assert!(hint("files.write", "idempotentHint"));
     }
     #[test]
     fn validation_rejects_ambiguous_types_and_unsupported_arguments() {

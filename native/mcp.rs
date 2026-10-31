@@ -27,6 +27,8 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
     let _touches = crate::ios_emulator::control::TouchClient::open();
     let sink = Mutex::new(sink);
     let active = Mutex::new(std::collections::HashMap::<String, Cancellation>::new());
+    // Log messages are sent once the client asks for them with logging/setLevel.
+    let level: Level = Arc::new(std::sync::atomic::AtomicU8::new(u8::MAX));
     std::thread::scope(|scope| -> Result<()> {
         let mut initialized = false;
         loop {
@@ -89,12 +91,26 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
                 let protocol = s(&params, "protocolVersion");
                 respond(
                     &sink,
-                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
+                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{},"logging":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To see what this computer can do right now (Android emulator and devices, iOS builds, iPhones, the virtual iPhone), call capabilities. To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
                 )?;
                 continue;
             }
             if method != "ping" && !initialized {
                 respond(&sink, &rpc_error(id, -32000, "Initialize first"))?;
+                continue;
+            }
+            if method == "logging/setLevel" {
+                let reply = match LEVELS
+                    .iter()
+                    .position(|level| *level == s(&params, "level"))
+                {
+                    Some(index) => {
+                        level.store(index as u8, Ordering::Relaxed);
+                        json!({"jsonrpc":"2.0","id":id,"result":{}})
+                    }
+                    None => rpc_error(id, -32602, "level must be one of the syslog levels"),
+                };
+                respond(&sink, &reply)?;
                 continue;
             }
             // Small discovery methods are immediate; slow tools/resources run independently.
@@ -130,9 +146,32 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
             let method = method.to_owned();
             let sink = &sink;
             let active = &active;
+            let level = level.clone();
             scope.spawn(move || {
-                let result =
-                    with_cancellation(Some(token.clone()), || response(id, &method, &params));
+                let follower = Follower::new(&method, &params, level);
+                let (done, finished) = std::sync::mpsc::channel::<()>();
+                let result = std::thread::scope(|inner| {
+                    // Notifications about this request stop before its response is sent.
+                    if let Some(mut follower) = follower {
+                        let token = token.clone();
+                        inner.spawn(move || {
+                            while let Err(std::sync::mpsc::RecvTimeoutError::Timeout) =
+                                finished.recv_timeout(TICK)
+                            {
+                                if token.load(Ordering::Relaxed) {
+                                    return;
+                                }
+                                for notification in follower.tick(api::dispatch) {
+                                    let _ = respond(sink, &notification);
+                                }
+                            }
+                        });
+                    }
+                    let result =
+                        with_cancellation(Some(token.clone()), || response(id, &method, &params));
+                    drop(done);
+                    result
+                });
                 if !token.load(Ordering::Relaxed) {
                     let _ = respond(sink, &result);
                 }
@@ -141,6 +180,137 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
         }
     })
 }
+/// How often a running tool call reports its progress.
+const TICK: std::time::Duration = std::time::Duration::from_secs(1);
+
+/// The MCP log levels, least severe first.
+const LEVELS: [&str; 8] = [
+    "debug",
+    "info",
+    "notice",
+    "warning",
+    "error",
+    "critical",
+    "alert",
+    "emergency",
+];
+/// The index in LEVELS of the least severe message the client wants;
+/// u8::MAX until it calls logging/setLevel.
+type Level = std::sync::Arc<std::sync::atomic::AtomicU8>;
+
+/// Reports on one running tool call: `notifications/progress` once a
+/// second when the client sent a progress token. For `job.wait` the message
+/// is the job's state and its latest log line, and the total is the wait;
+/// and each new log line is a `notifications/message` at level info while
+/// the client's level lets info through.
+struct Follower {
+    token: Option<Value>,
+    level: Level,
+    tool: String,
+    /// The job a `job.wait` waits for, and how far its log has been read.
+    job: Option<String>,
+    offset: Option<u64>,
+    partial: String,
+    last_line: String,
+    total: Option<u64>,
+    ticks: u64,
+}
+impl Follower {
+    fn new(method: &str, params: &Value, level: Level) -> Option<Self> {
+        if method != "tools/call" {
+            return None;
+        }
+        let token = Some(params["_meta"]["progressToken"].clone())
+            .filter(|token| token.is_string() || token.is_i64() || token.is_u64());
+        let tool = s(params, "name").to_string();
+        let arguments = &params["arguments"];
+        let job = (tool == "job.wait")
+            .then(|| s(arguments, "job_id").to_string())
+            .filter(|id| !id.is_empty());
+        if token.is_none() && job.is_none() {
+            return None;
+        }
+        let total = job
+            .is_some()
+            .then(|| arguments["seconds"].as_u64().unwrap_or(30));
+        Some(Follower {
+            token,
+            level,
+            tool,
+            job,
+            offset: None,
+            partial: String::new(),
+            last_line: String::new(),
+            total,
+            ticks: 0,
+        })
+    }
+    /// The notifications for one more second of waiting.
+    fn tick(&mut self, dispatch: impl Fn(&str, &Value) -> Result) -> Vec<Value> {
+        self.ticks += 1;
+        let mut notifications = Vec::new();
+        let logging = self.level.load(std::sync::atomic::Ordering::Relaxed) <= 1;
+        let mut message = format!("{} running for {} s", self.tool, self.ticks);
+        if let Some(id) = self.job.clone().filter(|_| logging || self.token.is_some()) {
+            if let Some((state, lines)) = self.read_log(&id, &dispatch) {
+                if let Some(line) = lines.last() {
+                    self.last_line = line.chars().take(200).collect();
+                }
+                message = format!("Job {state}");
+                if !self.last_line.is_empty() {
+                    message = format!("{message}: {}", self.last_line);
+                }
+                if logging {
+                    notifications.extend(lines.into_iter().map(|line| {
+                        json!({"jsonrpc":"2.0","method":"notifications/message",
+                            "params":{"level":"info","logger":format!("job {id}"),"data":line}})
+                    }));
+                }
+            }
+        }
+        if let Some(token) = &self.token {
+            let mut progress =
+                json!({"progressToken":token,"progress":self.ticks,"message":message});
+            if let Some(total) = self.total {
+                progress["total"] = json!(total.max(self.ticks));
+            }
+            notifications
+                .push(json!({"jsonrpc":"2.0","method":"notifications/progress","params":progress}));
+        }
+        notifications
+    }
+    /// The job's state and the complete log lines written since the last
+    /// tick. The first tick starts at the end of the log, so a repeated wait
+    /// does not report the same lines again.
+    fn read_log(
+        &mut self,
+        id: &str,
+        dispatch: &impl Fn(&str, &Value) -> Result,
+    ) -> Option<(String, Vec<String>)> {
+        let offset = match self.offset {
+            Some(offset) => offset,
+            None => {
+                let job = dispatch("job.get", &json!({"job_id":id})).ok()?;
+                let size = fs::metadata(s(&job, "log_path")).map_or(0, |m| m.len());
+                self.offset = Some(size);
+                return Some((s(&job, "state").to_string(), Vec::new()));
+            }
+        };
+        let logs = dispatch("job.logs", &json!({"job_id":id,"offset":offset})).ok()?;
+        self.offset = logs["next_offset"].as_u64().or(Some(offset));
+        self.partial.push_str(s(&logs, "text"));
+        let mut lines = Vec::new();
+        while let Some(end) = self.partial.find('\n') {
+            let line: String = self.partial.drain(..=end).collect();
+            let line = line.trim_end().to_string();
+            if !line.is_empty() {
+                lines.push(line);
+            }
+        }
+        Some((s(&logs, "state").to_string(), lines))
+    }
+}
+
 fn response(id: Value, method: &str, params: &Value) -> Value {
     match handle(method, params) {
         Ok(Some(value)) => json!({"jsonrpc":"2.0","id":id,"result":value}),
@@ -175,15 +345,22 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
                             }
                         }
                     }
-                    json!({"content":content,"isError":false})
+                    json!({"content":content,"structuredContent":structured(value),"isError":false})
                 }
                 Err(error) => {
-                    json!({"content":[{"type":"text","text":json!({"error":error.value()}).to_string()}],"isError":true})
+                    let error = json!({"error":error.value()});
+                    let mut reply = json!({"content":[{"type":"text","text":error.to_string()}],"isError":true});
+                    // A declared outputSchema describes results, not errors.
+                    if api::operation(name).is_ok_and(|op| op.get("outputSchema").is_none()) {
+                        reply["structuredContent"] = error;
+                    }
+                    reply
                 }
             }
         }
         "resources/list" => {
             let mut resources = vec![
+                json!({"uri":"tomacco://capabilities","name":"What this computer can do","description":"The capabilities operation's result: Android, iOS and the virtual iPhone, each ready or with what it lacks.","mimeType":"application/json"}),
                 json!({"uri":"tomacco://catalog","name":"Device catalogue","mimeType":"application/json"}),
                 json!({"uri":"tomacco://jobs","name":"Recent jobs","mimeType":"application/json"}),
                 json!({"uri":"tomacco://workspaces","name":"Saved development workspaces","mimeType":"application/json"}),
@@ -206,6 +383,7 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
                 ));
             }
             let op = match uri {
+                "tomacco://capabilities" => "capabilities",
                 "tomacco://catalog" => "catalog.list",
                 "tomacco://jobs" => "job.list",
                 "tomacco://workspaces" => "workspace.list",
@@ -243,6 +421,17 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
         }
         _ => return Ok(None),
     }))
+}
+
+/// A result as MCP structured content, which must be an object: an object
+/// result is itself, anything else is `{"result": value}`. The text content
+/// keeps the result exactly as the CLI prints it.
+fn structured(value: Value) -> Value {
+    if value.is_object() {
+        value
+    } else {
+        json!({ "result": value })
+    }
 }
 
 /// A guide from docs/, compiled in so that it matches this version and an
@@ -377,6 +566,145 @@ mod tests {
         );
     }
     #[test]
+    fn results_and_errors_come_as_structured_content_too() {
+        assert_eq!(structured(json!({"id":"a"})), json!({"id":"a"}));
+        assert_eq!(structured(json!([1, 2])), json!({"result":[1,2]}));
+        assert_eq!(structured(json!("text")), json!({"result":"text"}));
+        let reply = handle(
+            "tools/call",
+            &json!({"name":"device.install","arguments":{}}),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(reply["isError"], true);
+        assert_eq!(
+            reply["structuredContent"]["error"]["code"],
+            "invalid_argument"
+        );
+        let text: Value = serde_json::from_str(s(&reply["content"][0], "text")).unwrap();
+        assert_eq!(text, reply["structuredContent"]);
+    }
+    #[test]
+    fn a_progress_token_gets_progress_and_a_job_wait_its_state_and_log() {
+        let call = |arguments: Value, meta: Value| json!({"name":"job.wait","arguments":arguments,"_meta":meta});
+        let id = "0123456789abcdef0123456789abcdef";
+        let off = || -> Level { std::sync::Arc::new(u8::MAX.into()) };
+        assert!(
+            Follower::new(
+                "tools/call",
+                &json!({"name":"job.get","arguments":{"job_id":id}}),
+                off()
+            )
+            .is_none()
+        );
+        assert!(
+            Follower::new(
+                "resources/read",
+                &json!({"_meta":{"progressToken":1}}),
+                off()
+            )
+            .is_none()
+        );
+        // Any other tool reports how long it has run.
+        let mut other = Follower::new(
+            "tools/call",
+            &json!({"name":"device.capture","_meta":{"progressToken":"t"}}),
+            off(),
+        )
+        .unwrap();
+        let first = other.tick(|_, _| unreachable!());
+        assert_eq!(first[0]["method"], "notifications/progress");
+        assert_eq!(first[0]["params"]["progressToken"], "t");
+        assert_eq!(first[0]["params"]["progress"], 1);
+        assert!(first[0]["params"].get("total").is_none());
+        assert_eq!(
+            other.tick(|_, _| unreachable!())[0]["params"]["progress"],
+            2
+        );
+
+        let directory = tempfile::tempdir().unwrap();
+        let log = directory.path().join("job.log");
+        fs::write(&log, "old line\n").unwrap();
+        let path = log.to_string_lossy().into_owned();
+        let pieces = std::cell::RefCell::new(vec!["building\nlin", "king\n"]);
+        let dispatch = |operation: &str, arguments: &Value| -> Result {
+            assert_eq!(arguments["job_id"], id);
+            match operation {
+                "job.get" => Ok(json!({"state":"running","log_path":path})),
+                "job.logs" => {
+                    assert_eq!(arguments["offset"], 9);
+                    let text = pieces.borrow_mut().remove(0);
+                    Ok(json!({"state":"running","text":text,"next_offset":9}))
+                }
+                _ => panic!("unexpected {operation}"),
+            }
+        };
+        let mut wait = Follower::new(
+            "tools/call",
+            &call(
+                json!({"job_id":id,"seconds":20}),
+                json!({"progressToken":7}),
+            ),
+            off(),
+        )
+        .unwrap();
+        let messages: Vec<Value> = (0..3)
+            .map(|_| wait.tick(dispatch)[0]["params"].clone())
+            .collect();
+        // The log is read from where it ended when the wait began.
+        assert_eq!(messages[0]["message"], "Job running");
+        assert_eq!(messages[1]["message"], "Job running: building");
+        assert_eq!(messages[2]["message"], "Job running: linking");
+        assert_eq!(messages[2]["progress"], 3);
+        assert_eq!(messages[2]["total"], 20);
+        assert_eq!(messages[2]["progressToken"], 7);
+    }
+    #[test]
+    fn job_log_lines_are_log_messages_once_the_client_asks_for_info() {
+        let id = "0123456789abcdef0123456789abcdef";
+        let directory = tempfile::tempdir().unwrap();
+        let log = directory.path().join("job.log");
+        fs::write(&log, "").unwrap();
+        let path = log.to_string_lossy().into_owned();
+        let reads = std::cell::Cell::new(0);
+        let dispatch = |operation: &str, _: &Value| -> Result {
+            reads.set(reads.get() + 1);
+            match operation {
+                "job.get" => Ok(json!({"state":"running","log_path":path})),
+                "job.logs" => Ok(json!({"state":"running","text":"one\ntwo\n","next_offset":8})),
+                _ => panic!("unexpected {operation}"),
+            }
+        };
+        let level: Level = std::sync::Arc::new(u8::MAX.into());
+        let params = json!({"name":"job.wait","arguments":{"job_id":id}});
+        let mut wait = Follower::new("tools/call", &params, level.clone()).unwrap();
+        // Before logging/setLevel, and at warning, nothing is read or sent.
+        assert!(wait.tick(dispatch).is_empty());
+        level.store(3, std::sync::atomic::Ordering::Relaxed);
+        assert!(wait.tick(dispatch).is_empty());
+        assert_eq!(reads.get(), 0);
+        level.store(1, std::sync::atomic::Ordering::Relaxed);
+        assert!(wait.tick(dispatch).is_empty());
+        let sent = wait.tick(dispatch);
+        assert_eq!(sent.len(), 2);
+        assert_eq!(sent[0]["method"], "notifications/message");
+        assert_eq!(sent[0]["params"]["level"], "info");
+        assert_eq!(sent[0]["params"]["logger"], format!("job {id}"));
+        assert_eq!(sent[1]["params"]["data"], "two");
+
+        let input = b"{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"logging/setLevel\",\"params\":{\"level\":\"loud\"}}\n{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"logging/setLevel\",\"params\":{\"level\":\"debug\"}}\n";
+        let mut output = Vec::new();
+        serve(&input[..], &mut output).unwrap();
+        let values: Vec<Value> = String::from_utf8(output)
+            .unwrap()
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        assert_eq!(values[0]["result"]["capabilities"]["logging"], json!({}));
+        assert_eq!(values[1]["error"]["code"], -32602);
+        assert_eq!(values[2]["result"], json!({}));
+    }
+    #[test]
     fn guides_are_listed_and_read_as_markdown() {
         let list = handle("resources/list", &json!({})).unwrap().unwrap();
         let uris: Vec<&str> = list["resources"]
@@ -386,6 +714,7 @@ mod tests {
             .map(|r| s(r, "uri"))
             .collect();
         assert!(uris.contains(&"tomacco://jobs"));
+        assert!(uris.contains(&"tomacco://capabilities"));
         assert!(uris.contains(&"tomacco://docs/recipes"));
         assert!(uris.contains(&"tomacco://docs/agents"));
         let read = handle("resources/read", &json!({"uri":"tomacco://docs/recipes"}))
