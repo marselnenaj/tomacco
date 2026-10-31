@@ -113,6 +113,11 @@ pub const TOOLS: &[(&str, &[&str], &str)] = &[
     ),
     ("node", &["--version"], "Install Node.js"),
     ("npm", &["--version"], "Install npm"),
+    (
+        "npx",
+        &["--version"],
+        "Install Node.js with npm, which provides npx",
+    ),
     ("ssh", &["-V"], "Install OpenSSH"),
 ];
 pub fn settings() -> Result {

@@ -1,4 +1,4 @@
-use crate::{core::*, gradle_model, jobs, swift, toolchain as tc};
+use crate::{core::*, gradle_model, javascript, jobs, swift, toolchain as tc};
 use serde_json::{Value, json};
 use std::{collections::BTreeSet, fs, path::Path};
 
@@ -71,6 +71,9 @@ pub fn inspect(value: &str) -> Result {
                 kinds.push(name);
             }
         }
+        if kinds.contains(&"expo") {
+            platforms.insert("android");
+        }
         kinds.push("web");
         platforms.insert("web");
     }
@@ -100,9 +103,11 @@ pub fn inspect(value: &str) -> Result {
     }
     let mut names: Vec<_> = tasks.keys().cloned().collect();
     names.sort();
-    Ok(
-        json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"android":gradle.as_deref().map(gradle_model::read),"tasks":names,"configuration":config}),
-    )
+    let mut value = json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"android":gradle.as_deref().map(gradle_model::read),"tasks":names,"configuration":config});
+    if let Some(framework) = javascript::framework(&kinds) {
+        value["javascript"] = javascript::describe(&root, framework, gradle.as_deref());
+    }
+    Ok(value)
 }
 fn kind(project: &Value, name: &str) -> bool {
     project["kinds"]
@@ -381,20 +386,63 @@ pub fn run(a: &Value) -> Result {
             json!({"steps":[{"argv":[tc::find("xtool")?,"dev","run","--udid",device,"--configuration",config]},{"argv":[crate::core::own_executable()?,"_iphone_launch",launch.to_string()]}],"cwd":root,"env":env,"exclusive":root,"single_active":true}),
         );
     }
+    let framework = if platform == "android" {
+        javascript::framework(
+            &project["kinds"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>(),
+        )
+    } else {
+        None
+    };
+    if framework == Some("expo") {
+        return javascript::run_expo(&project, a, env);
+    }
+    if framework == Some("react-native") {
+        javascript::prepare_react_native(&project)?;
+    }
     if kind(&project, "gradle") && platform == "android" {
         let (task, id) = android_target(&project, a)?;
         let mut args = gradle(&project)?;
         args.extend(["--console=plain".into(), task]);
         env["ANDROID_SERIAL"] = json!(device);
-        return jobs::submit(
-            &format!("Deploy {}", s(&project, "name")),
-            json!({"steps":[{"argv":args},{"argv":[crate::core::own_executable()?,"call","android.launch",json!({"device":device,"bundle_id":id}).to_string()]}],"cwd":project["gradle_directory"],"env":env,"artifacts":["**/build/outputs/apk/**/*.apk"],"exclusive":root,"single_active":true}),
-        );
+        let launch = argv(&[
+            &crate::core::own_executable()?.to_string_lossy(),
+            "call",
+            "android.launch",
+            &json!({"device":device,"bundle_id":id}).to_string(),
+        ]);
+        let mut steps = vec![json!({"argv":args})];
+        // A React Native debug build loads its JavaScript from Metro.
+        let serves = framework == Some("react-native") && !release_build(a);
+        if serves {
+            steps.push(javascript::metro_step(&project, device, launch)?);
+        } else {
+            steps.push(json!({"argv":launch}));
+        }
+        let mut spec = json!({"steps":steps,"cwd":project["gradle_directory"],"env":env,"artifacts":["**/build/outputs/apk/**/*.apk"],"exclusive":root,"single_active":true});
+        if serves {
+            spec["timeout"] = json!(86400);
+        }
+        return jobs::submit(&format!("Deploy {}", s(&project, "name")), spec);
     }
     Err(Error::new(
         "action_unsupported",
         "Use build, device.install and device.app for this project type",
     ))
+}
+/// Whether a run installs a release build: the release configuration, or a
+/// variant whose build type is release.
+fn release_build(a: &Value) -> bool {
+    let variant = s(a, "variant");
+    if variant.is_empty() {
+        s(a, "configuration") == "release"
+    } else {
+        variant.ends_with("Release") || variant == "release"
+    }
 }
 fn capitalized(value: &str) -> String {
     let mut chars = value.chars();

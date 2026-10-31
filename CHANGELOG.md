@@ -59,6 +59,9 @@ operations and their JSON results.
     flavors, variants and minimum, target and compile SDK from the Gradle files and
     versions catalog without running Gradle, and lists what it could not resolve.
     `project.run` uses that ID and takes a `variant` for apps with product flavors.
+  - `project.run` runs the Android app of a React Native project (Gradle, then Metro on
+    port 8081) or an Expo project (`npx expo run:android`), and refuses with the install
+    command when `node_modules` lacks the framework. Tested with stand-in tools only.
 - **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
   logs and old test reports in the data directory. A dry run by default.
 - **iPhone.**

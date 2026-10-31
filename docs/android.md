@@ -76,6 +76,26 @@ installed SDK platform, and the Android Gradle Plugin 9.1.1.
 - A Flutter run supports hot reload through `job.send`, and holds the project's
   workspace lock until it exits.
 
+## React Native and Expo
+
+`project.inspect` names the framework under `javascript`, with the package manager
+its lockfile implies, whether `node_modules` has the framework, and how
+`project.run` will run the Android app.
+
+- **React Native.** `project.run` installs `android/` with Gradle, then starts Metro
+  with `npx react-native start` on port 8081, reverses that port to the device and
+  launches the app. The job keeps Metro running until you cancel it. A release run
+  installs and launches without Metro.
+- **Expo.** `project.run` runs `npx expo run:android --device SERIAL`, which writes
+  `android/` with prebuild when it is missing and serves the JavaScript with Metro
+  until you cancel the job. A release run passes `--variant release --no-bundler`.
+- Install the dependencies first (`npm install`, or your package manager); without
+  them the run answers `dependencies_missing` with the command. Without Node.js it
+  answers `tool_missing`.
+
+These runs are covered by tests with stand-in tools; no React Native or Expo app was
+built with them yet.
+
 ## Inspect an APK or AAB
 
 `android.package_inspect` reads a package file without a device: package name, version

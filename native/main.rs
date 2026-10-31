@@ -19,6 +19,7 @@ mod gradle_model;
 mod instrumentation;
 mod ios_emulator;
 mod iphone_setup;
+mod javascript;
 mod jdwp;
 mod jobs;
 mod mcp;
@@ -322,6 +323,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             ios_emulator::pmp::worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing PMP request"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_serve_then") => {
+            javascript::serve_worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing server request"))?,
             )?;
             return Ok(0);
         }
