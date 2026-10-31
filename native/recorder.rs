@@ -406,12 +406,15 @@ impl Live {
             )),
             "touch" => match s(a, "phase") {
                 "down" => {
+                    // The hold is timed from after the hierarchy is read,
+                    // when the finger reaches the device.
+                    let xml = hierarchy();
                     self.touch = Some(Touch {
                         x,
                         y,
                         last: (x, y),
                         started: std::time::Instant::now(),
-                        xml: hierarchy(),
+                        xml,
                     });
                     None
                 }
@@ -558,7 +561,12 @@ mod tests {
         store
             .handle(&json!({"device":"emulator-5554","action":"start"}))
             .unwrap();
-        assert!(live.before(&down, screen).is_none());
+        // A slow hierarchy read does not make the touch a long click.
+        let slow = || {
+            std::thread::sleep(std::time::Duration::from_millis(600));
+            screen()
+        };
+        assert!(live.before(&down, slow).is_none());
         let step = live.before(
             &json!({"action":"touch","phase":"move","x":0.1,"y":0.23}),
             screen,
@@ -580,6 +588,12 @@ mod tests {
             .unwrap();
         assert_eq!(status["steps"], 2);
         assert_eq!(status["skipped"], json!(["rotate", "no_hierarchy"]));
+        let recorded = read_json(&store.file("emulator-5554"), None).unwrap();
+        assert_eq!(
+            recorded["steps"],
+            json!([{"action":"click","selector":{"resource_id":"dev.example:id/add"}},
+                   {"action":"key","key":"KEYCODE_BACK"}])
+        );
     }
     #[test]
     fn a_recording_starts_collects_steps_and_writes_a_scenario() {

@@ -643,6 +643,10 @@ tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"de
 What has been run: `testing.visual_diff`, `testing.accessibility` (on the Settings app), `testing.crashes` (with a crash from
 `am crash`) and the crash list of `testing.run` on an API 36 x86_64 emulator, and `testing.results` on a `testing.run` report. ANRs,
 native crashes and Gradle's own result files have been read only from sample text in the unit tests.
+On an API 36 x86_64 emulator with the Settings app: `testing.record` with `android.input`, `testing.action` and `runtime.input`
+(touch, key, swipe and rotation sent through a display session from the command line, not by hand in the desktop), the recorded
+scenario passing `testing.lint` and `testing.run`, and a directory of two scenarios run with `shard` and `retries`. A pass after a
+failure (`flaky`) has been seen only with a stand-in adb in the tests.
 
 `profile.capture` records Android Perfetto traces. Configure the official `trace_processor`, then use `profile.analyze` and `profile.compare`. Metrics that are
 not available are null, not zero. A count of frames with jank tags is not the same as visible drops.
