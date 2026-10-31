@@ -147,6 +147,22 @@ class FrameworkTests(Isolated):
         self.assertEqual(log.read_text().splitlines(), ["run build", "cap sync android", "gradle --console=plain :app:installDebug"])
         self.assertIn("io.ionic.starter/.MainActivity", jobs.logs(job["id"])["text"])
 
+    def test_kotlin_multiplatform_android_plans_with_gradle_and_ios_needs_a_mac(self):
+        root = self.root / "Kmp"
+        for relative, text in (("settings.gradle.kts", 'include(":composeApp")\n'),
+                               ("composeApp/build.gradle.kts", 'plugins { kotlin("multiplatform"); id("com.android.application") }\nkotlin { androidTarget(); iosArm64() }\nandroid { defaultConfig { applicationId = "dev.kmp" } }\n'),
+                               ("gradlew", "#!/bin/sh\n")):
+            (root / relative).parent.mkdir(parents=True, exist_ok=True)
+            (root / relative).write_text(text)
+        inspected = dispatch("project.inspect", {"path": str(root)})
+        self.assertIn("kotlin-multiplatform", inspected["kinds"])
+        self.assertEqual(inspected["multiplatform"]["ios"]["targets"], ["iosArm64"])
+        plan = dispatch("project.plan", {"path": str(root), "platform": "android"})
+        self.assertEqual(plan["steps"][0]["argv"][-1], "assembleDebug")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("project.plan", {"path": str(root), "platform": "ios"})
+        self.assertEqual(refused.exception.code, "macos_required")
+
 
 if __name__ == "__main__":
     unittest.main()

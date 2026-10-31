@@ -101,6 +101,22 @@ its lockfile implies, whether `node_modules` has the framework, and how
 These runs are covered by tests with stand-in tools; no React Native, Expo or Capacitor
 app was built with them yet.
 
+## Kotlin Multiplatform and Compose Multiplatform
+
+`project.inspect` adds the kinds `kotlin-multiplatform` and, with the
+`org.jetbrains.compose` plugin, `compose-multiplatform`. `multiplatform` lists each
+module's targets (`androidTarget`, `iosArm64`, `jvm` and so on) and the Xcode project
+of the iOS app, such as `iosApp/iosApp.xcodeproj`.
+
+- The Android target builds and runs like any Gradle app: `project.run` installs the
+  app module, for example `:composeApp:installDebug`, and launches its ID.
+- The iOS target does not build on Linux. Kotlin/Native links iOS frameworks only on
+  macOS with Xcode, so `project.plan` and `project.run` for `ios` answer
+  `macos_required`. Build it on a Mac: configure one with `remote.configure`, then use
+  `apple.build` for the Xcode project or `remote.run` for Gradle.
+
+Tested on fixture projects only; no Kotlin Multiplatform app was built here.
+
 ## Inspect an APK or AAB
 
 `android.package_inspect` reads a package file without a device: package name, version

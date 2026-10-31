@@ -64,6 +64,9 @@ operations and their JSON results.
     command when `node_modules` lacks the framework. Tested with stand-in tools only.
   - `project.run` runs a Capacitor or Ionic app on Android: the web build script,
     `npx cap sync android`, Gradle install and launch. Tested with stand-in tools only.
+  - `project.inspect` recognises Kotlin Multiplatform and Compose Multiplatform builds, with
+    each module's targets and the iOS app's Xcode project. `project.run` runs the Android
+    target; the iOS target answers `macos_required` with what it needs.
 - **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
   logs and old test reports in the data directory. A dry run by default.
 - **iPhone.**

@@ -46,9 +46,23 @@ pub fn inspect(value: &str) -> Result {
             .iter()
             .any(|p| dir.join(p).is_file())
         });
-    if gradle.is_some() {
+    let mut multiplatform = None;
+    if let Some(dir) = &gradle {
         kinds.push("gradle");
         platforms.insert("android");
+        multiplatform = gradle_model::multiplatform(dir);
+        if let Some(mp) = &multiplatform {
+            kinds.push("kotlin-multiplatform");
+            if mp["compose_multiplatform"] == true {
+                kinds.push("compose-multiplatform");
+            }
+            if mp["ios"]["targets"]
+                .as_array()
+                .is_some_and(|t| !t.is_empty())
+            {
+                platforms.insert("ios");
+            }
+        }
     }
     if root.join("Package.swift").is_file() {
         kinds.push("swift");
@@ -104,6 +118,9 @@ pub fn inspect(value: &str) -> Result {
     let mut names: Vec<_> = tasks.keys().cloned().collect();
     names.sort();
     let mut value = json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"android":gradle.as_deref().map(gradle_model::read),"tasks":names,"configuration":config});
+    if let Some(mp) = multiplatform {
+        value["multiplatform"] = mp;
+    }
     if let Some(framework) = javascript::framework(&kinds) {
         value["javascript"] = javascript::describe(&root, framework, gradle.as_deref());
     }
@@ -209,6 +226,8 @@ pub fn plan(a: &Value) -> Result {
             .remedy("Define tasks in tomacco.json"));
         }
         args = strings(entry);
+    } else if kind(&project, "kotlin-multiplatform") && platform == "ios" {
+        return Err(kotlin_ios_error());
     } else if kind(&project, "flutter") {
         let tool = tc::find("flutter")?;
         match action {
@@ -386,6 +405,9 @@ pub fn run(a: &Value) -> Result {
             json!({"steps":[{"argv":[tc::find("xtool")?,"dev","run","--udid",device,"--configuration",config]},{"argv":[crate::core::own_executable()?,"_iphone_launch",launch.to_string()]}],"cwd":root,"env":env,"exclusive":root,"single_active":true}),
         );
     }
+    if kind(&project, "kotlin-multiplatform") && platform == "ios" {
+        return Err(kotlin_ios_error());
+    }
     let framework = if platform == "android" {
         javascript::framework(
             &project["kinds"]
@@ -439,6 +461,13 @@ pub fn run(a: &Value) -> Result {
         "action_unsupported",
         "Use build, device.install and device.app for this project type",
     ))
+}
+fn kotlin_ios_error() -> Error {
+    Error::new(
+        "macos_required",
+        "The iOS target of a Kotlin Multiplatform project builds only on macOS",
+    )
+    .remedy(gradle_model::KMP_IOS_NEEDS)
 }
 /// Whether a run installs a release build: the release configuration, or a
 /// variant whose build type is release.
@@ -825,5 +854,36 @@ mod configuration_tests {
         )
         .unwrap();
         assert_eq!(task, "installDebug");
+    }
+
+    #[test]
+    fn a_kotlin_multiplatform_project_runs_android_and_explains_ios() {
+        let project = fixture(&[
+            ("settings.gradle.kts", "include(\":composeApp\")\n"),
+            (
+                "composeApp/build.gradle.kts",
+                "plugins { kotlin(\"multiplatform\"); id(\"com.android.application\"); id(\"org.jetbrains.compose\") }\nkotlin { androidTarget(); iosArm64(); iosSimulatorArm64() }\nandroid { namespace = \"dev.kmp\"; defaultConfig { applicationId = \"dev.kmp.app\" } }\n",
+            ),
+        ]);
+        let path = project.path().to_string_lossy().to_string();
+        let inspected = inspect(&path).unwrap();
+        assert_eq!(
+            inspected["kinds"],
+            json!(["gradle", "kotlin-multiplatform", "compose-multiplatform"])
+        );
+        assert_eq!(inspected["platforms"], json!(["android", "ios"]));
+        assert_eq!(inspected["multiplatform"]["ios"]["builds_on_linux"], false);
+        let (task, id) = android_target(&inspected, &json!({"configuration":"debug"})).unwrap();
+        assert_eq!(
+            (task.as_str(), id.as_str()),
+            (":composeApp:installDebug", "dev.kmp.app")
+        );
+        let error = plan(&json!({"path":path,"platform":"ios","action":"build"})).unwrap_err();
+        assert_eq!(error.code, "macos_required");
+        assert!(error.remedy.contains("remote.configure"));
+        let error =
+            run(&json!({"path":path,"platform":"ios","device":"00008110-0011223344556677"}))
+                .unwrap_err();
+        assert_eq!(error.code, "macos_required");
     }
 }

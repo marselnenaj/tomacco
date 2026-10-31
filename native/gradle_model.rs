@@ -529,7 +529,7 @@ pub fn catalog_file(dir: &Path) -> Option<PathBuf> {
 
 /// Every module directory of a build: the root and its includes, as
 /// (Gradle path, directory). Includes outside the build are skipped.
-pub fn modules(dir: &Path) -> Vec<(String, PathBuf)> {
+pub fn modules_of(dir: &Path) -> Vec<(String, PathBuf)> {
     let mut found = vec![(String::new(), dir.to_path_buf())];
     if let Some(text) = settings_file(dir).and_then(|p| read_text(&p)) {
         let dirs = project_dirs(&text);
@@ -547,13 +547,19 @@ pub fn modules(dir: &Path) -> Vec<(String, PathBuf)> {
     found
 }
 
+/// The script without plugin declarations marked `apply false`, with which a
+/// root build declares plugins for its modules.
+fn without_apply_false(text: &str) -> String {
+    Regex::new(r"(?m)^[^\n]*\bapply\s*\(?\s*false[^\n]*$")
+        .unwrap()
+        .replace_all(text, "")
+        .into_owned()
+}
+
 /// Whether a build script applies the Android application plugin, directly,
 /// through a catalog alias or through a convention plugin named for it.
 fn applies_application(text: &str, catalog: &Catalog) -> bool {
-    // A root build declares plugins for its modules with `apply false`.
-    let text = &Regex::new(r"(?m)^[^\n]*\bapply\s*\(?\s*false[^\n]*$")
-        .unwrap()
-        .replace_all(text, "");
+    let text = &without_apply_false(text);
     if text.contains("com.android.application") {
         return true;
     }
@@ -889,7 +895,7 @@ pub fn read(dir: &Path) -> Value {
         }
     }
     let mut apps = Vec::new();
-    for (gradle_path, module_dir) in modules(dir) {
+    for (gradle_path, module_dir) in modules_of(dir) {
         let Some(script) = build_file(&module_dir).and_then(|p| read_text(&p)) else {
             continue;
         };
@@ -918,6 +924,108 @@ pub fn read(dir: &Path) -> Value {
         }
     }
     json!({"app_modules":apps,"application_ids":ids,"read_from":"build files, without running Gradle"})
+}
+
+/// Whether a build script applies a plugin, by id or through a catalog alias,
+/// or an alias whose name, without separators, is one of `names`.
+fn applies(text: &str, catalog: &Catalog, ids: &[&str], names: &[&str]) -> bool {
+    let quoted = Regex::new(r#"["']([\w.-]+)["']"#).unwrap();
+    if quoted.captures_iter(text).any(|c| ids.contains(&&c[1])) {
+        return true;
+    }
+    let alias = Regex::new(r#"alias\(\s*libs\.plugins\.([\w.]+)\s*\)"#).unwrap();
+    alias
+        .captures_iter(text)
+        .any(|c| match catalog.plugin_by_accessor(&c[1]) {
+            Some(p) => ids.contains(&p.module.as_str()),
+            None => names.contains(&accessor(&c[1]).to_lowercase().replace('.', "").as_str()),
+        })
+}
+
+/// What iOS needs in a Kotlin Multiplatform project.
+pub const KMP_IOS_NEEDS: &str = "Kotlin/Native links iOS frameworks only on macOS with Xcode; on Linux Gradle skips the Apple binaries. Build the iOS app on a Mac: configure it with remote.configure, then use apple.build for the Xcode project or remote.run for Gradle.";
+
+/// A Kotlin Multiplatform build: its modules and their targets, whether it
+/// uses Compose Multiplatform, and what its iOS side needs. None for a build
+/// without the Kotlin Multiplatform plugin.
+pub fn multiplatform(dir: &Path) -> Option<Value> {
+    let catalog = catalog_file(dir)
+        .and_then(|p| read_text(&p))
+        .map(|t| parse_catalog(&t))
+        .unwrap_or_default();
+    let target = Regex::new(
+        r"(?:^|[^\w.])(androidTarget|androidLibrary|iosX64|iosArm64|iosSimulatorArm64|jvm|js|wasmJs|wasmWasi|macosX64|macosArm64|linuxX64|linuxArm64|mingwX64|tvosArm64|watchosArm64)\s*[({]",
+    )
+    .unwrap();
+    let mut modules = Vec::new();
+    let mut compose = false;
+    let mut ios = Vec::new();
+    for (gradle_path, module_dir) in modules_of(dir) {
+        let Some(script) = build_file(&module_dir).and_then(|p| read_text(&p)) else {
+            continue;
+        };
+        let script = strip_comments(&script);
+        let script = without_apply_false(&script);
+        if script.contains("kotlin(\"multiplatform\")")
+            || applies(
+                &script,
+                &catalog,
+                &["org.jetbrains.kotlin.multiplatform"],
+                &["kotlinmultiplatform", "multiplatform"],
+            )
+        {
+            let mut targets: Vec<String> = Vec::new();
+            for body in blocks(&script, "kotlin") {
+                for c in target.captures_iter(body) {
+                    let name = c[1].replace("androidLibrary", "androidTarget");
+                    if !targets.contains(&name) {
+                        targets.push(name);
+                    }
+                }
+            }
+            for t in targets.iter().filter(|t| t.starts_with("ios")) {
+                if !ios.contains(t) {
+                    ios.push(t.clone());
+                }
+            }
+            compose |= applies(
+                &script,
+                &catalog,
+                &["org.jetbrains.compose"],
+                &["composemultiplatform", "jetbrainscompose"],
+            );
+            modules.push(json!({
+                "module": if gradle_path.is_empty() { String::new() } else { format!(":{gradle_path}") },
+                "targets": targets,
+            }));
+        }
+    }
+    if modules.is_empty() {
+        return None;
+    }
+    let xcode = fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_dir())
+        .flat_map(|e| {
+            fs::read_dir(e.path())
+                .into_iter()
+                .flatten()
+                .filter_map(|e| e.ok())
+        })
+        .map(|e| e.path())
+        .find(|p| p.extension().is_some_and(|x| x == "xcodeproj"));
+    Some(json!({
+        "compose_multiplatform": compose,
+        "modules": modules,
+        "ios": {
+            "targets": ios,
+            "xcode_project": xcode,
+            "builds_on_linux": false,
+            "needs": KMP_IOS_NEEDS,
+        },
+    }))
 }
 
 #[cfg(test)]
@@ -1126,5 +1234,74 @@ android {
         assert_eq!(app["application_id"], Value::Null);
         assert!(app["note"].as_str().unwrap().contains("convention plugin"));
         assert_eq!(model["application_ids"], json!([]));
+    }
+
+    #[test]
+    fn a_compose_multiplatform_layout_is_recognised_with_its_ios_needs() {
+        let root = tempfile::tempdir().unwrap();
+        let root = root.path();
+        write(
+            root,
+            "settings.gradle.kts",
+            "rootProject.name = \"Kmp\"\ninclude(\":composeApp\")\ninclude(\":shared\")\n",
+        );
+        write(
+            root,
+            "gradle/libs.versions.toml",
+            "[versions]\nandroid-minSdk = \"24\"\n[plugins]\nandroidApplication = { id = \"com.android.application\", version = \"8.7.3\" }\nkotlinMultiplatform = { id = \"org.jetbrains.kotlin.multiplatform\", version = \"2.2.10\" }\ncomposeMultiplatform = { id = \"org.jetbrains.compose\", version = \"1.9.0\" }\n",
+        );
+        write(
+            root,
+            "build.gradle.kts",
+            "plugins {\n alias(libs.plugins.androidApplication) apply false\n alias(libs.plugins.kotlinMultiplatform) apply false\n}\n",
+        );
+        write(
+            root,
+            "composeApp/build.gradle.kts",
+            "plugins {\n alias(libs.plugins.kotlinMultiplatform)\n alias(libs.plugins.androidApplication)\n alias(libs.plugins.composeMultiplatform)\n}\nkotlin {\n androidTarget { }\n listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { it.binaries.framework { baseName = \"ComposeApp\" } }\n jvm(\"desktop\")\n}\nandroid {\n namespace = \"dev.kmp\"\n defaultConfig { applicationId = \"dev.kmp.app\"; minSdk = libs.versions.android.minSdk.get().toInt() }\n}\n",
+        );
+        write(
+            root,
+            "shared/build.gradle.kts",
+            "plugins { kotlin(\"multiplatform\") }\nkotlin { jvm() }\n",
+        );
+        fs::create_dir_all(root.join("iosApp/iosApp.xcodeproj")).unwrap();
+        let mp = multiplatform(root).unwrap();
+        assert_eq!(mp["compose_multiplatform"], true);
+        assert_eq!(mp["modules"][0]["module"], ":composeApp");
+        assert_eq!(
+            mp["modules"][0]["targets"],
+            json!([
+                "androidTarget",
+                "iosX64",
+                "iosArm64",
+                "iosSimulatorArm64",
+                "jvm"
+            ])
+        );
+        assert_eq!(mp["modules"][1]["targets"], json!(["jvm"]));
+        assert_eq!(mp["ios"]["targets"].as_array().unwrap().len(), 3);
+        assert!(
+            mp["ios"]["xcode_project"]
+                .as_str()
+                .unwrap()
+                .ends_with("iosApp/iosApp.xcodeproj")
+        );
+        assert_eq!(mp["ios"]["builds_on_linux"], false);
+        let app = &read(root)["app_modules"][0];
+        assert_eq!(app["module"], ":composeApp");
+        assert_eq!(app["application_id"], "dev.kmp.app");
+        assert_eq!(app["min_sdk"], 24);
+    }
+
+    #[test]
+    fn an_android_only_build_is_not_multiplatform() {
+        let root = tempfile::tempdir().unwrap();
+        write(
+            root.path(),
+            "build.gradle.kts",
+            "plugins { id(\"com.android.application\"); kotlin(\"android\") }\n",
+        );
+        assert!(multiplatform(root.path()).is_none());
     }
 }
