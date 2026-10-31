@@ -67,6 +67,8 @@ operations and their JSON results.
   - `project.inspect` recognises Kotlin Multiplatform and Compose Multiplatform builds, with
     each module's targets and the iOS app's Xcode project. `project.run` runs the Android
     target; the iOS target answers `macos_required` with what it needs.
+  - `project.create` with `kind` `compose`: a Kotlin and Jetpack Compose starter with a versions
+    catalog and one Compose UI test, which passed on an Android 16 emulator.
 - **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
   logs and old test reports in the data directory. A dry run by default.
 - **iPhone.**

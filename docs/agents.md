@@ -146,6 +146,10 @@ tomaccoctl call device.list '{"platform":"android"}'
 tomaccoctl call project.run '{"path":"/absolute/NewApp","platform":"android","device":"emulator-5554"}'
 ```
 
+`"kind":"compose"` creates a Kotlin and Jetpack Compose app with one Compose UI test instead; run it
+with `"action":"instrumented-test"`. `project.inspect` reports a Gradle app's application ID, variants
+and SDK levels under `android`, read from its files.
+
 Then look: `device.capture` for evidence, `android.hierarchy` for the UI tree, and assert the app's state
 after each action. Prefer `testing.find` and `testing.action` over coordinates when the app exposes
 accessible controls.

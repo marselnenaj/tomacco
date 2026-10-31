@@ -61,6 +61,12 @@ own build configuration stays as it is. Flutter uses the installed Flutter CLI.
 The starter has a native Android UI and a persistent counter. It uses the highest
 installed SDK platform, and the Android Gradle Plugin 9.1.1.
 
+`kind: "compose"` creates the same counter in Kotlin with Jetpack Compose and Material 3,
+with a versions catalog in `gradle/libs.versions.toml` and one Compose UI test in
+`app/src/androidTest`. It needs Android platform 36. Run the test with
+`project.execute` and `"action":"instrumented-test"`. A new project built, passed its UI
+test on an Android 16 emulator and ran with `project.run`.
+
 - Build produces an APK or an AAB. Installing on a device takes APKs, split APKs
   included, or one AAB through bundletool; see below.
 - `project.inspect` reads each app module's application ID, namespace, minimum,

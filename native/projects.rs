@@ -666,6 +666,13 @@ pub fn create(a: &Value) -> Result {
             "Install an Android platform using android.sdk_install",
         )
     })?;
+    if kind == "compose" && api < 36 {
+        return Err(Error::new(
+            "sdk_platform_missing",
+            format!("The Compose starter needs Android platform 36 or newer; the newest installed is {api}"),
+        )
+        .remedy("Install platforms;android-36 using android.sdk_install"));
+    }
     // Stage a complete project beside the destination, then publish it atomically.
     let staging = tempfile::Builder::new()
         .prefix(".tomacco-project-")
@@ -678,44 +685,78 @@ pub fn create(a: &Value) -> Result {
             "pluginManagement {{ repositories {{ google(); mavenCentral(); gradlePluginPortal() }} }}\ndependencyResolutionManagement {{ repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories {{ google(); mavenCentral() }} }}\nrootProject.name = \"{name}\"\ninclude(\":app\")\n"
         ),
     )?;
-    write(
-        root,
-        "build.gradle.kts",
-        "plugins { id(\"com.android.application\") version \"9.1.1\" apply false }\n",
-    )?;
-    let mut gradle = format!(
-        "plugins {{ id(\"com.android.application\") }}\nandroid {{\n namespace = \"{bundle}\"\n compileSdk = {api}\n defaultConfig {{ applicationId = \"{bundle}\"; minSdk = 26; targetSdk = {api}; versionCode = 1; versionName = \"1.0\" }}\n}}\n"
+    let manifest = format!(
+        "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"><application android:label=\"{name}\" android:theme=\"@android:style/Theme.Material.Light.NoActionBar\" android:allowBackup=\"false\"><activity android:name=\".MainActivity\" android:exported=\"true\"><intent-filter><action android:name=\"android.intent.action.MAIN\"/><category android:name=\"android.intent.category.LAUNCHER\"/></intent-filter></activity></application></manifest>\n"
     );
-    if kind == "swift-android" {
-        gradle.push_str(include_str!("../assets/templates/swift.gradle.kts"));
+    write(root, "app/src/main/AndroidManifest.xml", &manifest)?;
+    let package = bundle.replace('.', "/");
+    if kind == "compose" {
+        // Kotlin with Jetpack Compose, through AGP's built-in Kotlin support.
+        let fill = |text: &str| {
+            text.replace("__BUNDLE__", &bundle)
+                .replace("__NAME__", name)
+                .replace("__API__", &api.to_string())
+        };
+        write(
+            root,
+            "build.gradle.kts",
+            "plugins {\n    alias(libs.plugins.android.application) apply false\n    alias(libs.plugins.kotlin.compose) apply false\n}\n",
+        )?;
+        write(
+            root,
+            "gradle/libs.versions.toml",
+            include_str!("../assets/templates/compose/libs.versions.toml"),
+        )?;
+        write(
+            root,
+            "app/build.gradle.kts",
+            &fill(include_str!("../assets/templates/compose/build.gradle.kts")),
+        )?;
+        write(
+            root,
+            "gradle.properties",
+            "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\n",
+        )?;
+        write(
+            root,
+            &format!("app/src/main/java/{package}/MainActivity.kt"),
+            &fill(include_str!("../assets/templates/compose/MainActivity.kt")),
+        )?;
+        write(
+            root,
+            &format!("app/src/androidTest/java/{package}/CounterTest.kt"),
+            &fill(include_str!("../assets/templates/compose/CounterTest.kt")),
+        )?;
+    } else {
+        write(
+            root,
+            "build.gradle.kts",
+            "plugins { id(\"com.android.application\") version \"9.1.1\" apply false }\n",
+        )?;
+        let mut gradle = format!(
+            "plugins {{ id(\"com.android.application\") }}\nandroid {{\n namespace = \"{bundle}\"\n compileSdk = {api}\n defaultConfig {{ applicationId = \"{bundle}\"; minSdk = 26; targetSdk = {api}; versionCode = 1; versionName = \"1.0\" }}\n}}\n"
+        );
+        if kind == "swift-android" {
+            gradle.push_str(include_str!("../assets/templates/swift.gradle.kts"));
+        }
+        write(root, "app/build.gradle.kts", &gradle)?;
+        write(
+            root,
+            "gradle.properties",
+            "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\n",
+        )?;
+        let mut java = include_str!("../assets/templates/MainActivity.java")
+            .replace("__BUNDLE__", &bundle)
+            .replace("__NAME__", name);
+        if kind != "swift-android" {
+            java=java.replace("    static { System.loadLibrary(\"TomaccoCore\"); }\n    private static native int nextCount(int current);\n","").replace("count = nextCount(count);","count++;");
+        }
+        write(
+            root,
+            &format!("app/src/main/java/{package}/MainActivity.java"),
+            &java,
+        )?;
     }
-    write(root, "app/build.gradle.kts", &gradle)?;
-    write(
-        root,
-        "gradle.properties",
-        "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\n",
-    )?;
-    write(
-        root,
-        "app/src/main/AndroidManifest.xml",
-        &format!(
-            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"><application android:label=\"{name}\" android:theme=\"@android:style/Theme.Material.Light.NoActionBar\" android:allowBackup=\"false\"><activity android:name=\".MainActivity\" android:exported=\"true\"><intent-filter><action android:name=\"android.intent.action.MAIN\"/><category android:name=\"android.intent.category.LAUNCHER\"/></intent-filter></activity></application></manifest>\n"
-        ),
-    )?;
-    let mut java = include_str!("../assets/templates/MainActivity.java")
-        .replace("__BUNDLE__", &bundle)
-        .replace("__NAME__", name);
-    if kind != "swift-android" {
-        java=java.replace("    static { System.loadLibrary(\"TomaccoCore\"); }\n    private static native int nextCount(int current);\n","").replace("count = nextCount(count);","count++;");
-    }
-    write(
-        root,
-        &format!(
-            "app/src/main/java/{}/MainActivity.java",
-            bundle.replace('.', "/")
-        ),
-        &java,
-    )?;
     let mut config = json!({"applicationId":bundle,"tasks":{}});
     write(
         root,

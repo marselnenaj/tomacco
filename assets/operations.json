@@ -324,7 +324,7 @@
   {
     "name": "project.create",
     "title": "Create project",
-    "description": "Create a native Android app, Android app with Swift core, SwiftUI iOS app (xtool), or Flutter app in a new directory. With build:true, an xtool project is also built in the same job; project.app then names the .app.",
+    "description": "Create a native Android app, a Jetpack Compose app in Kotlin with one UI test (kind compose), an Android app with Swift core, SwiftUI iOS app (xtool), or Flutter app in a new directory. With build:true, an xtool project is also built in the same job; project.app then names the .app.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -339,6 +339,7 @@
           "enum": [
             "swift-android",
             "android",
+            "compose",
             "xtool",
             "flutter"
           ]
