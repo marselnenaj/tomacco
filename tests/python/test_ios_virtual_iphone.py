@@ -1595,6 +1595,27 @@ class VirtualPhoneOperations(Isolated):
         self.assertFalse(status["guest_running"])
         self.assertIsNone(status["busy"])
 
+    def test_a_start_whose_disk_copy_cannot_fit_is_refused_before_any_job(self):
+        base = self.root / "base"
+        base.mkdir()
+        # A sparse 8 TiB root disk: more than any test host has free.
+        with (base / "system.raw").open("wb") as stream:
+            stream.truncate(8 << 40)
+        for name in ("auxiliary.raw", "sep.raw"):
+            (base / name).write_bytes(b"\0" * 4096)
+        directory = self.profile(install=str(base))
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        try:
+            dispatch("ios.virtual.start")
+        except StudioError as error:
+            self.assertEqual(error.code, "ios_virtual_disk_space")
+            self.assertIn("8193.0 GiB", str(error))
+            self.assertIn("installs", str(error))
+            self.assertEqual(error.details["installs"], str(directory / "installs"))
+        else:
+            self.skipTest("the installs filesystem clones files, so the copy needs no room")
+        self.assertEqual([job for job in jobs.listing(20) if "virtual" in job["label"]], [])
+
     def test_the_device_model_is_a_setting_of_its_own_and_reaches_the_start(self):
         with self.assertRaises(StudioError) as error:
             dispatch("ios.virtual.configure", {"model": "16"})

@@ -410,6 +410,179 @@ fn copy_progress(state: &Value) -> Value {
         "step":text("phase"),"disk":text("copying_disk")})
 }
 
+/// What a full disk copy needs beyond the disks themselves, as the copy
+/// checks for each disk (`COPY_HEADROOM` in tools/prepare_ios_userland.py).
+const COPY_HEADROOM: u64 = 1 << 30;
+
+/// Whether a disk copy may be deleted by the start: only a real directory
+/// the start created in the profile's `installs` (`Phone.owned`).
+fn owned_copy(installs: &Path, copy: &Path) -> bool {
+    let parent = copy.parent().and_then(|parent| parent.canonicalize().ok());
+    parent.is_some()
+        && parent == installs.canonicalize().ok()
+        && copy
+            .file_name()
+            .is_some_and(|name| name.to_string_lossy().starts_with("guest-install"))
+        && fs::symlink_metadata(copy).is_ok_and(|meta| meta.is_dir())
+}
+
+/// The copies a start deletes before it makes its own: the disk copy of an
+/// attempt that never booted (`discard_attempt`) and every recorded copy but
+/// the verified run's and the newest (`prune(keep=1)`), as far as they are
+/// the start's own.
+fn copies_a_start_removes(profile: &Value, state: &Value) -> Vec<PathBuf> {
+    let installs = PathBuf::from(s(profile, "installs"));
+    let created: Vec<PathBuf> = state["created"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|path| path.as_str().map(PathBuf::from))
+        .collect();
+    let verified = PathBuf::from(s(&state["verified"], "install"));
+    let mut removed: Vec<PathBuf> = created
+        .iter()
+        .take(created.len().saturating_sub(1))
+        .filter(|path| **path != verified)
+        .cloned()
+        .collect();
+    if let Some(attempt) = state["attempt"]["install"].as_str().map(PathBuf::from) {
+        removed.push(attempt);
+    }
+    removed.sort();
+    removed.dedup();
+    removed.retain(|path| owned_copy(&installs, path));
+    removed
+}
+
+/// The bytes the regular files directly inside a directory occupy on disk.
+fn allocated_bytes(directory: &Path) -> u64 {
+    fs::read_dir(directory)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|entry| fs::symlink_metadata(entry.path()).ok())
+        .filter(|meta| meta.is_file())
+        .map(|meta| meta.blocks() * 512)
+        .sum()
+}
+
+/// Whether the filesystem of `installs` can clone `source` instead of
+/// copying it (FICLONE), as the copy tries first. The probe clones the
+/// base's smallest disk into a temporary file there and removes it again.
+fn clones_into(source: &Path, installs: &Path) -> bool {
+    use std::os::fd::AsRawFd;
+    let Ok(input) = File::open(source) else {
+        return false;
+    };
+    let Ok(output) = tempfile::Builder::new()
+        .prefix(".tomacco-clone-probe")
+        .tempfile_in(installs)
+    else {
+        return false;
+    };
+    unsafe { libc::ioctl(output.as_file().as_raw_fd(), 0x40049409, input.as_raw_fd()) == 0 }
+}
+
+/// Free bytes for an unprivileged writer on the filesystem of `path`.
+fn free_bytes(path: &Path) -> Option<u64> {
+    use std::os::unix::ffi::OsStrExt;
+    let name = std::ffi::CString::new(path.as_os_str().as_bytes()).ok()?;
+    let mut space: libc::statvfs = unsafe { std::mem::zeroed() };
+    (unsafe { libc::statvfs(name.as_ptr(), &mut space) } == 0)
+        .then(|| space.f_bavail as u64 * space.f_frsize as u64)
+}
+
+/// Whether the copy fits: a full copy needs the base's disks and the
+/// headroom, which the free space and what the start deletes first must
+/// cover. Only when they do not is `clones` asked whether the filesystem
+/// shares blocks instead, and a clone needs the headroom alone.
+fn disk_verdict(
+    disks: u64,
+    free: u64,
+    reclaimable: u64,
+    clones: impl FnOnce() -> bool,
+) -> (u64, Option<bool>, bool) {
+    let full = disks + COPY_HEADROOM;
+    if free.saturating_add(reclaimable) >= full {
+        return (full, None, true);
+    }
+    if clones() {
+        return (COPY_HEADROOM, Some(true), free >= COPY_HEADROOM);
+    }
+    (full, Some(false), false)
+}
+
+/// The space the next start's disk copy needs in the profile's `installs`
+/// and whether it is there. Null when the base's disks or the filesystem
+/// cannot be read; the start itself then says why.
+fn start_disk(profile: &Value, state: &Value) -> Value {
+    let base = match state["verified"]["install"].as_str() {
+        Some(base) => PathBuf::from(base),
+        None if state["closed"] == true && text(state, "install") => {
+            PathBuf::from(s(state, "install"))
+        }
+        None => return Value::Null,
+    };
+    let installs = PathBuf::from(s(profile, "installs"));
+    let mut disks = 0;
+    for name in DISKS {
+        match fs::metadata(base.join(name)) {
+            Ok(meta) if meta.is_file() => disks += meta.len(),
+            _ => return Value::Null,
+        }
+    }
+    let Some(free) = free_bytes(&installs) else {
+        return Value::Null;
+    };
+    let reclaimable = copies_a_start_removes(profile, state)
+        .iter()
+        .map(|copy| allocated_bytes(copy))
+        .sum::<u64>();
+    let (needed, reflink, enough) = disk_verdict(disks, free, reclaimable, || {
+        clones_into(&base.join("sep.raw"), &installs)
+    });
+    json!({"installs":installs,"needed_bytes":needed,"free_bytes":free,
+        "reclaimable_bytes":reclaimable,"reflink":reflink,"enough":enough})
+}
+
+fn gib(bytes: u64) -> String {
+    format!("{:.1} GiB", bytes as f64 / (1u64 << 30) as f64)
+}
+
+/// A start that would run out of space part way through its disk copy is
+/// refused before anything is deleted or copied, with what to do about it.
+fn refuse_short_disk(disk: &Value) -> Result<()> {
+    if disk["enough"] != false {
+        return Ok(());
+    }
+    let (needed, free, reclaimable) = (
+        n(disk, "needed_bytes"),
+        n(disk, "free_bytes"),
+        n(disk, "reclaimable_bytes"),
+    );
+    let installs = s(disk, "installs");
+    let short = needed.saturating_sub(free.saturating_add(reclaimable));
+    Err(Error::new(
+        "ios_virtual_disk_space",
+        format!(
+            "The start copies {} of disks into {installs}, but that filesystem has {} free{}",
+            gib(needed),
+            gib(free),
+            if reclaimable > 0 {
+                format!(" and the start would delete {} of older copies", gib(reclaimable))
+            } else {
+                String::new()
+            }
+        ),
+    )
+    .remedy(format!(
+        "Free at least {} on the filesystem of {installs}, or point the profile's installs at a filesystem with room; \
+         on btrfs or XFS with reflink the copy shares blocks with its base. Tomacco deletes only the copies it made there",
+        gib(short)
+    ))
+    .details(disk.clone()))
+}
+
 /// When each phase of the current start or stop began (`phase_log`, which
 /// `Phone.save` in the script keeps from the start's `preparing` on) and how
 /// long each took; the current phase's time runs on until the next. Entries
@@ -649,6 +822,13 @@ fn submit_with(
 }
 
 pub fn start(a: &Value) -> Result {
+    // A start that adopts a running guest, or repeats an active start, makes
+    // no copy; any other start is refused here when its copy cannot fit.
+    let directory = directory()?;
+    let (profile, state) = records(&directory)?;
+    if jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state) {
+        refuse_short_disk(&start_disk(&profile, &state))?;
+    }
     // Preparation, a boot of many minutes and the unlock each have their own
     // bound inside the script; this is the outer limit of the whole job.
     submit(
@@ -1075,5 +1255,117 @@ mod start_progress_tests {
         assert!(copy_progress(&unrecorded).is_null());
         fs::remove_file(base.join("sep.raw")).unwrap();
         assert!(copy_progress(&state).is_null());
+    }
+}
+
+#[cfg(test)]
+mod start_disk_tests {
+    use super::*;
+
+    const GIB: u64 = 1 << 30;
+
+    #[test]
+    fn a_full_copy_needs_its_disks_and_headroom_in_free_or_deleted_space() {
+        let never = || panic!("no clone probe while a full copy fits");
+        assert_eq!(
+            disk_verdict(32 * GIB, 40 * GIB, 0, never),
+            (33 * GIB, None, true)
+        );
+        assert_eq!(
+            disk_verdict(32 * GIB, 20 * GIB, 13 * GIB, never),
+            (33 * GIB, None, true)
+        );
+        assert_eq!(
+            disk_verdict(32 * GIB, 20 * GIB, 0, || false),
+            (33 * GIB, Some(false), false)
+        );
+        // A filesystem that clones needs the headroom alone.
+        assert_eq!(
+            disk_verdict(32 * GIB, 2 * GIB, 0, || true),
+            (GIB, Some(true), true)
+        );
+        assert_eq!(
+            disk_verdict(32 * GIB, GIB / 2, 0, || true),
+            (GIB, Some(true), false)
+        );
+    }
+
+    #[test]
+    fn the_refusal_names_the_space_and_the_remedy() {
+        let disk = json!({"installs":"/data/installs","needed_bytes":33 * GIB,
+            "free_bytes":20 * GIB,"reclaimable_bytes":4 * GIB,"reflink":false,"enough":false});
+        let error = refuse_short_disk(&disk).unwrap_err();
+        assert_eq!(error.code, "ios_virtual_disk_space");
+        let value = error.value();
+        let message = s(&value, "message");
+        assert!(message.contains("33.0 GiB"), "{message}");
+        assert!(message.contains("20.0 GiB free"), "{message}");
+        assert!(message.contains("4.0 GiB of older copies"), "{message}");
+        let remedy = s(&value, "remedy");
+        assert!(remedy.starts_with("Free at least 9.0 GiB"), "{remedy}");
+        assert!(remedy.contains("reflink"), "{remedy}");
+        assert_eq!(value["details"], disk);
+        // Enough space, or nothing known, never refuses.
+        assert!(refuse_short_disk(&json!({"enough":true})).is_ok());
+        assert!(refuse_short_disk(&Value::Null).is_ok());
+    }
+
+    #[test]
+    fn only_the_starts_own_older_copies_count_as_space_it_frees() {
+        let root = tempfile::tempdir().unwrap();
+        let installs = root.path().join("installs");
+        for name in [
+            "guest-install5",
+            "guest-install6",
+            "guest-install7",
+            "guest-install8",
+        ] {
+            fs::create_dir_all(installs.join(name)).unwrap();
+            fs::write(installs.join(name).join("system.raw"), vec![1u8; 8192]).unwrap();
+        }
+        let elsewhere = root.path().join("elsewhere/guest-install4");
+        fs::create_dir_all(&elsewhere).unwrap();
+        fs::create_dir_all(installs.join("kept")).unwrap();
+        let profile = json!({"installs":installs});
+        let state = json!({
+            "verified":{"install":installs.join("guest-install6")},
+            "created":[elsewhere, installs.join("guest-install5"), installs.join("guest-install6"),
+                installs.join("kept"), installs.join("guest-install7")],
+            "attempt":{"install":installs.join("guest-install8")}});
+        // Not the verified run, not the newest copy, not a copy outside
+        // installs or of another name; the unbooted attempt goes.
+        assert_eq!(
+            copies_a_start_removes(&profile, &state),
+            vec![
+                installs.join("guest-install5"),
+                installs.join("guest-install8")
+            ]
+        );
+        assert!(allocated_bytes(&installs.join("guest-install5")) >= 8192);
+        assert_eq!(allocated_bytes(&root.path().join("missing")), 0);
+    }
+
+    #[test]
+    fn the_start_disk_reads_the_bases_disks_and_the_installs_filesystem() {
+        let root = tempfile::tempdir().unwrap();
+        let (base, installs) = (root.path().join("base"), root.path().join("installs"));
+        fs::create_dir_all(&base).unwrap();
+        fs::create_dir_all(&installs).unwrap();
+        for name in DISKS {
+            fs::write(base.join(name), vec![0u8; 4096]).unwrap();
+        }
+        let profile = json!({"installs":installs});
+        let state = json!({"closed":true,"install":base});
+        let disk = start_disk(&profile, &state);
+        assert_eq!(disk["needed_bytes"], 3 * 4096 + COPY_HEADROOM);
+        assert_eq!(
+            disk["enough"],
+            disk["free_bytes"].as_u64().unwrap() >= 3 * 4096 + COPY_HEADROOM
+        );
+        // An open run without a verified base, or a base without its disks,
+        // says nothing.
+        assert!(start_disk(&profile, &json!({"closed":false,"install":base})).is_null());
+        fs::remove_file(base.join("sep.raw")).unwrap();
+        assert!(start_disk(&profile, &state).is_null());
     }
 }

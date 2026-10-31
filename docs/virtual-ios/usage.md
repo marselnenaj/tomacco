@@ -59,6 +59,12 @@ refused at the limit is the guest frozen. `ios.virtual.status` reports a guest t
 Disk copies are 32 GiB each, and at most two are kept. Only copies Tomacco made in the profile's `installs`
 directory are ever deleted.
 
+A start checks the space first. When the filesystem of `installs` lacks room for the copy (the base's disks
+plus 1 GiB, counting the older copies the start would delete first), `ios.virtual.start` refuses at once with
+`ios_virtual_disk_space`, before anything is deleted or copied. The refusal says how much to free. On a filesystem
+that clones files (btrfs, or XFS with reflink) the copy shares blocks with its base and needs only the 1 GiB.
+The refusal has unit tests and a control-plane test; it has not been met on a real full disk.
+
 ## The graphics memory guard
 
 A session stops the careful way when under an eighth of the graphics card stays free, so it cannot take
