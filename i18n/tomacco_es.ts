@@ -264,6 +264,46 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
         <translation>Añade un emulador o conecta un teléfono con la depuración USB activada.</translation>
     </message>
+    <message>
+        <source>Unpin</source>
+        <translation>Desfijar</translation>
+    </message>
+    <message>
+        <source>Pin</source>
+        <translation>Fijar</translation>
+    </message>
+    <message>
+        <source>Unpin this device</source>
+        <translation>Desfijar este dispositivo</translation>
+    </message>
+    <message>
+        <source>Pin this device to the top</source>
+        <translation>Fijar este dispositivo arriba</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Cambiar nombre</translation>
+    </message>
+    <message>
+        <source>Give this device a nickname</source>
+        <translation>Dar un apodo a este dispositivo</translation>
+    </message>
+    <message>
+        <source>Device nickname</source>
+        <translation>Apodo del dispositivo</translation>
+    </message>
+    <message>
+        <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
+        <translation>Se muestra en lugar de %1 aquí, en las listas de dispositivos y en el panel de Omarchy.</translation>
+    </message>
+    <message>
+        <source>Nickname</source>
+        <translation>Apodo</translation>
+    </message>
+    <message>
+        <source>Remove nickname</source>
+        <translation>Quitar el apodo</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -3969,6 +4009,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     <message>
         <source>Page errors</source>
         <translation>Errores de la página</translation>
+    </message>
+    <message>
+        <source>Name or pin a device</source>
+        <translation>Nombrar o fijar un dispositivo</translation>
     </message>
 </context>
 <context>

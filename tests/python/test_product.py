@@ -937,6 +937,40 @@ class AndroidControlTests(Isolated):
         self.assertEqual((health["battery"], health["storage"], health["uptime_seconds"], health["android"]["version"]), (None, None, None, None))
         self.assertEqual(health["screen"]["size_dp"], [360, 640])
 
+    def test_nicknames_and_pins_show_in_the_device_list(self):
+        # The emulator's serial changes with its port; its AVD name does not.
+        self.tool("adb", "import json,os,sys\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+                         "port=(root/'port').read_text() if (root/'port').exists() else '5554'\n"
+                         "if a[:1]==['devices']: print(f'List of devices attached\\nR5CT device model:SM_S928B\\nemulator-{port} device model:sdk_gphone\\n')\n"
+                         "elif a[2:]==['emu','avd','name']: print('Small_Phone\\nOK')\n"
+                         "elif 'boot_completed' in ' '.join(a): print('1')\n")
+        listed = lambda: dispatch("device.list", {"platform": "android"})["devices"]
+        self.assertEqual([(d["id"], d["pinned"]) for d in listed()], [("R5CT", False), ("emulator-5554", False)])
+        self.assertNotIn("nickname", listed()[0])
+        value = dispatch("device.label", {"device": "emulator-5554", "nickname": "  Small test phone ", "pinned": True})
+        self.assertEqual((value["key"], value["nickname"], value["pinned"]), ("avd:Small_Phone", "Small test phone", True))
+        dispatch("device.label", {"device": "R5CT", "nickname": "Galaxy"})
+        (self.root / "port").write_text("5556")
+        devices = listed()
+        # Pinned first, under its nickname, whatever port the emulator has now.
+        self.assertEqual([(d["id"], d["name"], d.get("nickname"), d["pinned"]) for d in devices],
+                         [("emulator-5556", "Small test phone", "Small test phone", True), ("R5CT", "Galaxy", "Galaxy", False)])
+        self.assertEqual(devices[1]["original_name"], "SM S928B")
+        # Reading changes nothing; an empty nickname and pinned false remove the label.
+        self.assertEqual(dispatch("device.label", {"device": "R5CT"})["nickname"], "Galaxy")
+        dispatch("device.label", {"device": "emulator-5556", "nickname": "", "pinned": False})
+        self.assertEqual(dispatch("device.label", {"device": "R5CT"})["labels"], {"R5CT": {"nickname": "Galaxy"}})
+        self.assertEqual([d["name"] for d in listed()], ["Galaxy", "Small_Phone"])
+        # An emulator that is off is named by its AVD.
+        self.assertEqual(dispatch("device.label", {"device": "avd:Small_Phone", "pinned": True})["key"], "avd:Small_Phone")
+        self.assertEqual([d["id"] for d in listed() if d["pinned"]], ["emulator-5556"])
+        with self.assertRaises(StudioError):
+            dispatch("device.label", {"device": "avd:../x", "pinned": True})
+        for arguments in ({"device": "R5CT", "nickname": "two\nlines"}, {"device": "R5CT", "nickname": "x" * 41}, {"device": "a;b", "pinned": True}):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("device.label", arguments)
+            self.assertEqual(refused.exception.code, "invalid_argument", arguments)
+
     def test_device_settings_apply_only_what_is_asked_and_read_everything_back(self):
         state = {"ro.build.version.sdk": "36\n", "uimode night": "Night mode: yes\n", "get system font_scale": "1.3\n",
                  "get global window_animation_scale": "0\n", "get global transition_animation_scale": "0.0\n",

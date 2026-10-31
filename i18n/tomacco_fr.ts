@@ -264,6 +264,46 @@ Le modèle détermine l'écran et le cadre. Android provient de l'image système
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
         <translation>Ajoutez un émulateur ou branchez un téléphone avec le débogage USB activé.</translation>
     </message>
+    <message>
+        <source>Unpin</source>
+        <translation>Désépingler</translation>
+    </message>
+    <message>
+        <source>Pin</source>
+        <translation>Épingler</translation>
+    </message>
+    <message>
+        <source>Unpin this device</source>
+        <translation>Désépingler cet appareil</translation>
+    </message>
+    <message>
+        <source>Pin this device to the top</source>
+        <translation>Épingler cet appareil en haut</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Renommer</translation>
+    </message>
+    <message>
+        <source>Give this device a nickname</source>
+        <translation>Donner un surnom à cet appareil</translation>
+    </message>
+    <message>
+        <source>Device nickname</source>
+        <translation>Surnom de l'appareil</translation>
+    </message>
+    <message>
+        <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
+        <translation>Affiché à la place de %1 ici, dans les listes d'appareils et dans le panneau Omarchy.</translation>
+    </message>
+    <message>
+        <source>Nickname</source>
+        <translation>Surnom</translation>
+    </message>
+    <message>
+        <source>Remove nickname</source>
+        <translation>Supprimer le surnom</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -3969,6 +4009,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
     <message>
         <source>Page errors</source>
         <translation>Erreurs de la page</translation>
+    </message>
+    <message>
+        <source>Name or pin a device</source>
+        <translation>Nommer ou épingler un appareil</translation>
     </message>
 </context>
 <context>

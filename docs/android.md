@@ -237,6 +237,17 @@ one, is `null`.
 tomaccoctl call device.info '{"platform":"android","device":"emulator-5554"}'
 ```
 
+`device.label` gives a device a nickname or pins it. `device.list` then shows the
+nickname as `name`, keeps the earlier name as `original_name`, sets `pinned` and lists
+pinned devices first. An emulator is named by its AVD, so the nickname stays when its
+serial changes; `avd:NAME` names one that is off. An empty nickname or `pinned:false`
+removes the label, and a call with neither only reads.
+
+```sh
+tomaccoctl call device.label '{"device":"emulator-5554","nickname":"Small phone","pinned":true}'
+tomaccoctl call device.label '{"device":"avd:Tomacco-pixel-11","nickname":""}'
+```
+
 ## Device settings for tests
 
 `android.settings` sets what changes an app's look and motion, so UI tests and

@@ -26,6 +26,11 @@ Canvas {
         switch(name) {
         case "project": box(3,3,7,7);box(14,3,7,7);box(3,14,7,7);box(14,14,7,7);break
         case "phone": box(6,2,12,20);fill(10,18,4,1.8);break
+        case "pin": line([8,3,16,3]);line([10,3,10,10,6,14,18,14,14,10,14,3]);line([12,14,12,21]);break
+        case "edit": line([4,20,4,16,15,5,19,9,8,20,4,20]);line([12,8,16,12]);break
+        case "record": c.beginPath();c.arc(12,12,6.5,0,Math.PI*2);c.fill();break
+        case "grid": box(2,4,5,16);box(9.5,4,5,16);box(17,4,5,16);break
+        case "qr": box(3,3,7,7);box(14,3,7,7);box(3,14,7,7);fill(14,14,3,3);fill(18,18,3,3);fill(5.5,5.5,2,2);fill(16.5,5.5,2,2);fill(5.5,16.5,2,2);break
         case "files": line([3,20,3,4,9.5,4,12,7,21,7,21,20,3,20]);break
         case "devices": box(2,4,13,12);line([5,20,12,20]);line([8.5,16,8.5,20]);box(17,9,5,12);break
         case "jobs": line([4,6,20,6]);line([4,12,20,12]);line([4,18,14,18]);fill(17,16,4,4);break

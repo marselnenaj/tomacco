@@ -6,10 +6,15 @@ operations and their JSON results.
 
 ## Unreleased
 
+`tomaccoctl` now has one typed API of 194 operations.
+
 ### Added
 
 - `device.info` sums up an Android device's health under `health` in the same read-only call: Android version,
   SDK level and security patch, battery, free storage on `/data`, screen size and density, and uptime.
+- `device.label` names a device and pins it as a favourite. `device.list` shows the nickname as `name`, marks
+  pinned devices and lists them first; the desktop's device list and the Omarchy panel show both. An emulator
+  keeps its nickname by its AVD name.
 
 ## 1.1.0
 

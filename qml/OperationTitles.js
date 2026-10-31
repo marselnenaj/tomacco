@@ -39,6 +39,7 @@ var titles = {
     "diagnostics.bundle": QT_TRANSLATE_NOOP("Operations", "Write a bug report bundle"),
     "device.list": QT_TRANSLATE_NOOP("Operations", "Find devices"),
     "device.info": QT_TRANSLATE_NOOP("Operations", "Device information"),
+    "device.label": QT_TRANSLATE_NOOP("Operations", "Name or pin a device"),
     "device.install": QT_TRANSLATE_NOOP("Operations", "Install app"),
     "device.app": QT_TRANSLATE_NOOP("Operations", "Control app"),
     "device.screenshot": QT_TRANSLATE_NOOP("Operations", "Device screenshot"),

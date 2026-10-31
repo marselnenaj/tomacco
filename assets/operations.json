@@ -1366,6 +1366,40 @@
     }
   },
   {
+    "name": "device.label",
+    "title": "Name or pin a device",
+    "description": "Give a device a nickname or pin it as a favourite. device.list then shows the nickname as name (the earlier name stays as original_name), marks pinned devices and lists them first; the desktop and the Omarchy panel show the same. An emulator is named by its AVD, so the name stays when its serial changes; a phone by its serial or UDID. An emulator that is off is named with device avd:NAME, its AVD name from android.avds, which also lists nickname and pinned. An empty nickname removes it and pinned false unpins. With neither, the call only reads. The result lists every label.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list, or avd:NAME for an emulator by its AVD name",
+          "minLength": 1
+        },
+        "nickname": {
+          "type": "string",
+          "maxLength": 40,
+          "description": "The name to show, at most 40 characters on one line; empty removes it."
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Pin the device as a favourite, or unpin it with false."
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "device.install",
     "title": "Install app",
     "description": "Install one or split APKs, or one .aab through bundletool (built for the selected device, then installed), or one signed IPA on the selected device.",

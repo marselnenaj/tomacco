@@ -264,6 +264,46 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
         <translation>Aggiungi un emulatore o collega un telefono con il debug USB attivo.</translation>
     </message>
+    <message>
+        <source>Unpin</source>
+        <translation>Sblocca</translation>
+    </message>
+    <message>
+        <source>Pin</source>
+        <translation>Fissa</translation>
+    </message>
+    <message>
+        <source>Unpin this device</source>
+        <translation>Sblocca questo dispositivo</translation>
+    </message>
+    <message>
+        <source>Pin this device to the top</source>
+        <translation>Fissa questo dispositivo in alto</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Rinomina</translation>
+    </message>
+    <message>
+        <source>Give this device a nickname</source>
+        <translation>Dai un soprannome a questo dispositivo</translation>
+    </message>
+    <message>
+        <source>Device nickname</source>
+        <translation>Soprannome del dispositivo</translation>
+    </message>
+    <message>
+        <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
+        <translation>Mostrato al posto di %1 qui, negli elenchi dei dispositivi e nel pannello Omarchy.</translation>
+    </message>
+    <message>
+        <source>Nickname</source>
+        <translation>Soprannome</translation>
+    </message>
+    <message>
+        <source>Remove nickname</source>
+        <translation>Rimuovi il soprannome</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -3969,6 +4009,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     <message>
         <source>Page errors</source>
         <translation>Errori della pagina</translation>
+    </message>
+    <message>
+        <source>Name or pin a device</source>
+        <translation>Assegna un nome o fissa un dispositivo</translation>
     </message>
 </context>
 <context>

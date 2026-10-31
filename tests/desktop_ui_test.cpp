@@ -605,6 +605,43 @@ private slots:
         workspace->setProperty("devices",previous);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void devices_can_be_renamed_and_pinned() {
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        auto *library=object("androidDeviceLibrary");QVERIFY(library);
+        const auto labels=[this]{QFile file(directory.filePath("state/device-labels.json"));return file.open(QIODevice::ReadOnly)?QJsonDocument::fromJson(file.readAll()).object().toVariantMap():QVariantMap{};};
+        const auto avds=[&](const QVariantMap &extra){QVariantMap avd{{"name","Label_Test"},{"profile_name","Pixel 11"},{"display",QVariantMap{{"width",1080},{"height",2400}}}};for(auto i=extra.begin();i!=extra.end();++i)avd[i.key()]=i.value();library->setProperty("avds",QVariantList{QVariantMap{{"name","Other"},{"display",QVariantMap{}}},avd});};
+        avds({});
+        // A pinned emulator comes first.
+        auto *pin=item("pinAvd-Label_Test");QVERIFY(pin);
+        QCOMPARE(accessibleName(pin),QString("Pin"));
+        QVERIFY(QMetaObject::invokeMethod(pin,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(labels().value("avd:Label_Test").toMap().value("pinned").toBool(),patient(10000));
+        avds({{"pinned",true}});
+        QCOMPARE(mapOf(library->property("shownAvds").toList().value(0)).value("name").toString(),QString("Label_Test"));
+        QTRY_COMPARE(accessibleName(item("pinAvd-Label_Test")),QString("Unpin"));
+        // A nickname is saved through device.label and shown in place of the model.
+        QVERIFY(QMetaObject::invokeMethod(item("renameAvd-Label_Test"),"clicked"));
+        auto *dialog=object("renameDeviceDialog");QVERIFY(dialog);QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *field=item("deviceNicknameField");auto *save=item("saveDeviceNickname");QVERIFY(field);QVERIFY(save);
+        QVERIFY(!save->isEnabled());
+        field->setProperty("text","  Test phone ");QVERIFY(save->isEnabled());
+        capture("device-nickname");
+        QVERIFY(QMetaObject::invokeMethod(save,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!dialog->property("visible").toBool(),patient(10000));
+        QCOMPARE(labels().value("avd:Label_Test").toMap(),(QVariantMap{{"nickname","Test phone"},{"pinned",true}}));
+        avds({{"pinned",true},{"nickname","Test phone"}});
+        QTRY_COMPARE(item("avdTitle-Label_Test")->property("text").toString(),QString("Test phone"));
+        // Removing the nickname and unpinning leave no label behind.
+        QVERIFY(QMetaObject::invokeMethod(item("renameAvd-Label_Test"),"clicked"));
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        QCOMPARE(field->property("text").toString(),QString("Test phone"));
+        QVERIFY(QMetaObject::invokeMethod(item("removeDeviceNickname"),"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!dialog->property("visible").toBool(),patient(10000));
+        avds({{"pinned",true}});
+        QVERIFY(QMetaObject::invokeMethod(item("pinAvd-Label_Test"),"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!labels().contains("avd:Label_Test"),patient(10000));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void iphone_setup_and_category_selection() {
         open("devices");
         auto *apple=item("devices-apple");QVERIFY(apple);

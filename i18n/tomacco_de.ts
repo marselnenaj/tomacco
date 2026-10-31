@@ -264,6 +264,46 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
         <translation>Füge einen Emulator hinzu oder schließe ein Telefon mit USB-Debugging an.</translation>
     </message>
+    <message>
+        <source>Unpin</source>
+        <translation>Lösen</translation>
+    </message>
+    <message>
+        <source>Pin</source>
+        <translation>Anheften</translation>
+    </message>
+    <message>
+        <source>Unpin this device</source>
+        <translation>Dieses Gerät lösen</translation>
+    </message>
+    <message>
+        <source>Pin this device to the top</source>
+        <translation>Dieses Gerät oben anheften</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Umbenennen</translation>
+    </message>
+    <message>
+        <source>Give this device a nickname</source>
+        <translation>Diesem Gerät einen Spitznamen geben</translation>
+    </message>
+    <message>
+        <source>Device nickname</source>
+        <translation>Spitzname des Geräts</translation>
+    </message>
+    <message>
+        <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
+        <translation>Wird statt %1 hier, in Gerätelisten und im Omarchy-Panel angezeigt.</translation>
+    </message>
+    <message>
+        <source>Nickname</source>
+        <translation>Spitzname</translation>
+    </message>
+    <message>
+        <source>Remove nickname</source>
+        <translation>Spitznamen entfernen</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -3969,6 +4009,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Wait for rendering</source>
         <translation>Auf Darstellung warten</translation>
+    </message>
+    <message>
+        <source>Name or pin a device</source>
+        <translation>Gerät benennen oder anheften</translation>
     </message>
 </context>
 <context>

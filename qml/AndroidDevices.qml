@@ -26,6 +26,12 @@ ColumnLayout {
     readonly property var profiles: Studio.models.filter(p=>p.platform==="android")
     readonly property var selectedProfile: profiles[modelPicker.currentIndex] || ({})
     readonly property var phones: workspace.devices.filter(d=>d.platform==="android")
+    // Pinned emulators first, then the others as android.avds lists them.
+    readonly property var shownAvds: avds.filter(a=>a.pinned).concat(avds.filter(a=>!a.pinned))
+    // The device being renamed: {device, name, title}.
+    property var renaming: ({})
+    function rename(device,current,title) {renaming={device:device,title:title};nicknameField.text=current || "";renameDialog.open();nicknameField.forceActiveFocus()}
+    function pin(device,pinned) {request("device.label",{device:device,pinned:pinned})}
     spacing:Theme.gapMd
     function request(op,args,quiet) {
         if(quiet)for(let id in requests)if(requests[id].op===op && JSON.stringify(requests[id].args)===JSON.stringify(args || {}))return
@@ -69,6 +75,7 @@ ColumnLayout {
             if(op==="android.avd_create"){library.submitting=false;library.createJob=value.id;createDialog.close();library.notice=qsTr("Setting up device…")}
             if(op==="android.avd_configure"){library.savingPerformance=false;performanceDialog.close();library.notice=qsTr("Performance settings saved · used on the next start");library.refresh()}
             if(op==="android.emulator")library.refresh()
+            if(op==="device.label"){renameDialog.close();library.refresh()}
             if(op==="android.avd_start"){
                 if(value.reused && value.device)library.refresh()
                 else library.pendingBoots=Object.assign({},library.pendingBoots,{[context.args.name]:value})
@@ -89,7 +96,7 @@ ColumnLayout {
     StudioScrollView {
         Layout.fillWidth:true;Layout.fillHeight:true;clip:true;contentWidth:availableWidth
         Column {width:parent.width-Theme.gapMd;spacing:Theme.gapXs
-            Repeater {model:library.avds
+            Repeater {model:library.shownAvds
                 Rectangle {
                     required property var modelData
                     readonly property var connected:library.deviceFor(modelData.name)
@@ -97,13 +104,15 @@ ColumnLayout {
                     RowLayout {anchors.fill:parent;anchors.margins:Theme.gapMd;spacing:Theme.gapMd
                         StudioIcon {name:"phone";color:connected?Theme.accentInk:Theme.faint}
                         ColumnLayout {id:deviceColumn;Layout.fillWidth:true;spacing:Theme.gapXxs
-                            Text {Layout.fillWidth:true;text:modelData.profile_name || modelData.name;color:Theme.text;font.pixelSize:Theme.fontBody;font.weight:Font.DemiBold;elide:Text.ElideRight}
+                            Text {objectName:"avdTitle-"+modelData.name;Layout.fillWidth:true;text:modelData.nickname || modelData.profile_name || modelData.name;color:Theme.text;font.pixelSize:Theme.fontBody;font.weight:Font.DemiBold;elide:Text.ElideRight}
                             Text {Layout.fillWidth:true;text:modelData.name+" · "+(modelData.display.width?modelData.display.width+" × "+modelData.display.height:qsTr("External profile"));color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro;elide:Text.ElideMiddle}
                             RowLayout {Layout.fillWidth:true;spacing:Theme.gapSm
                                 StudioStatus {tone:connected?"ok":library.pendingBoots[modelData.name]?"busy":"idle";text:connected?(connected.state==="device"?qsTr("Connected"):connected.state):library.pendingBoots[modelData.name]?qsTr("Starting…"):qsTr("Off")}
                                 Text {Layout.fillWidth:true;text:qsTr("Graphics: %1").arg(modelData.gpu || "auto")+(modelData.memory_mb?" · "+modelData.memory_mb+" MB":"");color:Theme.faint;font.pixelSize:Theme.fontSmall;elide:Text.ElideRight}
                             }
                         }
+                        StudioButton {objectName:"pinAvd-"+modelData.name;iconName:"pin";displayText:"";quiet:!modelData.pinned;selected:!!modelData.pinned;text:modelData.pinned?qsTr("Unpin"):qsTr("Pin");tip:modelData.pinned?qsTr("Unpin this device"):qsTr("Pin this device to the top");onClicked:library.pin("avd:"+modelData.name,!modelData.pinned)}
+                        StudioButton {objectName:"renameAvd-"+modelData.name;iconName:"edit";displayText:"";quiet:true;text:qsTr("Rename");tip:qsTr("Give this device a nickname");onClicked:library.rename("avd:"+modelData.name,modelData.nickname,modelData.profile_name || modelData.name)}
                         StudioButton {objectName:"performanceAvd-"+modelData.name;iconName:"settings";quiet:true;tip:qsTr("Set graphics, memory and CPU");onClicked:library.performance(modelData)}
                         StudioButton {objectName:"startAvd-"+modelData.name;text:connected && connected.state==="device"?qsTr("Open"):library.pendingBoots[modelData.name]?qsTr("Starting…"):qsTr("Start");iconName:connected && connected.state==="device"?"phone":"play";enabled:!library.pendingBoots[modelData.name];onClicked:library.start(modelData)}
                     }
@@ -118,6 +127,8 @@ ColumnLayout {
                             Text {text:modelData.name;color:Theme.text;font.pixelSize:Theme.fontBody;font.weight:Font.DemiBold;Layout.fillWidth:true;elide:Text.ElideRight}
                             Text {text:modelData.id+" · "+modelData.state;color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro;Layout.fillWidth:true;elide:Text.ElideMiddle}
                         }
+                        StudioButton {objectName:"pinDevice-"+modelData.id;iconName:"pin";displayText:"";quiet:!modelData.pinned;selected:!!modelData.pinned;text:modelData.pinned?qsTr("Unpin"):qsTr("Pin");tip:modelData.pinned?qsTr("Unpin this device"):qsTr("Pin this device to the top");onClicked:library.pin(modelData.id,!modelData.pinned)}
+                        StudioButton {objectName:"renameDevice-"+modelData.id;iconName:"edit";displayText:"";quiet:true;text:qsTr("Rename");tip:qsTr("Give this device a nickname");onClicked:library.rename(modelData.id,modelData.nickname,modelData.original_name || modelData.name)}
                         StudioButton {text:qsTr("Open");enabled:modelData.state==="device";onClicked:library.openDevice(modelData)}
                     }
                     onClicked:workspace.selectedDevice=modelData.id
@@ -183,6 +194,19 @@ ColumnLayout {
                 StudioButton {objectName:"saveAndroidPerformance";text:library.savingPerformance?qsTr("Saving…"):qsTr("Save");accent:true;enabled:!library.savingPerformance && !library.deviceFor(library.performanceAvd.name) && !library.pendingBoots[library.performanceAvd.name] && memoryField.acceptableInput && coresField.acceptableInput;onClicked:{library.savingPerformance=true;library.request("android.avd_configure",{name:library.performanceAvd.name,gpu:library.gpuOptions[rendererPicker.currentIndex].value,vulkan:["auto","on","off"][vulkanPicker.currentIndex],memory_mb:Number(memoryField.text),cores:Number(coresField.text)})}}
             }
         }}
+    }
+    StudioDialog {
+        id:renameDialog;objectName:"renameDeviceDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,440);modal:true;title:qsTr("Device nickname")
+        contentItem:ColumnLayout {spacing:Theme.gapSm
+            Text {Layout.fillWidth:true;text:qsTr("Shown instead of %1 here, in device lists and in the Omarchy panel.").arg(library.renaming.title || "");color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            StudioTextField {id:nicknameField;objectName:"deviceNicknameField";Layout.fillWidth:true;maximumLength:40;placeholderText:qsTr("Nickname");onAccepted:if(renameSave.enabled)renameSave.clicked()}
+            RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
+                StudioButton {objectName:"removeDeviceNickname";text:qsTr("Remove nickname");quiet:true;onClicked:library.request("device.label",{device:library.renaming.device,nickname:""})}
+                Item {Layout.fillWidth:true}
+                StudioButton {text:qsTr("Cancel");onClicked:renameDialog.close()}
+                StudioButton {id:renameSave;objectName:"saveDeviceNickname";text:qsTr("Save");accent:true;enabled:nicknameField.text.trim().length>0;onClicked:library.request("device.label",{device:library.renaming.device,nickname:nicknameField.text.trim()})}
+            }
+        }
     }
     FileDialog {id:modelFile;title:qsTr("Import Android model");nameFilters:[qsTr("Device profile (*.json)")];onAccepted:library.request("catalog.import",{path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))})}
 }

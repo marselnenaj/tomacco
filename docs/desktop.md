@@ -193,6 +193,17 @@ window, an `.app` bundle is added to the profile through
 (`deploy`). A file the device cannot take is refused with the reason; files that
 are no app are ignored. The detached device window accepts drops too.
 
+## Devices page
+
+### Nicknames and pins
+
+Each Android device and emulator under **Devices** has a pin button and a rename
+button. A pinned device is listed first; a nickname is shown in place of the model
+name in the device lists, the device picker and the Omarchy panel, where a star marks
+a pinned device. Both are stored through `device.label`, so agents see them in
+`device.list` too. An emulator keeps its nickname by its AVD name, also while it is
+off and when its serial changes.
+
 ## Touches and coordinates
 
 **Touches and coordinates** in the tool strip beside the live device
@@ -267,7 +278,8 @@ while a device is live and shows an orbiting arc while a build or task runs;
 emulators and audio bridges are listed as services and do not count as activity.
 
 The panel lists connected devices (connect, disconnect, open as window, stop an
-emulator), stopped Android emulators with a start button, running and recent
+emulator), stopped Android emulators with a start button, each under its nickname
+and with pinned devices first, running and recent
 jobs with their duration, and saved projects with build-and-run. Each job row
 has a button that opens the job's log file in the desktop's text viewer
 (`xdg-open`). Keys in the open panel: O workspace, F device window,
