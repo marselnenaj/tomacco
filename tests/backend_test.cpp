@@ -32,6 +32,19 @@ private slots:
         QVERIFY(isolatedData.isValid());
         qputenv("TOMACCO_HOME",isolatedData.path().toUtf8());
     }
+    void droppedFoldersOpenAsProjectsButFilesAndAppsDoNot() {
+        QTemporaryDir root; QVERIFY(root.isValid());
+        QVERIFY(QDir(root.path()).mkpath("app"));
+        QVERIFY(QDir(root.path()).mkpath("Sample.app"));
+        write(root.filePath("notes.txt"),"notes");
+        Backend backend(QString(),nullptr,false);
+        QCOMPARE(backend.projectFolder(root.filePath("app")),QFileInfo(root.filePath("app")).canonicalFilePath());
+        QCOMPARE(backend.projectFolder(root.filePath("app")+"/"),QFileInfo(root.filePath("app")).canonicalFilePath());
+        QVERIFY(backend.projectFolder(root.filePath("Sample.app")).isEmpty());
+        QVERIFY(backend.projectFolder(root.filePath("notes.txt")).isEmpty());
+        QVERIFY(backend.projectFolder(root.filePath("missing")).isEmpty());
+        QVERIFY(backend.projectFolder(QString()).isEmpty());
+    }
     void dataDirectoryIsTheVariableOrTheDefault() {
         QTemporaryDir home;
         QVERIFY(home.isValid());

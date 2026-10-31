@@ -61,6 +61,8 @@ Panel {
     function isService(job) { return /^Emulator /.test(job.label) || /^Android(-Ton| audio)/.test(job.label) || job.label==="Run virtual iOS platform" }
     readonly property var workJobs: liveJobs.filter(j=>!isService(j))
     readonly property var recentJobs: jobs.filter(j=>j.state!=="running" && j.state!=="queued").slice(0,5)
+    // Jobs come newest first.
+    readonly property var latestJob: jobs.length ? jobs[0] : null
     readonly property var liveRuntimes: (snapshot.runtimes || []).filter(x=>x.status==="connected")
     readonly property var liveRuntime: liveRuntimes.length ? liveRuntimes[0] : null
     readonly property bool desktopOpen: (snapshot.sessions || []).some(x=>x.session==="main")
@@ -139,6 +141,14 @@ Panel {
         let stamp=Qt.formatDateTime(new Date(),"yyyy-MM-dd-HHmmss")
         let path=home+"/Pictures/Tomacco/"+liveRuntime.device+"-"+stamp+".png"
         run(root.tr("Saving screenshot","Screenshot wird gespeichert"),[["runtime.capture",{session:liveRuntime.session,path:path},root.tr("Screenshot saved: ","Screenshot gespeichert: ")+path]])
+    }
+    // Opens a job's log in the desktop's viewer for text files; the control
+    // plane names the file (job.get log_path).
+    function openLog(job) {
+        if(!job || logLookup.running) return
+        logLookup.command=[cli,"call","job.get",JSON.stringify({job_id:job.id})]
+        logLookup.running=true
+        close()
     }
     // The emulator boots without its own window. The device window opens at
     // once with a startup screen and switches to the real picture when
@@ -258,6 +268,20 @@ Panel {
         onRunningChanged: if(!running && !started) { finish(false,root.tr("Tomacco is not reachable. Check the installation.","Tomacco ist nicht erreichbar. Installation prüfen.")); Qt.callLater(root.next) }
         onExited: Qt.callLater(root.next)
     }
+    Process {
+        id: logLookup
+        stdout: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: {
+                let path=""
+                try { let result=JSON.parse(text); if(result.ok) path=result.result.log_path || "" } catch(e) {}
+                if(!path) { root.message=root.tr("The job's log could not be found.","Das Log des Auftrags wurde nicht gefunden."); root.messageIsError=true; return }
+                opener.command=["xdg-open",path]
+                opener.running=true
+            }
+        }
+    }
+    Process { id: opener }
     Process { id: notify }
     // One instance per session answers IPC, so keys can be bound in Hyprland:
     //   omarchy-shell io.github.marselnenaj.tomacco window
@@ -270,6 +294,7 @@ Panel {
         function show(tab: string): string { root.openStudio(tab || "runtime"); return "ok" }
         function window(): string { if(!root.canPopOut) return root.tr("No device connected","Kein Gerät verbunden"); root.popOut(null); return "ok" }
         function screenshot(): string { if(!root.liveRuntime) return root.tr("No live device","Kein Live-Gerät"); root.screenshot(); return "ok" }
+        function log(): string { if(!root.latestJob) return root.tr("No jobs yet","Noch keine Aufträge"); root.openLog(root.latestJob); return "ok" }
         function iphone(command: string): string {
             if(!root.phone.configured) return root.tr("No virtual iOS device set up","Kein virtuelles iOS-Gerät eingerichtet")
             if(command==="start") { if(root.phoneRunning || root.phoneBusy) return root.tr("Already running or starting","Läuft bereits oder wird gerade gestartet"); root.startPhone() }
@@ -433,6 +458,7 @@ Panel {
                 else if(key==="s") root.screenshot()
                 else if(key==="g") root.openStudio("devices")
                 else if(key==="a") root.openStudio("jobs")
+                else if(key==="v") root.openLog(root.latestJob)
                 else if(key==="r") { root.refresh(); root.scan() }
             }
             Flickable {
@@ -532,7 +558,7 @@ Panel {
                     PanelSeparator { foreground: root.foreground }
                     Section {
                         title: root.tr("JOBS","AUFTRÄGE")
-                        trailing: root.workJobs.length ? root.workJobs.length+root.tr(" active"," aktiv") : ""
+                        trailing: root.workJobs.length ? root.workJobs.length+root.tr(" active"," aktiv") : root.latestJob ? root.tr("V · newest log","V · neuestes Log") : ""
                         Hint { visible: root.jobs.length===0; text: root.tr("No jobs yet. Builds from the CLI, MCP and the workspace appear here.","Noch keine Aufträge. Builds aus CLI, MCP und Workspace erscheinen hier.") }
                         Repeater {
                             model: root.liveJobs
@@ -543,6 +569,7 @@ Panel {
                                 title: modelData.label
                                 detail: (service ? root.tr("Service running","Dienst läuft") : root.stateLabel(modelData.state))+(modelData.created ? root.tr(" · for "," · seit ")+root.span(root.now-modelData.created) : "")
                                 clickable: true; onTriggered: root.openStudio("jobs")
+                                IconAction { glyph: ""; hint: root.tr("Open log","Log öffnen"); onTriggered: root.openLog(modelData) }
                                 IconAction { glyph: ""; hint: service ? root.tr("Stop service","Dienst beenden") : root.tr("Cancel job","Auftrag abbrechen"); tint: root.bad; onTriggered: root.run(root.tr("Cancelling job","Auftrag wird abgebrochen"),[["job.cancel",{job_id:modelData.id}]]) }
                             }
                         }
@@ -554,6 +581,7 @@ Panel {
                                 title: modelData.label
                                 detail: root.stateLabel(modelData.state)+root.tr(" · "," · vor ")+root.span(root.now-modelData.updated)+root.tr(" ago","")+(modelData.created && modelData.updated>modelData.created ? root.tr(" · took "," · Dauer ")+root.span(modelData.updated-modelData.created) : "")
                                 clickable: true; onTriggered: root.openStudio("jobs")
+                                IconAction { glyph: ""; hint: root.tr("Open log","Log öffnen"); onTriggered: root.openLog(modelData) }
                             }
                         }
                     }

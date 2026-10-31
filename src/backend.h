@@ -26,6 +26,8 @@ class Backend final : public QObject {
     Q_PROPERTY(bool dark READ dark NOTIFY appearanceChanged)
     // For the About dialog.
     Q_PROPERTY(QString qtVersion READ qtVersion CONSTANT)
+    // Project folders opened before, newest first; folders that are gone are left out.
+    Q_PROPERTY(QStringList recentProjects READ recentProjects NOTIFY recentProjectsChanged)
     Q_PROPERTY(QUrl sourceUrl READ sourceUrl CONSTANT)
 public:
     explicit Backend(QString initialUrl, QObject *parent=nullptr, bool autoProbe=true);
@@ -45,6 +47,13 @@ public:
     // (qml/Theme.js lists the same families); loads the bundled fonts. Call it before QML is loaded.
     static void applyInterfaceFont();
     QString qtVersion() const;
+    QStringList recentProjects() const;
+    // Puts a project folder at the front of the recent ones (at most eight are kept).
+    Q_INVOKABLE void rememberProject(const QString &path);
+    Q_INVOKABLE void forgetProject(const QString &path);
+    // The folder a dropped path names, to open as a project: its canonical
+    // path when it is a directory and no app bundle, otherwise an empty string.
+    Q_INVOKABLE QString projectFolder(const QString &path) const;
     // The release this build's version names, where its corresponding source
     // is offered (docs/SOURCE.md.in); the repository when no version is set.
     QUrl sourceUrl() const;
@@ -74,6 +83,8 @@ public:
     Q_INVOKABLE void probeToolchain();
     Q_INVOKABLE void copy(const QString &text);
     Q_INVOKABLE QString screenshotPath(const QString &model);
+    // Puts the image saved at this path on the clipboard; false when it cannot be read.
+    Q_INVOKABLE bool copyImage(const QString &path);
     Q_INVOKABLE void openExternal(const QUrl &url);
     // Starts this program again from its path, for the new version an update installed there.
     Q_INVOKABLE bool relaunch();
@@ -86,6 +97,7 @@ signals:
     void message(const QString &text);
     void languageChanged();
     void appearanceChanged();
+    void recentProjectsChanged();
 private:
     static QString s_uiLanguage;
     // A probe result is the tool's output or one of these states, which are

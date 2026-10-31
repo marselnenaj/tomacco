@@ -20,6 +20,9 @@
 #include <QJsonDocument>
 #include <QLocalServer>
 #include <QLocalSocket>
+#include <QMimeData>
+#include <QClipboard>
+#include <QImage>
 #include <QtEndian>
 #include <QtMath>
 #include <QUrl>
@@ -1847,6 +1850,18 @@ for line in sys.stdin:
             capture("ios-virtual-apps-"+QString::number(size.width()));
             flick->setProperty("contentY",0);
         }
+        // An .app dropped on the device's picture is added the same way, and deployed at once while the phone runs.
+        auto *guest=object("iosGuestView");QVERIFY(guest);
+        phone({},research,QVariantMap{},QVariant());
+        QCOMPARE(guest->property("appKinds").toStringList(),QStringList{"app"});
+        QVERIFY(QMetaObject::invokeMethod(view,"dropApplication",Q_ARG(QVariant,QString("/fixture/Dropped.app"))));
+        configures=sent("ios.virtual.configure");QCOMPARE(configures.size(),1);
+        QCOMPARE(configures.last().second.value("add_application").toString(),QString("/fixture/Dropped.app"));
+        QVERIFY(configures.last().second.value("deploy").toBool());
+        QCOMPARE(guest->property("appNotice").toString(),QString("Checking Dropped.app…"));
+        accept(configures.last().first,status({},research,QVariantMap{},QVariant()));
+        QCOMPARE(guest->property("appNotice").toString(),QString("Dropped.app added · installing on the running device"));
+        guest->setProperty("appNotice",QString());
         // Leave nothing behind; the real control plane's late refusals of the fixture paths find nothing waiting.
         view->setProperty("virtualAppPath",QString());view->setProperty("virtualAppNotice",QString());view->setProperty("virtualAppBusy",false);
         view->setProperty("virtualPhone",QVariantMap{{"configured",false}});
@@ -1957,6 +1972,200 @@ for line in sys.stdin:
         // The awaited device itself is connected, with the app's own audio setting.
         QCOMPARE(shownPlatform,QString("android"));QCOMPARE(shownTarget,QString("emulator-await"));
         QCOMPARE(starts.size(),1);QVERIFY(starts[0].toMap().value("signature").toString().contains("emulator-await"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void apps_dropped_on_the_device_install_there() {
+        // Files dragged onto the device view: APKs install on an Android device, one IPA on an iPhone, through
+        // device.install. Other app files are explained; files that are no app pass on.
+        open("runtime");
+        window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *area=item("nativeAppDrop");QVERIFY(area);
+        auto *overlay=visualItem(area,"appDropOverlay");QVERIFY(overlay);
+        const auto platform=view->property("platform"),target=view->property("target"),appleTarget=view->property("appleTarget");
+        view->setProperty("requests",QVariantMap{});view->setProperty("live",QVariantMap{});
+        view->setProperty("targets",QVariantList{
+            QVariantMap{{"id","drop-pixel"},{"name","Drop Pixel"},{"platform","android"},{"kind","device"},{"state","device"}},
+            QVariantMap{{"id","drop-iphone"},{"name","Drop iPhone"},{"platform","ios"},{"kind","device"},{"state","connected"}}});
+        view->setProperty("platform","android");view->setProperty("target","drop-pixel");
+        QTemporaryDir files;QVERIFY(files.isValid());
+        for(const auto *name:{"base.apk","split.apk","App.ipa","notes.txt"}){QFile file(files.filePath(name));QVERIFY(file.open(QIODevice::WriteOnly));}
+        const auto url=[&](const char *name){return QUrl::fromLocalFile(files.filePath(name));};
+        const QPoint at=area->mapToScene(QPointF(area->width()/2,area->height()/2)).toPoint();
+        QMimeData data;
+        // Enters with these files and reports whether the view took the drag.
+        const auto enter=[&](const QList<QUrl> &urls){
+            data.setUrls(urls);
+            QDragEnterEvent event(at,Qt::CopyAction,&data,Qt::LeftButton,Qt::NoModifier);
+            QCoreApplication::sendEvent(window,&event);
+            return event.isAccepted();
+        };
+        const auto drop=[&]{QDropEvent event(at,Qt::CopyAction,&data,Qt::LeftButton,Qt::NoModifier);QCoreApplication::sendEvent(window,&event);};
+        const auto leave=[&]{QDragLeaveEvent event;QCoreApplication::sendEvent(window,&event);};
+        const auto installs=[&]{
+            QStringList found;const auto all=mapOf(view->property("requests"));
+            for(const auto &entry:all)if(entry.toMap().value("op").toString()=="device.install")found.append(entry.toMap().value("signature").toString());
+            return found;
+        };
+        // Split APKs install together on the Android device.
+        QVERIFY(enter({url("base.apk"),url("split.apk")}));
+        QVERIFY(overlay->isVisible());QVERIFY(area->property("fits").toBool());
+        drop();
+        QVERIFY(!overlay->isVisible());
+        auto sent=installs();QCOMPARE(sent.size(),1);
+        auto arguments=QJsonDocument::fromJson(sent[0].toUtf8()).toVariant().toMap();
+        QCOMPARE(arguments.value("platform").toString(),QString("android"));QCOMPARE(arguments.value("device").toString(),QString("drop-pixel"));
+        QCOMPARE(arguments.value("paths").toStringList(),(QStringList{files.filePath("base.apk"),files.filePath("split.apk")}));
+        QVERIFY(view->property("notice").toString().startsWith("Installing base.apk, split.apk on "));QVERIFY(!view->property("failed").toBool());
+        // An IPA is no Android app: said so, nothing is sent.
+        view->setProperty("requests",QVariantMap{});
+        QVERIFY(enter({url("App.ipa")}));QVERIFY(!area->property("fits").toBool());
+        drop();
+        QVERIFY(installs().isEmpty());
+        QCOMPARE(view->property("notice").toString(),QString("Android devices install .apk files."));QVERIFY(view->property("failed").toBool());
+        // A file that is no app is not taken here.
+        QVERIFY(!enter({url("notes.txt")}));QVERIFY(!overlay->isVisible());leave();
+        // An iPhone over USB takes one signed IPA.
+        view->setProperty("platform","ios");view->setProperty("appleTarget","device");view->setProperty("target","drop-iphone");
+        QVERIFY(enter({url("App.ipa")}));QVERIFY(area->property("fits").toBool());
+        drop();
+        sent=installs();QCOMPARE(sent.size(),1);
+        arguments=QJsonDocument::fromJson(sent[0].toUtf8()).toVariant().toMap();
+        QCOMPARE(arguments.value("platform").toString(),QString("ios"));QCOMPARE(arguments.value("device").toString(),QString("drop-iphone"));
+        QCOMPARE(arguments.value("paths").toStringList(),QStringList{files.filePath("App.ipa")});
+        QVERIFY(enter({url("base.apk")}));QVERIFY(!area->property("fits").toBool());leave();
+        // Leave nothing behind for the scenarios that follow.
+        view->setProperty("requests",QVariantMap{});view->setProperty("targets",QVariantList{});
+        view->setProperty("platform",platform);view->setProperty("appleTarget",appleTarget);view->setProperty("target",target);
+        view->setProperty("notice",QString());view->setProperty("failed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void screenshots_are_saved_and_copied() {
+        // A capture of the live device is saved by the control plane and then put on the clipboard;
+        // without a device the reason is shown. The palette and the shortcut sheet name it.
+        open("runtime");
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        view->setProperty("live",QVariantMap{});view->setProperty("requests",QVariantMap{});
+        QVERIFY(QMetaObject::invokeMethod(view,"capture"));
+        QCOMPARE(view->property("notice").toString(),QString("Connect a device to take a screenshot."));
+        QVERIFY(view->property("failed").toBool());
+        QTemporaryDir pictures;QVERIFY(pictures.isValid());
+        const auto path=pictures.filePath("shot.png");
+        QImage picture(36,64,QImage::Format_RGB32);picture.fill(QColor("#2fa84f"));QVERIFY(picture.save(path));
+        QGuiApplication::clipboard()->clear();
+        view->setProperty("requests",QVariantMap{{"-61",QVariantMap{{"op","runtime.capture"}}}});
+        control->apiFinished(-61,"runtime.capture",QVariantMap{{"ok",true},{"result",QVariantMap{{"path",path}}}});
+        QCOMPARE(view->property("notice").toString(),QString("Screenshot saved and copied · ")+path);
+        QVERIFY(!view->property("failed").toBool());
+        const auto copied=QGuiApplication::clipboard()->image();
+        QCOMPARE(copied.size(),picture.size());QCOMPARE(copied.pixelColor(10,10),QColor("#2fa84f"));
+        // A file that cannot be read is still reported as saved, but not as copied.
+        view->setProperty("requests",QVariantMap{{"-62",QVariantMap{{"op","runtime.capture"}}}});
+        control->apiFinished(-62,"runtime.capture",QVariantMap{{"ok",true},{"result",QVariantMap{{"path",pictures.filePath("missing.png")}}}});
+        QCOMPARE(view->property("notice").toString(),QString("Capture saved · ")+pictures.filePath("missing.png"));
+        bool listed=false;
+        for(const auto &command:view->property("commands").value<QJSValue>().toVariant().toList())
+            if(command.toMap().value("id").toString()=="screenshot")listed=command.toMap().value("key").toString()=="Ctrl+Shift+S";
+        QVERIFY(listed);
+        view->setProperty("notice",QString());view->setProperty("failed",false);view->setProperty("requests",QVariantMap{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void recent_projects_reopen_from_the_start_screen_and_the_palette() {
+        // Every project opened is remembered, newest first, without duplicates or folders that are gone;
+        // the start screen and the palette offer the others again.
+        open("runtime");
+        window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        const auto original=directory.filePath("project");
+        QTRY_VERIFY(backend->recentProjects().contains(QFileInfo(original).canonicalFilePath()));
+        QTemporaryDir other;QVERIFY(other.isValid());
+        const auto first=other.filePath("first"),second=other.filePath("second"),gone=other.filePath("gone");
+        for(const auto &folder:{first,second,gone})QVERIFY(QDir().mkpath(folder));
+        QFile pubspec(second+"/pubspec.yaml");QVERIFY(pubspec.open(QIODevice::WriteOnly));pubspec.write("name: second_app\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");pubspec.close();
+        QSignalSpy changed(backend.get(),&Backend::recentProjectsChanged);
+        backend->rememberProject(first);backend->rememberProject(gone);backend->rememberProject(second);backend->rememberProject(first);
+        QCOMPARE(changed.size(),4);
+        QVERIFY(QDir(gone).removeRecursively());
+        auto recent=backend->recentProjects();
+        QCOMPARE(recent.mid(0,2),(QStringList{QFileInfo(first).canonicalFilePath(),QFileInfo(second).canonicalFilePath()}));
+        QVERIFY(!recent.contains(gone));QCOMPARE(recent.count(QFileInfo(first).canonicalFilePath()),1);
+        backend->rememberProject(first);QCOMPARE(changed.size(),4);
+        backend->rememberProject(other.filePath("missing"));QCOMPARE(changed.size(),4);
+        // The start screen names the newest ones; the open project is not among them.
+        QTRY_VERIFY(item("heroRecent-0") && item("heroRecent-1"));
+        auto *button=item("heroRecent-0");QVERIFY(button->isVisible());
+        QCOMPARE(button->property("text").toString(),QString("first"));
+        QCOMPARE(item("heroRecent-1")->property("text").toString(),QString("second"));
+        for(int index=0;index<3;++index)
+            if(auto *shown=item(qPrintable(QString("heroRecent-%1").arg(index))))QVERIFY(shown->property("tip").toString()!=original);
+        // The palette finds them by name and opens one.
+        auto *palette=object("commandPalette");QVERIFY(palette);
+        QVERIFY(QMetaObject::invokeMethod(palette,"open"));
+        QTRY_VERIFY(item("commandSearch") && item("commandSearch")->hasActiveFocus());
+        type("second");
+        QTRY_COMPARE(palette->property("results").value<QJSValue>().property(0).property("title").toString(),QString("Open recent project second"));
+        QTest::keyClick(window,Qt::Key_Return);
+        const auto path=[&]{return mapOf(workspace->property("project")).value("path").toString();};
+        QTRY_COMPARE_WITH_TIMEOUT(QFileInfo(path()).canonicalFilePath(),QFileInfo(second).canonicalFilePath(),patient(10000));
+        QCOMPARE(backend->recentProjects().first(),QFileInfo(second).canonicalFilePath());
+        // Back to the project the other scenarios use, and only it is remembered from here.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"openProject",Q_ARG(QVariant,original)));
+        QTRY_COMPARE_WITH_TIMEOUT(path(),original,patient(10000));
+        for(const auto &folder:backend->recentProjects())if(folder!=QFileInfo(original).canonicalFilePath())backend->forgetProject(folder);
+        QTRY_VERIFY(!item("heroRecent-0") || !item("heroRecent-0")->isVisible());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void a_project_folder_dropped_on_the_window_opens() {
+        // A folder dragged onto the window opens as the project and shows its overview; a file does not.
+        open("runtime");
+        window->resize(1380,970);QTest::qWait(50);
+        auto *overlay=item("projectFolderDropOverlay");QVERIFY(overlay);
+        const auto original=directory.filePath("project");
+        QTemporaryDir other;QVERIFY(other.isValid());
+        const auto folder=other.filePath("dropped");QVERIFY(QDir().mkpath(folder));
+        QFile pubspec(folder+"/pubspec.yaml");QVERIFY(pubspec.open(QIODevice::WriteOnly));
+        pubspec.write("name: dropped_app\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");pubspec.close();
+        const QPoint at(window->width()/2,window->height()/2);
+        QMimeData data;
+        const auto enter=[&](const QString &path){
+            data.setUrls({QUrl::fromLocalFile(path)});
+            QDragEnterEvent event(at,Qt::CopyAction,&data,Qt::LeftButton,Qt::NoModifier);
+            QCoreApplication::sendEvent(window,&event);
+            return event.isAccepted();
+        };
+        QVERIFY(!enter(folder+"/pubspec.yaml"));QVERIFY(!overlay->isVisible());
+        {QDragLeaveEvent event;QCoreApplication::sendEvent(window,&event);}
+        QVERIFY(enter(folder));QVERIFY(overlay->isVisible());
+        QVERIFY(overlay->property("text").toString().contains("dropped"));
+        {QDropEvent event(at,Qt::CopyAction,&data,Qt::LeftButton,Qt::NoModifier);QCoreApplication::sendEvent(window,&event);}
+        QVERIFY(!overlay->isVisible());
+        const auto path=[&]{return mapOf(workspace->property("project")).value("path").toString();};
+        QTRY_COMPARE_WITH_TIMEOUT(QFileInfo(path()).canonicalFilePath(),QFileInfo(folder).canonicalFilePath(),patient(10000));
+        QVERIFY(workspace->property("opened").toBool());QCOMPARE(workspace->property("section").toString(),QString("project"));
+        // Back to the project the other scenarios use; the dropped one is not kept among the recent ones.
+        open("runtime");
+        QTRY_COMPARE_WITH_TIMEOUT(path(),original,patient(10000));
+        backend->forgetProject(QFileInfo(folder).canonicalFilePath());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void the_window_reopens_at_its_last_size() {
+        // Closing stores the size, or that the window was maximised; the next start opens it that way.
+        open("runtime");
+        window->resize(700,540);QTest::qWait(50);
+        QVERIFY(QMetaObject::invokeMethod(window,"saveGeometry"));
+        QSettings settings;
+        QCOMPARE(settings.value("window/width").toInt(),700);QCOMPARE(settings.value("window/height").toInt(),540);
+        QCOMPARE(settings.value("window/maximized").toString(),QString("false"));
+        window->resize(1380,970);QTest::qWait(50);
+        // (No larger than the screen: the test's offscreen screen is 800×600.)
+        QVERIFY(QMetaObject::invokeMethod(window,"restoreGeometry"));
+        QTRY_COMPARE(window->width(),700);QTRY_COMPARE(window->height(),540);
+        // A stored size below the smallest window is ignored.
+        backend->saveSetting("window/width",200);backend->saveSetting("window/height",100);
+        QVERIFY(QMetaObject::invokeMethod(window,"restoreGeometry"));
+        QTest::qWait(50);QCOMPARE(window->width(),700);
+        window->resize(1380,970);QTest::qWait(50);
+        for(const auto *key:{"window/width","window/height","window/maximized"})settings.remove(key);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void german_interface_switches_live() {

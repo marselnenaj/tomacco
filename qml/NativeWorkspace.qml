@@ -7,6 +7,7 @@ import Tomacco.Native 1.0
 import "."
 import "NativeProfiles.js" as NativeProfiles
 import "ColorNames.js" as ColorNames
+import "AppFiles.js" as AppFiles
 
 Rectangle {
     id: view
@@ -14,6 +15,29 @@ Rectangle {
     required property var workspace
     signal webRequested()
     color: Theme.background
+    // A project folder dropped anywhere on the window opens as the project.
+    // Above everything, so its frame covers the window; it takes only folders,
+    // so app files pass on to the device's own drop target.
+    DropArea {
+        id:folderDrop;objectName:"projectFolderDrop";anchors.fill:parent;z:100
+        property string folder:""
+        onEntered:drag=>{
+            const paths=AppFiles.paths(drag.urls)
+            folder=paths.length===1?Studio.projectFolder(paths[0]):""
+            if(!folder){drag.accepted=false;return}
+            drag.accept(Qt.CopyAction)
+        }
+        onExited:folder=""
+        onDropped:drop=>{
+            const paths=AppFiles.paths(drop.urls)
+            const chosen=paths.length===1?Studio.projectFolder(paths[0]):""
+            folder=""
+            if(!chosen){drop.accepted=false;return}
+            drop.accept(Qt.CopyAction)
+            view.workspace.openProject(chosen);view.navigate("project")
+        }
+        DropOverlay {objectName:"projectFolderDropOverlay";anchors.fill:parent;visible:folderDrop.containsDrag;text:qsTr("Drop to open %1 as the project").arg(AppFiles.name(folderDrop.folder))}
+    }
     property var requests: ({})
     property var targets: []
     property var remotes: ({})
@@ -199,6 +223,12 @@ Rectangle {
         onBackRequested:view.input({action:"key",key:"back"})
         onRotateRequested:view.input({action:"rotate",orientation:display.sourceSize.width>display.sourceSize.height?"portrait":"landscape_left"})
         onScreenshotRequested:view.capture()
+        AppDropArea {
+            parent:deviceWindow.host;anchors.fill:parent;z:2;enabled:view.detached
+            kinds:view.installKinds;targetName:view.deviceName;refusal:view.installRefusal
+            onAppsDropped:paths=>view.installApps(paths)
+            onRefused:reason=>{view.notice=reason;view.failed=true}
+        }
     }
     function choosePlatform(value) {
         if(platform===value)return
@@ -260,7 +290,26 @@ Rectangle {
     }
     function stop() {pendingLaunch=null;autoAttach=false;if(live.session)request("runtime.stop",{session:live.session});live=({});display.session=({})}
     function input(args) {display.sendInput(args)}
-    function capture() {if(live.session)request("runtime.capture",{session:live.session,path:Studio.screenshotPath(live.device)})}
+    // Apps dropped on the device view install on the device it shows, or on
+    // the chosen one, through device.install: APKs on Android, one signed
+    // IPA on an iPhone over USB.
+    readonly property var installTarget: live.session && display.state==="live" ? ({platform:live.platform,device:live.device,kind:live.remote?"simulator":"device"})
+        : hasTarget ? ({platform:platform,device:target,kind:platform==="ios"?appleTarget:"device"}) : null
+    readonly property var installKinds: !installTarget ? [] : installTarget.platform==="android" ? ["apk"] : installTarget.kind==="device" ? ["ipa"] : []
+    readonly property string installRefusal: !installTarget ? qsTr("Choose a device first, then drop the app on it.")
+        : installTarget.platform==="android" ? qsTr("Android devices install .apk files.")
+        : installTarget.kind==="device" ? qsTr("An iPhone installs one signed .ipa file.")
+        : qsTr("Apps for the Mac's simulator are installed with Apple's tools.")
+    function installApps(paths) {
+        if(!AppFiles.installable(paths,installKinds)){notice=installRefusal;failed=true;return}
+        request("device.install",{platform:installTarget.platform,device:installTarget.device,paths:paths})
+        notice=qsTr("Installing %1 on %2…").arg(paths.map(AppFiles.name).join(", ")).arg(deviceName || installTarget.device);failed=false
+    }
+    // The picture is saved under Pictures/Tomacco and put on the clipboard.
+    function capture() {
+        if(!live.session){notice=qsTr("Connect a device to take a screenshot.");failed=true;return}
+        request("runtime.capture",{session:live.session,path:Studio.screenshotPath(live.device)})
+    }
     function build(action) {
         if(!projectPath)return
         if(platform==="ios" && appleTarget==="simulator") {
@@ -368,7 +417,8 @@ Rectangle {
                 else {view.notice=qsTr("App launch: %1. Details under Builds & jobs.").arg(workspace.jobStateLabel(r));view.failed=true}
             }
             if(op==="workspace.context") {workspace.openProject(r.project.path);view.platform=r.workspace.platform || "android";view.target=r.workspace.device || ""}
-            if(op==="runtime.capture"){view.notice=qsTr("Capture saved · %1").arg(r.path);view.failed=false}
+            if(op==="device.install"){if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
+            if(op==="runtime.capture"){view.notice=(Studio.copyImage(r.path)?qsTr("Screenshot saved and copied · %1"):qsTr("Capture saved · %1")).arg(r.path);view.failed=false}
         }
     }
     readonly property alias workspaceHost: workspaceHost
@@ -393,6 +443,8 @@ Rectangle {
         {id:"release",label:"Release",icon:"release",key:"9"},
         {id:"tools",label:qsTr("Agents"),icon:"agent",key:"0",group:qsTr("AUTOMATION")}
     ]
+    // Project folders opened before, but the open one, to reopen from the start screen and the palette.
+    readonly property var recentProjects: Studio.recentProjects.filter(p=>p!==projectPath).map(p=>({path:p,name:AppFiles.name(p)}))
     // What the palette offers besides the views and the agent tools.
     readonly property var commands: [
         {id:"open-project",title:qsTr("Open project"),detail:qsTr("Command"),icon:"files",key:qsTr("Ctrl")+"+O",run:()=>projectFolder.open()},
@@ -401,9 +453,10 @@ Rectangle {
         {id:"copy-context",title:qsTr("Copy context"),detail:qsTr("Command"),icon:"copy",key:"",run:()=>view.copyContext()},
         {id:"appearance",title:Theme.isDark?qsTr("Switch to light appearance"):qsTr("Switch to dark appearance"),detail:qsTr("Command"),icon:Theme.isDark?"sun":"moon",key:"",run:()=>Studio.setAppearance(Theme.isDark?"light":"dark")},
         {id:"settings",title:qsTr("Settings"),detail:qsTr("Command"),icon:"settings",key:qsTr("Ctrl")+"+,",run:()=>settingsDialog.open()},
+        {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
         {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()}
-    ]
+    ].concat(recentProjects.map(p=>({id:"recent:"+p.path,title:qsTr("Open recent project %1").arg(p.name),detail:p.path,search:p.name,icon:"files",key:"",run:()=>workspace.openProject(p.path)})))
     function navigate(section) { if(section==="runtime")workspace.close();else workspace.showTab(section) }
     function copyContext() {Studio.copy(JSON.stringify({project:projectPath,runtime:live,cli:Agent.cliPath,mcp:{command:Agent.cliPath,args:["mcp"]}},null,2));notice=qsTr("Project and runtime context copied");failed=false}
     // The panel is open by default where there is room; in a narrow window it
@@ -611,6 +664,12 @@ Rectangle {
                             StudioStatus {tone:"busy";mono:true;text:view.runningJobs.length?view.workspace.jobStateLabel(view.runningJobs[0]):""}
                             StudioHeading {Layout.fillWidth:true;text:view.runningJobs.length?view.runningJobs[0].label:"";size:Theme.fontDisplay;maximumLineCount:3;elide:Text.ElideRight}
                         }
+                        AppDropArea {
+                            objectName:"nativeAppDrop";anchors.fill:parent;z:2;enabled:!view.detached
+                            kinds:view.installKinds;targetName:view.deviceName;refusal:view.installRefusal
+                            onAppsDropped:paths=>view.installApps(paths)
+                            onRefused:reason=>{view.notice=reason;view.failed=true}
+                        }
                         StudioEmptyState {
                             objectName:"nativeDetachedNotice";actionName:"nativeDockButton"
                             anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,480);visible:view.detached && view.deviceShown
@@ -628,6 +687,8 @@ Rectangle {
                             errorText:display.error
                             secondaryText:view.projectPath?"":qsTr("Open a project")
                             onSecondary:projectFolder.open()
+                            recent:view.recentProjects
+                            onRecentChosen:path=>view.workspace.openProject(path)
                             steps:[
                                 {key:"project",label:qsTr("Project"),detail:workspace.project.name || qsTr("Open a project"),done:!!view.projectPath},
                                 {key:"device",label:qsTr("Device"),detail:view.deviceName || qsTr("Choose a device"),done:view.hasTarget},
@@ -647,7 +708,7 @@ Rectangle {
                             StudioButton {text:qsTr("Back");displayText:"";iconName:"back";quiet:true;tip:text;visible:display.state==="live" && view.live.platform!=="ios";onClicked:view.input({action:"key",key:"back"})}
                             StudioButton {text:"Home";displayText:"";iconName:"home";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"key",key:"home"})}
                             StudioButton {text:qsTr("Rotate");displayText:"";iconName:"rotate";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"rotate",orientation:display.sourceSize.width>display.sourceSize.height?"portrait":"landscape_left"})}
-                            StudioButton {text:"Screenshot";displayText:"";iconName:"camera";quiet:true;tip:text;visible:display.state==="live";onClicked:view.capture()}
+                            StudioButton {objectName:"nativeScreenshot";text:"Screenshot";displayText:"";iconName:"camera";quiet:true;tip:qsTr("Save and copy a screenshot")+" · "+qsTr("Ctrl")+"+Shift+S";visible:display.state==="live";onClicked:view.capture()}
                             StudioButton {text:qsTr("Enter text");displayText:"";iconName:"keyboard";quiet:true;tip:text;visible:display.state==="live";onClicked:textEntry.open()}
                             StudioButton {objectName:"nativeDetachButton";text:view.detached?qsTr("Dock"):qsTr("Own window");displayText:"";iconName:view.detached?"dock":"window";quiet:true;selected:view.detached;tip:view.detached?text:qsTr("Detach the device into its own window");visible:display.state==="live";onClicked:view.detached=!view.detached}
                             Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:display.state==="live"}
@@ -739,7 +800,7 @@ Rectangle {
             GridLayout {
                 width:parent.width;columns:2;columnSpacing:Theme.gapXl;rowSpacing:Theme.gapSm
                 Repeater {
-                    model:[["Ctrl+K",qsTr("Search views, commands and tools")],["F1",qsTr("Keyboard shortcuts")],["Ctrl+O",qsTr("Open project")],["Ctrl+J",qsTr("Show or hide activity")],["Ctrl+,",qsTr("Settings")],["Ctrl+S",qsTr("Save the current file")],["Ctrl+Shift+F",qsTr("Search the project's source code")],["F11",qsTr("Full screen · web preview")]].concat(view.navigation.map(x=>["Ctrl+"+x.key,x.label])).map(x=>[x[0].replace("Ctrl",qsTr("Ctrl")),x[1]])
+                    model:[["Ctrl+K",qsTr("Search views, commands and tools")],["F1",qsTr("Keyboard shortcuts")],["Ctrl+O",qsTr("Open project")],["Ctrl+J",qsTr("Show or hide activity")],["Ctrl+,",qsTr("Settings")],["Ctrl+S",qsTr("Save the current file")],["Ctrl+Shift+S",qsTr("Save and copy a device screenshot")],["Ctrl+Shift+F",qsTr("Search the project's source code")],["F11",qsTr("Full screen · web preview")]].concat(view.navigation.map(x=>["Ctrl+"+x.key,x.label])).map(x=>[x[0].replace("Ctrl",qsTr("Ctrl")),x[1]])
                     delegate:Item {
                         required property var modelData
                         required property int index

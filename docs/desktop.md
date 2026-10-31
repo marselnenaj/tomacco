@@ -20,6 +20,13 @@ tomacco --device duo --fold open --orientation landscape
 Open **Tomacco** in the application menu to enter the native project workspace. Explicit URL, folder or device arguments open the visual
 layout lab instead (see [Visual layout lab](#visual-layout-lab)).
 
+Tomacco remembers the last eight project folders you opened. The start screen
+shows the three newest besides the open one under **Recent** (*Zuletzt*), and
+the command palette (Ctrl+K) finds all of them as **Open recent project**
+(*Zuletzt geöffnetes Projekt … öffnen*). Folders that no longer exist are left out.
+A project folder dragged from the file manager onto the window opens as the
+project and shows its overview; a single file or an `.app` bundle does not.
+
 ## Languages
 
 The desktop speaks English and German. It follows the desktop language: German when
@@ -62,6 +69,9 @@ Files, Builds & jobs and Agents run edge to edge. Apple and Android devices have
 separate categories. Narrow, tall windows are normal in a tiling window manager:
 the rail stays icons, the device bar's actions become icons, and the activity
 panel takes the whole stage while it is open. The smallest window is 560×480.
+The window opens at the size it had when it was last closed, at most as large
+as the screen, and maximised if it was; a tiling window manager still decides
+the size itself. `--capture` and `--smoke-test` keep the default size.
 
 | Action | Shortcut |
 | --- | --- |
@@ -73,6 +83,12 @@ panel takes the whole stage while it is open. The smallest window is 560×480.
 | Live device / files / jobs / devices / overview | Ctrl+1 … Ctrl+5 |
 | Debugger / UI tests / performance / release / agents | Ctrl+6 … Ctrl+9, Ctrl+0 |
 | Save the current source file | Ctrl+S |
+| Save a screenshot of the live device and copy it to the clipboard | Ctrl+Shift+S |
+
+Screenshots of the live device, from the camera button, the palette, Ctrl+Shift+S or
+the device window's rail (Ctrl+Shift+S there too), are saved in `~/Pictures/Tomacco`
+(or the configured Pictures directory) and put on the clipboard as an image.
+The virtual iOS device's **Screenshot** button copies its capture the same way.
 
 ## Activity
 
@@ -96,6 +112,18 @@ Apple defaults to a physical iPhone over USB: Linux compiles supported Swift
 apps and the iPhone executes them. Apple's Simulator remains an optional Mac
 connection. The **Web preview** button (*Web-Vorschau*) opens the separate Chromium
 layout lab.
+
+## Installing an app by dropping it
+
+Drag an app from the file manager onto the device view to install it on the
+device shown there, or on the chosen one when none is live. Android devices
+take one or more `.apk` files (split APKs install together), an iPhone over USB
+one signed `.ipa`; both go through `device.install` and show up as a job under
+**Builds & jobs**. On the virtual iOS device's picture, docked or in its own
+window, an `.app` bundle is added to the profile through
+`ios.virtual.configure` and, while the phone runs, installed at once
+(`deploy`). A file the device cannot take is refused with the reason; files that
+are no app are ignored. The detached device window accepts drops too.
 
 ## Device window
 
@@ -160,10 +188,12 @@ emulators and audio bridges are listed as services and do not count as activity.
 
 The panel lists connected devices (connect, disconnect, open as window, stop an
 emulator), stopped Android emulators with a start button, running and recent
-jobs with their duration, and saved projects with build-and-run. Keys in the
-open panel: O workspace, F device window, S screenshot, G devices, A jobs,
-R refresh. The same actions are available over IPC for Hyprland bindings, for
-example `omarchy-shell io.github.marselnenaj.tomacco window`, `screenshot`,
+jobs with their duration, and saved projects with build-and-run. Each job row
+has a button that opens the job's log file in the desktop's text viewer
+(`xdg-open`). Keys in the open panel: O workspace, F device window,
+S screenshot, G devices, A jobs, V log of the newest job, R refresh. The same
+actions are available over IPC for Hyprland bindings, for example
+`omarchy-shell io.github.marselnenaj.tomacco window`, `screenshot`, `log`,
 `show jobs`, `emulator <name>`, `iphone start|window|stop`, `status`, `version`
 and `refresh`. Its native popup supports Escape and switching between panels.
 Completion notifications can be turned off in the widget's settings, or with
@@ -278,7 +308,8 @@ and the rounded display render using each profile's declared density,
 accounting for the desktop display scale. This keeps text and canvas content
 sharp when the device is enlarged. Zoomed devices can be scrolled into view.
 Screenshots include the device frame and are saved at 2× the preview's logical
-size in `~/Pictures/Tomacco` (or the configured Pictures directory).
+size in `~/Pictures/Tomacco` (or the configured Pictures directory) and copied
+to the clipboard.
 
 Pages on every profile always fill the complete display: there are no blank
 strips around the browser. The app can read the layout metadata below to

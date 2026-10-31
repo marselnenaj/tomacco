@@ -80,7 +80,26 @@ ApplicationWindow {
     function configureIosGuest(args) { workspace.configureIosGuest(args) }
     function nativeCaptureItem(includeFrame) { return nativeWorkspace.captureItem(includeFrame) }
     property bool discardOnClose: false
+    // The window opens at the size it had when it was last closed, maximised
+    // if it was; visual checks and the smoke test keep the default size.
+    readonly property bool keepsGeometry: !captureMode && !smokeTest
+    function saveGeometry() {
+        if(!keepsGeometry) return
+        const maximized=root.visibility===Window.Maximized || root.visibility===Window.FullScreen
+        Studio.saveSetting("window/maximized",maximized)
+        if(!maximized) {Studio.saveSetting("window/width",root.width);Studio.saveSetting("window/height",root.height)}
+    }
+    function restoreGeometry() {
+        if(!keepsGeometry) return
+        const w=Number(Studio.setting("window/width",0)),h=Number(Studio.setting("window/height",0))
+        if(w>=root.minimumWidth && h>=root.minimumHeight) {
+            root.width=Math.min(w,Math.max(root.minimumWidth,Screen.desktopAvailableWidth))
+            root.height=Math.min(h,Math.max(root.minimumHeight,Screen.desktopAvailableHeight))
+        }
+        if(String(Studio.setting("window/maximized",false))==="true" && root.visible) root.showMaximized()
+    }
     onClosing: function(close) {
+        root.saveGeometry()
         // With a device window on screen the app continues as that window.
         // Unsaved edits stay in the hidden main window, which returns before
         // the app ends, so nothing is asked and nothing is discarded here.
@@ -131,10 +150,11 @@ ApplicationWindow {
         let path=Studio.screenshotPath(currentModel.id+"-"+(currentModel.id==="duo"?(foldedOpen?"offen-":"gefaltet-"):"")+(rotated?"quer":"hoch"))
         if(!path.length) return
         phone.grabToImage(function(result) {
-            root.toast(result.saveToFile(path) ? qsTr("Screenshot saved · %1").arg(path) : qsTr("Screenshot could not be saved."))
+            root.toast(!result.saveToFile(path) ? qsTr("Screenshot could not be saved.") : (Studio.copyImage(path) ? qsTr("Screenshot saved and copied · %1") : qsTr("Screenshot saved · %1")).arg(path))
         },Qt.size(phone.width*2,phone.height*2))
     }
     Component.onCompleted: {
+        root.restoreGeometry()
         if(!captureMode && !smokeTest) {
             let saved=Studio.setting("device","18pro")
             for(let i=0;i<devices.length;i++) if(devices[i].id===saved) selectedIndex=i

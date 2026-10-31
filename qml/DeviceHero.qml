@@ -14,6 +14,9 @@ Item {
     property string errorText: ""
     // Each step: {label, detail, done, key}
     property var steps: []
+    // Projects to open again at once, newest first: {name, path}.
+    property var recent: []
+    signal recentChosen(string path)
     signal action()
     signal secondary()
     signal stepChosen(string key)
@@ -152,6 +155,38 @@ Item {
                 leftPadding: Theme.gapLg
                 rightPadding: Theme.gapLg
                 onClicked: hero.secondary()
+            }
+        }
+        Flow {
+            objectName: "heroRecent"
+            Layout.fillWidth: true
+            Layout.leftMargin: hero.titleSize*.84
+            visible: hero.showBody && hero.recent.length>0
+            spacing: Theme.gapXs
+            Text {
+                height: Theme.controlHeight
+                verticalAlignment: Text.AlignVCenter
+                rightPadding: Theme.gapXs
+                text: qsTr("Recent")
+                color: Theme.ink
+                font.family: Theme.mono
+                font.pixelSize: Theme.fontSmall
+                font.weight: Font.Bold
+            }
+            Repeater {
+                model: hero.recent.slice(0,3)
+                StudioButton {
+                    required property var modelData
+                    required property int index
+                    objectName: "heroRecent-"+index
+                    text: modelData.name
+                    iconName: "files"
+                    tip: modelData.path
+                    inverted: true
+                    invertedFill: Theme.paper
+                    invertedText: Theme.ink
+                    onClicked: hero.recentChosen(modelData.path)
+                }
             }
         }
         Text {

@@ -8,6 +8,7 @@
 #include <QFont>
 #include <QFontDatabase>
 #include <QGuiApplication>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -218,11 +219,45 @@ void Backend::probeToolchain() {
     emit toolchainChanged();
 }
 void Backend::copy(const QString &text) { QGuiApplication::clipboard()->setText(text); emit message(tr("Copied")); }
+bool Backend::copyImage(const QString &path) {
+    const QImage image(path);
+    if(image.isNull()) return false;
+    QGuiApplication::clipboard()->setImage(image);
+    return true;
+}
 QString Backend::screenshotPath(const QString &model) {
     auto directory=QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)+"/Tomacco";
     if(!QDir().mkpath(directory)) { emit message(tr("The screenshot folder could not be created.")); return {}; }
     auto safe=model; safe.replace(QRegularExpression("[^A-Za-z0-9_-]"),"-");
     return directory+"/"+safe+"-"+QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz")+".png";
+}
+QStringList Backend::recentProjects() const {
+    QStringList existing;
+    for(const auto &path: m_settings.value("recentProjects").toStringList())
+        if(QFileInfo(path).isDir()) existing.append(path);
+    return existing;
+}
+void Backend::rememberProject(const QString &path) {
+    const QFileInfo folder(path);
+    if(path.isEmpty() || !folder.isDir()) return;
+    const auto canonical=folder.canonicalFilePath();
+    auto stored=m_settings.value("recentProjects").toStringList();
+    if(!stored.isEmpty() && stored.first()==canonical) return;
+    stored.removeAll(canonical);
+    stored.prepend(canonical);
+    m_settings.setValue("recentProjects",stored.mid(0,8));
+    emit recentProjectsChanged();
+}
+void Backend::forgetProject(const QString &path) {
+    auto stored=m_settings.value("recentProjects").toStringList();
+    if(!stored.removeAll(path)) return;
+    m_settings.setValue("recentProjects",stored);
+    emit recentProjectsChanged();
+}
+QString Backend::projectFolder(const QString &path) const {
+    const QFileInfo folder(path);
+    if(path.isEmpty() || !folder.isDir() || folder.suffix().compare(QLatin1String("app"),Qt::CaseInsensitive)==0) return {};
+    return folder.canonicalFilePath();
 }
 QString Backend::qtVersion() const { return QString::fromLatin1(qVersion()); }
 QUrl Backend::sourceUrl() const {
