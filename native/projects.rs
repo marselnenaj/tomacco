@@ -1,4 +1,4 @@
-use crate::{core::*, jobs, swift, toolchain as tc};
+use crate::{core::*, gradle_model, javascript, jobs, swift, toolchain as tc};
 use serde_json::{Value, json};
 use std::{collections::BTreeSet, fs, path::Path};
 
@@ -46,9 +46,23 @@ pub fn inspect(value: &str) -> Result {
             .iter()
             .any(|p| dir.join(p).is_file())
         });
-    if gradle.is_some() {
+    let mut multiplatform = None;
+    if let Some(dir) = &gradle {
         kinds.push("gradle");
         platforms.insert("android");
+        multiplatform = gradle_model::multiplatform(dir);
+        if let Some(mp) = &multiplatform {
+            kinds.push("kotlin-multiplatform");
+            if mp["compose_multiplatform"] == true {
+                kinds.push("compose-multiplatform");
+            }
+            if mp["ios"]["targets"]
+                .as_array()
+                .is_some_and(|t| !t.is_empty())
+            {
+                platforms.insert("ios");
+            }
+        }
     }
     if root.join("Package.swift").is_file() {
         kinds.push("swift");
@@ -70,6 +84,9 @@ pub fn inspect(value: &str) -> Result {
             {
                 kinds.push(name);
             }
+        }
+        if kinds.contains(&"expo") {
+            platforms.insert("android");
         }
         kinds.push("web");
         platforms.insert("web");
@@ -100,9 +117,14 @@ pub fn inspect(value: &str) -> Result {
     }
     let mut names: Vec<_> = tasks.keys().cloned().collect();
     names.sort();
-    Ok(
-        json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"tasks":names,"configuration":config}),
-    )
+    let mut value = json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"android":gradle.as_deref().map(gradle_model::read),"tasks":names,"configuration":config});
+    if let Some(mp) = multiplatform {
+        value["multiplatform"] = mp;
+    }
+    if let Some(framework) = javascript::framework(&kinds) {
+        value["javascript"] = javascript::describe(&root, framework, gradle.as_deref());
+    }
+    Ok(value)
 }
 fn kind(project: &Value, name: &str) -> bool {
     project["kinds"]
@@ -204,6 +226,8 @@ pub fn plan(a: &Value) -> Result {
             .remedy("Define tasks in tomacco.json"));
         }
         args = strings(entry);
+    } else if kind(&project, "kotlin-multiplatform") && platform == "ios" {
+        return Err(kotlin_ios_error());
     } else if kind(&project, "flutter") {
         let tool = tc::find("flutter")?;
         match action {
@@ -381,36 +405,183 @@ pub fn run(a: &Value) -> Result {
             json!({"steps":[{"argv":[tc::find("xtool")?,"dev","run","--udid",device,"--configuration",config]},{"argv":[crate::core::own_executable()?,"_iphone_launch",launch.to_string()]}],"cwd":root,"env":env,"exclusive":root,"single_active":true}),
         );
     }
+    if kind(&project, "kotlin-multiplatform") && platform == "ios" {
+        return Err(kotlin_ios_error());
+    }
+    let framework = if platform == "android" {
+        javascript::framework(
+            &project["kinds"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>(),
+        )
+    } else {
+        None
+    };
+    if framework == Some("expo") {
+        return javascript::run_expo(&project, a, env);
+    }
+    if framework == Some("react-native") {
+        javascript::prepare_react_native(&project)?;
+    }
+    let before = if framework == Some("capacitor") {
+        javascript::capacitor_steps(&project)?
+    } else {
+        Vec::new()
+    };
     if kind(&project, "gradle") && platform == "android" {
-        let id = if s(a, "bundle_id").is_empty() {
-            s(&project["configuration"], "applicationId")
-        } else {
-            s(a, "bundle_id")
-        };
-        identifier(
-            id,
-            "application ID",
-            Some(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+"),
-        )?;
+        let (task, id) = android_target(&project, a)?;
         let mut args = gradle(&project)?;
-        args.extend(argv(&[
-            "--console=plain",
-            if config == "release" {
-                "installRelease"
-            } else {
-                "installDebug"
-            },
-        ]));
+        args.extend(["--console=plain".into(), task]);
         env["ANDROID_SERIAL"] = json!(device);
-        return jobs::submit(
-            &format!("Deploy {}", s(&project, "name")),
-            json!({"steps":[{"argv":args},{"argv":[crate::core::own_executable()?,"call","android.launch",json!({"device":device,"bundle_id":id}).to_string()]}],"cwd":project["gradle_directory"],"env":env,"artifacts":["**/build/outputs/apk/**/*.apk"],"exclusive":root,"single_active":true}),
-        );
+        let launch = argv(&[
+            &crate::core::own_executable()?.to_string_lossy(),
+            "call",
+            "android.launch",
+            &json!({"device":device,"bundle_id":id}).to_string(),
+        ]);
+        let mut steps = before;
+        steps.push(json!({"argv":args}));
+        // A React Native debug build loads its JavaScript from Metro.
+        let serves = framework == Some("react-native") && !release_build(a);
+        if serves {
+            steps.push(javascript::metro_step(&project, device, launch)?);
+        } else {
+            steps.push(json!({"argv":launch}));
+        }
+        let mut spec = json!({"steps":steps,"cwd":project["gradle_directory"],"env":env,"artifacts":["**/build/outputs/apk/**/*.apk"],"exclusive":root,"single_active":true});
+        if serves {
+            spec["timeout"] = json!(86400);
+        }
+        return jobs::submit(&format!("Deploy {}", s(&project, "name")), spec);
     }
     Err(Error::new(
         "action_unsupported",
         "Use build, device.install and device.app for this project type",
     ))
+}
+fn kotlin_ios_error() -> Error {
+    Error::new(
+        "macos_required",
+        "The iOS target of a Kotlin Multiplatform project builds only on macOS",
+    )
+    .remedy(gradle_model::KMP_IOS_NEEDS)
+}
+/// Whether a run installs a release build: the release configuration, or a
+/// variant whose build type is release.
+fn release_build(a: &Value) -> bool {
+    let variant = s(a, "variant");
+    if variant.is_empty() {
+        s(a, "configuration") == "release"
+    } else {
+        variant.ends_with("Release") || variant == "release"
+    }
+}
+fn capitalized(value: &str) -> String {
+    let mut chars = value.chars();
+    chars
+        .next()
+        .map(|c| c.to_uppercase().collect::<String>() + chars.as_str())
+        .unwrap_or_default()
+}
+/// The Gradle install task and the application ID of an Android run: the
+/// requested variant, or the configuration when the app has no flavors. The
+/// ID is `bundle_id`, else the variant's ID from the build files when a
+/// variant is named, else tomacco.json's applicationId, else the build files',
+/// else a Capacitor config's appId.
+fn android_target(project: &Value, a: &Value) -> Result<(String, String)> {
+    let configuration = s(a, "configuration");
+    let apps = project["android"]["app_modules"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    let app = match apps.len() {
+        1 => Some(&apps[0]),
+        _ => apps.iter().find(|m| m["module"] == ":app"),
+    };
+    let variants: Vec<&Value> = app
+        .and_then(|m| m["variants"].as_array())
+        .map(|v| v.iter().collect())
+        .unwrap_or_default();
+    let names = |filter: &dyn Fn(&&Value) -> bool| {
+        variants
+            .iter()
+            .filter(|v| filter(v))
+            .filter_map(|v| v["name"].as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let requested = s(a, "variant");
+    let variant = if requested.is_empty() {
+        if app.is_some_and(|m| m["flavors"].as_array().is_some_and(|f| !f.is_empty())) {
+            return Err(Error::new(
+                "variant_required",
+                "This app has product flavors; name the build variant to install",
+            )
+            .remedy(format!(
+                "Pass variant, one of: {}",
+                names(&|v| v["build_type"] == configuration)
+            )));
+        }
+        configuration.to_string()
+    } else {
+        identifier(requested, "build variant", Some("[a-z][A-Za-z0-9]{0,99}"))?;
+        if !variants.is_empty() && !variants.iter().any(|v| v["name"] == requested) {
+            return Err(Error::new(
+                "invalid_variant",
+                format!("The build files have no variant {requested}"),
+            )
+            .remedy(format!("Use one of: {}", names(&|_| true))));
+        }
+        requested.to_string()
+    };
+    let module = app.map(|m| s(m, "module")).unwrap_or_default();
+    let task = if module.is_empty() {
+        format!("install{}", capitalized(&variant))
+    } else {
+        format!("{module}:install{}", capitalized(&variant))
+    };
+    let from_build = variants
+        .iter()
+        .find(|v| v["name"] == variant.as_str())
+        .and_then(|v| v["application_id"].as_str())
+        .unwrap_or_default();
+    let configured = s(&project["configuration"], "applicationId");
+    let id = [
+        s(a, "bundle_id"),
+        if requested.is_empty() { "" } else { from_build },
+        configured,
+        from_build,
+        s(&project["javascript"], "app_id"),
+    ]
+    .into_iter()
+    .find(|id| !id.is_empty())
+    .ok_or_else(|| {
+        let known: Vec<_> = apps
+            .iter()
+            .map(|m| format!("{} {}", s(m, "module"), m["application_id"]))
+            .collect();
+        Error::new(
+            "application_id_unknown",
+            "The build files do not state this app's application ID",
+        )
+        .remedy(if known.len() > 1 {
+            format!(
+                "Several app modules ({}): pass bundle_id, or set applicationId with project.configure",
+                known.join(", ")
+            )
+        } else {
+            "Pass bundle_id, or set applicationId with project.configure".to_string()
+        })
+    })?;
+    identifier(
+        id,
+        "application ID",
+        Some(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+"),
+    )?;
+    Ok((task, id.to_string()))
 }
 fn write(root: &Path, relative: &str, content: &str) -> Result<()> {
     let file = root.join(relative);
@@ -495,6 +666,13 @@ pub fn create(a: &Value) -> Result {
             "Install an Android platform using android.sdk_install",
         )
     })?;
+    if kind == "compose" && api < 36 {
+        return Err(Error::new(
+            "sdk_platform_missing",
+            format!("The Compose starter needs Android platform 36 or newer; the newest installed is {api}"),
+        )
+        .remedy("Install platforms;android-36 using android.sdk_install"));
+    }
     // Stage a complete project beside the destination, then publish it atomically.
     let staging = tempfile::Builder::new()
         .prefix(".tomacco-project-")
@@ -507,44 +685,78 @@ pub fn create(a: &Value) -> Result {
             "pluginManagement {{ repositories {{ google(); mavenCentral(); gradlePluginPortal() }} }}\ndependencyResolutionManagement {{ repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories {{ google(); mavenCentral() }} }}\nrootProject.name = \"{name}\"\ninclude(\":app\")\n"
         ),
     )?;
-    write(
-        root,
-        "build.gradle.kts",
-        "plugins { id(\"com.android.application\") version \"9.1.1\" apply false }\n",
-    )?;
-    let mut gradle = format!(
-        "plugins {{ id(\"com.android.application\") }}\nandroid {{\n namespace = \"{bundle}\"\n compileSdk = {api}\n defaultConfig {{ applicationId = \"{bundle}\"; minSdk = 26; targetSdk = {api}; versionCode = 1; versionName = \"1.0\" }}\n}}\n"
+    let manifest = format!(
+        "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"><application android:label=\"{name}\" android:theme=\"@android:style/Theme.Material.Light.NoActionBar\" android:allowBackup=\"false\"><activity android:name=\".MainActivity\" android:exported=\"true\"><intent-filter><action android:name=\"android.intent.action.MAIN\"/><category android:name=\"android.intent.category.LAUNCHER\"/></intent-filter></activity></application></manifest>\n"
     );
-    if kind == "swift-android" {
-        gradle.push_str(include_str!("../assets/templates/swift.gradle.kts"));
+    write(root, "app/src/main/AndroidManifest.xml", &manifest)?;
+    let package = bundle.replace('.', "/");
+    if kind == "compose" {
+        // Kotlin with Jetpack Compose, through AGP's built-in Kotlin support.
+        let fill = |text: &str| {
+            text.replace("__BUNDLE__", &bundle)
+                .replace("__NAME__", name)
+                .replace("__API__", &api.to_string())
+        };
+        write(
+            root,
+            "build.gradle.kts",
+            "plugins {\n    alias(libs.plugins.android.application) apply false\n    alias(libs.plugins.kotlin.compose) apply false\n}\n",
+        )?;
+        write(
+            root,
+            "gradle/libs.versions.toml",
+            include_str!("../assets/templates/compose/libs.versions.toml"),
+        )?;
+        write(
+            root,
+            "app/build.gradle.kts",
+            &fill(include_str!("../assets/templates/compose/build.gradle.kts")),
+        )?;
+        write(
+            root,
+            "gradle.properties",
+            "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\n",
+        )?;
+        write(
+            root,
+            &format!("app/src/main/java/{package}/MainActivity.kt"),
+            &fill(include_str!("../assets/templates/compose/MainActivity.kt")),
+        )?;
+        write(
+            root,
+            &format!("app/src/androidTest/java/{package}/CounterTest.kt"),
+            &fill(include_str!("../assets/templates/compose/CounterTest.kt")),
+        )?;
+    } else {
+        write(
+            root,
+            "build.gradle.kts",
+            "plugins { id(\"com.android.application\") version \"9.1.1\" apply false }\n",
+        )?;
+        let mut gradle = format!(
+            "plugins {{ id(\"com.android.application\") }}\nandroid {{\n namespace = \"{bundle}\"\n compileSdk = {api}\n defaultConfig {{ applicationId = \"{bundle}\"; minSdk = 26; targetSdk = {api}; versionCode = 1; versionName = \"1.0\" }}\n}}\n"
+        );
+        if kind == "swift-android" {
+            gradle.push_str(include_str!("../assets/templates/swift.gradle.kts"));
+        }
+        write(root, "app/build.gradle.kts", &gradle)?;
+        write(
+            root,
+            "gradle.properties",
+            "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\n",
+        )?;
+        let mut java = include_str!("../assets/templates/MainActivity.java")
+            .replace("__BUNDLE__", &bundle)
+            .replace("__NAME__", name);
+        if kind != "swift-android" {
+            java=java.replace("    static { System.loadLibrary(\"TomaccoCore\"); }\n    private static native int nextCount(int current);\n","").replace("count = nextCount(count);","count++;");
+        }
+        write(
+            root,
+            &format!("app/src/main/java/{package}/MainActivity.java"),
+            &java,
+        )?;
     }
-    write(root, "app/build.gradle.kts", &gradle)?;
-    write(
-        root,
-        "gradle.properties",
-        "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\n",
-    )?;
-    write(
-        root,
-        "app/src/main/AndroidManifest.xml",
-        &format!(
-            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"><application android:label=\"{name}\" android:theme=\"@android:style/Theme.Material.Light.NoActionBar\" android:allowBackup=\"false\"><activity android:name=\".MainActivity\" android:exported=\"true\"><intent-filter><action android:name=\"android.intent.action.MAIN\"/><category android:name=\"android.intent.category.LAUNCHER\"/></intent-filter></activity></application></manifest>\n"
-        ),
-    )?;
-    let mut java = include_str!("../assets/templates/MainActivity.java")
-        .replace("__BUNDLE__", &bundle)
-        .replace("__NAME__", name);
-    if kind != "swift-android" {
-        java=java.replace("    static { System.loadLibrary(\"TomaccoCore\"); }\n    private static native int nextCount(int current);\n","").replace("count = nextCount(count);","count++;");
-    }
-    write(
-        root,
-        &format!(
-            "app/src/main/java/{}/MainActivity.java",
-            bundle.replace('.', "/")
-        ),
-        &java,
-    )?;
     let mut config = json!({"applicationId":bundle,"tasks":{}});
     write(
         root,
@@ -592,5 +804,127 @@ mod configuration_tests {
         fs::write(&current, br#"{"tasks":{"check":["true"]}}"#).unwrap();
         let inspected = inspect(&project.path().to_string_lossy()).unwrap();
         assert_eq!(inspected["configuration"]["tasks"]["check"][0], "true");
+    }
+
+    fn fixture(files: &[(&str, &str)]) -> tempfile::TempDir {
+        let project = tempfile::tempdir().unwrap();
+        for (relative, text) in files {
+            let file = project.path().join(relative);
+            fs::create_dir_all(file.parent().unwrap()).unwrap();
+            fs::write(file, text).unwrap();
+        }
+        project
+    }
+
+    #[test]
+    fn inspect_reads_the_app_id_and_sdk_levels_from_the_build_files() {
+        let project = fixture(&[
+            ("settings.gradle.kts", "include(\":app\")\n"),
+            (
+                "app/build.gradle.kts",
+                "plugins { id(\"com.android.application\") }\nandroid { namespace = \"dev.x\"; compileSdk = 36\n defaultConfig { applicationId = \"dev.x.app\"; minSdk = 26; targetSdk = 36 } }\n",
+            ),
+        ]);
+        let inspected = inspect(&project.path().to_string_lossy()).unwrap();
+        let app = &inspected["android"]["app_modules"][0];
+        assert_eq!(app["application_id"], "dev.x.app");
+        assert_eq!(app["min_sdk"], 26);
+        assert_eq!(app["target_sdk"], 36);
+        assert_eq!(app["compile_sdk"], 36);
+        assert_eq!(
+            inspected["android"]["application_ids"],
+            json!(["dev.x.app"])
+        );
+        let (task, id) = android_target(&inspected, &json!({"configuration":"debug"})).unwrap();
+        assert_eq!(
+            (task.as_str(), id.as_str()),
+            (":app:installDebug", "dev.x.app")
+        );
+        let (task, id) = android_target(
+            &inspected,
+            &json!({"configuration":"release","bundle_id":"dev.other"}),
+        )
+        .unwrap();
+        assert_eq!(
+            (task.as_str(), id.as_str()),
+            (":app:installRelease", "dev.other")
+        );
+    }
+
+    #[test]
+    fn a_flavored_app_needs_a_variant_and_runs_the_variants_id() {
+        let project = fixture(&[
+            ("settings.gradle", "include ':app'\n"),
+            (
+                "app/build.gradle",
+                "apply plugin: 'com.android.application'\nandroid {\n defaultConfig { applicationId 'dev.f' }\n buildTypes { debug { applicationIdSuffix '.debug' } }\n flavorDimensions 'tier'\n productFlavors {\n  free { applicationIdSuffix '.free' }\n  paid { }\n }\n}\n",
+            ),
+            ("tomacco.json", "{\"applicationId\":\"dev.f\"}"),
+        ]);
+        let inspected = inspect(&project.path().to_string_lossy()).unwrap();
+        let error = android_target(&inspected, &json!({"configuration":"debug"})).unwrap_err();
+        assert_eq!(error.code, "variant_required");
+        assert!(error.remedy.contains("freeDebug, paidDebug"));
+        let error = android_target(
+            &inspected,
+            &json!({"configuration":"debug","variant":"proDebug"}),
+        )
+        .unwrap_err();
+        assert_eq!(error.code, "invalid_variant");
+        let (task, id) = android_target(
+            &inspected,
+            &json!({"configuration":"debug","variant":"freeDebug"}),
+        )
+        .unwrap();
+        assert_eq!(
+            (task.as_str(), id.as_str()),
+            (":app:installFreeDebug", "dev.f.free.debug")
+        );
+    }
+
+    #[test]
+    fn without_an_id_in_the_build_files_the_run_says_how_to_give_one() {
+        let project = fixture(&[("build.gradle", "plugins { id 'my.android.application' }\n")]);
+        let inspected = inspect(&project.path().to_string_lossy()).unwrap();
+        let error = android_target(&inspected, &json!({"configuration":"debug"})).unwrap_err();
+        assert_eq!(error.code, "application_id_unknown");
+        assert!(error.remedy.contains("bundle_id"));
+        let (task, _) = android_target(
+            &inspected,
+            &json!({"configuration":"debug","bundle_id":"dev.y"}),
+        )
+        .unwrap();
+        assert_eq!(task, "installDebug");
+    }
+
+    #[test]
+    fn a_kotlin_multiplatform_project_runs_android_and_explains_ios() {
+        let project = fixture(&[
+            ("settings.gradle.kts", "include(\":composeApp\")\n"),
+            (
+                "composeApp/build.gradle.kts",
+                "plugins { kotlin(\"multiplatform\"); id(\"com.android.application\"); id(\"org.jetbrains.compose\") }\nkotlin { androidTarget(); iosArm64(); iosSimulatorArm64() }\nandroid { namespace = \"dev.kmp\"; defaultConfig { applicationId = \"dev.kmp.app\" } }\n",
+            ),
+        ]);
+        let path = project.path().to_string_lossy().to_string();
+        let inspected = inspect(&path).unwrap();
+        assert_eq!(
+            inspected["kinds"],
+            json!(["gradle", "kotlin-multiplatform", "compose-multiplatform"])
+        );
+        assert_eq!(inspected["platforms"], json!(["android", "ios"]));
+        assert_eq!(inspected["multiplatform"]["ios"]["builds_on_linux"], false);
+        let (task, id) = android_target(&inspected, &json!({"configuration":"debug"})).unwrap();
+        assert_eq!(
+            (task.as_str(), id.as_str()),
+            (":composeApp:installDebug", "dev.kmp.app")
+        );
+        let error = plan(&json!({"path":path,"platform":"ios","action":"build"})).unwrap_err();
+        assert_eq!(error.code, "macos_required");
+        assert!(error.remedy.contains("remote.configure"));
+        let error =
+            run(&json!({"path":path,"platform":"ios","device":"00008110-0011223344556677"}))
+                .unwrap_err();
+        assert_eq!(error.code, "macos_required");
     }
 }

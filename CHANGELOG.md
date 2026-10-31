@@ -71,6 +71,24 @@ operations and their JSON results.
   - `testing.results` summarises JUnit XML from Gradle unit and instrumented tests or
     `testing.run`: totals, suites and failures with their stacks, leaving out results
     older than the test job.
+- **Projects.**
+  - `project.inspect` reports each Android app module's application ID, build types,
+    flavors, variants and minimum, target and compile SDK from the Gradle files and
+    versions catalog without running Gradle, and lists what it could not resolve.
+    `project.run` uses that ID and takes a `variant` for apps with product flavors.
+  - `project.run` runs the Android app of a React Native project (Gradle, then Metro on
+    port 8081) or an Expo project (`npx expo run:android`), and refuses with the install
+    command when `node_modules` lacks the framework. Tested with stand-in tools only.
+  - `project.run` runs a Capacitor or Ionic app on Android: the web build script,
+    `npx cap sync android`, Gradle install and launch. Tested with stand-in tools only.
+  - `project.inspect` recognises Kotlin Multiplatform and Compose Multiplatform builds, with
+    each module's targets and the iOS app's Xcode project. `project.run` runs the Android
+    target; the iOS target answers `macos_required` with what it needs.
+  - `project.create` with `kind` `compose`: a Kotlin and Jetpack Compose starter with a versions
+    catalog and one Compose UI test, which passed on an Android 16 emulator.
+  - `project.dependency_updates` compares a Gradle build's catalog and build-file versions with
+    Google Maven, Maven Central and Gradle Plugin Portal metadata, read-only, as a job with
+    `report.json`; it answers `offline` at once without a network.
 - **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
   logs and old test reports in the data directory. A dry run by default.
 - **iPhone.**

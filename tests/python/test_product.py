@@ -689,6 +689,25 @@ class AdapterTests(Isolated):
                 self.assertIn("Java_dev_test_1app_counter_MainActivity_nextCount", next(project.rglob("Counter.swift")).read_text())
                 self.assertIn("ProcessBuilder", (project / "app/build.gradle.kts").read_text())
             with self.assertRaises(StudioError): dispatch("project.create", {"path": str(project), "kind": kind})
+        (sdk / "platforms/android-36").rename(sdk / "platforms/android-35")
+        with self.assertRaises(StudioError) as old:
+            dispatch("project.create", {"path": str(self.root / "old"), "kind": "compose"})
+        self.assertEqual(old.exception.code, "sdk_platform_missing")
+        (sdk / "platforms/android-35").rename(sdk / "platforms/android-36")
+        project = self.root / "compose"
+        result = dispatch("project.create", {"path": str(project), "kind": "compose", "organization": "dev.test_app", "name": "Counter"})
+        self.assertEqual(result["application_id"], "dev.test_app.counter")
+        activity = project / "app/src/main/java/dev/test_app/counter/MainActivity.kt"
+        self.assertIn("setContent", activity.read_text())
+        self.assertIn('title = "Counter"', activity.read_text())
+        test = (project / "app/src/androidTest/java/dev/test_app/counter/CounterTest.kt").read_text()
+        self.assertIn("package dev.test_app.counter", test)
+        self.assertIn("createComposeRule", test)
+        self.assertIn("compileSdk = 36", (project / "app/build.gradle.kts").read_text())
+        self.assertFalse(list(project.rglob("*.java")))
+        inspected = dispatch("project.inspect", {"path": str(project)})
+        app = inspected["android"]["app_modules"][0]
+        self.assertEqual((app["application_id"], app["min_sdk"], app["target_sdk"]), ("dev.test_app.counter", 26, 36))
 
     def test_settings_validation_preserves_previous_configuration(self):
         tool = self.tool("adb")

@@ -61,13 +61,85 @@ own build configuration stays as it is. Flutter uses the installed Flutter CLI.
 The starter has a native Android UI and a persistent counter. It uses the highest
 installed SDK platform, and the Android Gradle Plugin 9.1.1.
 
+`kind: "compose"` creates the same counter in Kotlin with Jetpack Compose and Material 3,
+with a versions catalog in `gradle/libs.versions.toml` and one Compose UI test in
+`app/src/androidTest`. It needs Android platform 36. Run the test with
+`project.execute` and `"action":"instrumented-test"`. A new project built, passed its UI
+test on an Android 16 emulator and ran with `project.run`.
+
 - Build produces an APK or an AAB. Installing on a device takes APKs, split APKs
   included, or one AAB through bundletool; see below.
-- For other Gradle apps, set `applicationId` with `project.configure`, or pass
-  `bundle_id` to `project.run`.
+- `project.inspect` reads each app module's application ID, namespace, minimum,
+  target and compile SDK, build types, product flavors and variants from the build
+  files and `gradle/libs.versions.toml`, without running Gradle. It follows
+  `rootProject.ext`, `extra` and gradle.properties values and catalog versions; what
+  only Gradle can compute, such as Flutter's `flutter.minSdkVersion` or a module
+  configured by a convention plugin, is listed under `unresolved` or in a `note`.
+- `project.run` installs the app module's variant and launches the ID read from the
+  build files. An app with product flavors needs `variant`, such as `freeDebug`. To
+  override the ID, set `applicationId` with `project.configure`, or pass `bundle_id`.
 - Release signing stays in the project's Gradle configuration and keystore.
 - A Flutter run supports hot reload through `job.send`, and holds the project's
   workspace lock until it exits.
+
+## React Native, Expo and Capacitor
+
+`project.inspect` names the framework under `javascript`, with the package manager
+its lockfile implies, whether `node_modules` has the framework, and how
+`project.run` will run the Android app.
+
+- **React Native.** `project.run` installs `android/` with Gradle, then starts Metro
+  with `npx react-native start` on port 8081, reverses that port to the device and
+  launches the app. The job keeps Metro running until you cancel it. A release run
+  installs and launches without Metro.
+- **Expo.** `project.run` runs `npx expo run:android --device SERIAL`, which writes
+  `android/` with prebuild when it is missing and serves the JavaScript with Metro
+  until you cancel the job. A release run passes `--variant release --no-bundler`.
+- **Capacitor and Ionic.** `project.run` runs the package's `build` script when it
+  has one, then `npx cap sync android`, installs `android/` with Gradle and launches
+  the app ID from the Gradle files, or `appId` from `capacitor.config.json` or `.ts`.
+  Without `android/` it answers `android_project_missing` and names
+  `npx cap add android`.
+- Install the dependencies first (`npm install`, or your package manager); without
+  them the run answers `dependencies_missing` with the command. Without Node.js it
+  answers `tool_missing`.
+
+These runs are covered by tests with stand-in tools; no React Native, Expo or Capacitor
+app was built with them yet.
+
+## Kotlin Multiplatform and Compose Multiplatform
+
+`project.inspect` adds the kinds `kotlin-multiplatform` and, with the
+`org.jetbrains.compose` plugin, `compose-multiplatform`. `multiplatform` lists each
+module's targets (`androidTarget`, `iosArm64`, `jvm` and so on) and the Xcode project
+of the iOS app, such as `iosApp/iosApp.xcodeproj`.
+
+- The Android target builds and runs like any Gradle app: `project.run` installs the
+  app module, for example `:composeApp:installDebug`, and launches its ID.
+- The iOS target does not build on Linux. Kotlin/Native links iOS frameworks only on
+  macOS with Xcode, so `project.plan` and `project.run` for `ios` answer
+  `macos_required`. Build it on a Mac: configure one with `remote.configure`, then use
+  `apple.build` for the Xcode project or `remote.run` for Gradle.
+
+Tested on fixture projects only; no Kotlin Multiplatform app was built here.
+
+## Dependency updates
+
+`project.dependency_updates` compares the versions a Gradle build declares with Maven
+metadata, without running Gradle or changing a file. It reads `gradle/libs.versions.toml`
+and the build files, asks Google Maven, Maven Central and the Gradle Plugin Portal in
+that order, and returns a job whose `report.json` lists every dependency and plugin with
+its source line, latest stable and latest version and a status: `update_available`,
+`prerelease_update_available`, `up_to_date`, `managed` (no version, such as libraries
+under a BOM), `dynamic`, `unresolved` (`$variable`), `not_found` or `unreachable`.
+
+```sh
+tomaccoctl call project.dependency_updates '{"path":"/absolute/NewApp"}' --wait
+```
+
+Without a network it answers `offline` at once. `repositories` replaces the defaults
+with your own `https://` or `file:///` repositories. It ran against the Compose starter
+online.
 
 ## Inspect an APK or AAB
 
