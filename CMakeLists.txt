@@ -140,7 +140,7 @@ install(PROGRAMS tools/collect_ios_service_artifacts.py DESTINATION share/tomacc
 install(PROGRAMS tools/build_source_release.py tools/build_release_notes.py tools/make_release.py DESTINATION share/tomacco/tools)
 install(FILES tools/ios_guest_tools.py tools/ios_guest_control.py DESTINATION share/tomacco/tools)
 install(FILES tools/ios_host_pressure.py tools/ios_hot_install.py DESTINATION share/tomacco/tools)
-install(PROGRAMS tools/ios_debug_bridge.py tools/ios_virtual_record.py DESTINATION share/tomacco/tools)
+install(PROGRAMS tools/ios_debug_bridge.py tools/ios_virtual_record.py tools/ios_ipa_inspect.py DESTINATION share/tomacco/tools)
 install(FILES tools/ios_apfs_layout.py tools/ios_paravirt_kernel.py tools/ios_paravirt_graphics.py tools/ios_graphics_location.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/build_ios_paravirt.py tools/ios_paravirt_build.py tools/prepare_ios_paravirt.py tools/prepare_ios_cpu_topology.py tools/prepare_ios_fileport_compat.py tools/prepare_ios_workloop_compat.py tools/prepare_ios_adapter_pin.py tools/prepare_ios_paravirt_restore.py tools/run_ios_paravirt.py tools/ios_paravirt_storage.py tools/ios_virtual_iphone.py tools/ios_virtual_profile.py tools/ios_lifecycle.py tools/ios_measure.py tools/engine_pac_bench.py tools/ios_tcg_profile.py tools/engine_branch_bench.py tools/ios_paravirt_usb.py tools/ios_paravirt_usbmuxd.py tools/ios_paravirt_firmware.py tools/ios_paravirt_restore.py DESTINATION share/tomacco/tools)
 install(FILES tools/ios_paravirt_mux.py tools/ios_paravirt_duplex.py tools/ios_paravirt_asr.py tools/ios_paravirt_manifest.py tools/ios_paravirt_seal.py tools/ios_paravirt_userland.py tools/ios_paravirt_pcc.py DESTINATION share/tomacco/tools)
