@@ -186,7 +186,10 @@ Rectangle {
     Timer {interval:300000;running:view.pendingWanted;onTriggered:view.givePendingUp(qsTr("The device did not become ready in time."))}
     property real detachedZoom: 0
     onDetachedChanged: if(detached && detachedZoom<=0)deviceWindow.setZoom(Math.min(1,deviceWindow.fitZoom))
-    Settings {category:"NativeDisplay";property alias showDeviceFrame:view.showDeviceFrame;property alias detachedZoom:view.detachedZoom}
+    Settings {category:"NativeDisplay";property alias showDeviceFrame:view.showDeviceFrame;property alias detachedZoom:view.detachedZoom;property alias showTouches:view.showTouches}
+    // A mark where the pointer touches the device and the pointer's position in
+    // the device's pixels and as fractions (what tomaccoctl's touch input takes).
+    property bool showTouches: false
     Settings {category:"NativeAudio";property alias forwardAudio:view.forwardAudio}
     // A build, test or app start that ends while no Tomacco window is active is
     // reported on the desktop, unless turned off in the settings. Jobs shorter
@@ -484,6 +487,7 @@ Rectangle {
         {id:"copy-context",title:qsTr("Copy context"),detail:qsTr("Command"),icon:"copy",key:"",run:()=>view.copyContext()},
         {id:"appearance",title:Theme.isDark?qsTr("Switch to light appearance"):qsTr("Switch to dark appearance"),detail:qsTr("Command"),icon:Theme.isDark?"sun":"moon",key:"",run:()=>Studio.setAppearance(Theme.isDark?"light":"dark")},
         {id:"settings",title:qsTr("Settings"),detail:qsTr("Command"),icon:"settings",key:qsTr("Ctrl")+"+,",run:()=>settingsDialog.open()},
+        {id:"touches",title:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates"),detail:qsTr("Command"),icon:"testing",key:"",run:()=>{view.showTouches=!view.showTouches}},
         {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
         {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()}
@@ -677,6 +681,52 @@ Rectangle {
                                 }
                             }
                             NativeView {id:display;parent:nativeFrame.screen;objectName:"nativeDisplay";anchors.fill:parent;session:view.live;onInputError:message=>{view.notice=message;view.failed=true}}
+                            // Touches and coordinates, for writing UI tests. Only passive
+                            // handlers: every press still reaches the display below.
+                            Item {
+                                id:touchOverlay;objectName:"nativeTouchOverlay"
+                                parent:nativeFrame.screen;anchors.fill:parent;z:2
+                                visible:view.showTouches && display.state==="live" && !view.pending
+                                readonly property rect area:display.contentRect
+                                // The device pixel and fraction under a point of this item.
+                                function at(px,py) {
+                                    const r=area,w=display.sourceSize.width,h=display.sourceSize.height
+                                    const fx=Math.max(0,Math.min(1,(px-r.x)/r.width)),fy=Math.max(0,Math.min(1,(py-r.y)/r.height))
+                                    return {x:Math.min(w-1,Math.floor(fx*w)),y:Math.min(h-1,Math.floor(fy*h)),fx:fx,fy:fy}
+                                }
+                                readonly property bool pointing:hover.hovered || touchPoint.active
+                                readonly property point pointer:touchPoint.active?touchPoint.point.position:hover.point.position
+                                readonly property var spot:at(pointer.x,pointer.y)
+                                readonly property string label:spot.x+", "+spot.y+"  ·  "+spot.fx.toFixed(3)+", "+spot.fy.toFixed(3)
+                                HoverHandler {id:hover}
+                                PointHandler {
+                                    id:touchPoint;acceptedButtons:Qt.LeftButton
+                                    onActiveChanged:if(active)touchMark.show();else touchMark.release()
+                                }
+                                Rectangle {
+                                    id:touchMark;objectName:"nativeTouchMark"
+                                    // Scaled with the device, so it stays finger-sized on screen.
+                                    readonly property real size:34/Math.max(.01,nativeFrame.scale)
+                                    width:size;height:size;radius:size/2;visible:opacity>0;opacity:0
+                                    x:touchOverlay.pointer.x-width/2;y:touchOverlay.pointer.y-height/2
+                                    color:"#40ffffff";border.color:"#b0ffffff";border.width:1.5/Math.max(.01,nativeFrame.scale)
+                                    function show(){fade.stop();opacity=1}
+                                    function release(){fade.restart()}
+                                    NumberAnimation {id:fade;target:touchMark;property:"opacity";to:0;duration:Theme.reducedMotion?0:420}
+                                }
+                                Rectangle {
+                                    objectName:"nativeTouchCoordinates"
+                                    visible:touchOverlay.pointing
+                                    readonly property real unit:1/Math.max(.01,nativeFrame.scale)
+                                    scale:unit;transformOrigin:Item.TopLeft
+                                    width:coordinateText.implicitWidth+Theme.gapSm*2;height:coordinateText.implicitHeight+Theme.gapXs*2
+                                    // Beside the pointer, kept inside the screen.
+                                    x:Math.max(0,Math.min(touchOverlay.width-width*unit,touchOverlay.pointer.x+Theme.gapMd*unit))
+                                    y:Math.max(0,Math.min(touchOverlay.height-height*unit,touchOverlay.pointer.y+Theme.gapMd*unit))
+                                    radius:Theme.radiusSmall;color:Theme.ink;opacity:.88
+                                    Text {id:coordinateText;objectName:"nativeTouchCoordinatesText";anchors.centerIn:parent;text:touchOverlay.label;color:Theme.paper;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
+                                }
+                            }
                         }
                         // On a wide stage the room beside the phone says what it is and what is happening.
                         ColumnLayout {
@@ -745,6 +795,7 @@ Rectangle {
                             Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:display.state==="live"}
                             StudioButton {objectName:"nativeAudioToggle";text:view.audioPending?qsTr("Sound…"):view.liveAudio.error?qsTr("Sound error"):qsTr("Sound");displayText:"";iconName:view.liveAudio.enabled?"volume":"muted";selected:view.liveAudio.enabled;quiet:true;visible:view.live.platform==="android" && !!view.live.session;enabled:!view.audioPending && view.live.status==="connected";tip:view.liveAudio.error || (view.liveAudio.enabled?qsTr("Stop forwarding sound; restore output on the device"):qsTr("Play the app's sound on this computer"));onClicked:view.requestAudio(!view.liveAudio.enabled)}
                             StudioButton {objectName:"nativeAudioLog";iconName:"jobs";quiet:true;danger:true;visible:!!view.liveAudio.error && !!view.liveAudio.job_id;tip:qsTr("View the sound forwarding error");onClicked:workspace.request("job.get",{job_id:view.liveAudio.job_id})}
+                            StudioButton {objectName:"nativeTouchToggle";text:qsTr("Touches and coordinates");displayText:"";iconName:"testing";selected:view.showTouches;quiet:true;visible:display.state==="live";tip:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates, for writing UI tests");onClicked:view.showTouches=!view.showTouches}
                             StudioButton {objectName:"nativeFrameToggle";text:qsTr("Frame");displayText:"";iconName:"frame";selected:view.showDeviceFrame;quiet:true;visible:view.hasFrame;tip:view.frameMatch.source==="display-match"?qsTr("Reference frame recognized from the display size; the frame geometry is approximated"):qsTr("Show the device frame; Android provides the real status bar");onClicked:view.showDeviceFrame=!view.showDeviceFrame}
                             StudioButton {text:qsTr("Color");displayText:"";iconName:"color";quiet:true;visible:view.hasFrame && view.showDeviceFrame && view.frameProfile.colors.length>1;tip:view.frameProfile.colorNames?ColorNames.name(view.frameProfile.colorNames[view.frameFinish]):qsTr("Case color");onClicked:view.frameFinish=(view.frameFinish+1)%view.frameProfile.colors.length}
                             Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:!!view.live.session}

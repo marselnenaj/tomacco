@@ -162,6 +162,18 @@ window, an `.app` bundle is added to the profile through
 (`deploy`). A file the device cannot take is refused with the reason; files that
 are no app are ignored. The detached device window accepts drops too.
 
+## Touches and coordinates
+
+**Touches and coordinates** in the tool strip beside the live device
+(*Berührungen und Koordinaten*, also in the command palette) helps when writing
+UI tests. While it is on, a ring marks where the pointer presses the device and
+follows the finger until it lifts, and a label beside the pointer names the
+device pixel under it and the same point as fractions of the screen, for
+example `250, 1500  ·  0.250, 0.750`. `runtime.input` takes the fractions as its
+coordinates. Presses still reach the device as before. The choice is
+stored. It applies to the Android and iPhone picture, docked or in its own
+window; the virtual iOS device has its own touch mark and no coordinates.
+
 ## Device window
 
 The **Own window** button in the tool strip beside the device (*Eigenes Fenster*) moves the

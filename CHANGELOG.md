@@ -45,6 +45,8 @@ operations and their JSON results.
     jobs, opens the log file and runs again a job the desktop started.
   - A desktop notification when a job ends while the window is in the background;
     it can be turned off in Settings.
+  - The live device view can mark touches and show the pointer's device pixel and
+    screen fractions, for writing UI tests.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.

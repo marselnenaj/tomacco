@@ -27,6 +27,7 @@
 #include <QtMath>
 #include <QUrl>
 #include <QtTest>
+#include <QAccessible>
 #include <QtWebEngineQuick/qtwebenginequickglobal.h>
 #include <QThread>
 #include <algorithm>
@@ -91,6 +92,11 @@ class DesktopUiTest : public QObject {
         QTest::mouseMove(window,QPoint(window->width()-8,8));
         QTest::qWait(150);
         QVERIFY(window->grabWindow().save(out+"/"+name+".png"));
+    }
+    // What assistive technology reads for an item.
+    static QString accessibleName(QQuickItem *item) {
+        auto *face=QAccessible::queryAccessibleInterface(item);
+        return face?face->text(QAccessible::Name):QString();
     }
     // A var property holds a JS value or, once set from C++ or from a reply, a plain map.
     static QVariantMap mapOf(const QVariant &value) {
@@ -2636,6 +2642,62 @@ for line in sys.stdin:
         QCOMPARE(workspace->property("selectedJob").toString(),QString("notify-on"));
         view->setProperty("appActive",true);
         workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void touches_and_coordinates_show_on_the_live_device() {
+        // Switched on, the device view marks a press and names the pointer's device pixel and
+        // fraction; the press still reaches the device. Off, nothing is drawn.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *display=qobject_cast<NativeView *>(object("nativeDisplay"));QVERIFY(display);
+        view->setProperty("autoAttach",false);view->setProperty("showDeviceFrame",false);view->setProperty("showTouches",false);
+        QLocalServer video,controlSocket;
+        QVERIFY(video.listen(directory.filePath("touch-video")));QVERIFY(controlSocket.listen(directory.filePath("touch-input")));
+        QImage image(QSize(1000,2000),QImage::Format_RGB32);image.fill(QColor("#295c83"));
+        QByteArray bytes;{QBuffer output(&bytes);output.open(QIODevice::WriteOnly);image.save(&output,"JPEG");}
+        QByteArray packet(4,0);qToBigEndian(quint32(bytes.size()),packet.data());packet+=bytes;
+        QVector<QJsonObject> inputs;
+        connect(&video,&QLocalServer::newConnection,this,[&]{auto *socket=video.nextPendingConnection();socket->write(packet);connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        connect(&controlSocket,&QLocalServer::newConnection,this,[&]{auto *socket=controlSocket.nextPendingConnection();connect(socket,&QLocalSocket::readyRead,socket,[&,socket]{if(!socket->canReadLine())return;inputs.push_back(QJsonDocument::fromJson(socket->readLine()).object()["arguments"].toObject());socket->write("{\"ok\":true}\n");});connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        view->setProperty("targets",QVariantList{QVariantMap{{"id","emulator-touch"},{"name","Touch test"},{"platform","android"},{"kind","emulator"}}});
+        const QVariantMap session{{"session","touch-session"},{"platform","android"},{"device","emulator-touch"},{"codec","mjpeg"},{"video_socket",video.fullServerName()},{"control_socket",controlSocket.fullServerName()}};
+        QVERIFY(QMetaObject::invokeMethod(view,"attach",Q_ARG(QVariant,session)));
+        QTRY_COMPARE_WITH_TIMEOUT(display->sourceSize(),QSize(1000,2000),patient(3000));
+        auto *overlay=item("nativeTouchOverlay");QVERIFY(overlay);QVERIFY(!overlay->isVisible());
+        auto *toggle=item("nativeTouchToggle");QVERIFY(toggle);QTRY_VERIFY(toggle->isVisible());
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,toggle->mapToScene(QPointF(toggle->width()/2,toggle->height()/2)).toPoint());
+        QTRY_VERIFY(view->property("showTouches").toBool());QTRY_VERIFY(overlay->isVisible());
+        QCOMPARE(accessibleName(toggle),QString("Hide touches and pointer coordinates"));
+        // A quarter across and three quarters down the picture.
+        const auto rect=display->contentRect();
+        const auto at=display->mapToScene(QPointF(rect.x()+rect.width()*.25,rect.y()+rect.height()*.75)).toPoint();
+        auto *coordinates=item("nativeTouchCoordinates");QVERIFY(coordinates);
+        QTest::mouseMove(window,at);
+        QTRY_VERIFY(coordinates->isVisible());
+        const auto label=[&]{return item("nativeTouchCoordinatesText")->property("text").toString();};
+        const auto numbers=[&]{QStringList parts=label().split(QRegularExpression("[ ,·]+"),Qt::SkipEmptyParts);return parts;};
+        QTRY_COMPARE(numbers().size(),4);
+        QVERIFY2(qAbs(numbers()[0].toInt()-250)<=2 && qAbs(numbers()[1].toInt()-1500)<=2,qPrintable(label()));
+        QVERIFY2(qAbs(numbers()[2].toDouble()-.25)<.003 && qAbs(numbers()[3].toDouble()-.75)<.003,qPrintable(label()));
+        // A press shows the mark where the finger is and still goes to the device.
+        auto *mark=item("nativeTouchMark");QVERIFY(mark);QVERIFY(!mark->isVisible());
+        inputs.clear();
+        QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,at);
+        QTRY_VERIFY(mark->isVisible());
+        const auto centre=mark->mapToScene(QPointF(mark->width()/2,mark->height()/2));
+        QVERIFY(qAbs(centre.x()-at.x())<=1.5 && qAbs(centre.y()-at.y())<=1.5);
+        QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,at);
+        QTRY_COMPARE_WITH_TIMEOUT(inputs.size(),2,patient(3000));
+        QCOMPARE(inputs[0]["phase"].toString(),QString("down"));
+        QVERIFY(qAbs(inputs[0]["x"].toDouble()-.25)<.005);QVERIFY(qAbs(inputs[0]["y"].toDouble()-.75)<.005);
+        QTRY_VERIFY(!mark->isVisible());
+        // The choice is stored; switched off nothing is drawn and taps still work.
+        QTRY_COMPARE(QSettings().value("NativeDisplay/showTouches").toString(),QString("true"));
+        view->setProperty("showTouches",false);QVERIFY(!overlay->isVisible());
+        inputs.clear();QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,at);
+        QTRY_COMPARE_WITH_TIMEOUT(inputs.size(),2,patient(3000));
+        QTest::mouseMove(window,QPoint(window->width()-8,8));
+        view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});view->setProperty("showDeviceFrame",true);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void cleanupTestCase() {

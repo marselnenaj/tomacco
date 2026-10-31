@@ -3033,6 +3033,22 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>When a job ends in the background</source>
         <translation>Wenn ein Auftrag im Hintergrund endet</translation>
     </message>
+    <message>
+        <source>Touches and coordinates</source>
+        <translation>Berührungen und Koordinaten</translation>
+    </message>
+    <message>
+        <source>Hide touches and pointer coordinates</source>
+        <translation>Berührungen und Zeigerkoordinaten ausblenden</translation>
+    </message>
+    <message>
+        <source>Show touches and pointer coordinates, for writing UI tests</source>
+        <translation>Berührungen und Zeigerkoordinaten zeigen, zum Schreiben von UI-Tests</translation>
+    </message>
+    <message>
+        <source>Show touches and pointer coordinates</source>
+        <translation>Berührungen und Zeigerkoordinaten zeigen</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
