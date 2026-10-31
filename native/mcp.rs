@@ -131,8 +131,30 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
             let sink = &sink;
             let active = &active;
             scope.spawn(move || {
-                let result =
-                    with_cancellation(Some(token.clone()), || response(id, &method, &params));
+                let follower = Follower::new(&method, &params);
+                let (done, finished) = std::sync::mpsc::channel::<()>();
+                let result = std::thread::scope(|inner| {
+                    // Notifications about this request stop before its response is sent.
+                    if let Some(mut follower) = follower {
+                        let token = token.clone();
+                        inner.spawn(move || {
+                            while let Err(std::sync::mpsc::RecvTimeoutError::Timeout) =
+                                finished.recv_timeout(TICK)
+                            {
+                                if token.load(Ordering::Relaxed) {
+                                    return;
+                                }
+                                for notification in follower.tick(api::dispatch) {
+                                    let _ = respond(sink, &notification);
+                                }
+                            }
+                        });
+                    }
+                    let result =
+                        with_cancellation(Some(token.clone()), || response(id, &method, &params));
+                    drop(done);
+                    result
+                });
                 if !token.load(Ordering::Relaxed) {
                     let _ = respond(sink, &result);
                 }
@@ -141,6 +163,105 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
         }
     })
 }
+/// How often a running tool call reports its progress.
+const TICK: std::time::Duration = std::time::Duration::from_secs(1);
+
+/// Reports on one running tool call: `notifications/progress` once a
+/// second when the client sent a progress token. For `job.wait` the message
+/// is the job's state and its latest log line, and the total is the wait.
+struct Follower {
+    token: Value,
+    tool: String,
+    /// The job a `job.wait` waits for, and how far its log has been read.
+    job: Option<String>,
+    offset: Option<u64>,
+    partial: String,
+    last_line: String,
+    total: Option<u64>,
+    ticks: u64,
+}
+impl Follower {
+    fn new(method: &str, params: &Value) -> Option<Self> {
+        if method != "tools/call" {
+            return None;
+        }
+        let token = params["_meta"]["progressToken"].clone();
+        if !token.is_string() && !token.is_i64() && !token.is_u64() {
+            return None;
+        }
+        let tool = s(params, "name").to_string();
+        let arguments = &params["arguments"];
+        let job = (tool == "job.wait")
+            .then(|| s(arguments, "job_id").to_string())
+            .filter(|id| !id.is_empty());
+        let total = job
+            .is_some()
+            .then(|| arguments["seconds"].as_u64().unwrap_or(30));
+        Some(Follower {
+            token,
+            tool,
+            job,
+            offset: None,
+            partial: String::new(),
+            last_line: String::new(),
+            total,
+            ticks: 0,
+        })
+    }
+    /// The notifications for one more second of waiting.
+    fn tick(&mut self, dispatch: impl Fn(&str, &Value) -> Result) -> Vec<Value> {
+        self.ticks += 1;
+        let mut message = format!("{} running for {} s", self.tool, self.ticks);
+        if let Some(id) = self.job.clone() {
+            if let Some((state, lines)) = self.read_log(&id, &dispatch) {
+                if let Some(line) = lines.last() {
+                    self.last_line = line.chars().take(200).collect();
+                }
+                message = format!("Job {state}");
+                if !self.last_line.is_empty() {
+                    message = format!("{message}: {}", self.last_line);
+                }
+            }
+        }
+        let mut progress =
+            json!({"progressToken":self.token,"progress":self.ticks,"message":message});
+        if let Some(total) = self.total {
+            progress["total"] = json!(total.max(self.ticks));
+        }
+        vec![json!({"jsonrpc":"2.0","method":"notifications/progress","params":progress})]
+    }
+    /// The job's state and the complete log lines written since the last
+    /// tick. The first tick starts at the end of the log, so a repeated wait
+    /// does not report the same lines again.
+    fn read_log(
+        &mut self,
+        id: &str,
+        dispatch: &impl Fn(&str, &Value) -> Result,
+    ) -> Option<(String, Vec<String>)> {
+        let offset = match self.offset {
+            Some(offset) => offset,
+            None => {
+                let job = dispatch("job.get", &json!({"job_id":id})).ok()?;
+                let size = fs::metadata(s(&job, "log_path")).map_or(0, |m| m.len());
+                self.offset = Some(size);
+                return Some((s(&job, "state").to_string(), Vec::new()));
+            }
+        };
+        let logs = dispatch("job.logs", &json!({"job_id":id,"offset":offset})).ok()?;
+        self.offset = logs["next_offset"].as_u64().or(Some(offset));
+        self.partial.push_str(s(&logs, "text"));
+        let mut lines = Vec::new();
+        while let Some(end) = self.partial.find('\n') {
+            let line: String = self.partial.drain(..=end).collect();
+            let line = line.trim_end().to_string();
+            if !line.is_empty() {
+                lines.push(line);
+            }
+        }
+        Some((s(&logs, "state").to_string(), lines))
+    }
+}
+
 fn response(id: Value, method: &str, params: &Value) -> Value {
     match handle(method, params) {
         Ok(Some(value)) => json!({"jsonrpc":"2.0","id":id,"result":value}),
@@ -411,6 +532,64 @@ mod tests {
         );
         let text: Value = serde_json::from_str(s(&reply["content"][0], "text")).unwrap();
         assert_eq!(text, reply["structuredContent"]);
+    }
+    #[test]
+    fn a_progress_token_gets_progress_and_a_job_wait_its_state_and_log() {
+        let call = |arguments: Value, meta: Value| json!({"name":"job.wait","arguments":arguments,"_meta":meta});
+        let id = "0123456789abcdef0123456789abcdef";
+        assert!(Follower::new("tools/call", &call(json!({"job_id":id}), json!({}))).is_none());
+        assert!(Follower::new("resources/read", &json!({"_meta":{"progressToken":1}})).is_none());
+        // Any other tool reports how long it has run.
+        let mut other = Follower::new(
+            "tools/call",
+            &json!({"name":"device.capture","_meta":{"progressToken":"t"}}),
+        )
+        .unwrap();
+        let first = other.tick(|_, _| unreachable!());
+        assert_eq!(first[0]["method"], "notifications/progress");
+        assert_eq!(first[0]["params"]["progressToken"], "t");
+        assert_eq!(first[0]["params"]["progress"], 1);
+        assert!(first[0]["params"].get("total").is_none());
+        assert_eq!(
+            other.tick(|_, _| unreachable!())[0]["params"]["progress"],
+            2
+        );
+
+        let directory = tempfile::tempdir().unwrap();
+        let log = directory.path().join("job.log");
+        fs::write(&log, "old line\n").unwrap();
+        let path = log.to_string_lossy().into_owned();
+        let pieces = std::cell::RefCell::new(vec!["building\nlin", "king\n"]);
+        let dispatch = |operation: &str, arguments: &Value| -> Result {
+            assert_eq!(arguments["job_id"], id);
+            match operation {
+                "job.get" => Ok(json!({"state":"running","log_path":path})),
+                "job.logs" => {
+                    assert_eq!(arguments["offset"], 9);
+                    let text = pieces.borrow_mut().remove(0);
+                    Ok(json!({"state":"running","text":text,"next_offset":9}))
+                }
+                _ => panic!("unexpected {operation}"),
+            }
+        };
+        let mut wait = Follower::new(
+            "tools/call",
+            &call(
+                json!({"job_id":id,"seconds":20}),
+                json!({"progressToken":7}),
+            ),
+        )
+        .unwrap();
+        let messages: Vec<Value> = (0..3)
+            .map(|_| wait.tick(dispatch)[0]["params"].clone())
+            .collect();
+        // The log is read from where it ended when the wait began.
+        assert_eq!(messages[0]["message"], "Job running");
+        assert_eq!(messages[1]["message"], "Job running: building");
+        assert_eq!(messages[2]["message"], "Job running: linking");
+        assert_eq!(messages[2]["progress"], 3);
+        assert_eq!(messages[2]["total"], 20);
+        assert_eq!(messages[2]["progressToken"], 7);
     }
     #[test]
     fn guides_are_listed_and_read_as_markdown() {

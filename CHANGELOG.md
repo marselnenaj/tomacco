@@ -26,6 +26,8 @@ operations and their JSON results.
   default. `testing.setup` and `testing.instrumentation` have titles.
 - **MCP structured results.** A tool result also comes as `structuredContent`; a result that is not
   an object is wrapped as `{"result": ...}`, an error as `{"error": ...}`.
+- **MCP progress.** A tool call with a progress token gets `notifications/progress` once a second;
+  for `job.wait` with the job's state and latest log line.
 - **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
   `tomacco://docs/NAME`, as Markdown of the installed version.
 - **Android.**
