@@ -2895,6 +2895,8 @@ for line in sys.stdin:
     }
     void clickItem(const char *name) {
         auto *target=item(name);QVERIFY2(target,name);QTRY_VERIFY2(target->isVisible() && target->width()>0,name);
+        // A row that just changed lays itself out again before the next frame.
+        QTest::qWait(patient(100));
         QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,target->mapToScene(QPointF(target->width()/2,target->height()/2)).toPoint());
     }
     void update_banner_offers_a_new_version_once_and_later_puts_it_away() {
@@ -3020,20 +3022,20 @@ for line in sys.stdin:
         auto *sheet=object("whatsNewSheet");QVERIFY(sheet);
         QVERIFY(!sheet->property("visible").toBool());
         // The same version again: nothing.
-        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets"));QTest::qWait(50);
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,QVariant())));QTest::qWait(50);
         QVERIFY(!sheet->property("visible").toBool());
         // An older version started here before: the sheet, once.
         QSettings().setValue("app/lastVersion","1.1.0");
-        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets"));
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,QVariant())));
         QTRY_VERIFY(sheet->property("visible").toBool());
         QVERIFY(sheet->property("title").toString().contains(QCoreApplication::applicationVersion()));
         QCOMPARE(QSettings().value("app/lastVersion").toString(),QCoreApplication::applicationVersion());
         QVERIFY(QMetaObject::invokeMethod(sheet,"close"));QTRY_VERIFY(!sheet->property("visible").toBool());
-        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets"));QTest::qWait(50);
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,QVariant())));QTest::qWait(50);
         QVERIFY(!sheet->property("visible").toBool());
         // Going back to an older version (a rollback) shows nothing.
         QSettings().setValue("app/lastVersion","99.0.0");
-        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets"));QTest::qWait(50);
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,QVariant())));QTest::qWait(50);
         QVERIFY(!sheet->property("visible").toBool());
         QVariant newer;
         QVERIFY(QMetaObject::invokeMethod(view,"newerVersion",Q_RETURN_ARG(QVariant,newer),Q_ARG(QVariant,"1.2.0"),Q_ARG(QVariant,"1.2.0-rc.1")));QVERIFY(newer.toBool());
