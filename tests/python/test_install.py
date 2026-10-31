@@ -608,6 +608,205 @@ class PortablePackageTests(unittest.TestCase):
             self.assertEqual((home / ".local/lib/tomacco/runtime/libexec/QtWebEngineProcess").read_bytes(), b"\x7fELF helper")
 
 
+
+class BatchedJournalTests(unittest.TestCase):
+    """Changes are journalled and flushed once a batch; an interruption at any
+    point leaves every file as it was or as installed, and rollback and
+    uninstall still work."""
+
+    FILES = {f".local/lib/tomacco/runtime/lib/lib{index}.so": f"library {index}" for index in range(7)}
+
+    @staticmethod
+    def journal(installer):
+        return json.loads((installer.backup / "manifest.json").read_text())["files"]
+
+    @staticmethod
+    def staged(home):
+        from install import STAGED
+        return sorted(str(p) for p in home.rglob(STAGED + "*"))
+
+    def test_a_batch_is_journalled_and_made_durable_once_before_it_is_published(self):
+        from unittest.mock import patch
+        import install
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / ".local/lib/tomacco/runtime/lib").mkdir(parents=True)
+            (home / ".local/lib/tomacco/runtime/lib/lib0.so").write_text("old")
+            durable, published, journals = [], [], []
+            real_durable, real_replace, real_journal = install.make_durable, install.os.replace, install.Installer.journal
+
+            def make_durable(paths):
+                manifest = next((Path(p) for p in paths if Path(p).name == "manifest.json"), None)
+                if manifest:
+                    durable.append({entry["path"] for entry in json.loads(manifest.read_text())["files"]})
+                return real_durable(paths)
+
+            def replace(source, target):
+                if Path(target).is_relative_to(home / ".local/lib"):
+                    # Write-ahead: the journal naming this file was made durable before it is published.
+                    self.assertIn(str(Path(target).relative_to(home)), durable[-1])
+                    published.append(target)
+                return real_replace(source, target)
+
+            def journal(self_):
+                journals.append(len(self_.records))
+                return real_journal(self_)
+
+            with patch.object(install, "BATCH", 3), patch.object(install, "make_durable", side_effect=make_durable), \
+                    patch("install.os.replace", side_effect=replace), patch.object(install.Installer, "journal", journal):
+                installer = Installer(home)
+                with installer.batch():
+                    for relative, text in self.FILES.items():
+                        installer.write(Path(relative), text)
+                installer.finish()
+            self.assertEqual(len(published), 7)
+            # Three batches of at most three: not one journal per file.
+            self.assertEqual(journals, [3, 6, 7])
+            self.assertEqual({p.read_text() for p in (home / ".local/lib/tomacco/runtime/lib").iterdir()}, set(self.FILES.values()))
+            # The old content is kept in the backup.
+            self.assertEqual((installer.backup / ".local/lib/tomacco/runtime/lib/lib0.so").read_text(), "old")
+            self.assertEqual(self.staged(home), [])
+
+    def test_an_interruption_inside_a_batch_can_be_rolled_back(self):
+        from unittest.mock import patch
+        import install
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / ".local/lib/tomacco/runtime/lib").mkdir(parents=True)
+            for index in range(7):
+                (home / f".local/lib/tomacco/runtime/lib/lib{index}.so").write_text(f"old {index}")
+            real_replace = install.os.replace
+            count = []
+
+            def replace(source, target):
+                if Path(target).name.startswith("lib"):
+                    count.append(target)
+                    if len(count) == 5:
+                        raise OSError("simulated interruption in the middle of a batch")
+                return real_replace(source, target)
+
+            installer = Installer(home)
+            with patch.object(install, "BATCH", 3), patch("install.os.replace", side_effect=replace):
+                with self.assertRaises(OSError):
+                    with installer.batch():
+                        for relative, text in self.FILES.items():
+                            installer.write(Path(relative), text)
+            # The second batch was journalled whole; its unpublished files were never changed.
+            self.assertEqual(len(self.journal(installer)), 6)
+            self.assertEqual(self.staged(home), [])
+            texts = [(home / relative).read_text() for relative in self.FILES]
+            self.assertEqual(texts, ["library 0", "library 1", "library 2", "library 3", "old 4", "old 5", "old 6"])
+            result = Installer(home).rollback(installer.backup.name)
+            self.assertEqual(result["changed"], 4)
+            self.assertEqual([(home / relative).read_text() for relative in self.FILES], [f"old {i}" for i in range(7)])
+
+    def kill_installation_after(self, package, home, replacements):
+        """Runs install.py as a process that dies (no cleanup, no finally) at
+        the given rename, as on a power cut or SIGKILL."""
+        import subprocess
+        import sys
+        script = (
+            "import os, sys\n"
+            f"sys.path.insert(0, {str(package)!r})\n"
+            f"sys.argv = ['install.py', '--user-home', {str(home)!r}, '--no-window-rule']\n"
+            "import install\n"
+            "install.BATCH = 4\n"
+            "real, count = os.replace, [0]\n"
+            "def replace(source, target):\n"
+            "    if os.path.basename(source).startswith(install.STAGED):\n"
+            "        count[0] += 1\n"
+            f"        if count[0] == {replacements}: os._exit(9)\n"
+            "    return real(source, target)\n"
+            "install.os.replace = replace\n"
+            "install.main()\n")
+        done = subprocess.run([sys.executable, "-B", "-c", script], capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 9, done.stderr)
+
+    def test_a_killed_installation_rolls_back_reinstalls_and_uninstalls_cleanly(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            home = root / "home"
+            package = fake_package(root / "a", PortablePackageTests.RUNTIME)
+            # An earlier installation, then an update killed halfway through.
+            PortablePackageTests.install(package, home)
+            before = {p: p.read_bytes() for p in home.rglob("*") if p.is_file() and "install-backups" not in p.parts}
+            newer = fake_package(root / "b", {name: (content + b" 1.0.1", executable) for name, (content, executable)
+                                              in PortablePackageTests.RUNTIME.items()}, "1.0.1")
+            self.kill_installation_after(newer, home, 6)
+            self.assertNotEqual(self.staged(home), [], "the killed run left staged files")
+            latest = sorted((home / ".local/share/tomacco/install-backups").iterdir())[-1]
+            restored = PortablePackageTests.install(package, home, "--rollback", latest.name)
+            self.assertGreater(restored["changed"], 0)
+            after = {p: p.read_bytes() for p in home.rglob("*") if p.is_file() and "install-backups" not in p.parts
+                     and not p.name.startswith(".tomacco-staged-")}
+            self.assertEqual(after, before)
+            # Installing again finishes the update and sweeps what the killed run staged.
+            self.kill_installation_after(newer, home, 3)
+            PortablePackageTests.install(newer, home)
+            self.assertEqual(self.staged(home), [])
+            self.assertEqual((home / ".local/lib/tomacco/runtime/lib/libQt6Core.so.6").read_bytes(), b"\x7fELF qt 1.0.1")
+            result = PortablePackageTests.install(home / ".local/lib/tomacco", home, "--uninstall")
+            self.assertEqual(result["kept"], [])
+            self.assertFalse((home / ".local/lib/tomacco").exists())
+
+    def test_a_killed_uninstallation_finishes_when_run_again(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            home = root / "home"
+            package = fake_package(root / "a", PortablePackageTests.RUNTIME)
+            PortablePackageTests.install(package, home)
+            copy = home / ".local/lib/tomacco/install.py"
+            script = ("import os, sys\n"
+                      f"sys.path.insert(0, {str(copy.parent)!r})\n"
+                      f"sys.argv = ['install.py', '--user-home', {str(home)!r}, '--uninstall']\n"
+                      "import install\ninstall.BATCH = 4\nreal, count = os.unlink, [0]\n"
+                      "def unlink(path, *a, **k):\n"
+                      "    if '.local/lib/tomacco/' in str(path):\n"
+                      "        count[0] += 1\n"
+                      "        if count[0] == 6: os._exit(9)\n"
+                      "    return real(path, *a, **k)\n"
+                      "install.Path.unlink = lambda self, missing_ok=False: unlink(self)\n"
+                      "install.main()\n")
+            done = subprocess.run([sys.executable, "-B", "-c", script], capture_output=True, text=True, timeout=120)
+            self.assertEqual(done.returncode, 9, done.stderr)
+            self.assertTrue(copy.exists() or (home / ".local/lib/tomacco").exists())
+            result = PortablePackageTests.install(package, home, "--uninstall")
+            self.assertEqual(result["kept"], [])
+            self.assertEqual(sorted(str(p) for p in (home / ".local/lib").rglob("*")), [])
+            self.assertFalse((home / ".local/bin/tomaccoctl").exists())
+
+    def test_the_backup_survives_when_hard_links_are_refused(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            (home / "app").write_text("old")
+            installer = Installer(home)
+            with patch("install.os.link", side_effect=OSError("cross-device link")):
+                installer.write(Path("app"), "new")
+            installer.finish()
+            self.assertEqual((installer.backup / "app").read_text(), "old")
+            self.assertEqual(Installer(home).rollback(installer.backup.name)["changed"], 1)
+            self.assertEqual((home / "app").read_text(), "old")
+
+    def test_without_syncfs_every_file_is_flushed_on_its_own(self):
+        from unittest.mock import patch
+        import install
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            synced = []
+            real_fsync = install.os.fsync
+            with patch.object(install, "SYNCFS", None), patch("install.os.fsync", side_effect=lambda fd: synced.append(fd) or real_fsync(fd)):
+                installer = Installer(home)
+                with installer.batch():
+                    for relative, text in self.FILES.items():
+                        installer.write(Path(relative), text)
+                installer.finish()
+            # Seven staged files, the manifest and the backup directory, then the destination directory.
+            self.assertEqual(len(synced), 9 + 1)
+            self.assertEqual(len(self.journal(installer)), 7)
+
 class PanelAndDocumentationTests(unittest.TestCase):
     """The Omarchy panel needs Quickshell to run, so what it promises is checked in its source."""
 

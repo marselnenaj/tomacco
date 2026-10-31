@@ -8,6 +8,10 @@ operations and their JSON results.
 
 ### Changed
 
+- `install.py` journals and flushes once per batch of up to 512 files instead of once per file: the portable package
+  (2184 files) installs in 0.7 s instead of 15 s on the development host, and uninstalls and rolls back as fast. Backups are
+  hard links where possible. An uninstall killed halfway now finishes when run again; before, the files whose removal was
+  journalled but not done were kept as if the user had changed them.
 - The Arch PKGBUILD and .SRCINFO build 1.1.0 from its source tarball.
 
 ## 1.1.0

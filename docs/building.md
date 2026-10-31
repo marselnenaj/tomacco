@@ -132,8 +132,10 @@ installed launchers and uninstalls. `install.py` copies `lib/tomacco/runtime` to
 the next release's portable package.
 
 For the 1.0.0 sources the package was about 176 MB (436 MB unpacked, 2182 files), and all checks passed in all four containers;
-`install.py` took 26 to 100 seconds there, most of it journalling each file. Nobody has run it on a desktop of those
-distributions yet.
+`install.py` took 26 to 100 seconds there, most of it journalling each file. Since then `install.py` journals and flushes once per
+batch of files: installing the 1.1.0 portable package (2184 files) into a scratch home took 0.7 s instead of 15 s on the development
+host (ext4 on NVMe), and 4.2 to 13 s instead of 27 to 84 s in a `debian:12` container on the same host, with the host busy. Nobody has
+run it on a desktop of those distributions yet.
 
 `install.py` and `cmake --install` install the same files, and the same documents into `share/doc/tomacco`: the guides and legal texts, in one flat directory, with
 links adjusted and `SOURCE.md` naming the version and commit. The list is `DOCUMENTS` in `install.py`. Links to anything else point at the release's copy on GitHub.
@@ -177,7 +179,11 @@ updates and removes the Arch package.
 | `--uninstall` | Removes what the installs wrote, while each file is still as installed; files you changed are kept and listed |
 | `--version` | Prints the version it installs |
 
-Every replaced file is backed up under `~/.local/share/tomacco/install-backups/<timestamp>/`, and each completed write is journalled. An uninstall
+Every replaced file is backed up under `~/.local/share/tomacco/install-backups/<timestamp>/`, and every change is journalled before it is made.
+`install.py` stages up to 512 files beside their destinations, writes the journal, gets the staged files, the backups and the journal onto
+the disk with one `syncfs` (one `fsync` per file where that is missing), and only then renames them into place. After a crash or a kill,
+each file is either as before or as installed: `--rollback ID` accepts both, `--uninstall` finishes an interrupted uninstall, and the next
+run deletes the `.tomacco-staged-*` files a killed run left. An uninstall
 undoes its edits to `hyprland.lua` and `shell.json`, never touches `~/.local/share/tomacco`, and is itself journalled, so `--rollback ID` brings the
 installation back. An uninstall also leaves your preferences (`~/.config/marselnenaj/Tomacco.conf`) and caches (`~/.cache/marselnenaj/Tomacco`); delete those and
 `~/.local/share/tomacco` by hand to remove every trace.
