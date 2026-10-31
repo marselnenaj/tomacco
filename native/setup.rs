@@ -740,7 +740,11 @@ mod tests {
         .collect();
         let broken = json!({"tools":tools,"desktop":{"installed":true,"path":"/home/me/.local/lib/tomacco/tomacco",
             "loadable":false,"missing_libraries":["libavcodec.so.63"],"missing_versions":["Qt_6.12 in libQt6Core.so.6"]}});
-        let steps = next_steps(&broken, true, true);
+        let steps = next_steps(
+            &broken,
+            true,
+            &json!({"configured":true,"phase":"stopped","start_disk":{"enough":true}}),
+        );
         assert_eq!(steps.len(), 1);
         assert_eq!(steps[0]["goal"], "desktop");
         let what = steps[0]["what"].as_str().unwrap();
@@ -760,7 +764,14 @@ mod tests {
             json!({"loadable":null}),
         ] {
             let doctor = json!({"tools":broken["tools"],"desktop":desktop});
-            assert!(next_steps(&doctor, true, true).is_empty());
+            assert!(
+                next_steps(
+                    &doctor,
+                    true,
+                    &json!({"configured":true,"phase":"stopped","start_disk":{"enough":true}})
+                )
+                .is_empty()
+            );
         }
     }
 
