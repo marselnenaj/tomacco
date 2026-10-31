@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 177 operations.
+`tomaccoctl` now has one typed API of 178 operations.
 
 ### Added
 
@@ -40,6 +40,8 @@ operations and their JSON results.
   - `testing.results` summarises JUnit XML from Gradle unit and instrumented tests or
     `testing.run`: totals, suites and failures with their stacks, leaving out results
     older than the test job.
+- **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
+  logs and old test reports in the data directory. A dry run by default.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.

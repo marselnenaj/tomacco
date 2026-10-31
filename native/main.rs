@@ -28,6 +28,7 @@ mod releases;
 mod remote;
 mod runtime;
 mod setup;
+mod storage;
 mod swift;
 mod test_results;
 mod toolchain;

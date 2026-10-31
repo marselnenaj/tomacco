@@ -121,6 +121,20 @@ is. Interrupting `--wait` leaves the job running.
   the active job. A Flutter run holds the lock until it exits. Keep independent projects in separate
   directories. Commands you run outside Tomacco are not covered.
 
+### Cleaning up
+
+Job records and logs stay in the data directory (`TOMACCO_HOME`, by default `~/.local/share/tomacco`) until you remove them.
+`storage.prune` lists what is older than `older_than_days` (30 by default): records and logs of jobs that ended, log files without a
+job, and report directories under `reports/`. `max_job_log_mb` also lists the oldest finished jobs until their logs fit. It is a dry run
+that changes nothing and reports the size of each entry of the data directory under `usage`. Show the user the candidates, and only then
+repeat the call with `apply:true`. Queued and running jobs, emulators, SDKs, the virtual iOS device, settings and the artifacts a job built
+in a project are never removed.
+
+```sh
+tomaccoctl call storage.prune '{"older_than_days":14}'
+tomaccoctl call storage.prune '{"older_than_days":14,"apply":true}'
+```
+
 ## Android
 
 Full guide: [Android](android.md). Check prerequisites with `doctor`, `android.sdk_packages` and `android.avds`.

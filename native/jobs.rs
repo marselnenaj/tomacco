@@ -83,7 +83,7 @@ pub fn database() -> Result<Connection> {
 /// an initialised database only reads its header: no schema statement, no
 /// initialisation lock and no write lock. Only a new or older database is
 /// initialised, once, under the lock and inside one IMMEDIATE transaction.
-fn open(root: &Path) -> Result<Connection> {
+pub(crate) fn open(root: &Path) -> Result<Connection> {
     let path = root.join("jobs.sqlite3");
     let db = Connection::open(&path)?;
     db.busy_timeout(BUSY_TIMEOUT)?;

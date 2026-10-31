@@ -796,6 +796,57 @@
     }
   },
   {
+    "name": "storage.prune",
+    "title": "Clean up old jobs and reports",
+    "description": "List, and with apply remove, what Tomacco keeps of finished work under its data directory: records and logs of jobs that ended before older_than_days, log files without a job, and report directories under reports/. A dry run by default; also reports the size of each top-level entry of the data directory. Never touches queued or running jobs, emulators, SDKs, the virtual iOS device, settings, or artifacts in projects.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "older_than_days": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3650,
+          "default": 30
+        },
+        "max_job_log_mb": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Also remove the oldest finished jobs until their logs take at most this much"
+        },
+        "include": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "jobs",
+              "reports"
+            ]
+          },
+          "default": [
+            "jobs",
+            "reports"
+          ]
+        },
+        "apply": {
+          "type": "boolean",
+          "default": false,
+          "description": "Remove the candidates; without it nothing is changed"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "device.list",
     "title": "Find devices",
     "description": "Discover connected Android and iOS devices. Diagnostics distinguish missing tools from no device.",
