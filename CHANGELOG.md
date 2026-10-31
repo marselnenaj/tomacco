@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 176 operations.
+`tomaccoctl` now has one typed API of 177 operations.
 
 ### Added
 
@@ -37,6 +37,9 @@ operations and their JSON results.
   - `testing.crashes` reports Android crashes, ANRs and native crashes from logcat as
     structured events, for an app, a time or a job's run. `testing.run` lists them per
     device and fails on a crash of an app the scenario uses.
+  - `testing.results` summarises JUnit XML from Gradle unit and instrumented tests or
+    `testing.run`: totals, suites and failures with their stacks, leaving out results
+    older than the test job.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.

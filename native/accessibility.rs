@@ -242,7 +242,11 @@ mod tests {
         let (findings, audited) = audit(SCREEN, &limits("dev.example")).unwrap();
         assert_eq!(audited, 11);
         // The last row of the list is cut off by its edge: not judged.
-        assert!(!findings.iter().any(|f| f["text"] == "Storage" || f["bounds"]["top"] == 1970));
+        assert!(
+            !findings
+                .iter()
+                .any(|f| f["text"] == "Storage" || f["bounds"]["top"] == 1970)
+        );
         let found = rules(&findings);
         // 168 px at 420 dpi is 64 dp: big enough, but unnamed.
         assert!(found.contains(&("missing_label".into(), "dev.example:id/share".into())));

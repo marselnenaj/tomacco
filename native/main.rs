@@ -29,6 +29,7 @@ mod remote;
 mod runtime;
 mod setup;
 mod swift;
+mod test_results;
 mod toolchain;
 mod update;
 mod visual;

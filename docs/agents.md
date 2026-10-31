@@ -409,6 +409,18 @@ Native debugging is qualified on API 36 x86_64. ARM64 is built but not run on a 
 `testing.setup` installs a small instrumentation companion for Unicode, emoji and whole-field replacement, without changing the user's keyboard. `testing.run`
 runs JSON scenarios on a bounded parallel device matrix, returning JUnit results and capturing failures; `examples/native-navigation.json` shows the format.
 
+`testing.results` reads JUnit XML into one summary: `totals` (`tests`, `passed`, `failed`, `errors`, `skipped`, `time`), each suite with
+its device for instrumented tests, and each failure with its class, name, message and stack. Given a project it finds Gradle's unit test
+results (`build/test-results`) and instrumented test results (`build/outputs/androidTest-results`); a directory or a single file works too,
+such as a `testing.run` report directory. Pass the test job's `job_id` (or `since`) so that results left from an earlier run are not
+mistaken for this one's; files older than that are counted in `older_files_skipped`, and when nothing newer is left it answers
+`no_test_results`. `report` writes the summary as JSON as well.
+
+```sh
+tomaccoctl call project.execute '{"path":"/absolute/MyApp","platform":"android","action":"test"}'
+tomaccoctl call testing.results '{"path":"/absolute/MyApp","job_id":"JOB_ID","report":"/absolute/test-summary.json"}'
+```
+
 `testing.crashes` reads the device's crash, system and main logs and returns Java crashes (`FATAL EXCEPTION`), ANRs and native crashes
 (`Fatal signal`) as `events`: `kind` (`crash`, `anr` or `native_crash`), `time`, `package`, `process`, `pid`, and for a crash the
 `exception`, `message`, `stack` and `caused_by`, for an ANR the `reason`, for a native crash the `signal`. `bundle_id` keeps one app's

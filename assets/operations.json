@@ -3345,6 +3345,44 @@
     }
   },
   {
+    "name": "testing.results",
+    "title": "Read test results",
+    "description": "Read the JUnit XML results of a project's tests into one summary: totals, suites and each failure with its message and stack. Finds Gradle unit (build/test-results) and instrumented (build/outputs/androidTest-results) results, or reads a given directory or file such as testing.run's junit.xml. since or job_id leaves out results older than the run.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the project, a results directory or one XML file"
+        },
+        "since": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Leave out files modified before this time, in seconds since 1970"
+        },
+        "job_id": {
+          "type": "string",
+          "description": "Leave out files older than this job, such as the project.execute test job"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to also write the summary as JSON"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "debug.start",
     "title": "Start debugger",
     "description": "Start or reuse a persistent JDWP Android/JVM, native Android LLDB, or local LLDB Swift/native debug session. Android sessions exclusively own their device until disconnected.",

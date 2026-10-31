@@ -99,6 +99,7 @@ var titles = {
     "testing.visual_diff": QT_TRANSLATE_NOOP("Operations", "Compare with baseline image"),
     "testing.accessibility": QT_TRANSLATE_NOOP("Operations", "Check Android accessibility"),
     "testing.crashes": QT_TRANSLATE_NOOP("Operations", "Find Android crashes"),
+    "testing.results": QT_TRANSLATE_NOOP("Operations", "Read test results"),
     "debug.start": QT_TRANSLATE_NOOP("Operations", "Start debugger"),
     "debug.list": QT_TRANSLATE_NOOP("Operations", "Debug sessions"),
     "debug.state": QT_TRANSLATE_NOOP("Operations", "Debugger status"),
