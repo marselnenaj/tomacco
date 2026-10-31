@@ -89,7 +89,7 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
                 let protocol = s(&params, "protocolVersion");
                 respond(
                     &sink,
-                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime."}}),
+                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
                 )?;
                 continue;
             }
@@ -183,10 +183,28 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
             }
         }
         "resources/list" => {
-            json!({"resources":[{"uri":"tomacco://catalog","name":"Device catalogue","mimeType":"application/json"},{"uri":"tomacco://jobs","name":"Recent jobs","mimeType":"application/json"},{"uri":"tomacco://workspaces","name":"Saved development workspaces","mimeType":"application/json"},{"uri":"tomacco://debug","name":"Native debug sessions","mimeType":"application/json"},{"uri":"tomacco://runtimes","name":"Native display sessions","mimeType":"application/json"}]})
+            let mut resources = vec![
+                json!({"uri":"tomacco://catalog","name":"Device catalogue","mimeType":"application/json"}),
+                json!({"uri":"tomacco://jobs","name":"Recent jobs","mimeType":"application/json"}),
+                json!({"uri":"tomacco://workspaces","name":"Saved development workspaces","mimeType":"application/json"}),
+                json!({"uri":"tomacco://debug","name":"Native debug sessions","mimeType":"application/json"}),
+                json!({"uri":"tomacco://runtimes","name":"Native display sessions","mimeType":"application/json"}),
+            ];
+            resources.extend(GUIDES.iter().map(|guide| {
+                json!({"uri":format!("tomacco://docs/{}",guide.name),"name":guide.title,"description":guide.description,"mimeType":"text/markdown","size":guide.text.len()})
+            }));
+            json!({ "resources": resources })
         }
         "resources/read" => {
             let uri = s(params, "uri");
+            if let Some(name) = uri.strip_prefix("tomacco://docs/") {
+                let guide = GUIDES.iter().find(|g| g.name == name).ok_or_else(|| {
+                    Error::new("resource_not_found", format!("Unknown guide: {name}"))
+                })?;
+                return Ok(Some(
+                    json!({"contents":[{"uri":uri,"mimeType":"text/markdown","text":guide.text}]}),
+                ));
+            }
             let op = match uri {
                 "tomacco://catalog" => "catalog.list",
                 "tomacco://jobs" => "job.list",
@@ -226,6 +244,66 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
         _ => return Ok(None),
     }))
 }
+
+/// A guide from docs/, compiled in so that it matches this version and an
+/// agent can read it over MCP as `tomacco://docs/NAME`. Links between guides
+/// stay relative to docs/.
+struct Guide {
+    name: &'static str,
+    title: &'static str,
+    description: &'static str,
+    text: &'static str,
+}
+const GUIDES: &[Guide] = &[
+    Guide {
+        name: "agents",
+        title: "Agent guide",
+        description: "The operation contract, jobs, and each platform's calls.",
+        text: include_str!("../docs/agents.md"),
+    },
+    Guide {
+        name: "recipes",
+        title: "Recipes",
+        description: "Short sequences of real calls for common tasks.",
+        text: include_str!("../docs/recipes.md"),
+    },
+    Guide {
+        name: "getting-started",
+        title: "Getting started",
+        description: "Install, set up and the first app on each route.",
+        text: include_str!("../docs/getting-started.md"),
+    },
+    Guide {
+        name: "android",
+        title: "Android",
+        description: "Android and Swift on Android: SDK, emulators, builds, tests.",
+        text: include_str!("../docs/android.md"),
+    },
+    Guide {
+        name: "iphone",
+        title: "iPhone",
+        description: "A physical iPhone over USB, Xcode projects and the Mac route.",
+        text: include_str!("../docs/iphone.md"),
+    },
+    Guide {
+        name: "virtual-ios",
+        title: "Virtual iOS device: usage",
+        description: "Start, stop, deploy, touch and screenshots on the virtual iPhone.",
+        text: include_str!("../docs/virtual-ios/usage.md"),
+    },
+    Guide {
+        name: "troubleshooting",
+        title: "Troubleshooting",
+        description: "Known errors and what to do about them.",
+        text: include_str!("../docs/troubleshooting.md"),
+    },
+    Guide {
+        name: "faq",
+        title: "FAQ",
+        description: "Short answers to common questions.",
+        text: include_str!("../docs/faq.md"),
+    },
+];
 
 /// A recipe a client offers its user, such as a slash command. Each names
 /// only real operations; `{argument}` in the text is replaced on prompts/get.
@@ -297,6 +375,35 @@ mod tests {
             values[3]["result"]["tools"].as_array().unwrap().len(),
             crate::api::manifest().as_array().unwrap().len()
         );
+    }
+    #[test]
+    fn guides_are_listed_and_read_as_markdown() {
+        let list = handle("resources/list", &json!({})).unwrap().unwrap();
+        let uris: Vec<&str> = list["resources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| s(r, "uri"))
+            .collect();
+        assert!(uris.contains(&"tomacco://jobs"));
+        assert!(uris.contains(&"tomacco://docs/recipes"));
+        assert!(uris.contains(&"tomacco://docs/agents"));
+        let read = handle("resources/read", &json!({"uri":"tomacco://docs/recipes"}))
+            .unwrap()
+            .unwrap();
+        assert_eq!(read["contents"][0]["mimeType"], "text/markdown");
+        assert!(s(&read["contents"][0], "text").starts_with("# Recipes"));
+        let unknown = handle("resources/read", &json!({"uri":"tomacco://docs/../legal"}));
+        assert_eq!(unknown.unwrap_err().code, "resource_not_found");
+        // Every guide named in the agent guide's resource list is served.
+        let agents = include_str!("../docs/agents.md");
+        for guide in GUIDES {
+            assert!(
+                agents.contains(&format!("tomacco://docs/{}", guide.name)),
+                "docs/agents.md does not list {}",
+                guide.name
+            );
+        }
     }
     #[test]
     fn prompts_are_listed_and_filled_in() {

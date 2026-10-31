@@ -19,6 +19,8 @@ operations and their JSON results.
 - **Update and uninstall.** `tomaccoctl update [--check]` and `tomaccoctl uninstall`.
   The installer now keeps a copy of itself for uninstall and rollback.
 - **MCP prompts.** `setup`, `run-android-app` and `run-virtual-iphone`.
+- **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
+  `tomacco://docs/NAME`, as Markdown of the installed version.
 - **Android.**
   - `android.input` types any Unicode text through the device clipboard.
   - `android.settings` sets dark mode, font scale, animations, airplane mode and one

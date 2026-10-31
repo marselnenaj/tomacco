@@ -25,6 +25,11 @@ stdio server: no network port and no token. The installer never changes client s
 Any MCP stdio client gets the same tools. The resources `tomacco://catalog`, `tomacco://jobs`,
 `tomacco://workspaces`, `tomacco://debug` and `tomacco://runtimes` expose profiles and recent work.
 
+The guides are resources too, as Markdown of the installed version: `tomacco://docs/agents` (this guide),
+`tomacco://docs/recipes`, `tomacco://docs/getting-started`, `tomacco://docs/android`, `tomacco://docs/iphone`,
+`tomacco://docs/virtual-ios` (its usage guide), `tomacco://docs/troubleshooting` and `tomacco://docs/faq`. Links
+inside them are relative to the repository's `docs/` directory.
+
 The server also offers three prompts, short recipes a client can show as commands:
 
 | Prompt | Arguments | What it asks the agent to do |
