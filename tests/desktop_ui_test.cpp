@@ -2498,6 +2498,42 @@ for line in sys.stdin:
         other->close();
         QVERIFY2(errors.isEmpty(),qPrintable(errors.join('\n')));
     }
+    void job_log_filters_by_text_and_level_and_copies_the_lines() {
+        // The reader narrows a job's log to a text and a level, and copies just those lines.
+        open("jobs");window->resize(1380,970);QTest::qWait(50);
+        const double now=QDateTime::currentSecsSinceEpoch();
+        workspace->setProperty("jobs",QVariantList{QVariantMap{{"id","log-filter-job"},{"label","Build Android · debug"},{"state","failed"},{"created",now-40},{"updated",now}}});
+        workspace->setProperty("selectedJob",QString("log-filter-job"));
+        workspace->setProperty("logText",QString("Resolving dependencies\nwarning: 'foo' is deprecated\nerror: build failed in app.dart\nE/AndroidRuntime: FATAL EXCEPTION: main\n10-31 12:00:00.000  1234  1234 W Choreographer: Skipped 30 frames\nBUILD done\n"));
+        auto *search=item("logSearch");QVERIFY(search);QTRY_VERIFY(search->isVisible());
+        // The bar takes its place above the log once the layout has run.
+        QTRY_VERIFY(qobject_cast<QQuickItem *>(object("jobLog"))->y()>=item("logFilterBar")->y()+item("logFilterBar")->height());
+        const auto shown=[&]{return workspace->property("shownLog").toString();};
+        QCOMPARE(shown().count('\n'),6);
+        search->forceActiveFocus();type("BUILD");
+        QTRY_COMPARE(shown(),QString("error: build failed in app.dart\nBUILD done"));
+        QCOMPARE(item("logMatches")->property("text").toString(),QString("2 lines"));
+        // Errors only, then warnings and errors, within the text.
+        workspace->setProperty("logQuery",QString());
+        auto *errors=item("logLevel-error");QVERIFY(errors);
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,errors->mapToScene(QPointF(errors->width()/2,errors->height()/2)).toPoint());
+        QTRY_COMPARE(shown(),QString("error: build failed in app.dart\nE/AndroidRuntime: FATAL EXCEPTION: main"));
+        workspace->setProperty("logLevel",QString("warning"));
+        QCOMPARE(shown(),QString("warning: 'foo' is deprecated\nerror: build failed in app.dart\nE/AndroidRuntime: FATAL EXCEPTION: main\n10-31 12:00:00.000  1234  1234 W Choreographer: Skipped 30 frames"));
+        // Copy takes exactly the lines shown.
+        QGuiApplication::clipboard()->clear();
+        auto *copy=item("logCopy");QVERIFY(copy);QCOMPARE(copy->property("text").toString(),QString("Copy these lines"));
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,copy->mapToScene(QPointF(copy->width()/2,copy->height()/2)).toPoint());
+        QTRY_COMPARE(QGuiApplication::clipboard()->text(),shown());
+        // Nothing matching says so instead of looking empty.
+        workspace->setProperty("logQuery",QString("no such text"));
+        QCOMPARE(shown(),QString());
+        QCOMPARE(object("jobLog")->property("placeholderText").toString(),QString("No line of this log matches."));
+        workspace->setProperty("logQuery",QString());workspace->setProperty("logLevel",QString("all"));
+        QCOMPARE(copy->property("text").toString(),QString("Copy log"));
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("logText",QString());workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void cleanupTestCase() {
         engine.reset();control.reset();backend.reset();
     }

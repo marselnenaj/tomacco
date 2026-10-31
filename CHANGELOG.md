@@ -40,6 +40,7 @@ operations and their JSON results.
   - Recent projects on the start screen and in the command palette.
   - The window reopens at its last size.
   - The Omarchy panel can open a job's log (V key, `log` command).
+  - A job's log can be filtered by text and by level, and the lines shown copied.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.

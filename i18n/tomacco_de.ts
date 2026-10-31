@@ -4323,6 +4323,41 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>The result shows up here.</source>
         <translation>Das Ergebnis erscheint hier.</translation>
     </message>
+    <message>
+        <source>Filter the log</source>
+        <translation>Protokoll filtern</translation>
+    </message>
+    <message>
+        <source>All lines</source>
+        <translation>Alle Zeilen</translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation>Warnungen</translation>
+    </message>
+    <message>
+        <source>Errors</source>
+        <translation>Fehler</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n line(s)</source>
+        <translation>
+            <numerusform>%n Zeile</numerusform>
+            <numerusform>%n Zeilen</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Copy these lines</source>
+        <translation>Diese Zeilen kopieren</translation>
+    </message>
+    <message>
+        <source>Copy log</source>
+        <translation>Protokoll kopieren</translation>
+    </message>
+    <message>
+        <source>No line of this log matches.</source>
+        <translation>Keine Zeile dieses Protokolls passt.</translation>
+    </message>
 </context>
 <context>
     <name>main</name>

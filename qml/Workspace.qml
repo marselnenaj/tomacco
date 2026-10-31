@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import "."
 import "OperationTitles.js" as OperationTitles
+import "LogFilter.js" as LogFilter
 
 Rectangle {
     id: panel
@@ -39,6 +40,12 @@ Rectangle {
     property string selectedJob: ""
     property int logOffset: 0
     property string logText: ""
+    // What the reader filters the log by: text and the lowest level shown.
+    property string logQuery: ""
+    property string logLevel: "all"
+    readonly property bool logFiltered: logQuery.length>0 || logLevel!=="all"
+    readonly property var logLines: logFiltered ? LogFilter.filter(logText,logQuery,logLevel) : []
+    readonly property string shownLog: logFiltered ? logLines.join("\n") : logText
     property string resultText: ""
     property string status: qsTr("Open a project, connect a device and start a build.")
     // The progress banner shows while a request's own status text is on screen.
@@ -379,7 +386,20 @@ Rectangle {
                         StudioButton { text: qsTr("Cancel"); iconName: "stop"; enabled: panel.activeJob.state==="running" || panel.activeJob.state==="queued"; onClicked: panel.request("job.cancel",{job_id:panel.selectedJob}) }
                     }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
-                    StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; clip: true; text: panel.logText; placeholderText: qsTr("Choose a job to read its log.") }
+                    RowLayout {
+                        objectName: "logFilterBar"
+                        Layout.fillWidth: true; Layout.margins: Theme.gapSm; Layout.leftMargin: Theme.gapMd; spacing: Theme.gapXs
+                        visible: panel.selectedJob.length>0
+                        StudioTextField { id: logSearch; objectName: "logSearch"; Layout.fillWidth: true; implicitWidth: 80; placeholderText: qsTr("Filter the log"); text: panel.logQuery; onTextEdited: panel.logQuery=text }
+                        StudioSegmented {
+                            objectName: "logLevel"; current: panel.logLevel
+                            model: [{id:"all",label:qsTr("All lines")},{id:"warning",label:qsTr("Warnings"),objectName:"logLevel-warning"},{id:"error",label:qsTr("Errors"),objectName:"logLevel-error"}]
+                            onChosen: id=>panel.logLevel=id
+                        }
+                        Text { objectName: "logMatches"; visible: panel.logFiltered && panel.width>=760; text: qsTr("%n line(s)","",panel.logLines.length); color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro }
+                        StudioButton { objectName: "logCopy"; text: panel.logFiltered?qsTr("Copy these lines"):qsTr("Copy log"); displayText: panel.width<1000?"":text; tip: text; iconName: "copy"; quiet: true; enabled: panel.shownLog.length>0; onClicked: Studio.copy(panel.shownLog) }
+                    }
+                    StudioCodeView { objectName: "jobLog"; Layout.fillWidth: true; Layout.fillHeight: true; clip: true; text: panel.shownLog; placeholderText: panel.logFiltered && panel.logText.length ? qsTr("No line of this log matches.") : qsTr("Choose a job to read its log.") }
                     Repeater {
                         model: panel.activeJob.result && panel.activeJob.result.artifacts ? panel.activeJob.result.artifacts : []
                         RowLayout {

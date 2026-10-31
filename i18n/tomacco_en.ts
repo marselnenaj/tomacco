@@ -55,4 +55,14 @@
         </translation>
     </message>
 </context>
+<context>
+    <name>Workspace</name>
+    <message numerus="yes">
+        <source>%n line(s)</source>
+        <translation>
+            <numerusform>%n line</numerusform>
+            <numerusform>%n lines</numerusform>
+        </translation>
+    </message>
+</context>
 </TS>

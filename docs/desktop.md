@@ -113,6 +113,17 @@ apps and the iPhone executes them. Apple's Simulator remains an optional Mac
 connection. The **Web preview** button (*Web-Vorschau*) opens the separate Chromium
 layout lab.
 
+## Builds and jobs
+
+**Builds & jobs** (Ctrl+3, *Builds & Aufträge*) lists the jobs of every client
+and shows the chosen job's log. Above the log, **Filter the log**
+(*Protokoll filtern*) keeps the lines that contain a text, ignoring case, and
+**Warnings** or **Errors** (*Warnungen*, *Fehler*) keep the lines at that level:
+Warnings shows warnings and errors. The level is guessed from words such as
+`error`, `failed`, `exception` and `warning`, and from Android's logcat letters
+(`E/Tag`, ` W Tag:`). **Copy these lines** (*Diese Zeilen kopieren*) copies
+exactly the lines shown; without a filter the button copies the whole log.
+
 ## Installing an app by dropping it
 
 Drag an app from the file manager onto the device view to install it on the
