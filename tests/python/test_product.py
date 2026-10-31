@@ -983,6 +983,46 @@ class AndroidControlTests(Isolated):
         with self.assertRaises(StudioError) as refused: files()
         self.assertEqual(refused.exception.code, "app_not_debuggable")
 
+    def test_steps_run_on_every_device_as_one_job_with_a_result_per_device(self):
+        # R5CT has no launcher activity for the app; emulator-5554 does.
+        self.tool("adb", "import json,os,sys\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+                         "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
+                         "if a[:1]==['devices']: print('List of devices attached\\nemulator-5554 device product:x model:A\\nR5CT device model:B\\nOLD1 offline\\n')\n"
+                         "elif 'resolve-activity' in a[-1]: print('dev.test.app/.Main' if a[1]=='emulator-5554' else 'No activity found')\n")
+        apk = self.root / "app.apk"
+        apk.touch()
+        steps = [{"operation": "device.install", "arguments": {"paths": [str(apk)]}},
+                 {"operation": "android.launch", "arguments": {"bundle_id": "dev.test.app"}},
+                 {"operation": "device.app", "arguments": {"bundle_id": "dev.test.app", "action": "stop"}}]
+        job = dispatch("android.each", {"steps": steps})
+        self.assertEqual(job["label"], "Run on 2 Android devices")
+        done = jobs.wait(job["id"], 30)
+        self.assertEqual(done["state"], "failed")
+        report = json.loads(Path(next(a["path"] for a in done["result"]["artifacts"] if a["path"].endswith("report.json"))).read_text())
+        self.assertEqual(report["failed"], ["R5CT"])
+        by_device = {d["device"]: d for d in report["devices"]}
+        self.assertEqual([(s["operation"], s["ok"]) for s in by_device["emulator-5554"]["steps"]],
+                         [("device.install", True), ("android.launch", True), ("device.app", True)])
+        self.assertEqual(by_device["emulator-5554"]["steps"][0]["state"], "succeeded")
+        self.assertEqual([(s["operation"], s["ok"]) for s in by_device["R5CT"]["steps"]], [("device.install", True), ("android.launch", False)])
+        self.assertEqual(by_device["R5CT"]["steps"][1]["error"]["code"], "launcher_missing")
+        installs = [call[:2] for call in map(json.loads, (self.root / "adb-calls.jsonl").read_text().splitlines()) if "install" in call]
+        self.assertEqual(sorted(installs), [["-s", "R5CT"], ["-s", "emulator-5554"]])
+        # Named devices only, and every step checked before anything runs.
+        job = dispatch("android.each", {"steps": steps[:2], "devices": ["emulator-5554"]})
+        self.assertEqual(jobs.wait(job["id"], 30)["state"], "succeeded")
+        for arguments, code in [({"steps": [{"operation": "android.launch", "arguments": {"device": "x", "bundle_id": "dev.test.app"}}]}, "invalid_argument"),
+                                ({"steps": [{"operation": "android.launch", "arguments": {}}]}, "invalid_argument"),
+                                ({"steps": [{"operation": "android.emulator", "arguments": {}}]}, "invalid_argument"),
+                                ({"steps": steps, "devices": ["x;reboot"]}, "invalid_argument")]:
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.each", arguments)
+            self.assertEqual(refused.exception.code, code, arguments)
+        self.tool("adb", "print('List of devices attached\\n')\n")
+        with self.assertRaises(StudioError) as none:
+            dispatch("android.each", {"steps": steps})
+        self.assertEqual(none.exception.code, "no_devices")
+
     def test_emulator_snapshots_battery_network_and_location_go_through_the_console(self):
         self.replies(**{"avd snapshot list": "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001\nOK\n",
                         "power display": "AC: offline\nstatus: Discharging\nhealth: Good\npresent: true\ncapacity: 15\nOK\n",

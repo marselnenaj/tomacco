@@ -3545,6 +3545,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Auf Mac ausführen</translation>
     </message>
     <message>
+        <source>Run on every Android device</source>
+        <translation>Auf jedem Android-Gerät ausführen</translation>
+    </message>
+    <message>
         <source>Run workspace</source>
         <translation>Workspace ausführen</translation>
     </message>

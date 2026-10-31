@@ -318,6 +318,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             )?;
             return Ok(0);
         }
+        Some("_android_each") => {
+            android_device::each_worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing device request"))?,
+            )?;
+            return Ok(0);
+        }
         Some("_play") => {
             play_store::worker(
                 args.get(1)

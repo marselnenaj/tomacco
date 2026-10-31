@@ -144,6 +144,9 @@ both.
 `android.notifications` lists the notifications shown, for asserting that the app posted one, and
 `android.app_files` lists or pulls a debuggable app's private files.
 
+`android.each` runs steps such as install and launch on every connected Android device as one job,
+with each device's result in the job's `report.json`.
+
 `android.package_inspect` reads what a built APK or AAB declares, without a device: package,
 version, SDK levels, permissions, ABIs and signing certificate digests.
 `device.install` also takes one `.aab` and installs it through bundletool.

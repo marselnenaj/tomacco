@@ -1614,6 +1614,75 @@
     }
   },
   {
+    "name": "android.each",
+    "title": "Run on every Android device",
+    "description": "Run the same steps on every connected Android device, or on the listed ones, as one job: all devices at once, each device's steps in order until one fails. A step that returns a job is followed to its end. The job's report.json artifact has every device's result; the job fails if any device failed. Steps leave out device and platform, which are set per device.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "description": "",
+                "enum": [
+                  "device.install",
+                  "device.app",
+                  "android.launch",
+                  "android.permission",
+                  "android.settings",
+                  "android.display",
+                  "android.deep_link",
+                  "android.input",
+                  "android.notifications"
+                ]
+              },
+              "arguments": {
+                "type": "object",
+                "description": "The operation's arguments without device and platform",
+                "default": {}
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "devices": {
+          "type": "array",
+          "description": "Serials from device.list; all online Android devices when left out",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "description": "",
+            "minLength": 1
+          }
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Seconds for the whole job",
+          "minimum": 10,
+          "maximum": 86400,
+          "default": 1800
+        }
+      },
+      "required": [
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "android.connect",
     "title": "Android over Wi-Fi",
     "description": "Pair or connect adb to a device address. Pairing codes are not persisted.",

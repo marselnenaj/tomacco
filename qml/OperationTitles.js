@@ -52,6 +52,7 @@ var titles = {
     "android.display": QT_TRANSLATE_NOOP("Operations", "Display orientation and size"),
     "android.notifications": QT_TRANSLATE_NOOP("Operations", "Notifications"),
     "android.app_files": QT_TRANSLATE_NOOP("Operations", "App data files"),
+    "android.each": QT_TRANSLATE_NOOP("Operations", "Run on every Android device"),
     "android.connect": QT_TRANSLATE_NOOP("Operations", "Android over Wi-Fi"),
     "android.calibrate": QT_TRANSLATE_NOOP("Operations", "Read model from device"),
     "android.sdk_packages": QT_TRANSLATE_NOOP("Operations", "SDK packages"),

@@ -1,5 +1,5 @@
-//! Android device state for tests: display overrides, notifications and
-//! the private files of debuggable apps.
+//! Android device state for tests: display overrides, notifications, the
+//! private files of debuggable apps, and one action on every device.
 use crate::{core::*, devices, toolchain as tc};
 use serde_json::{Value, json};
 
@@ -368,6 +368,181 @@ pub fn app_files(a: &Value) -> Result {
     )
 }
 
+/// Operations `android.each` may run on every device. Each takes `device`.
+pub const EACH_OPERATIONS: [&str; 9] = [
+    "device.install",
+    "device.app",
+    "android.launch",
+    "android.permission",
+    "android.settings",
+    "android.display",
+    "android.deep_link",
+    "android.input",
+    "android.notifications",
+];
+
+/// One step's arguments for one device.
+fn for_device(operation: &str, arguments: &Value, device: &str) -> Value {
+    let mut value = if arguments.is_object() {
+        arguments.clone()
+    } else {
+        json!({})
+    };
+    value["device"] = json!(device);
+    if operation.starts_with("device.") {
+        value["platform"] = json!("android");
+    }
+    value
+}
+
+/// Runs the same steps on several Android devices as one job, all devices at
+/// once, and reports every device's result in report.json.
+pub fn each(a: &Value) -> Result {
+    let steps = a["steps"].as_array().cloned().unwrap_or_default();
+    let mut devices = strings(&a["devices"]);
+    if devices.is_empty() {
+        let listing = devices::listing("android")?;
+        devices = listing["devices"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|d| s(d, "state") == "device")
+            .map(|d| s(d, "id").to_string())
+            .collect();
+    }
+    devices.sort();
+    devices.dedup();
+    if devices.is_empty() {
+        return Err(Error::new("no_devices", "No Android device is connected")
+            .remedy("Start an emulator with android.avd_start or connect a phone, then check device.list"));
+    }
+    for device in &devices {
+        identifier(device, "Android serial", None)?;
+    }
+    for step in &steps {
+        let operation = s(step, "operation");
+        if !EACH_OPERATIONS.contains(&operation) {
+            return Err(Error::new(
+                "invalid_argument",
+                format!("{operation} cannot run on every device"),
+            ));
+        }
+        for key in ["device", "platform"] {
+            if step["arguments"].get(key).is_some() {
+                return Err(Error::new(
+                    "invalid_argument",
+                    format!("Leave {key} out of the step arguments; android.each sets it"),
+                ));
+            }
+        }
+        // Refuse a malformed step before anything runs on a device.
+        crate::api::arguments(
+            operation,
+            &for_device(operation, &step["arguments"], &devices[0]),
+        )?;
+    }
+    let directory = home()?
+        .join("each")
+        .join(uuid::Uuid::new_v4().simple().to_string());
+    private_dir(&directory)?;
+    let request = directory.join("request.json");
+    atomic_json(
+        &request,
+        &json!({"devices":devices,"steps":steps,"report":directory.join("report.json")}),
+    )?;
+    crate::jobs::submit(
+        &match devices.len() {
+            1 => "Run on 1 Android device".to_string(),
+            count => format!("Run on {count} Android devices"),
+        },
+        json!({"steps":[{"argv":[own_executable()?,"_android_each",request]}],"cwd":directory,"env":tc::environment()?,"timeout":n(a,"timeout"),"always_artifacts":["report.json"]}),
+    )
+}
+
+/// One device's steps, in order, until one fails. A step that returns a job
+/// is followed to its end.
+fn each_device(device: &str, steps: &[Value]) -> Value {
+    let mut results = Vec::new();
+    let mut ok = true;
+    for step in steps {
+        let operation = s(step, "operation");
+        let arguments = for_device(operation, &step["arguments"], device);
+        let mut entry = json!({"operation":operation});
+        match crate::api::dispatch(operation, &arguments) {
+            Ok(value) if value.get("plan").is_some() && value["id"].is_string() => {
+                let mut job = value;
+                while !crate::jobs::TERMINAL.contains(&s(&job, "state")) {
+                    match crate::jobs::wait(s(&job, "id"), 60) {
+                        Ok(next) => job = next,
+                        Err(error) => {
+                            job["state"] = json!("failed");
+                            entry["error"] = error.value();
+                        }
+                    }
+                }
+                entry["job_id"] = job["id"].clone();
+                entry["state"] = job["state"].clone();
+                entry["result"] = job["result"].clone();
+                entry["ok"] = json!(s(&job, "state") == "succeeded");
+            }
+            Ok(value) => {
+                entry["ok"] = json!(true);
+                entry["result"] = value;
+            }
+            Err(error) => {
+                entry["ok"] = json!(false);
+                entry["error"] = error.value();
+            }
+        }
+        ok = entry["ok"] == true;
+        eprintln!(
+            "[{device}] {operation}: {}",
+            if ok { "succeeded" } else { "failed" }
+        );
+        results.push(entry);
+        if !ok {
+            break;
+        }
+    }
+    json!({"device":device,"ok":ok,"steps":results})
+}
+
+/// The `_android_each` worker of an android.each job.
+pub fn each_worker(request: &str) -> Result<()> {
+    let spec = read_json(std::path::Path::new(request), None)?;
+    let steps = spec["steps"].as_array().cloned().unwrap_or_default();
+    let devices = strings(&spec["devices"]);
+    let results: Vec<Value> = std::thread::scope(|scope| {
+        let handles: Vec<_> = devices
+            .iter()
+            .map(|device| (device, scope.spawn(|| each_device(device, &steps))))
+            .collect();
+        handles
+            .into_iter()
+            .map(|(device, handle)| {
+                handle.join().unwrap_or_else(|_| {
+                    json!({"device":device,"ok":false,"steps":[],"error":"The device's worker stopped"})
+                })
+            })
+            .collect()
+    });
+    let failed: Vec<_> = results
+        .iter()
+        .filter(|r| r["ok"] != true)
+        .map(|r| s(r, "device").to_string())
+        .collect();
+    let report = json!({"ok":failed.is_empty(),"devices":results,"failed":failed});
+    atomic_json(std::path::Path::new(s(&spec, "report")), &report)?;
+    println!("{}", serde_json::to_string_pretty(&report)?);
+    if !failed.is_empty() {
+        return Err(Error::new(
+            "device_failed",
+            format!("Failed on {}", failed.join(", ")),
+        ));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -436,6 +611,28 @@ mod tests {
                 json!({"path":"files/a b.txt","size":3,"modified":1793474139}),
                 json!({"path":"shared_prefs/p.xml","size":12,"modified":1})
             ]
+        );
+    }
+
+    #[test]
+    fn a_step_gets_the_device_and_device_operations_the_platform() {
+        let value = for_device("device.install", &json!({"paths":["/a.apk"]}), "R5CT");
+        assert_eq!(
+            value,
+            json!({"paths":["/a.apk"],"device":"R5CT","platform":"android"})
+        );
+        let value = for_device(
+            "android.launch",
+            &json!({"bundle_id":"dev.example.app"}),
+            "emulator-5554",
+        );
+        assert_eq!(
+            value,
+            json!({"bundle_id":"dev.example.app","device":"emulator-5554"})
+        );
+        assert_eq!(
+            for_device("android.input", &Value::Null, "x"),
+            json!({"device":"x"})
         );
     }
 }

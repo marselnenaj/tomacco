@@ -321,6 +321,31 @@ tomaccoctl call android.emulator '{"device":"emulator-5554","action":"network","
   snapshot load in an emulator started with `-read-only`. Tomacco reports those as
   `emulator_refused` with the console's reason.
 
+## Every device at once
+
+`android.each` runs the same steps on every connected Android device, or on the
+`devices` you list, as one job. Devices run at the same time; on each device the
+steps run in order and stop at the first failure. A step that returns a job, such as
+an install, is followed to its end.
+
+```sh
+tomaccoctl call android.each '{"steps":[{"operation":"device.install","arguments":{"paths":["/absolute/app-debug.apk"]}},{"operation":"android.launch","arguments":{"bundle_id":"dev.example.newapp"}}]}'
+```
+
+- Steps leave out `device` and `platform`; they are set per device. A step is checked
+  against its operation's schema before anything runs.
+- The steps can be `device.install`, `device.app`, `android.launch`,
+  `android.permission`, `android.settings`, `android.display`, `android.deep_link`,
+  `android.input` and `android.notifications`.
+- The job's `report.json` artifact lists every device with each step's result, job
+  state or error, and `failed` names the devices that failed. The job fails when any
+  device failed.
+- Without `devices`, every device that `device.list` shows as `device` takes part,
+  including emulators that other tools started.
+- Install, launch and a notification list ran as one job on one API 36 x86_64
+  emulator. Several devices at once, and a failure on one of them, are covered by tests
+  with a stand-in adb; no run on several real devices yet.
+
 ## Phones
 
 Enable USB debugging and authorize the computer. For wireless debugging, use
