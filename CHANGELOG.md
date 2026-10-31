@@ -10,6 +10,8 @@ operations and their JSON results.
 
 ### Added
 
+- `doctor` checks with the dynamic loader whether the desktop can start on this system, lists missing libraries and symbol
+  versions under `desktop`, and puts a step first in `next_steps` when it cannot.
 - **Command line.**
   - `tomaccoctl completions bash|zsh|fish`. Only the bash script has been run.
   - `tomaccoctl schema OPERATION` and `schema --names`.
@@ -94,7 +96,9 @@ operations and their JSON results.
 - `doctor`'s `next_steps` for the virtual iOS device name the next stage of its setup chain and
   carry the whole chain in order, with what is already built; with a profile they name what
   stops the next start (disk space, a failed start, apps not installed). Unit-tested only.
-
+- Operations that write a file (screenshots, recordings, traces, reports, profile exports, signed releases) refuse a destination
+  that is a symbolic link or a special file; `catalog.export` now checks its destination like the others.
+- `doctor` checks all tools at once instead of eight at a time, and a `call` parses only its own operation's schema, not all of them.
 - `ios.virtual.start` refuses up front, before deleting or copying anything, when the
   disk lacks room for the copy.
 - The panel `ios.virtual.status` reports comes from the running guest's boot, not from
@@ -103,6 +107,13 @@ operations and their JSON results.
 
 ### Fixed
 
+- Errors, job records and job logs mask recognised secrets (authorization headers, tokens, signing passwords, private keys) as
+  `[redacted]`, and a secret given where its file's path belongs is no longer repeated in the error.
+- Job logs and worker logs are created 0600 and the data directories 0700 in one step, whatever the umask; older logs are
+  tightened when they are rewritten. The installer creates `~/.local/share/tomacco` and its backups owner-only.
+- Runtime and debugger sockets, the virtual iPhone's launcher and the tests no longer fail with a long `TMPDIR`
+  ("path must be shorter than SUN_LEN"): socket directories move to a private `XDG_RUNTIME_DIR` or `/tmp` when `TMPDIR` is too long.
+  `tests/update_e2e.rs` works in `target/tmp` without a `TMPDIR`, and the touch-lane tests no longer fail under parallel load.
 - A command the emulator console refused (`KO`) no longer looks like success:
   `emulator_refused`.
 - Every network latency preset sends its millisecond range; the emulator's own `gprs`

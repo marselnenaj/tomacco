@@ -1653,7 +1653,9 @@ def main():
             with os.fdopen(os.open(root_hash_copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as stream:
                 stream.write(root_hash_data)
             root_hash.update(source=str(root_hash_path), path=str(root_hash_copy))
-        with tempfile.TemporaryDirectory(prefix="tomacco-vphone-") as temporary:
+        from ios_guest_control import socket_root
+        # Room for "/tomacco-vphone-XXXXXXXX/guest.sock_1339" and the like.
+        with tempfile.TemporaryDirectory(prefix="tomacco-vphone-", dir=socket_root(48)) as temporary:
             from ios_guest_control import local_control_preflight
             try:
                 control_preflight = local_control_preflight(temporary)

@@ -164,7 +164,7 @@ pub fn import(a: &Value) -> Result {
 pub fn export(a: &Value) -> Result {
     let mut value = find(s(a, "profile_id"))?;
     value.as_object_mut().unwrap().remove("custom");
-    let p = path(s(a, "path"), false, false)?;
+    let p = output_path(s(a, "path"))?;
     if p.exists() {
         return Err(Error::new(
             "file_exists",

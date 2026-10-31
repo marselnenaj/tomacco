@@ -117,7 +117,7 @@ fn server_path(arch: &str) -> Result<PathBuf> {
 fn command(device: &str, args: &[String], log: &Path) -> Result<Command> {
     let mut adb = devices::adb(device)?;
     adb.extend(["shell".into(), "-T".into(), shell_join(args)]);
-    let output = File::create(log)?;
+    let output = private_file(log, false)?;
     let mut command = Command::new(&adb[0]);
     command
         .args(&adb[1..])

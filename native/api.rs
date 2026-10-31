@@ -4,28 +4,59 @@ use crate::{
 };
 use serde_json::{Value, json};
 use std::sync::OnceLock;
+const OPERATIONS: &str = include_str!("../assets/operations.json");
 pub fn manifest() -> &'static Value {
     static MANIFEST: OnceLock<Value> = OnceLock::new();
-    MANIFEST.get_or_init(|| {
-        serde_json::from_str(include_str!("../assets/operations.json"))
-            .expect("operation schema is valid JSON")
+    MANIFEST
+        .get_or_init(|| serde_json::from_str(OPERATIONS).expect("operation schema is valid JSON"))
+}
+/// One operation in the schema: its name, its JSON text, and its parsed
+/// schema once something asks for it.
+struct Entry {
+    name: String,
+    text: &'static serde_json::value::RawValue,
+    schema: OnceLock<Value>,
+}
+/// The schema split into operations without building any of them: a call
+/// needs one schema of 173, and parsing them all (224 KiB of JSON) was most
+/// of the time a short `tomaccoctl call` took.
+fn entries() -> &'static [Entry] {
+    static ENTRIES: OnceLock<Vec<Entry>> = OnceLock::new();
+    ENTRIES.get_or_init(|| {
+        #[derive(serde::Deserialize)]
+        struct Named<'a> {
+            #[serde(borrow)]
+            name: std::borrow::Cow<'a, str>,
+        }
+        let operations: Vec<&'static serde_json::value::RawValue> =
+            serde_json::from_str(OPERATIONS).expect("operation schema is valid JSON");
+        operations
+            .into_iter()
+            .map(|text| Entry {
+                name: serde_json::from_str::<Named<'_>>(text.get())
+                    .expect("every operation has a name")
+                    .name
+                    .into_owned(),
+                text,
+                schema: OnceLock::new(),
+            })
+            .collect()
     })
 }
 /// Every operation's name, in schema order.
 pub fn names() -> impl Iterator<Item = &'static str> {
-    manifest()
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|op| s(op, "name"))
+    entries().iter().map(|entry| entry.name.as_str())
 }
 /// One operation's schema; an unknown name is answered with the closest one.
 pub fn operation(name: &str) -> Result<&'static Value> {
-    manifest()
-        .as_array()
-        .unwrap()
+    entries()
         .iter()
-        .find(|op| s(op, "name") == name)
+        .find(|entry| entry.name == name)
+        .map(|entry| {
+            entry.schema.get_or_init(|| {
+                serde_json::from_str(entry.text.get()).expect("operation schema is valid JSON")
+            })
+        })
         .ok_or_else(|| {
             let remedy = match closest(name, names()) {
                 Some(near) => {
@@ -56,16 +87,18 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "doctor" => toolchain::doctor().map(crate::setup::with_next_steps),
         "settings.get" => toolchain::settings(),
         "settings.configure" => toolchain::configure(&a),
-        "desktop.status" => desktop::status(),
+        "desktop.status" => desktop::status().map(redacted),
         "desktop.open" => desktop::open(&a),
         "catalog.list" => catalog::profiles(s(&a, "platform")),
         "catalog.import" => catalog::import(&a),
         "catalog.export" => catalog::export(&a),
         "catalog.remove" => catalog::remove(s(&a, "profile_id")),
-        "job.list" => jobs::listing(n(&a, "limit")),
-        "job.get" => jobs::get(s(&a, "job_id")),
-        "job.logs" => jobs::logs(&a),
-        "job.wait" => jobs::wait(s(&a, "job_id"), n(&a, "seconds")),
+        // Job records and logs hold commands, environments and tool output:
+        // what leaves the process has recognised secrets masked.
+        "job.list" => jobs::listing(n(&a, "limit")).map(redacted),
+        "job.get" => jobs::get(s(&a, "job_id")).map(redacted),
+        "job.logs" => jobs::logs(&a).map(redacted),
+        "job.wait" => jobs::wait(s(&a, "job_id"), n(&a, "seconds")).map(redacted),
         "job.cancel" => jobs::cancel(s(&a, "job_id")),
         "job.send" => jobs::send(s(&a, "job_id"), s(&a, "command")),
         "storage.prune" => crate::storage::handle(&a),
@@ -153,6 +186,10 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         _ => Err(Error::new("operation_not_found", name)),
     }
 }
+fn redacted(mut value: Value) -> Value {
+    crate::redact::value(&mut value);
+    value
+}
 pub fn envelope(value: Result) -> Value {
     match value {
         Ok(result) => json!({"ok":true,"result":result}),
@@ -163,6 +200,19 @@ pub fn envelope(value: Result) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn one_operation_parsed_alone_is_the_one_in_the_whole_schema() {
+        let all = manifest().as_array().unwrap();
+        assert_eq!(names().count(), all.len());
+        for (name, whole) in names().zip(all) {
+            assert_eq!(s(whole, "name"), name);
+            assert_eq!(operation(name).unwrap(), whole);
+        }
+        assert_eq!(
+            operation("job.wiat").unwrap_err().code,
+            "operation_not_found"
+        );
+    }
     #[test]
     fn all_operations_have_unique_names_and_strict_schemas() {
         let mut names = std::collections::HashSet::new();

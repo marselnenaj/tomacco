@@ -104,6 +104,26 @@ fn next_steps(doctor: &Value, emulator: bool, virtual_ios: &Value) -> Vec<Value>
     let mut step = |goal: &str, what: &str, how: String, ask_first: bool| {
         steps.push(json!({"goal":goal,"what":what,"how":how,"ask_first":ask_first}))
     };
+    if doctor["desktop"]["loadable"] == false {
+        let desktop = &doctor["desktop"];
+        let missing: Vec<String> = strings(&desktop["missing_libraries"])
+            .into_iter()
+            .chain(strings(&desktop["missing_versions"]))
+            .collect();
+        step(
+            "desktop",
+            &format!(
+                "The desktop at {} cannot start on this system; the loader is missing {}",
+                s(desktop, "path"),
+                missing.join(", ")
+            ),
+            format!(
+                "The release desktop needs {}. Update the system (on Arch: sudo pacman -Syu), or build the desktop from a checkout on this system: {DOCS}/getting-started.md#debian-ubuntu-and-fedora. tomaccoctl itself works without it.",
+                crate::desktop::RELEASE_REQUIREMENTS
+            ),
+            true,
+        );
+    }
     if !has(doctor, "java") || !has(doctor, "gradle") {
         step(
             "android",
@@ -702,6 +722,46 @@ mod tests {
             "code":"ios_virtual_profile_invalid","message":"profile.json is not a format 1 virtual iOS device profile"}}));
         assert_eq!(broken.len(), 1);
         assert!(broken[0]["how"].as_str().unwrap().contains("format 1"));
+    }
+
+    #[test]
+    fn a_desktop_that_cannot_load_comes_first_with_what_it_lacks() {
+        let tools: Vec<Value> = [
+            "java",
+            "gradle",
+            "sdkmanager",
+            "adb",
+            "emulator",
+            "swift",
+            "xtool",
+        ]
+        .iter()
+        .map(|name| json!({"name":name,"available":true}))
+        .collect();
+        let broken = json!({"tools":tools,"desktop":{"installed":true,"path":"/home/me/.local/lib/tomacco/tomacco",
+            "loadable":false,"missing_libraries":["libavcodec.so.63"],"missing_versions":["Qt_6.12 in libQt6Core.so.6"]}});
+        let steps = next_steps(&broken, true, true);
+        assert_eq!(steps.len(), 1);
+        assert_eq!(steps[0]["goal"], "desktop");
+        let what = steps[0]["what"].as_str().unwrap();
+        assert!(
+            what.contains("libavcodec.so.63") && what.contains("Qt_6.12"),
+            "{what}"
+        );
+        let how = steps[0]["how"].as_str().unwrap();
+        assert!(
+            how.contains("Qt 6.12") && how.contains("FFmpeg 9") && how.contains("glibc 2.39"),
+            "{how}"
+        );
+        // Loadable, not installed, or not checked: nothing to do.
+        for desktop in [
+            json!({"loadable":true}),
+            json!({"installed":false,"loadable":null}),
+            json!({"loadable":null}),
+        ] {
+            let doctor = json!({"tools":broken["tools"],"desktop":desktop});
+            assert!(next_steps(&doctor, true, true).is_empty());
+        }
     }
 
     #[test]

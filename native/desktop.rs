@@ -1,12 +1,114 @@
 use crate::{core::*, jobs, preview, toolchain};
 use serde_json::{Value, json};
 use std::{
-    fs::OpenOptions,
     os::unix::process::CommandExt,
+    path::PathBuf,
     process::{Command, Stdio},
     thread,
     time::{Duration, Instant},
 };
+/// The desktop program desktop.open starts: TOMACCO_BINARY, the one beside
+/// this tomaccoctl, a build in this checkout, the release layout, or PATH.
+pub fn binary() -> Result<Option<PathBuf>> {
+    let exe = crate::core::own_executable()?;
+    let dir = exe.parent().unwrap();
+    let mut candidates = vec![dir.join("tomacco")];
+    if let Some(root) = crate::core::source_checkout() {
+        candidates.push(root.join("build-product/tomacco"));
+        candidates.push(root.join("build/tomacco"));
+    }
+    candidates.push(dir.join("../../bin/tomacco"));
+    if let Some(p) = std::env::var_os("TOMACCO_BINARY") {
+        candidates.insert(0, p.into());
+    }
+    if let Some(p) = toolchain::which("tomacco") {
+        candidates.push(p);
+    }
+    Ok(candidates.into_iter().find(|p| toolchain::executable(p)))
+}
+
+/// What the release desktop links against, for the advice when it cannot load.
+pub const RELEASE_REQUIREMENTS: &str =
+    "Qt 6.12 or newer, FFmpeg 9 (libavcodec.so.63) and glibc 2.39 or newer";
+
+/// Whether the desktop program can be loaded on this system: the dynamic
+/// loader's view (`ldd`) of the libraries and symbol versions it needs. The
+/// release desktop is built on a current Arch Linux; on an older system it
+/// stops before its window opens, with the loader's message only on stderr.
+pub fn load_check() -> Value {
+    let binary = match binary() {
+        Ok(Some(binary)) => binary,
+        Ok(None) => return json!({"installed":false,"path":null,"loadable":null}),
+        Err(error) => {
+            return json!({"installed":false,"path":null,"loadable":null,"error":error.value()});
+        }
+    };
+    let mut report = json!({"installed":true,"path":binary,"loadable":null,
+        "release_requires":RELEASE_REQUIREMENTS});
+    let Some(ldd) = toolchain::which("ldd") else {
+        report["reason"] = json!("ldd was not found, so the libraries were not checked");
+        return report;
+    };
+    let args = [
+        ldd.to_string_lossy().into_owned(),
+        binary.to_string_lossy().into_owned(),
+    ];
+    match toolchain::run(&args, 10, None, false) {
+        Ok(result) => {
+            let text = format!("{}\n{}", s(&result, "stdout"), s(&result, "stderr"));
+            let (libraries, versions) = loader_problems(&text);
+            let dynamic = !text.contains("not a dynamic executable");
+            report["loadable"] = json!(libraries.is_empty() && versions.is_empty());
+            if result["exit_code"] != 0 && dynamic && libraries.is_empty() && versions.is_empty() {
+                report["loadable"] = Value::Null;
+                report["reason"] = json!(text.trim().chars().take(500).collect::<String>());
+            }
+            report["missing_libraries"] = json!(libraries);
+            report["missing_versions"] = json!(versions);
+        }
+        Err(error) => report["error"] = error.value(),
+    }
+    report
+}
+
+/// The libraries the loader could not find, and the symbol versions a found
+/// library is too old to have (`GLIBC_2.39 in libc.so.6`), from ldd's output.
+fn loader_problems(text: &str) -> (Vec<String>, Vec<String>) {
+    let mut libraries = Vec::new();
+    let mut versions = Vec::new();
+    for line in text.lines().map(str::trim) {
+        if let Some(library) = line.strip_suffix("=> not found") {
+            let library = library.trim().to_string();
+            if !library.is_empty() && !libraries.contains(&library) {
+                libraries.push(library);
+            }
+        } else if let Some((before, after)) = line.split_once("version `") {
+            let Some((version, _)) = after.split_once('\'') else {
+                continue;
+            };
+            if !after.contains("not found") {
+                continue;
+            }
+            // "/usr/lib/libc.so.6: version `GLIBC_2.39' not found (required by ...)"
+            let library = before
+                .trim_end()
+                .trim_end_matches(':')
+                .rsplit(['/', ' '])
+                .next()
+                .unwrap_or("");
+            let entry = if library.is_empty() {
+                version.to_string()
+            } else {
+                format!("{version} in {library}")
+            };
+            if !versions.contains(&entry) {
+                versions.push(entry);
+            }
+        }
+    }
+    (libraries, versions)
+}
+
 pub fn status() -> Result {
     let current = jobs::listing(200)?;
     let all = current.as_array().unwrap();
@@ -68,31 +170,11 @@ pub fn open(a: &Value) -> Result {
         Err(e) if e.code != "preview_unavailable" => return Err(e),
         _ => (),
     }
-    let exe = crate::core::own_executable()?;
-    let dir = exe.parent().unwrap();
-    let mut candidates = vec![dir.join("tomacco")];
-    if let Some(root) = crate::core::source_checkout() {
-        candidates.push(root.join("build-product/tomacco"));
-        candidates.push(root.join("build/tomacco"));
-    }
-    candidates.push(dir.join("../../bin/tomacco"));
-    if let Some(p) = std::env::var_os("TOMACCO_BINARY") {
-        candidates.insert(0, p.into());
-    }
-    if let Some(p) = toolchain::which("tomacco") {
-        candidates.push(p);
-    }
-    let binary = candidates
-        .into_iter()
-        .find(|p| toolchain::executable(p))
-        .ok_or_else(|| {
-            Error::new("desktop_missing", "Tomacco desktop is not installed")
-                .remedy("Build with CMake and run python3 install.py")
-        })?;
-    let log = OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open(home()?.join("desktop.log"))?;
+    let binary = binary()?.ok_or_else(|| {
+        Error::new("desktop_missing", "Tomacco desktop is not installed")
+            .remedy("Build with CMake and run python3 install.py")
+    })?;
+    let log = private_file(&home()?.join("desktop.log"), true)?;
     let mut command = Command::new(binary);
     command
         .args(["--preview-session", session, "--workspace", tab])
@@ -147,4 +229,28 @@ pub fn open(a: &Value) -> Result {
         "Desktop has not opened its control socket",
     )
     .remedy(format!("Read {}", home()?.join("desktop.log").display())))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_loaders_complaints_are_read_from_ldd() {
+        let text = "\tlinux-vdso.so.1 (0x00007ffd)\n\
+\tlibQt6Quick.so.6 => not found\n\
+\tlibavcodec.so.63 => not found\n\
+\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f)\n\
+/opt/tomacco/tomacco: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.39' not found (required by /opt/tomacco/tomacco)\n\
+/opt/tomacco/tomacco: /usr/lib/libQt6Core.so.6: version `Qt_6.12' not found (required by /opt/tomacco/tomacco)\n\
+/opt/tomacco/tomacco: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.39' not found (required by /usr/lib/libfoo.so)\n";
+        let (libraries, versions) = loader_problems(text);
+        assert_eq!(libraries, ["libQt6Quick.so.6", "libavcodec.so.63"]);
+        assert_eq!(
+            versions,
+            ["GLIBC_2.39 in libc.so.6", "Qt_6.12 in libQt6Core.so.6"]
+        );
+        let healthy = "\tlinux-vdso.so.1 (0x00007ffd)\n\tlibc.so.6 => /usr/lib/libc.so.6 (0x7f)\n";
+        assert_eq!(loader_problems(healthy), (vec![], vec![]));
+    }
 }

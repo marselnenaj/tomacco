@@ -106,7 +106,7 @@ cat >/dev/null
         &format!("sh -c {}", shell_quote(&script)),
     ]);
     let mut cmd = Command::new(&args[0]);
-    let output = File::create(dir.join("companion.log"))?;
+    let output = private_file(&dir.join("companion.log"), false)?;
     cmd.args(&args[1..])
         .stdin(Stdio::piped())
         .stdout(output.try_clone()?)
@@ -625,7 +625,7 @@ mod tests {
     #[test]
     fn apple_grpc_contract_video_hid_capture_and_accessibility() {
         // Protocol acceptance only. This deliberately does not claim an Apple runtime test.
-        let temp = tempfile::tempdir().unwrap();
+        let temp = crate::core::socket_tempdir();
         let socket = temp.path().join("idb.sock");
         let rt = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)

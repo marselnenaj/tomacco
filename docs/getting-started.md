@@ -59,7 +59,8 @@ index; installing them and building Tomacco there has not been tried.
 **The release package may not start there.** The 1.0.0 desktop binary was built on Arch: its
 dynamic symbols require Qt 6.12 or newer, FFmpeg 9 (`libavcodec.so.63`) and glibc 2.39. Where the
 distribution has older Qt or FFmpeg, build from a checkout as below. `tomaccoctl` itself needs only
-glibc 2.39. To check a binary, run `readelf -d` and `objdump -T` on it.
+glibc 2.39. `tomaccoctl doctor` checks whether the installed desktop loads here: its `desktop` entry lists missing
+libraries and symbol versions, and `next_steps` then starts with what to do.
 
 **To build from a checkout** you need Qt 6.9 or newer with Quick, Quick Controls 2, WebEngine Quick,
 Network and SVG, the FFmpeg development libraries, OpenSSL, Python 3.11 or newer, CMake, Ninja, a

@@ -233,6 +233,21 @@ class Installer:
         self.changed = []
         self.records = []
 
+    def private_backup(self):
+        """Creates this run's backup directory and the data directories above
+        it owner-only: backups are copies of the user's configuration, and
+        tomaccoctl keeps job records and credentials' paths beside them."""
+        for directory in (self.user / USER_DATA, self.user / BACKUPS, self.backup):
+            if not directory.is_dir():
+                directory.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    os.mkdir(directory, 0o700)
+                except FileExistsError:
+                    pass
+            if directory.stat().st_uid != os.geteuid():
+                raise SystemExit(f"Refusing a backup directory this user does not own: {directory}")
+            os.chmod(directory, 0o700)
+
     def destination(self, relative):
         relative = Path(relative)
         if relative.is_absolute() or '..' in relative.parts or not relative.parts:
@@ -253,8 +268,8 @@ class Installer:
             if path.read_bytes() == data and path.stat().st_mode & 0o777 == mode:
                 return
             saved = self.backup / relative
+            self.private_backup()
             saved.parent.mkdir(parents=True, exist_ok=True)
-            self.backup.chmod(0o700)
             shutil.copy2(path, saved)
             old = {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "mode": path.stat().st_mode & 0o777}
         fd, temp = tempfile.mkstemp(prefix=".tomacco-", dir=path.parent)
@@ -276,8 +291,7 @@ class Installer:
 
     def finish(self):
         if self.records:
-            self.backup.mkdir(parents=True, exist_ok=True)
-            self.backup.chmod(0o700)
+            self.private_backup()
             manifest = self.backup / 'manifest.json'
             fd, temporary = tempfile.mkstemp(prefix='.manifest-', dir=self.backup)
             try:
@@ -295,7 +309,8 @@ class Installer:
         data = target.read_bytes()
         previous = {"sha256": hashlib.sha256(data).hexdigest(), "mode": target.stat().st_mode & 0o777}
         saved = self.backup / relative
-        saved.parent.mkdir(parents=True, exist_ok=True); self.backup.chmod(0o700)
+        self.private_backup()
+        saved.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(target, saved)
         self.records.append({"path": str(relative), "before": previous, "after": None})
         self.finish()

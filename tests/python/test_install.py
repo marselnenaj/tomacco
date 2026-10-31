@@ -31,6 +31,22 @@ class InstallerTests(unittest.TestCase):
             self.assertEqual((user/'new-file').read_text(),'added')
             with self.assertRaises(SystemExit):Installer(user).rollback('../escape')
 
+    def test_backups_and_the_data_directory_are_owner_only(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            user=Path(directory);(user/'app').write_text('old')
+            previous=os.umask(0)
+            try:
+                install=Installer(user);install.write(Path('app'),'new');install.finish()
+            finally:
+                os.umask(previous)
+            for path in (user/'.local/share/tomacco',user/'.local/share/tomacco/install-backups',install.backup):
+                self.assertEqual(path.stat().st_mode & 0o777,0o700,path)
+            # One an earlier version left open is tightened by the next install.
+            (user/'.local/share/tomacco').chmod(0o755)
+            again=Installer(user);again.write(Path('app'),'newer');again.finish()
+            self.assertEqual((user/'.local/share/tomacco').stat().st_mode & 0o777,0o700)
+
     def test_write_ahead_journal_handles_an_unpublished_write(self):
         from unittest.mock import patch
         import os

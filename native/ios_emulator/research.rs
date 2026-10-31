@@ -602,7 +602,10 @@ pub fn worker(file: &str) -> Result<()> {
         }
         let mut engine = Engine(command.spawn()?);
         report["engine_pid"] = json!(engine.0.id());
-        let log = Arc::new(Mutex::new((File::create(directory.join("engine.log"))?, 0)));
+        let log = Arc::new(Mutex::new((
+            private_file(&directory.join("engine.log"), false)?,
+            0,
+        )));
         let truncated = Arc::new(AtomicBool::new(false));
         let readers = [
             log_reader(

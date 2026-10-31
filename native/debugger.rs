@@ -31,7 +31,7 @@ fn socket(id: &str) -> Result<PathBuf> {
     }
     // A shared temporary directory: the name carries the user, and a
     // directory someone else created first is refused, never bound into.
-    let root = std::env::temp_dir().join(format!(
+    let root = socket_root(80).join(format!(
         "tomacco-debug-{}-{}",
         unsafe { libc::geteuid() },
         &digest(directory()?.to_string_lossy().as_bytes())[..16]
@@ -240,7 +240,7 @@ fn start(a: &Value) -> Result {
     spec["session"] = json!(id);
     spec["spec_digest"] = json!(spec_digest);
     atomic_json(&dir.join("spec.json"), &spec)?;
-    let stderr = fs::File::create(dir.join("worker.log"))?;
+    let stderr = private_file(&dir.join("worker.log"), false)?;
     let mut cmd = Command::new(crate::core::own_executable()?);
     cmd.args(["_debug_worker", &id])
         .stdin(Stdio::null())

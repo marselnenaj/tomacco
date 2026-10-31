@@ -16,6 +16,7 @@ tomaccoctl doctor
 | --- | --- | --- |
 | `tomaccoctl: command not found` | `~/.local/bin` is not on `PATH`, or Tomacco is not installed. | Add it to `PATH`, or [install](getting-started.md#1-install). |
 | `desktop_missing` | `desktop.open` found no desktop. | Build with CMake and run `python3 install.py`. |
+| The desktop does not open; `doctor` has a `desktop` next step, or its `desktop` entry has `"loadable": false` | The system's dynamic loader cannot load it: `missing_libraries` and `missing_versions` say what is missing (`doctor` runs `ldd` on the desktop). The release desktop needs Qt 6.12 or newer, FFmpeg 9 (`libavcodec.so.63`) and glibc 2.39. | Update the system, or [build from a checkout](getting-started.md#debian-ubuntu-and-fedora) on it. `tomaccoctl` works without the desktop. |
 | `preview_unavailable`: "Cannot reach preview session" | No desktop session has that name. | Start `tomacco --preview-session NAME`. |
 | The device window has a border or blur on Omarchy | The Hyprland rule is missing. | Install with `--omarchy`. It is `~/.config/hypr/tomacco.lua`. |
 | A changed installed file is left after an uninstall | Files you changed are kept and listed, on purpose. | Delete them if you do not need them. |
@@ -40,6 +41,7 @@ tomaccoctl doctor
 | `invalid_argument` | The arguments do not match the schema. Unknown keys are refused. | Check `tomaccoctl schema`. For instance, `job.wait` `seconds` is at most 60. |
 | `operation_not_found` | No such operation. | Check `tomaccoctl schema`. Do not guess names. |
 | A job says `running` | This is a valid result, not success. | Repeat `job.wait` until it is `succeeded`, `failed`, `cancelled` or `timed_out`. |
+| `invalid_path`: "The destination is a symbolic link" | A screenshot, recording, trace, report or export would be written through a link. | Name the file itself, or remove the link. A folder in the path may be a link. |
 | `workspace_busy` | Other work holds this project. The error has the active job. | Wait for it or `job.cancel` it. Use separate directories for independent work. |
 | `job_not_found` | The id is wrong, or from another `TOMACCO_HOME`. | Use the same data directory. `job.list` shows what exists. |
 | A job vanished with a sandboxed agent | A process supervisor can kill workers, even though jobs persist. | Run outside that sandbox, and read `job.get` for the recorded state. |

@@ -3,7 +3,6 @@ use crate::{core::*, toolchain};
 use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, VecDeque},
-    fs::File,
     io::{BufRead, BufReader, Write},
     os::unix::process::CommandExt,
     path::Path,
@@ -70,7 +69,7 @@ impl Dap {
             .envs(toolchain::environment()?)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::from(File::create(log)?))
+            .stderr(Stdio::from(private_file(log, false)?))
             .process_group(0);
         if let Some(env) = spec["environment"].as_object() {
             for (k, v) in env {

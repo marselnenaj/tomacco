@@ -503,6 +503,28 @@ class FrameMailboxTests(unittest.TestCase):
         self.assertEqual(run.sweep_frame_mailboxes(root, now=time.time() + 3600), ["b" * 32])
 
 
+class SocketRootTests(unittest.TestCase):
+    """Sockets need a short path whatever TMPDIR is."""
+
+    def test_a_long_tmpdir_gives_way_to_a_short_private_directory(self):
+        from ios_guest_control import SOCKET_PATH_LIMIT, socket_root
+        with tempfile.TemporaryDirectory(dir="/tmp") as base:
+            short = os.path.join(base, "t")
+            long = os.path.join(base, "x" * 90)
+            runtime = os.path.join(base, "run")
+            for path in (short, long, runtime):
+                os.mkdir(path, 0o700)
+            os.chmod(runtime, 0o700)
+            self.assertEqual(socket_root(48, {"TMPDIR": short, "XDG_RUNTIME_DIR": runtime}), short)
+            self.assertEqual(socket_root(48, {"TMPDIR": long, "XDG_RUNTIME_DIR": runtime}), runtime)
+            os.chmod(runtime, 0o755)
+            self.assertEqual(socket_root(48, {"TMPDIR": long, "XDG_RUNTIME_DIR": runtime}), "/tmp")
+            self.assertEqual(socket_root(48, {"TMPDIR": "relative"}), "/tmp")
+            self.assertEqual(socket_root(48, {}), "/tmp")
+            # What the launcher makes there fits a socket address.
+            self.assertLessEqual(len(socket_root(48)) + 48, SOCKET_PATH_LIMIT)
+
+
 class SessionLogBudgetTests(unittest.TestCase):
     def test_a_day_long_session_gets_a_log_budget_per_six_hours(self):
         # A serial log reaches about 11 MiB in six hours; a fixed 32 MiB
@@ -1181,9 +1203,14 @@ class LauncherTests(unittest.TestCase):
             (self.root / "pressure" / resource).write_text(
                 "some avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
                 "full avg10=0.00 avg60=0.00 avg300=0.00 total=0\n")
+        # No block devices either: with TMPDIR on a disk rather than tmpfs, the
+        # launcher would otherwise sample that disk for seconds and judge the
+        # host by whatever else is writing to it.
+        (self.root / "sysfs").mkdir()
         environment = patch.dict(os.environ, {"TOMACCO_TEST_ROOT": str(self.root),
                                               "TOMACCO_IOS_PRESSURE_WAIT_SECONDS": "0",
-                                              "TOMACCO_IOS_PRESSURE_DIRECTORY": str(self.root / "pressure")})
+                                              "TOMACCO_IOS_PRESSURE_DIRECTORY": str(self.root / "pressure"),
+                                              "TOMACCO_IOS_SYSFS_DIRECTORY": str(self.root / "sysfs")})
         environment.start()
         self.addCleanup(environment.stop)
         self.engine = self.root / "engine"

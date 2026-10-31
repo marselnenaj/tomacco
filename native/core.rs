@@ -66,13 +66,16 @@ impl Error {
         self.details = Some(Box::new(value));
         self
     }
+    /// The error as clients see it, with any secret it quotes masked.
     pub fn value(&self) -> Value {
-        serde_json::to_value(self).expect("error is serializable")
+        let mut value = serde_json::to_value(self).expect("error is serializable");
+        crate::redact::value(&mut value);
+        value
     }
 }
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.message.fmt(f)
+        crate::redact::text(&self.message).fmt(f)
     }
 }
 impl std::error::Error for Error {}
@@ -215,7 +218,9 @@ pub fn expand(value: &str) -> PathBuf {
         PathBuf::from(value)
     }
 }
-pub fn path(value: &str, directory: bool, exists: bool) -> Result<PathBuf> {
+/// `value` as an absolute path, `~` expanded and `.` and `..` folded away,
+/// with no link resolved.
+fn lexical(value: &str) -> Result<PathBuf> {
     if value.trim().is_empty() || value.contains('\0') {
         return Err(Error::new(
             "invalid_path",
@@ -228,6 +233,19 @@ pub fn path(value: &str, directory: bool, exists: bool) -> Result<PathBuf> {
     } else {
         std::env::current_dir()?.join(expanded)
     };
+    let normalized: PathBuf = absolute.components().fold(PathBuf::new(), |mut p, part| {
+        match part {
+            std::path::Component::ParentDir => {
+                p.pop();
+            }
+            std::path::Component::CurDir => (),
+            _ => p.push(part),
+        };
+        p
+    });
+    Ok(normalized)
+}
+pub fn path(value: &str, directory: bool, exists: bool) -> Result<PathBuf> {
     // Canonicalize existing ancestors as Python Path.resolve() did, including new destinations.
     fn resolve(p: &Path) -> std::io::Result<PathBuf> {
         if p.exists() {
@@ -241,16 +259,7 @@ pub fn path(value: &str, directory: bool, exists: bool) -> Result<PathBuf> {
             .ok_or_else(|| std::io::Error::other("Invalid path"))?;
         Ok(resolve(parent)?.join(name))
     }
-    let normalized: PathBuf = absolute.components().fold(PathBuf::new(), |mut p, part| {
-        match part {
-            std::path::Component::ParentDir => {
-                p.pop();
-            }
-            std::path::Component::CurDir => (),
-            _ => p.push(part),
-        };
-        p
-    });
+    let normalized = lexical(value)?;
     let resolved = resolve(&normalized)?;
     if exists
         && !(if directory {
@@ -334,22 +343,143 @@ pub fn private_runtime_dir(path: &Path) -> Result<()> {
     }
     Ok(())
 }
+/// The longest Unix socket path the kernel accepts: sun_path holds 108
+/// bytes with the terminating NUL.
+pub const SOCKET_PATH_LIMIT: usize = 107;
+/// A shared directory to make private socket directories in, short enough
+/// that `reserve` more bytes (the directory and socket names under it) still
+/// fit a socket address. TMPDIR comes first, as for any temporary file; a
+/// TMPDIR too long for that (a build sandbox, a nested workspace) gives way to
+/// the user's private runtime directory, and then to /tmp.
+pub fn socket_root(reserve: usize) -> PathBuf {
+    socket_root_from(
+        std::env::var_os("TMPDIR").map(PathBuf::from),
+        std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from),
+        reserve,
+    )
+}
+fn socket_root_from(
+    temporary: Option<PathBuf>,
+    runtime: Option<PathBuf>,
+    reserve: usize,
+) -> PathBuf {
+    use std::os::unix::fs::MetadataExt;
+    let fits = |path: &Path| path.as_os_str().len() + reserve <= SOCKET_PATH_LIMIT;
+    let usable = |path: &PathBuf| path.is_absolute() && path.is_dir() && fits(path);
+    if let Some(path) = temporary.filter(usable) {
+        return path;
+    }
+    // SAFETY: geteuid has no preconditions.
+    let owner = unsafe { libc::geteuid() };
+    if let Some(path) = runtime.filter(usable).filter(|path| {
+        fs::symlink_metadata(path)
+            .is_ok_and(|meta| meta.is_dir() && meta.uid() == owner && meta.mode() & 0o077 == 0)
+    }) {
+        return path;
+    }
+    PathBuf::from("/tmp")
+}
+/// A fresh private directory for test sockets, whatever TMPDIR is.
+#[cfg(test)]
+pub fn socket_tempdir() -> tempfile::TempDir {
+    tempfile::Builder::new()
+        .prefix("tomacco-test-")
+        .tempdir_in(socket_root(48))
+        .expect("a private socket directory")
+}
+/// A file an operation writes: a screenshot, a recording, a trace, a report,
+/// an export, a signed release. Its folders may be links (a Pictures folder on
+/// another disk); the file itself must not be. Tools such as adb pull and
+/// rsync write through a link, so one planted at the destination, in /tmp
+/// say, would point the write at another file of the user. A directory, a
+/// FIFO or a device is not a file destination either.
 pub fn output_path(value: &str) -> Result<PathBuf> {
-    let p = path(value, false, false)?;
-    if p.file_name().is_none() || p.is_dir() {
+    let named = lexical(value)?;
+    let (Some(parent), Some(name)) = (named.parent(), named.file_name()) else {
         return Err(Error::new(
             "invalid_path",
             "Select a file destination, not a directory",
         ));
+    };
+    let target = path(&parent.to_string_lossy(), false, false)?.join(name);
+    match fs::symlink_metadata(&target) {
+        Ok(meta) if meta.file_type().is_symlink() => Err(Error::new(
+            "invalid_path",
+            format!(
+                "The destination is a symbolic link, which would redirect the write: {}",
+                target.display()
+            ),
+        )
+        .remedy("Name the file itself, or remove the link")),
+        Ok(meta) if meta.is_dir() => Err(Error::new(
+            "invalid_path",
+            "Select a file destination, not a directory",
+        )),
+        Ok(meta) if !meta.is_file() => Err(Error::new(
+            "invalid_path",
+            format!(
+                "The destination is not a regular file: {}",
+                target.display()
+            ),
+        )),
+        _ => Ok(target),
     }
-    Ok(p)
 }
+/// Resolves the path of a file that holds a secret (a password, a token, a
+/// key). Its error never quotes the value: a secret given where its file's
+/// path belongs must not be echoed into an error, a job record or an MCP
+/// transcript.
+pub fn secret_path(value: &str, label: &str) -> Result<PathBuf> {
+    path(value, false, true).map_err(|_| {
+        Error::new(
+            "path_not_found",
+            format!("No file at the path given for {label}"),
+        )
+        .remedy(format!(
+            "Give {label} the absolute path of an owner-only file that holds the secret, not the secret itself"
+        ))
+    })
+}
+/// Creates a missing directory owner-only. The directory itself is made
+/// with mode 0700 in one step, so it is never open to others, whatever the
+/// umask; missing parents get the usual permissions. An existing directory
+/// is left as it is.
 pub fn private_dir(path: &Path) -> Result<()> {
-    if !path.exists() {
-        fs::create_dir_all(path)?;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
+    use std::os::unix::fs::DirBuilderExt;
+    if path.exists() {
+        return Ok(());
     }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    match fs::DirBuilder::new().mode(0o700).create(path) {
+        Ok(()) => (),
+        // Another process made it in the meantime.
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => return Ok(()),
+        Err(error) => return Err(error.into()),
+    }
+    // The umask can only have removed bits; this keeps the owner's.
+    fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
     Ok(())
+}
+/// Creates or truncates a file only its owner may read: logs that hold
+/// commands, environments and tool output. A file left with wider
+/// permissions by an earlier version is tightened.
+pub fn private_file(path: &Path, append: bool) -> Result<File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .read(!append)
+        .append(append)
+        .truncate(!append)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(path)?;
+    if file.metadata()?.permissions().mode() & 0o077 != 0 {
+        file.set_permissions(fs::Permissions::from_mode(0o600))?;
+    }
+    Ok(file)
 }
 pub fn read_json(path: &Path, default: Option<Value>) -> Result {
     if !path.exists() {
@@ -686,6 +816,150 @@ mod directory_tests {
         let file = parent.path().join("file");
         fs::write(&file, b"").unwrap();
         assert!(private_runtime_dir(&file).is_err());
+    }
+
+    #[test]
+    fn an_output_file_may_sit_behind_linked_folders_but_not_be_a_link() {
+        let parent = tempfile::tempdir().unwrap();
+        let root = parent.path().canonicalize().unwrap();
+        let precious = root.join("precious");
+        fs::write(&precious, b"keep").unwrap();
+        // New and existing regular files are fine.
+        let new = root.join("shot.png");
+        assert_eq!(output_path(&new.to_string_lossy()).unwrap(), new);
+        assert_eq!(output_path(&precious.to_string_lossy()).unwrap(), precious);
+        // A linked folder is followed, as for a Pictures folder on another disk.
+        let real = root.join("real");
+        fs::create_dir(&real).unwrap();
+        std::os::unix::fs::symlink(&real, root.join("pictures")).unwrap();
+        assert_eq!(
+            output_path(&root.join("pictures/../pictures/a.png").to_string_lossy()).unwrap(),
+            real.join("a.png")
+        );
+        // A link at the destination, to a file or to nothing yet, is refused.
+        for (name, to) in [
+            ("planted", precious.clone()),
+            ("dangling", root.join("none")),
+        ] {
+            let link = root.join(name);
+            std::os::unix::fs::symlink(&to, &link).unwrap();
+            let error = output_path(&link.to_string_lossy()).unwrap_err();
+            assert_eq!(error.code, "invalid_path");
+            assert!(error.message.contains("symbolic link"), "{}", error.message);
+        }
+        // A link behind a linked folder too.
+        std::os::unix::fs::symlink(&precious, real.join("b.png")).unwrap();
+        assert!(output_path(&root.join("pictures/b.png").to_string_lossy()).is_err());
+        // Directories, a FIFO, and nothing at all are not file destinations.
+        assert!(output_path(&real.to_string_lossy()).is_err());
+        assert!(output_path(&format!("{}/", real.display())).is_err());
+        assert!(output_path("/").is_err());
+        let fifo = root.join("fifo");
+        let name = std::ffi::CString::new(fifo.to_string_lossy().as_bytes()).unwrap();
+        // SAFETY: name is a valid NUL-terminated path.
+        assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+        assert!(output_path(&fifo.to_string_lossy()).is_err());
+        assert_eq!(fs::read(&precious).unwrap(), b"keep");
+    }
+
+    #[test]
+    fn errors_never_show_a_secret_they_quote() {
+        let error = Error::new(
+            "update_check_failed",
+            "curl: header = \"Authorization: Bearer ghp_0123456789abcdefABCDEF0123\"",
+        )
+        .remedy("Retry with password=hunter2-x")
+        .details(json!({"token":"abc","transport":"https://u:hunter3@example.com/"}));
+        let shown = format!("{} {}", error, error.value());
+        for secret in ["ghp_0123", "hunter2-x", "\"abc\"", "hunter3"] {
+            assert!(!shown.contains(secret), "{shown}");
+        }
+        // A path the error is about stays readable.
+        let missing = secret_path("hunter2-typed-here", "password_file").unwrap_err();
+        assert_eq!(missing.code, "path_not_found");
+        assert!(!missing.value().to_string().contains("hunter2-typed-here"));
+        assert!(
+            Error::new("path_not_found", "Path not found: /a/b/key.txt")
+                .value()
+                .to_string()
+                .contains("/a/b/key.txt")
+        );
+    }
+
+    #[test]
+    fn private_directories_and_logs_are_their_owners_alone() {
+        let parent = tempfile::tempdir().unwrap();
+        // SAFETY: umask only changes this process's file creation mask.
+        let previous = unsafe { libc::umask(0) };
+        let directory = parent.path().join("a/b/data");
+        let created = private_dir(&directory);
+        let log = private_file(&directory.join("job.log"), false);
+        unsafe { libc::umask(previous) };
+        created.unwrap();
+        assert_eq!(fs::metadata(&directory).unwrap().mode() & 0o777, 0o700);
+        let mut log = log.unwrap();
+        log.write_all(b"secret output").unwrap();
+        assert_eq!(
+            fs::metadata(directory.join("job.log")).unwrap().mode() & 0o777,
+            0o600
+        );
+        // An existing log from an older version is tightened and truncated.
+        let old = directory.join("old.log");
+        fs::write(&old, b"before").unwrap();
+        fs::set_permissions(&old, fs::Permissions::from_mode(0o644)).unwrap();
+        drop(private_file(&old, false).unwrap());
+        assert_eq!(fs::metadata(&old).unwrap().mode() & 0o777, 0o600);
+        assert_eq!(fs::read(&old).unwrap(), b"");
+        // Appending keeps what is there.
+        fs::write(&old, b"kept").unwrap();
+        private_file(&old, true).unwrap().write_all(b"+").unwrap();
+        assert_eq!(fs::read(&old).unwrap(), b"kept+");
+        // A link planted at a log path is not followed.
+        let link = directory.join("link.log");
+        std::os::unix::fs::symlink(&old, &link).unwrap();
+        assert!(private_file(&link, false).is_err());
+        assert_eq!(fs::read(&old).unwrap(), b"kept+");
+    }
+
+    #[test]
+    fn sockets_go_to_a_root_short_enough_for_their_address() {
+        // In /tmp, so that the short paths stay short under any TMPDIR.
+        let parent = tempfile::tempdir_in("/tmp").unwrap();
+        let short = parent.path().to_path_buf();
+        let long = short.join("x".repeat(90));
+        fs::create_dir(&long).unwrap();
+        let runtime = short.join("run");
+        fs::create_dir(&runtime).unwrap();
+        fs::set_permissions(&runtime, fs::Permissions::from_mode(0o700)).unwrap();
+        let reserve = SOCKET_PATH_LIMIT - runtime.as_os_str().len();
+        // A short TMPDIR is used as it is.
+        assert_eq!(
+            socket_root_from(Some(short.clone()), Some(runtime.clone()), 0),
+            short
+        );
+        // A long one gives way to a private runtime directory that fits.
+        assert_eq!(
+            socket_root_from(Some(long.clone()), Some(runtime.clone()), reserve),
+            runtime
+        );
+        // A runtime directory others may enter is not used.
+        fs::set_permissions(&runtime, fs::Permissions::from_mode(0o755)).unwrap();
+        assert_eq!(
+            socket_root_from(Some(long.clone()), Some(runtime.clone()), reserve),
+            Path::new("/tmp")
+        );
+        // Neither set, relative or missing: /tmp.
+        assert_eq!(socket_root_from(None, None, 20), Path::new("/tmp"));
+        assert_eq!(
+            socket_root_from(Some("relative".into()), None, 20),
+            Path::new("/tmp")
+        );
+        assert_eq!(
+            socket_root_from(Some(short.join("missing")), None, 20),
+            Path::new("/tmp")
+        );
+        let directory = socket_tempdir();
+        assert!(directory.path().as_os_str().len() + 40 <= SOCKET_PATH_LIMIT);
     }
 
     #[test]

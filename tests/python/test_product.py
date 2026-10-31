@@ -228,6 +228,29 @@ class RuntimeAudioTests(Isolated):
 
 
 class CatalogueTests(Isolated):
+    def test_writes_refuse_a_link_planted_at_the_destination(self):
+        precious = self.root / "precious"
+        precious.write_text("keep")
+        link = self.root / "shot.png"
+        link.symlink_to(precious)
+        profile = catalog.builtin()[0]["id"]
+        for operation, arguments in (("catalog.export", {"profile_id": profile, "path": str(link)}),
+                                     ("ios.virtual.screenshot", {"path": str(link)}),
+                                     ("ios.virtual.record", {"path": str(link.with_suffix(".mp4"))})):
+            if operation == "ios.virtual.record":
+                link.with_suffix(".mp4").symlink_to(precious)
+            with self.assertRaises(StudioError) as caught:
+                dispatch(operation, arguments)
+            self.assertEqual(caught.exception.code, "invalid_path", operation)
+            self.assertIn("symbolic link", str(caught.exception))
+        self.assertEqual(precious.read_text(), "keep")
+        # A folder that is a link is fine: the profile lands in the real folder.
+        real = self.root / "real"
+        real.mkdir()
+        (self.root / "exports").symlink_to(real)
+        catalog.export_profile(profile, str(self.root / "exports/profile.json"))
+        self.assertTrue((real / "profile.json").is_file())
+
     def test_builtins_and_full_round_trip(self):
         profiles = catalog.builtin()
         self.assertEqual(len(profiles), 13)
@@ -322,6 +345,16 @@ class JobTests(Isolated):
         job = self.submit([{"argv": [sys.executable, "-c", "raise SystemExit(7)"]}])
         done = jobs.wait(job["id"], 5)
         self.assertEqual((done["state"], done["exit_code"]), ("failed", 7))
+
+    def test_the_data_directory_and_job_logs_are_owner_only(self):
+        job = self.submit([{"argv": [sys.executable, "-c", "print('tool output')"]}])
+        done = jobs.wait(job["id"], 5)
+        self.assertEqual(done["state"], "succeeded", done)
+        state = self.root / "state"
+        self.assertEqual(state.stat().st_mode & 0o777, 0o700)
+        self.assertEqual((state / "jobs").stat().st_mode & 0o777, 0o700)
+        self.assertEqual(Path(done["log_path"]).stat().st_mode & 0o777, 0o600)
+        self.assertEqual((state / "jobs.sqlite3").stat().st_mode & 0o777, 0o600)
 
     def test_cancel_kills_descendants(self):
         marker = self.root / "should-not-exist"
@@ -1255,6 +1288,46 @@ class ProjectFilesTests(Isolated):
 
 
 
+class DoctorDesktopTests(Isolated):
+    """doctor asks the dynamic loader whether the desktop can start here."""
+
+    def doctor(self, ldd_output=None):
+        desktop = self.root / "tomacco"
+        desktop.write_text("#!/bin/sh\nexit 0\n")
+        desktop.chmod(0o755)
+        env = {**os.environ, "TOMACCO_BINARY": str(desktop)}
+        if ldd_output is not None:
+            tools = self.root / "fake-ldd"
+            tools.mkdir(exist_ok=True)
+            (tools / "ldd").write_text("#!/bin/sh\ncat <<'EOF'\n" + ldd_output + "EOF\nexit 1\n")
+            (tools / "ldd").chmod(0o755)
+            env["PATH"] = str(tools) + os.pathsep + env["PATH"]
+        value = subprocess.run([binary(), "call", "doctor", "{}"], capture_output=True, text=True, timeout=120, env=env)
+        reply = json.loads(value.stdout)
+        self.assertTrue(reply["ok"], reply)
+        return reply["result"], desktop
+
+    def test_missing_libraries_and_versions_become_the_first_next_step(self):
+        result, desktop = self.doctor(
+            "\tlibavcodec.so.63 => not found\n"
+            "/x/tomacco: /usr/lib/libQt6Core.so.6: version `Qt_6.12' not found (required by /x/tomacco)\n")
+        report = result["desktop"]
+        self.assertEqual(report["path"], str(desktop))
+        self.assertIs(report["loadable"], False, report)
+        self.assertEqual(report["missing_libraries"], ["libavcodec.so.63"])
+        self.assertEqual(report["missing_versions"], ["Qt_6.12 in libQt6Core.so.6"])
+        step = result["next_steps"][0]
+        self.assertEqual(step["goal"], "desktop", result["next_steps"])
+        self.assertIn("libavcodec.so.63", step["what"])
+        self.assertIn("Qt 6.12", step["how"])
+
+    def test_a_desktop_the_real_loader_accepts_has_no_step(self):
+        # The real ldd: a shell script is not a dynamic executable, so not refused.
+        result, _ = self.doctor()
+        self.assertNotEqual(result["desktop"]["loadable"], False, result["desktop"])
+        self.assertNotIn("desktop", [step["goal"] for step in result["next_steps"]])
+
+
 class ReleaseContractTests(Isolated):
     def test_version_preserves_comments_and_rejects_ambiguous_gradle(self):
         pubspec = self.root / "pubspec.yaml"
@@ -1268,6 +1341,35 @@ class ReleaseContractTests(Isolated):
         gradle.write_text('versionName = providers.gradleProperty("appVersion").get()\nversionCode = 1\n')
         with self.assertRaises(StudioError): dispatch("release.version", {"path":str(self.root), "version":"2.0.0", "build_number":2})
         self.assertIn('providers.gradleProperty', gradle.read_text())
+
+    def test_a_secret_given_instead_of_its_file_is_not_echoed(self):
+        secret = "hunter2-correct-horse"
+        output = str(self.root / "release.p12")
+        requests = [
+            ("release.keystore", {"output": output, "password_file": secret, "alias": "fixture", "distinguished_name": "CN=Fixture"}),
+            ("play.commit", {"credentials": secret, "package": "dev.example.app", "edit_id": "e1"}),
+            ("settings.configure", {"updates": {"token_file": "ghp_" + "a" * 36}}),
+        ]
+        for operation, arguments in requests:
+            value = subprocess.run([binary(), "call", operation, json.dumps(arguments)], capture_output=True, text=True, timeout=60)
+            reply = json.loads(value.stdout)
+            self.assertFalse(reply["ok"], reply)
+            self.assertEqual(reply["error"]["code"], "path_not_found", reply)
+            self.assertNotIn(secret, value.stdout + value.stderr)
+            self.assertNotIn("ghp_aaaa", value.stdout + value.stderr)
+            self.assertIn("not the secret itself", reply["error"]["remedy"])
+
+    def test_job_records_and_logs_mask_secrets_a_tool_prints(self):
+        token = "ghp_" + "b" * 36
+        code = f"import sys;print('Authorization: Bearer {token}');print('password=hunter2-staple', file=sys.stderr)"
+        job = self.submit([{"argv": [sys.executable, "-c", code, "--token=" + token]}])
+        done = jobs.wait(job["id"], 5)
+        self.assertEqual(done["state"], "succeeded", done)
+        log = jobs.logs(job["id"])["text"]
+        self.assertIn("Authorization: [redacted]", log)
+        for record in (log, json.dumps(jobs.get(job["id"])), json.dumps(jobs.listing(5)), json.dumps(done)):
+            self.assertNotIn(token, record)
+            self.assertNotIn("hunter2-staple", record)
 
     def test_signing_cancel_and_worker_crash_remove_temporary_credentials(self):
         password=self.root/"password";password.write_text("private-fixture-password\n");password.chmod(0o600)
