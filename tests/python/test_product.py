@@ -1221,10 +1221,11 @@ class ProtocolTests(Isolated):
             process.stdout.close();process.stderr.close()
             jobs.cancel(job["id"]);jobs.wait(job["id"],5)
 
-    def test_mcp_job_wait_reports_progress_before_its_result(self):
+    def test_mcp_job_wait_reports_progress_and_log_lines_before_its_result(self):
         job=self.submit([{"argv":[sys.executable,"-c","import time\nfor i in range(12):print('step',i,flush=True);time.sleep(0.4)"]}],timeout=40)
         self.wait_log(job,"step 0")
         requests=[{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25"}},
+                  {"jsonrpc":"2.0","id":3,"method":"logging/setLevel","params":{"level":"info"}},
                   {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"job.wait","arguments":{"job_id":job["id"],"seconds":30},"_meta":{"progressToken":"wait-1"}}}]
         output=subprocess.check_output([binary(),"mcp"],input="\n".join(map(json.dumps,requests))+"\n",text=True,timeout=40)
         messages=[json.loads(line) for line in output.splitlines()]
@@ -1236,6 +1237,9 @@ class ProtocolTests(Isolated):
         self.assertEqual({p["progressToken"] for p in progress},{"wait-1"})
         self.assertEqual([p["progress"] for p in progress],sorted({p["progress"] for p in progress}))
         self.assertTrue(any("step" in p["message"] for p in progress),progress)
+        logged=[m["params"] for i,m in enumerate(messages) if m.get("method")=="notifications/message" and i<result]
+        self.assertTrue(logged,messages)
+        self.assertTrue(all(p["level"]=="info" and p["logger"]=="job "+job["id"] and p["data"].startswith("step ") for p in logged),logged)
 
     def test_long_socket_path_and_preview_readiness(self):
         data = self.root / ("nested-project-" * 12) / "state"

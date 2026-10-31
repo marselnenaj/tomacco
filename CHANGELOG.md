@@ -28,6 +28,8 @@ operations and their JSON results.
   an object is wrapped as `{"result": ...}`, an error as `{"error": ...}`.
 - **MCP progress.** A tool call with a progress token gets `notifications/progress` once a second;
   for `job.wait` with the job's state and latest log line.
+- **MCP logging.** After `logging/setLevel` `info`, `job.wait` sends its job's new log lines as
+  `notifications/message`.
 - **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
   `tomacco://docs/NAME`, as Markdown of the installed version.
 - **Android.**

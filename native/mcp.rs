@@ -27,6 +27,8 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
     let _touches = crate::ios_emulator::control::TouchClient::open();
     let sink = Mutex::new(sink);
     let active = Mutex::new(std::collections::HashMap::<String, Cancellation>::new());
+    // Log messages are sent once the client asks for them with logging/setLevel.
+    let level: Level = Arc::new(std::sync::atomic::AtomicU8::new(u8::MAX));
     std::thread::scope(|scope| -> Result<()> {
         let mut initialized = false;
         loop {
@@ -89,12 +91,26 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
                 let protocol = s(&params, "protocolVersion");
                 respond(
                     &sink,
-                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
+                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{},"logging":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
                 )?;
                 continue;
             }
             if method != "ping" && !initialized {
                 respond(&sink, &rpc_error(id, -32000, "Initialize first"))?;
+                continue;
+            }
+            if method == "logging/setLevel" {
+                let reply = match LEVELS
+                    .iter()
+                    .position(|level| *level == s(&params, "level"))
+                {
+                    Some(index) => {
+                        level.store(index as u8, Ordering::Relaxed);
+                        json!({"jsonrpc":"2.0","id":id,"result":{}})
+                    }
+                    None => rpc_error(id, -32602, "level must be one of the syslog levels"),
+                };
+                respond(&sink, &reply)?;
                 continue;
             }
             // Small discovery methods are immediate; slow tools/resources run independently.
@@ -130,8 +146,9 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
             let method = method.to_owned();
             let sink = &sink;
             let active = &active;
+            let level = level.clone();
             scope.spawn(move || {
-                let follower = Follower::new(&method, &params);
+                let follower = Follower::new(&method, &params, level);
                 let (done, finished) = std::sync::mpsc::channel::<()>();
                 let result = std::thread::scope(|inner| {
                     // Notifications about this request stop before its response is sent.
@@ -166,11 +183,29 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
 /// How often a running tool call reports its progress.
 const TICK: std::time::Duration = std::time::Duration::from_secs(1);
 
+/// The MCP log levels, least severe first.
+const LEVELS: [&str; 8] = [
+    "debug",
+    "info",
+    "notice",
+    "warning",
+    "error",
+    "critical",
+    "alert",
+    "emergency",
+];
+/// The index in LEVELS of the least severe message the client wants;
+/// u8::MAX until it calls logging/setLevel.
+type Level = std::sync::Arc<std::sync::atomic::AtomicU8>;
+
 /// Reports on one running tool call: `notifications/progress` once a
 /// second when the client sent a progress token. For `job.wait` the message
-/// is the job's state and its latest log line, and the total is the wait.
+/// is the job's state and its latest log line, and the total is the wait;
+/// and each new log line is a `notifications/message` at level info while
+/// the client's level lets info through.
 struct Follower {
-    token: Value,
+    token: Option<Value>,
+    level: Level,
     tool: String,
     /// The job a `job.wait` waits for, and how far its log has been read.
     job: Option<String>,
@@ -181,24 +216,26 @@ struct Follower {
     ticks: u64,
 }
 impl Follower {
-    fn new(method: &str, params: &Value) -> Option<Self> {
+    fn new(method: &str, params: &Value, level: Level) -> Option<Self> {
         if method != "tools/call" {
             return None;
         }
-        let token = params["_meta"]["progressToken"].clone();
-        if !token.is_string() && !token.is_i64() && !token.is_u64() {
-            return None;
-        }
+        let token = Some(params["_meta"]["progressToken"].clone())
+            .filter(|token| token.is_string() || token.is_i64() || token.is_u64());
         let tool = s(params, "name").to_string();
         let arguments = &params["arguments"];
         let job = (tool == "job.wait")
             .then(|| s(arguments, "job_id").to_string())
             .filter(|id| !id.is_empty());
+        if token.is_none() && job.is_none() {
+            return None;
+        }
         let total = job
             .is_some()
             .then(|| arguments["seconds"].as_u64().unwrap_or(30));
         Some(Follower {
             token,
+            level,
             tool,
             job,
             offset: None,
@@ -211,8 +248,10 @@ impl Follower {
     /// The notifications for one more second of waiting.
     fn tick(&mut self, dispatch: impl Fn(&str, &Value) -> Result) -> Vec<Value> {
         self.ticks += 1;
+        let mut notifications = Vec::new();
+        let logging = self.level.load(std::sync::atomic::Ordering::Relaxed) <= 1;
         let mut message = format!("{} running for {} s", self.tool, self.ticks);
-        if let Some(id) = self.job.clone() {
+        if let Some(id) = self.job.clone().filter(|_| logging || self.token.is_some()) {
             if let Some((state, lines)) = self.read_log(&id, &dispatch) {
                 if let Some(line) = lines.last() {
                     self.last_line = line.chars().take(200).collect();
@@ -221,14 +260,24 @@ impl Follower {
                 if !self.last_line.is_empty() {
                     message = format!("{message}: {}", self.last_line);
                 }
+                if logging {
+                    notifications.extend(lines.into_iter().map(|line| {
+                        json!({"jsonrpc":"2.0","method":"notifications/message",
+                            "params":{"level":"info","logger":format!("job {id}"),"data":line}})
+                    }));
+                }
             }
         }
-        let mut progress =
-            json!({"progressToken":self.token,"progress":self.ticks,"message":message});
-        if let Some(total) = self.total {
-            progress["total"] = json!(total.max(self.ticks));
+        if let Some(token) = &self.token {
+            let mut progress =
+                json!({"progressToken":token,"progress":self.ticks,"message":message});
+            if let Some(total) = self.total {
+                progress["total"] = json!(total.max(self.ticks));
+            }
+            notifications
+                .push(json!({"jsonrpc":"2.0","method":"notifications/progress","params":progress}));
         }
-        vec![json!({"jsonrpc":"2.0","method":"notifications/progress","params":progress})]
+        notifications
     }
     /// The job's state and the complete log lines written since the last
     /// tick. The first tick starts at the end of the log, so a repeated wait
@@ -537,12 +586,28 @@ mod tests {
     fn a_progress_token_gets_progress_and_a_job_wait_its_state_and_log() {
         let call = |arguments: Value, meta: Value| json!({"name":"job.wait","arguments":arguments,"_meta":meta});
         let id = "0123456789abcdef0123456789abcdef";
-        assert!(Follower::new("tools/call", &call(json!({"job_id":id}), json!({}))).is_none());
-        assert!(Follower::new("resources/read", &json!({"_meta":{"progressToken":1}})).is_none());
+        let off = || -> Level { std::sync::Arc::new(u8::MAX.into()) };
+        assert!(
+            Follower::new(
+                "tools/call",
+                &json!({"name":"job.get","arguments":{"job_id":id}}),
+                off()
+            )
+            .is_none()
+        );
+        assert!(
+            Follower::new(
+                "resources/read",
+                &json!({"_meta":{"progressToken":1}}),
+                off()
+            )
+            .is_none()
+        );
         // Any other tool reports how long it has run.
         let mut other = Follower::new(
             "tools/call",
             &json!({"name":"device.capture","_meta":{"progressToken":"t"}}),
+            off(),
         )
         .unwrap();
         let first = other.tick(|_, _| unreachable!());
@@ -578,6 +643,7 @@ mod tests {
                 json!({"job_id":id,"seconds":20}),
                 json!({"progressToken":7}),
             ),
+            off(),
         )
         .unwrap();
         let messages: Vec<Value> = (0..3)
@@ -590,6 +656,51 @@ mod tests {
         assert_eq!(messages[2]["progress"], 3);
         assert_eq!(messages[2]["total"], 20);
         assert_eq!(messages[2]["progressToken"], 7);
+    }
+    #[test]
+    fn job_log_lines_are_log_messages_once_the_client_asks_for_info() {
+        let id = "0123456789abcdef0123456789abcdef";
+        let directory = tempfile::tempdir().unwrap();
+        let log = directory.path().join("job.log");
+        fs::write(&log, "").unwrap();
+        let path = log.to_string_lossy().into_owned();
+        let reads = std::cell::Cell::new(0);
+        let dispatch = |operation: &str, _: &Value| -> Result {
+            reads.set(reads.get() + 1);
+            match operation {
+                "job.get" => Ok(json!({"state":"running","log_path":path})),
+                "job.logs" => Ok(json!({"state":"running","text":"one\ntwo\n","next_offset":8})),
+                _ => panic!("unexpected {operation}"),
+            }
+        };
+        let level: Level = std::sync::Arc::new(u8::MAX.into());
+        let params = json!({"name":"job.wait","arguments":{"job_id":id}});
+        let mut wait = Follower::new("tools/call", &params, level.clone()).unwrap();
+        // Before logging/setLevel, and at warning, nothing is read or sent.
+        assert!(wait.tick(dispatch).is_empty());
+        level.store(3, std::sync::atomic::Ordering::Relaxed);
+        assert!(wait.tick(dispatch).is_empty());
+        assert_eq!(reads.get(), 0);
+        level.store(1, std::sync::atomic::Ordering::Relaxed);
+        assert!(wait.tick(dispatch).is_empty());
+        let sent = wait.tick(dispatch);
+        assert_eq!(sent.len(), 2);
+        assert_eq!(sent[0]["method"], "notifications/message");
+        assert_eq!(sent[0]["params"]["level"], "info");
+        assert_eq!(sent[0]["params"]["logger"], format!("job {id}"));
+        assert_eq!(sent[1]["params"]["data"], "two");
+
+        let input = b"{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"logging/setLevel\",\"params\":{\"level\":\"loud\"}}\n{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"logging/setLevel\",\"params\":{\"level\":\"debug\"}}\n";
+        let mut output = Vec::new();
+        serve(&input[..], &mut output).unwrap();
+        let values: Vec<Value> = String::from_utf8(output)
+            .unwrap()
+            .lines()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        assert_eq!(values[0]["result"]["capabilities"]["logging"], json!({}));
+        assert_eq!(values[1]["error"]["code"], -32602);
+        assert_eq!(values[2]["result"], json!({}));
     }
     #[test]
     fn guides_are_listed_and_read_as_markdown() {
