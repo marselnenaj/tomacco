@@ -355,10 +355,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let port = free_port();
         let marker = dir.path().join("then");
-        // A server that listens, accepts one connection after the follow-up
-        // commands ran, and exits.
+        // A server that listens and exits after accepting a connection made
+        // once the follow-up commands ran. It checks only after an accept, so
+        // it cannot exit before the follow-up's own connection arrives.
         let server = format!(
-            "import socket,os,time\ns=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);time.sleep(0.3);s.bind(('127.0.0.1',{port}));s.listen()\nwhile not os.path.exists({marker:?}):\n  c,_=s.accept();c.close();time.sleep(0.05)\n"
+            "import socket,os,time\ns=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);time.sleep(0.3);s.bind(('127.0.0.1',{port}));s.listen()\nwhile True:\n  c,_=s.accept();done=os.path.exists({marker:?});c.close()\n  if done: break\n"
         );
         let spec = json!({
             "serve": ["python3", "-c", server],

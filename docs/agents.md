@@ -104,8 +104,8 @@ The script asks `tomaccoctl schema --names` for the names, so it stays current a
 bash script is tested; the zsh and fish scripts have not been run in those shells yet.
 
 To plan, `tomaccoctl call capabilities` says in one call what this computer can do right now:
-`android.build`, `android.emulator` (with its AVDs), `android.devices`, `ios.build` (xtool),
-`ios.devices` and `ios.virtual_iphone` (configured, running, phase). Each has `ready` and `missing`, the
+under `android` its `build`, `emulator` (with its AVDs) and `devices`, and under `ios` its `build`
+(xtool), `devices` and `virtual_iphone` (configured, running, phase). Each has `ready` and `missing`, the
 names of what it lacks, such as `kvm` or `xtool`; `doctor`'s `next_steps` say how to set them up. It
 runs `doctor`'s tool checks, so it takes a few seconds. Over MCP its schema has an `outputSchema`, and the same result is the
 resource `tomacco://capabilities`.
