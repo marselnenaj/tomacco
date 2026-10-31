@@ -25,6 +25,9 @@ operations and their JSON results.
   (2184 files) installs in 0.7 s instead of 15 s on the development host, and uninstalls and rolls back as fast. Backups are
   hard links where possible. An uninstall killed halfway now finishes when run again; before, the files whose removal was
   journalled but not done were kept as if the user had changed them.
+- `make_release.py` builds with `SOURCE_DATE_EPOCH` set to the release commit's time and the package's entries get UID and
+  GID 0, so two builds of a commit in the same directory give the same package. Before, the tarball's time stamps and the
+  time Qt's `rcc` stored for the translations differed per build.
 - The Arch PKGBUILD and .SRCINFO build 1.1.0 from its source tarball.
 
 ## 1.1.0

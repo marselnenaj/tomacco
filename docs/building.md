@@ -236,6 +236,12 @@ Releases are made locally, not by a workflow. From a clean checkout of the tag, 
 checksums, signs both packages and creates a draft release whose body comes from `docs/RELEASE_NOTES.md`, with relative links pointing into the tag. It refuses a dirty tree, a checkout that is not
 the tag, and versions that disagree. With `--dry-run` it only prints what it would do.
 
+The builds run with `SOURCE_DATE_EPOCH` set to the release commit's time, which CPack and Qt's `rcc` use for their time stamps.
+Two builds of the same commit from fresh clones in the same directory, by the same user, gave the same package digest; without it,
+the tarball's times and the time `rcc` stored for the generated translations differed. The package still records the builder's
+user name, and the binaries hold the paths they were built in, so builds in other directories or by other users differ. Two runs of
+`tools/build_source_release.py` on the v1.1.0 tag gave the published source tarball's digest both times.
+
 `--with-qt-sources` also puts the source tarballs of the Qt modules the portable package bundles into the release, each with its
 `.sha256`, as the LGPL source offer for them. `packaging/portable/qt-sources.txt` pins their URLs and SHA-256 digests: qtbase,
 qtdeclarative, qtsvg, qtwayland, qttranslations, qtpositioning and qtwebchannel from Qt's 6.12.0 submodules. Qt WebEngine is not among
