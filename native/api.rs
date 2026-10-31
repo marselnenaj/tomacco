@@ -119,6 +119,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
             &a,
             automation::action,
         ),
+        "testing.lint" => automation::lint(&a),
         "testing.record" => crate::recorder::handle(&a),
         "testing.run" => automation::run(&a),
         "testing.visual_diff" => crate::visual::visual_diff(&a),

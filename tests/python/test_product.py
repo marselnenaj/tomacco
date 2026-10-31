@@ -906,6 +906,27 @@ class AndroidControlTests(Isolated):
         self.assertIn(["input", "tap", "900", "2000"], self.shell_calls())
         self.assertFalse(dispatch("testing.record", {**device, "action": "status"})["recording"])
 
+    def test_lint_checks_a_scenario_against_the_screen_without_acting(self):
+        screen = ('<hierarchy><node bounds="[0,0][1080,2400]"><node text="OK" enabled="true" bounds="[0,10][20,30]"/>'
+                  '<node text="OK" enabled="true" bounds="[30,10][60,30]"/></node></hierarchy>')
+        self.replies(**{"cat /data/local/tmp/tomacco-": screen})
+        scenario = self.root / "scenario.json"
+        scenario.write_text(json.dumps({"name": "Lint", "steps": [{"action": "click", "selector": {"text": "OK"}},
+                                                                   {"action": "tap", "x": 10, "y": 20}]}))
+        result = dispatch("testing.lint", {"path": str(scenario), "device": "emulator-5554"})
+        self.assertEqual((result["valid"], result["passed"]), (True, False))
+        self.assertEqual([(f["step"], f["code"]) for f in result["findings"]], [(0, "ambiguous")])
+        self.assertFalse(any(args[:1] == ["input"] for args in self.shell_calls()), "lint never acts")
+        saved = self.root / "screen.xml"
+        saved.write_text(screen)
+        scenario.write_text(json.dumps({"name": "Lint", "steps": [{"action": "click", "selector": {"text": "OK", "index": 0}}]}))
+        self.assertTrue(dispatch("testing.lint", {"path": str(scenario), "hierarchy": str(saved)})["passed"])
+        scenario.write_text(json.dumps({"name": "Lint", "steps": [{"action": "tap", "x": 10}]}))
+        result = dispatch("testing.lint", {"path": str(scenario), "hierarchy": str(saved)})
+        self.assertEqual((result["valid"], result["error"]["code"]), (False, "invalid_argument"))
+        with self.assertRaises(StudioError):
+            dispatch("testing.lint", {"path": str(scenario)})
+
     def test_unicode_text_names_what_it_needs_when_it_cannot_work(self):
         with self.assertRaises(StudioError) as missing:
             dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "é"})

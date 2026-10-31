@@ -3751,6 +3751,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>UI-Test aufzeichnen</translation>
     </message>
     <message>
+        <source>Check UI test scenario</source>
+        <translation>UI-Test-Szenario prüfen</translation>
+    </message>
+    <message>
         <source>Set up Android text input</source>
         <translation>Android-Texteingabe einrichten</translation>
     </message>

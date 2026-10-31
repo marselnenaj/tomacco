@@ -3743,6 +3743,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Registra un test dell'interfaccia</translation>
     </message>
     <message>
+        <source>Check UI test scenario</source>
+        <translation>Controlla scenario di test dell'interfaccia</translation>
+    </message>
+    <message>
         <source>Set up Android text input</source>
         <translation>Configura l'inserimento di testo Android</translation>
     </message>

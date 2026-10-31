@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 194 operations.
+`tomaccoctl` now has one typed API of 195 operations.
 
 ### Added
 
@@ -15,6 +15,8 @@ operations and their JSON results.
     `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`
     steps. A tap becomes a click on the element under it when the UI hierarchy names it, otherwise a tap at
     coordinates. Scenarios gain the steps `tap`, `swipe` and `text` for that.
+  - `testing.lint` checks a scenario against the current screen or a saved hierarchy without acting: selectors that
+    match nothing, several elements or a disabled one, points off the screen and malformed keys.
 
 ## 1.1.0
 

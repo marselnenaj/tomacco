@@ -275,6 +275,136 @@ pub fn run(a: &Value) -> Result {
         json!({"steps":[{"argv":[crate::core::own_executable()?,"_automation",output.join("run.json")],"artifacts":[output.join("report.json"),output.join("junit.xml")]}],"cwd":output,"timeout":a["timeout"].as_u64().unwrap_or(3600),"always_artifacts":["report.json","junit.xml","*.png"]}),
     )
 }
+/// testing.lint: checks a scenario against the screen now, without acting.
+pub fn lint(a: &Value) -> Result {
+    let device = s(a, "device");
+    let hierarchy = s(a, "hierarchy");
+    if device.is_empty() == hierarchy.is_empty() {
+        return Err(Error::new(
+            "invalid_argument",
+            "Give either device or hierarchy",
+        ));
+    }
+    let scenario = read_json(&path(s(a, "path"), false, true)?, None)?;
+    if let Err(error) = check_scenario(&scenario) {
+        return Ok(
+            json!({"name":scenario["name"],"valid":false,"passed":false,"error":error.value(),"findings":[]}),
+        );
+    }
+    let xml = if device.is_empty() {
+        let file = path(hierarchy, false, true)?;
+        if fs::metadata(&file)?.len() > 16 * 1024 * 1024 {
+            return Err(Error::new(
+                "invalid_hierarchy",
+                "The hierarchy is larger than 16 MiB",
+            ));
+        }
+        fs::read_to_string(file)?
+    } else {
+        identifier(device, "device", None)?;
+        s(
+            &devices::handle("android.hierarchy", &json!({"device":device}))?,
+            "xml",
+        )
+        .to_string()
+    };
+    roxmltree::Document::parse(&xml).map_err(|e| Error::new("invalid_hierarchy", e.to_string()))?;
+    let (steps, findings) = lint_steps(&scenario, &xml);
+    let passed = !findings.iter().any(|f| f["severity"] == "error");
+    Ok(
+        json!({"name":scenario["name"],"valid":true,"passed":passed,"steps":steps,"findings":findings}),
+    )
+}
+/// Each step's matches on one screen, and what would go wrong: a selector
+/// that matches nothing here (a warning, as an earlier step may open the
+/// screen it is on), several elements where one is acted on, a disabled
+/// element, a point off the screen or a malformed key.
+fn lint_steps(scenario: &Value, xml: &str) -> (Vec<Value>, Vec<Value>) {
+    let size = crate::recorder::screen(xml);
+    let key = regex::Regex::new(r"^(?:KEYCODE_[A-Z0-9_]+|[0-9]{1,4})$").unwrap();
+    let mut steps = Vec::new();
+    let mut findings = Vec::new();
+    for (index, step) in scenario["steps"].as_array().unwrap().iter().enumerate() {
+        let action = s(step, "action");
+        let mut finding = |severity: &str, code: &str, message: String| {
+            findings.push(json!({"step":index,"action":action,"label":step["label"],"severity":severity,"code":code,"message":message}));
+        };
+        let mut entry = json!({"index":index,"action":action});
+        match action {
+            "wait" | "assert" | "click" | "long_click" | "fill" => {
+                let matches = select(xml, &step["selector"]).unwrap_or_default();
+                entry["matches"] = json!(matches.len());
+                let absent = s(step, "state") == "absent";
+                let acts = ["click", "long_click", "fill"].contains(&action);
+                match matches.len() {
+                    0 if !absent => finding(
+                        "warning",
+                        "not_found",
+                        "No element on this screen matches the selector".into(),
+                    ),
+                    0 => (),
+                    _ if absent => finding(
+                        "warning",
+                        "present",
+                        format!(
+                            "{} element(s) match a selector expected absent",
+                            matches.len()
+                        ),
+                    ),
+                    1 => {
+                        if acts && matches[0]["enabled"] == "false" {
+                            finding("error", "disabled", "The element is disabled".into());
+                        }
+                    }
+                    count => finding(
+                        if acts { "error" } else { "warning" },
+                        "ambiguous",
+                        format!("{count} elements match; refine the selector or add index"),
+                    ),
+                }
+                if matches.len() > 1 {
+                    entry["candidates"] = json!(
+                        matches
+                            .iter()
+                            .take(5)
+                            .map(|m| json!({"text":m["text"],"resource_id":m["resource-id"],"description":m["content-desc"],"bounds":m["bounds"]}))
+                            .collect::<Vec<_>>()
+                    );
+                }
+            }
+            "tap" | "swipe" => {
+                if let Some((width, height)) = size {
+                    let points: &[(&str, &str)] = if action == "tap" {
+                        &[("x", "y")]
+                    } else {
+                        &[("x", "y"), ("end_x", "end_y")]
+                    };
+                    for (x, y) in points {
+                        if n(step, x) as i64 >= width || n(step, y) as i64 >= height {
+                            finding(
+                                "error",
+                                "off_screen",
+                                format!(
+                                    "({}, {}) lies outside the {width}x{height} screen",
+                                    n(step, x),
+                                    n(step, y)
+                                ),
+                            );
+                        }
+                    }
+                }
+            }
+            "key" if !key.is_match(s(step, "key")) => finding(
+                "error",
+                "invalid_key",
+                "A key is a KEYCODE_ name or a number".into(),
+            ),
+            _ => (),
+        }
+        steps.push(entry);
+    }
+    (steps, findings)
+}
 fn xml_escape(value: &str) -> String {
     value
         .replace('&', "&amp;")
@@ -503,6 +633,44 @@ mod tests {
         ] {
             assert!(check_scenario(&scenario(step.clone())).is_err(), "{step}");
         }
+    }
+    #[test]
+    fn lint_reports_missing_ambiguous_and_disabled_elements_and_bad_points() {
+        let xml = r#"<hierarchy><node bounds="[0,0][1080,2400]"><node text="OK" enabled="true" bounds="[0,10][20,30]"/><node text="OK" enabled="true" bounds="[30,10][60,30]"/><node text="Save" enabled="false" bounds="[0,40][60,80]"/><node text="Home" enabled="true" bounds="[0,90][60,120]"/></node></hierarchy>"#;
+        let scenario = json!({"name":"x","steps":[
+            {"action":"assert","selector":{"text":"Home"}},
+            {"action":"click","selector":{"text":"OK"}},
+            {"action":"assert","selector":{"text":"OK"}},
+            {"action":"click","selector":{"text":"OK","index":1}},
+            {"action":"click","selector":{"text":"Save"}},
+            {"action":"wait","selector":{"text":"Later"}},
+            {"action":"wait","selector":{"text":"Later"},"state":"absent"},
+            {"action":"assert","selector":{"text":"Home"},"state":"absent"},
+            {"action":"tap","x":100,"y":2400},
+            {"action":"key","key":"back"},
+            {"action":"key","key":"KEYCODE_BACK"}
+        ]});
+        check_scenario(&scenario).unwrap();
+        let (steps, findings) = lint_steps(&scenario, xml);
+        assert_eq!(steps.len(), 11);
+        assert_eq!(steps[1]["matches"], 2);
+        assert_eq!(steps[1]["candidates"].as_array().unwrap().len(), 2);
+        let found: Vec<(u64, &str, &str)> = findings
+            .iter()
+            .map(|f| (f["step"].as_u64().unwrap(), s(f, "code"), s(f, "severity")))
+            .collect();
+        assert_eq!(
+            found,
+            [
+                (1, "ambiguous", "error"),
+                (2, "ambiguous", "warning"),
+                (4, "disabled", "error"),
+                (5, "not_found", "warning"),
+                (7, "present", "warning"),
+                (8, "off_screen", "error"),
+                (9, "invalid_key", "error"),
+            ]
+        );
     }
     #[test]
     fn selectors_handle_escaping_ambiguity_and_index() {

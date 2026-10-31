@@ -532,6 +532,17 @@ tomaccoctl call testing.record '{"device":"emulator-5554","action":"stop","path"
 Read the scenario before you keep it: coordinate steps depend on the screen size, and a recorded step waits only when it is a click
 on a named element, which waits for that element.
 
+`testing.lint` checks a scenario without acting on the device: its format, then each step against the screen now, or against a saved
+`android.hierarchy` XML given as `hierarchy`. A finding names the step, a `severity` and a `code`: `not_found` (nothing on this screen
+matches; a warning, since an earlier step may open the screen it belongs to), `ambiguous` (several elements match: an error for
+`click`, `long_click` and `fill`, which act on one, with up to five `candidates` in `steps`), `disabled`, `present` (an element
+expected absent is there), `off_screen` and `invalid_key`. `passed` is false when a finding is an error; a scenario that does not
+parse answers `valid:false` with the error.
+
+```sh
+tomaccoctl call testing.lint '{"path":"/absolute/add-counter.json","device":"emulator-5554"}'
+```
+
 `testing.results` reads JUnit XML into one summary: `totals` (`tests`, `passed`, `failed`, `errors`, `skipped`, `time`), each suite with
 its device for instrumented tests, and each failure with its class, name, message and stack. Given a project it finds Gradle's unit test
 results (`build/test-results`) and instrumented test results (`build/outputs/androidTest-results`); a directory or a single file works too,
