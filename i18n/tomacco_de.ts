@@ -3679,20 +3679,20 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Native Tests ausführen</translation>
     </message>
     <message>
+        <source>Set up Android text input</source>
+        <translation>Android-Texteingabe einrichten</translation>
+    </message>
+    <message>
+        <source>Check Android text input</source>
+        <translation>Android-Texteingabe prüfen</translation>
+    </message>
+    <message>
         <source>Clean up old jobs and reports</source>
         <translation>Alte Jobs und Berichte aufräumen</translation>
     </message>
     <message>
         <source>Read test results</source>
         <translation>Testergebnisse lesen</translation>
-    </message>
-    <message>
-        <source>Install Android test helper</source>
-        <translation>Android-Testhelfer installieren</translation>
-    </message>
-    <message>
-        <source>Check Android test helper</source>
-        <translation>Android-Testhelfer prüfen</translation>
     </message>
     <message>
         <source>Find Android crashes</source>

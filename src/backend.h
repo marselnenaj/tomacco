@@ -15,9 +15,9 @@ class Backend final : public QObject {
     Q_PROPERTY(bool probing READ probing NOTIFY toolchainChanged)
     Q_PROPERTY(QUrl demoUrl READ demoUrl CONSTANT)
     Q_PROPERTY(QString initialUrl READ initialUrl CONSTANT)
-    // The stored interface language choice: "system", "en" or "de".
+    // The stored interface language choice: "system" or a language code ("en", "de", ...).
     Q_PROPERTY(QString language READ language NOTIFY languageChanged)
-    // The language the interface shows: "en" or "de".
+    // The language the interface shows, as a code: "en", "de", ...
     Q_PROPERTY(QString uiLanguage READ uiLanguage NOTIFY languageChanged)
     // The stored appearance choice: "system", "dark" or "light".
     Q_PROPERTY(QString appearance READ appearance NOTIFY appearanceChanged)
@@ -70,7 +70,7 @@ public:
     // Persists the choice and installs its translators. The application's
     // QML engine retranslates on languageChanged (see main.cpp).
     Q_INVOKABLE void setLanguage(const QString &choice);
-    // Installs the translators for a choice ("system", "en", "de"; anything
+    // Installs the translators for a choice ("system", "en", "de", ...; anything
     // else counts as "system") and returns the effective language. The
     // TOMACCO_LANGUAGE environment variable overrides the choice.
     static QString applyLanguage(const QString &choice);

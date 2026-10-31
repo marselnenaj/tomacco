@@ -365,6 +365,8 @@ class UninstallTests(unittest.TestCase):
             from install import VERSION
             self.assertEqual((home / ".local/lib/tomacco/VERSION").read_text(), VERSION + "\n")
             self.assertTrue((home / ".local/share/doc/tomacco/LICENSE").is_file())
+            manual = home / ".local/share/man/man1/tomaccoctl.1"
+            self.assertEqual(manual.read_bytes(), (ROOT / "docs/tomaccoctl.1").read_bytes())
             self.assertIn(APP_ID, shell.read_text())
             self.assertIn('require("hypr.tomacco")', hypr.read_text())
             # The user edits one installed document; that file is theirs now.
@@ -385,6 +387,7 @@ class UninstallTests(unittest.TestCase):
             self.assertEqual(hypr.read_text(), 'require("hypr.looknfeel")\n')
             self.assertFalse((home / ".local/lib/tomacco").exists())
             self.assertFalse(metainfo.exists())
+            self.assertFalse(manual.exists())
             self.assertFalse((home / ".config/omarchy/plugins" / APP_ID).exists())
             self.assertTrue((home / ".local/share/applications").is_dir())
             # A second uninstallation has nothing left to do.

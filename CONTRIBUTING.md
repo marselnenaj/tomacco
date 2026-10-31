@@ -49,8 +49,9 @@ Tests that need a toolchain, an engine or a device skip and say what they need.
   own restore image. See [docs/legal.md](docs/legal.md).
 - A claim in the documentation states what was measured or run. An accepted
   request is not a result.
-- A new user-visible string goes through `qsTr` in English with its German
-  translation in `i18n/tomacco_de.ts`.
+- A new user-visible string goes through `qsTr` in English with its translation in
+  every `i18n/tomacco_*.ts` file (German, French, Spanish and Italian); `tests/python/test_i18n.py`
+  checks that none is missing.
 - Engine patches go in `integrations/ios-emulator` and are listed in order in
   `tools/build_ios_paravirt.py`.
 

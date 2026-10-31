@@ -5771,7 +5771,7 @@
   },
   {
     "name": "testing.setup",
-    "title": "Install Android test helper",
+    "title": "Set up Android text input",
     "description": "Build and install the native Android instrumentation for Unicode text replacement. Returns a durable job.",
     "inputSchema": {
       "type": "object",
@@ -5795,7 +5795,7 @@
   },
   {
     "name": "testing.instrumentation",
-    "title": "Check Android test helper",
+    "title": "Check Android text input",
     "description": "Check the installed native Android instrumentation protocol.",
     "inputSchema": {
       "type": "object",

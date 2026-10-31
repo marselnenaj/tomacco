@@ -15,6 +15,9 @@ operations and their JSON results.
 - **Command line.**
   - `tomaccoctl completions bash|zsh|fish`. Only the bash script has been run.
   - `tomaccoctl schema OPERATION` and `schema --names`.
+  - A manual page, `man tomaccoctl`, installed by CMake and the installer; a test keeps it in step with `--help`.
+  - `tomaccoctl help OPERATION` and `call OPERATION --help` describe an operation in plain text: arguments with types,
+    choices, limits and defaults, and an example call generated from the schema.
   - `call … --wait` follows a job to its end, with its log on stderr.
   - Indented JSON in a terminal or with `--pretty`; output to a pipe is unchanged.
   - "Did you mean" remedies for misspelt operations, argument keys and flags.
@@ -114,6 +117,9 @@ operations and their JSON results.
     by default that reports the bytes it would free. It never touches the verified base, the
     current run or a copy a guest holds. Unit-tested only.
 - **Desktop.**
+  - An Italian interface, chosen under Language in Settings or followed from the desktop language.
+  - A Spanish interface, chosen under Language in Settings or followed from the desktop language.
+  - A French interface, chosen under Language in Settings or followed from the desktop language.
   - Drop an `.apk`, `.ipa` or `.app` on the device view to install it, or drop a
     project folder on the window to open it.
   - Screenshots are also copied to the clipboard.
@@ -164,6 +170,8 @@ operations and their JSON results.
   `emulator_refused`.
 - Every network latency preset sends its millisecond range; the emulator's own `gprs`
   name applied the UMTS range.
+- `testing.setup` and `testing.instrumentation` have titles, shown translated in the desktop; a test now requires a title,
+  a description and a German title for every operation.
 - The documentation said Qt 6.9 for running the release on other distributions. The
   release desktop needs Qt 6.12, FFmpeg 9 and glibc 2.39; Qt 6.9 is enough to build
   from source.

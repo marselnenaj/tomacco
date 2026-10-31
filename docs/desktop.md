@@ -29,11 +29,11 @@ project and shows its overview; a single file or an `.app` bundle does not.
 
 ## Languages
 
-The desktop speaks English and German. It follows the desktop language: German when
-the system's UI language is German, English otherwise. Choose *System*, *English* or
-*Deutsch* under **Language** in **Settings** (Ctrl+,); the choice is stored and
-applies at once. `TOMACCO_LANGUAGE=en|de` overrides it for one run. `tomaccoctl` and MCP
-output always stay English.
+The desktop speaks English, German, French, Spanish and Italian. It follows the desktop language: the
+first of the system's UI languages that it has, English otherwise. Choose *System*,
+*English*, *Deutsch*, *Français*, *Español* or *Italiano* under **Language** in **Settings** (Ctrl+,); the
+choice is stored and applies at once. `TOMACCO_LANGUAGE=en|de|fr|es|it` overrides it for one
+run. `tomaccoctl` and MCP output always stay English.
 
 ## Appearance
 

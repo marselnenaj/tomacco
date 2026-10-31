@@ -14,6 +14,7 @@ mod crashes;
 mod dap;
 mod debugger;
 mod dependencies;
+mod describe;
 mod desktop;
 mod devices;
 mod files;
@@ -250,6 +251,11 @@ Usage:
                     Print every operation with its argument schema (JSON),
                     only the named one, or with --names just the names, one
                     per line.
+  tomaccoctl help [OPERATION]
+                    Without an operation, print this help. With one, describe
+                    it for a person: what it does, its arguments with their
+                    types, choices and defaults, and an example call. The
+                    same as tomaccoctl call OPERATION --help.
   tomaccoctl setup [--yes]
                     Check this machine in plain text and offer to install the
                     Android SDK and connect your coding agents.
@@ -283,6 +289,16 @@ schema; long work runs as durable jobs (job.wait, job.cancel, job.list).
 Data lives in ~/.local/share/tomacco (TOMACCO_HOME overrides it).
 Documentation: docs/agents.md. License: GPL-2.0-or-later."
     )
+}
+/// `tomaccoctl help [OPERATION]`, and `call OPERATION --help`: the
+/// command-line help, or one operation described for a person.
+fn help_command(args: &[String], options: &Options) -> Result<String> {
+    options.check(&[])?;
+    match args {
+        [] => Ok(help() + "\n"),
+        [name] => describe::operation(name),
+        _ => Err(Error::new("invalid_request", "Expected one operation name")),
+    }
 }
 
 fn run(args: &[String], options: &Options) -> Result<i32> {
@@ -435,6 +451,10 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             let _ = write!(std::io::stdout(), "{}", completions::script(shell)?);
             return Ok(0);
         }
+        "help" => {
+            let _ = write!(std::io::stdout(), "{}", help_command(&args[1..], options)?);
+            return Ok(0);
+        }
         "doctor" => options
             .check(&[])
             .and_then(|()| api::dispatch("doctor", &json!({}))),
@@ -443,6 +463,10 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             let op = args
                 .get(1)
                 .ok_or_else(|| Error::new("invalid_request", "Missing operation name"))?;
+            if args[2..].iter().any(|arg| arg == "--help" || arg == "-h") {
+                let _ = write!(std::io::stdout(), "{}", help_command(&args[1..2], options)?);
+                return Ok(0);
+            }
             if args.len() > 3 {
                 return Err(Error::new(
                     "invalid_request",
@@ -600,6 +624,82 @@ mod tests {
         assert!(names.contains(&"ios.virtual.start"));
         assert!(reply(&["schema", "job.wait", "job.get"]).is_err());
         assert!(reply(&["schema", "job.wait", "--names"]).is_err());
+    }
+    /// docs/tomaccoctl.1 is written by hand; it names every command and
+    /// flag the help names, and no other flag.
+    #[test]
+    fn help_and_manual_page_name_the_same_commands_and_flags() {
+        let manual = include_str!("../docs/tomaccoctl.1");
+        let help = help();
+        let commands: Vec<&str> = help
+            .lines()
+            .filter_map(|line| line.strip_prefix("  tomaccoctl "))
+            .filter_map(|rest| rest.split_whitespace().next())
+            .filter(|word| !word.starts_with('-'))
+            .collect();
+        assert!(commands.len() >= 9, "{commands:?}");
+        for (name, _) in completions::COMMANDS {
+            assert!(commands.contains(name), "the help lacks {name}");
+        }
+        for command in &commands {
+            assert!(
+                manual.contains(&format!(".B tomaccoctl {command}\n")),
+                "SYNOPSIS lacks {command}"
+            );
+            assert!(
+                manual.lines().collect::<Vec<_>>().windows(2).any(|pair| {
+                    let words: Vec<&str> = pair[1].split_whitespace().collect();
+                    pair[0] == ".TP"
+                        && words.len() >= 2
+                        && matches!(words[0], ".B" | ".BR" | ".BI")
+                        && words[1].trim_matches('"') == *command
+                }),
+                "COMMANDS lacks {command}"
+            );
+        }
+        let flag = regex::Regex::new(r"(?:^|[^\\w-])(--[a-z]+|-[a-zA-Z])\b").unwrap();
+        let in_help: std::collections::BTreeSet<&str> = flag
+            .captures_iter(&help)
+            .map(|c| c.get(1).unwrap().as_str())
+            .filter(|f| f.starts_with("--") || matches!(*f, "-h" | "-V"))
+            .collect();
+        let roff = regex::Regex::new(r"(\\-\\-[a-z]+|\\-[a-zA-Z])\b").unwrap();
+        let in_manual: std::collections::BTreeSet<String> = roff
+            .captures_iter(manual)
+            .map(|c| c.get(1).unwrap().as_str().replace("\\-", "-"))
+            .collect();
+        let in_help: std::collections::BTreeSet<String> = in_help
+            .into_iter()
+            .chain(Options::FLAGS.iter().copied())
+            .map(String::from)
+            .collect();
+        assert_eq!(in_manual, in_help);
+    }
+    #[test]
+    fn help_describes_the_commands_or_one_operation() {
+        let help = |words: &[&str]| {
+            let (args, options) = line(words);
+            help_command(&args[1..], &options)
+        };
+        assert!(
+            help(&["help"])
+                .unwrap()
+                .contains("tomaccoctl help [OPERATION]")
+        );
+        let text = help(&["help", "job.wait"]).unwrap();
+        assert!(text.starts_with("job.wait - Wait for job"));
+        assert!(text.contains("tomaccoctl call job.wait '"));
+        let error = help(&["help", "job.wiat"]).unwrap_err();
+        assert_eq!(error.code, "operation_not_found");
+        assert!(help(&["help", "job.wait", "job.get"]).is_err());
+        assert_eq!(
+            help(&["help", "job.wait", "--names"]).unwrap_err().message,
+            "Unknown option: --names"
+        );
+        // `call OPERATION --help` keeps --help for the operation.
+        let (args, options) = line(&["call", "job.wait", "--help"]);
+        assert_eq!(args, ["call", "job.wait", "--help"]);
+        assert!(options.check(&["--wait"]).is_ok());
     }
     #[test]
     fn call_arguments_come_inline_from_a_file_or_from_standard_input() {

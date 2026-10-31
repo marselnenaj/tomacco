@@ -104,6 +104,10 @@ fn package_tree(top: &Path, version: &str) {
         &format!("assets/{app}.metainfo.xml"),
         &top.join(format!("share/metainfo/{app}.metainfo.xml")),
     );
+    copy_into(
+        "docs/tomaccoctl.1",
+        &top.join("share/man/man1/tomaccoctl.1"),
+    );
 }
 
 fn package(tree: &Path) -> Vec<u8> {
