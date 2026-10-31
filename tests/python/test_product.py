@@ -1187,7 +1187,10 @@ class ProtocolTests(Isolated):
         for tool in replies[2]["result"]["tools"]:
             self.assertEqual(sorted(tool["annotations"]), ["destructiveHint", "idempotentHint", "openWorldHint", "readOnlyHint"], tool["name"])
         self.assertFalse(replies[3]["result"]["isError"])
+        # A list result is wrapped, since structured content is an object.
+        self.assertEqual(replies[3]["result"]["structuredContent"], {"result": json.loads(replies[3]["result"]["content"][0]["text"])})
         self.assertTrue(replies[4]["result"]["isError"])
+        self.assertEqual(replies[4]["result"]["structuredContent"], json.loads(replies[4]["result"]["content"][0]["text"]))
         self.assertIn("contents", replies[5]["result"])
 
     def test_mcp_wait_does_not_block_other_requests_and_cancellation_preserves_job(self):

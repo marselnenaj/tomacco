@@ -175,10 +175,16 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
                             }
                         }
                     }
-                    json!({"content":content,"isError":false})
+                    json!({"content":content,"structuredContent":structured(value),"isError":false})
                 }
                 Err(error) => {
-                    json!({"content":[{"type":"text","text":json!({"error":error.value()}).to_string()}],"isError":true})
+                    let error = json!({"error":error.value()});
+                    let mut reply = json!({"content":[{"type":"text","text":error.to_string()}],"isError":true});
+                    // A declared outputSchema describes results, not errors.
+                    if api::operation(name).is_ok_and(|op| op.get("outputSchema").is_none()) {
+                        reply["structuredContent"] = error;
+                    }
+                    reply
                 }
             }
         }
@@ -243,6 +249,17 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
         }
         _ => return Ok(None),
     }))
+}
+
+/// A result as MCP structured content, which must be an object: an object
+/// result is itself, anything else is `{"result": value}`. The text content
+/// keeps the result exactly as the CLI prints it.
+fn structured(value: Value) -> Value {
+    if value.is_object() {
+        value
+    } else {
+        json!({ "result": value })
+    }
 }
 
 /// A guide from docs/, compiled in so that it matches this version and an
@@ -375,6 +392,25 @@ mod tests {
             values[3]["result"]["tools"].as_array().unwrap().len(),
             crate::api::manifest().as_array().unwrap().len()
         );
+    }
+    #[test]
+    fn results_and_errors_come_as_structured_content_too() {
+        assert_eq!(structured(json!({"id":"a"})), json!({"id":"a"}));
+        assert_eq!(structured(json!([1, 2])), json!({"result":[1,2]}));
+        assert_eq!(structured(json!("text")), json!({"result":"text"}));
+        let reply = handle(
+            "tools/call",
+            &json!({"name":"device.install","arguments":{}}),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(reply["isError"], true);
+        assert_eq!(
+            reply["structuredContent"]["error"]["code"],
+            "invalid_argument"
+        );
+        let text: Value = serde_json::from_str(s(&reply["content"][0], "text")).unwrap();
+        assert_eq!(text, reply["structuredContent"]);
     }
     #[test]
     fn guides_are_listed_and_read_as_markdown() {

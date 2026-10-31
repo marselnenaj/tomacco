@@ -43,6 +43,8 @@ The server also offers three prompts, short recipes a client can show as command
 - MCP requests can run at the same time.
 - `notifications/cancelled` stops that request. Cancelling `job.wait` leaves its job running; use
   `job.cancel` to cancel a build and its descendants.
+- A tool result also comes as `structuredContent`: an object result as it is, any other result
+  as `{"result": ...}`, and an error as `{"error": {...}}`. The text content is unchanged.
 - Native screenshots up to 4 MiB are embedded as MCP images. Larger ones keep a path and digest.
 
 ## The contract

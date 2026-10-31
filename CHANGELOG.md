@@ -24,6 +24,8 @@ operations and their JSON results.
 - **MCP tool annotations.** Every operation now states `destructiveHint` and `idempotentHint` as well
   as `readOnlyHint` and `openWorldHint`; before, MCP clients read 104 operations as destructive by
   default. `testing.setup` and `testing.instrumentation` have titles.
+- **MCP structured results.** A tool result also comes as `structuredContent`; a result that is not
+  an object is wrapped as `{"result": ...}`, an error as `{"error": ...}`.
 - **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
   `tomacco://docs/NAME`, as Markdown of the installed version.
 - **Android.**
