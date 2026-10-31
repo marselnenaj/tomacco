@@ -334,6 +334,50 @@ pub fn private_runtime_dir(path: &Path) -> Result<()> {
     }
     Ok(())
 }
+/// The longest Unix socket path the kernel accepts: sun_path holds 108
+/// bytes with the terminating NUL.
+pub const SOCKET_PATH_LIMIT: usize = 107;
+/// A shared directory to make private socket directories in, short enough
+/// that `reserve` more bytes (the directory and socket names under it) still
+/// fit a socket address. TMPDIR comes first, as for any temporary file; a
+/// TMPDIR too long for that (a build sandbox, a nested workspace) gives way to
+/// the user's private runtime directory, and then to /tmp.
+pub fn socket_root(reserve: usize) -> PathBuf {
+    socket_root_from(
+        std::env::var_os("TMPDIR").map(PathBuf::from),
+        std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from),
+        reserve,
+    )
+}
+fn socket_root_from(
+    temporary: Option<PathBuf>,
+    runtime: Option<PathBuf>,
+    reserve: usize,
+) -> PathBuf {
+    use std::os::unix::fs::MetadataExt;
+    let fits = |path: &Path| path.as_os_str().len() + reserve <= SOCKET_PATH_LIMIT;
+    let usable = |path: &PathBuf| path.is_absolute() && path.is_dir() && fits(path);
+    if let Some(path) = temporary.filter(usable) {
+        return path;
+    }
+    // SAFETY: geteuid has no preconditions.
+    let owner = unsafe { libc::geteuid() };
+    if let Some(path) = runtime.filter(usable).filter(|path| {
+        fs::symlink_metadata(path)
+            .is_ok_and(|meta| meta.is_dir() && meta.uid() == owner && meta.mode() & 0o077 == 0)
+    }) {
+        return path;
+    }
+    PathBuf::from("/tmp")
+}
+/// A fresh private directory for test sockets, whatever TMPDIR is.
+#[cfg(test)]
+pub fn socket_tempdir() -> tempfile::TempDir {
+    tempfile::Builder::new()
+        .prefix("tomacco-test-")
+        .tempdir_in(socket_root(48))
+        .expect("a private socket directory")
+}
 pub fn output_path(value: &str) -> Result<PathBuf> {
     let p = path(value, false, false)?;
     if p.file_name().is_none() || p.is_dir() {
@@ -686,6 +730,47 @@ mod directory_tests {
         let file = parent.path().join("file");
         fs::write(&file, b"").unwrap();
         assert!(private_runtime_dir(&file).is_err());
+    }
+
+    #[test]
+    fn sockets_go_to_a_root_short_enough_for_their_address() {
+        // In /tmp, so that the short paths stay short under any TMPDIR.
+        let parent = tempfile::tempdir_in("/tmp").unwrap();
+        let short = parent.path().to_path_buf();
+        let long = short.join("x".repeat(90));
+        fs::create_dir(&long).unwrap();
+        let runtime = short.join("run");
+        fs::create_dir(&runtime).unwrap();
+        fs::set_permissions(&runtime, fs::Permissions::from_mode(0o700)).unwrap();
+        let reserve = SOCKET_PATH_LIMIT - runtime.as_os_str().len();
+        // A short TMPDIR is used as it is.
+        assert_eq!(
+            socket_root_from(Some(short.clone()), Some(runtime.clone()), 0),
+            short
+        );
+        // A long one gives way to a private runtime directory that fits.
+        assert_eq!(
+            socket_root_from(Some(long.clone()), Some(runtime.clone()), reserve),
+            runtime
+        );
+        // A runtime directory others may enter is not used.
+        fs::set_permissions(&runtime, fs::Permissions::from_mode(0o755)).unwrap();
+        assert_eq!(
+            socket_root_from(Some(long.clone()), Some(runtime.clone()), reserve),
+            Path::new("/tmp")
+        );
+        // Neither set, relative or missing: /tmp.
+        assert_eq!(socket_root_from(None, None, 20), Path::new("/tmp"));
+        assert_eq!(
+            socket_root_from(Some("relative".into()), None, 20),
+            Path::new("/tmp")
+        );
+        assert_eq!(
+            socket_root_from(Some(short.join("missing")), None, 20),
+            Path::new("/tmp")
+        );
+        let directory = socket_tempdir();
+        assert!(directory.path().as_os_str().len() + 40 <= SOCKET_PATH_LIMIT);
     }
 
     #[test]

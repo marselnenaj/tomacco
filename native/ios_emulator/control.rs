@@ -1860,7 +1860,7 @@ mod tests {
     }
 
     fn monitor(refuse: usize) -> Monitor {
-        let directory = tempfile::tempdir().unwrap();
+        let directory = socket_tempdir();
         let listener =
             std::os::unix::net::UnixListener::bind(directory.path().join("control.sock")).unwrap();
         let touches = Arc::new(Mutex::new(Vec::new()));
@@ -1900,11 +1900,31 @@ mod tests {
         fn lane(&self) -> Lock {
             Lock::open(&self.directory.path().join("locks").join("control.lock")).unwrap()
         }
+        /// Takes the lane as `lane()` in the product does: waiting a moment.
+        /// A flock belongs to the open file, and a process another test
+        /// forks in parallel holds a copy of every descriptor until its
+        /// exec closes them; a lane this process released can stay taken
+        /// for that instant. A lane still held by a contact is not released
+        /// by waiting, so this never passes for one that was not freed.
+        fn acquire_soon(&self) -> Option<Lock> {
+            let lane = self.lane();
+            let deadline = Instant::now() + Duration::from_secs(5);
+            loop {
+                if lane.acquire(true).unwrap() {
+                    return Some(lane);
+                }
+                if Instant::now() >= deadline {
+                    return None;
+                }
+                thread::sleep(Duration::from_millis(2));
+            }
+        }
         /// What touch_down's caller hands the lane: the monitor and the taken control lane.
         fn open(&self) -> impl FnOnce() -> Result<(Qmp, bool, Lock)> + '_ {
             move || {
-                let lane = self.lane();
-                assert!(lane.acquire(true)?, "the control lane is still taken");
+                let lane = self
+                    .acquire_soon()
+                    .expect("the control lane is still taken");
                 Ok((
                     Qmp::open(&self.directory.path().join("control.sock"))?,
                     true,
@@ -1915,8 +1935,13 @@ mod tests {
         fn touches(&self) -> Vec<u64> {
             self.touches.lock().unwrap().clone()
         }
+        /// The lane has been released (see acquire_soon).
         fn lane_free(&self) -> bool {
-            self.lane().acquire(true).unwrap()
+            self.acquire_soon().is_some()
+        }
+        /// The lane is held right now, by the contact under test.
+        fn lane_held(&self) -> bool {
+            !self.lane().acquire(true).unwrap()
         }
     }
 
@@ -1932,7 +1957,7 @@ mod tests {
         assert_eq!(down["contact"], "down");
         assert_eq!(monitor.touches(), [contact(100, 200, true)]);
         // No other input lands inside the gesture.
-        assert!(!monitor.lane_free());
+        assert!(monitor.lane_held());
         lane.moved("a", (300, 400)).unwrap();
         // The same point again only keeps the contact alive.
         lane.moved("a", (300, 400)).unwrap();
@@ -1979,7 +2004,7 @@ mod tests {
         );
         assert!(!lane.expire(first, Duration::ZERO));
         assert!(lane.expire(second, Duration::from_secs(60)));
-        assert!(!monitor.lane_free());
+        assert!(monitor.lane_held());
         // A client that stopped sending loses the contact.
         assert!(!lane.expire(second, Duration::ZERO));
         assert_eq!(monitor.touches().last(), Some(&contact(2, 2, false)));

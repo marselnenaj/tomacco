@@ -153,7 +153,8 @@ fn directory(id: &str) -> Result<PathBuf> {
     Ok(home()?.join("native-sessions").join(id))
 }
 fn sockets() -> Result<PathBuf> {
-    let path = std::env::temp_dir().join(format!(
+    // Room for the directory name and "/<session>-idb.sock".
+    let path = socket_root(84).join(format!(
         "tomacco-live-{}-{}",
         unsafe { libc::geteuid() },
         &digest(home()?.to_string_lossy().as_bytes())[..16]

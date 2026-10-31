@@ -5,7 +5,32 @@ from pathlib import Path
 import stat
 import socket
 import subprocess
+import tempfile
 import time
+
+# The longest Unix socket path: sun_path holds 108 bytes with its NUL.
+SOCKET_PATH_LIMIT = 107
+
+
+def socket_root(reserve, environ=None):
+    """A shared directory to make a private socket directory in, short enough
+    that reserve more bytes (that directory's name, a socket name and the
+    suffix vhost-user-vsock appends) still fit a socket address. TMPDIR comes
+    first; one too long gives way to the user's private runtime directory, and
+    then to /tmp."""
+    environ = os.environ if environ is None else environ
+    def fits(path):
+        return (path and os.path.isabs(path) and os.path.isdir(path)
+                and len(os.fsencode(path)) + reserve <= SOCKET_PATH_LIMIT)
+    temporary = environ.get("TMPDIR") if environ is not os.environ else tempfile.gettempdir()
+    if fits(temporary):
+        return temporary
+    runtime = environ.get("XDG_RUNTIME_DIR")
+    if fits(runtime):
+        status = os.lstat(runtime)
+        if stat.S_ISDIR(status.st_mode) and status.st_uid == os.geteuid() and not status.st_mode & 0o077:
+            return runtime
+    return "/tmp"
 
 
 def local_control_preflight(directory):

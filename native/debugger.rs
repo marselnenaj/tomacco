@@ -31,7 +31,7 @@ fn socket(id: &str) -> Result<PathBuf> {
     }
     // A shared temporary directory: the name carries the user, and a
     // directory someone else created first is refused, never bound into.
-    let root = std::env::temp_dir().join(format!(
+    let root = socket_root(80).join(format!(
         "tomacco-debug-{}-{}",
         unsafe { libc::geteuid() },
         &digest(directory()?.to_string_lossy().as_bytes())[..16]

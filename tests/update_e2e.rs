@@ -207,13 +207,37 @@ fn publish(pages: &Pages, api: &str, version: &str, package: &[u8], signature: O
     );
 }
 
+/// Where the sandbox lives. It holds several copies of the debug binary,
+/// more than a small /tmp may have room for, so without a TMPDIR it goes to
+/// Cargo's own scratch directory in target/.
+fn sandbox_directory() -> tempfile::TempDir {
+    match std::env::var_os("TMPDIR").filter(|value| Path::new(value).is_absolute()) {
+        Some(_) => tempfile::tempdir(),
+        None => tempfile::tempdir_in(env!("CARGO_TARGET_TMPDIR")),
+    }
+    .unwrap()
+}
+
+#[test]
+fn the_sandbox_follows_tmpdir_or_stays_in_target() {
+    let directory = sandbox_directory();
+    let expected = match std::env::var_os("TMPDIR").filter(|value| Path::new(value).is_absolute()) {
+        Some(value) => PathBuf::from(value),
+        None => PathBuf::from(env!("CARGO_TARGET_TMPDIR")),
+    };
+    assert_eq!(
+        directory.path().parent().unwrap().canonicalize().unwrap(),
+        expected.canonicalize().unwrap()
+    );
+}
+
 #[test]
 fn install_update_and_roll_back_through_the_real_binary() {
     if Command::new("python3").arg("--version").output().is_err() {
         eprintln!("skipped: the installer needs Python");
         return;
     }
-    let directory = tempfile::tempdir().unwrap();
+    let directory = sandbox_directory();
     let home = directory.path().join("home");
     let data = directory.path().join("data");
     fs::create_dir_all(&home).unwrap();

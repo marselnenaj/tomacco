@@ -56,6 +56,9 @@ operations and their JSON results.
 
 ### Fixed
 
+- Runtime and debugger sockets, the virtual iPhone's launcher and the tests no longer fail with a long `TMPDIR`
+  ("path must be shorter than SUN_LEN"): socket directories move to a private `XDG_RUNTIME_DIR` or `/tmp` when `TMPDIR` is too long.
+  `tests/update_e2e.rs` works in `target/tmp` without a `TMPDIR`, and the touch-lane tests no longer fail under parallel load.
 - A command the emulator console refused (`KO`) no longer looks like success:
   `emulator_refused`.
 - Every network latency preset sends its millisecond range; the emulator's own `gprs`

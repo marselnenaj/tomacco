@@ -1295,7 +1295,7 @@ mod tests {
     }
     #[test]
     fn qmp_handles_fragmented_messages_events_and_ids() {
-        let temp = tempfile::tempdir().unwrap();
+        let temp = socket_tempdir();
         let socket = temp.path().join("qmp");
         let listener = std::os::unix::net::UnixListener::bind(&socket).unwrap();
         let server = thread::spawn(move || {

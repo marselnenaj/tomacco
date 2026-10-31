@@ -51,6 +51,11 @@ The test environment also needs `unzip` for the iPhone runner tests, a font such
 networking, and a graphical session or `QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software` for the desktop checks. Tests that need a toolchain, engine or device they do not find skip and say
 what it is.
 
+**Temporary files.** Tests follow `TMPDIR`. Unix sockets need a path of at most 107 bytes, so the tests, the runtime and the virtual
+iPhone's launcher make their socket directories in `TMPDIR` only while it is short enough, and otherwise in a private `XDG_RUNTIME_DIR`
+or in `/tmp`. `tests/update_e2e.rs` holds several copies of the debug `tomaccoctl`; without `TMPDIR` it works in `target/tmp`, not in
+`/tmp`.
+
 **Documentation tests.** `tests/python/test_docs_links.py` checks every relative link and anchor in tracked Markdown.
 `tests/python/test_docs_virtual_iphone.py` checks the `tomaccoctl` commands and tools the guides show against the schema and the sources, and the
 limits they must state.

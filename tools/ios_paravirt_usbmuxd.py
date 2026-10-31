@@ -21,6 +21,7 @@ import tempfile
 import threading
 import time
 
+from ios_guest_control import socket_root
 from ios_paravirt_duplex import DuplexUSBConnection
 from ios_paravirt_mux import MuxConnection, PLIST_LIMIT
 from ios_paravirt_usb import USB_ATTACH_TIMEOUT, USBConnection, enumerate_device, wait_for_usb_ready
@@ -457,7 +458,7 @@ def main():
         hub = MuxHub(usb, device)
         bridge = Bridge(hub, device)
         # Short path avoids sockaddr_un truncation for deeply nested workspaces.
-        with tempfile.TemporaryDirectory(prefix="tomacco-usbmuxd-") as private:
+        with tempfile.TemporaryDirectory(prefix="tomacco-usbmuxd-", dir=socket_root(48)) as private:
             address = str(Path(private) / "usbmuxd.sock")
             with socket.socket(socket.AF_UNIX) as listener:
                 listener.bind(address)
