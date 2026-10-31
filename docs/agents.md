@@ -455,6 +455,10 @@ There is one session per device. Repeated calls return it with `reused:true`, an
 
 Start with `workspace.context` for the selected project and `runtime.list` for what is connected. `desktop.open` with `tab:"runtime"` lets the
 user watch the same app you are controlling.
+When the desktop on the session is not the installed version, for example the one that ran while an update was installed,
+`desktop.open` asks it to quit, starts the installed one and reports the old version as `replaced_version` (null for a desktop from
+an earlier release, which does not say). A desktop with unsaved files stays, with `desktop_unsaved`; one that does not quit within 10 seconds
+gives `desktop_stale`.
 
 **Input.** `runtime.input` coordinates run from 0 to 1. Android supports `tap`, `touch` (down, move, up, cancel), `swipe`, `key`, `text` and `rotate`.
 The Simulator also supports `fill`, `pinch`, `shake` and `hinge` when its companion does. Apple `text` sends ASCII keys, and `fill` replaces an

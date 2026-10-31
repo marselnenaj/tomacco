@@ -2977,6 +2977,18 @@ for line in sys.stdin:
         updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void the_session_names_its_version_and_quits_for_another_one() {
+        // desktop.open compares this with the installed version.
+        const auto state=previewCall("state").value("result").toMap();
+        QCOMPARE(state.value("version").toString(),QCoreApplication::applicationVersion());
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        const int before=quits;
+        const auto reply=previewCall("quit",{{"reason","replaced"}}).value("result").toMap();
+        QVERIFY(reply.value("quitting").toBool());QVERIFY(!reply.value("unsaved").toBool());
+        QTRY_COMPARE(quits,before+1);
+        view->setProperty("quitting",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void touches_and_coordinates_show_on_the_live_device() {
         // Switched on, the device view marks a press and names the pointer's device pixel and
         // fraction; the press still reaches the device. Off, nothing is drawn.

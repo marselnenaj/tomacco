@@ -13,6 +13,9 @@ operations and their JSON results.
   new version also sends one desktop notification. The word in the status line stays.
 - The **Updates** settings explain Off, Notify and Automatic in one line each. After an installation,
   also one made by itself in Automatic mode, the banner says **Updated to X** and offers **Restart now**.
+- `desktop.open` replaces a desktop on the session that is not the installed version, such as the one
+  that ran while an update was installed, instead of raising its window; the result names it as
+  `replaced_version`. The desktop's `state` and `show` answers carry its `version`.
 - **Update channel.** `updates.channel` in `settings.configure` is `stable` (the default) or `prerelease`;
   on `prerelease`, `update.check` and `update.apply` take the newest release including GitHub
   pre-releases. The **Updates** settings offer the choice, and the settings export carries it.

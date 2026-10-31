@@ -145,6 +145,116 @@ pub fn status() -> Result {
         json!({"running":running,"jobs":jobs,"sessions":sessions,"runtimes":runtimes,"workspaces":workspaces,"data_directory":home()?}),
     )
 }
+/// A desktop that answers on a preview session, as desktop.open talks to it.
+trait Desktop {
+    fn call(&self, method: &str, params: Value, timeout: u64) -> Result;
+    /// The process behind the session, if it can be told.
+    fn process(&self) -> Option<u32>;
+    /// Ends that process without its cooperation.
+    fn terminate(&self, pid: u32);
+}
+
+struct LiveDesktop<'a>(&'a str);
+
+impl Desktop for LiveDesktop<'_> {
+    fn call(&self, method: &str, params: Value, timeout: u64) -> Result {
+        preview::call(method, params, self.0, timeout)
+    }
+    fn process(&self) -> Option<u32> {
+        let pid = preview::peer_pid(self.0)?;
+        // Only a Tomacco desktop is ended, never whatever else holds the socket.
+        let exe = std::fs::read_link(format!("/proc/{pid}/exe")).ok()?;
+        let name = exe.file_name()?.to_string_lossy().into_owned();
+        (name == "tomacco" || name.starts_with("tomacco ")).then_some(pid)
+    }
+    fn terminate(&self, pid: u32) {
+        // SAFETY: kill only sends a signal; pid came from the socket's peer credentials.
+        unsafe {
+            libc::kill(pid as libc::pid_t, libc::SIGTERM);
+        }
+    }
+}
+
+fn unsaved(running: &str, installed: &str) -> Error {
+    Error::new(
+        "desktop_unsaved",
+        format!("The running Tomacco desktop ({running}) is not the installed version {installed}, and it has unsaved files."),
+    )
+    .remedy("Save or discard them in that window and close it, then open Tomacco again")
+}
+
+/// Ends a desktop on the session that is not the installed version, such as
+/// the one that was running when an update was installed, so that the
+/// installed one can start. Its answer to `quit` is asked for first; a
+/// desktop from before `quit` existed is ended with SIGTERM, but only without
+/// unsaved files. Returns the version it replaced (null when that desktop did
+/// not say), or None when no desktop answers or the running one is current.
+fn retire(desktop: &dyn Desktop, installed: &str, patience: Duration) -> Result<Option<Value>> {
+    let state = match desktop.call("state", json!({}), 3) {
+        Ok(state) => state,
+        Err(e) if e.code == "preview_unavailable" => return Ok(None),
+        Err(e) => return Err(e),
+    };
+    let version = s(&state, "version").to_string();
+    if version == installed {
+        return Ok(None);
+    }
+    let running = if version.is_empty() {
+        "an older version".to_string()
+    } else {
+        version.clone()
+    };
+    let process = desktop.process();
+    match desktop.call("quit", json!({"reason":"replaced"}), 3) {
+        Ok(reply) if reply["quitting"] == true => {}
+        Ok(_) => return Err(unsaved(&running, installed)),
+        Err(e) if e.code == "preview_unavailable" => {
+            return Ok(Some(if version.is_empty() {
+                Value::Null
+            } else {
+                json!(version)
+            }));
+        }
+        // A desktop from before quit existed refuses the unknown request.
+        Err(e) if e.code == "preview_error" => {
+            if state["workspace"]["dirty"]
+                .as_array()
+                .is_some_and(|dirty| !dirty.is_empty())
+            {
+                return Err(unsaved(&running, installed));
+            }
+            let pid = process.ok_or_else(|| {
+                Error::new(
+                    "desktop_stale",
+                    format!("The running Tomacco desktop ({running}) is not the installed version {installed} and cannot be asked to quit."),
+                )
+                .remedy("Close that window, then open Tomacco again")
+            })?;
+            desktop.terminate(pid);
+        }
+        Err(e) => return Err(e),
+    }
+    let deadline = Instant::now() + patience;
+    loop {
+        match desktop.call("state", json!({}), 1) {
+            Err(e) if e.code == "preview_unavailable" => break,
+            _ if Instant::now() >= deadline => {
+                return Err(Error::new(
+                    "desktop_stale",
+                    format!("The running Tomacco desktop ({running}) did not quit in time for the installed version {installed}."),
+                )
+                .remedy("Close that window, then open Tomacco again"));
+            }
+            _ => thread::sleep(Duration::from_millis(100)),
+        }
+    }
+    Ok(Some(if version.is_empty() {
+        Value::Null
+    } else {
+        json!(version)
+    }))
+}
+
 pub fn open(a: &Value) -> Result {
     let session = s(a, "session");
     let tab = s(a, "tab");
@@ -158,15 +268,28 @@ pub fn open(a: &Value) -> Result {
         show["line"] = a["line"].clone();
     }
     let device_only = b(a, "device_only");
+    let replaced = retire(
+        &LiveDesktop(session),
+        &crate::update::current_version(),
+        Duration::from_secs(10),
+    )?;
+    let note = |mut result: Value| {
+        if let Some(version) = &replaced {
+            result["replaced_version"] = version.clone();
+        }
+        result
+    };
     if device_only {
         // Never raise an existing main window for a device-only request.
         if let Ok(state) = preview::call("state", json!({}), session, 3) {
-            return Ok(json!({"session":session,"shown":false,"started":false,
-                "device_only":true,"state":state["native"]["status"]}));
+            return Ok(note(
+                json!({"session":session,"shown":false,"started":false,
+                "device_only":true,"state":state["native"]["status"]}),
+            ));
         }
     }
     match preview::call("show", show.clone(), session, 3) {
-        Ok(value) => return Ok(value),
+        Ok(value) => return Ok(note(value)),
         Err(e) if e.code != "preview_unavailable" => return Err(e),
         _ => (),
     }
@@ -214,6 +337,7 @@ pub fn open(a: &Value) -> Result {
         if let Ok(mut result) = ready {
             result["started"] = json!(true);
             result["pid"] = json!(child.id());
+            let result = note(result);
             thread::spawn(move || {
                 let _ = child.wait();
             });
@@ -234,6 +358,143 @@ pub fn open(a: &Value) -> Result {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::{Cell, RefCell};
+
+    /// A desktop on a session: its version, how it answers quit, and whether it is still there.
+    struct FakeDesktop {
+        version: Option<&'static str>,
+        knows_quit: bool,
+        unsaved: bool,
+        dirty: Vec<&'static str>,
+        quits_on_request: bool,
+        running: Cell<bool>,
+        calls: RefCell<Vec<String>>,
+        terminated: Cell<Option<u32>>,
+    }
+    impl FakeDesktop {
+        fn new(version: Option<&'static str>) -> Self {
+            FakeDesktop {
+                version,
+                knows_quit: true,
+                unsaved: false,
+                dirty: vec![],
+                quits_on_request: true,
+                running: Cell::new(true),
+                calls: RefCell::new(vec![]),
+                terminated: Cell::new(None),
+            }
+        }
+        fn methods(&self) -> Vec<String> {
+            self.calls.borrow().clone()
+        }
+    }
+    impl Desktop for FakeDesktop {
+        fn call(&self, method: &str, _params: Value, _timeout: u64) -> Result {
+            self.calls.borrow_mut().push(method.to_string());
+            if !self.running.get() {
+                return Err(Error::new("preview_unavailable", "gone"));
+            }
+            match method {
+                "state" => {
+                    let mut state = json!({"session":"main","workspace":{"dirty":self.dirty}});
+                    if let Some(version) = self.version {
+                        state["version"] = json!(version);
+                    }
+                    Ok(state)
+                }
+                "quit" if !self.knows_quit => Err(Error::new(
+                    "preview_error",
+                    "Unknown preview operation: quit",
+                )),
+                "quit" if self.unsaved => Ok(json!({"quitting":false,"unsaved":true})),
+                "quit" => {
+                    if self.quits_on_request {
+                        self.running.set(false);
+                    }
+                    Ok(json!({"quitting":true}))
+                }
+                _ => Ok(json!({})),
+            }
+        }
+        fn process(&self) -> Option<u32> {
+            Some(4242)
+        }
+        fn terminate(&self, pid: u32) {
+            self.terminated.set(Some(pid));
+            self.running.set(false);
+        }
+    }
+
+    const SOON: Duration = Duration::from_millis(300);
+
+    #[test]
+    fn the_installed_version_is_left_running() {
+        let desktop = FakeDesktop::new(Some("1.2.0"));
+        assert_eq!(retire(&desktop, "1.2.0", SOON).unwrap(), None);
+        assert_eq!(desktop.methods(), ["state"]);
+        assert!(desktop.running.get());
+    }
+
+    #[test]
+    fn no_desktop_means_nothing_to_replace() {
+        let desktop = FakeDesktop::new(Some("1.1.0"));
+        desktop.running.set(false);
+        assert_eq!(retire(&desktop, "1.2.0", SOON).unwrap(), None);
+    }
+
+    #[test]
+    fn an_older_desktop_is_asked_to_quit_and_its_version_reported() {
+        let desktop = FakeDesktop::new(Some("1.1.0"));
+        assert_eq!(
+            retire(&desktop, "1.2.0", SOON).unwrap(),
+            Some(json!("1.1.0"))
+        );
+        assert_eq!(desktop.methods(), ["state", "quit", "state"]);
+        assert_eq!(desktop.terminated.get(), None);
+    }
+
+    #[test]
+    fn a_desktop_with_unsaved_files_stays_and_says_why() {
+        let desktop = FakeDesktop {
+            unsaved: true,
+            ..FakeDesktop::new(Some("1.1.0"))
+        };
+        let error = retire(&desktop, "1.2.0", SOON).unwrap_err();
+        assert_eq!(error.code, "desktop_unsaved");
+        assert!(desktop.running.get());
+    }
+
+    #[test]
+    fn a_desktop_from_before_quit_is_ended_only_without_unsaved_files() {
+        let old = FakeDesktop {
+            knows_quit: false,
+            ..FakeDesktop::new(None)
+        };
+        assert_eq!(retire(&old, "1.2.0", SOON).unwrap(), Some(Value::Null));
+        assert_eq!(old.terminated.get(), Some(4242));
+        let busy = FakeDesktop {
+            knows_quit: false,
+            dirty: vec!["lib/main.dart"],
+            ..FakeDesktop::new(None)
+        };
+        assert_eq!(
+            retire(&busy, "1.2.0", SOON).unwrap_err().code,
+            "desktop_unsaved"
+        );
+        assert_eq!(busy.terminated.get(), None);
+    }
+
+    #[test]
+    fn a_desktop_that_does_not_quit_in_time_is_an_error() {
+        let stuck = FakeDesktop {
+            quits_on_request: false,
+            ..FakeDesktop::new(Some("1.1.0"))
+        };
+        assert_eq!(
+            retire(&stuck, "1.2.0", SOON).unwrap_err().code,
+            "desktop_stale"
+        );
+    }
 
     #[test]
     fn the_loaders_complaints_are_read_from_ldd() {
