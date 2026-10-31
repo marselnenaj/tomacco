@@ -257,10 +257,7 @@ fn next_steps(doctor: &Value, emulator: bool, virtual_ios: &Value) -> Vec<Value>
                 s(desktop, "path"),
                 missing.join(", ")
             ),
-            format!(
-                "The release desktop needs {}. Update the system (on Arch: sudo pacman -Syu), or build the desktop from a checkout on this system: {DOCS}/getting-started.md#debian-ubuntu-and-fedora. tomaccoctl itself works without it.",
-                crate::desktop::RELEASE_REQUIREMENTS
-            ),
+            desktop_remedy(desktop),
             true,
         );
     }
@@ -293,6 +290,39 @@ fn next_steps(doctor: &Value, emulator: bool, virtual_ios: &Value) -> Vec<Value>
 }
 
 const DOCS: &str = "https://github.com/marselnenaj/tomacco/blob/main/docs";
+
+/// How to make the desktop start: the command that installs the missing
+/// system libraries where doctor knows their packages, else what it needs.
+fn desktop_remedy(desktop: &Value) -> String {
+    let install = &desktop["install"];
+    let command = s(install, "command");
+    let unknown = strings(&install["unknown"]);
+    let versions = strings(&desktop["missing_versions"]);
+    if !command.is_empty() && unknown.is_empty() && versions.is_empty() {
+        return format!(
+            "Install the missing system libraries: {command}. tomaccoctl itself works without them."
+        );
+    }
+    let requires = desktop["release_requires"]
+        .as_str()
+        .unwrap_or(crate::desktop::RELEASE_REQUIREMENTS);
+    let mut how = String::new();
+    if !command.is_empty() {
+        how.push_str(&format!(
+            "Install the system libraries it can name: {command}. "
+        ));
+    }
+    if desktop["portable"] == true {
+        how.push_str(&format!(
+            "The portable desktop needs {requires}. tomaccoctl itself works without it."
+        ));
+    } else {
+        how.push_str(&format!(
+            "The release desktop needs {requires}. Update the system (on Arch: sudo pacman -Syu), install the portable package, or build the desktop from a checkout on this system: {DOCS}/getting-started.md#debian-ubuntu-and-fedora. tomaccoctl itself works without it."
+        ));
+    }
+    how
+}
 
 /// The virtual iOS device's setup chain, in order, as far as cheap checks of
 /// this machine can tell: each stage with `done` true, false, or null when
@@ -711,6 +741,12 @@ pub fn run(arguments: &[String]) -> Result<i32> {
         crate::update::current_version()
     );
     print_report(&report(&doctor));
+    if doctor["desktop"]["loadable"] == false {
+        println!(
+            "  missing  Desktop libraries: {}",
+            desktop_remedy(&doctor["desktop"])
+        );
+    }
     if virtual_device {
         println!("  ok       Virtual iOS device");
     } else {
@@ -910,6 +946,30 @@ mod tests {
         let how = steps[0]["how"].as_str().unwrap();
         assert!(
             how.contains("Qt 6.12") && how.contains("FFmpeg 9") && how.contains("glibc 2.39"),
+            "{how}"
+        );
+        // A portable desktop on Debian that lacks only libraries doctor knows: the command alone.
+        let mut portable = broken.clone();
+        portable["desktop"] = json!({"installed":true,"path":"/home/me/.local/lib/tomacco/tomacco","loadable":false,
+            "portable":true,"release_requires":crate::desktop::PORTABLE_REQUIREMENTS,
+            "missing_libraries":["libnss3.so","libxkbfile.so.1"],"missing_versions":[],
+            "install":{"manager":"apt","packages":["libnss3","libxkbfile1"],
+                "command":"sudo apt-get install libnss3 libxkbfile1","unknown":[]}});
+        let steps = next_steps(
+            &portable,
+            true,
+            &json!({"configured":true,"phase":"stopped","start_disk":{"enough":true}}),
+        );
+        assert_eq!(
+            steps[0]["how"],
+            "Install the missing system libraries: sudo apt-get install libnss3 libxkbfile1. tomaccoctl itself works without them."
+        );
+        // With a library no package is known for, the command and what the desktop needs.
+        portable["desktop"]["install"]["unknown"] = json!(["libmystery.so.7"]);
+        let how = desktop_remedy(&portable["desktop"]);
+        assert!(
+            how.starts_with("Install the system libraries it can name: sudo apt-get install libnss3 libxkbfile1. ")
+                && how.contains("glibc 2.35"),
             "{how}"
         );
         // Loadable, not installed, or not checked: nothing to do.

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Install the desktop, control plane and optional Omarchy panel for one user."""
 import argparse
+import contextlib
 import datetime
 import hashlib
 import json
@@ -237,18 +238,98 @@ def launcher_script(name, target, portable=False):
     return "#!/bin/sh\n" + MARKER + "\n" + env + "exec " + shlex.quote(str(target / name)) + ' "$@"\n'
 
 
+# Files are staged and published in batches of up to this many: the journal is
+# written and the disk flushed once a batch, not once a file.
+BATCH = 512
+# The prefix of a file staged beside its destination and not yet published.
+# One that a killed run left behind is deleted by the next run that stages there.
+STAGED = ".tomacco-staged-"
+
+
+def _syncfs():
+    try:
+        import ctypes
+        function = ctypes.CDLL(None, use_errno=True).syncfs
+        function.argtypes = [ctypes.c_int]
+        return function
+    except (OSError, AttributeError, ImportError):
+        return None
+
+
+SYNCFS = _syncfs()
+
+
+def file_digest(path):
+    with open(path, "rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def make_durable(paths):
+    """Gets the data and names of the files and directories in `paths` onto the
+    disk: one syncfs(2) for each file system they are on or, where that is not
+    available, one fsync for each path."""
+    if SYNCFS is not None:
+        devices = {}
+        for path in paths:
+            try:
+                devices.setdefault(os.stat(path).st_dev, path)
+            except FileNotFoundError:
+                continue
+        failed = False
+        for path in devices.values():
+            fd = os.open(path, os.O_RDONLY)
+            try:
+                failed = SYNCFS(fd) != 0
+            finally:
+                os.close(fd)
+            if failed:
+                break
+        if not failed:
+            return
+    for path in paths:
+        try:
+            fd = os.open(path, os.O_RDONLY)
+        except FileNotFoundError:
+            continue
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+
 class Installer:
+    """Changes files in a home through a write-ahead journal.
+
+    write() and remove() stage a change: the new content goes into a temporary
+    file beside the destination and the old content into this run's backup
+    directory. flush(), which runs every BATCH changes and from finish(),
+    records the batch in manifest.json, gets the staged files, the backups and
+    the manifest onto the disk, and only then publishes the batch by renaming
+    or unlinking. After an interruption each journalled file is either as it
+    was before or as installed, and --rollback accepts both."""
+
     def __init__(self, user):
         self.user = user.resolve()
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         self.backup = self.user / BACKUPS / stamp
         self.changed = []
         self.records = []
+        # The staged changes of the current batch, in order: (temporary file,
+        # or None for a removal; destination; backup copy or None).
+        self.pending = []
+        self.pending_paths = set()
+        self.swept = set()
+        self.private = False
+        # Whether changes wait for a full batch (see batch()) or are published one by one.
+        self.batched = False
+        self.journalled = 0
 
     def private_backup(self):
         """Creates this run's backup directory and the data directories above
         it owner-only: backups are copies of the user's configuration, and
         tomaccoctl keeps job records and credentials' paths beside them."""
+        if self.private:
+            return
         for directory in (self.user / USER_DATA, self.user / BACKUPS, self.backup):
             if not directory.is_dir():
                 directory.parent.mkdir(parents=True, exist_ok=True)
@@ -259,6 +340,7 @@ class Installer:
             if directory.stat().st_uid != os.geteuid():
                 raise SystemExit(f"Refusing a backup directory this user does not own: {directory}")
             os.chmod(directory, 0o700)
+        self.private = True
 
     def destination(self, relative):
         relative = Path(relative)
@@ -269,64 +351,131 @@ class Installer:
             raise SystemExit(f"Refusing to follow an installation symlink: {path}")
         return path
 
+    def sweep(self, directory):
+        """Deletes the staged files an interrupted run left in `directory`,
+        once a run: they were never published, so nothing refers to them."""
+        if directory in self.swept:
+            return
+        self.swept.add(directory)
+        for path in directory.glob(STAGED + "*"):
+            if path.is_file() and not path.is_symlink():
+                path.unlink()
+
+    def save(self, relative, path):
+        """Keeps the current content of `path` in this run's backup. A file is
+        only ever replaced by renaming over it or unlinked, never changed in
+        place, so a hard link holds the old content; a copy where linking fails."""
+        saved = self.backup / relative
+        self.private_backup()
+        saved.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.link(path, saved, follow_symlinks=False)
+        except OSError:
+            shutil.copy2(path, saved)
+        return saved
+
+    def stage(self, relative, path, temp, saved, after, before):
+        self.records.append({"path": str(relative), "before": before, "after": after})
+        self.pending.append((temp, path, saved))
+        self.pending_paths.add(path)
+        if len(self.pending) >= (BATCH if self.batched else 1):
+            self.flush()
+
     def write(self, relative, data, mode=0o644):
         path = self.destination(relative)
+        if path in self.pending_paths:
+            self.flush()
         path.parent.mkdir(parents=True, exist_ok=True)
         data = data.encode() if isinstance(data, str) else data
         if path.is_symlink():
             raise SystemExit(f"Refusing to replace symlink: {path}")
-        old = None
+        old = saved = None
         if path.exists():
-            if path.read_bytes() == data and path.stat().st_mode & 0o777 == mode:
+            current = path.read_bytes()
+            current_mode = path.stat().st_mode & 0o777
+            if current == data and current_mode == mode:
                 return
-            saved = self.backup / relative
-            self.private_backup()
-            saved.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, saved)
-            old = {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "mode": path.stat().st_mode & 0o777}
-        fd, temp = tempfile.mkstemp(prefix=".tomacco-", dir=path.parent)
+            saved = self.save(relative, path)
+            old = {"sha256": hashlib.sha256(current).hexdigest(), "mode": current_mode}
+        self.sweep(path.parent)
+        fd, temp = tempfile.mkstemp(prefix=STAGED, dir=path.parent)
         try:
             with os.fdopen(fd, "wb") as out:
                 out.write(data)
-                out.flush()
-                os.fsync(out.fileno())
             os.chmod(temp, mode)
-            # Write-ahead journal: an interrupted installation can be restored.
-            self.records.append({"path": str(relative), "before": old,
-                                 "after": {"sha256": hashlib.sha256(data).hexdigest(), "mode": mode}})
-            self.finish()
-            os.replace(temp, path)
-            self.changed.append(str(path))
-        finally:
-            if os.path.exists(temp):
-                os.unlink(temp)
-
-    def finish(self):
-        if self.records:
-            self.private_backup()
-            manifest = self.backup / 'manifest.json'
-            fd, temporary = tempfile.mkstemp(prefix='.manifest-', dir=self.backup)
-            try:
-                with os.fdopen(fd, 'w') as output:
-                    json.dump({"format": 1, "created": self.backup.name,
-                               "version": VERSION, "files": self.records}, output, indent=2)
-                    output.write('\n'); output.flush(); os.fsync(output.fileno())
-                os.replace(temporary, manifest)
-            finally:
-                if os.path.exists(temporary): os.unlink(temporary)
-        return self.backup if self.records else None
+        except BaseException:
+            os.unlink(temp)
+            raise
+        self.stage(relative, path, temp, saved, {"sha256": hashlib.sha256(data).hexdigest(), "mode": mode}, old)
 
     def remove(self, relative):
         target = self.destination(relative)
+        if target in self.pending_paths:
+            self.flush()
         data = target.read_bytes()
         previous = {"sha256": hashlib.sha256(data).hexdigest(), "mode": target.stat().st_mode & 0o777}
-        saved = self.backup / relative
+        saved = self.save(relative, target)
+        self.stage(relative, target, None, saved, None, previous)
+
+    def journal(self):
+        """Writes manifest.json with every change recorded so far; the caller makes it durable."""
         self.private_backup()
-        saved.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(target, saved)
-        self.records.append({"path": str(relative), "before": previous, "after": None})
-        self.finish()
-        target.unlink(); self.changed.append(str(target))
+        self.journalled = len(self.records)
+        manifest = self.backup / 'manifest.json'
+        fd, temporary = tempfile.mkstemp(prefix='.manifest-', dir=self.backup)
+        try:
+            with os.fdopen(fd, 'w') as output:
+                json.dump({"format": 1, "created": self.backup.name,
+                           "version": VERSION, "files": self.records}, output, indent=2)
+                output.write('\n')
+            os.replace(temporary, manifest)
+        finally:
+            if os.path.exists(temporary): os.unlink(temporary)
+        return manifest
+
+    def flush(self):
+        """Journals the staged batch, makes it and its backups durable, then publishes it."""
+        if not self.pending:
+            return
+        pending, self.pending, self.pending_paths = self.pending, [], set()
+        try:
+            manifest = self.journal()
+            # Write-ahead: the new content, the old content and the journal
+            # are on the disk before any destination changes.
+            make_durable([manifest, self.backup, *(temp for temp, _, _ in pending if temp),
+                          *(saved for _, _, saved in pending if saved)])
+            directories = {}
+            for index, (temp, path, _) in enumerate(pending):
+                if temp:
+                    os.replace(temp, path)
+                else:
+                    path.unlink()
+                pending[index] = (None, path, None)
+                directories[path.parent] = None
+                self.changed.append(str(path))
+            make_durable(list(directories))
+        finally:
+            for temp, _, _ in pending:
+                if temp and os.path.exists(temp):
+                    os.unlink(temp)
+
+    @contextlib.contextmanager
+    def batch(self):
+        """Stages changes in batches of BATCH until the block ends, which
+        publishes the rest. Inside it a change is visible only after the next
+        flush(); outside it each change is published at once."""
+        self.batched = True
+        try:
+            yield self
+            self.flush()
+        finally:
+            self.batched = False
+
+    def finish(self):
+        self.flush()
+        if self.records and self.journalled != len(self.records):
+            make_durable([self.journal(), self.backup])
+        return self.backup if self.records else None
 
     def rollback(self, identifier):
         if not identifier or Path(identifier).name != identifier or identifier in ('.', '..'):
@@ -356,16 +505,21 @@ class Installer:
                 saved = source / relative
                 if saved.is_symlink() or not saved.resolve().is_relative_to(source.resolve()) or not saved.is_file():
                     raise SystemExit(f"Missing backup file: {relative}")
-                content = saved.read_bytes()
-                if hashlib.sha256(content).hexdigest() != previous['sha256']:
+                content = saved
+                if file_digest(saved) != previous['sha256']:
                     raise SystemExit(f"Backup checksum mismatch: {relative}")
             changes.append((relative, target, previous, content))
-        for relative, target, previous, content in changes:
-            if previous:
-                self.write(relative, content, previous['mode'])
-            else:
-                # Only a file recorded as newly created by this installation is removed.
-                self.remove(relative)
+        # The backups are read again one at a time, not held in memory together.
+        with self.batch():
+            for relative, target, previous, saved in changes:
+                if previous:
+                    content = saved.read_bytes()
+                    if hashlib.sha256(content).hexdigest() != previous['sha256']:
+                        raise SystemExit(f"Backup checksum mismatch: {relative}")
+                    self.write(relative, content, previous['mode'])
+                else:
+                    # Only a file recorded as newly created by this installation is removed.
+                    self.remove(relative)
         self.finish()
         return {"restored": identifier, "changed": len(self.changed), "backups": str(self.backup)}
 
@@ -391,23 +545,30 @@ class Installer:
                 keep.add(relative)
             self.write(app / "qt.conf", QT_CONF)
             keep.add(app / "qt.conf")
-        for recorded, entry in sorted(self.latest().items()):
+        self.flush()
+        for recorded, entries in sorted(self.history().items()):
             relative = Path(recorded)
-            if relative in keep or entry.get("after") is None:
+            if relative in keep:
                 continue
             if relative != app / "qt.conf" and not relative.is_relative_to(app / "runtime"):
                 continue
-            target = self.user / relative
-            if target.is_file() and not target.is_symlink() and \
-                    hashlib.sha256(target.read_bytes()).hexdigest() == entry["after"]["sha256"]:
+            if self.as_installed(entries, self.user / relative):
                 self.remove(relative)
-        root = self.user / app / "runtime"
-        if root.is_dir() and not root.is_symlink():
-            for path in sorted((p for p in root.rglob("*") if p.is_dir() and not p.is_symlink()), key=lambda p: len(p.parts), reverse=True):
-                if not any(path.iterdir()):
-                    path.rmdir()
-            if not any(root.iterdir()):
-                root.rmdir()
+        self.prune(app / "runtime")
+
+    def prune(self, directory):
+        """Publishes what is staged, then removes the empty directories below
+        `directory` and it, and the staged files an interrupted run left there."""
+        self.flush()
+        root = self.user / directory
+        if not root.is_dir() or root.is_symlink():
+            return
+        for path in sorted((p for p in [root, *root.rglob("*")] if p.is_dir() and not p.is_symlink()), key=lambda p: len(p.parts), reverse=True):
+            for staged in path.glob(STAGED + "*"):
+                if staged.is_file() and not staged.is_symlink():
+                    staged.unlink()
+            if not any(path.iterdir()):
+                path.rmdir()
 
     def widget_placed(self):
         """Whether the bar names the widget."""
@@ -467,17 +628,38 @@ class Installer:
         for path in sorted(stale):
             if path.is_file() and not path.is_symlink() and not path.parent.is_symlink():
                 self.remove(path.relative_to(self.user))
+                self.flush()
                 if path.parent != installed and not any(path.parent.iterdir()):
                     path.parent.rmdir()
         self.write(Path(".config/omarchy/shell.json"), json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
-    def latest(self):
-        """The newest journal entry of every file the installations recorded."""
-        latest = {}
+    def history(self):
+        """Every file the installations recorded, with its journal entries, oldest first."""
+        history = {}
         for manifest in self.manifests():
             for entry in manifest["files"]:
-                latest[entry["path"]] = entry
-        return latest
+                history.setdefault(entry["path"], []).append(entry)
+        return history
+
+    @staticmethod
+    def as_installed(entries, target):
+        """Whether `target` is exactly as an installation left it, by its
+        journal entries. The newest entry may never have been published, when
+        its run was interrupted: then the file is as the entry found it."""
+        if not target.is_file() or target.is_symlink():
+            return False
+        digest = file_digest(target)
+        newest = entries[-1]
+        if newest.get("after") is not None:
+            if newest["after"]["sha256"] == digest:
+                return True
+            before = newest.get("before")
+            # An interrupted update: the file is what the installation before wrote.
+            return bool(before and before["sha256"] == digest and len(entries) > 1
+                        and (entries[-2].get("after") or {}).get("sha256") == digest)
+        # A removal is journalled only for a file as installed; an interrupted
+        # one left that file in place.
+        return bool(newest.get("before") and newest["before"]["sha256"] == digest)
 
     def manifests(self):
         """Every journalled installation, rollback and uninstallation, oldest first."""
@@ -502,38 +684,32 @@ class Installer:
         these backups) is never touched, and the uninstallation is itself
         journalled, so --rollback with its ID reinstalls everything it removed.
         """
-        latest = self.latest()
+        history = self.history()
         kept = []
         # The user's own configuration first, so it never names a removed file.
         self.unedit_window_rule()
         self.unedit_omarchy()
-        for relative, entry in sorted(latest.items()):
-            relative = Path(relative)
-            if relative.is_relative_to(USER_DATA) or not any(relative == owned or relative.is_relative_to(owned) for owned in OWNED):
-                continue
-            if (self.user / relative).is_symlink():
-                kept.append(str(self.user / relative))
-                continue
-            try:
-                target = self.destination(relative)
-            except SystemExit:
-                kept.append(str(self.user / relative))
-                continue
-            if not target.is_file():
-                continue
-            current = {"sha256": hashlib.sha256(target.read_bytes()).hexdigest(), "mode": target.stat().st_mode & 0o777}
-            if entry.get("after") is None or current["sha256"] != entry["after"]["sha256"]:
-                kept.append(str(target))
-                continue
-            self.remove(relative)
+        with self.batch():
+            for relative, entries in sorted(history.items()):
+                relative = Path(relative)
+                if relative.is_relative_to(USER_DATA) or not any(relative == owned or relative.is_relative_to(owned) for owned in OWNED):
+                    continue
+                if (self.user / relative).is_symlink():
+                    kept.append(str(self.user / relative))
+                    continue
+                try:
+                    target = self.destination(relative)
+                except SystemExit:
+                    kept.append(str(self.user / relative))
+                    continue
+                if not target.is_file():
+                    continue
+                if not self.as_installed(entries, target):
+                    kept.append(str(target))
+                    continue
+                self.remove(relative)
         for directory in OWNED_DIRECTORIES:
-            root = self.user / directory
-            if root.is_dir() and not root.is_symlink():
-                for path in sorted((p for p in root.rglob("*") if p.is_dir() and not p.is_symlink()), key=lambda p: len(p.parts), reverse=True):
-                    if not any(path.iterdir()):
-                        path.rmdir()
-                if not any(root.iterdir()):
-                    root.rmdir()
+            self.prune(directory)
         self.finish()
         return {"removed": len(self.changed), "kept": kept,
                 "backups": str(self.backup) if self.records else None,
@@ -623,33 +799,36 @@ def main():
         parser.error("Build the Rust control plane first, or pass --cli pointing to its native ELF binary.")
     runtime = ROOT / RUNTIME if PACKAGED and (ROOT / RUNTIME).is_dir() else None
     installer = Installer(args.user_home)
-    installer.launchers(portable=runtime is not None)
-    app = Path(".local/lib/tomacco")
-    installer.write(app / "tomacco", args.binary.read_bytes(), 0o755)
-    installer.write(app / "tomaccoctl", cli.read_bytes(), 0o755)
-    installer.runtime(runtime)
-    for source in sorted(source_path("tools").glob("*.py")):
-        installer.write(app / "tools" / source.name, source.read_bytes(), 0o755)
-    for source in sorted(source_path("examples/ios-restore-native").iterdir()):
-        if source.is_file():
-            installer.write(app / "examples/ios-restore-native" / source.name, source.read_bytes())
-    for name, data in integration_files().items():
-        installer.write(app / INTEGRATION / name, data)
-    for source in sorted(source_path("assets").glob("*.json")):
-        installer.write(app / "assets" / source.name, source.read_bytes())
-    installer.write(app / "VERSION", VERSION + "\n")
-    installer.write(app / "install.py", Path(__file__).read_bytes(), 0o755)
-    # The guides and legal documents; the About dialog opens LICENSE,
-    # THIRD_PARTY_NOTICES.md and legal.md from here.
-    doc = Path(".local/share/doc/tomacco")
-    for name, data in documents().items():
-        installer.write(doc / name, data)
-    installer.write(MANUAL_PAGE, source_path("docs/tomaccoctl.1").read_bytes())
-    installer.write(Path(".local/share/icons/hicolor/scalable/apps") / (APP_ID + ".svg"), source_path("assets/icon.svg").read_bytes())
-    launcher = installer.user / ".local/bin/tomacco"
-    installer.write(Path(".local/share/applications") / (APP_ID + ".desktop"), desktop_entry(str(launcher)))
-    # The software-center listing; it names the menu entry above.
-    installer.write(Path(".local/share/metainfo") / (APP_ID + ".metainfo.xml"), source_path(f"assets/{APP_ID}.metainfo.xml").read_bytes())
+    # The program's own files in batches; the integrations below edit the
+    # user's configuration one file at a time, in order.
+    with installer.batch():
+        installer.launchers(portable=runtime is not None)
+        app = Path(".local/lib/tomacco")
+        installer.write(app / "tomacco", args.binary.read_bytes(), 0o755)
+        installer.write(app / "tomaccoctl", cli.read_bytes(), 0o755)
+        installer.runtime(runtime)
+        for source in sorted(source_path("tools").glob("*.py")):
+            installer.write(app / "tools" / source.name, source.read_bytes(), 0o755)
+        for source in sorted(source_path("examples/ios-restore-native").iterdir()):
+            if source.is_file():
+                installer.write(app / "examples/ios-restore-native" / source.name, source.read_bytes())
+        for name, data in integration_files().items():
+            installer.write(app / INTEGRATION / name, data)
+        for source in sorted(source_path("assets").glob("*.json")):
+            installer.write(app / "assets" / source.name, source.read_bytes())
+        installer.write(app / "VERSION", VERSION + "\n")
+        installer.write(app / "install.py", Path(__file__).read_bytes(), 0o755)
+        # The guides and legal documents; the About dialog opens LICENSE,
+        # THIRD_PARTY_NOTICES.md and legal.md from here.
+        doc = Path(".local/share/doc/tomacco")
+        for name, data in documents().items():
+            installer.write(doc / name, data)
+        installer.write(MANUAL_PAGE, source_path("docs/tomaccoctl.1").read_bytes())
+        installer.write(Path(".local/share/icons/hicolor/scalable/apps") / (APP_ID + ".svg"), source_path("assets/icon.svg").read_bytes())
+        launcher = installer.user / ".local/bin/tomacco"
+        installer.write(Path(".local/share/applications") / (APP_ID + ".desktop"), desktop_entry(str(launcher)))
+        # The software-center listing; it names the menu entry above.
+        installer.write(Path(".local/share/metainfo") / (APP_ID + ".metainfo.xml"), source_path(f"assets/{APP_ID}.metainfo.xml").read_bytes())
     if args.omarchy:
         installer.omarchy()
     elif args.update and installer.widget_placed():

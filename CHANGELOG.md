@@ -58,11 +58,29 @@ operations and their JSON results.
 - **Update channel.** `updates.channel` in `settings.configure` is `stable` (the default) or `prerelease`;
   on `prerelease`, `update.check` and `update.apply` take the newest release including GitHub
   pre-releases. The **Updates** settings offer the choice, and the settings export carries it.
+- `make_release.py --with-qt-sources` releases the source tarballs of the Qt modules the portable package bundles, pinned
+  by URL and SHA-256 in `packaging/portable/qt-sources.txt`; Qt WebEngine's comes from Qt's online repository, as it is not
+  among the 6.12.0 submodules.
+- `doctor` names the `apt-get` or `dnf` command that installs the system libraries the desktop is missing, on Debian, Ubuntu
+  (with the t64 package names of 24.04), Fedora and their derivatives, as `desktop.install`; the `desktop` next step and
+  `tomaccoctl setup` show it. For the portable package it also checks the X11 and Wayland plugins and WebEngine's helper,
+  and `desktop.portable` says which package it is. Run in debian:12, ubuntu:22.04, ubuntu:24.04 and fedora:44 containers,
+  the one command made the 1.1.0 portable desktop loadable.
 
 ### Changed
 
 - The README and the documentation index describe 1.1.0: the portable package, the five desktop languages, what
   is new, and the new tutorial, agent patterns and reference.
+- docs/building.md says why there is no Flatpak or AppImage: Tomacco runs adb, the emulator, Gradle, xtool, usbmuxd and QEMU
+  on the host, and agents call `tomaccoctl` by a fixed path.
+- `install.py` journals and flushes once per batch of up to 512 files instead of once per file: the portable package
+  (2184 files) installs in 0.7 s instead of 15 s on the development host, and uninstalls and rolls back as fast. Backups are
+  hard links where possible. An uninstall killed halfway now finishes when run again; before, the files whose removal was
+  journalled but not done were kept as if the user had changed them.
+- `make_release.py` builds with `SOURCE_DATE_EPOCH` set to the release commit's time and the package's entries get UID and
+  GID 0, so two builds of a commit in the same directory give the same package. Before, the tarball's time stamps and the
+  time Qt's `rcc` stored for the translations differed per build.
+- The Arch PKGBUILD and .SRCINFO build 1.1.0 from its source tarball.
 
 ### Fixed
 

@@ -167,6 +167,12 @@ set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_FILE_NAME "tomacco-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 set(CPACK_PACKAGE_CHECKSUM SHA256)
+# The same build gives the same package: entries with UID and GID 0 (CMake 4.3
+# and newer; older versions ignore these; the owner's name is still recorded),
+# and with SOURCE_DATE_EPOCH set, as make_release.py sets it, CPack's time
+# stamps and rcc's are that time.
+set(CPACK_ARCHIVE_UID 0)
+set(CPACK_ARCHIVE_GID 0)
 include(CPack)
 include(CTest)
 if(BUILD_TESTING)

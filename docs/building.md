@@ -104,7 +104,8 @@ makepkg
 ```
 
 For 1.0.0, `makepkg` built the package in about a minute and a half on the development host, and the packaged desktop passed
-`--smoke-test` offscreen. Installing it with pacman was not part of that check.
+`--smoke-test` offscreen. For 1.1.0, `makepkg -d` built it in 1 min 54 s, and the packaged `SOURCE.md` names the tag's commit.
+Installing it with pacman was not part of either check.
 
 **Portable package.** The regular package links the system's Qt and FFmpeg, so it runs only where those match the build host's
 (Arch). `tools/build_portable.py` builds `tomacco-VERSION-Linux-x86_64-portable.tar.gz`, which bundles them, in a container:
@@ -131,8 +132,26 @@ installed launchers and uninstalls. `install.py` copies `lib/tomacco/runtime` to
 the next release's portable package.
 
 For the 1.0.0 sources the package was about 176 MB (436 MB unpacked, 2182 files), and all checks passed in all four containers;
-`install.py` took 26 to 100 seconds there, most of it journalling each file. Nobody has run it on a desktop of those
-distributions yet.
+`install.py` took 26 to 100 seconds there, most of it journalling each file. Since then `install.py` journals and flushes once per
+batch of files: installing the 1.1.0 portable package (2184 files) into a scratch home took 0.7 s instead of 15 s on the development
+host (ext4 on NVMe), and 4.2 to 13 s instead of 27 to 84 s in a `debian:12` container on the same host, with the host busy. Nobody has
+run it on a desktop of those distributions yet.
+
+**Why there is no Flatpak or AppImage.** Both were considered for the distributions the regular package does not fit; the
+portable package serves them instead. Tomacco's work happens in programs on the host: `tomaccoctl` runs `adb`, the Android emulator
+(which needs `/dev/kvm`), Gradle and a JDK, `xtool` and Swift, `usbmuxd` for iPhones, and QEMU-based engines it builds into the
+checkout's `.tooling`. Coding agents run `tomaccoctl` from their own processes, by a path `tomaccoctl setup` writes into their
+settings files in the home directory.
+
+- *Flatpak.* Inside the sandbox none of those programs exists. Reaching them takes `flatpak-spawn --host` for every command, which needs
+  the `org.freedesktop.Flatpak` bus name and removes the sandbox anyway, plus device access for KVM and USB and the whole home for
+  projects and agent settings. Agents would also have to call `flatpak run io.github.marselnenaj.tomacco` instead of `tomaccoctl`,
+  and Flatpak's own updates would replace the signed updates `tomaccoctl update` makes.
+- *AppImage.* It has no sandbox, so the host tools work, but it is one file mounted at a new path on every start: the path agents keep
+  for `tomaccoctl` would point into a mount that is gone, so the programs would still have to be copied out. It also needs FUSE on
+  the host. Copying them out with a menu entry, uninstall and rollback is what the portable package and `install.py` already do.
+
+So there is no prototype of either. These reasons come from what Tomacco runs; neither format was built or tried.
 
 `install.py` and `cmake --install` install the same files, and the same documents into `share/doc/tomacco`: the guides and legal texts, in one flat directory, with
 links adjusted and `SOURCE.md` naming the version and commit. The list is `DOCUMENTS` in `install.py`. Links to anything else point at the release's copy on GitHub.
@@ -176,7 +195,11 @@ updates and removes the Arch package.
 | `--uninstall` | Removes what the installs wrote, while each file is still as installed; files you changed are kept and listed |
 | `--version` | Prints the version it installs |
 
-Every replaced file is backed up under `~/.local/share/tomacco/install-backups/<timestamp>/`, and each completed write is journalled. An uninstall
+Every replaced file is backed up under `~/.local/share/tomacco/install-backups/<timestamp>/`, and every change is journalled before it is made.
+`install.py` stages up to 512 files beside their destinations, writes the journal, gets the staged files, the backups and the journal onto
+the disk with one `syncfs` (one `fsync` per file where that is missing), and only then renames them into place. After a crash or a kill,
+each file is either as before or as installed: `--rollback ID` accepts both, `--uninstall` finishes an interrupted uninstall, and the next
+run deletes the `.tomacco-staged-*` files a killed run left. An uninstall
 undoes its edits to `hyprland.lua` and `shell.json`, never touches `~/.local/share/tomacco`, and is itself journalled, so `--rollback ID` brings the
 installation back. An uninstall also leaves your preferences (`~/.config/marselnenaj/Tomacco.conf`) and caches (`~/.cache/marselnenaj/Tomacco`); delete those and
 `~/.local/share/tomacco` by hand to remove every trace.
@@ -212,6 +235,19 @@ Releases are made locally, not by a workflow. From a clean checkout of the tag, 
 [portable package](#packaging) (built and verified with `tools/build_portable.py`; `--no-portable` leaves it out) and the source tarball with their
 checksums, signs both packages and creates a draft release whose body comes from `docs/RELEASE_NOTES.md`, with relative links pointing into the tag. It refuses a dirty tree, a checkout that is not
 the tag, and versions that disagree. With `--dry-run` it only prints what it would do.
+
+The builds run with `SOURCE_DATE_EPOCH` set to the release commit's time, which CPack and Qt's `rcc` use for their time stamps.
+Two builds of the same commit from fresh clones in the same directory, by the same user, gave the same package digest; without it,
+the tarball's times and the time `rcc` stored for the generated translations differed. The package still records the builder's
+user name, and the binaries hold the paths they were built in, so builds in other directories or by other users differ. Two runs of
+`tools/build_source_release.py` on the v1.1.0 tag gave the published source tarball's digest both times.
+
+`--with-qt-sources` also puts the source tarballs of the Qt modules the portable package bundles into the release, each with its
+`.sha256`, as the LGPL source offer for them. `packaging/portable/qt-sources.txt` pins their URLs and SHA-256 digests: qtbase,
+qtdeclarative, qtsvg, qtwayland, qttranslations, qtpositioning and qtwebchannel from Qt's 6.12.0 submodules. Qt WebEngine is not among
+those submodules; Qt ships it as an extension of its online installer, and the source it publishes beside the bundled build
+(`6.12.0-0-202607081027`) is a 583 MB tarball named `qtwebengine-everywhere-src-6.12.0-beta2.tar.xz`. That tarball does not record
+its commit, so it could not be matched against the commit the binary's SBOM names. Together the tarballs are about 680 MB.
 
 **Set by hand on GitHub.** The repository's social preview is `assets/readme/social-preview.png` (1280x640, the banner on a 2:1 canvas). Upload it under Settings, General,
 Social preview.

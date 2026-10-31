@@ -1,0 +1,19 @@
+# The source of each Qt module the portable package bundles (qt-archives.txt),
+# which `tools/make_release.py --with-qt-sources` mirrors into a release.
+# Each line: SHA-256, then the URL. The digests were computed from downloads
+# that matched the MD5 sums Qt publishes beside the submodules and the SHA-1
+# beside the WebEngine source.
+a951bd163c7b80fc6b8c88d7668fb56abf91c152373e13c10666763238131307  https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qtbase-everywhere-src-6.12.0.tar.xz
+311f3a2603e1973bb59baef9dfa740a376de713157d4782ee043681e889c9260  https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qtdeclarative-everywhere-src-6.12.0.tar.xz
+e4ab39534ec97987b1b9b60ef7f4d3253d5912a69f8c713a01753174a4029331  https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qtsvg-everywhere-src-6.12.0.tar.xz
+ae14d9bcf1bb3c300a3ab2e6a53f50284e5c6c966a4ac4cc5aedcb1bc74e4d02  https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qtwayland-everywhere-src-6.12.0.tar.xz
+85929c0c30d6f273f23bd879bb69803ea17b010ab73cab2f8abf95357f6f6bbb  https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qttranslations-everywhere-src-6.12.0.tar.xz
+b060d410fac7413b05a0e7938bbf3325f7ad08d7df14af3956270f0696e76763  https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qtpositioning-everywhere-src-6.12.0.tar.xz
+9afdfb64855b33c1cc16a4fdce69a556876f0d5b9df79d88de7306ffa2dca327  https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qtwebchannel-everywhere-src-6.12.0.tar.xz
+# Qt WebEngine is not among the 6.12.0 submodules: Qt ships it as an extension
+# of its online installer, with the source of each build beside it. This is
+# the source of the build the portable package bundles (6.12.0-0-202607081027).
+# Its file name says 6.12.0-beta2 and its .cmake.conf a pre-release segment
+# "alpha1"; its .tag is not filled in, so it does not name the commit the
+# binary's SBOM records (qtwebengine 9a169a5eeded781fd7690fd4edd330be0302efaa).
+7ea604d7b19927c7815f8fa97e55d2465626f2382290c0fdc8a2bf835a6e043d  https://download.qt.io/online/qtsdkrepository/all_os/extensions/qtwebengine/6120/src_doc_examples/extensions.qtwebengine.6120.src/6.12.0-0-202607081027qtwebengine-everywhere-src-6.12.0-beta2.tar.xz
