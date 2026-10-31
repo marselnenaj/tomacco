@@ -1028,7 +1028,7 @@
   {
     "name": "device.logs",
     "title": "Device logs",
-    "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag.",
+    "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1076,7 +1076,7 @@
   {
     "name": "android.input",
     "title": "Tap / swipe / input",
-    "description": "Control real Android UI through adb, using device pixel coordinates.",
+    "description": "Control real Android UI through adb, using device pixel coordinates. ASCII text is typed; other text is pasted through the device clipboard with the configured scrcpy 4.1 server on Android 7 and newer.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1404,6 +1404,61 @@
     }
   },
   {
+    "name": "android.settings",
+    "title": "Device settings for tests",
+    "description": "Read or set what changes an app's look and motion in UI tests and screenshots: dark mode, font scale, animations, airplane mode and one app's language. Arguments left out stay as they are; the result reads every setting back and reports a value Android did not apply as setting_not_applied.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "dark_mode": {
+          "type": "string",
+          "description": "System dark theme; auto follows the device schedule",
+          "enum": [
+            "on",
+            "off",
+            "auto"
+          ]
+        },
+        "font_scale": {
+          "type": "number",
+          "description": "System font size; 1 is the default",
+          "minimum": 0.5,
+          "maximum": 2
+        },
+        "animations": {
+          "type": "boolean",
+          "description": "false sets the window, transition and animator scales to 0; true sets them to 1"
+        },
+        "airplane_mode": {
+          "type": "boolean",
+          "description": "Android 11 and newer"
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "App whose language app_locale sets and the result reads"
+        },
+        "app_locale": {
+          "type": "string",
+          "description": "Language tags separated by commas, such as de-DE or fr,en; empty follows the device language again. Android 13 and newer."
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": true,
+      "idempotentHint": true
+    }
+  },
+  {
     "name": "android.connect",
     "title": "Android over Wi-Fi",
     "description": "Pair or connect adb to a device address. Pairing codes are not persisted.",
@@ -1702,7 +1757,7 @@
   {
     "name": "android.emulator",
     "title": "Control emulator",
-    "description": "Stop an emulator, save/load a snapshot or set GPS location.",
+    "description": "Stop an emulator; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1718,12 +1773,16 @@
             "stop",
             "snapshot-save",
             "snapshot-load",
-            "location"
+            "snapshot-list",
+            "snapshot-delete",
+            "location",
+            "battery",
+            "network"
           ]
         },
         "name": {
           "type": "string",
-          "description": "",
+          "description": "Snapshot name for snapshot-save, snapshot-load and snapshot-delete",
           "default": "default"
         },
         "longitude": {
@@ -1737,6 +1796,46 @@
           "minimum": -90,
           "maximum": 90,
           "default": 0
+        },
+        "battery_level": {
+          "type": "integer",
+          "description": "Battery charge in percent, for battery",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 100
+        },
+        "charging": {
+          "type": "boolean",
+          "description": "Whether the charger is connected, for battery",
+          "default": true
+        },
+        "network_speed": {
+          "type": "string",
+          "description": "Network speed preset, for network; full means no limit",
+          "enum": [
+            "gsm",
+            "hscsd",
+            "gprs",
+            "edge",
+            "umts",
+            "hsdpa",
+            "lte",
+            "evdo",
+            "5g",
+            "full"
+          ],
+          "default": "full"
+        },
+        "network_delay": {
+          "type": "string",
+          "description": "Network latency, for network: gprs 150-550 ms, edge 80-400 ms, umts 35-200 ms, none adds no latency",
+          "enum": [
+            "gprs",
+            "edge",
+            "umts",
+            "none"
+          ],
+          "default": "none"
         }
       },
       "required": [

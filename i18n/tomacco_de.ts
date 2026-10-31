@@ -3145,6 +3145,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Geräte-Screenshot</translation>
     </message>
     <message>
+        <source>Device settings for tests</source>
+        <translation>Geräteeinstellungen für Tests</translation>
+    </message>
+    <message>
         <source>Discard Google Play draft</source>
         <translation>Google Play Entwurf verwerfen</translation>
     </message>

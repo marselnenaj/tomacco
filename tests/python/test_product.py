@@ -718,6 +718,180 @@ for line in sys.stdin:
             with self.assertRaises(StudioError): dispatch(operation, args)
 
 
+class AndroidControlTests(Isolated):
+    """Android device control through a fake adb that records each call and
+    answers from adb-replies.json: the first key found in the command wins."""
+    ADB = ("import json,os,sys,time\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+           "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
+           "replies=json.loads((root/'adb-replies.json').read_text()) if (root/'adb-replies.json').exists() else {}\n"
+           "command=' '.join(a[2:])\n"
+           "for key,reply in replies.items():\n"
+           "    if key in command: print(reply,end=''); sys.exit(0)\n"
+           "if 'app_process' in command: time.sleep(30)\n")
+
+    def setUp(self):
+        super().setUp()
+        self.tool("adb", self.ADB)
+
+    def replies(self, **values):
+        (self.root / "adb-replies.json").write_text(json.dumps(values))
+
+    def calls(self):
+        path = self.root / "adb-calls.jsonl"
+        return [json.loads(line)[2:] for line in path.read_text().splitlines()] if path.exists() else []
+
+    def shell_calls(self):
+        return [shlex.split(call[1]) for call in self.calls() if call[:1] == ["shell"]]
+
+    def test_unicode_text_is_pasted_through_a_control_only_scrcpy_server(self):
+        self.tool("scrcpy")
+        (self.root / "scrcpy-server").write_bytes(b"jar")
+        listener = socket.create_server(("127.0.0.1", 0))
+        self.addCleanup(listener.close)
+        received = {}
+
+        def serve():
+            connection, _ = listener.accept()
+            with connection:
+                connection.sendall(b"\0")
+                header = b""
+                while len(header) < 14: header += connection.recv(14 - len(header))
+                length = int.from_bytes(header[10:14], "big")
+                text = b""
+                while len(text) < length: text += connection.recv(length - len(text))
+                received.update(kind=header[0], paste=header[9], text=text.decode())
+                connection.sendall(b"\1" + header[1:9])
+                connection.recv(1)
+        server = threading.Thread(target=serve, daemon=True)
+        server.start()
+        self.replies(**{"forward tcp:0": f"{listener.getsockname()[1]}\n", "ro.build.version.sdk": "36\n"})
+        value = dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "Grüße 👋 %s"})
+        server.join(5)
+        self.assertEqual(value["method"], "clipboard")
+        self.assertEqual(received, {"kind": 9, "paste": 1, "text": "Grüße 👋 %s"})
+        calls = self.calls()
+        push = next(call for call in calls if call[:1] == ["push"])
+        self.assertEqual(push[1], str((self.root / "scrcpy-server").resolve()))
+        server_args = next(args for args in self.shell_calls() if "app_process" in args)
+        for option in ("video=false", "audio=false", "control=true", "tunnel_forward=true"):
+            self.assertIn(option, server_args)
+        self.assertTrue(any(call[:2] == ["forward", "--remove"] for call in calls))
+        self.assertIn(["rm", "-f", push[2]], self.shell_calls())
+        # ASCII keeps adb's own text input.
+        dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "plain text"})
+        self.assertEqual(self.shell_calls()[-1], ["input", "text", "plain%stext"])
+
+    def test_unicode_text_names_what_it_needs_when_it_cannot_work(self):
+        with self.assertRaises(StudioError) as missing:
+            dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "é"})
+        self.assertEqual(missing.exception.code, "text_unsupported")
+        self.assertIn("scrcpy", str(missing.exception))
+        self.tool("scrcpy")
+        (self.root / "scrcpy-server").write_bytes(b"jar")
+        self.replies(**{"ro.build.version.sdk": "23\n"})
+        with self.assertRaises(StudioError) as old:
+            dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "é"})
+        self.assertEqual(old.exception.code, "text_unsupported")
+        self.assertFalse(any(call[:1] == ["push"] for call in self.calls()))
+
+
+    def test_app_logs_follow_the_user_id_from_android_12_and_the_pid_before(self):
+        self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": "package:dev.test.app.extra uid:10201\npackage:dev.test.app uid:10200\n"})
+        job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1})
+        self.assertEqual(job["plan"]["steps"][0]["argv"][-3:], ["-v", "threadtime", "--uid=10200"])
+        jobs.wait(job["id"], 5)
+        self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": ""})
+        with self.assertRaises(StudioError) as missing:
+            dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app"})
+        self.assertEqual(missing.exception.code, "app_not_installed")
+        self.replies(**{"ro.build.version.sdk": "29\n", "pidof": "4242\n"})
+        job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1, "filter": "*:E"})
+        self.assertEqual(job["plan"]["steps"][0]["argv"][-3:], ["--pid", "4242", "*:E"])
+        jobs.wait(job["id"], 5)
+        self.replies(**{"ro.build.version.sdk": "29\n"})
+        with self.assertRaises(StudioError) as stopped:
+            dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app"})
+        self.assertEqual(stopped.exception.code, "app_not_running")
+
+    def test_device_settings_apply_only_what_is_asked_and_read_everything_back(self):
+        state = {"ro.build.version.sdk": "36\n", "uimode night": "Night mode: yes\n", "get system font_scale": "1.3\n",
+                 "get global window_animation_scale": "0\n", "get global transition_animation_scale": "0.0\n",
+                 "get global animator_duration_scale": "0\n", "get global airplane_mode_on": "1\n",
+                 "get-app-locales": "Locales for dev.test.app for user 0 are [de-DE]\n"}
+        self.replies(**state)
+        value = dispatch("android.settings", {"device": "emulator-5554", "dark_mode": "on", "font_scale": 1.3, "animations": False,
+                                              "airplane_mode": True, "bundle_id": "dev.test.app", "app_locale": "de-de"})
+        self.assertEqual(value["changed"], ["dark_mode", "font_scale", "animations", "airplane_mode", "app_locale"])
+        self.assertEqual((value["dark_mode"], value["font_scale"], value["animations"], value["airplane_mode"], value["app_locale"]),
+                         ("on", 1.3, False, True, "de-DE"))
+        shell = self.shell_calls()
+        for command in (["cmd", "uimode", "night", "yes"], ["settings", "put", "system", "font_scale", "1.3"],
+                        ["settings", "put", "global", "animator_duration_scale", "0"], ["cmd", "connectivity", "airplane-mode", "enable"],
+                        ["cmd", "locale", "set-app-locales", "dev.test.app", "--locales", "de-de"]):
+            self.assertIn(command, shell)
+        # Nothing asked: nothing written, everything read.
+        (self.root / "adb-calls.jsonl").unlink()
+        value = dispatch("android.settings", {"device": "emulator-5554"})
+        self.assertEqual(value["changed"], [])
+        self.assertFalse(any(args[:2] in (["settings", "put"], ["cmd", "connectivity"]) or args[-1] in ("yes", "no", "auto") for args in self.shell_calls()))
+        # An empty language resets the app to the device language.
+        state["get-app-locales"] = "Locales for dev.test.app for user 0 are []\n"
+        self.replies(**state)
+        dispatch("android.settings", {"device": "emulator-5554", "bundle_id": "dev.test.app", "app_locale": ""})
+        self.assertIn(["cmd", "locale", "set-app-locales", "dev.test.app"], self.shell_calls())
+        # A value Android ignored is an error, not a silent success.
+        with self.assertRaises(StudioError) as ignored:
+            dispatch("android.settings", {"device": "emulator-5554", "dark_mode": "off"})
+        self.assertEqual(ignored.exception.code, "setting_not_applied")
+        self.assertEqual(ignored.exception.details["dark_mode"], "on")
+
+    def test_device_settings_refuse_what_the_android_version_cannot_do_before_changing_anything(self):
+        self.replies(**{"ro.build.version.sdk": "29\n"})
+        for arguments, code in [({"airplane_mode": True}, "setting_unsupported"), ({"bundle_id": "dev.test.app", "app_locale": "de"}, "setting_unsupported"),
+                                ({"app_locale": "de"}, "invalid_argument"), ({"bundle_id": "dev.test.app", "app_locale": "de;reboot"}, "invalid_argument")]:
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.settings", {"device": "emulator-5554", "dark_mode": "on", **arguments})
+            self.assertEqual(refused.exception.code, code, arguments)
+        self.assertFalse(any("uimode" in args for args in self.shell_calls()))
+        with self.assertRaises(StudioError):
+            dispatch("android.settings", {"device": "emulator-5554", "font_scale": 3})
+
+    def test_emulator_snapshots_battery_network_and_location_go_through_the_console(self):
+        self.replies(**{"avd snapshot list": "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001\nOK\n",
+                        "power display": "AC: offline\nstatus: Discharging\nhealth: Good\npresent: true\ncapacity: 15\nOK\n",
+                        "network status": "Current network status:\n  minimum latency:  150 ms\n  maximum latency:  550 ms\nOK\n",
+                        "emu": "OK\n"})
+        emulator = lambda **a: dispatch("android.emulator", {"device": "emulator-5554", **a})
+        self.assertEqual(emulator(action="snapshot-list")["snapshots"], ["before-login"])
+        emulator(action="snapshot-save", name="before-login")
+        emulator(action="snapshot-load", name="before-login")
+        emulator(action="snapshot-delete", name="before-login")
+        battery = emulator(action="battery", battery_level=15, charging=False)
+        self.assertEqual(battery["battery"]["capacity"], "15")
+        network = emulator(action="network", network_speed="edge", network_delay="gprs")
+        self.assertEqual(network["network"]["minimum_latency"], "150 ms")
+        emulator(action="location", longitude=16.37, latitude=48.21)
+        consoles = [call[1:] for call in self.calls() if call[:1] == ["emu"]]
+        self.assertEqual(consoles, [["avd", "snapshot", "list"], ["avd", "snapshot", "save", "before-login"],
+                                    ["avd", "snapshot", "load", "before-login"], ["avd", "snapshot", "del", "before-login"],
+                                    ["power", "capacity", "15"], ["power", "ac", "off"], ["power", "status", "discharging"], ["power", "display"],
+                                    ["network", "speed", "edge"], ["network", "delay", "150:550"], ["network", "status"],
+                                    ["geo", "fix", "16.37", "48.21"]])
+        for arguments in ({"action": "battery", "battery_level": 101}, {"action": "network", "network_speed": "warp"},
+                          {"action": "snapshot-save", "name": "../x"}):
+            with self.assertRaises(StudioError): emulator(**arguments)
+        with self.assertRaises(StudioError) as phone:
+            dispatch("android.emulator", {"device": "R5CT1234", "action": "snapshot-list"})
+        self.assertEqual(phone.exception.code, "not_emulator")
+
+    def test_a_refused_console_command_is_an_error_not_a_success(self):
+        # adb emu exits with success when the console answers KO.
+        self.replies(**{"avd snapshot load": 'KO: Snapshot load is disabled because "-read-only" was specified\n'})
+        with self.assertRaises(StudioError) as refused:
+            dispatch("android.emulator", {"device": "emulator-5554", "action": "snapshot-load", "name": "missing"})
+        self.assertEqual(refused.exception.code, "emulator_refused")
+        self.assertIn("-read-only", str(refused.exception))
+
 class ProtocolTests(Isolated):
     def test_cli_schema_errors_and_file_arguments(self):
         schema = json.loads(subprocess.check_output([binary(), "schema"]))["result"]

@@ -193,6 +193,47 @@ fn launch_command(device: &str, id: &str) -> Result<Vec<String>> {
         })?;
     sh(device, &["am", "start", "-W", "-n", component])
 }
+fn sdk_level(device: &str) -> Result<u64> {
+    let result = run(sh(device, &["getprop", "ro.build.version.sdk"])?)?;
+    Ok(s(&result, "stdout").trim().parse().unwrap_or(0))
+}
+/// The app's user ID from `cmd package list packages -U`, matched exactly.
+fn package_uid(listing: &str, id: &str) -> Option<String> {
+    listing.lines().find_map(|line| {
+        let mut parts = line.split_whitespace();
+        let package = parts.next()?.strip_prefix("package:")?;
+        let uid = parts.find_map(|part| part.strip_prefix("uid:"))?;
+        (package == id && !uid.is_empty() && uid.bytes().all(|c| c.is_ascii_digit()))
+            .then(|| uid.to_string())
+    })
+}
+/// logcat arguments for one app. From Android 12 its user ID selects the app's
+/// processes, across restarts and before launch; older logcat filters by the
+/// PID of the running process.
+fn app_log_filter(device: &str, id: &str) -> Result<Vec<String>> {
+    bundle(id)?;
+    if sdk_level(device)? >= 31 {
+        let result = run(sh(
+            device,
+            &["cmd", "package", "list", "packages", "-U", id],
+        )?)?;
+        let uid = package_uid(s(&result, "stdout"), id).ok_or_else(|| {
+            Error::new("app_not_installed", format!("{id} is not installed"))
+                .remedy("Install the app with device.install or project.run")
+        })?;
+        return Ok(vec![format!("--uid={uid}")]);
+    }
+    let result = run(sh(device, &["pidof", "-s", id])?)?;
+    let pid = s(&result, "stdout").trim();
+    if pid.is_empty() || !pid.bytes().all(|c| c.is_ascii_digit()) {
+        return Err(Error::new(
+            "app_not_running",
+            "Launch the app before requesting process logs",
+        )
+        .remedy("Below Android 12, logs follow the running process"));
+    }
+    Ok(argv(&["--pid", pid]))
+}
 fn screenshot(a: &Value) -> Result {
     let device = identifier(s(a, "device"), "device ID", None)?;
     let target = output_path(s(a, "path"))?;
@@ -491,16 +532,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 let mut args = adb(device)?;
                 args.extend(argv(&["logcat", "-v", "threadtime"]));
                 if !id.is_empty() {
-                    bundle(id)?;
-                    let result = run(sh(device, &["pidof", "-s", id])?)?;
-                    let pid = s(&result, "stdout").trim();
-                    if pid.is_empty() || !pid.bytes().all(|c| c.is_ascii_digit()) {
-                        return Err(Error::new(
-                            "app_not_running",
-                            "Launch the app before requesting process logs",
-                        ));
-                    }
-                    args.extend(argv(&["--pid", pid]));
+                    args.extend(app_log_filter(device, id)?);
                 }
                 if !filter.is_empty() {
                     identifier(filter, "logcat filter", Some(r"[A-Za-z0-9_.*:-]+"))?;
@@ -525,10 +557,9 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 "text" => {
                     let text = s(a, "text");
                     if !text.is_ascii() || text.contains("%s") {
-                        return Err(Error::new(
-                            "text_unsupported",
-                            "adb input text supports ASCII; use a test framework or IME for Unicode",
-                        ));
+                        // adb input text types ASCII only and reads %s as a space.
+                        identifier(device, "Android serial", None)?;
+                        return crate::runtime::android::paste(device, text);
                     }
                     args.push(text.replace(' ', "%s"));
                 }
@@ -819,29 +850,8 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 json!({"steps":[{"argv":args}],"cwd":home()?,"timeout":86400,"env":env,"exclusive":format!("android-avd:{name}"),"single_active":true}),
             )
         }
-        "android.emulator" => {
-            if !device.starts_with("emulator-") {
-                return Err(Error::new(
-                    "not_emulator",
-                    "This operation requires an emulator serial",
-                ));
-            }
-            let name = identifier(s(a, "name"), "snapshot name", Some("[A-Za-z0-9_-]+"))?;
-            let mut args = adb(device)?;
-            args.push("emu".into());
-            args.extend(match s(a, "action") {
-                "stop" => argv(&["kill"]),
-                "snapshot-save" => argv(&["avd", "snapshot", "save", name]),
-                "snapshot-load" => argv(&["avd", "snapshot", "load", name]),
-                _ => argv(&[
-                    "geo",
-                    "fix",
-                    &a["longitude"].to_string(),
-                    &a["latitude"].to_string(),
-                ]),
-            });
-            run(args)
-        }
+        "android.settings" => settings(a),
+        "android.emulator" => emulator(a),
         "ios.sdk_install" => {
             let source = expand(s(a, "path"));
             let source = path(s(a, "path"), source.is_dir(), true)?;
@@ -858,6 +868,311 @@ pub fn handle(op: &str, a: &Value) -> Result {
         }
         _ => Err(Error::new("operation_not_found", op)),
     }
+}
+/// Runs one emulator console command through `adb emu`. The console answers
+/// `KO: reason` for a refused command while adb itself exits with success.
+fn console(device: &str, command: &[&str]) -> Result<String> {
+    let mut args = adb(device)?;
+    args.push("emu".into());
+    args.extend(argv(command));
+    let result = run(args)?;
+    let output = s(&result, "stdout").replace('\r', "");
+    if let Some(reason) = output.lines().find_map(|l| l.trim().strip_prefix("KO")) {
+        return Err(Error::new(
+            "emulator_refused",
+            format!(
+                "The emulator refused {}: {}",
+                command.join(" "),
+                reason.trim_start_matches(':').trim()
+            ),
+        )
+        .details(json!({"command":command,"output":output})));
+    }
+    Ok(output
+        .lines()
+        .filter(|l| l.trim() != "OK")
+        .collect::<Vec<_>>()
+        .join("\n"))
+}
+/// Snapshot tags from the console's `avd snapshot list` table.
+fn snapshot_names(output: &str) -> Vec<String> {
+    let mut rows = output.lines().skip_while(|l| {
+        let mut columns = l.split_whitespace();
+        !(columns.next() == Some("ID") && columns.next() == Some("TAG"))
+    });
+    rows.next();
+    rows.filter_map(|l| l.split_whitespace().nth(1).map(String::from))
+        .collect()
+}
+/// `key: value` lines of `power display` and `network status`.
+fn console_fields(output: &str) -> Value {
+    let mut fields = json!({});
+    for line in output.lines() {
+        if let Some((key, value)) = line.split_once(':') {
+            let value = value.trim();
+            if !value.is_empty() {
+                fields[key.trim().replace(' ', "_")] = json!(value);
+            }
+        }
+    }
+    fields
+}
+fn emulator(a: &Value) -> Result {
+    let device = s(a, "device");
+    if !device.starts_with("emulator-") {
+        return Err(Error::new(
+            "not_emulator",
+            "This operation requires an emulator serial",
+        ));
+    }
+    let action = s(a, "action");
+    let name = identifier(s(a, "name"), "snapshot name", Some("[A-Za-z0-9_-]+"))?;
+    match action {
+        "stop" => {
+            console(device, &["kill"])?;
+            Ok(json!({"device":device,"action":action}))
+        }
+        "snapshot-save" | "snapshot-load" | "snapshot-delete" => {
+            let verb = match action {
+                "snapshot-save" => "save",
+                "snapshot-load" => "load",
+                _ => "del",
+            };
+            console(device, &["avd", "snapshot", verb, name])?;
+            Ok(json!({"device":device,"action":action,"name":name}))
+        }
+        "snapshot-list" => {
+            let output = console(device, &["avd", "snapshot", "list"])?;
+            Ok(json!({"device":device,"snapshots":snapshot_names(&output),"output":output}))
+        }
+        "battery" => {
+            let level = n(a, "battery_level").to_string();
+            let charging = b(a, "charging");
+            console(device, &["power", "capacity", &level])?;
+            console(
+                device,
+                &["power", "ac", if charging { "on" } else { "off" }],
+            )?;
+            console(
+                device,
+                &[
+                    "power",
+                    "status",
+                    if charging { "charging" } else { "discharging" },
+                ],
+            )?;
+            let state = console(device, &["power", "display"])?;
+            Ok(json!({"device":device,"action":action,"battery":console_fields(&state)}))
+        }
+        "network" => {
+            console(device, &["network", "speed", s(a, "network_speed")])?;
+            // The console's own gprs latency preset applies UMTS values on the
+            // tested emulator, so every preset goes as its range in milliseconds.
+            let delay = match s(a, "network_delay") {
+                "gprs" => "150:550",
+                "edge" => "80:400",
+                "umts" => "35:200",
+                _ => "0:0",
+            };
+            console(device, &["network", "delay", delay])?;
+            let state = console(device, &["network", "status"])?;
+            Ok(
+                json!({"device":device,"action":action,"speed":s(a,"network_speed"),"delay":s(a,"network_delay"),"network":console_fields(&state)}),
+            )
+        }
+        _ => {
+            console(
+                device,
+                &[
+                    "geo",
+                    "fix",
+                    &a["longitude"].to_string(),
+                    &a["latitude"].to_string(),
+                ],
+            )?;
+            Ok(
+                json!({"device":device,"action":action,"longitude":a["longitude"],"latitude":a["latitude"]}),
+            )
+        }
+    }
+}
+const ANIMATION_SCALES: [&str; 3] = [
+    "window_animation_scale",
+    "transition_animation_scale",
+    "animator_duration_scale",
+];
+/// Language tags separated by commas, as `cmd locale` takes them.
+fn locale_tags(value: &str) -> Result<&str> {
+    if value.is_empty() {
+        return Ok(value);
+    }
+    identifier(
+        value,
+        "language tags",
+        Some(r"[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*(,[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*)*"),
+    )
+}
+/// The tags in `Locales for PACKAGE for user 0 are [de-DE,fr]`.
+fn app_locales(output: &str) -> Option<String> {
+    let line = output.lines().find(|l| l.starts_with("Locales for "))?;
+    let list = line.rsplit_once(" are [")?.1.strip_suffix(']')?;
+    Some(list.split(',').map(str::trim).collect::<Vec<_>>().join(","))
+}
+fn setting(device: &str, namespace: &str, key: &str) -> Result<String> {
+    let result = run(sh(device, &["settings", "get", namespace, key])?)?;
+    Ok(s(&result, "stdout").trim().to_string())
+}
+/// A scale setting as Android reads it; unset means the default of 1.
+fn scale(value: &str) -> f64 {
+    value.parse().unwrap_or(1.0)
+}
+/// Sets the settings that change how an app looks or moves in UI tests and
+/// screenshots, then reads every one back. Arguments left out stay unchanged.
+fn settings(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "device ID", None)?;
+    let locale = a.get("app_locale").and_then(Value::as_str);
+    let id = s(a, "bundle_id");
+    if locale.is_some() && id.is_empty() {
+        return Err(Error::new(
+            "invalid_argument",
+            "app_locale applies to one app; pass its bundle_id",
+        ));
+    }
+    if !id.is_empty() {
+        bundle(id)?;
+    }
+    if let Some(tags) = locale {
+        locale_tags(tags)?;
+    }
+    let sdk = sdk_level(device)?;
+    if a.get("airplane_mode").is_some() && sdk < 30 {
+        return Err(Error::new(
+            "setting_unsupported",
+            "Switching airplane mode from adb needs Android 11 (API 30) or newer",
+        ));
+    }
+    if !id.is_empty() && sdk < 33 {
+        return Err(Error::new(
+            "setting_unsupported",
+            "A language for one app needs Android 13 (API 33) or newer",
+        )
+        .remedy(
+            "Older Android changes the language only for the whole device, in its Settings app",
+        ));
+    }
+    let mut changed = Vec::new();
+    if let Some(mode) = a.get("dark_mode").and_then(Value::as_str) {
+        let night = match mode {
+            "on" => "yes",
+            "off" => "no",
+            _ => "auto",
+        };
+        run(sh(device, &["cmd", "uimode", "night", night])?)?;
+        changed.push("dark_mode");
+    }
+    if let Some(value) = a.get("font_scale").and_then(Value::as_f64) {
+        run(sh(
+            device,
+            &[
+                "settings",
+                "put",
+                "system",
+                "font_scale",
+                &value.to_string(),
+            ],
+        )?)?;
+        changed.push("font_scale");
+    }
+    if let Some(on) = a.get("animations").and_then(Value::as_bool) {
+        for key in ANIMATION_SCALES {
+            run(sh(
+                device,
+                &["settings", "put", "global", key, if on { "1" } else { "0" }],
+            )?)?;
+        }
+        changed.push("animations");
+    }
+    if let Some(on) = a.get("airplane_mode").and_then(Value::as_bool) {
+        run(sh(
+            device,
+            &[
+                "cmd",
+                "connectivity",
+                "airplane-mode",
+                if on { "enable" } else { "disable" },
+            ],
+        )?)?;
+        changed.push("airplane_mode");
+    }
+    if let Some(tags) = locale {
+        let mut args = vec!["cmd", "locale", "set-app-locales", id];
+        // Without --locales the app follows the device language again.
+        if !tags.is_empty() {
+            args.extend(["--locales", tags]);
+        }
+        run(sh(device, &args)?)?;
+        changed.push("app_locale");
+    }
+    let night = run(sh(device, &["cmd", "uimode", "night"])?)?;
+    let night = s(&night, "stdout")
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("Night mode: "))
+        .unwrap_or("")
+        .trim();
+    let mut animations = json!({});
+    for key in ANIMATION_SCALES {
+        animations[key] = json!(scale(&setting(device, "global", key)?));
+    }
+    let mut value = json!({
+        "device": device,
+        "sdk": sdk,
+        "dark_mode": match night { "yes" => "on", "no" => "off", other => other },
+        "font_scale": scale(&setting(device, "system", "font_scale")?),
+        "animations": ANIMATION_SCALES.iter().all(|k| animations[k] != json!(0.0)),
+        "animation_scales": animations,
+        "airplane_mode": setting(device, "global", "airplane_mode_on")? == "1",
+        "changed": changed,
+    });
+    if !id.is_empty() {
+        let result = run(sh(device, &["cmd", "locale", "get-app-locales", id])?)?;
+        let tags = app_locales(s(&result, "stdout")).ok_or_else(|| {
+            Error::new(
+                "app_not_installed",
+                format!("Android has no language setting for {id}"),
+            )
+            .remedy("Install the app first")
+            .details(result.clone())
+        })?;
+        value["bundle_id"] = json!(id);
+        value["app_locale"] = json!(tags);
+    }
+    // Android accepts some values without applying them; report those.
+    let mut differences = Vec::new();
+    for key in ["dark_mode", "animations", "airplane_mode", "app_locale"] {
+        if let Some(wanted) = a.get(key) {
+            let actual = &value[key];
+            let same = match (wanted.as_str(), actual.as_str()) {
+                (Some(w), Some(v)) => w.eq_ignore_ascii_case(v),
+                _ => wanted == actual,
+            };
+            if !same {
+                differences.push(key);
+            }
+        }
+    }
+    if let Some(wanted) = a.get("font_scale").and_then(Value::as_f64) {
+        if (value["font_scale"].as_f64().unwrap_or(0.0) - wanted).abs() > 0.001 {
+            differences.push("font_scale");
+        }
+    }
+    if !differences.is_empty() {
+        return Err(Error::new(
+            "setting_not_applied",
+            format!("Android did not apply: {}", differences.join(", ")),
+        )
+        .details(value));
+    }
+    Ok(value)
 }
 fn avd_profile(a: &Value) -> Result {
     let name = avd_name(s(a, "name"))?;
@@ -1040,4 +1355,66 @@ fn avd_configuration_lock(directory: &std::path::Path) -> Result<Lock> {
         ));
     }
     Ok(lock)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn package_uid_matches_the_exact_package_only() {
+        let listing =
+            "package:dev.example.app.helper uid:10200\npackage:dev.example.app uid:10199\n";
+        assert_eq!(
+            package_uid(listing, "dev.example.app").as_deref(),
+            Some("10199")
+        );
+        assert_eq!(package_uid(listing, "dev.example"), None);
+        assert_eq!(
+            package_uid("package:dev.example.app uid:x1", "dev.example.app"),
+            None
+        );
+        assert_eq!(package_uid("", "dev.example.app"), None);
+    }
+
+    #[test]
+    fn app_languages_are_validated_and_read_back() {
+        assert!(locale_tags("de-DE,fr,zh-Hant-TW").is_ok());
+        assert!(locale_tags("").is_ok());
+        for bad in ["de DE", "de;reboot", "-de", "de,,fr", "d"] {
+            assert!(locale_tags(bad).is_err(), "{bad}");
+        }
+        assert_eq!(
+            app_locales("Locales for dev.example.app for user 0 are [de-DE,fr]\n").as_deref(),
+            Some("de-DE,fr")
+        );
+        assert_eq!(
+            app_locales("Locales for dev.example.app for user 0 are []").as_deref(),
+            Some("")
+        );
+        assert_eq!(
+            app_locales("Unknown package dev.example.app for userId 0"),
+            None
+        );
+        assert_eq!(scale("null"), 1.0);
+        assert_eq!(scale("0.0"), 0.0);
+    }
+
+    #[test]
+    fn emulator_console_tables_and_fields_are_read() {
+        let list = "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        default_boot        102M 2026-10-31 19:40:01   00:02:10.512\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001";
+        assert_eq!(snapshot_names(list), ["default_boot", "before-login"]);
+        assert!(snapshot_names("There is no snapshot available.").is_empty());
+        let power = "AC: online\nstatus: Charging\nhealth: Good\npresent: true\ncapacity: 42";
+        let fields = console_fields(power);
+        assert_eq!(fields["capacity"], "42");
+        assert_eq!(fields["AC"], "online");
+        let network = "Current network status:\n  download speed:   173000000 bits/s (21118.2 KB/s)\n  minimum latency:  35 ms";
+        assert_eq!(console_fields(network)["minimum_latency"], "35 ms");
+        assert!(
+            console_fields(network)
+                .get("Current_network_status")
+                .is_none()
+        );
+    }
 }
