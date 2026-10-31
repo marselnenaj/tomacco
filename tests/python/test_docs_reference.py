@@ -11,7 +11,10 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from tests.python.test_docs_virtual_iphone import refusal
+try:
+    from test_docs_virtual_iphone import refusal
+except ImportError:  # run as tests.python.test_docs_reference from the repository root
+    from tests.python.test_docs_virtual_iphone import refusal
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("build_reference", ROOT / "tools/build_reference.py")
