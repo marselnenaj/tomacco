@@ -183,10 +183,12 @@ emulators and audio bridges are listed as services and do not count as activity.
 
 The panel lists connected devices (connect, disconnect, open as window, stop an
 emulator), stopped Android emulators with a start button, running and recent
-jobs with their duration, and saved projects with build-and-run. Keys in the
-open panel: O workspace, F device window, S screenshot, G devices, A jobs,
-R refresh. The same actions are available over IPC for Hyprland bindings, for
-example `omarchy-shell io.github.marselnenaj.tomacco window`, `screenshot`,
+jobs with their duration, and saved projects with build-and-run. Each job row
+has a button that opens the job's log file in the desktop's text viewer
+(`xdg-open`). Keys in the open panel: O workspace, F device window,
+S screenshot, G devices, A jobs, V log of the newest job, R refresh. The same
+actions are available over IPC for Hyprland bindings, for example
+`omarchy-shell io.github.marselnenaj.tomacco window`, `screenshot`, `log`,
 `show jobs`, `emulator <name>`, `iphone start|window|stop`, `status`, `version`
 and `refresh`. Its native popup supports Escape and switching between panels.
 Completion notifications can be turned off in the widget's settings, or with
