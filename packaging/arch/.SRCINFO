@@ -1,0 +1,26 @@
+pkgbase = tomacco
+	pkgdesc = Build, run and test Android and iOS apps on Linux, with a coding agent or a Qt desktop
+	pkgver = 1.0.0
+	pkgrel = 1
+	url = https://tomacco.dev
+	arch = x86_64
+	license = GPL-2.0-or-later
+	makedepends = cmake
+	makedepends = ninja
+	makedepends = rust
+	makedepends = protobuf
+	makedepends = qt6-tools
+	depends = qt6-base
+	depends = qt6-declarative
+	depends = qt6-svg
+	depends = qt6-webengine
+	depends = ffmpeg
+	depends = openssl
+	depends = python
+	optdepends = scrcpy: live view and control of Android devices
+	optdepends = unzip: the iPhone runner download
+	options = !lto
+	source = https://github.com/marselnenaj/tomacco/releases/download/v1.0.0/tomacco-1.0.0-source.tar.gz
+	sha256sums = f6f183f851966e0b764edac325c6193daf88cdbf6a7d59b82f22c7c62f7721ba
+
+pkgname = tomacco

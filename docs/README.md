@@ -11,8 +11,10 @@ operations, so a person and a coding agent can do the same things.
 | Install Tomacco and get a first success | [Getting started](getting-started.md) |
 | Have my coding agent set everything up | [Agent setup](agent-setup.md) |
 | Connect a coding agent over MCP or the JSON CLI | [Agents](agents.md) |
+| Copy a short sequence: build and run, screenshot and UI test, iOS build, virtual iPhone deploy | [Recipes](recipes.md) |
 | Use the desktop app: device window, shortcuts, Omarchy panel, layout lab | [Desktop](desktop.md) |
 | Build and run an Android app, Swift on Android included | [Android](android.md) |
+| Build, run and test a ready-made example app | [Examples](../examples/README.md) |
 | Run an app on an iPhone over USB, or use a Mac | [iPhone](iphone.md) |
 | Know what the experimental virtual iOS device is and what it needs | [Virtual iOS device](virtual-ios/README.md) |
 | Find the two Apple restore images and prepare their disk-image inputs | [Virtual iOS: image preparation](virtual-ios/setup.md#obtain-the-apple-images) |
@@ -24,6 +26,7 @@ operations, so a person and a coding agent can do the same things.
 | Understand the virtual machine, renderer and guest tools | [Virtual iOS: how it works](virtual-ios/how-it-works.md) |
 | Check what may be done with Apple software, and what is changed | [Legal notes](legal.md) |
 | See what leaves my machine | [Privacy](privacy.md) |
+| Get short answers: simulator or not, do I need a Mac, legality, hardware | [FAQ](faq.md) |
 | See what this release is, and its limits | [Release notes](RELEASE_NOTES.md) |
 | Run my own programs in a restore environment, or study PMP firmware | [Research engines](research-engines.md) |
 

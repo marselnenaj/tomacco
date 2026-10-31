@@ -1,0 +1,43 @@
+# Maintainer: Marsel Nenaj
+#
+# Builds Tomacco from the corresponding-source tarball of a release. That
+# tarball holds the vendored Rust crates, so the build needs no network.
+pkgname=tomacco
+pkgver=1.0.0
+pkgrel=1
+pkgdesc='Build, run and test Android and iOS apps on Linux, with a coding agent or a Qt desktop'
+arch=('x86_64')
+url='https://tomacco.dev'
+# The source is GPL-2.0-or-later. The built binaries link GPL-3.0 FFmpeg and
+# Apache-2.0 crates, so they are conveyed under GPL version 3; the package
+# installs that text as /usr/share/doc/tomacco/COPYING.GPL-3.0.
+license=('GPL-2.0-or-later')
+depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-webengine' 'ffmpeg' 'openssl' 'python')
+makedepends=('cmake' 'ninja' 'rust' 'protobuf' 'qt6-tools')
+optdepends=('scrcpy: live view and control of Android devices'
+            'unzip: the iPhone runner download')
+# With makepkg's LTO flags, tomaccoctl fails to link the SQLite that rusqlite bundles.
+options=('!lto')
+# The release commit, from SOURCE_RELEASE.md in the tarball. The installed
+# SOURCE.md names it; without it the build would ask Git, which in an AUR
+# checkout answers with the PKGBUILD's own commit.
+_commit=84f877eb34fb202384010afb5f54c0da7fea892f
+source=("https://github.com/marselnenaj/tomacco/releases/download/v$pkgver/tomacco-$pkgver-source.tar.gz")
+sha256sums=('f6f183f851966e0b764edac325c6193daf88cdbf6a7d59b82f22c7c62f7721ba')
+
+build() {
+  # TOMACCO_DISABLE_UPDATES: pacman updates this package, so tomaccoctl never
+  # asks GitHub for a release or installs one.
+  cmake -S "$pkgname-$pkgver-source" -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DTOMACCO_DISABLE_UPDATES=ON \
+    -DBUILD_TESTING=OFF
+  CARGO_NET_OFFLINE=true TOMACCO_SOURCE_COMMIT="\`$_commit\`" cmake --build build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+  # The per-user installer of the release tarball; a system package has no use for it.
+  rm "$pkgdir/usr/install.py"
+}

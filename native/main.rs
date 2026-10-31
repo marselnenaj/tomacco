@@ -45,7 +45,8 @@ fn main() {
     std::process::exit(code);
 }
 /// The flags of the public commands, wherever they stand on the line. The
-/// internal `_worker` commands and `setup`, which has its own, keep theirs.
+/// internal `_worker` commands, and `setup`, `update` and `uninstall`, which
+/// read their own, keep theirs.
 #[derive(Debug, Default, PartialEq)]
 struct Options {
     flags: Vec<&'static str>,
@@ -53,13 +54,15 @@ struct Options {
 }
 impl Options {
     const FLAGS: &[&str] = &["--names", "--pretty", "--compact", "--wait"];
+    /// Commands that parse their own arguments.
+    const OWN: &[&str] = &["setup", "update", "uninstall"];
     /// What every command that prints an envelope takes.
     const OUTPUT: &[&str] = &["--pretty", "--compact"];
     fn parse(args: Vec<String>) -> (Vec<String>, Options) {
         let mut options = Options::default();
         if args
             .first()
-            .is_some_and(|a| a.starts_with('_') || a == "setup")
+            .is_some_and(|a| a.starts_with('_') || Self::OWN.contains(&a.as_str()))
         {
             return (args, options);
         }
@@ -244,6 +247,12 @@ Usage:
   tomaccoctl completions bash|zsh|fish
                     Print a completion script for commands, flags and
                     operation names, e.g. source <(tomaccoctl completions bash)
+  tomaccoctl update [--check]
+                    Check for a new release and install it (update.check,
+                    then update.apply); --check only checks.
+  tomaccoctl uninstall
+                    Remove this installation; keeps your data and the files
+                    you changed, and prints how to undo it.
   tomaccoctl --version, -V
   tomaccoctl --help, -h
 
@@ -280,6 +289,8 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             return Ok(0);
         }
         Some("setup") => return setup::run(&args[1..]),
+        Some("update") => return update::update_command(&args[1..]),
+        Some("uninstall") => return update::uninstall_command(&args[1..]),
         Some("mcp") => {
             mcp::serve(std::io::stdin().lock(), std::io::stdout())?;
             return Ok(0);
@@ -454,6 +465,8 @@ mod tests {
         assert_eq!(options, Options::default());
         let (args, _) = line(&["setup", "--yes"]);
         assert_eq!(args, ["setup", "--yes"]);
+        let (args, _) = line(&["update", "--check"]);
+        assert_eq!(args, ["update", "--check"]);
     }
     #[test]
     fn json_is_indented_at_a_terminal_or_when_asked_and_one_line_otherwise() {

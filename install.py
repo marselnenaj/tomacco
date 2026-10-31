@@ -43,6 +43,11 @@ HYPR_COMMENT = "-- Tomacco mobile workspace."
 # The release tarball holds this file at its top, beside bin/, lib/ and share/
 # as CMake installed them, and no source tree. These are the tree's paths there.
 PACKAGED = (ROOT / "share/tomacco/VERSION").is_file()
+# Every installation keeps a copy of this file beside the program in
+# ~/.local/lib/tomacco, so `tomaccoctl uninstall` works after the package or
+# checkout it came from is gone. That copy only uninstalls, rolls back and
+# lists backups.
+INSTALLED = not PACKAGED and (ROOT / "VERSION").is_file() and (ROOT / "tomaccoctl").is_file()
 PACKAGE_PATHS = {
     "tools": "share/tomacco/tools",
     "examples/ios-restore-native": "share/tomacco/examples/ios-restore-native",
@@ -64,6 +69,8 @@ def project_version():
     """The version CMake builds (project(... VERSION x.y.z)), so both installers agree."""
     if PACKAGED:
         return (ROOT / "share/tomacco/VERSION").read_text().strip()
+    if INSTALLED:
+        return (ROOT / "VERSION").read_text().strip()
     found = re.search(r"project\(\s*Tomacco\s+VERSION\s+([0-9][0-9.]*)", (ROOT / "CMakeLists.txt").read_text())
     if not found:
         raise SystemExit("CMakeLists.txt names no project version")
@@ -83,7 +90,7 @@ DOCUMENTS = {
     "integrations/ios-emulator/COPYING_GPL-3.0": "COPYING.GPL-3.0",
     "docs/README.md": "guides.md", "docs/RELEASE_NOTES.md": "RELEASE_NOTES.md",
     **{f"docs/{name}.md": f"{name}.md" for name in
-       ("getting-started", "agents", "desktop", "android", "iphone", "troubleshooting", "legal", "privacy",
+       ("getting-started", "agents", "recipes", "faq", "desktop", "android", "iphone", "troubleshooting", "legal", "privacy",
         "research-engines")},
     "docs/virtual-ios/README.md": "virtual-ios.md",
     **{f"docs/virtual-ios/{name}.md": f"virtual-ios-{name}.md" for name in ("setup", "usage", "troubleshooting")},
@@ -547,6 +554,9 @@ def main():
         if installer.user == Path.home() and shutil.which("update-desktop-database"):
             subprocess.run(["update-desktop-database", str(installer.user / ".local/share/applications")], check=False)
         print(json.dumps(result, indent=2));return
+    if INSTALLED:
+        parser.error("This installed copy only uninstalls (--uninstall), rolls back (--rollback) and lists backups "
+                     "(--list-backups). Install from a release package or a checkout.")
     if not args.binary.is_file():
         parser.error(f"No desktop binary at {args.binary}. Build with CMake first or pass --binary.")
     cli = args.cli or args.binary.resolve().parent / "tomaccoctl"
@@ -567,6 +577,7 @@ def main():
     for source in sorted(source_path("assets").glob("*.json")):
         installer.write(app / "assets" / source.name, source.read_bytes())
     installer.write(app / "VERSION", VERSION + "\n")
+    installer.write(app / "install.py", Path(__file__).read_bytes(), 0o755)
     # The guides and legal documents; the About dialog opens LICENSE,
     # THIRD_PARTY_NOTICES.md and legal.md from here.
     doc = Path(".local/share/doc/tomacco")

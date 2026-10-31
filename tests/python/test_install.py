@@ -382,6 +382,36 @@ class UninstallTests(unittest.TestCase):
             self.assertIn('require("hypr.tomacco")', hypr.read_text())
             self.assertEqual(installed["cli"], str(home / ".local/bin/tomaccoctl"))
 
+    def test_the_installed_copy_uninstalls_without_the_package(self):
+        """`tomaccoctl uninstall` runs the copy in ~/.local/lib/tomacco, because the
+        package the one-line installer unpacked is gone by then."""
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / "home"
+            build = root / "build"
+            build.mkdir()
+            (build / "tomacco").write_bytes(b"\x7fELF desktop")
+            (build / "tomaccoctl").write_bytes(b"\x7fELF control plane")
+            self.run_installer(home, "--binary", str(build / "tomacco"))
+            copy = home / ".local/lib/tomacco/install.py"
+            self.assertEqual(copy.read_bytes(), (ROOT / "install.py").read_bytes())
+            self.assertEqual(copy.stat().st_mode & 0o777, 0o755)
+            run = lambda *arguments: subprocess.run([sys.executable, str(copy), "--user-home", str(home), *arguments],
+                                                    capture_output=True, text=True, timeout=120)
+            from install import VERSION
+            self.assertEqual(run("--version").stdout.strip(), f"Tomacco installer {VERSION}")
+            # It installs nothing itself: it has no program to install.
+            refused = run("--binary", str(build / "tomacco"))
+            self.assertEqual(refused.returncode, 2)
+            self.assertIn("only uninstalls", refused.stderr)
+            done = run("--uninstall")
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(json.loads(done.stdout)["kept"], [])
+            self.assertFalse((home / ".local/lib/tomacco").exists())
+            self.assertFalse((home / ".local/bin/tomaccoctl").exists())
+
     def test_uninstall_skips_files_it_does_not_own(self):
         with tempfile.TemporaryDirectory() as directory:
             user = Path(directory)

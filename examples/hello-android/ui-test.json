@@ -1,0 +1,14 @@
+{
+  "name": "HelloAndroid · counter",
+  "steps": [
+    {"action": "clear", "bundle_id": "dev.tomacco.examples.helloandroid"},
+    {"action": "launch", "bundle_id": "dev.tomacco.examples.helloandroid"},
+    {"action": "assert", "selector": {"text": "HelloAndroid"}, "timeout": 20},
+    {"action": "assert", "selector": {"text": "0"}},
+    {"action": "click", "selector": {"text": "Add one"}},
+    {"action": "assert", "selector": {"text": "1"}},
+    {"action": "screenshot", "label": "Counter at one"},
+    {"action": "click", "selector": {"text": "Reset"}},
+    {"action": "assert", "selector": {"text": "0"}}
+  ]
+}

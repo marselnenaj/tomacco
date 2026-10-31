@@ -4,6 +4,66 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+`tomaccoctl` now has one typed API of 173 operations.
+
+### Added
+
+- **Command line.**
+  - `tomaccoctl completions bash|zsh|fish`. Only the bash script has been run.
+  - `tomaccoctl schema OPERATION` and `schema --names`.
+  - `call … --wait` follows a job to its end, with its log on stderr.
+  - Indented JSON in a terminal or with `--pretty`; output to a pipe is unchanged.
+  - "Did you mean" remedies for misspelt operations, argument keys and flags.
+- **Update and uninstall.** `tomaccoctl update [--check]` and `tomaccoctl uninstall`.
+  The installer now keeps a copy of itself for uninstall and rollback.
+- **MCP prompts.** `setup`, `run-android-app` and `run-virtual-iphone`.
+- **Android.**
+  - `android.input` types any Unicode text through the device clipboard.
+  - `android.settings` sets dark mode, font scale, animations, airplane mode and one
+    app's language, then reads them back.
+  - `device.logs` follows one app by its user ID on Android 12 and newer, across
+    restarts.
+  - `android.emulator` gains `snapshot-list`, `snapshot-delete`, `battery` and
+    `network`.
+- **Virtual iPhone.**
+  - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
+  - `ios.virtual.record` records the screen to MP4.
+  - `ios.virtual.status` reports phase times, copy progress and whether the disk has
+    room for the next start.
+  - None of these four has been run on a live phone yet.
+- **Desktop.**
+  - Drop an `.apk`, `.ipa` or `.app` on the device view to install it, or drop a
+    project folder on the window to open it.
+  - Screenshots are also copied to the clipboard.
+  - Recent projects on the start screen and in the command palette.
+  - The window reopens at its last size.
+  - The Omarchy panel can open a job's log (V key, `log` command).
+- **Packaging and guides.**
+  - An Arch `PKGBUILD` in `packaging/arch`.
+  - Debian, Ubuntu and Fedora package lists; not tested on those systems.
+  - An Android example in `examples/`.
+  - [Recipes](docs/recipes.md) and an [FAQ](docs/faq.md).
+
+### Changed
+
+- `ios.virtual.start` refuses up front, before deleting or copying anything, when the
+  disk lacks room for the copy.
+- The panel `ios.virtual.status` reports comes from the running guest's boot, not from
+  the current profile.
+- Unknown argument keys are reported before missing required ones.
+
+### Fixed
+
+- A command the emulator console refused (`KO`) no longer looks like success:
+  `emulator_refused`.
+- Every network latency preset sends its millisecond range; the emulator's own `gprs`
+  name applied the UMTS range.
+- The documentation said Qt 6.9 for running the release on other distributions. The
+  release desktop needs Qt 6.12, FFmpeg 9 and glibc 2.39; Qt 6.9 is enough to build
+  from source.
+
 ## 1.0.0
 
 First release of the Rust control plane and the redesigned Qt desktop.

@@ -48,7 +48,8 @@ GUIDES = ("README.md", "docs/README.md", "docs/getting-started.md", "docs/deskto
           "docs/android.md", "docs/iphone.md", "docs/troubleshooting.md", "docs/architecture.md", "docs/building.md",
           "docs/research-engines.md",
           "docs/virtual-ios/README.md", "docs/virtual-ios/setup.md", "docs/virtual-ios/usage.md",
-          "docs/virtual-ios/troubleshooting.md", "docs/virtual-ios/how-it-works.md")
+          "docs/virtual-ios/troubleshooting.md", "docs/virtual-ios/how-it-works.md", "examples/README.md",
+          "docs/recipes.md", "docs/faq.md")
 # A dotted name in a guide that looks like an operation and is a result's path instead.
 RESULT_PATHS = {"workspace.ios_research.guest.detach_pending"}
 OPERATION_AREAS = {entry["name"].split(".")[0] for entry in operation_entries() if "." in entry["name"]}
@@ -58,7 +59,7 @@ def call_examples(path):
     """(line number, operation, JSON arguments or None) of each `tomaccoctl call` line of a guide."""
     found = []
     for number, line in enumerate(raw(path).splitlines(), 1):
-        match = re.match(r"^\s*tomaccoctl call (\S+)(?: '(\{.*\})'| @\S+)?\s*$", line)
+        match = re.match(r"^\s*tomaccoctl call (\S+)(?: '(\{.*\})'| @\S+)?((?: --(?:wait|pretty|compact))*)\s*$", line)
         if match:
             found.append((number, match.group(1), match.group(2)))
     return found
@@ -265,7 +266,7 @@ class EveryGuideTests(DocumentTest):
         for path in GUIDES:
             for line in command_lines(path):
                 if line.startswith("tomaccoctl call "):
-                    self.assertTrue(re.match(r"^tomaccoctl call (\S+)(?: '(\{.*\})'| @\S+)?$", line),
+                    self.assertTrue(re.match(r"^tomaccoctl call (\S+)(?: '(\{.*\})'| @\S+)?(?: --(?:wait|pretty|compact))*$", line),
                                     f"{path}: not a checkable call: {line}")
 
     def test_every_operation_a_guide_names_exists(self):

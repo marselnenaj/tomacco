@@ -14,8 +14,8 @@ curl -fsSL https://tomacco.dev/install.sh | bash
 This finds the latest release, checks its checksum and signature, and installs it for your
 user into `~/.local`, adding the bar widget on Omarchy. Use `bash -s -- --no-omarchy` at the
 end to leave the widget out. On Arch it asks before installing the system packages with
-`sudo pacman`. Elsewhere, install Qt 6.9 or newer first, with Quick, Quick Controls 2,
-WebEngine Quick, Network and SVG, plus FFmpeg, OpenSSL and Python 3.11 or newer.
+`sudo pacman`. Elsewhere, install the system packages first; see
+[Debian, Ubuntu and Fedora](#debian-ubuntu-and-fedora).
 
 To read it first: `curl -fsSL https://tomacco.dev/install.sh -o install.sh`.
 
@@ -50,6 +50,46 @@ Leave out `--omarchy` on other desktops. `tomacco` and `tomaccoctl` go in `~/.lo
 must be on your `PATH`. To upgrade, roll back or uninstall, see [Building](building.md#installing).
 
 </details>
+
+### Debian, Ubuntu and Fedora
+
+Only Arch Linux has been tested. The package names below come from each distribution's package
+index; installing them and building Tomacco there has not been tried.
+
+**The release package may not start there.** The 1.0.0 desktop binary was built on Arch: its
+dynamic symbols require Qt 6.12 or newer, FFmpeg 9 (`libavcodec.so.63`) and glibc 2.39. Where the
+distribution has older Qt or FFmpeg, build from a checkout as below. `tomaccoctl` itself needs only
+glibc 2.39. To check a binary, run `readelf -d` and `objdump -T` on it.
+
+**To build from a checkout** you need Qt 6.9 or newer with Quick, Quick Controls 2, WebEngine Quick,
+Network and SVG, the FFmpeg development libraries, OpenSSL, Python 3.11 or newer, CMake, Ninja, a
+C++20 compiler, protobuf and Rust/Cargo 1.89 or newer. Distributions with Qt 6.9 or newer:
+Debian testing and unstable (Debian 13 has Qt 6.8, too old), Ubuntu 25.10 and newer, and Fedora 43
+and newer. If the distribution's `cargo --version` is older than 1.89, install Rust with
+[rustup](https://rustup.rs) instead.
+
+On Debian or Ubuntu:
+
+```sh
+sudo apt install git cmake ninja-build g++ pkg-config cargo protobuf-compiler python3 openssl ffmpeg rsync unzip fonts-dejavu-core \
+  qt6-base-dev qt6-declarative-dev qt6-svg-dev qt6-svg-plugins qt6-webengine-dev libgl-dev \
+  libavcodec-dev libavutil-dev libswscale-dev \
+  qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-templates qml6-module-qtquick-layouts \
+  qml6-module-qtquick-dialogs qml6-module-qtquick-shapes qml6-module-qtquick-window qml6-module-qtquick-effects \
+  qml6-module-qtqml-workerscript qml6-module-qtcore qml6-module-qtwebengine
+```
+
+On Fedora:
+
+```sh
+sudo dnf install git cmake ninja-build gcc-c++ pkgconf-pkg-config rust cargo protobuf-compiler python3 openssl ffmpeg-free rsync unzip dejavu-sans-fonts \
+  qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel qt6-qtwebengine-devel \
+  libavcodec-free-devel libavutil-free-devel libswscale-free-devel
+```
+
+Fedora's `ffmpeg-free` is a reduced FFmpeg build. Whether its H.264 decoder is enough for the
+Android live view has not been checked; RPM Fusion's `ffmpeg` is the full build. Then build and
+install with the three `cmake` and `install.py` commands of the Arch block above.
 
 ## 2. Set up your tools
 

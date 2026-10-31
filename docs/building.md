@@ -87,16 +87,41 @@ This makes a TGZ and its SHA-256. A distribution package configures with `-DTOMA
 installs an update. It holds `bin/`, `lib/`, `share/` and `install.py`, which installs for one user what it finds beside it, with the options below.
 `tools/build_source_release.py` builds the corresponding-source tarball a release offers; see [SOURCE.md.in](SOURCE.md.in).
 
+**Arch package.** `packaging/arch/PKGBUILD` builds a system package from the release's source tarball, with `-DTOMACCO_DISABLE_UPDATES=ON`
+and the tarball's checksum pinned. For a new release, update `pkgver`, `sha256sums` (from the release's `.sha256`) and `_commit` (from the
+tarball's `SOURCE_RELEASE.md`), then refresh `.SRCINFO` and build:
+
+```sh
+cd packaging/arch
+makepkg --printsrcinfo > .SRCINFO
+makepkg
+```
+
+For 1.0.0, `makepkg` built the package in about a minute and a half on the development host, and the packaged desktop passed
+`--smoke-test` offscreen. Installing it with pacman was not part of that check.
+
 `install.py` and `cmake --install` install the same files, and the same documents into `share/doc/tomacco`: the guides and legal texts, in one flat directory, with
 links adjusted and `SOURCE.md` naming the version and commit. The list is `DOCUMENTS` in `install.py`. Links to anything else point at the release's copy on GitHub.
 
 ## Installing
 
-`install.py` installs for the current user.
+`install.py` installs for the current user. Once installed, two commands cover the rest:
+
+```sh
+tomaccoctl update
+tomaccoctl uninstall
+```
+
+`tomaccoctl update` checks GitHub for a newer release as your own request (`update.check` with `manual`) and, if there is one, installs it
+with `update.apply` and waits for the job; `--check` only checks. `tomaccoctl uninstall` runs `install.py --uninstall` from the copy every
+installation keeps in `~/.local/lib/tomacco/install.py`, and prints the command that undoes it. Installations made by 1.0.0 have no such copy:
+run `python3 install.py --uninstall` from the release package instead. Both commands refuse a source checkout and a system package; pacman
+updates and removes the Arch package.
 
 | What | Where |
 | --- | --- |
 | Program | `~/.local/lib/tomacco/tomacco` |
+| A copy of the installer, for `tomaccoctl uninstall` | `~/.local/lib/tomacco/install.py` |
 | Launchers | `~/.local/bin/tomacco`, `~/.local/bin/tomaccoctl` |
 | Menu entry and icon | `~/.local/share/applications/`, `~/.local/share/icons/` |
 | Documents | `~/.local/share/doc/tomacco/` |

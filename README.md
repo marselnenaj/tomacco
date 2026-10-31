@@ -69,9 +69,9 @@ The first line checks and installs the latest signed release for your user. On A
 Omarchy it also offers to install the system packages. The second shows what your computer
 can do and offers to install the Android SDK and connect your coding agents.
 
-Arch Linux and Omarchy are the tested platforms. On other distributions, install Qt 6.9+
-first. To read the script before running it, or to build from source, see
-[installation options](docs/getting-started.md#1-install).
+Arch Linux and Omarchy are the tested platforms. For Debian, Ubuntu and Fedora, see
+[their package lists](docs/getting-started.md#debian-ubuntu-and-fedora). To read the script
+before running it, or to build from source, see [installation options](docs/getting-started.md#1-install).
 
 Then open a project:
 
@@ -230,6 +230,7 @@ The [documentation index](docs/README.md) lists every guide. Common starting poi
 | Set up the experimental iOS runtime | [Virtual iOS](docs/virtual-ios/README.md) |
 | Contribute to the implementation | [Architecture](docs/architecture.md) · [Building and testing](docs/building.md) |
 | Check licensing, privacy and release status | [Legal notes](docs/legal.md) · [Privacy](docs/privacy.md) · [Release notes](docs/RELEASE_NOTES.md) |
+| Get short answers to common questions | [FAQ](docs/faq.md) |
 
 ## Built on the work of others
 

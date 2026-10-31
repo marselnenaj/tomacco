@@ -10,6 +10,8 @@ const COMMANDS: &[(&str, &str)] = &[
     ("setup", "Check and set up this machine"),
     ("doctor", "Check toolchains and devices"),
     ("mcp", "Serve operations over MCP stdio"),
+    ("update", "Check for and install a new release"),
+    ("uninstall", "Remove this installation"),
     ("completions", "Print a shell completion script"),
 ];
 pub const SHELLS: &[&str] = &["bash", "zsh", "fish"];
@@ -42,6 +44,7 @@ _tomaccoctl() {{
             fi ;;
         doctor) words="--pretty --compact" ;;
         setup) words="--yes" ;;
+        update) words="--check" ;;
         completions) words="{shells}" ;;
         esac
     fi
@@ -75,6 +78,7 @@ _tomaccoctl() {{
         fi ;;
     doctor) compadd -- --pretty --compact ;;
     setup) compadd -- --yes ;;
+    update) compadd -- --check ;;
     completions) compadd {shells} ;;
     esac
 }}
@@ -110,6 +114,7 @@ complete -c tomaccoctl -n '__fish_seen_subcommand_from schema' -l names -d 'Only
 complete -c tomaccoctl -n '__fish_seen_subcommand_from call schema doctor' -l pretty -d 'Indented JSON'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from call schema doctor' -l compact -d 'One line of JSON'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from setup' -l yes -d 'Answer yes to every question'
+complete -c tomaccoctl -n '__fish_seen_subcommand_from update' -l check -d 'Only check for a new release'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from completions' -a '{}'
 ",
                 SHELLS.join(" ")
