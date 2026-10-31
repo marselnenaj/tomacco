@@ -3219,6 +3219,14 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>On GitHub ↗</source>
         <translation>En GitHub ↗</translation>
     </message>
+    <message>
+        <source>Get started</source>
+        <translation>Primeros pasos</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Conectar tu agente de código</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5012,6 +5020,69 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
     <message>
         <source>Later</source>
         <translation>Más tarde</translation>
+    </message>
+</context>
+<context>
+    <name>OnboardingSheet</name>
+    <message>
+        <source>Welcome to Tomacco</source>
+        <translation>Te damos la bienvenida a Tomacco</translation>
+    </message>
+    <message>
+        <source>This system lacks libraries the desktop needs. Your agent can still use Tomacco through tomaccoctl.</source>
+        <translation>A este sistema le faltan bibliotecas que necesita el escritorio. Tu agente puede usar Tomacco igualmente con tomaccoctl.</translation>
+    </message>
+    <message>
+        <source>Install Java (JDK 17 or newer) and Gradle to build Android apps.</source>
+        <translation>Instala Java (JDK 17 o posterior) y Gradle para compilar apps de Android.</translation>
+    </message>
+    <message>
+        <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
+        <translation>Instala el SDK de Android y un emulador. Se descargan unos 5 GB.</translation>
+    </message>
+    <message>
+        <source>Set up iOS builds. This needs an Apple account.</source>
+        <translation>Configura las compilaciones de iOS. Necesitas una cuenta de Apple.</translation>
+    </message>
+    <message>
+        <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
+        <translation>Opcional: el iPhone virtual. Necesita tu propia imagen de restauración de iPhone, unos 100 GiB de disco y una tarjeta gráfica de 16 GiB.</translation>
+    </message>
+    <message>
+        <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
+        <translation>Tomacco permite a tu agente de código compilar, ejecutar y probar apps de Android e iOS en este ordenador.</translation>
+    </message>
+    <message>
+        <source>Checking this computer…</source>
+        <translation>Comprobando este ordenador…</translation>
+    </message>
+    <message>
+        <source>What is left to set up:</source>
+        <translation>Lo que queda por configurar:</translation>
+    </message>
+    <message>
+        <source>Everything for Android and iOS builds is in place.</source>
+        <translation>Todo lo necesario para compilar para Android e iOS está listo.</translation>
+    </message>
+    <message>
+        <source>Your agent can do these steps for you. Connect it, then ask it to set Tomacco up.</source>
+        <translation>Tu agente puede hacer estos pasos por ti. Conéctalo y pídele que configure Tomacco.</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>Copiado</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Conectar tu agente de código</translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <translation>Omitir</translation>
+    </message>
+    <message>
+        <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
+        <translation>La configuración MCP está en el portapapeles. Pégala en los ajustes MCP de tu agente.</translation>
     </message>
 </context>
 </TS>

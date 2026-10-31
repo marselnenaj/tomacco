@@ -3042,6 +3042,45 @@ for line in sys.stdin:
         QSettings().setValue("app/lastVersion",QCoreApplication::applicationVersion());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void onboarding_shows_once_on_the_first_start_and_from_the_palette() {
+        open("runtime");
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *sheet=object("onboardingSheet");QVERIFY(sheet);
+        auto *whatsNew=object("whatsNewSheet");QVERIFY(whatsNew);
+        QVERIFY(!sheet->property("visible").toBool());
+        // The very first start: no version recorded and no settings before.
+        QSettings().remove("app/lastVersion");QSettings().remove("onboarding/shown");
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,true)));
+        QTRY_VERIFY(sheet->property("visible").toBool());
+        QVERIFY(!whatsNew->property("visible").toBool());
+        QCOMPARE(QSettings().value("onboarding/shown").toString(),QString("true"));
+        // doctor's next steps, in plain words, or that nothing is left.
+        QTRY_VERIFY_WITH_TIMEOUT(!sheet->property("checking").toBool(),patient(60000));
+        const auto steps=sheet->property("steps").toStringList();
+        QCOMPARE(item("onboardingReady")->isVisible(),steps.isEmpty());
+        for(const auto &step:steps)QVERIFY2(!step.contains("tomaccoctl setup --yes") && !step.contains("pacman"),qPrintable(step));
+        // Connect copies the MCP configuration.
+        QGuiApplication::clipboard()->clear();
+        clickItem("onboardingConnect");
+        QTRY_VERIFY(QGuiApplication::clipboard()->text().contains("\"mcpServers\""));
+        QVERIFY(QGuiApplication::clipboard()->text().contains(control->cliPath()));
+        QVERIFY(item("onboardingCopied")->isVisible());
+        clickItem("onboardingSkip");QTRY_VERIFY(!sheet->property("visible").toBool());
+        // Not again by itself, nor as a new version's sheet.
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,true)));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());QVERIFY(!whatsNew->property("visible").toBool());
+        QSettings().remove("app/lastVersion");
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,true)));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());
+        // The palette opens it again.
+        QTest::keyClick(window,Qt::Key_K,Qt::ControlModifier);QTRY_VERIFY(item("commandSearch")->hasActiveFocus());
+        type("Get started");QTest::keyClick(window,Qt::Key_Return);
+        QTRY_VERIFY(sheet->property("visible").toBool());
+        QTRY_VERIFY_WITH_TIMEOUT(!sheet->property("checking").toBool(),patient(60000));
+        QVERIFY(QMetaObject::invokeMethod(sheet,"close"));QTRY_VERIFY(!sheet->property("visible").toBool());
+        QSettings().setValue("app/lastVersion",QCoreApplication::applicationVersion());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void the_session_names_its_version_and_quits_for_another_one() {
         // desktop.open compares this with the installed version.
         const auto state=previewCall("state").value("result").toMap();

@@ -126,15 +126,16 @@ Rectangle {
         for(let i=0;i<3;++i)if((x.numbers[i] || 0)!==(y.numbers[i] || 0))return (x.numbers[i] || 0)>(y.numbers[i] || 0)
         return !x.pre && y.pre
     }
-    // Shown once per start of a new version: what changed.
-    function startupSheets() {
+    // Shown once: the onboarding on the very first start, then what changed on
+    // the first start of each new version. fresh overrides Studio.firstStart (the tests use it).
+    function startupSheets(fresh) {
         if(captureMode || smokeTest || initialDeviceOnly)return
         const current=Qt.application.version
         if(!current)return
         const seen=String(Studio.setting("app/lastVersion",""))
         if(seen===current)return
         Studio.saveSetting("app/lastVersion",current)
-        if(Studio.firstStart)return
+        if(fresh===undefined?Studio.firstStart:fresh){if(String(Studio.setting("onboarding/shown",false))!=="true")onboarding.open();return}
         // No version recorded but settings exist: an update from a release before this one.
         if(seen && !newerVersion(current,seen))return
         whatsNew.open()
@@ -558,7 +559,8 @@ Rectangle {
         {id:"touches",title:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates"),detail:qsTr("Command"),icon:"testing",key:"",run:()=>{view.showTouches=!view.showTouches}},
         {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
-        {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()}
+        {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()},
+        {id:"onboarding",title:qsTr("Get started"),detail:qsTr("Command"),search:qsTr("Connect your coding agent"),icon:"agent",key:"",run:()=>onboarding.open()}
     ].concat(recentProjects.map(p=>({id:"recent:"+p.path,title:qsTr("Open recent project %1").arg(p.name),detail:p.path,search:p.name,icon:"files",key:"",run:()=>workspace.openProject(p.path)})))
     function navigate(section) { if(section==="runtime")workspace.close();else workspace.showTab(section) }
     function copyContext() {Studio.copy(JSON.stringify({project:projectPath,runtime:live,cli:Agent.cliPath,mcp:{command:Agent.cliPath,args:["mcp"]}},null,2));notice=qsTr("Project and runtime context copied");failed=false}
@@ -961,6 +963,7 @@ Rectangle {
     }
     FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
+    OnboardingSheet {id:onboarding;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,560);height:Math.min(view.height-Theme.gapLg,implicitHeight)}
     StudioDialog {
         id:whatsNew;objectName:"whatsNewSheet";title:qsTr("What's new in %1").arg(Qt.application.version);anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,620);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
         property string highlights:""

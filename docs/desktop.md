@@ -27,6 +27,14 @@ the command palette (Ctrl+K) finds all of them as **Open recent project**
 A project folder dragged from the file manager onto the window opens as the
 project and shows its overview; a single file or an `.app` bundle does not.
 
+### First start
+
+On the very first start the desktop shows **Welcome to Tomacco** (*Willkommen bei Tomacco*). It runs `doctor`
+and lists what is left to set up in plain words, such as the Android SDK or iOS builds, or says that everything
+is in place. **Connect your coding agent** (*Deinen Coding-Agenten verbinden*) copies the MCP configuration to
+paste into your agent's MCP settings; **Skip** (*Überspringen*) closes the sheet. It shows by itself only once;
+**Get started** (*Erste Schritte*) in the command palette (Ctrl+K) opens it again.
+
 ## Languages
 
 The desktop speaks English, German, French, Spanish and Italian. It follows the desktop language: the
