@@ -541,6 +541,11 @@ The layout lab is a separate Chromium surface, not a device. Start a session wit
   worker's, and not WebSocket traffic.
 - `preview.ready` waits for the document, fonts and Flutter's first frame. A `wait_for` expression can wait for your own readiness.
 - `preview.inspect`, `preview.click`, `preview.fill`, `preview.evaluate`, `preview.console` and `preview.capture` interact with the page.
+- `preview.errors` reports the current page load as structured results: `console_errors`, `exceptions` (uncaught
+  errors and unhandled rejections, with stack), `failed_requests` (fetch, XMLHttpRequest, elements, style sheet
+  resources, fonts and the document; status 0 is a network error) and `clean`. `reload:true` reloads and waits
+  first, so the report covers one load. `preview.console` keeps the raw console. Requests from workers and frames
+  are not recorded.
 - `preview.matrix` captures several profiles and orientations and restores the session. Besides one PNG per
   capture and `matrix.json`, it writes `contact-sheet.png`: every capture side by side at one scale, labelled with
   the model and its orientation. `contact_sheet:false` leaves it out.

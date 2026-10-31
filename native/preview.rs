@@ -162,6 +162,24 @@ pub fn handle(op: &str, a: &Value) -> Result {
             30,
         ),
         "preview.matrix" => matrix(a),
+        "preview.errors" => {
+            if b(a, "reload") {
+                call("reload", json!({}), session, 30)?;
+                let timeout = if a["timeout"].is_u64() {
+                    n(a, "timeout")
+                } else {
+                    30
+                };
+                // A page that failed to load is reported, not refused.
+                match ready(session, timeout, s(a, "wait_for")) {
+                    Err(e) if e.code == "page_load_failed" => {}
+                    other => {
+                        other?;
+                    }
+                }
+            }
+            call("errors", json!({}), session, 30)
+        }
         _ => {
             let mut params = a.clone();
             params.as_object_mut().unwrap().remove("session");

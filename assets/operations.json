@@ -3093,6 +3093,46 @@
     }
   },
   {
+    "name": "preview.errors",
+    "title": "Page errors",
+    "description": "Report the current page load's errors as structured results: console errors, uncaught exceptions, unhandled promise rejections and failed requests (network errors and HTTP status 400 and above from fetch, XMLHttpRequest, elements, style sheets, fonts and the document), with clean true when there are none. reload:true reloads first and waits for the page, so the report covers exactly one load.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "reload": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reload the page and wait until it is ready before reporting"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "default": 30,
+          "description": "Seconds to wait for the reloaded page"
+        },
+        "wait_for": {
+          "type": "string",
+          "default": "",
+          "description": "JavaScript expression that becomes true when application content is ready, after a reload"
+        },
+        "session": {
+          "type": "string",
+          "description": "Running preview session name; defaults to main",
+          "pattern": "[A-Za-z0-9_-]{1,40}"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "preview.click",
     "title": "Click element",
     "description": "Click a CSS selector in the preview page.",

@@ -78,6 +78,10 @@ class FakePreview:
                 size = (size[0] * 2, size[1] * 2)
             Path(params["path"]).write_bytes(png(*size, (200, 30, 30, 255)))
             return {"path": params["path"], "width": size[0], "height": size[1]}
+        if method == "reload":
+            return {"reloading": True}
+        if method == "errors":
+            return {"clean": True, "failed_requests": []}
         if method == "evaluate":
             if "issues" in params["script"]:
                 return {"issues": [], "url": self.state["url"]}
@@ -144,6 +148,23 @@ class Emulation(PreviewCase):
                 dispatch("preview.configure", arguments)
             self.assertEqual(caught.exception.code, "invalid_argument", arguments)
         self.assertEqual(self.preview.requests, [])
+
+
+class Errors(PreviewCase):
+    def test_errors_report_the_current_load_or_reload_first(self):
+        self.assertEqual(dispatch("preview.errors", {}), {"clean": True, "failed_requests": []})
+        self.assertEqual([m for m, _ in self.preview.requests], ["errors"])
+        self.preview.requests.clear()
+        dispatch("preview.errors", {"reload": True, "wait_for": "window.ready", "timeout": 5})
+        methods = [m for m, _ in self.preview.requests]
+        self.assertEqual(methods[0], "reload")
+        self.assertEqual(methods[-1], "errors")
+        self.assertIn("Boolean(window.ready)", [p.get("script") for _, p in self.preview.requests])
+
+    def test_a_page_that_failed_to_load_is_reported_after_a_reload(self):
+        self.preview.state["error"] = "Page not reachable"
+        self.assertEqual(dispatch("preview.errors", {"reload": True})["clean"], True)
+        self.assertEqual(self.preview.requests[-1][0], "errors")
 
 
 if __name__ == "__main__":

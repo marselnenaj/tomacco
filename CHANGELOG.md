@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 188 operations.
+`tomaccoctl` now has one typed API of 189 operations.
 
 ### Added
 
@@ -101,6 +101,8 @@ operations and their JSON results.
     scale and labelled with model and orientation.
   - `preview.configure` and the lab's View panel set the page's `prefers-color-scheme`
     and `prefers-reduced-motion`, per session, through the DevTools protocol.
+  - `preview.errors` reports one page load's console errors, uncaught exceptions,
+    unhandled rejections and failed requests as structured results.
   - Network throttling and offline for the lab's page: Fast 3G, Slow 3G, offline or
     your own latency and bandwidth, with `preview.configure` or the View panel.
 - **Packaging and guides.**

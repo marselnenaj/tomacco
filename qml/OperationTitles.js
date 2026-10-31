@@ -93,6 +93,7 @@ var titles = {
     "preview.capture": QT_TRANSLATE_NOOP("Operations", "Capture preview"),
     "preview.inspect": QT_TRANSLATE_NOOP("Operations", "Inspect DOM"),
     "preview.console": QT_TRANSLATE_NOOP("Operations", "Browser console"),
+    "preview.errors": QT_TRANSLATE_NOOP("Operations", "Page errors"),
     "preview.click": QT_TRANSLATE_NOOP("Operations", "Click element"),
     "preview.fill": QT_TRANSLATE_NOOP("Operations", "Fill in form"),
     "preview.reload": QT_TRANSLATE_NOOP("Operations", "Reload page"),

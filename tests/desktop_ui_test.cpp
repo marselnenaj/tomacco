@@ -997,6 +997,47 @@ private slots:
         if(auto *panel=object("activityPanel"))panel->setProperty("calls",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void layout_lab_reports_the_page_loads_errors_and_failed_requests() {
+        PageServer web("<!doctype html><title>errors</title><style>div{width:20px;height:20px;background:url(/missing-bg.png)}</style><div></div>"
+                       "<img src=/missing.png alt=x><script>console.error('custom failure');console.warn('a warning');"
+                       "fetch('/missing-api').then(r=>r.text());fetch('http://127.0.0.1:1/none').catch(()=>{});"
+                       "Promise.reject(new Error('rejected promise'));setTimeout(()=>{throw new Error('thrown later')},0);"
+                       "const x=new XMLHttpRequest();x.open('GET','/missing-xhr');x.send();</script>");
+        QVERIFY(web.server.isListening());
+        const bool wasNative=window->property("nativeMode").toBool();window->setProperty("nativeMode",false);
+        QVERIFY(openPage(web.url()));
+        QVariantMap report;
+        QTRY_VERIFY2_WITH_TIMEOUT((report=previewCall("errors").value("result").toMap()).value("failed_requests").toList().size()>=5,qPrintable(QJsonDocument::fromVariant(report).toJson()),patient(10000));
+        QVERIFY(report.value("collected").toBool());QVERIFY(!report.value("clean").toBool());
+        QCOMPARE(report.value("url").toString(),web.url());
+        const auto console=report.value("console_errors").toList();
+        QVERIFY2(std::any_of(console.begin(),console.end(),[](const QVariant &e){return e.toMap().value("message").toString()=="custom failure";}),qPrintable(QJsonDocument::fromVariant(console).toJson()));
+        QCOMPARE(report.value("console_warnings").toInt(),1);
+        QStringList kinds;for(const auto &e:report.value("exceptions").toList())kinds<<e.toMap().value("kind").toString()+":"+e.toMap().value("message").toString();
+        kinds.sort();QCOMPARE(kinds,(QStringList{"exception:thrown later","unhandled-rejection:rejected promise"}));
+        // An uncaught error is listed once, as an exception, not again as a console error.
+        for(const auto &e:console)QVERIFY(!e.toMap().value("message").toString().contains("thrown later"));
+        QMap<QString,QVariantMap> failed;for(const auto &e:report.value("failed_requests").toList())failed[QUrl(e.toMap().value("url").toString()).path()]=e.toMap();
+        QCOMPARE(failed.value("/missing-api").value("kind").toString(),QString("fetch"));QCOMPARE(failed.value("/missing-api").value("status").toInt(),404);
+        QCOMPARE(failed.value("/missing-xhr").value("kind").toString(),QString("xhr"));QCOMPARE(failed.value("/missing-xhr").value("status").toInt(),404);
+        QCOMPARE(failed.value("/missing.png").value("kind").toString(),QString("element"));QCOMPARE(failed.value("/missing.png").value("status").toInt(),404);
+        QCOMPARE(failed.value("/missing-bg.png").value("kind").toString(),QString("resource"));QCOMPARE(failed.value("/missing-bg.png").value("status").toInt(),404);
+        QCOMPARE(failed.value("/none").value("kind").toString(),QString("fetch"));QCOMPARE(failed.value("/none").value("status").toInt(),0);
+        QVERIFY(!failed.value("/none").value("error").toString().isEmpty());
+        // A new load starts a new report; a missing document is one failed request.
+        QVERIFY(openPage(web.url("/missing-page")));
+        QTRY_VERIFY_WITH_TIMEOUT(previewCall("errors").value("result").toMap().value("failed_requests").toList().size()==1,patient(5000));
+        report=previewCall("errors").value("result").toMap();
+        const auto document=report.value("failed_requests").toList().value(0).toMap();
+        QCOMPARE(document.value("kind").toString(),QString("document"));QCOMPARE(document.value("status").toInt(),404);
+        QVERIFY(report.value("exceptions").toList().isEmpty());QVERIFY(report.value("console_errors").toList().isEmpty());
+        QVERIFY(openPage(web.url("/clean")));
+        report=previewCall("errors").value("result").toMap();
+        QVERIFY2(report.value("clean").toBool(),qPrintable(QJsonDocument::fromVariant(report).toJson()));
+        previewCall("navigate",{{"url","tomacco://demo"}});window->setProperty("nativeMode",wasNative);
+        if(auto *panel=object("activityPanel"))panel->setProperty("calls",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void iphone_frames_follow_the_measured_geometry() {
         // Every iPhone is drawn to scale from its profile: the body's millimetres through the panel's
         // density, the island (or notch, or punch hole) of its exact size at its exact place, the

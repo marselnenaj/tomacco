@@ -1,4 +1,5 @@
 import QtQuick
+import QtWebEngine
 
 Item {
     id: automation
@@ -35,6 +36,22 @@ Item {
             else Agent.complete(id,value.value===undefined?null:value.value)
         })
     }
+    // preview.errors: the page's own records joined with the console's errors.
+    function errors(id) {
+        device.browser.runJavaScript("window.__tomaccoPageErrors ? window.__tomaccoPageErrors.report() : null",function(page) {
+            const exceptions=page ? page.errors : []
+            // Chromium also logs an uncaught error to the console as "Uncaught …"; it is listed once, as an exception.
+            const repeated=m=>m.message.startsWith("Uncaught") && exceptions.some(e=>e.message.length && m.message.indexOf(e.message)>=0)
+            const consoleErrors=device.consoleMessages.filter(m=>m.level===WebEngineView.ErrorMessageLevel && !repeated(m))
+                .map(m=>({message:m.message,source:m.source,line:m.line,time:m.time}))
+            const warnings=device.consoleMessages.filter(m=>m.level===WebEngineView.WarningMessageLevel).length
+            const failed=page ? page.failed_requests : []
+            Agent.complete(id,{url:device.browser.url.toString(),loading:device.browser.loading,load_started:device.loadStarted,load_error:device.loadError,
+                clean:!device.loadError && !consoleErrors.length && !exceptions.length && !failed.length,
+                console_errors:consoleErrors,exceptions:exceptions,failed_requests:failed,console_warnings:warnings,
+                collected:page!==null && page!==undefined,dropped:page ? page.dropped : 0})
+        })
+    }
     Connections {
         target: Agent
         function onPreviewRequest(id,method,args) {
@@ -42,6 +59,7 @@ Item {
                 if(method==="state") { Agent.complete(id,automation.state()); return }
                 if(method==="show") { app.showWorkspace(args.tab || "project", args.path || "", args.file || "", args.line || 1); Agent.complete(id,{shown:true,session:Agent.session,tab:args.tab || "project"}); return }
                 if(method==="console") { Agent.complete(id,device.consoleMessages); return }
+                if(method==="errors") { automation.errors(id); return }
                 if(method==="navigate") {
                     let url=Studio.normalizeUrl(args.url||"")
                     if(!url.toString().length) throw new Error("Invalid URL")

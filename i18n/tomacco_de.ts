@@ -3219,6 +3219,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Browser-Konsole</translation>
     </message>
     <message>
+        <source>Page errors</source>
+        <translation>Seitenfehler</translation>
+    </message>
+    <message>
         <source>Build &amp; run on device</source>
         <translation>Bauen &amp; auf Gerät starten</translation>
     </message>
