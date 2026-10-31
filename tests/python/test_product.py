@@ -813,6 +813,49 @@ class AndroidControlTests(Isolated):
             dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app"})
         self.assertEqual(stopped.exception.code, "app_not_running")
 
+    def test_device_settings_apply_only_what_is_asked_and_read_everything_back(self):
+        state = {"ro.build.version.sdk": "36\n", "uimode night": "Night mode: yes\n", "get system font_scale": "1.3\n",
+                 "get global window_animation_scale": "0\n", "get global transition_animation_scale": "0.0\n",
+                 "get global animator_duration_scale": "0\n", "get global airplane_mode_on": "1\n",
+                 "get-app-locales": "Locales for dev.test.app for user 0 are [de-DE]\n"}
+        self.replies(**state)
+        value = dispatch("android.settings", {"device": "emulator-5554", "dark_mode": "on", "font_scale": 1.3, "animations": False,
+                                              "airplane_mode": True, "bundle_id": "dev.test.app", "app_locale": "de-de"})
+        self.assertEqual(value["changed"], ["dark_mode", "font_scale", "animations", "airplane_mode", "app_locale"])
+        self.assertEqual((value["dark_mode"], value["font_scale"], value["animations"], value["airplane_mode"], value["app_locale"]),
+                         ("on", 1.3, False, True, "de-DE"))
+        shell = self.shell_calls()
+        for command in (["cmd", "uimode", "night", "yes"], ["settings", "put", "system", "font_scale", "1.3"],
+                        ["settings", "put", "global", "animator_duration_scale", "0"], ["cmd", "connectivity", "airplane-mode", "enable"],
+                        ["cmd", "locale", "set-app-locales", "dev.test.app", "--locales", "de-de"]):
+            self.assertIn(command, shell)
+        # Nothing asked: nothing written, everything read.
+        (self.root / "adb-calls.jsonl").unlink()
+        value = dispatch("android.settings", {"device": "emulator-5554"})
+        self.assertEqual(value["changed"], [])
+        self.assertFalse(any(args[:2] in (["settings", "put"], ["cmd", "connectivity"]) or args[-1] in ("yes", "no", "auto") for args in self.shell_calls()))
+        # An empty language resets the app to the device language.
+        state["get-app-locales"] = "Locales for dev.test.app for user 0 are []\n"
+        self.replies(**state)
+        dispatch("android.settings", {"device": "emulator-5554", "bundle_id": "dev.test.app", "app_locale": ""})
+        self.assertIn(["cmd", "locale", "set-app-locales", "dev.test.app"], self.shell_calls())
+        # A value Android ignored is an error, not a silent success.
+        with self.assertRaises(StudioError) as ignored:
+            dispatch("android.settings", {"device": "emulator-5554", "dark_mode": "off"})
+        self.assertEqual(ignored.exception.code, "setting_not_applied")
+        self.assertEqual(ignored.exception.details["dark_mode"], "on")
+
+    def test_device_settings_refuse_what_the_android_version_cannot_do_before_changing_anything(self):
+        self.replies(**{"ro.build.version.sdk": "29\n"})
+        for arguments, code in [({"airplane_mode": True}, "setting_unsupported"), ({"bundle_id": "dev.test.app", "app_locale": "de"}, "setting_unsupported"),
+                                ({"app_locale": "de"}, "invalid_argument"), ({"bundle_id": "dev.test.app", "app_locale": "de;reboot"}, "invalid_argument")]:
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.settings", {"device": "emulator-5554", "dark_mode": "on", **arguments})
+            self.assertEqual(refused.exception.code, code, arguments)
+        self.assertFalse(any("uimode" in args for args in self.shell_calls()))
+        with self.assertRaises(StudioError):
+            dispatch("android.settings", {"device": "emulator-5554", "font_scale": 3})
+
 class ProtocolTests(Isolated):
     def test_cli_schema_errors_and_file_arguments(self):
         schema = json.loads(subprocess.check_output([binary(), "schema"]))["result"]

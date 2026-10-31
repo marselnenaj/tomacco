@@ -111,6 +111,29 @@ running app, so launch the app first.
 tomaccoctl call device.logs '{"platform":"android","device":"emulator-5554","bundle_id":"dev.example.newapp","duration":30}'
 ```
 
+## Device settings for tests
+
+`android.settings` sets what changes an app's look and motion, so UI tests and
+screenshots start from a known state. Leave out what should stay as it is; the result
+reads every setting back. A value Android accepts but does not apply answers
+`setting_not_applied` with what it reads instead.
+
+```sh
+tomaccoctl call android.settings '{"device":"emulator-5554","dark_mode":"on","font_scale":1.3,"animations":false}'
+tomaccoctl call android.settings '{"device":"emulator-5554","bundle_id":"dev.example.newapp","app_locale":"de-DE"}'
+tomaccoctl call android.settings '{"device":"emulator-5554"}'
+```
+
+- `dark_mode` is `on`, `off` or `auto`, through `cmd uimode night`.
+- `font_scale` is the system font size from 0.5 to 2; 1 is the default.
+- `animations:false` sets the window, transition and animator scales to 0. `true`
+  sets them back to 1.
+- `airplane_mode` needs Android 11 (API 30) or newer.
+- `app_locale` sets the language of one app, given by `bundle_id`, through Android's
+  per-app languages, which need Android 13 (API 33) or newer. An empty value returns
+  the app to the device language. The language of the whole device is not changed:
+  adb cannot do that without root.
+
 ## Sound
 
 On Android 11 and newer, output sound is forwarded to the computer by default when

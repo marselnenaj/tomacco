@@ -850,6 +850,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 json!({"steps":[{"argv":args}],"cwd":home()?,"timeout":86400,"env":env,"exclusive":format!("android-avd:{name}"),"single_active":true}),
             )
         }
+        "android.settings" => settings(a),
         "android.emulator" => {
             if !device.starts_with("emulator-") {
                 return Err(Error::new(
@@ -889,6 +890,184 @@ pub fn handle(op: &str, a: &Value) -> Result {
         }
         _ => Err(Error::new("operation_not_found", op)),
     }
+}
+const ANIMATION_SCALES: [&str; 3] = [
+    "window_animation_scale",
+    "transition_animation_scale",
+    "animator_duration_scale",
+];
+/// Language tags separated by commas, as `cmd locale` takes them.
+fn locale_tags(value: &str) -> Result<&str> {
+    if value.is_empty() {
+        return Ok(value);
+    }
+    identifier(
+        value,
+        "language tags",
+        Some(r"[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*(,[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*)*"),
+    )
+}
+/// The tags in `Locales for PACKAGE for user 0 are [de-DE,fr]`.
+fn app_locales(output: &str) -> Option<String> {
+    let line = output.lines().find(|l| l.starts_with("Locales for "))?;
+    let list = line.rsplit_once(" are [")?.1.strip_suffix(']')?;
+    Some(list.split(',').map(str::trim).collect::<Vec<_>>().join(","))
+}
+fn setting(device: &str, namespace: &str, key: &str) -> Result<String> {
+    let result = run(sh(device, &["settings", "get", namespace, key])?)?;
+    Ok(s(&result, "stdout").trim().to_string())
+}
+/// A scale setting as Android reads it; unset means the default of 1.
+fn scale(value: &str) -> f64 {
+    value.parse().unwrap_or(1.0)
+}
+/// Sets the settings that change how an app looks or moves in UI tests and
+/// screenshots, then reads every one back. Arguments left out stay unchanged.
+fn settings(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "device ID", None)?;
+    let locale = a.get("app_locale").and_then(Value::as_str);
+    let id = s(a, "bundle_id");
+    if locale.is_some() && id.is_empty() {
+        return Err(Error::new(
+            "invalid_argument",
+            "app_locale applies to one app; pass its bundle_id",
+        ));
+    }
+    if !id.is_empty() {
+        bundle(id)?;
+    }
+    if let Some(tags) = locale {
+        locale_tags(tags)?;
+    }
+    let sdk = sdk_level(device)?;
+    if a.get("airplane_mode").is_some() && sdk < 30 {
+        return Err(Error::new(
+            "setting_unsupported",
+            "Switching airplane mode from adb needs Android 11 (API 30) or newer",
+        ));
+    }
+    if !id.is_empty() && sdk < 33 {
+        return Err(Error::new(
+            "setting_unsupported",
+            "A language for one app needs Android 13 (API 33) or newer",
+        )
+        .remedy(
+            "Older Android changes the language only for the whole device, in its Settings app",
+        ));
+    }
+    let mut changed = Vec::new();
+    if let Some(mode) = a.get("dark_mode").and_then(Value::as_str) {
+        let night = match mode {
+            "on" => "yes",
+            "off" => "no",
+            _ => "auto",
+        };
+        run(sh(device, &["cmd", "uimode", "night", night])?)?;
+        changed.push("dark_mode");
+    }
+    if let Some(value) = a.get("font_scale").and_then(Value::as_f64) {
+        run(sh(
+            device,
+            &[
+                "settings",
+                "put",
+                "system",
+                "font_scale",
+                &value.to_string(),
+            ],
+        )?)?;
+        changed.push("font_scale");
+    }
+    if let Some(on) = a.get("animations").and_then(Value::as_bool) {
+        for key in ANIMATION_SCALES {
+            run(sh(
+                device,
+                &["settings", "put", "global", key, if on { "1" } else { "0" }],
+            )?)?;
+        }
+        changed.push("animations");
+    }
+    if let Some(on) = a.get("airplane_mode").and_then(Value::as_bool) {
+        run(sh(
+            device,
+            &[
+                "cmd",
+                "connectivity",
+                "airplane-mode",
+                if on { "enable" } else { "disable" },
+            ],
+        )?)?;
+        changed.push("airplane_mode");
+    }
+    if let Some(tags) = locale {
+        let mut args = vec!["cmd", "locale", "set-app-locales", id];
+        // Without --locales the app follows the device language again.
+        if !tags.is_empty() {
+            args.extend(["--locales", tags]);
+        }
+        run(sh(device, &args)?)?;
+        changed.push("app_locale");
+    }
+    let night = run(sh(device, &["cmd", "uimode", "night"])?)?;
+    let night = s(&night, "stdout")
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("Night mode: "))
+        .unwrap_or("")
+        .trim();
+    let mut animations = json!({});
+    for key in ANIMATION_SCALES {
+        animations[key] = json!(scale(&setting(device, "global", key)?));
+    }
+    let mut value = json!({
+        "device": device,
+        "sdk": sdk,
+        "dark_mode": match night { "yes" => "on", "no" => "off", other => other },
+        "font_scale": scale(&setting(device, "system", "font_scale")?),
+        "animations": ANIMATION_SCALES.iter().all(|k| animations[k] != json!(0.0)),
+        "animation_scales": animations,
+        "airplane_mode": setting(device, "global", "airplane_mode_on")? == "1",
+        "changed": changed,
+    });
+    if !id.is_empty() {
+        let result = run(sh(device, &["cmd", "locale", "get-app-locales", id])?)?;
+        let tags = app_locales(s(&result, "stdout")).ok_or_else(|| {
+            Error::new(
+                "app_not_installed",
+                format!("Android has no language setting for {id}"),
+            )
+            .remedy("Install the app first")
+            .details(result.clone())
+        })?;
+        value["bundle_id"] = json!(id);
+        value["app_locale"] = json!(tags);
+    }
+    // Android accepts some values without applying them; report those.
+    let mut differences = Vec::new();
+    for key in ["dark_mode", "animations", "airplane_mode", "app_locale"] {
+        if let Some(wanted) = a.get(key) {
+            let actual = &value[key];
+            let same = match (wanted.as_str(), actual.as_str()) {
+                (Some(w), Some(v)) => w.eq_ignore_ascii_case(v),
+                _ => wanted == actual,
+            };
+            if !same {
+                differences.push(key);
+            }
+        }
+    }
+    if let Some(wanted) = a.get("font_scale").and_then(Value::as_f64) {
+        if (value["font_scale"].as_f64().unwrap_or(0.0) - wanted).abs() > 0.001 {
+            differences.push("font_scale");
+        }
+    }
+    if !differences.is_empty() {
+        return Err(Error::new(
+            "setting_not_applied",
+            format!("Android did not apply: {}", differences.join(", ")),
+        )
+        .details(value));
+    }
+    Ok(value)
 }
 fn avd_profile(a: &Value) -> Result {
     let name = avd_name(s(a, "name"))?;
@@ -1091,5 +1270,28 @@ mod tests {
             None
         );
         assert_eq!(package_uid("", "dev.example.app"), None);
+    }
+
+    #[test]
+    fn app_languages_are_validated_and_read_back() {
+        assert!(locale_tags("de-DE,fr,zh-Hant-TW").is_ok());
+        assert!(locale_tags("").is_ok());
+        for bad in ["de DE", "de;reboot", "-de", "de,,fr", "d"] {
+            assert!(locale_tags(bad).is_err(), "{bad}");
+        }
+        assert_eq!(
+            app_locales("Locales for dev.example.app for user 0 are [de-DE,fr]\n").as_deref(),
+            Some("de-DE,fr")
+        );
+        assert_eq!(
+            app_locales("Locales for dev.example.app for user 0 are []").as_deref(),
+            Some("")
+        );
+        assert_eq!(
+            app_locales("Unknown package dev.example.app for userId 0"),
+            None
+        );
+        assert_eq!(scale("null"), 1.0);
+        assert_eq!(scale("0.0"), 0.0);
     }
 }

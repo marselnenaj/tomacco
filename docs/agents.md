@@ -94,6 +94,13 @@ Then look: `device.capture` for evidence, `android.hierarchy` for the UI tree, a
 after each action. Prefer `testing.find` and `testing.action` over coordinates when the app exposes
 accessible controls.
 
+Before UI tests or screenshots, `android.settings` fixes dark mode, font scale, animations, airplane
+mode and an app's language, and reads them back:
+
+```sh
+tomaccoctl call android.settings '{"device":"emulator-5554","dark_mode":"off","font_scale":1,"animations":false}'
+```
+
 For the emulator's settings, `android.avd_configure` changes a stopped emulator:
 
 ```sh
