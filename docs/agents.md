@@ -192,6 +192,8 @@ tool makes those. Stop and tell the user when the IM4M is what is missing, rathe
   the current run's `running_panel` as `WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM`.
 - `ios.virtual.status` reports the time-zone outcome as `time_zone`, and `installed_applications` (bundle identifier to the
   cdhash on the current run's volume) next to `applications`, the profile's own bundles.
+- During a start, `phase_elapsed_seconds`, `phases` and, while `preparing`, `copy_progress` show where it is. `start_disk.enough`
+  false means the next start will be refused with `ios_virtual_disk_space`; its remedy says how much to free.
 - A window for the phone: `preview.configure` with `ios_guest:{detached:true}`. Asked while no guest is running, the request is
   kept for ten minutes. `workspace.ios_research.guest.detach_pending` in the returned state tells whether it is still waiting.
 

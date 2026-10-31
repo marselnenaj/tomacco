@@ -63,7 +63,10 @@ A start checks the space first. When the filesystem of `installs` lacks room for
 plus 1 GiB, counting the older copies the start would delete first), `ios.virtual.start` refuses at once with
 `ios_virtual_disk_space`, before anything is deleted or copied. The refusal says how much to free. On a filesystem
 that clones files (btrfs, or XFS with reflink) the copy shares blocks with its base and needs only the 1 GiB.
-The refusal has unit tests and a control-plane test; it has not been met on a real full disk.
+`start_disk` in `ios.virtual.status` gives the same reckoning before you start: `needed_bytes`, `free_bytes`,
+`reclaimable_bytes` and `enough`. The status writes nothing to find out, so on btrfs or XFS short of room for a
+full copy `enough` stays null until a start tries a clone. The refusal and `start_disk` have unit tests and a
+control-plane test; neither has been met on a real full disk.
 
 ## The graphics memory guard
 

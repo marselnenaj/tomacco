@@ -492,30 +492,49 @@ fn free_bytes(path: &Path) -> Option<u64> {
         .then(|| space.f_bavail as u64 * space.f_frsize as u64)
 }
 
+/// Whether a filesystem of this kind can clone files at all (btrfs, XFS,
+/// bcachefs, OCFS2), read from its superblock magic without writing.
+fn may_clone(path: &Path) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    let Ok(name) = std::ffi::CString::new(path.as_os_str().as_bytes()) else {
+        return false;
+    };
+    let mut info: libc::statfs = unsafe { std::mem::zeroed() };
+    if unsafe { libc::statfs(name.as_ptr(), &mut info) } != 0 {
+        return false;
+    }
+    [0x9123_683E_i64, 0x5846_5342, 0xCA45_1A4E, 0x7461_636F].contains(&(info.f_type as i64))
+}
+
 /// Whether the copy fits: a full copy needs the base's disks and the
 /// headroom, which the free space and what the start deletes first must
 /// cover. Only when they do not is `clones` asked whether the filesystem
-/// shares blocks instead, and a clone needs the headroom alone.
+/// shares blocks instead (None: not known), and a clone needs the headroom
+/// alone. The answer is None when it depends on a clone that is not known.
 fn disk_verdict(
     disks: u64,
     free: u64,
     reclaimable: u64,
-    clones: impl FnOnce() -> bool,
-) -> (u64, Option<bool>, bool) {
+    clones: impl FnOnce() -> Option<bool>,
+) -> (u64, Option<bool>, Option<bool>) {
     let full = disks + COPY_HEADROOM;
     if free.saturating_add(reclaimable) >= full {
-        return (full, None, true);
+        return (full, None, Some(true));
     }
-    if clones() {
-        return (COPY_HEADROOM, Some(true), free >= COPY_HEADROOM);
+    match clones() {
+        Some(true) => (COPY_HEADROOM, Some(true), Some(free >= COPY_HEADROOM)),
+        Some(false) => (full, Some(false), Some(false)),
+        None => (full, None, None),
     }
-    (full, Some(false), false)
 }
 
 /// The space the next start's disk copy needs in the profile's `installs`
-/// and whether it is there. Null when the base's disks or the filesystem
-/// cannot be read; the start itself then says why.
-fn start_disk(profile: &Value, state: &Value) -> Value {
+/// and whether it is there. With `probe`, a short filesystem is asked to
+/// clone the base's smallest disk (the start); without, nothing is written
+/// and a filesystem that might clone leaves the answer open (the status).
+/// Null when the base's disks or the filesystem cannot be read; the start
+/// itself then says why.
+fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
     let base = match state["verified"]["install"].as_str() {
         Some(base) => PathBuf::from(base),
         None if state["closed"] == true && text(state, "install") => {
@@ -539,7 +558,13 @@ fn start_disk(profile: &Value, state: &Value) -> Value {
         .map(|copy| allocated_bytes(copy))
         .sum::<u64>();
     let (needed, reflink, enough) = disk_verdict(disks, free, reclaimable, || {
-        clones_into(&base.join("sep.raw"), &installs)
+        if probe {
+            Some(clones_into(&base.join("sep.raw"), &installs))
+        } else if may_clone(&installs) {
+            None
+        } else {
+            Some(false)
+        }
     });
     json!({"installs":installs,"needed_bytes":needed,"free_bytes":free,
         "reclaimable_bytes":reclaimable,"reflink":reflink,"enough":enough})
@@ -732,6 +757,8 @@ pub fn status(_a: &Value) -> Result {
         // or stop with its seconds, and the disk copy's progress while preparing.
         "phase_started":times["phase_started"],"phase_elapsed_seconds":times["phase_elapsed_seconds"],
         "phases":times["phases"],"copy_progress":copy_progress(&state),
+        // Whether the next start's disk copy fits in the profile's installs.
+        "start_disk":start_disk(&profile,&state,false),
         "error":state["error"],"updated":state["updated"],
         "guest_job":state["guest_job"],"guest_state":guest_state,"guest_state_known":guest_known,
         "guest_report_readable":report_readable,
@@ -827,7 +854,7 @@ pub fn start(a: &Value) -> Result {
     let directory = directory()?;
     let (profile, state) = records(&directory)?;
     if jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state) {
-        refuse_short_disk(&start_disk(&profile, &state))?;
+        refuse_short_disk(&start_disk(&profile, &state, true))?;
     }
     // Preparation, a boot of many minutes and the unlock each have their own
     // bound inside the script; this is the outer limit of the whole job.
@@ -1269,24 +1296,29 @@ mod start_disk_tests {
         let never = || panic!("no clone probe while a full copy fits");
         assert_eq!(
             disk_verdict(32 * GIB, 40 * GIB, 0, never),
-            (33 * GIB, None, true)
+            (33 * GIB, None, Some(true))
         );
         assert_eq!(
             disk_verdict(32 * GIB, 20 * GIB, 13 * GIB, never),
-            (33 * GIB, None, true)
+            (33 * GIB, None, Some(true))
         );
         assert_eq!(
-            disk_verdict(32 * GIB, 20 * GIB, 0, || false),
-            (33 * GIB, Some(false), false)
+            disk_verdict(32 * GIB, 20 * GIB, 0, || Some(false)),
+            (33 * GIB, Some(false), Some(false))
         );
         // A filesystem that clones needs the headroom alone.
         assert_eq!(
-            disk_verdict(32 * GIB, 2 * GIB, 0, || true),
-            (GIB, Some(true), true)
+            disk_verdict(32 * GIB, 2 * GIB, 0, || Some(true)),
+            (GIB, Some(true), Some(true))
         );
         assert_eq!(
-            disk_verdict(32 * GIB, GIB / 2, 0, || true),
-            (GIB, Some(true), false)
+            disk_verdict(32 * GIB, GIB / 2, 0, || Some(true)),
+            (GIB, Some(true), Some(false))
+        );
+        // One that might clone, not asked: the answer stays open.
+        assert_eq!(
+            disk_verdict(32 * GIB, 2 * GIB, 0, || None),
+            (33 * GIB, None, None)
         );
     }
 
@@ -1356,16 +1388,19 @@ mod start_disk_tests {
         }
         let profile = json!({"installs":installs});
         let state = json!({"closed":true,"install":base});
-        let disk = start_disk(&profile, &state);
-        assert_eq!(disk["needed_bytes"], 3 * 4096 + COPY_HEADROOM);
-        assert_eq!(
-            disk["enough"],
-            disk["free_bytes"].as_u64().unwrap() >= 3 * 4096 + COPY_HEADROOM
-        );
+        for probe in [true, false] {
+            let disk = start_disk(&profile, &state, probe);
+            assert_eq!(disk["needed_bytes"], 3 * 4096 + COPY_HEADROOM);
+            if disk["free_bytes"].as_u64().unwrap() >= 3 * 4096 + COPY_HEADROOM {
+                assert_eq!(disk["enough"], true);
+            }
+            // Neither reading leaves anything in installs.
+            assert_eq!(fs::read_dir(&installs).unwrap().count(), 0);
+        }
         // An open run without a verified base, or a base without its disks,
         // says nothing.
-        assert!(start_disk(&profile, &json!({"closed":false,"install":base})).is_null());
+        assert!(start_disk(&profile, &json!({"closed":false,"install":base}), false).is_null());
         fs::remove_file(base.join("sep.raw")).unwrap();
-        assert!(start_disk(&profile, &state).is_null());
+        assert!(start_disk(&profile, &state, true).is_null());
     }
 }

@@ -1604,7 +1604,12 @@ class VirtualPhoneOperations(Isolated):
         for name in ("auxiliary.raw", "sep.raw"):
             (base / name).write_bytes(b"\0" * 4096)
         directory = self.profile(install=str(base))
-        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        disk = dispatch("ios.virtual.configure", {"directory": str(directory)})["start_disk"]
+        # The status says so before any start, without writing a probe: on a
+        # filesystem that might clone, the answer stays open.
+        self.assertEqual(disk["needed_bytes"], (8 << 40) + 8192 + (1 << 30))
+        self.assertIn(disk["enough"], (False, None))
+        self.assertEqual(list((directory / "installs").iterdir()), [])
         try:
             dispatch("ios.virtual.start")
         except StudioError as error:
