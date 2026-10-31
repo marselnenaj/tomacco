@@ -11,6 +11,14 @@ pub fn manifest() -> &'static Value {
             .expect("operation schema is valid JSON")
     })
 }
+/// Every operation's name, in schema order.
+pub fn names() -> impl Iterator<Item = &'static str> {
+    manifest()
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|op| s(op, "name"))
+}
 pub fn arguments(name: &str, args: &Value) -> Result {
     let op = manifest()
         .as_array()
@@ -18,8 +26,13 @@ pub fn arguments(name: &str, args: &Value) -> Result {
         .iter()
         .find(|op| s(op, "name") == name)
         .ok_or_else(|| {
-            Error::new("operation_not_found", format!("Unknown operation: {name}"))
-                .remedy("Use tomaccoctl schema to discover operations")
+            let remedy = match closest(name, names()) {
+                Some(near) => {
+                    format!("Did you mean {near}? tomaccoctl schema --names lists every operation")
+                }
+                None => "Use tomaccoctl schema to discover operations".to_string(),
+            };
+            Error::new("operation_not_found", format!("Unknown operation: {name}")).remedy(remedy)
         })?;
     validate(args, &op["inputSchema"], "arguments")?;
     let mut args = args.clone();
@@ -158,6 +171,25 @@ mod tests {
         );
         assert!(arguments("doctor", &json!({"unexpected":true})).is_err());
         assert!(arguments("catalog.list", &json!([])).is_err());
+    }
+    #[test]
+    fn mistyped_names_and_arguments_are_answered_with_the_closest_match() {
+        let error = arguments("projct.run", &json!({})).unwrap_err();
+        assert_eq!(error.code, "operation_not_found");
+        assert!(error.remedy.starts_with("Did you mean project.run?"));
+        // The last dotted parts of exactly one operation.
+        let error = arguments("virtual.start", &json!({})).unwrap_err();
+        assert!(error.remedy.starts_with("Did you mean ios.virtual.start?"));
+        let error = arguments("completely-different", &json!({})).unwrap_err();
+        assert_eq!(error.remedy, "Use tomaccoctl schema to discover operations");
+        // A misspelt required argument is named as a misspelling, not as missing.
+        let error = arguments("project.inspect", &json!({"pth":"/tmp"})).unwrap_err();
+        assert_eq!(error.message, "Unknown argument: arguments.pth");
+        assert_eq!(error.remedy, "Did you mean arguments.path?");
+        let error = arguments("job.wait", &json!({"job_id":"x","zzzzzz":1})).unwrap_err();
+        assert_eq!(error.remedy, "Accepted keys of arguments: job_id, seconds");
+        let error = arguments("doctor", &json!({"unexpected":true})).unwrap_err();
+        assert_eq!(error.remedy, "arguments must be an empty object");
     }
     #[test]
     fn defaults_match_existing_contract() {

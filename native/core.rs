@@ -403,6 +403,44 @@ pub fn identifier<'a>(value: &'a str, label: &str, pattern: Option<&str>) -> Res
     }
     Ok(value)
 }
+/// The candidate a mistyped name most likely meant: the fewest single-character
+/// edits, within a third of its length (at least two), or else the one
+/// candidate whose last dotted parts are the name (`ios.virtual.start` for
+/// `virtual.start`). None when nothing is close enough to suggest.
+pub fn closest<'a>(name: &str, candidates: impl IntoIterator<Item = &'a str>) -> Option<&'a str> {
+    fn distance(a: &str, b: &str) -> usize {
+        let b: Vec<char> = b.chars().collect();
+        let mut row: Vec<usize> = (0..=b.len()).collect();
+        for (i, x) in a.chars().enumerate() {
+            let mut diagonal = row[0];
+            row[0] = i + 1;
+            for (j, y) in b.iter().enumerate() {
+                let above = row[j + 1];
+                row[j + 1] = (above + 1)
+                    .min(row[j] + 1)
+                    .min(diagonal + usize::from(x != *y));
+                diagonal = above;
+            }
+        }
+        row[b.len()]
+    }
+    let name = name.to_ascii_lowercase();
+    let limit = (name.chars().count() / 3).max(2);
+    let suffix = format!(".{name}");
+    let mut best: Option<(usize, &str)> = None;
+    let mut suffixed = Vec::new();
+    for candidate in candidates {
+        if candidate.ends_with(&suffix) {
+            suffixed.push(candidate);
+        }
+        let d = distance(&name, candidate);
+        if d <= limit && best.is_none_or(|(e, _)| d < e) {
+            best = Some((d, candidate));
+        }
+    }
+    best.map(|(_, c)| c)
+        .or_else(|| (suffixed.len() == 1).then(|| suffixed[0]))
+}
 pub fn validate(value: &Value, schema: &Value, name: &str) -> Result<()> {
     let kind = schema["type"].as_str().unwrap_or("");
     let valid = match kind {
@@ -432,6 +470,24 @@ pub fn validate(value: &Value, schema: &Value, name: &str) -> Result<()> {
             {
                 return Err(fail(format!("{name} has an invalid property count")));
             }
+            // Unknown keys come first: a misspelt required argument is
+            // answered with its spelling, not as missing.
+            for key in value.as_object().unwrap().keys() {
+                if schema["properties"].get(key).is_none()
+                    && schema["additionalProperties"] == false
+                {
+                    let known: Vec<&str> = schema["properties"]
+                        .as_object()
+                        .map(|p| p.keys().map(String::as_str).collect())
+                        .unwrap_or_default();
+                    let remedy = match closest(key, known.iter().copied()) {
+                        Some(near) => format!("Did you mean {name}.{near}?"),
+                        None if known.is_empty() => format!("{name} must be an empty object"),
+                        None => format!("Accepted keys of {name}: {}", known.join(", ")),
+                    };
+                    return Err(fail(format!("Unknown argument: {name}.{key}")).remedy(remedy));
+                }
+            }
             if let Some(required) = schema["required"].as_array() {
                 for key in required {
                     let key = key.as_str().unwrap_or("");
@@ -443,8 +499,6 @@ pub fn validate(value: &Value, schema: &Value, name: &str) -> Result<()> {
             for (key, item) in value.as_object().unwrap() {
                 if let Some(spec) = schema["properties"].get(key) {
                     validate(item, spec, &format!("{name}.{key}"))?;
-                } else if schema["additionalProperties"] == false {
-                    return Err(fail(format!("Unknown argument: {name}.{key}")));
                 } else if schema["additionalProperties"].is_object() {
                     validate(
                         item,
@@ -636,6 +690,27 @@ mod directory_tests {
         owner_only(&data).unwrap();
         assert_eq!(fs::metadata(&data).unwrap().mode() & 0o777, 0o700);
         assert!(owner_only(&parent.path().join("missing")).is_err());
+    }
+
+    #[test]
+    fn the_closest_name_is_suggested_only_when_it_is_close() {
+        let names = [
+            "job.wait",
+            "job.logs",
+            "ios.virtual.start",
+            "android.avd_start",
+        ];
+        assert_eq!(closest("job.wiat", names), Some("job.wait"));
+        assert_eq!(closest("JOB.LOGS", names), Some("job.logs"));
+        assert_eq!(closest("virtual.start", names), Some("ios.virtual.start"));
+        assert_eq!(closest("start", names), Some("ios.virtual.start"));
+        // Two operations end in `.start`: neither is the likely one.
+        assert_eq!(
+            closest("start", ["ios.virtual.start", "runtime.start"]),
+            None
+        );
+        assert_eq!(closest("profile.capture", names), None);
+        assert_eq!(closest("x", std::iter::empty()), None);
     }
 
     #[test]
