@@ -136,7 +136,7 @@ For agents, the same device is reached by `runtime.input`, `runtime.capture` and
 display session, use `device.capture`, `device.logs`, `android.hierarchy`,
 `android.input`, `android.record`, `android.mirror`, `android.ports`,
 `android.permission`, `android.deep_link`, `android.performance`, `android.settings`,
-`android.display` and `android.emulator`.
+`android.display`, `android.notifications` and `android.emulator`.
 
 `android.input` types ASCII text with `adb shell input text`. Other text, such as
 `Grüße` or emoji, cannot go that way, so Tomacco pastes it: it starts the configured
@@ -196,6 +196,30 @@ tomaccoctl call android.display '{"device":"emulator-5554","reset":true}'
   `wm density`. Both stay until `reset`, also across app restarts.
 - `reset` returns size and density to the device's own and rotation to the sensor,
   before any other argument in the same call.
+- Checked on the API 36 x86_64 emulator, where landscape turned the display by
+  90 degrees and `reset` brought back its own size and density.
+
+### Notifications
+
+`android.notifications` lists what Android is showing, so a test can check that its
+app posted the right notification. Each entry has the key, package, ID, tag, channel,
+flags and, when set, title, text, sub-text and big text. `bundle_id` keeps one app's.
+
+```sh
+tomaccoctl call android.notifications '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
+tomaccoctl call android.notifications '{"device":"emulator-5554","action":"open"}'
+tomaccoctl call android.notifications '{"device":"emulator-5554","action":"snooze","key":"0|dev.example.newapp|7|null|10200","seconds":600}'
+```
+
+- `open` and `close` expand and collapse the notification shade through
+  `cmd statusbar`, for a screenshot or a tap on a notification with `android.input`.
+- adb cannot cancel another app's notifications: Android refuses it to the shell. To
+  get one out of the way, `snooze` hides it for `seconds` and fails with
+  `notification_not_snoozed` when it is still listed.
+- Every action returns the list afterwards. The list is read from
+  `dumpsys notification --noredact`.
+- Listing, open, close and snooze were checked on the API 36 x86_64 emulator with a
+  notification posted by `cmd notification post`.
 
 ## Sound
 

@@ -119,6 +119,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "ios.virtual.debug" => crate::ios_emulator::virtual_phone::debug(&a),
         "ios.virtual.screenshot" => crate::ios_emulator::virtual_screen::screenshot(&a),
         "ios.virtual.record" => crate::ios_emulator::virtual_screen::record(&a),
+        "android.notifications" => crate::android_device::notification(&a),
         "android.display" => crate::android_device::display(&a),
         "android.package_inspect" => crate::android_package::inspect(&a),
         name if name.starts_with("play.") => play_store::handle(name, &a),

@@ -929,6 +929,36 @@ class AndroidControlTests(Isolated):
         for arguments in ({"width": 720}, {"density": 10}, {"orientation": "sideways"}):
             with self.assertRaises(StudioError): display(**arguments)
 
+    NOTIFICATIONS = ("Current Notification Manager state:\n  Notification List:\n"
+                     "    NotificationRecord(0x01d08d09: pkg=dev.test.app user=UserHandle{0} id=7 tag=null importance=3 key=0|dev.test.app|7|null|10200: "
+                     "Notification(channel=orders shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 vis=PRIVATE))\n"
+                     "      notification=\n        extras={\n            android.title=String (Order shipped)\n            android.text=String (Arrives Monday)\n        }\n"
+                     "    NotificationRecord(0x02a82fca: pkg=android user=UserHandle{-1} id=19 tag=null importance=2 key=-1|android|19|null|1000: "
+                     "Notification(channel=DEVELOPER shortcut=null defaults=0 flags=ONGOING_EVENT color=0x00000000 vis=PUBLIC))\n"
+                     "  Snoozed notifications:\n")
+
+    def test_notifications_are_listed_the_shade_opened_and_one_snoozed(self):
+        self.replies(**{"dumpsys notification": self.NOTIFICATIONS, "snooze": "snoozing <-1|android|19|null|1000> until time: later\n"})
+        notifications = lambda **a: dispatch("android.notifications", {"device": "emulator-5554", **a})
+        listed = notifications()["notifications"]
+        self.assertEqual([(n["package"], n.get("title"), n.get("text"), n["ongoing"]) for n in listed],
+                         [("dev.test.app", "Order shipped", "Arrives Monday", False), ("android", None, None, True)])
+        self.assertEqual([n["key"] for n in notifications(bundle_id="dev.test.app")["notifications"]], ["0|dev.test.app|7|null|10200"])
+        notifications(action="open")
+        notifications(action="close")
+        self.assertIn(["cmd", "statusbar", "expand-notifications"], self.shell_calls())
+        self.assertIn(["cmd", "statusbar", "collapse"], self.shell_calls())
+        # The fake still lists the key afterwards, so the snooze did not hide it.
+        with self.assertRaises(StudioError) as shown:
+            notifications(action="snooze", key="0|dev.test.app|7|null|10200", seconds=60)
+        self.assertEqual(shown.exception.code, "notification_not_snoozed")
+        self.assertIn(["cmd", "notification", "snooze", "--for", "60000", "0|dev.test.app|7|null|10200"], self.shell_calls())
+        self.replies(**{"dumpsys notification": self.NOTIFICATIONS.split("    NotificationRecord(0x02a8")[0] + "  Snoozed notifications:\n",
+                        "snooze": "snoozing <-1|android|19|null|1000> until time: later\n"})
+        self.assertEqual(len(notifications(action="snooze", key="-1|android|19|null|1000")["notifications"]), 1)
+        for arguments in ({"action": "snooze"}, {"action": "snooze", "key": "not-a-key"}, {"bundle_id": "x;y"}):
+            with self.assertRaises(StudioError): notifications(**arguments)
+
     def test_emulator_snapshots_battery_network_and_location_go_through_the_console(self):
         self.replies(**{"avd snapshot list": "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001\nOK\n",
                         "power display": "AC: offline\nstatus: Discharging\nhealth: Good\npresent: true\ncapacity: 15\nOK\n",

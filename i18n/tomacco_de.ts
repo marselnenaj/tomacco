@@ -3289,6 +3289,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>iOS-Werkzeuge installieren</translation>
     </message>
     <message>
+        <source>Notifications</source>
+        <translation>Benachrichtigungen</translation>
+    </message>
+    <message>
         <source>Prepare Flutter for iOS</source>
         <translation>Flutter für iOS vorbereiten</translation>
     </message>
