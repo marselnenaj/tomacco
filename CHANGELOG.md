@@ -99,7 +99,7 @@ First release of the Rust control plane and the redesigned Qt desktop.
 
 - One-line install from tomacco.dev that checks the signature, and `tomaccoctl setup`,
   which checks the machine, installs the Android SDK and connects coding agents.
-- `tomaccoctl`: one typed API of 183 operations as a JSON CLI and a stdio MCP
+- `tomaccoctl`: one typed API of 170 operations as a JSON CLI and a stdio MCP
   server, with durable jobs, artifacts and shared debug sessions.
 - Qt desktop in English and German with live device display, debugging and a
   visual layout lab.
