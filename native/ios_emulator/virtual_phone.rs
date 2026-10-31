@@ -146,11 +146,23 @@ fn model() -> Result<String> {
     Ok(s(&read_json(&location()?, Some(json!({})))?, "model").to_string())
 }
 
-/// The panel of a run as `WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM`: the model's
-/// own, or for the Home-button phone the profile's display profile, which a
-/// model start leaves aside (`boot_request` in the script). Null for a model
-/// this control plane does not know.
-fn running_panel(profile: &Value, model: &str) -> Value {
+/// The panel of a run as `WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM`. The guest
+/// job's own request says what the engine was given (`paravirtual::start`
+/// puts a model's panel there), so a profile or catalogue edited after the
+/// boot cannot change the answer; a request without a panel left the engine
+/// its default, which is unknown here (null). Without the guest job: the
+/// model's own panel, or for the Home-button phone the profile's display
+/// profile, which a model start leaves aside (`boot_request` in the script).
+/// Null for a model this control plane does not know.
+fn running_panel(profile: &Value, model: &str, guest: Option<&Value>) -> Value {
+    if let Some(key) = guest
+        .map(|job| &job["plan"]["operation_key"])
+        .filter(|key| key["operation"] == "ios.emulator.paravirtual")
+    {
+        return key["arguments"]["display_profile"]
+            .as_str()
+            .map_or(Value::Null, Value::from);
+    }
     if model.is_empty() {
         return profile["boot"]["display_profile"].clone();
     }
@@ -485,7 +497,7 @@ pub fn status(_a: &Value) -> Result {
         "busy":busy,
         // What the next start will be, what the current run is, and the choice.
         "model":model()?,"running_model":state.get("model").cloned().unwrap_or(json!("")),
-        "running_panel":running_panel(&profile,s(&state,"model")),
+        "running_panel":running_panel(&profile,s(&state,"model"),guest.as_ref()),
         "models":paravirtual::device_models().iter().map(|model| json!({"id":model["id"],
             "name":model["name"],"panel":model["panel"],"source":model["source"]})).collect::<Vec<_>>(),
         "guest_ended":ended,"guest_saved":saved,"guest_gpu_memory_stop":gpu_memory_stop,
@@ -744,14 +756,53 @@ mod running_panel_tests {
         // A profile can name the Home-button phone's panel while the guest
         // runs as the iPhone 16; the status says what runs.
         let profile = json!({"boot":{"display_profile":"1170x2532@60:65x141"}});
-        assert_eq!(running_panel(&profile, "16"), json!("1179x2556@60:65x141"));
         assert_eq!(
-            running_panel(&profile, "18pro"),
+            running_panel(&profile, "16", None),
+            json!("1179x2556@60:65x141")
+        );
+        assert_eq!(
+            running_panel(&profile, "18pro", None),
             json!("1206x2622@60:66x143")
         );
-        assert_eq!(running_panel(&profile, ""), json!("1170x2532@60:65x141"));
-        assert_eq!(running_panel(&profile, "no-such-model"), Value::Null);
-        assert_eq!(running_panel(&json!({"boot":{}}), ""), Value::Null);
+        assert_eq!(
+            running_panel(&profile, "", None),
+            json!("1170x2532@60:65x141")
+        );
+        assert_eq!(running_panel(&profile, "no-such-model", None), Value::Null);
+        assert_eq!(running_panel(&json!({"boot":{}}), "", None), Value::Null);
+    }
+
+    #[test]
+    fn the_guest_jobs_request_is_the_panel_that_was_booted() {
+        // The profile was edited after the boot: the status still reports
+        // what the engine was given, not what the next start would give it.
+        let edited = json!({"boot":{"display_profile":"1206x2622@60:66x143"}});
+        let guest = |arguments: Value| {
+            json!({"plan":{"operation_key":{"operation":"ios.emulator.paravirtual",
+                "arguments":arguments}}})
+        };
+        let booted = guest(json!({"display_profile":"1170x2532@60:65x141"}));
+        assert_eq!(
+            running_panel(&edited, "", Some(&booted)),
+            json!("1170x2532@60:65x141")
+        );
+        // A model boot carries its panel in the request as well.
+        let model = guest(json!({"device_model":"16","display_profile":"1179x2556@60:65x141"}));
+        assert_eq!(
+            running_panel(&edited, "16", Some(&model)),
+            json!("1179x2556@60:65x141")
+        );
+        // A boot without a panel ran on the engine's default, unknown here.
+        assert_eq!(
+            running_panel(&edited, "", Some(&guest(json!({})))),
+            Value::Null
+        );
+        // A job of another kind says nothing about the panel.
+        let other = json!({"plan":{"operation_key":{"operation":"ios.emulator.research"}}});
+        assert_eq!(
+            running_panel(&edited, "", Some(&other)),
+            json!("1206x2622@60:66x143")
+        );
     }
 }
 

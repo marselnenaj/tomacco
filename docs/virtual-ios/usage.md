@@ -74,7 +74,9 @@ tomaccoctl call ios.virtual.configure '{"model":"16"}'
 
 The status lists `models`, each with `id`, `name`, `panel` and `source`. The choice applies from the next
 start; your data stays the same. The status also has `model` (for the next start), `running_model` and
-`running_panel`. Choose a model in the desktop too.
+`running_panel`. `running_panel` is the panel the current run's boot request gave the engine, so editing the
+profile while a phone runs does not change it; it is null when that boot named no panel. Choose a model in the
+desktop too.
 
 | Model | Panel | Source | Result when booted once |
 | --- | --- | --- | --- |
