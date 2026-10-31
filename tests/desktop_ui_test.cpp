@@ -21,6 +21,8 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QMimeData>
+#include <QClipboard>
+#include <QImage>
 #include <QtEndian>
 #include <QtMath>
 #include <QUrl>
@@ -2036,6 +2038,36 @@ for line in sys.stdin:
         view->setProperty("requests",QVariantMap{});view->setProperty("targets",QVariantList{});
         view->setProperty("platform",platform);view->setProperty("appleTarget",appleTarget);view->setProperty("target",target);
         view->setProperty("notice",QString());view->setProperty("failed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void screenshots_are_saved_and_copied() {
+        // A capture of the live device is saved by the control plane and then put on the clipboard;
+        // without a device the reason is shown. The palette and the shortcut sheet name it.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"close"));
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        view->setProperty("live",QVariantMap{});view->setProperty("requests",QVariantMap{});
+        QVERIFY(QMetaObject::invokeMethod(view,"capture"));
+        QCOMPARE(view->property("notice").toString(),QString("Connect a device to take a screenshot."));
+        QVERIFY(view->property("failed").toBool());
+        QTemporaryDir pictures;QVERIFY(pictures.isValid());
+        const auto path=pictures.filePath("shot.png");
+        QImage picture(36,64,QImage::Format_RGB32);picture.fill(QColor("#2fa84f"));QVERIFY(picture.save(path));
+        QGuiApplication::clipboard()->clear();
+        view->setProperty("requests",QVariantMap{{"-61",QVariantMap{{"op","runtime.capture"}}}});
+        control->apiFinished(-61,"runtime.capture",QVariantMap{{"ok",true},{"result",QVariantMap{{"path",path}}}});
+        QCOMPARE(view->property("notice").toString(),QString("Screenshot saved and copied · ")+path);
+        QVERIFY(!view->property("failed").toBool());
+        const auto copied=QGuiApplication::clipboard()->image();
+        QCOMPARE(copied.size(),picture.size());QCOMPARE(copied.pixelColor(10,10),QColor("#2fa84f"));
+        // A file that cannot be read is still reported as saved, but not as copied.
+        view->setProperty("requests",QVariantMap{{"-62",QVariantMap{{"op","runtime.capture"}}}});
+        control->apiFinished(-62,"runtime.capture",QVariantMap{{"ok",true},{"result",QVariantMap{{"path",pictures.filePath("missing.png")}}}});
+        QCOMPARE(view->property("notice").toString(),QString("Capture saved · ")+pictures.filePath("missing.png"));
+        bool listed=false;
+        for(const auto &command:view->property("commands").value<QJSValue>().toVariant().toList())
+            if(command.toMap().value("id").toString()=="screenshot")listed=command.toMap().value("key").toString()=="Ctrl+Shift+S";
+        QVERIFY(listed);
+        view->setProperty("notice",QString());view->setProperty("failed",false);view->setProperty("requests",QVariantMap{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void german_interface_switches_live() {

@@ -8,6 +8,7 @@
 #include <QFont>
 #include <QFontDatabase>
 #include <QGuiApplication>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -218,6 +219,12 @@ void Backend::probeToolchain() {
     emit toolchainChanged();
 }
 void Backend::copy(const QString &text) { QGuiApplication::clipboard()->setText(text); emit message(tr("Copied")); }
+bool Backend::copyImage(const QString &path) {
+    const QImage image(path);
+    if(image.isNull()) return false;
+    QGuiApplication::clipboard()->setImage(image);
+    return true;
+}
 QString Backend::screenshotPath(const QString &model) {
     auto directory=QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)+"/Tomacco";
     if(!QDir().mkpath(directory)) { emit message(tr("The screenshot folder could not be created.")); return {}; }

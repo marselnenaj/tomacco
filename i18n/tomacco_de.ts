@@ -782,6 +782,10 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
 <context>
     <name>DeviceWindow</name>
     <message>
+        <source>Save and copy a screenshot · Ctrl+Shift+S</source>
+        <translation>Screenshot speichern und kopieren · Strg+Umschalt+S</translation>
+    </message>
+    <message>
         <source>Back</source>
         <translation>Zurück</translation>
     </message>
@@ -808,10 +812,6 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
     <message>
         <source>Rotate</source>
         <translation>Drehen</translation>
-    </message>
-    <message>
-        <source>Save screenshot</source>
-        <translation>Screenshot speichern</translation>
     </message>
     <message>
         <source>Show the back</source>
@@ -919,6 +919,10 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
 </context>
 <context>
     <name>IosGuestView</name>
+    <message>
+        <source>Screenshot saved and copied: %1</source>
+        <translation>Screenshot gespeichert und kopiert: %1</translation>
+    </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
         <translation>%1 · Ausgang unklar, nicht automatisch wiederholt</translation>
@@ -1754,6 +1758,10 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
 <context>
     <name>Main</name>
     <message>
+        <source>Screenshot saved and copied · %1</source>
+        <translation>Screenshot gespeichert und kopiert · %1</translation>
+    </message>
+    <message>
         <source>%1 panel pixels</source>
         <translation>%1 Panel-Pixel</translation>
     </message>
@@ -2189,6 +2197,22 @@ xtool setup</translation>
 </context>
 <context>
     <name>NativeWorkspace</name>
+    <message>
+        <source>Connect a device to take a screenshot.</source>
+        <translation>Verbinde ein Gerät, um einen Screenshot aufzunehmen.</translation>
+    </message>
+    <message>
+        <source>Screenshot saved and copied · %1</source>
+        <translation>Screenshot gespeichert und kopiert · %1</translation>
+    </message>
+    <message>
+        <source>Save and copy a device screenshot</source>
+        <translation>Geräte-Screenshot speichern und kopieren</translation>
+    </message>
+    <message>
+        <source>Save and copy a screenshot</source>
+        <translation>Screenshot speichern und kopieren</translation>
+    </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
         <translation>Wähle zuerst ein Gerät und lege die App dann darauf ab.</translation>

@@ -467,7 +467,7 @@ ColumnLayout {
                 view.capturedAt=new Date().toLocaleTimeString(Qt.locale(),"HH:mm:ss")
                 view.notice=""
                 if(view.inputQueue.length)view.pump();else nextFrame.restart()
-            } else if(context.action==="screenshot") {view.notice=qsTr("Capture saved: %1").arg(result.path);view.pump()}
+            } else if(context.action==="screenshot") {view.notice=(Studio.copyImage(result.path)?qsTr("Screenshot saved and copied: %1"):qsTr("Capture saved: %1")).arg(result.path);view.pump()}
             else view.pump()
         }
     }

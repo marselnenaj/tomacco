@@ -131,7 +131,7 @@ ApplicationWindow {
         let path=Studio.screenshotPath(currentModel.id+"-"+(currentModel.id==="duo"?(foldedOpen?"offen-":"gefaltet-"):"")+(rotated?"quer":"hoch"))
         if(!path.length) return
         phone.grabToImage(function(result) {
-            root.toast(result.saveToFile(path) ? qsTr("Screenshot saved · %1").arg(path) : qsTr("Screenshot could not be saved."))
+            root.toast(!result.saveToFile(path) ? qsTr("Screenshot could not be saved.") : (Studio.copyImage(path) ? qsTr("Screenshot saved and copied · %1") : qsTr("Screenshot saved · %1")).arg(path))
         },Qt.size(phone.width*2,phone.height*2))
     }
     Component.onCompleted: {

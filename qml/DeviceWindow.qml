@@ -93,6 +93,7 @@ Window {
             else if(control && (event.key===Qt.Key_Plus || event.key===Qt.Key_Equal))win.chooseZoom(win.zoom+.1)
             else if(control && event.key===Qt.Key_Minus)win.chooseZoom(win.zoom-.1)
             else if(control && event.key===Qt.Key_0)win.chooseZoom(Math.min(1,win.fitZoom))
+            else if(control && (event.modifiers & Qt.ShiftModifier) && event.key===Qt.Key_S && win.controlsEnabled)win.screenshotRequested()
             else if(win.forwardHardwareKeys) {
                 win.hardwareKeyRequested(event.key,event.modifiers);event.accepted=true;return
             } else return
@@ -129,7 +130,7 @@ Window {
                 StudioButton {objectName:"deviceWindowBack";iconName:"back";quiet:true;tip:qsTr("Back")+(win.backShortcut?" · "+win.backShortcut:"");visible:win.showBack;enabled:win.controlsEnabled;onClicked:win.backRequested()}
                 StudioButton {iconName:"rotate";quiet:true;tip:qsTr("Rotate");visible:win.showRotate;enabled:win.controlsEnabled;onClicked:win.rotateRequested()}
                 StudioButton {objectName:"deviceWindowFlip";iconName:"flip";quiet:true;selected:win.flipped;tip:win.flipped?qsTr("Show the front"):qsTr("Show the back");visible:win.showFlip;onClicked:win.flipped=!win.flipped}
-                StudioButton {iconName:"camera";quiet:true;tip:qsTr("Save screenshot");enabled:win.controlsEnabled;onClicked:win.screenshotRequested()}
+                StudioButton {iconName:"camera";quiet:true;objectName:"deviceWindowScreenshot";tip:qsTr("Save and copy a screenshot · Ctrl+Shift+S");enabled:win.controlsEnabled;onClicked:win.screenshotRequested()}
                 Rectangle {Layout.alignment:Qt.AlignHCenter;width:Theme.gapXl;height:1;color:Theme.subtle}
                 StudioButton {objectName:"deviceWindowZoomIn";iconName:"plus";quiet:true;tip:qsTr("Larger · Ctrl+mouse wheel");enabled:win.zoom<Math.min(win.maxZoom,win.fitZoom);onClicked:win.chooseZoom(win.zoom+.1)}
                 Text {Layout.alignment:Qt.AlignHCenter;text:Math.round(win.zoom*100)+"%";color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}

@@ -282,7 +282,11 @@ Rectangle {
         request("device.install",{platform:installTarget.platform,device:installTarget.device,paths:paths})
         notice=qsTr("Installing %1 on %2…").arg(paths.map(AppFiles.name).join(", ")).arg(deviceName || installTarget.device);failed=false
     }
-    function capture() {if(live.session)request("runtime.capture",{session:live.session,path:Studio.screenshotPath(live.device)})}
+    // The picture is saved under Pictures/Tomacco and put on the clipboard.
+    function capture() {
+        if(!live.session){notice=qsTr("Connect a device to take a screenshot.");failed=true;return}
+        request("runtime.capture",{session:live.session,path:Studio.screenshotPath(live.device)})
+    }
     function build(action) {
         if(!projectPath)return
         if(platform==="ios" && appleTarget==="simulator") {
@@ -391,7 +395,7 @@ Rectangle {
             }
             if(op==="workspace.context") {workspace.openProject(r.project.path);view.platform=r.workspace.platform || "android";view.target=r.workspace.device || ""}
             if(op==="device.install"){if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
-            if(op==="runtime.capture"){view.notice=qsTr("Capture saved · %1").arg(r.path);view.failed=false}
+            if(op==="runtime.capture"){view.notice=(Studio.copyImage(r.path)?qsTr("Screenshot saved and copied · %1"):qsTr("Capture saved · %1")).arg(r.path);view.failed=false}
         }
     }
     readonly property alias workspaceHost: workspaceHost
@@ -424,6 +428,7 @@ Rectangle {
         {id:"copy-context",title:qsTr("Copy context"),detail:qsTr("Command"),icon:"copy",key:"",run:()=>view.copyContext()},
         {id:"appearance",title:Theme.isDark?qsTr("Switch to light appearance"):qsTr("Switch to dark appearance"),detail:qsTr("Command"),icon:Theme.isDark?"sun":"moon",key:"",run:()=>Studio.setAppearance(Theme.isDark?"light":"dark")},
         {id:"settings",title:qsTr("Settings"),detail:qsTr("Command"),icon:"settings",key:qsTr("Ctrl")+"+,",run:()=>settingsDialog.open()},
+        {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
         {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()}
     ]
@@ -676,7 +681,7 @@ Rectangle {
                             StudioButton {text:qsTr("Back");displayText:"";iconName:"back";quiet:true;tip:text;visible:display.state==="live" && view.live.platform!=="ios";onClicked:view.input({action:"key",key:"back"})}
                             StudioButton {text:"Home";displayText:"";iconName:"home";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"key",key:"home"})}
                             StudioButton {text:qsTr("Rotate");displayText:"";iconName:"rotate";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"rotate",orientation:display.sourceSize.width>display.sourceSize.height?"portrait":"landscape_left"})}
-                            StudioButton {text:"Screenshot";displayText:"";iconName:"camera";quiet:true;tip:text;visible:display.state==="live";onClicked:view.capture()}
+                            StudioButton {objectName:"nativeScreenshot";text:"Screenshot";displayText:"";iconName:"camera";quiet:true;tip:qsTr("Save and copy a screenshot")+" · "+qsTr("Ctrl")+"+Shift+S";visible:display.state==="live";onClicked:view.capture()}
                             StudioButton {text:qsTr("Enter text");displayText:"";iconName:"keyboard";quiet:true;tip:text;visible:display.state==="live";onClicked:textEntry.open()}
                             StudioButton {objectName:"nativeDetachButton";text:view.detached?qsTr("Dock"):qsTr("Own window");displayText:"";iconName:view.detached?"dock":"window";quiet:true;selected:view.detached;tip:view.detached?text:qsTr("Detach the device into its own window");visible:display.state==="live";onClicked:view.detached=!view.detached}
                             Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:display.state==="live"}
@@ -768,7 +773,7 @@ Rectangle {
             GridLayout {
                 width:parent.width;columns:2;columnSpacing:Theme.gapXl;rowSpacing:Theme.gapSm
                 Repeater {
-                    model:[["Ctrl+K",qsTr("Search views, commands and tools")],["F1",qsTr("Keyboard shortcuts")],["Ctrl+O",qsTr("Open project")],["Ctrl+J",qsTr("Show or hide activity")],["Ctrl+,",qsTr("Settings")],["Ctrl+S",qsTr("Save the current file")],["Ctrl+Shift+F",qsTr("Search the project's source code")],["F11",qsTr("Full screen · web preview")]].concat(view.navigation.map(x=>["Ctrl+"+x.key,x.label])).map(x=>[x[0].replace("Ctrl",qsTr("Ctrl")),x[1]])
+                    model:[["Ctrl+K",qsTr("Search views, commands and tools")],["F1",qsTr("Keyboard shortcuts")],["Ctrl+O",qsTr("Open project")],["Ctrl+J",qsTr("Show or hide activity")],["Ctrl+,",qsTr("Settings")],["Ctrl+S",qsTr("Save the current file")],["Ctrl+Shift+S",qsTr("Save and copy a device screenshot")],["Ctrl+Shift+F",qsTr("Search the project's source code")],["F11",qsTr("Full screen · web preview")]].concat(view.navigation.map(x=>["Ctrl+"+x.key,x.label])).map(x=>[x[0].replace("Ctrl",qsTr("Ctrl")),x[1]])
                     delegate:Item {
                         required property var modelData
                         required property int index

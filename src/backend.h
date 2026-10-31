@@ -74,6 +74,8 @@ public:
     Q_INVOKABLE void probeToolchain();
     Q_INVOKABLE void copy(const QString &text);
     Q_INVOKABLE QString screenshotPath(const QString &model);
+    // Puts the image saved at this path on the clipboard; false when it cannot be read.
+    Q_INVOKABLE bool copyImage(const QString &path);
     Q_INVOKABLE void openExternal(const QUrl &url);
     // Starts this program again from its path, for the new version an update installed there.
     Q_INVOKABLE bool relaunch();

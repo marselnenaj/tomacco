@@ -73,6 +73,12 @@ panel takes the whole stage while it is open. The smallest window is 560×480.
 | Live device / files / jobs / devices / overview | Ctrl+1 … Ctrl+5 |
 | Debugger / UI tests / performance / release / agents | Ctrl+6 … Ctrl+9, Ctrl+0 |
 | Save the current source file | Ctrl+S |
+| Save a screenshot of the live device and copy it to the clipboard | Ctrl+Shift+S |
+
+Screenshots of the live device, from the camera button, the palette, Ctrl+Shift+S or
+the device window's rail (Ctrl+Shift+S there too), are saved in `~/Pictures/Tomacco`
+(or the configured Pictures directory) and put on the clipboard as an image.
+The virtual iOS device's **Screenshot** button copies its capture the same way.
 
 ## Activity
 
@@ -290,7 +296,8 @@ and the rounded display render using each profile's declared density,
 accounting for the desktop display scale. This keeps text and canvas content
 sharp when the device is enlarged. Zoomed devices can be scrolled into view.
 Screenshots include the device frame and are saved at 2× the preview's logical
-size in `~/Pictures/Tomacco` (or the configured Pictures directory).
+size in `~/Pictures/Tomacco` (or the configured Pictures directory) and copied
+to the clipboard.
 
 Pages on every profile always fill the complete display: there are no blank
 strips around the browser. The app can read the layout metadata below to
