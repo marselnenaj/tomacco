@@ -33,6 +33,8 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QElapsedTimer>
+#include <QProcess>
+#include <QJsonArray>
 #include <QCryptographicHash>
 #include <unistd.h>
 #include <algorithm>
@@ -1034,6 +1036,51 @@ private slots:
         QVERIFY(openPage(web.url("/clean")));
         report=previewCall("errors").value("result").toMap();
         QVERIFY2(report.value("clean").toBool(),qPrintable(QJsonDocument::fromVariant(report).toJson()));
+        previewCall("navigate",{{"url","tomacco://demo"}});window->setProperty("nativeMode",wasNative);
+        if(auto *panel=object("activityPanel"))panel->setProperty("calls",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void layout_audit_finds_overflow_clipped_text_and_small_targets() {
+        PageServer web("<!doctype html><meta name=viewport content='width=device-width'><title>audit</title>"
+                       "<style>body{margin:0;font:16px sans-serif}#top{position:fixed;top:0;left:0;margin:0;width:100%}</style>"
+                       "<p id=top>Under the island</p><div style='height:120px'></div>"
+                       "<section><div style='width:2000px'>wide</div><div><button style='width:46px;height:46px'>Go</button></div></section>"
+                       "<p>Read <a href='#more'>more</a> here</p><button id=big style='width:60px;height:60px'>Ok</button>");
+        QVERIFY(web.server.isListening());
+        const bool wasNative=window->property("nativeMode").toBool();window->setProperty("nativeMode",false);
+        const auto before=previewCall("state").value("result").toMap();
+        QVERIFY(!previewCall("configure",{{"device","18pro"},{"orientation","portrait"},{"safe_area",true}}).contains("error"));
+        QVERIFY(openPage(web.url()));
+        const auto audit=[&]{
+            QProcess cli;cli.start(QCoreApplication::applicationDirPath()+"/tomaccoctl",{"call","preview.audit",R"({"session":"ui-acceptance"})"});
+            QElapsedTimer clock;clock.start();
+            while(cli.state()!=QProcess::NotRunning && clock.elapsed()<patient(30000))QTest::qWait(20);
+            const auto reply=QJsonDocument::fromJson(cli.readAllStandardOutput()).object().toVariantMap();
+            [&]{QVERIFY2(reply.value("ok").toBool(),qPrintable(QJsonDocument::fromVariant(reply).toJson()));}();
+            QMultiMap<QString,QVariantMap> found;
+            for(const auto &issue:reply.value("result").toMap().value("issues").toList())found.insert(issue.toMap().value("rule").toString(),issue.toMap());
+            return std::make_pair(reply.value("result").toMap(),found);
+        };
+        auto [result,issues]=audit();
+        QCOMPARE(result.value("platform").toString(),QString("ios"));QCOMPARE(result.value("target_minimum").toInt(),44);
+        QVERIFY(issues.contains("document-overflow"));QVERIFY(issues.value("document-overflow").value("overflow").toInt()>1000);
+        QCOMPARE(issues.value("horizontal-overflow").value("selector").toString(),QString("body > section > div:nth-of-type(1)"));
+        // The fixed line at the top lies under the island: 62 points of inset on this profile.
+        const auto clipped=issues.value("safe-area-text");
+        QCOMPARE(clipped.value("selector").toString(),QString("#top"));QCOMPARE(clipped.value("edges").toList(),(QVariantList{"top"}));
+        QCOMPARE(clipped.value("text").toString(),QString("Under the island"));
+        // Selectors match the element they name, alone.
+        for(const auto &issue:issues)QCOMPARE(evaluate("document.querySelectorAll("+QString::fromUtf8(QJsonDocument(QJsonArray{issue.value("selector").toString()}).toJson(QJsonDocument::Compact)).mid(1).chopped(1)+").length").toInt(),1);
+        // 46 points is enough on iOS; the link in running text is exempt.
+        QVERIFY(!issues.contains("target-size-platform"));
+        QVERIFY(!previewCall("configure",{{"device","pixel-11"}}).contains("error"));
+        QTRY_COMPARE(evaluate("window.__tomaccoViewport.platform").toString(),QString("android"));
+        std::tie(result,issues)=audit();
+        QCOMPARE(result.value("target_minimum").toInt(),48);
+        const auto small=issues.values("target-size-platform");QCOMPARE(small.size(),1);
+        QCOMPARE(small.value(0).value("selector").toString(),QString("body > section > div:nth-of-type(2) > button"));
+        QCOMPARE(small.value(0).value("label").toString(),QString("Go"));QCOMPARE(small.value(0).value("width").toInt(),46);
+        QVERIFY(!previewCall("configure",{{"device",before.value("device")},{"safe_area",before.value("safe_area")}}).contains("error"));
         previewCall("navigate",{{"url","tomacco://demo"}});window->setProperty("nativeMode",wasNative);
         if(auto *panel=object("activityPanel"))panel->setProperty("calls",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));

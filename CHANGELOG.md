@@ -101,6 +101,9 @@ operations and their JSON results.
     scale and labelled with model and orientation.
   - `preview.configure` and the lab's View panel set the page's `prefers-color-scheme`
     and `prefers-reduced-motion`, per session, through the DevTools protocol.
+  - `preview.audit` finds a page wider than the viewport, text under the camera cutout
+    or system bars, and controls under 44 pt (iOS) or 48 dp (Android), each with a
+    selector that matches the element alone. `window.__tomaccoViewport` gains `platform`.
   - `preview.errors` reports one page load's console errors, uncaught exceptions,
     unhandled rejections and failed requests as structured results.
   - Network throttling and offline for the lab's page: Fast 3G, Slow 3G, offline or

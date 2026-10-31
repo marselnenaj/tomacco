@@ -61,7 +61,7 @@ Item {
     readonly property int viewportWidth: screenWidth - (cropViewport ? safeLeft + safeRight : 0)
     readonly property int viewportHeight: screenHeight - (cropViewport ? safeTop + safeBottom : 0)
     readonly property string viewportJson: JSON.stringify({
-        version: 1, model: model.id, display: isDuo ? (unfolded ? "inner" : "outer") : "single",
+        version: 1, model: model.id, platform: model.platform || "generic", display: isDuo ? (unfolded ? "inner" : "outer") : "single",
         orientation: landscape ? "landscape" : "portrait",
         width: viewportWidth, height: viewportHeight,
         barEdge: isDuo ? barEdge : "automatic",

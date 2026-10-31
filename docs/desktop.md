@@ -448,14 +448,14 @@ Example for folded portrait (all dimensions in CSS pixels):
 
 ```json
 {
-  "version": 1, "model": "duo", "display": "outer",
+  "version": 1, "model": "duo", "platform": "ios", "display": "outer",
   "orientation": "portrait", "width": 466, "height": 678,
   "barEdge": "right", "controlsTop": 126,
   "safeArea": {"top": 0, "right": 72, "bottom": 0, "left": 0}
 }
 ```
 
-`barEdge` is `left`, `right`, `bottom`, or `automatic` for ordinary profiles.
+`platform` is `ios`, `android` or `generic`. `barEdge` is `left`, `right`, `bottom`, or `automatic` for ordinary profiles.
 `controlsTop` is the suggested starting Y of vertical controls, below system UI.
 A page reload is unnecessary when the metadata changes.
 

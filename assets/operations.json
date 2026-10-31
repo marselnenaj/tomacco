@@ -3236,7 +3236,7 @@
   {
     "name": "preview.audit",
     "title": "Check layout",
-    "description": "Check overflow, accessible names, input labels and target sizes; returns evidence, not a compliance certification.",
+    "description": "Check overflow of the page and its elements, text under the camera cutout or system bars, accessible names, input labels and target sizes (24 px, and 44 pt on iOS or 48 dp on Android), with a unique selector per finding; returns evidence, not a compliance certification.",
     "inputSchema": {
       "type": "object",
       "properties": {

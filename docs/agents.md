@@ -550,6 +550,11 @@ The layout lab is a separate Chromium surface, not a device. Start a session wit
   capture and `matrix.json`, it writes `contact-sheet.png`: every capture side by side at one scale, labelled with
   the model and its orientation. `contact_sheet:false` leaves it out.
 - `preview.audit` reports overflow, missing names and small targets. It is not an accessibility certificate or Safari emulation.
+  Each finding has a `rule` and a `selector` that matches that element alone. `document-overflow` is a page wider than
+  the viewport and `horizontal-overflow` an element that sticks out; `safe-area-text` is text drawn where the profile's
+  safe area ends (camera cutout, system bars), with its `edges`, while safe-area metadata is on;
+  `target-size-platform` is a control under 44 points on iOS and generic profiles or 48 dp on Android, with links in
+  running text exempt; `target-size-24` is WCAG 2.2's 24-pixel minimum.
 - `catalog.export`, `catalog.import` and `catalog.remove` manage custom profiles, which are data only. `android.calibrate` reads a device's real size and density.
 
 The [desktop guide](desktop.md#visual-layout-lab) has the details.
