@@ -185,6 +185,10 @@ def host_software():
     return record
 
 
+# The most phase changes a state keeps (Phone.save).
+PHASE_LOG_LIMIT = 32
+
+
 def emit(phase, **details):
     print("TOMACCO_VIRTUAL_IPHONE " + json.dumps({"phase": phase, **details}), flush=True)
 
@@ -529,7 +533,16 @@ class Phone:
                 if key in self.state}
 
     def save(self, **changes):
-        self.state.update(changes, updated=time.time())
+        now = time.time()
+        if "phase" in changes and changes["phase"] != self.state.get("phase"):
+            # When each phase began, for ios.virtual.status's elapsed times. A
+            # start's first phase begins a new log; a stop or a later phase
+            # adds to it, and only the last entries are kept.
+            log = [] if changes["phase"] == "preparing" else [
+                row for row in self.state.get("phase_log") or [] if isinstance(row, dict)]
+            log.append({"phase": changes["phase"], "started": now})
+            changes["phase_log"] = log[-PHASE_LOG_LIMIT:]
+        self.state.update(changes, updated=now)
         temporary = self.state_path.with_suffix(".json.tmp")
         # Launch intent must reach disk before the external mutation begins.
         # Atomic rename alone does not retain it across a host power loss.

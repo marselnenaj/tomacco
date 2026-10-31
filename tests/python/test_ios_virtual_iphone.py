@@ -129,6 +129,27 @@ class VirtualPhoneLogic(unittest.TestCase):
         self.environment.stop()
         self.temp.cleanup()
 
+    def test_each_phase_change_is_logged_with_its_start_and_a_start_begins_a_new_log(self):
+        phone = ios_virtual_iphone.Phone(str(self.cli), self.profile)
+        moments = iter([10.0, 20.0, 25.0, 30.0, 40.0, 50.0])
+        with patch.object(ios_virtual_iphone.time, "time", lambda: next(moments), create=True):
+            phone.save(phase="stopped")
+            phone.save(phase="preparing", error=None)
+            phone.save(phase="booting")
+            # Writing the same phase again, or no phase, keeps its start.
+            phone.save(phase="booting", guest_job="b" * 32)
+            phone.save(error="x")
+            phone.save(phase="unlocking")
+        self.assertEqual(self.state()["phase_log"], [
+            {"phase": "preparing", "started": 20.0}, {"phase": "booting", "started": 25.0},
+            {"phase": "unlocking", "started": 50.0}])
+        # A stop goes on in the same log; only the last entries are kept.
+        for number in range(40):
+            phone.save(phase=f"phase-{number}")
+        log = self.state()["phase_log"]
+        self.assertEqual(len(log), ios_virtual_iphone.PHASE_LOG_LIMIT)
+        self.assertEqual(log[-1]["phase"], "phase-39")
+
     def write_state(self, **state):
         (self.profile / "state.json").write_text(json.dumps(state))
 

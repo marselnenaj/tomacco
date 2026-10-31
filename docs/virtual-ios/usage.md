@@ -23,6 +23,12 @@ Phases in the status, in order: `preparing`, `booting`, `installing` (only when 
 `unlocking`, `launch-accepted`. After a stop it is `stopped` or `unverified`, and after a refusal
 `failed`, with `error` naming the reason.
 
+`phase_elapsed_seconds` is how long the current phase has run, and `phases` lists each phase of the
+current start or stop with its seconds. While `preparing`, `copy_progress` has the disk copy's
+`bytes_done`, `bytes_total` and `percent`, with the preparation's `step` and `disk`. It compares the
+size of the new copy's files with the base's, so a reflinked copy shows as complete at once. These
+fields have unit tests; they have not been watched during a live start yet.
+
 Accepted is not the same as visible. After an accepted launch the start looks at the panel for up
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
 display defect, not a working phone.

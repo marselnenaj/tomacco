@@ -360,6 +360,88 @@ fn installed_applications(state: &Value) -> Value {
     }
 }
 
+/// The disks a start copies from its base, in the order it copies them
+/// (`prepare` in tools/prepare_ios_guest_tools.py).
+const DISKS: [&str; 3] = ["system.raw", "auxiliary.raw", "sep.raw"];
+
+/// How far the `preparing` phase's disk copy has come: the bytes of the new
+/// copy's disk files against those of the base it is copied from, and the
+/// preparation's own step (`copy-storage`, `install-preboot`, ...) and disk
+/// from its record. A streamed copy grows as it is written; a reflinked one
+/// is complete at once. Null outside `preparing`, before the attempt is
+/// recorded and when the base's disks cannot be read.
+fn copy_progress(state: &Value) -> Value {
+    if state["phase"] != "preparing" {
+        return Value::Null;
+    }
+    let (Some(output), Some(base)) = (
+        state["attempt"]["install"].as_str(),
+        state["verified"]["install"].as_str(),
+    ) else {
+        return Value::Null;
+    };
+    let size = |path: PathBuf| {
+        fs::symlink_metadata(path)
+            .ok()
+            .filter(|meta| meta.is_file())
+            .map(|meta| meta.len())
+    };
+    let (mut done, mut total) = (0u64, 0u64);
+    for name in DISKS {
+        let Some(source) = size(Path::new(base).join(name)) else {
+            return Value::Null;
+        };
+        total += source;
+        done += size(Path::new(output).join(name)).unwrap_or(0).min(source);
+    }
+    let record = Path::new(output).join("guest-tools-install.json");
+    let record = if fs::symlink_metadata(&record).is_ok_and(|meta| meta.is_file()) {
+        read_json(&record, None).unwrap_or(Value::Null)
+    } else {
+        Value::Null
+    };
+    let text = |key: &str| record[key].as_str().map_or(Value::Null, Value::from);
+    let percent = if total == 0 {
+        0.0
+    } else {
+        (done as f64 * 1000.0 / total as f64).floor() / 10.0
+    };
+    json!({"bytes_done":done,"bytes_total":total,"percent":percent,
+        "step":text("phase"),"disk":text("copying_disk")})
+}
+
+/// When each phase of the current start or stop began (`phase_log`, which
+/// `Phone.save` in the script keeps from the start's `preparing` on) and how
+/// long each took; the current phase's time runs on until the next. Entries
+/// of another shape are left out, and a log whose last phase is not the
+/// state's phase (a state written before the log existed) gives no elapsed
+/// time for the phase.
+fn phase_times(state: &Value, now: f64) -> Value {
+    let log: Vec<(&str, f64)> = state["phase_log"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|row| Some((row["phase"].as_str()?, row["started"].as_f64()?)))
+        .filter(|(_, started)| started.is_finite())
+        .collect();
+    let round = |seconds: f64| (seconds.max(0.0) * 10.0).round() / 10.0;
+    let phases: Vec<Value> = log
+        .iter()
+        .enumerate()
+        .map(|(index, (phase, started))| {
+            let until = log.get(index + 1).map_or(now, |next| next.1);
+            json!({"phase":phase,"started":started,"seconds":round(until - started)})
+        })
+        .collect();
+    let current = log
+        .last()
+        .filter(|(phase, _)| state["phase"] == *phase)
+        .map(|(_, started)| *started);
+    json!({"phase_started":current,
+        "phase_elapsed_seconds":current.map(|started| round(now - started)),
+        "phases":phases})
+}
+
 fn application_process_observation(profile: &Value, state: &Value, running: bool) -> Value {
     let launch = &state["launch_receipt"];
     if running
@@ -469,9 +551,14 @@ pub fn status(_a: &Value) -> Result {
             "action":job["plan"]["operation_key"]["operation"]})
     });
     let application_process = application_process_observation(&profile, &state, running);
+    let times = phase_times(&state, now());
     Ok(json!({
         "configured":true,"experimental":true,"directory":directory,
         "run":state["run"],"phase":state["phase"],"closed":state["closed"],
+        // When the phase began, how long it has run, each phase of this start
+        // or stop with its seconds, and the disk copy's progress while preparing.
+        "phase_started":times["phase_started"],"phase_elapsed_seconds":times["phase_elapsed_seconds"],
+        "phases":times["phases"],"copy_progress":copy_progress(&state),
         "error":state["error"],"updated":state["updated"],
         "guest_job":state["guest_job"],"guest_state":guest_state,"guest_state_known":guest_known,
         "guest_report_readable":report_readable,
@@ -907,5 +994,86 @@ mod process_observation_tests {
             state["launch_receipt"]["job_id"] = id;
             assert!(application_process_observation(&profile, &state, true).is_null());
         }
+    }
+}
+
+#[cfg(test)]
+mod start_progress_tests {
+    use super::*;
+
+    #[test]
+    fn each_phase_has_its_start_and_seconds_and_the_current_one_runs_on() {
+        let state = json!({"phase":"booting","phase_log":[
+            {"phase":"preparing","started":100.0},{"phase":"booting","started":160.5}]});
+        assert_eq!(
+            phase_times(&state, 200.0),
+            json!({"phase_started":160.5,"phase_elapsed_seconds":39.5,"phases":[
+                {"phase":"preparing","started":100.0,"seconds":60.5},
+                {"phase":"booting","started":160.5,"seconds":39.5}]})
+        );
+        // A clock that went back never gives negative seconds.
+        assert_eq!(phase_times(&state, 150.0)["phase_elapsed_seconds"], 0.0);
+    }
+
+    #[test]
+    fn a_state_without_a_usable_log_reports_no_phase_time() {
+        let none = json!({"phase_started":null,"phase_elapsed_seconds":null,"phases":[]});
+        assert_eq!(phase_times(&json!({"phase":"stopped"}), 9.0), none);
+        assert_eq!(
+            phase_times(&json!({"phase":"stopped","phase_log":"x"}), 9.0),
+            none
+        );
+        // Malformed rows are left out; a log that ends in another phase than
+        // the state's gives the phases but no elapsed time.
+        let state = json!({"phase":"failed","phase_log":[{"phase":"preparing","started":1.0},
+            {"phase":7,"started":2.0},{"phase":"booting"},{"phase":"booting","started":"3"}]});
+        assert_eq!(
+            phase_times(&state, 11.0),
+            json!({"phase_started":null,"phase_elapsed_seconds":null,"phases":[
+                {"phase":"preparing","started":1.0,"seconds":10.0}]})
+        );
+    }
+
+    #[test]
+    fn the_copy_reports_its_bytes_against_the_base_while_preparing() {
+        let root = tempfile::tempdir().unwrap();
+        let (base, output) = (root.path().join("base"), root.path().join("guest-install2"));
+        fs::create_dir_all(&base).unwrap();
+        fs::create_dir_all(&output).unwrap();
+        for (name, bytes) in [
+            ("system.raw", 6000),
+            ("auxiliary.raw", 3000),
+            ("sep.raw", 1000),
+        ] {
+            fs::write(base.join(name), vec![0u8; bytes]).unwrap();
+        }
+        let state = json!({"phase":"preparing","verified":{"install":base},
+            "attempt":{"run":2,"install":output}});
+        // Nothing written yet, and no record: the preparation has not begun copying.
+        assert_eq!(
+            copy_progress(&state),
+            json!({"bytes_done":0,"bytes_total":10000,"percent":0.0,"step":null,"disk":null})
+        );
+        fs::write(output.join("system.raw"), vec![0u8; 6000]).unwrap();
+        fs::write(output.join("auxiliary.raw"), vec![0u8; 1234]).unwrap();
+        fs::write(
+            output.join("guest-tools-install.json"),
+            r#"{"phase":"copy-storage","copying_disk":"auxiliary.raw"}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            copy_progress(&state),
+            json!({"bytes_done":7234,"bytes_total":10000,"percent":72.3,
+                "step":"copy-storage","disk":"auxiliary.raw"})
+        );
+        // Other phases, a missing attempt and an unreadable base report nothing.
+        let mut booting = state.clone();
+        booting["phase"] = json!("booting");
+        assert!(copy_progress(&booting).is_null());
+        let mut unrecorded = state.clone();
+        unrecorded["attempt"] = Value::Null;
+        assert!(copy_progress(&unrecorded).is_null());
+        fs::remove_file(base.join("sep.raw")).unwrap();
+        assert!(copy_progress(&state).is_null());
     }
 }
