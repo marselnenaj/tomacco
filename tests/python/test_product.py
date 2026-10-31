@@ -4,6 +4,7 @@ import fcntl
 import json
 import os
 import shlex
+import shutil
 import socket
 import sqlite3
 import subprocess
@@ -1008,6 +1009,166 @@ class AndroidControlTests(Isolated):
         with self.assertRaises(StudioError) as stopped:
             dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app"})
         self.assertEqual(stopped.exception.code, "app_not_running")
+
+    def test_device_info_sums_up_health_in_one_read_only_call(self):
+        self.replies(**{"getprop": "[ro.build.version.release]: [16]\n[ro.build.version.sdk]: [36]\n[ro.build.version.security_patch]: [2026-09-05]\n[ro.product.model]: [Pixel 9]\n",
+                        "wm size": "Physical size: 1080x2400\n", "wm density": "Physical density: 420\nOverride density: 480\n",
+                        "dumpsys battery": "Current Battery Service state:\n  AC powered: true\n  status: 3\n  health: 2\n  present: true\n  level: 42\n  scale: 100\n  temperature: 312\n",
+                        "df -k": "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/block/dm-5 6000000 2000000 4000000 34% /data\n",
+                        "/proc/uptime": "3600.25 7000.00\n"})
+        health = dispatch("device.info", {"platform": "android", "device": "emulator-5554"})["health"]
+        self.assertEqual(health["android"], {"version": "16", "sdk": 36, "security_patch": "2026-09-05", "build": None})
+        self.assertEqual((health["battery"]["level"], health["battery"]["status"], health["battery"]["temperature_celsius"], health["battery"]["plugged"]),
+                         (42, "discharging", 31.2, ["ac"]))
+        self.assertEqual(health["storage"]["free_bytes"], 4000000 * 1024)
+        self.assertEqual(health["screen"], {"size": [1080, 2400], "density": 480, "size_dp": [360, 800], "physical_size": [1080, 2400], "physical_density": 420})
+        self.assertEqual(health["uptime_seconds"], 3600)
+        self.assertEqual(health["model"], "Pixel 9")
+        # Only reads: nothing is set, and a part the device does not answer is null.
+        self.assertFalse(any(args[:2] in (["settings", "put"],) or args[:1] == ["wm"] and len(args) > 2 for args in self.shell_calls()))
+        self.replies(**{"getprop": "[ro.build.version.sdk]: [30]\n", "wm size": "Physical size: 720x1280\n", "wm density": "Physical density: 320\n",
+                        "dumpsys battery": "FAIL:Can't find service: battery\n", "df -k": "FAIL:df: denied\n", "/proc/uptime": "FAIL:no\n"})
+        health = dispatch("device.info", {"platform": "android", "device": "emulator-5554"})["health"]
+        self.assertEqual((health["battery"], health["storage"], health["uptime_seconds"], health["android"]["version"]), (None, None, None, None))
+        self.assertEqual(health["screen"]["size_dp"], [360, 640])
+
+    def test_nicknames_and_pins_show_in_the_device_list(self):
+        # The emulator's serial changes with its port; its AVD name does not.
+        self.tool("adb", "import json,os,sys\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+                         "port=(root/'port').read_text() if (root/'port').exists() else '5554'\n"
+                         "if a[:1]==['devices']: print(f'List of devices attached\\nR5CT device model:SM_S928B\\nemulator-{port} device model:sdk_gphone\\n')\n"
+                         "elif a[2:]==['emu','avd','name']: print('Small_Phone\\nOK')\n"
+                         "elif 'boot_completed' in ' '.join(a): print('1')\n")
+        listed = lambda: dispatch("device.list", {"platform": "android"})["devices"]
+        self.assertEqual([(d["id"], d["pinned"]) for d in listed()], [("R5CT", False), ("emulator-5554", False)])
+        self.assertNotIn("nickname", listed()[0])
+        value = dispatch("device.label", {"device": "emulator-5554", "nickname": "  Small test phone ", "pinned": True})
+        self.assertEqual((value["key"], value["nickname"], value["pinned"]), ("avd:Small_Phone", "Small test phone", True))
+        dispatch("device.label", {"device": "R5CT", "nickname": "Galaxy"})
+        (self.root / "port").write_text("5556")
+        devices = listed()
+        # Pinned first, under its nickname, whatever port the emulator has now.
+        self.assertEqual([(d["id"], d["name"], d.get("nickname"), d["pinned"]) for d in devices],
+                         [("emulator-5556", "Small test phone", "Small test phone", True), ("R5CT", "Galaxy", "Galaxy", False)])
+        self.assertEqual(devices[1]["original_name"], "SM S928B")
+        # Reading changes nothing; an empty nickname and pinned false remove the label.
+        self.assertEqual(dispatch("device.label", {"device": "R5CT"})["nickname"], "Galaxy")
+        dispatch("device.label", {"device": "emulator-5556", "nickname": "", "pinned": False})
+        self.assertEqual(dispatch("device.label", {"device": "R5CT"})["labels"], {"R5CT": {"nickname": "Galaxy"}})
+        self.assertEqual([d["name"] for d in listed()], ["Galaxy", "Small_Phone"])
+        # An emulator that is off is named by its AVD.
+        self.assertEqual(dispatch("device.label", {"device": "avd:Small_Phone", "pinned": True})["key"], "avd:Small_Phone")
+        self.assertEqual([d["id"] for d in listed() if d["pinned"]], ["emulator-5556"])
+        with self.assertRaises(StudioError):
+            dispatch("device.label", {"device": "avd:../x", "pinned": True})
+        for arguments in ({"device": "R5CT", "nickname": "two\nlines"}, {"device": "R5CT", "nickname": "x" * 41}, {"device": "a;b", "pinned": True}):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("device.label", arguments)
+            self.assertEqual(refused.exception.code, "invalid_argument", arguments)
+
+    def test_wireless_pairing_by_qr_code_pairs_and_connects_once_the_phone_scanned_it(self):
+        code = dispatch("android.pair", {"path": str(self.root / "pair.png")})
+        self.assertRegex(code["qr_text"], r"^WIFI:T:ADB;S:tomacco-[a-z0-9]{8};P:[a-z0-9]{10};;$")
+        self.assertEqual(code["qr_text"], f"WIFI:T:ADB;S:{code['service']};P:{code['password']};;")
+        self.assertEqual(len(code["qr"]["rows"]), code["qr"]["size"])
+        self.assertTrue(code["svg"].startswith("<svg"))
+        self.assertEqual((self.root / "pair.png").read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
+        zbar = shutil.which("zbarimg")
+        if zbar:
+            decoded = subprocess.run([zbar, "-q", "--raw", str(self.root / "pair.png")], capture_output=True, text=True)
+            self.assertEqual(decoded.stdout.strip(), code["qr_text"])
+        with self.assertRaises(StudioError) as named:
+            dispatch("android.pair", {"path": str(self.root / "pair.jpg")})
+        self.assertEqual(named.exception.code, "invalid_path")
+        # The phone offers the service once it scanned the code, then its connection service.
+        service, password = code["service"], code["password"]
+        self.tool("adb", "import json,os,sys\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+                         "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
+                         "scanned=(root/'scanned').exists()\npaired=(root/'paired').exists()\n"
+                         "if a==['mdns','services']:\n"
+                         "    print('List of discovered mdns services')\n"
+                         f"    if scanned: print('{service}\\t_adb-tls-pairing._tcp.\\t192.168.1.20:41235')\n"
+                         "    if paired: print('adb-R5CT-AbCd\\t_adb-tls-connect._tcp.\\t192.168.1.20:37099')\n"
+                         f"elif a[:1]==['pair']:\n    ok=a[1:]==['192.168.1.20:41235','{password}']\n    (root/'paired').touch() if ok else None\n"
+                         "    print('Successfully paired to 192.168.1.20:41235 [guid=adb-R5CT-AbCd]' if ok else 'Failed: Wrong password or connection was dropped.')\n"
+                         "elif a[:1]==['connect']: print('connected to '+a[1])\n")
+        with self.assertRaises(StudioError) as early:
+            dispatch("android.pair", {"action": "wait", "service": service, "password": password, "timeout": 1})
+        self.assertEqual(early.exception.code, "pairing_timeout")
+        (self.root / "scanned").touch()
+        self.assertEqual([s["name"] for s in dispatch("android.pair", {"action": "services"})["services"]], [service])
+        value = dispatch("android.pair", {"action": "wait", "service": service, "password": password, "timeout": 5})
+        self.assertEqual(value, {"paired": True, "address": "192.168.1.20:41235", "guid": "adb-R5CT-AbCd", "connected": True, "device": "192.168.1.20:37099"})
+        calls = [json.loads(line) for line in (self.root / "adb-calls.jsonl").read_text().splitlines()]
+        self.assertIn(["connect", "192.168.1.20:37099"], calls)
+        (self.root / "paired").unlink()
+        with self.assertRaises(StudioError) as wrong:
+            dispatch("android.pair", {"action": "wait", "service": service, "password": "wrongpass1", "timeout": 2})
+        self.assertEqual(wrong.exception.code, "pairing_failed")
+        for arguments in ({"action": "wait", "service": "a;b", "password": password}, {"action": "wait", "service": service, "password": "x"}):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.pair", arguments)
+            self.assertEqual(refused.exception.code, "invalid_argument")
+        self.tool("adb", "import sys\nprint('unknown command mdns', file=sys.stderr); sys.exit(1)\n")
+        with self.assertRaises(StudioError) as old:
+            dispatch("android.pair", {"action": "services"})
+        self.assertEqual(old.exception.code, "mdns_unavailable")
+
+    def test_a_recording_stops_early_on_request_and_keeps_the_video(self):
+        # screenrecord runs until pkill interrupts it; pull writes the file.
+        self.tool("adb", "import json,os,sys,time\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+                         "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
+                         "command=' '.join(a[2:])\n"
+                         "if 'screenrecord --time-limit' in command:\n"
+                         "    for _ in range(600):\n"
+                         "        if (root/'interrupted').exists(): sys.exit(0)\n"
+                         "        time.sleep(.05)\n"
+                         "    sys.exit(3)\n"
+                         "elif 'pkill' in command: (root/'interrupted').touch()\n"
+                         "elif a[2:3]==['pull']: Path(a[4]).write_bytes(b'mp4 video')\n")
+        target = self.root / "videos/clip.mp4"
+        job = dispatch("android.record", {"device": "emulator-5554", "path": str(target), "seconds": 180})
+        self.assertTrue(job["plan"]["steps"][0]["stoppable"])
+        with self.assertRaises(StudioError) as early:
+            dispatch("job.send", {"job_id": uuid.uuid4().hex, "command": "stop"})
+        deadline = time.monotonic() + 10 * PATIENCE
+        while jobs.get(job["id"])["state"] != "running":
+            self.assertLess(time.monotonic(), deadline)
+            time.sleep(.05)
+        self.assertEqual(dispatch("job.send", {"job_id": job["id"], "command": "stop"})["sent"], "stop")
+        done = jobs.wait(job["id"], 30)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        self.assertEqual(target.read_bytes(), b"mp4 video")
+        self.assertIn(str(target), [a["path"] for a in done["result"]["artifacts"]])
+        pkill = next(args for args in self.shell_calls() if args[:1] == ["pkill"])
+        self.assertEqual(pkill[:3], ["pkill", "-INT", "-f"])
+        self.assertRegex(pkill[3], r"^screenrecor\[d\]\.\*[0-9a-f]{32}$")
+        self.assertIn("[stop] ending early on request", jobs.logs(job["id"])["text"])
+        # Only a running recording can be stopped this way.
+        with self.assertRaises(StudioError) as finished:
+            dispatch("job.send", {"job_id": job["id"], "command": "stop"})
+        self.assertEqual(finished.exception.code, "not_stoppable")
+
+    def test_a_screen_preview_is_saved_at_once_without_a_job(self):
+        png = b"\x89PNG\r\n\x1a\n\0\0\0\x0dIHDR" + (1080).to_bytes(4, "big") + (2400).to_bytes(4, "big") + b"\x08\x02\0\0\0rest"
+        (self.root / "screen.png").write_bytes(png)
+        self.tool("adb", "import sys\nfrom pathlib import Path\n"
+                         f"if sys.argv[3:]==['exec-out','screencap','-p']: sys.stdout.buffer.write(Path({str(self.root / 'screen.png')!r}).read_bytes())\n"
+                         "else: sys.exit(1)\n")
+        before = len(jobs.listing(200))
+        target = self.root / "thumbs/emulator-5554.png"
+        value = dispatch("android.screen", {"device": "emulator-5554", "path": str(target)})
+        self.assertEqual((value["width"], value["height"], value["bytes"]), (1080, 2400, len(png)))
+        self.assertEqual(target.read_bytes(), png)
+        self.assertEqual(len(jobs.listing(200)), before)
+        with self.assertRaises(StudioError) as named:
+            dispatch("android.screen", {"device": "emulator-5554", "path": str(self.root / "x.jpg")})
+        self.assertEqual(named.exception.code, "invalid_path")
+        self.tool("adb", "print('not a picture')\n")
+        with self.assertRaises(StudioError) as broken:
+            dispatch("android.screen", {"device": "emulator-5554", "path": str(target)})
+        self.assertEqual(broken.exception.code, "invalid_screenshot")
+        self.assertEqual(target.read_bytes(), png)
 
     def test_device_settings_apply_only_what_is_asked_and_read_everything_back(self):
         state = {"ro.build.version.sdk": "36\n", "uimode night": "Night mode: yes\n", "get system font_scale": "1.3\n",

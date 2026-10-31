@@ -266,6 +266,13 @@ both.
 `android.notifications` lists the notifications shown, for asserting that the app posted one, and
 `android.app_files` lists or pulls a debuggable app's private files.
 
+`device.info` sums up an Android device under `health`: Android version and security patch, battery,
+free storage, screen size and density, and uptime. `device.label` gives a device a nickname or pins it;
+`device.list` then shows the nickname as `name` and lists pinned devices first.
+
+`android.pair` pairs a phone over Wi-Fi by QR code: show the person the code it returns, then call it with
+`action` `wait` until it pairs.
+
 `android.each` runs steps such as install and launch on every connected Android device as one job,
 with each device's result in the job's `report.json`.
 

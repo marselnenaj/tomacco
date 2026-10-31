@@ -73,23 +73,27 @@ class Frames:
         return picture
 
 
-def record(fetch, write, seconds, fps, clock=time.monotonic, sleep=time.sleep):
+def record(fetch, write, seconds, fps, clock=time.monotonic, sleep=time.sleep, stopped=lambda: False):
     """Write `seconds * fps` pictures, each the latest frame at its moment.
 
     Returns how many pictures were written, how many polls brought one, and
     how many of those were a different picture. Raises RecordingError when no
-    first frame comes; a guest that ends later ends the recording early."""
+    first frame comes; a guest that ends later ends the recording early, and
+    so does `stopped` once it returns true (stopped_early)."""
     total = int(seconds * fps)
     first_deadline = clock() + FIRST_FRAME_SECONDS
     last = fetch()
     while last is None:
+        if stopped():
+            raise RecordingError("Stopped before the first frame came")
         if clock() >= first_deadline:
             raise RecordingError(f"No frame came within {FIRST_FRAME_SECONDS} s")
         sleep(0.1)
         last = fetch()
     start = clock()
     written, captured, distinct, ended = 0, 1, 1, None
-    while written < total:
+    # A stop keeps at least the first picture, so there is a video.
+    while written < total and not (written and stopped()):
         # Every moment that has passed gets the latest picture.
         # (A millionth of a frame absorbs the clock's rounding at a frame's moment.)
         due = min(total, math.floor((clock() - start) * fps + 1e-6) + 1)
@@ -112,7 +116,7 @@ def record(fetch, write, seconds, fps, clock=time.monotonic, sleep=time.sleep):
                 distinct += 1
             last = picture
     return {"frames_written": written, "frames_captured": captured, "frames_distinct": distinct,
-            "ended_early": ended}
+            "ended_early": ended, "stopped_early": written < total and ended is None}
 
 
 def main(argv=None):
@@ -133,6 +137,9 @@ def main(argv=None):
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, interrupted)
+    # SIGINT, as job.send stop sends it, ends the recording early and keeps it.
+    stop = []
+    signal.signal(signal.SIGINT, lambda _signum, _frame: stop.append(True))
     encoder = None
     try:
         encoder = subprocess.Popen(ffmpeg_command(args.ffmpeg, args.fps, partial), stdin=subprocess.PIPE,
@@ -144,7 +151,7 @@ def main(argv=None):
             except BrokenPipeError:
                 raise RecordingError("ffmpeg stopped: " + encoder.stderr.read().decode(errors="replace")[-400:])
 
-        summary = record(Frames(args.cli, args.job), write, args.seconds, args.fps)
+        summary = record(Frames(args.cli, args.job), write, args.seconds, args.fps, stopped=lambda: bool(stop))
         encoder.stdin.close()
         error = encoder.stderr.read().decode(errors="replace")
         if encoder.wait() != 0 or not partial.is_file():

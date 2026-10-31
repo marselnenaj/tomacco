@@ -935,7 +935,7 @@ tomaccoctl call ios.virtual.screenshot '{"path":"<path>"}'
 
 **Record virtual iOS device screen**
 
-Record the running virtual iPhone's screen for seconds into an H.264 MP4 at path, as a durable job: the frames ios.emulator.control frame with transport file gives a viewer, polled fps times a second and encoded by ffmpeg as they come (ffmpeg must be installed). A frame that has not changed, or a poll slower than one frame, repeats the last picture, so the video lasts as long as the recording; the guest itself draws about 10 changed frames a second on this host. The job's result names the file and counts frames_written, frames_captured and frames_distinct; a phone that stops ends the recording early with what it has (ended_early). Follow it with job.wait and job.logs. One recording at a time. Refused with ios_virtual_not_running when the phone is off.
+Record the running virtual iPhone's screen for seconds into an H.264 MP4 at path, as a durable job: the frames ios.emulator.control frame with transport file gives a viewer, polled fps times a second and encoded by ffmpeg as they come (ffmpeg must be installed). A frame that has not changed, or a poll slower than one frame, repeats the last picture, so the video lasts as long as the recording; the guest itself draws about 10 changed frames a second on this host. The job's result names the file and counts frames_written, frames_captured and frames_distinct; a phone that stops ends the recording early with what it has (ended_early). Follow it with job.wait and job.logs. job.send stop ends the recording early and keeps the video recorded so far (stopped_early). One recording at a time. Refused with ios_virtual_not_running when the phone is off.
 
 Annotations: writes, not idempotent, closed world.
 

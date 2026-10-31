@@ -156,6 +156,25 @@ class DesktopUiTest : public QObject {
     static QVariantMap mapOf(const QVariant &value) {
         return value.metaType()==QMetaType::fromType<QJSValue>()?value.value<QJSValue>().toVariant().toMap():value.toMap();
     }
+    // A stand-in adb for this test run's control plane, a shell script with
+    // this body; the guard it returns removes it from the settings again.
+    auto useFakeAdb(const QString &body) {
+        const auto fake=directory.filePath("fake-adb");
+        {QFile script(fake);script.open(QIODevice::WriteOnly|QIODevice::Truncate);
+         script.write(("#!/bin/sh\nd='"+directory.path()+"'\n"+body+"\nexit 0\n").toUtf8());script.close();
+         script.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ExeOwner);}
+        QSignalSpy replies(control.get(),&Control::apiFinished);
+        const int id=control->request("settings.configure",{{"executables",QVariantMap{{"adb",fake}}}});
+        QElapsedTimer clock;clock.start();
+        while(!std::any_of(replies.begin(),replies.end(),[&](const QList<QVariant> &r){return r.value(0).toInt()==id;}) && clock.elapsed()<patient(10000))QTest::qWait(20);
+        return qScopeGuard([this]{
+            QFile file(directory.filePath("state/settings.json"));
+            if(!file.open(QIODevice::ReadOnly))return;
+            auto value=QJsonDocument::fromJson(file.readAll()).object();file.close();
+            auto tools=value.value("executables").toObject();tools.remove("adb");value["executables"]=tools;
+            if(file.open(QIODevice::WriteOnly|QIODevice::Truncate))file.write(QJsonDocument(value).toJson());
+        });
+    }
 private slots:
     void initTestCase() {
         QVERIFY(directory.isValid());
@@ -604,6 +623,233 @@ private slots:
         memory->setProperty("text","8192");QVERIFY(save->isEnabled());
         capture("android-performance");
         QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+        workspace->setProperty("devices",previous);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void devices_can_be_renamed_and_pinned() {
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        auto *library=object("androidDeviceLibrary");QVERIFY(library);
+        const auto labels=[this]{QFile file(directory.filePath("state/device-labels.json"));return file.open(QIODevice::ReadOnly)?QJsonDocument::fromJson(file.readAll()).object().toVariantMap():QVariantMap{};};
+        const auto avds=[&](const QVariantMap &extra){QVariantMap avd{{"name","Label_Test"},{"profile_name","Pixel 11"},{"display",QVariantMap{{"width",1080},{"height",2400}}}};for(auto i=extra.begin();i!=extra.end();++i)avd[i.key()]=i.value();library->setProperty("avds",QVariantList{QVariantMap{{"name","Other"},{"display",QVariantMap{}}},avd});};
+        avds({});
+        // A pinned emulator comes first.
+        auto *pin=item("pinAvd-Label_Test");QVERIFY(pin);
+        QCOMPARE(accessibleName(pin),QString("Pin"));
+        QVERIFY(QMetaObject::invokeMethod(pin,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(labels().value("avd:Label_Test").toMap().value("pinned").toBool(),patient(10000));
+        avds({{"pinned",true}});
+        QCOMPARE(mapOf(library->property("shownAvds").toList().value(0)).value("name").toString(),QString("Label_Test"));
+        QTRY_COMPARE(accessibleName(item("pinAvd-Label_Test")),QString("Unpin"));
+        // A nickname is saved through device.label and shown in place of the model.
+        QVERIFY(QMetaObject::invokeMethod(item("renameAvd-Label_Test"),"clicked"));
+        auto *dialog=object("renameDeviceDialog");QVERIFY(dialog);QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *field=item("deviceNicknameField");auto *save=item("saveDeviceNickname");QVERIFY(field);QVERIFY(save);
+        QVERIFY(!save->isEnabled());
+        field->setProperty("text","  Test phone ");QVERIFY(save->isEnabled());
+        capture("device-nickname");
+        QVERIFY(QMetaObject::invokeMethod(save,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!dialog->property("visible").toBool(),patient(10000));
+        QCOMPARE(labels().value("avd:Label_Test").toMap(),(QVariantMap{{"nickname","Test phone"},{"pinned",true}}));
+        avds({{"pinned",true},{"nickname","Test phone"}});
+        QTRY_COMPARE(item("avdTitle-Label_Test")->property("text").toString(),QString("Test phone"));
+        // Removing the nickname and unpinning leave no label behind.
+        QVERIFY(QMetaObject::invokeMethod(item("renameAvd-Label_Test"),"clicked"));
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        QCOMPARE(field->property("text").toString(),QString("Test phone"));
+        QVERIFY(QMetaObject::invokeMethod(item("removeDeviceNickname"),"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!dialog->property("visible").toBool(),patient(10000));
+        avds({{"pinned",true}});
+        QVERIFY(QMetaObject::invokeMethod(item("pinAvd-Label_Test"),"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!labels().contains("avd:Label_Test"),patient(10000));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void wireless_pairing_shows_a_qr_code_and_falls_back_to_the_pairing_code() {
+        // A stand-in adb: the phone offers the code's service once the test says it scanned it.
+        auto fake=useFakeAdb("case \"$1\" in\n"
+             " mdns) echo 'List of discovered mdns services'; [ -f \"$d/scanned\" ] && printf '%s\\t_adb-tls-pairing._tcp.\\t192.168.1.20:41235\\n' \"$(cat \"$d/scanned\")\"; [ -f \"$d/paired\" ] && printf 'adb-R5CT-AbCd\\t_adb-tls-connect._tcp.\\t192.168.1.20:37099\\n';;\n"
+             " pair) touch \"$d/paired\"; echo \"Successfully paired to $2 [guid=adb-R5CT-AbCd]\";;\n"
+             " connect) echo \"connected to $2\";;\n"
+             " devices) echo 'List of devices attached';;\nesac");
+        auto cleanup=qScopeGuard([&]{QFile::remove(directory.filePath("scanned"));QFile::remove(directory.filePath("paired"));});
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        auto *library=object("androidDeviceLibrary");QVERIFY(library);
+        auto *button=item("pairWifiButton");QVERIFY(button);QVERIFY(button->isVisible());
+        QVERIFY(QMetaObject::invokeMethod(button,"clicked"));
+        auto *dialog=object("pairWifiDialog");QVERIFY(dialog);QTRY_VERIFY(dialog->property("visible").toBool());
+        // The code comes from android.pair and is drawn from its modules.
+        QTRY_VERIFY2_WITH_TIMEOUT(library->property("pairState").toString()=="waiting",qPrintable(library->property("pairMessage").toString()),patient(10000));
+        const auto pairing=mapOf(library->property("pairing"));
+        QVERIFY(pairing.value("qr_text").toString().startsWith("WIFI:T:ADB;S:tomacco-"));
+        QCOMPARE(object("pairQrCanvas")->property("rows").toList().size(),pairing.value("qr").toMap().value("size").toInt());
+        QVERIFY(item("pairQrCode")->isVisible());
+        capture("pair-qr");
+        {QFile scanned(directory.filePath("scanned"));QVERIFY(scanned.open(QIODevice::WriteOnly));scanned.write(pairing.value("service").toByteArray());}
+        QTRY_COMPARE_WITH_TIMEOUT(library->property("pairState").toString(),QString("done"),patient(20000));
+        QCOMPARE(library->property("pairMessage").toString(),QString("Paired and connected · 192.168.1.20:37099"));
+        QVERIFY(item("pairNewCode")->isVisible());
+        // The pairing code: address and six digits, then the phone's connection service.
+        QFile::remove(directory.filePath("paired"));
+        QVERIFY(QMetaObject::invokeMethod(item("pairModeCode"),"clicked"));
+        QTRY_COMPARE(library->property("pairMode").toString(),QString("code"));
+        auto *address=item("pairAddressField");auto *code=item("pairCodeField");auto *pair=item("pairWithCode");
+        QVERIFY(address);QVERIFY(code);QVERIFY(pair);
+        // The one pairing service adb found fills in the address.
+        QTRY_COMPARE_WITH_TIMEOUT(address->property("text").toString(),QString("192.168.1.20:41235"),patient(10000));
+        QVERIFY(!pair->isEnabled());
+        code->setProperty("text","12345");QVERIFY(!pair->isEnabled());
+        code->setProperty("text","123456");QVERIFY(pair->isEnabled());
+        QVERIFY(QMetaObject::invokeMethod(pair,"clicked"));
+        QTRY_COMPARE_WITH_TIMEOUT(library->property("pairState").toString(),QString("done"),patient(20000));
+        QCOMPARE(library->property("pairMessage").toString(),QString("Paired and connected · 192.168.1.20:37099"));
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(library->property("pairState").toString(),QString());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void the_live_screen_is_recorded_until_stopped_and_the_video_shown() {
+        // Recordings go to the videos folder the desktop names, here a temporary one.
+        QTemporaryDir videos;QVERIFY(videos.isValid());
+        {QFile dirs(directory.filePath("config/user-dirs.dirs"));QVERIFY(QDir().mkpath(directory.filePath("config")));QVERIFY(dirs.open(QIODevice::WriteOnly));dirs.write(("XDG_VIDEOS_DIR=\""+videos.path()+"\"\n").toUtf8());}
+        auto dirs=qScopeGuard([&]{QFile::remove(directory.filePath("config/user-dirs.dirs"));});
+        // screenrecord runs until pkill interrupts it; pull writes the video.
+        auto fake=useFakeAdb("case \"$*\" in\n"
+             " *screenrecord\\ --time-limit*) i=0; while [ ! -f \"$d/interrupted\" ] && [ $i -lt 600 ]; do sleep 0.05; i=$((i+1)); done;;\n"
+             " *pkill*) touch \"$d/interrupted\";;\n"
+             " *\\ pull\\ *) printf 'mp4 video' > \"$5\";;\n"
+             " devices*) echo 'List of devices attached';;\nesac");
+        auto cleanup=qScopeGuard([&]{QFile::remove(directory.filePath("interrupted"));});
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *display=qobject_cast<NativeView *>(object("nativeDisplay"));QVERIFY(display);
+        view->setProperty("autoAttach",false);
+        QLocalServer video,controlSocket;
+        QVERIFY(video.listen(directory.filePath("record-video")));QVERIFY(controlSocket.listen(directory.filePath("record-input")));
+        QImage image(QSize(400,800),QImage::Format_RGB32);image.fill(QColor("#2fa84f"));
+        QByteArray bytes;{QBuffer output(&bytes);output.open(QIODevice::WriteOnly);image.save(&output,"JPEG");}
+        QByteArray packet(4,0);qToBigEndian(quint32(bytes.size()),packet.data());packet+=bytes;
+        connect(&video,&QLocalServer::newConnection,this,[&]{auto *socket=video.nextPendingConnection();socket->write(packet);connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        view->setProperty("targets",QVariantList{QVariantMap{{"id","emulator-5554"},{"name","Record test"},{"platform","android"},{"kind","emulator"}}});
+        const QVariantMap session{{"session","record-session"},{"platform","android"},{"device","emulator-5554"},{"codec","mjpeg"},{"video_socket",video.fullServerName()},{"control_socket",controlSocket.fullServerName()}};
+        QVERIFY(QMetaObject::invokeMethod(view,"attach",Q_ARG(QVariant,session)));
+        QTRY_COMPARE_WITH_TIMEOUT(display->sourceSize(),QSize(400,800),patient(3000));
+        auto *button=item("nativeRecord");QVERIFY(button);QTRY_VERIFY(button->isVisible());
+        QCOMPARE(accessibleName(button),QString("Record the screen"));
+        auto *recorder=object("nativeRecorder");QVERIFY(recorder);
+        QSignalSpy revealed(backend.get(),&Backend::fileRevealed);
+        QVERIFY(QMetaObject::invokeMethod(button,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(recorder->property("recording").toBool(),patient(10000));
+        QTRY_COMPARE(accessibleName(button),QString("Stop recording"));
+        const auto path=recorder->property("path").toString();
+        QVERIFY2(path.startsWith(videos.path()+"/Tomacco/Record-test-") && path.endsWith(".mp4"),qPrintable(path));
+        capture("native-recording");
+        QVERIFY(QMetaObject::invokeMethod(button,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!recorder->property("recording").toBool(),patient(20000));
+        QVERIFY2(!recorder->property("failed").toBool(),qPrintable(recorder->property("notice").toString()));
+        QCOMPARE(view->property("notice").toString(),QString("Recording saved · ")+path);
+        QFile saved(path);QVERIFY(saved.open(QIODevice::ReadOnly));QCOMPARE(saved.readAll(),QByteArray("mp4 video"));
+        QCOMPARE(revealed.size(),1);QCOMPARE(revealed.first().first().toString(),path);
+        view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});
+        // The virtual iPhone records through ios.virtual.record; with no phone running it says why.
+        auto *guest=object("iosGuestRecorder");QVERIFY(guest);
+        const QVariantMap phoneArgs{{"path",videos.filePath("phone.mp4")},{"seconds",600}};
+        QVERIFY(QMetaObject::invokeMethod(guest,"start",Q_ARG(QVariant,QString("ios.virtual.record")),Q_ARG(QVariant,phoneArgs)));
+        QTRY_VERIFY_WITH_TIMEOUT(guest->property("failed").toBool(),patient(10000));
+        QVERIFY(!guest->property("recording").toBool());QVERIFY(!guest->property("pending").toBool());
+        QVERIFY(!guest->property("notice").toString().isEmpty());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void all_running_devices_show_their_screens_side_by_side() {
+        // Two running devices; adb answers each screencap with that device's picture.
+        for(const auto &[serial,color]:{std::pair{"emulator-5554","#2fa84f"},std::pair{"R5CT","#295c83"}}) {
+            QImage picture(108,240,QImage::Format_RGB32);picture.fill(QColor(color));QVERIFY(picture.save(directory.filePath(QString("screen-%1.png").arg(serial))));
+        }
+        auto fake=useFakeAdb("case \"$*\" in\n"
+             " *exec-out\\ screencap*) cat \"$d/screen-$2.png\";;\n"
+             " devices*) printf 'List of devices attached\\nemulator-5554 device model:Pixel\\nR5CT device model:Galaxy\\nOFF1 offline\\n';;\nesac");
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        auto *library=object("androidDeviceLibrary");QVERIFY(library);
+        const auto previous=workspace->property("devices");
+        workspace->setProperty("devices",QVariantList{
+            QVariantMap{{"id","emulator-5554"},{"name","Pixel"},{"platform","android"},{"state","device"},{"pinned",true}},
+            QVariantMap{{"id","R5CT"},{"name","Galaxy"},{"platform","android"},{"state","device"}},
+            QVariantMap{{"id","OFF1"},{"name","OFF1"},{"platform","android"},{"state","offline"}}});
+        auto *toggle=item("deviceGridToggle");QVERIFY(toggle);QCOMPARE(accessibleName(toggle),QString("All screens"));
+        QVERIFY(QMetaObject::invokeMethod(toggle,"clicked"));
+        QTRY_VERIFY(library->property("gridMode").toBool());
+        auto *grid=item("androidDeviceGrid");QVERIFY(grid);QTRY_VERIFY(grid->isVisible());
+        // Only running devices, each with its own screen.
+        QTRY_COMPARE(grid->property("devices").toList().size(),2);
+        for(const auto &[serial,color]:{std::pair{"emulator-5554","#2fa84f"},std::pair{"R5CT","#295c83"}}) {
+            QQuickItem *thumb=nullptr;
+            QTRY_VERIFY_WITH_TIMEOUT((thumb=item(QString("deviceThumb-%1").arg(serial).toLatin1().constData())) && thumb->property("status").toInt()==1,patient(15000));
+            const auto shot=mapOf(mapOf(grid->property("shots")).value(serial));
+            QCOMPARE(shot.value("width").toInt(),108);
+            QCOMPARE(QImage(shot.value("path").toString()).pixelColor(5,5),QColor(color));
+        }
+        QVERIFY(!item("deviceTile-OFF1"));
+        // A new picture at the same path loads again.
+        const auto first=mapOf(mapOf(grid->property("shots")).value("R5CT")).value("stamp").toDouble();
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(mapOf(grid->property("shots")).value("R5CT")).value("stamp").toDouble()>first,patient(10000));
+        capture("device-grid");
+        // A click opens that device live.
+        QSignalSpy opened(workspace,SIGNAL(runtimeRequested(QString,QString)));
+        QVERIFY(QMetaObject::invokeMethod(item("deviceTile-R5CT"),"clicked"));
+        QCOMPARE(opened.size(),1);QCOMPARE(opened.first().value(1).toString(),QString("R5CT"));
+        QCOMPARE(workspace->property("selectedDevice").toString(),QString("R5CT"));
+        library->setProperty("gridMode",false);workspace->setProperty("devices",previous);
+        open("devices");
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void the_live_log_follows_one_app_from_a_level_up() {
+        // logcat names its arguments, then prints an error and an info line and keeps running.
+        auto fake=useFakeAdb("case \"$*\" in\n"
+             " *logcat*) echo \"ARGS $*\"; echo '10-31 12:00:00.000  100  100 E Fake: fake error line'; echo '10-31 12:00:00.001  100  100 I Fake: fake info line'; while true; do sleep 0.2; done;;\n"
+             " *getprop\\ ro.build.version.sdk*) echo 36;;\n"
+             " *list\\ packages\\ -U*) echo 'package:dev.test.app uid:10200';;\n"
+             " devices*) printf 'List of devices attached\\nemulator-5554 device model:Pixel\\n';;\nesac");
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        const auto previous=workspace->property("devices");
+        workspace->setProperty("devices",QVariantList{QVariantMap{{"id","emulator-5554"},{"name","Pixel"},{"platform","android"},{"state","device"}}});
+        workspace->setProperty("selectedDevice","emulator-5554");
+        auto *toggle=item("deviceLogToggle");QVERIFY(toggle);QCOMPARE(accessibleName(toggle),QString("Live log"));
+        QVERIFY(QMetaObject::invokeMethod(toggle,"clicked"));
+        auto *pane=object("deviceLogPane");QVERIFY(pane);QTRY_VERIFY(qobject_cast<QQuickItem *>(pane)->isVisible());
+        const auto text=[&]{return pane->property("text").toString();};
+        QTRY_VERIFY2_WITH_TIMEOUT(text().contains("fake info line"),qPrintable(text()+pane->property("error").toString()),patient(15000));
+        QVERIFY(text().contains("ARGS -s emulator-5554 logcat -v threadtime\n"));
+        const auto firstJob=pane->property("job").toString();QVERIFY(!firstJob.isEmpty());
+        // From warnings up: logcat filters, and a new capture starts.
+        QVERIFY(QMetaObject::invokeMethod(item("deviceLogLevel-W"),"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(text().contains("logcat -v threadtime *:W\n"),patient(15000));
+        // One app, by its user ID.
+        auto *app=item("deviceLogApp");QVERIFY(app);
+        app->setProperty("text","dev.test.app");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
+        QTRY_VERIFY_WITH_TIMEOUT(text().contains("logcat -v threadtime --uid=10200 *:W\n"),patient(15000));
+        // Searching keeps the lines with the text, coloured by level.
+        item("deviceLogSearch")->setProperty("text","error line");
+        QTRY_COMPARE(pane->property("lines").toList().size(),1);
+        capture("device-log");
+        item("deviceLogSearch")->setProperty("text","");
+        // An app that is not installed is said, not followed.
+        app->setProperty("text","dev.missing.app");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
+        QTRY_COMPARE_WITH_TIMEOUT(pane->property("error").toString(),QString("dev.missing.app is not installed"),patient(10000));
+        QVERIFY(pane->property("job").toString().isEmpty());
+        // Closing the pane ends its capture.
+        app->setProperty("text","");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
+        QTRY_VERIFY_WITH_TIMEOUT(!pane->property("job").toString().isEmpty(),patient(10000));
+        const auto lastJob=pane->property("job").toString();
+        QVERIFY(QMetaObject::invokeMethod(toggle,"clicked"));
+        QTRY_VERIFY(!qobject_cast<QQuickItem *>(pane)->isVisible());
+        QVERIFY(pane->property("job").toString().isEmpty());
+        for(const auto &job:{firstJob,lastJob}) {
+            QString state;
+            QTRY_VERIFY_WITH_TIMEOUT(([&]{
+                QSignalSpy replies(control.get(),&Control::apiFinished);
+                const int id=control->request("job.get",{{"job_id",job}});
+                if(!replies.wait(patient(5000)))return false;
+                for(const auto &reply:replies)if(reply.value(0).toInt()==id)state=reply.value(2).toMap().value("result").toMap().value("state").toString();
+                return state=="cancelled";
+            })(),patient(20000));
+        }
         workspace->setProperty("devices",previous);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }

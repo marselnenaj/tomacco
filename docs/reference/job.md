@@ -112,16 +112,16 @@ tomaccoctl call job.cancel '{"job_id":"<job_id>"}'
 
 ### job.send
 
-**Hot Reload**
+**Send a command to a job**
 
-Send reload, restart or quit to a running Flutter session.
+Send reload, restart or quit to a running Flutter session, or stop to a running recording (android.record, ios.virtual.record): it ends early and keeps the video recorded so far.
 
 Annotations: writes, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `job_id` | string | yes |  |  |
-| `command` | string |  | `"reload"` | one of `reload`, `restart`, `quit` |
+| `command` | string |  | `"reload"` | one of `reload`, `restart`, `quit`, `stop` |
 
 ```sh
 tomaccoctl call job.send '{"job_id":"<job_id>"}'

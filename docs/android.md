@@ -219,6 +219,20 @@ into the focused field. This needs scrcpy configured and Android 7 (API 24) or n
 replaces what was on the device clipboard, and answers `text_unsupported` with a
 remedy when it cannot work.
 
+`android.screen` saves the screen as a PNG at once, without a job, for previews
+that refresh; `device.capture` keeps evidence with a job. Checked on the API 36 x86_64
+emulator.
+
+`android.record` records the screen as a job, for up to 180 seconds; `job.send` with
+`command` `stop` ends it early, and the video is still pulled to `path`. The stop
+interrupts `screenrecord` on the device, which then finishes the file. On the API 36
+x86_64 emulator a recording stopped after 6 seconds gave a playable H.264 MP4.
+
+```sh
+tomaccoctl call android.record '{"device":"emulator-5554","path":"/absolute/clip.mp4","seconds":180}'
+tomaccoctl call job.send '{"job_id":"RECORD_JOB","command":"stop"}'
+```
+
 `device.logs` with `bundle_id` keeps only that app's lines. On Android 12 (API 31)
 and newer it filters by the app's user ID, so the capture can start before the app
 and continues across restarts. On older Android it follows the process ID of the
@@ -226,6 +240,28 @@ running app, so launch the app first.
 
 ```sh
 tomaccoctl call device.logs '{"platform":"android","device":"emulator-5554","bundle_id":"dev.example.newapp","duration":30}'
+```
+
+`device.info` reads a device's properties and, under `health`, what matters at a
+glance in one read-only call: Android version, SDK level and security patch, battery
+level, state, health and temperature, free and total storage on `/data`, screen size
+and density in pixels and dp (an override from `android.display` counts), and uptime in
+seconds. A part the device does not report, such as the battery of a device without
+one, is `null`. Read on the API 36 x86_64 emulator.
+
+```sh
+tomaccoctl call device.info '{"platform":"android","device":"emulator-5554"}'
+```
+
+`device.label` gives a device a nickname or pins it. `device.list` then shows the
+nickname as `name`, keeps the earlier name as `original_name`, sets `pinned` and lists
+pinned devices first. An emulator is named by its AVD, so the nickname stays when its
+serial changes (checked on the API 36 x86_64 emulator); `avd:NAME` names one that is off. An empty nickname or `pinned:false`
+removes the label, and a call with neither only reads.
+
+```sh
+tomaccoctl call device.label '{"device":"emulator-5554","nickname":"Small phone","pinned":true}'
+tomaccoctl call device.label '{"device":"avd:Tomacco-pixel-11","nickname":""}'
 ```
 
 ## Device settings for tests
@@ -422,9 +458,31 @@ tomaccoctl call android.each '{"steps":[{"operation":"device.install","arguments
 
 ## Phones
 
-Enable USB debugging and authorize the computer. For wireless debugging, use
-`android.connect` with the device's address and pairing code. Everything else works
-the same as on the emulator.
+Enable USB debugging and authorize the computer. Everything else works the same as on
+the emulator.
+
+### Wireless debugging
+
+Android 11 and newer pair over Wi-Fi by QR code. `android.pair` makes a one-time code
+for the phone's **Developer options › Wireless debugging › Pair device with QR code**;
+`wait` then pairs and connects as soon as the phone offers it on the local network
+(adb's mDNS discovery). Nothing is stored; the password lives only in the code.
+
+```sh
+tomaccoctl call android.pair '{"path":"/absolute/pair.png"}'
+tomaccoctl call android.pair '{"action":"wait","service":"tomacco-…","password":"…","timeout":60}'
+```
+
+- `qr` returns `qr_text`, the modules as `qr.rows` and an SVG; with `path` it also writes
+  a PNG or SVG file to show the person.
+- `wait` answers `pairing_timeout` while the phone has not scanned the code; call it again.
+  Its result names the `device` to use, or `connected:false` when the phone offered no
+  connection service in time.
+- With a pairing code instead, `services` lists what adb finds, such as the address
+  the phone shows under **Pair device with pairing code**; pass it with the code to
+  `android.connect`, then connect to the address under **Wireless debugging**.
+- The code is checked by decoding it with zbar. Pairing and connecting were tested with
+  a stand-in adb only; no phone was paired over Wi-Fi.
 
 ## Swift on Android
 

@@ -642,6 +642,8 @@ pub fn logs(a: &Value) -> Result {
         json!({"id":id,"state":job["state"],"offset":offset,"next_offset":offset+data.len() as u64,"text":String::from_utf8_lossy(&data),"eof":offset+data.len() as u64>=size}),
     )
 }
+/// The input job.send stop queues for a stoppable step.
+const STOP_INPUT: &str = "\u{1}stop";
 pub fn cancel(id: &str) -> Result {
     identifier(id, "job ID", Some("[0-9a-f]{32}"))?;
     let db = database()?;
@@ -663,6 +665,27 @@ pub fn send(id: &str, command: &str) -> Result {
     let db = database()?;
     let row = get_row(&db, id)?;
     let plan: Value = serde_json::from_str(s(&row.value, "plan"))?;
+    if command == "stop" {
+        // A recording ends early and keeps what it has.
+        if s(&row.value, "state") != "running"
+            || !plan["steps"]
+                .as_array()
+                .is_some_and(|a| a.iter().any(|s| b(s, "stoppable")))
+        {
+            return Err(Error::new(
+                "not_stoppable",
+                "This job has no running step that stop ends early",
+            )
+            .remedy("job.cancel ends any job, without keeping its result"));
+        }
+        retrying(Instant::now() + READ_RETRY, || {
+            Ok(db.execute(
+                "INSERT INTO inputs(job,text) VALUES(?,?)",
+                params![id, STOP_INPUT],
+            )?)
+        })?;
+        return Ok(json!({"id":id,"sent":command}));
+    }
     if s(&row.value, "state") != "running"
         || !plan["steps"]
             .as_array()
@@ -1187,6 +1210,9 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
                 .filter(|n| n.is_finite() && *n >= 0.0 && *n <= 86400.0)
                 .map(|n| Instant::now() + Duration::from_secs_f64(n));
             let mut captured = false;
+            // When job.send stop asked a stoppable step to end: it then has
+            // this long to finish by itself.
+            let mut stopping: Option<Instant> = None;
             loop {
                 if machine {
                     let mut bytes = Vec::new();
@@ -1257,6 +1283,41 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
                             Ok(db.execute("DELETE FROM inputs WHERE id=?", [input])?)
                         })?;
                     }
+                }
+                if b(step, "stoppable") && stopping.is_none() {
+                    let asked = match (|| -> Result<Vec<i64>> {
+                        Ok(db
+                            .prepare("SELECT id FROM inputs WHERE job=? AND text=?")?
+                            .query_map(params![id, STOP_INPUT], |r| r.get(0))?
+                            .collect::<std::result::Result<Vec<_>, _>>()?)
+                    })() {
+                        Err(error) if error.is_database_busy() => Vec::new(),
+                        other => other?,
+                    };
+                    if !asked.is_empty() {
+                        for input in asked {
+                            retrying(Instant::now() + WORKER_RETRY, || {
+                                Ok(db.execute("DELETE FROM inputs WHERE id=?", [input])?)
+                            })?;
+                        }
+                        writeln!(log, "\n[stop] ending early on request")?;
+                        let stop = strings(&step["stop_argv"]);
+                        if stop.is_empty() {
+                            // SAFETY: kill receives the child's own process ID.
+                            unsafe {
+                                libc::kill(proc.0.id() as i32, libc::SIGINT);
+                            }
+                        } else if let Err(error) = toolchain::run(&stop, 15, None, false) {
+                            writeln!(log, "[stop] {}", error.message)?;
+                        }
+                        stopping = Some(Instant::now() + Duration::from_secs(30));
+                    }
+                }
+                if stopping.is_some_and(|end| Instant::now() >= end) {
+                    writeln!(log, "[stop] the step did not end within 30 s")?;
+                    toolchain::stop(&mut proc.0);
+                    code = proc.0.wait()?.code().unwrap_or(-1);
+                    break;
                 }
                 if let Some(value) = interrupt(&log)? {
                     state = value.into();

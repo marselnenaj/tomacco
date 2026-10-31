@@ -145,7 +145,113 @@ pub fn listing(platform: &str) -> Result {
             }
         }
     }
+    let labels = labels()?;
+    for entry in &mut devices {
+        label_entry(entry, &labels);
+    }
+    // Pinned devices first, otherwise in the order adb and libimobiledevice list them.
+    devices.sort_by_key(|d| !b(d, "pinned"));
     Ok(json!({"devices":devices,"diagnostics":diagnostics}))
+}
+
+/// Where nicknames and pins are kept: by AVD name for an emulator, whose
+/// serial changes with its port, otherwise by serial or UDID.
+fn label_key(entry: &Value) -> String {
+    match entry["avd"].as_str() {
+        Some(avd) if !avd.is_empty() => format!("avd:{avd}"),
+        _ => s(entry, "id").to_string(),
+    }
+}
+fn labels_path() -> Result<PathBuf> {
+    Ok(home()?.join("device-labels.json"))
+}
+fn labels() -> Result {
+    let value = read_json(&labels_path()?, Some(json!({})))?;
+    Ok(if value.is_object() { value } else { json!({}) })
+}
+/// Shows a device under its nickname, keeping the name it had, and says
+/// whether it is pinned.
+fn label_entry(entry: &mut Value, labels: &Value) {
+    let label = &labels[label_key(entry)];
+    let nickname = s(label, "nickname").to_string();
+    if !nickname.is_empty() {
+        entry["original_name"] = entry["name"].clone();
+        entry["name"] = json!(nickname);
+        entry["nickname"] = json!(nickname);
+    }
+    entry["pinned"] = json!(b(label, "pinned"));
+}
+/// A nickname is shown as given: one line, at most 40 characters.
+fn nickname(value: &str) -> Result<String> {
+    let value = value.trim();
+    if value.chars().count() > 40 || value.chars().any(char::is_control) {
+        return Err(Error::new(
+            "invalid_argument",
+            "A nickname is one line of at most 40 characters",
+        ));
+    }
+    Ok(value.to_string())
+}
+/// Names or pins a device, or reads what it has with neither argument.
+fn label(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "device ID", None)?;
+    let nickname = a
+        .get("nickname")
+        .map(|v| nickname(v.as_str().unwrap_or("")))
+        .transpose()?;
+    // An emulator is named by its AVD, which keeps its name across ports.
+    let mut entry = json!({"id":device});
+    if let Some(name) = device.strip_prefix("avd:") {
+        entry["avd"] = json!(avd_name(name)?);
+    } else if device.starts_with("emulator-") {
+        let mut command = adb(device)?;
+        command.extend(argv(&["emu", "avd", "name"]));
+        if let Ok(reply) = tc::run(&command, 3, None, true) {
+            if let Some(name) = s(&reply, "stdout")
+                .lines()
+                .next()
+                .map(str::trim)
+                .filter(|v| avd_name(v).is_ok())
+            {
+                entry["avd"] = json!(name);
+            }
+        }
+    }
+    let key = label_key(&entry);
+    let lock = Lock::open(&home()?.join("device-labels.lock"))?;
+    lock.acquire(false)?;
+    let mut all = labels()?;
+    let mut record = all[&key].as_object().cloned().unwrap_or_default();
+    if let Some(name) = nickname {
+        if name.is_empty() {
+            record.remove("nickname");
+        } else {
+            record.insert("nickname".into(), json!(name));
+        }
+    }
+    if let Some(pinned) = a.get("pinned").and_then(Value::as_bool) {
+        if pinned {
+            record.insert("pinned".into(), json!(true));
+        } else {
+            record.remove("pinned");
+        }
+    }
+    if a.get("nickname").is_some() || a.get("pinned").is_some() {
+        if record.is_empty() {
+            all.as_object_mut().unwrap().remove(&key);
+        } else {
+            all[&key] = Value::Object(record.clone());
+        }
+        atomic_json(&labels_path()?, &all)?;
+    }
+    let record = Value::Object(record);
+    Ok(json!({
+        "device": device,
+        "key": key,
+        "nickname": record.get("nickname").cloned().unwrap_or(Value::Null),
+        "pinned": b(&record, "pinned"),
+        "labels": all,
+    }))
 }
 fn info(platform: &str, device: &str) -> Result {
     identifier(device, "device ID", None)?;
@@ -158,9 +264,15 @@ fn info(platform: &str, device: &str) -> Result {
     for caps in re.captures_iter(s(&output, "stdout")) {
         props[&caps[1]] = json!(&caps[2]);
     }
-    Ok(
-        json!({"id":device,"properties":props,"display":run(sh(device,&["wm","size"])?)?["stdout"],"density":run(sh(device,&["wm","density"])?)?["stdout"]}),
-    )
+    let display = run(sh(device, &["wm", "size"])?)?["stdout"].clone();
+    let density = run(sh(device, &["wm", "density"])?)?["stdout"].clone();
+    let health = crate::android_device::health(
+        device,
+        &props,
+        display.as_str().unwrap_or(""),
+        density.as_str().unwrap_or(""),
+    );
+    Ok(json!({"id":device,"properties":props,"display":display,"density":density,"health":health}))
 }
 fn launch_command(device: &str, id: &str) -> Result<Vec<String>> {
     bundle(id)?;
@@ -394,6 +506,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
     match op {
         "device.list" => listing(platform),
         "device.info" => info(platform, device),
+        "device.label" => label(a),
         "device.install" => {
             identifier(device, "device ID", None)?;
             let files = strings(&a["paths"])
@@ -594,12 +707,19 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "android.record" => {
             let target = output_path(s(a, "path"))?;
             fs::create_dir_all(target.parent().unwrap())?;
-            let remote = format!("/sdcard/tomacco-{}.mp4", uuid::Uuid::new_v4().simple());
+            let name = uuid::Uuid::new_v4().simple().to_string();
+            let remote = format!("/sdcard/tomacco-{name}.mp4");
             let mut pull = adb(device)?;
             pull.extend(argv(&["pull", &remote, &target.to_string_lossy()]));
+            // job.send stop interrupts screenrecord, which then finishes the
+            // file; the bracket keeps pkill from matching its own shell.
+            let stop = sh(
+                device,
+                &["pkill", "-INT", "-f", &format!("screenrecor[d].*{name}")],
+            )?;
             submit(
                 "Record Android screen",
-                json!([{"argv":sh(device,&["screenrecord","--time-limit",&n(a,"seconds").to_string(),&remote])?},{"argv":pull,"artifacts":[target]},{"argv":sh(device,&["rm","-f",&remote])?}]),
+                json!([{"argv":sh(device,&["screenrecord","--time-limit",&n(a,"seconds").to_string(),&remote])?,"stoppable":true,"stop_argv":stop},{"argv":pull,"artifacts":[target]},{"argv":sh(device,&["rm","-f",&remote])?}]),
                 n(a, "seconds") + 60,
                 json!({}),
             )
@@ -757,7 +877,16 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 json!({}),
             )
         }
-        "android.avds" => Ok(json!({"avds":avds()?,"system_images":installed_system_images()?})),
+        "android.avds" => {
+            let labels = labels()?;
+            let mut avds = avds()?;
+            for avd in &mut avds {
+                let label = &labels[format!("avd:{}", s(avd, "name"))];
+                avd["nickname"] = label.get("nickname").cloned().unwrap_or(Value::Null);
+                avd["pinned"] = json!(b(label, "pinned"));
+            }
+            Ok(json!({"avds":avds,"system_images":installed_system_images()?}))
+        }
         "android.avd_create" => {
             let name = avd_name(s(a, "name"))?;
             let admission = Lock::open(
@@ -1415,6 +1544,34 @@ fn avd_configuration_lock(directory: &std::path::Path) -> Result<Lock> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nicknames_show_in_place_of_the_name_and_pins_are_kept_by_avd() {
+        let labels =
+            json!({"avd:Pixel_9":{"nickname":"Small phone","pinned":true},"R5CT":{"pinned":true}});
+        let mut emulator = json!({"id":"emulator-5556","avd":"Pixel_9","name":"Pixel 9 · Pixel_9"});
+        label_entry(&mut emulator, &labels);
+        assert_eq!(emulator["name"], "Small phone");
+        assert_eq!(emulator["original_name"], "Pixel 9 · Pixel_9");
+        assert_eq!(emulator["pinned"], true);
+        let mut phone = json!({"id":"R5CT","name":"SM S928B"});
+        label_entry(&mut phone, &labels);
+        assert_eq!(
+            (
+                phone["name"].as_str(),
+                phone.get("nickname"),
+                phone["pinned"].as_bool()
+            ),
+            (Some("SM S928B"), None, Some(true))
+        );
+        let mut other = json!({"id":"emulator-5554","name":"x"});
+        label_entry(&mut other, &labels);
+        assert_eq!(other["pinned"], false);
+        assert_eq!(nickname("  Test phone ").unwrap(), "Test phone");
+        assert!(nickname("two\nlines").is_err());
+        assert!(nickname(&"x".repeat(41)).is_err());
+        assert_eq!(nickname(&"ä".repeat(40)).unwrap().chars().count(), 40);
+    }
 
     #[test]
     fn package_uid_matches_the_exact_package_only() {

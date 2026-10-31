@@ -408,6 +408,13 @@ Rectangle {
         request("device.install",{platform:installTarget.platform,device:installTarget.device,paths:paths})
         notice=qsTr("Installing %1 on %2…").arg(paths.map(AppFiles.name).join(", ")).arg(deviceName || installTarget.device);failed=false
     }
+    // A recording of the live Android screen, saved under Videos/Tomacco and shown in the file manager.
+    ScreenRecorder {id:recorder;objectName:"nativeRecorder";onNoticeChanged:if(notice){view.notice=notice;view.failed=failed}}
+    function toggleRecording() {
+        if(recorder.recording){recorder.stop();return}
+        if(!live.session || live.platform!=="android"){notice=qsTr("Connect an Android device to record its screen.");failed=true;return}
+        recorder.start("android.record",{device:live.device,path:Studio.recordingPath(deviceName || live.device),seconds:180})
+    }
     // The picture is saved under Pictures/Tomacco and put on the clipboard.
     function capture() {
         if(!live.session){notice=qsTr("Connect a device to take a screenshot.");failed=true;return}
@@ -861,6 +868,7 @@ Rectangle {
                             StudioButton {text:"Home";displayText:"";iconName:"home";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"key",key:"home"})}
                             StudioButton {text:qsTr("Rotate");displayText:"";iconName:"rotate";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"rotate",orientation:display.sourceSize.width>display.sourceSize.height?"portrait":"landscape_left"})}
                             StudioButton {objectName:"nativeScreenshot";text:"Screenshot";displayText:"";iconName:"camera";quiet:true;tip:qsTr("Save and copy a screenshot")+" · "+qsTr("Ctrl")+"+Shift+S";visible:display.state==="live";onClicked:view.capture()}
+                            StudioButton {objectName:"nativeRecord";text:recorder.recording?qsTr("Stop recording"):qsTr("Record the screen");displayText:"";iconName:recorder.recording?"stop":"record";quiet:!recorder.recording;danger:recorder.recording;selected:recorder.recording;tip:recorder.recording?qsTr("Stop and save the recording · %1 s").arg(recorder.elapsed):qsTr("Record the screen to a video, at most 3 minutes");visible:display.state==="live" && view.live.platform==="android";enabled:!recorder.pending && !recorder.stopping;onClicked:view.toggleRecording()}
                             StudioButton {text:qsTr("Enter text");displayText:"";iconName:"keyboard";quiet:true;tip:text;visible:display.state==="live";onClicked:textEntry.open()}
                             StudioButton {objectName:"nativeDetachButton";text:view.detached?qsTr("Dock"):qsTr("Own window");displayText:"";iconName:view.detached?"dock":"window";quiet:true;selected:view.detached;tip:view.detached?text:qsTr("Detach the device into its own window");visible:display.state==="live";onClicked:view.detached=!view.detached}
                             Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:display.state==="live"}

@@ -35,6 +35,7 @@ mod product;
 mod profiling;
 mod projects;
 mod recorder;
+mod qr;
 mod redact;
 mod releases;
 mod remote;

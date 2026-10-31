@@ -460,4 +460,39 @@ void Backend::notificationAction(uint id,const QString &action) {
 }
 void Backend::openExternal(const QUrl &url) { if(url.scheme()=="http" || url.scheme()=="https") QDesktopServices::openUrl(url); }
 void Backend::openScreenshots() { QDesktopServices::openUrl(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)+"/Tomacco")); }
+QString Backend::recordingPath(const QString &model) {
+    auto directory=QStandardPaths::writableLocation(QStandardPaths::MoviesLocation)+"/Tomacco";
+    if(!QDir().mkpath(directory)) { emit message(tr("The recordings folder could not be created.")); return {}; }
+    auto safe=model; safe.replace(QRegularExpression("[^A-Za-z0-9_-]"),"-");
+    return directory+"/"+safe+"-"+QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss")+".mp4";
+}
+QString Backend::thumbnailPath(const QString &device) {
+    const auto directory=QStandardPaths::writableLocation(QStandardPaths::CacheLocation)+"/device-thumbnails";
+    if(!QDir().mkpath(directory)) return {};
+    auto safe=device; safe.replace(QRegularExpression("[^A-Za-z0-9_.-]"),"-");
+    return directory+"/"+safe+".png";
+}
+bool Backend::revealFile(const QString &path) {
+    const QFileInfo file(path);
+    if(!file.isFile()) return false;
+    emit fileRevealed(file.absoluteFilePath());
+    if(qGuiApp && QGuiApplication::platformName()==QLatin1String("offscreen")) return true;
+#ifdef TOMACCO_HAVE_DBUS
+    auto bus=QDBusConnection::sessionBus();
+    if(bus.isConnected()) {
+        auto call=QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.FileManager1"),QStringLiteral("/org/freedesktop/FileManager1"),
+                                                 QStringLiteral("org.freedesktop.FileManager1"),QStringLiteral("ShowItems"));
+        call<<QStringList{QUrl::fromLocalFile(file.absoluteFilePath()).toString()}<<QString();
+        auto *watcher=new QDBusPendingCallWatcher(bus.asyncCall(call,2000),this);
+        const auto folder=QUrl::fromLocalFile(file.absolutePath());
+        connect(watcher,&QDBusPendingCallWatcher::finished,this,[folder](QDBusPendingCallWatcher *done){
+            // No file manager answers: open the folder instead.
+            if(done->isError()) QDesktopServices::openUrl(folder);
+            done->deleteLater();
+        });
+        return true;
+    }
+#endif
+    return QDesktopServices::openUrl(QUrl::fromLocalFile(file.absolutePath()));
+}
 void Backend::testResult(const QVariantMap &result) { const auto data=QJsonDocument(QJsonObject::fromVariantMap(result)).toJson(QJsonDocument::Compact); fprintf(stdout,"TOMACCO_TEST %s\n",data.constData()); fflush(stdout); }

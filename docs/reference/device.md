@@ -2,7 +2,7 @@
 
 # `device` operations
 
-7 operations. Generated from `assets/operations.json`; [all areas](README.md).
+8 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### device.list
 
@@ -24,7 +24,7 @@ tomaccoctl call device.list
 
 **Device information**
 
-Read Android properties/display settings or iOS device information.
+Read Android properties/display settings or iOS device information. For Android, health sums up the device in the same call, read-only: Android version, SDK and security patch, battery level, state, health and temperature, free and total storage on /data, screen size and density in pixels and dp, and uptime in seconds; a part the device does not report is null.
 
 Annotations: read-only, idempotent, open world.
 
@@ -35,6 +35,24 @@ Annotations: read-only, idempotent, open world.
 
 ```sh
 tomaccoctl call device.info '{"platform":"android","device":"<device>"}'
+```
+
+### device.label
+
+**Name or pin a device**
+
+Give a device a nickname or pin it as a favourite. device.list then shows the nickname as name (the earlier name stays as original_name), marks pinned devices and lists them first; the desktop and the Omarchy panel show the same. An emulator is named by its AVD, so the name stays when its serial changes; a phone by its serial or UDID. An emulator that is off is named with device avd:NAME, its AVD name from android.avds, which also lists nickname and pinned. An empty nickname removes it and pinned false unpins. With neither, the call only reads. The result lists every label.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list, or avd:NAME for an emulator by its AVD name |
+| `nickname` | string |  |  | up to 40 characters; The name to show, at most 40 characters on one line; empty removes it. |
+| `pinned` | boolean |  |  | Pin the device as a favourite, or unpin it with false. |
+
+```sh
+tomaccoctl call device.label '{"device":"<device>"}'
 ```
 
 ### device.install

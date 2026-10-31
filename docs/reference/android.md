@@ -2,7 +2,24 @@
 
 # `android` operations
 
-25 operations. Generated from `assets/operations.json`; [all areas](README.md).
+27 operations. Generated from `assets/operations.json`; [all areas](README.md).
+
+### android.screen
+
+**Android screen preview**
+
+Save an Android device's screen as a PNG at path at once, through adb exec-out screencap, within 10 seconds and without a job, for previews that refresh such as the desktop's device grid. The result has the file's size and the picture's width and height. For evidence kept with a job, use device.capture.
+
+Annotations: writes, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `path` | string | yes |  | non-empty; Absolute path of the PNG to write; an existing file is replaced. |
+
+```sh
+tomaccoctl call android.screen '{"device":"<device>","path":"<path>"}'
+```
 
 ### android.input
 
@@ -65,7 +82,7 @@ tomaccoctl call android.launch '{"device":"<device>","bundle_id":"<bundle_id>"}'
 
 **Record display**
 
-Record an Android screen video and pull it to the given path.
+Record an Android screen video and pull it to the given path, as a job. job.send stop ends the recording early and still pulls the video.
 
 Annotations: writes, not idempotent, open world.
 
@@ -290,6 +307,26 @@ Annotations: writes, idempotent, open world.
 
 ```sh
 tomaccoctl call android.connect '{"address":"<address>"}'
+```
+
+### android.pair
+
+**Pair over Wi-Fi by QR code**
+
+Wireless debugging pairing by QR code, for Android 11 and newer. action qr makes a one-time service name and password and returns the QR code the phone's Developer options &gt; Wireless debugging &gt; Pair device with QR code scans: qr_text, the modules as qr.rows (1 is dark), an SVG, and with path a PNG or SVG file. Nothing is stored. action wait, with that service and password, waits up to timeout seconds for the phone to offer the code on the local network (adb mdns), pairs with adb pair and connects to the phone's debugging service; the result names the device to use. Call wait again while the code shows; pairing_timeout means the phone has not scanned it yet. action services lists what adb finds on the network, such as the address the phone shows under Pair device with pairing code, for android.connect with pairing_code.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `action` | string |  | `"qr"` | one of `qr`, `wait`, `services`; qr shows a new code, wait pairs once the phone scanned it, services lists discovered devices. |
+| `service` | string |  |  | For wait: the service name action qr returned. |
+| `password` | string |  |  | For wait: the password action qr returned. |
+| `timeout` | integer |  | `60` | 1 to 300; For wait: how many seconds to wait for the phone. |
+| `path` | string |  | `""` | For qr: an absolute path ending in .png or .svg to write the code to. |
+
+```sh
+tomaccoctl call android.pair
 ```
 
 ### android.calibrate

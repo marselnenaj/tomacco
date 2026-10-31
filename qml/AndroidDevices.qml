@@ -26,6 +26,54 @@ ColumnLayout {
     readonly property var profiles: Studio.models.filter(p=>p.platform==="android")
     readonly property var selectedProfile: profiles[modelPicker.currentIndex] || ({})
     readonly property var phones: workspace.devices.filter(d=>d.platform==="android")
+    // Pinned emulators first, then the others as android.avds lists them.
+    // All screens: the running devices side by side instead of the list.
+    property bool gridMode: false
+    readonly property var runningPhones: phones.filter(d=>d.state==="device" && d.booted!==false)
+    readonly property var shownAvds: avds.filter(a=>a.pinned).concat(avds.filter(a=>!a.pinned))
+    // The device being renamed: {device, name, title}.
+    property var renaming: ({})
+    function rename(device,current,title) {renaming={device:device,title:title};nicknameField.text=current || "";renameDialog.open();nicknameField.forceActiveFocus()}
+    function pin(device,pinned) {request("device.label",{device:device,pinned:pinned})}
+    // Wireless debugging pairing: a QR code from android.pair, or the phone's pairing code.
+    property string pairMode: "qr"
+    property var pairing: ({})
+    // "", creating, waiting, pairing, connecting, done or failed
+    property string pairState: ""
+    property string pairMessage: ""
+    property string pairHost: ""
+    function openPairing() {pairMode="qr";pairDialog.open();startPairing()}
+    function startPairing() {pairing={};pairState="creating";pairMessage="";request("android.pair",{action:"qr"})}
+    function waitForPhone() {if(pairDialog.visible && pairMode==="qr" && pairing.service)request("android.pair",{action:"wait",service:pairing.service,password:pairing.password,timeout:15},true)}
+    function pairWithCode() {pairState="pairing";pairMessage="";pairHost=pairAddress.text.replace(/:[0-9]+$/,"");request("android.connect",{address:pairAddress.text.trim(),pairing_code:pairCode.text.trim()})}
+    function connectTo(address) {pairState="connecting";request("android.connect",{address:address})}
+    function pairFailed(message) {pairState="failed";pairMessage=message}
+    function pairReply(op,args,response) {
+        let value=response.result || {}
+        if(op==="android.pair" && args.action==="qr") {
+            if(!response.ok){pairFailed(response.error.message);return}
+            pairing=value;pairState="waiting";waitForPhone();return
+        }
+        if(op==="android.pair" && args.action==="wait") {
+            if(args.service!==pairing.service || pairMode!=="qr")return
+            if(!response.ok){if(response.error.code==="pairing_timeout")waitForPhone();else pairFailed(response.error.message);return}
+            pairState="done";pairMessage=value.connected?qsTr("Paired and connected · %1").arg(value.device):qsTr("Paired. Enter the IP address and port shown under Wireless debugging to connect.");refresh();return
+        }
+        if(op==="android.pair" && args.action==="services") {
+            if(!response.ok){pairFailed(response.error.message);return}
+            let services=value.services || []
+            if(pairState==="connecting"){let found=services.find(s=>s.type.indexOf("_adb-tls-connect")===0 && s.address.replace(/:[0-9]+$/,"")===pairHost);if(found)connectTo(found.address);else{pairState="done";pairMessage=qsTr("Paired. Enter the IP address and port shown under Wireless debugging to connect.")}}
+            else{let offered=services.filter(s=>s.type.indexOf("_adb-tls-pairing")===0);if(offered.length===1 && !pairAddress.text)pairAddress.text=offered[0].address}
+            return
+        }
+        if(op==="android.connect") {
+            if(!response.ok){pairFailed(response.error.message);return}
+            let output=((value.stdout || "")+" "+(value.stderr || "")).trim()
+            if(args.pairing_code!==undefined){if(output.indexOf("Successfully paired")<0){pairFailed(output || qsTr("adb could not pair"));return}pairState="connecting";request("android.pair",{action:"services"});return}
+            if(output.toLowerCase().indexOf("connected to")<0){pairFailed(output || qsTr("adb could not connect"));return}
+            pairState="done";pairMessage=qsTr("Paired and connected · %1").arg(args.address);refresh()
+        }
+    }
     spacing:Theme.gapMd
     function request(op,args,quiet) {
         if(quiet)for(let id in requests)if(requests[id].op===op && JSON.stringify(requests[id].args)===JSON.stringify(args || {}))return
@@ -56,6 +104,7 @@ ColumnLayout {
         target:Agent
         function onApiFinished(id,op,response) {
             let context=library.requests[id];if(!context)return;delete library.requests[id]
+            if(op==="android.pair" || op==="android.connect"){library.pairReply(op,context.args,response);return}
             if(!response.ok){library.notice=response.error.message;library.failed=true;if(op==="android.avd_configure")library.savingPerformance=false;if(op==="android.avd_create")library.submitting=false;if(op==="android.avd_start"){let next=Object.assign({},library.pendingBoots);delete next[context.args.name];library.pendingBoots=next}return}
             let value=response.result
             if(op==="android.avds"){library.avds=value.avds;library.images=value.system_images || []}
@@ -69,6 +118,7 @@ ColumnLayout {
             if(op==="android.avd_create"){library.submitting=false;library.createJob=value.id;createDialog.close();library.notice=qsTr("Setting up device…")}
             if(op==="android.avd_configure"){library.savingPerformance=false;performanceDialog.close();library.notice=qsTr("Performance settings saved · used on the next start");library.refresh()}
             if(op==="android.emulator")library.refresh()
+            if(op==="device.label"){renameDialog.close();library.refresh()}
             if(op==="android.avd_start"){
                 if(value.reused && value.device)library.refresh()
                 else library.pendingBoots=Object.assign({},library.pendingBoots,{[context.args.name]:value})
@@ -84,12 +134,18 @@ ColumnLayout {
     }
     RowLayout {Layout.fillWidth:true;spacing:Theme.gapMd
         Text {Layout.fillWidth:true;text:qsTr("Each emulator keeps its own model and app data.");color:Theme.muted;font.pixelSize:Theme.fontBody;wrapMode:Text.WordWrap}
+        StudioButton {objectName:"deviceGridToggle";text:library.gridMode?qsTr("List"):qsTr("All screens");displayText:library.width<760?"":text;iconName:library.gridMode?"devices":"grid";quiet:true;selected:library.gridMode;tip:library.gridMode?qsTr("Show the device list"):qsTr("Show every running device's screen side by side");onClicked:library.gridMode=!library.gridMode}
         StudioButton {objectName:"createAndroidEmulator";text:library.createJob?qsTr("Creating…"):qsTr("Add device");iconName:"plus";accent:true;enabled:!library.createJob && !library.submitting;onClicked:library.newEmulator()}
     }
+    DeviceGrid {
+        objectName:"androidDeviceGrid";Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:320;visible:library.gridMode
+        devices:library.runningPhones;selected:workspace.selectedDevice
+        onChosen:device=>{workspace.selectedDevice=device.id;library.openDevice(device)}
+    }
     StudioScrollView {
-        Layout.fillWidth:true;Layout.fillHeight:true;clip:true;contentWidth:availableWidth
+        Layout.fillWidth:true;Layout.fillHeight:true;clip:true;contentWidth:availableWidth;visible:!library.gridMode
         Column {width:parent.width-Theme.gapMd;spacing:Theme.gapXs
-            Repeater {model:library.avds
+            Repeater {model:library.shownAvds
                 Rectangle {
                     required property var modelData
                     readonly property var connected:library.deviceFor(modelData.name)
@@ -97,13 +153,15 @@ ColumnLayout {
                     RowLayout {anchors.fill:parent;anchors.margins:Theme.gapMd;spacing:Theme.gapMd
                         StudioIcon {name:"phone";color:connected?Theme.accentInk:Theme.faint}
                         ColumnLayout {id:deviceColumn;Layout.fillWidth:true;spacing:Theme.gapXxs
-                            Text {Layout.fillWidth:true;text:modelData.profile_name || modelData.name;color:Theme.text;font.pixelSize:Theme.fontBody;font.weight:Font.DemiBold;elide:Text.ElideRight}
+                            Text {objectName:"avdTitle-"+modelData.name;Layout.fillWidth:true;text:modelData.nickname || modelData.profile_name || modelData.name;color:Theme.text;font.pixelSize:Theme.fontBody;font.weight:Font.DemiBold;elide:Text.ElideRight}
                             Text {Layout.fillWidth:true;text:modelData.name+" · "+(modelData.display.width?modelData.display.width+" × "+modelData.display.height:qsTr("External profile"));color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro;elide:Text.ElideMiddle}
                             RowLayout {Layout.fillWidth:true;spacing:Theme.gapSm
                                 StudioStatus {tone:connected?"ok":library.pendingBoots[modelData.name]?"busy":"idle";text:connected?(connected.state==="device"?qsTr("Connected"):connected.state):library.pendingBoots[modelData.name]?qsTr("Starting…"):qsTr("Off")}
                                 Text {Layout.fillWidth:true;text:qsTr("Graphics: %1").arg(modelData.gpu || "auto")+(modelData.memory_mb?" · "+modelData.memory_mb+" MB":"");color:Theme.faint;font.pixelSize:Theme.fontSmall;elide:Text.ElideRight}
                             }
                         }
+                        StudioButton {objectName:"pinAvd-"+modelData.name;iconName:"pin";displayText:"";quiet:!modelData.pinned;selected:!!modelData.pinned;text:modelData.pinned?qsTr("Unpin"):qsTr("Pin");tip:modelData.pinned?qsTr("Unpin this device"):qsTr("Pin this device to the top");onClicked:library.pin("avd:"+modelData.name,!modelData.pinned)}
+                        StudioButton {objectName:"renameAvd-"+modelData.name;iconName:"edit";displayText:"";quiet:true;text:qsTr("Rename");tip:qsTr("Give this device a nickname");onClicked:library.rename("avd:"+modelData.name,modelData.nickname,modelData.profile_name || modelData.name)}
                         StudioButton {objectName:"performanceAvd-"+modelData.name;iconName:"settings";quiet:true;tip:qsTr("Set graphics, memory and CPU");onClicked:library.performance(modelData)}
                         StudioButton {objectName:"startAvd-"+modelData.name;text:connected && connected.state==="device"?qsTr("Open"):library.pendingBoots[modelData.name]?qsTr("Starting…"):qsTr("Start");iconName:connected && connected.state==="device"?"phone":"play";enabled:!library.pendingBoots[modelData.name];onClicked:library.start(modelData)}
                     }
@@ -118,6 +176,8 @@ ColumnLayout {
                             Text {text:modelData.name;color:Theme.text;font.pixelSize:Theme.fontBody;font.weight:Font.DemiBold;Layout.fillWidth:true;elide:Text.ElideRight}
                             Text {text:modelData.id+" · "+modelData.state;color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro;Layout.fillWidth:true;elide:Text.ElideMiddle}
                         }
+                        StudioButton {objectName:"pinDevice-"+modelData.id;iconName:"pin";displayText:"";quiet:!modelData.pinned;selected:!!modelData.pinned;text:modelData.pinned?qsTr("Unpin"):qsTr("Pin");tip:modelData.pinned?qsTr("Unpin this device"):qsTr("Pin this device to the top");onClicked:library.pin(modelData.id,!modelData.pinned)}
+                        StudioButton {objectName:"renameDevice-"+modelData.id;iconName:"edit";displayText:"";quiet:true;text:qsTr("Rename");tip:qsTr("Give this device a nickname");onClicked:library.rename(modelData.id,modelData.nickname,modelData.original_name || modelData.name)}
                         StudioButton {text:qsTr("Open");enabled:modelData.state==="device";onClicked:library.openDevice(modelData)}
                     }
                     onClicked:workspace.selectedDevice=modelData.id
@@ -181,6 +241,58 @@ ColumnLayout {
                 Item {Layout.fillWidth:true}
                 StudioButton {text:qsTr("Close");enabled:!library.savingPerformance;onClicked:performanceDialog.close()}
                 StudioButton {objectName:"saveAndroidPerformance";text:library.savingPerformance?qsTr("Saving…"):qsTr("Save");accent:true;enabled:!library.savingPerformance && !library.deviceFor(library.performanceAvd.name) && !library.pendingBoots[library.performanceAvd.name] && memoryField.acceptableInput && coresField.acceptableInput;onClicked:{library.savingPerformance=true;library.request("android.avd_configure",{name:library.performanceAvd.name,gpu:library.gpuOptions[rendererPicker.currentIndex].value,vulkan:["auto","on","off"][vulkanPicker.currentIndex],memory_mb:Number(memoryField.text),cores:Number(coresField.text)})}}
+            }
+        }}
+    }
+    StudioDialog {
+        id:renameDialog;objectName:"renameDeviceDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,440);modal:true;title:qsTr("Device nickname")
+        contentItem:ColumnLayout {spacing:Theme.gapSm
+            Text {Layout.fillWidth:true;text:qsTr("Shown instead of %1 here, in device lists and in the Omarchy panel.").arg(library.renaming.title || "");color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            StudioTextField {id:nicknameField;objectName:"deviceNicknameField";Layout.fillWidth:true;maximumLength:40;placeholderText:qsTr("Nickname");onAccepted:if(renameSave.enabled)renameSave.clicked()}
+            RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
+                StudioButton {objectName:"removeDeviceNickname";text:qsTr("Remove nickname");quiet:true;onClicked:library.request("device.label",{device:library.renaming.device,nickname:""})}
+                Item {Layout.fillWidth:true}
+                StudioButton {text:qsTr("Cancel");onClicked:renameDialog.close()}
+                StudioButton {id:renameSave;objectName:"saveDeviceNickname";text:qsTr("Save");accent:true;enabled:nicknameField.text.trim().length>0;onClicked:library.request("device.label",{device:library.renaming.device,nickname:nicknameField.text.trim()})}
+            }
+        }
+    }
+    StudioDialog {
+        id:pairDialog;objectName:"pairWifiDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,480);height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Pair over Wi-Fi")
+        onClosed:{library.pairing={};library.pairState=""}
+        contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapSm
+            StudioSegmented {
+                current:library.pairMode
+                model:[{id:"qr",label:qsTr("QR code"),objectName:"pairModeQr"},{id:"code",label:qsTr("Pairing code"),objectName:"pairModeCode"}]
+                onChosen:id=>{library.pairMode=id;library.pairMessage="";if(id==="qr")library.startPairing();else{library.pairing={};library.pairState="";library.request("android.pair",{action:"services"})}}
+            }
+            Text {Layout.fillWidth:true;wrapMode:Text.WordWrap;color:Theme.muted;font.pixelSize:Theme.fontSmall
+                text:library.pairMode==="qr"?qsTr("On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer."):qsTr("On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.")}
+            Rectangle {
+                objectName:"pairQrCode";visible:library.pairMode==="qr";Layout.alignment:Qt.AlignHCenter;Layout.preferredWidth:232;Layout.preferredHeight:232;color:"white";radius:Theme.radiusSmall
+                Canvas {
+                    id:qrCanvas;objectName:"pairQrCanvas";anchors.fill:parent;anchors.margins:12
+                    readonly property var rows:library.pairing.qr?library.pairing.qr.rows:[]
+                    onRowsChanged:requestPaint()
+                    onPaint:{let c=getContext("2d");c.reset();c.fillStyle="white";c.fillRect(0,0,width,height);if(!rows.length)return;let cell=Math.floor(Math.min(width,height)/rows.length),offset=Math.floor((width-cell*rows.length)/2);c.fillStyle="black";for(let y=0;y<rows.length;y++)for(let x=0;x<rows[y].length;x++)if(rows[y][x]==="1")c.fillRect(offset+x*cell,offset+y*cell,cell,cell)}
+                    Accessible.role:Accessible.Graphic;Accessible.name:qsTr("QR code for wireless debugging")
+                }
+                Text {anchors.centerIn:parent;visible:library.pairState==="creating";text:qsTr("Creating a code…");color:"black";font.pixelSize:Theme.fontSmall}
+            }
+            GridLayout {visible:library.pairMode==="code";Layout.fillWidth:true;columns:2;columnSpacing:Theme.gapSm;rowSpacing:Theme.gapXs
+                Text {text:qsTr("Pairing address");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                StudioTextField {id:pairAddress;objectName:"pairAddressField";Layout.fillWidth:true;placeholderText:"192.168.1.20:41235";font.family:Theme.mono}
+                Text {text:qsTr("Pairing code");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                StudioTextField {id:pairCode;objectName:"pairCodeField";Layout.fillWidth:true;placeholderText:"123456";maximumLength:6;inputMethodHints:Qt.ImhDigitsOnly;font.family:Theme.mono;validator:RegularExpressionValidator {regularExpression:/[0-9]{6}/}}
+            }
+            StudioStatus {objectName:"pairStatus";visible:["creating","waiting","pairing","connecting"].indexOf(library.pairState)>=0;tone:"busy"
+                text:library.pairState==="waiting"?qsTr("Waiting for the phone…"):library.pairState==="pairing"?qsTr("Pairing…"):library.pairState==="connecting"?qsTr("Connecting…"):qsTr("Creating a code…")}
+            Text {objectName:"pairMessage";Layout.fillWidth:true;visible:["done","failed"].indexOf(library.pairState)>=0;text:library.pairMessage;color:library.pairState==="failed"?Theme.danger:Theme.text;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            RowLayout {Layout.fillWidth:true;Layout.topMargin:Theme.gapSm;spacing:Theme.gapXs
+                StudioButton {objectName:"pairNewCode";visible:library.pairMode==="qr" && ["failed","done"].indexOf(library.pairState)>=0;text:qsTr("New code");quiet:true;onClicked:library.startPairing()}
+                Item {Layout.fillWidth:true}
+                StudioButton {text:qsTr("Close");onClicked:pairDialog.close()}
+                StudioButton {objectName:"pairWithCode";visible:library.pairMode==="code";text:qsTr("Pair");accent:true;enabled:pairCode.acceptableInput && /^[A-Za-z0-9.\[\]:_-]+:[0-9]{1,5}$/.test(pairAddress.text.trim()) && ["pairing","connecting"].indexOf(library.pairState)<0;onClicked:library.pairWithCode()}
             }
         }}
     }

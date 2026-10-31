@@ -94,6 +94,8 @@ Rectangle {
     property string initialPath: ""
     property string selectedDevice: ""
     property string selectedPlatform: "android"
+    // The live log of the selected Android device under Devices.
+    property bool showDeviceLog: false
     signal profilesChanged()
     signal runtimeRequested(string platform, string device)
     signal iosSetupRequested()
@@ -334,11 +336,11 @@ Rectangle {
                         onChosen:id=>panel.chooseDevicePlatform(id)
                     }
                     Item {Layout.fillWidth:true}
-                    StudioButton {visible:panel.selectedPlatform==="android";text:qsTr("Connect via Wi-Fi");quiet:true;onClicked:panel.showAction("android.connect")}
+                    StudioButton {objectName:"pairWifiButton";visible:panel.selectedPlatform==="android";text:qsTr("Connect via Wi-Fi");quiet:true;onClicked:androidLibrary.openPairing()}
                     StudioButton {visible:panel.selectedPlatform==="ios";text:qsTr("Set up iPhone");quiet:true;onClicked:panel.iosSetupRequested()}
                     StudioButton {text:qsTr("Find devices");iconName:"refresh";onClicked:panel.request("device.list",{})}
                 }
-                AndroidDevices {Layout.fillWidth:true;Layout.fillHeight:true;visible:panel.selectedPlatform==="android";workspace:panel}
+                AndroidDevices {id:androidLibrary;Layout.fillWidth:true;Layout.fillHeight:true;visible:panel.selectedPlatform==="android";workspace:panel}
                 IosResearch {id:iosResearch;Layout.fillWidth:true;visible:panel.selectedPlatform==="ios";workspace:panel;guestSolo:panel.guestSolo;onGuestCloseRequested:panel.guestCloseRequested();onGuestDockRequested:panel.guestDockRequested()}
                 ListView {
                     id:deviceList;Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:160
@@ -375,10 +377,15 @@ Rectangle {
                 Flow {id:deviceActions;objectName:"deviceActions";Layout.fillWidth:true;spacing:Theme.gapXs;enabled:panel.devices.some(x=>x.id===panel.selectedDevice && x.platform===panel.selectedPlatform)
                     StudioButton {text:qsTr("Open live device");iconName:"phone";accent:true;onClicked:panel.runtimeRequested(panel.selectedPlatform,panel.selectedDevice)}
                     StudioButton {text:panel.selectedPlatform==="ios"?qsTr("Install IPA"):qsTr("Install APK");onClicked:installFile.open()}
-                    StudioButton {text:"Logs";quiet:true;onClicked:panel.request("device.logs",{platform:panel.selectedPlatform,device:panel.selectedDevice,duration:60})}
+                    StudioButton {objectName:"deviceLogToggle";text:panel.selectedPlatform==="android"?qsTr("Live log"):"Logs";iconName:panel.selectedPlatform==="android"?"jobs":"";quiet:!panel.showDeviceLog;selected:panel.showDeviceLog && panel.selectedPlatform==="android";onClicked:if(panel.selectedPlatform==="android")panel.showDeviceLog=!panel.showDeviceLog;else panel.request("device.logs",{platform:panel.selectedPlatform,device:panel.selectedDevice,duration:60})}
                     StudioButton {text:"Screenshot";quiet:true;onClicked:screenshotFile.open()}
                     StudioButton {text:qsTr("Information");quiet:true;onClicked:{panel.request("device.info",{platform:panel.selectedPlatform,device:panel.selectedDevice});panel.currentIndex=3}}
                     StudioButton {text:qsTr("Calibrate model");quiet:true;visible:panel.selectedPlatform==="android";onClicked:panel.showAction("android.calibrate")}
+                }
+                DeviceLogPane {
+                    Layout.fillWidth:true;Layout.preferredHeight:320;Layout.minimumHeight:200
+                    visible:panel.opened && panel.section==="devices" && panel.showDeviceLog && panel.selectedPlatform==="android" && panel.devices.some(x=>x.id===panel.selectedDevice && x.platform==="android")
+                    device:panel.selectedDevice
                 }
               }
             }

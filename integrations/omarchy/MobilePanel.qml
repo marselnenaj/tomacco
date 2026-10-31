@@ -69,7 +69,8 @@ Panel {
     readonly property bool anyLive: liveRuntimes.length>0 || phoneRunning
     readonly property var readyDevice: devices.find(isReady) || null
     readonly property bool canPopOut: !!liveRuntime || !!readyDevice || phoneRunning
-    readonly property var idleAvds: avds.filter(a=>!devices.some(d=>d.avd===a.name))
+    // Pinned emulators first; device.list already lists pinned devices first.
+    readonly property var idleAvds: avds.filter(a=>!devices.some(d=>d.avd===a.name)).sort((a,b)=>(b.pinned===true)-(a.pinned===true))
     readonly property var workspaceNames: Object.keys(snapshot.workspaces || {})
     readonly property string summary: hasError ? root.tr("Not reachable","Nicht erreichbar")
         : busyLabel ? busyLabel
@@ -536,7 +537,8 @@ Panel {
                                 readonly property var live: root.runtimeFor(modelData.id)
                                 readonly property bool ready: root.isReady(modelData)
                                 dotColor: live ? root.good : ready ? root.accent : root.faint
-                                title: modelData.name
+                                // The nickname from device.label, when the device has one; a pin marks a favourite.
+                                title: (modelData.pinned ? "\u2605 " : "")+modelData.name
                                 detail: (modelData.platform==="ios" ? "Apple" : "Android")+" · "+(modelData.kind==="emulator" ? "Emulator" : root.tr("Device","Gerät"))+" · "+(live ? root.tr("live in the workspace","live im Workspace") : ready ? (modelData.booted===false ? root.tr("starting …","startet …") : root.tr("ready","bereit")) : modelData.state)
                                 IconAction { glyph: ""; hint: root.tr("Open as its own window","Als eigenes Fenster öffnen"); enabled: ready; onTriggered: root.popOut(modelData) }
                                 IconAction { glyph: live ? "" : ""; hint: live ? root.tr("Disconnect live","Live-Verbindung trennen") : root.tr("Connect live","Live verbinden"); enabled: ready; tint: live ? root.good : root.foreground; onTriggered: live ? root.disconnectDevice(modelData) : root.connectDevice(modelData) }
@@ -547,7 +549,7 @@ Panel {
                             model: root.idleAvds
                             ListRow {
                                 required property var modelData
-                                title: modelData.name
+                                title: (modelData.pinned ? "\u2605 " : "")+(modelData.nickname || modelData.name)
                                 detail: (modelData.profile_name || root.tr("Android emulator","Android-Emulator"))+root.tr(" · off"," · aus")
                                 IconAction { glyph: ""; hint: root.tr("Start and show as a device window","Starten und als Gerätefenster zeigen"); tint: root.accent; onTriggered: root.startAvd(modelData) }
                             }

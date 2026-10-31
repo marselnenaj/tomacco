@@ -213,6 +213,42 @@ window, an `.app` bundle is added to the profile through
 (`deploy`). A file the device cannot take is refused with the reason; files that
 are no app are ignored. The detached device window accepts drops too.
 
+## Devices page
+
+### Nicknames and pins
+
+Each Android device and emulator under **Devices** has a pin button and a rename
+button. A pinned device is listed first; a nickname is shown in place of the model
+name in the device lists, the device picker and the Omarchy panel, where a star marks
+a pinned device. Both are stored through `device.label`, so agents see them in
+`device.list` too. An emulator keeps its nickname by its AVD name, also while it is
+off and when its serial changes.
+
+### All screens
+
+**All screens** under Devices shows every running Android device and emulator side by
+side, each with a picture of its screen that refreshes every few seconds through
+`android.screen`. A click on one opens it as the live device. The pictures are still
+screenshots, not video; the live device view streams one device at a time.
+
+### Live log
+
+**Live log** under Devices opens the log of the selected Android device below the
+device list, as it grows. An app ID keeps only that app's lines, by its user ID on
+Android 12 and newer, so they continue across restarts; the level buttons show
+everything, or from info, warnings or errors up, filtered by logcat. The search field
+keeps lines with a text, and errors and warnings are coloured. The pane reads a
+`device.logs` job and starts a new one when a capture ends or the app or level
+changes; closing the pane or pausing it ends the capture.
+
+### Pairing over Wi-Fi
+
+**Connect via Wi-Fi** under Devices shows a QR code for the phone's **Developer options ›
+Wireless debugging › Pair device with QR code** and pairs and connects as soon as the
+phone has scanned it. **Pairing code** is the other way: enter the address and six-digit
+code the phone shows; when adb finds a single pairing address on the network it is
+filled in. Both go through `android.pair` and `android.connect`.
+
 ## Touches and coordinates
 
 **Touches and coordinates** in the tool strip beside the live device
@@ -224,6 +260,14 @@ example `250, 1500  ·  0.250, 0.750`. `runtime.input` takes the fractions as it
 coordinates. Presses still reach the device as before. The choice is
 stored. It applies to the Android and iPhone picture, docked or in its own
 window; the virtual iOS device has its own touch mark and no coordinates.
+
+## Screen recording
+
+The record button in the tool strip beside a live Android device records its screen
+with `android.record`, for up to three minutes; pressing it again stops the recording
+with `job.send` `stop`. The video is saved under `Videos/Tomacco` and shown in the file
+manager. The virtual iOS device has a **Record** button beside its picture that does
+the same through `ios.virtual.record`, for up to ten minutes.
 
 ## Device window
 
@@ -287,7 +331,8 @@ while a device is live and shows an orbiting arc while a build or task runs;
 emulators and audio bridges are listed as services and do not count as activity.
 
 The panel lists connected devices (connect, disconnect, open as window, stop an
-emulator), stopped Android emulators with a start button, running and recent
+emulator), stopped Android emulators with a start button, each under its nickname
+and with pinned devices first, running and recent
 jobs with their duration, and saved projects with build-and-run. Each job row
 has a button that opens the job's log file in the desktop's text viewer
 (`xdg-open`). Keys in the open panel: O workspace, F device window,

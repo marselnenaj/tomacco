@@ -264,6 +264,130 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
         <translation>Füge einen Emulator hinzu oder schließe ein Telefon mit USB-Debugging an.</translation>
     </message>
+    <message>
+        <source>Unpin</source>
+        <translation>Lösen</translation>
+    </message>
+    <message>
+        <source>Pin</source>
+        <translation>Anheften</translation>
+    </message>
+    <message>
+        <source>Unpin this device</source>
+        <translation>Dieses Gerät lösen</translation>
+    </message>
+    <message>
+        <source>Pin this device to the top</source>
+        <translation>Dieses Gerät oben anheften</translation>
+    </message>
+    <message>
+        <source>Rename</source>
+        <translation>Umbenennen</translation>
+    </message>
+    <message>
+        <source>Give this device a nickname</source>
+        <translation>Diesem Gerät einen Spitznamen geben</translation>
+    </message>
+    <message>
+        <source>Device nickname</source>
+        <translation>Spitzname des Geräts</translation>
+    </message>
+    <message>
+        <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
+        <translation>Wird statt %1 hier, in Gerätelisten und im Omarchy-Panel angezeigt.</translation>
+    </message>
+    <message>
+        <source>Nickname</source>
+        <translation>Spitzname</translation>
+    </message>
+    <message>
+        <source>Remove nickname</source>
+        <translation>Spitznamen entfernen</translation>
+    </message>
+    <message>
+        <source>Paired and connected · %1</source>
+        <translation>Gekoppelt und verbunden · %1</translation>
+    </message>
+    <message>
+        <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
+        <translation>Gekoppelt. Gib zum Verbinden die IP-Adresse und den Port ein, die unter Drahtloses Debugging stehen.</translation>
+    </message>
+    <message>
+        <source>adb could not pair</source>
+        <translation>adb konnte nicht koppeln</translation>
+    </message>
+    <message>
+        <source>adb could not connect</source>
+        <translation>adb konnte sich nicht verbinden</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi</source>
+        <translation>Über WLAN koppeln</translation>
+    </message>
+    <message>
+        <source>QR code</source>
+        <translation>QR-Code</translation>
+    </message>
+    <message>
+        <source>Pairing code</source>
+        <translation>Kopplungscode</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
+        <translation>Öffne auf dem Smartphone Entwickleroptionen › Drahtloses Debugging › Gerät über QR-Code koppeln und scanne diesen Code. Smartphone und Computer müssen im selben Netzwerk sein; ab Android 11.</translation>
+    </message>
+    <message>
+        <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
+        <translation>Öffne auf dem Smartphone Entwickleroptionen › Drahtloses Debugging › Gerät mit Kopplungscode koppeln und gib die angezeigte Adresse und den Code ein.</translation>
+    </message>
+    <message>
+        <source>QR code for wireless debugging</source>
+        <translation>QR-Code für drahtloses Debugging</translation>
+    </message>
+    <message>
+        <source>Creating a code…</source>
+        <translation>Code wird erstellt …</translation>
+    </message>
+    <message>
+        <source>Pairing address</source>
+        <translation>Kopplungsadresse</translation>
+    </message>
+    <message>
+        <source>Waiting for the phone…</source>
+        <translation>Warte auf das Smartphone …</translation>
+    </message>
+    <message>
+        <source>Pairing…</source>
+        <translation>Wird gekoppelt …</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Wird verbunden …</translation>
+    </message>
+    <message>
+        <source>New code</source>
+        <translation>Neuer Code</translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation>Koppeln</translation>
+    </message>
+    <message>
+        <source>List</source>
+        <translation>Liste</translation>
+    </message>
+    <message>
+        <source>All screens</source>
+        <translation>Alle Bildschirme</translation>
+    </message>
+    <message>
+        <source>Show the device list</source>
+        <translation>Geräteliste zeigen</translation>
+    </message>
+    <message>
+        <source>Show every running device's screen side by side</source>
+        <translation>Die Bildschirme aller laufenden Geräte nebeneinander zeigen</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -334,6 +458,10 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
     <message>
         <source>%1 comes from a newer Tomacco; update this one first.</source>
         <translation>%1 stammt von einem neueren Tomacco; aktualisiere zuerst dieses.</translation>
+    </message>
+    <message>
+        <source>The recordings folder could not be created.</source>
+        <translation>Der Ordner für Aufnahmen konnte nicht angelegt werden.</translation>
     </message>
 </context>
 <context>
@@ -1117,6 +1245,22 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
     <message>
         <source>Wake or lock the display</source>
         <translation>Display aufwecken oder sperren</translation>
+    </message>
+    <message>
+        <source>Stop recording · %1 s</source>
+        <translation>Aufnahme beenden · %1 s</translation>
+    </message>
+    <message>
+        <source>Record</source>
+        <translation>Aufnehmen</translation>
+    </message>
+    <message>
+        <source>Stop and save the recording</source>
+        <translation>Aufnahme beenden und speichern</translation>
+    </message>
+    <message>
+        <source>Record the screen to a video, at most 10 minutes</source>
+        <translation>Bildschirm als Video aufnehmen, höchstens 10 Minuten</translation>
     </message>
 </context>
 <context>
@@ -3227,6 +3371,26 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Connect your coding agent</source>
         <translation>Deinen Coding-Agenten verbinden</translation>
     </message>
+    <message>
+        <source>Connect an Android device to record its screen.</source>
+        <translation>Verbinde ein Android-Gerät, um seinen Bildschirm aufzunehmen.</translation>
+    </message>
+    <message>
+        <source>Stop recording</source>
+        <translation>Aufnahme beenden</translation>
+    </message>
+    <message>
+        <source>Record the screen</source>
+        <translation>Bildschirm aufnehmen</translation>
+    </message>
+    <message>
+        <source>Stop and save the recording · %1 s</source>
+        <translation>Aufnahme beenden und speichern · %1 s</translation>
+    </message>
+    <message>
+        <source>Record the screen to a video, at most 3 minutes</source>
+        <translation>Bildschirm als Video aufnehmen, höchstens 3 Minuten</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -3515,8 +3679,8 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Geräte suchen</translation>
     </message>
     <message>
-        <source>Hot Reload</source>
-        <translation>Hot Reload</translation>
+        <source>Send a command to a job</source>
+        <translation>Befehl an einen Job senden</translation>
     </message>
     <message>
         <source>Inspect APK or AAB</source>
@@ -4013,6 +4177,18 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Wait for rendering</source>
         <translation>Auf Darstellung warten</translation>
+    </message>
+    <message>
+        <source>Name or pin a device</source>
+        <translation>Gerät benennen oder anheften</translation>
+    </message>
+    <message>
+        <source>Pair over Wi-Fi by QR code</source>
+        <translation>Über WLAN per QR-Code koppeln</translation>
+    </message>
+    <message>
+        <source>Android screen preview</source>
+        <translation>Android-Bildschirmvorschau</translation>
     </message>
 </context>
 <context>
@@ -4746,6 +4922,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Job log</source>
         <translation>Auftragsprotokoll</translation>
     </message>
+    <message>
+        <source>Live log</source>
+        <translation>Live-Log</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5095,6 +5275,99 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
         <translation>Die MCP-Konfiguration ist in der Zwischenablage. Füge sie in die MCP-Einstellungen deines Agenten ein.</translation>
+    </message>
+</context>
+<context>
+    <name>ScreenRecorder</name>
+    <message>
+        <source>Starting the recording…</source>
+        <translation>Aufnahme wird gestartet …</translation>
+    </message>
+    <message>
+        <source>Saving the recording…</source>
+        <translation>Aufnahme wird gespeichert …</translation>
+    </message>
+    <message>
+        <source>Recording saved · %1</source>
+        <translation>Aufnahme gespeichert · %1</translation>
+    </message>
+    <message>
+        <source>The recording did not finish · details under Builds &amp; jobs</source>
+        <translation>Die Aufnahme wurde nicht fertig · Details unter Builds &amp; Aufträge</translation>
+    </message>
+    <message>
+        <source>Recording · press again to stop</source>
+        <translation>Aufnahme läuft · zum Beenden erneut drücken</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceGrid</name>
+    <message>
+        <source>Waiting for the screen…</source>
+        <translation>Warte auf den Bildschirm …</translation>
+    </message>
+    <message>
+        <source>No device running.</source>
+        <translation>Kein Gerät läuft.</translation>
+    </message>
+    <message>
+        <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
+        <translation>Starte einen Emulator oder schließe ein Smartphone mit aktiviertem USB-Debugging an; jedes erscheint hier mit seinem Bildschirm.</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceLogPane</name>
+    <message>
+        <source>App ID, all apps when empty</source>
+        <translation>App-ID, leer für alle Apps</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation>Info</translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation>Warnungen</translation>
+    </message>
+    <message>
+        <source>Errors</source>
+        <translation>Fehler</translation>
+    </message>
+    <message>
+        <source>Find in the log</source>
+        <translation>Im Log suchen</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Fortsetzen</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Anhalten</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Leeren</translation>
+    </message>
+    <message>
+        <source>Clear the lines shown</source>
+        <translation>Angezeigte Zeilen leeren</translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation>Angehalten</translation>
+    </message>
+    <message>
+        <source>No line contains this text.</source>
+        <translation>Keine Zeile enthält diesen Text.</translation>
+    </message>
+    <message>
+        <source>Waiting for log lines…</source>
+        <translation>Warte auf Log-Zeilen …</translation>
     </message>
 </context>
 </TS>

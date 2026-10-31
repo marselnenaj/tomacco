@@ -188,6 +188,11 @@ so a higher `fps` mostly repeats pictures; the result's `frames_distinct` says h
 the recording early with what it has. The pacing has unit tests, and an MP4 was made from synthetic frames with a real
 ffmpeg and checked with ffprobe; a live phone has not been recorded with it yet.
 
+`job.send` with `command` `stop` ends a recording early and keeps the video so far; the result then has
+`stopped_early`. The desktop's **Record** button beside the phone's picture starts a recording of up to 10 minutes
+under `Videos/Tomacco`, stops it on a second press and shows the file in the file manager. The stop was checked with a
+synthetic frame source and a real ffmpeg; not on a live phone.
+
 ## Deploy your own app
 
 To build a SwiftUI app for it on Linux, first import the SDK from an `Xcode.xip` you

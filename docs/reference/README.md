@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 196 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 199 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -19,6 +19,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 
 | Operation | Title | Annotation |
 | --- | --- | --- |
+| [`android.screen`](android.md#androidscreen) | Android screen preview | writes |
 | [`android.input`](android.md#androidinput) | Tap / swipe / input | writes |
 | [`android.hierarchy`](android.md#androidhierarchy) | Read UI tree | read-only |
 | [`android.launch`](android.md#androidlaunch) | Start Android activity | writes |
@@ -34,6 +35,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`android.app_files`](android.md#androidapp_files) | App data files | writes |
 | [`android.each`](android.md#androideach) | Run on every Android device | **destructive** |
 | [`android.connect`](android.md#androidconnect) | Android over Wi-Fi | writes |
+| [`android.pair`](android.md#androidpair) | Pair over Wi-Fi by QR code | writes |
 | [`android.calibrate`](android.md#androidcalibrate) | Read model from device | writes |
 | [`android.sdk_packages`](android.md#androidsdk_packages) | SDK packages | read-only |
 | [`android.sdk_install`](android.md#androidsdk_install) | Install SDK packages | writes |
@@ -97,6 +99,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | --- | --- | --- |
 | [`device.list`](device.md#devicelist) | Find devices | read-only |
 | [`device.info`](device.md#deviceinfo) | Device information | read-only |
+| [`device.label`](device.md#devicelabel) | Name or pin a device | writes |
 | [`device.install`](device.md#deviceinstall) | Install app | **destructive** |
 | [`device.app`](device.md#deviceapp) | Control app | **destructive** |
 | [`device.screenshot`](device.md#devicescreenshot) | Device screenshot | writes |
@@ -179,7 +182,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`job.wait`](job.md#jobwait) | Wait for job | read-only |
 | [`job.events`](job.md#jobevents) | Job timeline | read-only |
 | [`job.cancel`](job.md#jobcancel) | Cancel job | **destructive** |
-| [`job.send`](job.md#jobsend) | Hot Reload | writes |
+| [`job.send`](job.md#jobsend) | Send a command to a job | writes |
 
 ## [play](play.md)
 

@@ -1,5 +1,7 @@
 #include "backend.h"
 #include <QTest>
+#include <QRegularExpression>
+#include <QUrl>
 #include <QTemporaryDir>
 #include <QFile>
 #include <QDir>
@@ -28,6 +30,16 @@ public slots:
         last={app,replaces,icon,summary,body,actions,hints.value("desktop-entry"),timeout};
         return 7;
     }
+};
+
+// A stand-in file manager on a private bus.
+class FakeFileManager: public QObject {
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface","org.freedesktop.FileManager1")
+public:
+    QStringList shown;
+public slots:
+    void ShowItems(const QStringList &uris,const QString &) { shown=uris; }
 };
 #endif
 
@@ -124,10 +136,36 @@ private slots:
             QVERIFY(service.send(other));
             QTest::qWait(200);
             QCOMPARE(clicked.size(),1);
+            // A recording is shown selected in the file manager. The session
+            // bus connection is made once per process, so this check shares
+            // the bus of the notifications.
+            FakeFileManager files;
+            QVERIFY(service.registerObject("/org/freedesktop/FileManager1",&files,QDBusConnection::ExportAllSlots));
+            QVERIFY(service.registerService("org.freedesktop.FileManager1"));
+            QTemporaryDir root; QVERIFY(root.isValid());
+            const auto video=root.filePath("clip.mp4");write(video,"mp4");
+            QSignalSpy revealed(&backend,&Backend::fileRevealed);
+            QVERIFY(backend.revealFile(video));
+            QCOMPARE(revealed.size(),1);
+            QTRY_COMPARE(files.shown,QStringList{QUrl::fromLocalFile(video).toString()});
         }
         QDBusConnection::disconnectFromBus("fake-notifications");
         daemon.terminate();daemon.waitForFinished(3000);
 #endif
+    }
+    void recordingsGoToTheVideosFolderAndAreShownInTheFileManager() {
+        QTemporaryDir root; QVERIFY(root.isValid());
+        QVERIFY(QDir().mkpath(isolatedData.path()+"/config"));
+        write(isolatedData.path()+"/config/user-dirs.dirs",("XDG_VIDEOS_DIR=\""+root.path()+"/videos\"\n").toUtf8());
+        Backend backend(QString(),nullptr,false);
+        const auto path=backend.recordingPath("Pixel 11 · Test");
+        QVERIFY2(QRegularExpression("^"+QRegularExpression::escape(root.path())+"/videos/Tomacco/Pixel-11---Test-\\d{8}-\\d{6}\\.mp4$").match(path).hasMatch(),qPrintable(path));
+        QVERIFY(QFileInfo(root.path()+"/videos/Tomacco").isDir());
+        QFile::remove(isolatedData.path()+"/config/user-dirs.dirs");
+        // One thumbnail file per device, whatever its serial holds.
+        QCOMPARE(QFileInfo(backend.thumbnailPath("192.168.1.20:37099")).fileName(),QString("192.168.1.20-37099.png"));
+        QCOMPARE(backend.thumbnailPath("emulator-5554"),backend.thumbnailPath("emulator-5554"));
+        QVERIFY(!backend.revealFile(root.filePath("missing.mp4")));
     }
     void settingsMoveToAnotherMachineWithoutWhatBelongsToThisOne() {
         QTemporaryDir root; QVERIFY(root.isValid());
