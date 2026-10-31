@@ -9,8 +9,15 @@ preparation recipes do.
 
 ## Connect a client
 
-`tomaccoctl setup` connects Claude Code and Codex for you. By hand, register the absolute path of
-`tomaccoctl`:
+`tomaccoctl setup` connects Claude Code and Codex through their `mcp add` commands, and Gemini CLI,
+Cursor, VS Code and Zed by adding a `tomacco` entry to their JSON settings: `~/.gemini/settings.json`
+(`mcpServers`), `~/.cursor/mcp.json` (`mcpServers`), `~/.config/Code/User/mcp.json` (`servers`) and
+`~/.config/zed/settings.json` (`context_servers`), with `$XDG_CONFIG_HOME` in place of `~/.config` when it
+is set. It asks first for each agent it finds and keeps
+everything else in the file. A file with comments, such as Zed's usual settings, or a file that is a
+symbolic link is left alone; setup prints the entry to add by hand. Only the file handling is tested,
+on a scratch home directory; whether each agent then starts the server has not been checked here.
+By hand, register the absolute path of `tomaccoctl`:
 
 ```sh
 claude mcp add --transport stdio --scope user tomacco -- "$(command -v tomaccoctl)" mcp

@@ -33,6 +33,8 @@ operations and their JSON results.
 - `capabilities` says in one call what this computer can do right now: Android builds, emulator and
   devices, iOS builds with xtool, iPhones and the virtual iPhone, each `ready` or with what it lacks.
   Also the MCP resource `tomacco://capabilities`, with an `outputSchema`.
+- `tomaccoctl setup` also connects Gemini CLI, Cursor, VS Code and Zed, after asking, by adding
+  `tomacco` to their JSON settings. A file with comments or a link is left for the person to edit.
 - **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
   `tomacco://docs/NAME`, as Markdown of the installed version.
 - **Android.**
