@@ -1,73 +1,63 @@
-# Tomacco 1.0.0
+# Tomacco 1.1.0
 
-Tomacco: Give your agent a phone. It builds, runs and tests Android and iOS apps
-from Linux. A Qt desktop and a command-line tool, `tomaccoctl`, share one typed set of
-operations, so a person and a coding agent can do the same things. `tomaccoctl` is also
-a local MCP server.
-
-This is the first release. [The guides](README.md) describe what ships.
+Tomacco: Give your agent a phone. It builds, runs and tests Android and iOS apps from Linux.
+This release adds 23 operations, for 193 in all, a portable package for other distributions,
+and three more desktop languages. The [changelog](../CHANGELOG.md) lists every change.
 
 ## Highlights
 
-- **Agents.** Over 150 schema-validated operations with JSON results, durable jobs
-  that survive a disconnect, and shared debug sessions.
-- **Android.** Gradle and Flutter builds, the real emulator, USB and wireless phones,
-  live view, input, debugging, UI tests, Perfetto, signing and staged Play edits.
-- **Swift on Android.** A native Swift core with an Android UI starter, for ARM64 and
-  x86_64.
-- **iOS without a Mac.** xtool projects built and signed on Linux, with install and
-  launch on a paired iPhone. This route is contract-tested only; see the limits.
-- **Virtual iOS device (experimental).** Boots your own iOS 27 image on x86_64 Linux in
-  a patched QEMU with a Rust Vulkan renderer. A SwiftUI app built on Linux runs on it,
-  shown so far with a few small apps. The engine builds reproducibly: two builds in
-  different directories gave one digest.
-- **Desktop.** Live device view, detachable device window, layout lab, English and
-  German, and an optional Omarchy panel.
+- **Other distributions.** A new portable package brings its own Qt 6.12 and FFmpeg. It needs
+  glibc 2.35 or newer and passed its checks in clean Debian 12, Ubuntu 22.04, Ubuntu 24.04 and
+  Fedora 44 containers. The one-line installer picks it where the regular package cannot start.
+- **Testing.** Compare screenshots with a baseline (`testing.visual_diff`), audit an Android
+  screen for accessibility (`testing.accessibility`), collect crashes and ANRs as events
+  (`testing.crashes`), read Gradle's JUnit results (`testing.results`), and run the same steps
+  on every connected Android device (`android.each`).
+- **Android.** Unicode text input, `android.settings` (dark mode, font scale, animations, app
+  language), `android.display`, `android.notifications`, `android.app_files`, APK and AAB
+  inspection, AAB installs through bundletool, and emulator snapshots, battery and network.
+- **Projects.** React Native, Expo, Capacitor and Kotlin or Compose Multiplatform apps run on
+  Android. A Jetpack Compose starter with a UI test, app IDs and variants read from Gradle files,
+  and `project.dependency_updates`.
+- **Virtual iPhone.** PNG screenshots, MP4 recordings, the installed apps, crash reports, safe
+  cleanup of old disk copies, a disk check before a start, and start progress.
+- **Agents.** `capabilities` in one call, MCP progress and log notifications, structured results,
+  tool annotations on every operation, MCP prompts and guides, and `tomaccoctl setup` now also
+  connects Gemini CLI, Cursor, VS Code and Zed.
+- **Command line.** `call … --wait`, `help OPERATION`, shell completions, a manual page,
+  `tomaccoctl update`, `uninstall` and `report`.
+- **Jobs.** Builds queue (two at a time by default), some steps can retry, downloads resume,
+  and every job keeps a timeline (`job.events`).
+- **Desktop.** French, Spanish and Italian; drag and drop to install; screenshots to the
+  clipboard; recent projects; job notifications; log search; tap markers; settings export.
+- **Web previews.** Dark mode, reduced motion, slow networks and offline; page errors per load
+  (`preview.errors`); a contact sheet for `preview.matrix`; more layout checks; Samsung foldables
+  and tablets in the catalogue.
 
-Measured on one host, an i9-13900K with a Radeon RX 6800-class 16 GiB card:
+## Changed behaviour
 
-| Virtual iOS device | |
-| --- | --- |
-| Touch to visible change | about 0.1 s |
-| App window appears after launch | about 6.4 to 7.7 s |
-| Home-screen swipe | about 7.5 to 11 changed frames per second |
+- At most two builds run at once; a third waits as `queued`. Set `jobs.max_builds` in
+  `settings.configure` (0 for no limit).
+- Unknown argument keys are reported before missing required ones.
+- `ios.virtual.start` refuses up front when the disk lacks room for its copy.
 
 ## Limits
 
-- **A physical iPhone is not qualified.** No physical iPhone, or physical ARM64 Android
-  phone, was run, and neither were live Play or App Store submissions.
-- **One tested machine.** Arch Linux with Omarchy, x86_64, Qt 6.11, Rust 1.99. Other
-  distributions should build but were not run.
-- **Linux on Apple Silicon (M1, M2, Asahi): experimental for the tools and agent API; the virtual iOS device needs x86_64.**
-- **The virtual iOS device is a research runtime**, not a qualified simulator. It is
-  far below hardware speed. It has no audio or working debugger, and pointer
-  authentication is bypassed. See [its limits](virtual-ios/README.md#honest-limits).
-- **It needs your own material.** You supply the restore images and an Image4 boot
-  ticket. Nothing from Apple ships with Tomacco, and no engine binary ships either: you
-  build it. See [the legal notes](legal.md).
+The [1.0.0 limits](https://github.com/marselnenaj/tomacco/blob/v1.0.0/docs/RELEASE_NOTES.md#limits)
+still apply. In addition:
 
-## Install
+- The new virtual iPhone features, React Native, Expo, Capacitor and Kotlin Multiplatform runs,
+  bundletool installs and the Zed and VS Code agent setups were tested with stand-ins, not on
+  real devices or real projects of those kinds.
+- The portable package has not been run on a real desktop session of those distributions yet.
+- The French, Spanish and Italian translations have not been reviewed by native speakers.
+  Corrections are welcome.
+
+## Install and upgrade
 
 ```sh
 curl -fsSL https://tomacco.dev/install.sh | bash
-tomaccoctl setup
 ```
 
-On Omarchy this adds the bar widget. To install by hand or build from source, see
-[getting started](getting-started.md). The binaries are conveyed under GPL-3.0-or-later and the source is
-GPL-2.0-or-later; `SOURCE.md` says where the corresponding source is offered.
-
-## Upgrade
-
-This is the first public release. Every file an install replaces is backed up:
-`install.py --list-backups`, then `--rollback ID`. See
-[installing](building.md#installing).
-
-## Credits
-
-Tomacco stands on the work of others. The iOS runtime builds on qemu-sptm and darwin-vm,
-orchard, reims-vgpu and metal2vulkan, Inferno, vphone-cli, linux-apfs-rw, vhost-device
-and m1n1's register definitions. Building for iOS on Linux uses xtool, go-ios, Appium
-WebDriverAgent, cctools-port, apple-libtapi, ldid and ipsw. Android's device view uses
-scrcpy. [The README](../README.md#built-on-the-work-of-others) links them, and
-[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) has their licenses.
+An installed 1.0.0 updates itself through `update.apply`, or run `tomaccoctl update` once 1.1.0
+is installed. Every replaced file is backed up; `install.py --rollback` undoes an update.
