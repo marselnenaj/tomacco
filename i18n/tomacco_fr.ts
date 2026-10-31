@@ -372,6 +372,22 @@ Le modèle détermine l'écran et le cadre. Android provient de l'image système
         <source>Pair</source>
         <translation>Associer</translation>
     </message>
+    <message>
+        <source>List</source>
+        <translation>Liste</translation>
+    </message>
+    <message>
+        <source>All screens</source>
+        <translation>Tous les écrans</translation>
+    </message>
+    <message>
+        <source>Show the device list</source>
+        <translation>Afficher la liste des appareils</translation>
+    </message>
+    <message>
+        <source>Show every running device's screen side by side</source>
+        <translation>Afficher côte à côte l'écran de chaque appareil en marche</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -4126,6 +4142,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>Pair over Wi-Fi by QR code</source>
         <translation>Associer via le Wi-Fi par code QR</translation>
     </message>
+    <message>
+        <source>Android screen preview</source>
+        <translation>Aperçu de l'écran Android</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5116,6 +5136,21 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
     <message>
         <source>Recording · press again to stop</source>
         <translation>Enregistrement en cours · appuyez à nouveau pour arrêter</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceGrid</name>
+    <message>
+        <source>Waiting for the screen…</source>
+        <translation>En attente de l'écran…</translation>
+    </message>
+    <message>
+        <source>No device running.</source>
+        <translation>Aucun appareil en marche.</translation>
+    </message>
+    <message>
+        <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
+        <translation>Démarrez un émulateur ou branchez un téléphone avec le débogage USB activé ; chacun apparaît ici avec son écran.</translation>
     </message>
 </context>
 </TS>

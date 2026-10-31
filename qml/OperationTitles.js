@@ -44,6 +44,7 @@ var titles = {
     "device.app": QT_TRANSLATE_NOOP("Operations", "Control app"),
     "device.screenshot": QT_TRANSLATE_NOOP("Operations", "Device screenshot"),
     "device.capture": QT_TRANSLATE_NOOP("Operations", "Device image for agents"),
+    "android.screen": QT_TRANSLATE_NOOP("Operations", "Android screen preview"),
     "device.logs": QT_TRANSLATE_NOOP("Operations", "Device logs"),
     "android.input": QT_TRANSLATE_NOOP("Operations", "Tap / swipe / input"),
     "android.hierarchy": QT_TRANSLATE_NOOP("Operations", "Read UI tree"),

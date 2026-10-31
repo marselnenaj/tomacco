@@ -1055,6 +1055,27 @@ class AndroidControlTests(Isolated):
             dispatch("job.send", {"job_id": job["id"], "command": "stop"})
         self.assertEqual(finished.exception.code, "not_stoppable")
 
+    def test_a_screen_preview_is_saved_at_once_without_a_job(self):
+        png = b"\x89PNG\r\n\x1a\n\0\0\0\x0dIHDR" + (1080).to_bytes(4, "big") + (2400).to_bytes(4, "big") + b"\x08\x02\0\0\0rest"
+        (self.root / "screen.png").write_bytes(png)
+        self.tool("adb", "import sys\nfrom pathlib import Path\n"
+                         f"if sys.argv[3:]==['exec-out','screencap','-p']: sys.stdout.buffer.write(Path({str(self.root / 'screen.png')!r}).read_bytes())\n"
+                         "else: sys.exit(1)\n")
+        before = len(jobs.listing(200))
+        target = self.root / "thumbs/emulator-5554.png"
+        value = dispatch("android.screen", {"device": "emulator-5554", "path": str(target)})
+        self.assertEqual((value["width"], value["height"], value["bytes"]), (1080, 2400, len(png)))
+        self.assertEqual(target.read_bytes(), png)
+        self.assertEqual(len(jobs.listing(200)), before)
+        with self.assertRaises(StudioError) as named:
+            dispatch("android.screen", {"device": "emulator-5554", "path": str(self.root / "x.jpg")})
+        self.assertEqual(named.exception.code, "invalid_path")
+        self.tool("adb", "print('not a picture')\n")
+        with self.assertRaises(StudioError) as broken:
+            dispatch("android.screen", {"device": "emulator-5554", "path": str(target)})
+        self.assertEqual(broken.exception.code, "invalid_screenshot")
+        self.assertEqual(target.read_bytes(), png)
+
     def test_device_settings_apply_only_what_is_asked_and_read_everything_back(self):
         state = {"ro.build.version.sdk": "36\n", "uimode night": "Night mode: yes\n", "get system font_scale": "1.3\n",
                  "get global window_animation_scale": "0\n", "get global transition_animation_scale": "0.0\n",

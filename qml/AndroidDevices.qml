@@ -27,6 +27,9 @@ ColumnLayout {
     readonly property var selectedProfile: profiles[modelPicker.currentIndex] || ({})
     readonly property var phones: workspace.devices.filter(d=>d.platform==="android")
     // Pinned emulators first, then the others as android.avds lists them.
+    // All screens: the running devices side by side instead of the list.
+    property bool gridMode: false
+    readonly property var runningPhones: phones.filter(d=>d.state==="device" && d.booted!==false)
     readonly property var shownAvds: avds.filter(a=>a.pinned).concat(avds.filter(a=>!a.pinned))
     // The device being renamed: {device, name, title}.
     property var renaming: ({})
@@ -131,10 +134,16 @@ ColumnLayout {
     }
     RowLayout {Layout.fillWidth:true;spacing:Theme.gapMd
         Text {Layout.fillWidth:true;text:qsTr("Each emulator keeps its own model and app data.");color:Theme.muted;font.pixelSize:Theme.fontBody;wrapMode:Text.WordWrap}
+        StudioButton {objectName:"deviceGridToggle";text:library.gridMode?qsTr("List"):qsTr("All screens");displayText:library.width<760?"":text;iconName:library.gridMode?"devices":"grid";quiet:true;selected:library.gridMode;tip:library.gridMode?qsTr("Show the device list"):qsTr("Show every running device's screen side by side");onClicked:library.gridMode=!library.gridMode}
         StudioButton {objectName:"createAndroidEmulator";text:library.createJob?qsTr("Creating…"):qsTr("Add device");iconName:"plus";accent:true;enabled:!library.createJob && !library.submitting;onClicked:library.newEmulator()}
     }
+    DeviceGrid {
+        objectName:"androidDeviceGrid";Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:320;visible:library.gridMode
+        devices:library.runningPhones;selected:workspace.selectedDevice
+        onChosen:device=>{workspace.selectedDevice=device.id;library.openDevice(device)}
+    }
     StudioScrollView {
-        Layout.fillWidth:true;Layout.fillHeight:true;clip:true;contentWidth:availableWidth
+        Layout.fillWidth:true;Layout.fillHeight:true;clip:true;contentWidth:availableWidth;visible:!library.gridMode
         Column {width:parent.width-Theme.gapMd;spacing:Theme.gapXs
             Repeater {model:library.shownAvds
                 Rectangle {

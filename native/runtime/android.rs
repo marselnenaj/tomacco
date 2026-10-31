@@ -521,42 +521,48 @@ impl Device for Android {
     }
     fn capture(&mut self, target: &Path) -> Result {
         let start = now();
-        fs::create_dir_all(target.parent().unwrap())?;
-        let temp = tempfile::Builder::new()
-            .suffix(".png")
-            .tempfile_in(target.parent().unwrap())?;
-        let mut args = devices::adb(&self.device)?;
-        args.extend(argv(&["exec-out", "screencap", "-p"]));
-        let mut command = Command::new(&args[0]);
-        command
-            .args(&args[1..])
-            .envs(tc::environment()?)
-            .stdin(Stdio::null())
-            .stdout(temp.reopen()?)
-            .stderr(Stdio::null())
-            .process_group(0);
-        tc::parent_bound(&mut command);
-        let mut child = ManagedProcess(command.spawn()?);
-        let deadline = Instant::now() + Duration::from_secs(10);
-        loop {
-            if let Some(status) = child.0.try_wait()? {
-                if !status.success() {
-                    return Err(Error::new("capture_failed", "ADB screenshot failed"));
-                }
-                break;
-            }
-            if Instant::now() > deadline {
-                return Err(Error::new("capture_timeout", "ADB screenshot timed out"));
-            }
-            thread::sleep(Duration::from_millis(20));
-        }
-        let bytes = fs::read(temp.path())?;
-        publish_png(target, &bytes)?;
+        screencap(&self.device, target)?;
         artifact(target, start)
     }
     fn hierarchy(&mut self) -> Result {
         devices::handle("android.hierarchy", &json!({"device":self.device}))
     }
+}
+
+/// The device's screen as a PNG at `target`, through `adb exec-out screencap`,
+/// within 10 seconds and without a job.
+pub fn screencap(device: &str, target: &Path) -> Result<()> {
+    fs::create_dir_all(target.parent().unwrap())?;
+    let temp = tempfile::Builder::new()
+        .suffix(".png")
+        .tempfile_in(target.parent().unwrap())?;
+    let mut args = devices::adb(device)?;
+    args.extend(argv(&["exec-out", "screencap", "-p"]));
+    let mut command = Command::new(&args[0]);
+    command
+        .args(&args[1..])
+        .envs(tc::environment()?)
+        .stdin(Stdio::null())
+        .stdout(temp.reopen()?)
+        .stderr(Stdio::null())
+        .process_group(0);
+    tc::parent_bound(&mut command);
+    let mut child = ManagedProcess(command.spawn()?);
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        if let Some(status) = child.0.try_wait()? {
+            if !status.success() {
+                return Err(Error::new("capture_failed", "ADB screenshot failed"));
+            }
+            break;
+        }
+        if Instant::now() > deadline {
+            return Err(Error::new("capture_timeout", "ADB screenshot timed out"));
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+    let bytes = fs::read(temp.path())?;
+    publish_png(target, &bytes)
 }
 
 #[cfg(test)]

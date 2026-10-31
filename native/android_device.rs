@@ -680,6 +680,37 @@ pub fn each_worker(request: &str) -> Result<()> {
     Ok(())
 }
 
+/// The width and height in a PNG's header.
+fn png_size(bytes: &[u8]) -> Option<(u32, u32)> {
+    (bytes.len() >= 24 && bytes.starts_with(b"\x89PNG\r\n\x1a\n") && &bytes[12..16] == b"IHDR")
+        .then(|| {
+            (
+                u32::from_be_bytes(bytes[16..20].try_into().unwrap()),
+                u32::from_be_bytes(bytes[20..24].try_into().unwrap()),
+            )
+        })
+}
+
+/// The screen as a PNG at once, without a job: for previews that refresh,
+/// such as the desktop's device grid.
+pub fn screen(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "Android serial", None)?;
+    let target = output_path(s(a, "path"))?;
+    if !target
+        .extension()
+        .is_some_and(|x| x.eq_ignore_ascii_case("png"))
+    {
+        return Err(Error::new(
+            "invalid_path",
+            "The screen is saved as a PNG; name a file ending in .png",
+        ));
+    }
+    crate::runtime::android::screencap(device, &target)?;
+    let bytes = std::fs::read(&target)?;
+    let (width, height) = png_size(&bytes).unwrap_or((0, 0));
+    Ok(json!({"device":device,"path":target,"bytes":bytes.len(),"width":width,"height":height}))
+}
+
 /// The services `adb mdns services` lists: name, type and address.
 fn mdns_services(output: &str) -> Vec<Value> {
     output
@@ -878,6 +909,15 @@ fn pair_wait(a: &Value) -> Result {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_png_header_gives_the_size() {
+        let mut png = b"\x89PNG\r\n\x1a\n\0\0\0\x0dIHDR".to_vec();
+        png.extend(1080u32.to_be_bytes());
+        png.extend(2400u32.to_be_bytes());
+        assert_eq!(png_size(&png), Some((1080, 2400)));
+        assert_eq!(png_size(b"not a png"), None);
+    }
 
     #[test]
     fn mdns_services_and_pairing_replies_are_read() {

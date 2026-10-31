@@ -755,6 +755,48 @@ private slots:
         QVERIFY(!guest->property("notice").toString().isEmpty());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void all_running_devices_show_their_screens_side_by_side() {
+        // Two running devices; adb answers each screencap with that device's picture.
+        for(const auto &[serial,color]:{std::pair{"emulator-5554","#2fa84f"},std::pair{"R5CT","#295c83"}}) {
+            QImage picture(108,240,QImage::Format_RGB32);picture.fill(QColor(color));QVERIFY(picture.save(directory.filePath(QString("screen-%1.png").arg(serial))));
+        }
+        auto fake=useFakeAdb("case \"$*\" in\n"
+             " *exec-out\\ screencap*) cat \"$d/screen-$2.png\";;\n"
+             " devices*) printf 'List of devices attached\\nemulator-5554 device model:Pixel\\nR5CT device model:Galaxy\\nOFF1 offline\\n';;\nesac");
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        auto *library=object("androidDeviceLibrary");QVERIFY(library);
+        const auto previous=workspace->property("devices");
+        workspace->setProperty("devices",QVariantList{
+            QVariantMap{{"id","emulator-5554"},{"name","Pixel"},{"platform","android"},{"state","device"},{"pinned",true}},
+            QVariantMap{{"id","R5CT"},{"name","Galaxy"},{"platform","android"},{"state","device"}},
+            QVariantMap{{"id","OFF1"},{"name","OFF1"},{"platform","android"},{"state","offline"}}});
+        auto *toggle=item("deviceGridToggle");QVERIFY(toggle);QCOMPARE(accessibleName(toggle),QString("All screens"));
+        QVERIFY(QMetaObject::invokeMethod(toggle,"clicked"));
+        QTRY_VERIFY(library->property("gridMode").toBool());
+        auto *grid=item("androidDeviceGrid");QVERIFY(grid);QTRY_VERIFY(grid->isVisible());
+        // Only running devices, each with its own screen.
+        QTRY_COMPARE(grid->property("devices").toList().size(),2);
+        for(const auto &[serial,color]:{std::pair{"emulator-5554","#2fa84f"},std::pair{"R5CT","#295c83"}}) {
+            QQuickItem *thumb=nullptr;
+            QTRY_VERIFY_WITH_TIMEOUT((thumb=item(QString("deviceThumb-%1").arg(serial).toLatin1().constData())) && thumb->property("status").toInt()==1,patient(15000));
+            const auto shot=mapOf(mapOf(grid->property("shots")).value(serial));
+            QCOMPARE(shot.value("width").toInt(),108);
+            QCOMPARE(QImage(shot.value("path").toString()).pixelColor(5,5),QColor(color));
+        }
+        QVERIFY(!item("deviceTile-OFF1"));
+        // A new picture at the same path loads again.
+        const auto first=mapOf(mapOf(grid->property("shots")).value("R5CT")).value("stamp").toDouble();
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(mapOf(grid->property("shots")).value("R5CT")).value("stamp").toDouble()>first,patient(10000));
+        capture("device-grid");
+        // A click opens that device live.
+        QSignalSpy opened(workspace,SIGNAL(runtimeRequested(QString,QString)));
+        QVERIFY(QMetaObject::invokeMethod(item("deviceTile-R5CT"),"clicked"));
+        QCOMPARE(opened.size(),1);QCOMPARE(opened.first().value(1).toString(),QString("R5CT"));
+        QCOMPARE(workspace->property("selectedDevice").toString(),QString("R5CT"));
+        library->setProperty("gridMode",false);workspace->setProperty("devices",previous);
+        open("devices");
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void iphone_setup_and_category_selection() {
         open("devices");
         auto *apple=item("devices-apple");QVERIFY(apple);

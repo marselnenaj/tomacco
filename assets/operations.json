@@ -1582,6 +1582,37 @@
     }
   },
   {
+    "name": "android.screen",
+    "title": "Android screen preview",
+    "description": "Save an Android device's screen as a PNG at path at once, through adb exec-out screencap, within 10 seconds and without a job, for previews that refresh such as the desktop's device grid. The result has the file's size and the picture's width and height. For evidence kept with a job, use device.capture.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "description": "Absolute path of the PNG to write; an existing file is replaced.",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "device",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "device.logs",
     "title": "Device logs",
     "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running.",

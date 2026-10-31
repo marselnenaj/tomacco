@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 195 operations.
+`tomaccoctl` now has one typed API of 196 operations.
 
 ### Added
 
@@ -23,6 +23,8 @@ operations and their JSON results.
   the video, `ios.virtual.record` closes the MP4 with what it has (`stopped_early`).
 - **Desktop.** A record button beside the live Android device and the virtual iOS device starts and stops a screen
   recording, saves it under `Videos/Tomacco` and shows it in the file manager.
+- **Desktop.** **All screens** under Devices shows every running Android device side by side with a picture of its
+  screen that refreshes every few seconds; a click opens it live. `android.screen` saves such a picture without a job.
 
 ## 1.1.0
 

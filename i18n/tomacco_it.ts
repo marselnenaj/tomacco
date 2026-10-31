@@ -372,6 +372,22 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <source>Pair</source>
         <translation>Accoppia</translation>
     </message>
+    <message>
+        <source>List</source>
+        <translation>Elenco</translation>
+    </message>
+    <message>
+        <source>All screens</source>
+        <translation>Tutti gli schermi</translation>
+    </message>
+    <message>
+        <source>Show the device list</source>
+        <translation>Mostra l'elenco dei dispositivi</translation>
+    </message>
+    <message>
+        <source>Show every running device's screen side by side</source>
+        <translation>Mostra affiancati gli schermi di tutti i dispositivi in funzione</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -4126,6 +4142,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Pair over Wi-Fi by QR code</source>
         <translation>Accoppia tramite Wi-Fi con codice QR</translation>
     </message>
+    <message>
+        <source>Android screen preview</source>
+        <translation>Anteprima dello schermo Android</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5116,6 +5136,21 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Recording · press again to stop</source>
         <translation>Registrazione in corso · premi di nuovo per interrompere</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceGrid</name>
+    <message>
+        <source>Waiting for the screen…</source>
+        <translation>In attesa dello schermo…</translation>
+    </message>
+    <message>
+        <source>No device running.</source>
+        <translation>Nessun dispositivo in funzione.</translation>
+    </message>
+    <message>
+        <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
+        <translation>Avvia un emulatore o collega un telefono con il debug USB attivo; ognuno compare qui con il suo schermo.</translation>
     </message>
 </context>
 </TS>

@@ -372,6 +372,22 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Pair</source>
         <translation>Koppeln</translation>
     </message>
+    <message>
+        <source>List</source>
+        <translation>Liste</translation>
+    </message>
+    <message>
+        <source>All screens</source>
+        <translation>Alle Bildschirme</translation>
+    </message>
+    <message>
+        <source>Show the device list</source>
+        <translation>Geräteliste zeigen</translation>
+    </message>
+    <message>
+        <source>Show every running device's screen side by side</source>
+        <translation>Die Bildschirme aller laufenden Geräte nebeneinander zeigen</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -4126,6 +4142,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Pair over Wi-Fi by QR code</source>
         <translation>Über WLAN per QR-Code koppeln</translation>
     </message>
+    <message>
+        <source>Android screen preview</source>
+        <translation>Android-Bildschirmvorschau</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5116,6 +5136,21 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     <message>
         <source>Recording · press again to stop</source>
         <translation>Aufnahme läuft · zum Beenden erneut drücken</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceGrid</name>
+    <message>
+        <source>Waiting for the screen…</source>
+        <translation>Warte auf den Bildschirm …</translation>
+    </message>
+    <message>
+        <source>No device running.</source>
+        <translation>Kein Gerät läuft.</translation>
+    </message>
+    <message>
+        <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
+        <translation>Starte einen Emulator oder schließe ein Smartphone mit aktiviertem USB-Debugging an; jedes erscheint hier mit seinem Bildschirm.</translation>
     </message>
 </context>
 </TS>

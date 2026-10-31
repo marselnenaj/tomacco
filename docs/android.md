@@ -217,6 +217,9 @@ into the focused field. This needs scrcpy configured and Android 7 (API 24) or n
 replaces what was on the device clipboard, and answers `text_unsupported` with a
 remedy when it cannot work.
 
+`android.screen` saves the screen as a PNG at once, without a job, for previews
+that refresh; `device.capture` keeps evidence with a job.
+
 `android.record` records the screen as a job, for up to 180 seconds; `job.send` with
 `command` `stop` ends it early, and the video is still pulled to `path`. The stop
 interrupts `screenrecord` on the device, which then finishes the file.

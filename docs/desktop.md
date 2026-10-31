@@ -204,6 +204,13 @@ a pinned device. Both are stored through `device.label`, so agents see them in
 `device.list` too. An emulator keeps its nickname by its AVD name, also while it is
 off and when its serial changes.
 
+### All screens
+
+**All screens** under Devices shows every running Android device and emulator side by
+side, each with a picture of its screen that refreshes every few seconds through
+`android.screen`. A click on one opens it as the live device. The pictures are still
+screenshots, not video; the live device view streams one device at a time.
+
 ### Pairing over Wi-Fi
 
 **Connect via Wi-Fi** under Devices shows a QR code for the phone's **Developer options ›

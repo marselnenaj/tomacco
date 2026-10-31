@@ -372,6 +372,22 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <source>Pair</source>
         <translation>Vincular</translation>
     </message>
+    <message>
+        <source>List</source>
+        <translation>Lista</translation>
+    </message>
+    <message>
+        <source>All screens</source>
+        <translation>Todas las pantallas</translation>
+    </message>
+    <message>
+        <source>Show the device list</source>
+        <translation>Mostrar la lista de dispositivos</translation>
+    </message>
+    <message>
+        <source>Show every running device's screen side by side</source>
+        <translation>Mostrar una junto a otra las pantallas de todos los dispositivos en marcha</translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -4126,6 +4142,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Pair over Wi-Fi by QR code</source>
         <translation>Vincular por Wi-Fi con código QR</translation>
     </message>
+    <message>
+        <source>Android screen preview</source>
+        <translation>Vista previa de la pantalla de Android</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5116,6 +5136,21 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
     <message>
         <source>Recording · press again to stop</source>
         <translation>Grabando · pulsa de nuevo para detener</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceGrid</name>
+    <message>
+        <source>Waiting for the screen…</source>
+        <translation>Esperando la pantalla…</translation>
+    </message>
+    <message>
+        <source>No device running.</source>
+        <translation>Ningún dispositivo en marcha.</translation>
+    </message>
+    <message>
+        <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
+        <translation>Inicia un emulador o conecta un teléfono con la depuración USB activada; cada uno aparece aquí con su pantalla.</translation>
     </message>
 </context>
 </TS>
