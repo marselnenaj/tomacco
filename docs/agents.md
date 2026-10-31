@@ -140,6 +140,7 @@ tomaccoctl call android.settings '{"device":"emulator-5554","dark_mode":"off","f
 
 `android.package_inspect` reads what a built APK or AAB declares, without a device: package,
 version, SDK levels, permissions, ABIs and signing certificate digests.
+`device.install` also takes one `.aab` and installs it through bundletool.
 
 For the emulator's settings, `android.avd_configure` changes a stopped emulator:
 

@@ -62,7 +62,7 @@ The starter has a native Android UI and a persistent counter. It uses the highes
 installed SDK platform, and the Android Gradle Plugin 9.1.1.
 
 - Build produces an APK or an AAB. Installing on a device takes APKs, split APKs
-  included.
+  included, or one AAB through bundletool; see below.
 - For other Gradle apps, set `applicationId` with `project.configure`, or pass
   `bundle_id` to `project.run`.
 - Release signing stays in the project's Gradle configuration and keystore.
@@ -88,6 +88,28 @@ tomaccoctl call android.package_inspect '{"path":"/absolute/NewApp/app/build/out
   is `false` with the reason.
 - Checked on APKs with the API 36 build-tools. AAB reading is covered by unit tests on
   generated bundles; no Gradle-built AAB has been read yet.
+
+## Install an AAB
+
+`device.install` with one `.aab` runs Google's
+[bundletool](https://github.com/google/bundletool) as a job: `build-apks
+--connected-device` builds the APK set for that device, and `install-apks` installs it.
+The APK set is deleted when the job ends.
+
+```sh
+tomaccoctl call settings.configure '{"executables":{"bundletool":"/absolute/bundletool-all.jar"}}'
+tomaccoctl call device.install '{"platform":"android","device":"emulator-5554","paths":["/absolute/app-release.aab"]}'
+```
+
+- Download `bundletool-all-VERSION.jar` from its releases page. A configured `.jar` runs
+  with the configured Java; a `bundletool` command on `PATH` works too. Without either,
+  the answer is `tool_missing` with that remedy.
+- bundletool signs the APKs it builds with the debug keystore in
+  `~/.android/debug.keystore`, which any earlier debug build creates; the bundle's own
+  signature does not carry over. Signing the APK set with your own key is not offered
+  yet.
+- Only the commands are covered by tests with a stand-in bundletool. No AAB has been
+  installed on a device through it yet.
 
 ## See and control the device
 

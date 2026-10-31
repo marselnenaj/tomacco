@@ -29,6 +29,8 @@ operations and their JSON results.
     `network`.
   - `android.package_inspect` reads an APK or AAB without a device: package, version,
     SDK levels, permissions, ABIs and signing certificate digests.
+  - `device.install` installs one `.aab` through bundletool, built for the selected
+    device.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.

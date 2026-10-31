@@ -856,7 +856,7 @@
   {
     "name": "device.install",
     "title": "Install app",
-    "description": "Install one/split APKs or one signed IPA on the selected device.",
+    "description": "Install one or split APKs, or one .aab through bundletool (built for the selected device, then installed), or one signed IPA on the selected device.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -881,7 +881,8 @@
             "type": "string",
             "description": "",
             "minLength": 1
-          }
+          },
+          "description": "Absolute paths: APKs, one .aab or one .ipa"
         }
       },
       "required": [

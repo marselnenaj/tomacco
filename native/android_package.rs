@@ -496,6 +496,52 @@ pub fn inspect(a: &Value) -> Result {
     Ok(value)
 }
 
+/// Installs an AAB on one device as a job: bundletool builds the APK set for
+/// that device, then installs it. Without signing options bundletool signs
+/// with the debug keystore in ~/.android.
+pub fn install_bundle(device: &str, bundle: &Path) -> Result {
+    if !zip_entries(bundle)?.iter().any(|e| e == "BundleConfig.pb") {
+        return Err(Error::new(
+            "invalid_artifact",
+            "Not an Android App Bundle: BundleConfig.pb is missing",
+        ));
+    }
+    let tool = tc::command("bundletool")?;
+    let adb = tc::find("adb")?;
+    let scratch = tempfile::Builder::new()
+        .prefix("bundle-")
+        .tempdir_in(home()?)?;
+    std::fs::set_permissions(
+        scratch.path(),
+        std::os::unix::fs::PermissionsExt::from_mode(0o700),
+    )?;
+    let apks = scratch.path().join("device.apks");
+    let mut build = tool.clone();
+    build.extend([
+        "build-apks".into(),
+        format!("--bundle={}", bundle.display()),
+        format!("--output={}", apks.display()),
+        "--connected-device".into(),
+        format!("--device-id={device}"),
+        format!("--adb={adb}"),
+    ]);
+    let mut install = tool;
+    install.extend([
+        "install-apks".into(),
+        format!("--apks={}", apks.display()),
+        format!("--device-id={device}"),
+        format!("--adb={adb}"),
+    ]);
+    let mut env = serde_json::to_value(tc::environment()?)?;
+    env["ANDROID_SERIAL"] = json!(device);
+    let job = crate::jobs::submit(
+        "Install app bundle",
+        json!({"steps":[{"argv":build},{"argv":install}],"cwd":home()?,"timeout":600,"env":env,"temporary_directories":[crate::jobs::temporary_directory(scratch.path())?]}),
+    )?;
+    let _ = scratch.keep();
+    Ok(job)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

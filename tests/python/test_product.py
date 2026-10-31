@@ -453,6 +453,51 @@ class AdapterTests(Isolated):
         self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
         with self.assertRaises(StudioError): dispatch("device.install", {"platform": "ios", "device": "serial", "paths": [str(files[0])]})
 
+    def test_an_app_bundle_is_built_for_the_device_and_installed_through_bundletool(self):
+        import zipfile
+        self.tool("adb")
+        bundle = self.root / "app.aab"
+        with zipfile.ZipFile(bundle, "w") as archive:
+            archive.writestr("BundleConfig.pb", b"")
+            archive.writestr("base/manifest/AndroidManifest.xml", b"")
+        with self.assertRaises(StudioError) as missing:
+            dispatch("device.install", {"platform": "android", "device": "emulator-5554", "paths": [str(bundle)]})
+        self.assertEqual(missing.exception.code, "tool_missing")
+        self.assertIn("github.com/google/bundletool", missing.exception.args[0] + json.dumps(dispatch("doctor")["tools"]))
+        log = self.root / "bundletool.jsonl"
+        recorder = ("import json,sys\nargs=sys.argv[1:]\nopen(%r,'a').write(json.dumps(args)+'\\n')\n"
+                    "out=[a.split('=',1)[1] for a in args if a.startswith('--output=')]\n"
+                    "out and open(out[0],'w').write('apks')\n") % str(log)
+        self.tool("bundletool", recorder)
+        job = dispatch("device.install", {"platform": "android", "device": "emulator-5554", "paths": [str(bundle)]})
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        build, install = [json.loads(line) for line in log.read_text().splitlines()]
+        adb = str(self.root / "adb")
+        self.assertEqual(build[0], "build-apks")
+        self.assertIn(f"--bundle={bundle}", build)
+        self.assertIn("--connected-device", build)
+        self.assertIn("--device-id=emulator-5554", build)
+        self.assertIn(f"--adb={adb}", build)
+        apks = next(a.split("=", 1)[1] for a in build if a.startswith("--output="))
+        self.assertEqual(install, ["install-apks", f"--apks={apks}", "--device-id=emulator-5554", f"--adb={adb}"])
+        self.assertFalse(Path(apks).parent.exists(), "the APK set is removed after the job")
+        # A JAR runs through java -jar.
+        jar = self.root / "bundletool-all.jar"
+        jar.write_bytes(b"PK")
+        self.tool("java", "import sys,runpy\nsys.argv=sys.argv[2:]\nexec(open(%r).read())\n" % str(self.root / "bundletool"))
+        (self.root / "bundletool").chmod(0o644)
+        dispatch("settings.configure", {"executables": {"bundletool": str(jar)}})
+        log.unlink()
+        job = dispatch("device.install", {"platform": "android", "device": "emulator-5554", "paths": [str(bundle)]})
+        self.assertEqual(job["plan"]["steps"][0]["argv"][:3], [str(self.root / "java"), "-jar", str(jar)])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        # An archive without a bundle configuration is not a bundle.
+        with zipfile.ZipFile(bundle, "w") as archive:
+            archive.writestr("AndroidManifest.xml", b"")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("device.install", {"platform": "android", "device": "emulator-5554", "paths": [str(bundle)]})
+        self.assertEqual(refused.exception.code, "invalid_artifact")
+
     def test_avd_registry_and_active_device_protection(self):
         path = self.root / "state/avds/Pixel.avd"
         path.mkdir(parents=True)

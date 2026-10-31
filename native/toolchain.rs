@@ -18,6 +18,11 @@ pub const TOOLS: &[(&str, &[&str], &str)] = &[
     ("zipalign", &["-h"], "Install Android SDK build-tools"),
     ("aapt2", &["version"], "Install Android SDK build-tools"),
     (
+        "bundletool",
+        &["version"],
+        "Download bundletool-all-VERSION.jar from https://github.com/google/bundletool/releases and set it with settings.configure {\"executables\":{\"bundletool\":\"/absolute/bundletool-all.jar\"}}",
+    ),
+    (
         "curl",
         &["--version"],
         "Install curl for authenticated store uploads",
@@ -141,7 +146,7 @@ pub fn configure(a: &Value) -> Result {
                 false,
                 true,
             )?;
-            if !executable(&p) {
+            if !executable(&p) && !runs_as_jar(name, &p) {
                 return Err(Error::new(
                     "not_executable",
                     format!("Not executable: {}", p.display()),
@@ -165,6 +170,20 @@ pub fn configure(a: &Value) -> Result {
     }
     atomic_json(&home()?.join("settings.json"), &config)?;
     Ok(config)
+}
+/// bundletool ships as a JAR that runs through Java rather than as an
+/// executable.
+fn runs_as_jar(name: &str, path: &Path) -> bool {
+    name == "bundletool" && path.is_file() && path.extension().is_some_and(|x| x == "jar")
+}
+/// The command that starts a tool: a configured bundletool JAR runs through
+/// `java -jar`.
+pub fn command(name: &str) -> Result<Vec<String>> {
+    let tool = find(name)?;
+    if runs_as_jar(name, Path::new(&tool)) {
+        return Ok(vec![find("java")?, "-jar".into(), tool]);
+    }
+    Ok(vec![tool])
 }
 pub fn executable(path: &Path) -> bool {
     path.is_file()
@@ -340,7 +359,7 @@ pub fn find_optional(name: &str) -> Result<Option<String>> {
     candidates.push(user_home().join(".local/bin").join(name));
     Ok(candidates
         .into_iter()
-        .find(|p| executable(p))
+        .find(|p| executable(p) || runs_as_jar(name, p))
         .map(|p| p.to_string_lossy().into_owned()))
 }
 pub fn find(name: &str) -> Result<String> {
@@ -528,10 +547,12 @@ pub fn doctor() -> Result {
                             let p = find_optional(name)?;
                             let mut value =
                                 json!({"name":name,"path":p,"available":false,"remedy":remedy});
-                            if let Some(p) = p {
-                                let mut argv = vec![p];
-                                argv.extend(args.iter().map(|s| s.to_string()));
-                                match run(&argv, 10, None, false) {
+                            if p.is_some() {
+                                let started = command(name).and_then(|mut argv| {
+                                    argv.extend(args.iter().map(|s| s.to_string()));
+                                    run(&argv, 10, None, false)
+                                });
+                                match started {
                                     Ok(result) => {
                                         let text = if s(&result, "stdout").is_empty() {
                                             s(&result, "stderr")
