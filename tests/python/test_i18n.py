@@ -1,8 +1,9 @@
 """The desktop interface's translations stay complete and in step with the code.
 
 English is the source language of qml/, the C++ desktop code and the
-operation titles in assets/operations.json; i18n/tomacco_de.ts carries
-the German interface and i18n/tomacco_en.ts the English plural forms.
+operation titles in assets/operations.json; i18n/tomacco_CODE.ts carries
+each other language's interface and i18n/tomacco_en.ts the English plural
+forms.
 """
 
 import glob
@@ -17,6 +18,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 LITERAL = r'"(?:[^"\\]|\\.)*"'
 CPP_CONTEXTS = {"backend.cpp": "Backend", "control.cpp": "Control", "nativeview.cpp": "NativeView"}
+# Every translated interface language, by the code in its file name.
+LANGUAGES = sorted(Path(p).stem.split("_", 1)[1] for p in glob.glob(str(ROOT / "i18n/tomacco_*.ts")) if not p.endswith("_en.ts"))
+# The number of plural forms Qt uses for each language (numerus.cpp).
+PLURAL_FORMS = {"de": 2, "fr": 2}
 
 
 def unquote(literal: str) -> str:
@@ -60,26 +65,59 @@ def ts_messages(path: Path) -> dict:
 
 
 class TranslationTests(unittest.TestCase):
-    def test_every_marked_string_has_a_finished_german_translation(self):
+    def test_every_marked_string_has_a_finished_translation_in_every_language(self):
         marked = marked_strings()
         self.assertGreater(len(marked), 500)
-        german = ts_messages(ROOT / "i18n/tomacco_de.ts")
-        missing = sorted(key for key in marked if key not in german)
-        self.assertEqual(missing, [], "run lupdate (cmake --build <dir> --target update_translations) and translate")
-        for key, numerus in marked.items():
-            message = german[key]
-            translation = message.find("translation")
-            self.assertNotIn(translation.get("type"), ("unfinished", "obsolete", "vanished"), key)
-            self.assertEqual(message.get("numerus") == "yes", numerus, key)
-            forms = [f.text or "" for f in translation.findall("numerusform")] if numerus else [translation.text or ""]
-            self.assertTrue(all(forms), key)
-            # Placeholders survive translation.
-            for form in forms:
-                self.assertEqual(sorted(set(re.findall(r"%\d", key[1]))), sorted(set(re.findall(r"%\d", form))), key)
-                self.assertEqual("%n" in key[1], "%n" in form, key)
-        # Nothing stale lingers as a live translation.
-        self.assertEqual(sorted(key for key in german if key not in marked
-                                and german[key].find("translation").get("type") not in ("obsolete", "vanished")), [])
+        self.assertIn("de", LANGUAGES)
+        for language in LANGUAGES:
+            path = ROOT / f"i18n/tomacco_{language}.ts"
+            self.assertEqual(ET.parse(path).getroot().get("language"), language)
+            translated = ts_messages(path)
+            missing = sorted(key for key in marked if key not in translated)
+            self.assertEqual(missing, [], f"{language}: run lupdate (cmake --build <dir> --target update_translations) and translate")
+            for key, numerus in marked.items():
+                where = (language,) + key
+                message = translated[key]
+                translation = message.find("translation")
+                self.assertNotIn(translation.get("type"), ("unfinished", "obsolete", "vanished"), where)
+                self.assertEqual(message.get("numerus") == "yes", numerus, where)
+                forms = [f.text or "" for f in translation.findall("numerusform")] if numerus else [translation.text or ""]
+                self.assertTrue(all(forms), where)
+                if numerus:
+                    self.assertEqual(len(forms), PLURAL_FORMS[language], where)
+                # Placeholders survive translation.
+                for form in forms:
+                    self.assertEqual(sorted(set(re.findall(r"%\d", key[1]))), sorted(set(re.findall(r"%\d", form))), where)
+                    self.assertEqual("%n" in key[1], "%n" in form, where)
+            # Nothing stale lingers as a live translation.
+            self.assertEqual(sorted(key for key in translated if key not in marked
+                                    and translated[key].find("translation").get("type") not in ("obsolete", "vanished")), [], language)
+
+    def test_every_language_is_built_offered_and_named(self):
+        cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
+        listed = re.search(r"set\(TOMACCO_TS_FILE ([^)]*)\)", cmake).group(1).split()
+        self.assertEqual(sorted(listed), [f"i18n/tomacco_{language}.ts" for language in LANGUAGES])
+        backend = (ROOT / "src/backend.cpp").read_text(encoding="utf-8")
+        offered = re.findall(r'QStringLiteral\("(\w+)"\)', re.search(r"interfaceLanguages\{([^}]*)\}", backend).group(1))
+        self.assertEqual(offered[0], "en")
+        self.assertEqual(sorted(offered), sorted(["en"] + LANGUAGES))
+        picker = (ROOT / "qml/NativeWorkspace.qml").read_text(encoding="utf-8")
+        codes = json.loads(re.search(r"readonly property var codes:(\[[^\]]*\])", picker).group(1))
+        self.assertEqual(codes, ["system"] + offered)
+        names = re.search(r'model:\[qsTr\("System"\),([^\]]*)\]', picker).group(1)
+        self.assertEqual(len(json.loads("[" + names + "]")), len(offered))
+        spec = importlib.util.spec_from_file_location("ts2qm", ROOT / "tools/ts2qm.py")
+        ts2qm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ts2qm)
+        self.assertEqual(set(PLURAL_FORMS), set(LANGUAGES))
+        for language in LANGUAGES:
+            self.assertIn(language, ts2qm.NUMERUS_RULES)
+        # The menu entry is translated wherever German is.
+        entry = (ROOT / "assets/io.github.marselnenaj.tomacco.desktop").read_text(encoding="utf-8")
+        for section in entry.split("\n\n"):
+            for key in re.findall(r"^(\w+)\[de\]=", section, re.M):
+                for language in LANGUAGES:
+                    self.assertRegex(section, rf"(?m)^{key}\[{language}\]=\S", f"{key}[{language}]")
 
     def test_english_plural_forms_exist_for_every_plural(self):
         english = ts_messages(ROOT / "i18n/tomacco_en.ts")
@@ -102,9 +140,10 @@ class TranslationTests(unittest.TestCase):
         self.assertEqual({name: unquote(source) for name, source in table.items()}, titled)
         for title in titled.values():
             self.assertIsNone(re.search(r"[äöüÄÖÜß]", title), title)
-        german = ts_messages(ROOT / "i18n/tomacco_de.ts")
-        for title in titled.values():
-            self.assertIn(("Operations", title, ""), german)
+        for language in LANGUAGES:
+            translated = ts_messages(ROOT / f"i18n/tomacco_{language}.ts")
+            for title in titled.values():
+                self.assertIn(("Operations", title, ""), translated, language)
 
     def test_color_names_are_english_and_translated(self):
         listed = {unquote(source) for source in re.findall(r'QT_TRANSLATE_NOOP\("Colors", (' + LITERAL + r")\)",
@@ -113,10 +152,11 @@ class TranslationTests(unittest.TestCase):
         # A profile measured from a connected device has one color, "Device".
         self.assertIn('"colorNames":["Device"]', (ROOT / "native/devices.rs").read_text(encoding="utf-8"))
         self.assertEqual(listed, catalog | {"Device"})
-        german = ts_messages(ROOT / "i18n/tomacco_de.ts")
+        translations = {language: ts_messages(ROOT / f"i18n/tomacco_{language}.ts") for language in LANGUAGES}
         for name in listed:
             self.assertIsNone(re.search(r"[äöüÄÖÜß]", name), name)
-            self.assertIn(("Colors", name, ""), german)
+            for language, translated in translations.items():
+                self.assertIn(("Colors", name, ""), translated, language)
         # Every place the interface shows a color name goes through the table.
         for path in sorted(glob.glob(str(ROOT / "qml/*.qml"))):
             for match in re.finditer(r"(?:ColorNames[.]name\()?[\w.]*colorNames\[", Path(path).read_text(encoding="utf-8")):
@@ -136,7 +176,7 @@ class TranslationTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("ts2qm", ROOT / "tools/ts2qm.py")
         ts2qm = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(ts2qm)
-        for name in ("tomacco_de.ts", "tomacco_en.ts"):
+        for name in ["tomacco_en.ts"] + [f"tomacco_{language}.ts" for language in LANGUAGES]:
             payload = ts2qm.compile_ts(str(ROOT / "i18n" / name))
             self.assertTrue(payload.startswith(ts2qm.MAGIC))
         self.assertEqual(ts2qm.elf_hash(b""), 1)
@@ -144,7 +184,7 @@ class TranslationTests(unittest.TestCase):
         self.assertEqual(ts2qm.elf_hash(b"Open"), 0x566BE)
         with tempfile.TemporaryDirectory() as directory:
             bad = Path(directory) / "bad.ts"
-            bad.write_text('<TS version="2.1" language="fr"></TS>')
+            bad.write_text('<TS version="2.1" language="tlh"></TS>')
             with self.assertRaises(SystemExit):
                 ts2qm.compile_ts(str(bad))
 

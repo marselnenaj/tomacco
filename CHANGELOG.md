@@ -81,6 +81,7 @@ operations and their JSON results.
     by default that reports the bytes it would free. It never touches the verified base, the
     current run or a copy a guest holds. Unit-tested only.
 - **Desktop.**
+  - A French interface, chosen under Language in Settings or followed from the desktop language.
   - Drop an `.apk`, `.ipa` or `.app` on the device view to install it, or drop a
     project folder on the window to open it.
   - Screenshots are also copied to the clipboard.

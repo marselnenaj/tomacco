@@ -12,6 +12,7 @@
 #include <QQmlProperty>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QScopeGuard>
 #include <QSettings>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -2227,6 +2228,44 @@ for line in sys.stdin:
         QCOMPARE(workspace->property("status").toString(),QString("Ready · Check toolchain"));
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    // The other translated interfaces: chosen in the settings, applied at once, with their
+    // plural rules (French uses the singular for 0) and the texts C++ and the operations give.
+    void translated_interfaces_switch_live_data() {
+        for(const auto *column:{"code","name","files","zeroModels","oneModel","threeModels","busy","ready","about"})QTest::addColumn<QString>(column);
+        QTest::newRow("fr")<<"fr"<<"Français"<<"Fichiers"<<"0 modèle"<<"1 modèle"<<"3 modèles"<<"Trop de requêtes simultanées"<<"Prêt · Vérifier la chaîne d'outils"<<"À propos de Tomacco";
+    }
+    void translated_interfaces_switch_live() {
+        QFETCH(QString,code);QFETCH(QString,name);QFETCH(QString,files);QFETCH(QString,zeroModels);QFETCH(QString,oneModel);QFETCH(QString,threeModels);QFETCH(QString,busy);QFETCH(QString,ready);QFETCH(QString,about);
+        open("project");
+        const auto label=[&](const char *button){auto *found=item(button);return found?found->property("text").toString():QString();};
+        auto *picker=object("languagePicker");QVERIFY(picker);
+        const auto codes=picker->property("codes").toStringList();
+        const int index=codes.indexOf(code);QVERIFY(index>0);
+        // English again afterwards, also when a check fails, so the next test reads English.
+        const auto english=qScopeGuard([&]{backend->setLanguage("en");});
+        QVERIFY(QMetaObject::invokeMethod(picker,"activated",Q_ARG(int,index)));
+        QCOMPARE(backend->language(),code);QCOMPARE(backend->uiLanguage(),code);
+        QCOMPARE(QSettings().value("language").toString(),code);
+        QTRY_COMPARE(label("nav-files"),files);
+        // The retranslated model resets the box; it selects the choice again right after.
+        QTRY_COMPARE(picker->property("currentIndex").toInt(),index);
+        QCOMPARE(picker->property("currentText").toString(),name);
+        QCOMPARE(QCoreApplication::translate("Main","%n model(s)",nullptr,0),zeroModels);
+        QCOMPARE(QCoreApplication::translate("Main","%n model(s)",nullptr,1),oneModel);
+        QCOMPARE(QCoreApplication::translate("Main","%n model(s)",nullptr,3),threeModels);
+        QCOMPARE(QCoreApplication::translate("Control","Too many concurrent requests"),busy);
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showAction",Q_ARG(QVariant,QString("doctor"))));
+        QCOMPARE(workspace->property("status").toString(),ready);
+        auto *dialog=object("aboutDialog");QVERIFY(dialog);
+        QMetaObject::invokeMethod(dialog,"open");QTRY_VERIFY(dialog->property("visible").toBool());
+        QCOMPARE(dialog->property("title").toString(),about);
+        capture("about-"+code);
+        QMetaObject::invokeMethod(dialog,"close");QTRY_VERIFY(!dialog->property("visible").toBool());
+        capture("language-"+code);
+        QVERIFY(QMetaObject::invokeMethod(picker,"activated",Q_ARG(int,1)));
+        QTRY_COMPARE(label("nav-files"),QString("Files"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void about_dialog_names_version_license_and_source() {
         open("runtime");
         auto *button=item("aboutButton");QVERIFY(button);
@@ -2323,7 +2362,7 @@ for line in sys.stdin:
         view->setProperty("autoAttach",false);view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});
         workspace->setProperty("jobs",QVariantList{});
         const auto activity=view->property("showActivity");
-        for(const auto *language:{"en","de"}) {
+        for(const auto *language:{"en","de","fr"}) {
             backend->setLanguage(language);
             for(const auto &size:{QSize(1920,1080),QSize(1440,900),QSize(1280,720),QSize(1000,700),QSize(900,700),QSize(960,1040),QSize(720,1040),QSize(600,1040),QSize(560,480)})for(const bool panel:{true,false}) {
                 const auto where=QString("%1x%2 %3 panel=%4").arg(size.width()).arg(size.height()).arg(language).arg(panel);
@@ -2368,6 +2407,8 @@ for line in sys.stdin:
         // Narrow, tall windows are normal in a tiling window manager. German: the longest text.
         for(const int width:{900,800,700,600,560})for(const int height:{1040,800,600})variants.append({QSize(width,height),"dark","de"});
         variants.append({QSize(560,480),"light","en"});variants.append({QSize(1280,800),"light","en"});
+        // The other languages at the sizes that break first.
+        for(const auto *language:{"fr"})for(const auto &size:{QSize(560,1040),QSize(700,600),QSize(900,800)})variants.append({size,"dark",language});
         if(capturing) {
             variants.clear();
             for(const auto &size:{QSize(1920,1080),QSize(1280,800),QSize(900,700),QSize(600,1040)})for(const auto *theme:{"dark","light"})for(const auto *language:{"en","de"})variants.append({size,theme,language});

@@ -64,7 +64,7 @@ ApplicationWindow {
 
     function toast(message) { notice=message; toastTimer.restart() }
     // Display sizes are written with a decimal comma (assets/models.json).
-    function inches(text) { return Studio.uiLanguage==="de" ? String(text) : String(text).replace(/(\d),(\d)/g,"$1.$2") }
+    function inches(text) { return Studio.uiLanguage!=="en" ? String(text) : String(text).replace(/(\d),(\d)/g,"$1.$2") }
     function showWorkspace(tab, projectPath, file, line) {
         if(projectPath) workspace.openProject(projectPath)
         if(file) workspace.revealFile(file,line || 1)

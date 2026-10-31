@@ -6,7 +6,7 @@ set(CMAKE_AUTOMOC ON)
 # QML icons also require the SVG module and its image-format plugin at runtime.
 find_package(Qt6 6.9 REQUIRED COMPONENTS Quick QuickControls2 WebEngineQuick Network Svg)
 # Qt's lupdate/lrelease (qt6-tools on Arch). Without them the translations are
-# compiled by tools/ts2qm.py, so the German interface builds everywhere.
+# compiled by tools/ts2qm.py, so the translated interface builds everywhere.
 find_package(Qt6 QUIET OPTIONAL_COMPONENTS LinguistTools)
 # Desktop notifications go over the session bus (org.freedesktop.Notifications).
 # Without Qt D-Bus the desktop builds and simply sends none.
@@ -79,8 +79,8 @@ set(TOMACCO_QML_RESOURCES
     assets/models.json assets/demo.html assets/icon.svg assets/logo.svg assets/fonts/archivo-var.ttf assets/fonts/jetbrains-mono-var.ttf)
 qt_add_resources(tomacco resources PREFIX / FILES ${TOMACCO_QML_RESOURCES})
 # Interface translations. English is the source language: its file only
-# carries plural forms. German repeats the texts the interface had before.
-set(TOMACCO_TS_FILE i18n/tomacco_de.ts)
+# carries plural forms. Each other language has one file with every text.
+set(TOMACCO_TS_FILE i18n/tomacco_de.ts i18n/tomacco_fr.ts)
 set(TOMACCO_PLURALS_TS_FILE i18n/tomacco_en.ts)
 if(TARGET Qt6::lrelease AND NOT TOMACCO_USE_TS2QM)
     # lupdate reads the target's C++ and QML/JS sources; the other resources hold no UI text.

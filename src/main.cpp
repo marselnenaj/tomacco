@@ -37,7 +37,7 @@ int main(int argc,char **argv) {
     app.setDesktopFileName("io.github.marselnenaj.tomacco");
     app.setWindowIcon(QIcon(":/assets/icon.svg"));
     Backend::applyInterfaceFont();
-    // English unless the desktop (or the stored choice) asks for German;
+    // English unless the desktop (or the stored choice) asks for another language;
     // installed before anything below produces a text.
     Backend::applyLanguage(Backend::storedLanguage());
     QCommandLineParser parser;

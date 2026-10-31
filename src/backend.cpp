@@ -53,14 +53,15 @@ void Backend::reloadModels() {
     emit modelsChanged();
 }
 QString Backend::s_uiLanguage=QStringLiteral("en");
-static const QStringList languageChoices{QStringLiteral("system"),QStringLiteral("en"),QStringLiteral("de")};
+// The interface languages, by ISO 639 code; each but English has i18n/tomacco_CODE.ts.
+static const QStringList interfaceLanguages{QStringLiteral("en"),QStringLiteral("de"),QStringLiteral("fr")};
+static const QStringList languageChoices=QStringList{QStringLiteral("system")}+interfaceLanguages;
 static QString resolveLanguage(const QString &choice) {
-    if(choice==QLatin1String("en") || choice==QLatin1String("de")) return choice;
+    if(interfaceLanguages.contains(choice)) return choice;
     // The first desktop language the interface has, English otherwise.
     for(const auto &name: QLocale::system().uiLanguages()) {
-        const auto language=QLocale(name).language();
-        if(language==QLocale::German) return QStringLiteral("de");
-        if(language==QLocale::English) return QStringLiteral("en");
+        const auto code=QLocale::languageToCode(QLocale(name).language());
+        if(interfaceLanguages.contains(code)) return code;
     }
     return QStringLiteral("en");
 }

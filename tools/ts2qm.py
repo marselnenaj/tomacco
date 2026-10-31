@@ -3,7 +3,7 @@
 
 The build uses Qt's own lrelease (qt_add_translations) whenever Qt's
 LinguistTools are installed. This is the fallback for hosts without them
-(on Arch they ship in qt6-tools), so the German interface also builds there.
+(on Arch they ship in qt6-tools), so the translated interface also builds there.
 It writes the same binary format as lrelease for what the .ts files here use:
 contexts, optional disambiguation comments, plural forms, and the numerus
 rules of the target language. Unfinished, obsolete and vanished messages
@@ -27,6 +27,8 @@ Q_AND, Q_OR, Q_NEWRULE = 0xFD, 0xFE, 0xFF
 NUMERUS_RULES = {
     "en": bytes([Q_EQ, 1]),
     "de": bytes([Q_EQ, 1]),
+    # French uses the singular for 0 and 1.
+    "fr": bytes([Q_LEQ, 1]),
 }
 
 
