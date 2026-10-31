@@ -26,6 +26,15 @@ cargo fmt --check
 cargo clippy --locked --all-targets -- -D warnings
 ```
 
+`ctest` includes the Python suite in `tests/python`, which also checks the documentation: every
+relative link and anchor, every `tomaccoctl call` line against the schema, and that the operation
+reference in `docs/reference/` matches `assets/operations.json`. After changing an operation, run
+`python3 tools/build_reference.py`. The documentation checks alone, from the repository root:
+
+```sh
+python3 -m unittest tests.python.test_docs_links tests.python.test_docs_virtual_iphone tests.python.test_docs_reference
+```
+
 Tests that need a toolchain, an engine or a device skip and say what they need.
 [docs/agents.md](docs/agents.md) describes the typed operations,
 [docs/desktop.md](docs/desktop.md) the desktop and

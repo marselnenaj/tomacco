@@ -5,6 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
+        Check [troubleshooting](https://github.com/marselnenaj/tomacco/blob/main/docs/troubleshooting.md) and the error's `remedy` first.
         For a security problem, use a [private advisory](https://github.com/marselnenaj/tomacco/security/advisories/new) instead.
         Never attach Apple firmware, iOS images, keys, tickets or anything taken from them; logs from a guest can contain device identifiers, so read them first.
   - type: dropdown
@@ -51,5 +52,12 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: The relevant part only.
+      description: The relevant part only. For a failed job, `tomaccoctl call job.logs '{"job_id":"JOB_ID"}'`.
       render: text
+  - type: textarea
+    id: report
+    attributes:
+      label: Report bundle
+      description: >-
+        Optional. `tomaccoctl report` writes a local .tar.gz with the version, host, doctor, settings and the
+        recent failed jobs, with known secrets masked; it sends nothing. Read it before you attach it here.

@@ -17,6 +17,8 @@ operations and their JSON results.
 - A guide for agent authors, [Agent patterns](docs/agent-patterns.md): planning with `capabilities`, waiting on jobs
   with progress, acting on an error's `remedy`, safe and destructive operations by their annotations, and recovering
   from failures, with real results.
+- The issue form links troubleshooting and asks for an optional `tomaccoctl report` bundle; the pull request
+  checklist follows CONTRIBUTING, and CONTRIBUTING says how the documentation is tested.
 
 ## 1.1.0
 

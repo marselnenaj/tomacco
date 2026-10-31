@@ -10,6 +10,9 @@ Symptom, cause, fix. Error codes are the ones Tomacco really returns. Every `tom
 tomaccoctl doctor
 ```
 
+When a problem stays, `tomaccoctl report` writes a local bug-report bundle to attach to an issue,
+after you have read it; see [bug reports](agents.md#bug-reports).
+
 ## Install and start
 
 | Symptom | Cause | Fix |

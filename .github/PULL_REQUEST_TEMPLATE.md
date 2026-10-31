@@ -10,6 +10,7 @@
 
 - [ ] `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings` and `ctest` pass
 - [ ] New behaviour has a test
-- [ ] Documentation and `CHANGELOG.md` say what changed; a limit is stated as a limit
-- [ ] New user-visible strings are in English with a German translation
+- [ ] Documentation and `CHANGELOG.md` say what changed; a claim states what was run, and a limit is stated as a limit
+- [ ] After a change to `assets/operations.json`, `python3 tools/build_reference.py` was run
+- [ ] New user-visible strings go through `qsTr` with a translation in every `i18n/tomacco_*.ts` file
 - [ ] Nothing from Apple firmware, an iOS image, a key or a ticket is included
