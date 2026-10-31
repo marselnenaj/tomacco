@@ -168,6 +168,14 @@ pub fn configure(a: &Value) -> Result {
     if a["updates"].is_object() {
         crate::update::configure(&mut config, &a["updates"])?;
     }
+    for (_, key, _) in crate::jobs::RESOURCES {
+        if let Some(limit) = a["jobs"][*key].as_u64() {
+            if !config["jobs"].is_object() {
+                config["jobs"] = json!({});
+            }
+            config["jobs"][*key] = json!(limit);
+        }
+    }
     atomic_json(&home()?.join("settings.json"), &config)?;
     Ok(config)
 }

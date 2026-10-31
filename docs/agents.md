@@ -120,6 +120,12 @@ is. Interrupting `--wait` leaves the job running.
   active request reuses its job, and different work in the same project answers `workspace_busy` with
   the active job. A Flutter run holds the lock until it exits. Keep independent projects in separate
   directories. Commands you run outside Tomacco are not covered.
+- **Heavy jobs wait their turn.** At most two builds run at once: `project.execute`, `project.run`
+  (except a Flutter session) and `ios.flutter_build`. Others stay `queued`, with `phase:"queued"`
+  and a `queued_reason` naming the jobs that hold the slots, and start when one ends. Emulators that
+  `android.avd_start` starts can be capped as well, for as long as they run; they have no cap by
+  default. `settings.configure {"jobs":{"max_builds":N,"max_emulators":N}}` changes the caps, and `0`
+  removes one. A queued job can be cancelled, and its timeout starts only when it runs.
 - **Finding jobs.** `job.list` returns the newest jobs first and takes `state` (a list), `operation`
   (a prefix of the operation that started the job, such as `project.`), `project` (an absolute
   directory the job locks or runs in), `since` (seconds since 1970) and `limit`. For the next page,

@@ -301,6 +301,9 @@ fn public(db: &Connection, mut row: Row) -> Result {
         Value::Null
     };
     row.value["phase"] = row.value["result"]["phase"].clone();
+    if s(&row.value, "state") == "queued" && !s(&row.value["result"], "reason").is_empty() {
+        row.value["queued_reason"] = row.value["result"]["reason"].clone();
+    }
     row.value["interactive"] = json!(
         row.value["plan"]["steps"]
             .as_array()
@@ -762,6 +765,92 @@ impl Drop for PartialOutput {
         let _ = fs::remove_file(&self.temporary);
     }
 }
+/// Jobs that take a share of the machine name a `resource` in their spec.
+/// Settings `jobs.KEY` caps how many of them run at once (0: no cap); the
+/// rest wait in `queued` with the reason.
+pub const RESOURCES: &[(&str, &str, u64)] =
+    &[("build", "max_builds", 2), ("emulator", "max_emulators", 0)];
+pub fn resource_limit(settings: &Value, resource: &str) -> Option<(&'static str, u64)> {
+    RESOURCES
+        .iter()
+        .find(|(name, _, _)| *name == resource)
+        .map(|(_, key, default)| (*key, settings["jobs"][*key].as_u64().unwrap_or(*default)))
+}
+/// One of `limit` slots of `resource`, if one is free. The kernel releases
+/// it with the worker, however the worker ends.
+fn free_slot(root: &Path, resource: &str, limit: u64) -> Result<Option<Lock>> {
+    for index in 0..limit {
+        let lock = Lock::open(
+            &root
+                .join("locks")
+                .join(format!("slot-{resource}-{index}.lock")),
+        )?;
+        if lock.acquire(true)? {
+            return Ok(Some(lock));
+        }
+    }
+    Ok(None)
+}
+enum Admission {
+    Admitted(Option<Lock>),
+    Stopped,
+}
+/// Waits, still `queued`, until the job's resource has a free slot. The
+/// reason names the jobs holding the slots and is published when it changes.
+fn admit(
+    db: &Connection,
+    root: &Path,
+    id: &str,
+    spec: &Value,
+    limit: impl Fn() -> Option<(&'static str, u64)>,
+) -> Result<Admission> {
+    let resource = s(spec, "resource");
+    let mut published = String::new();
+    loop {
+        let Some((key, limit)) = limit().filter(|(_, limit)| *limit > 0) else {
+            return Ok(Admission::Admitted(None));
+        };
+        if let Some(slot) = free_slot(root, resource, limit)? {
+            return Ok(Admission::Admitted(Some(slot)));
+        }
+        let row = retrying(Instant::now() + WORKER_RETRY, || get_row(db, id))?;
+        let parent_stopped = !s(spec, "parent_job").is_empty() && {
+            let parent = retrying(Instant::now() + WORKER_RETRY, || {
+                get_row(db, s(spec, "parent_job"))
+            })?;
+            parent.cancel || TERMINAL.contains(&s(&parent.value, "state"))
+        };
+        if row.cancel || parent_stopped {
+            return Ok(Admission::Stopped);
+        }
+        let holders = db
+            .prepare("SELECT id FROM jobs WHERE state='running' AND json_extract(spec,'$.resource')=? ORDER BY created")?
+            .query_map([resource], |r| r.get::<_, String>(0))?
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        let reason = format!(
+            "Waiting for a {resource} slot: {limit} of {limit} in use{}. settings.configure jobs.{key} changes the limit",
+            if holders.is_empty() {
+                String::new()
+            } else {
+                format!(" by {}", holders.join(", "))
+            }
+        );
+        if reason != published {
+            retrying(Instant::now() + WORKER_RETRY, || {
+                Ok(db.execute(
+                    "UPDATE jobs SET result=?,updated=? WHERE id=? AND state='queued'",
+                    params![
+                        json!({"phase":"queued","reason":reason}).to_string(),
+                        now(),
+                        id
+                    ],
+                )?)
+            })?;
+            published = reason;
+        }
+        thread::sleep(Duration::from_millis(250));
+    }
+}
 pub fn worker(id: &str) -> Result<()> {
     identifier(id, "job ID", Some("[0-9a-f]{32}"))?;
     // The lease comes first: while the database is contended a reader sees a
@@ -782,6 +871,33 @@ pub fn worker(id: &str) -> Result<()> {
         return Ok(());
     }
     let spec: Value = serde_json::from_str(s(&row.value, "plan"))?;
+    let _slot = if s(&spec, "resource").is_empty() {
+        None
+    } else {
+        let root = home()?;
+        match admit(&db, &root, id, &spec, || {
+            resource_limit(
+                &toolchain::settings().unwrap_or_default(),
+                s(&spec, "resource"),
+            )
+        })? {
+            Admission::Admitted(slot) => slot,
+            Admission::Stopped => {
+                let errors = remove_temporary_directories(&spec);
+                let mut result = json!({"artifacts":[],"error":"Cancelled while queued"});
+                if !errors.is_empty() {
+                    result["cleanup_errors"] = json!(errors);
+                }
+                retrying(Instant::now() + WORKER_RETRY, || {
+                    Ok(db.execute(
+                        "UPDATE jobs SET state='cancelled',exit_code=-1,result=?,updated=? WHERE id=? AND state='queued'",
+                        params![result.to_string(), now(), id],
+                    )?)
+                })?;
+                return Ok(());
+            }
+        }
+    };
     let pid = std::process::id();
     if retrying(Instant::now() + WORKER_RETRY, || {
         Ok(db.execute(
@@ -1544,6 +1660,85 @@ mod database_tests {
             assert_eq!(requested_operation().as_deref(), Some("project.run"));
         }
         assert_eq!(requested_operation(), None);
+    }
+
+    #[test]
+    fn a_heavy_job_waits_queued_with_its_reason_until_a_slot_is_free() {
+        let root = tempfile::tempdir().unwrap();
+        let db = open(root.path()).unwrap();
+        let (holder, waiting) = ("3".repeat(32), "4".repeat(32));
+        let spec = json!({"steps":[],"resource":"build"});
+        for (id, state) in [(&holder, "running"), (&waiting, "queued")] {
+            db.execute(
+                "INSERT INTO jobs(id,label,state,created,updated,spec) VALUES(?,?,?,?,?,?)",
+                params![id, "Build", state, now(), now(), spec.to_string()],
+            )
+            .unwrap();
+        }
+        let _holder_worker = lease(root.path(), &holder);
+        let first = free_slot(root.path(), "build", 2).unwrap().unwrap();
+        let second = free_slot(root.path(), "build", 2).unwrap().unwrap();
+        assert!(free_slot(root.path(), "build", 2).unwrap().is_none());
+        // Another resource has its own slots.
+        assert!(free_slot(root.path(), "emulator", 1).unwrap().is_some());
+        let release = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(600));
+            drop(first);
+        });
+        let admitted = admit(&db, root.path(), &waiting, &spec, || {
+            Some(("max_builds", 2))
+        })
+        .unwrap();
+        release.join().unwrap();
+        assert!(matches!(admitted, Admission::Admitted(Some(_))));
+        let _waiting_worker = lease(root.path(), &waiting);
+        let job = read(&db, &waiting).unwrap();
+        assert_eq!(s(&job, "state"), "queued");
+        assert_eq!(s(&job, "phase"), "queued");
+        let reason = s(&job, "queued_reason");
+        assert!(
+            reason.contains("2 of 2") && reason.contains(&holder),
+            "{reason}"
+        );
+        assert!(reason.contains("jobs.max_builds"));
+        let events = timeline(&db, &waiting, 0, 100).unwrap();
+        assert!(
+            events["events"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|e| s(e, "value") == "queued" && s(e, "kind") == "phase")
+        );
+        // Cancelling a queued job stops the wait.
+        drop(admitted);
+        let _third = free_slot(root.path(), "build", 2).unwrap().unwrap();
+        cancel_tree(&db, &waiting).unwrap();
+        let stopped = admit(&db, root.path(), &waiting, &spec, || {
+            Some(("max_builds", 2))
+        })
+        .unwrap();
+        assert!(matches!(stopped, Admission::Stopped));
+        // Without a limit a job is admitted at once.
+        let unlimited = admit(&db, root.path(), &waiting, &spec, || {
+            Some(("max_builds", 0))
+        })
+        .unwrap();
+        assert!(matches!(unlimited, Admission::Admitted(None)));
+        drop(second);
+    }
+
+    #[test]
+    fn resource_limits_come_from_settings_with_defaults() {
+        assert_eq!(resource_limit(&json!({}), "build"), Some(("max_builds", 2)));
+        assert_eq!(
+            resource_limit(&json!({}), "emulator"),
+            Some(("max_emulators", 0))
+        );
+        assert_eq!(
+            resource_limit(&json!({"jobs":{"max_builds":5}}), "build"),
+            Some(("max_builds", 5))
+        );
+        assert_eq!(resource_limit(&json!({}), "other"), None);
     }
 
     #[test]

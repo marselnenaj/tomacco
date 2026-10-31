@@ -349,6 +349,7 @@ pub fn execute(a: &Value) -> Result {
     let label = s(&value, "label").to_string();
     value["timeout"] = a["timeout"].clone();
     value["single_active"] = json!(true);
+    value["resource"] = json!("build");
     value["operation_key"] =
         json!({"operation":"project.execute","arguments":a,"project":value["cwd"]});
     jobs::submit(&label, value)
@@ -378,7 +379,7 @@ pub fn run(a: &Value) -> Result {
         let launch = json!({"path":root,"device":device,"bundle_id":s(a,"bundle_id")});
         return jobs::submit(
             &format!("Deploy {}", s(&project, "name")),
-            json!({"steps":[{"argv":[tc::find("xtool")?,"dev","run","--udid",device,"--configuration",config]},{"argv":[crate::core::own_executable()?,"_iphone_launch",launch.to_string()]}],"cwd":root,"env":env,"exclusive":root,"single_active":true}),
+            json!({"steps":[{"argv":[tc::find("xtool")?,"dev","run","--udid",device,"--configuration",config]},{"argv":[crate::core::own_executable()?,"_iphone_launch",launch.to_string()]}],"cwd":root,"env":env,"exclusive":root,"single_active":true,"resource":"build"}),
         );
     }
     if kind(&project, "gradle") && platform == "android" {
@@ -404,7 +405,7 @@ pub fn run(a: &Value) -> Result {
         env["ANDROID_SERIAL"] = json!(device);
         return jobs::submit(
             &format!("Deploy {}", s(&project, "name")),
-            json!({"steps":[{"argv":args},{"argv":[crate::core::own_executable()?,"call","android.launch",json!({"device":device,"bundle_id":id}).to_string()]}],"cwd":project["gradle_directory"],"env":env,"artifacts":["**/build/outputs/apk/**/*.apk"],"exclusive":root,"single_active":true}),
+            json!({"steps":[{"argv":args},{"argv":[crate::core::own_executable()?,"call","android.launch",json!({"device":device,"bundle_id":id}).to_string()]}],"cwd":project["gradle_directory"],"env":env,"artifacts":["**/build/outputs/apk/**/*.apk"],"exclusive":root,"single_active":true,"resource":"build"}),
         );
     }
     Err(Error::new(

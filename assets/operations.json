@@ -107,7 +107,7 @@
   {
     "name": "settings.configure",
     "title": "Set up toolchain",
-    "description": "Configure SDK, JDK and executable paths without installing or running them, and how updates behave.",
+    "description": "Configure SDK, JDK and executable paths without installing or running them, how updates behave, and how many heavy jobs run at once.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -150,6 +150,26 @@
             "token_file": {
               "type": "string",
               "description": "Owner-only file with a GitHub token, for a private repository; empty removes it"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "jobs": {
+          "type": "object",
+          "description": "How many heavy jobs run at once; more wait as queued with a reason. 0 means no limit",
+          "properties": {
+            "max_builds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64,
+              "description": "Builds and deploys (project.execute, project.run except Flutter sessions, ios.flutter_build); 2 by default"
+            },
+            "max_emulators": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 64,
+              "description": "Android emulators started with android.avd_start, for as long as they run; no limit by default"
             }
           },
           "required": [],

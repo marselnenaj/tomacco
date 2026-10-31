@@ -853,7 +853,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
             env["ANDROID_AVD_HOME"] = json!(directory);
             jobs::submit(
                 &format!("Emulator {name}"),
-                json!({"steps":[{"argv":args}],"cwd":home()?,"timeout":86400,"env":env,"exclusive":format!("android-avd:{name}"),"single_active":true}),
+                json!({"steps":[{"argv":args}],"cwd":home()?,"timeout":86400,"env":env,"exclusive":format!("android-avd:{name}"),"single_active":true,"resource":"emulator"}),
             )
         }
         "android.settings" => settings(a),

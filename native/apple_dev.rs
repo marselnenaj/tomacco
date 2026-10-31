@@ -388,7 +388,7 @@ fn flutter_build(a: &Value) -> Result {
         &format!("Build Flutter iOS · {}", s(&project, "name")),
         json!({"steps":[{"argv":args}],"cwd":app,"env":env,"timeout":a["timeout"],
             "exclusive":app,"single_active":true,
-            "operation_key":{"operation":"ios.flutter_build","arguments":a},
+            "operation_key":{"operation":"ios.flutter_build","arguments":a},"resource":"build",
             "artifacts":["build/ios-linux/Runner.ipa"],
             "metadata":{"ipa":out.join("Runner.ipa"),"app":out.join("Payload/Runner.app"),"signed":false,
                 "tested":false,"note":"Release mode, arm64 device build; not a virtual-device build"}}),
