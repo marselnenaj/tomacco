@@ -64,7 +64,10 @@ finished releases, **Pre-release** (*Vorabversion*) also those GitHub marks as p
 it starts a new check unless updates are off. `updates.channel` in `settings.configure` is the same choice.
 
 A check never delays the start and fails silently when you are offline; **Settings** shows how it ended. **What's new** opens the release's page, **Install** downloads, verifies and
-installs it, and **Restart** starts the new version once it is in place: the running app keeps working until then. **Roll back** returns to the version before. If the new version does not
+installs it, and **Restart** (or **Restart now** in the band) starts the new version once it is in place: the running app keeps working until then. The restart goes
+through the installed `tomacco` launcher, opens the same project and view at the same window size, and waits until the old window has
+closed, so agents reach the new one. With unsaved files nothing restarts; the window shows them first. On the first start of a new
+version a short **What's new in X** sheet (*Neu in X*) shows the highlights from the installed release notes, once. **Roll back** returns to the version before. If the new version does not
 start after installing, the previous one is restored by itself.
 
 An installation made by `install.py` can be updated. A source checkout, a system package or a directory you cannot write is left alone, and the section says so. Installing needs Python 3.9

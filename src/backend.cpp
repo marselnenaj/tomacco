@@ -28,10 +28,12 @@
 #include <QTcpSocket>
 #include <QTimer>
 #include <QTranslator>
+#include <algorithm>
 #include <cstdio>
 #include <memory>
 
 Backend::Backend(QString initialUrl, QObject *parent, bool autoProbe): QObject(parent), m_initial(std::move(initialUrl)) {
+    m_firstStart=m_settings.allKeys().isEmpty();
     reloadModels();
     connect(&m_server,&QTcpServer::newConnection,this,&Backend::acceptConnections);
     if(qGuiApp) connect(QGuiApplication::styleHints(),&QStyleHints::colorSchemeChanged,this,&Backend::appearanceChanged);
@@ -357,11 +359,60 @@ bool Backend::openDocument(const QString &name) {
     if(path.isEmpty()) { emit message(tr("%1 is not part of this installation.").arg(name)); return false; }
     return QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
-bool Backend::relaunch() {
-    auto program=QCoreApplication::applicationFilePath();
+QString Backend::relaunchProgram(const QString &applicationPath,const QString &home) {
+    auto program=applicationPath;
     // How the kernel names a running program whose file an update replaced.
     if(program.endsWith(QLatin1String(" (deleted)"))) program.chop(10);
-    return QProcess::startDetached(program,QCoreApplication::arguments().mid(1));
+    // install.py puts the program in ~/.local/lib/tomacco and a launcher that
+    // sets its environment in ~/.local/bin; an update may have changed both.
+    const auto library=QDir(home).filePath(QStringLiteral(".local/lib/tomacco/tomacco"));
+    const auto launcher=QDir(home).filePath(QStringLiteral(".local/bin/tomacco"));
+    if(QDir::cleanPath(program)==QDir::cleanPath(library) && QFileInfo(launcher).isExecutable()) {
+        QFile script(launcher);
+        if(script.size()<64*1024 && script.open(QIODevice::ReadOnly) && script.readAll().contains("# Managed by tomacco/install.py")) return launcher;
+    }
+    return program;
+}
+QStringList Backend::relaunchArguments(const QStringList &original,const QString &project,const QString &workspace) {
+    static const QStringList valued{QStringLiteral("--project"),QStringLiteral("--workspace"),QStringLiteral("--capture")};
+    static const QStringList flags{QStringLiteral("--smoke-test")};
+    QStringList kept;
+    for(int i=0;i<original.size();++i) {
+        const auto &argument=original.at(i);
+        if(valued.contains(argument)) { ++i; continue; }
+        if(flags.contains(argument) || std::any_of(valued.cbegin(),valued.cend(),[&](const QString &option){return argument.startsWith(option+QLatin1Char('='));})) continue;
+        kept<<argument;
+    }
+    if(!project.isEmpty()) kept<<QStringLiteral("--project")<<project;
+    if(!workspace.isEmpty()) kept<<QStringLiteral("--workspace")<<workspace;
+    return kept;
+}
+bool Backend::relaunch(const QString &project,const QString &workspace) {
+    const auto program=relaunchProgram(QCoreApplication::applicationFilePath(),QDir::homePath());
+    const auto arguments=relaunchArguments(QCoreApplication::arguments().mid(1),project,workspace);
+    auto environment=QProcessEnvironment::systemEnvironment();
+    environment.insert(QStringLiteral("TOMACCO_RESTART_AFTER"),QString::number(QCoreApplication::applicationPid()));
+    if(m_starter) return m_starter(program,arguments,environment);
+    QProcess process;
+    process.setProgram(program);process.setArguments(arguments);process.setProcessEnvironment(environment);
+    process.setStandardInputFile(QProcess::nullDevice());
+    return process.startDetached();
+}
+QString Backend::releaseHighlights(const QString &version) const {
+    const auto path=documentPath(QStringLiteral("RELEASE_NOTES.md"));
+    QFile file(path);
+    if(version.isEmpty() || path.isEmpty() || file.size()>1024*1024 || !file.open(QIODevice::ReadOnly)) return {};
+    const auto lines=QString::fromUtf8(file.readAll()).split(QLatin1Char('\n'));
+    if(lines.isEmpty() || lines.first().trimmed()!=QStringLiteral("# Tomacco ")+version) return {};
+    QStringList kept;
+    bool inside=false;
+    for(const auto &line:lines) {
+        if(line.startsWith(QLatin1String("## "))) { if(inside) break; inside=line.trimmed()==QLatin1String("## Highlights"); continue; }
+        if(inside) kept<<line;
+    }
+    // Links point into the repository, which the sheet cannot open; their text stays.
+    static const QRegularExpression link(QStringLiteral("\\[([^\\]]*)\\]\\([^)]*\\)"));
+    return kept.join(QLatin1Char('\n')).replace(link,QStringLiteral("\\1")).trimmed();
 }
 QString Backend::jobLogPath(const QString &path) const {
     static const QRegularExpression name(QStringLiteral("^[0-9a-f]{32}\\.log$"));

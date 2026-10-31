@@ -180,6 +180,35 @@ private slots:
         QVERIFY(!backend.exportSettings(root.filePath("no/such/dir/settings.json")).isEmpty());
         QSettings().clear();
     }
+    void aRestartGoesThroughTheInstalledLauncherWithThisProjectAndView() {
+        QTemporaryDir home;QVERIFY(home.isValid());
+        const auto library=home.filePath(".local/lib/tomacco/tomacco"),launcher=home.filePath(".local/bin/tomacco");
+        // Without a launcher, or with someone else's, the program itself.
+        QCOMPARE(Backend::relaunchProgram(library+" (deleted)",home.path()),library);
+        QVERIFY(QDir().mkpath(QFileInfo(launcher).absolutePath()));
+        QFile script(launcher);QVERIFY(script.open(QIODevice::WriteOnly));script.write("#!/bin/sh\nexec /elsewhere/tomacco \"$@\"\n");script.close();
+        QVERIFY(script.setPermissions(QFile::ReadOwner|QFile::WriteOwner|QFile::ExeOwner));
+        QCOMPARE(Backend::relaunchProgram(library,home.path()),library);
+        // install.py's launcher sets the environment the program needs.
+        QVERIFY(script.open(QIODevice::WriteOnly));script.write("#!/bin/sh\n# Managed by tomacco/install.py\nexec "+library.toUtf8()+" \"$@\"\n");script.close();
+        QCOMPARE(Backend::relaunchProgram(library+" (deleted)",home.path()),launcher);
+        // A build or a package elsewhere starts itself.
+        QCOMPARE(Backend::relaunchProgram("/opt/build/tomacco",home.path()),QString("/opt/build/tomacco"));
+        QCOMPARE(Backend::relaunchArguments({"--project","/old","--workspace=jobs","--preview-session","work","--capture","/tmp/x.png","--smoke-test","--device-only"},"/new","files"),
+            (QStringList{"--preview-session","work","--device-only","--project","/new","--workspace","files"}));
+        QCOMPARE(Backend::relaunchArguments({"--project=/old"},"",""),QStringList{});
+    }
+    void theWhatsNewSheetReadsThisVersionsHighlights() {
+        Backend backend(QString(),nullptr,false);
+        const auto path=backend.documentPath("RELEASE_NOTES.md");
+        if(path.isEmpty())QSKIP("The release notes are not beside this build");
+        QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
+        const auto version=QString::fromUtf8(file.readLine()).trimmed().mid(QStringLiteral("# Tomacco ").size());
+        const auto highlights=backend.releaseHighlights(version);
+        QVERIFY(highlights.startsWith("- "));
+        QVERIFY(!highlights.contains("## "));QVERIFY(!highlights.contains("]("));
+        QCOMPARE(backend.releaseHighlights("0.0.1"),QString());QCOMPARE(backend.releaseHighlights(""),QString());
+    }
     void dataDirectoryIsTheVariableOrTheDefault() {
         QTemporaryDir home;
         QVERIFY(home.isValid());

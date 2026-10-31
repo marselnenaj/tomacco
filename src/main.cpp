@@ -10,13 +10,33 @@
 #include <QtWebEngineQuick/qtwebenginequickglobal.h>
 #include <cstdio>
 #include <cstring>
+#include <QFile>
+#include <cerrno>
+#include <csignal>
+#include <unistd.h>
 
 // The version comes from the build (CMake's project version).
 #ifndef TOMACCO_VERSION
 #error "TOMACCO_VERSION must be defined by the build"
 #endif
 
+// Whether a process still runs; a zombie that waits for its parent does not count.
+static bool processRuns(qint64 pid) {
+    if(kill(pid_t(pid),0)!=0 && errno!=EPERM) return false;
+    QFile stat(QStringLiteral("/proc/%1/stat").arg(pid));
+    if(!stat.open(QIODevice::ReadOnly)) return true;
+    const auto text=stat.readAll();
+    const auto close=text.lastIndexOf(')');
+    return close<0 || text.mid(close+2,1)!="Z";
+}
+
 int main(int argc,char **argv) {
+    // A restart for an update (Backend::relaunch): the previous desktop ends
+    // first, so this one gets its agent session. At most 10 seconds.
+    if(const auto previous=qEnvironmentVariableIntValue("TOMACCO_RESTART_AFTER");previous>1) {
+        qunsetenv("TOMACCO_RESTART_AFTER");
+        for(int i=0;i<100 && processRuns(previous);++i) usleep(100000);
+    }
     // Without a display Qt aborts with a core dump. --version and --help need
     // none; anything else gets a sentence instead.
     if(qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM") && qEnvironmentVariableIsEmpty("DISPLAY") && qEnvironmentVariableIsEmpty("WAYLAND_DISPLAY")) {

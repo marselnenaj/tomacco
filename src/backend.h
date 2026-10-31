@@ -5,6 +5,8 @@
 #include <QTcpServer>
 #include <QUrl>
 #include <QVariantList>
+#include <QProcessEnvironment>
+#include <functional>
 
 class Backend final : public QObject {
     Q_OBJECT
@@ -30,6 +32,8 @@ class Backend final : public QObject {
     // Project folders opened before, newest first; folders that are gone are left out.
     Q_PROPERTY(QStringList recentProjects READ recentProjects NOTIFY recentProjectsChanged)
     Q_PROPERTY(QUrl sourceUrl READ sourceUrl CONSTANT)
+    // True when this desktop found no stored settings at all: Tomacco's very first start here.
+    Q_PROPERTY(bool firstStart READ firstStart CONSTANT)
 public:
     explicit Backend(QString initialUrl, QObject *parent=nullptr, bool autoProbe=true);
     QVariantList models() const { return m_models; }
@@ -104,8 +108,24 @@ public:
     // clicked. False when no notification service is reachable. An offscreen
     // run has no desktop to notify: it only emits notificationSent.
     Q_INVOKABLE bool notify(const QString &title,const QString &body,const QString &tag);
-    // Starts this program again from its path, for the new version an update installed there.
-    Q_INVOKABLE bool relaunch();
+    // Starts Tomacco again for the new version an update installed: through the
+    // installed launcher when this is an installed copy, otherwise this program,
+    // with its arguments and the given project and workspace. The new process
+    // waits until this one has ended (TOMACCO_RESTART_AFTER), so it gets the
+    // agent session.
+    Q_INVOKABLE bool relaunch(const QString &project={},const QString &workspace={});
+    // What relaunch starts, for a program at this path in this home directory.
+    static QString relaunchProgram(const QString &applicationPath,const QString &home);
+    // The arguments it passes: the original ones without a project, workspace,
+    // capture or smoke test, then the project and workspace given.
+    static QStringList relaunchArguments(const QStringList &original,const QString &project,const QString &workspace);
+    // Replaces how relaunch starts the program (the tests record it instead).
+    using Starter=std::function<bool(const QString &program,const QStringList &arguments,const QProcessEnvironment &environment)>;
+    void setStarter(Starter starter) { m_starter=std::move(starter); }
+    // The Highlights of the installed release notes when they are this
+    // version's, as Markdown; otherwise an empty string.
+    Q_INVOKABLE QString releaseHighlights(const QString &version) const;
+    bool firstStart() const { return m_firstStart; }
     Q_INVOKABLE void openScreenshots();
     Q_INVOKABLE void testResult(const QVariantMap &result);
     Q_INVOKABLE void reloadModels();
@@ -131,6 +151,8 @@ private:
     bool m_notificationsConnected=false;
     void probe(const QString &name, const QStringList &args, QString *destination);
     QSettings m_settings;
+    bool m_firstStart=false;
+    Starter m_starter;
     QVariantList m_models;
     QString m_xtool=QStringLiteral("@probe:checking"), m_swift=m_xtool, m_sdk=m_xtool;
     QString m_initial, m_root;

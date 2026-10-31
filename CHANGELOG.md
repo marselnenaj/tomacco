@@ -16,6 +16,9 @@ operations and their JSON results.
 - `desktop.open` replaces a desktop on the session that is not the installed version, such as the one
   that ran while an update was installed, instead of raising its window; the result names it as
   `replaced_version`. The desktop's `state` and `show` answers carry its `version`.
+- **Restart after an update.** **Restart now** starts the installed launcher with the same project, view and window
+  size, and the new desktop waits for the old one to end so it gets the agent session. The first start of a new
+  version shows a **What's new in X** sheet from the installed release notes, once.
 - **Update channel.** `updates.channel` in `settings.configure` is `stable` (the default) or `prerelease`;
   on `prerelease`, `update.check` and `update.apply` take the newest release including GitHub
   pre-releases. The **Updates** settings offer the choice, and the settings export carries it.

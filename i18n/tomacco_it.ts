@@ -3203,6 +3203,22 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Open Tomacco to see what&apos;s new and install it.</source>
         <translation>Apri Tomacco per vedere le novità e installarla.</translation>
     </message>
+    <message>
+        <source>Tomacco could not be started again. Close it and open it from the application menu.</source>
+        <translation>Non è stato possibile riavviare Tomacco. Chiudilo e aprilo dal menu delle applicazioni.</translation>
+    </message>
+    <message>
+        <source>What&apos;s new in %1</source>
+        <translation>Novità della versione %1</translation>
+    </message>
+    <message>
+        <source>Tomacco is now version %1. The release notes list what changed.</source>
+        <translation>Tomacco ora è alla versione %1. Le note di rilascio elencano le modifiche.</translation>
+    </message>
+    <message>
+        <source>On GitHub ↗</source>
+        <translation>Su GitHub ↗</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>

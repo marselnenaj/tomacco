@@ -165,6 +165,8 @@ private slots:
         qputenv("XDG_CACHE_HOME",directory.filePath("cache").toUtf8());
         QVERIFY(QDir().mkpath(directory.filePath("project")));
         QFile source(directory.filePath("project/pubspec.yaml"));QVERIFY(source.open(QIODevice::WriteOnly));source.write("name: tomacco_ui_test\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");source.close();
+        // This version has started here before: no sheet for a first start or a new version.
+        QSettings().setValue("app/lastVersion",QCoreApplication::applicationVersion());
         backend=std::make_unique<Backend>(QString());
         Backend::applyInterfaceFont();
         // The checks below read the English interface whatever the host's
@@ -2975,6 +2977,69 @@ for line in sys.stdin:
         }
         QVERIFY(QMetaObject::invokeMethod(dialog,"close"));QTRY_VERIFY(!dialog->property("visible").toBool());
         updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void restart_now_starts_the_installed_desktop_with_this_project_and_view() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *updates=object("updateModel");QVERIFY(updates);
+        auto *banner=item("updateBanner");QVERIFY(banner);
+        updates->setProperty("background",false);
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        QSettings().remove("updates");updates->setProperty("dismissed",QString());
+        // The re-exec is recorded, not run.
+        QString program;QStringList arguments;QProcessEnvironment environment;int starts=0;
+        backend->setStarter([&](const QString &p,const QStringList &a,const QProcessEnvironment &e){program=p;arguments=a;environment=e;++starts;return true;});
+        const auto cleanup=qScopeGuard([&]{backend->setStarter({});view->setProperty("quitting",false);updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);});
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showTab",Q_ARG(QVariant,"jobs")));
+        QTRY_COMPARE(workspace->property("section").toString(),QString("jobs"));
+        updates->setProperty("status",installedStatus("9.9.0"));
+        QTRY_VERIFY(banner->isVisible() && banner->width()>0);
+        const int before=quits;
+        clickItem("updateBannerRestart");
+        QTRY_COMPARE(starts,1);
+        QCOMPARE(program,Backend::relaunchProgram(QCoreApplication::applicationFilePath(),QDir::homePath()));
+        QCOMPARE(arguments.mid(arguments.indexOf("--project"),2),(QStringList{"--project",directory.filePath("project")}));
+        QCOMPARE(arguments.mid(arguments.indexOf("--workspace"),2),(QStringList{"--workspace","jobs"}));
+        QCOMPARE(environment.value("TOMACCO_RESTART_AFTER"),QString::number(QCoreApplication::applicationPid()));
+        // This desktop then ends, with its window's size kept for the new one.
+        QTRY_COMPARE(quits,before+1);
+        QVERIFY(QSettings().contains("window/width"));
+        // A start that fails keeps this desktop and says so.
+        view->setProperty("quitting",false);view->setProperty("notice",QString());
+        backend->setStarter([](const QString &,const QStringList &,const QProcessEnvironment &){return false;});
+        QVERIFY(QMetaObject::invokeMethod(updates,"restartRequested"));
+        QTRY_VERIFY(view->property("failed").toBool());
+        QCOMPARE(quits,before+1);
+        view->setProperty("notice",QString());view->setProperty("failed",false);
+        QVERIFY(QMetaObject::invokeMethod(workspace,"close"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void whats_new_shows_once_on_the_first_start_of_a_new_version() {
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *sheet=object("whatsNewSheet");QVERIFY(sheet);
+        QVERIFY(!sheet->property("visible").toBool());
+        // The same version again: nothing.
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets"));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());
+        // An older version started here before: the sheet, once.
+        QSettings().setValue("app/lastVersion","1.1.0");
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets"));
+        QTRY_VERIFY(sheet->property("visible").toBool());
+        QVERIFY(sheet->property("title").toString().contains(QCoreApplication::applicationVersion()));
+        QCOMPARE(QSettings().value("app/lastVersion").toString(),QCoreApplication::applicationVersion());
+        QVERIFY(QMetaObject::invokeMethod(sheet,"close"));QTRY_VERIFY(!sheet->property("visible").toBool());
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets"));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());
+        // Going back to an older version (a rollback) shows nothing.
+        QSettings().setValue("app/lastVersion","99.0.0");
+        QVERIFY(QMetaObject::invokeMethod(view,"startupSheets"));QTest::qWait(50);
+        QVERIFY(!sheet->property("visible").toBool());
+        QVariant newer;
+        QVERIFY(QMetaObject::invokeMethod(view,"newerVersion",Q_RETURN_ARG(QVariant,newer),Q_ARG(QVariant,"1.2.0"),Q_ARG(QVariant,"1.2.0-rc.1")));QVERIFY(newer.toBool());
+        QVERIFY(QMetaObject::invokeMethod(view,"newerVersion",Q_RETURN_ARG(QVariant,newer),Q_ARG(QVariant,"1.10.0"),Q_ARG(QVariant,"1.9.3")));QVERIFY(newer.toBool());
+        QVERIFY(QMetaObject::invokeMethod(view,"newerVersion",Q_RETURN_ARG(QVariant,newer),Q_ARG(QVariant,"1.1.0"),Q_ARG(QVariant,"1.1.0")));QVERIFY(!newer.toBool());
+        QSettings().setValue("app/lastVersion",QCoreApplication::applicationVersion());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void the_session_names_its_version_and_quits_for_another_one() {
