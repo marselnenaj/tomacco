@@ -2885,6 +2885,65 @@ for line in sys.stdin:
         workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    // What update.status says when a newer release can be installed.
+    static QVariantMap updateStatus(const QString &latest) {
+        return {{"mode","notify"},{"state","update_available"},{"update_available",true},{"latest",latest},
+            {"current",QCoreApplication::applicationVersion()},{"can_apply",true},{"notes_url","https://github.com/marselnenaj/tomacco/releases/tag/v"+latest},
+            {"install",QVariantMap{{"kind","user_install"}}}};
+    }
+    void clickItem(const char *name) {
+        auto *target=item(name);QVERIFY2(target,name);QTRY_VERIFY2(target->isVisible() && target->width()>0,name);
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,target->mapToScene(QPointF(target->width()/2,target->height()/2)).toPoint());
+    }
+    void update_banner_offers_a_new_version_once_and_later_puts_it_away() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *updates=object("updateModel");QVERIFY(updates);
+        auto *banner=item("updateBanner");QVERIFY(banner);
+        // The model's own checks and their answers would replace the status set here.
+        updates->setProperty("background",false);
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        QSettings().remove("updates");updates->setProperty("dismissed",QString());
+        QSignalSpy sent(backend.get(),&Backend::notificationSent);
+        QSignalSpy asked(updates,SIGNAL(asked(QString,QVariant)));
+        // Found while the window is in the background: the banner and one desktop notification.
+        view->setProperty("appActive",false);
+        updates->setProperty("status",updateStatus("9.0.0"));
+        QTRY_VERIFY(banner->isVisible());
+        // Laid out below the title bar, across the window.
+        QTRY_VERIFY(banner->width()==view->property("width").toDouble() && banner->height()>0 && banner->mapToScene(QPointF(0,0)).y()>0);
+        QVERIFY(object("updateBannerText")->property("text").toString().contains("9.0.0"));
+        QVERIFY(item("updateBannerNotes")->isVisible());
+        QVERIFY(object("statusUpdate")->property("visible").toBool());
+        QCOMPARE(sent.size(),1);QCOMPARE(sent.at(0).at(2).toString(),QString("update:9.0.0"));
+        // The same version again sends nothing more.
+        updates->setProperty("status",QVariantMap{});QTRY_VERIFY(!banner->isVisible());
+        updates->setProperty("status",updateStatus("9.0.0"));QTRY_VERIFY(banner->isVisible() && banner->width()>0);
+        QCOMPARE(sent.size(),1);
+        // Install asks tomaccoctl for update.apply, as the user's request.
+        view->setProperty("appActive",true);
+        const auto applied=[&]{for(const auto &call:asked)if(call.at(0).toString()=="update.apply")return mapOf(call.at(1));return QVariantMap{};};
+        asked.clear();
+        clickItem("updateBannerInstall");
+        QTRY_VERIFY(!applied().isEmpty());
+        QVERIFY(applied().value("manual").toBool());
+        // The forced-off control program refuses; its answer refreshes the status.
+        QTRY_VERIFY_WITH_TIMEOUT(!updates->property("working").toBool(),patient(15000));
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        // Later puts the banner away for this version only; the status line keeps its word.
+        updates->setProperty("status",updateStatus("9.0.0"));QTRY_VERIFY(banner->isVisible() && banner->width()>0);
+        clickItem("updateBannerLater");
+        QTRY_VERIFY(!banner->isVisible());
+        QCOMPARE(QSettings().value("updates/dismissedVersion").toString(),QString("9.0.0"));
+        QVERIFY(object("statusUpdate")->property("visible").toBool());
+        updates->setProperty("status",updateStatus("9.1.0"));
+        QTRY_VERIFY(banner->isVisible());
+        // Off: no banner, whatever a manual check found.
+        auto off=updateStatus("9.2.0");off["mode"]="off";updates->setProperty("status",off);
+        QTRY_VERIFY(!banner->isVisible());
+        updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void touches_and_coordinates_show_on_the_live_device() {
         // Switched on, the device view marks a press and names the pointer's device pixel and
         // fraction; the press still reaches the device. Off, nothing is drawn.

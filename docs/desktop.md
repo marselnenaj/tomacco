@@ -51,8 +51,13 @@ The **Updates** part of **Settings** (Ctrl+,) chooses how Tomacco treats new rel
 | Choice | What it does |
 | --- | --- |
 | **Off** | No request at all. **Check now** still asks GitHub, once, when you press it. |
-| **Notify** (default) | Checks once a day while the desktop runs, and shows the new version in the status line. |
+| **Notify** (default) | Checks once a day while the desktop runs, and shows the new version in a band at the top of the window and in the status line. |
 | **Automatic** | Also installs it by itself while no job, device session or virtual iOS device runs. A version that failed or that you rolled back is not installed by itself again. |
+
+The band (*Tomacco X ist verfügbar*) has **What's new**, **Install** and **Later** (*Später*). Later
+hides the band for that version; the status line keeps its word, and a newer version brings the band
+back. When a new version is found while no Tomacco window is active, the desktop also sends one
+notification for that version (over D-Bus, as for [jobs](#notifications)); clicking it brings the window back.
 
 **Channel** (*Kanal*) chooses which releases count: **Stable** (*Stabil*, the default) only
 finished releases, **Pre-release** (*Vorabversion*) also those GitHub marks as pre-releases. Changing

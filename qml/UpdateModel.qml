@@ -5,12 +5,15 @@ import QtQuick
 // in the background, so that nothing here can delay the start.
 Item {
     id: model
+    objectName: "updateModel"
     visible: false
     property var status: ({})
     property bool checking: false
     property bool working: false
     property string error: ""
     signal restartRequested()
+    // Every request this model makes, for whoever wants to watch them (the tests do).
+    signal asked(string operation,var arguments)
     property var requests: ({})
     readonly property string mode: status.mode || "notify"
     // stable: GitHub's latest release; prerelease: pre-releases too.
@@ -24,10 +27,21 @@ Item {
     readonly property string latest: status.latest || ""
     // The control program is already the new version while this desktop is not.
     readonly property bool restartNeeded: !!status.install && status.install.kind==="user_install" && !!status.current && !!Qt.application.version && status.current!==Qt.application.version
+    // The version whose banner Later put away; a newer one shows it again.
+    property string dismissed: String(Studio.setting("updates/dismissedVersion",""))
+    readonly property string bannerKind: !updateAvailable || restartNeeded || latest===dismissed ? ""
+        : installing ? "installing"
+        : mode!=="off" ? "available" : ""
+    function later() {
+        dismissed=latest
+        Studio.saveSetting("updates/dismissedVersion",dismissed)
+    }
     readonly property string notice: restartNeeded?qsTr("Updated · restart"):installing?qsTr("Installing update"):updateAvailable && mode!=="off"?qsTr("Update %1").arg(latest):""
 
     function ask(operation,arguments,quiet,then) {
-        let id=Agent.request(operation,arguments||{});requests[id]={quiet:!!quiet,then:then||""};return id
+        let id=Agent.request(operation,arguments||{});requests[id]={quiet:!!quiet,then:then||""}
+        asked(operation,arguments||{})
+        return id
     }
     function refresh() {ask("update.status",{},true)}
     function scheduledCheck() {ask("update.check",{},true)}
@@ -69,9 +83,11 @@ Item {
         return checkText()
     }
 
-    Timer {interval:5000;running:true;onTriggered:model.scheduledCheck()}
+    // Whether the model checks by itself; the tests turn it off to set the status themselves.
+    property bool background: true
+    Timer {interval:5000;running:model.background;onTriggered:model.scheduledCheck()}
     // tomaccoctl decides whether a day has passed; asking costs no request before that.
-    Timer {interval:3600000;running:true;repeat:true;onTriggered:model.scheduledCheck()}
+    Timer {interval:3600000;running:model.background;repeat:true;onTriggered:model.scheduledCheck()}
     Timer {interval:2000;running:model.installing;repeat:true;onTriggered:model.refresh()}
     Connections {
         target:Agent

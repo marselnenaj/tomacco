@@ -98,7 +98,15 @@ Rectangle {
     property bool quitting: false
     // Bounds the wait for the session to stop before the app ends.
     Timer {id:quitTimer;interval:2500;onTriggered:view.quitApp()}
-    UpdateModel {id:updates;onRestartRequested:view.restartForUpdate()}
+    UpdateModel {id:updates;onRestartRequested:view.restartForUpdate();onBannerKindChanged:view.noteUpdate()}
+    // A new version found while no Tomacco window is active is also reported on
+    // the desktop, once per version.
+    function noteUpdate() {
+        if(updates.bannerKind!=="available" || appActive)return
+        if(String(Studio.setting("updates/notifiedVersion",""))===updates.latest)return
+        Studio.saveSetting("updates/notifiedVersion",updates.latest)
+        Studio.notify(qsTr("Tomacco %1 is available").arg(updates.latest),qsTr("Open Tomacco to see what's new and install it."),"update:"+updates.latest)
+    }
     // Unsaved edits stay and are shown; the new version starts only once they are dealt with.
     function restartForUpdate() {
         if(workspace.hasUnsaved()){quitApp();return}
@@ -248,6 +256,7 @@ Rectangle {
     Connections {
         target:Studio
         function onNotificationActivated(tag) {
+            if(tag.indexOf("update:")===0){view.showMainWindow();return}
             const job=view.workspace.jobs.find(x=>x.id===tag)
             view.showMainWindow()
             if(job)view.workspace.selectJob(job)
@@ -588,6 +597,7 @@ Rectangle {
             }
             Rectangle {anchors.bottom:parent.bottom;width:parent.width;height:1;color:Theme.subtle}
         }
+        UpdateBanner {Layout.fillWidth:true;Layout.preferredHeight:implicitHeight;model:updates}
         RowLayout {
             Layout.fillWidth:true;Layout.fillHeight:true;spacing:0
             // The rail: icons in a narrow window, icons, names and keys in a wide one.

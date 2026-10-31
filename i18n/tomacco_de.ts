@@ -3195,6 +3195,14 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
             <numerusform>%n ignoriert</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Tomacco %1 is available</source>
+        <translation>Tomacco %1 ist verfügbar</translation>
+    </message>
+    <message>
+        <source>Open Tomacco to see what&apos;s new and install it.</source>
+        <translation>Öffne Tomacco, um zu sehen, was neu ist, und es zu installieren.</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4957,6 +4965,37 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     <message>
         <source>Recent</source>
         <translation>Zuletzt</translation>
+    </message>
+</context>
+<context>
+    <name>UpdateBanner</name>
+    <message>
+        <source>Updated to %1 · Restart to use it</source>
+        <translation>Aktualisiert auf %1 · Starte neu, um sie zu verwenden</translation>
+    </message>
+    <message>
+        <source>Installing Tomacco %1…</source>
+        <translation>Tomacco %1 wird installiert…</translation>
+    </message>
+    <message>
+        <source>Tomacco %1 is available</source>
+        <translation>Tomacco %1 ist verfügbar</translation>
+    </message>
+    <message>
+        <source>What&apos;s new ↗</source>
+        <translation>Was ist neu ↗</translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <translation>Installieren</translation>
+    </message>
+    <message>
+        <source>Restart now</source>
+        <translation>Jetzt neu starten</translation>
+    </message>
+    <message>
+        <source>Later</source>
+        <translation>Später</translation>
     </message>
 </context>
 </TS>
