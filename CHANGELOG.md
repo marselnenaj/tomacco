@@ -19,6 +19,8 @@ operations and their JSON results.
 
 ### Changed
 
+- docs/building.md says why there is no Flatpak or AppImage: Tomacco runs adb, the emulator, Gradle, xtool, usbmuxd and QEMU
+  on the host, and agents call `tomaccoctl` by a fixed path.
 - `install.py` journals and flushes once per batch of up to 512 files instead of once per file: the portable package
   (2184 files) installs in 0.7 s instead of 15 s on the development host, and uninstalls and rolls back as fast. Backups are
   hard links where possible. An uninstall killed halfway now finishes when run again; before, the files whose removal was

@@ -137,6 +137,22 @@ batch of files: installing the 1.1.0 portable package (2184 files) into a scratc
 host (ext4 on NVMe), and 4.2 to 13 s instead of 27 to 84 s in a `debian:12` container on the same host, with the host busy. Nobody has
 run it on a desktop of those distributions yet.
 
+**Why there is no Flatpak or AppImage.** Both were considered for the distributions the regular package does not fit; the
+portable package serves them instead. Tomacco's work happens in programs on the host: `tomaccoctl` runs `adb`, the Android emulator
+(which needs `/dev/kvm`), Gradle and a JDK, `xtool` and Swift, `usbmuxd` for iPhones, and QEMU-based engines it builds into the
+checkout's `.tooling`. Coding agents run `tomaccoctl` from their own processes, by a path `tomaccoctl setup` writes into their
+settings files in the home directory.
+
+- *Flatpak.* Inside the sandbox none of those programs exists. Reaching them takes `flatpak-spawn --host` for every command, which needs
+  the `org.freedesktop.Flatpak` bus name and removes the sandbox anyway, plus device access for KVM and USB and the whole home for
+  projects and agent settings. Agents would also have to call `flatpak run io.github.marselnenaj.tomacco` instead of `tomaccoctl`,
+  and Flatpak's own updates would replace the signed updates `tomaccoctl update` makes.
+- *AppImage.* It has no sandbox, so the host tools work, but it is one file mounted at a new path on every start: the path agents keep
+  for `tomaccoctl` would point into a mount that is gone, so the programs would still have to be copied out. It also needs FUSE on
+  the host. Copying them out with a menu entry, uninstall and rollback is what the portable package and `install.py` already do.
+
+So there is no prototype of either. These reasons come from what Tomacco runs; neither format was built or tried.
+
 `install.py` and `cmake --install` install the same files, and the same documents into `share/doc/tomacco`: the guides and legal texts, in one flat directory, with
 links adjusted and `SOURCE.md` naming the version and commit. The list is `DOCUMENTS` in `install.py`. Links to anything else point at the release's copy on GitHub.
 
