@@ -6,6 +6,14 @@ operations and their JSON results.
 
 ## Unreleased
 
+### Added
+
+- `doctor` names the `apt-get` or `dnf` command that installs the system libraries the desktop is missing, on Debian, Ubuntu
+  (with the t64 package names of 24.04), Fedora and their derivatives, as `desktop.install`; the `desktop` next step and
+  `tomaccoctl setup` show it. For the portable package it also checks the X11 and Wayland plugins and WebEngine's helper,
+  and `desktop.portable` says which package it is. Run in debian:12, ubuntu:22.04, ubuntu:24.04 and fedora:44 containers,
+  the one command made the 1.1.0 portable desktop loadable.
+
 ### Changed
 
 - `install.py` journals and flushes once per batch of up to 512 files instead of once per file: the portable package

@@ -95,3 +95,22 @@ class Rules(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HostPackageTests(unittest.TestCase):
+    """doctor's table of system packages (native/desktop.rs) covers the libraries this build leaves to the host."""
+
+    def test_every_library_in_the_table_is_one_the_package_may_need_from_the_host(self):
+        import re as regex
+        from pathlib import Path as P
+        import build_portable
+        table = regex.findall(r'\("([^"]+\.so[^"]*)", "([^"]+)", "([^"]+)"\)',
+                              (P(build_portable.ROOT) / "native/desktop.rs").read_text())
+        self.assertGreater(len(table), 50)
+        for library, debian, fedora in table:
+            self.assertRegex(library, build_portable.SYSTEM, library)
+        # Each package doctor names is one verify installs too, or the base system or a dependency of one.
+        base_apt = {"libc6", "libgcc-s1", "libstdc++6", "zlib1g", "libglx0", "libnspr4"}
+        base_dnf = {"glibc", "libgcc", "libstdc++", "zlib-ng-compat", "nss-util", "libbrotli"}
+        self.assertLessEqual({row[1] for row in table} - base_apt, set(build_portable.APT_PACKAGES))
+        self.assertLessEqual({row[2] for row in table} - base_dnf, set(build_portable.DNF_PACKAGES))
