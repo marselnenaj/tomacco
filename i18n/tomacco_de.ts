@@ -3675,6 +3675,14 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Native Tests ausführen</translation>
     </message>
     <message>
+        <source>Set up Android text input</source>
+        <translation>Android-Texteingabe einrichten</translation>
+    </message>
+    <message>
+        <source>Check Android text input</source>
+        <translation>Android-Texteingabe prüfen</translation>
+    </message>
+    <message>
         <source>Clean up old jobs and reports</source>
         <translation>Alte Jobs und Berichte aufräumen</translation>
     </message>

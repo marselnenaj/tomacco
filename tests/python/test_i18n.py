@@ -94,7 +94,11 @@ class TranslationTests(unittest.TestCase):
         operations = json.loads((ROOT / "assets/operations.json").read_text(encoding="utf-8"))
         table = dict(re.findall(r'^\s*"([^"]+)": QT_TRANSLATE_NOOP\("Operations", (' + LITERAL + r")\),?$",
                                 (ROOT / "qml/OperationTitles.js").read_text(encoding="utf-8"), re.M))
-        titled = {op["name"]: op["title"] for op in operations if "title" in op}
+        # Every operation has a title and a description; the desktop lists them all.
+        for op in operations:
+            self.assertTrue(op.get("title", "").strip(), f"{op['name']} has no title")
+            self.assertTrue(op.get("description", "").strip(), f"{op['name']} has no description")
+        titled = {op["name"]: op["title"] for op in operations}
         self.assertEqual({name: unquote(source) for name, source in table.items()}, titled)
         for title in titled.values():
             self.assertIsNone(re.search(r"[äöüÄÖÜß]", title), title)

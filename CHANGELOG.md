@@ -129,6 +129,8 @@ operations and their JSON results.
   `emulator_refused`.
 - Every network latency preset sends its millisecond range; the emulator's own `gprs`
   name applied the UMTS range.
+- `testing.setup` and `testing.instrumentation` have titles, shown translated in the desktop; a test now requires a title,
+  a description and a German title for every operation.
 - The documentation said Qt 6.9 for running the release on other distributions. The
   release desktop needs Qt 6.12, FFmpeg 9 and glibc 2.39; Qt 6.9 is enough to build
   from source.
