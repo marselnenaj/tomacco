@@ -3653,6 +3653,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Bildschirmfoto des virtuellen iOS-Geräts</translation>
     </message>
     <message>
+        <source>Apps of virtual iOS device</source>
+        <translation>Apps des virtuellen iOS-Geräts</translation>
+    </message>
+    <message>
         <source>Record virtual iOS device screen</source>
         <translation>Bildschirm des virtuellen iOS-Geräts aufnehmen</translation>
     </message>

@@ -58,3 +58,39 @@ class VirtualIphoneStatusRecordTests(Isolated):
         status = dispatch("ios.virtual.configure", {"directory": str(before)})
         self.assertEqual((status["phases"], status["phase_started"], status["phase_elapsed_seconds"]), ([], None, None))
 
+
+
+class VirtualIphoneAppsTests(Isolated):
+    """ios.virtual.apps joins the profile's list, each bundle's Info.plist on
+    the host and the run's installed record; no guest is asked."""
+    RESEARCH = VirtualIphoneStatusRecordTests.RESEARCH
+    profile = VirtualIphoneStatusRecordTests.profile
+
+    def test_versions_installed_state_and_the_app_the_start_opens(self):
+        import plistlib
+        bundle = self.root / "Sample.app"
+        bundle.mkdir()
+        (bundle / "Info.plist").write_bytes(plistlib.dumps({
+            "CFBundleIdentifier": "io.example.sample", "CFBundleShortVersionString": "1.3",
+            "CFBundleVersion": "9", "MinimumOSVersion": "17.0", "CFBundleExecutable": "Sample"}))
+        directory = self.profile("apps", {"applications": {"io.example.sample": "00" * 20,
+                                                           "io.example.removed": "11" * 20}})
+        profile = json.loads((directory / "profile.json").read_text())
+        profile["applications"] = [
+            {"bundle": str(bundle), "bundle_id": "io.example.sample", "name": "Sample.app", "display_name": "Sample"},
+            {"bundle": str(self.root / "Gone.app"), "bundle_id": "io.example.gone", "name": "Gone.app",
+             "display_name": "Gone"}]
+        profile["application"] = "io.example.sample"
+        (directory / "profile.json").write_text(json.dumps(profile))
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        reply = dispatch("ios.virtual.apps")
+        rows = {row["bundle_id"]: row for row in reply["applications"]}
+        self.assertEqual(list(rows), [self.RESEARCH, "io.example.sample", "io.example.gone", "io.example.removed"])
+        sample = rows["io.example.sample"]
+        self.assertEqual((sample["version"], sample["build"], sample["minimum_os"]), ("1.3", "9", "17.0"))
+        self.assertTrue(sample["installed"])
+        self.assertTrue(sample["opens_at_start"])
+        self.assertFalse(rows["io.example.gone"]["bundle_readable"])
+        self.assertIn("does not exist", rows["io.example.gone"]["bundle_error"])
+        self.assertFalse(rows["io.example.removed"]["listed"])
+        self.assertFalse(reply["guest_running"])

@@ -360,6 +360,117 @@ fn installed_applications(state: &Value) -> Value {
     }
 }
 
+/// What each listed bundle's Info.plist says now (tools/ios_ipa_inspect.py
+/// `info`), by host path; empty when there is nothing to read or the reader
+/// cannot run, so every bundle then reads as unknown rather than absent.
+fn bundle_infos(bundles: &[String]) -> std::collections::HashMap<String, Value> {
+    let mut found = std::collections::HashMap::new();
+    if bundles.is_empty() {
+        return found;
+    }
+    let reply = (|| -> Result {
+        let mut argv = vec![
+            toolchain::find("python3")?,
+            "-I".into(),
+            research::script("ios_ipa_inspect.py")?
+                .to_string_lossy()
+                .into_owned(),
+            "info".into(),
+        ];
+        argv.extend(bundles.iter().cloned());
+        let done = toolchain::run(&argv, 60, None, false)?;
+        Ok(serde_json::from_str(s(&done, "stdout").trim()).unwrap_or(Value::Null))
+    })()
+    .unwrap_or(Value::Null);
+    for row in reply["applications"].as_array().into_iter().flatten() {
+        found.insert(s(row, "path").to_string(), row.clone());
+    }
+    found
+}
+
+/// One row per app the phone knows of: the owned diagnostic, each app the
+/// profile lists (with the version its bundle on the host has now) and any
+/// app installed on the current run's volume that the profile no longer
+/// lists. `installed` is the run's record (a start's install or a hot
+/// deploy); it names the cdhash installed, not whether the bundle changed
+/// since, which the next start finds out itself.
+fn application_rows(
+    profile: &Value,
+    state: &Value,
+    infos: &std::collections::HashMap<String, Value>,
+) -> Vec<Value> {
+    let installed = installed_applications(state);
+    let opens = profile["application"].as_str().unwrap_or_default();
+    let mut rows = vec![
+        json!({"bundle_id":RESEARCH_APPLICATION,"owned_diagnostic":true,
+        "listed":false,"bundle":null,"name":null,"display_name":null,"version":null,"build":null,
+        "minimum_os":null,"bundle_readable":null,"bundle_error":null,
+        // Every guest-tools build carries it; the run's record does not list it.
+        "installed":null,"installed_cdhash":null,"opens_at_start":opens == RESEARCH_APPLICATION}),
+    ];
+    let listed = profile["applications"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    for row in &listed {
+        let id = s(row, "bundle_id");
+        let info = infos.get(s(row, "bundle"));
+        let field = |key: &str| {
+            info.filter(|info| info["ok"] == true)
+                .map_or(Value::Null, |info| info[key].clone())
+        };
+        let readable = info.map_or(Value::Null, |info| json!(info["ok"] == true));
+        let error = info
+            .filter(|info| info["ok"] != true)
+            .map_or(Value::Null, |info| info["error"].clone());
+        // The bundle on the host may now carry another identifier than the
+        // one the profile recorded when it was added.
+        let changed_id = field("bundle_id")
+            .as_str()
+            .is_some_and(|now| !id.is_empty() && now != id);
+        rows.push(json!({"bundle_id":row["bundle_id"],"owned_diagnostic":false,"listed":true,
+            "bundle":row["bundle"],"name":row["name"],"display_name":row["display_name"],
+            "version":field("version"),"build":field("build"),"minimum_os":field("minimum_os"),
+            "bundle_readable":readable,"bundle_error":error,
+            "bundle_id_changed":changed_id,
+            "entitlements":row.get("entitlements").cloned().unwrap_or(Value::Null),
+            "installed":installed.get(id).is_some(),"installed_cdhash":installed.get(id).cloned().unwrap_or(Value::Null),
+            "opens_at_start":!id.is_empty() && opens == id}));
+    }
+    if let Value::Object(map) = &installed {
+        for (id, hash) in map {
+            if listed.iter().any(|row| row["bundle_id"] == *id) {
+                continue;
+            }
+            rows.push(
+                json!({"bundle_id":id,"owned_diagnostic":false,"listed":false,
+                "bundle":null,"name":null,"display_name":null,"version":null,"build":null,
+                "minimum_os":null,"bundle_readable":null,"bundle_error":null,
+                "installed":true,"installed_cdhash":hash,"opens_at_start":opens == id}),
+            );
+        }
+    }
+    rows
+}
+
+/// The apps of the configured phone in one list: what the profile lists,
+/// each bundle's version on the host, and what the current run has
+/// installed. Reads the profile, the state and the bundles' Info.plist only.
+pub fn apps(_a: &Value) -> Result {
+    let directory = directory()?;
+    let (profile, state) = records(&directory)?;
+    let bundles: Vec<String> = applications(&profile)?
+        .iter()
+        .map(|row| s(row, "bundle").to_string())
+        .collect();
+    let rows = application_rows(&profile, &state, &bundle_infos(&bundles));
+    Ok(
+        json!({"directory":directory,"run":state["run"],"guest_running":guest_is_running(&state),
+        "application":profile["application"],"applications":rows,
+        "applications_error":state.get("applications_error").filter(|v| v.is_string()).cloned().unwrap_or(Value::Null)}),
+    )
+}
+
 /// The disks a start copies from its base, in the order it copies them
 /// (`prepare` in tools/prepare_ios_guest_tools.py).
 const DISKS: [&str; 3] = ["system.raw", "auxiliary.raw", "sep.raw"];
@@ -1172,6 +1283,77 @@ mod status_record_tests {
             installed_applications(&json!({"applications":["io.example.first"]})),
             json!({})
         );
+    }
+}
+
+#[cfg(test)]
+mod application_rows_tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn listed_installed_and_orphaned_apps_are_one_list() {
+        let profile = json!({"application":"dev.example.Two","applications":[
+            {"bundle":"/apps/One.app","bundle_id":"dev.example.One","name":"One.app","display_name":"One"},
+            {"bundle":"/apps/Two.app","bundle_id":"dev.example.Two","name":"Two.app","display_name":"Two",
+             "entitlements":"/apps/two.plist"},
+            {"bundle":"/apps/Gone.app","bundle_id":"dev.example.Gone","name":"Gone.app","display_name":"Gone"}]});
+        let state = json!({"applications":{"dev.example.One":"aa".repeat(20),
+            "dev.example.Removed":"bb".repeat(20)}});
+        let mut infos = HashMap::new();
+        infos.insert(
+            "/apps/One.app".to_string(),
+            json!({"path":"/apps/One.app","ok":true,"bundle_id":"dev.example.One",
+                "version":"1.2","build":"7","minimum_os":"17.0"}),
+        );
+        infos.insert(
+            "/apps/Two.app".to_string(),
+            json!({"path":"/apps/Two.app","ok":true,"bundle_id":"dev.example.Renamed",
+                "version":"2.0","build":"1","minimum_os":null}),
+        );
+        infos.insert(
+            "/apps/Gone.app".to_string(),
+            json!({"path":"/apps/Gone.app","ok":false,"error":"/apps/Gone.app does not exist"}),
+        );
+        let rows = application_rows(&profile, &state, &infos);
+        assert_eq!(rows.len(), 5);
+        assert_eq!(rows[0]["bundle_id"], RESEARCH_APPLICATION);
+        assert_eq!(rows[0]["owned_diagnostic"], true);
+        assert_eq!(rows[0]["opens_at_start"], false);
+        let one = &rows[1];
+        assert_eq!(
+            (&one["version"], &one["build"], &one["minimum_os"]),
+            (&json!("1.2"), &json!("7"), &json!("17.0"))
+        );
+        assert_eq!(one["installed"], true);
+        assert_eq!(one["installed_cdhash"], "aa".repeat(20));
+        assert_eq!(one["bundle_readable"], true);
+        assert_eq!(one["bundle_id_changed"], false);
+        let two = &rows[2];
+        assert_eq!(two["installed"], false);
+        assert_eq!(two["opens_at_start"], true);
+        assert_eq!(two["bundle_id_changed"], true);
+        assert_eq!(two["entitlements"], "/apps/two.plist");
+        let gone = &rows[3];
+        assert_eq!(gone["bundle_readable"], false);
+        assert_eq!(gone["bundle_error"], "/apps/Gone.app does not exist");
+        assert_eq!(gone["version"], Value::Null);
+        let removed = &rows[4];
+        assert_eq!(removed["bundle_id"], "dev.example.Removed");
+        assert_eq!(removed["listed"], false);
+        assert_eq!(removed["installed"], true);
+    }
+
+    #[test]
+    fn a_bundle_the_reader_did_not_answer_for_is_unknown_not_absent() {
+        let profile = json!({"application":RESEARCH_APPLICATION,"applications":[
+            {"bundle":"/apps/One.app","bundle_id":"dev.example.One"}]});
+        let rows = application_rows(&profile, &json!({}), &HashMap::new());
+        assert_eq!(rows[0]["opens_at_start"], true);
+        assert_eq!(rows[1]["bundle_readable"], Value::Null);
+        assert_eq!(rows[1]["version"], Value::Null);
+        assert_eq!(rows[1]["installed"], false);
+        assert!(bundle_infos(&[]).is_empty());
     }
 }
 

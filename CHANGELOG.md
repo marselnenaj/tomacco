@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 174 operations.
+`tomaccoctl` now has one typed API of 175 operations.
 
 ### Added
 
@@ -38,6 +38,9 @@ operations and their JSON results.
   - `ios.virtual.status` reports phase times, copy progress and whether the disk has
     room for the next start.
   - None of these four has been run on a live phone yet.
+  - `ios.virtual.apps` lists the phone's apps in one place: each listed app's version from
+    its bundle on the host, whether the current run has it installed, the one the start
+    opens, and installed apps the profile no longer lists. Unit-tested only.
 - **Desktop.**
   - Drop an `.apk`, `.ipa` or `.app` on the device view to install it, or drop a
     project folder on the window to open it.

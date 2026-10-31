@@ -241,7 +241,19 @@ Every refusal names the file and the reason. The full sequence for an agent, wit
 [agent guide](../agents.md#deploying-an-app-to-the-virtual-ios-device).
 
 To check a result, read `application`, `application_launch_accepted`, `display_visible` and `installed_applications` in
-`ios.virtual.status`. The bundle's own `crash_reports` are described in [troubleshooting](troubleshooting.md#an-app-does-not-open).
+`ios.virtual.status`.
+
+`ios.virtual.apps` puts the apps in one list, without asking the guest:
+
+```sh
+tomaccoctl call ios.virtual.apps '{}'
+```
+
+Each row has the `bundle_id`, the `version`, `build` and `minimum_os` that the bundle on the host has now, `installed`
+(the current run's record of what a start or `ios.virtual.deploy` installed) and `opens_at_start`. A bundle that is gone
+has `bundle_readable:false` and the reason. An app the run installed but the profile no longer lists appears with
+`listed:false`. `installed` does not say whether you rebuilt the bundle since; the next start checks that itself. The
+list has unit tests only. The bundle's own `crash_reports` are described in [troubleshooting](troubleshooting.md#an-app-does-not-open).
 
 ## Small things the start does for you
 
