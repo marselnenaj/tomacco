@@ -25,6 +25,14 @@ stdio server: no network port and no token. The installer never changes client s
 Any MCP stdio client gets the same tools. The resources `tomacco://catalog`, `tomacco://jobs`,
 `tomacco://workspaces`, `tomacco://debug` and `tomacco://runtimes` expose profiles and recent work.
 
+The server also offers three prompts, short recipes a client can show as commands:
+
+| Prompt | Arguments | What it asks the agent to do |
+| --- | --- | --- |
+| `setup` | none | Call `doctor` and work through `next_steps` in order, asking before each step marked `ask_first`. |
+| `run-android-app` | `path` | Inspect the project, find or start an Android device, `project.run` it, wait for the job and capture the screen. |
+| `run-virtual-iphone` | `path` | Check the virtual iOS device, find or build the xtool app, deploy it to a running phone or configure and start one, then look at the screen. |
+
 - MCP requests can run at the same time.
 - `notifications/cancelled` stops that request. Cancelling `job.wait` leaves its job running; use
   `job.cancel` to cancel a build and its descendants.
