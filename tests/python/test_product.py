@@ -856,6 +856,42 @@ class AndroidControlTests(Isolated):
         with self.assertRaises(StudioError):
             dispatch("android.settings", {"device": "emulator-5554", "font_scale": 3})
 
+    def test_emulator_snapshots_battery_network_and_location_go_through_the_console(self):
+        self.replies(**{"avd snapshot list": "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001\nOK\n",
+                        "power display": "AC: offline\nstatus: Discharging\nhealth: Good\npresent: true\ncapacity: 15\nOK\n",
+                        "network status": "Current network status:\n  minimum latency:  150 ms\n  maximum latency:  550 ms\nOK\n",
+                        "emu": "OK\n"})
+        emulator = lambda **a: dispatch("android.emulator", {"device": "emulator-5554", **a})
+        self.assertEqual(emulator(action="snapshot-list")["snapshots"], ["before-login"])
+        emulator(action="snapshot-save", name="before-login")
+        emulator(action="snapshot-load", name="before-login")
+        emulator(action="snapshot-delete", name="before-login")
+        battery = emulator(action="battery", battery_level=15, charging=False)
+        self.assertEqual(battery["battery"]["capacity"], "15")
+        network = emulator(action="network", network_speed="edge", network_delay="gprs")
+        self.assertEqual(network["network"]["minimum_latency"], "150 ms")
+        emulator(action="location", longitude=16.37, latitude=48.21)
+        consoles = [call[1:] for call in self.calls() if call[:1] == ["emu"]]
+        self.assertEqual(consoles, [["avd", "snapshot", "list"], ["avd", "snapshot", "save", "before-login"],
+                                    ["avd", "snapshot", "load", "before-login"], ["avd", "snapshot", "del", "before-login"],
+                                    ["power", "capacity", "15"], ["power", "ac", "off"], ["power", "status", "discharging"], ["power", "display"],
+                                    ["network", "speed", "edge"], ["network", "delay", "gprs"], ["network", "status"],
+                                    ["geo", "fix", "16.37", "48.21"]])
+        for arguments in ({"action": "battery", "battery_level": 101}, {"action": "network", "network_speed": "warp"},
+                          {"action": "snapshot-save", "name": "../x"}):
+            with self.assertRaises(StudioError): emulator(**arguments)
+        with self.assertRaises(StudioError) as phone:
+            dispatch("android.emulator", {"device": "R5CT1234", "action": "snapshot-list"})
+        self.assertEqual(phone.exception.code, "not_emulator")
+
+    def test_a_refused_console_command_is_an_error_not_a_success(self):
+        # adb emu exits with success when the console answers KO.
+        self.replies(**{"avd snapshot load": 'KO: Snapshot load is disabled because "-read-only" was specified\n'})
+        with self.assertRaises(StudioError) as refused:
+            dispatch("android.emulator", {"device": "emulator-5554", "action": "snapshot-load", "name": "missing"})
+        self.assertEqual(refused.exception.code, "emulator_refused")
+        self.assertIn("-read-only", str(refused.exception))
+
 class ProtocolTests(Isolated):
     def test_cli_schema_errors_and_file_arguments(self):
         schema = json.loads(subprocess.check_output([binary(), "schema"]))["result"]

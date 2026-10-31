@@ -851,29 +851,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
             )
         }
         "android.settings" => settings(a),
-        "android.emulator" => {
-            if !device.starts_with("emulator-") {
-                return Err(Error::new(
-                    "not_emulator",
-                    "This operation requires an emulator serial",
-                ));
-            }
-            let name = identifier(s(a, "name"), "snapshot name", Some("[A-Za-z0-9_-]+"))?;
-            let mut args = adb(device)?;
-            args.push("emu".into());
-            args.extend(match s(a, "action") {
-                "stop" => argv(&["kill"]),
-                "snapshot-save" => argv(&["avd", "snapshot", "save", name]),
-                "snapshot-load" => argv(&["avd", "snapshot", "load", name]),
-                _ => argv(&[
-                    "geo",
-                    "fix",
-                    &a["longitude"].to_string(),
-                    &a["latitude"].to_string(),
-                ]),
-            });
-            run(args)
-        }
+        "android.emulator" => emulator(a),
         "ios.sdk_install" => {
             let source = expand(s(a, "path"));
             let source = path(s(a, "path"), source.is_dir(), true)?;
@@ -889,6 +867,125 @@ pub fn handle(op: &str, a: &Value) -> Result {
             submit("Import Apple SDK", json!([{"argv":args}]), 7200, json!({}))
         }
         _ => Err(Error::new("operation_not_found", op)),
+    }
+}
+/// Runs one emulator console command through `adb emu`. The console answers
+/// `KO: reason` for a refused command while adb itself exits with success.
+fn console(device: &str, command: &[&str]) -> Result<String> {
+    let mut args = adb(device)?;
+    args.push("emu".into());
+    args.extend(argv(command));
+    let result = run(args)?;
+    let output = s(&result, "stdout").replace('\r', "");
+    if let Some(reason) = output.lines().find_map(|l| l.trim().strip_prefix("KO")) {
+        return Err(Error::new(
+            "emulator_refused",
+            format!(
+                "The emulator refused {}: {}",
+                command.join(" "),
+                reason.trim_start_matches(':').trim()
+            ),
+        )
+        .details(json!({"command":command,"output":output})));
+    }
+    Ok(output
+        .lines()
+        .filter(|l| l.trim() != "OK")
+        .collect::<Vec<_>>()
+        .join("\n"))
+}
+/// Snapshot tags from the console's `avd snapshot list` table.
+fn snapshot_names(output: &str) -> Vec<String> {
+    let mut rows = output.lines().skip_while(|l| {
+        let mut columns = l.split_whitespace();
+        !(columns.next() == Some("ID") && columns.next() == Some("TAG"))
+    });
+    rows.next();
+    rows.filter_map(|l| l.split_whitespace().nth(1).map(String::from))
+        .collect()
+}
+/// `key: value` lines of `power display` and `network status`.
+fn console_fields(output: &str) -> Value {
+    let mut fields = json!({});
+    for line in output.lines() {
+        if let Some((key, value)) = line.split_once(':') {
+            let value = value.trim();
+            if !value.is_empty() {
+                fields[key.trim().replace(' ', "_")] = json!(value);
+            }
+        }
+    }
+    fields
+}
+fn emulator(a: &Value) -> Result {
+    let device = s(a, "device");
+    if !device.starts_with("emulator-") {
+        return Err(Error::new(
+            "not_emulator",
+            "This operation requires an emulator serial",
+        ));
+    }
+    let action = s(a, "action");
+    let name = identifier(s(a, "name"), "snapshot name", Some("[A-Za-z0-9_-]+"))?;
+    match action {
+        "stop" => {
+            console(device, &["kill"])?;
+            Ok(json!({"device":device,"action":action}))
+        }
+        "snapshot-save" | "snapshot-load" | "snapshot-delete" => {
+            let verb = match action {
+                "snapshot-save" => "save",
+                "snapshot-load" => "load",
+                _ => "del",
+            };
+            console(device, &["avd", "snapshot", verb, name])?;
+            Ok(json!({"device":device,"action":action,"name":name}))
+        }
+        "snapshot-list" => {
+            let output = console(device, &["avd", "snapshot", "list"])?;
+            Ok(json!({"device":device,"snapshots":snapshot_names(&output),"output":output}))
+        }
+        "battery" => {
+            let level = n(a, "battery_level").to_string();
+            let charging = b(a, "charging");
+            console(device, &["power", "capacity", &level])?;
+            console(
+                device,
+                &["power", "ac", if charging { "on" } else { "off" }],
+            )?;
+            console(
+                device,
+                &[
+                    "power",
+                    "status",
+                    if charging { "charging" } else { "discharging" },
+                ],
+            )?;
+            let state = console(device, &["power", "display"])?;
+            Ok(json!({"device":device,"action":action,"battery":console_fields(&state)}))
+        }
+        "network" => {
+            console(device, &["network", "speed", s(a, "network_speed")])?;
+            console(device, &["network", "delay", s(a, "network_delay")])?;
+            let state = console(device, &["network", "status"])?;
+            Ok(
+                json!({"device":device,"action":action,"speed":s(a,"network_speed"),"delay":s(a,"network_delay"),"network":console_fields(&state)}),
+            )
+        }
+        _ => {
+            console(
+                device,
+                &[
+                    "geo",
+                    "fix",
+                    &a["longitude"].to_string(),
+                    &a["latitude"].to_string(),
+                ],
+            )?;
+            Ok(
+                json!({"device":device,"action":action,"longitude":a["longitude"],"latitude":a["latitude"]}),
+            )
+        }
     }
 }
 const ANIMATION_SCALES: [&str; 3] = [
@@ -1293,5 +1390,23 @@ mod tests {
         );
         assert_eq!(scale("null"), 1.0);
         assert_eq!(scale("0.0"), 0.0);
+    }
+
+    #[test]
+    fn emulator_console_tables_and_fields_are_read() {
+        let list = "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        default_boot        102M 2026-10-31 19:40:01   00:02:10.512\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001";
+        assert_eq!(snapshot_names(list), ["default_boot", "before-login"]);
+        assert!(snapshot_names("There is no snapshot available.").is_empty());
+        let power = "AC: online\nstatus: Charging\nhealth: Good\npresent: true\ncapacity: 42";
+        let fields = console_fields(power);
+        assert_eq!(fields["capacity"], "42");
+        assert_eq!(fields["AC"], "online");
+        let network = "Current network status:\n  download speed:   173000000 bits/s (21118.2 KB/s)\n  minimum latency:  35 ms";
+        assert_eq!(console_fields(network)["minimum_latency"], "35 ms");
+        assert!(
+            console_fields(network)
+                .get("Current_network_status")
+                .is_none()
+        );
     }
 }

@@ -1757,7 +1757,7 @@
   {
     "name": "android.emulator",
     "title": "Control emulator",
-    "description": "Stop an emulator, save/load a snapshot or set GPS location.",
+    "description": "Stop an emulator; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1773,12 +1773,16 @@
             "stop",
             "snapshot-save",
             "snapshot-load",
-            "location"
+            "snapshot-list",
+            "snapshot-delete",
+            "location",
+            "battery",
+            "network"
           ]
         },
         "name": {
           "type": "string",
-          "description": "",
+          "description": "Snapshot name for snapshot-save, snapshot-load and snapshot-delete",
           "default": "default"
         },
         "longitude": {
@@ -1792,6 +1796,46 @@
           "minimum": -90,
           "maximum": 90,
           "default": 0
+        },
+        "battery_level": {
+          "type": "integer",
+          "description": "Battery charge in percent, for battery",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 100
+        },
+        "charging": {
+          "type": "boolean",
+          "description": "Whether the charger is connected, for battery",
+          "default": true
+        },
+        "network_speed": {
+          "type": "string",
+          "description": "Network speed preset, for network; full means no limit",
+          "enum": [
+            "gsm",
+            "hscsd",
+            "gprs",
+            "edge",
+            "umts",
+            "hsdpa",
+            "lte",
+            "evdo",
+            "5g",
+            "full"
+          ],
+          "default": "full"
+        },
+        "network_delay": {
+          "type": "string",
+          "description": "Network latency preset, for network; none means no added latency",
+          "enum": [
+            "gprs",
+            "edge",
+            "umts",
+            "none"
+          ],
+          "default": "none"
         }
       },
       "required": [

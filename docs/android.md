@@ -93,7 +93,8 @@ For agents, the same device is reached by `runtime.input`, `runtime.capture` and
 `runtime.hierarchy`; see [display sessions](agents.md#display-sessions). Without a
 display session, use `device.capture`, `device.logs`, `android.hierarchy`,
 `android.input`, `android.record`, `android.mirror`, `android.ports`,
-`android.permission`, `android.deep_link` and `android.performance`.
+`android.permission`, `android.deep_link`, `android.performance`, `android.settings`
+and `android.emulator`.
 
 `android.input` types ASCII text with `adb shell input text`. Other text, such as
 `Grüße` or emoji, cannot go that way, so Tomacco pastes it: it starts the configured
@@ -184,6 +185,33 @@ renderer only after checking its picture and stability on your machine.
 
 The desktop's Omarchy panel can boot an emulator without its own window and show just
 the phone; see the [desktop guide](desktop.md#device-window).
+
+### Snapshots, location, battery and network
+
+`android.emulator` drives a running emulator through its console with `adb emu`.
+Snapshots keep the whole running state, so a test can return to a logged-in screen
+in seconds instead of booting.
+
+```sh
+tomaccoctl call android.emulator '{"device":"emulator-5554","action":"snapshot-save","name":"logged-in"}'
+tomaccoctl call android.emulator '{"device":"emulator-5554","action":"snapshot-list"}'
+tomaccoctl call android.emulator '{"device":"emulator-5554","action":"snapshot-load","name":"logged-in"}'
+tomaccoctl call android.emulator '{"device":"emulator-5554","action":"snapshot-delete","name":"logged-in"}'
+tomaccoctl call android.emulator '{"device":"emulator-5554","action":"location","latitude":48.2082,"longitude":16.3738}'
+tomaccoctl call android.emulator '{"device":"emulator-5554","action":"battery","battery_level":15,"charging":false}'
+tomaccoctl call android.emulator '{"device":"emulator-5554","action":"network","network_speed":"edge","network_delay":"gprs"}'
+```
+
+- `snapshot-list` returns the snapshot names and the console's own table.
+- `battery` sets the charge in percent and whether the charger is connected, and
+  returns what the emulator then reports.
+- `network` takes the emulator's presets: speeds `gsm`, `hscsd`, `gprs`, `edge`,
+  `umts`, `hsdpa`, `lte`, `evdo`, `5g` and `full`, latencies `gprs`, `edge`, `umts`
+  and `none`. `full` and `none` remove the limits. For airplane mode, which also works
+  on phones, use `android.settings`.
+- The console answers some refusals with `KO` while adb still succeeds, for example a
+  snapshot load in an emulator started with `-read-only`. Tomacco reports those as
+  `emulator_refused` with the console's reason.
 
 ## Phones
 
