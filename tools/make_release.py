@@ -21,6 +21,9 @@ BUILD = "build-product"
 PORTABLE = "build-portable"
 DIST = "dist"
 NOTES = "dist-notes/body.md"
+# The source of the Qt modules the portable package bundles, which
+# --with-qt-sources mirrors into the release (LGPL-3.0's source offer).
+QT_SOURCES = "packaging/portable/qt-sources.txt"
 
 
 class Refused(Exception):
@@ -169,6 +172,39 @@ def verify_checksums(root):
             raise Refused(f"{target.name} does not match its checksum")
 
 
+def qt_sources(root):
+    """[(SHA-256, URL)] from packaging/portable/qt-sources.txt."""
+    path = root / QT_SOURCES
+    if not path.is_file():
+        raise Refused(f"There is no {QT_SOURCES}")
+    found = []
+    for line in path.read_text().splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        digest, url = line.split()
+        if not re.fullmatch(r"[0-9a-f]{64}", digest) or not url.startswith("https://"):
+            raise Refused(f"{QT_SOURCES}: not a SHA-256 and an https URL: {line}")
+        found.append((digest, url))
+    return found
+
+
+def mirror_qt_sources(commands, root):
+    """Downloads the Qt source tarballs into dist with a .sha256 each, and
+    refuses one that does not match its pinned digest."""
+    for digest, url in qt_sources(root):
+        name = url.rpartition("/")[2]
+        target = root / DIST / name
+        commands.run(["curl", "-fL", "--retry", "3", "-o", str(target), url])
+        if commands.dry_run:
+            continue
+        with target.open("rb") as stream:
+            actual = hashlib.file_digest(stream, "sha256").hexdigest()
+        if actual != digest:
+            target.unlink()
+            raise Refused(f"{name} from {url} does not match {QT_SOURCES}: {actual}")
+        target.with_name(name + ".sha256").write_text(f"{digest}  {name}\n")
+
+
 def sign(commands, key, package):
     """Writes <package>.sig, base64 of the signature, and checks it."""
     with tempfile.TemporaryDirectory() as directory:
@@ -201,7 +237,13 @@ def make(options, commands, root, environment):
         raise Refused(f"{DIST}/ is not empty: everything in it would be published")
     prefix = constant(root, "PACKAGE_PREFIX")
     portable = None if options.no_portable else portable_name(prefix, version)
+    if options.with_qt_sources:
+        if not portable:
+            raise Refused("--with-qt-sources mirrors the source of the Qt in the portable package; leave out --no-portable")
+        qt_sources(root)
     build(commands, root, tag, portable)
+    if options.with_qt_sources:
+        mirror_qt_sources(commands, root)
     if commands.dry_run:
         print(f"Would move {BUILD}/{prefix}-{version}-Linux-*.tar.gz and its checksum to {DIST}/, verify the checksums")
         print(f"Would sign the package with {key} into {DIST}/{prefix}-{version}-Linux-*.tar.gz.sig, and verify the signature")
@@ -224,6 +266,8 @@ def main(arguments=None, commands=None, root=ROOT, environment=os.environ):
     parser.add_argument("--dry-run", action="store_true", help="Only print what it would do")
     parser.add_argument("--no-portable", action="store_true",
                         help="Leave out the portable package (tools/build_portable.py, which needs Docker)")
+    parser.add_argument("--with-qt-sources", action="store_true",
+                        help=f"Also release the source tarballs of the Qt modules the portable package bundles ({QT_SOURCES})")
     options = parser.parse_args(arguments)
     commands = commands or Commands(root, options.dry_run)
     try:

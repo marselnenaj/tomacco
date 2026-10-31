@@ -220,6 +220,13 @@ Releases are made locally, not by a workflow. From a clean checkout of the tag, 
 checksums, signs both packages and creates a draft release whose body comes from `docs/RELEASE_NOTES.md`, with relative links pointing into the tag. It refuses a dirty tree, a checkout that is not
 the tag, and versions that disagree. With `--dry-run` it only prints what it would do.
 
+`--with-qt-sources` also puts the source tarballs of the Qt modules the portable package bundles into the release, each with its
+`.sha256`, as the LGPL source offer for them. `packaging/portable/qt-sources.txt` pins their URLs and SHA-256 digests: qtbase,
+qtdeclarative, qtsvg, qtwayland, qttranslations, qtpositioning and qtwebchannel from Qt's 6.12.0 submodules. Qt WebEngine is not among
+those submodules; Qt ships it as an extension of its online installer, and the source it publishes beside the bundled build
+(`6.12.0-0-202607081027`) is a 583 MB tarball named `qtwebengine-everywhere-src-6.12.0-beta2.tar.xz`. That tarball does not record
+its commit, so it could not be matched against the commit the binary's SBOM names. Together the tarballs are about 680 MB.
+
 **Set by hand on GitHub.** The repository's social preview is `assets/readme/social-preview.png` (1280x640, the banner on a 2:1 canvas). Upload it under Settings, General,
 Social preview.
 

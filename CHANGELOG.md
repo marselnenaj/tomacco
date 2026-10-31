@@ -8,6 +8,9 @@ operations and their JSON results.
 
 ### Added
 
+- `make_release.py --with-qt-sources` releases the source tarballs of the Qt modules the portable package bundles, pinned
+  by URL and SHA-256 in `packaging/portable/qt-sources.txt`; Qt WebEngine's comes from Qt's online repository, as it is not
+  among the 6.12.0 submodules.
 - `doctor` names the `apt-get` or `dnf` command that installs the system libraries the desktop is missing, on Debian, Ubuntu
   (with the t64 package names of 24.04), Fedora and their derivatives, as `desktop.install`; the `desktop` next step and
   `tomaccoctl setup` show it. For the portable package it also checks the X11 and Wayland plugins and WebEngine's helper,

@@ -64,6 +64,8 @@ class Fake(make_release.Commands):
             source.with_name(source.name + ".sha256").write_text(hashlib.sha256(b"source").hexdigest() + "  " + source.name + "\n")
         if argv[:3] == ["openssl", "pkeyutl", "-sign"]:
             Path(argv[argv.index("-out") + 1]).write_bytes(b"\x22" * 64)
+        if argv[0] == "curl":
+            Path(argv[argv.index("-o") + 1]).write_bytes(b"source of " + argv[-1].rpartition("/")[2].encode())
 
 
 class MakeRelease(unittest.TestCase):
@@ -129,6 +131,57 @@ class MakeRelease(unittest.TestCase):
         signed = [argv[argv.index("-in") + 1] for argv in commands.runs if argv[:3] == ["openssl", "pkeyutl", "-sign"]]
         self.assertEqual([Path(path).name for path in signed],
                          ["tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz"])
+
+    def qt_sources(self, *names, corrupt=None):
+        lines = ["# comment"]
+        for name in names:
+            content = b"source of " + name.encode()
+            lines.append(f"{hashlib.sha256(b'other' if name == corrupt else content).hexdigest()}  https://download.example/{name}")
+        (self.root / "packaging/portable").mkdir(parents=True, exist_ok=True)
+        (self.root / make_release.QT_SOURCES).write_text("\n".join(lines) + "\n")
+
+    def test_with_qt_sources_mirrors_each_tarball_with_its_checksum(self):
+        self.qt_sources("qtbase-everywhere-src-6.12.0.tar.xz", "qtwebengine-src.tar.xz")
+        code, commands, errors, _ = self.make("--key", str(self.key), "--with-qt-sources")
+        self.assertEqual(code, 0, errors)
+        release = commands.runs[-1]
+        names = [Path(part).name for part in release if part.startswith("dist/")]
+        for name in ("qtbase-everywhere-src-6.12.0.tar.xz", "qtwebengine-src.tar.xz"):
+            self.assertIn(name, names)
+            self.assertIn(name + ".sha256", names)
+            self.assertNotIn(name + ".sig", names)
+        downloads = [argv for argv in commands.runs if argv[0] == "curl"]
+        self.assertEqual([argv[-1] for argv in downloads], ["https://download.example/qtbase-everywhere-src-6.12.0.tar.xz",
+                                                           "https://download.example/qtwebengine-src.tar.xz"])
+        # Without the flag, none.
+        shutil.rmtree(self.root / "dist")
+        shutil.rmtree(self.root / make_release.BUILD)
+        shutil.rmtree(self.root / make_release.PORTABLE)
+        code, commands, errors, _ = self.make("--key", str(self.key))
+        self.assertEqual(code, 0, errors)
+        self.assertFalse(any(argv[0] == "curl" for argv in commands.runs))
+
+    def test_a_qt_source_that_does_not_match_its_pin_is_refused(self):
+        self.qt_sources("qtbase.tar.xz", "qtsvg.tar.xz", corrupt="qtsvg.tar.xz")
+        code, commands, errors, _ = self.make("--key", str(self.key), "--with-qt-sources")
+        self.assertEqual(code, 1)
+        self.assertIn("qtsvg.tar.xz from https://download.example/qtsvg.tar.xz does not match", errors)
+        self.assertFalse((self.root / "dist/qtsvg.tar.xz").exists())
+        self.assertFalse(any(argv[0] == "gh" for argv in commands.runs))
+
+    def test_qt_sources_need_the_portable_package_and_the_list(self):
+        self.assertRefused("leave out --no-portable", "--key", str(self.key), "--with-qt-sources", "--no-portable")
+        self.assertRefused("There is no packaging/portable/qt-sources.txt", "--key", str(self.key), "--with-qt-sources")
+
+    def test_the_qt_source_list_covers_every_bundled_module(self):
+        # Each module of qt-archives.txt has its source pinned, by name.
+        sources = make_release.qt_sources(ROOT)
+        archives = (ROOT / "packaging/portable/qt-archives.txt").read_text()
+        modules = sorted(set(__import__("re").findall(r"\d{12}(qt[a-z]+)-Linux", archives)))
+        self.assertEqual(len(modules), 8, modules)
+        for module in modules:
+            self.assertTrue(any(f"{module}-everywhere-src-6.12.0" in url for _, url in sources), module)
+        self.assertTrue(all(url.startswith("https://download.qt.io/") for _, url in sources))
 
     def test_no_portable_leaves_the_portable_package_out(self):
         code, commands, errors, _ = self.make("--key", str(self.key), "--no-portable")
