@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 173 operations.
+`tomaccoctl` now has one typed API of 174 operations.
 
 ### Added
 
@@ -29,6 +29,9 @@ operations and their JSON results.
     restarts.
   - `android.emulator` gains `snapshot-list`, `snapshot-delete`, `battery` and
     `network`.
+- **Testing.**
+  - `testing.visual_diff` compares a screenshot with a baseline PNG: changed fraction,
+    threshold, tolerance, ignored regions and a diff image.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.

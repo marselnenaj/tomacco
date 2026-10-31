@@ -29,6 +29,7 @@ mod setup;
 mod swift;
 mod toolchain;
 mod update;
+mod visual;
 mod workspaces;
 use core::*;
 use serde_json::{Value, json};

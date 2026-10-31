@@ -69,6 +69,15 @@ JSON report, JUnit results and screenshots of failures into `directory`. The for
 tomaccoctl call testing.run '{"path":"/absolute/ui-test.json","directory":"/absolute/ui-results","devices":["emulator-5554"]}'
 ```
 
+To catch visual changes, compare a fresh capture with a baseline you approved. The first
+time, look at the picture and keep it with `update_baseline`; later calls report the
+changed fraction and write a diff image with the changes in red:
+
+```sh
+tomaccoctl call testing.visual_diff '{"actual":"/absolute/screen.png","baseline":"/absolute/baselines/home.png","update_baseline":true}'
+tomaccoctl call testing.visual_diff '{"actual":"/absolute/screen.png","baseline":"/absolute/baselines/home.png","diff":"/absolute/home-diff.png","threshold":0.001}'
+```
+
 Text through `android.input` is ASCII only. For Unicode, install the companion once with
 `testing.setup`, then use `testing.action` with `fill`.
 

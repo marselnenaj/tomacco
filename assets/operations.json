@@ -3155,6 +3155,93 @@
     }
   },
   {
+    "name": "testing.visual_diff",
+    "title": "Compare with baseline image",
+    "description": "Compare a PNG screenshot with a baseline PNG pixel by pixel. Reports changed_fraction, changed_bounds and passed (changed_fraction <= threshold); writes a diff image with changes in red when diff is given. update_baseline keeps the actual image as the new baseline instead of comparing.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "actual": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the PNG to check, such as a device.capture result"
+        },
+        "baseline": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the approved PNG"
+        },
+        "diff": {
+          "type": "string",
+          "description": "Absolute path for a difference image: the baseline faded, changed pixels red, ignored regions blue"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0,
+          "description": "Largest changed fraction of the compared pixels that still passes"
+        },
+        "tolerance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "default": 0,
+          "description": "A pixel counts as changed when a channel differs by more than this"
+        },
+        "ignore": {
+          "type": "array",
+          "maxItems": 100,
+          "description": "Regions in baseline pixels that are not compared, such as the status bar clock",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "x",
+              "y",
+              "width",
+              "height"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "y": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "update_baseline": {
+          "type": "boolean",
+          "default": false,
+          "description": "Copy actual to baseline and compare nothing; only after you have checked the image"
+        }
+      },
+      "required": [
+        "actual",
+        "baseline"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "debug.start",
     "title": "Start debugger",
     "description": "Start or reuse a persistent JDWP Android/JVM, native Android LLDB, or local LLDB Swift/native debug session. Android sessions exclusively own their device until disconnected.",

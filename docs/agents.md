@@ -409,6 +409,16 @@ Native debugging is qualified on API 36 x86_64. ARM64 is built but not run on a 
 `testing.setup` installs a small instrumentation companion for Unicode, emoji and whole-field replacement, without changing the user's keyboard. `testing.run`
 runs JSON scenarios on a bounded parallel device matrix, returning JUnit results and capturing failures; `examples/native-navigation.json` shows the format.
 
+`testing.visual_diff` compares a screenshot with an approved baseline PNG, pixel by pixel. It answers `changed_fraction` of the compared pixels,
+`changed_bounds` and `passed` (`changed_fraction` at most `threshold`), and with `diff` writes the baseline faded with changed pixels in red.
+`tolerance` ignores small colour differences per channel, and `ignore` leaves out regions such as the status bar clock. A missing baseline
+answers `baseline_missing`; look at the image, and only if it is right call again with `update_baseline:true` to keep it. Images of different
+sizes fail with `size_mismatch:true`.
+
+```sh
+tomaccoctl call testing.visual_diff '{"actual":"/absolute/screen.png","baseline":"/absolute/baselines/home.png","diff":"/absolute/home-diff.png","threshold":0.001,"tolerance":8,"ignore":[{"x":0,"y":0,"width":1080,"height":64}]}'
+```
+
 `profile.capture` records Android Perfetto traces. Configure the official `trace_processor`, then use `profile.analyze` and `profile.compare`. Metrics that are
 not available are null, not zero. A count of frames with jank tags is not the same as visible drops.
 
