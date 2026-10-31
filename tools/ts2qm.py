@@ -29,6 +29,7 @@ NUMERUS_RULES = {
     "de": bytes([Q_EQ, 1]),
     # French uses the singular for 0 and 1.
     "fr": bytes([Q_LEQ, 1]),
+    "it": bytes([Q_EQ, 1]),
     "es": bytes([Q_EQ, 1]),
 }
 

@@ -2233,6 +2233,7 @@ for line in sys.stdin:
     void translated_interfaces_switch_live_data() {
         for(const auto *column:{"code","name","files","zeroModels","oneModel","threeModels","busy","ready","about"})QTest::addColumn<QString>(column);
         QTest::newRow("fr")<<"fr"<<"Français"<<"Fichiers"<<"0 modèle"<<"1 modèle"<<"3 modèles"<<"Trop de requêtes simultanées"<<"Prêt · Vérifier la chaîne d'outils"<<"À propos de Tomacco";
+        QTest::newRow("it")<<"it"<<"Italiano"<<"File"<<"0 modelli"<<"1 modello"<<"3 modelli"<<"Troppe richieste simultanee"<<"Pronto · Verifica la toolchain"<<"Informazioni su Tomacco";
         QTest::newRow("es")<<"es"<<"Español"<<"Archivos"<<"0 modelos"<<"1 modelo"<<"3 modelos"<<"Demasiadas solicitudes simultáneas"<<"Listo · Comprobar la cadena de herramientas"<<"Acerca de Tomacco";
     }
     void translated_interfaces_switch_live() {
@@ -2363,7 +2364,7 @@ for line in sys.stdin:
         view->setProperty("autoAttach",false);view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});
         workspace->setProperty("jobs",QVariantList{});
         const auto activity=view->property("showActivity");
-        for(const auto *language:{"en","de","fr","es"}) {
+        for(const auto *language:{"en","de","fr","es","it"}) {
             backend->setLanguage(language);
             for(const auto &size:{QSize(1920,1080),QSize(1440,900),QSize(1280,720),QSize(1000,700),QSize(900,700),QSize(960,1040),QSize(720,1040),QSize(600,1040),QSize(560,480)})for(const bool panel:{true,false}) {
                 const auto where=QString("%1x%2 %3 panel=%4").arg(size.width()).arg(size.height()).arg(language).arg(panel);
@@ -2409,7 +2410,7 @@ for line in sys.stdin:
         for(const int width:{900,800,700,600,560})for(const int height:{1040,800,600})variants.append({QSize(width,height),"dark","de"});
         variants.append({QSize(560,480),"light","en"});variants.append({QSize(1280,800),"light","en"});
         // The other languages at the sizes that break first.
-        for(const auto *language:{"fr","es"})for(const auto &size:{QSize(560,1040),QSize(700,600),QSize(900,800)})variants.append({size,"dark",language});
+        for(const auto *language:{"fr","es","it"})for(const auto &size:{QSize(560,1040),QSize(700,600),QSize(900,800)})variants.append({size,"dark",language});
         if(capturing) {
             variants.clear();
             for(const auto &size:{QSize(1920,1080),QSize(1280,800),QSize(900,700),QSize(600,1040)})for(const auto *theme:{"dark","light"})for(const auto *language:{"en","de"})variants.append({size,theme,language});
