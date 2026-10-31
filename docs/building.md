@@ -105,11 +105,23 @@ links adjusted and `SOURCE.md` naming the version and commit. The list is `DOCUM
 
 ## Installing
 
-`install.py` installs for the current user.
+`install.py` installs for the current user. Once installed, two commands cover the rest:
+
+```sh
+tomaccoctl update
+tomaccoctl uninstall
+```
+
+`tomaccoctl update` checks GitHub for a newer release as your own request (`update.check` with `manual`) and, if there is one, installs it
+with `update.apply` and waits for the job; `--check` only checks. `tomaccoctl uninstall` runs `install.py --uninstall` from the copy every
+installation keeps in `~/.local/lib/tomacco/install.py`, and prints the command that undoes it. Installations made by 1.0.0 have no such copy:
+run `python3 install.py --uninstall` from the release package instead. Both commands refuse a source checkout and a system package; pacman
+updates and removes the Arch package.
 
 | What | Where |
 | --- | --- |
 | Program | `~/.local/lib/tomacco/tomacco` |
+| A copy of the installer, for `tomaccoctl uninstall` | `~/.local/lib/tomacco/install.py` |
 | Launchers | `~/.local/bin/tomacco`, `~/.local/bin/tomaccoctl` |
 | Menu entry and icon | `~/.local/share/applications/`, `~/.local/share/icons/` |
 | Documents | `~/.local/share/doc/tomacco/` |

@@ -80,6 +80,12 @@ Usage:
   tomaccoctl doctor  Check the toolchains and devices this machine can use.
   tomaccoctl mcp     Serve the same operations to a coding agent over stdio
                     (Model Context Protocol; no network port).
+  tomaccoctl update [--check]
+                    Check for a new release and install it (update.check,
+                    then update.apply); --check only checks.
+  tomaccoctl uninstall
+                    Remove this installation; keeps your data and the files
+                    you changed, and prints how to undo it.
   tomaccoctl --version, -V
   tomaccoctl --help, -h
 
@@ -112,6 +118,8 @@ fn run() -> Result<i32> {
             return Ok(0);
         }
         Some("setup") => return setup::run(&args[1..]),
+        Some("update") => return update::update_command(&args[1..]),
+        Some("uninstall") => return update::uninstall_command(&args[1..]),
         Some("mcp") => {
             mcp::serve(std::io::stdin().lock(), std::io::stdout())?;
             return Ok(0);

@@ -1856,6 +1856,105 @@ fn rollback() -> Result {
     Ok(json!({"rolled_back":to,"current":from,"restart_required":true}))
 }
 
+// ---------------------------------------------------------------------------
+// tomaccoctl update and tomaccoctl uninstall
+// ---------------------------------------------------------------------------
+
+/// `tomaccoctl update [--check]`: `update.check` as the user's own request,
+/// then, unless `--check`, `update.apply` and its job to the end. Prints one
+/// JSON envelope: the check, or the finished job.
+pub fn update_command(args: &[String]) -> Result<i32> {
+    let check_only = match args {
+        [] => false,
+        [flag] if flag == "--check" => true,
+        _ => {
+            return Err(
+                Error::new("invalid_request", "Usage: tomaccoctl update [--check]")
+                    .remedy("Run tomaccoctl --help for the commands"),
+            );
+        }
+    };
+    let manual = json!({"manual":true});
+    let found = crate::api::dispatch("update.check", &manual)?;
+    if check_only || found["update_available"] != true {
+        let _ = writeln!(std::io::stdout(), "{}", crate::api::envelope(Ok(found)));
+        return Ok(0);
+    }
+    eprintln!("Installing {PRODUCT_NAME} {}", s(&found, "latest"));
+    let mut job = crate::api::dispatch("update.apply", &manual)?;
+    let id = s(&job, "id").to_string();
+    while matches!(s(&job, "state"), "queued" | "running") {
+        job = crate::api::dispatch("job.wait", &json!({"job_id":id,"seconds":60}))?;
+    }
+    let succeeded = s(&job, "state") == "succeeded";
+    let _ = writeln!(std::io::stdout(), "{}", crate::api::envelope(Ok(job)));
+    Ok(if succeeded { 0 } else { 1 })
+}
+
+/// `tomaccoctl uninstall`: the installation's own copy of install.py with
+/// `--uninstall`. It keeps user data and files the user changed, and journals
+/// what it removes, so `--rollback` brings the installation back.
+pub fn uninstall_command(args: &[String]) -> Result<i32> {
+    if !args.is_empty() {
+        return Err(Error::new("invalid_request", "Usage: tomaccoctl uninstall")
+            .remedy("Run tomaccoctl --help for the commands"));
+    }
+    let install = this_installation()?;
+    let (Some(home), "user_install") = (install.home.clone(), install.kind) else {
+        return Err(Error::new(
+            &format!("uninstall_{}", install.kind),
+            format!(
+                "{} The installer did not install this copy, so it does not remove it.",
+                install.message
+            ),
+        ));
+    };
+    let script = home.join(INSTALLED_LIBRARY).join("install.py");
+    if !script.is_file() {
+        return Err(Error::new(
+            "uninstall_installer_missing",
+            format!(
+                "{} is missing: installations made by {PRODUCT_NAME} 1.0.0 do not keep it.",
+                script.display()
+            ),
+        )
+        .remedy("Download the release package and run python3 install.py --uninstall from it"));
+    }
+    let python = tc::find_optional("python3")?.ok_or_else(|| {
+        Error::new(
+            "uninstall_python_missing",
+            "Uninstalling needs Python 3, which the installer runs on.",
+        )
+        .remedy("Install Python 3, then try again")
+    })?;
+    let done = Command::new(python)
+        .arg("-I")
+        .arg(&script)
+        .arg("--user-home")
+        .arg(&home)
+        .arg("--uninstall")
+        .stdin(Stdio::null())
+        .stderr(Stdio::inherit())
+        .output()?;
+    let printed = String::from_utf8_lossy(&done.stdout);
+    let _ = write!(std::io::stdout(), "{printed}");
+    if !done.status.success() {
+        return Ok(1);
+    }
+    // The uninstallation's journal holds a copy of the installer it removed.
+    if let Some(backups) = serde_json::from_str::<Value>(&printed)
+        .ok()
+        .and_then(|result| result["backups"].as_str().map(PathBuf::from))
+    {
+        let id = backups.file_name().unwrap_or_default().to_string_lossy();
+        eprintln!(
+            "To undo: python3 {} --rollback {id}",
+            backups.join(INSTALLED_LIBRARY).join("install.py").display()
+        );
+    }
+    Ok(0)
+}
+
 pub fn handle(op: &str, a: &Value) -> Result {
     match op {
         "update.check" => check(a),
