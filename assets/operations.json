@@ -17,6 +17,237 @@
     }
   },
   {
+    "name": "capabilities",
+    "title": "What this computer can do",
+    "description": "Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "android": {
+          "type": "object",
+          "properties": {
+            "build": {
+              "type": "object",
+              "properties": {
+                "ready": {
+                  "type": "boolean"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "gradle": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ready",
+                "missing"
+              ]
+            },
+            "emulator": {
+              "type": "object",
+              "properties": {
+                "ready": {
+                  "type": "boolean"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "avds": {
+                  "type": "array"
+                },
+                "kvm": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ready",
+                "missing"
+              ]
+            },
+            "devices": {
+              "type": "object",
+              "properties": {
+                "ready": {
+                  "type": "boolean"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "connected": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "emulator",
+                          "physical"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "ready",
+                "missing"
+              ]
+            }
+          },
+          "required": [
+            "build",
+            "emulator",
+            "devices"
+          ]
+        },
+        "ios": {
+          "type": "object",
+          "properties": {
+            "build": {
+              "type": "object",
+              "properties": {
+                "ready": {
+                  "type": "boolean"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "ready",
+                "missing"
+              ]
+            },
+            "devices": {
+              "type": "object",
+              "properties": {
+                "ready": {
+                  "type": "boolean"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "connected": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "emulator",
+                          "physical"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "kind"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "ready",
+                "missing"
+              ]
+            },
+            "virtual_iphone": {
+              "type": "object",
+              "properties": {
+                "ready": {
+                  "type": "boolean"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "host_supported": {
+                  "type": "boolean"
+                },
+                "running": {
+                  "type": "boolean"
+                },
+                "display_visible": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ready",
+                "missing"
+              ]
+            }
+          },
+          "required": [
+            "build",
+            "devices",
+            "virtual_iphone"
+          ]
+        },
+        "desktop": {
+          "type": "object",
+          "properties": {
+            "ready": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "ready"
+          ]
+        },
+        "next": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "android",
+        "ios",
+        "desktop"
+      ]
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "desktop.status",
     "title": "Desktop status",
     "description": "Read recent jobs and live preview sessions for the desktop panel.",

@@ -3239,6 +3239,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Toolchain prüfen</translation>
     </message>
     <message>
+        <source>What this computer can do</source>
+        <translation>Was dieser Computer kann</translation>
+    </message>
+    <message>
         <source>Click element</source>
         <translation>Element anklicken</translation>
     </message>

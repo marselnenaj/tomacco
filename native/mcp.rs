@@ -91,7 +91,7 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
                 let protocol = s(&params, "protocolVersion");
                 respond(
                     &sink,
-                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{},"logging":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
+                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{},"logging":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To see what this computer can do right now (Android emulator and devices, iOS builds, iPhones, the virtual iPhone), call capabilities. To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
                 )?;
                 continue;
             }
@@ -360,6 +360,7 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
         }
         "resources/list" => {
             let mut resources = vec![
+                json!({"uri":"tomacco://capabilities","name":"What this computer can do","description":"The capabilities operation's result: Android, iOS and the virtual iPhone, each ready or with what it lacks.","mimeType":"application/json"}),
                 json!({"uri":"tomacco://catalog","name":"Device catalogue","mimeType":"application/json"}),
                 json!({"uri":"tomacco://jobs","name":"Recent jobs","mimeType":"application/json"}),
                 json!({"uri":"tomacco://workspaces","name":"Saved development workspaces","mimeType":"application/json"}),
@@ -382,6 +383,7 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
                 ));
             }
             let op = match uri {
+                "tomacco://capabilities" => "capabilities",
                 "tomacco://catalog" => "catalog.list",
                 "tomacco://jobs" => "job.list",
                 "tomacco://workspaces" => "workspace.list",
@@ -712,6 +714,7 @@ mod tests {
             .map(|r| s(r, "uri"))
             .collect();
         assert!(uris.contains(&"tomacco://jobs"));
+        assert!(uris.contains(&"tomacco://capabilities"));
         assert!(uris.contains(&"tomacco://docs/recipes"));
         assert!(uris.contains(&"tomacco://docs/agents"));
         let read = handle("resources/read", &json!({"uri":"tomacco://docs/recipes"}))

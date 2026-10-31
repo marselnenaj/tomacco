@@ -1177,11 +1177,12 @@ class ProtocolTests(Isolated):
             {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "catalog.list"}},
             {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "device.install", "arguments": {}}},
             {"jsonrpc": "2.0", "id": 5, "method": "resources/read", "params": {"uri": "tomacco://catalog"}},
+            {"jsonrpc": "2.0", "id": 6, "method": "resources/read", "params": {"uri": "tomacco://capabilities"}},
         ]
         output = subprocess.check_output([binary(), "mcp"], input='bad\n' + '\n'.join(map(json.dumps, requests)) + '\n', text=True)
         replies = sorted([json.loads(line) for line in output.splitlines()], key=lambda r: -1 if r["id"] is None else r["id"])
         self.assertEqual(replies[0]["error"]["code"], -32700)
-        self.assertEqual([r["id"] for r in replies[1:]], [1, 2, 3, 4, 5])
+        self.assertEqual([r["id"] for r in replies[1:]], [1, 2, 3, 4, 5, 6])
         self.assertEqual(replies[1]["result"]["protocolVersion"], "2025-11-25")
         self.assertEqual(len(replies[2]["result"]["tools"]), len(json.loads((ROOT / "assets/operations.json").read_text())))
         for tool in replies[2]["result"]["tools"]:
@@ -1192,6 +1193,11 @@ class ProtocolTests(Isolated):
         self.assertTrue(replies[4]["result"]["isError"])
         self.assertEqual(replies[4]["result"]["structuredContent"], json.loads(replies[4]["result"]["content"][0]["text"]))
         self.assertIn("contents", replies[5]["result"])
+        capabilities = json.loads(replies[6]["result"]["contents"][0]["text"])
+        self.assertEqual(sorted(capabilities["ios"]), ["build", "devices", "virtual_iphone"])
+        self.assertIsInstance(capabilities["android"]["emulator"]["ready"], bool)
+        tool = next(t for t in replies[2]["result"]["tools"] if t["name"] == "capabilities")
+        self.assertEqual(tool["outputSchema"]["required"], ["android", "ios", "desktop"])
 
     def test_mcp_wait_does_not_block_other_requests_and_cancellation_preserves_job(self):
         import queue

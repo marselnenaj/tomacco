@@ -24,6 +24,7 @@ stdio server: no network port and no token. The installer never changes client s
 
 Any MCP stdio client gets the same tools. The resources `tomacco://catalog`, `tomacco://jobs`,
 `tomacco://workspaces`, `tomacco://debug` and `tomacco://runtimes` expose profiles and recent work.
+`tomacco://capabilities` is the result of the `capabilities` operation.
 
 The guides are resources too, as Markdown of the installed version: `tomacco://docs/agents` (this guide),
 `tomacco://docs/recipes`, `tomacco://docs/getting-started`, `tomacco://docs/android`, `tomacco://docs/iphone`,
@@ -89,6 +90,13 @@ for the commands, their flags and the operation names after `call` and `schema`.
 `source <(tomaccoctl completions bash)`, the same for zsh, or `tomaccoctl completions fish | source`.
 The script asks `tomaccoctl schema --names` for the names, so it stays current after an update. The
 bash script is tested; the zsh and fish scripts have not been run in those shells yet.
+
+To plan, `tomaccoctl call capabilities` says in one call what this computer can do right now:
+`android.build`, `android.emulator` (with its AVDs), `android.devices`, `ios.build` (xtool),
+`ios.devices` and `ios.virtual_iphone` (configured, running, phase). Each has `ready` and `missing`, the
+names of what it lacks, such as `kvm` or `xtool`; `doctor`'s `next_steps` say how to set them up. It
+runs `doctor`'s tool checks, so it takes a few seconds. Over MCP its schema has an `outputSchema`, and the same result is the
+resource `tomacco://capabilities`.
 
 Use `TOMACCO_HOME=/absolute/test-state` to isolate job, toolchain, profile and emulator state. The
 desktop's **All tools** tab shows every operation and its schema.

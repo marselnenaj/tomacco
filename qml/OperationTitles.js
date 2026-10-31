@@ -8,6 +8,7 @@
 // tests/python/test_i18n.py keeps the table and the JSON in step.
 var titles = {
     "doctor": QT_TRANSLATE_NOOP("Operations", "Check toolchain"),
+    "capabilities": QT_TRANSLATE_NOOP("Operations", "What this computer can do"),
     "desktop.status": QT_TRANSLATE_NOOP("Operations", "Desktop status"),
     "desktop.open": QT_TRANSLATE_NOOP("Operations", "Open Tomacco"),
     "settings.get": QT_TRANSLATE_NOOP("Operations", "Settings"),

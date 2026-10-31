@@ -85,6 +85,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
     let a = arguments(name, args)?;
     match name {
         "doctor" => toolchain::doctor().map(crate::setup::with_next_steps),
+        "capabilities" => crate::capabilities::capabilities(),
         "settings.get" => toolchain::settings(),
         "settings.configure" => toolchain::configure(&a),
         "desktop.status" => desktop::status().map(redacted),

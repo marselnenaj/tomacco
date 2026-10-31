@@ -6,6 +6,7 @@ mod api;
 mod apple;
 mod apple_dev;
 mod automation;
+mod capabilities;
 mod catalog;
 mod completions;
 mod core;

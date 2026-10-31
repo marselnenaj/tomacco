@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 188 operations.
+`tomaccoctl` now has one typed API of 189 operations.
 
 ### Added
 
@@ -30,6 +30,9 @@ operations and their JSON results.
   for `job.wait` with the job's state and latest log line.
 - **MCP logging.** After `logging/setLevel` `info`, `job.wait` sends its job's new log lines as
   `notifications/message`.
+- `capabilities` says in one call what this computer can do right now: Android builds, emulator and
+  devices, iOS builds with xtool, iPhones and the virtual iPhone, each `ready` or with what it lacks.
+  Also the MCP resource `tomacco://capabilities`, with an `outputSchema`.
 - **MCP guides.** The agent guide, recipes and six other guides are MCP resources,
   `tomacco://docs/NAME`, as Markdown of the installed version.
 - **Android.**
