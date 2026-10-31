@@ -63,7 +63,7 @@ after you have read it; see [bug reports](agents.md#bug-reports).
 | `runtime_configuration_conflict` | A session exists with other settings. | Stop it first, then start again. |
 | The picture works but there is no sound | Audio failures leave video connected. Android 11 must be unlocked when capture starts, and apps may restrict capture. | Read `runtime.state` `audio` and the job log. |
 | `enabled` is true but it is silent | `enabled` only means that forwarding is active. | Check that the app is making sound, and the Linux output device. |
-| Unicode text does not arrive | `android.input` text is ASCII only. | `testing.setup`, then `testing.action` with `fill`. |
+| `text_unsupported` from `android.input` | Text other than ASCII is pasted through the device clipboard, which needs the scrcpy 4.1 server and Android 7 or newer. | Configure scrcpy, or use `testing.setup`, then `testing.action` with `fill`. |
 | `app_not_debuggable` | Android refused `run-as`. | Install a debuggable build for the current primary user. |
 | `lldb_server_missing` | The NDK has no `lldb-server` for this ABI. | Use an NDK that has it. |
 | `device_debug_busy` | Another debug session owns the device. The error names it. | `debug.control` with `action:"disconnect"`. |

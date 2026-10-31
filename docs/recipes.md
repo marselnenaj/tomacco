@@ -78,8 +78,10 @@ tomaccoctl call testing.visual_diff '{"actual":"/absolute/screen.png","baseline"
 tomaccoctl call testing.visual_diff '{"actual":"/absolute/screen.png","baseline":"/absolute/baselines/home.png","diff":"/absolute/home-diff.png","threshold":0.001}'
 ```
 
-Text through `android.input` is ASCII only. For Unicode, install the companion once with
-`testing.setup`, then use `testing.action` with `fill`.
+`android.input` types ASCII text directly and pastes other text, such as `Grüße` or emoji,
+through the device clipboard; that needs scrcpy configured and Android 7 or newer. To replace a
+whole field's text, install the companion once with `testing.setup`, then use `testing.action`
+with `fill`.
 
 ## Build an iOS app on Linux with xtool
 

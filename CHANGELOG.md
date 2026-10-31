@@ -25,6 +25,13 @@ operations and their JSON results.
 - The README and the documentation index describe 1.1.0: the portable package, the five desktop languages, what
   is new, and the new tutorial, agent patterns and reference.
 
+### Fixed
+
+- The recipes and troubleshooting said `android.input` types ASCII only; since 1.1.0 it pastes other text through the
+  device clipboard. Getting started and building showed 1.0.0 package names and said a release has no portable package.
+- A test keeps the version, the operation count, the Rust and Qt build minimums, the desktop languages and the
+  `tomaccoctl` flags the documentation names in step with their sources.
+
 ## 1.1.0
 
 `tomaccoctl` now has one typed API of 193 operations.

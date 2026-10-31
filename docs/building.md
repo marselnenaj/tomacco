@@ -111,7 +111,7 @@ For 1.0.0, `makepkg` built the package in about a minute and a half on the devel
 
 ```sh
 tools/build_portable.py build
-tools/build_portable.py verify build-portable/tomacco-1.0.0-Linux-x86_64-portable.tar.gz
+tools/build_portable.py verify build-portable/tomacco-1.1.0-Linux-x86_64-portable.tar.gz
 ```
 
 `build` needs Docker and network access. It builds the image `tomacco-portable-builder:<digest>` from

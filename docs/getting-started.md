@@ -31,12 +31,12 @@ available.
 [releases page](https://github.com/marselnenaj/tomacco/releases), then:
 
 ```sh
-sha256sum -c tomacco-1.0.0-Linux-x86_64.tar.gz.sha256
-tar -xzf tomacco-1.0.0-Linux-x86_64.tar.gz
-python3 tomacco-1.0.0-Linux-x86_64/install.py --omarchy
+sha256sum -c tomacco-1.1.0-Linux-x86_64.tar.gz.sha256
+tar -xzf tomacco-1.1.0-Linux-x86_64.tar.gz
+python3 tomacco-1.1.0-Linux-x86_64/install.py --omarchy
 ```
 
-Outside Arch, take the release's `-portable` package instead, where it has one; see
+Outside Arch, take the release's `-portable` package instead; see
 [which package](#debian-ubuntu-and-fedora).
 
 **From a checkout.** You also need CMake, Ninja, a C++20 compiler, Rust/Cargo 1.89 or newer,
@@ -66,12 +66,12 @@ package index; installing them and building Tomacco there has not been tried.
 | `tomacco-VERSION-Linux-x86_64.tar.gz` | Arch | The system's Qt 6.12 or newer, FFmpeg 9 (`libavcodec.so.63`), glibc 2.39 | Arch and Omarchy |
 | `tomacco-VERSION-Linux-x86_64-portable.tar.gz` | Ubuntu 22.04 | glibc 2.35 or newer; Qt 6.12 and FFmpeg are bundled | Other distributions, such as Debian 12, Ubuntu 22.04 and newer, Fedora |
 
-The 1.0.0 release has only the first. Its desktop will not start where the distribution's Qt or FFmpeg
-is older; build from a checkout there, as below. `tomaccoctl doctor` checks whether the installed desktop loads here: its `desktop` entry lists missing
+Releases from 1.1.0 have both; 1.0.0 had only the first. The regular package's desktop will not start
+where the distribution's Qt or FFmpeg is older; use the portable package there, or build from a checkout. `tomaccoctl doctor` checks whether the installed desktop loads here: its `desktop` entry lists missing
 libraries and symbol versions, and `next_steps` then starts with what to do.
 
 **The portable package** installs like the other one: check it, unpack it, run its `install.py`.
-It is about 176 MB. It still uses the system's graphics, X11 or Wayland, font, D-Bus, NSS and ALSA
+It was about 176 MB when measured on the 1.0.0 sources. It still uses the system's graphics, X11 or Wayland, font, D-Bus, NSS and ALSA
 libraries, which desktop installations have; `share/doc/tomacco/PORTABLE.md` in the package lists
 them. For the 1.0.0 sources, `tools/build_portable.py verify` ran it in clean containers of Debian 12,
 Ubuntu 22.04, Ubuntu 24.04 and Fedora 44: `tomaccoctl --version`, `tomaccoctl doctor`, the desktop's
