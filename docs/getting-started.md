@@ -223,6 +223,8 @@ tomacco --project /absolute/FirstApp --workspace runtime
 ```
 
 You have a first success when the screenshot shows the starter's counter app.
+[Your first Android app](tutorial-android.md) does the same with the Jetpack Compose starter and
+adds a UI test.
 The [Android guide](android.md) goes on from here. If a step fails, read the error's
 `message` and `remedy`; [Troubleshooting](troubleshooting.md) lists the common ones.
 

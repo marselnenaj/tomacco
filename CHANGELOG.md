@@ -11,6 +11,9 @@ operations and their JSON results.
 - An operation reference in `docs/reference/`, one page per area, generated from `assets/operations.json` by
   `tools/build_reference.py`: each operation's title, description, annotations, arguments with types, choices,
   limits and defaults, and an example call. A test fails when it is out of date.
+- A tutorial, [Your first Android app](docs/tutorial-android.md): from an installed Tomacco to the Compose starter on
+  the emulator, a screenshot, a checked tap and a passing UI test, in 103 seconds on a host with the SDK and Gradle
+  cache already present.
 
 ## 1.1.0
 

@@ -49,7 +49,7 @@ GUIDES = ("README.md", "docs/README.md", "docs/getting-started.md", "docs/deskto
           "docs/research-engines.md",
           "docs/virtual-ios/README.md", "docs/virtual-ios/setup.md", "docs/virtual-ios/usage.md",
           "docs/virtual-ios/troubleshooting.md", "docs/virtual-ios/how-it-works.md", "examples/README.md",
-          "docs/recipes.md", "docs/faq.md")
+          "docs/recipes.md", "docs/faq.md", "docs/tutorial-android.md")
 # A dotted name in a guide that looks like an operation and is a result's path instead.
 RESULT_PATHS = {"workspace.ios_research.guest.detach_pending"}
 OPERATION_AREAS = {entry["name"].split(".")[0] for entry in operation_entries() if "." in entry["name"]}
@@ -306,6 +306,26 @@ class EveryGuideTests(DocumentTest):
                     source = raw("src/main.cpp")
                     for flag in re.findall(r"(?<!\S)--([a-z0-9-]+)", match.group(1)):
                         self.assertTrue(f'{{"{flag}"' in source, f"{path}: tomacco has no flag --{flag}")
+
+
+class TutorialTests(DocumentTest):
+    GUIDE = "docs/tutorial-android.md"
+
+    def test_the_tutorial_runs_its_steps_in_order(self):
+        # The order of the run it reports: emulator, app, run, picture, tap, UI test, results, stop.
+        guide = raw(self.GUIDE)
+        position = 0
+        for token in ("capabilities", "android.avd_start", "device.list", "project.create", "\"kind\":\"compose\"",
+                      "project.run", "device.capture", "testing.action", "testing.find", "instrumented-test",
+                      "testing.results", "\"action\":\"stop\""):
+            found = guide.find(token, position)
+            self.assertTrue(found != -1, f"{self.GUIDE}: {token} does not follow the previous step")
+            position = found + len(token)
+
+    def test_the_tutorial_says_what_its_time_covers(self):
+        self.assert_says(self.GUIDE, text(self.GUIDE), "steps 2 to 8 below took 103 seconds",
+                         "Those downloads were not timed.")
+        self.assertTrue((ROOT / "docs/images/tutorial-android-counter.png").is_file())
 
 
 class AgentGuideTests(DocumentTest):

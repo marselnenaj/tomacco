@@ -9,6 +9,7 @@ operations, so a person and a coding agent can do the same things.
 | I want to... | Read |
 | --- | --- |
 | Install Tomacco and get a first success | [Getting started](getting-started.md) |
+| Go from an install to a Compose app on the emulator, with a screenshot and a UI test | [Your first Android app](tutorial-android.md) |
 | Have my coding agent set everything up | [Agent setup](agent-setup.md) |
 | Connect a coding agent over MCP or the JSON CLI | [Agents](agents.md) |
 | Copy a short sequence: build and run, screenshot and UI test, iOS build, virtual iPhone deploy | [Recipes](recipes.md) |
