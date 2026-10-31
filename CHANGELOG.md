@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 178 operations.
+`tomaccoctl` now has one typed API of 183 operations.
 
 ### Added
 
@@ -29,6 +29,18 @@ operations and their JSON results.
     restarts.
   - `android.emulator` gains `snapshot-list`, `snapshot-delete`, `battery` and
     `network`.
+  - `android.package_inspect` reads an APK or AAB without a device: package, version,
+    SDK levels, permissions, ABIs and signing certificate digests.
+  - `device.install` installs one `.aab` through bundletool, built for the selected
+    device.
+  - `android.display` locks the screen orientation and overrides display size and
+    density, then reads them back; `reset` undoes them.
+  - `android.notifications` lists the notifications shown, opens or closes the shade
+    and snoozes one by its key.
+  - `android.app_files` lists or pulls the private files of a debuggable app through
+    `run-as`.
+  - `android.each` runs the same steps, such as install and launch, on every connected
+    Android device as one job with a result per device.
 - **Testing.**
   - `testing.visual_diff` compares a screenshot with a baseline PNG: changed fraction,
     threshold, tolerance, ignored regions and a diff image.
@@ -87,7 +99,7 @@ First release of the Rust control plane and the redesigned Qt desktop.
 
 - One-line install from tomacco.dev that checks the signature, and `tomaccoctl setup`,
   which checks the machine, installs the Android SDK and connects coding agents.
-- `tomaccoctl`: one typed API of 170 operations as a JSON CLI and a stdio MCP
+- `tomaccoctl`: one typed API of 183 operations as a JSON CLI and a stdio MCP
   server, with durable jobs, artifacts and shared debug sessions.
 - Qt desktop in English and German with live device display, debugging and a
   visual layout lab.

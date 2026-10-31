@@ -62,12 +62,54 @@ The starter has a native Android UI and a persistent counter. It uses the highes
 installed SDK platform, and the Android Gradle Plugin 9.1.1.
 
 - Build produces an APK or an AAB. Installing on a device takes APKs, split APKs
-  included.
+  included, or one AAB through bundletool; see below.
 - For other Gradle apps, set `applicationId` with `project.configure`, or pass
   `bundle_id` to `project.run`.
 - Release signing stays in the project's Gradle configuration and keystore.
 - A Flutter run supports hot reload through `job.send`, and holds the project's
   workspace lock until it exits.
+
+## Inspect an APK or AAB
+
+`android.package_inspect` reads a package file without a device: package name, version
+name and code, minimum, target and compile SDK, permissions, native ABIs and the
+signing certificates with their SHA-256 digests.
+
+```sh
+tomaccoctl call android.package_inspect '{"path":"/absolute/NewApp/app/build/outputs/apk/debug/app-debug.apk"}'
+```
+
+- An APK is read with `aapt2 dump badging` and `apksigner verify --print-certs` from
+  the newest installed build-tools. An unsigned APK answers `signing.signed:false` with
+  apksigner's errors.
+- An AAB's compiled manifest is read directly, so no extra tool is needed. Its JAR
+  signature is read with `keytool` from the configured JDK.
+- If apksigner or keytool is missing, the rest is still reported and `signing.checked`
+  is `false` with the reason.
+- Checked on APKs with the API 36 build-tools. AAB reading is covered by unit tests on
+  generated bundles; no Gradle-built AAB has been read yet.
+
+## Install an AAB
+
+`device.install` with one `.aab` runs Google's
+[bundletool](https://github.com/google/bundletool) as a job: `build-apks
+--connected-device` builds the APK set for that device, and `install-apks` installs it.
+The APK set is deleted when the job ends.
+
+```sh
+tomaccoctl call settings.configure '{"executables":{"bundletool":"/absolute/bundletool-all.jar"}}'
+tomaccoctl call device.install '{"platform":"android","device":"emulator-5554","paths":["/absolute/app-release.aab"]}'
+```
+
+- Download `bundletool-all-VERSION.jar` from its releases page. A configured `.jar` runs
+  with the configured Java; a `bundletool` command on `PATH` works too. Without either,
+  the answer is `tool_missing` with that remedy.
+- bundletool signs the APKs it builds with the debug keystore in
+  `~/.android/debug.keystore`, which any earlier debug build creates; the bundle's own
+  signature does not carry over. Signing the APK set with your own key is not offered
+  yet.
+- Only the commands are covered by tests with a stand-in bundletool. No AAB has been
+  installed on a device through it yet.
 
 ## See and control the device
 
@@ -93,8 +135,8 @@ For agents, the same device is reached by `runtime.input`, `runtime.capture` and
 `runtime.hierarchy`; see [display sessions](agents.md#display-sessions). Without a
 display session, use `device.capture`, `device.logs`, `android.hierarchy`,
 `android.input`, `android.record`, `android.mirror`, `android.ports`,
-`android.permission`, `android.deep_link`, `android.performance`, `android.settings`
-and `android.emulator`.
+`android.permission`, `android.deep_link`, `android.performance`, `android.settings`,
+`android.display`, `android.notifications`, `android.app_files` and `android.emulator`.
 
 `android.input` types ASCII text with `adb shell input text`. Other text, such as
 `Grüße` or emoji, cannot go that way, so Tomacco pastes it: it starts the configured
@@ -134,6 +176,70 @@ tomaccoctl call android.settings '{"device":"emulator-5554"}'
   per-app languages, which need Android 13 (API 33) or newer. An empty value returns
   the app to the device language. The language of the whole device is not changed:
   adb cannot do that without root.
+
+### Orientation, display size and density
+
+`android.display` locks the screen orientation and overrides the display size or
+density, for layouts on other screens without another emulator. The result reads
+all three back, and a value Android did not apply answers `setting_not_applied`.
+
+```sh
+tomaccoctl call android.display '{"device":"emulator-5554","orientation":"landscape"}'
+tomaccoctl call android.display '{"device":"emulator-5554","width":720,"height":1600,"density":320}'
+tomaccoctl call android.display '{"device":"emulator-5554","reset":true}'
+```
+
+- `orientation` is `portrait`, `landscape`, `reverse-portrait`, `reverse-landscape` or
+  `auto`. A locked orientation turns auto-rotate off; `auto` turns it on again. An app
+  that fixes its own orientation keeps it.
+- `width` and `height` go together, through `wm size`; `density` goes through
+  `wm density`. Both stay until `reset`, also across app restarts.
+- `reset` returns size and density to the device's own and rotation to the sensor,
+  before any other argument in the same call.
+- Checked on the API 36 x86_64 emulator, where landscape turned the display by
+  90 degrees and `reset` brought back its own size and density.
+
+### Notifications
+
+`android.notifications` lists what Android is showing, so a test can check that its
+app posted the right notification. Each entry has the key, package, ID, tag, channel,
+flags and, when set, title, text, sub-text and big text. `bundle_id` keeps one app's.
+
+```sh
+tomaccoctl call android.notifications '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
+tomaccoctl call android.notifications '{"device":"emulator-5554","action":"open"}'
+tomaccoctl call android.notifications '{"device":"emulator-5554","action":"snooze","key":"0|dev.example.newapp|7|null|10200","seconds":600}'
+```
+
+- `open` and `close` expand and collapse the notification shade through
+  `cmd statusbar`, for a screenshot or a tap on a notification with `android.input`.
+- adb cannot cancel another app's notifications: Android refuses it to the shell. To
+  get one out of the way, `snooze` hides it for `seconds` and fails with
+  `notification_not_snoozed` when it is still listed.
+- Every action returns the list afterwards. The list is read from
+  `dumpsys notification --noredact`.
+- Listing, open, close and snooze were checked on the API 36 x86_64 emulator with a
+  notification posted by `cmd notification post`.
+
+### App data files
+
+`android.app_files` lists or pulls the private files of a debuggable app, such as
+its databases and shared preferences, through `run-as`. Android allows that only for
+debuggable builds, so a release build answers `app_not_debuggable`. Paths are relative
+to the app's data directory.
+
+```sh
+tomaccoctl call android.app_files '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
+tomaccoctl call android.app_files '{"device":"emulator-5554","bundle_id":"dev.example.newapp","action":"pull","path":"databases","output":"/absolute/out/databases.tar"}'
+```
+
+- `list` returns each file's path, size and modification time.
+- `pull` returns a job that writes the files as one `.tar` archive; unpack it with
+  `tar -xf`.
+- To force-stop the app or clear its data, use `device.app` with `stop` or
+  `clear-data`.
+- Listing, pulling and the refusal for a non-debuggable app were checked on the API 36
+  x86_64 emulator with a debug build.
 
 ## Sound
 
@@ -214,6 +320,31 @@ tomaccoctl call android.emulator '{"device":"emulator-5554","action":"network","
 - The console answers some refusals with `KO` while adb still succeeds, for example a
   snapshot load in an emulator started with `-read-only`. Tomacco reports those as
   `emulator_refused` with the console's reason.
+
+## Every device at once
+
+`android.each` runs the same steps on every connected Android device, or on the
+`devices` you list, as one job. Devices run at the same time; on each device the
+steps run in order and stop at the first failure. A step that returns a job, such as
+an install, is followed to its end.
+
+```sh
+tomaccoctl call android.each '{"steps":[{"operation":"device.install","arguments":{"paths":["/absolute/app-debug.apk"]}},{"operation":"android.launch","arguments":{"bundle_id":"dev.example.newapp"}}]}'
+```
+
+- Steps leave out `device` and `platform`; they are set per device. A step is checked
+  against its operation's schema before anything runs.
+- The steps can be `device.install`, `device.app`, `android.launch`,
+  `android.permission`, `android.settings`, `android.display`, `android.deep_link`,
+  `android.input` and `android.notifications`.
+- The job's `report.json` artifact lists every device with each step's result, job
+  state or error, and `failed` names the devices that failed. The job fails when any
+  device failed.
+- Without `devices`, every device that `device.list` shows as `device` takes part,
+  including emulators that other tools started.
+- Install, launch and a notification list ran as one job on one API 36 x86_64
+  emulator. Several devices at once, and a failure on one of them, are covered by tests
+  with a stand-in adb; no run on several real devices yet.
 
 ## Phones
 

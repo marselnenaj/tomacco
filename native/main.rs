@@ -1,5 +1,7 @@
 mod accessibility;
 mod android_debug;
+mod android_device;
+mod android_package;
 mod api;
 mod apple;
 mod apple_dev;
@@ -318,6 +320,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             ios_emulator::pmp::worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing PMP request"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_android_each") => {
+            android_device::each_worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing device request"))?,
             )?;
             return Ok(0);
         }

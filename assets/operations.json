@@ -907,7 +907,7 @@
   {
     "name": "device.install",
     "title": "Install app",
-    "description": "Install one/split APKs or one signed IPA on the selected device.",
+    "description": "Install one or split APKs, or one .aab through bundletool (built for the selected device, then installed), or one signed IPA on the selected device.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -932,7 +932,8 @@
             "type": "string",
             "description": "",
             "minLength": 1
-          }
+          },
+          "description": "Absolute paths: APKs, one .aab or one .ipa"
         }
       },
       "required": [
@@ -1510,6 +1511,229 @@
     }
   },
   {
+    "name": "android.display",
+    "title": "Display orientation and size",
+    "description": "Lock the screen orientation, override the display size or density, or reset them, on a phone or emulator; the result reads all three back. A value Android did not apply answers setting_not_applied. With no other argument it only reads.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "orientation": {
+          "type": "string",
+          "description": "Lock the rotation; auto follows the sensor again",
+          "enum": [
+            "auto",
+            "portrait",
+            "landscape",
+            "reverse-portrait",
+            "reverse-landscape"
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "description": "Override width in pixels, with height",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "height": {
+          "type": "integer",
+          "description": "Override height in pixels, with width",
+          "minimum": 100,
+          "maximum": 10000
+        },
+        "density": {
+          "type": "integer",
+          "description": "Override density in dpi",
+          "minimum": 72,
+          "maximum": 1000
+        },
+        "reset": {
+          "type": "boolean",
+          "description": "Return size and density to the device's own and rotation to the sensor, before anything else given",
+          "default": false
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": true,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "android.notifications",
+    "title": "Notifications",
+    "description": "List the notifications Android is showing, with key, package, title, text, channel and flags; open or close the notification shade; or snooze one notification by its key. Every action returns the list afterwards. adb cannot cancel another app's notifications, so snooze hides one for a time instead.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "description": "open and close expand or collapse the notification shade",
+          "enum": [
+            "list",
+            "open",
+            "close",
+            "snooze"
+          ],
+          "default": "list"
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "List only this app's notifications"
+        },
+        "key": {
+          "type": "string",
+          "description": "Notification key from the list, for snooze"
+        },
+        "seconds": {
+          "type": "integer",
+          "description": "How long snooze hides the notification",
+          "minimum": 1,
+          "maximum": 604800,
+          "default": 3600
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.app_files",
+    "title": "App data files",
+    "description": "List or pull the private files of a debuggable app (its data directory, through run-as). pull returns a job that writes the files as one .tar archive. Release builds answer app_not_debuggable. To clear app data or force-stop the app, use device.app.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID of a debuggable build"
+        },
+        "action": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "list",
+            "pull"
+          ],
+          "default": "list"
+        },
+        "path": {
+          "type": "string",
+          "description": "File or directory inside the app's data directory, relative to it, such as files or databases/app.db",
+          "default": "."
+        },
+        "output": {
+          "type": "string",
+          "description": "Absolute local path of the .tar archive, for pull",
+          "default": ""
+        }
+      },
+      "required": [
+        "device",
+        "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.each",
+    "title": "Run on every Android device",
+    "description": "Run the same steps on every connected Android device, or on the listed ones, as one job: all devices at once, each device's steps in order until one fails. A step that returns a job is followed to its end. The job's report.json artifact has every device's result; the job fails if any device failed. Steps leave out device and platform, which are set per device.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string",
+                "description": "",
+                "enum": [
+                  "device.install",
+                  "device.app",
+                  "android.launch",
+                  "android.permission",
+                  "android.settings",
+                  "android.display",
+                  "android.deep_link",
+                  "android.input",
+                  "android.notifications"
+                ]
+              },
+              "arguments": {
+                "type": "object",
+                "description": "The operation's arguments without device and platform",
+                "default": {}
+              }
+            },
+            "required": [
+              "operation"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "devices": {
+          "type": "array",
+          "description": "Serials from device.list; all online Android devices when left out",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "description": "",
+            "minLength": 1
+          }
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Seconds for the whole job",
+          "minimum": 10,
+          "maximum": 86400,
+          "default": 1800
+        }
+      },
+      "required": [
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "android.connect",
     "title": "Android over Wi-Fi",
     "description": "Pair or connect adb to a device address. Pairing codes are not persisted.",
@@ -1898,6 +2122,29 @@
     "annotations": {
       "readOnlyHint": false,
       "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.package_inspect",
+    "title": "Inspect APK or AAB",
+    "description": "Read an APK or AAB without a device: package, version name and code, minimum, target and compile SDK, permissions, native ABIs and signing certificates with their SHA-256 digests. APKs go through aapt2 and apksigner from the SDK build-tools; an AAB's manifest is read directly and its signature through keytool. Reads the file only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute path of an .apk or .aab file",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
     }
   },
   {

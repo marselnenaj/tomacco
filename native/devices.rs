@@ -421,6 +421,12 @@ pub fn handle(op: &str, a: &Value) -> Result {
                     device.into(),
                     files[0].to_string_lossy().into_owned(),
                 ]
+            } else if files.len() == 1
+                && files[0]
+                    .extension()
+                    .is_some_and(|x| x.eq_ignore_ascii_case("aab"))
+            {
+                return crate::android_package::install_bundle(device, &files[0]);
             } else {
                 if files.iter().any(|p| {
                     p.extension()
@@ -431,7 +437,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 }) {
                     return Err(Error::new(
                         "invalid_artifact",
-                        "Android devices install APKs; build an APK or use bundletool for an AAB",
+                        "Android devices install APKs, split APKs or one .aab through bundletool",
                     ));
                 }
                 let mut command = adb(device)?;

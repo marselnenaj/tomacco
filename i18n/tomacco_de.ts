@@ -3037,6 +3037,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Android per WLAN</translation>
     </message>
     <message>
+        <source>App data files</source>
+        <translation>App-Datendateien</translation>
+    </message>
+    <message>
         <source>App permission</source>
         <translation>App-Berechtigung</translation>
     </message>
@@ -3237,6 +3241,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Laufzeit trennen</translation>
     </message>
     <message>
+        <source>Display orientation and size</source>
+        <translation>Ausrichtung und Größe des Displays</translation>
+    </message>
+    <message>
         <source>Download Mac artifact</source>
         <translation>Mac-Artefakt herunterladen</translation>
     </message>
@@ -3277,8 +3285,16 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Hot Reload</translation>
     </message>
     <message>
+        <source>Inspect APK or AAB</source>
+        <translation>APK oder AAB untersuchen</translation>
+    </message>
+    <message>
         <source>Install iOS toolkit</source>
         <translation>iOS-Werkzeuge installieren</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Benachrichtigungen</translation>
     </message>
     <message>
         <source>Prepare Flutter for iOS</source>
@@ -3547,6 +3563,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Run on Mac</source>
         <translation>Auf Mac ausführen</translation>
+    </message>
+    <message>
+        <source>Run on every Android device</source>
+        <translation>Auf jedem Android-Gerät ausführen</translation>
     </message>
     <message>
         <source>Run workspace</source>

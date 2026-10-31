@@ -453,6 +453,51 @@ class AdapterTests(Isolated):
         self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
         with self.assertRaises(StudioError): dispatch("device.install", {"platform": "ios", "device": "serial", "paths": [str(files[0])]})
 
+    def test_an_app_bundle_is_built_for_the_device_and_installed_through_bundletool(self):
+        import zipfile
+        self.tool("adb")
+        bundle = self.root / "app.aab"
+        with zipfile.ZipFile(bundle, "w") as archive:
+            archive.writestr("BundleConfig.pb", b"")
+            archive.writestr("base/manifest/AndroidManifest.xml", b"")
+        with self.assertRaises(StudioError) as missing:
+            dispatch("device.install", {"platform": "android", "device": "emulator-5554", "paths": [str(bundle)]})
+        self.assertEqual(missing.exception.code, "tool_missing")
+        self.assertIn("github.com/google/bundletool", missing.exception.args[0] + json.dumps(dispatch("doctor")["tools"]))
+        log = self.root / "bundletool.jsonl"
+        recorder = ("import json,sys\nargs=sys.argv[1:]\nopen(%r,'a').write(json.dumps(args)+'\\n')\n"
+                    "out=[a.split('=',1)[1] for a in args if a.startswith('--output=')]\n"
+                    "out and open(out[0],'w').write('apks')\n") % str(log)
+        self.tool("bundletool", recorder)
+        job = dispatch("device.install", {"platform": "android", "device": "emulator-5554", "paths": [str(bundle)]})
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        build, install = [json.loads(line) for line in log.read_text().splitlines()]
+        adb = str(self.root / "adb")
+        self.assertEqual(build[0], "build-apks")
+        self.assertIn(f"--bundle={bundle}", build)
+        self.assertIn("--connected-device", build)
+        self.assertIn("--device-id=emulator-5554", build)
+        self.assertIn(f"--adb={adb}", build)
+        apks = next(a.split("=", 1)[1] for a in build if a.startswith("--output="))
+        self.assertEqual(install, ["install-apks", f"--apks={apks}", "--device-id=emulator-5554", f"--adb={adb}"])
+        self.assertFalse(Path(apks).parent.exists(), "the APK set is removed after the job")
+        # A JAR runs through java -jar.
+        jar = self.root / "bundletool-all.jar"
+        jar.write_bytes(b"PK")
+        self.tool("java", "import sys,runpy\nsys.argv=sys.argv[2:]\nexec(open(%r).read())\n" % str(self.root / "bundletool"))
+        (self.root / "bundletool").chmod(0o644)
+        dispatch("settings.configure", {"executables": {"bundletool": str(jar)}})
+        log.unlink()
+        job = dispatch("device.install", {"platform": "android", "device": "emulator-5554", "paths": [str(bundle)]})
+        self.assertEqual(job["plan"]["steps"][0]["argv"][:3], [str(self.root / "java"), "-jar", str(jar)])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        # An archive without a bundle configuration is not a bundle.
+        with zipfile.ZipFile(bundle, "w") as archive:
+            archive.writestr("AndroidManifest.xml", b"")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("device.install", {"platform": "android", "device": "emulator-5554", "paths": [str(bundle)]})
+        self.assertEqual(refused.exception.code, "invalid_artifact")
+
     def test_avd_registry_and_active_device_protection(self):
         path = self.root / "state/avds/Pixel.avd"
         path.mkdir(parents=True)
@@ -720,13 +765,14 @@ for line in sys.stdin:
 
 class AndroidControlTests(Isolated):
     """Android device control through a fake adb that records each call and
-    answers from adb-replies.json: the first key found in the command wins."""
+    answers from adb-replies.json: the first key found in the command wins, and
+    a reply that starts with FAIL: exits 1."""
     ADB = ("import json,os,sys,time\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
            "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
            "replies=json.loads((root/'adb-replies.json').read_text()) if (root/'adb-replies.json').exists() else {}\n"
            "command=' '.join(a[2:])\n"
            "for key,reply in replies.items():\n"
-           "    if key in command: print(reply,end=''); sys.exit(0)\n"
+           "    if key in command: print(reply.removeprefix('FAIL:'),end=''); sys.exit(1 if reply.startswith('FAIL:') else 0)\n"
            "if 'app_process' in command: time.sleep(30)\n")
 
     def setUp(self):
@@ -856,6 +902,127 @@ class AndroidControlTests(Isolated):
         with self.assertRaises(StudioError):
             dispatch("android.settings", {"device": "emulator-5554", "font_scale": 3})
 
+    def test_display_orientation_size_and_density_are_set_and_read_back(self):
+        state = {"wm size": "Physical size: 1080x2400\nOverride size: 720x1600\n", "wm density": "Physical density: 420\nOverride density: 320\n",
+                 "accelerometer_rotation": "0\n", "user_rotation": "1\n"}
+        self.replies(**state)
+        display = lambda **a: dispatch("android.display", {"device": "emulator-5554", **a})
+        value = display(orientation="landscape", width=720, height=1600, density=320)
+        self.assertEqual((value["size"], value["density"], value["orientation"], value["changed"]),
+                         ({"physical": [1080, 2400], "override": [720, 1600]}, {"physical": 420, "override": 320}, "landscape",
+                          ["size", "density", "orientation"]))
+        shell = self.shell_calls()
+        for command in (["wm", "size", "720x1600"], ["wm", "density", "320"], ["settings", "put", "system", "accelerometer_rotation", "0"],
+                        ["settings", "put", "system", "user_rotation", "1"]):
+            self.assertIn(command, shell)
+        (self.root / "adb-calls.jsonl").unlink()
+        self.assertEqual(display()["changed"], [])
+        self.assertFalse(any(args[:2] == ["settings", "put"] or (args[0] == "wm" and args[2:]) for args in self.shell_calls()))
+        state.update({"wm size": "Physical size: 1080x2400\n", "wm density": "Physical density: 420\n", "accelerometer_rotation": "1\n"})
+        self.replies(**state)
+        value = display(reset=True)
+        self.assertEqual((value["size"]["override"], value["density"]["override"], value["orientation"]), (None, None, "auto"))
+        for command in (["wm", "size", "reset"], ["wm", "density", "reset"], ["settings", "put", "system", "accelerometer_rotation", "1"]):
+            self.assertIn(command, self.shell_calls())
+        with self.assertRaises(StudioError) as ignored:
+            display(orientation="portrait")
+        self.assertEqual(ignored.exception.code, "setting_not_applied")
+        for arguments in ({"width": 720}, {"density": 10}, {"orientation": "sideways"}):
+            with self.assertRaises(StudioError): display(**arguments)
+
+    NOTIFICATIONS = ("Current Notification Manager state:\n  Notification List:\n"
+                     "    NotificationRecord(0x01d08d09: pkg=dev.test.app user=UserHandle{0} id=7 tag=null importance=3 key=0|dev.test.app|7|null|10200: "
+                     "Notification(channel=orders shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 vis=PRIVATE))\n"
+                     "      notification=\n        extras={\n            android.title=String (Order shipped)\n            android.text=String (Arrives Monday)\n        }\n"
+                     "    NotificationRecord(0x02a82fca: pkg=android user=UserHandle{-1} id=19 tag=null importance=2 key=-1|android|19|null|1000: "
+                     "Notification(channel=DEVELOPER shortcut=null defaults=0 flags=ONGOING_EVENT color=0x00000000 vis=PUBLIC))\n"
+                     "  Snoozed notifications:\n")
+
+    def test_notifications_are_listed_the_shade_opened_and_one_snoozed(self):
+        self.replies(**{"dumpsys notification": self.NOTIFICATIONS, "snooze": "snoozing <-1|android|19|null|1000> until time: later\n"})
+        notifications = lambda **a: dispatch("android.notifications", {"device": "emulator-5554", **a})
+        listed = notifications()["notifications"]
+        self.assertEqual([(n["package"], n.get("title"), n.get("text"), n["ongoing"]) for n in listed],
+                         [("dev.test.app", "Order shipped", "Arrives Monday", False), ("android", None, None, True)])
+        self.assertEqual([n["key"] for n in notifications(bundle_id="dev.test.app")["notifications"]], ["0|dev.test.app|7|null|10200"])
+        notifications(action="open")
+        notifications(action="close")
+        self.assertIn(["cmd", "statusbar", "expand-notifications"], self.shell_calls())
+        self.assertIn(["cmd", "statusbar", "collapse"], self.shell_calls())
+        # The fake still lists the key afterwards, so the snooze did not hide it.
+        with self.assertRaises(StudioError) as shown:
+            notifications(action="snooze", key="0|dev.test.app|7|null|10200", seconds=60)
+        self.assertEqual(shown.exception.code, "notification_not_snoozed")
+        self.assertIn(["cmd", "notification", "snooze", "--for", "60000", "0|dev.test.app|7|null|10200"], self.shell_calls())
+        self.replies(**{"dumpsys notification": self.NOTIFICATIONS.split("    NotificationRecord(0x02a8")[0] + "  Snoozed notifications:\n",
+                        "snooze": "snoozing <-1|android|19|null|1000> until time: later\n"})
+        self.assertEqual(len(notifications(action="snooze", key="-1|android|19|null|1000")["notifications"]), 1)
+        for arguments in ({"action": "snooze"}, {"action": "snooze", "key": "not-a-key"}, {"bundle_id": "x;y"}):
+            with self.assertRaises(StudioError): notifications(**arguments)
+
+    def test_a_debuggable_apps_files_are_listed_and_pulled_as_a_tar_archive(self):
+        files = lambda **a: dispatch("android.app_files", {"device": "emulator-5554", "bundle_id": "dev.test.app", **a})
+        self.replies(**{"stat -c": "6 1793474273 ./files/a b.txt\n120 1793474000 ./shared_prefs/settings.xml\n", "tar -cf": "x" * 2048})
+        self.assertEqual(files()["files"], [{"path": "files/a b.txt", "size": 6, "modified": 1793474273},
+                                            {"path": "shared_prefs/settings.xml", "size": 120, "modified": 1793474000}])
+        self.assertIn(["run-as", "dev.test.app", "find", ".", "-type", "f", "-exec", "stat", "-c", "%s %Y %n", "{}", "+"], self.shell_calls())
+        target = self.root / "out/files.tar"
+        job = files(action="pull", path="files", output=str(target))
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        self.assertEqual(target.read_text(), "x" * 2048)
+        self.assertEqual(job["plan"]["steps"][0]["argv"][-2:], ["exec-out", "run-as dev.test.app tar -cf - files 2>/dev/null"])
+        with self.assertRaises(StudioError) as named:
+            files(action="pull", output=str(self.root / "files.zip"))
+        self.assertEqual(named.exception.code, "invalid_path")
+        for path in ("/data/data/dev.other", "../dev.other", "a;reboot"):
+            with self.assertRaises(StudioError): files(path=path)
+        self.replies(**{"ls -d": "FAIL:ls: nosuch: No such file or directory\n"})
+        with self.assertRaises(StudioError) as missing: files(path="nosuch")
+        self.assertEqual(missing.exception.code, "path_not_found")
+        self.replies(**{"run-as": "FAIL:run-as: package not debuggable: dev.test.app\n"})
+        with self.assertRaises(StudioError) as refused: files()
+        self.assertEqual(refused.exception.code, "app_not_debuggable")
+
+    def test_steps_run_on_every_device_as_one_job_with_a_result_per_device(self):
+        # R5CT has no launcher activity for the app; emulator-5554 does.
+        self.tool("adb", "import json,os,sys\nfrom pathlib import Path\nroot=Path(os.environ['TOMACCO_TEST_ROOT'])\na=sys.argv[1:]\n"
+                         "with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')\n"
+                         "if a[:1]==['devices']: print('List of devices attached\\nemulator-5554 device product:x model:A\\nR5CT device model:B\\nOLD1 offline\\n')\n"
+                         "elif 'resolve-activity' in a[-1]: print('dev.test.app/.Main' if a[1]=='emulator-5554' else 'No activity found')\n")
+        apk = self.root / "app.apk"
+        apk.touch()
+        steps = [{"operation": "device.install", "arguments": {"paths": [str(apk)]}},
+                 {"operation": "android.launch", "arguments": {"bundle_id": "dev.test.app"}},
+                 {"operation": "device.app", "arguments": {"bundle_id": "dev.test.app", "action": "stop"}}]
+        job = dispatch("android.each", {"steps": steps})
+        self.assertEqual(job["label"], "Run on 2 Android devices")
+        done = jobs.wait(job["id"], 30)
+        self.assertEqual(done["state"], "failed")
+        report = json.loads(Path(next(a["path"] for a in done["result"]["artifacts"] if a["path"].endswith("report.json"))).read_text())
+        self.assertEqual(report["failed"], ["R5CT"])
+        by_device = {d["device"]: d for d in report["devices"]}
+        self.assertEqual([(s["operation"], s["ok"]) for s in by_device["emulator-5554"]["steps"]],
+                         [("device.install", True), ("android.launch", True), ("device.app", True)])
+        self.assertEqual(by_device["emulator-5554"]["steps"][0]["state"], "succeeded")
+        self.assertEqual([(s["operation"], s["ok"]) for s in by_device["R5CT"]["steps"]], [("device.install", True), ("android.launch", False)])
+        self.assertEqual(by_device["R5CT"]["steps"][1]["error"]["code"], "launcher_missing")
+        installs = [call[:2] for call in map(json.loads, (self.root / "adb-calls.jsonl").read_text().splitlines()) if "install" in call]
+        self.assertEqual(sorted(installs), [["-s", "R5CT"], ["-s", "emulator-5554"]])
+        # Named devices only, and every step checked before anything runs.
+        job = dispatch("android.each", {"steps": steps[:2], "devices": ["emulator-5554"]})
+        self.assertEqual(jobs.wait(job["id"], 30)["state"], "succeeded")
+        for arguments, code in [({"steps": [{"operation": "android.launch", "arguments": {"device": "x", "bundle_id": "dev.test.app"}}]}, "invalid_argument"),
+                                ({"steps": [{"operation": "android.launch", "arguments": {}}]}, "invalid_argument"),
+                                ({"steps": [{"operation": "android.emulator", "arguments": {}}]}, "invalid_argument"),
+                                ({"steps": steps, "devices": ["x;reboot"]}, "invalid_argument")]:
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.each", arguments)
+            self.assertEqual(refused.exception.code, code, arguments)
+        self.tool("adb", "print('List of devices attached\\n')\n")
+        with self.assertRaises(StudioError) as none:
+            dispatch("android.each", {"steps": steps})
+        self.assertEqual(none.exception.code, "no_devices")
+
     def test_emulator_snapshots_battery_network_and_location_go_through_the_console(self):
         self.replies(**{"avd snapshot list": "List of snapshots present on all disks:\nID        TAG                 VM SIZE                DATE       VM CLOCK\n--        before-login        98M 2026-10-31 19:42:12   00:03:00.001\nOK\n",
                         "power display": "AC: offline\nstatus: Discharging\nhealth: Good\npresent: true\ncapacity: 15\nOK\n",
@@ -891,6 +1058,70 @@ class AndroidControlTests(Isolated):
             dispatch("android.emulator", {"device": "emulator-5554", "action": "snapshot-load", "name": "missing"})
         self.assertEqual(refused.exception.code, "emulator_refused")
         self.assertIn("-read-only", str(refused.exception))
+
+class AndroidPackageTests(Isolated):
+    """android.package_inspect reads a package with stand-ins for the SDK tools."""
+    @staticmethod
+    def field(number, payload):
+        def varint(value):
+            out = bytearray()
+            while True:
+                out.append((value & 0x7F) | (0x80 if value > 0x7F else 0))
+                value >>= 7
+                if not value: return bytes(out)
+        return varint(number << 3 | 2) + varint(len(payload)) + payload
+
+    def element(self, name, attributes=(), children=()):
+        body = self.field(3, name.encode())
+        for key, value in attributes:
+            body += self.field(4, self.field(2, key.encode()) + self.field(3, value.encode()))
+        for child in children:
+            body += self.field(5, child)
+        return self.field(1, body)
+
+    def test_an_apk_is_read_through_aapt2_and_apksigner(self):
+        apk = self.root / "app.apk"
+        import zipfile
+        with zipfile.ZipFile(apk, "w") as archive:
+            archive.writestr("AndroidManifest.xml", b"")
+            archive.writestr("lib/x86_64/libcore.so", b"x")
+        self.tool("aapt2", "print(\"package: name='dev.test.app' versionCode='3' versionName='1.2' compileSdkVersion='36'\\nminSdkVersion:'26'\\n"
+                           "targetSdkVersion:'36'\\nuses-permission: name='android.permission.INTERNET'\\nnative-code: 'arm64-v8a'\")\n")
+        self.tool("apksigner", "print('Verifies\\nVerified using v2 scheme (APK Signature Scheme v2): true\\n"
+                               "Signer #1 certificate DN: CN=Test\\nSigner #1 certificate SHA-256 digest: 00ff')\n")
+        value = dispatch("android.package_inspect", {"path": str(apk)})
+        self.assertEqual((value["package"], value["version_code"], value["version_name"], value["min_sdk"], value["target_sdk"]),
+                         ("dev.test.app", 3, "1.2", 26, 36))
+        self.assertEqual(value["permissions"], ["android.permission.INTERNET"])
+        self.assertEqual(value["abis"], ["arm64-v8a", "x86_64"])
+        self.assertEqual(value["signing"], {"checked": True, "signed": True, "schemes": ["v2"],
+                                            "certificates": [{"subject": "CN=Test", "sha256": "00ff"}]})
+        self.tool("apksigner", "import sys;print('DOES NOT VERIFY\\nERROR: Missing META-INF/MANIFEST.MF');sys.exit(1)\n")
+        signing = dispatch("android.package_inspect", {"path": str(apk)})["signing"]
+        self.assertEqual((signing["signed"], signing["errors"]), (False, ["Missing META-INF/MANIFEST.MF"]))
+
+    def test_a_bundle_is_read_without_aapt2_and_its_signature_through_keytool(self):
+        import zipfile
+        manifest = self.element("manifest", [("package", "dev.test.bundle"), ("versionCode", "42"), ("versionName", "4.2")], [
+            self.element("uses-sdk", [("minSdkVersion", "24"), ("targetSdkVersion", "36")]),
+            self.element("uses-permission", [("name", "android.permission.CAMERA")])])
+        aab = self.root / "app.aab"
+        with zipfile.ZipFile(aab, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("base/manifest/AndroidManifest.xml", manifest)
+            archive.writestr("base/lib/arm64-v8a/libcore.so", b"x")
+            archive.writestr("base/dex/classes.dex", b"x")
+        self.tool("keytool", "print('Signer #1:\\nOwner: CN=Android Debug, O=Android, C=US\\nCertificate fingerprints:\\n  SHA256: 0A:FF')\n")
+        value = dispatch("android.package_inspect", {"path": str(aab)})
+        self.assertEqual((value["format"], value["package"], value["version_code"], value["min_sdk"], value["target_sdk"]),
+                         ("aab", "dev.test.bundle", 42, 24, 36))
+        self.assertEqual((value["permissions"], value["abis"], value["modules"]), (["android.permission.CAMERA"], ["arm64-v8a"], ["base"]))
+        self.assertEqual(value["signing"]["certificates"], [{"subject": "CN=Android Debug, O=Android, C=US", "sha256": "0aff"}])
+        for name, data in (("notes.txt", b"x"), ("broken.apk", b"not a zip")):
+            (self.root / name).write_bytes(data)
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.package_inspect", {"path": str(self.root / name)})
+            self.assertEqual(refused.exception.code, "invalid_artifact")
+
 
 class ProtocolTests(Isolated):
     def test_cli_schema_errors_and_file_arguments(self):
