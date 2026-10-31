@@ -269,7 +269,7 @@
   {
     "name": "project.inspect",
     "title": "Open project",
-    "description": "Detect frameworks and available platforms without executing project code.",
+    "description": "Detect frameworks and available platforms without executing project code. For a Gradle build, android lists each app module's application ID, namespace, min, target and compile SDK, build types, flavors and variants as read from the build files and versions catalog; values only Gradle can compute are listed under unresolved.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -550,7 +550,7 @@
         },
         "bundle_id": {
           "type": "string",
-          "description": "Android application ID for Gradle projects, or exact installed iPhone bundle ID to resolve ambiguous xtool signing mappings. Omit for automatic iPhone detection.",
+          "description": "Android application ID for Gradle projects (default: the variant's ID read from the build files, or tomacco.json's applicationId), or exact installed iPhone bundle ID to resolve ambiguous xtool signing mappings. Omit for automatic iPhone detection.",
           "default": ""
         },
         "configuration": {
@@ -561,6 +561,11 @@
             "release"
           ],
           "default": "debug"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Gradle build variant to install, such as freeDebug. Required when the app has product flavors; otherwise the configuration's build type.",
+          "default": ""
         }
       },
       "required": [

@@ -63,8 +63,15 @@ installed SDK platform, and the Android Gradle Plugin 9.1.1.
 
 - Build produces an APK or an AAB. Installing on a device takes APKs, split APKs
   included, or one AAB through bundletool; see below.
-- For other Gradle apps, set `applicationId` with `project.configure`, or pass
-  `bundle_id` to `project.run`.
+- `project.inspect` reads each app module's application ID, namespace, minimum,
+  target and compile SDK, build types, product flavors and variants from the build
+  files and `gradle/libs.versions.toml`, without running Gradle. It follows
+  `rootProject.ext`, `extra` and gradle.properties values and catalog versions; what
+  only Gradle can compute, such as Flutter's `flutter.minSdkVersion` or a module
+  configured by a convention plugin, is listed under `unresolved` or in a `note`.
+- `project.run` installs the app module's variant and launches the ID read from the
+  build files. An app with product flavors needs `variant`, such as `freeDebug`. To
+  override the ID, set `applicationId` with `project.configure`, or pass `bundle_id`.
 - Release signing stays in the project's Gradle configuration and keystore.
 - A Flutter run supports hot reload through `job.send`, and holds the project's
   workspace lock until it exits.

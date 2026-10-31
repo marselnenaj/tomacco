@@ -1,4 +1,4 @@
-use crate::{core::*, jobs, swift, toolchain as tc};
+use crate::{core::*, gradle_model, jobs, swift, toolchain as tc};
 use serde_json::{Value, json};
 use std::{collections::BTreeSet, fs, path::Path};
 
@@ -101,7 +101,7 @@ pub fn inspect(value: &str) -> Result {
     let mut names: Vec<_> = tasks.keys().cloned().collect();
     names.sort();
     Ok(
-        json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"tasks":names,"configuration":config}),
+        json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"android":gradle.as_deref().map(gradle_model::read),"tasks":names,"configuration":config}),
     )
 }
 fn kind(project: &Value, name: &str) -> bool {
@@ -382,25 +382,9 @@ pub fn run(a: &Value) -> Result {
         );
     }
     if kind(&project, "gradle") && platform == "android" {
-        let id = if s(a, "bundle_id").is_empty() {
-            s(&project["configuration"], "applicationId")
-        } else {
-            s(a, "bundle_id")
-        };
-        identifier(
-            id,
-            "application ID",
-            Some(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+"),
-        )?;
+        let (task, id) = android_target(&project, a)?;
         let mut args = gradle(&project)?;
-        args.extend(argv(&[
-            "--console=plain",
-            if config == "release" {
-                "installRelease"
-            } else {
-                "installDebug"
-            },
-        ]));
+        args.extend(["--console=plain".into(), task]);
         env["ANDROID_SERIAL"] = json!(device);
         return jobs::submit(
             &format!("Deploy {}", s(&project, "name")),
@@ -411,6 +395,108 @@ pub fn run(a: &Value) -> Result {
         "action_unsupported",
         "Use build, device.install and device.app for this project type",
     ))
+}
+fn capitalized(value: &str) -> String {
+    let mut chars = value.chars();
+    chars
+        .next()
+        .map(|c| c.to_uppercase().collect::<String>() + chars.as_str())
+        .unwrap_or_default()
+}
+/// The Gradle install task and the application ID of an Android run: the
+/// requested variant, or the configuration when the app has no flavors. The
+/// ID is `bundle_id`, else the variant's ID from the build files when a
+/// variant is named, else tomacco.json's applicationId, else the build files'.
+fn android_target(project: &Value, a: &Value) -> Result<(String, String)> {
+    let configuration = s(a, "configuration");
+    let apps = project["android"]["app_modules"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    let app = match apps.len() {
+        1 => Some(&apps[0]),
+        _ => apps.iter().find(|m| m["module"] == ":app"),
+    };
+    let variants: Vec<&Value> = app
+        .and_then(|m| m["variants"].as_array())
+        .map(|v| v.iter().collect())
+        .unwrap_or_default();
+    let names = |filter: &dyn Fn(&&Value) -> bool| {
+        variants
+            .iter()
+            .filter(|v| filter(v))
+            .filter_map(|v| v["name"].as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let requested = s(a, "variant");
+    let variant = if requested.is_empty() {
+        if app.is_some_and(|m| m["flavors"].as_array().is_some_and(|f| !f.is_empty())) {
+            return Err(Error::new(
+                "variant_required",
+                "This app has product flavors; name the build variant to install",
+            )
+            .remedy(format!(
+                "Pass variant, one of: {}",
+                names(&|v| v["build_type"] == configuration)
+            )));
+        }
+        configuration.to_string()
+    } else {
+        identifier(requested, "build variant", Some("[a-z][A-Za-z0-9]{0,99}"))?;
+        if !variants.is_empty() && !variants.iter().any(|v| v["name"] == requested) {
+            return Err(Error::new(
+                "invalid_variant",
+                format!("The build files have no variant {requested}"),
+            )
+            .remedy(format!("Use one of: {}", names(&|_| true))));
+        }
+        requested.to_string()
+    };
+    let module = app.map(|m| s(m, "module")).unwrap_or_default();
+    let task = if module.is_empty() {
+        format!("install{}", capitalized(&variant))
+    } else {
+        format!("{module}:install{}", capitalized(&variant))
+    };
+    let from_build = variants
+        .iter()
+        .find(|v| v["name"] == variant.as_str())
+        .and_then(|v| v["application_id"].as_str())
+        .unwrap_or_default();
+    let configured = s(&project["configuration"], "applicationId");
+    let id = [
+        s(a, "bundle_id"),
+        if requested.is_empty() { "" } else { from_build },
+        configured,
+        from_build,
+    ]
+    .into_iter()
+    .find(|id| !id.is_empty())
+    .ok_or_else(|| {
+        let known: Vec<_> = apps
+            .iter()
+            .map(|m| format!("{} {}", s(m, "module"), m["application_id"]))
+            .collect();
+        Error::new(
+            "application_id_unknown",
+            "The build files do not state this app's application ID",
+        )
+        .remedy(if known.len() > 1 {
+            format!(
+                "Several app modules ({}): pass bundle_id, or set applicationId with project.configure",
+                known.join(", ")
+            )
+        } else {
+            "Pass bundle_id, or set applicationId with project.configure".to_string()
+        })
+    })?;
+    identifier(
+        id,
+        "application ID",
+        Some(r"[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+"),
+    )?;
+    Ok((task, id.to_string()))
 }
 fn write(root: &Path, relative: &str, content: &str) -> Result<()> {
     let file = root.join(relative);
@@ -592,5 +678,96 @@ mod configuration_tests {
         fs::write(&current, br#"{"tasks":{"check":["true"]}}"#).unwrap();
         let inspected = inspect(&project.path().to_string_lossy()).unwrap();
         assert_eq!(inspected["configuration"]["tasks"]["check"][0], "true");
+    }
+
+    fn fixture(files: &[(&str, &str)]) -> tempfile::TempDir {
+        let project = tempfile::tempdir().unwrap();
+        for (relative, text) in files {
+            let file = project.path().join(relative);
+            fs::create_dir_all(file.parent().unwrap()).unwrap();
+            fs::write(file, text).unwrap();
+        }
+        project
+    }
+
+    #[test]
+    fn inspect_reads_the_app_id_and_sdk_levels_from_the_build_files() {
+        let project = fixture(&[
+            ("settings.gradle.kts", "include(\":app\")\n"),
+            (
+                "app/build.gradle.kts",
+                "plugins { id(\"com.android.application\") }\nandroid { namespace = \"dev.x\"; compileSdk = 36\n defaultConfig { applicationId = \"dev.x.app\"; minSdk = 26; targetSdk = 36 } }\n",
+            ),
+        ]);
+        let inspected = inspect(&project.path().to_string_lossy()).unwrap();
+        let app = &inspected["android"]["app_modules"][0];
+        assert_eq!(app["application_id"], "dev.x.app");
+        assert_eq!(app["min_sdk"], 26);
+        assert_eq!(app["target_sdk"], 36);
+        assert_eq!(app["compile_sdk"], 36);
+        assert_eq!(
+            inspected["android"]["application_ids"],
+            json!(["dev.x.app"])
+        );
+        let (task, id) = android_target(&inspected, &json!({"configuration":"debug"})).unwrap();
+        assert_eq!(
+            (task.as_str(), id.as_str()),
+            (":app:installDebug", "dev.x.app")
+        );
+        let (task, id) = android_target(
+            &inspected,
+            &json!({"configuration":"release","bundle_id":"dev.other"}),
+        )
+        .unwrap();
+        assert_eq!(
+            (task.as_str(), id.as_str()),
+            (":app:installRelease", "dev.other")
+        );
+    }
+
+    #[test]
+    fn a_flavored_app_needs_a_variant_and_runs_the_variants_id() {
+        let project = fixture(&[
+            ("settings.gradle", "include ':app'\n"),
+            (
+                "app/build.gradle",
+                "apply plugin: 'com.android.application'\nandroid {\n defaultConfig { applicationId 'dev.f' }\n buildTypes { debug { applicationIdSuffix '.debug' } }\n flavorDimensions 'tier'\n productFlavors {\n  free { applicationIdSuffix '.free' }\n  paid { }\n }\n}\n",
+            ),
+            ("tomacco.json", "{\"applicationId\":\"dev.f\"}"),
+        ]);
+        let inspected = inspect(&project.path().to_string_lossy()).unwrap();
+        let error = android_target(&inspected, &json!({"configuration":"debug"})).unwrap_err();
+        assert_eq!(error.code, "variant_required");
+        assert!(error.remedy.contains("freeDebug, paidDebug"));
+        let error = android_target(
+            &inspected,
+            &json!({"configuration":"debug","variant":"proDebug"}),
+        )
+        .unwrap_err();
+        assert_eq!(error.code, "invalid_variant");
+        let (task, id) = android_target(
+            &inspected,
+            &json!({"configuration":"debug","variant":"freeDebug"}),
+        )
+        .unwrap();
+        assert_eq!(
+            (task.as_str(), id.as_str()),
+            (":app:installFreeDebug", "dev.f.free.debug")
+        );
+    }
+
+    #[test]
+    fn without_an_id_in_the_build_files_the_run_says_how_to_give_one() {
+        let project = fixture(&[("build.gradle", "plugins { id 'my.android.application' }\n")]);
+        let inspected = inspect(&project.path().to_string_lossy()).unwrap();
+        let error = android_target(&inspected, &json!({"configuration":"debug"})).unwrap_err();
+        assert_eq!(error.code, "application_id_unknown");
+        assert!(error.remedy.contains("bundle_id"));
+        let (task, _) = android_target(
+            &inspected,
+            &json!({"configuration":"debug","bundle_id":"dev.y"}),
+        )
+        .unwrap();
+        assert_eq!(task, "installDebug");
     }
 }

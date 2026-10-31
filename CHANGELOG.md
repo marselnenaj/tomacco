@@ -54,6 +54,11 @@ operations and their JSON results.
   - `testing.results` summarises JUnit XML from Gradle unit and instrumented tests or
     `testing.run`: totals, suites and failures with their stacks, leaving out results
     older than the test job.
+- **Projects.**
+  - `project.inspect` reports each Android app module's application ID, build types,
+    flavors, variants and minimum, target and compile SDK from the Gradle files and
+    versions catalog without running Gradle, and lists what it could not resolve.
+    `project.run` uses that ID and takes a `variant` for apps with product flavors.
 - **Housekeeping.** `storage.prune` lists, and with `apply` removes, old job records and
   logs and old test reports in the data directory. A dry run by default.
 - **iPhone.**
