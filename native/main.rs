@@ -34,10 +34,12 @@ mod preview;
 mod product;
 mod profiling;
 mod projects;
+mod recorder;
 mod redact;
 mod releases;
 mod remote;
 mod runtime;
+mod session_log;
 mod setup;
 mod storage;
 mod swift;
@@ -45,6 +47,7 @@ mod test_results;
 mod toolchain;
 mod update;
 mod visual;
+mod watch;
 mod workspaces;
 use core::*;
 use serde_json::{Value, json};
@@ -69,7 +72,7 @@ struct Options {
     unknown: Vec<String>,
 }
 impl Options {
-    const FLAGS: &[&str] = &["--names", "--pretty", "--compact", "--wait"];
+    const FLAGS: &[&str] = &["--names", "--pretty", "--compact", "--wait", "--dry-run"];
     /// Commands that parse their own arguments.
     const OWN: &[&str] = &["setup", "update", "uninstall"];
     /// What every command that prints an envelope takes.
@@ -269,6 +272,12 @@ Usage:
                     secrets masked. Nothing is sent; read it before sharing.
   tomaccoctl mcp     Serve the same operations to a coding agent over stdio
                     (Model Context Protocol; no network port).
+  tomaccoctl replay FILE [--dry-run]
+                    Call again, in order, the operations of a session log
+                    that changed something, waiting for each job; stops at
+                    the first failure. With --dry-run, list them only. Set
+                    TOMACCO_SESSION_LOG to a file to log the operations of
+                    call and mcp, with recognised secrets masked.
   tomaccoctl completions bash|zsh|fish
                     Print a completion script for commands, flags and
                     operation names, e.g. source <(tomaccoctl completions bash)
@@ -281,7 +290,7 @@ Usage:
   tomaccoctl --version, -V
   tomaccoctl --help, -h
 
-Options of call, schema, doctor and report:
+Options of call, schema, doctor, report and replay:
   --pretty          Indent the JSON. This is the default when standard output
                     is a terminal; a pipe or a file gets one line.
   --compact         One line of JSON, even at a terminal.
@@ -429,6 +438,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             )?;
             return Ok(0);
         }
+        Some("_watch") => {
+            watch::worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing watch specification"))?,
+            )?;
+            return Ok(0);
+        }
         Some("_automation") => {
             automation::worker(
                 args.get(1).ok_or_else(|| {
@@ -496,7 +512,7 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
                 args.get(2).map(String::as_str).unwrap_or("{}"),
                 std::io::stdin().lock(),
             )?;
-            match api::dispatch(op, &arguments) {
+            match session_log::call(op, &arguments) {
                 Ok(result) if options.given("--wait") => match job_id(&result) {
                     Some(id) => follow(id, api::dispatch, &mut std::io::stderr()),
                     None => Ok(result),
@@ -504,6 +520,16 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
                 result => result,
             }
         }
+        "replay" => options
+            .check(&["--dry-run"])
+            .and_then(|()| match &args[1..] {
+                [file] => session_log::replay(
+                    &std::fs::read_to_string(path(file, false, true)?)?,
+                    options.given("--dry-run"),
+                    api::dispatch,
+                ),
+                _ => Err(Error::new("invalid_request", "Name one session log file")),
+            }),
         _ => Err(
             Error::new("invalid_request", format!("Unknown command: {}", args[0]))
                 .remedy("Run tomaccoctl --help for the commands"),
@@ -676,13 +702,13 @@ mod tests {
                 "COMMANDS lacks {command}"
             );
         }
-        let flag = regex::Regex::new(r"(?:^|[^\\w-])(--[a-z]+|-[a-zA-Z])\b").unwrap();
+        let flag = regex::Regex::new(r"(?:^|[^\\w-])(--[a-z]+(?:-[a-z]+)*|-[a-zA-Z])\b").unwrap();
         let in_help: std::collections::BTreeSet<&str> = flag
             .captures_iter(&help)
             .map(|c| c.get(1).unwrap().as_str())
             .filter(|f| f.starts_with("--") || matches!(*f, "-h" | "-V"))
             .collect();
-        let roff = regex::Regex::new(r"(\\-\\-[a-z]+|\\-[a-zA-Z])\b").unwrap();
+        let roff = regex::Regex::new(r"(\\-\\-[a-z]+(?:\\-[a-z]+)*|\\-[a-zA-Z])\b").unwrap();
         let in_manual: std::collections::BTreeSet<String> = roff
             .captures_iter(manual)
             .map(|c| c.get(1).unwrap().as_str().replace("\\-", "-"))

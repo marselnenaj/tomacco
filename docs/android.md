@@ -81,6 +81,8 @@ test on an Android 16 emulator and ran with `project.run`.
 - Release signing stays in the project's Gradle configuration and keystore.
 - A Flutter run supports hot reload through `job.send`, and holds the project's
   workspace lock until it exits.
+- `project.watch` runs the app again whenever its sources change, or sends a Flutter
+  session Hot Reload; see [the agent guide](agents.md#android).
 
 ## React Native, Expo and Capacitor
 

@@ -201,6 +201,25 @@ and that they should read it before sharing it.
 tomaccoctl report /absolute/tomacco-report.tar.gz
 ```
 
+### Session log and replay
+
+Set `TOMACCO_SESSION_LOG` to an absolute file path, in the shell or in the `env` of your MCP client's server entry, and every
+operation called through `tomaccoctl call` or `tomaccoctl mcp` is appended to that file as one JSON line: `time`, `operation`,
+`arguments` with recognised secrets masked, `mutating` (the operation is not read-only), `ok`, `duration_seconds`, and a short
+`result` (a job's ID and state, an object's keys, a list's length) or the `error` code and message. The file is created owner-only.
+Calls an operation makes itself, and the job polling of `call --wait`, are not logged.
+
+`tomaccoctl replay FILE` calls the logged operations that change something again, in order, waits for each job one of them starts,
+and stops at the first failure. It skips, and lists with the reason, calls that only read (`read_only`), that failed when they were
+logged (`failed_originally`), `job.*` calls, which name jobs of the old session (`job_reference`), and calls whose arguments were
+masked (`redacted`). `--dry-run` lists what it would call without calling anything.
+
+```sh
+TOMACCO_SESSION_LOG=/absolute/session.jsonl tomaccoctl call project.run '{"path":"/absolute/MyApp","platform":"android","device":"emulator-5554"}'
+tomaccoctl replay /absolute/session.jsonl --dry-run
+tomaccoctl replay /absolute/session.jsonl
+```
+
 ## Android
 
 Full guide: [Android](android.md). Check prerequisites with `doctor`, `android.sdk_packages` and `android.avds`.
@@ -216,6 +235,19 @@ tomaccoctl call project.run '{"path":"/absolute/NewApp","platform":"android","de
 with `"action":"instrumented-test"`. `project.inspect` reports a Gradle app's application ID, variants
 and SDK levels under `android`, read from its files. `project.dependency_updates` reports which of a
 Gradle build's dependencies and plugins have newer versions, as a read-only job.
+
+`project.watch` takes the arguments of `project.run` and keeps the app current while you edit: a job that runs the app once,
+then polls the project's files and, after they have stayed unchanged for `debounce_ms` (800 by default), calls `project.run`
+again and waits for it. Build output, dependencies and tool state (`build`, `.gradle`, `.dart_tool`, `node_modules`, `Pods`,
+`.git` and similar) are not watched; `ignore` adds directory names. A Flutter project gets one Flutter session and Hot Reload on
+each change instead, and a new session when that one has ended. Each cycle writes one line to the job's log, such as
+`cycle 3: 1 file changed (app/src/main/java/Main.kt): built, installed and launched in 41.2 s (job ID)`. Cancel the job to stop;
+the run it started is cancelled with it.
+
+```sh
+tomaccoctl call project.watch '{"path":"/absolute/NewApp","platform":"android","device":"emulator-5554"}'
+tomaccoctl call job.logs '{"job_id":"WATCH_JOB_ID"}'
+```
 
 Then look: `device.capture` for evidence, `android.hierarchy` for the UI tree, and assert the app's state
 after each action. Prefer `testing.find` and `testing.action` over coordinates when the app exposes
@@ -515,6 +547,50 @@ Native debugging is qualified on API 36 x86_64. ARM64 is built but not run on a 
 
 `testing.setup` installs a small instrumentation companion for Unicode, emoji and whole-field replacement, without changing the user's keyboard. `testing.run`
 runs JSON scenarios on a bounded parallel device matrix, returning JUnit results and capturing failures; `examples/native-navigation.json` shows the format.
+Besides the selector steps, a scenario can `tap` or `swipe` at pixel coordinates (`x`, `y`, `end_x`, `end_y`, `duration` in
+milliseconds) and type `text` into the focused field.
+
+`testing.record` writes such a scenario from what you do. Between `start` and `stop`, the taps, swipes, text and keys sent to that
+Android device through `android.input`, `runtime.input` (also from the desktop's live display) and `testing.action` become steps. Before
+each tap it reads the UI hierarchy and names the element under the finger by resource ID, description or text, adding `index` when the
+name is shared; without a name there it records a `tap` at pixel coordinates. Reading the hierarchy makes a tap take longer while
+recording. A rotation or another input a scenario cannot express is listed under `skipped`. `status` counts the steps, `discard` throws
+the recording away.
+
+```sh
+tomaccoctl call testing.record '{"device":"emulator-5554","action":"start","name":"Add a counter"}'
+# tap and type in the desktop or with android.input / runtime.input
+tomaccoctl call testing.record '{"device":"emulator-5554","action":"stop","path":"/absolute/add-counter.json"}'
+```
+
+Read the scenario before you keep it: coordinate steps depend on the screen size, and a recorded step waits only when it is a click
+on a named element, which waits for that element.
+
+`testing.lint` checks a scenario without acting on the device: its format, then each step against the screen now, or against a saved
+`android.hierarchy` XML given as `hierarchy`. A finding names the step, a `severity` and a `code`: `not_found` (nothing on this screen
+matches; a warning, since an earlier step may open the screen it belongs to), `ambiguous` (several elements match: an error for
+`click`, `long_click` and `fill`, which act on one, with up to five `candidates` in `steps`), `disabled`, `present` (an element
+expected absent is there), `off_screen` and `invalid_key`. `passed` is false when a finding is an error; a scenario that does not
+parse answers `valid:false` with the error.
+
+```sh
+tomaccoctl call testing.lint '{"path":"/absolute/add-counter.json","device":"emulator-5554"}'
+```
+
+`path` can also be a directory: each `.json` file directly in it is a scenario, run in name order, and a malformed one is refused
+before anything runs. By default every device runs every scenario. `shard:true` splits them instead: each scenario runs once, on
+whichever device is free next, and the results are merged into one `report.json` (each result names its `scenario` and `device`) and
+one `junit.xml` (`classname` is the scenario). Only the first `parallelism` devices take part, so raise it to use more.
+
+```sh
+tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute/ui-results","devices":["emulator-5554","emulator-5556"],"shard":true,"parallelism":2,"retries":1}'
+```
+
+`retries` runs a failed scenario again on that device, up to five times; a scenario's own `retries` field takes precedence. Each
+device's result in `report.json` then lists its `attempts` (whether each passed, its error and the index of the step that failed), and
+`flaky:true` marks a pass after a failure; the report's `flaky` lists each such `scenario` and `device`. In `junit.xml` the earlier failures are
+`flakyFailure` elements of a passed test case, or `rerunFailure` elements of a failed one, as Maven Surefire writes them. A retry hides
+nothing: read the attempts of a flaky scenario.
 
 `testing.results` reads JUnit XML into one summary: `totals` (`tests`, `passed`, `failed`, `errors`, `skipped`, `time`), each suite with
 its device for instrumented tests, and each failure with its class, name, message and stack. Given a project it finds Gradle's unit test
@@ -569,6 +645,10 @@ tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"de
 What has been run: `testing.visual_diff`, `testing.accessibility` (on the Settings app), `testing.crashes` (with a crash from
 `am crash`) and the crash list of `testing.run` on an API 36 x86_64 emulator, and `testing.results` on a `testing.run` report. ANRs,
 native crashes and Gradle's own result files have been read only from sample text in the unit tests.
+On an API 36 x86_64 emulator with the Settings app: `testing.record` with `android.input`, `testing.action` and `runtime.input`
+(touch, key, swipe and rotation sent through a display session from the command line, not by hand in the desktop), the recorded
+scenario passing `testing.lint` and `testing.run`, and a directory of two scenarios run with `shard` and `retries`. A pass after a
+failure (`flaky`) has been seen only with a stand-in adb in the tests.
 
 `profile.capture` records Android Perfetto traces. Configure the official `trace_processor`, then use `profile.analyze` and `profile.compare`. Metrics that are
 not available are null, not zero. A count of frames with jank tags is not the same as visible drops.

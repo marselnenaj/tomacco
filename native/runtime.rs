@@ -570,11 +570,33 @@ pub fn worker(id: &str) -> Result<()> {
             .lock()
             .unwrap()
             .update(json!({"status":"connected"}))?;
+        // A recording of a UI test (testing.record) takes Android input.
+        let mut recording = if s(&spec, "platform") == "android" {
+            crate::recorder::Store::home()
+                .ok()
+                .map(|store| crate::recorder::Live::new(store, s(&spec, "device")))
+        } else {
+            None
+        };
         while !stopped.load(Ordering::Relaxed) {
             if let Ok(command) = receive.recv_timeout(Duration::from_millis(100)) {
                 let answer = match command.op.as_str() {
-                    "input" => api::arguments("runtime.input", &command.args)
-                        .and_then(|a| device.input(&a)),
+                    "input" => api::arguments("runtime.input", &command.args).and_then(|a| {
+                        let step = recording.as_mut().and_then(|live| {
+                            live.before(&a, || {
+                                device
+                                    .hierarchy()
+                                    .ok()
+                                    .map(|value| s(&value, "xml").to_string())
+                                    .filter(|xml| !xml.is_empty())
+                            })
+                        });
+                        let result = device.input(&a)?;
+                        if let Some(live) = &recording {
+                            live.after(step);
+                        }
+                        Ok(result)
+                    }),
                     "capture" => api::arguments("runtime.capture", &command.args)
                         .and_then(|a| device.capture(&output_path(s(&a, "path"))?)),
                     "hierarchy" => device.hierarchy(),

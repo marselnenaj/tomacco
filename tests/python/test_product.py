@@ -883,6 +883,100 @@ class AndroidControlTests(Isolated):
         dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "plain text"})
         self.assertEqual(self.shell_calls()[-1], ["input", "text", "plain%stext"])
 
+    def test_input_sent_while_recording_becomes_a_scenario(self):
+        screen = ('<hierarchy><node class="android.widget.FrameLayout" bounds="[0,0][1080,2400]">'
+                  '<node class="android.widget.Button" text="Add one" resource-id="" clickable="true" bounds="[0,500][540,600]"/>'
+                  '</node></hierarchy>')
+        self.replies(**{"cat /data/local/tmp/tomacco-": screen})
+        device = {"device": "emulator-5554"}
+        dispatch("android.input", {**device, "action": "tap", "x": 100, "y": 550})
+        self.assertFalse(any("uiautomator" in " ".join(call) for call in self.calls()), "no hierarchy without a recording")
+        dispatch("testing.record", {**device, "action": "start", "name": "Counter"})
+        dispatch("android.input", {**device, "action": "tap", "x": 100, "y": 550})
+        dispatch("android.input", {**device, "action": "tap", "x": 900, "y": 2000})
+        dispatch("android.input", {**device, "action": "keyevent", "key": "KEYCODE_BACK"})
+        self.assertEqual(dispatch("testing.record", {**device, "action": "status"})["steps"], 3)
+        target = self.root / "counter.json"
+        result = dispatch("testing.record", {**device, "action": "stop", "path": str(target)})
+        self.assertEqual(result["path"], str(target))
+        self.assertEqual(json.loads(target.read_text()), {"name": "Counter", "steps": [
+            {"action": "click", "selector": {"text": "Add one"}},
+            {"action": "tap", "x": 900, "y": 2000},
+            {"action": "key", "key": "KEYCODE_BACK"}]})
+        self.assertIn(["input", "tap", "900", "2000"], self.shell_calls())
+        self.assertFalse(dispatch("testing.record", {**device, "action": "status"})["recording"])
+
+    def test_lint_checks_a_scenario_against_the_screen_without_acting(self):
+        screen = ('<hierarchy><node bounds="[0,0][1080,2400]"><node text="OK" enabled="true" bounds="[0,10][20,30]"/>'
+                  '<node text="OK" enabled="true" bounds="[30,10][60,30]"/></node></hierarchy>')
+        self.replies(**{"cat /data/local/tmp/tomacco-": screen})
+        scenario = self.root / "scenario.json"
+        scenario.write_text(json.dumps({"name": "Lint", "steps": [{"action": "click", "selector": {"text": "OK"}},
+                                                                   {"action": "tap", "x": 10, "y": 20}]}))
+        result = dispatch("testing.lint", {"path": str(scenario), "device": "emulator-5554"})
+        self.assertEqual((result["valid"], result["passed"]), (True, False))
+        self.assertEqual([(f["step"], f["code"]) for f in result["findings"]], [(0, "ambiguous")])
+        self.assertFalse(any(args[:1] == ["input"] for args in self.shell_calls()), "lint never acts")
+        saved = self.root / "screen.xml"
+        saved.write_text(screen)
+        scenario.write_text(json.dumps({"name": "Lint", "steps": [{"action": "click", "selector": {"text": "OK", "index": 0}}]}))
+        self.assertTrue(dispatch("testing.lint", {"path": str(scenario), "hierarchy": str(saved)})["passed"])
+        scenario.write_text(json.dumps({"name": "Lint", "steps": [{"action": "tap", "x": 10}]}))
+        result = dispatch("testing.lint", {"path": str(scenario), "hierarchy": str(saved)})
+        self.assertEqual((result["valid"], result["error"]["code"]), (False, "invalid_argument"))
+        with self.assertRaises(StudioError):
+            dispatch("testing.lint", {"path": str(scenario)})
+
+    def test_a_failed_scenario_is_retried_and_a_late_pass_reported_flaky(self):
+        # The first key press fails, every later one works.
+        self.tool("adb", self.ADB.replace("command=' '.join(a[2:])\n",
+                                          "command=' '.join(a[2:])\n"
+                                          "if 'keyevent' in command:\n"
+                                          "    marker=root/'failed-once'\n"
+                                          "    if not marker.exists(): marker.write_text('1'); print('device offline'); sys.exit(1)\n"))
+        scenario = self.root / "scenario.json"
+        scenario.write_text(json.dumps({"name": "Back", "steps": [{"action": "key", "key": "KEYCODE_BACK"}]}))
+        report = self.root / "report"
+        job = dispatch("testing.run", {"path": str(scenario), "directory": str(report), "devices": ["emulator-5554"], "retries": 1})
+        done = jobs.wait(job["id"], 60 * PATIENCE)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        value = json.loads((report / "report.json").read_text())
+        self.assertEqual((value["passed"], value["flaky"], value["retries"]), (True, [{"scenario": "Back", "device": "emulator-5554"}], 1))
+        result = value["results"][0]
+        self.assertTrue(result["flaky"])
+        self.assertEqual([attempt["passed"] for attempt in result["attempts"]], [False, True])
+        self.assertEqual(result["attempts"][0]["failed_step"], 0)
+        self.assertIn("<flakyFailure", (report / "junit.xml").read_text())
+
+    def test_scenarios_are_sharded_across_devices_into_one_report(self):
+        scenarios = self.root / "scenarios"
+        scenarios.mkdir()
+        for number, key in enumerate(["KEYCODE_1", "KEYCODE_2", "KEYCODE_3"]):
+            (scenarios / f"{number}.json").write_text(json.dumps({"name": f"Press {number}", "steps": [{"action": "key", "key": key}]}))
+        devices = ["emulator-5554", "emulator-5556"]
+        run = lambda directory, **extra: jobs.wait(dispatch("testing.run", {"path": str(scenarios), "directory": str(self.root / directory),
+                                                                            "devices": devices, **extra})["id"], 60 * PATIENCE)
+        self.assertEqual(run("shard", shard=True)["state"], "succeeded")
+        value = json.loads((self.root / "shard/report.json").read_text())
+        self.assertEqual((value["passed"], value["shard"], value["scenarios"]), (True, True, ["Press 0", "Press 1", "Press 2"]))
+        self.assertEqual([r["scenario"] for r in value["results"]], ["Press 0", "Press 1", "Press 2"])
+        self.assertTrue({r["device"] for r in value["results"]} <= set(devices))
+        # Each scenario ran once, on the device its result names.
+        presses = [(call[1], call[-1]) for call in map(json.loads, (self.root / "adb-calls.jsonl").read_text().splitlines())
+                   if "keyevent" in call[-1]]
+        self.assertEqual(sorted(presses), sorted((r["device"], f"input keyevent KEYCODE_{n + 1}") for n, r in enumerate(value["results"])))
+        junit = (self.root / "shard/junit.xml").read_text()
+        self.assertIn('tests="3" failures="0"', junit)
+        self.assertIn('classname="Press 2"', junit)
+        # Without shard every device runs every scenario.
+        self.assertEqual(run("matrix")["state"], "succeeded")
+        value = json.loads((self.root / "matrix/report.json").read_text())
+        self.assertEqual(len(value["results"]), 6)
+        (scenarios / "broken.json").write_text(json.dumps({"name": "Broken", "steps": []}))
+        with self.assertRaises(StudioError) as broken:
+            run("broken", shard=True)
+        self.assertIn("broken.json", str(broken.exception))
+
     def test_unicode_text_names_what_it_needs_when_it_cannot_work(self):
         with self.assertRaises(StudioError) as missing:
             dispatch("android.input", {"device": "emulator-5554", "action": "text", "text": "é"})
@@ -1191,6 +1285,41 @@ class ProtocolTests(Isolated):
         args.write_text('{"platform":"ios"}')
         value = json.loads(subprocess.check_output([binary(), "call", "catalog.list", "@" + str(args)]))
         self.assertTrue(all(p["platform"] == "ios" for p in value["result"]))
+
+    def test_a_session_log_records_calls_and_replay_repeats_the_changing_ones(self):
+        log = self.root / "session.jsonl"
+        first, second = self.root / "adb-one", self.root / "adb-two"
+        for tool in (first, second):
+            tool.write_text("#!/bin/sh\n")
+            tool.chmod(0o755)
+        logged = {**os.environ, "TOMACCO_SESSION_LOG": str(log)}
+        call = lambda op, args: subprocess.run([binary(), "call", op, json.dumps(args)], env=logged, capture_output=True, text=True)
+        call("catalog.list", {"platform": "ios"})
+        call("settings.configure", {"executables": {"adb": str(first)}})
+        call("project.inspect", {"path": str(self.root / "missing")})
+        request = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                   "params": {"name": "remote.configure", "arguments": {"name": "mac", "host": "mac.local", "user": "me", "password": "hunter2-secret"}}}
+        handshake = [{"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}},
+                     {"jsonrpc": "2.0", "method": "notifications/initialized"}, request]
+        subprocess.run([binary(), "mcp"], input="\n".join(map(json.dumps, handshake)) + "\n", env=logged, capture_output=True, text=True)
+        entries = [json.loads(line) for line in log.read_text().splitlines()]
+        self.assertEqual([(e["operation"], e["ok"], e["mutating"]) for e in entries],
+                         [("catalog.list", True, False), ("settings.configure", True, True), ("project.inspect", False, False),
+                          ("remote.configure", False, True)])
+        self.assertEqual(entries[0]["result"], {"items": entries[0]["result"]["items"]})
+        self.assertNotIn("hunter2", log.read_text())
+        self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+        dispatch("settings.configure", {"executables": {"adb": str(second)}})
+        replay = lambda *flags: json.loads(subprocess.run([binary(), "replay", str(log), *flags], capture_output=True, text=True).stdout)
+        plan = replay("--dry-run")["result"]
+        self.assertEqual([(c["operation"], c["status"]) for c in plan["calls"]],
+                         [("catalog.list", "skipped"), ("settings.configure", "would_run"), ("project.inspect", "skipped"),
+                          ("remote.configure", "skipped")])
+        self.assertEqual(dispatch("settings.get", {})["executables"]["adb"], str(second))
+        done = replay()["result"]
+        self.assertEqual((done["ran"], done["skipped"]), (1, 3))
+        self.assertEqual(dispatch("settings.get", {})["executables"]["adb"], str(first))
+        self.assertFalse(replay("--wait")["ok"])
 
     def test_mcp_handshake_resources_and_error_recovery(self):
         requests = [

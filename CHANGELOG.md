@@ -6,8 +6,30 @@ operations and their JSON results.
 
 ## Unreleased
 
+`tomaccoctl` now has one typed API of 196 operations.
+
 ### Added
 
+- **Testing.**
+  - `testing.record` records a UI test on an Android device: taps, swipes, text and keys sent through
+    `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`
+    steps. A tap becomes a click on the element under it when the UI hierarchy names it, otherwise a tap at
+    coordinates. Scenarios gain the steps `tap`, `swipe` and `text` for that.
+  - `testing.lint` checks a scenario against the current screen or a saved hierarchy without acting: selectors that
+    match nothing, several elements or a disabled one, points off the screen and malformed keys.
+  - `testing.run` takes `retries`, or a scenario its own `retries`: a failed scenario runs again on that device.
+    Each result lists its `attempts`, a pass after a failure is `flaky`, the report lists them under `flaky`, and
+    `junit.xml` writes the earlier failures as `flakyFailure` or `rerunFailure`.
+  - `testing.run` takes a directory of scenarios as `path`, and with `shard:true` splits them across the devices,
+    each scenario once on the next free device, into one report and one `junit.xml`. Without it every device runs
+    every scenario.
+- **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
+  unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
+  ignored. A Flutter project keeps one session and gets Hot Reload on each change.
+- **Session log and replay.** With `TOMACCO_SESSION_LOG` set to a file, every operation called through `tomaccoctl call`
+  or `tomaccoctl mcp` is appended to it as a JSON line: arguments with recognised secrets masked, outcome, a short
+  result summary and the duration. `tomaccoctl replay FILE [--dry-run]` calls the logged operations that change
+  something again, in order, waiting for their jobs and stopping at the first failure.
 - An operation reference in `docs/reference/`, one page per area, generated from `assets/operations.json` by
   `tools/build_reference.py`: each operation's title, description, annotations, arguments with types, choices,
   limits and defaults, and an example call. A test fails when it is out of date.

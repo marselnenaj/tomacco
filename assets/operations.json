@@ -863,6 +863,88 @@
     }
   },
   {
+    "name": "project.watch",
+    "title": "Watch and rerun app",
+    "description": "Watch a project's source files and, whenever they change and have stayed unchanged for debounce_ms, build, install and launch the app again with project.run, as a durable job; it also runs the app once at the start. Build output, dependency and tool directories (build, .gradle, .dart_tool, node_modules, Pods, .git and others) are ignored. For a Flutter project it starts one Flutter session and sends it Hot Reload on each change, starting a new session when that one has ended. Each cycle writes one line to the job's log: the files that changed and how the run ended. Cancel the job to stop watching; runs it started are cancelled with it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local filesystem path",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "android",
+            "ios"
+          ]
+        },
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Android application ID for Gradle projects (default: the variant's ID read from the build files, or tomacco.json's applicationId), or exact installed iPhone bundle ID to resolve ambiguous xtool signing mappings. Omit for automatic iPhone detection.",
+          "default": ""
+        },
+        "configuration": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "debug",
+            "release"
+          ],
+          "default": "debug"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Gradle build variant to install, such as freeDebug. Required when the app has product flavors; otherwise the configuration's build type.",
+          "default": ""
+        },
+        "debounce_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000,
+          "default": 800,
+          "description": "How long the files must stay unchanged before a cycle starts, in milliseconds"
+        },
+        "ignore": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "More directory names to leave out, besides build, .gradle, .dart_tool, node_modules, Pods, .git and other build and tool directories"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400,
+          "default": 86400,
+          "description": "Seconds after which the watch ends"
+        }
+      },
+      "required": [
+        "path",
+        "platform",
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "project.dependency_updates",
     "title": "Check dependency updates",
     "description": "Compare the versions a Gradle build declares, in gradle/libs.versions.toml and its build files, with the newest versions in Maven metadata from Google Maven, Maven Central and the Gradle Plugin Portal. Read-only, as a job whose report.json lists each dependency and plugin with its source line, latest stable and latest version and a status. Answers offline at once when no repository host resolves.",
@@ -4162,12 +4244,13 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run a JSON native Android scenario across devices with device locks, JUnit, JSON reports and failure screenshots.",
+    "description": "Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "path": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute path of a scenario JSON, or of a directory whose .json files are scenarios, run in name order"
         },
         "directory": {
           "type": "string"
@@ -4181,6 +4264,11 @@
             "minLength": 1
           }
         },
+        "shard": {
+          "type": "boolean",
+          "default": false,
+          "description": "Split the scenarios across the devices, each scenario once, on the next free device, instead of running every scenario on every device. At most parallelism devices are used."
+        },
         "parallelism": {
           "type": "integer",
           "minimum": 1,
@@ -4192,6 +4280,13 @@
           "minimum": 10,
           "maximum": 86400,
           "default": 3600
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "default": 0,
+          "description": "Run a failed scenario again up to this many times per device; a scenario's own retries field takes precedence. A pass after a failure is flaky in report.json, with every attempt listed."
         }
       },
       "required": [
@@ -4205,6 +4300,90 @@
       "readOnlyHint": false,
       "destructiveHint": false,
       "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "testing.record",
+    "title": "Record UI test",
+    "description": "Record a UI test on an Android device. Between start and stop, the taps, swipes, text and keys sent to the device through android.input, runtime.input (the desktop's live display included) and testing.action become testing.run scenario steps. A tap becomes a click on the element under it, named by resource ID, description or text (with index when that is shared), when the UI hierarchy read just before the tap names one; otherwise a tap at pixel coordinates. Reading the hierarchy makes each tap slower while recording. stop writes the scenario to path; status counts the steps; discard throws the recording away. Input a scenario cannot express, such as a rotation, is listed under skipped.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "start",
+            "status",
+            "stop",
+            "discard"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "The scenario's name, set at start"
+        },
+        "path": {
+          "type": "string",
+          "description": "Absolute path of the scenario JSON that stop writes"
+        },
+        "overwrite": {
+          "type": "boolean",
+          "default": false,
+          "description": "Let stop replace an existing file at path"
+        }
+      },
+      "required": [
+        "device",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "testing.lint",
+    "title": "Check UI test scenario",
+    "description": "Check a testing.run scenario without acting on the device: its format, and each step against the current Android screen (or a saved android.hierarchy XML). findings name the step and a code: not_found (no element here matches; a warning, since an earlier step may open the screen it is on), ambiguous (several match: an error for click, long_click and fill, which need one), disabled, present (an element expected absent is there), off_screen (a tap or swipe point outside the screen) and invalid_key. steps lists each step's match count. A scenario that does not parse answers valid false with the error. passed is false when any finding is an error.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the scenario JSON"
+        },
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list; reads the current screen"
+        },
+        "hierarchy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of a saved android.hierarchy XML instead of a device"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
       "openWorldHint": true
     }
   },

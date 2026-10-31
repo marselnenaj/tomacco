@@ -3251,6 +3251,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Bauen &amp; auf Gerät starten</translation>
     </message>
     <message>
+        <source>Watch and rerun app</source>
+        <translation>App beobachten und neu starten</translation>
+    </message>
+    <message>
         <source>Build iOS graphics compiler plugin</source>
         <translation>iOS-Grafik-Compiler-Plugin bauen</translation>
     </message>
@@ -3745,6 +3749,14 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Run native tests</source>
         <translation>Native Tests ausführen</translation>
+    </message>
+    <message>
+        <source>Record UI test</source>
+        <translation>UI-Test aufzeichnen</translation>
+    </message>
+    <message>
+        <source>Check UI test scenario</source>
+        <translation>UI-Test-Szenario prüfen</translation>
     </message>
     <message>
         <source>Set up Android text input</source>

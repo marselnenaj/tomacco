@@ -3247,6 +3247,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Compiler et lancer sur l'appareil</translation>
     </message>
     <message>
+        <source>Watch and rerun app</source>
+        <translation>Surveiller et relancer l'app</translation>
+    </message>
+    <message>
         <source>Build iOS graphics compiler plugin</source>
         <translation>Compiler le plugin de compilateur graphique iOS</translation>
     </message>
@@ -3737,6 +3741,14 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
     <message>
         <source>Run native tests</source>
         <translation>Exécuter les tests natifs</translation>
+    </message>
+    <message>
+        <source>Record UI test</source>
+        <translation>Enregistrer un test d'interface</translation>
+    </message>
+    <message>
+        <source>Check UI test scenario</source>
+        <translation>Vérifier un scénario de test d'interface</translation>
     </message>
     <message>
         <source>Set up Android text input</source>

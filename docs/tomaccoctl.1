@@ -24,6 +24,10 @@ tomaccoctl \- the Tomacco control plane for building, running and testing mobile
 .br
 .B tomaccoctl mcp
 .br
+.B tomaccoctl replay
+.I FILE
+.RB [ \-\-dry\-run ]
+.br
 .B tomaccoctl completions
 .BR bash | zsh | fish
 .br
@@ -105,6 +109,17 @@ left to set up, in order.
 Serve the same operations to a coding agent over standard input and output
 (Model Context Protocol). It opens no network port.
 .TP
+.BR replay " \fIFILE\fR [" \-\-dry\-run ]
+Call again, in order, the operations of a session log (see
+.BR TOMACCO_SESSION_LOG )
+that change something, waiting for each job they start to end. It stops at
+the first call that fails. Calls that failed when they were logged, that
+only read, that name a job of the logged session or whose arguments were
+masked are skipped and listed with the reason.
+With
+.B \-\-dry\-run
+it only lists what it would call.
+.TP
 .BR completions " " bash | zsh | fish
 Print a completion script for the commands, their flags and the operation
 names, for example
@@ -129,9 +144,10 @@ sent; read it before you share it.
 .SH OPTIONS
 These options can stand anywhere on the command line of
 .BR call ,
-.B schema
+.BR schema ,
+.B doctor
 and
-.BR doctor .
+.BR replay .
 .TP
 .B \-\-pretty
 Indent the JSON. This is the default when standard output is a terminal;
@@ -148,6 +164,10 @@ Follow a job that the operation starts until it ends.
 .RB ( schema )
 Print only the operation names.
 .TP
+.B \-\-dry\-run
+.RB ( replay )
+List the calls without making them.
+.TP
 .BR \-\-version ", " \-V
 Print the version.
 .TP
@@ -162,6 +182,16 @@ in the JSON envelope on standard output.
 The data directory: projects, device profiles, job records and logs.
 The default is
 .IR ~/.local/share/tomacco .
+.TP
+.B TOMACCO_SESSION_LOG
+An absolute file path. Every operation called through
+.B call
+or
+.B mcp
+is appended to it as one JSON line: the operation, its arguments with
+recognised secrets masked, whether it worked, a short summary of the result
+and its duration. Masking recognises known shapes only; read the log before
+you share it.
 .TP
 .B TOMACCO_UPDATES
 Set to
