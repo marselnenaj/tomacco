@@ -77,6 +77,14 @@ pub fn audit(xml: &str, limits: &Limits) -> Result<(Vec<Value>, usize)> {
                 "width_dp":(width * 10.0).round() / 10.0,"height_dp":(height * 10.0).round() / 10.0,
             })
         };
+        // An element cut off at the edge of a scrolling list shows only part
+        // of its size; its size is not judged.
+        let clipped = node
+            .ancestors()
+            .skip(1)
+            .find(|n| n.attribute("scrollable") == Some("true"))
+            .and_then(|n| rectangle(n.attribute("bounds").unwrap_or("")))
+            .is_some_and(|(l, t, r, b)| left <= l || top <= t || right >= r || bottom >= b);
         let image = class.ends_with("ImageView") || class.ends_with("ImageButton");
         if actionable && !has_label(node) {
             findings.push(finding(
@@ -90,6 +98,7 @@ pub fn audit(xml: &str, limits: &Limits) -> Result<(Vec<Value>, usize)> {
             ));
         }
         if actionable
+            && !clipped
             && attribute("enabled") != "false"
             && (width < limits.min_target_dp || height < limits.min_target_dp)
         {
@@ -104,6 +113,7 @@ pub fn audit(xml: &str, limits: &Limits) -> Result<(Vec<Value>, usize)> {
         }
         let leaf = !node.children().any(|n| n.has_tag_name("node"));
         if leaf
+            && !clipped
             && !attribute("text").trim().is_empty()
             && !class.ends_with("EditText")
             && height < limits.min_text_height_dp
@@ -203,6 +213,11 @@ mod tests {
     <node index="3" text="v1.0 build 7" class="android.widget.TextView" package="dev.example" clickable="false" bounds="[40,2300][400,2330]"/>
     <node index="4" text="" class="android.view.View" package="dev.example" clickable="true" enabled="false" bounds="[0,600][60,660]"/>
     <node index="5" text="" class="android.widget.EditText" package="dev.example" clickable="true" enabled="true" bounds="[0,700][1080,720]"/>
+    <node index="6" text="" class="androidx.recyclerview.widget.RecyclerView" package="dev.example" scrollable="true" bounds="[0,800][1080,2000]">
+      <node index="0" text="" class="android.widget.LinearLayout" package="dev.example" clickable="true" enabled="true" bounds="[0,1970][1080,2000]">
+        <node index="0" text="Storage" resource-id="dev.example:id/cut" class="android.widget.TextView" package="dev.example" bounds="[40,1975][400,2000]"/>
+      </node>
+    </node>
   </node>
   <node index="1" text="12:00" class="android.widget.TextView" package="com.android.systemui" bounds="[0,0][100,20]"/>
 </hierarchy>"#;
@@ -225,7 +240,9 @@ mod tests {
     #[test]
     fn labels_targets_and_text_are_audited() {
         let (findings, audited) = audit(SCREEN, &limits("dev.example")).unwrap();
-        assert_eq!(audited, 8);
+        assert_eq!(audited, 11);
+        // The last row of the list is cut off by its edge: not judged.
+        assert!(!findings.iter().any(|f| f["text"] == "Storage" || f["bounds"]["top"] == 1970));
         let found = rules(&findings);
         // 168 px at 420 dpi is 64 dp: big enough, but unnamed.
         assert!(found.contains(&("missing_label".into(), "dev.example:id/share".into())));

@@ -440,7 +440,7 @@ has a `rule`, `severity`, `message`, the element's class, id, text and descripti
 - `small_text` (warning): a text element lower than `min_text_height_dp`, 14 by default. The hierarchy has no font sizes, so this is an
   estimate from the element's height, which includes padding: it finds tiny text, not all small text.
 
-`bundle_id` keeps only the app's elements, without the status bar. These are heuristics, not a certificate: contrast, font sizes and focus
+An element cut off at the edge of a scrolling list is not judged by size. `bundle_id` keeps only the app's elements, without the status bar. These are heuristics, not a certificate: contrast, font sizes and focus
 order are not checked.
 
 ```sh
