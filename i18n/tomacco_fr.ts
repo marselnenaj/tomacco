@@ -4901,18 +4901,6 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
         <translation>Automatiques</translation>
     </message>
     <message>
-        <source>Nothing is sent unless you check now.</source>
-        <translation>Rien n'est envoyé sauf si vous vérifiez maintenant.</translation>
-    </message>
-    <message>
-        <source>Checks GitHub once a day and installs by itself when nothing is running.</source>
-        <translation>Consulte GitHub une fois par jour et installe seul quand rien ne tourne.</translation>
-    </message>
-    <message>
-        <source>Checks GitHub once a day and tells you.</source>
-        <translation>Consulte GitHub une fois par jour et vous prévient.</translation>
-    </message>
-    <message>
         <source>Check now</source>
         <translation>Vérifier maintenant</translation>
     </message>
@@ -4951,6 +4939,18 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
     <message>
         <source>Offers only finished releases.</source>
         <translation>Ne propose que les versions publiées.</translation>
+    </message>
+    <message>
+        <source>Off: nothing is sent unless you check now.</source>
+        <translation>Désactivées : rien n&apos;est envoyé sauf si vous vérifiez maintenant.</translation>
+    </message>
+    <message>
+        <source>Notify: checks GitHub once a day and shows a new version at the top of the window.</source>
+        <translation>Notifier : consulte GitHub une fois par jour et affiche une nouvelle version en haut de la fenêtre.</translation>
+    </message>
+    <message>
+        <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
+        <translation>Automatiques : les mises à jour s&apos;installent aussi seules quand rien ne tourne, puis Tomacco propose un redémarrage.</translation>
     </message>
 </context>
 <context>

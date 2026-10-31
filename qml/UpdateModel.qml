@@ -29,11 +29,13 @@ Item {
     readonly property bool restartNeeded: !!status.install && status.install.kind==="user_install" && !!status.current && !!Qt.application.version && status.current!==Qt.application.version
     // The version whose banner Later put away; a newer one shows it again.
     property string dismissed: String(Studio.setting("updates/dismissedVersion",""))
-    readonly property string bannerKind: !updateAvailable || restartNeeded || latest===dismissed ? ""
+    // After an installation, by hand or by itself in auto mode, the banner asks for the restart.
+    readonly property string bannerKind: restartNeeded ? (status.current!==dismissed ? "restart" : "")
+        : !updateAvailable || latest===dismissed ? ""
         : installing ? "installing"
         : mode!=="off" ? "available" : ""
     function later() {
-        dismissed=latest
+        dismissed=restartNeeded?status.current:latest
         Studio.saveSetting("updates/dismissedVersion",dismissed)
     }
     readonly property string notice: restartNeeded?qsTr("Updated · restart"):installing?qsTr("Installing update"):updateAvailable && mode!=="off"?qsTr("Update %1").arg(latest):""

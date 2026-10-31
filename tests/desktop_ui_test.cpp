@@ -2944,6 +2944,39 @@ for line in sys.stdin:
         updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    // What update.status says once a newer version is installed and this desktop is still the old one.
+    static QVariantMap installedStatus(const QString &version) {
+        return {{"mode","auto"},{"state","up_to_date"},{"update_available",false},{"latest",version},{"current",version},
+            {"can_apply",true},{"install",QVariantMap{{"kind","user_install"}}},{"last_install",QVariantMap{{"to",version}}}};
+    }
+    void a_background_install_asks_for_a_restart_and_settings_explain_each_mode() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *updates=object("updateModel");QVERIFY(updates);
+        auto *banner=item("updateBanner");QVERIFY(banner);
+        updates->setProperty("background",false);
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        QSettings().remove("updates");updates->setProperty("dismissed",QString());
+        QVERIFY(QCoreApplication::applicationVersion()!="9.9.0");
+        updates->setProperty("status",installedStatus("9.9.0"));
+        QTRY_VERIFY(banner->isVisible() && banner->width()>0);
+        QCOMPARE(updates->property("bannerKind").toString(),QString("restart"));
+        QVERIFY(object("updateBannerText")->property("text").toString().startsWith("Updated to 9.9.0"));
+        QVERIFY(item("updateBannerRestart")->isVisible());QVERIFY(!item("updateBannerInstall")->isVisible());
+        // Later puts the restart band away for this version.
+        clickItem("updateBannerLater");QTRY_VERIFY(!banner->isVisible());
+        QCOMPARE(QSettings().value("updates/dismissedVersion").toString(),QString("9.9.0"));
+        // The Settings explain every mode in a line of its own, the chosen one stronger.
+        auto *dialog=object("settingsDialog");QVERIFY(dialog);
+        QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("visible").toBool());
+        for(const auto *mode:{"off","notify","auto"}) {
+            auto *line=item(qPrintable(QString("updateModeHelp-")+mode));QVERIFY2(line,mode);
+            QVERIFY(!line->property("text").toString().isEmpty());
+            QCOMPARE(line->property("chosen").toBool(),QString(mode)=="auto");
+        }
+        QVERIFY(QMetaObject::invokeMethod(dialog,"close"));QTRY_VERIFY(!dialog->property("visible").toBool());
+        updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void touches_and_coordinates_show_on_the_live_device() {
         // Switched on, the device view marks a press and names the pointer's device pixel and
         // fraction; the press still reaches the device. Off, nothing is drawn.

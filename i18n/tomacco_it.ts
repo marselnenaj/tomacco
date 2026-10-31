@@ -4901,18 +4901,6 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Automatici</translation>
     </message>
     <message>
-        <source>Nothing is sent unless you check now.</source>
-        <translation>Non viene inviato nulla a meno che tu non verifichi ora.</translation>
-    </message>
-    <message>
-        <source>Checks GitHub once a day and installs by itself when nothing is running.</source>
-        <translation>Controlla GitHub una volta al giorno e installa da solo quando non c'è nulla in esecuzione.</translation>
-    </message>
-    <message>
-        <source>Checks GitHub once a day and tells you.</source>
-        <translation>Controlla GitHub una volta al giorno e ti avvisa.</translation>
-    </message>
-    <message>
         <source>Check now</source>
         <translation>Verifica ora</translation>
     </message>
@@ -4951,6 +4939,18 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Offers only finished releases.</source>
         <translation>Offre solo le versioni rilasciate.</translation>
+    </message>
+    <message>
+        <source>Off: nothing is sent unless you check now.</source>
+        <translation>Disattivati: non viene inviato nulla a meno che tu non verifichi ora.</translation>
+    </message>
+    <message>
+        <source>Notify: checks GitHub once a day and shows a new version at the top of the window.</source>
+        <translation>Notifica: controlla GitHub una volta al giorno e mostra una nuova versione in cima alla finestra.</translation>
+    </message>
+    <message>
+        <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
+        <translation>Automatici: gli aggiornamenti si installano anche da soli quando non c&apos;è nulla in esecuzione, poi viene proposto un riavvio.</translation>
     </message>
 </context>
 <context>
