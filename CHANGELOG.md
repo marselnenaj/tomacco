@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 173 operations.
+`tomaccoctl` now has one typed API of 174 operations.
 
 ### Added
 
@@ -27,6 +27,11 @@ operations and their JSON results.
     restarts.
   - `android.emulator` gains `snapshot-list`, `snapshot-delete`, `battery` and
     `network`.
+- **iPhone.**
+  - `ios.ipa_inspect` reads an `.ipa` or `.app` without a device: bundle id, version,
+    minimum iOS, entitlements, the signing certificate and a summary of the embedded
+    provisioning profile, with warnings such as an expired profile. Unit-tested only, on
+    synthetic files.
 - **Virtual iPhone.**
   - `ios.virtual.screenshot` writes a PNG, with optional rounded corners or a bezel.
   - `ios.virtual.record` records the screen to MP4.

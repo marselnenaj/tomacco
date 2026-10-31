@@ -171,7 +171,11 @@ tomaccoctl call project.create '{"path":"/absolute/MyiOSApp","kind":"xtool","nam
 tomaccoctl call project.execute '{"path":"/absolute/MyiOSApp","platform":"ios","format":"ipa","sign":true}'
 tomaccoctl call runtime.start '{"platform":"ios","device":"ACTUAL_UDID","runner_bundle_id":"INSTALLED_RUNNER_ID"}'
 tomaccoctl call project.run '{"path":"/absolute/MyiOSApp","platform":"ios","device":"ACTUAL_UDID"}'
+tomaccoctl call ios.ipa_inspect '{"path":"/absolute/MyiOSApp.ipa"}'
 ```
+
+`ios.ipa_inspect` needs no device: read its `warnings` before an install fails on an expired profile or the wrong
+bundle id. It reads what the files claim and verifies no signature.
 
 This route builds xtool's SwiftPM format; `project.import_xcode` writes it for an `.xcodeproj`. Tomacco neither ships nor downloads the SDK.
 Read Xcode's license first.

@@ -1998,6 +1998,29 @@
     }
   },
   {
+    "name": "ios.ipa_inspect",
+    "title": "Inspect iOS app",
+    "description": "Read what an .ipa archive or .app directory says about itself, without a device or an Apple tool: bundle_id, version, build, minimum_os, device_family, architectures, the executable's code signature (signed, ad_hoc, identifier, team_id and the signing certificate's common_name, organizational_unit, not_after and sha1), its embedded entitlements, and provisioning_profile, a summary of embedded.mobileprovision (name, uuid, team_id, team_name, expires, expired, days_left, kind development/ad-hoc/app-store/enterprise, devices count, certificates, bundle_id_matches, signing_certificate_included) or null. warnings names an expired profile, a profile for another bundle or team, a signer the profile does not list, a missing arm64 slice and an unsigned executable. Nothing is verified cryptographically: the files are read as they claim to be. Reads files only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path of an .ipa archive or an .app directory",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.store_ship",
     "title": "Prepare for App Store",
     "description": "Build an App Store IPA from an xtool project with the pinned omarchy-apple-dev ship.sh as a durable job, sign it, and validate it offline. Without a key it signs with a local TEST identity, which Apple rejects. upload:true sends the IPA to App Store Connect; it never submits for review. The .p8 stays in the owner-only file you name; the key and issuer IDs appear in the job record. A live upload has not been qualified.",

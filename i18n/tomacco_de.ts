@@ -3293,6 +3293,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Absturzbericht lesen</translation>
     </message>
     <message>
+        <source>Inspect iOS app</source>
+        <translation>iOS-App untersuchen</translation>
+    </message>
+    <message>
         <source>Prepare for App Store</source>
         <translation>Für den App Store vorbereiten</translation>
     </message>

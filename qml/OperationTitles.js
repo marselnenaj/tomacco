@@ -64,6 +64,7 @@ var titles = {
     "ios.flutter_setup": QT_TRANSLATE_NOOP("Operations", "Prepare Flutter for iOS"),
     "ios.flutter_build": QT_TRANSLATE_NOOP("Operations", "Build Flutter app for iOS"),
     "ios.crash_symbolicate": QT_TRANSLATE_NOOP("Operations", "Read crash report"),
+    "ios.ipa_inspect": QT_TRANSLATE_NOOP("Operations", "Inspect iOS app"),
     "ios.store_ship": QT_TRANSLATE_NOOP("Operations", "Prepare for App Store"),
     "project.import_xcode": QT_TRANSLATE_NOOP("Operations", "Import Xcode project"),
     "project.app": QT_TRANSLATE_NOOP("Operations", "Find built iOS app"),

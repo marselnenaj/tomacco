@@ -526,6 +526,50 @@ fn crash_symbolicate(a: &Value) -> Result {
     Ok(result)
 }
 
+/// What an .ipa or .app says about itself, read by tools/ios_ipa_inspect.py
+/// with Python's standard library alone: identity, signature, entitlements and
+/// the embedded provisioning profile. Nothing is verified cryptographically.
+fn ipa_inspect(a: &Value) -> Result {
+    let target = path(s(a, "path"), false, true)?;
+    let argv = vec![
+        tc::find("python3")?,
+        "-I".into(),
+        ios_emulator::research::script("ios_ipa_inspect.py")?
+            .to_string_lossy()
+            .into_owned(),
+        "inspect".into(),
+        target.to_string_lossy().into_owned(),
+    ];
+    inspection_reply(&tc::run(&argv, 120, None, false)?, &target)
+}
+
+/// The inspector's JSON answer, or its refusal as an error naming the reason.
+fn inspection_reply(done: &Value, target: &Path) -> Result {
+    let mut reply: Value = serde_json::from_str(s(done, "stdout").trim()).unwrap_or(Value::Null);
+    if reply["ok"] != true {
+        let reason = reply["error"].as_str().map_or_else(
+            || {
+                format!(
+                    "The app inspector failed: {}",
+                    s(done, "stderr")
+                        .trim()
+                        .chars()
+                        .take(400)
+                        .collect::<String>()
+                )
+            },
+            str::to_string,
+        );
+        return Err(Error::new("invalid_ios_application", reason)
+            .details(json!({"path":target}))
+            .remedy("Name an .ipa archive or an .app directory"));
+    }
+    if let Some(object) = reply.as_object_mut() {
+        object.shift_remove("ok");
+    }
+    Ok(reply)
+}
+
 /// A .p8 key: an owner-only regular file. Only its path travels; its content
 /// is read by upstream's asc.py alone, to sign the App Store Connect token.
 fn store_key(value: &str) -> Result<PathBuf> {
@@ -656,6 +700,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "ios.flutter_setup" => flutter_setup(a),
         "ios.flutter_build" => flutter_build(a),
         "ios.crash_symbolicate" => crash_symbolicate(a),
+        "ios.ipa_inspect" => ipa_inspect(a),
         "ios.store_ship" => store_ship(a),
         "project.import_xcode" => import_xcode(a),
         "project.app" => app_product(a),
@@ -666,6 +711,26 @@ pub fn handle(op: &str, a: &Value) -> Result {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_inspection_is_returned_without_ok_and_a_refusal_names_its_reason() {
+        let target = Path::new("/apps/Demo.ipa");
+        let done = json!({"stdout":"{\"ok\":true,\"bundle_id\":\"dev.demo\",\"warnings\":[]}\n","stderr":""});
+        let reply = inspection_reply(&done, target).unwrap();
+        assert_eq!(reply, json!({"bundle_id":"dev.demo","warnings":[]}));
+        let refused =
+            json!({"stdout":"{\"ok\":false,\"error\":\"Demo.ipa holds 2 apps\"}","stderr":""});
+        let error = inspection_reply(&refused, target).unwrap_err();
+        assert_eq!(error.code, "invalid_ios_application");
+        assert_eq!(error.message, "Demo.ipa holds 2 apps");
+        let crashed = json!({"stdout":"","stderr":"Traceback: boom"});
+        let error = inspection_reply(&crashed, target).unwrap_err();
+        assert!(
+            error.message.ends_with("Traceback: boom"),
+            "{}",
+            error.message
+        );
+    }
 
     #[test]
     fn a_report_becomes_summary_and_two_frame_lists() {

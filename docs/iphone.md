@@ -116,6 +116,26 @@ To only make an IPA, use `project.execute`:
 tomaccoctl call project.execute '{"path":"/absolute/MyiOSApp","platform":"ios","format":"ipa","sign":true}'
 ```
 
+### Look inside an IPA
+
+`ios.ipa_inspect` reads an `.ipa` or an `.app` directory without a phone, with Python's
+standard library only:
+
+```sh
+tomaccoctl call ios.ipa_inspect '{"path":"/absolute/MyiOSApp.ipa"}'
+```
+
+It returns the bundle id, version, build, minimum iOS, architectures, the executable's
+signature (ad hoc or not, signing identifier, team, the signing certificate's name, expiry
+and SHA-1), the entitlements in that signature, and a summary of `embedded.mobileprovision`:
+name, team, expiry, kind (development, ad hoc, App Store or enterprise), number of devices
+and whether it covers the bundle id and lists the signing certificate. `warnings` names what
+would stop an install, such as an expired profile.
+
+It reads what the files claim. It checks no signature, so it cannot tell you a bundle is
+genuine. It has unit tests on synthetic files only; no IPA from xtool or Xcode has been read
+with it yet.
+
 ## Flutter, Xcode projects, crash reports and the App Store
 
 These call a pinned commit of Joshua Warren's MIT-licensed

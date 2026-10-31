@@ -83,6 +83,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         | "ios.flutter_setup"
         | "ios.flutter_build"
         | "ios.crash_symbolicate"
+        | "ios.ipa_inspect"
         | "ios.store_ship"
         | "project.import_xcode"
         | "project.app" => crate::apple_dev::handle(name, &a),
