@@ -406,6 +406,22 @@ hidden, use automatic contrast or be switched between light/dark manually.
 Duo's side views use the compact ring indicator; open portrait uses a
 horizontal status bar. Android profiles use their own indicator shapes.
 
+### Color scheme, motion and network
+
+Under **View**, *Page color scheme* (*Farbschema der Seite*) makes the page see
+`prefers-color-scheme: light` or `dark`, *Reduce motion* (*Bewegung reduzieren*)
+`prefers-reduced-motion: reduce`, and *Network* (*Netzwerk*) slows its requests to
+Chromium DevTools' Fast 3G or Slow 3G or takes it offline. *System* and *No
+throttling* leave the page as the desktop has it. Agents set the same with
+`preview.configure` and can give their own latency and bandwidth.
+
+Qt WebEngine has no setting for these, so Tomacco sends them through the Chrome
+DevTools protocol of the web inspector's view. From the first change on, that
+view stays attached to the page while its window is hidden, and the page's
+`debugger` statements are skipped until you open the inspector. The settings last
+across reloads and navigation. Requests of service workers and WebSocket traffic
+are not throttled.
+
 ### App layout metadata
 
 Tomacco injects `window.__tomaccoViewport` before page scripts run,
@@ -432,14 +448,14 @@ Example for folded portrait (all dimensions in CSS pixels):
 
 ```json
 {
-  "version": 1, "model": "duo", "display": "outer",
+  "version": 1, "model": "duo", "platform": "ios", "display": "outer",
   "orientation": "portrait", "width": 466, "height": 678,
   "barEdge": "right", "controlsTop": 126,
   "safeArea": {"top": 0, "right": 72, "bottom": 0, "left": 0}
 }
 ```
 
-`barEdge` is `left`, `right`, `bottom`, or `automatic` for ordinary profiles.
+`platform` is `ios`, `android` or `generic`. `barEdge` is `left`, `right`, `bottom`, or `automatic` for ordinary profiles.
 `controlsTop` is the suggested starting Y of vertical controls, below system UI.
 A page reload is unnecessary when the metadata changes.
 
@@ -477,6 +493,13 @@ appear in their declared platform; platform-neutral imports get an additional
 - [Pixel 11 Pro](https://store.google.com/product/pixel_11_pro_specs)
 - [Pixel 11 Pro Fold](https://store.google.com/product/pixel_11_pro_fold_specs)
 - Galaxy S26 / S26 Ultra: source URLs are stored in their catalogue records.
+- [Galaxy Z Fold8 Ultra](https://www.samsung.com/nz/smartphones/galaxy-z-fold8-ultra/specs/),
+  [Galaxy Z Fold8](https://www.samsung.com/nz/smartphones/galaxy-z-fold8/specs/) and
+  [Galaxy Z Flip8](https://www.samsung.com/nz/smartphones/galaxy-z-flip8/specs/), checked on 2026-10-31.
+  Their logical sizes assume a density of 3, which Samsung does not publish; the Flip8 profile is its
+  unfolded main display.
+- [Galaxy Tab S12+ and Tab S12 Ultra](https://www.samsung.com/in/tablets/galaxy-tab-s12/buy/), checked on
+  2026-10-31, at an assumed density of 2. The frame draws no camera notch.
 
 `assets/models.json` holds all profiles. Qt renders the app and device frames;
 Qt WebEngine renders the page. Page content has no bridge to native commands.

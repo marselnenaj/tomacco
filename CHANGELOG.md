@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 192 operations.
+`tomaccoctl` now has one typed API of 193 operations.
 
 ### Added
 
@@ -151,6 +151,20 @@ operations and their JSON results.
     paths, window sizes or history.
   - Keyboard and accessibility: named icon buttons and list rows, a wider focus ring,
     and keyboard navigation in the jobs, tools and file lists.
+- **Web layout lab.**
+  - `preview.matrix` also writes `contact-sheet.png`, all captures side by side at one
+    scale and labelled with model and orientation.
+  - `preview.configure` and the lab's View panel set the page's `prefers-color-scheme`
+    and `prefers-reduced-motion`, per session, through the DevTools protocol.
+  - `preview.audit` finds a page wider than the viewport, text under the camera cutout
+    or system bars, and controls under 44 pt (iOS) or 48 dp (Android), each with a
+    selector that matches the element alone. `window.__tomaccoViewport` gains `platform`.
+  - Profiles for the Galaxy Z Fold8 Ultra, Z Fold8 and Z Flip8 and the Galaxy Tab S12+
+    and Tab S12 Ultra.
+  - `preview.errors` reports one page load's console errors, uncaught exceptions,
+    unhandled rejections and failed requests as structured results.
+  - Network throttling and offline for the lab's page: Fast 3G, Slow 3G, offline or
+    your own latency and bandwidth, with `preview.configure` or the View panel.
 - **Packaging and guides.**
   - An Arch `PKGBUILD` in `packaging/arch`.
   - Debian, Ubuntu and Fedora package lists; not tested on those systems.

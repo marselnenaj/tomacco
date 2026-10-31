@@ -446,6 +446,30 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <source>White</source>
         <translation>Blanco</translation>
     </message>
+    <message>
+        <source>Gray</source>
+        <translation>Gris</translation>
+    </message>
+    <message>
+        <source>Graphite</source>
+        <translation>Grafito</translation>
+    </message>
+    <message>
+        <source>Green Shadow</source>
+        <translation>Sombra verde</translation>
+    </message>
+    <message>
+        <source>Cream</source>
+        <translation>Crema</translation>
+    </message>
+    <message>
+        <source>Violet Shadow</source>
+        <translation>Sombra violeta</translation>
+    </message>
+    <message>
+        <source>Mint</source>
+        <translation>Menta</translation>
+    </message>
 </context>
 <context>
     <name>CommandPalette</name>
@@ -2183,6 +2207,46 @@ xtool setup</translation>
         <source>Open it by URL, or load a finished build as a folder. Switch phone, color and orientation without reloading.</source>
         <translation>Abrirla por URL o cargar una compilación terminada como carpeta. Cambiar de teléfono, color y orientación sin recargar.</translation>
     </message>
+    <message>
+        <source>Fast 3G</source>
+        <translation>3G rápido</translation>
+    </message>
+    <message>
+        <source>Page color scheme</source>
+        <translation>Esquema de color de la página</translation>
+    </message>
+    <message>
+        <source>Offline</source>
+        <translation>Sin conexión</translation>
+    </message>
+    <message>
+        <source>System</source>
+        <translation>Sistema</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>Red</translation>
+    </message>
+    <message>
+        <source>Reduce motion</source>
+        <translation>Reducir movimiento</translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation>Personalizado</translation>
+    </message>
+    <message>
+        <source>No throttling</source>
+        <translation>Sin limitación</translation>
+    </message>
+    <message>
+        <source>The page sees prefers-reduced-motion: reduce</source>
+        <translation>La página recibe prefers-reduced-motion: reduce</translation>
+    </message>
+    <message>
+        <source>Slow 3G</source>
+        <translation>3G lento</translation>
+    </message>
 </context>
 <context>
     <name>NativeView</name>
@@ -3901,6 +3965,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     <message>
         <source>Wait for rendering</source>
         <translation>Esperar al renderizado</translation>
+    </message>
+    <message>
+        <source>Page errors</source>
+        <translation>Errores de la página</translation>
     </message>
 </context>
 <context>

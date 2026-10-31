@@ -12,13 +12,18 @@ var names = [
     QT_TRANSLATE_NOOP("Colors", "Canyon"),
     QT_TRANSLATE_NOOP("Colors", "Cloud White"),
     QT_TRANSLATE_NOOP("Colors", "Cobalt Violet"),
+    QT_TRANSLATE_NOOP("Colors", "Cream"),
     QT_TRANSLATE_NOOP("Colors", "Device"),
     QT_TRANSLATE_NOOP("Colors", "Fog"),
     QT_TRANSLATE_NOOP("Colors", "Frost"),
     QT_TRANSLATE_NOOP("Colors", "Glacier"),
+    QT_TRANSLATE_NOOP("Colors", "Graphite"),
+    QT_TRANSLATE_NOOP("Colors", "Gray"),
+    QT_TRANSLATE_NOOP("Colors", "Green Shadow"),
     QT_TRANSLATE_NOOP("Colors", "Hibiscus"),
     QT_TRANSLATE_NOOP("Colors", "Lavender"),
     QT_TRANSLATE_NOOP("Colors", "Light Gold"),
+    QT_TRANSLATE_NOOP("Colors", "Mint"),
     QT_TRANSLATE_NOOP("Colors", "Mist Blue"),
     QT_TRANSLATE_NOOP("Colors", "Night Sky"),
     QT_TRANSLATE_NOOP("Colors", "Obsidian"),
@@ -33,6 +38,7 @@ var names = [
     QT_TRANSLATE_NOOP("Colors", "Star White"),
     QT_TRANSLATE_NOOP("Colors", "Teal"),
     QT_TRANSLATE_NOOP("Colors", "Ultramarine"),
+    QT_TRANSLATE_NOOP("Colors", "Violet Shadow"),
     QT_TRANSLATE_NOOP("Colors", "White")
 ]
 

@@ -602,10 +602,28 @@ From a terminal, `tomaccoctl update` runs the manual check and, when a release a
 The layout lab is a separate Chromium surface, not a device. Start a session with `tomacco --url URL --preview-session NAME`, and discover it with `preview.sessions`.
 
 - `preview.configure` selects a profile, orientation, fold, chrome, safe-area metadata, guides and zoom.
+- `preview.configure` also sets what the page sees for `prefers-color-scheme` (`color_scheme`: `system`, `light`,
+  `dark`) and `prefers-reduced-motion` (`reduced_motion`: `system`, `reduce`, `no-preference`), and throttles or cuts
+  its network: `network:{preset:"slow-3g"}`, `{preset:"offline"}`, or `latency_ms`, `download_kbps` and `upload_kbps`;
+  `{preset:"none"}` turns throttling off. The settings belong to the session, last across reloads and are reported by
+  `preview.state`. They go through Chromium's DevTools protocol, so they cover the page's requests but not a service
+  worker's, and not WebSocket traffic.
 - `preview.ready` waits for the document, fonts and Flutter's first frame. A `wait_for` expression can wait for your own readiness.
 - `preview.inspect`, `preview.click`, `preview.fill`, `preview.evaluate`, `preview.console` and `preview.capture` interact with the page.
-- `preview.matrix` captures several profiles and orientations and restores the session.
+- `preview.errors` reports the current page load as structured results: `console_errors`, `exceptions` (uncaught
+  errors and unhandled rejections, with stack), `failed_requests` (fetch, XMLHttpRequest, elements, style sheet
+  resources, fonts and the document; status 0 is a network error) and `clean`. `reload:true` reloads and waits
+  first, so the report covers one load. `preview.console` keeps the raw console. Requests from workers and frames
+  are not recorded.
+- `preview.matrix` captures several profiles and orientations and restores the session. Besides one PNG per
+  capture and `matrix.json`, it writes `contact-sheet.png`: every capture side by side at one scale, labelled with
+  the model and its orientation. `contact_sheet:false` leaves it out.
 - `preview.audit` reports overflow, missing names and small targets. It is not an accessibility certificate or Safari emulation.
+  Each finding has a `rule` and a `selector` that matches that element alone. `document-overflow` is a page wider than
+  the viewport and `horizontal-overflow` an element that sticks out; `safe-area-text` is text drawn where the profile's
+  safe area ends (camera cutout, system bars), with its `edges`, while safe-area metadata is on;
+  `target-size-platform` is a control under 44 points on iOS and generic profiles or 48 dp on Android, with links in
+  running text exempt; `target-size-24` is WCAG 2.2's 24-pixel minimum.
 - `catalog.export`, `catalog.import` and `catalog.remove` manage custom profiles, which are data only. `android.calibrate` reads a device's real size and density.
 
 The [desktop guide](desktop.md#visual-layout-lab) has the details.

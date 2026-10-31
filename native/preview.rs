@@ -1,4 +1,4 @@
-use crate::{catalog, core::*};
+use crate::{catalog, contact_sheet, core::*, visual};
 use serde_json::{Value, json};
 use std::{
     fs,
@@ -162,6 +162,24 @@ pub fn handle(op: &str, a: &Value) -> Result {
             30,
         ),
         "preview.matrix" => matrix(a),
+        "preview.errors" => {
+            if b(a, "reload") {
+                call("reload", json!({}), session, 30)?;
+                let timeout = if a["timeout"].is_u64() {
+                    n(a, "timeout")
+                } else {
+                    30
+                };
+                // A page that failed to load is reported, not refused.
+                match ready(session, timeout, s(a, "wait_for")) {
+                    Err(e) if e.code == "page_load_failed" => {}
+                    other => {
+                        other?;
+                    }
+                }
+            }
+            call("errors", json!({}), session, 30)
+        }
         _ => {
             let mut params = a.clone();
             params.as_object_mut().unwrap().remove("session");
@@ -227,7 +245,10 @@ fn matrix(a: &Value) -> Result {
                 }
             }
         }
-        let mut value = json!({"results":results,"created":now()});
+        let mut value = json!({"results":&results,"created":now()});
+        if a.get("contact_sheet") != Some(&json!(false)) {
+            value["contact_sheet"] = sheet(&results, &output.join("contact-sheet.png"))?;
+        }
         atomic_json(&output.join("matrix.json"), &value)?;
         value["manifest"] = json!(output.join("matrix.json"));
         Ok(value)
@@ -258,4 +279,33 @@ fn matrix(a: &Value) -> Result {
     restored?;
     navigation?;
     Ok(result)
+}
+
+/// Every capture of a matrix in one labelled PNG.
+fn sheet(results: &[Value], target: &std::path::Path) -> Result {
+    let started = now();
+    let mut cells = Vec::new();
+    for result in results {
+        let device = s(result, "device");
+        let name = catalog::find(device)
+            .ok()
+            .and_then(|p| p["name"].as_str().map(String::from))
+            .unwrap_or_else(|| device.to_string());
+        let state = format!(
+            "{}{}",
+            if b(result, "unfolded") { "open " } else { "" },
+            s(result, "orientation")
+        );
+        let image = visual::decode(&fs::read(s(&result["capture"], "path"))?)?;
+        cells.push(contact_sheet::Cell {
+            image,
+            label: vec![name, state],
+        });
+    }
+    let image = contact_sheet::compose(&cells);
+    atomic_write(target, &visual::encode(&image)?)?;
+    let mut value = artifact(target, started)?;
+    value["width"] = json!(image.width);
+    value["height"] = json!(image.height);
+    Ok(value)
 }

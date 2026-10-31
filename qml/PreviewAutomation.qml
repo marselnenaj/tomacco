@@ -1,9 +1,11 @@
 import QtQuick
+import QtWebEngine
 
 Item {
     id: automation
     required property var app
     required property var device
+    required property var protocol
     function state() {
         let result={session:Agent.session,device:app.currentModel.id,platform:app.currentModel.platform,workspace:app.workspaceState(),native:app.nativeState(),mode:app.nativeMode?"runtime":"preview",
             device_category:app.deviceCategory,visible_devices:app.visibleDevices.map(d=>d.id),
@@ -12,6 +14,7 @@ Item {
             zoom:app.requestedZoom,url:device.browser.url.toString(),loading:device.browser.loading,error:device.loadError,
             viewport:{width:device.viewportWidth,height:device.viewportHeight},screen:{width:device.screenWidth,height:device.screenHeight},
             status_style:device.statusStyle,status_edge:device.barEdge,status_bar:device.showChrome,chrome_theme:device.chromeTheme,effective_chrome_theme:device.effectiveChromeTheme,density:device.model.dpr,engine:app.nativeMode?"Native device video / Qt":"Qt WebEngine / Chromium",nativeRuntime:app.nativeMode && app.nativeState().status==="live"}
+        Object.assign(result,protocol.state())
         if(app.nativeMode) {
             const native=result.native
             result.device=native.profile_id || native.device;result.platform=native.platform;result.device_category=native.platform
@@ -33,6 +36,22 @@ Item {
             else Agent.complete(id,value.value===undefined?null:value.value)
         })
     }
+    // preview.errors: the page's own records joined with the console's errors.
+    function errors(id) {
+        device.browser.runJavaScript("window.__tomaccoPageErrors ? window.__tomaccoPageErrors.report() : null",function(page) {
+            const exceptions=page ? page.errors : []
+            // Chromium also logs an uncaught error to the console as "Uncaught …"; it is listed once, as an exception.
+            const repeated=m=>m.message.startsWith("Uncaught") && exceptions.some(e=>e.message.length && m.message.indexOf(e.message)>=0)
+            const consoleErrors=device.consoleMessages.filter(m=>m.level===WebEngineView.ErrorMessageLevel && !repeated(m))
+                .map(m=>({message:m.message,source:m.source,line:m.line,time:m.time}))
+            const warnings=device.consoleMessages.filter(m=>m.level===WebEngineView.WarningMessageLevel).length
+            const failed=page ? page.failed_requests : []
+            Agent.complete(id,{url:device.browser.url.toString(),loading:device.browser.loading,load_started:device.loadStarted,load_error:device.loadError,
+                clean:!device.loadError && !consoleErrors.length && !exceptions.length && !failed.length,
+                console_errors:consoleErrors,exceptions:exceptions,failed_requests:failed,console_warnings:warnings,
+                collected:page!==null && page!==undefined,dropped:page ? page.dropped : 0})
+        })
+    }
     Connections {
         target: Agent
         function onPreviewRequest(id,method,args) {
@@ -40,6 +59,7 @@ Item {
                 if(method==="state") { Agent.complete(id,automation.state()); return }
                 if(method==="show") { app.showWorkspace(args.tab || "project", args.path || "", args.file || "", args.line || 1); Agent.complete(id,{shown:true,session:Agent.session,tab:args.tab || "project"}); return }
                 if(method==="console") { Agent.complete(id,device.consoleMessages); return }
+                if(method==="errors") { automation.errors(id); return }
                 if(method==="navigate") {
                     let url=Studio.normalizeUrl(args.url||"")
                     if(!url.toString().length) throw new Error("Invalid URL")
@@ -56,6 +76,7 @@ Item {
                     if(args.orientation!==undefined && ["portrait","landscape"].indexOf(args.orientation)<0) throw new Error("Invalid orientation")
                     if(args.unfolded===true && !app.devices[index].openWidth) throw new Error("This model is not foldable")
                     if(args.zoom!==undefined && (!isFinite(args.zoom) || args.zoom<0 || args.zoom>3)) throw new Error("Zoom outside 0–3")
+                    const media=protocol.parse(args)
                     if(index!==app.selectedIndex) app.selectDevice(index)
                     if(args.orientation!==undefined) app.rotated=args.orientation==="landscape"
                     if(args.unfolded!==undefined) app.foldedOpen=args.unfolded
@@ -64,6 +85,10 @@ Item {
                     if(args.zoom!==undefined) app.requestedZoom=args.zoom
                     if(args.status_bar!==undefined) device.showChrome=args.status_bar
                     if(args.chrome_theme!==undefined) device.chromeTheme=args.chrome_theme
+                    if(media.colorScheme!==undefined || media.reducedMotion!==undefined || media.network!==undefined) {
+                        protocol.update(media,function(failure) { if(failure) Agent.complete(id,null,failure); else Agent.complete(id,automation.state()) })
+                        return
+                    }
                     Qt.callLater(()=>Agent.complete(id,automation.state())); return
                 }
                 if(method==="reload") { device.browser.reload(); Agent.complete(id,{reloading:true}); return }

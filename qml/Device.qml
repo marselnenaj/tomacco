@@ -37,6 +37,8 @@ Item {
     property alias browser: web
     property alias displayItem: screen
     property var consoleMessages: []
+    // When the current page load started (ms since the epoch).
+    property real loadStarted: 0
     readonly property int bezel: model.bezel === undefined ? 9 : model.bezel
     readonly property var profileInsets: (unfolded ? (landscape ? model.openSafeLandscape : model.openSafePortrait) : (landscape ? model.safeLandscape : model.safePortrait)) || {top:0,right:0,bottom:0,left:0}
     property int baseWidth: unfolded && model.openWidth ? model.openWidth : model.width
@@ -59,7 +61,7 @@ Item {
     readonly property int viewportWidth: screenWidth - (cropViewport ? safeLeft + safeRight : 0)
     readonly property int viewportHeight: screenHeight - (cropViewport ? safeTop + safeBottom : 0)
     readonly property string viewportJson: JSON.stringify({
-        version: 1, model: model.id, display: isDuo ? (unfolded ? "inner" : "outer") : "single",
+        version: 1, model: model.id, platform: model.platform || "generic", display: isDuo ? (unfolded ? "inner" : "outer") : "single",
         orientation: landscape ? "landscape" : "portrait",
         width: viewportWidth, height: viewportHeight,
         barEdge: isDuo ? barEdge : "automatic",
@@ -75,6 +77,14 @@ Item {
         worldId: WebEngineScript.MainWorld,
         runsOnSubFrames: false,
         sourceCode: "window.addEventListener('flutter-first-frame',()=>{window.__tomaccoFirstFrame=true},{once:true});" + device.viewportScript
+    })
+    // Records the load's uncaught errors and failed requests for preview.errors.
+    property webEngineScript pageErrors: ({
+        name: "Tomacco page errors",
+        injectionPoint: WebEngineScript.DocumentCreation,
+        worldId: WebEngineScript.MainWorld,
+        runsOnSubFrames: false,
+        sourceUrl: "qrc:/assets/page-errors.js"
     })
     // Corners per state (the folded Duo's hinge side is tight); turned to
     // landscape the top right corner becomes the top left one.
@@ -223,7 +233,7 @@ Item {
             id: web
             objectName: "previewBrowser"
             profile: previewProfile
-            userScripts.collection: [viewportMetadata]
+            userScripts.collection: [viewportMetadata, pageErrors]
             x: device.cropViewport ? device.safeLeft : 0
             y: device.cropViewport ? device.safeTop : 0
             width: device.viewportWidth * device.renderScale
@@ -246,7 +256,7 @@ Item {
                 }
             }
             onLoadingChanged: function(request) {
-                if(request.status===WebEngineView.LoadStartedStatus) { device.loadError=""; device.consoleMessages=[] }
+                if(request.status===WebEngineView.LoadStartedStatus) { device.loadError=""; device.consoleMessages=[]; device.loadStarted=Date.now() }
                 if(request.status===WebEngineView.LoadSucceededStatus) { web.runJavaScript(device.viewportScript); device.refreshChromeTheme() }
                 if(request.status===WebEngineView.LoadFailedStatus)
                     device.loadError=qsTr("Page not reachable. Is your dev server running?")

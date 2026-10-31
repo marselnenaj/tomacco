@@ -31,6 +31,13 @@
 #include <QAccessible>
 #include <QtWebEngineQuick/qtwebenginequickglobal.h>
 #include <QThread>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QElapsedTimer>
+#include <QProcess>
+#include <QJsonArray>
+#include <QCryptographicHash>
+#include <unistd.h>
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -99,6 +106,52 @@ class DesktopUiTest : public QObject {
         auto *face=QAccessible::queryAccessibleInterface(item);
         return face?face->text(QAccessible::Name):QString();
     }
+    // One request on the preview socket, as tomaccoctl sends it: {result} or {error}.
+    QVariantMap previewCall(const QString &method,const QVariantMap &params={}) {
+        // Where Control puts it: the data directory's runtime/, or /tmp when that path is too long.
+        const auto data=QDir::cleanPath(QFileInfo(Backend::dataDirectory()).absoluteFilePath());
+        auto runtime=data+"/runtime";
+        if(runtime.toUtf8().size()+54>=104)runtime=QStringLiteral("/tmp/tomacco-%1-%2").arg(getuid()).arg(QString::fromLatin1(QCryptographicHash::hash(data.toUtf8(),QCryptographicHash::Sha256).toHex().left(16)));
+        QLocalSocket socket;socket.connectToServer(runtime+"/preview-ui-acceptance.sock");
+        if(!socket.waitForConnected(2000))return {{"error","not connected"}};
+        socket.write(QJsonDocument(QJsonObject{{"id",1},{"method",method},{"params",QJsonObject::fromVariantMap(params)}}).toJson(QJsonDocument::Compact)+"\n");socket.flush();
+        QElapsedTimer clock;clock.start();
+        while(!socket.canReadLine() && clock.elapsed()<patient(30000))QTest::qWait(10);
+        return QJsonDocument::fromJson(socket.readLine()).object().toVariantMap();
+    }
+    // A web server on 127.0.0.1 for the layout lab: a page at /, two bytes anywhere else.
+    struct PageServer {
+        QTcpServer server;
+        explicit PageServer(const QByteArray &page) {
+            QObject::connect(&server,&QTcpServer::newConnection,&server,[this,page]{
+                while(auto *socket=server.nextPendingConnection()) {
+                    QObject::connect(socket,&QTcpSocket::readyRead,socket,[socket,page]{
+                        const auto request=socket->readAll();if(!request.contains("\r\n\r\n"))return;
+                        const auto path=request.split(' ').value(1);
+                        const QByteArray body=path=="/"?page:path.startsWith("/missing")?QByteArray("gone"):QByteArray("ok");
+                        const QByteArray status=path.startsWith("/missing")?"404 Not Found":"200 OK";
+                        socket->write("HTTP/1.1 "+status+"\r\nContent-Type: "+(path=="/"?"text/html":"text/plain")+"\r\nCache-Control: no-store\r\nContent-Length: "+QByteArray::number(body.size())+"\r\nConnection: close\r\n\r\n"+body);
+                        socket->disconnectFromHost();
+                    });
+                    QObject::connect(socket,&QTcpSocket::disconnected,socket,&QObject::deleteLater);
+                }
+            });
+            server.listen(QHostAddress::LocalHost);
+        }
+        QString url(const QString &path="/") const { return QString("http://127.0.0.1:%1%2").arg(server.serverPort()).arg(path); }
+    };
+    // Navigates the lab and waits until the page has loaded.
+    bool openPage(const QString &url) {
+        if(previewCall("navigate",{{"url",url}}).contains("error"))return false;
+        QElapsedTimer clock;clock.start();
+        while(clock.elapsed()<patient(15000)) {
+            const auto state=previewCall("state").value("result").toMap();
+            if(state.value("url").toString()==url && !state.value("loading").toBool())return true;
+            QTest::qWait(50);
+        }
+        return false;
+    }
+    QVariant evaluate(const QString &script) { return previewCall("evaluate",{{"script",script}}).value("result"); }
     // A var property holds a JS value or, once set from C++ or from a reply, a plain map.
     static QVariantMap mapOf(const QVariant &value) {
         return value.metaType()==QMetaType::fromType<QJSValue>()?value.value<QJSValue>().toVariant().toMap():value.toMap();
@@ -315,10 +368,12 @@ private slots:
             inputs.clear();QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,display->mapToScene(display->contentRect().center()).toPoint());
             QTRY_COMPARE_WITH_TIMEOUT(inputs.size(),2,patient(3000));
             QVERIFY(qAbs(inputs[0]["x"].toDouble()-.5)<.005);QVERIFY(qAbs(inputs[0]["y"].toDouble()-.5)<.005);
-            // Rounded corners and camera holes are hardware, not app touch areas.
-            auto *camera=item("nativeCameraCutout");QVERIFY(camera);
-            QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,camera->mapToScene(QPointF(camera->width()/2,camera->height()/2)).toPoint());
-            QTest::qWait(30);QCOMPARE(inputs.size(),2);
+            // Rounded corners and camera holes are hardware, not app touch areas (a tablet has no hole).
+            if(profile.value("cutout").toString()!="none") {
+                auto *camera=item("nativeCameraCutout");QVERIFY(camera);
+                QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,camera->mapToScene(QPointF(camera->width()/2,camera->height()/2)).toPoint());
+                QTest::qWait(30);QCOMPARE(inputs.size(),2);
+            }
             QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,display->mapToScene(QPointF(1,1)).toPoint());QTest::qWait(30);QCOMPARE(inputs.size(),2);
             capture("frame-"+profile["id"].toString());
             start(profile,QSize(size.height(),size.width()),"emulator-frame",true);
@@ -521,7 +576,8 @@ private slots:
         auto *button=item("createAndroidEmulator");QVERIFY(button);
         QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,button->mapToScene(QPointF(button->width()/2,button->height()/2)).toPoint());
         auto *dialog=object("createAndroidDialog");QVERIFY(dialog);QTRY_VERIFY(dialog->property("visible").toBool());
-        auto *picker=object("androidModelPicker");QVERIFY(picker);QCOMPARE(picker->property("count").toInt(),6);
+        auto *picker=object("androidModelPicker");QVERIFY(picker);int android=0;for(const auto &p:backend->models())android+=p.toMap()["platform"]=="android";
+        QCOMPARE(picker->property("count").toInt(),android);
         auto *name=item("androidAvdName");QVERIFY(name);QCOMPARE(name->property("text").toString(),QString("Tomacco-pixel-11"));
         capture("android-model-create");QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
@@ -890,6 +946,147 @@ private slots:
         }
         QVERIFY(QMetaObject::invokeMethod(window,"selectDuoState",Q_ARG(QVariant,false),Q_ARG(QVariant,false)));
         QVERIFY(QMetaObject::invokeMethod(window,"selectDevice",Q_ARG(QVariant,0)));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void layout_lab_emulates_media_and_network_per_session() {
+        PageServer web("<!doctype html><title>media</title><p>media");QVERIFY(web.server.isListening());
+        const bool wasNative=window->property("nativeMode").toBool();window->setProperty("nativeMode",false);
+        const auto first=previewCall("state");auto state=first.value("result").toMap();
+        QVERIFY2(first.contains("result"),qPrintable(QJsonDocument::fromVariant(first).toJson()));
+        QCOMPARE(state.value("color_scheme").toString(),QString("system"));QCOMPARE(state.value("reduced_motion").toString(),QString("system"));
+        QCOMPARE(state.value("network").toMap().value("preset").toString(),QString("none"));
+        QVERIFY(!state.value("emulation").toMap().value("attached").toBool());
+        QVERIFY(openPage(web.url()));
+        const QString media="[matchMedia('(prefers-color-scheme: dark)').matches,matchMedia('(prefers-color-scheme: light)').matches,matchMedia('(prefers-reduced-motion: reduce)').matches]";
+        auto reply=previewCall("configure",{{"color_scheme","dark"},{"reduced_motion","reduce"}});
+        QVERIFY2(!reply.contains("error"),qPrintable(reply.value("error").toMap().value("message").toString()));
+        QCOMPARE(reply.value("result").toMap().value("color_scheme").toString(),QString("dark"));
+        QVERIFY(reply.value("result").toMap().value("emulation").toMap().value("attached").toBool());
+        QCOMPARE(evaluate(media).toList(),(QVariantList{true,false,true}));
+        QVERIFY(!previewCall("configure",{{"color_scheme","light"}}).contains("error"));
+        QCOMPARE(evaluate(media).toList(),(QVariantList{false,true,true}));
+        // The page keeps it across a reload.
+        QVERIFY(openPage(web.url()+"?again"));
+        QCOMPARE(evaluate(media).toList(),(QVariantList{false,true,true}));
+        // Throttled: a request waits at least the added latency.
+        const QString timed="(()=>{const t=performance.now();const x=new XMLHttpRequest();x.open('GET','/data?'+Math.random(),false);x.send();return [x.status,Math.round(performance.now()-t)]})()";
+        reply=previewCall("configure",{{"network",QVariantMap{{"latency_ms",400}}}});
+        QVERIFY2(!reply.contains("error"),qPrintable(reply.value("error").toMap().value("message").toString()));
+        QCOMPARE(reply.value("result").toMap().value("network").toMap().value("preset").toString(),QString("custom"));
+        auto measured=evaluate(timed).toList();QCOMPARE(measured.value(0).toInt(),200);QVERIFY2(measured.value(1).toInt()>=380,qPrintable(measured.value(1).toString()));
+        QVERIFY(!previewCall("configure",{{"network",QVariantMap{{"preset","offline"}}}}).contains("error"));
+        QCOMPARE(evaluate("navigator.onLine"),QVariant(false));
+        QCOMPARE(evaluate("(()=>{try{const x=new XMLHttpRequest();x.open('GET','/data',false);x.send();return x.status}catch(e){return 'failed'}})()").toString(),QString("failed"));
+        // The desktop shows the same setting.
+        auto *network=object("pageNetwork");QVERIFY(network);QCOMPARE(network->property("currentText").toString(),QString("Offline"));
+        // A bad value is refused and changes nothing.
+        reply=previewCall("configure",{{"color_scheme","blue"}});
+        QVERIFY(reply.value("error").toMap().value("message").toString().contains("color_scheme"));
+        // The hidden inspector's debugger does not stop the page.
+        QCOMPARE(evaluate("(()=>{debugger;return 7})()").toInt(),7);
+        // Back to the desktop's own: the page is as before.
+        reply=previewCall("configure",{{"color_scheme","system"},{"reduced_motion","system"},{"network",QVariantMap{{"preset","none"}}}});
+        QVERIFY2(!reply.contains("error"),qPrintable(reply.value("error").toMap().value("message").toString()));
+        QCOMPARE(evaluate("navigator.onLine"),QVariant(true));
+        QCOMPARE(evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"),QVariant(false));
+        measured=evaluate(timed).toList();QCOMPARE(measured.value(0).toInt(),200);QVERIFY2(measured.value(1).toInt()<380,qPrintable(measured.value(1).toString()));
+        // The side panel sets it too.
+        auto *dark=item("pageSchemeDark");QVERIFY(dark);
+        QVERIFY(QMetaObject::invokeMethod(dark,"clicked"));
+        QTRY_COMPARE(previewCall("state").value("result").toMap().value("color_scheme").toString(),QString("dark"));
+        QTRY_COMPARE(evaluate("matchMedia('(prefers-color-scheme: dark)').matches"),QVariant(true));
+        QVERIFY(QMetaObject::invokeMethod(item("pageSchemeSystem"),"clicked"));
+        QTRY_COMPARE(evaluate("matchMedia('(prefers-color-scheme: dark)').matches"),QVariant(false));
+        QVERIFY(previewCall("state").value("result").toMap().value("emulation").toMap().value("error").toString().isEmpty());
+        previewCall("navigate",{{"url","tomacco://demo"}});window->setProperty("nativeMode",wasNative);
+        // These calls are not the activity panel's business in the tests after this one.
+        if(auto *panel=object("activityPanel"))panel->setProperty("calls",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void layout_lab_reports_the_page_loads_errors_and_failed_requests() {
+        PageServer web("<!doctype html><title>errors</title><style>div{width:20px;height:20px;background:url(/missing-bg.png)}</style><div></div>"
+                       "<img src=/missing.png alt=x><script>console.error('custom failure');console.warn('a warning');"
+                       "fetch('/missing-api').then(r=>r.text());fetch('http://127.0.0.1:1/none').catch(()=>{});"
+                       "Promise.reject(new Error('rejected promise'));setTimeout(()=>{throw new Error('thrown later')},0);"
+                       "const x=new XMLHttpRequest();x.open('GET','/missing-xhr');x.send();</script>");
+        QVERIFY(web.server.isListening());
+        const bool wasNative=window->property("nativeMode").toBool();window->setProperty("nativeMode",false);
+        QVERIFY(openPage(web.url()));
+        QVariantMap report;
+        QTRY_VERIFY2_WITH_TIMEOUT((report=previewCall("errors").value("result").toMap()).value("failed_requests").toList().size()>=5,qPrintable(QJsonDocument::fromVariant(report).toJson()),patient(10000));
+        QVERIFY(report.value("collected").toBool());QVERIFY(!report.value("clean").toBool());
+        QCOMPARE(report.value("url").toString(),web.url());
+        const auto console=report.value("console_errors").toList();
+        QVERIFY2(std::any_of(console.begin(),console.end(),[](const QVariant &e){return e.toMap().value("message").toString()=="custom failure";}),qPrintable(QJsonDocument::fromVariant(console).toJson()));
+        QCOMPARE(report.value("console_warnings").toInt(),1);
+        QStringList kinds;for(const auto &e:report.value("exceptions").toList())kinds<<e.toMap().value("kind").toString()+":"+e.toMap().value("message").toString();
+        kinds.sort();QCOMPARE(kinds,(QStringList{"exception:thrown later","unhandled-rejection:rejected promise"}));
+        // An uncaught error is listed once, as an exception, not again as a console error.
+        for(const auto &e:console)QVERIFY(!e.toMap().value("message").toString().contains("thrown later"));
+        QMap<QString,QVariantMap> failed;for(const auto &e:report.value("failed_requests").toList())failed[QUrl(e.toMap().value("url").toString()).path()]=e.toMap();
+        QCOMPARE(failed.value("/missing-api").value("kind").toString(),QString("fetch"));QCOMPARE(failed.value("/missing-api").value("status").toInt(),404);
+        QCOMPARE(failed.value("/missing-xhr").value("kind").toString(),QString("xhr"));QCOMPARE(failed.value("/missing-xhr").value("status").toInt(),404);
+        QCOMPARE(failed.value("/missing.png").value("kind").toString(),QString("element"));QCOMPARE(failed.value("/missing.png").value("status").toInt(),404);
+        QCOMPARE(failed.value("/missing-bg.png").value("kind").toString(),QString("resource"));QCOMPARE(failed.value("/missing-bg.png").value("status").toInt(),404);
+        QCOMPARE(failed.value("/none").value("kind").toString(),QString("fetch"));QCOMPARE(failed.value("/none").value("status").toInt(),0);
+        QVERIFY(!failed.value("/none").value("error").toString().isEmpty());
+        // A new load starts a new report; a missing document is one failed request.
+        QVERIFY(openPage(web.url("/missing-page")));
+        QTRY_VERIFY_WITH_TIMEOUT(previewCall("errors").value("result").toMap().value("failed_requests").toList().size()==1,patient(5000));
+        report=previewCall("errors").value("result").toMap();
+        const auto document=report.value("failed_requests").toList().value(0).toMap();
+        QCOMPARE(document.value("kind").toString(),QString("document"));QCOMPARE(document.value("status").toInt(),404);
+        QVERIFY(report.value("exceptions").toList().isEmpty());QVERIFY(report.value("console_errors").toList().isEmpty());
+        QVERIFY(openPage(web.url("/clean")));
+        report=previewCall("errors").value("result").toMap();
+        QVERIFY2(report.value("clean").toBool(),qPrintable(QJsonDocument::fromVariant(report).toJson()));
+        previewCall("navigate",{{"url","tomacco://demo"}});window->setProperty("nativeMode",wasNative);
+        if(auto *panel=object("activityPanel"))panel->setProperty("calls",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void layout_audit_finds_overflow_clipped_text_and_small_targets() {
+        PageServer web("<!doctype html><meta name=viewport content='width=device-width'><title>audit</title>"
+                       "<style>body{margin:0;font:16px sans-serif}#top{position:fixed;top:0;left:0;margin:0;width:100%}</style>"
+                       "<p id=top>Under the island</p><div style='height:120px'></div>"
+                       "<section><div style='width:2000px'>wide</div><div><button style='width:46px;height:46px'>Go</button></div></section>"
+                       "<p>Read <a href='#more'>more</a> here</p><button id=big style='width:60px;height:60px'>Ok</button>");
+        QVERIFY(web.server.isListening());
+        const bool wasNative=window->property("nativeMode").toBool();window->setProperty("nativeMode",false);
+        const auto before=previewCall("state").value("result").toMap();
+        QVERIFY(!previewCall("configure",{{"device","18pro"},{"orientation","portrait"},{"safe_area",true}}).contains("error"));
+        QVERIFY(openPage(web.url()));
+        const auto audit=[&]{
+            QProcess cli;cli.start(QCoreApplication::applicationDirPath()+"/tomaccoctl",{"call","preview.audit",R"({"session":"ui-acceptance"})"});
+            QElapsedTimer clock;clock.start();
+            while(cli.state()!=QProcess::NotRunning && clock.elapsed()<patient(30000))QTest::qWait(20);
+            const auto reply=QJsonDocument::fromJson(cli.readAllStandardOutput()).object().toVariantMap();
+            [&]{QVERIFY2(reply.value("ok").toBool(),qPrintable(QJsonDocument::fromVariant(reply).toJson()));}();
+            QMultiMap<QString,QVariantMap> found;
+            for(const auto &issue:reply.value("result").toMap().value("issues").toList())found.insert(issue.toMap().value("rule").toString(),issue.toMap());
+            return std::make_pair(reply.value("result").toMap(),found);
+        };
+        auto [result,issues]=audit();
+        QCOMPARE(result.value("platform").toString(),QString("ios"));QCOMPARE(result.value("target_minimum").toInt(),44);
+        QVERIFY(issues.contains("document-overflow"));QVERIFY(issues.value("document-overflow").value("overflow").toInt()>1000);
+        QCOMPARE(issues.value("horizontal-overflow").value("selector").toString(),QString("body > section > div:nth-of-type(1)"));
+        // The fixed line at the top lies under the island: 62 points of inset on this profile.
+        const auto clipped=issues.value("safe-area-text");
+        QCOMPARE(clipped.value("selector").toString(),QString("#top"));QCOMPARE(clipped.value("edges").toList(),(QVariantList{"top"}));
+        QCOMPARE(clipped.value("text").toString(),QString("Under the island"));
+        // Selectors match the element they name, alone.
+        for(const auto &issue:issues)QCOMPARE(evaluate("document.querySelectorAll("+QString::fromUtf8(QJsonDocument(QJsonArray{issue.value("selector").toString()}).toJson(QJsonDocument::Compact)).mid(1).chopped(1)+").length").toInt(),1);
+        // 46 points is enough on iOS; the link in running text is exempt.
+        QVERIFY(!issues.contains("target-size-platform"));
+        QVERIFY(!previewCall("configure",{{"device","pixel-11"}}).contains("error"));
+        QTRY_COMPARE(evaluate("window.__tomaccoViewport.platform").toString(),QString("android"));
+        std::tie(result,issues)=audit();
+        QCOMPARE(result.value("target_minimum").toInt(),48);
+        const auto small=issues.values("target-size-platform");QCOMPARE(small.size(),1);
+        QCOMPARE(small.value(0).value("selector").toString(),QString("body > section > div:nth-of-type(2) > button"));
+        QCOMPARE(small.value(0).value("label").toString(),QString("Go"));QCOMPARE(small.value(0).value("width").toInt(),46);
+        QVERIFY(!previewCall("configure",{{"device",before.value("device")},{"safe_area",before.value("safe_area")}}).contains("error"));
+        previewCall("navigate",{{"url","tomacco://demo"}});window->setProperty("nativeMode",wasNative);
+        if(auto *panel=object("activityPanel"))panel->setProperty("calls",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void iphone_frames_follow_the_measured_geometry() {
