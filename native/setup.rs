@@ -99,8 +99,7 @@ fn print_report(lines: &[(bool, String)]) {
 
 /// What is left to do, in order, for an agent setting Tomacco up for a person. `ask_first`
 /// means the step needs the person's yes: it costs them a download, a license or a password.
-fn next_steps(doctor: &Value, emulator: bool, virtual_device: bool) -> Vec<Value> {
-    const DOCS: &str = "https://github.com/marselnenaj/tomacco/blob/main/docs";
+fn next_steps(doctor: &Value, emulator: bool, virtual_ios: &Value) -> Vec<Value> {
     let mut steps = Vec::new();
     let mut step = |goal: &str, what: &str, how: String, ask_first: bool| {
         steps.push(json!({"goal":goal,"what":what,"how":how,"ask_first":ask_first}))
@@ -129,26 +128,135 @@ fn next_steps(doctor: &Value, emulator: bool, virtual_device: bool) -> Vec<Value
             true,
         );
     }
-    if !virtual_device {
-        step(
-            "virtual_ios",
-            "Set up the virtual iOS device, only if the person wants it",
-            format!(
-                "Follow {DOCS}/virtual-ios/setup.md, and read its IM4M section before any download: it says what is required and whether setup can finish. It needs about 100 GiB and a 16 GiB graphics card. `python3 tools/ios_virtual_profile.py --check` lists what is still missing."
-            ),
-            true,
+    steps.extend(virtual_ios_steps(virtual_ios));
+    steps
+}
+
+const DOCS: &str = "https://github.com/marselnenaj/tomacco/blob/main/docs";
+
+/// The virtual iOS device's setup chain, in order, as far as cheap checks of
+/// this machine can tell: each stage with `done` true, false, or null when
+/// only the person's own files or a later check can say. The stages that
+/// build tools look in the checkout's `.tooling` (null without a checkout).
+fn virtual_ios_chain(tooling: Option<&Path>) -> Vec<Value> {
+    let exists = |relative: &[&str]| -> Value {
+        tooling.map_or(Value::Null, |root| {
+            json!(relative.iter().all(|path| root.join(path).is_file()))
+        })
+    };
+    vec![
+        json!({"stage":"engine","what":"Build the engine and the guest-control backend",
+            "done":exists(&["ios-paravirt/sptm-build/qemu-system-aarch64",
+                "ios-guest-control/vhost-device-vsock"]),
+            "how":"In a Tomacco checkout: python3 tools/build_ios_paravirt.py --jobs 8 --cpu-optimization native, then python3 tools/build_ios_guest_control.py --output .tooling/ios-guest-control (setup.md, chain step 1). It builds for many minutes.",
+            "ask_first":true}),
+        json!({"stage":"helper","what":"Prepare the helper support and the linker",
+            "done":exists(&["ios-sptm/build/qemu-system-x86_64","ios-sptm/support/busybox/busybox",
+                "ios-sptm/support/apfs/apfs.ko","ios-linker/prefix/bin/aarch64-apple-darwin-ld"]),
+            "how":"python3 tools/prepare_ios_emulator.py --firmware IPHONE_IPSW --output RESTORE_SHELL and python3 tools/build_ios_linker.py (setup.md, chain step 2). It needs the person's unpacked iPhone image.",
+            "ask_first":true}),
+        json!({"stage":"images","what":"The person's own restore images and IM4M",
+            "done":null,
+            "how":format!("Only the person can supply them: {DOCS}/virtual-ios/setup.md#obtain-the-apple-images and #how-do-i-get-the-im4m. Read the IM4M section before any download."),
+            "ask_first":true}),
+        json!({"stage":"chain","what":"Prepare the boot components, userland, restore, Cryptexes, guest tools, kernel and first install",
+            "done":null,
+            "how":format!("{DOCS}/virtual-ios/setup.md#the-chain, steps 3 to 10. The restore alone takes about half an hour; setup needs about 100 GiB."),
+            "ask_first":true}),
+        json!({"stage":"profile","what":"Write the profile",
+            "done":false,
+            "how":"python3 tools/ios_virtual_profile.py --check with the chain's outputs names each input still missing and the command that makes it; then the same with --directory writes the profile (setup.md, chain step 11).",
+            "ask_first":false}),
+        json!({"stage":"configure","what":"Select the profile",
+            "done":false,
+            "how":"tomaccoctl call ios.virtual.configure '{\"directory\":\"/absolute/profile\"}', then ios.virtual.start.",
+            "ask_first":false}),
+    ]
+}
+
+/// The steps for the virtual iOS device, from what `virtual_ios_summary`
+/// found: without a profile, one step naming the chain's next stage with the
+/// whole chain; with one, what keeps the next start from working.
+fn virtual_ios_steps(summary: &Value) -> Vec<Value> {
+    let mut steps = Vec::new();
+    if summary["host_supported"] == false {
+        return steps;
+    }
+    if let Some(error) = summary["status_error"].as_object() {
+        steps.push(json!({"goal":"virtual_ios","what":"Fix the virtual iOS device profile",
+            "how":format!("ios.virtual.status refuses it: {} {} Check the inputs with python3 tools/ios_virtual_profile.py --check.",
+                error.get("message").and_then(Value::as_str).unwrap_or("unknown error"),
+                error.get("remedy").and_then(Value::as_str).unwrap_or("")),
+            "ask_first":false}));
+        return steps;
+    }
+    if summary["configured"] != true {
+        let chain = summary["chain"].as_array().cloned().unwrap_or_default();
+        let next = chain
+            .iter()
+            .find(|stage| stage["done"] != true)
+            .cloned()
+            .unwrap_or(Value::Null);
+        steps.push(json!({"goal":"virtual_ios",
+            "what":format!("Set up the virtual iOS device, only if the person wants it. Next: {}",
+                next["what"].as_str().unwrap_or("select the profile")),
+            "how":format!("{} The whole chain is in chain, in order; {DOCS}/virtual-ios/setup.md explains it. Read its IM4M section before anything is built or downloaded: it says what is required and whether setup can finish. It needs about 100 GiB and a 16 GiB graphics card.",
+                next["how"].as_str().unwrap_or("")),
+            "ask_first":true,"next_stage":next["stage"],"chain":chain}));
+        return steps;
+    }
+    let disk = &summary["start_disk"];
+    if disk["enough"] == false {
+        let short = disk["needed_bytes"].as_u64().unwrap_or(0).saturating_sub(
+            disk["free_bytes"].as_u64().unwrap_or(0)
+                + disk["reclaimable_bytes"].as_u64().unwrap_or(0),
         );
+        steps.push(json!({"goal":"virtual_ios","what":"Free disk space for the next virtual iPhone start",
+            "how":format!("The start needs {:.1} GiB more on the filesystem of {}. ios.virtual.cleanup lists older disk copies it can delete (a dry run first); anything else there is the person's to delete.",
+                short as f64 / (1u64 << 30) as f64, disk["installs"].as_str().unwrap_or("installs")),
+            "ask_first":true}));
+    }
+    if summary["phase"] == "failed" {
+        steps.push(json!({"goal":"virtual_ios","what":"Read why the last virtual iPhone start failed",
+            "how":format!("ios.virtual.status error: {}. {DOCS}/virtual-ios/troubleshooting.md has the causes and fixes.",
+                summary["error"].as_str().unwrap_or("not recorded")),
+            "ask_first":false}));
+    }
+    if let Some(error) = summary["applications_error"].as_str() {
+        steps.push(json!({"goal":"virtual_ios","what":"The last virtual iPhone start installed no apps",
+            "how":format!("{error}. {DOCS}/virtual-ios/troubleshooting.md#an-app-does-not-open says what to do."),
+            "ask_first":false}));
     }
     steps
+}
+
+/// The `.tooling` directory of the source checkout this program belongs to,
+/// where the chain's builds go; None for an installed program without one.
+fn tooling() -> Option<PathBuf> {
+    source_checkout().map(|root| root.join(".tooling"))
+}
+
+/// What the doctor knows about the virtual iOS device: the status of a
+/// configured profile, the refusal of one that cannot be read, or the setup
+/// chain of a machine without one.
+fn virtual_ios_summary() -> Value {
+    if std::env::consts::ARCH != "x86_64" {
+        return json!({"host_supported":false});
+    }
+    match api::dispatch("ios.virtual.status", &json!({})) {
+        Ok(status) if status["configured"] == true => json!({"configured":true,
+            "start_disk":status["start_disk"],"phase":status["phase"],"error":status["error"],
+            "applications_error":status["applications_error"]}),
+        Ok(_) => json!({"configured":false,"chain":virtual_ios_chain(tooling().as_deref())}),
+        Err(error) => json!({"configured":true,"status_error":error.value()}),
+    }
 }
 
 /// The plan an agent reads from the `doctor` operation.
 pub fn with_next_steps(mut doctor: Value) -> Value {
     let emulator = api::dispatch("android.avds", &json!({}))
         .is_ok_and(|avds| avds["avds"].as_array().is_some_and(|avds| !avds.is_empty()));
-    let virtual_device = api::dispatch("ios.virtual.status", &json!({}))
-        .is_ok_and(|status| status["configured"] == true);
-    doctor["next_steps"] = json!(next_steps(&doctor, emulator, virtual_device));
+    doctor["next_steps"] = json!(next_steps(&doctor, emulator, &virtual_ios_summary()));
     doctor
 }
 
@@ -486,8 +594,10 @@ mod tests {
         .iter()
         .map(|name| json!({"name":name,"available":true}))
         .collect();
-        assert!(next_steps(&json!({"tools":tools}), true, true).is_empty());
-        let steps = next_steps(&json!({"tools":[]}), false, false);
+        let ready = json!({"configured":true,"phase":"stopped","start_disk":{"enough":true}});
+        assert!(next_steps(&json!({"tools":tools}), true, &ready).is_empty());
+        let unconfigured = json!({"configured":false,"chain":virtual_ios_chain(None)});
+        let steps = next_steps(&json!({"tools":[]}), false, &unconfigured);
         let goals: Vec<_> = steps
             .iter()
             .map(|step| step["goal"].as_str().unwrap())
@@ -495,6 +605,103 @@ mod tests {
         assert_eq!(goals, ["android", "android", "ios", "virtual_ios"]);
         assert!(steps.iter().all(|step| step["ask_first"] == true));
         assert!(steps[3]["how"].as_str().unwrap().contains("IM4M"));
+    }
+
+    #[test]
+    fn the_virtual_ios_step_names_the_next_missing_stage_of_the_chain() {
+        let root = tempfile::tempdir().unwrap();
+        let tooling = root.path();
+        let stages = |chain: &[Value]| -> Vec<Value> {
+            chain.iter().map(|stage| stage["stage"].clone()).collect()
+        };
+        let chain = virtual_ios_chain(Some(tooling));
+        assert_eq!(
+            stages(&chain),
+            [
+                "engine",
+                "helper",
+                "images",
+                "chain",
+                "profile",
+                "configure"
+            ]
+        );
+        assert_eq!(chain[0]["done"], false);
+        let step = &virtual_ios_steps(&json!({"configured":false,"chain":chain}))[0];
+        assert_eq!(step["next_stage"], "engine");
+        assert!(step["what"].as_str().unwrap().contains("Build the engine"));
+        assert!(
+            step["how"]
+                .as_str()
+                .unwrap()
+                .contains("build_ios_paravirt.py")
+        );
+        // With the engine and helper built, the person's images come next.
+        for file in [
+            "ios-paravirt/sptm-build/qemu-system-aarch64",
+            "ios-guest-control/vhost-device-vsock",
+            "ios-sptm/build/qemu-system-x86_64",
+            "ios-sptm/support/busybox/busybox",
+            "ios-sptm/support/apfs/apfs.ko",
+            "ios-linker/prefix/bin/aarch64-apple-darwin-ld",
+        ] {
+            std::fs::create_dir_all(tooling.join(file).parent().unwrap()).unwrap();
+            std::fs::write(tooling.join(file), b"").unwrap();
+        }
+        let chain = virtual_ios_chain(Some(tooling));
+        assert_eq!(
+            (&chain[0]["done"], &chain[1]["done"]),
+            (&json!(true), &json!(true))
+        );
+        let step = &virtual_ios_steps(&json!({"configured":false,"chain":chain}))[0];
+        assert_eq!(step["next_stage"], "images");
+        assert!(step["how"].as_str().unwrap().contains("IM4M"));
+        // Without a checkout the build stages are unknown, and still named first.
+        let chain = virtual_ios_chain(None);
+        assert_eq!(chain[0]["done"], Value::Null);
+        let step = &virtual_ios_steps(&json!({"configured":false,"chain":chain}))[0];
+        assert_eq!(step["next_stage"], "engine");
+        // A host that cannot run it gets no step at all.
+        assert!(virtual_ios_steps(&json!({"host_supported":false})).is_empty());
+    }
+
+    #[test]
+    fn a_configured_phone_gets_steps_only_for_what_stops_the_next_start() {
+        assert!(
+            virtual_ios_steps(&json!({"configured":true,"phase":"stopped",
+            "start_disk":{"enough":null},"applications_error":null}))
+            .is_empty()
+        );
+        let steps = virtual_ios_steps(&json!({"configured":true,"phase":"failed",
+            "error":"The boot did not reach the Home screen",
+            "start_disk":{"enough":false,"needed_bytes":36u64 << 30,"free_bytes":20u64 << 30,
+                "reclaimable_bytes":6u64 << 30,"installs":"/phone/installs"},
+            "applications_error":"installd did not install dev.example.App"}));
+        let what: Vec<_> = steps
+            .iter()
+            .map(|step| step["what"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            what,
+            [
+                "Free disk space for the next virtual iPhone start",
+                "Read why the last virtual iPhone start failed",
+                "The last virtual iPhone start installed no apps"
+            ]
+        );
+        assert!(steps[0]["how"].as_str().unwrap().contains("10.0 GiB more"));
+        assert!(
+            steps[0]["how"]
+                .as_str()
+                .unwrap()
+                .contains("ios.virtual.cleanup")
+        );
+        assert_eq!(steps[0]["ask_first"], true);
+        assert!(steps[1]["how"].as_str().unwrap().contains("Home screen"));
+        let broken = virtual_ios_steps(&json!({"configured":true,"status_error":{
+            "code":"ios_virtual_profile_invalid","message":"profile.json is not a format 1 virtual iOS device profile"}}));
+        assert_eq!(broken.len(), 1);
+        assert!(broken[0]["how"].as_str().unwrap().contains("format 1"));
     }
 
     #[test]

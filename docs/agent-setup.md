@@ -33,7 +33,11 @@ tomaccoctl doctor
 ```
 
 The result has `next_steps`, in order. Each has a `goal`, `what`, `how` and `ask_first`. Do the
-steps for the goals the person chose, then run `doctor` again until none are left. Over MCP
+steps for the goals the person chose, then run `doctor` again until none are left.
+The virtual iOS device's step also has `chain`: its whole setup chain in order, each stage with
+`done` (`true`, `false`, or `null` when only the person's files can tell), and `next_stage`, the
+first stage not done. Once a profile is set up, its steps name only what stops the next start,
+such as too little disk space. Over MCP
 the same plan comes from the `doctor` tool. To connect yourself over MCP, run `tomaccoctl setup`
 with the person watching, or use the commands in [Agents](agents.md#connect-a-client).
 

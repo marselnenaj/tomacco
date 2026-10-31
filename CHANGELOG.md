@@ -64,6 +64,10 @@ operations and their JSON results.
 
 ### Changed
 
+- `doctor`'s `next_steps` for the virtual iOS device name the next stage of its setup chain and
+  carry the whole chain in order, with what is already built; with a profile they name what
+  stops the next start (disk space, a failed start, apps not installed). Unit-tested only.
+
 - `ios.virtual.start` refuses up front, before deleting or copying anything, when the
   disk lacks room for the copy.
 - The panel `ios.virtual.status` reports comes from the running guest's boot, not from
