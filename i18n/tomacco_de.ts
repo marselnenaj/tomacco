@@ -2198,6 +2198,10 @@ xtool setup</translation>
 <context>
     <name>NativeWorkspace</name>
     <message>
+        <source>Drop to open %1 as the project</source>
+        <translation>Ablegen, um %1 als Projekt zu öffnen</translation>
+    </message>
+    <message>
         <source>Open recent project %1</source>
         <translation>Zuletzt geöffnetes Projekt %1 öffnen</translation>
     </message>

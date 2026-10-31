@@ -24,6 +24,8 @@ Tomacco remembers the last eight project folders you opened. The start screen
 shows the three newest besides the open one under **Recent** (*Zuletzt*), and
 the command palette (Ctrl+K) finds all of them as **Open recent project**
 (*Zuletzt geöffnetes Projekt … öffnen*). Folders that no longer exist are left out.
+A project folder dragged from the file manager onto the window opens as the
+project and shows its overview; a single file or an `.app` bundle does not.
 
 ## Languages
 

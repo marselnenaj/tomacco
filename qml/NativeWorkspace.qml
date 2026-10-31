@@ -15,6 +15,29 @@ Rectangle {
     required property var workspace
     signal webRequested()
     color: Theme.background
+    // A project folder dropped anywhere on the window opens as the project.
+    // Above everything, so its frame covers the window; it takes only folders,
+    // so app files pass on to the device's own drop target.
+    DropArea {
+        id:folderDrop;objectName:"projectFolderDrop";anchors.fill:parent;z:100
+        property string folder:""
+        onEntered:drag=>{
+            const paths=AppFiles.paths(drag.urls)
+            folder=paths.length===1?Studio.projectFolder(paths[0]):""
+            if(!folder){drag.accepted=false;return}
+            drag.accept(Qt.CopyAction)
+        }
+        onExited:folder=""
+        onDropped:drop=>{
+            const paths=AppFiles.paths(drop.urls)
+            const chosen=paths.length===1?Studio.projectFolder(paths[0]):""
+            folder=""
+            if(!chosen){drop.accepted=false;return}
+            drop.accept(Qt.CopyAction)
+            view.workspace.openProject(chosen);view.navigate("project")
+        }
+        DropOverlay {objectName:"projectFolderDropOverlay";anchors.fill:parent;visible:folderDrop.containsDrag;text:qsTr("Drop to open %1 as the project").arg(AppFiles.name(folderDrop.folder))}
+    }
     property var requests: ({})
     property var targets: []
     property var remotes: ({})

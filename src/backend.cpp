@@ -254,6 +254,11 @@ void Backend::forgetProject(const QString &path) {
     m_settings.setValue("recentProjects",stored);
     emit recentProjectsChanged();
 }
+QString Backend::projectFolder(const QString &path) const {
+    const QFileInfo folder(path);
+    if(path.isEmpty() || !folder.isDir() || folder.suffix().compare(QLatin1String("app"),Qt::CaseInsensitive)==0) return {};
+    return folder.canonicalFilePath();
+}
 QString Backend::qtVersion() const { return QString::fromLatin1(qVersion()); }
 QUrl Backend::sourceUrl() const {
     const QString repository=QStringLiteral("https://github.com/marselnenaj/tomacco");

@@ -2115,6 +2115,39 @@ for line in sys.stdin:
         QTRY_VERIFY(!item("heroRecent-0") || !item("heroRecent-0")->isVisible());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void a_project_folder_dropped_on_the_window_opens() {
+        // A folder dragged onto the window opens as the project and shows its overview; a file does not.
+        open("runtime");
+        window->resize(1380,970);QTest::qWait(50);
+        auto *overlay=item("projectFolderDropOverlay");QVERIFY(overlay);
+        const auto original=directory.filePath("project");
+        QTemporaryDir other;QVERIFY(other.isValid());
+        const auto folder=other.filePath("dropped");QVERIFY(QDir().mkpath(folder));
+        QFile pubspec(folder+"/pubspec.yaml");QVERIFY(pubspec.open(QIODevice::WriteOnly));
+        pubspec.write("name: dropped_app\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");pubspec.close();
+        const QPoint at(window->width()/2,window->height()/2);
+        QMimeData data;
+        const auto enter=[&](const QString &path){
+            data.setUrls({QUrl::fromLocalFile(path)});
+            QDragEnterEvent event(at,Qt::CopyAction,&data,Qt::LeftButton,Qt::NoModifier);
+            QCoreApplication::sendEvent(window,&event);
+            return event.isAccepted();
+        };
+        QVERIFY(!enter(folder+"/pubspec.yaml"));QVERIFY(!overlay->isVisible());
+        {QDragLeaveEvent event;QCoreApplication::sendEvent(window,&event);}
+        QVERIFY(enter(folder));QVERIFY(overlay->isVisible());
+        QVERIFY(overlay->property("text").toString().contains("dropped"));
+        {QDropEvent event(at,Qt::CopyAction,&data,Qt::LeftButton,Qt::NoModifier);QCoreApplication::sendEvent(window,&event);}
+        QVERIFY(!overlay->isVisible());
+        const auto path=[&]{return mapOf(workspace->property("project")).value("path").toString();};
+        QTRY_COMPARE_WITH_TIMEOUT(QFileInfo(path()).canonicalFilePath(),QFileInfo(folder).canonicalFilePath(),patient(10000));
+        QVERIFY(workspace->property("opened").toBool());QCOMPARE(workspace->property("section").toString(),QString("project"));
+        // Back to the project the other scenarios use; the dropped one is not kept among the recent ones.
+        open("runtime");
+        QTRY_COMPARE_WITH_TIMEOUT(path(),original,patient(10000));
+        backend->forgetProject(QFileInfo(folder).canonicalFilePath());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void german_interface_switches_live() {
         open("project");
         // The navigation is rebuilt in the new language, so its buttons are looked up each time.

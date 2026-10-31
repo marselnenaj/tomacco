@@ -51,6 +51,9 @@ public:
     // Puts a project folder at the front of the recent ones (at most eight are kept).
     Q_INVOKABLE void rememberProject(const QString &path);
     Q_INVOKABLE void forgetProject(const QString &path);
+    // The folder a dropped path names, to open as a project: its canonical
+    // path when it is a directory and no app bundle, otherwise an empty string.
+    Q_INVOKABLE QString projectFolder(const QString &path) const;
     // The release this build's version names, where its corresponding source
     // is offered (docs/SOURCE.md.in); the repository when no version is set.
     QUrl sourceUrl() const;

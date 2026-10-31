@@ -30,29 +30,11 @@ DropArea {
         drop.accept(Qt.CopyAction)
         if(AppFiles.installable(list,kinds))appsDropped(list);else refused(refusal)
     }
-    Rectangle {
+    DropOverlay {
         objectName: "appDropOverlay"
         anchors.fill: parent
         visible: area.containsDrag
-        color: Theme.scrim
-        border.width: Theme.gapXxs
-        border.color: area.fits ? Theme.accent : Theme.danger
-        Rectangle {
-            anchors.centerIn: parent
-            width: Math.min(parent.width-Theme.gapXl,label.implicitWidth+Theme.gapXl*2)
-            height: label.implicitHeight+Theme.gapLg*2
-            radius: Theme.radiusLarge
-            color: Theme.elevated
-            border.color: area.fits ? Theme.accent : Theme.danger
-            StudioHeading {
-                id: label
-                anchors.centerIn: parent
-                width: Math.min(implicitWidth,parent.parent.width-Theme.gapXl*3)
-                horizontalAlignment: Text.AlignHCenter
-                size: Theme.fontTitle
-                color: area.fits ? Theme.text : Theme.danger
-                text: area.fits ? qsTr("Drop to install on %1").arg(area.targetName) : area.refusal
-            }
-        }
+        fits: area.fits
+        text: area.fits ? qsTr("Drop to install on %1").arg(area.targetName) : area.refusal
     }
 }
