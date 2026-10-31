@@ -69,7 +69,8 @@ operation, as `result`, and `tomaccoctl schema --names` prints just the names, o
 text. Unknown arguments are refused before dispatch.
 A mistyped operation name or argument key gets a `remedy` naming the closest match, such as
 `Did you mean project.run?` or `Did you mean arguments.path?`. With no close match, the remedy for an
-unknown key lists the keys that are accepted.
+unknown key lists the keys that are accepted. The [operation reference](reference/README.md) is the same
+schema as Markdown pages, generated for this version.
 
 ```sh
 tomaccoctl schema

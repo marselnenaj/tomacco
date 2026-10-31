@@ -4,6 +4,14 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Added
+
+- An operation reference in `docs/reference/`, one page per area, generated from `assets/operations.json` by
+  `tools/build_reference.py`: each operation's title, description, annotations, arguments with types, choices,
+  limits and defaults, and an example call. A test fails when it is out of date.
+
 ## 1.1.0
 
 `tomaccoctl` now has one typed API of 193 operations.
