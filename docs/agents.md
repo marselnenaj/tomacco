@@ -76,7 +76,8 @@ terminal.
 
 For people typing commands, `tomaccoctl help OPERATION` (or `tomaccoctl call OPERATION --help`)
 describes one operation in plain text: what it does, each argument with its type, choices, limits and
-default, whether it changes anything, and an example call built from the schema.
+default, whether it changes anything, and an example call built from the schema. `man tomaccoctl`
+describes the commands and flags; the installer and `cmake --install` put the page in `share/man/man1`.
 
 `tomaccoctl completions bash`, `zsh` or `fish` prints a completion script
 for the commands, their flags and the operation names after `call`, `schema` and `help`. Load it with

@@ -4,7 +4,7 @@
 use crate::core::*;
 
 /// The public commands, with the line each shell shows beside them.
-const COMMANDS: &[(&str, &str)] = &[
+pub const COMMANDS: &[(&str, &str)] = &[
     ("call", "Run one operation"),
     ("schema", "Print operation schemas"),
     ("help", "Describe an operation"),

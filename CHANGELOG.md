@@ -15,6 +15,7 @@ operations and their JSON results.
 - **Command line.**
   - `tomaccoctl completions bash|zsh|fish`. Only the bash script has been run.
   - `tomaccoctl schema OPERATION` and `schema --names`.
+  - A manual page, `man tomaccoctl`, installed by CMake and the installer; a test keeps it in step with `--help`.
   - `tomaccoctl help OPERATION` and `call OPERATION --help` describe an operation in plain text: arguments with types,
     choices, limits and defaults, and an example call generated from the schema.
   - `call … --wait` follows a job to its end, with its log on stderr.

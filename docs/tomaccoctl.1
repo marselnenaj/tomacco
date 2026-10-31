@@ -1,0 +1,204 @@
+.\" The manual page of tomaccoctl. Keep it in step with tomaccoctl --help:
+.\" the test help_and_manual_page_name_the_same_commands_and_flags in
+.\" native/main.rs checks that both name the same commands and flags.
+.TH TOMACCOCTL 1 "" "Tomacco" "User Commands"
+.SH NAME
+tomaccoctl \- the Tomacco control plane for building, running and testing mobile apps
+.SH SYNOPSIS
+.B tomaccoctl call
+.I OPERATION
+.RI [ JSON " | @" FILE " | @-]"
+.RB [ \-\-wait ]
+.RB [ \-\-help ]
+.br
+.B tomaccoctl schema
+.RI [ OPERATION " | " \fB\-\-names\fR ]
+.br
+.B tomaccoctl help
+.RI [ OPERATION ]
+.br
+.B tomaccoctl setup
+.RB [ \-\-yes ]
+.br
+.B tomaccoctl doctor
+.br
+.B tomaccoctl mcp
+.br
+.B tomaccoctl completions
+.BR bash | zsh | fish
+.br
+.B tomaccoctl update
+.RB [ \-\-check ]
+.br
+.B tomaccoctl uninstall
+.br
+.B tomaccoctl
+.BR \-\-version | \-V
+.br
+.B tomaccoctl
+.BR \-\-help | \-h
+.SH DESCRIPTION
+.B tomaccoctl
+builds, runs and tests iOS and Android apps on Linux.
+The Tomacco desktop app, this command and its MCP server share one typed
+schema of operations, such as
+.BR project.run ,
+.B device.list
+or
+.BR ios.virtual.status .
+Each operation takes one JSON object of arguments and returns one JSON
+envelope:
+.B {"ok":true,"result":...}
+or
+.BR {"ok":false,"error":{"code":...,"message":...,"remedy":...}} .
+Long work, such as a build or an installation, runs as a durable job that
+outlives the command; see
+.BR job.wait ,
+.B job.logs
+and
+.BR job.cancel .
+.SH COMMANDS
+.TP
+.BI "call " OPERATION " \fR[\fPJSON\fR | \fP@FILE\fR | \fP@-\fR]\fP"
+Run one operation. The arguments are given inline as JSON, read from
+.IR FILE ,
+or read from standard input with
+.BR @- .
+Without arguments the operation gets an empty object.
+Prints one JSON envelope and exits 0 on success, 1 on failure.
+With
+.BR \-\-wait ,
+an operation that starts a job is followed until the job ends: its log
+goes to standard error, the envelope holds the final job record, and only
+a succeeded job exits 0.
+With
+.BR \-\-help ,
+describes the operation instead of running it, as
+.B help
+does.
+.TP
+.BR schema " [\fIOPERATION\fR | " \-\-names ]
+Print every operation with its JSON Schema of arguments, only the named
+operation, or with
+.B \-\-names
+only the names, one per line, as plain text.
+.TP
+.BR help " [\fIOPERATION\fR]"
+Without an operation, print the command-line help. With one, describe it
+in plain text: what it does, each argument with its type, choices, limits
+and default, whether it changes anything, and an example call.
+.TP
+.BR setup " [" \-\-yes ]
+Check this machine in plain text and offer to install the Android SDK and
+connect coding agents.
+.B \-\-yes
+answers every question with yes.
+.TP
+.B doctor
+Check the toolchains and devices this machine can use, and list what is
+left to set up, in order.
+.TP
+.B mcp
+Serve the same operations to a coding agent over standard input and output
+(Model Context Protocol). It opens no network port.
+.TP
+.BR completions " " bash | zsh | fish
+Print a completion script for the commands, their flags and the operation
+names, for example
+.BR "source <(tomaccoctl completions bash)" .
+.TP
+.BR update " [" \-\-check ]
+Check for a new release and install it
+.RB ( update.check ,
+then
+.BR update.apply ).
+.B \-\-check
+only checks.
+.TP
+.B uninstall
+Remove this installation. It keeps your data and the files you changed,
+and prints how to undo it.
+.SH OPTIONS
+These options can stand anywhere on the command line of
+.BR call ,
+.B schema
+and
+.BR doctor .
+.TP
+.B \-\-pretty
+Indent the JSON. This is the default when standard output is a terminal;
+a pipe or a file gets one line.
+.TP
+.B \-\-compact
+One line of JSON, even at a terminal.
+.TP
+.B \-\-wait
+.RB ( call )
+Follow a job that the operation starts until it ends.
+.TP
+.B \-\-names
+.RB ( schema )
+Print only the operation names.
+.TP
+.BR \-\-version ", " \-V
+Print the version.
+.TP
+.BR \-\-help ", " \-h
+Print the command-line help.
+.SH EXIT STATUS
+0 when the command or operation succeeded, 1 when it failed. The error is
+in the JSON envelope on standard output.
+.SH ENVIRONMENT
+.TP
+.B TOMACCO_HOME
+The data directory: projects, device profiles, job records and logs.
+The default is
+.IR ~/.local/share/tomacco .
+.TP
+.B TOMACCO_UPDATES
+Set to
+.B off
+to turn every update check and installation off.
+.SH FILES
+.TP
+.I ~/.local/share/tomacco
+Data directory, unless
+.B TOMACCO_HOME
+names another.
+.TP
+.I ~/.local/lib/tomacco
+The installed programs, tools and operation schema.
+.SH EXAMPLES
+List the saved project and device workspaces:
+.PP
+.RS
+.B tomaccoctl call workspace.list
+.RE
+.PP
+Describe an operation, then run it:
+.PP
+.RS
+.nf
+.B tomaccoctl help project.run
+.B tomaccoctl call project.run '{"path":"/home/me/app","platform":"android","device":"emulator-5554"}' \-\-wait
+.fi
+.RE
+.PP
+Wait for a job with arguments from standard input:
+.PP
+.RS
+.B echo '{"job_id":"ID","seconds":60}' | tomaccoctl call job.wait @-
+.RE
+.SH SEE ALSO
+The guides are installed in
+.I share/doc/tomacco
+beside the program, for example
+.IR ~/.local/share/doc/tomacco :
+.I agents.md
+describes the operations and how agents use them,
+.I desktop.md
+the desktop app.
+.PP
+Project page: https://github.com/marselnenaj/tomacco
+.SH LICENSE
+GPL-2.0-or-later.

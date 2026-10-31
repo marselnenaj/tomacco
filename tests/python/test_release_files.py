@@ -45,7 +45,8 @@ def package_tree(top):
     (documents / "LICENSE").write_text("License\n")
     for source, target in (("assets/icon.svg", f"share/icons/hicolor/scalable/apps/{APP_ID}.svg"),
                            (f"assets/{APP_ID}.desktop", f"share/applications/{APP_ID}.desktop"),
-                           (f"assets/{APP_ID}.metainfo.xml", f"share/metainfo/{APP_ID}.metainfo.xml")):
+                           (f"assets/{APP_ID}.metainfo.xml", f"share/metainfo/{APP_ID}.metainfo.xml"),
+                           ("docs/tomaccoctl.1", "share/man/man1/tomaccoctl.1")):
         (top / target).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / source, top / target)
 
@@ -80,6 +81,7 @@ class TarballInstaller(unittest.TestCase):
             self.assertIn(f'Exec="{home}/.local/bin/tomacco"', entry)
             self.assertTrue((home / f".local/share/icons/hicolor/scalable/apps/{APP_ID}.svg").is_file())
             self.assertTrue((home / f".local/share/metainfo/{APP_ID}.metainfo.xml").is_file())
+            self.assertEqual((home / ".local/share/man/man1/tomaccoctl.1").read_bytes(), (ROOT / "docs/tomaccoctl.1").read_bytes())
             result = json.loads(install("--uninstall").stdout)
             self.assertEqual(result["kept"], [])
             self.assertFalse((home / ".local/bin/tomacco").exists())
@@ -90,6 +92,7 @@ class TarballInstaller(unittest.TestCase):
         self.assertIn("install(PROGRAMS install.py DESTINATION .)", cmake)
         self.assertRegex(cmake, r'install\(FILES "\$\{CMAKE_CURRENT_BINARY_DIR\}/VERSION" DESTINATION share/tomacco\)')
         self.assertIn("assets/operations.json DESTINATION lib/tomacco/assets", cmake)
+        self.assertIn("install(FILES docs/tomaccoctl.1 DESTINATION share/man/man1)", cmake)
 
 
 class InstalledDocuments(unittest.TestCase):

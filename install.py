@@ -28,10 +28,13 @@ def identity_files(app_id):
             Path(".local/share/metainfo") / (app_id + ".metainfo.xml"))
 
 
+# man finds pages in ../share/man beside each directory on PATH, so
+# ~/.local/bin/tomaccoctl gets its page from here.
+MANUAL_PAGE = Path(".local/share/man/man1/tomaccoctl.1")
 # What an installation owns outright. --uninstall removes these files when they
 # are still exactly as installed; everything else it leaves alone.
 OWNED = (Path(".local/bin/tomacco"), Path(".local/bin/tomaccoctl"), Path(".local/lib/tomacco"),
-         Path(".local/share/doc/tomacco"), *identity_files(APP_ID),
+         Path(".local/share/doc/tomacco"), MANUAL_PAGE, *identity_files(APP_ID),
          Path(".config/omarchy/plugins") / APP_ID, Path(".config/hypr/tomacco.lua"))
 # Directories the installation creates for itself, removed once empty.
 OWNED_DIRECTORIES = (Path(".local/lib/tomacco"), Path(".local/share/doc/tomacco"),
@@ -57,6 +60,7 @@ PACKAGE_PATHS = {
     "assets/icon.svg": f"share/icons/hicolor/scalable/apps/{APP_ID}.svg",
     f"assets/{APP_ID}.desktop": f"share/applications/{APP_ID}.desktop",
     f"assets/{APP_ID}.metainfo.xml": f"share/metainfo/{APP_ID}.metainfo.xml",
+    "docs/tomaccoctl.1": "share/man/man1/tomaccoctl.1",
 }
 
 
@@ -598,6 +602,7 @@ def main():
     doc = Path(".local/share/doc/tomacco")
     for name, data in documents().items():
         installer.write(doc / name, data)
+    installer.write(MANUAL_PAGE, source_path("docs/tomaccoctl.1").read_bytes())
     installer.write(Path(".local/share/icons/hicolor/scalable/apps") / (APP_ID + ".svg"), source_path("assets/icon.svg").read_bytes())
     launcher = installer.user / ".local/bin/tomacco"
     installer.write(Path(".local/share/applications") / (APP_ID + ".desktop"), desktop_entry(str(launcher)))

@@ -607,6 +607,56 @@ mod tests {
         assert!(reply(&["schema", "job.wait", "job.get"]).is_err());
         assert!(reply(&["schema", "job.wait", "--names"]).is_err());
     }
+    /// docs/tomaccoctl.1 is written by hand; it names every command and
+    /// flag the help names, and no other flag.
+    #[test]
+    fn help_and_manual_page_name_the_same_commands_and_flags() {
+        let manual = include_str!("../docs/tomaccoctl.1");
+        let help = help();
+        let commands: Vec<&str> = help
+            .lines()
+            .filter_map(|line| line.strip_prefix("  tomaccoctl "))
+            .filter_map(|rest| rest.split_whitespace().next())
+            .filter(|word| !word.starts_with('-'))
+            .collect();
+        assert!(commands.len() >= 9, "{commands:?}");
+        for (name, _) in completions::COMMANDS {
+            assert!(commands.contains(name), "the help lacks {name}");
+        }
+        for command in &commands {
+            assert!(
+                manual.contains(&format!(".B tomaccoctl {command}\n")),
+                "SYNOPSIS lacks {command}"
+            );
+            assert!(
+                manual.lines().collect::<Vec<_>>().windows(2).any(|pair| {
+                    let words: Vec<&str> = pair[1].split_whitespace().collect();
+                    pair[0] == ".TP"
+                        && words.len() >= 2
+                        && matches!(words[0], ".B" | ".BR" | ".BI")
+                        && words[1].trim_matches('"') == *command
+                }),
+                "COMMANDS lacks {command}"
+            );
+        }
+        let flag = regex::Regex::new(r"(?:^|[^\\w-])(--[a-z]+|-[a-zA-Z])\b").unwrap();
+        let in_help: std::collections::BTreeSet<&str> = flag
+            .captures_iter(&help)
+            .map(|c| c.get(1).unwrap().as_str())
+            .filter(|f| f.starts_with("--") || matches!(*f, "-h" | "-V"))
+            .collect();
+        let roff = regex::Regex::new(r"(\\-\\-[a-z]+|\\-[a-zA-Z])\b").unwrap();
+        let in_manual: std::collections::BTreeSet<String> = roff
+            .captures_iter(manual)
+            .map(|c| c.get(1).unwrap().as_str().replace("\\-", "-"))
+            .collect();
+        let in_help: std::collections::BTreeSet<String> = in_help
+            .into_iter()
+            .chain(Options::FLAGS.iter().copied())
+            .map(String::from)
+            .collect();
+        assert_eq!(in_manual, in_help);
+    }
     #[test]
     fn help_describes_the_commands_or_one_operation() {
         let help = |words: &[&str]| {

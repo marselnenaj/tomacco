@@ -117,6 +117,7 @@ target_compile_options(tomacco PRIVATE -Wall -Wextra -Wpedantic
     "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=/tomacco" "-ffile-prefix-map=${CMAKE_CURRENT_BINARY_DIR}=/tomacco-build")
 install(TARGETS tomacco RUNTIME DESTINATION bin)
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/tomaccoctl" DESTINATION bin)
+install(FILES docs/tomaccoctl.1 DESTINATION share/man/man1)
 install(FILES assets/models.json assets/device-profile.schema.json assets/operations.json DESTINATION lib/tomacco/assets)
 # The package's own installer: run from the unpacked tarball, it installs for
 # one user what it finds beside it, and share/tomacco/VERSION tells it that it is
