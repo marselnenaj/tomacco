@@ -3525,6 +3525,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Native Tests ausführen</translation>
     </message>
     <message>
+        <source>Check Android accessibility</source>
+        <translation>Android-Barrierefreiheit prüfen</translation>
+    </message>
+    <message>
         <source>Compare with baseline image</source>
         <translation>Mit Referenzbild vergleichen</translation>
     </message>

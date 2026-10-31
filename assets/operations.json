@@ -3242,6 +3242,60 @@
     }
   },
   {
+    "name": "testing.accessibility",
+    "title": "Check Android accessibility",
+    "description": "Audit an Android screen's UI hierarchy: clickable elements without a label (missing_label), touch targets under min_target_dp (small_target) and text shorter than min_text_height_dp (small_text). Returns structured findings with bounds in pixels and sizes in dp. Heuristics, not a certificate: no contrast, font size or focus order.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list; reads the current screen"
+        },
+        "hierarchy": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of a saved android.hierarchy XML instead of a device"
+        },
+        "density": {
+          "type": "number",
+          "minimum": 50,
+          "maximum": 1000,
+          "description": "Screen density in dpi; read from the device when omitted, required with hierarchy"
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Audit only this app's elements, leaving out the status bar and other apps"
+        },
+        "min_target_dp": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 48
+        },
+        "min_text_height_dp": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 14
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to also write the result as JSON"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "debug.start",
     "title": "Start debugger",
     "description": "Start or reuse a persistent JDWP Android/JVM, native Android LLDB, or local LLDB Swift/native debug session. Android sessions exclusively own their device until disconnected.",

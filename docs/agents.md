@@ -419,6 +419,21 @@ sizes fail with `size_mismatch:true`.
 tomaccoctl call testing.visual_diff '{"actual":"/absolute/screen.png","baseline":"/absolute/baselines/home.png","diff":"/absolute/home-diff.png","threshold":0.001,"tolerance":8,"ignore":[{"x":0,"y":0,"width":1080,"height":64}]}'
 ```
 
+`testing.accessibility` audits the Android screen's UI hierarchy, from a `device` or a saved `hierarchy` file with its `density`. Each finding
+has a `rule`, `severity`, `message`, the element's class, id, text and description, its `bounds` in pixels and its size in dp:
+
+- `missing_label` (error): a clickable, long-clickable or checkable element with no text or content description, itself or inside it.
+- `small_target` (warning): an enabled touch target narrower or lower than `min_target_dp`, 48 by default.
+- `small_text` (warning): a text element lower than `min_text_height_dp`, 14 by default. The hierarchy has no font sizes, so this is an
+  estimate from the element's height, which includes padding: it finds tiny text, not all small text.
+
+`bundle_id` keeps only the app's elements, without the status bar. These are heuristics, not a certificate: contrast, font sizes and focus
+order are not checked.
+
+```sh
+tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
+```
+
 `profile.capture` records Android Perfetto traces. Configure the official `trace_processor`, then use `profile.analyze` and `profile.compare`. Metrics that are
 not available are null, not zero. A count of frames with jank tags is not the same as visible drops.
 

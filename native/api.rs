@@ -78,6 +78,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "testing.action" => automation::action(&a),
         "testing.run" => automation::run(&a),
         "testing.visual_diff" => crate::visual::visual_diff(&a),
+        "testing.accessibility" => crate::accessibility::accessibility(&a),
         "testing.setup" => crate::instrumentation::setup(&a),
         "testing.instrumentation" => crate::instrumentation::invoke(&a),
         "ios.toolkit_install"

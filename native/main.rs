@@ -1,3 +1,4 @@
+mod accessibility;
 mod android_debug;
 mod api;
 mod apple;
