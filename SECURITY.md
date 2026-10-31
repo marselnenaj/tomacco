@@ -32,6 +32,9 @@ Only the latest release gets fixes.
   owner-only as well.
 - Directories it creates for its own state are made 0700 in one step. Job logs, worker logs and the job database are 0600, since
   they hold commands, environments and tool output; a log path that is a symbolic link is refused.
+- A file an operation writes (a screenshot, recording, trace, report, profile export or signed release) is refused when the
+  destination is itself a symbolic link, a directory or a special file, since some of the tools that write it follow links.
+  Its folders may be links. `files.*` operations stay inside their project, also through links.
 - Runtime and debugger sockets live in owner-only directories, in `TMPDIR` or, when that path is too long for a socket, in a private
   `XDG_RUNTIME_DIR` or `/tmp`.
 

@@ -218,7 +218,9 @@ pub fn expand(value: &str) -> PathBuf {
         PathBuf::from(value)
     }
 }
-pub fn path(value: &str, directory: bool, exists: bool) -> Result<PathBuf> {
+/// `value` as an absolute path, `~` expanded and `.` and `..` folded away,
+/// with no link resolved.
+fn lexical(value: &str) -> Result<PathBuf> {
     if value.trim().is_empty() || value.contains('\0') {
         return Err(Error::new(
             "invalid_path",
@@ -231,6 +233,19 @@ pub fn path(value: &str, directory: bool, exists: bool) -> Result<PathBuf> {
     } else {
         std::env::current_dir()?.join(expanded)
     };
+    let normalized: PathBuf = absolute.components().fold(PathBuf::new(), |mut p, part| {
+        match part {
+            std::path::Component::ParentDir => {
+                p.pop();
+            }
+            std::path::Component::CurDir => (),
+            _ => p.push(part),
+        };
+        p
+    });
+    Ok(normalized)
+}
+pub fn path(value: &str, directory: bool, exists: bool) -> Result<PathBuf> {
     // Canonicalize existing ancestors as Python Path.resolve() did, including new destinations.
     fn resolve(p: &Path) -> std::io::Result<PathBuf> {
         if p.exists() {
@@ -244,16 +259,7 @@ pub fn path(value: &str, directory: bool, exists: bool) -> Result<PathBuf> {
             .ok_or_else(|| std::io::Error::other("Invalid path"))?;
         Ok(resolve(parent)?.join(name))
     }
-    let normalized: PathBuf = absolute.components().fold(PathBuf::new(), |mut p, part| {
-        match part {
-            std::path::Component::ParentDir => {
-                p.pop();
-            }
-            std::path::Component::CurDir => (),
-            _ => p.push(part),
-        };
-        p
-    });
+    let normalized = lexical(value)?;
     let resolved = resolve(&normalized)?;
     if exists
         && !(if directory {
@@ -381,15 +387,43 @@ pub fn socket_tempdir() -> tempfile::TempDir {
         .tempdir_in(socket_root(48))
         .expect("a private socket directory")
 }
+/// A file an operation writes: a screenshot, a recording, a trace, a report,
+/// an export, a signed release. Its folders may be links (a Pictures folder on
+/// another disk); the file itself must not be. Tools such as adb pull and
+/// rsync write through a link, so one planted at the destination, in /tmp
+/// say, would point the write at another file of the user. A directory, a
+/// FIFO or a device is not a file destination either.
 pub fn output_path(value: &str) -> Result<PathBuf> {
-    let p = path(value, false, false)?;
-    if p.file_name().is_none() || p.is_dir() {
+    let named = lexical(value)?;
+    let (Some(parent), Some(name)) = (named.parent(), named.file_name()) else {
         return Err(Error::new(
             "invalid_path",
             "Select a file destination, not a directory",
         ));
+    };
+    let target = path(&parent.to_string_lossy(), false, false)?.join(name);
+    match fs::symlink_metadata(&target) {
+        Ok(meta) if meta.file_type().is_symlink() => Err(Error::new(
+            "invalid_path",
+            format!(
+                "The destination is a symbolic link, which would redirect the write: {}",
+                target.display()
+            ),
+        )
+        .remedy("Name the file itself, or remove the link")),
+        Ok(meta) if meta.is_dir() => Err(Error::new(
+            "invalid_path",
+            "Select a file destination, not a directory",
+        )),
+        Ok(meta) if !meta.is_file() => Err(Error::new(
+            "invalid_path",
+            format!(
+                "The destination is not a regular file: {}",
+                target.display()
+            ),
+        )),
+        _ => Ok(target),
     }
-    Ok(p)
 }
 /// Resolves the path of a file that holds a secret (a password, a token, a
 /// key). Its error never quotes the value: a secret given where its file's
@@ -782,6 +816,50 @@ mod directory_tests {
         let file = parent.path().join("file");
         fs::write(&file, b"").unwrap();
         assert!(private_runtime_dir(&file).is_err());
+    }
+
+    #[test]
+    fn an_output_file_may_sit_behind_linked_folders_but_not_be_a_link() {
+        let parent = tempfile::tempdir().unwrap();
+        let root = parent.path().canonicalize().unwrap();
+        let precious = root.join("precious");
+        fs::write(&precious, b"keep").unwrap();
+        // New and existing regular files are fine.
+        let new = root.join("shot.png");
+        assert_eq!(output_path(&new.to_string_lossy()).unwrap(), new);
+        assert_eq!(output_path(&precious.to_string_lossy()).unwrap(), precious);
+        // A linked folder is followed, as for a Pictures folder on another disk.
+        let real = root.join("real");
+        fs::create_dir(&real).unwrap();
+        std::os::unix::fs::symlink(&real, root.join("pictures")).unwrap();
+        assert_eq!(
+            output_path(&root.join("pictures/../pictures/a.png").to_string_lossy()).unwrap(),
+            real.join("a.png")
+        );
+        // A link at the destination, to a file or to nothing yet, is refused.
+        for (name, to) in [
+            ("planted", precious.clone()),
+            ("dangling", root.join("none")),
+        ] {
+            let link = root.join(name);
+            std::os::unix::fs::symlink(&to, &link).unwrap();
+            let error = output_path(&link.to_string_lossy()).unwrap_err();
+            assert_eq!(error.code, "invalid_path");
+            assert!(error.message.contains("symbolic link"), "{}", error.message);
+        }
+        // A link behind a linked folder too.
+        std::os::unix::fs::symlink(&precious, real.join("b.png")).unwrap();
+        assert!(output_path(&root.join("pictures/b.png").to_string_lossy()).is_err());
+        // Directories, a FIFO, and nothing at all are not file destinations.
+        assert!(output_path(&real.to_string_lossy()).is_err());
+        assert!(output_path(&format!("{}/", real.display())).is_err());
+        assert!(output_path("/").is_err());
+        let fifo = root.join("fifo");
+        let name = std::ffi::CString::new(fifo.to_string_lossy().as_bytes()).unwrap();
+        // SAFETY: name is a valid NUL-terminated path.
+        assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+        assert!(output_path(&fifo.to_string_lossy()).is_err());
+        assert_eq!(fs::read(&precious).unwrap(), b"keep");
     }
 
     #[test]

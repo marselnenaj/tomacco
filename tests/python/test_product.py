@@ -228,6 +228,29 @@ class RuntimeAudioTests(Isolated):
 
 
 class CatalogueTests(Isolated):
+    def test_writes_refuse_a_link_planted_at_the_destination(self):
+        precious = self.root / "precious"
+        precious.write_text("keep")
+        link = self.root / "shot.png"
+        link.symlink_to(precious)
+        profile = catalog.builtin()[0]["id"]
+        for operation, arguments in (("catalog.export", {"profile_id": profile, "path": str(link)}),
+                                     ("ios.virtual.screenshot", {"path": str(link)}),
+                                     ("ios.virtual.record", {"path": str(link.with_suffix(".mp4"))})):
+            if operation == "ios.virtual.record":
+                link.with_suffix(".mp4").symlink_to(precious)
+            with self.assertRaises(StudioError) as caught:
+                dispatch(operation, arguments)
+            self.assertEqual(caught.exception.code, "invalid_path", operation)
+            self.assertIn("symbolic link", str(caught.exception))
+        self.assertEqual(precious.read_text(), "keep")
+        # A folder that is a link is fine: the profile lands in the real folder.
+        real = self.root / "real"
+        real.mkdir()
+        (self.root / "exports").symlink_to(real)
+        catalog.export_profile(profile, str(self.root / "exports/profile.json"))
+        self.assertTrue((real / "profile.json").is_file())
+
     def test_builtins_and_full_round_trip(self):
         profiles = catalog.builtin()
         self.assertEqual(len(profiles), 13)

@@ -41,6 +41,7 @@ tomaccoctl doctor
 | `invalid_argument` | The arguments do not match the schema. Unknown keys are refused. | Check `tomaccoctl schema`. For instance, `job.wait` `seconds` is at most 60. |
 | `operation_not_found` | No such operation. | Check `tomaccoctl schema`. Do not guess names. |
 | A job says `running` | This is a valid result, not success. | Repeat `job.wait` until it is `succeeded`, `failed`, `cancelled` or `timed_out`. |
+| `invalid_path`: "The destination is a symbolic link" | A screenshot, recording, trace, report or export would be written through a link. | Name the file itself, or remove the link. A folder in the path may be a link. |
 | `workspace_busy` | Other work holds this project. The error has the active job. | Wait for it or `job.cancel` it. Use separate directories for independent work. |
 | `job_not_found` | The id is wrong, or from another `TOMACCO_HOME`. | Use the same data directory. `job.list` shows what exists. |
 | A job vanished with a sandboxed agent | A process supervisor can kill workers, even though jobs persist. | Run outside that sandbox, and read `job.get` for the recorded state. |
