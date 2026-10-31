@@ -117,6 +117,8 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         name if name.starts_with("update.") => update::handle(name, &a),
         "ios.virtual.deploy" => crate::ios_emulator::virtual_phone::deploy(&a),
         "ios.virtual.debug" => crate::ios_emulator::virtual_phone::debug(&a),
+        "ios.virtual.screenshot" => crate::ios_emulator::virtual_screen::screenshot(&a),
+        "ios.virtual.record" => crate::ios_emulator::virtual_screen::record(&a),
         name if name.starts_with("play.") => play_store::handle(name, &a),
         name if name.starts_with("runtime.") => crate::runtime::handle(name, &a),
         name if name.starts_with("apple.") => apple::handle(name, &a),

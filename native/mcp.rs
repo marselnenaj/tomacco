@@ -159,7 +159,14 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
             match result {
                 Ok(value) => {
                     let mut content = vec![json!({"type":"text","text":value.to_string()})];
-                    if ["preview.capture", "device.capture", "runtime.capture"].contains(&name) {
+                    if [
+                        "preview.capture",
+                        "device.capture",
+                        "runtime.capture",
+                        "ios.virtual.screenshot",
+                    ]
+                    .contains(&name)
+                    {
                         let path = Path::new(s(&value, "path"));
                         if fs::metadata(path).is_ok_and(|m| m.len() <= 4 * 1024 * 1024) {
                             let data = fs::read(path)?;

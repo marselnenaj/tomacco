@@ -12,6 +12,7 @@ pub mod restore;
 pub mod usb_bridge;
 pub mod userland;
 pub mod virtual_phone;
+pub mod virtual_screen;
 use crate::{core::*, jobs, toolchain};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};

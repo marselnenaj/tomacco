@@ -33,6 +33,7 @@ tomaccoctl call job.logs '{"job_id":"START_JOB","offset":0}'
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | "No verified run is recorded; the profile cannot start a guest" | `state.json` names no clean base. | Generate the profile from a finished [first install](setup.md#the-chain). |
+| `ios_virtual_disk_space`: "The start copies ... of disks into ..." | The filesystem of the profile's `installs` lacks room for the session's disk copy. | Free the space the remedy names on that filesystem, or point `installs` at one with room. btrfs, or XFS with reflink, shares blocks with the base. |
 | "The host was too busy (I/O or memory pressure) to boot the guest" | The machine was short of I/O or memory during boot. | Start again once it is quieter. |
 | "The guest service did not answer within an hour" | The boot never got as far as the guest service. The phase stays `booting`. | Stop, then read `ios.emulator.report` for the guest job. |
 | "The guest stopped during boot" | The emulator ended early. | Read `ios.emulator.report` for the guest job. |

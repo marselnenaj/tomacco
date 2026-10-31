@@ -30,13 +30,13 @@ const LANE_WAIT: Duration = Duration::from_millis(2500);
 const FRAME_FILE_LIMIT: u64 = 64 * 1024 * 1024;
 
 /// Bytes of a binary PPM picture: "P6\n<width> <height>\n255\n" and RGB.
-fn ppm_bytes(width: u64, height: u64) -> u64 {
+pub(super) fn ppm_bytes(width: u64, height: u64) -> u64 {
     (format!("P6\n{width} {height}\n255\n").len() as u64)
         .saturating_add(width.saturating_mul(height).saturating_mul(3))
 }
 
 /// The size of a frame file that is a complete, plausible PPM picture.
-fn ppm_frame(path: &Path) -> Option<(u64, u64)> {
+pub(super) fn ppm_frame(path: &Path) -> Option<(u64, u64)> {
     let metadata = fs::symlink_metadata(path).ok()?;
     if !metadata.is_file() || metadata.len() > FRAME_FILE_LIMIT {
         return None;

@@ -175,7 +175,9 @@ var titles = {
     "ios.virtual.start": QT_TRANSLATE_NOOP("Operations", "Start virtual iOS device"),
     "ios.virtual.stop": QT_TRANSLATE_NOOP("Operations", "Stop virtual iOS device"),
     "ios.virtual.deploy": QT_TRANSLATE_NOOP("Operations", "Install app on running virtual iOS device"),
-    "ios.virtual.debug": QT_TRANSLATE_NOOP("Operations", "Debug process on virtual iOS device")
+    "ios.virtual.debug": QT_TRANSLATE_NOOP("Operations", "Debug process on virtual iOS device"),
+    "ios.virtual.screenshot": QT_TRANSLATE_NOOP("Operations", "Screenshot of virtual iOS device"),
+    "ios.virtual.record": QT_TRANSLATE_NOOP("Operations", "Record virtual iOS device screen")
 }
 
 function title(operation) {

@@ -44,3 +44,17 @@ class VirtualIphoneStatusRecordTests(Isolated):
         self.assertIsNone(status["time_zone"])
         self.assertEqual(status["installed_applications"], {})
         self.assertEqual(dispatch("ios.virtual.status")["time_zone"], None)
+
+    def test_the_phase_times_and_the_copy_progress_are_reported(self):
+        directory = self.profile("timed", {"phase": "stopped", "phase_log": [
+            {"phase": "stopping", "started": 100.0}, {"phase": "stopped", "started": 130.0}]})
+        status = dispatch("ios.virtual.configure", {"directory": str(directory)})
+        self.assertEqual(status["phases"][0], {"phase": "stopping", "started": 100.0, "seconds": 30.0})
+        self.assertEqual(status["phase_started"], 130.0)
+        self.assertGreater(status["phase_elapsed_seconds"], 0)
+        # Not preparing: no copy to follow.
+        self.assertIsNone(status["copy_progress"])
+        before = self.profile("untimed", {})
+        status = dispatch("ios.virtual.configure", {"directory": str(before)})
+        self.assertEqual((status["phases"], status["phase_started"], status["phase_elapsed_seconds"]), ([], None, None))
+

@@ -23,6 +23,12 @@ Phases in the status, in order: `preparing`, `booting`, `installing` (only when 
 `unlocking`, `launch-accepted`. After a stop it is `stopped` or `unverified`, and after a refusal
 `failed`, with `error` naming the reason.
 
+`phase_elapsed_seconds` is how long the current phase has run, and `phases` lists each phase of the
+current start or stop with its seconds. While `preparing`, `copy_progress` has the disk copy's
+`bytes_done`, `bytes_total` and `percent`, with the preparation's `step` and `disk`. It compares the
+size of the new copy's files with the base's, so a reflinked copy shows as complete at once. These
+fields have unit tests; they have not been watched during a live start yet.
+
 Accepted is not the same as visible. After an accepted launch the start looks at the panel for up
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
 display defect, not a working phone.
@@ -53,6 +59,15 @@ refused at the limit is the guest frozen. `ios.virtual.status` reports a guest t
 Disk copies are 32 GiB each, and at most two are kept. Only copies Tomacco made in the profile's `installs`
 directory are ever deleted.
 
+A start checks the space first. When the filesystem of `installs` lacks room for the copy (the base's disks
+plus 1 GiB, counting the older copies the start would delete first), `ios.virtual.start` refuses at once with
+`ios_virtual_disk_space`, before anything is deleted or copied. The refusal says how much to free. On a filesystem
+that clones files (btrfs, or XFS with reflink) the copy shares blocks with its base and needs only the 1 GiB.
+`start_disk` in `ios.virtual.status` gives the same reckoning before you start: `needed_bytes`, `free_bytes`,
+`reclaimable_bytes` and `enough`. The status writes nothing to find out, so on btrfs or XFS short of room for a
+full copy `enough` stays null until a start tries a clone. The refusal and `start_disk` have unit tests and a
+control-plane test; neither has been met on a real full disk.
+
 ## The graphics memory guard
 
 A session stops the careful way when under an eighth of the graphics card stays free, so it cannot take
@@ -74,7 +89,9 @@ tomaccoctl call ios.virtual.configure '{"model":"16"}'
 
 The status lists `models`, each with `id`, `name`, `panel` and `source`. The choice applies from the next
 start; your data stays the same. The status also has `model` (for the next start), `running_model` and
-`running_panel`. Choose a model in the desktop too.
+`running_panel`. `running_panel` is the panel the current run's boot request gave the engine, so editing the
+profile while a phone runs does not change it; it is null when that boot named no panel. Choose a model in the
+desktop too.
 
 | Model | Panel | Source | Result when booted once |
 | --- | --- | --- | --- |
@@ -130,6 +147,32 @@ tomaccoctl call ios.emulator.control '{"job_id":"GUEST_JOB","action":"frame","tr
 
 A phone without a Home button is unlocked with a slow drag up from the bottom edge, as in the second example. The start
 does that by itself.
+
+## Screenshots and recordings
+
+```sh
+tomaccoctl call ios.virtual.screenshot '{"path":"/absolute/phone.png"}'
+tomaccoctl call ios.virtual.screenshot '{"path":"/absolute/phone-framed.png","frame":"device"}'
+```
+
+`ios.virtual.screenshot` saves the running phone's current screen as a PNG, from the same frame a viewer gets. `frame`
+`rounded` cuts the corners round with the radius of the model the phone runs as and makes outside them transparent;
+the Home-button phone keeps square corners. `device` also draws a plain black bezel around it: a drawing, not a
+picture of the phone, with circular corners rather than Apple's continuous curves. Over MCP the PNG comes back inline
+when it is at most 4 MiB. The framing and the PNG writer have unit tests; a screenshot of a live phone has not been
+taken with it yet.
+
+```sh
+tomaccoctl call ios.virtual.record '{"path":"/absolute/phone.mp4","seconds":20,"fps":10}'
+tomaccoctl call job.wait '{"job_id":"RECORD_JOB","seconds":60}'
+```
+
+`ios.virtual.record` is a job that records the screen for `seconds` (up to 600) into an H.264 MP4, with ffmpeg, which must
+be installed. It asks for a frame `fps` times a second (up to 30) and repeats the last picture when nothing changed or a
+poll was slow, so the video lasts as long as the recording. The guest itself draws only about 10 changed frames a second,
+so a higher `fps` mostly repeats pictures; the result's `frames_distinct` says how many differed. A phone that stops ends
+the recording early with what it has. The pacing has unit tests, and an MP4 was made from synthetic frames with a real
+ffmpeg and checked with ffprobe; a live phone has not been recorded with it yet.
 
 ## Deploy your own app
 

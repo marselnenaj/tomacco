@@ -146,11 +146,23 @@ fn model() -> Result<String> {
     Ok(s(&read_json(&location()?, Some(json!({})))?, "model").to_string())
 }
 
-/// The panel of a run as `WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM`: the model's
-/// own, or for the Home-button phone the profile's display profile, which a
-/// model start leaves aside (`boot_request` in the script). Null for a model
-/// this control plane does not know.
-fn running_panel(profile: &Value, model: &str) -> Value {
+/// The panel of a run as `WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM`. The guest
+/// job's own request says what the engine was given (`paravirtual::start`
+/// puts a model's panel there), so a profile or catalogue edited after the
+/// boot cannot change the answer; a request without a panel left the engine
+/// its default, which is unknown here (null). Without the guest job: the
+/// model's own panel, or for the Home-button phone the profile's display
+/// profile, which a model start leaves aside (`boot_request` in the script).
+/// Null for a model this control plane does not know.
+fn running_panel(profile: &Value, model: &str, guest: Option<&Value>) -> Value {
+    if let Some(key) = guest
+        .map(|job| &job["plan"]["operation_key"])
+        .filter(|key| key["operation"] == "ios.emulator.paravirtual")
+    {
+        return key["arguments"]["display_profile"]
+            .as_str()
+            .map_or(Value::Null, Value::from);
+    }
     if model.is_empty() {
         return profile["boot"]["display_profile"].clone();
     }
@@ -348,6 +360,286 @@ fn installed_applications(state: &Value) -> Value {
     }
 }
 
+/// The disks a start copies from its base, in the order it copies them
+/// (`prepare` in tools/prepare_ios_guest_tools.py).
+const DISKS: [&str; 3] = ["system.raw", "auxiliary.raw", "sep.raw"];
+
+/// How far the `preparing` phase's disk copy has come: the bytes of the new
+/// copy's disk files against those of the base it is copied from, and the
+/// preparation's own step (`copy-storage`, `install-preboot`, ...) and disk
+/// from its record. A streamed copy grows as it is written; a reflinked one
+/// is complete at once. Null outside `preparing`, before the attempt is
+/// recorded and when the base's disks cannot be read.
+fn copy_progress(state: &Value) -> Value {
+    if state["phase"] != "preparing" {
+        return Value::Null;
+    }
+    let (Some(output), Some(base)) = (
+        state["attempt"]["install"].as_str(),
+        state["verified"]["install"].as_str(),
+    ) else {
+        return Value::Null;
+    };
+    let size = |path: PathBuf| {
+        fs::symlink_metadata(path)
+            .ok()
+            .filter(|meta| meta.is_file())
+            .map(|meta| meta.len())
+    };
+    let (mut done, mut total) = (0u64, 0u64);
+    for name in DISKS {
+        let Some(source) = size(Path::new(base).join(name)) else {
+            return Value::Null;
+        };
+        total += source;
+        done += size(Path::new(output).join(name)).unwrap_or(0).min(source);
+    }
+    let record = Path::new(output).join("guest-tools-install.json");
+    let record = if fs::symlink_metadata(&record).is_ok_and(|meta| meta.is_file()) {
+        read_json(&record, None).unwrap_or(Value::Null)
+    } else {
+        Value::Null
+    };
+    let text = |key: &str| record[key].as_str().map_or(Value::Null, Value::from);
+    let percent = if total == 0 {
+        0.0
+    } else {
+        (done as f64 * 1000.0 / total as f64).floor() / 10.0
+    };
+    json!({"bytes_done":done,"bytes_total":total,"percent":percent,
+        "step":text("phase"),"disk":text("copying_disk")})
+}
+
+/// What a full disk copy needs beyond the disks themselves, as the copy
+/// checks for each disk (`COPY_HEADROOM` in tools/prepare_ios_userland.py).
+const COPY_HEADROOM: u64 = 1 << 30;
+
+/// Whether a disk copy may be deleted by the start: only a real directory
+/// the start created in the profile's `installs` (`Phone.owned`).
+fn owned_copy(installs: &Path, copy: &Path) -> bool {
+    let parent = copy.parent().and_then(|parent| parent.canonicalize().ok());
+    parent.is_some()
+        && parent == installs.canonicalize().ok()
+        && copy
+            .file_name()
+            .is_some_and(|name| name.to_string_lossy().starts_with("guest-install"))
+        && fs::symlink_metadata(copy).is_ok_and(|meta| meta.is_dir())
+}
+
+/// The copies a start deletes before it makes its own: the disk copy of an
+/// attempt that never booted (`discard_attempt`) and every recorded copy but
+/// the verified run's and the newest (`prune(keep=1)`), as far as they are
+/// the start's own.
+fn copies_a_start_removes(profile: &Value, state: &Value) -> Vec<PathBuf> {
+    let installs = PathBuf::from(s(profile, "installs"));
+    let created: Vec<PathBuf> = state["created"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|path| path.as_str().map(PathBuf::from))
+        .collect();
+    let verified = PathBuf::from(s(&state["verified"], "install"));
+    let mut removed: Vec<PathBuf> = created
+        .iter()
+        .take(created.len().saturating_sub(1))
+        .filter(|path| **path != verified)
+        .cloned()
+        .collect();
+    if let Some(attempt) = state["attempt"]["install"].as_str().map(PathBuf::from) {
+        removed.push(attempt);
+    }
+    removed.sort();
+    removed.dedup();
+    removed.retain(|path| owned_copy(&installs, path));
+    removed
+}
+
+/// The bytes the regular files directly inside a directory occupy on disk.
+fn allocated_bytes(directory: &Path) -> u64 {
+    fs::read_dir(directory)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|entry| fs::symlink_metadata(entry.path()).ok())
+        .filter(|meta| meta.is_file())
+        .map(|meta| meta.blocks() * 512)
+        .sum()
+}
+
+/// Whether the filesystem of `installs` can clone `source` instead of
+/// copying it (FICLONE), as the copy tries first. The probe clones the
+/// base's smallest disk into a temporary file there and removes it again.
+fn clones_into(source: &Path, installs: &Path) -> bool {
+    use std::os::fd::AsRawFd;
+    let Ok(input) = File::open(source) else {
+        return false;
+    };
+    let Ok(output) = tempfile::Builder::new()
+        .prefix(".tomacco-clone-probe")
+        .tempfile_in(installs)
+    else {
+        return false;
+    };
+    unsafe { libc::ioctl(output.as_file().as_raw_fd(), 0x40049409, input.as_raw_fd()) == 0 }
+}
+
+/// Free bytes for an unprivileged writer on the filesystem of `path`.
+fn free_bytes(path: &Path) -> Option<u64> {
+    use std::os::unix::ffi::OsStrExt;
+    let name = std::ffi::CString::new(path.as_os_str().as_bytes()).ok()?;
+    let mut space: libc::statvfs = unsafe { std::mem::zeroed() };
+    (unsafe { libc::statvfs(name.as_ptr(), &mut space) } == 0)
+        .then(|| space.f_bavail as u64 * space.f_frsize as u64)
+}
+
+/// Whether a filesystem of this kind can clone files at all (btrfs, XFS,
+/// bcachefs, OCFS2), read from its superblock magic without writing.
+fn may_clone(path: &Path) -> bool {
+    use std::os::unix::ffi::OsStrExt;
+    let Ok(name) = std::ffi::CString::new(path.as_os_str().as_bytes()) else {
+        return false;
+    };
+    let mut info: libc::statfs = unsafe { std::mem::zeroed() };
+    if unsafe { libc::statfs(name.as_ptr(), &mut info) } != 0 {
+        return false;
+    }
+    [0x9123_683E_i64, 0x5846_5342, 0xCA45_1A4E, 0x7461_636F].contains(&(info.f_type as i64))
+}
+
+/// Whether the copy fits: a full copy needs the base's disks and the
+/// headroom, which the free space and what the start deletes first must
+/// cover. Only when they do not is `clones` asked whether the filesystem
+/// shares blocks instead (None: not known), and a clone needs the headroom
+/// alone. The answer is None when it depends on a clone that is not known.
+fn disk_verdict(
+    disks: u64,
+    free: u64,
+    reclaimable: u64,
+    clones: impl FnOnce() -> Option<bool>,
+) -> (u64, Option<bool>, Option<bool>) {
+    let full = disks + COPY_HEADROOM;
+    if free.saturating_add(reclaimable) >= full {
+        return (full, None, Some(true));
+    }
+    match clones() {
+        Some(true) => (COPY_HEADROOM, Some(true), Some(free >= COPY_HEADROOM)),
+        Some(false) => (full, Some(false), Some(false)),
+        None => (full, None, None),
+    }
+}
+
+/// The space the next start's disk copy needs in the profile's `installs`
+/// and whether it is there. With `probe`, a short filesystem is asked to
+/// clone the base's smallest disk (the start); without, nothing is written
+/// and a filesystem that might clone leaves the answer open (the status).
+/// Null when the base's disks or the filesystem cannot be read; the start
+/// itself then says why.
+fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
+    let base = match state["verified"]["install"].as_str() {
+        Some(base) => PathBuf::from(base),
+        None if state["closed"] == true && text(state, "install") => {
+            PathBuf::from(s(state, "install"))
+        }
+        None => return Value::Null,
+    };
+    let installs = PathBuf::from(s(profile, "installs"));
+    let mut disks = 0;
+    for name in DISKS {
+        match fs::metadata(base.join(name)) {
+            Ok(meta) if meta.is_file() => disks += meta.len(),
+            _ => return Value::Null,
+        }
+    }
+    let Some(free) = free_bytes(&installs) else {
+        return Value::Null;
+    };
+    let reclaimable = copies_a_start_removes(profile, state)
+        .iter()
+        .map(|copy| allocated_bytes(copy))
+        .sum::<u64>();
+    let (needed, reflink, enough) = disk_verdict(disks, free, reclaimable, || {
+        if probe {
+            Some(clones_into(&base.join("sep.raw"), &installs))
+        } else if may_clone(&installs) {
+            None
+        } else {
+            Some(false)
+        }
+    });
+    json!({"installs":installs,"needed_bytes":needed,"free_bytes":free,
+        "reclaimable_bytes":reclaimable,"reflink":reflink,"enough":enough})
+}
+
+fn gib(bytes: u64) -> String {
+    format!("{:.1} GiB", bytes as f64 / (1u64 << 30) as f64)
+}
+
+/// A start that would run out of space part way through its disk copy is
+/// refused before anything is deleted or copied, with what to do about it.
+fn refuse_short_disk(disk: &Value) -> Result<()> {
+    if disk["enough"] != false {
+        return Ok(());
+    }
+    let (needed, free, reclaimable) = (
+        n(disk, "needed_bytes"),
+        n(disk, "free_bytes"),
+        n(disk, "reclaimable_bytes"),
+    );
+    let installs = s(disk, "installs");
+    let short = needed.saturating_sub(free.saturating_add(reclaimable));
+    Err(Error::new(
+        "ios_virtual_disk_space",
+        format!(
+            "The start copies {} of disks into {installs}, but that filesystem has {} free{}",
+            gib(needed),
+            gib(free),
+            if reclaimable > 0 {
+                format!(" and the start would delete {} of older copies", gib(reclaimable))
+            } else {
+                String::new()
+            }
+        ),
+    )
+    .remedy(format!(
+        "Free at least {} on the filesystem of {installs}, or point the profile's installs at a filesystem with room; \
+         on btrfs or XFS with reflink the copy shares blocks with its base. Tomacco deletes only the copies it made there",
+        gib(short)
+    ))
+    .details(disk.clone()))
+}
+
+/// When each phase of the current start or stop began (`phase_log`, which
+/// `Phone.save` in the script keeps from the start's `preparing` on) and how
+/// long each took; the current phase's time runs on until the next. Entries
+/// of another shape are left out, and a log whose last phase is not the
+/// state's phase (a state written before the log existed) gives no elapsed
+/// time for the phase.
+fn phase_times(state: &Value, now: f64) -> Value {
+    let log: Vec<(&str, f64)> = state["phase_log"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|row| Some((row["phase"].as_str()?, row["started"].as_f64()?)))
+        .filter(|(_, started)| started.is_finite())
+        .collect();
+    let round = |seconds: f64| (seconds.max(0.0) * 10.0).round() / 10.0;
+    let phases: Vec<Value> = log
+        .iter()
+        .enumerate()
+        .map(|(index, (phase, started))| {
+            let until = log.get(index + 1).map_or(now, |next| next.1);
+            json!({"phase":phase,"started":started,"seconds":round(until - started)})
+        })
+        .collect();
+    let current = log
+        .last()
+        .filter(|(phase, _)| state["phase"] == *phase)
+        .map(|(_, started)| *started);
+    json!({"phase_started":current,
+        "phase_elapsed_seconds":current.map(|started| round(now - started)),
+        "phases":phases})
+}
+
 fn application_process_observation(profile: &Value, state: &Value, running: bool) -> Value {
     let launch = &state["launch_receipt"];
     if running
@@ -457,9 +749,16 @@ pub fn status(_a: &Value) -> Result {
             "action":job["plan"]["operation_key"]["operation"]})
     });
     let application_process = application_process_observation(&profile, &state, running);
+    let times = phase_times(&state, now());
     Ok(json!({
         "configured":true,"experimental":true,"directory":directory,
         "run":state["run"],"phase":state["phase"],"closed":state["closed"],
+        // When the phase began, how long it has run, each phase of this start
+        // or stop with its seconds, and the disk copy's progress while preparing.
+        "phase_started":times["phase_started"],"phase_elapsed_seconds":times["phase_elapsed_seconds"],
+        "phases":times["phases"],"copy_progress":copy_progress(&state),
+        // Whether the next start's disk copy fits in the profile's installs.
+        "start_disk":start_disk(&profile,&state,false),
         "error":state["error"],"updated":state["updated"],
         "guest_job":state["guest_job"],"guest_state":guest_state,"guest_state_known":guest_known,
         "guest_report_readable":report_readable,
@@ -485,7 +784,7 @@ pub fn status(_a: &Value) -> Result {
         "busy":busy,
         // What the next start will be, what the current run is, and the choice.
         "model":model()?,"running_model":state.get("model").cloned().unwrap_or(json!("")),
-        "running_panel":running_panel(&profile,s(&state,"model")),
+        "running_panel":running_panel(&profile,s(&state,"model"),guest.as_ref()),
         "models":paravirtual::device_models().iter().map(|model| json!({"id":model["id"],
             "name":model["name"],"panel":model["panel"],"source":model["source"]})).collect::<Vec<_>>(),
         "guest_ended":ended,"guest_saved":saved,"guest_gpu_memory_stop":gpu_memory_stop,
@@ -550,6 +849,13 @@ fn submit_with(
 }
 
 pub fn start(a: &Value) -> Result {
+    // A start that adopts a running guest, or repeats an active start, makes
+    // no copy; any other start is refused here when its copy cannot fit.
+    let directory = directory()?;
+    let (profile, state) = records(&directory)?;
+    if jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state) {
+        refuse_short_disk(&start_disk(&profile, &state, true))?;
+    }
     // Preparation, a boot of many minutes and the unlock each have their own
     // bound inside the script; this is the outer limit of the whole job.
     submit(
@@ -687,6 +993,22 @@ fn guest_control_debug_target(value: &str) -> bool {
         && !value.starts_with(['.', '-'])
 }
 
+/// The guest job of the running phone and the model it was started as
+/// (empty: the Home-button phone), or `ios_virtual_not_running`.
+pub(super) fn running_guest() -> Result<(String, String)> {
+    let (_, state) = records(&directory()?)?;
+    if !guest_is_running(&state) {
+        return Err(Error::new(
+            "ios_virtual_not_running",
+            "The phone is not running; start it with ios.virtual.start",
+        ));
+    }
+    Ok((
+        s(&state, "guest_job").to_string(),
+        s(&state, "model").to_string(),
+    ))
+}
+
 /// Whether the state's guest job is still on its way or running.
 fn guest_is_running(state: &Value) -> bool {
     state["guest_job"].as_str().is_some_and(|id| {
@@ -744,14 +1066,53 @@ mod running_panel_tests {
         // A profile can name the Home-button phone's panel while the guest
         // runs as the iPhone 16; the status says what runs.
         let profile = json!({"boot":{"display_profile":"1170x2532@60:65x141"}});
-        assert_eq!(running_panel(&profile, "16"), json!("1179x2556@60:65x141"));
         assert_eq!(
-            running_panel(&profile, "18pro"),
+            running_panel(&profile, "16", None),
+            json!("1179x2556@60:65x141")
+        );
+        assert_eq!(
+            running_panel(&profile, "18pro", None),
             json!("1206x2622@60:66x143")
         );
-        assert_eq!(running_panel(&profile, ""), json!("1170x2532@60:65x141"));
-        assert_eq!(running_panel(&profile, "no-such-model"), Value::Null);
-        assert_eq!(running_panel(&json!({"boot":{}}), ""), Value::Null);
+        assert_eq!(
+            running_panel(&profile, "", None),
+            json!("1170x2532@60:65x141")
+        );
+        assert_eq!(running_panel(&profile, "no-such-model", None), Value::Null);
+        assert_eq!(running_panel(&json!({"boot":{}}), "", None), Value::Null);
+    }
+
+    #[test]
+    fn the_guest_jobs_request_is_the_panel_that_was_booted() {
+        // The profile was edited after the boot: the status still reports
+        // what the engine was given, not what the next start would give it.
+        let edited = json!({"boot":{"display_profile":"1206x2622@60:66x143"}});
+        let guest = |arguments: Value| {
+            json!({"plan":{"operation_key":{"operation":"ios.emulator.paravirtual",
+                "arguments":arguments}}})
+        };
+        let booted = guest(json!({"display_profile":"1170x2532@60:65x141"}));
+        assert_eq!(
+            running_panel(&edited, "", Some(&booted)),
+            json!("1170x2532@60:65x141")
+        );
+        // A model boot carries its panel in the request as well.
+        let model = guest(json!({"device_model":"16","display_profile":"1179x2556@60:65x141"}));
+        assert_eq!(
+            running_panel(&edited, "16", Some(&model)),
+            json!("1179x2556@60:65x141")
+        );
+        // A boot without a panel ran on the engine's default, unknown here.
+        assert_eq!(
+            running_panel(&edited, "", Some(&guest(json!({})))),
+            Value::Null
+        );
+        // A job of another kind says nothing about the panel.
+        let other = json!({"plan":{"operation_key":{"operation":"ios.emulator.research"}}});
+        assert_eq!(
+            running_panel(&edited, "", Some(&other)),
+            json!("1206x2622@60:66x143")
+        );
     }
 }
 
@@ -856,5 +1217,206 @@ mod process_observation_tests {
             state["launch_receipt"]["job_id"] = id;
             assert!(application_process_observation(&profile, &state, true).is_null());
         }
+    }
+}
+
+#[cfg(test)]
+mod start_progress_tests {
+    use super::*;
+
+    #[test]
+    fn each_phase_has_its_start_and_seconds_and_the_current_one_runs_on() {
+        let state = json!({"phase":"booting","phase_log":[
+            {"phase":"preparing","started":100.0},{"phase":"booting","started":160.5}]});
+        assert_eq!(
+            phase_times(&state, 200.0),
+            json!({"phase_started":160.5,"phase_elapsed_seconds":39.5,"phases":[
+                {"phase":"preparing","started":100.0,"seconds":60.5},
+                {"phase":"booting","started":160.5,"seconds":39.5}]})
+        );
+        // A clock that went back never gives negative seconds.
+        assert_eq!(phase_times(&state, 150.0)["phase_elapsed_seconds"], 0.0);
+    }
+
+    #[test]
+    fn a_state_without_a_usable_log_reports_no_phase_time() {
+        let none = json!({"phase_started":null,"phase_elapsed_seconds":null,"phases":[]});
+        assert_eq!(phase_times(&json!({"phase":"stopped"}), 9.0), none);
+        assert_eq!(
+            phase_times(&json!({"phase":"stopped","phase_log":"x"}), 9.0),
+            none
+        );
+        // Malformed rows are left out; a log that ends in another phase than
+        // the state's gives the phases but no elapsed time.
+        let state = json!({"phase":"failed","phase_log":[{"phase":"preparing","started":1.0},
+            {"phase":7,"started":2.0},{"phase":"booting"},{"phase":"booting","started":"3"}]});
+        assert_eq!(
+            phase_times(&state, 11.0),
+            json!({"phase_started":null,"phase_elapsed_seconds":null,"phases":[
+                {"phase":"preparing","started":1.0,"seconds":10.0}]})
+        );
+    }
+
+    #[test]
+    fn the_copy_reports_its_bytes_against_the_base_while_preparing() {
+        let root = tempfile::tempdir().unwrap();
+        let (base, output) = (root.path().join("base"), root.path().join("guest-install2"));
+        fs::create_dir_all(&base).unwrap();
+        fs::create_dir_all(&output).unwrap();
+        for (name, bytes) in [
+            ("system.raw", 6000),
+            ("auxiliary.raw", 3000),
+            ("sep.raw", 1000),
+        ] {
+            fs::write(base.join(name), vec![0u8; bytes]).unwrap();
+        }
+        let state = json!({"phase":"preparing","verified":{"install":base},
+            "attempt":{"run":2,"install":output}});
+        // Nothing written yet, and no record: the preparation has not begun copying.
+        assert_eq!(
+            copy_progress(&state),
+            json!({"bytes_done":0,"bytes_total":10000,"percent":0.0,"step":null,"disk":null})
+        );
+        fs::write(output.join("system.raw"), vec![0u8; 6000]).unwrap();
+        fs::write(output.join("auxiliary.raw"), vec![0u8; 1234]).unwrap();
+        fs::write(
+            output.join("guest-tools-install.json"),
+            r#"{"phase":"copy-storage","copying_disk":"auxiliary.raw"}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            copy_progress(&state),
+            json!({"bytes_done":7234,"bytes_total":10000,"percent":72.3,
+                "step":"copy-storage","disk":"auxiliary.raw"})
+        );
+        // Other phases, a missing attempt and an unreadable base report nothing.
+        let mut booting = state.clone();
+        booting["phase"] = json!("booting");
+        assert!(copy_progress(&booting).is_null());
+        let mut unrecorded = state.clone();
+        unrecorded["attempt"] = Value::Null;
+        assert!(copy_progress(&unrecorded).is_null());
+        fs::remove_file(base.join("sep.raw")).unwrap();
+        assert!(copy_progress(&state).is_null());
+    }
+}
+
+#[cfg(test)]
+mod start_disk_tests {
+    use super::*;
+
+    const GIB: u64 = 1 << 30;
+
+    #[test]
+    fn a_full_copy_needs_its_disks_and_headroom_in_free_or_deleted_space() {
+        let never = || panic!("no clone probe while a full copy fits");
+        assert_eq!(
+            disk_verdict(32 * GIB, 40 * GIB, 0, never),
+            (33 * GIB, None, Some(true))
+        );
+        assert_eq!(
+            disk_verdict(32 * GIB, 20 * GIB, 13 * GIB, never),
+            (33 * GIB, None, Some(true))
+        );
+        assert_eq!(
+            disk_verdict(32 * GIB, 20 * GIB, 0, || Some(false)),
+            (33 * GIB, Some(false), Some(false))
+        );
+        // A filesystem that clones needs the headroom alone.
+        assert_eq!(
+            disk_verdict(32 * GIB, 2 * GIB, 0, || Some(true)),
+            (GIB, Some(true), Some(true))
+        );
+        assert_eq!(
+            disk_verdict(32 * GIB, GIB / 2, 0, || Some(true)),
+            (GIB, Some(true), Some(false))
+        );
+        // One that might clone, not asked: the answer stays open.
+        assert_eq!(
+            disk_verdict(32 * GIB, 2 * GIB, 0, || None),
+            (33 * GIB, None, None)
+        );
+    }
+
+    #[test]
+    fn the_refusal_names_the_space_and_the_remedy() {
+        let disk = json!({"installs":"/data/installs","needed_bytes":33 * GIB,
+            "free_bytes":20 * GIB,"reclaimable_bytes":4 * GIB,"reflink":false,"enough":false});
+        let error = refuse_short_disk(&disk).unwrap_err();
+        assert_eq!(error.code, "ios_virtual_disk_space");
+        let value = error.value();
+        let message = s(&value, "message");
+        assert!(message.contains("33.0 GiB"), "{message}");
+        assert!(message.contains("20.0 GiB free"), "{message}");
+        assert!(message.contains("4.0 GiB of older copies"), "{message}");
+        let remedy = s(&value, "remedy");
+        assert!(remedy.starts_with("Free at least 9.0 GiB"), "{remedy}");
+        assert!(remedy.contains("reflink"), "{remedy}");
+        assert_eq!(value["details"], disk);
+        // Enough space, or nothing known, never refuses.
+        assert!(refuse_short_disk(&json!({"enough":true})).is_ok());
+        assert!(refuse_short_disk(&Value::Null).is_ok());
+    }
+
+    #[test]
+    fn only_the_starts_own_older_copies_count_as_space_it_frees() {
+        let root = tempfile::tempdir().unwrap();
+        let installs = root.path().join("installs");
+        for name in [
+            "guest-install5",
+            "guest-install6",
+            "guest-install7",
+            "guest-install8",
+        ] {
+            fs::create_dir_all(installs.join(name)).unwrap();
+            fs::write(installs.join(name).join("system.raw"), vec![1u8; 8192]).unwrap();
+        }
+        let elsewhere = root.path().join("elsewhere/guest-install4");
+        fs::create_dir_all(&elsewhere).unwrap();
+        fs::create_dir_all(installs.join("kept")).unwrap();
+        let profile = json!({"installs":installs});
+        let state = json!({
+            "verified":{"install":installs.join("guest-install6")},
+            "created":[elsewhere, installs.join("guest-install5"), installs.join("guest-install6"),
+                installs.join("kept"), installs.join("guest-install7")],
+            "attempt":{"install":installs.join("guest-install8")}});
+        // Not the verified run, not the newest copy, not a copy outside
+        // installs or of another name; the unbooted attempt goes.
+        assert_eq!(
+            copies_a_start_removes(&profile, &state),
+            vec![
+                installs.join("guest-install5"),
+                installs.join("guest-install8")
+            ]
+        );
+        assert!(allocated_bytes(&installs.join("guest-install5")) >= 8192);
+        assert_eq!(allocated_bytes(&root.path().join("missing")), 0);
+    }
+
+    #[test]
+    fn the_start_disk_reads_the_bases_disks_and_the_installs_filesystem() {
+        let root = tempfile::tempdir().unwrap();
+        let (base, installs) = (root.path().join("base"), root.path().join("installs"));
+        fs::create_dir_all(&base).unwrap();
+        fs::create_dir_all(&installs).unwrap();
+        for name in DISKS {
+            fs::write(base.join(name), vec![0u8; 4096]).unwrap();
+        }
+        let profile = json!({"installs":installs});
+        let state = json!({"closed":true,"install":base});
+        for probe in [true, false] {
+            let disk = start_disk(&profile, &state, probe);
+            assert_eq!(disk["needed_bytes"], 3 * 4096 + COPY_HEADROOM);
+            if disk["free_bytes"].as_u64().unwrap() >= 3 * 4096 + COPY_HEADROOM {
+                assert_eq!(disk["enough"], true);
+            }
+            // Neither reading leaves anything in installs.
+            assert_eq!(fs::read_dir(&installs).unwrap().count(), 0);
+        }
+        // An open run without a verified base, or a base without its disks,
+        // says nothing.
+        assert!(start_disk(&profile, &json!({"closed":false,"install":base}), false).is_null());
+        fs::remove_file(base.join("sep.raw")).unwrap();
+        assert!(start_disk(&profile, &state, true).is_null());
     }
 }

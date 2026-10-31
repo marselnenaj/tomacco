@@ -129,6 +129,27 @@ class VirtualPhoneLogic(unittest.TestCase):
         self.environment.stop()
         self.temp.cleanup()
 
+    def test_each_phase_change_is_logged_with_its_start_and_a_start_begins_a_new_log(self):
+        phone = ios_virtual_iphone.Phone(str(self.cli), self.profile)
+        moments = iter([10.0, 20.0, 25.0, 30.0, 40.0, 50.0])
+        with patch.object(ios_virtual_iphone.time, "time", lambda: next(moments), create=True):
+            phone.save(phase="stopped")
+            phone.save(phase="preparing", error=None)
+            phone.save(phase="booting")
+            # Writing the same phase again, or no phase, keeps its start.
+            phone.save(phase="booting", guest_job="b" * 32)
+            phone.save(error="x")
+            phone.save(phase="unlocking")
+        self.assertEqual(self.state()["phase_log"], [
+            {"phase": "preparing", "started": 20.0}, {"phase": "booting", "started": 25.0},
+            {"phase": "unlocking", "started": 50.0}])
+        # A stop goes on in the same log; only the last entries are kept.
+        for number in range(40):
+            phone.save(phase=f"phase-{number}")
+        log = self.state()["phase_log"]
+        self.assertEqual(len(log), ios_virtual_iphone.PHASE_LOG_LIMIT)
+        self.assertEqual(log[-1]["phase"], "phase-39")
+
     def write_state(self, **state):
         (self.profile / "state.json").write_text(json.dumps(state))
 
@@ -1573,6 +1594,60 @@ class VirtualPhoneOperations(Isolated):
         self.assertFalse(status["guest_state_known"])
         self.assertFalse(status["guest_running"])
         self.assertIsNone(status["busy"])
+
+    def test_a_start_whose_disk_copy_cannot_fit_is_refused_before_any_job(self):
+        base = self.root / "base"
+        base.mkdir()
+        # A sparse 8 TiB root disk: more than any test host has free.
+        with (base / "system.raw").open("wb") as stream:
+            stream.truncate(8 << 40)
+        for name in ("auxiliary.raw", "sep.raw"):
+            (base / name).write_bytes(b"\0" * 4096)
+        directory = self.profile(install=str(base))
+        disk = dispatch("ios.virtual.configure", {"directory": str(directory)})["start_disk"]
+        # The status says so before any start, without writing a probe: on a
+        # filesystem that might clone, the answer stays open.
+        self.assertEqual(disk["needed_bytes"], (8 << 40) + 8192 + (1 << 30))
+        self.assertIn(disk["enough"], (False, None))
+        self.assertEqual(list((directory / "installs").iterdir()), [])
+        try:
+            dispatch("ios.virtual.start")
+        except StudioError as error:
+            self.assertEqual(error.code, "ios_virtual_disk_space")
+            self.assertIn("8193.0 GiB", str(error))
+            self.assertIn("installs", str(error))
+            self.assertEqual(error.details["installs"], str(directory / "installs"))
+        else:
+            self.skipTest("the installs filesystem clones files, so the copy needs no room")
+        self.assertEqual([job for job in jobs.listing(20) if "virtual" in job["label"]], [])
+
+    def test_a_screenshot_needs_a_running_phone_and_a_png_path(self):
+        directory = self.profile()
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        target = self.root / "shots/phone.png"
+        with self.assertRaises(StudioError) as error:
+            dispatch("ios.virtual.screenshot", {"path": str(target), "frame": "device"})
+        self.assertEqual(error.exception.code, "ios_virtual_not_running")
+        with self.assertRaises(StudioError) as error:
+            dispatch("ios.virtual.screenshot", {"path": str(self.root / "phone.jpg")})
+        self.assertEqual(error.exception.code, "invalid_path")
+        with self.assertRaises(StudioError):
+            dispatch("ios.virtual.screenshot", {"path": str(target), "frame": "photo"})
+        self.assertFalse(target.exists())
+
+    def test_a_recording_needs_a_running_phone_and_an_mp4_path(self):
+        directory = self.profile()
+        dispatch("ios.virtual.configure", {"directory": str(directory)})
+        with self.assertRaises(StudioError) as error:
+            dispatch("ios.virtual.record", {"path": str(self.root / "clip.mov")})
+        self.assertEqual(error.exception.code, "invalid_path")
+        for arguments in ({"seconds": 0}, {"seconds": 601}, {"fps": 31}):
+            with self.assertRaises(StudioError):
+                dispatch("ios.virtual.record", {"path": str(self.root / "clip.mp4"), **arguments})
+        with self.assertRaises(StudioError) as error:
+            dispatch("ios.virtual.record", {"path": str(self.root / "clip.mp4"), "seconds": 5})
+        self.assertIn(error.exception.code, ("ios_virtual_not_running", "tool_missing"))
+        self.assertEqual([job for job in jobs.listing(20) if "Record" in job["label"]], [])
 
     def test_the_device_model_is_a_setting_of_its_own_and_reaches_the_start(self):
         with self.assertRaises(StudioError) as error:

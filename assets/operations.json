@@ -6949,7 +6949,7 @@
   {
     "name": "ios.virtual.status",
     "title": "Virtual iOS device: status",
-    "description": "Read whether a virtual iOS device profile is configured, its current run, phase, guest job and any start or stop that is in progress. A guest job started from another data directory has no guest_state here; that is unknown, not stopped. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. Also reports model (for the next start), running_model (of the current run), running_panel (the current run's panel as WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM: the model's own panel, or the profile's display profile for the Home-button phone; null for an unknown recorded model), models (the choice: id, name, panel, and source apple or derived) and guest_ended when the guest has ended on its own since the last start, with guest_saved telling whether it flushed its storage and closed cleanly first (as a session does at its time limit). application_process reports only the matching active job and application; it proves no process lifetime or visible scene. applications lists the developer apps the profile names (bundle path, bundle_id); the start installs them from the guest-tools build that carries them.",
+    "description": "Read whether a virtual iOS device profile is configured, its current run, phase, guest job and any start or stop that is in progress. A guest job started from another data directory has no guest_state here; that is unknown, not stopped. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. Also reports model (for the next start), running_model (of the current run), running_panel (the current run's panel as WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM, as its guest job's request gave it to the engine, so a later edit of the profile does not change it; null when that boot named no panel. Without a guest job: the model's own panel, or the profile's display profile for the Home-button phone; null for an unknown recorded model), models (the choice: id, name, panel, and source apple or derived) and guest_ended when the guest has ended on its own since the last start, with guest_saved telling whether it flushed its storage and closed cleanly first (as a session does at its time limit). application_process reports only the matching active job and application; it proves no process lifetime or visible scene. applications lists the developer apps the profile names (bundle path, bundle_id); the start installs them from the guest-tools build that carries them. phase_started and phase_elapsed_seconds tell when the current phase began and how long it has run, and phases lists each phase of the current start or stop with its started time and seconds (empty for a state written before phases were logged). copy_progress, only in the preparing phase, compares the bytes of the new disk copy with those of its base (bytes_done, bytes_total, percent) and names the preparation's step and disk; a reflinked copy is complete at once. start_disk says whether the next start's disk copy fits in the profile's installs: needed_bytes, free_bytes, reclaimable_bytes (older copies the start deletes first), reflink and enough, the check ios.virtual.start refuses with; the status writes nothing to find out, so on a filesystem that might clone files and lacks room for a full copy enough and reflink are null until a start probes it. Null when the base's disks or the filesystem cannot be read.",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -7024,7 +7024,7 @@
   {
     "name": "ios.virtual.start",
     "title": "Start virtual iOS device",
-    "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene.",
+    "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -7121,6 +7121,78 @@
       },
       "required": [
         "target"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "ios.virtual.screenshot",
+    "title": "Screenshot of virtual iOS device",
+    "description": "Save the running virtual iPhone's current screen as a PNG at path, from the same frame ios.emulator.control frame with transport file gives a viewer. frame none (default) keeps the picture as it is; rounded cuts the screen's corners round with the radius of the model the phone runs as (square for the Home-button phone) and makes outside them transparent; device also puts a plain black bezel around it, a drawing with rounded outer corners and no buttons, not a picture of the phone. The corner radius is the circular arc of the device catalogue's value, not Apple's continuous curve. MCP returns a PNG of up to 4 MiB inline. Refused with ios_virtual_not_running when the phone is off.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the PNG to write, ending in .png; an existing file is replaced."
+        },
+        "frame": {
+          "type": "string",
+          "enum": [
+            "none",
+            "rounded",
+            "device"
+          ],
+          "default": "none",
+          "description": "none: the screen as it is; rounded: round, transparent corners; device: rounded screen inside a plain bezel."
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "ios.virtual.record",
+    "title": "Record virtual iOS device screen",
+    "description": "Record the running virtual iPhone's screen for seconds into an H.264 MP4 at path, as a durable job: the frames ios.emulator.control frame with transport file gives a viewer, polled fps times a second and encoded by ffmpeg as they come (ffmpeg must be installed). A frame that has not changed, or a poll slower than one frame, repeats the last picture, so the video lasts as long as the recording; the guest itself draws about 10 changed frames a second on this host. The job's result names the file and counts frames_written, frames_captured and frames_distinct; a phone that stops ends the recording early with what it has (ended_early). Follow it with job.wait and job.logs. One recording at a time. Refused with ios_virtual_not_running when the phone is off.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the MP4 to write, ending in .mp4; an existing file is replaced when the recording succeeds."
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600,
+          "default": 10,
+          "description": "How long to record."
+        },
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 10,
+          "description": "Frames per second of the video, and how often a frame is asked for."
+        }
+      },
+      "required": [
+        "path"
       ],
       "additionalProperties": false
     },
