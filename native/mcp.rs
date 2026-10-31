@@ -325,7 +325,8 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
         "tools/list" => json!({"tools":api::manifest()}),
         "tools/call" => {
             let name = s(params, "name");
-            let result = api::dispatch(name, params.get("arguments").unwrap_or(&json!({})));
+            let result =
+                crate::session_log::call(name, params.get("arguments").unwrap_or(&json!({})));
             match result {
                 Ok(value) => {
                     let mut content = vec![json!({"type":"text","text":value.to_string()})];

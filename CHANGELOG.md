@@ -18,11 +18,15 @@ operations and their JSON results.
   - `testing.lint` checks a scenario against the current screen or a saved hierarchy without acting: selectors that
     match nothing, several elements or a disabled one, points off the screen and malformed keys.
   - `testing.run` takes `retries`, or a scenario its own `retries`: a failed scenario runs again on that device.
-    Each result lists its `attempts`, a pass after a failure is `flaky`, the report lists the flaky devices, and
+    Each result lists its `attempts`, a pass after a failure is `flaky`, the report lists them under `flaky`, and
     `junit.xml` writes the earlier failures as `flakyFailure` or `rerunFailure`.
   - `testing.run` takes a directory of scenarios as `path`, and with `shard:true` splits them across the devices,
     each scenario once on the next free device, into one report and one `junit.xml`. Without it every device runs
     every scenario.
+- **Session log and replay.** With `TOMACCO_SESSION_LOG` set to a file, every operation called through `tomaccoctl call`
+  or `tomaccoctl mcp` is appended to it as a JSON line: arguments with recognised secrets masked, outcome, a short
+  result summary and the duration. `tomaccoctl replay FILE [--dry-run]` calls the logged operations that change
+  something again, in order, waiting for their jobs and stopping at the first failure.
 
 ## 1.1.0
 

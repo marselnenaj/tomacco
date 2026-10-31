@@ -12,6 +12,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("doctor", "Check toolchains and devices"),
     ("report", "Write a redacted bug-report bundle"),
     ("mcp", "Serve operations over MCP stdio"),
+    ("replay", "Replay a session log"),
     ("update", "Check for and install a new release"),
     ("uninstall", "Remove this installation"),
     ("completions", "Print a shell completion script"),
@@ -49,6 +50,7 @@ _tomaccoctl() {{
                 words="--names --pretty --compact"
             fi ;;
         doctor) words="--pretty --compact" ;;
+        replay) words="--dry-run --pretty --compact" ;;
         setup) words="--yes" ;;
         update) words="--check" ;;
         completions) words="{shells}" ;;
@@ -85,6 +87,7 @@ _tomaccoctl() {{
             compadd -- --names --pretty --compact
         fi ;;
     doctor) compadd -- --pretty --compact ;;
+    replay) _files; compadd -- --dry-run --pretty --compact ;;
     setup) compadd -- --yes ;;
     update) compadd -- --check ;;
     completions) compadd {shells} ;;
@@ -122,6 +125,8 @@ complete -c tomaccoctl -n '__fish_seen_subcommand_from call' -l help -d 'Describ
 complete -c tomaccoctl -n '__fish_seen_subcommand_from schema' -l names -d 'Only the operation names'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from call schema doctor' -l pretty -d 'Indented JSON'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from call schema doctor' -l compact -d 'One line of JSON'
+complete -c tomaccoctl -n '__fish_seen_subcommand_from replay' -F
+complete -c tomaccoctl -n '__fish_seen_subcommand_from replay' -l dry-run -d 'Only list the calls'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from setup' -l yes -d 'Answer yes to every question'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from update' -l check -d 'Only check for a new release'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from completions' -a '{}'

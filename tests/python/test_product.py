@@ -1286,6 +1286,41 @@ class ProtocolTests(Isolated):
         value = json.loads(subprocess.check_output([binary(), "call", "catalog.list", "@" + str(args)]))
         self.assertTrue(all(p["platform"] == "ios" for p in value["result"]))
 
+    def test_a_session_log_records_calls_and_replay_repeats_the_changing_ones(self):
+        log = self.root / "session.jsonl"
+        first, second = self.root / "adb-one", self.root / "adb-two"
+        for tool in (first, second):
+            tool.write_text("#!/bin/sh\n")
+            tool.chmod(0o755)
+        logged = {**os.environ, "TOMACCO_SESSION_LOG": str(log)}
+        call = lambda op, args: subprocess.run([binary(), "call", op, json.dumps(args)], env=logged, capture_output=True, text=True)
+        call("catalog.list", {"platform": "ios"})
+        call("settings.configure", {"executables": {"adb": str(first)}})
+        call("project.inspect", {"path": str(self.root / "missing")})
+        request = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                   "params": {"name": "remote.configure", "arguments": {"name": "mac", "host": "mac.local", "user": "me", "password": "hunter2-secret"}}}
+        handshake = [{"jsonrpc": "2.0", "id": 0, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}},
+                     {"jsonrpc": "2.0", "method": "notifications/initialized"}, request]
+        subprocess.run([binary(), "mcp"], input="\n".join(map(json.dumps, handshake)) + "\n", env=logged, capture_output=True, text=True)
+        entries = [json.loads(line) for line in log.read_text().splitlines()]
+        self.assertEqual([(e["operation"], e["ok"], e["mutating"]) for e in entries],
+                         [("catalog.list", True, False), ("settings.configure", True, True), ("project.inspect", False, False),
+                          ("remote.configure", False, True)])
+        self.assertEqual(entries[0]["result"], {"items": entries[0]["result"]["items"]})
+        self.assertNotIn("hunter2", log.read_text())
+        self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+        dispatch("settings.configure", {"executables": {"adb": str(second)}})
+        replay = lambda *flags: json.loads(subprocess.run([binary(), "replay", str(log), *flags], capture_output=True, text=True).stdout)
+        plan = replay("--dry-run")["result"]
+        self.assertEqual([(c["operation"], c["status"]) for c in plan["calls"]],
+                         [("catalog.list", "skipped"), ("settings.configure", "would_run"), ("project.inspect", "skipped"),
+                          ("remote.configure", "skipped")])
+        self.assertEqual(dispatch("settings.get", {})["executables"]["adb"], str(second))
+        done = replay()["result"]
+        self.assertEqual((done["ran"], done["skipped"]), (1, 3))
+        self.assertEqual(dispatch("settings.get", {})["executables"]["adb"], str(first))
+        self.assertFalse(replay("--wait")["ok"])
+
     def test_mcp_handshake_resources_and_error_recovery(self):
         requests = [
             {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}},

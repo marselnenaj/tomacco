@@ -199,6 +199,25 @@ and that they should read it before sharing it.
 tomaccoctl report /absolute/tomacco-report.tar.gz
 ```
 
+### Session log and replay
+
+Set `TOMACCO_SESSION_LOG` to an absolute file path, in the shell or in the `env` of your MCP client's server entry, and every
+operation called through `tomaccoctl call` or `tomaccoctl mcp` is appended to that file as one JSON line: `time`, `operation`,
+`arguments` with recognised secrets masked, `mutating` (the operation is not read-only), `ok`, `duration_seconds`, and a short
+`result` (a job's ID and state, an object's keys, a list's length) or the `error` code and message. The file is created owner-only.
+Calls an operation makes itself, and the job polling of `call --wait`, are not logged.
+
+`tomaccoctl replay FILE` calls the logged operations that change something again, in order, waits for each job one of them starts,
+and stops at the first failure. It skips, and lists with the reason, calls that only read (`read_only`), that failed when they were
+logged (`failed_originally`), `job.*` calls, which name jobs of the old session (`job_reference`), and calls whose arguments were
+masked (`redacted`). `--dry-run` lists what it would call without calling anything.
+
+```sh
+TOMACCO_SESSION_LOG=/absolute/session.jsonl tomaccoctl call project.run '{"path":"/absolute/MyApp","platform":"android","device":"emulator-5554"}'
+tomaccoctl replay /absolute/session.jsonl --dry-run
+tomaccoctl replay /absolute/session.jsonl
+```
+
 ## Android
 
 Full guide: [Android](android.md). Check prerequisites with `doctor`, `android.sdk_packages` and `android.avds`.
@@ -554,7 +573,7 @@ tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute
 
 `retries` runs a failed scenario again on that device, up to five times; a scenario's own `retries` field takes precedence. Each
 device's result in `report.json` then lists its `attempts` (whether each passed, its error and the index of the step that failed), and
-`flaky:true` marks a pass after a failure; the report's `flaky` lists those devices. In `junit.xml` the earlier failures are
+`flaky:true` marks a pass after a failure; the report's `flaky` lists each such `scenario` and `device`. In `junit.xml` the earlier failures are
 `flakyFailure` elements of a passed test case, or `rerunFailure` elements of a failed one, as Maven Surefire writes them. A retry hides
 nothing: read the attempts of a flaky scenario.
 
