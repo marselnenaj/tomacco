@@ -117,6 +117,36 @@ class FrameworkTests(Isolated):
         self.assertEqual(release["plan"]["steps"][0]["argv"][5:], ["--variant", "release", "--no-bundler"])
         self.assertFalse(release["plan"]["steps"][0]["interactive"])
 
+    def test_capacitor_builds_syncs_installs_and_launches(self):
+        log = self.root / "calls.log"
+        record = f"import sys\nopen({str(log)!r}, 'a').write(' '.join(sys.argv[1:]) + '\\n')\n"
+        self.tool("npx", record)
+        self.tool("npm", record)
+        self.tool("adb", "import json,sys\nargs=sys.argv[1:]\nprint('priority=0\\nio.ionic.starter/.MainActivity' if 'resolve-activity' in args[-1] else json.dumps(args))\n")
+        root = self.project("CapApp", {"scripts": {"build": "vite build"}, "dependencies": {"@capacitor/core": "7.0.0"}},
+                            [("capacitor.config.json", '{"appId":"io.ionic.starter","webDir":"dist"}')])
+        inspected = dispatch("project.inspect", {"path": str(root)})
+        self.assertIn("capacitor", inspected["kinds"])
+        self.assertEqual(inspected["javascript"]["app_id"], "io.ionic.starter")
+        args = {"path": str(root), "platform": "android", "device": "emulator-5554"}
+        with self.assertRaises(StudioError) as missing:
+            dispatch("project.run", args)
+        self.assertEqual(missing.exception.code, "android_project_missing")
+        for relative, text in (("android/settings.gradle", "include ':app'\n"),
+                               ("android/app/build.gradle", "apply plugin: 'com.android.application'\nandroid { namespace 'io.ionic.starter' }\n"),
+                               ("android/gradlew", f"#!/bin/sh\necho gradle \"$@\" >> {str(log)!r}\n")):
+            (root / relative).parent.mkdir(parents=True, exist_ok=True)
+            (root / relative).write_text(text)
+        with self.assertRaises(StudioError) as missing:
+            dispatch("project.run", args)
+        self.assertEqual(missing.exception.code, "dependencies_missing")
+        (root / "node_modules/@capacitor/cli").mkdir(parents=True)
+        job = dispatch("project.run", args)
+        done = jobs.wait(job["id"], 30)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        self.assertEqual(log.read_text().splitlines(), ["run build", "cap sync android", "gradle --console=plain :app:installDebug"])
+        self.assertIn("io.ionic.starter/.MainActivity", jobs.logs(job["id"])["text"])
+
 
 if __name__ == "__main__":
     unittest.main()

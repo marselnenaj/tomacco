@@ -404,6 +404,11 @@ pub fn run(a: &Value) -> Result {
     if framework == Some("react-native") {
         javascript::prepare_react_native(&project)?;
     }
+    let before = if framework == Some("capacitor") {
+        javascript::capacitor_steps(&project)?
+    } else {
+        Vec::new()
+    };
     if kind(&project, "gradle") && platform == "android" {
         let (task, id) = android_target(&project, a)?;
         let mut args = gradle(&project)?;
@@ -415,7 +420,8 @@ pub fn run(a: &Value) -> Result {
             "android.launch",
             &json!({"device":device,"bundle_id":id}).to_string(),
         ]);
-        let mut steps = vec![json!({"argv":args})];
+        let mut steps = before;
+        steps.push(json!({"argv":args}));
         // A React Native debug build loads its JavaScript from Metro.
         let serves = framework == Some("react-native") && !release_build(a);
         if serves {
@@ -454,7 +460,8 @@ fn capitalized(value: &str) -> String {
 /// The Gradle install task and the application ID of an Android run: the
 /// requested variant, or the configuration when the app has no flavors. The
 /// ID is `bundle_id`, else the variant's ID from the build files when a
-/// variant is named, else tomacco.json's applicationId, else the build files'.
+/// variant is named, else tomacco.json's applicationId, else the build files',
+/// else a Capacitor config's appId.
 fn android_target(project: &Value, a: &Value) -> Result<(String, String)> {
     let configuration = s(a, "configuration");
     let apps = project["android"]["app_modules"]
@@ -518,6 +525,7 @@ fn android_target(project: &Value, a: &Value) -> Result<(String, String)> {
         if requested.is_empty() { "" } else { from_build },
         configured,
         from_build,
+        s(&project["javascript"], "app_id"),
     ]
     .into_iter()
     .find(|id| !id.is_empty())

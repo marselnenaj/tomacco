@@ -29,9 +29,26 @@ pub fn package_manager(root: &Path) -> &'static str {
 
 /// The framework of a project's `kinds`, most specific first.
 pub fn framework(kinds: &[&str]) -> Option<&'static str> {
-    ["expo", "react-native"]
+    ["expo", "capacitor", "react-native"]
         .into_iter()
         .find(|k| kinds.contains(k))
+}
+
+/// The application ID in capacitor.config.json or .ts.
+pub fn capacitor_app_id(root: &Path) -> Option<String> {
+    let json = root.join("capacitor.config.json");
+    if let Ok(value) = read_json(&json, None) {
+        return value["appId"].as_str().map(String::from);
+    }
+    let re = regex::Regex::new(r#"appId\s*:\s*["']([\w.]+)["']"#).unwrap();
+    for name in ["capacitor.config.ts", "capacitor.config.js"] {
+        if let Some(text) = crate::gradle_model::read_text(&root.join(name)) {
+            if let Some(c) = re.captures(&text) {
+                return Some(c[1].to_string());
+            }
+        }
+    }
+    None
 }
 
 /// What `project.inspect` reports about a React Native, Expo or Capacitor project.
@@ -39,6 +56,7 @@ pub fn describe(root: &Path, framework: &str, gradle: Option<&Path>) -> Value {
     let manager = package_manager(root);
     let dependency = match framework {
         "expo" => "expo",
+        "capacitor" => "@capacitor/core",
         _ => "react-native",
     };
     let android = root.join("android");
@@ -56,13 +74,17 @@ pub fn describe(root: &Path, framework: &str, gradle: Option<&Path>) -> Value {
         ("capacitor", None) => "needs android/ first: npx cap add android",
         _ => "needs an android/ directory",
     };
-    json!({
+    let mut value = json!({
         "framework": framework,
         "package_manager": manager,
         "dependencies_installed": root.join("node_modules").join(dependency).is_dir(),
         "android_project": android,
         "android_run": run,
-    })
+    });
+    if framework == "capacitor" {
+        value["app_id"] = json!(capacitor_app_id(root));
+    }
+    value
 }
 
 fn install_command(root: &Path) -> String {
@@ -169,6 +191,23 @@ pub fn prepare_react_native(project: &Value) -> Result<()> {
     Ok(())
 }
 
+/// Checks before a Capacitor run, and the steps before Gradle: the web
+/// build when package.json has one, then `npx cap sync android`.
+pub fn capacitor_steps(project: &Value) -> Result<Vec<Value>> {
+    let root = Path::new(s(project, "path"));
+    require_android(project, "capacitor")?;
+    require_dependencies(root, "@capacitor/cli")?;
+    let npx = npx()?;
+    let mut steps = Vec::new();
+    let package = read_json(&root.join("package.json"), None)?;
+    if package["scripts"].get("build").is_some() {
+        let manager = package_manager(root);
+        steps.push(json!({"argv":[tc::find(if manager == "npm" { "npm" } else { manager }).unwrap_or_else(|_| manager.to_string()),"run","build"],"cwd":root}));
+    }
+    steps.push(json!({"argv":[npx,"cap","sync","android"],"cwd":root}));
+    Ok(steps)
+}
+
 fn listening(port: u16) -> bool {
     TcpStream::connect_timeout(
         &SocketAddr::from((Ipv4Addr::LOCALHOST, port)),
@@ -271,6 +310,36 @@ mod tests {
         assert!(error.remedy.contains("`yarn install`"));
         fs::create_dir_all(root.path().join("node_modules/react-native")).unwrap();
         assert!(require_dependencies(root.path(), "react-native").is_ok());
+    }
+
+    #[test]
+    fn the_capacitor_app_id_is_read_from_its_config() {
+        let root = tempfile::tempdir().unwrap();
+        assert_eq!(capacitor_app_id(root.path()), None);
+        fs::write(
+            root.path().join("capacitor.config.ts"),
+            "const config: CapacitorConfig = {\n  appId: 'io.ionic.starter',\n  webDir: 'dist'\n};\n",
+        )
+        .unwrap();
+        assert_eq!(capacitor_app_id(root.path()).unwrap(), "io.ionic.starter");
+        fs::write(
+            root.path().join("capacitor.config.json"),
+            r#"{"appId":"dev.cap.app"}"#,
+        )
+        .unwrap();
+        assert_eq!(capacitor_app_id(root.path()).unwrap(), "dev.cap.app");
+    }
+
+    #[test]
+    fn a_missing_android_directory_names_the_frameworks_command() {
+        let project = json!({"path":"/work/app","gradle_directory":null});
+        let error = require_android(&project, "capacitor").unwrap_err();
+        assert_eq!(error.code, "android_project_missing");
+        assert!(error.remedy.contains("npx cap add android"));
+        let error = require_android(&project, "react-native").unwrap_err();
+        assert!(error.remedy.contains("android/"));
+        let project = json!({"path":"/work/app","gradle_directory":"/work/app/android"});
+        assert!(require_android(&project, "capacitor").is_ok());
     }
 
     fn free_port() -> u16 {

@@ -76,7 +76,7 @@ installed SDK platform, and the Android Gradle Plugin 9.1.1.
 - A Flutter run supports hot reload through `job.send`, and holds the project's
   workspace lock until it exits.
 
-## React Native and Expo
+## React Native, Expo and Capacitor
 
 `project.inspect` names the framework under `javascript`, with the package manager
 its lockfile implies, whether `node_modules` has the framework, and how
@@ -89,12 +89,17 @@ its lockfile implies, whether `node_modules` has the framework, and how
 - **Expo.** `project.run` runs `npx expo run:android --device SERIAL`, which writes
   `android/` with prebuild when it is missing and serves the JavaScript with Metro
   until you cancel the job. A release run passes `--variant release --no-bundler`.
+- **Capacitor and Ionic.** `project.run` runs the package's `build` script when it
+  has one, then `npx cap sync android`, installs `android/` with Gradle and launches
+  the app ID from the Gradle files, or `appId` from `capacitor.config.json` or `.ts`.
+  Without `android/` it answers `android_project_missing` and names
+  `npx cap add android`.
 - Install the dependencies first (`npm install`, or your package manager); without
   them the run answers `dependencies_missing` with the command. Without Node.js it
   answers `tool_missing`.
 
-These runs are covered by tests with stand-in tools; no React Native or Expo app was
-built with them yet.
+These runs are covered by tests with stand-in tools; no React Native, Expo or Capacitor
+app was built with them yet.
 
 ## Inspect an APK or AAB
 
