@@ -4878,6 +4878,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>Job log</source>
         <translation>Journal de la tâche</translation>
     </message>
+    <message>
+        <source>Live log</source>
+        <translation>Journal en direct</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5151,6 +5155,61 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
     <message>
         <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
         <translation>Démarrez un émulateur ou branchez un téléphone avec le débogage USB activé ; chacun apparaît ici avec son écran.</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceLogPane</name>
+    <message>
+        <source>App ID, all apps when empty</source>
+        <translation>ID d'app, toutes les apps si vide</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Tout</translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation>Info</translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation>Avertissements</translation>
+    </message>
+    <message>
+        <source>Errors</source>
+        <translation>Erreurs</translation>
+    </message>
+    <message>
+        <source>Find in the log</source>
+        <translation>Rechercher dans le journal</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Reprendre</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Effacer</translation>
+    </message>
+    <message>
+        <source>Clear the lines shown</source>
+        <translation>Effacer les lignes affichées</translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation>En pause</translation>
+    </message>
+    <message>
+        <source>No line contains this text.</source>
+        <translation>Aucune ligne ne contient ce texte.</translation>
+    </message>
+    <message>
+        <source>Waiting for log lines…</source>
+        <translation>En attente de lignes de journal…</translation>
     </message>
 </context>
 </TS>

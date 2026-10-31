@@ -211,6 +211,16 @@ side, each with a picture of its screen that refreshes every few seconds through
 `android.screen`. A click on one opens it as the live device. The pictures are still
 screenshots, not video; the live device view streams one device at a time.
 
+### Live log
+
+**Live log** under Devices opens the log of the selected Android device below the
+device list, as it grows. An app ID keeps only that app's lines, by its user ID on
+Android 12 and newer, so they continue across restarts; the level buttons show
+everything, or from info, warnings or errors up, filtered by logcat. The search field
+keeps lines with a text, and errors and warnings are coloured. The pane reads a
+`device.logs` job and starts a new one when a capture ends or the app or level
+changes; closing the pane or pausing it ends the capture.
+
 ### Pairing over Wi-Fi
 
 **Connect via Wi-Fi** under Devices shows a QR code for the phone's **Developer options ›

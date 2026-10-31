@@ -4878,6 +4878,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Job log</source>
         <translation>Log del job</translation>
     </message>
+    <message>
+        <source>Live log</source>
+        <translation>Log in tempo reale</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5151,6 +5155,61 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
         <translation>Avvia un emulatore o collega un telefono con il debug USB attivo; ognuno compare qui con il suo schermo.</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceLogPane</name>
+    <message>
+        <source>App ID, all apps when empty</source>
+        <translation>ID dell'app, tutte le app se vuoto</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Tutto</translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation>Info</translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation>Avvisi</translation>
+    </message>
+    <message>
+        <source>Errors</source>
+        <translation>Errori</translation>
+    </message>
+    <message>
+        <source>Find in the log</source>
+        <translation>Cerca nel log</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Riprendi</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pausa</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Svuota</translation>
+    </message>
+    <message>
+        <source>Clear the lines shown</source>
+        <translation>Svuota le righe mostrate</translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation>In pausa</translation>
+    </message>
+    <message>
+        <source>No line contains this text.</source>
+        <translation>Nessuna riga contiene questo testo.</translation>
+    </message>
+    <message>
+        <source>Waiting for log lines…</source>
+        <translation>In attesa di righe di log…</translation>
     </message>
 </context>
 </TS>

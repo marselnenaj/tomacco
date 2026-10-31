@@ -4878,6 +4878,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Job log</source>
         <translation>Auftragsprotokoll</translation>
     </message>
+    <message>
+        <source>Live log</source>
+        <translation>Live-Log</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5151,6 +5155,61 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     <message>
         <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
         <translation>Starte einen Emulator oder schließe ein Smartphone mit aktiviertem USB-Debugging an; jedes erscheint hier mit seinem Bildschirm.</translation>
+    </message>
+</context>
+<context>
+    <name>DeviceLogPane</name>
+    <message>
+        <source>App ID, all apps when empty</source>
+        <translation>App-ID, leer für alle Apps</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <source>Info</source>
+        <translation>Info</translation>
+    </message>
+    <message>
+        <source>Warnings</source>
+        <translation>Warnungen</translation>
+    </message>
+    <message>
+        <source>Errors</source>
+        <translation>Fehler</translation>
+    </message>
+    <message>
+        <source>Find in the log</source>
+        <translation>Im Log suchen</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Fortsetzen</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Anhalten</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Leeren</translation>
+    </message>
+    <message>
+        <source>Clear the lines shown</source>
+        <translation>Angezeigte Zeilen leeren</translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <translation>Angehalten</translation>
+    </message>
+    <message>
+        <source>No line contains this text.</source>
+        <translation>Keine Zeile enthält diesen Text.</translation>
+    </message>
+    <message>
+        <source>Waiting for log lines…</source>
+        <translation>Warte auf Log-Zeilen …</translation>
     </message>
 </context>
 </TS>

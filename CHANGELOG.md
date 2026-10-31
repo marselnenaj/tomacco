@@ -25,6 +25,8 @@ operations and their JSON results.
   recording, saves it under `Videos/Tomacco` and shows it in the file manager.
 - **Desktop.** **All screens** under Devices shows every running Android device side by side with a picture of its
   screen that refreshes every few seconds; a click opens it live. `android.screen` saves such a picture without a job.
+- **Desktop.** **Live log** under Devices follows the selected Android device's log, for one app (by its user ID from
+  Android 12) and from a level up, with a search field.
 
 ## 1.1.0
 

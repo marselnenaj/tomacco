@@ -797,6 +797,60 @@ private slots:
         open("devices");
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void the_live_log_follows_one_app_from_a_level_up() {
+        // logcat names its arguments, then prints an error and an info line and keeps running.
+        auto fake=useFakeAdb("case \"$*\" in\n"
+             " *logcat*) echo \"ARGS $*\"; echo '10-31 12:00:00.000  100  100 E Fake: fake error line'; echo '10-31 12:00:00.001  100  100 I Fake: fake info line'; while true; do sleep 0.2; done;;\n"
+             " *getprop\\ ro.build.version.sdk*) echo 36;;\n"
+             " *list\\ packages\\ -U*) echo 'package:dev.test.app uid:10200';;\n"
+             " devices*) printf 'List of devices attached\\nemulator-5554 device model:Pixel\\n';;\nesac");
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        const auto previous=workspace->property("devices");
+        workspace->setProperty("devices",QVariantList{QVariantMap{{"id","emulator-5554"},{"name","Pixel"},{"platform","android"},{"state","device"}}});
+        workspace->setProperty("selectedDevice","emulator-5554");
+        auto *toggle=item("deviceLogToggle");QVERIFY(toggle);QCOMPARE(accessibleName(toggle),QString("Live log"));
+        QVERIFY(QMetaObject::invokeMethod(toggle,"clicked"));
+        auto *pane=object("deviceLogPane");QVERIFY(pane);QTRY_VERIFY(qobject_cast<QQuickItem *>(pane)->isVisible());
+        const auto text=[&]{return pane->property("text").toString();};
+        QTRY_VERIFY2_WITH_TIMEOUT(text().contains("fake info line"),qPrintable(text()+pane->property("error").toString()),patient(15000));
+        QVERIFY(text().contains("ARGS -s emulator-5554 logcat -v threadtime\n"));
+        const auto firstJob=pane->property("job").toString();QVERIFY(!firstJob.isEmpty());
+        // From warnings up: logcat filters, and a new capture starts.
+        QVERIFY(QMetaObject::invokeMethod(item("deviceLogLevel-W"),"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(text().contains("logcat -v threadtime *:W\n"),patient(15000));
+        // One app, by its user ID.
+        auto *app=item("deviceLogApp");QVERIFY(app);
+        app->setProperty("text","dev.test.app");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
+        QTRY_VERIFY_WITH_TIMEOUT(text().contains("logcat -v threadtime --uid=10200 *:W\n"),patient(15000));
+        // Searching keeps the lines with the text, coloured by level.
+        item("deviceLogSearch")->setProperty("text","error line");
+        QTRY_COMPARE(pane->property("lines").toList().size(),1);
+        capture("device-log");
+        item("deviceLogSearch")->setProperty("text","");
+        // An app that is not installed is said, not followed.
+        app->setProperty("text","dev.missing.app");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
+        QTRY_COMPARE_WITH_TIMEOUT(pane->property("error").toString(),QString("dev.missing.app is not installed"),patient(10000));
+        QVERIFY(pane->property("job").toString().isEmpty());
+        // Closing the pane ends its capture.
+        app->setProperty("text","");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
+        QTRY_VERIFY_WITH_TIMEOUT(!pane->property("job").toString().isEmpty(),patient(10000));
+        const auto lastJob=pane->property("job").toString();
+        QVERIFY(QMetaObject::invokeMethod(toggle,"clicked"));
+        QTRY_VERIFY(!qobject_cast<QQuickItem *>(pane)->isVisible());
+        QVERIFY(pane->property("job").toString().isEmpty());
+        for(const auto &job:{firstJob,lastJob}) {
+            QString state;
+            QTRY_VERIFY_WITH_TIMEOUT(([&]{
+                QSignalSpy replies(control.get(),&Control::apiFinished);
+                const int id=control->request("job.get",{{"job_id",job}});
+                if(!replies.wait(patient(5000)))return false;
+                for(const auto &reply:replies)if(reply.value(0).toInt()==id)state=reply.value(2).toMap().value("result").toMap().value("state").toString();
+                return state=="cancelled";
+            })(),patient(20000));
+        }
+        workspace->setProperty("devices",previous);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void iphone_setup_and_category_selection() {
         open("devices");
         auto *apple=item("devices-apple");QVERIFY(apple);
