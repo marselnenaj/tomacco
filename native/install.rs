@@ -305,13 +305,16 @@ fn make_durable(paths: &[PathBuf], syncfs: bool) -> io::Result<usize> {
     Ok(synced)
 }
 
+/// Called with each destination before its staged change is published.
+pub(crate) type PublishHook = Box<dyn FnMut(&Path) -> io::Result<()>>;
+
 /// What tests watch and change. A real run has the defaults.
 pub(crate) struct Hooks {
     pub batch: usize,
     pub syncfs: bool,
     pub link: bool,
     /// Called before each staged change is published (renamed or unlinked).
-    pub before_publish: Option<Box<dyn FnMut(&Path) -> io::Result<()>>>,
+    pub before_publish: Option<PublishHook>,
     /// When set, records journal sizes, durable calls, fsyncs and publications.
     pub trace: Option<Vec<Event>>,
 }
