@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-45 operations. Generated from `assets/operations.json`; [all areas](README.md).
+49 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -862,6 +862,70 @@ Annotations: **destructive**, not idempotent, closed world.
 
 ```sh
 tomaccoctl call ios.virtual.cleanup
+```
+
+### ios.virtual.states
+
+**Saved states of virtual iOS device**
+
+List the saved phone states of the configured virtual iOS device (saved-states.json in the profile directory): each with name, run, install, saved (time), model (the model its run was last started as), exists (whether its root disk is still there), bytes (allocated in its install directory, blocks shared with other copies counted in full) and base (whether the next start begins from it). base is the next start's base run, and base_saved_as the names that keep it. Reads files only.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call ios.virtual.states
+```
+
+### ios.virtual.state_save
+
+**Save state of virtual iOS device**
+
+Keep the last verified run of the configured virtual iOS device under a name, so a later start can begin from it with ios.virtual.state_use. Nothing is copied: a verified run's disks never change after its stop, and the start's pruning and ios.virtual.cleanup keep every saved run's disk copy and the copies its overlay reads. Refused with ios_virtual_no_verified_run when no run has been stopped cleanly, ios_virtual_state_exists for a name in use unless replace, and ios_virtual_busy while a start or stop runs. A running phone is fine: the saved run is the last verified one, not the running one.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`; Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit. |
+| `replace` | boolean |  | `false` | Point an existing name at the current verified run. |
+
+```sh
+tomaccoctl call ios.virtual.state_save '{"name":"<name>"}'
+```
+
+### ios.virtual.state_delete
+
+**Delete saved state of virtual iOS device**
+
+Remove a saved state's name and delete the disk copy it kept, when that copy is one the start made in the profile's installs and nothing else keeps it: not the verified base, the current run, a start's attempt, another saved state or a copy an overlay among those reads. kept_because says why a copy stayed; removed and freed_bytes what went. A copy a running guest holds is refused, not deleted. Refused with ios_virtual_state_unknown for an unknown name and ios_virtual_busy while a start or stop runs.
+
+Annotations: **destructive**, not idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`; Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit. |
+
+```sh
+tomaccoctl call ios.virtual.state_delete '{"name":"<name>"}'
+```
+
+### ios.virtual.state_use
+
+**Start virtual iOS device from saved state**
+
+Make a saved state the base of the next ios.virtual.start of the configured virtual iOS device: state.json then names its run as the verified run, and the start copies from it (or lays an overlay on it). The phone must be stopped (ios_virtual_running otherwise). When the current verified run has no saved name, a later start's pruning may delete its disks, so this is refused with ios_virtual_state_unsaved unless discard_current. Refused with ios_virtual_state_missing when the state's disks are gone and ios_virtual_busy while a start or stop runs. previous is the base it replaced.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`; Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit. |
+| `discard_current` | boolean |  | `false` | Give up the current verified run even though no saved state keeps it. |
+
+```sh
+tomaccoctl call ios.virtual.state_use '{"name":"<name>"}'
 ```
 
 ### ios.virtual.deploy

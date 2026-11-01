@@ -672,7 +672,10 @@ class Phone:
         """Keep the verified run and the last `keep` copies (after a verified
         stop: the run and its predecessor); drop older disk copies."""
         created = [Path(path) for path in self.state.get("created", [])]
-        protected = self.with_backing({Path(self.state["verified"]["install"])} | set(created[-keep:]))
+        saved = self.saved_installs()
+        if saved is None:
+            return
+        protected = self.with_backing({Path(self.state["verified"]["install"])} | set(created[-keep:]) | saved)
         remaining = []
         for path in created:
             kept = path in protected or path.resolve() in protected
@@ -686,6 +689,20 @@ class Phone:
                 remaining.append(str(path))
                 emit("cleanup-refused", install=str(path), reason=str(error))
         self.save(created=remaining)
+
+    def saved_installs(self):
+        """The installs saved phone states keep (saved-states.json, written by
+        ios.virtual.state_save). None when the file cannot be read: nothing
+        is pruned on a misread list."""
+        path = self.directory / "saved-states.json"
+        if not path.exists():
+            return set()
+        try:
+            states = json.loads(path.read_text())["states"]
+            return {Path(row["install"]) for row in states.values()}
+        except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+            emit("cleanup-refused", reason=f"{path} cannot be read ({error}); no copy is pruned")
+            return None
 
     @staticmethod
     def with_backing(installs):

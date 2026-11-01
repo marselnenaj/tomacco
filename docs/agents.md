@@ -391,6 +391,10 @@ tool makes those. Stop and tell the user when the IM4M is what is missing, rathe
 - During a start, `phase_elapsed_seconds`, `phases` and, while `preparing`, `copy_progress` show where it is. `start_disk.enough`
   false means the next start will be refused with `ios_virtual_disk_space`; its remedy says how much to free.
   `ios.virtual.cleanup` (a dry run unless `dry_run:false`) deletes older disk copies; ask the user before deleting.
+- `ios.virtual.state_save {name}` keeps the last verified run under a name without copying it, `ios.virtual.states` lists
+  the names, `ios.virtual.state_use {name}` makes one the base of the next start (the phone must be off) and
+  `ios.virtual.state_delete {name}` removes a name and the copy only it kept; ask the user before deleting. See
+  [saved phone states](virtual-ios/usage.md#saved-phone-states).
 - A window for the phone: `preview.configure` with `ios_guest:{detached:true}`. Asked while no guest is running, the request is
   kept for ten minutes. `workspace.ios_research.guest.detach_pending` in the returned state tells whether it is still waiting.
 

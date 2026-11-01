@@ -82,6 +82,32 @@ that clones files (btrfs, or XFS with reflink) the copy shares blocks with its b
 full copy `enough` stays null until a start tries a clone. The refusal and `start_disk` have unit tests and a
 control-plane test; neither has been met on a real full disk.
 
+### Saved phone states
+
+A verified run can be kept under a name and started from again later, for example a phone set up just before a test:
+
+```sh
+tomaccoctl call ios.virtual.state_save '{"name":"Clean phone"}'
+tomaccoctl call ios.virtual.states '{}'
+tomaccoctl call ios.virtual.state_use '{"name":"Clean phone"}'
+tomaccoctl call ios.virtual.state_delete '{"name":"Clean phone"}'
+```
+
+`ios.virtual.state_save` names the last verified run, the base of the next start. It copies nothing: a start never changes
+its base, and a verified run's disks do not change after its stop. The names are kept in `saved-states.json` in the profile
+directory, and the start's own pruning and `ios.virtual.cleanup` keep every named run's copy (`kept` with the reason
+`saved-state:NAME`). A running phone does not stop a save; it saves the last verified run, not the running one.
+
+`ios.virtual.state_use` makes a saved run the base of the next start, which copies from it as from any verified run. The
+phone must be stopped. When the current base has no name, a later start may delete its copy, so the call is refused with
+`ios_virtual_state_unsaved` unless you save the current base first or pass `"discard_current":true`.
+
+`ios.virtual.state_delete` removes the name, and the copy too when nothing else keeps it: not the base, the current run, a
+start's attempt, another name or a copy an overlay reads. `kept_because` says why a copy stayed.
+
+Each named run keeps its own 32 GiB copy on a filesystem that cannot share blocks. The operations have unit tests and
+control-plane tests; they have not been used with a live phone yet.
+
 ### Copy-free starts (experimental)
 
 Every start copies the base run's 32 GiB root disk, which takes about 9 minutes on a filesystem that cannot clone files

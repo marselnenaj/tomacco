@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 199 operations.
+`tomaccoctl` now has one typed API of 203 operations.
 
 ### Added
 
@@ -74,6 +74,10 @@ operations and their JSON results.
     chain, pruning and `ios.virtual.cleanup` keep the copies an overlay reads, and after 8 layers a start flattens the
     chain. `ios.emulator.prepare_guest_tools` takes `root_overlay` and `qemu_img`, and `start_disk` in
     `ios.virtual.status` names the `method`. Unit-tested only, not run on a live phone.
+  - Saved phone states: `ios.virtual.state_save` keeps the last verified run under a name without copying it,
+    `ios.virtual.states` lists the names, `ios.virtual.state_use` makes one the base of the next start and
+    `ios.virtual.state_delete` removes a name and the copy only it kept. Pruning and `ios.virtual.cleanup` keep named runs.
+    Unit-tested only, not run on a live phone.
 
 ### Changed
 

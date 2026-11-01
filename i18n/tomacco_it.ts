@@ -4190,6 +4190,22 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Android screen preview</source>
         <translation>Anteprima dello schermo Android</translation>
     </message>
+    <message>
+        <source>Saved states of virtual iOS device</source>
+        <translation>Stati salvati del dispositivo iOS virtuale</translation>
+    </message>
+    <message>
+        <source>Save state of virtual iOS device</source>
+        <translation>Salva lo stato del dispositivo iOS virtuale</translation>
+    </message>
+    <message>
+        <source>Delete saved state of virtual iOS device</source>
+        <translation>Elimina uno stato salvato del dispositivo iOS virtuale</translation>
+    </message>
+    <message>
+        <source>Start virtual iOS device from saved state</source>
+        <translation>Avvia il dispositivo iOS virtuale da uno stato salvato</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

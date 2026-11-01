@@ -487,6 +487,7 @@ pub fn apps(_a: &Value) -> Result {
 /// The disks a start copies from its base, in the order it copies them
 /// (`prepare` in tools/prepare_ios_guest_tools.py).
 use super::disk_overlay;
+pub mod states;
 
 /// The disks a start copies besides the root disk, which is a copy, an
 /// overlay or a flattened overlay (`disk_overlay`).
@@ -571,7 +572,11 @@ fn owned_copy(installs: &Path, copy: &Path) -> bool {
 /// attempt that never booted (`discard_attempt`) and every recorded copy but
 /// the verified run's and the newest (`prune(keep=1)`), as far as they are
 /// the start's own.
-fn copies_a_start_removes(profile: &Value, state: &Value) -> Vec<PathBuf> {
+fn copies_a_start_removes(
+    profile: &Value,
+    state: &Value,
+    pins: &[(PathBuf, String)],
+) -> Vec<PathBuf> {
     let installs = PathBuf::from(s(profile, "installs"));
     let created: Vec<PathBuf> = state["created"]
         .as_array()
@@ -583,6 +588,7 @@ fn copies_a_start_removes(profile: &Value, state: &Value) -> Vec<PathBuf> {
     // What the start keeps (prune(keep=1)) and what those read as overlays.
     let mut keeps = vec![verified.clone()];
     keeps.extend(created.last().cloned());
+    keeps.extend(pins.iter().map(|(path, _)| path.clone()));
     let kept = disk_overlay::with_backing(&keeps);
     let mut removed: Vec<PathBuf> = created
         .iter()
@@ -679,7 +685,7 @@ fn disk_verdict(
 /// and a filesystem that might clone leaves the answer open (the status).
 /// Null when the base's disks or the filesystem cannot be read; the start
 /// itself then says why.
-fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
+fn start_disk(profile: &Value, state: &Value, pins: &[(PathBuf, String)], probe: bool) -> Value {
     let base = match state["verified"]["install"].as_str() {
         Some(base) => PathBuf::from(base),
         None if state["closed"] == true && text(state, "install") => {
@@ -704,7 +710,7 @@ fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
     let Some(free) = free_bytes(&installs) else {
         return Value::Null;
     };
-    let reclaimable = copies_a_start_removes(profile, state)
+    let reclaimable = copies_a_start_removes(profile, state, pins)
         .iter()
         .map(|copy| allocated_bytes(copy))
         .sum::<u64>();
@@ -729,17 +735,24 @@ fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
 /// the current run nor a start's attempt, and the reason each other copy is
 /// kept. A `guest-install*` directory the state does not record is listed
 /// as unrecorded and never removed: it may belong to another profile.
-fn cleanup_plan(profile: &Value, state: &Value) -> (Vec<PathBuf>, Vec<Value>, Vec<PathBuf>) {
+fn cleanup_plan(
+    profile: &Value,
+    state: &Value,
+    pins: &[(PathBuf, String)],
+) -> (Vec<PathBuf>, Vec<Value>, Vec<PathBuf>) {
     let installs = PathBuf::from(s(profile, "installs"));
-    let mut protected: Vec<(PathBuf, &str)> = Vec::new();
+    let mut protected: Vec<(PathBuf, String)> = Vec::new();
     if let Some(base) = state["verified"]["install"].as_str() {
-        protected.push((PathBuf::from(base), "verified-base"));
+        protected.push((PathBuf::from(base), "verified-base".into()));
     }
     if text(state, "install") {
-        protected.push((PathBuf::from(s(state, "install")), "current-run"));
+        protected.push((PathBuf::from(s(state, "install")), "current-run".into()));
     }
     if let Some(attempt) = state["attempt"]["install"].as_str() {
-        protected.push((PathBuf::from(attempt), "start-attempt"));
+        protected.push((PathBuf::from(attempt), "start-attempt".into()));
+    }
+    for (path, name) in pins {
+        protected.push((path.clone(), format!("saved-state:{name}")));
     }
     let created: Vec<PathBuf> = state["created"]
         .as_array()
@@ -752,7 +765,7 @@ fn cleanup_plan(profile: &Value, state: &Value) -> (Vec<PathBuf>, Vec<Value>, Ve
     for (path, _) in protected.clone() {
         for backing in disk_overlay::backing_installs(&path) {
             if !roots.contains(&backing) {
-                protected.push((backing, "overlay-backing"));
+                protected.push((backing, "overlay-backing".into()));
             }
         }
     }
@@ -857,7 +870,7 @@ pub fn cleanup(a: &Value) -> Result {
         .details(json!({"job":busy})));
     }
     let installs = PathBuf::from(s(&profile, "installs"));
-    let (removable, kept, unrecorded) = cleanup_plan(&profile, &state);
+    let (removable, kept, unrecorded) = cleanup_plan(&profile, &state, &states::pinned(&directory));
     let mut copies = Vec::new();
     let (mut reclaimable, mut freed) = (0u64, 0u64);
     for copy in &removable {
@@ -1072,7 +1085,7 @@ pub fn status(_a: &Value) -> Result {
         "phases":times["phases"],"copy_progress":copy_progress(&state),
         // Whether the next start's disk copy fits in the profile's installs,
         // and whether it copies the root disk or lays an overlay on it.
-        "start_disk":start_disk(&profile,&state,false),
+        "start_disk":start_disk(&profile,&state,&states::pinned(&directory),false),
         "start_disks":profile["start_disks"].as_str().unwrap_or("copy"),
         "error":state["error"],"updated":state["updated"],
         "guest_job":state["guest_job"],"guest_state":guest_state,"guest_state_known":guest_known,
@@ -1169,7 +1182,12 @@ pub fn start(a: &Value) -> Result {
     let directory = directory()?;
     let (profile, state) = records(&directory)?;
     if jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state) {
-        refuse_short_disk(&start_disk(&profile, &state, true))?;
+        refuse_short_disk(&start_disk(
+            &profile,
+            &state,
+            &states::pinned(&directory),
+            true,
+        ))?;
     }
     // Preparation, a boot of many minutes and the unlock each have their own
     // bound inside the script; this is the outer limit of the whole job.
@@ -1517,7 +1535,7 @@ mod cleanup_tests {
         let profile = json!({"installs":installs});
         let state = json!({"install":run,"verified":{"install":base},"attempt":{"install":attempt},
             "created":[old,base,run,attempt,other,installs.join("guest-install-gone")]});
-        let (removable, kept, unrecorded) = cleanup_plan(&profile, &state);
+        let (removable, kept, unrecorded) = cleanup_plan(&profile, &state, &[]);
         assert_eq!(removable, vec![old.clone()]);
         let reasons: Vec<_> = kept.iter().map(|row| row["reason"].clone()).collect();
         assert_eq!(
@@ -1531,7 +1549,7 @@ mod cleanup_tests {
         assert_eq!(unrecorded, vec![stray.clone()]);
         // The first install outside installs is never even considered.
         let state = json!({"install":first,"verified":{"install":first},"created":[]});
-        let (removable, kept, unrecorded) = cleanup_plan(&profile, &state);
+        let (removable, kept, unrecorded) = cleanup_plan(&profile, &state, &[]);
         assert!(removable.is_empty());
         assert_eq!(kept, vec![json!({"path":first,"reason":"verified-base"})]);
         assert_eq!(unrecorded.len(), 5);
@@ -1847,7 +1865,7 @@ mod start_disk_tests {
         // Not the verified run, not the newest copy, not a copy outside
         // installs or of another name; the unbooted attempt goes.
         assert_eq!(
-            copies_a_start_removes(&profile, &state),
+            copies_a_start_removes(&profile, &state, &[]),
             vec![
                 installs.join("guest-install5"),
                 installs.join("guest-install8")
@@ -1869,7 +1887,7 @@ mod start_disk_tests {
         let profile = json!({"installs":installs});
         let state = json!({"closed":true,"install":base});
         for probe in [true, false] {
-            let disk = start_disk(&profile, &state, probe);
+            let disk = start_disk(&profile, &state, &[], probe);
             assert_eq!(disk["needed_bytes"], 3 * 4096 + COPY_HEADROOM);
             if disk["free_bytes"].as_u64().unwrap() >= 3 * 4096 + COPY_HEADROOM {
                 assert_eq!(disk["enough"], true);
@@ -1879,9 +1897,17 @@ mod start_disk_tests {
         }
         // An open run without a verified base, or a base without its disks,
         // says nothing.
-        assert!(start_disk(&profile, &json!({"closed":false,"install":base}), false).is_null());
+        assert!(
+            start_disk(
+                &profile,
+                &json!({"closed":false,"install":base}),
+                &[],
+                false
+            )
+            .is_null()
+        );
         fs::remove_file(base.join("sep.raw")).unwrap();
-        assert!(start_disk(&profile, &state, true).is_null());
+        assert!(start_disk(&profile, &state, &[], true).is_null());
     }
 
     #[test]
@@ -1903,7 +1929,7 @@ mod start_disk_tests {
         let profile = json!({"installs":installs,"start_disks":"overlay",
             "prepare":{"helper_engine":helper.join("qemu-system-x86_64")}});
         let state = json!({"closed":true,"install":base});
-        let disk = start_disk(&profile, &state, false);
+        let disk = start_disk(&profile, &state, &[], false);
         assert_eq!(disk["method"], "overlay");
         assert_eq!(disk["needed_bytes"], 2 * 4096 + COPY_HEADROOM);
         // A copy of an overlay base is a flattened raw disk of its virtual size.
@@ -1918,7 +1944,7 @@ mod start_disk_tests {
             fs::write(next.join(name), vec![0u8; 4096]).unwrap();
         }
         let copies = json!({"installs":installs,"prepare":{"helper_engine":helper.join("qemu-system-x86_64")}});
-        let disk = start_disk(&copies, &json!({"closed":true,"install":next}), true);
+        let disk = start_disk(&copies, &json!({"closed":true,"install":next}), &[], true);
         assert_eq!(disk["method"], "flatten");
         assert_eq!(disk["needed_bytes"], 66 * 4096 + COPY_HEADROOM);
     }
@@ -1943,15 +1969,15 @@ mod start_disk_tests {
         // The verified run is an overlay on 5: the start keeps 5 as well.
         let state =
             json!({"verified":{"install":created[1]},"install":created[2],"created":created});
-        assert!(copies_a_start_removes(&profile, &state).is_empty());
-        let (removable, kept, _) = cleanup_plan(&profile, &state);
+        assert!(copies_a_start_removes(&profile, &state, &[]).is_empty());
+        let (removable, kept, _) = cleanup_plan(&profile, &state, &[]);
         assert!(removable.is_empty());
         assert!(kept.contains(&json!({"path":created[0],"reason":"overlay-backing"})));
         // Once nothing kept reads it, it goes like any older copy.
         let state =
             json!({"verified":{"install":created[2]},"install":created[2],"created":created});
         assert_eq!(
-            copies_a_start_removes(&profile, &state),
+            copies_a_start_removes(&profile, &state, &[]),
             created[..2].to_vec()
         );
     }
