@@ -1124,9 +1124,11 @@ tomaccoctl call profile.startup '{"device":"virtual-iphone","bundle_id":"dev.exa
 tomaccoctl call profile.startup '{"platform":"ios","device":"00008110-0011223344556677","bundle_id":"dev.example.myapp"}'
 ```
 
-On the virtual iPhone, `cold` ends the app with the guest's `restart_ui`, which restarts iOS's interface: no guest operation
-ends one app, so every cold run takes the seconds that restart takes, and the lock screen it may bring back is left first, as
-for a scenario. `hot` presses Home and waits until the app is no longer in front. Frames come from `ios.emulator.control`'s
+On the virtual iPhone, `cold` calls the guest's `restart_ui`, which restarts iOS's interface; no guest operation ends one
+app, and on the test phone the app's process survived the restart (the same process ID before and after, for two apps), so
+every cold run reported `launch_state` `hot` and `mismatched_runs` counted them. Installing the app again
+(`ios.virtual.deploy` with `force`, 26.9 s) did give a new process. Every cold run takes the seconds the restart takes, and the
+lock screen it brings back is left first, as for a scenario, once the guest can say whether it is locked. `hot` presses Home and waits until the app is no longer in front. Frames come from `ios.emulator.control`'s
 file transport, from the frame mailbox; a frame number the last read already had is the same picture and is not read again.
 The guest runs on an emulated processor with a software renderer, so its launches take far longer than an iPhone's and say
 nothing about one.
@@ -1139,9 +1141,15 @@ On a USB iPhone, `cold` runs `go-ios kill BUNDLE --udid=UDID` and `hot` opens Se
 own delay, and every time includes go-ios connecting to the phone for the launch request. The phone needs the developer image,
 and on iOS 17 and newer a tunnel ([ios.prepare](iphone.md#is-the-phone-ready)).
 
-Tested with fixtures only; not measured on a live phone. The change detection is checked against grids of real
-virtual-iPhone screenshots (its Home screen, the same screen with an icon pressed and the clock moved, the research app's
-window), the runs with a recorded launch sequence, and the iPhone route with stand-ins for go-ios and ffmpeg.
+On the virtual iPhone, with the example app `examples/hello-virtual-iphone` deployed, three `hot` runs took a median 1329 ms
+to the first frame (1284 to 1950 ms), 460 ms until the open request returned with the app's process (423 to 523 ms) and 1604 ms
+until the screen was still (1526 to 2513 ms); `mismatched_runs` 0, `baseline_still` true in every run, `resolution_ms` 0.3. Two
+`cold` runs of the same app took a median 1363 ms to the first frame, 363 ms to launched and 2468 ms to settled, but both
+reported `launch_state` `hot` (`mismatched_runs` 2), so they measure a launch of a running app; the research app gave 1287 and
+1599 ms to the first frame, also with `mismatched_runs` 2. A launch of an app that was not running was not measured on a live
+phone, and neither was a USB iPhone. The change detection is also checked against grids of real virtual-iPhone screenshots
+(its Home screen, the same screen with an icon pressed and the clock moved, the research app's window), the runs with a
+recorded launch sequence, and the iPhone route with stand-ins for go-ios and ffmpeg.
 
 `profile.frames` resets a running app's frame statistics (`dumpsys gfxinfo reset`), waits `seconds` (5 by default) or runs a
 `testing.run` scenario given as `scenario`, and reads them again. The metrics are `frames_total`, `janky_frames`, `jank_percent`,

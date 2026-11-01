@@ -463,11 +463,13 @@ tomaccoctl call profile.startup '{"device":"virtual-iphone","bundle_id":"dev.exa
 `profile.startup` with `device` `virtual-iphone` opens an installed app several times through the guest's `open` and
 times each launch on frames from the frame mailbox: to the first picture that differs from the one before and stays
 different, to the open request returning with the app's process, and to the screen keeping still. `hot` presses Home before
-each launch. `cold` ends the app with `restart_ui`, which restarts iOS's interface, so each cold run also waits for that
-restart. The report has Android's metric names, such as `startup_hot_median_ms`, `device_kind` `virtual-iphone` and a note:
+each launch. `cold` restarts iOS's interface with `restart_ui` and waits for its lock screen to be readable and left; on
+the test phone that did not end the app's process, so a cold run reported `launch_state` `hot` and `mismatched_runs` counted
+it. Only installing the app again (`ios.virtual.deploy` with `force`) gave a new process there. The report has Android's metric names, such as `startup_hot_median_ms`, `device_kind` `virtual-iphone` and a note:
 the guest runs emulated, so these launches are far slower than on an iPhone, and the numbers only compare with other
-virtual-iPhone reports. The [agent guide](../agents.md#app-performance) says what each number means. Tested with fixtures
-only; not measured on a live phone.
+virtual-iPhone reports. The [agent guide](../agents.md#app-performance) says what each number means. On the test phone,
+three `hot` runs of the example app took a median 1329 ms to the first frame, 460 ms to the open request returning and
+1604 ms to the screen keeping still.
 
 ## Deploy your own app
 

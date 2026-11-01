@@ -207,8 +207,17 @@ operations and their JSON results.
   with the conversion beside it. Offline on the development host, with caches emptied before each run: that copy and
   conversion 3.5-3.9 ms before and 2.5-2.8 ms now; one thread converting a frame 4.1 ms before and 1.9 ms now; the
   hand-off 1.7-1.8 ms before and 1.2-1.4 ms now, though slower than before (0.6-0.7 against 0.3-0.6 ms) when both buffers
-  are still in the cache. Not yet measured on a live phone. `REIMS_VGPU_STORE_PUBLISH_BANDS=off` restores the previous
-  Store.
+  are still in the cache. Live, 1.2.1 against this engine on the same script (20 Home swipes, Settings scrolls; host load
+  average 9 to 12 and 5 to 12): publish with its overlap 5.1 ms a Store before and 2.1 ms now, the Store chain 7.1 ms a
+  present before and 3.9 ms now, the mailbox hand-off 1.25 ms before and 1.01 ms now, and 11 presents a second against
+  10, with no banded serial fallback, no refused stash, no black present and the Settings screenshots identical below the
+  status bar. `REIMS_VGPU_STORE_PUBLISH_BANDS=off` restores the previous Store.
+
+- `profile.startup` on the virtual iPhone waits, up to 30 s, for the guest to say whether the screen is locked before it
+  opens the app, and up to 90 s after a cold run's interface restart, instead of opening into the lock screen
+  (`request_rejected_by_ios`, Locked). On the test phone three hot runs of the example app took a median 1329 ms to the
+  first frame, 460 ms to launched and 1604 ms to settled; the cold runs restart iOS's interface, which did not end the
+  app's process there, and `mismatched_runs` says so.
 
 ### Tests
 

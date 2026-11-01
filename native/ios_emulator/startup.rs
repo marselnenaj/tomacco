@@ -12,8 +12,9 @@ use std::time::{Duration, Instant};
 
 const NOTE: &str = "Measured on the virtual iPhone, whose guest runs on an emulated processor with a software renderer: \
 launches take far longer than on an iPhone, and these times say nothing about one. Compare virtual-iPhone reports with \
-each other only. Each time is bounded below by one frame read (resolution_ms). cold ends the app by restarting iOS's \
-interface (restart_ui), the only guest operation that ends an app; system caches stay warm, so it is not a launch after a reboot.";
+each other only. Each time is bounded below by one frame read (resolution_ms). cold restarts iOS's interface (restart_ui), \
+which on the phones tried left the app's process running: check launch_state and mismatched_runs, a cold run that says hot \
+did not start a new process. System caches stay warm, so it is not a launch after a reboot.";
 
 /// How long a guest request waits for an earlier one to end.
 const BUSY_PATIENCE: Duration = Duration::from_secs(120);
