@@ -88,6 +88,7 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
             }
             if method == "initialize" {
                 initialized = true;
+                crate::guard::set_client(&params["clientInfo"]);
                 let protocol = s(&params, "protocolVersion");
                 respond(
                     &sink,

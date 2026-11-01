@@ -4545,6 +4545,18 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Log of virtual iOS device</source>
         <translation>Registro del dispositivo iOS virtual</translation>
     </message>
+    <message>
+        <source>Agent policy</source>
+        <translation>Política de agentes</translation>
+    </message>
+    <message>
+        <source>Audit log</source>
+        <translation>Registro de auditoría</translation>
+    </message>
+    <message>
+        <source>Read a saved result</source>
+        <translation>Leer un resultado guardado</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

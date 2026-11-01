@@ -16,11 +16,11 @@ pub const VARIABLE: &str = "TOMACCO_SESSION_LOG";
 pub fn call(name: &str, arguments: &Value) -> Result {
     let file = std::env::var(VARIABLE).unwrap_or_default();
     if file.is_empty() {
-        return api::dispatch(name, arguments);
+        return crate::guard::dispatch(name, arguments);
     }
     let started = now();
     let clock = std::time::Instant::now();
-    let result = api::dispatch(name, arguments);
+    let result = crate::guard::dispatch(name, arguments);
     let entry = entry(
         name,
         arguments,

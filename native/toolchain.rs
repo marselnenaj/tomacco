@@ -194,6 +194,9 @@ pub fn configure(a: &Value) -> Result {
             config["jobs"][*key] = json!(limit);
         }
     }
+    if a.get("agent_policy").is_some() {
+        config["agent_policy"] = crate::guard::validated_policy(&a["agent_policy"])?;
+    }
     atomic_json(&home()?.join("settings.json"), &config)?;
     Ok(config)
 }

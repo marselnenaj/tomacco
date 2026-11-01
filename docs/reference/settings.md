@@ -22,7 +22,7 @@ tomaccoctl call settings.get
 
 **Set up toolchain**
 
-Configure SDK, JDK and executable paths without installing or running them, how updates behave, and how many heavy jobs run at once.
+Configure SDK, JDK and executable paths without installing or running them, how updates behave, how many heavy jobs run at once, and the agent policy.
 
 Annotations: writes, idempotent, open world.
 
@@ -40,6 +40,7 @@ Annotations: writes, idempotent, open world.
 | `jobs` | object |  |  | How many heavy jobs run at once; more wait as queued with a reason. 0 means no limit |
 | `jobs.max_builds` | integer |  |  | 0 to 64; Builds and deploys (project.execute, project.run except Flutter sessions, ios.flutter_build); 2 by default |
 | `jobs.max_emulators` | integer |  |  | 0 to 64; Android emulators started with android.avd_start, for as long as they run; no limit by default |
+| `agent_policy` | object |  |  | The agent policy, replacing the stored one ({} removes it): mcp, cli and clients name the policy for MCP servers, tomaccoctl call and MCP clients by name (full, no_destructive, read_only or one in policies); policies defines named ones (mode, allow, deny, writes roots or anywhere, write_roots); approval (destructive, timeout_seconds 5-30, without_desktop allow or deny, session); limits (jobs_per_session 0-64, inline_result_kib 1-16384); audit true or false. Refused over MCP and under a limiting policy |
 
 ```sh
 tomaccoctl call settings.configure

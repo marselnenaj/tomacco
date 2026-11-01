@@ -412,7 +412,7 @@
   {
     "name": "settings.configure",
     "title": "Set up toolchain",
-    "description": "Configure SDK, JDK and executable paths without installing or running them, how updates behave, and how many heavy jobs run at once.",
+    "description": "Configure SDK, JDK and executable paths without installing or running them, how updates behave, how many heavy jobs run at once, and the agent policy.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -487,6 +487,10 @@
           },
           "required": [],
           "additionalProperties": false
+        },
+        "agent_policy": {
+          "type": "object",
+          "description": "The agent policy, replacing the stored one ({} removes it): mcp, cli and clients name the policy for MCP servers, tomaccoctl call and MCP clients by name (full, no_destructive, read_only or one in policies); policies defines named ones (mode, allow, deny, writes roots or anywhere, write_roots); approval (destructive, timeout_seconds 5-30, without_desktop allow or deny, session); limits (jobs_per_session 0-64, inline_result_kib 1-16384); audit true or false. Refused over MCP and under a limiting policy"
         }
       },
       "required": [],
@@ -1430,6 +1434,128 @@
       "destructiveHint": false,
       "idempotentHint": false,
       "openWorldHint": true
+    }
+  },
+  {
+    "name": "agent.policy",
+    "title": "Agent policy",
+    "description": "The agent policy a caller gets, from settings.json's agent_policy and the server's --policy or TOMACCO_POLICY: its mode, allow and deny lists and where it lets operations write, what chose it, desktop approval of destructive calls, the session limits and whether calls are audited. Without arguments, for this caller.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "type": "string",
+          "enum": [
+            "mcp",
+            "cli"
+          ],
+          "description": "mcp for an MCP server, cli for tomaccoctl call; this caller's by default"
+        },
+        "client": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "An MCP client's name as it sends it in initialize; this caller's by default"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "audit.list",
+    "title": "Audit log",
+    "description": "The newest entries of the audit log, newest first: every call through tomaccoctl call or MCP that may change something, and every call a guard refused, with the channel, the client's name, the operation, its arguments with secrets masked, how it ended and when. more is true when older entries match too.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 50
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Only operations whose name starts with this"
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "mcp",
+            "cli"
+          ]
+        },
+        "client": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Only calls from the MCP client of this name"
+        },
+        "failed": {
+          "type": "boolean",
+          "description": "Only calls that failed or were refused",
+          "default": false
+        },
+        "since": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Only calls at or after this time, in seconds since 1970"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "result.read",
+    "title": "Read a saved result",
+    "description": "Read a piece of a result too large for an MCP answer, which the result_too_large error saved under a result_id. Pass next_offset back as offset until eof is true; the pieces joined are the result's JSON. Saved results are kept for a week.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "result_id": {
+          "type": "string",
+          "pattern": "[a-f0-9]{32}",
+          "description": "result_id from the result_too_large error"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Byte offset to read from"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 1048576,
+          "default": 262144,
+          "description": "Most bytes to return"
+        }
+      },
+      "required": [
+        "result_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
