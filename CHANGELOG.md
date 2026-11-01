@@ -153,6 +153,10 @@ operations and their JSON results.
     the launcher's outcome with a summary, each reason it was not verified (no exit code 0, incomplete storage hashes,
     no confirmed flush, the graphics memory guard) and a remedy. A failed stop's error and a boot that ended early say
     the same. Unit-tested against recorded launcher records, not read off a live phone.
+  - A start that fails after the boot ends with what to call next, and `next` in `ios.virtual.status` says the same:
+    resume with `ios.virtual.start`, which adopts the still-running guest without a new disk copy, with
+    `{"open_app":false}` when an app launch's outcome is unknown, after unlocking a passcode, or stop again. Unit-tested
+    over the start's phases, not tried on a live phone.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
 

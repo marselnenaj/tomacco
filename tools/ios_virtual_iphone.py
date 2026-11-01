@@ -2228,6 +2228,25 @@ class Phone:
                                + "; the next start uses the last verified run")
 
 
+def resume_hint(phone):
+    """What a failed start's error adds when its guest still runs: a start
+    adopts that guest without a new disk copy (ios.virtual.status `next`
+    says the same). Empty when the guest cannot be observed or does not run."""
+    try:
+        running = phone.guest_running()
+    except (GuestObservationError, OSError, ValueError, RuntimeError, subprocess.SubprocessError):
+        return ""
+    if not running:
+        return ""
+    phase = phone.state.get("phase")
+    if phase == "launch-uncertain":
+        return ("; the guest is still running: call ios.virtual.start with open_app false to finish without "
+                "sending the launch again")
+    if phase == "awaiting-unlock":
+        return "; the guest is still running: unlock it in the phone window, then call ios.virtual.start again"
+    return "; the guest is still running: call ios.virtual.start again to continue with it, without a new disk copy"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("action", choices=("start", "stop", "deploy"))
@@ -2273,9 +2292,10 @@ def main():
                 changes = {"phase": "failed"} if not isinstance(error, GuestObservationError) and args.action == "start" and phone.state.get("phase") not in (
                     "booting", "launch-uncertain", "awaiting-unlock") else {}
                 phone.save(error=str(error), **changes)
+                hint = resume_hint(phone) if args.action == "start" else ""
             except (OSError, ValueError, KeyError):
-                pass
-            print(json.dumps({"state": "failed", "error": str(error)}))
+                hint = ""
+            print(json.dumps({"state": "failed", "error": str(error) + hint}))
             return 1
 
 

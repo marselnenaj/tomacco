@@ -29,6 +29,19 @@ current start or stop with its seconds. While `preparing`, `copy_progress` has t
 size of the new copy's files with the base's, so a reflinked copy shows as complete at once. These
 fields have unit tests; they have not been watched during a live start yet.
 
+**A start that failed halfway.** A start adopts a guest that is still running instead of booting another, so it
+makes no new disk copy and goes on from the guest-service check. When a start fails after the boot, its error ends
+with what to call, and `next` in the status says the same: `action` (`resume`, `unlock_then_resume`, `stop`,
+`record_end`, `start_again` or `wait`), the `call` and its `arguments`, whether it `resumes` the running guest, and
+`why`. An app launch whose outcome is unknown is never sent twice, so that case resumes with `{"open_app":false}`.
+A start that failed before its guest ran has removed its copy and begins again from the last verified run. Unit-tested
+over the start's phases, not tried on a live phone.
+
+```json
+"next": {"action": "resume", "call": "ios.virtual.start", "arguments": {}, "resumes": true,
+         "why": "The last start ended while its guest kept running. Start again: ..."}
+```
+
 Accepted is not the same as visible. After an accepted launch the start looks at the panel for up
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
 display defect, not a working phone.

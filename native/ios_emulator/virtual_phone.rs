@@ -1074,6 +1074,79 @@ fn last_run(state: &Value) -> Value {
     }
 }
 
+/// What to call next when a start or stop ended halfway, from the state the
+/// script left (tools/ios_virtual_iphone.py) and whether its guest runs. A
+/// start adopts a running guest instead of booting another: it makes no disk
+/// copy and goes on from the guest-service check, so a start that failed
+/// after the boot resumes with `ios.virtual.start`. Null when nothing is left
+/// halfway: the phone is ready, off, or its last run is described by
+/// `last_run`.
+fn next_step(state: &Value, running: bool, ended: bool, busy: Option<&Value>) -> Value {
+    let step = |action: &str, call: &str, arguments: Value, resumes: bool, why: &str| json!({"action":action,"call":call,"arguments":arguments,"resumes":resumes,"why":why});
+    if let Some(job) = busy {
+        return step(
+            "wait",
+            "job.wait",
+            json!({"job_id":job["id"]}),
+            false,
+            "A start or stop is in progress; follow its job.",
+        );
+    }
+    let phase = s(state, "phase");
+    if running {
+        return match phase {
+            "launch-uncertain" => step(
+                "resume",
+                "ios.virtual.start",
+                json!({"open_app":false}),
+                true,
+                "The guest runs, but whether iOS opened the app is unknown, and the launch is never sent twice                  on its own. A start with open_app false adopts the guest and finishes without it; open the app                  yourself afterwards.",
+            ),
+            "awaiting-unlock" => step(
+                "unlock_then_resume",
+                "ios.virtual.start",
+                json!({}),
+                true,
+                "The lock screen has a passcode. Unlock it in the phone window, then start again: the start                  adopts the running guest and opens the app.",
+            ),
+            "stopping" => step(
+                "stop",
+                "ios.virtual.stop",
+                json!({}),
+                false,
+                "A stop ended before the guest did. Stop again; a guest that answers is asked to save first.",
+            ),
+            "preparing" | "booting" | "installing" | "unlocking" | "failed" => step(
+                "resume",
+                "ios.virtual.start",
+                json!({}),
+                true,
+                "The last start ended while its guest kept running. Start again: it adopts that guest without                  a new disk copy and goes on from the guest-service check.",
+            ),
+            _ => Value::Null,
+        };
+    }
+    if ended {
+        return step(
+            "record_end",
+            "ios.virtual.stop",
+            json!({}),
+            false,
+            "The guest has ended on its own. A stop records whether it saved first, and last_run then says how              it ended; a start does the same before it begins from the last verified run.",
+        );
+    }
+    if phase == "failed" && state["closed"] == true {
+        return step(
+            "start_again",
+            "ios.virtual.start",
+            json!({}),
+            false,
+            "The last start failed before its guest ran, and its disk copy was removed. A new start begins              again from the last verified run; error says what went wrong.",
+        );
+    }
+    Value::Null
+}
+
 fn application_process_observation(profile: &Value, state: &Value, running: bool) -> Value {
     let launch = &state["launch_receipt"];
     if running
@@ -1227,6 +1300,9 @@ pub fn status(_a: &Value) -> Result {
         // How the last finished run ended, in plain words: verified, outcome,
         // summary, the reasons it was not verified and a remedy.
         "last_run":last_run(&state),
+        // What to call next when a start or stop ended halfway: resume the
+        // running guest instead of a new start, or record how a guest ended.
+        "next":next_step(&state,running,ended,busy.as_ref()),
     }))
 }
 
@@ -1859,6 +1935,70 @@ mod process_observation_tests {
             state["launch_receipt"]["job_id"] = id;
             assert!(application_process_observation(&profile, &state, true).is_null());
         }
+    }
+}
+
+#[cfg(test)]
+mod next_step_tests {
+    use super::*;
+
+    fn action(state: Value, running: bool, ended: bool) -> Value {
+        next_step(&state, running, ended, None)["action"].clone()
+    }
+
+    #[test]
+    fn a_start_that_ended_while_its_guest_runs_is_resumed_not_repeated() {
+        for phase in ["preparing", "booting", "installing", "unlocking", "failed"] {
+            let state = json!({"phase":phase,"closed":false,"error":"iOS refused the launch"});
+            let step = next_step(&state, true, false, None);
+            assert_eq!(step["action"], "resume", "{phase}");
+            assert_eq!(step["call"], "ios.virtual.start");
+            assert_eq!(step["arguments"], json!({}));
+            assert_eq!(step["resumes"], true);
+        }
+        // An unknown launch is never sent again on its own.
+        let step = next_step(&json!({"phase":"launch-uncertain"}), true, false, None);
+        assert_eq!(
+            (step["action"].clone(), step["arguments"].clone()),
+            (json!("resume"), json!({"open_app":false}))
+        );
+        assert_eq!(
+            action(json!({"phase":"awaiting-unlock"}), true, false),
+            "unlock_then_resume"
+        );
+        assert_eq!(action(json!({"phase":"stopping"}), true, false), "stop");
+    }
+
+    #[test]
+    fn a_ready_or_stopped_phone_has_nothing_left_halfway() {
+        for phase in ["launch-accepted", "service-ready"] {
+            assert!(next_step(&json!({"phase":phase}), true, false, None).is_null());
+        }
+        for phase in ["stopped", "unverified", "configured"] {
+            assert!(next_step(&json!({"phase":phase,"closed":true}), false, false, None).is_null());
+        }
+    }
+
+    #[test]
+    fn an_ended_guest_a_failed_preparation_and_a_running_job() {
+        assert_eq!(
+            action(
+                json!({"phase":"launch-accepted","closed":false}),
+                false,
+                true
+            ),
+            "record_end"
+        );
+        let step = next_step(&json!({"phase":"failed","closed":true}), false, false, None);
+        assert_eq!(
+            (step["action"].clone(), step["resumes"].clone()),
+            (json!("start_again"), json!(false))
+        );
+        // A start or stop in progress comes first.
+        let busy = json!({"id":"a".repeat(32),"state":"running"});
+        let step = next_step(&json!({"phase":"failed"}), true, false, Some(&busy));
+        assert_eq!(step["action"], "wait");
+        assert_eq!(step["arguments"]["job_id"], busy["id"]);
     }
 }
 

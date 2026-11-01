@@ -1423,7 +1423,11 @@ class VirtualPhoneLogic(unittest.TestCase):
         with patch("sys.argv", arguments), patch("builtins.print") as printed, \
                 patch.object(ios_virtual_iphone.time, "monotonic", side_effect=lambda: next(clock)):
             self.assertEqual(ios_virtual_iphone.main(), 1)
-        self.assertEqual(json.loads(printed.call_args_list[-1].args[0])["state"], "failed")
+        failed = json.loads(printed.call_args_list[-1].args[0])
+        self.assertEqual(failed["state"], "failed")
+        # The guest still boots: the error says how to go on with it.
+        self.assertTrue(failed["error"].endswith(
+            "; the guest is still running: call ios.virtual.start again to continue with it, without a new disk copy"))
         state = self.state()
         self.assertIn("did not answer", state["error"])
         # Not "failed": the guest is still booting and a stop must know that.
@@ -1457,12 +1461,26 @@ class VirtualPhoneLogic(unittest.TestCase):
             self.assertEqual(len(self.calls("ios.emulator.control")), 4)
             self.assertEqual((self.state()["phase"], self.state()["closed"]), ("unverified", False))
 
+    def test_a_failed_starts_hint_follows_the_phase_and_needs_a_running_guest(self):
+        for phase, expected in (("launch-uncertain", "with open_app false"),
+                                ("awaiting-unlock", "unlock it in the phone window"),
+                                ("failed", "without a new disk copy")):
+            self.guest_up(phase)
+            self.assertIn(expected, ios_virtual_iphone.resume_hint(self.phone()))
+        # A guest that has ended, or one that cannot be observed, gets no hint.
+        self.guest_up("failed")
+        self.scenario(job__get=ok({"id": "guest8", "state": "failed"}))
+        self.assertEqual(ios_virtual_iphone.resume_hint(self.phone()), "")
+        self.scenario(job__get={"ok": False, "error": {"code": "database_error", "message": "locked"}})
+        self.assertEqual(ios_virtual_iphone.resume_hint(self.phone()), "")
+
     def test_a_native_refusal_other_than_locked_ends_the_start_and_is_recorded(self):
         self.scenario(ios__emulator__guest=[ready(), ready(), refused("Disabled")])
         with patch("sys.argv", ["tool", "start", "--cli", str(self.cli), "--profile", str(self.profile)]), \
                 patch("builtins.print") as printed:
             self.assertEqual(ios_virtual_iphone.main(), 1)
         self.assertEqual(json.loads(printed.call_args_list[-1].args[0])["state"], "failed")
+        self.assertIn("call ios.virtual.start again", json.loads(printed.call_args_list[-1].args[0])["error"])
         state = self.state()
         self.assertEqual(state["phase"], "failed")
         self.assertIn("Disabled", state["error"])
