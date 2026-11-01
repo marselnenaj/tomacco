@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import struct
 import sys
 import tempfile
 import time
@@ -1639,9 +1640,19 @@ class VirtualPhoneOperations(Isolated):
     def test_a_start_whose_disk_copy_cannot_fit_is_refused_before_any_job(self):
         base = self.root / "base"
         base.mkdir()
-        # A sparse 8 TiB root disk: more than any test host has free.
-        with (base / "system.raw").open("wb") as stream:
-            stream.truncate(8 << 40)
+        # A root disk of 8 TiB: more than any test host has free. A streamed
+        # copy of a sparse raw disk writes only its data, so the base is a
+        # qcow2 overlay of that virtual size, which a start flattens into a
+        # full raw disk.
+        first = self.root / "first"
+        first.mkdir()
+        (first / "system.raw").write_bytes(bytes(4096))
+        backing = str(first / "system.raw").encode()
+        header = bytearray(512)
+        struct.pack_into(">4sIQII", header, 0, b"QFI\xfb", 3, 200, len(backing), 16)
+        struct.pack_into(">Q", header, 24, 8 << 40)
+        header[200:200 + len(backing)] = backing
+        (base / "system.qcow2").write_bytes(bytes(header))
         for name in ("auxiliary.raw", "sep.raw"):
             (base / name).write_bytes(b"\0" * 4096)
         directory = self.profile(install=str(base))
