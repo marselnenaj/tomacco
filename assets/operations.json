@@ -2378,14 +2378,14 @@
   {
     "name": "screen.diff",
     "title": "Compare two screens",
-    "description": "Describe what changed between two screens in structured form. before and after are both UIAutomator XML files (hierarchies: elements added, removed and changed in text, state or position, or a different screen, from screen.tree or screen.marks with xml_path) or both PNG screenshots (the regions where pixels changed, each with its box, size, share of changed pixels and position, and a summary; status bar regions are marked). Leave after out and give device to compare before with the screen now. With text:true the screenshots are also read with Tesseract and the lines added and removed are listed. Screens of different sizes (a rotation) answer size_changed.",
+    "description": "Describe what changed between two screens in structured form. before and after are both UIAutomator XML files (hierarchies: elements added, removed and changed in text, state or position, or a different screen, from screen.tree or screen.marks with xml_path) or both PNG screenshots (the regions where pixels changed, each with its box, size, share of changed pixels and position, and a summary; status bar regions are marked). Leave after out and give device to compare before with the screen now. With text:true the screenshots are also read with Tesseract and the lines added and removed are listed. Screens of different sizes (a rotation) answer size_changed. before and after can also both be export bundles from screen.export (the directory or its screen.json): the answer then lists the metadata that changed (device, display, theme, locale, app), the element difference and the pixel regions.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "before": {
           "type": "string",
           "minLength": 1,
-          "description": "Absolute path of a .xml hierarchy or a .png screenshot"
+          "description": "Absolute path of a .xml hierarchy, a .png screenshot, or a screen.export bundle (its directory or screen.json)"
         },
         "after": {
           "type": "string",
@@ -2637,6 +2637,153 @@
       "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "screen.export",
+    "title": "Export a screen",
+    "description": "Write one screen of a device as a bundle other tools can read: screen.png at full resolution and screen.json, a documented, versioned format (format \"tomacco.screen\", version 1; docs/screen-export.md and assets/schemas/screen-export-v1.schema.json). screen.json has the capture time, the device (platform, id, model, OS version, form factor), the display (pixels, density, size in dp or pt, orientation, rotation), the insets of the status bar, navigation bar and cutout where the platform reports them, the theme (dark or light), the locale, the foreground app, and every element of the screen as a flat list with ids and parent ids: role, class, text, description, resource id, bounds in pixels and in dp or pt, enabled, clickable, focusable, checked and selected, and the mark number screen.marks gives it. On Android the elements are the UI hierarchy. The virtual iPhone and USB iPhones (platform ios) have none, so there the elements are lines of text read off the screenshot with Tesseract (source ocr, state flags null) and hierarchy says unavailable. A field the platform does not report is null, never guessed. The marks are kept for screen.tap as after screen.marks. The directory must be new or empty. The result summarises the export; read screen.json for the elements.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list, virtual-iphone for the running virtual iPhone, or a USB iPhone's UDID with platform ios"
+        },
+        "directory": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the bundle directory to create; it must not exist or must be empty"
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "default": "android",
+          "description": "ios for a USB iPhone (screenshot and device info, no hierarchy); virtual-iphone needs no platform"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "hierarchy",
+            "ocr"
+          ],
+          "default": "auto",
+          "description": "hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract; auto takes the hierarchy where the platform has one and OCR where it has not"
+        },
+        "max_marks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 200,
+          "description": "Most mark numbers; the first ones in reading order are numbered, as screen.marks numbers them, and marks.truncated says if more were left out. Every element is still listed"
+        },
+        "marked": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also write marked.png, the screenshot with the numbered boxes of screen.marks"
+        },
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 40,
+          "description": "For OCR: leave out words Tesseract reads with less confidence than this (0 to 100)"
+        },
+        "language": {
+          "type": "string",
+          "default": "eng",
+          "pattern": "^[A-Za-z0-9_+]+$",
+          "description": "For OCR: Tesseract language code, such as eng or eng+deu; its data must be installed"
+        }
+      },
+      "required": [
+        "device",
+        "directory"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "screen.export_batch",
+    "title": "Export screens of several devices",
+    "description": "Export the screen now of several devices (Android serials and virtual-iphone) in one call, each as a screen.export bundle in NN-device/ inside one directory, with index.json (format \"tomacco.screen-index\", version 1) listing each screen's device, model, size, orientation, theme, locale, app, element count and files. A device that cannot be read is listed with its error and the others still run; ok is false then. It takes the current screen of each device, not a matrix of languages and themes: android.store_screenshots does that for store screenshots. The directory must be new or empty.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "devices": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Android serials from device.list, or virtual-iphone"
+        },
+        "directory": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the directory to create; it must not exist or must be empty"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "hierarchy",
+            "ocr"
+          ],
+          "default": "auto",
+          "description": "hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract; auto takes the hierarchy where the platform has one and OCR where it has not"
+        },
+        "max_marks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 200,
+          "description": "Most mark numbers; the first ones in reading order are numbered, as screen.marks numbers them, and marks.truncated says if more were left out. Every element is still listed"
+        },
+        "marked": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also write marked.png, the screenshot with the numbered boxes of screen.marks"
+        },
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 40,
+          "description": "For OCR: leave out words Tesseract reads with less confidence than this (0 to 100)"
+        },
+        "language": {
+          "type": "string",
+          "default": "eng",
+          "pattern": "^[A-Za-z0-9_+]+$",
+          "description": "For OCR: Tesseract language code, such as eng or eng+deu; its data must be installed"
+        }
+      },
+      "required": [
+        "devices",
+        "directory"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
       "openWorldHint": true
     }
   },

@@ -368,6 +368,9 @@ impl<P: Phone> Screen for PhoneScreen<'_, P> {
     fn hierarchy(&mut self) -> Result<Option<String>> {
         Ok(None)
     }
+    fn facts(&mut self, size: (u32, u32)) -> crate::screen_export::Facts {
+        crate::screen_export::virtual_iphone_facts(size)
+    }
     fn tap(&mut self, x: i64, y: i64, hold_ms: Option<u64>) -> Result {
         tap_pixel(self.0, x, y, hold_ms)
     }

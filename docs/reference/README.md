@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 248 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 250 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 480 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 483 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -333,6 +333,8 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`screen.ocr`](screen.md#screenocr) | Read text on screen | read-only |
 | [`screen.diff`](screen.md#screendiff) | Compare two screens | read-only |
 | [`screen.wait`](screen.md#screenwait) | Wait for text or a steady screen | read-only |
+| [`screen.export`](screen.md#screenexport) | Export a screen | writes |
+| [`screen.export_batch`](screen.md#screenexport_batch) | Export screens of several devices | writes |
 
 ## [settings](settings.md)
 

@@ -1,0 +1,38 @@
+{
+  "format": "tomacco.screen-index",
+  "version": 1,
+  "tomacco_version": "0.0.0",
+  "captured_at": "2026-11-01T12:00:00Z",
+  "count": 2,
+  "failed": 1,
+  "screens": [
+    {
+      "device": "emulator-5554",
+      "ok": true,
+      "directory": "01-emulator-5554",
+      "screen_json": "01-emulator-5554/screen.json",
+      "screenshot": "01-emulator-5554/screen.png",
+      "platform": "android",
+      "model": "sdk_gphone64_x86_64",
+      "width_px": 1080,
+      "height_px": 2400,
+      "orientation": "portrait",
+      "theme": "light",
+      "locale": "en-US",
+      "app": "com.google.android.apps.nexuslauncher",
+      "elements": 12,
+      "elements_source": "hierarchy",
+      "hierarchy": "available",
+      "warnings": []
+    },
+    {
+      "device": "emulator-5556",
+      "ok": false,
+      "error": {
+        "code": "device_offline",
+        "message": "offline",
+        "remedy": ""
+      }
+    }
+  ]
+}

@@ -129,6 +129,8 @@ var titles = {
     "screen.ocr": QT_TRANSLATE_NOOP("Operations", "Read text on screen"),
     "screen.diff": QT_TRANSLATE_NOOP("Operations", "Compare two screens"),
     "screen.wait": QT_TRANSLATE_NOOP("Operations", "Wait for text or a steady screen"),
+    "screen.export": QT_TRANSLATE_NOOP("Operations", "Export a screen"),
+    "screen.export_batch": QT_TRANSLATE_NOOP("Operations", "Export screens of several devices"),
     "testing.lint": QT_TRANSLATE_NOOP("Operations", "Check UI test scenario"),
     "testing.visual_diff": QT_TRANSLATE_NOOP("Operations", "Compare with baseline image"),
     "testing.accessibility": QT_TRANSLATE_NOOP("Operations", "Check Android accessibility"),

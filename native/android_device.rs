@@ -19,7 +19,7 @@ const ORIENTATIONS: [&str; 4] = [
 ];
 
 /// `Physical size: 1080x2400` and `Override size: 720x1600` from `wm size`.
-fn sizes(output: &str) -> (Value, Value) {
+pub(crate) fn sizes(output: &str) -> (Value, Value) {
     let pick = |prefix: &str| {
         output
             .lines()
@@ -32,7 +32,7 @@ fn sizes(output: &str) -> (Value, Value) {
 }
 
 /// `Physical density: 420` and `Override density: 320` from `wm density`.
-fn densities(output: &str) -> (Value, Value) {
+pub(crate) fn densities(output: &str) -> (Value, Value) {
     let pick = |prefix: &str| {
         output
             .lines()

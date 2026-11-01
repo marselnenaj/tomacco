@@ -4418,6 +4418,14 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Auf Text oder ruhigen Bildschirm warten</translation>
     </message>
     <message>
+        <source>Export a screen</source>
+        <translation>Bildschirm exportieren</translation>
+    </message>
+    <message>
+        <source>Export screens of several devices</source>
+        <translation>Bildschirme mehrerer Geräte exportieren</translation>
+    </message>
+    <message>
         <source>Check UI test scenario</source>
         <translation>UI-Test-Szenario prüfen</translation>
     </message>

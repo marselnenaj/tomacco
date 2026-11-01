@@ -1,0 +1,666 @@
+{
+  "format": "tomacco.screen",
+  "version": 1,
+  "tomacco_version": "0.0.0",
+  "captured_at": "2026-11-01T12:00:00Z",
+  "device": {
+    "platform": "android",
+    "id": "emulator-5554",
+    "serial": "emulator-5554",
+    "udid": null,
+    "virtual": true,
+    "model": "sdk_gphone64_x86_64",
+    "manufacturer": "Google",
+    "os_name": "Android",
+    "os_version": "16",
+    "sdk": 36,
+    "form_factor": "phone"
+  },
+  "display": {
+    "width_px": 1080,
+    "height_px": 2400,
+    "density_dpi": 420,
+    "scale": 2.625,
+    "width_dp": 411.43,
+    "height_dp": 914.29,
+    "unit": "dp",
+    "orientation": "portrait",
+    "rotation": 0
+  },
+  "insets": {
+    "source": "dumpsys window",
+    "estimated": false,
+    "status_bar": {
+      "left": 0,
+      "top": 0,
+      "right": 1080,
+      "bottom": 63
+    },
+    "navigation_bar": {
+      "left": 0,
+      "top": 2361,
+      "right": 1080,
+      "bottom": 2424
+    },
+    "cutout": [],
+    "safe_area_px": {
+      "left": 0,
+      "top": 63,
+      "right": 0,
+      "bottom": 63
+    },
+    "safe_area_dp": {
+      "left": 0.0,
+      "top": 24.0,
+      "right": 0.0,
+      "bottom": 24.0
+    }
+  },
+  "theme": {
+    "mode": "light",
+    "source": "cmd uimode night"
+  },
+  "locale": {
+    "tag": "en-US",
+    "source": "getprop persist.sys.locale"
+  },
+  "app": {
+    "package": "com.google.android.apps.nexuslauncher",
+    "activity": "com.google.android.apps.nexuslauncher.NexusLauncherActivity",
+    "source": "dumpsys window"
+  },
+  "screenshot": {
+    "file": "screen.png",
+    "width": 1080,
+    "height": 2400,
+    "bytes": 15402,
+    "sha256": "376fce84c2fa996a04c48d954b7186c17c20d0985733767a7896c9c7f83fcbe1",
+    "marked_file": "marked.png"
+  },
+  "hierarchy": "available",
+  "elements_source": "hierarchy",
+  "marks": {
+    "count": 6,
+    "limit": 200,
+    "truncated": false
+  },
+  "elements": [
+    {
+      "id": "e0",
+      "parent": null,
+      "depth": 0,
+      "source": "hierarchy",
+      "role": "container",
+      "class": "android.widget.FrameLayout",
+      "package": "dev.example.app",
+      "resource_id": "",
+      "text": "",
+      "description": "",
+      "label": "Back | Welcome back | Email",
+      "bounds": {
+        "px": {
+          "left": 0,
+          "top": 0,
+          "right": 1080,
+          "bottom": 2400,
+          "width": 1080,
+          "height": 2400
+        },
+        "dp": {
+          "left": 0.0,
+          "top": 0.0,
+          "right": 411.43,
+          "bottom": 914.29,
+          "width": 411.43,
+          "height": 914.29
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 1200
+      },
+      "enabled": true,
+      "clickable": false,
+      "long_clickable": false,
+      "focusable": false,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": null
+    },
+    {
+      "id": "e1",
+      "parent": "e0",
+      "depth": 1,
+      "source": "hierarchy",
+      "role": "container",
+      "class": "android.widget.FrameLayout",
+      "package": "dev.example.app",
+      "resource_id": "android:id/content",
+      "text": "",
+      "description": "",
+      "label": "Back | Welcome back | Email",
+      "bounds": {
+        "px": {
+          "left": 0,
+          "top": 0,
+          "right": 1080,
+          "bottom": 2400,
+          "width": 1080,
+          "height": 2400
+        },
+        "dp": {
+          "left": 0.0,
+          "top": 0.0,
+          "right": 411.43,
+          "bottom": 914.29,
+          "width": 411.43,
+          "height": 914.29
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 1200
+      },
+      "enabled": true,
+      "clickable": false,
+      "long_clickable": false,
+      "focusable": false,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": null
+    },
+    {
+      "id": "e2",
+      "parent": "e1",
+      "depth": 2,
+      "source": "hierarchy",
+      "role": "container",
+      "class": "android.widget.LinearLayout",
+      "package": "dev.example.app",
+      "resource_id": "dev.example.app:id/form",
+      "text": "",
+      "description": "",
+      "label": "Back | Welcome back | Email",
+      "bounds": {
+        "px": {
+          "left": 0,
+          "top": 100,
+          "right": 1080,
+          "bottom": 2400,
+          "width": 1080,
+          "height": 2300
+        },
+        "dp": {
+          "left": 0.0,
+          "top": 38.1,
+          "right": 411.43,
+          "bottom": 914.29,
+          "width": 411.43,
+          "height": 876.19
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 1250
+      },
+      "enabled": true,
+      "clickable": false,
+      "long_clickable": false,
+      "focusable": false,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": null
+    },
+    {
+      "id": "e3",
+      "parent": "e2",
+      "depth": 3,
+      "source": "hierarchy",
+      "role": "button",
+      "class": "android.widget.ImageButton",
+      "package": "dev.example.app",
+      "resource_id": "",
+      "text": "",
+      "description": "Back",
+      "label": "Back",
+      "bounds": {
+        "px": {
+          "left": 0,
+          "top": 100,
+          "right": 140,
+          "bottom": 240,
+          "width": 140,
+          "height": 140
+        },
+        "dp": {
+          "left": 0.0,
+          "top": 38.1,
+          "right": 53.33,
+          "bottom": 91.43,
+          "width": 53.33,
+          "height": 53.33
+        }
+      },
+      "center": {
+        "x": 70,
+        "y": 170
+      },
+      "enabled": true,
+      "clickable": true,
+      "long_clickable": false,
+      "focusable": true,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": 1
+    },
+    {
+      "id": "e4",
+      "parent": "e2",
+      "depth": 3,
+      "source": "hierarchy",
+      "role": "text",
+      "class": "android.widget.TextView",
+      "package": "dev.example.app",
+      "resource_id": "dev.example.app:id/title",
+      "text": "Welcome back",
+      "description": "",
+      "label": "Welcome back",
+      "bounds": {
+        "px": {
+          "left": 140,
+          "top": 120,
+          "right": 940,
+          "bottom": 260,
+          "width": 800,
+          "height": 140
+        },
+        "dp": {
+          "left": 53.33,
+          "top": 45.71,
+          "right": 358.1,
+          "bottom": 99.05,
+          "width": 304.76,
+          "height": 53.33
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 190
+      },
+      "enabled": true,
+      "clickable": false,
+      "long_clickable": false,
+      "focusable": false,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": null
+    },
+    {
+      "id": "e5",
+      "parent": "e2",
+      "depth": 3,
+      "source": "hierarchy",
+      "role": "text_field",
+      "class": "android.widget.EditText",
+      "package": "dev.example.app",
+      "resource_id": "dev.example.app:id/email",
+      "text": "Email",
+      "description": "",
+      "label": "Email",
+      "bounds": {
+        "px": {
+          "left": 140,
+          "top": 400,
+          "right": 940,
+          "bottom": 520,
+          "width": 800,
+          "height": 120
+        },
+        "dp": {
+          "left": 53.33,
+          "top": 152.38,
+          "right": 358.1,
+          "bottom": 198.1,
+          "width": 304.76,
+          "height": 45.71
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 460
+      },
+      "enabled": true,
+      "clickable": true,
+      "long_clickable": false,
+      "focusable": true,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": true,
+      "password": false,
+      "confidence": null,
+      "mark": 2
+    },
+    {
+      "id": "e6",
+      "parent": "e2",
+      "depth": 3,
+      "source": "hierarchy",
+      "role": "text_field",
+      "class": "android.widget.EditText",
+      "package": "dev.example.app",
+      "resource_id": "dev.example.app:id/password",
+      "text": "Password",
+      "description": "",
+      "label": "Password",
+      "bounds": {
+        "px": {
+          "left": 140,
+          "top": 600,
+          "right": 940,
+          "bottom": 720,
+          "width": 800,
+          "height": 120
+        },
+        "dp": {
+          "left": 53.33,
+          "top": 228.57,
+          "right": 358.1,
+          "bottom": 274.29,
+          "width": 304.76,
+          "height": 45.71
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 660
+      },
+      "enabled": true,
+      "clickable": true,
+      "long_clickable": false,
+      "focusable": true,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": true,
+      "password": false,
+      "confidence": null,
+      "mark": 3
+    },
+    {
+      "id": "e7",
+      "parent": "e2",
+      "depth": 3,
+      "source": "hierarchy",
+      "role": "checkbox",
+      "class": "android.widget.CheckBox",
+      "package": "dev.example.app",
+      "resource_id": "dev.example.app:id/remember",
+      "text": "Remember me",
+      "description": "",
+      "label": "Remember me",
+      "bounds": {
+        "px": {
+          "left": 140,
+          "top": 1100,
+          "right": 940,
+          "bottom": 1200,
+          "width": 800,
+          "height": 100
+        },
+        "dp": {
+          "left": 53.33,
+          "top": 419.05,
+          "right": 358.1,
+          "bottom": 457.14,
+          "width": 304.76,
+          "height": 38.1
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 1150
+      },
+      "enabled": true,
+      "clickable": true,
+      "long_clickable": false,
+      "focusable": true,
+      "focused": false,
+      "checkable": true,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": 4
+    },
+    {
+      "id": "e8",
+      "parent": "e2",
+      "depth": 3,
+      "source": "hierarchy",
+      "role": "button",
+      "class": "android.widget.Button",
+      "package": "dev.example.app",
+      "resource_id": "dev.example.app:id/sign_in",
+      "text": "Sign in",
+      "description": "",
+      "label": "Sign in",
+      "bounds": {
+        "px": {
+          "left": 140,
+          "top": 1440,
+          "right": 940,
+          "bottom": 1560,
+          "width": 800,
+          "height": 120
+        },
+        "dp": {
+          "left": 53.33,
+          "top": 548.57,
+          "right": 358.1,
+          "bottom": 594.29,
+          "width": 304.76,
+          "height": 45.71
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 1500
+      },
+      "enabled": true,
+      "clickable": true,
+      "long_clickable": false,
+      "focusable": true,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": 5
+    },
+    {
+      "id": "e9",
+      "parent": "e2",
+      "depth": 3,
+      "source": "hierarchy",
+      "role": "button",
+      "class": "android.widget.Button",
+      "package": "dev.example.app",
+      "resource_id": "dev.example.app:id/google",
+      "text": "Sign in with Google",
+      "description": "",
+      "label": "Sign in with Google",
+      "bounds": {
+        "px": {
+          "left": 140,
+          "top": 1600,
+          "right": 940,
+          "bottom": 1720,
+          "width": 800,
+          "height": 120
+        },
+        "dp": {
+          "left": 53.33,
+          "top": 609.52,
+          "right": 358.1,
+          "bottom": 655.24,
+          "width": 304.76,
+          "height": 45.71
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 1660
+      },
+      "enabled": false,
+      "clickable": true,
+      "long_clickable": false,
+      "focusable": true,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": null
+    },
+    {
+      "id": "e10",
+      "parent": "e2",
+      "depth": 3,
+      "source": "hierarchy",
+      "role": "control",
+      "class": "android.view.ViewGroup",
+      "package": "dev.example.app",
+      "resource_id": "",
+      "text": "",
+      "description": "",
+      "label": "Forgot password?",
+      "bounds": {
+        "px": {
+          "left": 140,
+          "top": 1800,
+          "right": 940,
+          "bottom": 1900,
+          "width": 800,
+          "height": 100
+        },
+        "dp": {
+          "left": 53.33,
+          "top": 685.71,
+          "right": 358.1,
+          "bottom": 723.81,
+          "width": 304.76,
+          "height": 38.1
+        }
+      },
+      "center": {
+        "x": 540,
+        "y": 1850
+      },
+      "enabled": true,
+      "clickable": true,
+      "long_clickable": false,
+      "focusable": true,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": 6
+    },
+    {
+      "id": "e11",
+      "parent": "e10",
+      "depth": 4,
+      "source": "hierarchy",
+      "role": "text",
+      "class": "android.widget.TextView",
+      "package": "dev.example.app",
+      "resource_id": "",
+      "text": "Forgot password?",
+      "description": "",
+      "label": "Forgot password?",
+      "bounds": {
+        "px": {
+          "left": 160,
+          "top": 1820,
+          "right": 700,
+          "bottom": 1880,
+          "width": 540,
+          "height": 60
+        },
+        "dp": {
+          "left": 60.95,
+          "top": 693.33,
+          "right": 266.67,
+          "bottom": 716.19,
+          "width": 205.71,
+          "height": 22.86
+        }
+      },
+      "center": {
+        "x": 430,
+        "y": 1850
+      },
+      "enabled": true,
+      "clickable": false,
+      "long_clickable": false,
+      "focusable": false,
+      "focused": false,
+      "checkable": false,
+      "checked": false,
+      "selected": false,
+      "scrollable": false,
+      "editable": false,
+      "password": false,
+      "confidence": null,
+      "mark": null
+    }
+  ],
+  "warnings": []
+}

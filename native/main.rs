@@ -64,6 +64,7 @@ mod releases;
 mod remote;
 mod runtime;
 mod screen;
+mod screen_export;
 mod screen_ocr;
 mod screen_tree;
 mod session_log;
