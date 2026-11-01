@@ -33,8 +33,9 @@ const IGNORED: &[&str] = &[
     ".vscode",
     ".fvm",
 ];
-/// Directories an xtool build writes into, ignored in an xtool project.
-const XTOOL_OUTPUT: &[&str] = &["xtool", ".xtool"];
+/// Directories an xtool build writes into (the app, and the editor
+/// configuration it creates at the first build), ignored in an xtool project.
+const XTOOL_OUTPUT: &[&str] = &["xtool", ".xtool", ".bsp"];
 /// More files than this are not watched; the scan says so once.
 const FILE_LIMIT: usize = 100_000;
 
@@ -355,7 +356,11 @@ mod tests {
     fn an_xtool_project_leaves_out_what_xtool_builds() {
         let xtool = json!({"kinds":["xtool"]});
         let names = ignored(&xtool, &["generated".to_string()]).unwrap();
-        assert!(names.iter().any(|n| n == "xtool") && names.iter().any(|n| n == ".xtool"));
+        assert!(
+            ["xtool", ".xtool", ".bsp"]
+                .iter()
+                .all(|x| names.iter().any(|n| n == x))
+        );
         assert_eq!(names.last().unwrap(), "generated");
         let flutter = ignored(&json!({"kinds":["flutter"]}), &[]).unwrap();
         assert!(!flutter.iter().any(|n| n == "xtool"));

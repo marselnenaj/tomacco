@@ -19,10 +19,13 @@ operations and their JSON results.
     when one appears. The run's `build/tomacco/virtual_iphone_run.json` has the build and deploy seconds, `unchanged`, the
     pid and the crash check. Refused at once when the phone is off. Unit-tested; not run on a live phone.
   - `project.watch` with `device` `virtual-iphone` rebuilds and redeploys an xtool project on each save, leaves xtool's
-    `xtool` and `.xtool` output out, and logs one line per cycle with the build and deploy seconds, `unchanged`, the pid and
-    the crash check. Unit-tested; not run on a live phone.
+    `xtool`, `.xtool` and `.bsp` output out, and logs one line per cycle with the build and deploy seconds, `unchanged`,
+    the pid and the crash check. Unit-tested; not run on a live phone.
   - `ios.virtual.syslog` takes `bundle_id` and returns only that app's lines: its executable's own and launchd's about its
     service, matched by name, so following with `offset` keeps them across relaunches. Tested on synthetic console lines.
+  - `examples/hello-virtual-iphone`, a SwiftUI starter in xtool's format for the virtual iPhone, and the walkthrough
+    [Your first SwiftUI app on the virtual iPhone](docs/tutorial-virtual-iphone.md). Its build and `project.app` check ran;
+    running it on a live phone did not.
 - `tomaccoctl setup` also connects OpenCode (`~/.config/opencode/opencode.json`, `mcp`). Apps that run these
   agents, such as T3 Code, then reach Tomacco through them; docs/agents.md says so.
 - **Release.**
