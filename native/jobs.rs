@@ -602,6 +602,48 @@ pub fn submit(label: &str, mut spec: Value) -> Result {
     get(&id)
 }
 
+/// Records the URIs a Flutter machine event names: the VM service from
+/// `app.debugPort`, the DevTools server from `app.devTools` (with the address
+/// that opens it on this app) and the Dart Tooling Daemon from `app.dtd`.
+/// Whether the event was one of them.
+pub fn flutter_uris(flutter: &mut Value, event: &str, params: &Value) -> bool {
+    let uri = |key: &str| params[key].as_str().filter(|u| !u.is_empty());
+    match event {
+        "app.debugPort" => {
+            let Some(ws) = uri("wsUri") else {
+                return false;
+            };
+            flutter["vm_service_uri"] = json!(ws);
+            let http = ws
+                .replacen("ws://", "http://", 1)
+                .replacen("wss://", "https://", 1);
+            flutter["vm_service_http_uri"] = json!(http.strip_suffix("ws").unwrap_or(&http));
+        }
+        "app.devTools" => {
+            let Some(devtools) = uri("uri").or_else(|| uri("url")) else {
+                return false;
+            };
+            flutter["devtools_uri"] = json!(devtools);
+        }
+        "app.dtd" => {
+            let Some(dtd) = uri("uri") else {
+                return false;
+            };
+            flutter["dtd_uri"] = json!(dtd);
+        }
+        _ => return false,
+    }
+    if let (Some(devtools), Some(service)) = (
+        flutter["devtools_uri"].as_str(),
+        flutter["vm_service_http_uri"].as_str(),
+    ) {
+        if !devtools.contains('?') {
+            flutter["devtools_app_uri"] = json!(format!("{devtools}?uri={service}"));
+        }
+    }
+    true
+}
+
 fn same_work(left: &Value, right: &Value) -> bool {
     if left["cwd"] != right["cwd"] || left["parent_job"] != right["parent_job"] {
         return false;
@@ -1053,19 +1095,21 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
     let mut code = 0;
     let mut result = json!({"artifacts":[]});
     let mut output_paths = BTreeSet::new();
-    let publish_phase = |phase: &str, app_id: &str| -> Result<()> {
+    // A Flutter session's state also carries its VM service and DevTools URIs.
+    let publish_session = |phase: &str, app_id: &str, flutter: &Value| -> Result<()> {
+        let mut state = json!({"phase":phase,"app_id":app_id});
+        if flutter.as_object().is_some_and(|f| !f.is_empty()) {
+            state["flutter"] = flutter.clone();
+        }
         retrying(Instant::now() + WORKER_RETRY, || {
             db.execute(
                 "UPDATE jobs SET result=?,updated=? WHERE id=?",
-                params![
-                    json!({"phase":phase,"app_id":app_id}).to_string(),
-                    now(),
-                    id
-                ],
+                params![state.to_string(), now(), id],
             )?;
             Ok(())
         })
     };
+    let publish_phase = |phase: &str, app_id: &str| publish_session(phase, app_id, &Value::Null);
     let interrupt = |log: &File| -> Result<Option<&'static str>> {
         let parent_stopped = if !s(spec, "parent_job").is_empty() {
             let parent = retrying(Instant::now() + WORKER_RETRY, || {
@@ -1149,6 +1193,7 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
             let mut event_buffer = String::new();
             let mut app_id = String::new();
             let mut phase = String::from("building");
+            let mut flutter = json!({});
             let output = if !s(step, "output").is_empty() {
                 let target = PathBuf::from(s(step, "output"));
                 fs::create_dir_all(target.parent().unwrap())?;
@@ -1228,18 +1273,16 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
                                 match s(&event, "event") {
                                     "app.start" => {
                                         app_id = s(&event["params"], "appId").into();
-                                        publish_phase(&phase, &app_id)?;
                                     }
-                                    "app.started" => {
-                                        phase = "ready".into();
-                                        publish_phase(&phase, &app_id)?;
+                                    "app.started" => phase = "ready".into(),
+                                    "app.stop" => phase = "stopping".into(),
+                                    name => {
+                                        if !flutter_uris(&mut flutter, name, &event["params"]) {
+                                            continue;
+                                        }
                                     }
-                                    "app.stop" => {
-                                        phase = "stopping".into();
-                                        publish_phase(&phase, &app_id)?;
-                                    }
-                                    _ => (),
                                 }
+                                publish_session(&phase, &app_id, &flutter)?;
                             }
                         }
                     }
@@ -1447,6 +1490,44 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
     }
     result["artifacts"] = json!(artifacts);
     Ok((state, code, result))
+}
+
+#[cfg(test)]
+mod flutter_session_tests {
+    use super::*;
+
+    #[test]
+    fn a_flutter_session_names_its_vm_service_and_devtools() {
+        let mut flutter = json!({});
+        assert!(!flutter_uris(&mut flutter, "app.log", &json!({"log":"x"})));
+        assert!(!flutter_uris(&mut flutter, "app.debugPort", &json!({})));
+        assert!(flutter_uris(
+            &mut flutter,
+            "app.debugPort",
+            &json!({"appId":"a","port":41815,"wsUri":"ws://127.0.0.1:41815/AbC_dE=/ws","baseUri":"file:///data/user/0/dev.x/code_cache/appXYZ/app/"})
+        ));
+        assert_eq!(flutter["vm_service_uri"], "ws://127.0.0.1:41815/AbC_dE=/ws");
+        assert_eq!(
+            flutter["vm_service_http_uri"],
+            "http://127.0.0.1:41815/AbC_dE=/"
+        );
+        assert!(flutter.get("devtools_app_uri").is_none());
+        assert!(flutter_uris(
+            &mut flutter,
+            "app.devTools",
+            &json!({"uri":"http://127.0.0.1:9100"})
+        ));
+        assert_eq!(
+            flutter["devtools_app_uri"],
+            "http://127.0.0.1:9100?uri=http://127.0.0.1:41815/AbC_dE=/"
+        );
+        assert!(flutter_uris(
+            &mut flutter,
+            "app.dtd",
+            &json!({"uri":"ws://127.0.0.1:9200/dtd"})
+        ));
+        assert_eq!(flutter["dtd_uri"], "ws://127.0.0.1:9200/dtd");
+    }
 }
 
 #[cfg(test)]

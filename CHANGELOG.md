@@ -37,6 +37,9 @@ operations and their JSON results.
     JSON) and SwiftPM (`Package.resolved` pins against the repository's tags from `git ls-remote`), in the same
     report, each entry marked with its `ecosystem`. `dart`, `git`, `pnpm` and `yarn` can be set with
     `settings.configure`.
+  - A running Flutter session's job shows the app's Dart VM service URI and, when Flutter reports them, its DevTools
+    and Dart Tooling Daemon URIs under `result.flutter` in `job.get`, with a `devtools_app_uri` that opens DevTools
+    on the app.
 - **Session log and replay.** With `TOMACCO_SESSION_LOG` set to a file, every operation called through `tomaccoctl call`
   or `tomaccoctl mcp` is appended to it as a JSON line: arguments with recognised secrets masked, outcome, a short
   result summary and the duration. `tomaccoctl replay FILE [--dry-run]` calls the logged operations that change

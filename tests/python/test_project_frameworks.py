@@ -386,6 +386,48 @@ class FlutterTestResultTests(Isolated):
         self.assertTrue(golden["images"]["isolatedDiff"].endswith("test/failures/home_isolatedDiff.png"))
 
 
+
+class FlutterSessionTests(Isolated):
+    def test_a_flutter_session_reports_its_vm_service_and_devtools(self):
+        import time
+        from host_patience import PATIENCE
+        commands = self.root / "commands.log"
+        self.tool("flutter", f"""import json,sys
+def say(event, **params):
+    print(json.dumps([{{'event':event,'params':dict(appId='fixture-app',**params)}}]),flush=True)
+say('app.start', deviceId='emulator-5554')
+say('app.debugPort', port=41815, wsUri='ws://127.0.0.1:41815/AbC=/ws', baseUri='file:///data/app/')
+say('app.devTools', uri='http://127.0.0.1:9100')
+say('app.started')
+for line in sys.stdin:
+    value=json.loads(line)[0]
+    open({str(commands)!r},'a').write(json.dumps(value)+'\\n')
+    if value['method']=='app.stop': break
+    print(json.dumps([{{'id':value['id'],'result':{{'code':0}}}}]),flush=True)
+""")
+        root = self.root / "FlutterApp"
+        (root / "android").mkdir(parents=True)
+        (root / "pubspec.yaml").write_text("flutter:\n")
+        job = dispatch("project.run", {"path": str(root), "platform": "android", "device": "emulator-5554"})
+        deadline = time.monotonic() + 10 * PATIENCE
+        while jobs.get(job["id"]).get("phase") != "ready":
+            self.assertLess(time.monotonic(), deadline, jobs.logs(job["id"])["text"])
+            time.sleep(.05)
+        flutter = jobs.get(job["id"])["result"]["flutter"]
+        self.assertEqual(flutter["vm_service_uri"], "ws://127.0.0.1:41815/AbC=/ws")
+        self.assertEqual(flutter["vm_service_http_uri"], "http://127.0.0.1:41815/AbC=/")
+        self.assertEqual(flutter["devtools_uri"], "http://127.0.0.1:9100")
+        self.assertEqual(flutter["devtools_app_uri"], "http://127.0.0.1:9100?uri=http://127.0.0.1:41815/AbC=/")
+        jobs.send(job["id"], "restart")
+        while not commands.exists():
+            self.assertLess(time.monotonic(), deadline)
+            time.sleep(.05)
+        sent = json.loads(commands.read_text().splitlines()[0])
+        self.assertEqual((sent["method"], sent["params"]["fullRestart"]), ("app.restart", True))
+        jobs.send(job["id"], "quit")
+        self.assertEqual(jobs.wait(job["id"], 10)["state"], "succeeded")
+
+
 class WatchTests(Isolated):
     def test_a_source_change_rebuilds_and_relaunches_and_build_output_does_not(self):
         import time

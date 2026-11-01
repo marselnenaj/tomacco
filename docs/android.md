@@ -128,6 +128,27 @@ tomaccoctl call testing.results '{"path":"/absolute/MyApp","job_id":"JOB_ID"}'
 Tested with a stand-in `flutter` that writes the JSON reporter's events; Flutter is not
 installed here.
 
+A Flutter session from `project.run` (and the one `project.watch` keeps) runs `flutter
+run --machine`. While it runs, `job.get` shows under `result.flutter` what Flutter
+reported about it:
+
+- `vm_service_uri`, the Dart VM service's WebSocket address from `app.debugPort`, and
+  `vm_service_http_uri`, the same service for a browser or `dart devtools`.
+- `devtools_uri`, from `app.devTools` when Flutter serves DevTools, and
+  `devtools_app_uri`, that address with `?uri=` the VM service, which opens DevTools on
+  this app.
+- `dtd_uri`, the Dart Tooling Daemon, from `app.dtd`.
+
+Flutter reports only what it serves, so a key can be missing. Without a DevTools URI,
+`dart devtools` opens DevTools, which asks for the `vm_service_http_uri`. The addresses
+are on this computer; for a device, Flutter forwards the port.
+
+```sh
+tomaccoctl call job.get '{"job_id":"RUN_JOB_ID"}'
+```
+
+Tested with a stand-in `flutter` that prints these events.
+
 ## Kotlin Multiplatform and Compose Multiplatform
 
 `project.inspect` adds the kinds `kotlin-multiplatform` and, with the

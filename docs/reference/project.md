@@ -107,7 +107,7 @@ tomaccoctl call project.execute '{"path":"<path>"}'
 
 **Build & run on device**
 
-Build and deploy to a selected Android/iOS device. Flutter supports interactive hot reload via job.send. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.
+Build and deploy to a selected Android/iOS device. Flutter supports interactive hot reload via job.send. While a Flutter session runs, job.get's result.flutter has the app's VM service URI (vm_service_uri, and vm_service_http_uri for a browser) and, once Flutter reports them, devtools_uri, devtools_app_uri (DevTools opened on this app) and dtd_uri. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.
 
 Annotations: writes, not idempotent, open world.
 
