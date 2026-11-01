@@ -226,9 +226,11 @@ pub fn metro_reload(port: u16) -> Result<u16> {
     })?;
     stream.set_read_timeout(Some(Duration::from_secs(5)))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
-    write!(
-        stream,
-        "POST /reload HTTP/1.1\r\nHost: localhost:{port}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    // One write: `write!` sends each formatted piece on its own, and a
+    // server may read the first piece as the whole request.
+    stream.write_all(
+        format!("POST /reload HTTP/1.1\r\nHost: localhost:{port}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+            .as_bytes(),
     )?;
     let mut head = [0u8; 64];
     let read = stream.read(&mut head)?;
