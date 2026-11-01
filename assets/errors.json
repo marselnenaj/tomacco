@@ -547,6 +547,10 @@
     "cause": "bti must be keep or off.",
     "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
   },
+  "invalid_export": {
+    "cause": "The path is not a screen.export bundle, or its screen.json cannot be read.",
+    "remedy": "Give the directory screen.export wrote, or its screen.json."
+  },
   "invalid_firmware": {
     "cause": "Research components are missing.",
     "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
@@ -1711,9 +1715,17 @@
     "cause": "Android did not negotiate H.264.",
     "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
   },
+  "unsupported_device": {
+    "cause": "A USB iPhone can be read but not tapped through the screen operations.",
+    "remedy": "Use screen.export or device.screenshot to read it; taps need an Android device or the virtual iPhone."
+  },
   "unsupported_engine": {
     "cause": "Guest commands require the Darwin/SPTM restore-shell backend.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "unsupported_export_version": {
+    "cause": "The export was written in a newer format version than this Tomacco reads.",
+    "remedy": "Update Tomacco, or export the screen again."
   },
   "unsupported_firmware": {
     "cause": "No matching board/variant erase identity in the firmware.",

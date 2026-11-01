@@ -55,7 +55,7 @@ Runtime status. read-only, idempotent.
 
 Read actual runtime dimensions, video counters and transport errors.
 
-- `session` string, required (matching ^[a-f0-9]{32}$): ID returned by runtime.start; separate from desktop preview sessions.
+- `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
 
 ```sh
 tomaccoctl call runtime.state '{"session":"<session>"}'
@@ -67,7 +67,7 @@ Disconnect runtime. writes, idempotent.
 
 Stop this display session and its private transport. The device and application remain running.
 
-- `session` string, required (matching ^[a-f0-9]{32}$): ID returned by runtime.start; separate from desktop preview sessions.
+- `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
 
 ```sh
 tomaccoctl call runtime.stop '{"session":"<session>"}'
@@ -79,7 +79,7 @@ Native input. writes.
 
 Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate and gestures committed on touch-up; pinch/shake/hinge are unsupported there. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation.
 
-- `session` string, required (matching ^[a-f0-9]{32}$): ID returned by runtime.start; separate from desktop preview sessions.
+- `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
 - `action` string, required (one of touch, tap, swipe, key, text, fill, rotate, shake, pinch, hinge)
 - `phase` string (one of down, move, up, cancel)
 - `x` number (0 to 1)
@@ -105,7 +105,7 @@ Native capture. writes.
 
 Capture a full-resolution PNG from the actual runtime to a local path.
 
-- `session` string, required (matching ^[a-f0-9]{32}$): ID returned by runtime.start; separate from desktop preview sessions.
+- `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
 - `path` string, required (non-empty)
 
 ```sh
@@ -118,7 +118,7 @@ Native accessibility tree. read-only, idempotent.
 
 Read Android UI XML, the physical iPhone WDA XML hierarchy or the iOS Simulator accessibility tree for agent inspection.
 
-- `session` string, required (matching ^[a-f0-9]{32}$): ID returned by runtime.start; separate from desktop preview sessions.
+- `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
 
 ```sh
 tomaccoctl call runtime.hierarchy '{"session":"<session>"}'

@@ -47,7 +47,7 @@ Debugger status. read-only, idempotent.
 
 Read current stop state, target and active thread.
 
-- `session` string, required (matching [a-f0-9]{32})
+- `session` string, required (matching `[a-f0-9]{32}`)
 
 ```sh
 tomaccoctl call debug.state '{"session":"<session>"}'
@@ -59,7 +59,7 @@ Debugger events. read-only, idempotent.
 
 Read bounded, cursor-based debugger events.
 
-- `session` string, required (matching [a-f0-9]{32})
+- `session` string, required (matching `[a-f0-9]{32}`)
 - `after` integer (0 to 9007199254740991; default 0)
 - `limit` integer (1 to 1000; default 100)
 
@@ -73,7 +73,7 @@ Set breakpoints. writes.
 
 Replace breakpoints in a Java/Kotlin class name (JDWP) or absolute source file (LLDB); unloaded classes remain pending until prepared.
 
-- `session` string, required (matching [a-f0-9]{32})
+- `session` string, required (matching `[a-f0-9]{32}`)
 - `source` string, required (non-empty)
 - `lines` array of integer, required (up to 200 items)
 
@@ -87,7 +87,7 @@ Read threads. read-only, idempotent.
 
 Read target threads and identifiers.
 
-- `session` string, required (matching [a-f0-9]{32})
+- `session` string, required (matching `[a-f0-9]{32}`)
 
 ```sh
 tomaccoctl call debug.threads '{"session":"<session>"}'
@@ -99,7 +99,7 @@ Read call stack. read-only, idempotent.
 
 Read source frames for a stopped thread.
 
-- `session` string, required (matching [a-f0-9]{32})
+- `session` string, required (matching `[a-f0-9]{32}`)
 - `thread_id` string
 - `limit` integer (1 to 100; default 30)
 
@@ -113,7 +113,7 @@ Read variables. read-only, idempotent.
 
 Read frame locals (JDWP), frame scopes (LLDB), or expand an object/scope reference.
 
-- `session` string, required (matching [a-f0-9]{32})
+- `session` string, required (matching `[a-f0-9]{32}`)
 - `thread_id` string
 - `frame_id` string
 - `reference` string
@@ -130,7 +130,7 @@ Evaluate expression. writes.
 
 LLDB evaluates expressions; JDWP resolves a local variable or dotted field path without executing target methods.
 
-- `session` string, required (matching [a-f0-9]{32})
+- `session` string, required (matching `[a-f0-9]{32}`)
 - `expression` string, required (non-empty, up to 10000 characters)
 - `thread_id` string
 - `frame_id` string
@@ -145,7 +145,7 @@ Control debugger. writes.
 
 Pause, continue, step or detach. Disconnect resumes the target without terminating it.
 
-- `session` string, required (matching [a-f0-9]{32})
+- `session` string, required (matching `[a-f0-9]{32}`)
 - `action` string, required (one of pause, continue, next, stepIn, stepOut, disconnect)
 - `thread_id` string
 

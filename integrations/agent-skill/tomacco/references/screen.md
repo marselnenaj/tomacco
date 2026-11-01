@@ -2,7 +2,7 @@
 
 # `screen` operations
 
-6 operations. Generated from `assets/operations.json`; [all references](index.md).
+8 operations. Generated from `assets/operations.json`; [all references](index.md).
 
 ### screen.marks
 
@@ -16,7 +16,7 @@ Take a screenshot with numbered boxes over what can be tapped, and a list that s
 - `max_marks` integer (1 to 200; default 60): Most marks; the first ones in reading order are kept and truncated says so
 - `xml_path` string (non-empty): Also keep the UI hierarchy as UIAutomator XML at this absolute path, for screen.diff
 - `min_confidence` number (0 to 100; default 40): Leave out words Tesseract reads with less confidence than this (0 to 100)
-- `language` string (matching ^[A-Za-z0-9_+]+$; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
+- `language` string (matching `^[A-Za-z0-9_+]+$`; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
 - `region` object {x, y, width, height}: Read only this part of the screen, in pixels. Tesseract reads a screen with both light and dark areas as one and can miss the minority area; a region reads it…
 
 ```sh
@@ -66,7 +66,7 @@ Read the text on a device's screen or in a PNG with Tesseract, for screens that 
 - `index` integer (0 to 10000): Keep only the nth match, top to bottom
 - `fuzzy` boolean (default false): Let a word of five or more letters match with one letter misread
 - `min_confidence` number (0 to 100; default 40): Leave out words Tesseract reads with less confidence than this (0 to 100)
-- `language` string (matching ^[A-Za-z0-9_+]+$; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
+- `language` string (matching `^[A-Za-z0-9_+]+$`; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
 - `region` object {x, y, width, height}: Read only this part of the screen, in pixels. Tesseract reads a screen with both light and dark areas as one and can miss the minority area; a region reads it…
 - `invert` string (one of auto, never, always; default "auto"): auto reads the picture as it is and with its colours inverted, and merges the words (twice the time, finds light text on dark ground); never reads it once…
 - `max_words` integer (1 to 5000; default 400): Most words and lines to list
@@ -79,9 +79,9 @@ tomaccoctl call screen.ocr
 
 Compare two screens. read-only, idempotent.
 
-Describe what changed between two screens in structured form. before and after are both UIAutomator XML files (hierarchies: elements added, removed and changed in text, state or position, or a different screen, from screen.tree or screen.marks with xml_path) or both PNG screenshots (the regions where pixels changed, each with its box, size, share of changed pixels and position, and a summary; status bar regions are marked). Leave after out and give device to compare before with the screen now. With text:true the screenshots are also read with Tesseract and the lines added and removed are listed. Screens of different sizes (a rotation) answer size_changed.
+Describe what changed between two screens in structured form. before and after are both UIAutomator XML files (hierarchies: elements added, removed and changed in text, state or position, or a different screen, from screen.tree or screen.marks with xml_path) or both PNG screenshots (the regions where pixels changed, each with its box, size, share of changed pixels and position, and a summary; status bar regions are marked). Leave after out and give device to compare before with the screen now. With text:true the screenshots are also read with Tesseract and the lines added and removed are listed. Screens of different sizes (a rotation) answer size_changed. before and after can also both be export bundles from screen.export (the directory or its screen.json): the answer then lists the metadata that changed (device, display, theme, locale, app), the element difference and the pixel regions.
 
-- `before` string, required (non-empty): Absolute path of a .xml hierarchy or a .png screenshot
+- `before` string, required (non-empty): Absolute path of a .xml hierarchy, a .png screenshot, or a screen.export bundle (its directory or screen.json)
 - `after` string (non-empty): Absolute path of the second one, the same kind
 - `device` string (non-empty): Android serial from device.list, or virtual-iphone for the running virtual iPhone
 - `tolerance` integer (0 to 255; default 24): A pixel counts as changed when a colour channel differs by more than this (screenshots)
@@ -89,7 +89,7 @@ Describe what changed between two screens in structured form. before and after a
 - `max_regions` integer (1 to 100; default 12): Most regions, or elements per list, to describe
 - `text` boolean (default false): Also list the lines of text added and removed, read with Tesseract (screenshots)
 - `min_confidence` number (0 to 100; default 40): Leave out words Tesseract reads with less confidence than this (0 to 100)
-- `language` string (matching ^[A-Za-z0-9_+]+$; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
+- `language` string (matching `^[A-Za-z0-9_+]+$`; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
 
 ```sh
 tomaccoctl call screen.diff '{"before":"<before>"}'
@@ -113,9 +113,46 @@ Wait until text is on the screen, is gone, or the screen has stopped changing, p
 - `ignore` array of object {x, y, width, height} (up to 100 items): Regions in screen pixels that are not compared, such as the status bar clock
 - `fuzzy` boolean (default false): For text read by OCR: let a word of five or more letters match with one letter misread
 - `min_confidence` number (0 to 100; default 40): Leave out words Tesseract reads with less confidence than this (0 to 100)
-- `language` string (matching ^[A-Za-z0-9_+]+$; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
+- `language` string (matching `^[A-Za-z0-9_+]+$`; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
 - `region` object {x, y, width, height}: Read only this part of the screen, in pixels. Tesseract reads a screen with both light and dark areas as one and can miss the minority area; a region reads it…
 
 ```sh
 tomaccoctl call screen.wait '{"device":"<device>","until":"text"}'
+```
+
+### screen.export
+
+Export a screen. writes.
+
+Write one screen of a device as a bundle other tools can read: screen.png at full resolution and screen.json, a documented, versioned format (format "tomacco.screen", version 1; docs/screen-export.md and assets/schemas/screen-export-v1.schema.json). screen.json has the capture time, the device (platform, id, model, OS version, form factor), the display (pixels, density, size in dp or pt, orientation, rotation), the insets of the status bar, navigation bar and cutout where the platform reports them, the theme (dark or light), the locale, the foreground app, and every element of the screen as a flat list with ids and parent ids: role, class, text, description, resource id, bounds in pixels and in dp or pt, enabled, clickable, focusable, checked and selected, and the mark number screen.marks gives it. On Android the elements are the UI hierarchy. The virtual iPhone and USB iPhones (platform ios) have none, so there the elements are lines of text read off the screenshot with Tesseract (source ocr, state flags null) and hierarchy says unavailable. A field the platform does not report is null, never guessed. The marks are kept for screen.tap as after screen.marks. The directory must be new or empty. The result summarises the export; read screen.json for the elements.
+
+- `device` string, required (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a USB iPhone's UDID with platform ios
+- `directory` string, required (non-empty): Absolute path of the bundle directory to create; it must not exist or must be empty
+- `platform` string (one of android, ios; default "android"): ios for a USB iPhone (screenshot and device info, no hierarchy); virtual-iphone needs no platform
+- `source` string (one of auto, hierarchy, ocr; default "auto"): hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract; auto takes the hierarchy where the platform has one and OCR where…
+- `max_marks` integer (1 to 500; default 200): Most mark numbers; the first ones in reading order are numbered, as screen.marks numbers them, and marks.truncated says if more were left out. Every element is…
+- `marked` boolean (default false): Also write marked.png, the screenshot with the numbered boxes of screen.marks
+- `min_confidence` number (0 to 100; default 40): For OCR: leave out words Tesseract reads with less confidence than this (0 to 100)
+- `language` string (matching `^[A-Za-z0-9_+]+$`; default "eng"): For OCR: Tesseract language code, such as eng or eng+deu; its data must be installed
+
+```sh
+tomaccoctl call screen.export '{"device":"<device>","directory":"<directory>"}'
+```
+
+### screen.export_batch
+
+Export screens of several devices. writes.
+
+Export the screen now of several devices (Android serials and virtual-iphone) in one call, each as a screen.export bundle in NN-device/ inside one directory, with index.json (format "tomacco.screen-index", version 1) listing each screen's device, model, size, orientation, theme, locale, app, element count and files. A device that cannot be read is listed with its error and the others still run; ok is false then. It takes the current screen of each device, not a matrix of languages and themes: android.store_screenshots does that for store screenshots. The directory must be new or empty.
+
+- `devices` array of string, required (1 to 16 items): Android serials from device.list, or virtual-iphone
+- `directory` string, required (non-empty): Absolute path of the directory to create; it must not exist or must be empty
+- `source` string (one of auto, hierarchy, ocr; default "auto"): hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract; auto takes the hierarchy where the platform has one and OCR where…
+- `max_marks` integer (1 to 500; default 200): Most mark numbers; the first ones in reading order are numbered, as screen.marks numbers them, and marks.truncated says if more were left out. Every element is…
+- `marked` boolean (default false): Also write marked.png, the screenshot with the numbered boxes of screen.marks
+- `min_confidence` number (0 to 100; default 40): For OCR: leave out words Tesseract reads with less confidence than this (0 to 100)
+- `language` string (matching `^[A-Za-z0-9_+]+$`; default "eng"): For OCR: Tesseract language code, such as eng or eng+deu; its data must be installed
+
+```sh
+tomaccoctl call screen.export_batch '{"devices":["<device>"],"directory":"<directory>"}'
 ```

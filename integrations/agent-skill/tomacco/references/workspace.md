@@ -22,7 +22,7 @@ Save workspace. writes, idempotent.
 
 Save a named project, target and optional native test scenario without modifying project sources.
 
-- `name` string, required (matching [A-Za-z0-9_-]{1,64})
+- `name` string, required (matching `[A-Za-z0-9_-]{1,64}`)
 - `path` string, required
 - `platform` string (one of android, ios, web, linux; default "android")
 - `device` string (default "")

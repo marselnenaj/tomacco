@@ -17,7 +17,7 @@ description: >
 # Tomacco
 
 Tomacco builds, runs, tests and inspects mobile apps on Linux. Its control plane, `tomaccoctl`,
-offers 248 typed operations. The MCP server, the JSON CLI and the desktop app call the same
+offers 250 typed operations. The MCP server, the JSON CLI and the desktop app call the same
 operations. This file is the router: it says how to reach Tomacco, how to stay safe and where each
 task lives. The operation details are in `references/`, one file per area, read only when needed.
 

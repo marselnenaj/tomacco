@@ -89,14 +89,14 @@ The server also offers three prompts, short recipes a client can show as command
 
 ### A shorter tool list
 
-The full tool list is every operation with its whole schema, 316,174 bytes of `tools/list` response in this
+The full tool list is every operation with its whole schema, 321,785 bytes of `tools/list` response in this
 version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env` of the client's server entry:
 
 | Value | Tools | `tools/list` response |
 | --- | --- | --- |
-| `full` (the default) | One per operation, with every description. | 316,174 bytes |
-| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 156,075 bytes |
-| `grouped` | One per area, such as `android` or `job`: 29 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 33,004 bytes |
+| `full` (the default) | One per operation, with every description. | 321,785 bytes |
+| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 157,922 bytes |
+| `grouped` | One per area, such as `android` or `job`: 29 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 33,148 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
@@ -1009,7 +1009,7 @@ that one screen fixed the baseline. Kover and the `jacoco` plugin are unit-teste
 
 ### Seeing the screen
 
-Six operations help an agent understand what is on a screen instead of guessing coordinates. They work on an Android
+Eight operations help an agent understand what is on a screen instead of guessing coordinates. They work on an Android
 serial and on `virtual-iphone`; a USB iPhone is not covered. On Android they read the UI hierarchy. The virtual iPhone has
 none, only pixels, so there they read the screenshot with Tesseract OCR. Install `tesseract` and its English data for
 that (`capabilities` returns `ocr` with `ready` and `missing`; `TOMACCO_TESSERACT` names another executable). Every
@@ -1035,6 +1035,11 @@ handled by also reading the colour-inverted picture (`invert`, on `auto`).
   text, state or position) or two screenshots (`.png`: regions with box, size, share of changed pixels and position, and
   a note when only the status bar changed); `text:true` also lists lines of text added and removed. Give `device`
   instead of `after` to compare with the screen now.
+- **`screen.export`** writes one screen as a bundle: the screenshot at full resolution and a JSON file with the device,
+  display (pixels and dp or points), insets, theme, locale, foreground app and every element with bounds in pixels and
+  dp, state flags and its `screen.marks` number. Where there is no hierarchy the elements are OCR lines and
+  `hierarchy:"unavailable"` says so. `screen.export_batch` does this for several devices into one directory with an
+  `index.json`, and `screen.diff` accepts two bundles. [Screen export format](screen-export.md) is the field reference.
 - **`screen.wait`** waits for `text` to appear, for `text_gone`, or for the screen to be `stable` (no more than
   `threshold` of the pixels changing for `stable_ms`); a timeout answers `text_timeout` or `screen_unstable` with what
   it saw. The same waits are the `wait_text` and `wait_stable` steps of a `testing.run` scenario.

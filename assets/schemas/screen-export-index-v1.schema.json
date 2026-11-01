@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/marselnenaj/tomacco/blob/main/assets/schemas/screen-export-index-v1.schema.json",
+  "title": "tomacco.screen-index version 1",
+  "description": "index.json of a screen.export_batch directory. Readers ignore fields they do not know.",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "tomacco.screen-index"
+    },
+    "version": {
+      "const": 1
+    },
+    "tomacco_version": {
+      "type": "string"
+    },
+    "captured_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "count": {
+      "type": "integer"
+    },
+    "failed": {
+      "type": "integer"
+    },
+    "screens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "device": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "directory": {
+            "type": "string"
+          },
+          "screen_json": {
+            "type": "string"
+          },
+          "screenshot": {
+            "type": "string"
+          },
+          "platform": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "width_px": {
+            "type": "integer"
+          },
+          "height_px": {
+            "type": "integer"
+          },
+          "orientation": {
+            "type": "string"
+          },
+          "theme": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locale": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "app": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "elements": {
+            "type": "integer"
+          },
+          "elements_source": {
+            "type": "string"
+          },
+          "hierarchy": {
+            "type": "string"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "device",
+          "ok"
+        ],
+        "description": "A device that was exported has the bundle's files and summary; one that failed has error."
+      }
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "captured_at",
+    "count",
+    "failed",
+    "screens"
+  ]
+}

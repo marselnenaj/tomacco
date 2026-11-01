@@ -41,7 +41,7 @@ Atomically save text when if_match equals the current SHA-256; use an empty revi
 - `path` string, required (non-empty)
 - `file` string, required (non-empty)
 - `text` string, required (up to 1048576 characters)
-- `if_match` string, required (matching ([a-f0-9]{64})?)
+- `if_match` string, required (matching `([a-f0-9]{64})?`)
 
 ```sh
 tomaccoctl call files.write '{"path":"<path>","file":"<file>","text":"<text>","if_match":"<if_match>"}'

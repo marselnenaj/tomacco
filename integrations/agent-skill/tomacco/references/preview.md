@@ -22,7 +22,7 @@ Preview status. read-only, idempotent.
 
 Read current device, viewport, page, loading status and rendering engine.
 
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.state
@@ -35,7 +35,7 @@ Open URL. writes, idempotent.
 Navigate the running preview to an HTTP(S) URL or tomacco://demo.
 
 - `url` string, required
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.navigate '{"url":"<url>"}'
@@ -58,7 +58,7 @@ Set profile, orientation, fold state, insets, guides, zoom, the page's color sch
 - `color_scheme` string (one of system, light, dark): prefers-color-scheme the page sees; system follows the desktop
 - `reduced_motion` string (one of system, reduce, no-preference): prefers-reduced-motion the page sees; system follows the desktop
 - `network` object {preset, offline, latency_ms, download_kbps, upload_kbps}: Throttle the page's requests or take it offline, through Chromium's DevTools network emulation. A preset sets every field; fields given with it override the…
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 - `ios_guest` object {detached}: The virtual iOS guest display shown by the desktop for a running interactive guest job.
 - `native` object {platform, apple_target, setup, device, connect, frame, detached, pending_avd, profile_id, solo}
 
@@ -73,7 +73,7 @@ Run JavaScript. writes.
 Evaluate JavaScript in the web page, returning a JSON-compatible result.
 
 - `script` string, required
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.evaluate '{"script":"<script>"}'
@@ -88,7 +88,7 @@ Capture the device or display as a PNG artifact.
 - `path` string, required (non-empty): Absolute local filesystem path
 - `frame` boolean
 - `scale` number (1 to 3)
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 - `window` boolean (default false): Capture the full desktop window including workspace panels
 
 ```sh
@@ -101,7 +101,7 @@ Inspect DOM. read-only, idempotent.
 
 Read page title, text, links, inputs and actionable DOM elements.
 
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.inspect
@@ -113,7 +113,7 @@ Browser console. read-only, idempotent.
 
 Read the last 200 browser console messages.
 
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.console
@@ -128,7 +128,7 @@ Report the current page load's errors as structured results: console errors, unc
 - `reload` boolean (default false): Reload the page and wait until it is ready before reporting
 - `timeout` integer (1 to 60; default 30): Seconds to wait for the reloaded page
 - `wait_for` string (default ""): JavaScript expression that becomes true when application content is ready, after a reload
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.errors
@@ -141,7 +141,7 @@ Click element. writes.
 Click a CSS selector in the preview page.
 
 - `selector` string, required
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.click '{"selector":"<selector>"}'
@@ -155,7 +155,7 @@ Fill an input/textarea and emit input/change events.
 
 - `selector` string, required
 - `text` string, required
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.fill '{"selector":"<selector>","text":"<text>"}'
@@ -167,7 +167,7 @@ Reload page. writes.
 
 Reload the active page.
 
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.reload
@@ -179,7 +179,7 @@ Reload catalog. writes, idempotent.
 
 Refresh the desktop catalogue after import/remove.
 
-- `session` string (matching [A-Za-z0-9_-]{1,40}): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.catalog_reload
@@ -191,7 +191,7 @@ Check layout. read-only, idempotent.
 
 Check overflow of the page and its elements, text under the camera cutout or system bars, accessible names, input labels and target sizes (24 px, and 44 pt on iOS or 48 dp on Android), with a unique selector per finding; returns evidence, not a compliance certification.
 
-- `session` string (matching [A-Za-z0-9_-]{1,40}; default "main"): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`; default "main"): Running preview session name; defaults to main
 
 ```sh
 tomaccoctl call preview.audit
@@ -203,7 +203,7 @@ Wait for rendering. read-only, idempotent.
 
 Wait for document/fonts and Flutter's first frame, optionally a JavaScript readiness predicate.
 
-- `session` string (matching [A-Za-z0-9_-]{1,40}; default "main"): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`; default "main"): Running preview session name; defaults to main
 - `timeout` integer (1 to 60; default 30)
 - `wait_for` string (default ""): JavaScript expression that becomes true when application content is ready
 
@@ -221,7 +221,7 @@ Capture and audit a page across multiple profiles and orientations, saving PNGs,
 - `directory` string, required (non-empty): Absolute local filesystem path
 - `url` string (default "")
 - `orientations` array of string (items one of portrait, landscape; 1 to 2 items)
-- `session` string (matching [A-Za-z0-9_-]{1,40}; default "main"): Running preview session name; defaults to main
+- `session` string (matching `[A-Za-z0-9_-]{1,40}`; default "main"): Running preview session name; defaults to main
 - `wait_for` string (default "")
 - `folded_views` boolean (default true)
 - `contact_sheet` boolean (default true): Also write contact-sheet.png: every capture side by side at one scale, labelled with model and orientation

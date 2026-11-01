@@ -319,7 +319,7 @@ def short_type(spec):
 
 
 def argument_line(key, spec, required):
-    notes = [part.replace("`", "") for part in limits(spec)]
+    notes = [part if part.startswith("matching ") else part.replace("`", "") for part in limits(spec)]
     if "default" in spec:
         notes.append("default " + compact(spec["default"]))
     detail = f" ({'; '.join(notes)})" if notes else ""

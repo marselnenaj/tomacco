@@ -80,7 +80,7 @@ Start virtual iOS USB access. writes.
 
 Connect a live ios.emulator.paravirtual job with usb=true to a private usbmuxd socket. Waits for the owned guest request and actual USB readiness. Identical active requests reuse the job; stopping its parent cancels the bridge. Inspect ios.emulator.report for readiness, USBMUXD_SOCKET_ADDRESS and service failures. No physical devices, pairing, network listeners, restore or signing requests.
 
-- `job_id` string, required (matching ^[a-f0-9]{32}$)
+- `job_id` string, required (matching `^[a-f0-9]{32}$`)
 - `seconds` integer (1 to 3600; default 180)
 
 ```sh
@@ -103,7 +103,7 @@ Run the vphone600/PCC platform directly on Linux as a bounded, exclusive, cancel
 - `guest_control_backend` string (non-empty): Optional local vhost-device-vsock executable. Requires the shared-memory engine patch and owned guest tools built with agent=true; no TCP networking.
 - `boot_manifest` string (non-empty)
 - `system_volume_root_hash` string (non-empty): Original isys IM4P; hands off its exact APFS auth blob and snapshot name without authenticating Apple signatures
-- `pcc_hostname` string (non-empty, up to 63 characters; matching ^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$): Optional local hostname for PCC darwin-init via its NVRAM boot proxy. Requires a normal sealed-system boot. Existing configurations are retained; no security…
+- `pcc_hostname` string (non-empty, up to 63 characters; matching `^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`): Optional local hostname for PCC darwin-init via its NVRAM boot proxy. Requires a normal sealed-system boot. Existing configurations are retained; no security…
 - `sep` string (non-empty)
 - `sep_manifest` string (non-empty)
 - `sep_storage` string (non-empty): Explicit writable virtual storage; changes persist. Never a physical device.
@@ -129,7 +129,7 @@ Run the vphone600/PCC platform directly on Linux as a bounded, exclusive, cancel
 - `interactive` boolean (default false): Attach input devices at boot and enable ios.emulator.control on a private local monitor. Does not imply responsive guest UI.
 - `input_transport` string (one of virtio, usb-hid; default "virtio"): virtio supplies a keyboard and absolute mouse. usb-hid requires interactive=true and supplies a VirtIO keyboard plus USB Home and a single-contact touchscreen.…
 - `display_profile` string (13 to 29 characters): Fixed physical panel: WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM, e.g. 1170x2532@60:65x141. Pixels 64..8192, Hz 1..120, mm 10..2000; physical aspect must match pixels…
-- `device_model` string (matching ^[a-z0-9-]{1,32}$): Describe the virtual iOS device as one of the built-in iPhone models that carry a virtual entry (ios.virtual.status lists them). The launcher applies Apple's…
+- `device_model` string (matching `^[a-z0-9-]{1,32}$`): Describe the virtual iOS device as one of the built-in iPhone models that carry a virtual entry (ios.virtual.status lists them). The launcher applies Apple's…
 - `trace_exceptions` boolean (default false)
 - `trace_storage` boolean (default false): Diagnostic only: trace every VirtIO disk request within the bounded log budget. Normal restores use aggregate QMP statistics.
 - `sep_measure_manifest` boolean (default false)
@@ -147,7 +147,7 @@ Operate running virtual iOS. writes.
 
 Inspect, capture or send input to a live ios.emulator.paravirtual job started with interactive=true. Actions are serialized per guest: one that arrives while another runs waits up to 2.5 s for its turn before ios_control_busy is returned. ios_control_starting means the control monitor is not published yet; ios_control_ended means the emulator has exited while the job is still finishing (hashing its media), so wait for the job instead of cancelling it. Coordinates are normalized from 0 to 1 across the captured display. With input_transport=virtio, click/drag use an absolute mouse. With usb-hid, they use a single touchscreen contact; home sends the HID Consumer Menu usage with emulator-owned release, and status reports actual USB delivery counters. Touch has no hover or multitouch. A persistent client (tomaccoctl mcp) can stream a live contact instead: touch_down presses at x/y and holds the guest's control lane until touch_up, touch_move moves the contact (the same point again only keeps it alive), and touch_up lifts it, at x/y when given. Other control actions wait for that lane meanwhile; file frames do not. A contact without any event for 5 s is lifted, and the client's end lifts whatever it still holds. A one-shot call refuses touch_down with ios_touch_lane_required; touch_up is accepted anywhere and always sends a release. A drag lifts at its end point at once, which a scroll view reads as a fling; with hold_ms it first rests there that long, so the content stops where the contact did. power_button sends the native timed 100 ms GPIO side-button pulse only on the tomacco-vphone machine; it can wake or lock the screen, so acknowledgement never establishes the resulting screen state. key accepts QEMU key names. Input acknowledgement is not proof of a guest UI response; inspect a subsequent screenshot. Screenshots stay in the owned job directory. frame returns an actual PNG data_url (up to 16 MiB) and deletes its temporary capture on success or failure; it is suitable for bounded live preview polling. metrics reads actual QMP CPU state/topology, cumulative block-device I/O counters and TCG cache statistics without pausing or resetting the guest. Host sampling timestamps bound the sequential observations. Unknown TCG fields stay null, unavailable monitor statistics retain their error, and the original text is preserved. Counters and guest-clock lag are not application FPS or CPU utilization. stop requests QMP exit so the durable job can finalize media hashes. With guest control enabled it reserves the framework lane and requires a confirmed idle native worker; pending or unknown work prevents stopping. An acknowledgement does not establish guest OS shutdown or completed storage verification. Follow ios.emulator.report until the job ends; an unconfirmed stop is not replayed automatically. If the emulator cannot be told to exit, the stop record is rewritten without the flush confirmation (guest_storage_flushed false, quit_acknowledged false); a request the client cancels leaves no record and does not stop the emulator. trust_cache_update stops the guest's CPUs, replaces the boot's trust-cache module in guest RAM with the file at path and lets them go on; only for a machine built with vphone-trust-cache-update, and ios.virtual.deploy is the way to use it. text types on the USB keyboard, into what has the focus; a key sent before the field has it is lost, so look at a frame first. iOS reads the keys with the layout of the guest's language: layout follows it unless named.
 
-- `job_id` string, required (matching ^[0-9a-f]{32}$)
+- `job_id` string, required (matching `^[0-9a-f]{32}$`)
 - `action` string (one of status, metrics, stop, screenshot, frame, home, power_button, key, move, click, drag, touch_down, touch_move, touch_up, trust_cache_update, text; default "status")
 - `transport` string (one of inline, file; default "inline"): Only for frame. inline returns a PNG data_url. file writes an uncompressed PPM into the user's private, memory-backed runtime directory and returns its path…
 - `keys` array of string (1 to 8 items)
@@ -288,11 +288,11 @@ Control native iOS guest programs. writes.
 
 Call the owned guest service through the active job's private virtio-vsock channel. Requires build_guest_tools agent=true and paravirtual guest_control_backend. One framework request and one status, service-log or cancel request may run at once; nothing connects from outside. Framework requests return request_id: ios.emulator.guest_result follows the latest receipt after a timeout without replaying the request. A timed-out mutation may still execute in iOS and is never replayed automatically. status reports the current worker and, as *_supported flags, what these guest tools offer. Acceptance never verifies a visible scene, and a process or crash observation never proves a process lifetime. Apps: inspect lists LaunchServices inventory; lookup finds a bundle; install takes a guest .app or .ipa through MobileInstallation (an IPA needs bundle_id) with request-correlated progress; register and open start an app through the original FrontBoard service, keeping native errors and the app's PID; cancel stops the current worker. receive_bundle, policy_add and debug_server are the guest side of ios.virtual.deploy and ios.virtual.debug. Logs: logs reads bounded owned logs by name, among them development (signing setup and verifier), quiet (tomacco-quiet: services unloaded and its locationd guard), battery, debugserver and buffer_texture (the native Metal buffer-texture observer), and an application's log through its container. Setup: setup reads SetupAssistant and MobileActivation state. setup_finish, on an activated virtual device, backs up and writes the three setup values through cfprefsd and reads them back; it returns restart_required. restart_ui restarts the interface. flush flushes storage. effects reduced or original sets Reduce Transparency and Reduce Motion through the system's setters, which turns the glass materials the renderer cannot draw correctly into plain surfaces. watchdog_scale original or a factor 2..30 sets FrontBoard's FBLaunchWatchdogScale, applied after restart_ui or a reboot; the watchdogs stay active. icon_cache clear moves each IconsCache store aside, deleting nothing, and restarts SpringBoard so that every icon is rendered again. time_zone Area/City sets the system zone through tzlink and reads previous_link and link back. auto_lock never or original sets Settings' Auto-Lock through ManagedConfiguration, or SBDontLockEver when profiled does not take it, and reads it back. Setting a zone or Auto-Lock again is harmless, so a lost reply is automatic_retry_safe; a start sends both itself. State: screen_state reads SpringBoard's screen-lock, passcode and backlight state; a failed RPC stays unknown, never unlocked. display_state reads the MobileGestalt scale and display tuple against the chosen display-scale. display_refresh asks the system helper to rebuild its display cache after checking the scale locally, and a new display_state must confirm it before a UI restart. foreground_state reads SpringBoard's primary-layout application. graphics_state reads the Metal default device and a process-name snapshot without submitting GPU work. surface_state reads IOSurface metadata for up to four comma-separated decimal IDs; no pixels are accessed. network_state lists the interfaces' IPv4 addresses and tries one name lookup. hardware_probe <IOKit class> counts that class's services. gestalt <key> reads one MobileGestalt answer. developer_mode status or enable reads or arms Developer Mode, effective at the next boot. keyboard_layout reports the guest's language, by whose layout iOS reads a hardware keyboard. Diagnostics: crash_reports <report name prefix> reads the matching .ips and .crash files of the CrashReporter directories, up to 512 KiB as base64 and with crash_report_identities parsed from the reports; it never removes reports. persistence_probe takes create:<64 hex digits>, read:<same challenge>, classes:<challenge> (one file per protection class A..D) or inode:<digits> (a path and protection class for a boot log's failure). A clean-reboot result needs two separately bound boots with the same challenge.
 
-- `job_id` string, required (matching ^[a-f0-9]{32}$)
+- `job_id` string, required (matching `^[a-f0-9]{32}$`)
 - `operation` string, required (one of inspect, status, lookup, cancel, install, register, open, logs, setup, setup_finish, restart_ui, flush, effects, screen_state, display_state, foreground_state, display_refresh, graphics_state, surface_state, crash_reports, persistence_probe, watchdog_scale, icon_cache, time_zone, auto_lock, receive_bundle, policy_add, debug_server, network_state, hardware_probe, gestalt, developer_mode, keyboard_layout)
 - `timeout_seconds` integer (1 to 120; default 30): Absolute response deadline, including partial reads. A timed-out install/register/open/setup_finish/display_refresh may still execute in iOS. Use…
 - `argument` string (non-empty, up to 4096 characters)
-- `bundle_id` string (non-empty, up to 255 characters; matching ^[A-Za-z0-9._-]+$): Installation only. Required for guest IPA archives. Optional for .app bundles, where it must match Info.plist. iOS validates the package identity.
+- `bundle_id` string (non-empty, up to 255 characters; matching `^[A-Za-z0-9._-]+$`): Installation only. Required for guest IPA archives. Optional for .app bundles, where it must match Info.plist. iOS validates the package identity.
 
 ```sh
 tomaccoctl call ios.emulator.guest '{"job_id":"<job_id>","operation":"inspect"}'
@@ -304,8 +304,8 @@ Fetch result of an iOS guest job. read-only, idempotent.
 
 Observe a framework request by its request_id, including after the original host timeout: install, register, open, lookup, inspect and application logs. Receipts up to 64 KiB are kept. Reads status and the latest atomic receipt from the live guest within one deadline and returns running, completed (with the actual response) or unknown. ready_for_next_request requires a completed receipt and an idle native worker. An absent or overwritten receipt, or a cancelled or timed-out worker, never establishes that a mutation failed. It does not replay the request, cancel a worker or verify a visible scene. The status read carries request-correlated progress (phase, sequence, optional native_status and percent_complete); progress never overrides a receipt. Recovered crash_reports receipts include crash_report_identities.
 
-- `job_id` string, required (matching ^[a-f0-9]{32}$)
-- `request_id` string, required (matching ^[a-f0-9]{32}$): The exact ID returned by the original guest framework request or its uncertain-outcome error.
+- `job_id` string, required (matching `^[a-f0-9]{32}$`)
+- `request_id` string, required (matching `^[a-f0-9]{32}$`): The exact ID returned by the original guest framework request or its uncertain-outcome error.
 - `timeout_seconds` integer (1 to 120; default 30): One absolute deadline covering both read-only guest requests.
 
 ```sh
@@ -364,7 +364,7 @@ Verify the matching T8140 BuildManifest digest, unwrap local PMP firmware and pr
 - `firmware` string, required (non-empty): Extracted local firmware tree containing the PMP IM4P
 - `manifest` string, required (non-empty): Matching BuildManifest.plist
 - `output` string, required (non-empty): New prepared bundle directory
-- `board` string (matching ^[a-z0-9]{1,32}$; default "d47ap")
+- `board` string (matching `^[a-z0-9]{1,32}$`; default "d47ap")
 
 ```sh
 tomaccoctl call ios.emulator.prepare_pmp '{"firmware":"<firmware>","manifest":"<manifest>","output":"<output>"}'
@@ -379,10 +379,10 @@ Recheck PMP container, payload, executable and source manifest. Inspect isolated
 - `engine` string, required (non-empty): QEMU executable with the PMP machine and strict bus/system-register fault tracing
 - `firmware` string, required (non-empty): Verified bundle from ios.emulator.prepare_pmp
 - `controller` string (one of none, asc-v6; default "none"): Experimental ASC/KIC model with architectural ARM timers and explicit laboratory policies; no independent KIC timer banks, measured silicon behavior or power…
-- `stop_at` string (matching ^(\|0x[0-9a-fA-F]{1,16})$; default ""): Optional ARM64 instruction breakpoint inside the verified executable image. Capture and stop the job without changing guest code.
+- `stop_at` string (matching `^(\|0x[0-9a-fA-F]{1,16})$`; default ""): Optional ARM64 instruction breakpoint inside the verified executable image. Capture and stop the job without changing guest code.
 - `capture_ram` boolean (default false): Save the isolated 2 MiB RAM after stopping, with exact physical base and SHA-256 in the report.
-- `cpu_midr` string (matching ^0x[0-9a-fA-F]{1,8}$; default "0x610f0000"): Explicit 32-bit laboratory MIDR. Selects firmware CPU setup; does not implement the named silicon or change QEMU max ISA features.
-- `cpu_affinity` string (matching ^0x[0-9a-fA-F]{1,10}$; default "0x0"): MPIDR affinity fields only (mask 0xff00ffffff). A single CPU; topology bits may select a different firmware path. Not a measured PMP identity.
+- `cpu_midr` string (matching `^0x[0-9a-fA-F]{1,8}$`; default "0x610f0000"): Explicit 32-bit laboratory MIDR. Selects firmware CPU setup; does not implement the named silicon or change QEMU max ISA features.
+- `cpu_affinity` string (matching `^0x[0-9a-fA-F]{1,10}$`; default "0x0"): MPIDR affinity fields only (mask 0xff00ffffff). A single CPU; topology bits may select a different firmware path. Not a measured PMP identity.
 
 ```sh
 tomaccoctl call ios.emulator.inspect_pmp '{"engine":"<engine>","firmware":"<firmware>"}'
@@ -398,10 +398,10 @@ Execute original PMP ARM64 instructions in isolated memory, optionally with the 
 - `firmware` string, required (non-empty): Verified bundle from ios.emulator.prepare_pmp
 - `seconds` integer (1 to 60; default 10)
 - `controller` string (one of none, asc-v6; default "none"): Experimental ASC/KIC model with architectural ARM timers and explicit laboratory policies; no independent KIC timer banks, measured silicon behavior or power…
-- `stop_at` string (matching ^(\|0x[0-9a-fA-F]{1,16})$; default ""): Optional ARM64 instruction breakpoint inside the verified executable image. Capture and stop the job without changing guest code.
+- `stop_at` string (matching `^(\|0x[0-9a-fA-F]{1,16})$`; default ""): Optional ARM64 instruction breakpoint inside the verified executable image. Capture and stop the job without changing guest code.
 - `capture_ram` boolean (default false): Save the isolated 2 MiB RAM after stopping, with exact physical base and SHA-256 in the report.
-- `cpu_midr` string (matching ^0x[0-9a-fA-F]{1,8}$; default "0x610f0000"): Explicit 32-bit laboratory MIDR. Selects firmware CPU setup; does not implement the named silicon or change QEMU max ISA features.
-- `cpu_affinity` string (matching ^0x[0-9a-fA-F]{1,10}$; default "0x0"): MPIDR affinity fields only (mask 0xff00ffffff). A single CPU; topology bits may select a different firmware path. Not a measured PMP identity.
+- `cpu_midr` string (matching `^0x[0-9a-fA-F]{1,8}$`; default "0x610f0000"): Explicit 32-bit laboratory MIDR. Selects firmware CPU setup; does not implement the named silicon or change QEMU max ISA features.
+- `cpu_affinity` string (matching `^0x[0-9a-fA-F]{1,10}$`; default "0x0"): MPIDR affinity fields only (mask 0xff00ffffff). A single CPU; topology bits may select a different firmware path. Not a measured PMP identity.
 
 ```sh
 tomaccoctl call ios.emulator.pmp '{"engine":"<engine>","firmware":"<firmware>"}'
@@ -429,7 +429,7 @@ Read iOS test run. read-only, idempotent.
 
 Read an owned iOS job report and its actual diagnostic/frame artifacts. A missing report while queued is pending, not success. For an ios.emulator.paravirtual job the reply also carries stop: the record written when the guest was stopped through ios.emulator.control (whether the native worker was idle and whether the guest confirmed flushing its storage), or null if it ended any other way. After a stop whose exit request failed, the record carries guest_storage_flushed false and quit_acknowledged false.
 
-- `job_id` string, required (matching ^[a-f0-9]{32}$)
+- `job_id` string, required (matching `^[a-f0-9]{32}$`)
 
 ```sh
 tomaccoctl call ios.emulator.report '{"job_id":"<job_id>"}'
@@ -441,8 +441,8 @@ Read PMP memory. read-only, idempotent.
 
 Read a bounded physical-memory range from a completed PMP RAM capture. Verify its size and SHA-256 before returning exact hex, ASCII and little-endian words; never reads arbitrary host files or a live guest.
 
-- `job_id` string, required (matching ^[a-f0-9]{32}$)
-- `address` string, required (matching ^0x[0-9a-fA-F]{1,16}$): Physical address inside PMP RAM [0x1000000, 0x1200000)
+- `job_id` string, required (matching `^[a-f0-9]{32}$`)
+- `address` string, required (matching `^0x[0-9a-fA-F]{1,16}$`): Physical address inside PMP RAM [0x1000000, 0x1200000)
 - `length` integer (1 to 4096; default 256)
 
 ```sh

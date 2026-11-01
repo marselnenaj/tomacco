@@ -10,7 +10,7 @@ Read a saved result. read-only, idempotent.
 
 Read a piece of a result too large for an MCP answer, which the result_too_large error saved under a result_id. Pass next_offset back as offset until eof is true; the pieces joined are the result's JSON. Saved results are kept for a week.
 
-- `result_id` string, required (matching [a-f0-9]{32}): result_id from the result_too_large error
+- `result_id` string, required (matching `[a-f0-9]{32}`): result_id from the result_too_large error
 - `offset` integer (at least 0; default 0): Byte offset to read from
 - `limit` integer (1024 to 1048576; default 262144): Most bytes to return
 

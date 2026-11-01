@@ -1,7 +1,7 @@
 # Tomacco documentation
 
 Tomacco is a mobile development workbench for Linux. A Qt desktop and a command-line
-tool, `tomaccoctl`, share the same 248 typed operations, so a person and a coding agent
+tool, `tomaccoctl`, share the same 250 typed operations, so a person and a coding agent
 can do the same things. These guides describe version 1.2.1; the
 [release notes](RELEASE_NOTES.md) say what is new in it and what was not tested.
 
@@ -13,6 +13,7 @@ can do the same things. These guides describe version 1.2.1; the
 | Go from an install to a Compose app on the emulator, with a screenshot and a UI test | [Your first Android app](tutorial-android.md) |
 | Have my coding agent set everything up | [Agent setup](agent-setup.md) |
 | Connect a coding agent over MCP or the JSON CLI | [Agents](agents.md) |
+| Hand a device screen, with its geometry and element tree, to a design tool, an agent or a comparison | [Screen export format](screen-export.md) |
 | Run tomaccoctl headless in Docker, for an agent, a server or CI | [Container image](container.md) |
 | Know what ran on which Linux distribution, and use Tomacco on SteamOS, NixOS, Silverblue or a small computer | [Linux distributions and hardware](linux-hosts.md) |
 | Copy a short sequence: build and run, screenshot and UI test, iOS build, virtual iPhone deploy | [Recipes](recipes.md) |

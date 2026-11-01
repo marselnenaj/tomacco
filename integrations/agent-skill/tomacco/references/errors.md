@@ -2,7 +2,7 @@
 
 # Error codes
 
-480 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
+483 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
 
 | Code | Meaning | Remedy |
 | --- | --- | --- |
@@ -143,6 +143,7 @@
 | `invalid_endpoint` | Unsupported store endpoint. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_engine` | Engine is not executable. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_engine_option` | bti must be keep or off. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
+| `invalid_export` | The path is not a screen.export bundle, or its screen.json cannot be read. | Give the directory screen.export wrote, or its screen.json. |
 | `invalid_firmware` | Research components are missing. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_glob` | An argument, file or response is not in the form Tomacco accepts. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_guest_network` | guest_network must be off or nat. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
@@ -434,7 +435,9 @@
 | `unsupported_boot_display` | This engine does not provide the guest boot framebuffer; rebuild the SPTM engine with Tomacco's patch. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `unsupported_boot_media` | This engine cannot register the RAM image with IOMedia; rebuild the SPTM engine with Tomacco's patch. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `unsupported_codec` | Android did not negotiate H.264. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
+| `unsupported_device` | A USB iPhone can be read but not tapped through the screen operations. | Use screen.export or device.screenshot to read it; taps need an Android device or the virtual iPhone. |
 | `unsupported_engine` | Guest commands require the Darwin/SPTM restore-shell backend. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
+| `unsupported_export_version` | The export was written in a newer format version than this Tomacco reads. | Update Tomacco, or export the screen again. |
 | `unsupported_firmware` | No matching board/variant erase identity in the firmware. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `unsupported_image` | The input is of a kind this operation does not support. | Pass one of the supported kinds the message or the operation's schema names. |
 | `unsupported_input` | This action is not supported by the Android runtime. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |

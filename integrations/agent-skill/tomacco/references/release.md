@@ -11,7 +11,7 @@ Create signing key. writes.
 Create a new RSA-4096 PKCS12 signing identity. Existing files are never overwritten.
 
 - `password_file` string, required: Owner-only file containing one password; never stored in job arguments
-- `alias` string, required (matching [A-Za-z0-9_.-]{1,100})
+- `alias` string, required (matching `[A-Za-z0-9_.-]{1,100}`)
 - `output` string, required
 - `distinguished_name` string (non-empty, up to 500 characters; default "CN=Tomacco Development")
 - `validity_days` integer (365 to 36500; default 10000)
@@ -27,7 +27,7 @@ Sign Android release. writes.
 Align APKs for 16 KiB pages, sign APK/AAB, verify signatures, then atomically publish a new artifact.
 
 - `password_file` string, required: Owner-only file containing one password; never stored in job arguments
-- `alias` string, required (matching [A-Za-z0-9_.-]{1,100})
+- `alias` string, required (matching `[A-Za-z0-9_.-]{1,100}`)
 - `keystore` string, required
 - `path` string, required
 - `output` string, required
@@ -91,7 +91,7 @@ Turn one section of a Markdown changelog into Google Play "What's new" text per 
 
 - `changelog` string, required (non-empty): Absolute path of the Markdown changelog for language
 - `section` string (default ""): Heading of the section to use, such as 1.2.0 or Unreleased, matched without brackets, a leading v or what follows a space; empty takes the first section
-- `language` string (matching [A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}; default "en-US"): Google Play language code, such as en-US, de-DE or es-419
+- `language` string (matching `[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}`; default "en-US"): Google Play language code, such as en-US, de-DE or es-419
 - `translations` array of object {language, changelog} (up to 80 items): Changelogs of other languages with the same section
 - `directory` string (default ""): Absolute path to write the files under: fastlane's metadata/android directory, Gradle Play Publisher's src/main/play, or a whatsnew directory
 - `layout` string (one of fastlane, play-publisher, whatsnew; default "fastlane"): fastlane: LANGUAGE/changelogs/default.txt, or BUILD.txt with build_number; play-publisher: release-notes/LANGUAGE/default.txt; whatsnew: whatsnew-LANGUAGE
