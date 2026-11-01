@@ -4,6 +4,27 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Added
+
+- ARM64 Linux in the releases. `tools/make_release.py --arm-host HOST` builds the regular
+  `tomacco-VERSION-Linux-aarch64.tar.gz` on an ARM build host over SSH from the release's own source tarball, which it
+  checks by SHA-256 on that host. It builds with `SOURCE_DATE_EPOCH`, runs the C++ tests there, then fetches the package,
+  checks, signs and describes it (SBOM), and lists it in the provenance and the draft like the x86_64 package.
+  `--arm-portable` adds the portable `tomacco-VERSION-Linux-aarch64-portable.tar.gz`.
+- `tools/build_portable.py build --arch aarch64` builds the aarch64 portable package for `linux/arm64` from
+  `packaging/portable/Dockerfile.aarch64`, with Qt 6.12.0's official aarch64 binaries, including Qt WebEngine, and the same
+  LGPL-only FFmpeg. Qt's aarch64 binaries are built on Ubuntu 24.04 and need glibc 2.38, so this package runs on Ubuntu
+  24.04, Debian 13, Fedora 40 and newer, but not on Debian 12 or Ubuntu 22.04. `verify` checks it in `linux/arm64`
+  containers.
+
+### Changed
+
+- The updater takes the portable package when a release has no regular package for this computer, and on aarch64 away
+  from Arch Linux ARM it prefers the portable package, as the installer does. A portable installation still takes only
+  the portable package.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
