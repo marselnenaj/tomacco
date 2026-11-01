@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 222 operations.
+`tomaccoctl` now has one typed API of 223 operations.
 
 ### Added
 
@@ -166,6 +166,10 @@ operations and their JSON results.
     what it last showed and when. A stalled phone gets `recovery`, the typed calls to make in order (`restart_ui`, then
     `ios.virtual.stop`); the status itself never acts on the phone. `ios.virtual.configure {"stall_seconds"}` sets the
     limit. Unit-tested only, not tried on a hung live phone.
+  - `ios.virtual.unlock` leaves the running phone's lock screen the way the start does, as a short job, and never
+    enters a passcode. `ios.virtual.deploy` unlocks first before it opens the app, and `testing.run` on
+    `virtual-iphone` before its first step, failing with the new `ios_virtual_locked` when it cannot. Tested with
+    scripted guest replies, not yet on a live phone.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
 

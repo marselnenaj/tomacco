@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-57 operations. Generated from `assets/operations.json`; [all areas](README.md).
+58 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -987,6 +987,20 @@ Takes no arguments.
 
 ```sh
 tomaccoctl call ios.virtual.stop
+```
+
+### ios.virtual.unlock
+
+**Unlock virtual iOS device**
+
+Leave the running virtual iOS device's lock screen the way a start does, as one short job: observe the native screen state, then wake the display and press Home (or swipe up on a model without a Home button) with the start's pacing until a fresh observation says it is unlocked. The job's screen is unlocked, or not-checked when the guest tools cannot report the screen (nothing is pressed then). A passcode is never entered: a lock screen with one, or one that stays locked for 10 minutes, fails the job. ios.virtual.deploy (before it opens the app) and testing.run on the virtual-iphone device unlock the same way first; testing.run fails with ios_virtual_locked when it cannot. Refused with ios_virtual_not_running when the phone is off and ios_virtual_busy during a start or stop.
+
+Annotations: writes, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call ios.virtual.unlock
 ```
 
 ### ios.virtual.cleanup

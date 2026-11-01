@@ -218,6 +218,7 @@ var titles = {
     "ios.virtual.apps": QT_TRANSLATE_NOOP("Operations", "Apps of virtual iOS device"),
     "ios.virtual.start": QT_TRANSLATE_NOOP("Operations", "Start virtual iOS device"),
     "ios.virtual.stop": QT_TRANSLATE_NOOP("Operations", "Stop virtual iOS device"),
+    "ios.virtual.unlock": QT_TRANSLATE_NOOP("Operations", "Unlock virtual iOS device"),
     "ios.virtual.cleanup": QT_TRANSLATE_NOOP("Operations", "Clean up virtual iOS device disk copies"),
     "ios.virtual.states": QT_TRANSLATE_NOOP("Operations", "Saved states of virtual iOS device"),
     "ios.virtual.state_save": QT_TRANSLATE_NOOP("Operations", "Save state of virtual iOS device"),

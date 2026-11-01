@@ -181,6 +181,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "ios.virtual.configure" => crate::ios_emulator::virtual_phone::configure(&a),
         "ios.virtual.start" => crate::ios_emulator::virtual_phone::start(&a),
         "ios.virtual.stop" => crate::ios_emulator::virtual_phone::stop(&a),
+        "ios.virtual.unlock" => crate::ios_emulator::virtual_phone::unlock(&a),
         name if name.starts_with("update.") => update::handle(name, &a),
         "ios.virtual.deploy" => crate::ios_emulator::virtual_phone::deploy(&a),
         "ios.virtual.debug" => crate::ios_emulator::virtual_phone::debug(&a),

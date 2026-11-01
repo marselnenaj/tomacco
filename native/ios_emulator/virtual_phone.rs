@@ -1346,7 +1346,7 @@ fn submit_with(
     arguments: Vec<String>,
 ) -> Result {
     let directory = directory()?;
-    records(&directory)?;
+    let (_, state) = records(&directory)?;
     let key = json!({"operation":operation,"arguments":{"directory":directory,
         "open_app":a["open_app"].as_bool().unwrap_or(true),"extra":arguments}});
     if let Some(mut active) = jobs::active_exclusive(EXCLUSIVE)? {
@@ -1381,6 +1381,10 @@ fn submit_with(
             // Such a device has no Home button; it is unlocked with a swipe.
             argv.extend(["--model".into(), model, "--unlock".into(), "swipe".into()]);
         }
+    } else if action != "stop" && !s(&state, "model").is_empty() {
+        // A deploy or an unlock leaves the lock screen of the running phone,
+        // which is unlocked as the model it was started as.
+        argv.extend(["--unlock".into(), "swipe".into()]);
     }
     jobs::submit(
         label,
@@ -1585,6 +1589,100 @@ fn guest_is_running(state: &Value) -> bool {
     state["guest_job"].as_str().is_some_and(|id| {
         jobs::get(id).is_ok_and(|job| !jobs::TERMINAL.contains(&s(&job, "state")))
     })
+}
+
+/// Leaves the running phone's lock screen as a start does (`Phone.ensure_unlocked`
+/// in the script), as a short job: `screen` in its result is `unlocked`, or
+/// `not-checked` when the guest tools cannot report the screen. A passcode is
+/// never entered.
+pub fn unlock(a: &Value) -> Result {
+    let (_, state) = records(&directory()?)?;
+    if !guest_is_running(&state) {
+        return Err(Error::new(
+            "ios_virtual_not_running",
+            "The phone is not running; start it with ios.virtual.start",
+        ));
+    }
+    submit(
+        "ios.virtual.unlock",
+        "unlock",
+        "Unlock virtual iOS device",
+        900,
+        a,
+    )
+}
+
+/// What a screen_state reply says about the lock screen.
+#[derive(Debug, PartialEq)]
+pub(crate) enum LockScreen {
+    Unlocked,
+    /// Locked without a passcode: the unlock path can leave it.
+    Locked,
+    Passcode,
+    /// The guest could not say (older guest tools, a busy or slow guest).
+    Unknown(String),
+}
+
+pub(crate) fn lock_screen(reply: &Result) -> LockScreen {
+    let response = match reply {
+        Ok(reply) => &reply["response"],
+        Err(error) => return LockScreen::Unknown(error.code.clone()),
+    };
+    if response["ok"] != true || response["screen_state_known"] != true {
+        return LockScreen::Unknown(
+            response["error"]
+                .as_str()
+                .unwrap_or("screen_state_unknown")
+                .to_string(),
+        );
+    }
+    match (
+        response["screen_locked"].as_bool(),
+        response["passcode_enabled"].as_bool(),
+    ) {
+        (Some(false), _) => LockScreen::Unlocked,
+        (Some(true), Some(false)) => LockScreen::Locked,
+        (Some(true), Some(true)) => LockScreen::Passcode,
+        _ => LockScreen::Unknown("screen_state_unknown".into()),
+    }
+}
+
+fn locked(message: &str, details: Value) -> Error {
+    Error::new("ios_virtual_locked", message)
+        .remedy("Unlock the phone in its window (Home, or a swipe up on a model without one), then try again")
+        .details(details)
+}
+
+/// Makes sure the running phone is past its lock screen before something
+/// that needs the screen: asks the guest once, and when it is locked without
+/// a passcode runs the unlock job and waits for it. A guest that cannot say
+/// is not held up (`not-checked`); a passcode or a screen that stays locked is
+/// `ios_virtual_locked`.
+pub(crate) fn ensure_unlocked() -> Result {
+    let (job, _) = running_guest()?;
+    let reply =
+        guest_control::call(&json!({"job_id":job,"operation":"screen_state","timeout_seconds":30}));
+    match lock_screen(&reply) {
+        LockScreen::Unlocked => Ok(json!({"screen":"unlocked","unlock_job":null})),
+        LockScreen::Unknown(reason) => Ok(json!({"screen":"not-checked","reason":reason})),
+        LockScreen::Passcode => Err(locked(
+            "The virtual iPhone's lock screen has a passcode, which Tomacco does not enter",
+            json!({"job_id":job}),
+        )),
+        LockScreen::Locked => {
+            let submitted = unlock(&json!({}))?;
+            let id = s(&submitted, "id").to_string();
+            let ended = jobs::wait(&id, 900)?;
+            if s(&ended, "state") == "succeeded" {
+                Ok(json!({"screen":"unlocked","unlock_job":id}))
+            } else {
+                Err(locked(
+                    "The virtual iPhone stayed on its lock screen",
+                    json!({"job_id":job,"unlock_job":ended}),
+                ))
+            }
+        }
+    }
 }
 
 pub fn stop(a: &Value) -> Result {
@@ -1970,6 +2068,54 @@ mod process_observation_tests {
             state["launch_receipt"]["job_id"] = id;
             assert!(application_process_observation(&profile, &state, true).is_null());
         }
+    }
+}
+
+#[cfg(test)]
+mod lock_screen_tests {
+    use super::*;
+
+    fn reply(response: Value) -> Result {
+        Ok(json!({"job_id":"0".repeat(32),"request_id":"a".repeat(32),"response":response}))
+    }
+
+    #[test]
+    fn a_screen_state_reply_decides_whether_to_unlock() {
+        let known = |locked: bool, passcode: bool| {
+            reply(
+                json!({"ok":true,"operation":"screen_state","screen_state_known":true,
+                "screen_locked":locked,"passcode_enabled":passcode}),
+            )
+        };
+        assert_eq!(lock_screen(&known(false, true)), LockScreen::Unlocked);
+        assert_eq!(lock_screen(&known(true, false)), LockScreen::Locked);
+        assert_eq!(lock_screen(&known(true, true)), LockScreen::Passcode);
+        // Older guest tools, an unknown screen, a busy or silent guest: not judged.
+        assert_eq!(
+            lock_screen(&reply(
+                json!({"ok":false,"error":"screen_query_api_unavailable"})
+            )),
+            LockScreen::Unknown("screen_query_api_unavailable".into())
+        );
+        assert_eq!(
+            lock_screen(&reply(
+                json!({"ok":true,"screen_state_known":false,"screen_locked":true})
+            )),
+            LockScreen::Unknown("screen_state_unknown".into())
+        );
+        assert_eq!(
+            lock_screen(&reply(
+                json!({"ok":true,"screen_state_known":true,"screen_locked":true})
+            )),
+            LockScreen::Unknown("screen_state_unknown".into())
+        );
+        assert_eq!(
+            lock_screen(&Err(Error::new("ios_guest_timeout", "late"))),
+            LockScreen::Unknown("ios_guest_timeout".into())
+        );
+        let error = locked("stayed locked", json!({}));
+        assert_eq!(error.code, "ios_virtual_locked");
+        assert!(error.remedy.contains("Unlock the phone in its window"));
     }
 }
 

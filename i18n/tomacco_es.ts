@@ -4354,6 +4354,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Detener dispositivo iOS virtual</translation>
     </message>
     <message>
+        <source>Unlock virtual iOS device</source>
+        <translation>Desbloquear dispositivo iOS virtual</translation>
+    </message>
+    <message>
         <source>Install app on running virtual iOS device</source>
         <translation>Instalar app en el dispositivo iOS virtual en ejecución</translation>
     </message>

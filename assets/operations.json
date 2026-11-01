@@ -10010,6 +10010,23 @@
     }
   },
   {
+    "name": "ios.virtual.unlock",
+    "title": "Unlock virtual iOS device",
+    "description": "Leave the running virtual iOS device's lock screen the way a start does, as one short job: observe the native screen state, then wake the display and press Home (or swipe up on a model without a Home button) with the start's pacing until a fresh observation says it is unlocked. The job's screen is unlocked, or not-checked when the guest tools cannot report the screen (nothing is pressed then). A passcode is never entered: a lock screen with one, or one that stays locked for 10 minutes, fails the job. ios.virtual.deploy (before it opens the app) and testing.run on the virtual-iphone device unlock the same way first; testing.run fails with ios_virtual_locked when it cannot. Refused with ios_virtual_not_running when the phone is off and ios_virtual_busy during a start or stop.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.virtual.cleanup",
     "title": "Clean up virtual iOS device disk copies",
     "description": "Delete older disk copies of the configured virtual iOS device from the profile's installs directory, or with dry_run (the default) only report what would go. Only copies the start recorded as its own (state.json created) that lie directly in installs and are named guest-install* are candidates; the verified base, the current run and a start's attempt are always kept (kept, with the reason). Each copy's files are locked before it is deleted, so a copy a running guest holds is refused with the reason. A guest-install* directory the state does not record is listed under unrecorded and never deleted. copies lists each candidate with path, bytes (allocated on disk; blocks a reflinked copy shares with its base are counted in full) and removed; reclaimable_bytes is their sum and freed_bytes what was deleted. A real cleanup is refused with ios_virtual_busy while a start or stop runs.",

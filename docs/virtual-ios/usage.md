@@ -291,6 +291,23 @@ tomaccoctl call ios.emulator.control '{"job_id":"GUEST_JOB","action":"frame","tr
 A phone without a Home button is unlocked with a slow drag up from the bottom edge, as in the second example. The start
 does that by itself.
 
+## The lock screen
+
+The phone can lock itself again after the start, for example with guest tools that cannot turn Auto-Lock off.
+`ios.virtual.unlock` leaves the lock screen the way the start does, as a short job: it observes the native screen
+state, then wakes the display and presses Home (or swipes up on a model without a Home button) with the start's pacing,
+until a fresh observation says the screen is unlocked. The job's `screen` is `unlocked`, or `not-checked` when the
+guest tools cannot report the screen; then nothing is pressed.
+
+```sh
+tomaccoctl call ios.virtual.unlock '{}'
+```
+
+`ios.virtual.deploy` does the same before it opens the app, and `testing.run` on `virtual-iphone` before its first
+step; its result has the `screen` it found. A passcode is never entered. A lock screen with one, or one that stays
+locked for ten minutes, fails the job, and `testing.run` fails with `ios_virtual_locked` before it taps anything.
+Tested with scripted guest replies, not yet on a live phone.
+
 ## Screenshots and recordings
 
 ```sh

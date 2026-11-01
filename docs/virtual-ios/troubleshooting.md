@@ -57,6 +57,7 @@ the code and that none is missing.
 | `ios_virtual_busy` | A start or stop is in progress. | Wait for it. The details name its job. |
 | `ios_virtual_disk_space` | The start's disk copy does not fit on the filesystem of the profile's `installs`. | Free the space the remedy names. See [starting](#starting). |
 | `ios_virtual_guest_state_unknown` | The guest job could not be observed. | Read `job.get` for the job in the details. |
+| `ios_virtual_locked` | `testing.run` found the phone's lock screen and could not leave it: it has a passcode, or it stayed locked. | Unlock it in the phone window, then run again. See [the lock screen](usage.md#the-lock-screen). |
 | `ios_virtual_log_unavailable` | The guest job has no console log yet. | Start the phone, or wait until its boot has begun, then read `ios.virtual.syslog` again. |
 | `ios_virtual_no_verified_run` | There is no verified run to save as a state. | Stop a run with `ios.virtual.stop` so it ends verified, then save it. |
 | `ios_virtual_not_running` | The phone is off. | `ios.virtual.start`. |
@@ -151,6 +152,8 @@ has not been surveyed yet.
 | `text` typed the wrong characters | iOS read the keys with another layout than you typed for. | Pass `layout` (`us` or `de`), or set the guest's language. |
 | `text` went nowhere | No field had the keyboard focus, or the app took it after the keys were sent. | Tap the field and check a frame, then `text`. |
 | `ios_virtual_not_running` from `deploy`/`debug` | The phone is off. | `ios.virtual.configure {add_application}` then `ios.virtual.start`. |
+| A deploy or `ios.virtual.unlock` fails with "The virtual iPhone stayed on its lock screen" | Ten minutes of the start's unlock steps did not leave the lock screen. | Unlock it in the phone window and try again. |
+| A deploy or `ios.virtual.unlock` fails with "Unlock the virtual iPhone with its passcode first" | The lock screen has a passcode, which Tomacco never enters. | Unlock it in the phone window and try again. |
 | `deploy` fails with `spare trust-cache entries` | The boot predates hot install, or its 512 entries are used up. | Stop and start the phone. |
 | `liveness.state` is `stalled` in the status | The guest service did not answer a probe, and no new frame came for `stall_seconds`. | Make the `recovery` calls in order: `ios.emulator.guest` `restart_ui`, probe again, and only then `ios.virtual.stop`. See [when the phone stops responding](usage.md#when-the-phone-stops-responding). |
 | `liveness.state` is `quiet` | Nothing new for `stall_seconds`. A still screen publishes no frames. | Call `ios.virtual.status '{"probe":true}'` to ask the guest service. |
