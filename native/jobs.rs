@@ -1086,6 +1086,13 @@ pub fn worker(id: &str) -> Result<()> {
         )?;
         Ok(db.execute("DELETE FROM inputs WHERE job=?", [id])?)
     })?;
+    // A job that ended while no desktop is open says so, where the person
+    // asked for that (tomaccoctl omarchy notify on).
+    crate::omarchy::job_ended(
+        s(&row.value, "label"),
+        &state,
+        now() - row.value["created"].as_f64().unwrap_or_else(now),
+    );
     Ok(())
 }
 /// The most retries a job may ask for, and the longest pause before one.
