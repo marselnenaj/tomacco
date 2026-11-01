@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0--or--later-6cb6ff" alt="License: GPL-2.0-or-later"></a>
-  <img src="https://img.shields.io/badge/version-1.1.0-7dffd0" alt="Version 1.1.0">
+  <img src="https://img.shields.io/badge/version-1.2.0-7dffd0" alt="Version 1.2.0">
   <img src="https://img.shields.io/badge/iOS_runtime-experimental-b58cff" alt="iOS runtime: experimental">
   <img src="https://img.shields.io/badge/made_for-Omarchy-b58cff" alt="Made for Omarchy">
 </p>
@@ -48,11 +48,11 @@ see [requirements and limits](#the-virtual-ios-device).
 | **iPhone over USB** | Build with xtool, sign, install and view through WebDriverAgent; physical-device execution not qualified | [iPhone guide](docs/iphone.md) |
 | **Mac over SSH** | Use Xcode builds, XCTest, the Simulator and App Store validation; not qualified | [Mac route](docs/iphone.md#the-mac-route) |
 
-New in 1.1: a portable package for other distributions, French, Spanish and Italian in the
-desktop, screenshot comparison, accessibility audits and crash reports for Android tests, a
-Jetpack Compose starter, React Native, Expo, Capacitor and Kotlin Multiplatform apps on Android,
-`capabilities` for agents, and `tomaccoctl update`, `report` and `help`. Several of these were
-tested with stand-ins only; the [release notes](docs/RELEASE_NOTES.md) say which.
+New in 1.2: UI tests you record by tapping, a watch mode, performance budgets, store screenshots,
+SwiftUI apps built, deployed and checked on the virtual iPhone in one call, a virtual iPhone that
+starts without a 32 GiB disk copy, an update banner, a Docker image you build yourself, and
+`tomaccoctl verify`. Several of these were tested with stand-ins only; the
+[release notes](docs/RELEASE_NOTES.md) say which.
 
 <img src="assets/readme/desktop.png" alt="Tomacco's native desktop showing the project workspace." width="100%">
 
@@ -75,7 +75,7 @@ The first line checks and installs the latest signed release for your user. On A
 Omarchy it also offers to install the system packages. The second shows what your computer
 can do and offers to install the Android SDK and connect your coding agents.
 
-Arch Linux and Omarchy are the tested platforms. For Debian, Ubuntu and Fedora, 1.1.0 has a
+Arch Linux and Omarchy are the tested platforms. For Debian, Ubuntu and Fedora, a release has a
 portable package that bundles Qt and FFmpeg and needs glibc 2.35 or newer; the installer picks it
 where the regular package cannot start. See [which package to use](docs/getting-started.md#debian-ubuntu-and-fedora).
 To read the script before running it, or to build from source, see
@@ -157,8 +157,8 @@ image: `tomaccoctl` from the signed release package, a JDK, Gradle and the Andro
 iPhone. Building it accepts Google's Android SDK license:
 
 ```sh
-docker build --build-arg ACCEPT_ANDROID_SDK_LICENSE=1 -t tomacco-container:1.1.0 packaging/container
-claude mcp add --transport stdio --scope user tomacco -- docker run -i --rm -v tomacco-data:/data tomacco-container:1.1.0 mcp
+docker build --build-arg ACCEPT_ANDROID_SDK_LICENSE=1 -t tomacco-container:1.2.0 packaging/container
+claude mcp add --transport stdio --scope user tomacco -- docker run -i --rm -v tomacco-data:/data tomacco-container:1.2.0 mcp
 ```
 
 [Container image](docs/container.md) covers the emulator, KVM, USB phones and what was tested.
@@ -219,7 +219,7 @@ Every guest processor is emulated, so performance is far below a physical phone.
 
 ## Status and limits
 
-Tomacco 1.1.0 was developed and tested on one workstation: x86_64 Arch Linux with Omarchy,
+Tomacco 1.2.0 was developed and tested on one workstation: x86_64 Arch Linux with Omarchy,
 Qt 6.12 and Rust 1.99. The portable package passed its checks in clean Debian 12, Ubuntu 22.04,
 Ubuntu 24.04 and Fedora 44 containers but has not been run on a real desktop of those
 distributions. Other machines have not been qualified.

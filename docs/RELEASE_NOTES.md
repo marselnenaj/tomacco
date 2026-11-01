@@ -1,57 +1,63 @@
-# Tomacco 1.1.0
+# Tomacco 1.2.0
 
 Tomacco: Give your agent a phone. It builds, runs and tests Android and iOS apps from Linux.
-This release adds 23 operations, for 193 in all, a portable package for other distributions,
-and three more desktop languages. The [changelog](../CHANGELOG.md) lists every change.
+This release adds 31 operations, for 224 in all. The [changelog](../CHANGELOG.md) lists every change.
 
 ## Highlights
 
-- **Other distributions.** A new portable package brings its own Qt 6.12 and FFmpeg. It needs
-  glibc 2.35 or newer and passed its checks in clean Debian 12, Ubuntu 22.04, Ubuntu 24.04 and
-  Fedora 44 containers. The one-line installer picks it where the regular package cannot start.
-- **Testing.** Compare screenshots with a baseline (`testing.visual_diff`), audit an Android
-  screen for accessibility (`testing.accessibility`), collect crashes and ANRs as events
-  (`testing.crashes`), read Gradle's JUnit results (`testing.results`), and run the same steps
-  on every connected Android device (`android.each`).
-- **Android.** Unicode text input, `android.settings` (dark mode, font scale, animations, app
-  language), `android.display`, `android.notifications`, `android.app_files`, APK and AAB
-  inspection, AAB installs through bundletool, and emulator snapshots, battery and network.
-- **Projects.** React Native, Expo, Capacitor and Kotlin or Compose Multiplatform apps run on
-  Android. A Jetpack Compose starter with a UI test, app IDs and variants read from Gradle files,
-  and `project.dependency_updates`.
-- **Virtual iPhone.** PNG screenshots, MP4 recordings, the installed apps, crash reports, safe
-  cleanup of old disk copies, a disk check before a start, and start progress.
-- **Agents.** `capabilities` in one call, MCP progress and log notifications, structured results,
-  tool annotations on every operation, MCP prompts and guides, and `tomaccoctl setup` now also
-  connects Gemini CLI, Cursor, VS Code and Zed.
-- **Command line.** `call … --wait`, `help OPERATION`, shell completions, a manual page,
-  `tomaccoctl update`, `uninstall` and `report`.
-- **Jobs.** Builds queue (two at a time by default), some steps can retry, downloads resume,
-  and every job keeps a timeline (`job.events`).
-- **Desktop.** French, Spanish and Italian; drag and drop to install; screenshots to the
-  clipboard; recent projects; job notifications; log search; tap markers; settings export.
-- **Web previews.** Dark mode, reduced motion, slow networks and offline; page errors per load
-  (`preview.errors`); a contact sheet for `preview.matrix`; more layout checks; Samsung foldables
-  and tablets in the catalogue.
+- **Virtual iPhone.** A start no longer copies the 32 GiB system disk when `qemu-img` is beside the
+  helper engine: it layers a qcow2 overlay on the last verified run. Measured on the test profile,
+  disk preparation took 16 s instead of 89 s, hashing before the boot 0.6 s instead of 198 s, and a
+  verified stop 5 s instead of 258 s. Also new: saved phone states, a structured guest log,
+  `ios.virtual.unlock`, `ios.virtual.doctor`, hang detection (`liveness`), per-step start and stop
+  timing, and a guided `ios.virtual.setup`.
+- **SwiftUI on the virtual iPhone.** `project.run` with `device:"virtual-iphone"` builds an xtool
+  project, deploys it, opens it and checks for a crash; an unchanged app only reopens. Run live
+  with `examples/hello-virtual-iphone`: built in 9.5 s, installed and opened in 13.4 s.
+  `project.watch` redeploys on every save.
+- **Tests.** Record a UI test by tapping, lint it without acting, retry flaky scenarios and shard
+  them across devices. Scenarios run on the virtual iPhone at screen coordinates and compare the
+  screen with a baseline.
+- **Performance.** `profile.startup`, `profile.frames`, `profile.memory`, `profile.usage` and
+  budgets that fail a scenario; `profile.compare` reports deltas against a baseline.
+- **Release work.** Store screenshots across devices, languages and themes, release notes per
+  language, size reports, signing key health, a pre-release checklist and version bumps for every
+  project type.
+- **Flutter and cross-platform.** `project.analyze`, Flutter test and golden results, dependency
+  updates for pub, npm and SwiftPM, DevTools links and Metro reloads.
+- **iPhone over USB.** Device logs per app, `ios.signing`, `ios.device_status`, app files, UI tests
+  through WebDriverAgent and `ios.record`.
+- **Desktop.** An update banner with **Restart now** and a **What's new** sheet, first-start help,
+  Wi-Fi pairing by QR code, every running device side by side, a live log beside the device,
+  agent activity with durations, typing straight into the virtual iPhone, and a fuzzy command
+  palette.
+- **Install and trust.** The installer is about 20 times faster for the portable package. `doctor`
+  names the apt or dnf command for missing desktop libraries. `tomaccoctl verify` checks a
+  download; each release carries an SBOM and a signed provenance file. A Docker image can be
+  built from the signed package. `tomaccoctl setup` also connects OpenCode, so apps that run these
+  agents, such as T3 Code, reach Tomacco through them.
 
 ## Changed behaviour
 
-- At most two builds run at once; a third waits as `queued`. Set `jobs.max_builds` in
-  `settings.configure` (0 for no limit).
-- Unknown argument keys are reported before missing required ones.
-- `ios.virtual.start` refuses up front when the disk lacks room for its copy.
+- Virtual iPhone starts use an overlay when `qemu-img` is found; set `start_disks` to `copy` for
+  the old behaviour.
+- The engine gets its own scratch directory instead of the shared `/tmp`. A full `/tmp` had left a
+  display black.
+- `job.send`'s title is now "Send a command to a job"; it also stops recordings.
 
 ## Limits
 
-The [1.0.0 limits](https://github.com/marselnenaj/tomacco/blob/v1.0.0/docs/RELEASE_NOTES.md#limits)
+The [1.1.0 limits](https://github.com/marselnenaj/tomacco/blob/v1.1.0/docs/RELEASE_NOTES.md#limits)
 still apply. In addition:
 
-- The new virtual iPhone features, React Native, Expo, Capacitor and Kotlin Multiplatform runs,
-  bundletool installs and the Zed and VS Code agent setups were tested with stand-ins, not on
-  real devices or real projects of those kinds.
-- The portable package has not been run on a real desktop session of those distributions yet.
-- The French, Spanish and Italian translations have not been reviewed by native speakers.
-  Corrections are welcome.
+- Tested with stand-ins only, not on real devices or projects: the iPhone-over-USB features, Flutter,
+  React Native, Expo and Kotlin Multiplatform runs, Wi-Fi pairing, and the Zed, VS Code and OpenCode
+  agent setups.
+- On the virtual iPhone, the Settings app's top-level list can show a placeholder symbol instead of
+  each row's icon; the pages behind it show their icons. UI tests there work at screen
+  coordinates only, because the guest reports no UI hierarchy.
+- The Docker image is not published: it contains Google's Android SDK, whose license you accept
+  when you build it.
 
 ## Install and upgrade
 
@@ -59,5 +65,6 @@ still apply. In addition:
 curl -fsSL https://tomacco.dev/install.sh | bash
 ```
 
-An installed 1.0.0 updates itself through `update.apply`, or run `tomaccoctl update` once 1.1.0
-is installed. Every replaced file is backed up; `install.py --rollback` undoes an update.
+An installed 1.1.0 shows the update in its status bar and installs it from **Settings**; from 1.2.0
+on, a banner at the top of the window offers it. Every replaced file is backed up, and
+`update.rollback` undoes an update.

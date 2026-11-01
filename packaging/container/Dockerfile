@@ -37,7 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # A package placed in the build context's packages/ directory (as
 # tools/build_container.py does for a release being made) is used instead of
 # the download, and checked the same way.
-ARG TOMACCO_VERSION=1.1.0
+ARG TOMACCO_VERSION=1.2.0
 # regular: the Arch build (glibc 2.39, 7 MB); portable: the Ubuntu 22.04 build
 # (glibc 2.35, 177 MB, of which only tomaccoctl is used here).
 ARG TOMACCO_PACKAGE=regular
