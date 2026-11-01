@@ -1,0 +1,210 @@
+reims-vgpu: the sampled cache's content digest is a four-lane multiply hash.
+
+find_cached_sampled hashes an incoming sampled blob on every bind that misses
+the identity path, and admission hashes each retained one. The digest was two
+salted SipHash-1-3 passes. It only narrows the walk to one candidate: the
+retained bytes beside each entry are compared, and that compare decides every
+hit and every deduplication (ResidentSampledSlot::content). A recorded busy
+app second on the development host: 418 buffer-texture binds, every one a
+content hit over 843 MB (sampled_cache_hits, sampled_cache_hit_bytes), and
+draw_phase acquire_sampled_us 305 ms.
+
+Now sampled_content_hash is four independent lanes of XXH64's round over
+32-byte stripes, the tail spread over the lanes, folded into two 64-bit halves
+with different multipliers and each finished with XXH64's avalanche, the length
+in both. A collision costs one failed compare, never a wrong image, so the
+digest needs mixing, not cryptographic strength. The stale doc comment that
+still said the digest decided alone is corrected.
+
+Offline (content_hash_timing, one 2 MB blob): the two SipHash passes 544-549
+us, the new digest 91-92 us, the deciding memcmp 57-58 us (medians of 31).
+Not measured on a live phone.
+
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/pools/mod.rs
+@@ -5,7 +5,7 @@
+ use ash::vk;
+ use ash::vk::Handle;
+ use std::collections::{HashMap, VecDeque};
+-use std::hash::{Hash, Hasher};
++use std::hash::Hash;
+ use std::sync::atomic::Ordering;
+ use std::time::Instant;
+ 
+@@ -3364,24 +3364,75 @@ impl CbBind {
+ 
+ /// 128-bit content fingerprint for the sampled cache.
+ ///
+-/// The sampled cache matches an incoming blob to a retained VkImage by this
+-/// fingerprint alone — it no longer keeps a byte copy to `memcmp` against, so
+-/// the width must make an accidental collision (different content, identical
+-/// digest, identical geometry/format key) astronomically unlikely: at 128 bits
+-/// the birthday bound across the 64-entry cache is ~2^-116, far below the host
+-/// GPU's own soft-error rate. Two independently salted `DefaultHasher`
+-/// (SipHash-1-3) passes over the *warm* source bytes are still strictly cheaper
+-/// than the old one-hash-plus-cold-full-frame-`memcmp` (which pulled the
+-/// retained 8 MiB copy back through DRAM on every hit).
++/// It narrows a content lookup to one candidate and decides nothing: the bytes
++/// it was taken over are retained beside it, and the compare of those is what
++/// answers a lookup or a deduplication (`ResidentSampledSlot::content`). So
++/// the digest has to be cheap and well mixed, not collision-resistant against
++/// an adversary — a collision costs one extra compare that fails, never a
++/// wrong image.
++///
++/// # Why not `DefaultHasher`
++///
++/// It was two salted SipHash-1-3 passes, and a lookup hashes the incoming
++/// blob on every bind that misses the identity path. On a busy app second on
++/// the vphone that is ~420 buffer-texture binds of ~2 MB each, every one a
++/// content hit (`sampled_cache_hits`, `sampled_cache_hit_bytes` 843 MB), and
++/// `draw_phase acquire_sampled_us` read ~305 ms of that second: two
++/// cryptographic-strength passes over bytes whose identity a compare settles
++/// anyway. This is four independent lanes of XXH64's round over 32-byte
++/// stripes — a multiply and a rotate per eight bytes, no data-dependent
++/// branch — folded into two halves with different multipliers and each
++/// finished with XXH64's avalanche, the length mixed into both.
+ fn sampled_content_hash(bytes: &[u8]) -> u128 {
+-    let mut lo = std::collections::hash_map::DefaultHasher::new();
+-    bytes.hash(&mut lo);
+-    let mut hi = std::collections::hash_map::DefaultHasher::new();
+-    // Distinct salt so the two digests are independent (else both hashers see
+-    // the same input and finish() to correlated values, collapsing to 64 bits).
+-    hi.write_u64(0x9e37_79b9_7f4a_7c15);
+-    bytes.hash(&mut hi);
+-    ((hi.finish() as u128) << 64) | lo.finish() as u128
++    const P1: u64 = 0x9E37_79B1_85EB_CA87;
++    const P2: u64 = 0xC2B2_AE3D_27D4_EB4F;
++    const P3: u64 = 0x1656_67B1_9E37_79F9;
++    const P4: u64 = 0x85EB_CA77_C2B2_AE63;
++    const P5: u64 = 0x27D4_EB2F_1656_67C5;
++    fn round(acc: u64, input: u64) -> u64 {
++        acc.wrapping_add(input.wrapping_mul(P2))
++            .rotate_left(31)
++            .wrapping_mul(P1)
++    }
++    fn avalanche(mut h: u64) -> u64 {
++        h ^= h >> 33;
++        h = h.wrapping_mul(P2);
++        h ^= h >> 29;
++        h = h.wrapping_mul(P3);
++        h ^ (h >> 32)
++    }
++    fn word(chunk: &[u8; 8]) -> u64 {
++        u64::from_le_bytes(*chunk)
++    }
++    let mut lanes = [P1.wrapping_add(P2), P2, 0, 0u64.wrapping_sub(P1)];
++    let (stripes, rest) = bytes.as_chunks::<32>();
++    for stripe in stripes {
++        let (words, _) = stripe.as_chunks::<8>();
++        for (lane, w) in lanes.iter_mut().zip(words) {
++            *lane = round(*lane, word(w));
++        }
++    }
++    // The tail, eight bytes at a time and then byte by byte, into the lanes in
++    // turn, so a short blob still reaches all four.
++    let (words, bytes_left) = rest.as_chunks::<8>();
++    for (i, w) in words.iter().enumerate() {
++        lanes[i % 4] = round(lanes[i % 4], word(w));
++    }
++    for (i, &b) in bytes_left.iter().enumerate() {
++        lanes[i % 4] = round(lanes[i % 4], u64::from(b) ^ P5);
++    }
++    let len = bytes.len() as u64;
++    let lo = lanes[0].rotate_left(1)
++        ^ lanes[1].rotate_left(7)
++        ^ lanes[2].rotate_left(12)
++        ^ lanes[3].rotate_left(18);
++    let hi = lanes[0].wrapping_mul(P3)
++        ^ lanes[1].wrapping_mul(P4).rotate_left(11)
++        ^ lanes[2].wrapping_mul(P5).rotate_left(23)
++        ^ lanes[3].wrapping_mul(P1).rotate_left(37);
++    let lo = avalanche(lo ^ len.wrapping_mul(P5));
++    let hi = avalanche(hi.wrapping_add(len).wrapping_mul(P4) ^ P2);
++    (u128::from(hi) << 64) | u128::from(lo)
+ }
+ 
+ /// Which pool asked for a `vkAllocateMemory`.
+@@ -3742,6 +3793,83 @@ mod content_hash_tests {
+         }
+     }
+ 
++    /// Every byte reaches the digest, wherever it sits: in a 32-byte stripe,
++    /// in the eight-byte tail words, or in the last loose bytes.
++    #[test]
++    fn a_change_anywhere_moves_the_digest() {
++        let len = 4096 + 24 + 5;
++        let base: Vec<u8> = (0..len)
++            .map(|i| (i as u32).wrapping_mul(37) as u8)
++            .collect();
++        let digest = sampled_content_hash(&base);
++        for at in [0, 7, 8, 31, 32, 2048, 4095, 4096, 4103, 4119, 4120, len - 1] {
++            let mut changed = base.clone();
++            changed[at] ^= 0x01;
++            assert_ne!(digest, sampled_content_hash(&changed), "byte {at}");
++        }
++    }
++
++    /// Blobs of zeros that differ only in length differ in digest, and the
++    /// digest is a pure function of the bytes.
++    #[test]
++    fn length_counts_and_the_digest_is_stable() {
++        let digests: Vec<u128> = (0..70)
++            .map(|n| sampled_content_hash(&vec![0u8; n]))
++            .collect();
++        for (i, a) in digests.iter().enumerate() {
++            for b in &digests[i + 1..] {
++                assert_ne!(a, b);
++            }
++        }
++        let blob: Vec<u8> = (0..1000u32).map(|i| (i * 7) as u8).collect();
++        assert_eq!(
++            sampled_content_hash(&blob),
++            sampled_content_hash(&blob.clone())
++        );
++    }
++
++    /// Timing, not a check: `cargo test --release -- --ignored --nocapture
++    /// content_hash_timing`. A 2 MB buffer texture, the size the vphone binds
++    /// ~420 times a busy second, through the two salted SipHash-1-3 passes the
++    /// digest used to be and through the digest now. Median of 31 runs each.
++    #[test]
++    #[ignore]
++    fn content_hash_timing() {
++        use std::hash::{Hash, Hasher};
++        let blob: Vec<u8> = (0..2_000_000u32)
++            .map(|i| i.wrapping_mul(2_654_435_761) as u8)
++            .collect();
++        let twin = blob.clone();
++        let siphash = |bytes: &[u8]| {
++            let mut lo = std::collections::hash_map::DefaultHasher::new();
++            bytes.hash(&mut lo);
++            let mut hi = std::collections::hash_map::DefaultHasher::new();
++            hi.write_u64(0x9e37_79b9_7f4a_7c15);
++            bytes.hash(&mut hi);
++            ((hi.finish() as u128) << 64) | lo.finish() as u128
++        };
++        let median = |f: &dyn Fn() -> u128| {
++            let mut runs: Vec<u128> = (0..31)
++                .map(|_| {
++                    let started = std::time::Instant::now();
++                    std::hint::black_box(f());
++                    started.elapsed().as_micros()
++                })
++                .collect();
++            runs.sort_unstable();
++            runs[runs.len() / 2]
++        };
++        for _ in 0..2 {
++            println!(
++                "content_hash_timing bytes={} siphash_x2_median_us={} digest_median_us={} memcmp_median_us={}",
++                blob.len(),
++                median(&|| siphash(&blob)),
++                median(&|| sampled_content_hash(&blob)),
++                median(&|| u128::from(std::hint::black_box(blob.as_slice()) == twin.as_slice())),
++            );
++        }
++    }
++
+     /// Length alone must not decide the digest (content matters within a fixed
+     /// geometry/format key, where all blobs share one length).
+     #[test]
