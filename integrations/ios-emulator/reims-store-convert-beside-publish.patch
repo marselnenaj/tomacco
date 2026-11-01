@@ -1,0 +1,470 @@
+reims-vgpu: the render Store converts the present's frame beside the guest publish.
+
+A native-float render Store of the presented RGBA16F front surface (1206x2622,
+25 MB of half floats) did three whole-frame things one after the other on the
+drain, under the device lock: read the resident back
+(native_float_readback_us), convert that readback into the BGRA8 frame the
+present takes (store_capture::stash, store_capture_convert_us), and copy the
+same readback into the guest's pages (native_float_publish_us). A recorded
+live second on the development host (i9-13900K, RX 6800-class GPU) with 46
+Stores: 69 ms, 86 ms and 105 ms, about 1.5, 1.9 and 2.3 ms a Store, out of a
+306 ms chain_phase store_us. The conversion and the publish only read the
+staging bytes, and neither needs anything the other produces.
+
+Now the writer runs them side by side: PreparedNativeImageWrite gains
+write_from_alongside, which hands the borrowed source bytes to a scoped thread
+running the caller's reader while this thread copies them into the guest's
+pages, and joins that thread before it drops the source, so the reader never
+outlives the staging lease and gets no device state, host or engine handle.
+write_from is the same call with no reader. store_capture::stash takes the
+texel kind and the borrowed bytes (readback_bytes_into_bgra, the bytes-level
+half of texels_into_bgra, so both callers still run one conversion). Seal,
+take and every refusal are unchanged; a thread that cannot start runs the
+reader first, as before (store route native_image_side_serial_n).
+
+native_float_publish_us now spans the overlapped pair. Offline, the
+store_overlap_timing test (FakeHost, 16 KiB pages scattered through guest RAM,
+the vphone geometry; the host shared with a running phone): conversion then
+publish 6.0-7.0 ms, side by side 3.8-4.4 ms (medians of 21). Not measured on a
+live phone.
+
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -3080,15 +3080,26 @@ pub(crate) fn texels_into_bgra(
+     texels: &ConsumableTargetTexels,
+     dst: &mut [u8],
+     decline: &dyn Fn(&DrawError),
++) -> Option<present_capture::FrameStats> {
++    readback_bytes_into_bgra(texels.texel, texels.bytes(), dst, decline)
++}
++
++/// [`texels_into_bgra`] over a readback's texel kind and bytes, so a thread
++/// that holds only the borrowed bytes (the render Store's stash, converting
++/// beside the guest publish of the same readback) runs the same conversion.
++pub(crate) fn readback_bytes_into_bgra(
++    texel: ReadbackTexel,
++    bytes: &[u8],
++    dst: &mut [u8],
++    decline: &dyn Fn(&DrawError),
+ ) -> Option<present_capture::FrameStats> {
+     use crate::protocol::pixel_format::Rgba8Narrowing;
+-    let texel = texels.texel;
+     let plan = match texel {
+         ReadbackTexel::Bgra8 => Rgba8Narrowing::Bgra8,
+         ReadbackTexel::Rgba8 => Rgba8Narrowing::Rgba8,
+         ReadbackTexel::Native(layout) => {
+             // The old rail's shape check, refused under the old rail's error.
+-            if let Err(e) = readback_pixel_count(texels.bytes().len(), layout) {
++            if let Err(e) = readback_pixel_count(bytes.len(), layout) {
+                 decline(&e);
+                 return None;
+             }
+@@ -3107,7 +3118,7 @@ pub(crate) fn texels_into_bgra(
+         }
+     };
+     let bpt = plan.source_layout().bytes_per_texel() as usize;
+-    let pixels = texels.bytes().len() / bpt;
++    let pixels = bytes.len() / bpt;
+     // `narrow_colour_bytes` refused a native frame whose pixel count does not
+     // fit a `u32`, before it looked at the caller's length.
+     if matches!(texel, ReadbackTexel::Native(_)) && u32::try_from(pixels).is_err() {
+@@ -3123,7 +3134,7 @@ pub(crate) fn texels_into_bgra(
+     if pixels.checked_mul(RESIDENT_READ_BYTES_PER_TEXEL as usize)? < dst.len() {
+         return None;
+     }
+-    present_capture::convert_with_stats(plan, texels.bytes(), dst)
++    present_capture::convert_with_stats(plan, bytes, dst)
+ }
+ 
+ /// The six fallible Vulkan calls a whole-image readback makes, named per rail.
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs
+@@ -68,7 +68,7 @@
+ //! [`stash`] — called while the Store holds a staging lease — takes no engine
+ //! lock at all (the [`super::ConsumableTargetTexels`] rule).
+ 
+-use super::{ConsumableTargetTexels, TargetIdentity};
++use super::TargetIdentity;
+ use ash::vk;
+ use parking_lot::Mutex;
+ 
+@@ -329,7 +329,13 @@ pub fn presented_recently(mapping: u32, width: u32, height: u32) -> bool {
+ ///
+ /// Takes no engine lock: the caller holds the staging lease. `false` (and no
+ /// stash) when the conversion refuses — the present then reads back as before.
+-pub fn stash(witness: ReadWitness, texels: &ConsumableTargetTexels) -> bool {
++///
++/// Takes the readback's texel kind and borrowed bytes rather than its owner:
++/// the render Store calls this from the thread that converts beside the guest
++/// publish of the same readback, which holds the staging bytes only as a shared
++/// borrow while the Store's own thread keeps the owner (and its lease) and
++/// drops it only after this has returned.
++pub fn stash(witness: ReadWitness, texel: super::ReadbackTexel, bytes: &[u8]) -> bool {
+     let need = (witness.width as usize)
+         .saturating_mul(witness.height as usize)
+         .saturating_mul(crate::protocol::pixel_format::RGBA8_BPP as usize);
+@@ -342,7 +348,7 @@ pub fn stash(witness: ReadWitness, texels: &ConsumableTargetTexels) -> bool {
+     bgra.clear();
+     bgra.resize(need, 0);
+     let started = std::time::Instant::now();
+-    let stats = super::texels_into_bgra(texels, &mut bgra, &|_| {});
++    let stats = super::readback_bytes_into_bgra(texel, bytes, &mut bgra, &|_| {});
+     let mut shelf = SHELF.lock();
+     match stats {
+         Some(stats) if need != 0 => {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+@@ -52,34 +52,94 @@ pub(crate) struct PreparedNativeImageWrite<'a, M: HostMemory + HostOps> {
+ 
+ impl<M: HostMemory + HostOps> PreparedNativeImageWrite<'_, M> {
+     pub(crate) fn write_from<S: NativeImageSource>(
+-        mut self,
++        self,
+         source: S,
+     ) -> Result<usize, NativeImageWriteRefusal> {
+-        use NativeImageWriteRefusal as R;
+-        let bytes = self.rect.packed();
+-        // This block copies or reads guest memory only. Neither source
+-        // failure nor success may release host views while a lease is held.
++        self.write_from_alongside(source, None::<fn(&[u8])>)
++    }
++
++    /// [`Self::write_from`], running `side` over the same source bytes on a
++    /// scoped thread while this thread copies them into the guest's pages.
++    ///
++    /// For a reader of the readback that needs nothing from the transaction —
++    /// the render Store's present conversion — so the two whole-frame passes
++    /// over one staging buffer overlap instead of following each other. `side`
++    /// has returned before the source is dropped, so it never outlives the
++    /// staging lease, and it gets only the bytes: no device state, host or
++    /// engine handle crosses to its thread. A thread that cannot be started
++    /// runs `side` here, before the copy, which is the order the two had
++    /// before.
++    pub(crate) fn write_from_alongside<S, F>(
++        mut self,
++        source: S,
++        side: Option<F>,
++    ) -> Result<usize, NativeImageWriteRefusal>
++    where
++        S: NativeImageSource,
++        F: FnOnce(&[u8]) + Send,
++    {
+         let result = {
+             let src = source.native_bytes();
+-            if src.len() != bytes {
+-                Err(R::SourceLength {
+-                    need: bytes,
+-                    have: src.len(),
+-                })
+-            } else if let Err(why) = self.transfer.check_backing(self.state) {
+-                Err(R::Transfer(why))
+-            } else {
+-                let copy = RunCopy::write_rect(src, self.rect)
+-                    .ok_or(R::Transfer(RectBatchRefusal::Window { index: 0 }));
+-                match copy {
+-                    Ok(copy) => self
+-                        .transfer
+-                        .copy(&mut [MappingRectCopy::new(self.offset, copy)])
+-                        .map_err(R::Transfer),
+-                    Err(why) => Err(why),
+-                }
++            match side {
++                None => self.copy_source(src),
++                Some(side) => std::thread::scope(|scope| {
++                    let (tx, rx) = std::sync::mpsc::sync_channel::<F>(1);
++                    let spawned = std::thread::Builder::new().spawn_scoped(scope, move || {
++                        if let Ok(side) = rx.recv() {
++                            side(src);
++                        }
++                    });
++                    match spawned {
++                        Ok(handle) => {
++                            // A buffered channel of one with a live receiver
++                            // cannot refuse.
++                            let _ = tx.send(side);
++                            let copied = self.copy_source(src);
++                            if let Err(panic) = handle.join() {
++                                std::panic::resume_unwind(panic);
++                            }
++                            copied
++                        }
++                        Err(_) => {
++                            crate::runtime::drain::note_store_route("native_image_side_serial_n");
++                            side(src);
++                            self.copy_source(src)
++                        }
++                    }
++                }),
+             }
+         };
++        self.finish(source, result)
++    }
++
++    /// This block copies or reads guest memory only. Neither source failure
++    /// nor success may release host views while a lease is held.
++    fn copy_source(&mut self, src: &[u8]) -> Result<usize, NativeImageWriteRefusal> {
++        use NativeImageWriteRefusal as R;
++        let bytes = self.rect.packed();
++        if src.len() != bytes {
++            return Err(R::SourceLength {
++                need: bytes,
++                have: src.len(),
++            });
++        }
++        self.transfer
++            .check_backing(self.state)
++            .map_err(R::Transfer)?;
++        let copy = RunCopy::write_rect(src, self.rect)
++            .ok_or(R::Transfer(RectBatchRefusal::Window { index: 0 }))?;
++        self.transfer
++            .copy(&mut [MappingRectCopy::new(self.offset, copy)])
++            .map_err(R::Transfer)?;
++        Ok(bytes)
++    }
++
++    fn finish<S: NativeImageSource>(
++        self,
++        source: S,
++        result: Result<usize, NativeImageWriteRefusal>,
++    ) -> Result<usize, NativeImageWriteRefusal> {
++        use NativeImageWriteRefusal as R;
+         drop(source);
+         if matches!(
+             &result,
+@@ -91,7 +151,7 @@ impl<M: HostMemory + HostOps> PreparedNativeImageWrite<'_, M> {
+         ) {
+             self.state.invalidate_mapping_pages(self.mapping_id);
+         }
+-        result?;
++        let bytes = result?;
+         self.state
+             .note_host_wrote_mapping(WriteRail::listed("native_image"), self.mapping_id);
+         self.transfer.complete(self.state, |state, host| {
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
+@@ -2661,3 +2661,196 @@ fn an_rgb8_444_surface_round_trips_both_windows_and_keeps_the_padding() {
+     assert_eq!(read.planes, planes);
+     assert_eq!(read.layout.planes[1].offset, 64);
+ }
++
++/// A large native Store into a page list scattered across guest RAM, with a
++/// reader of the same source running beside the copy: the reader sees the
++/// whole source, and the guest's pages end up exactly as the copy alone leaves
++/// them — every row at its own offset, the inter-row padding untouched.
++#[test]
++fn a_large_native_store_beside_its_reader_lands_every_row_and_no_padding() {
++    use crate::model::PAGE_SHIFT_X86;
++    use crate::protocol::pixel_format::MTL_FORMAT_RGBA16_FLOAT;
++    use std::sync::atomic::{AtomicU64, Ordering};
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_X86);
++    let mut host = FakeHost::new();
++    let page = 1u64 << PAGE_SHIFT_X86;
++    // 1000x1100 RGBA16F: 8000-byte rows on a wider pitch, 8.8 MB.
++    let (w, h) = (1000u32, 1100u32);
++    let tight = w as usize * 8;
++    let base = 0x4000_0000u64;
++    let pages = (tight * h as usize * 2) / page as usize;
++    host.map_range(base, pages * page as usize, 0xee);
++    // Every page somewhere else in RAM, as a long-lived surface's pages are.
++    let mut order: Vec<u64> = (0..pages as u64).collect();
++    for i in 0..pages {
++        order.swap(i, (i * 7 + 3) % pages);
++    }
++    let mid = 21u32;
++    state.map_surface(mid);
++    {
++        let m = state.mappings.get_mut(&mid).unwrap();
++        m.mapped = true;
++        m.mapping_internal = 0;
++        m.page_entries = order
++            .iter()
++            .map(|n| {
++                ((((base + n * page) >> PAGE_SHIFT_X86) as u32) << PAGE_ENTRY_PFN_SHIFT)
++                    | PAGE_ENTRY_VALID
++            })
++            .collect();
++    }
++    assert!(state.set_mapping_geom(mid, w, h, MTL_FORMAT_RGBA16_FLOAT));
++    let (offset, stride, _) = {
++        let m = state.mappings.get(&mid).unwrap();
++        mapper_ref_texture_sample_window(m, w, h, MTL_FORMAT_RGBA16_FLOAT).unwrap()
++    };
++    let src: Vec<u8> = (0..tight * h as usize)
++        .map(|i| (i as u32).wrapping_mul(2_654_435_761).rotate_right(13) as u8)
++        .collect();
++    let want_sum: u64 = src.iter().map(|&b| u64::from(b)).sum();
++    let target = {
++        let m = state.mappings.get(&mid).unwrap();
++        NativeImageWriteTarget::capture(mid, m, w, h, MTL_FORMAT_RGBA16_FLOAT).unwrap()
++    };
++    let plan = target.prepared_source_plan(&state, &mut host).unwrap();
++    let writer = prepare_native_image_write(&mut state, &mut host, target, plan).unwrap();
++    let seen = AtomicU64::new(0);
++    let side = |bytes: &[u8]| {
++        seen.store(bytes.iter().map(|&b| u64::from(b)).sum(), Ordering::Relaxed);
++    };
++    assert_eq!(
++        writer
++            .write_from_alongside(src.clone(), Some(side))
++            .unwrap(),
++        src.len()
++    );
++    assert_eq!(
++        seen.load(Ordering::Relaxed),
++        want_sum,
++        "the reader saw the whole source"
++    );
++    // Read the span back through the page list and compare row by row.
++    let stride = stride as usize;
++    let span = stride * (h as usize - 1) + tight;
++    let mut guest = vec![0u8; span];
++    let first = offset as usize;
++    let mut at = 0usize;
++    while at < span {
++        let logical = first + at;
++        let (index, within) = (logical / page as usize, logical % page as usize);
++        let len = (page as usize - within).min(span - at);
++        let gpa = base + order[index] * page + within as u64;
++        host.read_gpa(gpa, &mut guest[at..at + len]).unwrap();
++        at += len;
++    }
++    for row in 0..h as usize {
++        let got = &guest[row * stride..row * stride + tight];
++        assert!(
++            got == &src[row * tight..(row + 1) * tight],
++            "row {row} differs"
++        );
++        if row + 1 < h as usize {
++            assert!(
++                guest[row * stride + tight..(row + 1) * stride]
++                    .iter()
++                    .all(|&b| b == 0xee),
++                "padding after row {row} was written"
++            );
++        }
++    }
++}
++
++/// Timing, not a check: `cargo test --release -- --ignored --nocapture
++/// store_overlap_timing`. The render Store of the vphone's front surface
++/// (1206x2622 RGBA16F, 16 KiB pages scattered through guest RAM) with the
++/// present conversion first and the publish after it, as before, against the
++/// two side by side. Median of 21 runs each; wall clock on a shared host.
++#[cfg(feature = "backend-vulkan")]
++#[test]
++#[ignore]
++fn store_overlap_timing() {
++    use crate::backend::vulkan::engine::{readback_bytes_into_bgra, ReadbackTexel};
++    use crate::protocol::pixel_format::{TexelLayout, MTL_FORMAT_RGBA16_FLOAT};
++    struct Borrowed<'a>(&'a [u8]);
++    impl NativeImageSource for Borrowed<'_> {
++        fn native_bytes(&self) -> &[u8] {
++            self.0
++        }
++    }
++    let mut state = DeviceState::new(DeviceId(1), PAGE_SHIFT_ARM64E);
++    let mut host = FakeHost::new();
++    let page = 1u64 << PAGE_SHIFT_ARM64E;
++    let (w, h) = (1206u32, 2622u32);
++    let tight = w as usize * 8;
++    let base = 0x8000_0000u64;
++    let pages = (tight * h as usize * 3 / 2) / page as usize;
++    host.map_range(base, pages * page as usize, 0);
++    let mut order: Vec<u64> = (0..pages as u64).collect();
++    for i in 0..pages {
++        order.swap(i, (i * 7 + 3) % pages);
++    }
++    let mid = 22u32;
++    state.map_surface(mid);
++    {
++        let m = state.mappings.get_mut(&mid).unwrap();
++        m.mapped = true;
++        m.mapping_internal = 0;
++        m.page_entries = order
++            .iter()
++            .map(|n| {
++                ((((base + n * page) >> PAGE_SHIFT_ARM64E) as u32) << PAGE_ENTRY_PFN_SHIFT)
++                    | PAGE_ENTRY_VALID
++            })
++            .collect();
++    }
++    assert!(state.set_mapping_geom(mid, w, h, MTL_FORMAT_RGBA16_FLOAT));
++    // Half floats in [0, 1], as a composite mostly holds.
++    let src: Vec<u8> = (0..tight * h as usize / 2)
++        .flat_map(|i| (0x2000u16 + (i as u16 % 0x1c00)).to_le_bytes())
++        .collect();
++    let mut bgra = vec![0u8; w as usize * h as usize * 4];
++    let texel = ReadbackTexel::Native(TexelLayout::Rgba16Float);
++    let median = |mut runs: Vec<u128>| {
++        runs.sort_unstable();
++        runs[runs.len() / 2]
++    };
++    let mut run = |overlap: bool, bgra: &mut Vec<u8>| -> u128 {
++        let target = {
++            let m = state.mappings.get(&mid).unwrap();
++            NativeImageWriteTarget::capture(mid, m, w, h, MTL_FORMAT_RGBA16_FLOAT).unwrap()
++        };
++        let plan = target.prepared_source_plan(&state, &mut host).unwrap();
++        let writer = prepare_native_image_write(&mut state, &mut host, target, plan).unwrap();
++        let started = std::time::Instant::now();
++        let mut convert = |bytes: &[u8]| {
++            assert!(readback_bytes_into_bgra(texel, bytes, bgra, &|_| {}).is_some());
++        };
++        if overlap {
++            writer
++                .write_from_alongside(Borrowed(&src), Some(convert))
++                .unwrap();
++        } else {
++            convert(&src);
++            writer.write_from(Borrowed(&src)).unwrap();
++        }
++        started.elapsed().as_micros()
++    };
++    let convert_alone: Vec<u128> = (0..21)
++        .map(|_| {
++            let started = std::time::Instant::now();
++            assert!(readback_bytes_into_bgra(texel, &src, &mut bgra, &|_| {}).is_some());
++            started.elapsed().as_micros()
++        })
++        .collect();
++    println!(
++        "store_overlap_timing convert_alone median_us={}",
++        median(convert_alone)
++    );
++    for overlap in [false, true, false, true] {
++        let runs: Vec<u128> = (0..21).map(|_| run(overlap, &mut bgra)).collect();
++        println!(
++            "store_overlap_timing overlap={overlap} median_us={}",
++            median(runs)
++        );
++    }
++}
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -227,15 +227,21 @@ fn store_native_float_surface<M: HostMemory + HostOps>(
+             // back again. Convert these bytes for it now, while they are in
+             // hand, when the display needs CPU frames and has been presenting
+             // this surface; `seal` at the call site licenses them once the
+-            // Store has landed and stamped the resident.
+-            if stash {
+-                crate::backend::vulkan::engine::store_capture::stash(witness, &readback);
+-            }
++            // Store has landed and stamped the resident. The conversion runs
++            // beside the guest publish below rather than before it: both only
++            // read the staging bytes, and the writer joins it before it drops
++            // the readback.
++            let texel = readback.texel;
++            let convert = stash.then_some(move |bytes: &[u8]| {
++                crate::backend::vulkan::engine::store_capture::stash(witness, texel, bytes);
++            });
+             let leased = readback.is_leased();
+             let publish_started = std::time::Instant::now();
+             // Ownership, never readback.bytes(), crosses this boundary. The
+             // writer drops the source before view release/currency publication.
+-            let bytes = writer.write_from(readback).map_err(R::Mapping)?;
++            let bytes = writer
++                .write_from_alongside(readback, convert)
++                .map_err(R::Mapping)?;
+             crate::runtime::drain::note_store_route_us(
+                 "native_float_publish_us",
+                 publish_started.elapsed().as_micros() as u64,
