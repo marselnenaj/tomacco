@@ -136,6 +136,26 @@ It reads what the files claim. It checks no signature, so it cannot tell you a b
 genuine. It has unit tests on synthetic files only; no IPA from xtool or Xcode has been read
 with it yet.
 
+## Working with the connected iPhone
+
+These operations look at and act on an iPhone connected by USB. They were tested with
+stand-ins only; no iPhone was connected. So they check what Tomacco asks of go-ios,
+libimobiledevice and WebDriverAgent and how it reads the answers, not that a real phone
+answers that way.
+
+### Logs of one app
+
+`device.logs` with a `bundle_id` keeps the lines of that app's process. The process name is
+the app's executable, which `go-ios apps` reports; the job's answer names it as `process`.
+`filter` keeps only lines that contain that text.
+
+```sh
+tomaccoctl call device.logs '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","duration":60}'
+```
+
+With libimobiledevice's `idevicesyslog` installed, it does the filtering. Without it, Tomacco
+runs `go-ios syslog` and filters the lines itself.
+
 ## Flutter, Xcode projects, crash reports and the App Store
 
 These call a pinned commit of Joshua Warren's MIT-licensed
@@ -268,7 +288,7 @@ lock prevents two Tomacco sessions from controlling one iPhone.
 
 **Choosing the bundle id.** An ambiguous id at launch is an error. Pass the exact
 `bundle_id` from `ios.apps`. `device.install` needs a signed IPA. Device screenshots
-and syslog through `device.capture` and `device.logs` use libimobiledevice.
+through `device.capture` use libimobiledevice; for logs see [Logs of one app](#logs-of-one-app).
 
 **The desktop.** `preview.configure` with `native:{platform:"ios",apple_target:"device",setup:true}`
 shows the setup dialog without implying a connected device.

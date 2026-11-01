@@ -1705,7 +1705,7 @@
   {
     "name": "device.logs",
     "title": "Device logs",
-    "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running.",
+    "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running. On an iPhone, bundle_id follows the app's process, its executable as go-ios apps names it, and the job names it as process; idevicesyslog filters when it is installed, otherwise go-ios syslog runs through Tomacco's filter. filter keeps lines containing that text.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1735,7 +1735,7 @@
         },
         "bundle_id": {
           "type": "string",
-          "description": "",
+          "description": "Android application ID, or iPhone bundle id as ios.apps lists it (an xtool XTL- prefix may be left out)",
           "default": ""
         }
       },

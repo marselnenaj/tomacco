@@ -322,6 +322,16 @@ bundle id. It reads what the files claim and verifies no signature.
 This route builds xtool's SwiftPM format; `project.import_xcode` writes it for an `.xcodeproj`. Tomacco neither ships nor downloads the SDK.
 Read Xcode's license first.
 
+### On the connected iPhone
+
+[Guide](iphone.md#working-with-the-connected-iphone). Tested with stand-ins only; no iPhone was connected.
+
+```sh
+tomaccoctl call device.logs '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","duration":60}'
+```
+
+- `device.logs` with `bundle_id` keeps that app's process; the job names it as `process`.
+
 ### Xcode projects, Flutter, crash reports and the App Store
 
 Full guide, with what was run for real and what was not:

@@ -641,11 +641,10 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "device.logs" => {
             identifier(device, "device ID", None)?;
             let filter = s(a, "filter");
+            let mut process = String::new();
             let mut command = if platform == "ios" {
-                let mut args = argv(&[&tc::find("idevicesyslog")?, "-u", device]);
-                if !filter.is_empty() {
-                    args.extend(argv(&["-m", filter]));
-                }
+                let (args, name) = crate::iphone_device::syslog_command(device, filter, id)?;
+                process = name;
                 args
             } else {
                 let mut args = adb(device)?;
@@ -659,12 +658,16 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 }
                 args
             };
-            submit(
+            let mut job = submit(
                 "Device logs",
                 json!([{"argv":std::mem::take(&mut command),"duration":n(a,"duration")}]),
                 n(a, "duration") + 10,
                 json!({}),
-            )
+            )?;
+            if !process.is_empty() {
+                job["process"] = json!(process);
+            }
+            Ok(job)
         }
         "android.input" => {
             let action = s(a, "action");

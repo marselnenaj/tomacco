@@ -133,7 +133,7 @@ tomaccoctl call device.capture '{"platform":"android","device":"<device>","path"
 
 **Device logs**
 
-Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running.
+Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running. On an iPhone, bundle_id follows the app's process, its executable as go-ios apps names it, and the job names it as process; idevicesyslog filters when it is installed, otherwise go-ios syslog runs through Tomacco's filter. filter keeps lines containing that text.
 
 Annotations: writes, not idempotent, open world.
 
@@ -143,7 +143,7 @@ Annotations: writes, not idempotent, open world.
 | `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
 | `duration` | integer |  | `60` | 1 to 3600 |
 | `filter` | string |  | `""` |  |
-| `bundle_id` | string |  | `""` |  |
+| `bundle_id` | string |  | `""` | Android application ID, or iPhone bundle id as ios.apps lists it (an xtool XTL- prefix may be left out) |
 
 ```sh
 tomaccoctl call device.logs '{"platform":"android","device":"<device>"}'

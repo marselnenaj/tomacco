@@ -24,6 +24,7 @@ mod files;
 mod gradle_model;
 mod instrumentation;
 mod ios_emulator;
+mod iphone_device;
 mod iphone_setup;
 mod javascript;
 mod jdwp;
@@ -34,8 +35,8 @@ mod preview;
 mod product;
 mod profiling;
 mod projects;
-mod recorder;
 mod qr;
+mod recorder;
 mod redact;
 mod releases;
 mod remote;
@@ -415,6 +416,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             iphone_setup::worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing iPhone setup request"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_iphone_syslog") => {
+            iphone_device::syslog_worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing syslog request"))?,
             )?;
             return Ok(0);
         }

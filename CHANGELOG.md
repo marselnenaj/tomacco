@@ -23,6 +23,11 @@ operations and their JSON results.
   - `testing.run` takes a directory of scenarios as `path`, and with `shard:true` splits them across the devices,
     each scenario once on the next free device, into one report and one `junit.xml`. Without it every device runs
     every scenario.
+- **iPhone over USB.** Tested with stand-ins for go-ios, libimobiledevice and WebDriverAgent only; no iPhone
+  was connected.
+  - `device.logs` with `bundle_id` follows one app's process on an iPhone, named by its executable from
+    `go-ios apps`. Without `idevicesyslog` it runs `go-ios syslog` through Tomacco's own filter. Before,
+    `bundle_id` was ignored on iOS.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.
