@@ -278,7 +278,8 @@ class Renderer:
                     i += 1
                 i += 1
                 cls = f' class="language-{html.escape(language)}"' if language else ""
-                out.append(f"<pre><code{cls}>{html.escape(chr(10).join(body), quote=False)}\n</code></pre>")
+                label = f' data-lang="{html.escape(language)}"' if language else ""
+                out.append(f"<pre{label}><code{cls}>{html.escape(chr(10).join(body), quote=False)}\n</code></pre>")
                 continue
             if line.lstrip().startswith("<!--"):
                 while i < n and "-->" not in lines[i]:
