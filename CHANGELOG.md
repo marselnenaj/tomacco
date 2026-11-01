@@ -12,15 +12,17 @@ operations and their JSON results.
 
 - **Virtual iPhone app loop.**
   - `ios.virtual.deploy` skips the trust-cache exchange, the transfer and the install when this run already installed the
-    same signed app, and only opens it: the deploy log says `unchanged`. `force` installs it again. Unit-tested; not run
-    on a live phone.
+    same signed app, and only opens it: the deploy log says `unchanged`. `force` installs it again. On a live phone a
+    second `project.run` of an unchanged app built in 2.9 s and was opened in 0.6 s.
   - `project.run` with `device` `virtual-iphone` builds an xtool project, deploys it on the running virtual iPhone and opens
     it in one job, then looks for a new crash report of the app for `crash_check_seconds` and fails the job as `crashed`
     when one appears. The run's `build/tomacco/virtual_iphone_run.json` has the build and deploy seconds, `unchanged`, the
-    pid and the crash check. Refused at once when the phone is off. Run once on a live phone with
-    examples/hello-virtual-iphone: built in 4.7 s, deployed in 33.2 s, then iOS refused the open right after the install
-    (`InvalidRequest`) and the job failed; an open 40 s later was accepted. That boot's display stayed black, so the app
-    was not seen on screen.
+    pid and the crash check. Refused at once when the phone is off. When iOS refuses the open right after the install
+    as `InvalidRequest`, as it did once on a live phone, the deploy asks again every 5 s for up to 2 minutes and logs
+    each refusal with iOS's reason; `deploy.open_refusals` counts them. On a live phone with a copy of
+    examples/hello-virtual-iphone under a new bundle identifier: built in 9.5 s, installed and opened in 13.4 s with no
+    refusal, no crash report in 10 s, and a `testing.run` `wait_screen` matched the app's screenshot exactly (0 changed
+    pixels) 6.2 s after its `launch`. A changed build of the example itself deployed in 7.3 s and showed its new text.
   - `project.watch` with `device` `virtual-iphone` rebuilds and redeploys an xtool project on each save, leaves xtool's
     `xtool`, `.xtool` and `.bsp` output out, and logs one line per cycle with the build and deploy seconds, `unchanged`,
     the pid and the crash check. Unit-tested; not run on a live phone.
@@ -151,15 +153,19 @@ operations and their JSON results.
   `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.
 
 - **Virtual iPhone.**
-  - Copy-free starts, experimental: with `ios.virtual.configure {"start_disks":"overlay"}` a start makes the run's root
+  - Copy-free starts, experimental and the default while a `qemu-img` is found (beside the helper engine or on `PATH`;
+    `ios.virtual.configure {"start_disks":"copy"}` keeps copies): a start makes the run's root
     disk an empty qcow2 overlay on the base's with `qemu-img` instead of copying 32 GiB, and copies only the small
     auxiliary and SEP disks. The engine and the guest-tools helper attach it as qcow2, the host reads APFS through the
     chain, pruning and `ios.virtual.cleanup` keep the copies an overlay reads, and after 8 layers a start flattens the
     chain. `ios.emulator.prepare_guest_tools` takes `root_overlay` and `qemu_img`, and `start_disk` in
     `ios.virtual.status` names the `method`. Run on a live phone twice, the second start layered on the first: the disk
     preparation took 16 s instead of 89 s for a copy, a verified stop 4.4 to 4.9 s instead of 258 s, and a run 0.4 GiB
-    instead of 32 GiB. Switching back to `copy` flattened the chain live in 54 s; the flattening that 8 layers trigger
-    has not run live.
+    instead of 32 GiB. Switching back to `copy` flattened the chain live in 54 s. Two more live starts layered on a raw
+    base, the second from a profile that names no `start_disks`: 16 to 18 s of preparation, 5.1 s for the overlay,
+    0.3 to 0.6 s of input hashing instead of 198 s, starts of 307 and 342 s, verified stops of 4.3 and 4.8 s and
+    0.4 GiB per run, both with a visible display. The flattening that 8 layers trigger ran on a 9-overlay chain over
+    that live base with the start's own plan and command, not in a start: 47.9 s, 24.1 GiB written.
   - Saved phone states: `ios.virtual.state_save` keeps the last verified run under a name without copying it,
     `ios.virtual.states` lists the names, `ios.virtual.state_use` makes one the base of the next start and
     `ios.virtual.state_delete` removes a name and the copy only it kept. Pruning and `ios.virtual.cleanup` keep named runs.
@@ -177,7 +183,9 @@ operations and their JSON results.
   - `ios.virtual.host_check` adds `host` (logical processors, physical cores, memory) and `recommend`: what to change in
     the configured profile's `host_cpu_policy` and `translation_cache_mib` for this host, with the current and suggested
     value and why. It changes nothing. Unit-tested; the effect of a suggested setting has not been measured on a live
-    phone.
+    phone. Its `qemu_img` item, also in `ios.virtual.doctor`, warns when the profile asks for overlay starts and no
+    `qemu-img` is found, and names the path beside the helper engine where it must be. The warning is unit-tested; the
+    live profile found its `qemu-img` there.
   - `ios.virtual.profiles` lists every profile directory configured so far with its run, phase and whether its phone runs.
     `ios.virtual.configure` refuses another directory while the current phone runs (`ios_virtual_running`) or a start or
     stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile. The
@@ -203,8 +211,18 @@ operations and their JSON results.
     output, and with `{"probe":true}` an answer from the guest service): `live`, `quiet`, `stalled` or `booting`, with
     what it last showed and when. A stalled phone gets `recovery`, the typed calls to make in order (`restart_ui`, then
     `ios.virtual.stop`); the status itself never acts on the phone. `ios.virtual.configure {"stall_seconds"}` sets the
-    limit. Not tried on a hung live phone. On a live phone whose display stayed black (`display_visible:false`), it said
-    `live` from console output while the frame had not changed for 410 s.
+    limit. Not tried on a hung live phone. Only a new frame or an answered probe makes a phone `live`; console output
+    alone is `quiet` with `console_only:true`. Before, a live phone whose display stayed black said `live` from console
+    output while its frame had not changed for 410 s; that run's recorded signs are now a test fixture and read `quiet`.
+    A working live phone read `live` from its frames and an answered probe.
+  - The engine writes its scratch files, the shader translator's included, to `.tomacco-engine-tmp` beside the engine
+    instead of the shared /tmp, and a start refuses when that directory cannot take 16 MiB. A live start whose /tmp was
+    over its quota had every shader translation refused (`Disk_quota_exceeded` in the renderer's `fail.log`) and a black
+    display for the whole run; the two live starts after the change had a visible display. A black display's warning now
+    names such a scratch failure.
+  - A redeployed app the guest tools were built with is admitted by the hash its deploy wrote. Before, installd
+    rejected it as an invalid signature (`0xe8008014`), seen live after the example app's text changed; after the
+    change the same redeploy installed and opened.
   - `ios.virtual.unlock` leaves the running phone's lock screen the way the start does, as a short job, and never
     enters a passcode. `ios.virtual.deploy` unlocks first before it opens the app, and `testing.run` on
     `virtual-iphone` before its first step, failing with the new `ios_virtual_locked` when it cannot. Tested with
