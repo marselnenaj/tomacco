@@ -132,7 +132,7 @@ class MarkdownReader(unittest.TestCase):
 
     def test_fenced_code_is_literal(self):
         body, _ = render("```sh\necho \"<x>\" | **y**\n```")
-        self.assertIn('<pre><code class="language-sh">echo "&lt;x&gt;" | **y**\n</code></pre>', body)
+        self.assertIn('<pre data-lang="sh"><code class="language-sh">echo "&lt;x&gt;" | **y**\n</code></pre>', body)
 
     def test_table(self):
         body, _ = render("| A | B |\n| --- | :---: |\n| `x\\|y` | 2 |\n")
@@ -149,7 +149,7 @@ class MarkdownReader(unittest.TestCase):
     def test_list_item_with_code_and_continuation(self):
         body, _ = render("- first line\n  continued\n- with code:\n\n  ```sh\n  ls\n  ```\n")
         self.assertIn("first line\ncontinued", body)
-        self.assertIn("<pre><code", body)
+        self.assertIn("<pre data-lang=\"sh\"><code", body)
         self.assertEqual(body.count("<li>"), 2)
 
     def test_blockquote_and_details(self):
