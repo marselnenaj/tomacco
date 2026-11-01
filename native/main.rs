@@ -28,6 +28,7 @@ mod diagnostics;
 mod download;
 mod files;
 mod gradle_model;
+mod install;
 mod instrumentation;
 mod ios_emulator;
 mod iphone_automation;
@@ -440,6 +441,7 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             )?;
             return Ok(0);
         }
+        Some("_install") => return install::command(&args[1..]),
         Some("_update") => {
             update::worker(
                 args.get(1)

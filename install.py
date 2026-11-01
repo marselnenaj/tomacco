@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 """Install the desktop, control plane and optional Omarchy panel for one user."""
+# Since 1.3 the installer is `tomaccoctl _install` (native/install.rs), which
+# takes these flags and needs no Python. Run from a release package or an
+# installation, this file hands over to the tomaccoctl there (see
+# native_installer()), so older install.sh scripts and updaters keep working.
+# The Python code below still installs from a source checkout, generates the
+# package's documents for CMake (--package-docs), and stands in where no
+# tomaccoctl that installs is found. Both write the same journal and backups.
 import argparse
 import contextlib
 import datetime
@@ -762,6 +769,38 @@ class Installer:
             self.write(Path(".config/hypr/hyprland.lua"), text.rstrip() + "\n\n" + HYPR_COMMENT + "\n" + HYPR_REQUIRE + "\n", config.stat().st_mode & 0o777)
 
 
+# Set to 1, the Python installer runs even where a tomaccoctl that installs is found.
+PYTHON_ENVIRONMENT = "TOMACCO_INSTALL_PYTHON"
+
+
+def native_installer(args):
+    """The tomaccoctl to hand over to, with the arguments it needs before this
+    file's own, or None. A package's own bin/tomaccoctl, the one beside an
+    installed copy of this file and, to roll back or uninstall, the one
+    installed in the home; each only when it answers `_install --version`
+    (tomaccoctl 1.3 and later). A checkout keeps the Python installer: it
+    generates the documents it installs from their sources."""
+    if os.environ.get(PYTHON_ENVIRONMENT) == "1":
+        return None
+    if PACKAGED:
+        candidates = [(ROOT / "bin/tomaccoctl", ["--package", str(ROOT)])]
+    elif INSTALLED:
+        candidates = [(ROOT / "tomaccoctl", [])]
+    else:
+        return None
+    if args.rollback or args.uninstall or args.list_backups:
+        candidates.append((args.user_home / ".local/lib/tomacco/tomaccoctl", []))
+    for program, extra in candidates:
+        try:
+            probe = subprocess.run([str(program), "_install", "--version"], stdin=subprocess.DEVNULL,
+                                   capture_output=True, text=True, timeout=60, check=False)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if probe.returncode == 0 and probe.stdout.startswith("Tomacco installer "):
+            return [str(program), "_install", *extra]
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, default=ROOT / ("bin/tomacco" if PACKAGED else "build/tomacco"))
@@ -780,6 +819,10 @@ def main():
         if PACKAGED:
             parser.error("--package-docs needs the source tree.")
         print(json.dumps({"written": package_documents(args.package_docs)}));return
+    native = native_installer(args)
+    if native:
+        import sys
+        os.execv(native[0], native + sys.argv[1:])
     if args.list_backups:
         entries=[]
         for manifest in sorted((args.user_home / BACKUPS).glob('*/manifest.json')):

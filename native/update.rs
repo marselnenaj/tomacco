@@ -5,10 +5,13 @@
 //! durable job that downloads, verifies and installs it, and `update.rollback`
 //! undoes the last installation. A package is installed only when its detached
 //! Ed25519 signature verifies against a key compiled into this binary. The
-//! installation itself is the package's own `install.py`, so that its journal,
-//! backups and `--rollback` hold for an update as for any other installation.
+//! installation itself is the package's own installer (`bin/tomaccoctl
+//! _install`, see `install.rs`), so that its journal, backups and rollback
+//! hold for an update as for any other installation; rolling back and
+//! uninstalling run in this process.
 use crate::{
     core::*,
+    install,
     ios_emulator::virtual_phone,
     jobs,
     product::*,
@@ -1331,34 +1334,6 @@ fn busy(except: &str) -> Result<Option<String>> {
 // update.apply
 // ---------------------------------------------------------------------------
 
-/// Python runs the installer; a version without `Path.is_relative_to` cannot.
-fn python() -> Result<String> {
-    let missing = || {
-        Error::new(
-            "update_python_missing",
-            format!("Installing an update needs Python 3.9 or newer, which {PRODUCT_NAME}'s installer runs on. Nothing was changed."),
-        )
-        .remedy("Install Python 3, then try again")
-    };
-    let python = tc::find_optional("python3")?.ok_or_else(missing)?;
-    let done = tc::run(
-        &[
-            python.clone(),
-            "-I".into(),
-            "-c".into(),
-            "import sys; sys.exit(sys.version_info < (3, 9))".into(),
-        ],
-        30,
-        None,
-        false,
-    )
-    .map_err(|_| missing())?;
-    if done["exit_code"] != 0 {
-        return Err(missing());
-    }
-    Ok(python)
-}
-
 fn refuse_unless_managed(install: &Installation) -> Result<PathBuf> {
     match (&install.home, install.kind) {
         (Some(home), "user_install") => Ok(home.clone()),
@@ -1418,7 +1393,6 @@ fn apply(a: &Value) -> Result {
     }
     let install = this_installation()?;
     let user = refuse_unless_managed(&install)?;
-    let python = python()?;
     tc::find("curl")?;
     if let Some(job) = active_update_job()? {
         let mut job = job;
@@ -1428,7 +1402,7 @@ fn apply(a: &Value) -> Result {
     if let Some(reason) = busy("")? {
         return Err(Error::new("update_busy", reason));
     }
-    repair_interrupted(&python, &user)?;
+    repair_interrupted(&user)?;
     // A temporary directory beside the installation, so on its filesystem.
     let parent = user.join(INSTALLED_LIBRARY);
     let parent = parent.parent().unwrap_or(&user);
@@ -1445,7 +1419,7 @@ fn apply(a: &Value) -> Result {
     let request = scratch.path().join("request.json");
     atomic_json(
         &request,
-        &json!({"home":user,"python":python,"scratch":scratch.path()}),
+        &json!({"home":user,"scratch":scratch.path()}),
     )?;
     let job = jobs::submit(
         &format!("Install {PRODUCT_NAME} update"),
@@ -1673,7 +1647,6 @@ fn unpack_package(verified: &Verified, scratch: &Path) -> Result<PathBuf> {
         ));
     }
     for file in [
-        "install.py".to_string(),
         format!("bin/{DESKTOP_NAME}"),
         format!("bin/{CLI_NAME}"),
     ] {
@@ -1734,10 +1707,10 @@ fn install_checked(installer: &dyn Installer, expected: &str) -> Result<String> 
     }
 }
 
-/// The package's own installer, or a kept copy of it.
+/// The package's own installer for installing; this process for rolling back.
 struct JournalledInstaller {
-    python: String,
-    script: PathBuf,
+    /// The package's `bin/tomaccoctl`; None where only a rollback is wanted.
+    program: Option<PathBuf>,
     home: PathBuf,
     known: BTreeSet<String>,
 }
@@ -1756,17 +1729,20 @@ fn backups(user: &Path) -> Result<BTreeSet<String>> {
     Ok(names)
 }
 
-impl JournalledInstaller {
-    fn run(&self, arguments: &[&str], timeout: u64) -> Result<Value> {
-        let mut command = vec![
-            self.python.clone(),
-            "-I".into(),
-            self.script.to_string_lossy().into_owned(),
+impl Installer for JournalledInstaller {
+    fn install(&self) -> Result<()> {
+        let program = self
+            .program
+            .as_ref()
+            .ok_or_else(|| Error::new("update_installer_failed", "No package to install"))?;
+        let command = vec![
+            program.to_string_lossy().into_owned(),
+            "_install".into(),
             "--user-home".into(),
             self.home.to_string_lossy().into_owned(),
+            "--update".into(),
         ];
-        command.extend(arguments.iter().map(|argument| argument.to_string()));
-        let done = tc::run(&command, timeout, self.script.parent(), false)?;
+        let done = tc::run(&command, 900, program.parent(), false)?;
         eprint!("{}", s(&done, "stdout"));
         eprint!("{}", s(&done, "stderr"));
         if done["exit_code"] != 0 {
@@ -1778,13 +1754,7 @@ impl JournalledInstaller {
                 .to_string();
             return Err(Error::new("update_installer_failed", message));
         }
-        Ok(done)
-    }
-}
-
-impl Installer for JournalledInstaller {
-    fn install(&self) -> Result<()> {
-        self.run(&["--update"], 900).map(|_| ())
+        Ok(())
     }
     /// Every run journals into one new backup. Of several new ones the oldest is
     /// the installation: a later one is an interrupted rollback of it, and
@@ -1795,7 +1765,10 @@ impl Installer for JournalledInstaller {
             .find(|name| !self.known.contains(name)))
     }
     fn rollback(&self, journal: &str) -> Result<()> {
-        self.run(&["--rollback", journal], 300).map(|_| ())
+        let done = install::rollback(&self.home, &current_version(), journal)
+            .map_err(|error| Error::new("update_installer_failed", error.message))?;
+        eprintln!("{done}");
+        Ok(())
     }
     fn healthy(&self, expected: &str) -> Result<()> {
         let launcher = self.home.join(INSTALLED_LAUNCHERS).join(CLI_NAME);
@@ -1826,24 +1799,33 @@ fn reports_version(program: &Path, expected: &str) -> Result<()> {
     Ok(())
 }
 
-/// A copy of the package's installer, in the data directory, for `update.rollback`:
-/// the installation that wrote a journal is the one to read it back.
-fn keep_installer(root: &Path, version: &str) -> Result<PathBuf> {
+/// A copy of the package's install.py, in the data directory. This version
+/// rolls back in its own process; the copy is for an older tomaccoctl that
+/// finds this state after a downgrade, which runs the `script` it names.
+fn keep_installer(root: &Path, version: &str) -> Result<Option<PathBuf>> {
     let kept = state_directory()?.join("rollback").join(version);
     if kept.exists() {
         fs::remove_dir_all(&kept)?;
+    }
+    if !root.join("install.py").is_file() {
+        return Ok(None);
     }
     let share = kept.join("share").join(PACKAGE_PREFIX);
     fs::create_dir_all(&share)?;
     fs::set_permissions(&kept, fs::Permissions::from_mode(0o700))?;
     fs::copy(root.join("install.py"), kept.join("install.py"))?;
     fs::write(share.join("VERSION"), format!("{version}\n"))?;
-    Ok(kept.join("install.py"))
+    Ok(Some(kept.join("install.py")))
 }
 
 fn prune_installers(keep: &str) -> Result<()> {
     let directory = state_directory()?.join("rollback");
-    for entry in fs::read_dir(directory)? {
+    let entries = match fs::read_dir(directory) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error.into()),
+    };
+    for entry in entries {
         let entry = entry?;
         if entry.file_name().to_string_lossy() != keep {
             fs::remove_dir_all(entry.path())?;
@@ -1854,15 +1836,14 @@ fn prune_installers(keep: &str) -> Result<()> {
 
 /// A worker that died inside the installer leaves a transaction; it is undone
 /// before anything else is installed or rolled back.
-fn repair_interrupted(python: &str, user: &Path) -> Result<()> {
+fn repair_interrupted(user: &Path) -> Result<()> {
     let state = read_state()?;
     let transaction = &state["transaction"];
     if !transaction.is_object() {
         return Ok(());
     }
     let installer = JournalledInstaller {
-        python: python.to_string(),
-        script: PathBuf::from(s(transaction, "script")),
+        program: None,
         home: user.to_path_buf(),
         known: strings(&transaction["known"]).into_iter().collect(),
     };
@@ -1893,7 +1874,6 @@ pub fn worker(request: &str) -> Result<()> {
     let request = read_json(Path::new(request), None)?;
     let scratch = PathBuf::from(s(&request, "scratch"));
     let user = PathBuf::from(s(&request, "home"));
-    let python = s(&request, "python").to_string();
     let current = current_version();
     let parent = std::env::var("TOMACCO_PARENT_JOB").unwrap_or_default();
     let mut attempted = None;
@@ -1926,8 +1906,7 @@ pub fn worker(request: &str) -> Result<()> {
                 json!({"from":current,"to":version,"script":script,"known":known});
         })?;
         let installer = JournalledInstaller {
-            python: python.clone(),
-            script: root.join("install.py"),
+            program: Some(root.join("bin").join(CLI_NAME)),
             home: user.clone(),
             known,
         };
@@ -1977,8 +1956,7 @@ fn rollback() -> Result {
     if let Some(reason) = busy("")? {
         return Err(Error::new("update_busy", reason));
     }
-    let python = python()?;
-    repair_interrupted(&python, &user)?;
+    repair_interrupted(&user)?;
     let state = read_state()?;
     let last = &state["last_install"];
     if !last.is_object() {
@@ -1988,8 +1966,7 @@ fn rollback() -> Result {
         ));
     }
     let installer = JournalledInstaller {
-        python,
-        script: PathBuf::from(s(last, "script")),
+        program: None,
         home: user,
         known: BTreeSet::new(),
     };
@@ -2040,9 +2017,9 @@ pub fn update_command(args: &[String]) -> Result<i32> {
     Ok(if succeeded { 0 } else { 1 })
 }
 
-/// `tomaccoctl uninstall`: the installation's own copy of install.py with
-/// `--uninstall`. It keeps user data and files the user changed, and journals
-/// what it removes, so `--rollback` brings the installation back.
+/// `tomaccoctl uninstall`: the installer's `--uninstall`, in this process. It
+/// keeps user data and files the user changed, and journals what it removes,
+/// so a rollback brings the installation back.
 pub fn uninstall_command(args: &[String]) -> Result<i32> {
     if !args.is_empty() {
         return Err(Error::new("invalid_request", "Usage: tomaccoctl uninstall")
@@ -2058,47 +2035,26 @@ pub fn uninstall_command(args: &[String]) -> Result<i32> {
             ),
         ));
     };
-    let script = home.join(INSTALLED_LIBRARY).join("install.py");
-    if !script.is_file() {
-        return Err(Error::new(
-            "uninstall_installer_missing",
-            format!(
-                "{} is missing: installations made by {PRODUCT_NAME} 1.0.0 do not keep it.",
-                script.display()
-            ),
-        )
-        .remedy("Download the release package and run python3 install.py --uninstall from it"));
-    }
-    let python = tc::find_optional("python3")?.ok_or_else(|| {
-        Error::new(
-            "uninstall_python_missing",
-            "Uninstalling needs Python 3, which the installer runs on.",
-        )
-        .remedy("Install Python 3, then try again")
-    })?;
-    let done = Command::new(python)
-        .arg("-I")
-        .arg(&script)
-        .arg("--user-home")
-        .arg(&home)
-        .arg("--uninstall")
-        .stdin(Stdio::null())
-        .stderr(Stdio::inherit())
-        .output()?;
-    let printed = String::from_utf8_lossy(&done.stdout);
-    let _ = write!(std::io::stdout(), "{printed}");
-    if !done.status.success() {
-        return Ok(1);
-    }
-    // The uninstallation's journal holds a copy of the installer it removed.
-    if let Some(backups) = serde_json::from_str::<Value>(&printed)
-        .ok()
-        .and_then(|result| result["backups"].as_str().map(PathBuf::from))
-    {
+    let result = match install::uninstall(&home, &current_version()) {
+        Ok(result) => result,
+        Err(error) => {
+            eprintln!("{}", error.message);
+            return Ok(1);
+        }
+    };
+    let _ = writeln!(std::io::stdout(), "{}", install::ascii_json(&result));
+    // The uninstallation's journal holds a copy of the program it removed,
+    // which rolls it back.
+    if let Some(backups) = result["backups"].as_str().map(PathBuf::from) {
         let id = backups.file_name().unwrap_or_default().to_string_lossy();
         eprintln!(
-            "To undo: python3 {} --rollback {id}",
-            backups.join(INSTALLED_LIBRARY).join("install.py").display()
+            "To undo: {} _install --rollback {id}",
+            shell_quote(
+                &backups
+                    .join(INSTALLED_LIBRARY)
+                    .join(CLI_NAME)
+                    .to_string_lossy()
+            )
         );
     }
     Ok(0)
