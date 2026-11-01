@@ -90,6 +90,10 @@ operations and their JSON results.
     found through its research identity, refuses a research kernel with another digest, and records each source and
     digest and the PCC StaticTrustCache in `boot-inputs.json`.
   - The `doctor` step for an unconfigured virtual iOS device names `ios.virtual.host_check` and `ios.virtual.setup`.
+  - `tomaccoctl report` and `diagnostics.bundle` add `virtual-ios.json`: the host check, and for a configured virtual iOS
+    device the profile's run settings, its status, the engine build (digest, pinned revisions, options, patch counts) and
+    guest-tools build, and the last guest run's classified outcome, with the end of its log in `virtual-ios/guest.log`.
+    It is redacted like the rest of the bundle; `virtual_ios:false` leaves it out.
 
 ### Changed
 

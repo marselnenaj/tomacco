@@ -156,3 +156,10 @@ That tells an inactive signing library from a refused bundle.
 `ios.emulator.report` with the guest job shows the emulator's outcome, and `userspace_failures` and `respawn_storms` list
 what went wrong inside iOS. An entry of kind `guard-ended` is expected. If you are still stuck, please open an issue
 with the report.
+
+`tomaccoctl report` writes one archive for that issue, on this computer only. Its `virtual-ios.json` holds this machine's
+readiness from `ios.virtual.host_check`, the profile's run settings, `ios.virtual.status`, which engine and guest-tools
+builds the profile uses, and how the last guest run ended (its outcome, evidence counts, and the first userspace
+failures and respawn storms); `virtual-ios/guest.log` is the end of that run's log. Recognised secrets are masked and
+your home directory is shown as `~`, but read the files before you share them. The archive holds no images, disks or
+other files of Apple's.

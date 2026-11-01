@@ -8,7 +8,7 @@
 
 **Write a bug report bundle**
 
-Write one .tar.gz for a bug report on this computer; nothing is sent anywhere. It holds the version, a host summary (OS, kernel, CPUs, memory, KVM, desktop session), doctor, the settings, and for the most recent failed, timed-out or cancelled jobs their record, timeline and the end of their log. Recognised secrets are masked, job environments keep only variable names, and the home directory is shown as ~. Masking recognises known shapes only: the person should read the bundle before sharing it. Returns the path, size, SHA-256 and the files it holds.
+Write one .tar.gz for a bug report on this computer; nothing is sent anywhere. It holds the version, a host summary (OS, kernel, CPUs, memory, KVM, desktop session), doctor, the settings, and for the most recent failed, timed-out or cancelled jobs their record, timeline and the end of their log. With virtual_ios (the default) it also holds virtual-ios.json: ios.virtual.host_check's readiness (CPU, memory, disk, graphics card and its memory), and for a configured virtual iOS device the profile's run settings, ios.virtual.status, the engine build (digest, pinned revisions, options, patch counts) and guest-tools build, and how the last guest run ended as its report classified it (outcome, evidence counts, the first userspace failures and respawn storms); virtual-ios/guest.log is the end of that run's log. Recognised secrets are masked, job environments keep only variable names, and the home directory is shown as ~. Masking recognises known shapes only: the person should read the bundle before sharing it. Returns the path, size, SHA-256 and the files it holds.
 
 Annotations: writes, not idempotent, closed world.
 
@@ -18,6 +18,7 @@ Annotations: writes, not idempotent, closed world.
 | `jobs` | integer |  | `10` | 0 to 50; How many recent jobs that did not succeed to include |
 | `log_kb` | integer |  | `64` | 1 to 1024; How much of the end of each job's log to include |
 | `doctor` | boolean |  | `true` | Include the doctor report |
+| `virtual_ios` | boolean |  | `true` | Include the virtual iOS device's readiness, profile, builds and last run |
 | `anonymize_home` | boolean |  | `true` | Show the home directory as ~ |
 
 ```sh

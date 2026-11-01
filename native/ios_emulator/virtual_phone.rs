@@ -84,7 +84,7 @@ pub(crate) fn inspect_application(bundle: &Path, entitlements: Option<&Path>) ->
 
 /// Reads and checks both records. Nothing is repaired or defaulted here: a
 /// profile that cannot be trusted must not start a guest.
-pub(super) fn records(directory: &Path) -> Result<(Value, Value)> {
+pub(crate) fn records(directory: &Path) -> Result<(Value, Value)> {
     let invalid = |message: &str| {
         Error::new("ios_virtual_profile_invalid", message).details(json!({"directory":directory}))
     };
@@ -128,7 +128,7 @@ pub(super) fn records(directory: &Path) -> Result<(Value, Value)> {
     Ok((profile, state))
 }
 
-pub(super) fn directory() -> Result<PathBuf> {
+pub(crate) fn directory() -> Result<PathBuf> {
     let record = read_json(&location()?, Some(json!({})))?;
     if !text(&record, "directory") {
         return Err(Error::new(

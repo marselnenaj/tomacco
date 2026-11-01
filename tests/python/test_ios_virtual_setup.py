@@ -1,5 +1,9 @@
 """ios.virtual.setup and ios.virtual.host_check through tomaccoctl: the plan of a machine with nothing prepared,
 the refusals of run, and that neither starts anything or writes outside work. No guest and no build runs."""
+import json
+import tarfile
+import unittest
+
 from test_product import Isolated
 from native_client import StudioError, dispatch
 
@@ -50,7 +54,20 @@ class VirtualSetupTests(Isolated):
             self.assertEqual(item["remedy"] is None, item["status"] == "pass")
         self.assertEqual(answer["ready"], answer["failed"] == 0)
 
+    def test_the_report_bundle_carries_the_virtual_device_part(self):
+        output = self.root / "report.tar.gz"
+        answer = dispatch("diagnostics.bundle", {"path": str(output), "doctor": False})
+        self.assertIn("virtual-ios.json", answer["files"])
+        with tarfile.open(output) as archive:
+            part = json.load(archive.extractfile("tomacco-report/virtual-ios.json"))
+            readme = archive.extractfile("tomacco-report/README.txt").read().decode()
+        self.assertFalse(part["configured"])
+        self.assertIn("checks", part["host"])
+        self.assertIn("virtual-ios.json", readme)
+        answer = dispatch("diagnostics.bundle", {"path": str(self.root / "plain.tar.gz"), "doctor": False,
+                                                 "virtual_ios": False})
+        self.assertNotIn("virtual-ios.json", answer["files"])
+
 
 if __name__ == "__main__":
-    import unittest
     unittest.main()
