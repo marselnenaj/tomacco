@@ -56,7 +56,8 @@ class GuestSyslog(Isolated):
             owned = dispatch("ios.virtual.syslog", {"bundle_id": "dev.tomacco.SampleApp", "offset": 0})
             self.assertEqual(owned["app"], {"bundle_id": "dev.tomacco.SampleApp", "executable": "SampleApp"})
             self.assertEqual([line["message"] for line in owned["lines"]],
-                             ["exited due to SIGABRT", "Caller wanted 1 of 2 rows", "Loaded 3 items", "second batch"])
+                             ["exited due to SIGABRT", "Caller wanted 1 of 2 rows", "Loaded 3 items",
+                              "service state: running", "service state: spawn scheduled", "second batch"])
         finally:
             jobs.cancel(guest)
             jobs.wait(guest, 30)
