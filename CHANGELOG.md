@@ -4,11 +4,60 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
-## Unreleased
+## 1.3.0
 
 `tomaccoctl` now has one typed API of 250 operations.
 
 ### Added
+- **Seeing the screen.** Six operations for coding agents: `screen.marks` takes a screenshot with numbered boxes over
+  what can be tapped and lists number, label, id, class and bounds, `screen.tap` taps a mark after checking the screen
+  still matches it (`mark_stale` otherwise), `screen.tree` renders the Android UI hierarchy as short text within
+  `max_chars`, `screen.ocr` finds text on a screenshot with tesseract (word boxes and confidence), `screen.diff` says
+  what changed between two hierarchies or two screenshots, and `screen.wait` waits for text or a steady screen. The
+  virtual iPhone has no UI hierarchy, so there `testing.find`, `testing.action` and the `wait`, `assert`, `click` and
+  `long_click` steps take a `text` or `text_contains` selector and read the screenshot with OCR, flagged
+  `pixel_based`; `capabilities` returns `ocr` and the testing matrix lists these. Scenarios gain `wait_text` and
+  `wait_stable` steps on Android and the virtual iPhone. OCR can misread or miss text; results carry its confidence.
+  The OCR was run on an Android emulator and in unit tests, not on the virtual iPhone.
+- `screen.export` writes a screen of a device as a documented, versioned bundle (format `tomacco.screen`, version 1):
+  `screen.png` at full resolution and `screen.json` with the device, display in pixels and dp or points, system bar and
+  cutout insets, theme, locale, foreground app and every element with its role, text, bounds in both units, state and
+  `screen.marks` number. Android elements come from the UI hierarchy; the virtual iPhone and a USB iPhone (`platform:"ios"`)
+  have none, so there they are OCR lines with `hierarchy:"unavailable"`. `screen.export_batch` exports several devices
+  into one directory with an `index.json`, and `screen.diff` compares two bundles. JSON Schemas are in `assets/schemas`
+  and [docs/screen-export.md](docs/screen-export.md) has the field reference and versioning rules. Run on an emulator
+  with hardware acceleration; the iPhone paths are unit-tested only. New errors: `invalid_export`,
+  `unsupported_export_version`, `unsupported_device`.
+- Android Macrobenchmark and Baseline Profiles. `project.inspect` lists a build's benchmark modules, plugin modules and profile
+  files under `performance`. `profile.macrobenchmark` runs the benchmark module on a device as a job and ends with a report
+  whose flat metrics (`startupCompilationNone_time_to_initial_display_ms_median` and so on) `profile.compare` and
+  `profile.budget` read; its artifacts include the Perfetto traces, which `profile.benchmark_results` can summarise with
+  `profile.analyze`. `profile.baseline_profile` generates a profile with the `androidx.baselineprofile` plugin,
+  `profile.baseline_rules` counts its rules, `profile.baseline_install` copies it to `src/main/baseline-prof.txt`, and
+  `profile.baseline_compare` times cold starts with and without the profile in one call. `project.create` with kind `compose`
+  and `performance:true` adds a `:baselineprofile` module. On an API 36 emulator the generated profile had 10,212 rules and
+  `profile.baseline_compare` measured median cold starts of 582 ms and 469 ms. New error codes: `baseline_plugin_missing`,
+  `baseline_profile_exists`, `baseline_profile_missing`, `benchmark_module_ambiguous`, `benchmark_module_missing`,
+  `benchmark_results_missing`, `profile_install_failed`, `compile_failed`.
+- **Omarchy.** `--omarchy` adds Tomacco to Omarchy's menu (Trigger, Tomacco) through the user's
+  `~/.config/omarchy/extensions/omarchy-menu.jsonc`, between marker lines (`--no-omarchy-menu` skips it);
+  `--omarchy-bindings` adds `~/.config/hypr/tomacco-bindings.lua` with Super+Ctrl+Shift+T (workspace), P (device window)
+  and S (device screenshot), keys Omarchy's own bindings leave free. Both are journalled, refreshed by `--update` only where in use
+  and removed by `--uninstall`, in `install.py` and `tomaccoctl _install` alike. `tomaccoctl omarchy` shows what is
+  installed, outdated or missing (`status`), installs it again (`repair`), saves a device screenshot where Omarchy
+  keeps screenshots and copies it (`screenshot`), and with `notify on` sends a notification when a job of 15 seconds or more
+  ends while no desktop is open. The desktop's screenshots go to `OMARCHY_SCREENSHOT_DIR`, or the Pictures folder, on
+  Omarchy. The panel takes the shell theme's accent where it reads (`themeAccent`). Tested in a scratch home and unit tests; not
+  tried in a live Omarchy session.
+- `profile.startup` measures app startup on the virtual iPhone (`device` `virtual-iphone`) and on a USB-connected iPhone
+  (`platform` `ios`, through go-ios). Without a launch timer like `am start -W`, each launch is timed on the screen: to
+  the first picture that differs from the one before and stays different (the `startup_<mode>_*_ms` metrics), to the open
+  request returning with the app's process, to the screen keeping still for `settle_ms`, and on an iPhone to the app's
+  first syslog line. Modes are `cold` (go-ios `kill`, or `restart_ui` on the virtual iPhone) and `hot` (Home, or Settings
+  on an iPhone); each run's `launch_state` compares the app's process with the one before. The report names its
+  `device_kind` and says that iPhone times are coarse and virtual-iPhone times emulated; `profile.compare` and
+  `profile.budget` read it like Android's. New error code `startup_unobserved`. Tested with fixtures only; not measured on
+  a live phone.
 
 - The agent skill is now a router with references instead of one page. `SKILL.md` (about 1,600 words) has a description
   that covers every area, including understanding a screen with marks and OCR, macrobenchmark and baseline profiles and
@@ -173,11 +222,11 @@ operations and their JSON results.
   installed in 0.9 to 1.2 s, uninstalled in 0.7 s and rolled back in 1.2 to 1.8 s; `install.py` took 1.0 to 1.7 s,
   0.9 to 1.1 s and 1.5 to 2.0 s there with Python installed.
 - Every error has a `remedy`: where the place that failed gave none, the error carries its code's general one. The
-  new [error reference](docs/reference/errors.md), generated from `assets/errors.json`, lists all 435 codes with what
+  new [error reference](docs/reference/errors.md), generated from `assets/errors.json`, lists every code with what
   each means and what to do, and a unit test fails when code returns an error code the catalogue lacks.
 - The Arch package builds 1.2.1: `packaging/arch/PKGBUILD` and `.SRCINFO` name its source tarball, whose SHA-256 matched
   the release's `.sha256`, and the `v1.2.1` commit. `makepkg -d` built it in 2 min 55 s on the development host.
-- The README's social card and how-it-works diagrams said 170 operations; they now say 224, and the diagram fits the count
+- The README's social card and how-it-works diagrams said 170 operations; they now show the current count, and the diagram fits it
   in its column. A test checks the drawn count against `assets/operations.json`.
 - README, getting started and the FAQ said `tomaccoctl setup` connects Claude Code and Codex; it also connects Gemini
   CLI, Cursor, VS Code, Zed and OpenCode, as [Agents](docs/agents.md#connect-a-client) says.
@@ -239,7 +288,7 @@ operations and their JSON results.
   mid-call. `tests/python/test_install_fuzz.py` kills the Rust installer at random publications during updates, first
   installations and uninstallations and checks every recovery.
 
-- Property tests build values for each of the 236 input schemas, valid ones and ones that break exactly one rule, and
+- Property tests build values for every operation's input schema, valid ones and ones that break exactly one rule, and
   arbitrary JSON, and check that validation never panics, accepts the valid and answers the rest with
   `invalid_argument` and a remedy (`TOMACCO_FUZZ_SEED`, `TOMACCO_FUZZ_ROUNDS`; see docs/building.md).
 

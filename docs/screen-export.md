@@ -48,7 +48,7 @@ that changed, the elements added, removed and changed, and the pixel regions.
 {
   "format": "tomacco.screen",
   "version": 1,
-  "tomacco_version": "1.2.1",
+  "tomacco_version": "1.3.0",
   "captured_at": "2026-11-01T21:20:07Z",
   "device": {
     "platform": "android",

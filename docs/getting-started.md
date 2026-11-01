@@ -24,7 +24,7 @@ release's aarch64 package: the regular one on Arch Linux ARM, the portable one e
 
 To read it first: `curl -fsSL https://tomacco.dev/install.sh -o install.sh`.
 
-Installing needs no Python from the release after 1.2.1 on: the package's own `tomaccoctl`
+Installing needs no Python from 1.3.0 on: the package's own `tomaccoctl`
 installs it. Releases up to 1.2.1 install with their `install.py`, which needs `python3`.
 
 Once Tomacco is installed, `tomaccoctl verify` makes the same check for a package you download
@@ -33,7 +33,7 @@ against the release keys built into `tomaccoctl`. It exits 0 only when both matc
 prints the result as JSON.
 
 ```sh
-tomaccoctl verify tomacco-1.2.1-Linux-x86_64.tar.gz
+tomaccoctl verify tomacco-1.3.0-Linux-x86_64.tar.gz
 ```
 
 Tomacco runs on x86_64 and aarch64 (ARM64) Linux. x86_64 Arch Linux and Omarchy are the tested
@@ -53,12 +53,12 @@ checks the checksum only; with an earlier Tomacco installed, `tomaccoctl verify`
 signature as well):
 
 ```sh
-sha256sum -c tomacco-1.2.1-Linux-x86_64.tar.gz.sha256
-tar -xzf tomacco-1.2.1-Linux-x86_64.tar.gz
-python3 tomacco-1.2.1-Linux-x86_64/install.py --omarchy
+sha256sum -c tomacco-1.3.0-Linux-x86_64.tar.gz.sha256
+tar -xzf tomacco-1.3.0-Linux-x86_64.tar.gz
+python3 tomacco-1.3.0-Linux-x86_64/install.py --omarchy
 ```
 
-From the release after 1.2.1 on, the package installs itself without Python:
+From 1.3.0 on, the package installs itself without Python:
 `tomacco-VERSION-Linux-x86_64/bin/tomaccoctl _install --omarchy` (its `install.py` still
 works and does the same).
 

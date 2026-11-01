@@ -174,7 +174,7 @@ Installing it with pacman was not part of these checks.
 
 ```sh
 tools/build_portable.py build
-tools/build_portable.py verify build-portable/tomacco-1.2.1-Linux-x86_64-portable.tar.gz
+tools/build_portable.py verify build-portable/tomacco-1.3.0-Linux-x86_64-portable.tar.gz
 ```
 
 `build` needs Docker and network access. It builds the image `tomacco-portable-builder:<digest>` from
@@ -207,7 +207,7 @@ for `linux/arm64`, into `build-portable-aarch64/`:
 
 ```sh
 tools/build_portable.py build --arch aarch64
-tools/build_portable.py verify build-portable-aarch64/tomacco-1.2.1-Linux-aarch64-portable.tar.gz
+tools/build_portable.py verify build-portable-aarch64/tomacco-1.3.0-Linux-aarch64-portable.tar.gz
 ```
 
 Its image, `tomacco-portable-builder-aarch64:<digest>`, comes from `packaging/portable/Dockerfile.aarch64` and
