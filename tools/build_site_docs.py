@@ -630,7 +630,7 @@ def topic_index(pages, ref):
     out = ['<section class="docs-topic-index" aria-labelledby="what-do-you-want-to-do">',
            '<header class="docs-topic-index-heading"><h2 id="what-do-you-want-to-do">Pick a direction.</h2>'
            '<p>Guides for you and your coding agent.</p></header>']
-    for number, (group, keys) in enumerate(GROUPS, 1):
+    for group, keys in GROUPS:
         title, description = HOME_GROUPS[group]
         ident = "topic-" + slugify(group)
         links = [(pages[key].url, HOME_TITLES.get(key, SHORT_TITLES.get(key, pages[key].title)))
@@ -640,8 +640,7 @@ def topic_index(pages, ref):
         elif group == "Virtual iOS device" and "virtual-ios/setup" in pages:
             links.append((pages["virtual-ios/setup"].url + "#obtain-the-apple-images", "Prepare Apple images"))
         out.append(f'<section class="docs-topic-section" aria-labelledby="{ident}">'
-                   f'<header><p class="docs-topic-number" aria-hidden="true">{number:02}</p>'
-                   f'<h3 class="docs-topic-title" id="{ident}">{html.escape(title)}</h3>'
+                   f'<header><h3 class="docs-topic-title" id="{ident}">{html.escape(title)}</h3>'
                    f'<p class="docs-topic-description">{html.escape(description)}</p></header>'
                    '<ul class="docs-topic-links">')
         for href, label in links:
