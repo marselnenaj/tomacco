@@ -145,7 +145,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "ios.emulator.prepare_research" => crate::ios_emulator::research::prepare(&a),
         "ios.emulator.research" => crate::ios_emulator::research::start(&a),
         "ios.emulator.paravirtual" => crate::ios_emulator::paravirtual::start(&a),
-        "ios.emulator.control" => crate::ios_emulator::control::handle(&a),
+        "ios.emulator.control" => crate::ios_emulator::ui_testing::control(&a),
         "ios.emulator.usb_bridge" => crate::ios_emulator::usb_bridge::start(&a),
         "ios.emulator.report" => crate::ios_emulator::research::report(&a),
         "ios.emulator.restore" => crate::ios_emulator::restore::start(&a),

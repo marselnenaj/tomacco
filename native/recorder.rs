@@ -3,7 +3,9 @@
 //! runtime.input (the desktop's live display included) and testing.action
 //! become the steps of a testing.run scenario. A tap becomes a click on the
 //! element under it when the UI hierarchy names that element uniquely, and a
-//! tap at coordinates otherwise.
+//! tap at coordinates otherwise. The virtual iPhone's ios.emulator.control
+//! input is recorded the same way, as taps at coordinates
+//! (`ios_emulator::ui_testing`).
 use crate::{automation, core::*};
 use serde_json::{Value, json};
 use std::path::PathBuf;
@@ -16,6 +18,10 @@ pub struct Store(PathBuf);
 impl Store {
     pub fn home() -> Result<Self> {
         Ok(Store(home()?.join("recordings")))
+    }
+    #[cfg(test)]
+    pub fn at(directory: PathBuf) -> Self {
+        Store(directory)
     }
     fn file(&self, device: &str) -> PathBuf {
         self.0
@@ -38,6 +44,12 @@ impl Store {
     }
     /// testing.record: start, status, stop (writing the scenario) or discard.
     pub fn handle(&self, a: &Value) -> Result {
+        self.handle_with_screen(a, Value::Null)
+    }
+    /// testing.record, with the size of the screen in pixels that a start
+    /// keeps for input that arrives in 0..1 coordinates (the virtual
+    /// iPhone's); null when steps arrive in pixels.
+    pub fn handle_with_screen(&self, a: &Value, screen: Value) -> Result {
         let device = identifier(s(a, "device"), "device", None)?;
         let path = self.file(device);
         let _lock = self.lock(device)?;
@@ -60,8 +72,11 @@ impl Store {
                     "" => format!("Recorded on {device}"),
                     name => name.to_string(),
                 };
-                let value =
+                let mut value =
                     json!({"device":device,"name":name,"started":now(),"steps":[],"skipped":[]});
+                if !screen.is_null() {
+                    value["screen"] = screen;
+                }
                 atomic_json(&path, &value)?;
                 Ok(summary(&value))
             }
@@ -114,6 +129,16 @@ impl Store {
     /// Adds a step to the device's recording, or notes input a scenario
     /// cannot express (`Err(what)`), if a recording runs.
     pub fn append(&self, device: &str, step: std::result::Result<Value, &str>) -> Result<()> {
+        self.edit(device, |_| Some(step))
+    }
+    /// Lets `change` see and change the device's recording, if one runs,
+    /// and adds the step it returns, or notes the input it names as
+    /// skipped.
+    pub fn edit<'a>(
+        &self,
+        device: &str,
+        change: impl FnOnce(&mut Value) -> Option<std::result::Result<Value, &'a str>>,
+    ) -> Result<()> {
         if !self.active(device) {
             return Ok(());
         }
@@ -124,15 +149,16 @@ impl Store {
             return Ok(());
         }
         let mut value = read_json(&path, None)?;
-        let step = match step {
-            Ok(step) if value["steps"].as_array().map_or(0, Vec::len) < STEP_LIMIT => {
+        let skipped = match change(&mut value) {
+            None => None,
+            Some(Ok(step)) if value["steps"].as_array().map_or(0, Vec::len) < STEP_LIMIT => {
                 value["steps"].as_array_mut().unwrap().push(step);
                 None
             }
-            Ok(_) => Some("step_limit"),
-            Err(what) => Some(what),
+            Some(Ok(_)) => Some("step_limit"),
+            Some(Err(what)) => Some(what),
         };
-        if let Some(what) = step {
+        if let Some(what) = skipped {
             let skipped = value["skipped"].as_array_mut().unwrap();
             if skipped.len() < 100 {
                 skipped.push(json!(what));
@@ -142,7 +168,19 @@ impl Store {
     }
 }
 pub fn handle(a: &Value) -> Result {
-    Store::home()?.handle(a)
+    let store = Store::home()?;
+    let device = s(a, "device");
+    // The virtual iPhone's input comes in 0..1 of its screen; a recording
+    // keeps the screen's size from its start to make pixels of it.
+    if crate::ios_emulator::ui_testing::is_virtual(device)
+        && s(a, "action") == "start"
+        && !store.active(device)
+    {
+        use crate::ios_emulator::ui_testing::Phone as _;
+        let (width, height) = crate::ios_emulator::ui_testing::LivePhone::default().screen()?;
+        return store.handle_with_screen(a, json!({"width":width,"height":height}));
+    }
+    store.handle(a)
 }
 fn summary(value: &Value) -> Value {
     let steps = value["steps"].as_array().map_or(0, Vec::len);

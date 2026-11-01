@@ -92,13 +92,13 @@ tomaccoctl call testing.run '{"path":"<path>","directory":"<directory>","devices
 
 **Record UI test**
 
-Record a UI test on an Android device. Between start and stop, the taps, swipes, text and keys sent to the device through android.input, runtime.input (the desktop's live display included) and testing.action become testing.run scenario steps. A tap becomes a click on the element under it, named by resource ID, description or text (with index when that is shared), when the UI hierarchy read just before the tap names one; otherwise a tap at pixel coordinates. Reading the hierarchy makes each tap slower while recording. stop writes the scenario to path; status counts the steps; discard throws the recording away. Input a scenario cannot express, such as a rotation, is listed under skipped.
+Record a UI test on an Android device or the virtual iPhone. Between start and stop, the taps, swipes, text and keys sent to the device through android.input, runtime.input (the desktop's live display included) and testing.action become testing.run scenario steps. A tap becomes a click on the element under it, named by resource ID, description or text (with index when that is shared), when the UI hierarchy read just before the tap names one; otherwise a tap at pixel coordinates. Reading the hierarchy makes each tap slower while recording. stop writes the scenario to path; status counts the steps; discard throws the recording away. Input a scenario cannot express, such as a rotation, is listed under skipped. With device virtual-iphone (while it runs), start notes the screen's size and the ios.emulator.control input sent to its guest job becomes steps at pixel coordinates: click a tap, drag a swipe, a streamed touch_down to touch_up a tap, long press or swipe, and text, key and home their steps; a key combination and power_button are skipped.
 
 Annotations: writes, not idempotent, closed world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `device` | string | yes |  | non-empty; Android serial from device.list |
+| `device` | string | yes |  | non-empty; Android serial from device.list, or virtual-iphone |
 | `action` | string | yes |  | one of `start`, `status`, `stop`, `discard` |
 | `name` | string |  |  | up to 150 characters; The scenario's name, set at start |
 | `path` | string |  |  | Absolute path of the scenario JSON that stop writes |

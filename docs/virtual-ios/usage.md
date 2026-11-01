@@ -195,7 +195,7 @@ synthetic frame source and a real ffmpeg; not on a live phone.
 
 ## UI tests
 
-`testing.run` and `testing.crashes` take `virtual-iphone` as the device while the phone runs. Steps act at
+`testing.run`, `testing.record` and `testing.crashes` take `virtual-iphone` as the device while the phone runs. Steps act at
 pixels of the screenshot and compare whole screens with a baseline, because the guest reports no UI hierarchy to find
 elements in. The [agent guide](../agents.md#ui-tests-on-the-virtual-iphone) has the steps. Unit-tested with recorded guest replies; not run on a live phone.
 

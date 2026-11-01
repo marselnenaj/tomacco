@@ -655,7 +655,7 @@ tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"de
 
 ### UI tests on the virtual iPhone
 
-Pass `virtual-iphone` as the device to `testing.run` and `testing.crashes` while the virtual iPhone runs. The
+Pass `virtual-iphone` as the device to `testing.run`, `testing.record` and `testing.crashes` while the virtual iPhone runs. The
 guest tools report no UI hierarchy, so nothing can find an element by its label there: `testing.find`, `testing.action`,
 `testing.lint`, `testing.accessibility` and the selector steps (`wait`, `assert`, `click`, `long_click`, `fill`) answer
 `ui_hierarchy_unavailable`, whose `details.testing` lists what works.
@@ -677,8 +677,15 @@ guest tools report no UI hierarchy, so nothing can find an element by its label 
   frames. Reports that give no event are listed under `unparsed` with the reason. The guest returns at most three reports per directory,
   so `collection_complete:false` means some were left out, and an empty list never proves that nothing crashed. `testing.run` does not
   read crash reports after an iPhone scenario; its result says so in `crashes_error`.
+- **Recording.** `testing.record` with `virtual-iphone` notes the screen's size at `start`, then turns the `ios.emulator.control`
+  input sent to the running phone into steps: `click` becomes a `tap`, `drag` a `swipe`, a streamed touch from `touch_down` to
+  `touch_up` (the desktop's phone window sends these) a tap, a long press or a swipe, and `text`, `key` and `home` their steps. A
+  key combination and the side button are listed under `skipped`. Every tap is at coordinates.
 
 ```sh
+tomaccoctl call testing.record '{"device":"virtual-iphone","action":"start","name":"Open Settings"}'
+# tap and type in the desktop's phone window, or with ios.emulator.control
+tomaccoctl call testing.record '{"device":"virtual-iphone","action":"stop","path":"/absolute/open-settings.json"}'
 tomaccoctl call testing.run '{"path":"/absolute/open-settings.json","directory":"/absolute/iphone-results","devices":["virtual-iphone"]}'
 tomaccoctl call testing.crashes '{"device":"virtual-iphone","process":"MyApp","job_id":"JOB_ID"}'
 ```

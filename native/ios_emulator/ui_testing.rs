@@ -30,11 +30,11 @@ pub fn no_hierarchy(operation: &str) -> Error {
 
 /// What the virtual iPhone supports for UI tests.
 pub fn capabilities() -> Value {
-    json!({"ui_hierarchy":false,"selectors":false,"run_coordinates":true,"run_selectors":false,"run_screens":true,"run_launch":true,"run_stop_clear":false,"visual_diff":true,"lint":false,"accessibility":false,"unicode_text":false,"crashes":true,"run_crash_check":false})
+    json!({"ui_hierarchy":false,"selectors":false,"run_coordinates":true,"run_selectors":false,"run_screens":true,"run_launch":true,"run_stop_clear":false,"visual_diff":true,"lint":false,"accessibility":false,"unicode_text":false,"crashes":true,"run_crash_check":false,"record":true})
 }
 
-/// The running phone as the scenario runner and testing.crashes use
-/// it. Tests replace it with recorded replies.
+/// The running phone as the scenario runner, testing.crashes and
+/// testing.record use it. Tests replace it with recorded replies.
 pub trait Phone {
     /// The size of the screen in pixels, as screenshots have it.
     fn screen(&mut self) -> Result<(u64, u64)>;
@@ -506,6 +506,153 @@ pub fn crashes(phone: &mut impl Phone, a: &Value) -> Result {
     Ok(value)
 }
 
+type Step = std::result::Result<Value, &'static str>;
+
+/// A point in 0..1 as the pixel of a `width` x `height` screen it falls on.
+fn pixel(value: f64, size: u64) -> u64 {
+    ((value.clamp(0.0, 1.0) * size as f64) as u64).min(size.saturating_sub(1))
+}
+
+fn milliseconds(seconds: f64) -> u64 {
+    ((seconds * 1000.0).round() as u64).clamp(1, 10_000)
+}
+
+/// What a recording makes of one ios.emulator.control call that was
+/// delivered: a scenario step, input a scenario cannot express (`Err`), or
+/// nothing for a call that is no input. `recording` is the recording's
+/// file; a streamed touch is kept in it from touch_down to touch_up, and
+/// `now` is the time in seconds.
+pub fn control_step(a: &Value, recording: &mut Value, now: f64) -> Option<Step> {
+    let action = s(a, "action");
+    let size = (
+        recording["screen"]["width"].as_u64().filter(|w| *w > 0),
+        recording["screen"]["height"].as_u64().filter(|h| *h > 0),
+    );
+    let (Some(width), Some(height)) = size else {
+        return matches!(
+            action,
+            "click" | "drag" | "text" | "key" | "home" | "touch_up" | "power_button"
+        )
+        .then_some(Err("no_screen"));
+    };
+    let point = |x: &str, y: &str| {
+        (
+            pixel(a[x].as_f64().unwrap_or(0.0), width),
+            pixel(a[y].as_f64().unwrap_or(0.0), height),
+        )
+    };
+    let press = |(x, y): (u64, u64), held: Option<u64>| match held {
+        Some(duration) => {
+            json!({"action":"swipe","x":x,"y":y,"end_x":x,"end_y":y,"duration":duration})
+        }
+        None => json!({"action":"tap","x":x,"y":y}),
+    };
+    Some(match action {
+        "click" => {
+            let held = a["duration_ms"].as_u64().filter(|ms| *ms >= 500);
+            Ok(press(point("x", "y"), held))
+        }
+        "drag" => {
+            let (x, y) = point("x", "y");
+            let (end_x, end_y) = point("to_x", "to_y");
+            Ok(
+                json!({"action":"swipe","x":x,"y":y,"end_x":end_x,"end_y":end_y,
+                "duration":a["duration_ms"].as_u64().unwrap_or(400)}),
+            )
+        }
+        "text" => Ok(json!({"action":"text","text":a["text"]})),
+        "home" => Ok(json!({"action":"key","key":"home"})),
+        "key" => match a["keys"].as_array().map(Vec::as_slice) {
+            Some([key]) => Ok(json!({"action":"key","key":key})),
+            _ => Err("key_combination"),
+        },
+        "power_button" => Err("power_button"),
+        "touch_down" => {
+            let (x, y) = (a["x"].as_f64()?, a["y"].as_f64()?);
+            recording["touch"] = json!({"x":x,"y":y,"last":[x,y],"started":now});
+            return None;
+        }
+        "touch_move" => {
+            if recording["touch"].is_object() {
+                recording["touch"]["last"] = json!([a["x"], a["y"]]);
+            }
+            return None;
+        }
+        "touch_up" => {
+            let touch = recording.as_object_mut()?.remove("touch")?;
+            let start = (touch["x"].as_f64()?, touch["y"].as_f64()?);
+            let end = match (a["x"].as_f64(), a["y"].as_f64()) {
+                (Some(x), Some(y)) => (x, y),
+                _ => (
+                    touch["last"][0].as_f64().unwrap_or(start.0),
+                    touch["last"][1].as_f64().unwrap_or(start.1),
+                ),
+            };
+            let held = (now - touch["started"].as_f64().unwrap_or(now)).max(0.0);
+            let from = (pixel(start.0, width), pixel(start.1, height));
+            let moved = ((end.0 - start.0).powi(2) + (end.1 - start.1).powi(2)).sqrt();
+            if moved < 0.02 {
+                Ok(press(from, (held >= 0.5).then(|| milliseconds(held))))
+            } else {
+                Ok(json!({"action":"swipe","x":from.0,"y":from.1,
+                    "end_x":pixel(end.0, width),"end_y":pixel(end.1, height),"duration":milliseconds(held)}))
+            }
+        }
+        _ => return None,
+    })
+}
+
+/// ios.emulator.control, recorded while a recording runs for the virtual
+/// iPhone and the call is for its running guest job. A failed delivery is
+/// not recorded, and a recording that cannot be written does not fail the
+/// input that was delivered.
+pub fn control_recorded(
+    store: &crate::recorder::Store,
+    a: &Value,
+    running_job: impl FnOnce() -> Option<String>,
+    deliver: impl FnOnce(&Value) -> Result,
+) -> Result {
+    if !store.active(DEVICE) {
+        return deliver(a);
+    }
+    let result = deliver(a)?;
+    if running_job().as_deref() == Some(s(a, "job_id")) {
+        let _ = store.edit(DEVICE, |recording| control_step(a, recording, now()));
+    }
+    Ok(result)
+}
+
+/// ios.emulator.control as the API serves it: input is recorded while a
+/// recording of the virtual iPhone runs; frames, status and the rest go
+/// straight through, so a viewer's polling costs nothing more.
+pub fn control(a: &Value) -> Result {
+    if !matches!(
+        s(a, "action"),
+        "click"
+            | "drag"
+            | "text"
+            | "key"
+            | "home"
+            | "power_button"
+            | "touch_down"
+            | "touch_move"
+            | "touch_up"
+    ) {
+        return control::handle(a);
+    }
+    control_recorded(
+        &crate::recorder::Store::home()?,
+        a,
+        running_job,
+        control::handle,
+    )
+}
+
+/// The job of the virtual iPhone that is running, if one is.
+pub fn running_job() -> Option<String> {
+    virtual_phone::running_guest().ok().map(|(job, _)| job)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -901,6 +1048,198 @@ mod tests {
                 .code,
             "ios_guest_crash_reports_failed"
         );
+    }
+
+    #[test]
+    fn control_input_becomes_scenario_steps_in_screen_pixels() {
+        let mut recording = json!({"screen":{"width":1000,"height":2000},"steps":[]});
+        let step = |a: Value, recording: &mut Value, now: f64| control_step(&a, recording, now);
+        assert_eq!(
+            step(
+                json!({"action":"click","x":0.5,"y":0.25}),
+                &mut recording,
+                0.0
+            ),
+            Some(Ok(json!({"action":"tap","x":500,"y":500})))
+        );
+        assert_eq!(
+            step(
+                json!({"action":"click","x":1.0,"y":1.0,"duration_ms":900}),
+                &mut recording,
+                0.0
+            ),
+            Some(Ok(
+                json!({"action":"swipe","x":999,"y":1999,"end_x":999,"end_y":1999,"duration":900})
+            ))
+        );
+        assert_eq!(
+            step(
+                json!({"action":"drag","x":0.5,"y":0.99,"to_x":0.5,"to_y":0.25,"duration_ms":1500}),
+                &mut recording,
+                0.0
+            ),
+            Some(Ok(
+                json!({"action":"swipe","x":500,"y":1980,"end_x":500,"end_y":500,"duration":1500})
+            ))
+        );
+        assert_eq!(
+            step(json!({"action":"text","text":"hi"}), &mut recording, 0.0),
+            Some(Ok(json!({"action":"text","text":"hi"})))
+        );
+        assert_eq!(
+            step(json!({"action":"home"}), &mut recording, 0.0),
+            Some(Ok(json!({"action":"key","key":"home"})))
+        );
+        assert_eq!(
+            step(json!({"action":"key","keys":["ret"]}), &mut recording, 0.0),
+            Some(Ok(json!({"action":"key","key":"ret"})))
+        );
+        assert_eq!(
+            step(
+                json!({"action":"key","keys":["shift","a"]}),
+                &mut recording,
+                0.0
+            ),
+            Some(Err("key_combination"))
+        );
+        assert_eq!(
+            step(json!({"action":"power_button"}), &mut recording, 0.0),
+            Some(Err("power_button"))
+        );
+        for quiet in ["frame", "status", "screenshot", "metrics", "move"] {
+            assert_eq!(step(json!({"action":quiet}), &mut recording, 0.0), None);
+        }
+        // A streamed touch: a short one is a tap, a held one a long press,
+        // one that moved a swipe.
+        assert_eq!(
+            step(
+                json!({"action":"touch_down","x":0.1,"y":0.1}),
+                &mut recording,
+                10.0
+            ),
+            None
+        );
+        assert!(recording["touch"].is_object());
+        assert_eq!(
+            step(json!({"action":"touch_up"}), &mut recording, 10.1),
+            Some(Ok(json!({"action":"tap","x":100,"y":200})))
+        );
+        assert!(recording.get("touch").is_none());
+        step(
+            json!({"action":"touch_down","x":0.1,"y":0.1}),
+            &mut recording,
+            10.0,
+        );
+        assert_eq!(
+            step(
+                json!({"action":"touch_up","x":0.1,"y":0.1}),
+                &mut recording,
+                10.75
+            ),
+            Some(Ok(
+                json!({"action":"swipe","x":100,"y":200,"end_x":100,"end_y":200,"duration":750})
+            ))
+        );
+        step(
+            json!({"action":"touch_down","x":0.5,"y":0.9}),
+            &mut recording,
+            10.0,
+        );
+        step(
+            json!({"action":"touch_move","x":0.5,"y":0.5}),
+            &mut recording,
+            10.2,
+        );
+        step(
+            json!({"action":"touch_move","x":0.5,"y":0.3}),
+            &mut recording,
+            10.4,
+        );
+        assert_eq!(
+            step(json!({"action":"touch_up"}), &mut recording, 10.5),
+            Some(Ok(
+                json!({"action":"swipe","x":500,"y":1800,"end_x":500,"end_y":600,"duration":500})
+            ))
+        );
+        // A release without a press records nothing.
+        assert_eq!(
+            step(json!({"action":"touch_up"}), &mut recording, 11.0),
+            None
+        );
+        // Without the screen's size there are no pixels.
+        let mut bare = json!({"steps":[]});
+        assert_eq!(
+            step(json!({"action":"click","x":0.5,"y":0.5}), &mut bare, 0.0),
+            Some(Err("no_screen"))
+        );
+        assert_eq!(step(json!({"action":"frame"}), &mut bare, 0.0), None);
+    }
+
+    #[test]
+    fn a_recording_of_the_virtual_iphone_collects_control_input_and_plays_it_back() {
+        let root = tempfile::tempdir().unwrap();
+        let store = crate::recorder::Store::at(root.path().join("recordings"));
+        let job = "0123456789abcdef0123456789abcdef";
+        let running = || Some(job.to_string());
+        let deliver = |a: &Value| Ok(json!({"job_id":a["job_id"],"action":a["action"]}));
+        // Nothing is recorded without a recording, and the running job is
+        // not even looked up.
+        control_recorded(
+            &store,
+            &json!({"job_id":job,"action":"click","x":0.5,"y":0.5}),
+            || panic!("not asked"),
+            deliver,
+        )
+        .unwrap();
+        store
+            .handle_with_screen(
+                &json!({"device":DEVICE,"action":"start","name":"Settings"}),
+                json!({"width":100,"height":200}),
+            )
+            .unwrap();
+        for a in [
+            json!({"job_id":job,"action":"click","x":0.5,"y":0.5}),
+            json!({"job_id":job,"action":"frame","transport":"file"}),
+            json!({"job_id":job,"action":"text","text":"Wi"}),
+            json!({"job_id":job,"action":"power_button"}),
+            // Another guest's input is not this recording's.
+            json!({"job_id":"fedcba9876543210fedcba9876543210","action":"click","x":0.1,"y":0.1}),
+        ] {
+            control_recorded(&store, &a, running, deliver).unwrap();
+        }
+        // A failed delivery records nothing.
+        assert!(
+            control_recorded(
+                &store,
+                &json!({"job_id":job,"action":"home"}),
+                running,
+                |_| Err(Error::new("ios_home_unavailable", "x"))
+            )
+            .is_err()
+        );
+        let target = root.path().join("settings.json");
+        let done = store
+            .handle(&json!({"device":DEVICE,"action":"stop","path":target}))
+            .unwrap();
+        assert_eq!(done["skipped"], json!(["power_button"]));
+        let scenario = read_json(&target, None).unwrap();
+        assert_eq!(
+            scenario,
+            json!({"name":"Settings","steps":[{"action":"tap","x":50,"y":100},{"action":"text","text":"Wi"}]})
+        );
+        // The recorded scenario plays back as the same control input.
+        automation::check_scenario(&scenario).unwrap();
+        let mut phone = Recorded {
+            screen: (100, 200),
+            ..Default::default()
+        };
+        let result = run_device(&mut phone, &scenario, root.path(), "p");
+        assert_eq!(result["passed"], true);
+        assert_eq!(
+            phone.calls[0],
+            json!({"action":"click","x":0.505,"y":0.5025})
+        );
+        assert_eq!(phone.calls[1], json!({"action":"text","text":"Wi"}));
     }
 
     #[test]
