@@ -5,6 +5,7 @@
 #include <QPointer>
 #include <QVariantList>
 #include <QHash>
+#include <QProcessEnvironment>
 
 class QProcess;
 class QTimer;
@@ -31,6 +32,8 @@ public:
     Q_INVOKABLE int request(const QString &operation, const QVariantMap &arguments={});
     Q_INVOKABLE void complete(int requestId, const QVariant &result, const QString &error={});
     Q_INVOKABLE QVariantMap captureWindow(QObject *window, const QString &path, double scale=1);
+    // The environment of the tomaccoctl processes this window starts.
+    static QProcessEnvironment personEnvironment();
 signals:
     void operationsChanged();
     void cliChanged();
