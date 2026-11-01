@@ -304,7 +304,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`testing.lint`](testing.md#testinglint) | Check UI test scenario | read-only |
 | [`testing.visual_diff`](testing.md#testingvisual_diff) | Compare with baseline image | writes |
 | [`testing.accessibility`](testing.md#testingaccessibility) | Check Android accessibility | read-only |
-| [`testing.crashes`](testing.md#testingcrashes) | Find Android crashes | read-only |
+| [`testing.crashes`](testing.md#testingcrashes) | Find app crashes | read-only |
 | [`testing.results`](testing.md#testingresults) | Read test results | read-only |
 | [`testing.setup`](testing.md#testingsetup) | Set up Android text input | writes |
 | [`testing.instrumentation`](testing.md#testinginstrumentation) | Check Android text input | read-only |

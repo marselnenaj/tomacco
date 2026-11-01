@@ -3983,8 +3983,8 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Analizar el código del proyecto</translation>
     </message>
     <message>
-        <source>Find Android crashes</source>
-        <translation>Buscar fallos de Android</translation>
+        <source>Find app crashes</source>
+        <translation>Buscar fallos de apps</translation>
     </message>
     <message>
         <source>Check Android accessibility</source>

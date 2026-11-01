@@ -666,6 +666,67 @@ order are not checked.
 tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
 ```
 
+### UI tests on the virtual iPhone
+
+Pass `virtual-iphone` as the device to `testing.run`, `testing.record` and `testing.crashes` while the virtual iPhone runs. The
+guest tools report no UI hierarchy, so nothing can find an element by its label there: `testing.find`, `testing.action`,
+`testing.lint`, `testing.accessibility` and the selector steps (`wait`, `assert`, `click`, `long_click`, `fill`) answer
+`ui_hierarchy_unavailable`, whose `details.testing` lists what works.
+
+- **Steps.** `tap` and `swipe` take pixels of the screenshot (`ios.virtual.screenshot` with `frame:"none"`) and go through
+  `ios.emulator.control` as `click` and `drag`; a contact lasts at most 2 seconds, and a swipe that stays put is a long press.
+  `text` types on the USB keyboard into the focused field. `key` takes a QEMU key name such as `ret`, `home` for the Home button,
+  or an Android key code that has a counterpart (`KEYCODE_ENTER`, `KEYCODE_DEL`, `KEYCODE_HOME`, the arrows). `launch` opens an app
+  through the guest service's `open`; `stop` and `clear` are not available.
+- **Screens instead of elements.** On both platforms, `screenshot` keeps a PNG in the report directory, `pause` waits `duration`
+  milliseconds, `assert_screen` compares the screen with a `baseline` PNG as `testing.visual_diff` does (`threshold`, `tolerance`) and
+  fails with `screen_mismatch`, and `wait_screen` takes screenshots until one matches or `timeout` passes (`screen_timeout`). A failure
+  writes the difference image beside the screenshot. Make the baseline with `ios.virtual.screenshot`, or with
+  `testing.visual_diff` and `update_baseline:true` after you have looked at it.
+- **Crashes.** `testing.crashes` needs `process`, the app's executable name or another report name prefix, and reads the guest's crash
+  reports through its `crash_reports` operation. Each report with an exception becomes an event like Android's: `kind` `crash`, `time`
+  (the report's capture time), `package` (the bundle identifier), `process`, `pid`, `thread`, `exception` (such as `EXC_CRASH`),
+  `signal`, `message` (the abort message, the exception's subtype or the termination), `termination` and `stack`, the crashed thread's
+  frames. Reports that give no event are listed under `unparsed` with the reason. The guest returns at most three reports per directory,
+  so `collection_complete:false` means some were left out, and an empty list never proves that nothing crashed. `testing.run` does not
+  read crash reports after an iPhone scenario; its result says so in `crashes_error`.
+- **Recording.** `testing.record` with `virtual-iphone` notes the screen's size at `start`, then turns the `ios.emulator.control`
+  input sent to the running phone into steps: `click` becomes a `tap`, `drag` a `swipe`, a streamed touch from `touch_down` to
+  `touch_up` (the desktop's phone window sends these) a tap, a long press or a swipe, and `text`, `key` and `home` their steps. A
+  key combination and the side button are listed under `skipped`. Every tap is at coordinates.
+
+```sh
+tomaccoctl call testing.record '{"device":"virtual-iphone","action":"start","name":"Open Settings"}'
+# tap and type in the desktop's phone window, or with ios.emulator.control
+tomaccoctl call testing.record '{"device":"virtual-iphone","action":"stop","path":"/absolute/open-settings.json"}'
+tomaccoctl call testing.run '{"path":"/absolute/open-settings.json","directory":"/absolute/iphone-results","devices":["virtual-iphone"]}'
+tomaccoctl call testing.crashes '{"device":"virtual-iphone","process":"MyApp","job_id":"JOB_ID"}'
+```
+
+All of this, the screen steps on Android included, is unit-tested with recorded guest replies, screenshots and synthetic crash
+reports; none of it has been run on a live phone or an emulator yet.
+
+What works where, kept equal to the code by a unit test (`capabilities` returns the same as `testing`). A Yes for the virtual
+iPhone means implemented and unit-tested, not yet run on a live phone.
+
+<!-- testing-matrix:begin -->
+| Feature | Android | Virtual iPhone | iPhone (USB) |
+| --- | --- | --- | --- |
+| `testing.find`, `testing.action` (selectors) | Yes: UI hierarchy | No: the guest reports no UI hierarchy | No |
+| `testing.run`: `tap`, `swipe`, `text`, `key` | Yes | Yes: through `ios.emulator.control` | No |
+| `testing.run`: `wait`, `assert`, `click`, `long_click`, `fill` | Yes | No: no UI hierarchy | No |
+| `testing.run`: `screenshot`, `assert_screen`, `wait_screen`, `pause` | Yes | Yes: from `ios.virtual.screenshot` | No |
+| `testing.run`: `launch` | Yes | Yes: the guest's `open` | No |
+| `testing.run`: `stop`, `clear` | Yes | No | No |
+| Crash check after a `testing.run` scenario | Yes | No: call `testing.crashes` | No |
+| `testing.visual_diff` | Yes | Yes: PNG from `ios.virtual.screenshot` | Yes: PNG from `device.capture` |
+| `testing.crashes` | Yes: logcat | Yes: crash reports, by `process` | No: use `ios.crash_reports` |
+| `testing.record` | Yes: taps named by element | Yes: taps at coordinates | No |
+| `testing.lint` | Yes | No: no UI hierarchy | No |
+| `testing.accessibility` | Yes | No: no UI hierarchy | No |
+| `testing.setup` (Unicode text) | Yes | No: `text` types US or German keys | No |
+<!-- testing-matrix:end -->
+
 What has been run: `testing.visual_diff`, `testing.accessibility` (on the Settings app), `testing.crashes` (with a crash from
 `am crash`) and the crash list of `testing.run` on an API 36 x86_64 emulator, and `testing.results` on a `testing.run` report. ANRs,
 native crashes and Gradle's own result files have been read only from sample text in the unit tests.

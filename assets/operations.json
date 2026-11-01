@@ -19,7 +19,7 @@
   {
     "name": "capabilities",
     "title": "What this computer can do",
-    "description": "Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds.",
+    "description": "Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds. testing lists each UI testing feature (id, feature) and whether it works on android, virtual_iphone and iphone (supported, note).",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -232,6 +232,72 @@
         },
         "next": {
           "type": "string"
+        },
+        "testing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "feature": {
+                "type": "string"
+              },
+              "android": {
+                "type": "object",
+                "properties": {
+                  "supported": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "supported",
+                  "note"
+                ]
+              },
+              "virtual_iphone": {
+                "type": "object",
+                "properties": {
+                  "supported": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "supported",
+                  "note"
+                ]
+              },
+              "iphone": {
+                "type": "object",
+                "properties": {
+                  "supported": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "supported",
+                  "note"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "feature",
+              "android",
+              "virtual_iphone",
+              "iphone"
+            ]
+          }
         }
       },
       "required": [
@@ -4249,7 +4315,7 @@
   {
     "name": "testing.find",
     "title": "Find Android element",
-    "description": "Wait for native UI elements using semantic properties; return bounds and attributes.",
+    "description": "Wait for native UI elements using semantic properties; return bounds and attributes. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4330,7 +4396,7 @@
   {
     "name": "testing.action",
     "title": "Operate Android element",
-    "description": "Click, long-click or fill a uniquely matched native Android element.",
+    "description": "Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4422,7 +4488,7 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.",
+    "description": "Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop and clear fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4440,7 +4506,8 @@
           "items": {
             "type": "string",
             "minLength": 1
-          }
+          },
+          "description": "Android serials from device.list, or virtual-iphone for the running virtual iPhone"
         },
         "shard": {
           "type": "boolean",
@@ -4484,14 +4551,14 @@
   {
     "name": "testing.record",
     "title": "Record UI test",
-    "description": "Record a UI test on an Android device. Between start and stop, the taps, swipes, text and keys sent to the device through android.input, runtime.input (the desktop's live display included) and testing.action become testing.run scenario steps. A tap becomes a click on the element under it, named by resource ID, description or text (with index when that is shared), when the UI hierarchy read just before the tap names one; otherwise a tap at pixel coordinates. Reading the hierarchy makes each tap slower while recording. stop writes the scenario to path; status counts the steps; discard throws the recording away. Input a scenario cannot express, such as a rotation, is listed under skipped.",
+    "description": "Record a UI test on an Android device or the virtual iPhone. Between start and stop, the taps, swipes, text and keys sent to the device through android.input, runtime.input (the desktop's live display included) and testing.action become testing.run scenario steps. A tap becomes a click on the element under it, named by resource ID, description or text (with index when that is shared), when the UI hierarchy read just before the tap names one; otherwise a tap at pixel coordinates. Reading the hierarchy makes each tap slower while recording. stop writes the scenario to path; status counts the steps; discard throws the recording away. Input a scenario cannot express, such as a rotation, is listed under skipped. With device virtual-iphone (while it runs), start notes the screen's size and the ios.emulator.control input sent to its guest job becomes steps at pixel coordinates: click a tap, drag a swipe, a streamed touch_down to touch_up a tap, long press or swipe, and text, key and home their steps; a key combination and power_button are skipped.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "device": {
           "type": "string",
           "minLength": 1,
-          "description": "Android serial from device.list"
+          "description": "Android serial from device.list, or virtual-iphone"
         },
         "action": {
           "type": "string",
@@ -4533,7 +4600,7 @@
   {
     "name": "testing.lint",
     "title": "Check UI test scenario",
-    "description": "Check a testing.run scenario without acting on the device: its format, and each step against the current Android screen (or a saved android.hierarchy XML). findings name the step and a code: not_found (no element here matches; a warning, since an earlier step may open the screen it is on), ambiguous (several match: an error for click, long_click and fill, which need one), disabled, present (an element expected absent is there), off_screen (a tap or swipe point outside the screen) and invalid_key. steps lists each step's match count. A scenario that does not parse answers valid false with the error. passed is false when any finding is an error.",
+    "description": "Check a testing.run scenario without acting on the device: its format, and each step against the current Android screen (or a saved android.hierarchy XML). findings name the step and a code: not_found (no element here matches; a warning, since an earlier step may open the screen it is on), ambiguous (several match: an error for click, long_click and fill, which need one), disabled, present (an element expected absent is there), off_screen (a tap or swipe point outside the screen) and invalid_key. steps lists each step's match count. A scenario that does not parse answers valid false with the error. passed is false when any finding is an error. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4655,7 +4722,7 @@
   {
     "name": "testing.accessibility",
     "title": "Check Android accessibility",
-    "description": "Audit an Android screen's UI hierarchy: clickable elements without a label (missing_label), touch targets under min_target_dp (small_target) and text shorter than min_text_height_dp (small_text). Returns structured findings with bounds in pixels and sizes in dp. Heuristics, not a certificate: no contrast, font size or focus order.",
+    "description": "Audit an Android screen's UI hierarchy: clickable elements without a label (missing_label), touch targets under min_target_dp (small_target) and text shorter than min_text_height_dp (small_text). Returns structured findings with bounds in pixels and sizes in dp. Heuristics, not a certificate: no contrast, font size or focus order. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4708,19 +4775,25 @@
   },
   {
     "name": "testing.crashes",
-    "title": "Find Android crashes",
-    "description": "Read logcat's crash, system and main buffers and return Java crashes (FATAL EXCEPTION), ANRs and native crashes (Fatal signal) as structured events with package, pid, exception, message, stack and reason. Window: since (epoch seconds on the device clock), the life of job_id, or the last lines lines.",
+    "title": "Find app crashes",
+    "description": "Read logcat's crash, system and main buffers and return Java crashes (FATAL EXCEPTION), ANRs and native crashes (Fatal signal) as structured events with package, pid, exception, message, stack and reason. Window: since (epoch seconds on the device clock), the life of job_id, or the last lines lines. With device virtual-iphone, reads the running virtual iPhone's crash reports whose names start with process through the guest service, as ios.virtual.crash_reports does, and returns each one with an exception as a crash event: package (bundle identifier), process, pid, thread, exception, signal, message, termination and the crashed thread's frames as stack, timed by the report's capture time; unparsed lists the rest with the reason. The guest returns at most three reports per directory, so collection_complete false means some were left out, and an empty list never proves that nothing crashed.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "device": {
           "type": "string",
           "minLength": 1,
-          "description": "Android serial from device.list"
+          "description": "Android serial from device.list, or virtual-iphone"
         },
         "bundle_id": {
           "type": "string",
           "description": "Only events of this app and its processes"
+        },
+        "process": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "description": "virtual-iphone only, and required there: the report name prefix, usually the app's executable name"
         },
         "since": {
           "type": "number",

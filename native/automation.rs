@@ -1,4 +1,6 @@
-//! Semantic native Android actions and durable, device-serialized scenario runs.
+//! Semantic native Android actions and durable, device-serialized scenario
+//! runs, on Android devices and on the virtual iPhone.
+use crate::ios_emulator::ui_testing;
 use crate::{core::*, devices, jobs, toolchain};
 use serde_json::{Value, json};
 use std::{
@@ -76,6 +78,9 @@ fn nodes(device: &str, selector: &Value) -> Result<Vec<Value>> {
 pub fn find(a: &Value) -> Result {
     let device = s(a, "device");
     identifier(device, "device", None)?;
+    if ui_testing::is_virtual(device) {
+        return Err(ui_testing::no_hierarchy("testing.find"));
+    }
     let timeout = a["timeout"].as_u64().unwrap_or(10);
     let expected = a["state"].as_str().unwrap_or("present");
     let deadline = Instant::now() + Duration::from_secs(timeout);
@@ -116,6 +121,9 @@ pub fn find(a: &Value) -> Result {
     }
 }
 pub fn action(a: &Value) -> Result {
+    if ui_testing::is_virtual(s(a, "device")) {
+        return Err(ui_testing::no_hierarchy("testing.action"));
+    }
     if s(a, "action") == "fill" && a.get("text").is_none() {
         return Err(Error::new(
             "invalid_argument",
@@ -207,7 +215,8 @@ pub fn action(a: &Value) -> Result {
 }
 fn step_schema() -> Value {
     json!({"type":"object","additionalProperties":false,"required":["action"],"properties":{
-    "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot","tap","swipe","text"]},"selector":selector_schema(),
+    "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot","tap","swipe","text","pause","assert_screen","wait_screen"]},"selector":selector_schema(),
+    "baseline":{"type":"string","minLength":1},"threshold":{"type":"number","minimum":0,"maximum":1},"tolerance":{"type":"integer","minimum":0,"maximum":255},
     "x":{"type":"integer","minimum":0,"maximum":16384},"y":{"type":"integer","minimum":0,"maximum":16384},"end_x":{"type":"integer","minimum":0,"maximum":16384},"end_y":{"type":"integer","minimum":0,"maximum":16384},"duration":{"type":"integer","minimum":1,"maximum":10000},"state":{"type":"string","enum":["present","absent"]},"text":{"type":"string"},"key":{"type":"string"},"bundle_id":{"type":"string"},"label":{"type":"string","maxLength":150},"timeout":{"type":"integer","minimum":0,"maximum":60}}})
 }
 /// A scenario's shape and each step's required fields.
@@ -243,6 +252,21 @@ pub fn check_scenario(scenario: &Value) -> Result<()> {
             }
             "text" if step.get("text").is_none() => {
                 return Err(Error::new("invalid_argument", "A text step requires text"));
+            }
+            "pause" if step.get("duration").is_none() => {
+                return Err(Error::new(
+                    "invalid_argument",
+                    "A pause step requires duration",
+                ));
+            }
+            "assert_screen" | "wait_screen" if !Path::new(s(step, "baseline")).is_absolute() => {
+                return Err(Error::new(
+                    "invalid_argument",
+                    format!(
+                        "A {} step requires baseline, the absolute path of a PNG",
+                        s(step, "action")
+                    ),
+                ));
             }
             _ => (),
         }
@@ -345,6 +369,9 @@ pub fn lint(a: &Value) -> Result {
         fs::read_to_string(file)?
     } else {
         identifier(device, "device", None)?;
+        if ui_testing::is_virtual(device) {
+            return Err(ui_testing::no_hierarchy("testing.lint"));
+        }
         s(
             &devices::handle("android.hierarchy", &json!({"device":device}))?,
             "xml",
@@ -694,18 +721,74 @@ fn app_crash(events: &[Value], apps: &[String]) -> Option<Error> {
         .details(event.clone()),
     )
 }
+/// The lock that serializes scenarios on one device.
+fn device_lock(device: &str) -> Result<Lock> {
+    let lock = Lock::open(
+        &home()?
+            .join("locks")
+            .join(format!("automation-{}.lock", digest(device.as_bytes()))),
+    )?;
+    lock.acquire(false)?;
+    Ok(lock)
+}
+/// A screen step: `assert_screen` takes one screenshot to `actual` and
+/// compares it with the step's baseline as testing.visual_diff does;
+/// `wait_screen` takes them until one matches or the step's timeout passes.
+/// A failure writes the difference image to `diff`.
+pub(crate) fn screen_step(
+    step: &Value,
+    actual: &Path,
+    diff: &Path,
+    mut capture: impl FnMut(&Path) -> Result<()>,
+) -> Result {
+    let wait = s(step, "action") == "wait_screen";
+    let deadline = Instant::now() + Duration::from_secs(step["timeout"].as_u64().unwrap_or(10));
+    let mut arguments = json!({"actual":actual,"baseline":step["baseline"],
+        "threshold":step["threshold"].as_f64().unwrap_or(0.0),"tolerance":n(step, "tolerance")});
+    loop {
+        capture(actual)?;
+        let last = !wait || Instant::now() >= deadline;
+        if last {
+            arguments["diff"] = json!(diff);
+        }
+        let result = crate::visual::visual_diff(&arguments)?;
+        if b(&result, "passed") {
+            return Ok(result);
+        }
+        if last {
+            let (code, message) = if wait {
+                (
+                    "screen_timeout",
+                    "The screen did not match the baseline in time",
+                )
+            } else {
+                ("screen_mismatch", "The screen does not match the baseline")
+            };
+            return Err(Error::new(code, message).details(result));
+        }
+        thread::sleep(Duration::from_millis(500));
+    }
+}
 fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Value {
+    if ui_testing::is_virtual(device) {
+        return match device_lock(device) {
+            Ok(_lock) => ui_testing::run_device(
+                &mut ui_testing::LivePhone::default(),
+                scenario,
+                directory,
+                tag,
+            ),
+            Err(error) => {
+                json!({"device":device,"passed":false,"duration_seconds":0.0,"steps":[],"error":error.value()})
+            }
+        };
+    }
     let started = Instant::now();
     // The emulator shares this computer's clock; a second of margin.
     let since = now() - 1.0;
     let mut steps = Vec::new();
     let result = (|| -> Result<()> {
-        let lock = Lock::open(
-            &home()?
-                .join("locks")
-                .join(format!("automation-{}.lock", digest(device.as_bytes()))),
-        )?;
-        lock.acquire(false)?;
+        let _lock = device_lock(device)?;
         for (index, step) in scenario["steps"].as_array().unwrap().iter().enumerate() {
             let begin = Instant::now();
             let mut args = step.clone();
@@ -749,6 +832,16 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
                     "screenshot" => {
                         screenshot(device, &directory.join(format!("{tag}-{index:03}.png")))
                     }
+                    "pause" => {
+                        thread::sleep(Duration::from_millis(n(step, "duration")));
+                        Ok(json!({"paused_ms":n(step, "duration")}))
+                    }
+                    "assert_screen" | "wait_screen" => screen_step(
+                        &args,
+                        &directory.join(format!("{tag}-{index:03}.png")),
+                        &directory.join(format!("{tag}-{index:03}-diff.png")),
+                        |path| screenshot(device, path).map(|_| ()),
+                    ),
                     _ => Err(Error::new("invalid_step", "Unknown scenario action")),
                 }
             })();
@@ -820,6 +913,53 @@ mod tests {
         ] {
             assert!(check_scenario(&scenario(step.clone())).is_err(), "{step}");
         }
+    }
+    #[test]
+    fn screen_and_pause_steps_need_their_fields() {
+        let scenario = |step: Value| json!({"name":"x","steps":[step]});
+        for step in [
+            json!({"action":"pause","duration":500}),
+            json!({"action":"assert_screen","baseline":"/absolute/home.png","threshold":0.01,"tolerance":8}),
+            json!({"action":"wait_screen","baseline":"/absolute/home.png","timeout":30}),
+        ] {
+            check_scenario(&scenario(step)).unwrap();
+        }
+        for step in [
+            json!({"action":"pause"}),
+            json!({"action":"assert_screen"}),
+            json!({"action":"wait_screen","baseline":"relative.png"}),
+            json!({"action":"assert_screen","baseline":"/a.png","threshold":2}),
+            json!({"action":"assert_screen","baseline":"/a.png","tolerance":256}),
+        ] {
+            assert!(check_scenario(&scenario(step.clone())).is_err(), "{step}");
+        }
+    }
+    #[test]
+    fn element_operations_on_the_virtual_iphone_say_it_has_no_hierarchy() {
+        let selector = json!({"text":"OK"});
+        let refused = [
+            find(&json!({"device":"virtual-iphone","selector":selector})),
+            action(&json!({"device":"virtual-iphone","selector":selector,"action":"click"})),
+            crate::accessibility::accessibility(&json!({"device":"virtual-iphone"})),
+        ];
+        for result in refused {
+            let error = result.unwrap_err();
+            assert_eq!(error.code, "ui_hierarchy_unavailable");
+            assert_eq!(error.details.unwrap()["testing"]["run_coordinates"], true);
+        }
+        let directory = tempfile::tempdir().unwrap();
+        let file = directory.path().join("s.json");
+        atomic_json(
+            &file,
+            &json!({"name":"x","steps":[{"action":"tap","x":1,"y":1}]}),
+        )
+        .unwrap();
+        let error = lint(&json!({"path":file,"device":"virtual-iphone"})).unwrap_err();
+        assert_eq!(error.code, "ui_hierarchy_unavailable");
+        // On Android, process is refused rather than ignored.
+        let error = crate::crashes::crashes(&json!({"device":"emulator-5554","process":"MyApp"}))
+            .unwrap_err();
+        assert_eq!(error.code, "invalid_argument");
     }
     #[test]
     fn lint_reports_missing_ambiguous_and_disabled_elements_and_bad_points() {

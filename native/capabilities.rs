@@ -106,6 +106,7 @@ fn summary(doctor: &Value, avds: &Value, devices: &Value, virtual_phone: Option<
         "android":{"build":android_build,"emulator":emulator,"devices":android_devices},
         "ios":{"build":ios_build,"devices":iphone,"virtual_iphone":virtual_iphone},
         "desktop":{"ready":doctor["desktop"]["loadable"] != false},
+        "testing":crate::ios_emulator::ui_testing::matrix(),
         "next":"doctor has next_steps for what is missing"
     })
 }
@@ -153,6 +154,11 @@ mod tests {
         assert_eq!(value["ios"]["devices"]["connected"][0]["id"], "00008110");
         assert_eq!(value["ios"]["build"]["ready"], true);
         assert_eq!(value["ios"]["virtual_iphone"]["running"], true);
+        // The testing matrix: selectors work on Android, not on the virtual iPhone.
+        let selectors = &value["testing"][0];
+        assert_eq!(selectors["id"], "selectors");
+        assert_eq!(selectors["android"]["supported"], true);
+        assert_eq!(selectors["virtual_iphone"]["supported"], false);
         let schema = &api::operation("capabilities").unwrap()["outputSchema"];
         validate(&value, schema, "result").unwrap();
     }

@@ -117,7 +117,7 @@ var titles = {
     "testing.lint": QT_TRANSLATE_NOOP("Operations", "Check UI test scenario"),
     "testing.visual_diff": QT_TRANSLATE_NOOP("Operations", "Compare with baseline image"),
     "testing.accessibility": QT_TRANSLATE_NOOP("Operations", "Check Android accessibility"),
-    "testing.crashes": QT_TRANSLATE_NOOP("Operations", "Find Android crashes"),
+    "testing.crashes": QT_TRANSLATE_NOOP("Operations", "Find app crashes"),
     "testing.results": QT_TRANSLATE_NOOP("Operations", "Read test results"),
     "testing.setup": QT_TRANSLATE_NOOP("Operations", "Set up Android text input"),
     "testing.instrumentation": QT_TRANSLATE_NOOP("Operations", "Check Android text input"),

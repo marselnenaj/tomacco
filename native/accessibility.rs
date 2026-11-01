@@ -140,6 +140,11 @@ pub fn accessibility(a: &Value) -> Result {
             "Give either device or hierarchy",
         ));
     }
+    if crate::ios_emulator::ui_testing::is_virtual(device) {
+        return Err(crate::ios_emulator::ui_testing::no_hierarchy(
+            "testing.accessibility",
+        ));
+    }
     let (xml, density) = if device.is_empty() {
         let file = path(hierarchy, false, true)?;
         if fs::metadata(&file)?.len() > 16 * 1024 * 1024 {

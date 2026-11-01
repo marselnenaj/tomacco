@@ -3975,8 +3975,8 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Testergebnisse lesen</translation>
     </message>
     <message>
-        <source>Find Android crashes</source>
-        <translation>Android-Abstürze finden</translation>
+        <source>Find app crashes</source>
+        <translation>App-Abstürze finden</translation>
     </message>
     <message>
         <source>Check Android accessibility</source>
