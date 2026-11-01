@@ -10,4 +10,14 @@ quietd[90]: unloaded 4 services
 AMFI: Booted in a VM
 
 com.apple.xpc.launchd|not a date <Notice>: a line with an odd time
+com.apple.xpc.launchd|2026-10-28 07:20:01.100000 (user/501/UIKitApplication:dev.tomacco.SampleApp[3f2a][rb-legacy] [413]) <Notice>: service state: running
+com.apple.xpc.launchd|2026-10-28 07:20:01.000000 (user/501/UIKitApplication:dev.tomacco.SampleApp[3f2a][rb-legacy]) <Notice>: service state: spawn scheduled
+com.apple.xpc.launchd|2026-10-28 07:20:02.000000 (pid/89 [exampled]) <Notice>: created
+com.apple.xpc.launchd|2026-10-28 07:20:02.500000 (pid/74/com.example.Endpoint) <Notice>: service state: spawn scheduled
+com.apple.xpc.launchd|2026-10-28 07:20:03.000000 (user/501) <Notice>: entering ondemand mode
+com.apple.xpc.launchd|2026-10-28 07:20:03.100000 (system) <Notice>: created
+com.apple.xpc.launchd|2026-10-28 07:20:03.200000 (example-boot) <Notice>: Doing boot task
+com.apple.xpc.launchd|2026-10-28 07:20:04.000000 (user/501/com.example.agent) <Error>: could not import the service
+dyld[1]: example cache mapped
+ampled [88]) <Notice>: job state = running
 partial line without its end

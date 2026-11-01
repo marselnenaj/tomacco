@@ -44,6 +44,55 @@ fn level(name: &str) -> Option<String> {
     .then_some(name)
 }
 
+/// A launchd domain, the part of a service label before the service's own
+/// name: `system`, `user/UID`, `gui/UID`, `login/ASID` or `pid/PID`. Returns
+/// the domain and what follows it (empty for the domain itself).
+fn split_domain(label: &str) -> Option<(&str, &str)> {
+    if let Some(rest) = label.strip_prefix("system") {
+        return match rest {
+            "" => Some((label, "")),
+            _ => rest.strip_prefix('/').map(|name| ("system", name)),
+        };
+    }
+    for kind in ["user/", "gui/", "login/", "pid/"] {
+        let Some(rest) = label.strip_prefix(kind) else {
+            continue;
+        };
+        let (id, name) = rest.split_once('/').unwrap_or((rest, ""));
+        if !id.is_empty() && id.chars().all(|c| c.is_ascii_digit()) {
+            return Some((&label[..kind.len() + id.len()], name));
+        }
+    }
+    None
+}
+
+/// The process and PID a launchd record's parentheses name. Forms seen on a
+/// live phone's console: `DOMAIN/SERVICE [PID]` and `DOMAIN/SERVICE` (a
+/// service, running or not), `pid/PID [NAME]` (the domain of one process,
+/// named by its 15-character command name), a bare domain such as `system`
+/// or `user/501` (launchd's own record about it), and a boot task's name.
+fn launchd_subject(inner: &str) -> (String, String, Option<u64>) {
+    let (label, bracket) = match inner.strip_suffix(']').and_then(|r| r.rsplit_once(" [")) {
+        Some((label, bracket)) => (label, Some(bracket)),
+        None => (inner, None),
+    };
+    let number = bracket.and_then(|b| b.parse::<u64>().ok());
+    match split_domain(label) {
+        // `pid/PID [NAME]`: the bracket names the process, the domain its PID.
+        Some((domain, "")) if domain.starts_with("pid/") => match bracket {
+            Some(name) if number.is_none() => (
+                label.to_string(),
+                name.to_string(),
+                domain[4..].parse().ok(),
+            ),
+            _ => (label.to_string(), "launchd".into(), Some(1)),
+        },
+        Some((_, "")) => (label.to_string(), "launchd".into(), Some(1)),
+        Some((_, name)) => (label.to_string(), service_process(name), number),
+        None => (label.to_string(), service_process(label), number),
+    }
+}
+
 /// The process a launchd service label names: an app's bundle identifier
 /// for a UIKit application, else the last part of a domain path.
 fn service_process(service: &str) -> String {
@@ -97,30 +146,22 @@ pub(crate) fn parse(raw: &str) -> Line {
         if !subsystem.is_empty() && !subsystem.contains(' ') && subsystem.contains('.') {
             if let Some((head, message)) = rest.split_once(">: ") {
                 if let Some((before, name)) = head.rsplit_once(" <") {
-                    let (time, service, pid) = match before.split_once(" (") {
-                        Some((time, inner)) => {
-                            let inner = inner.strip_suffix(')').unwrap_or(inner);
-                            match inner.rsplit_once(" [") {
-                                Some((service, pid)) => (
-                                    time,
-                                    Some(service.to_string()),
-                                    pid.trim_end_matches(']').parse().ok(),
-                                ),
-                                None => (time, Some(inner.to_string()), None),
-                            }
-                        }
-                        None => (before, None, None),
-                    };
                     let sender = subsystem
                         .rsplit('.')
                         .next()
                         .unwrap_or(subsystem)
                         .to_string();
-                    let (process, pid) = match &service {
-                        Some(service) => (service_process(service), pid),
+                    let (time, service, process, pid) = match before.split_once(" (") {
+                        Some((time, inner)) => {
+                            let inner = inner.strip_suffix(')').unwrap_or(inner);
+                            let (service, process, pid) = launchd_subject(inner);
+                            (time, Some(service), process, pid)
+                        }
                         // launchd's own record.
-                        None if sender == "launchd" => ("launchd".to_string(), Some(1)),
-                        None => (sender.clone(), None),
+                        None if sender == "launchd" => {
+                            (before, None, "launchd".to_string(), Some(1))
+                        }
+                        None => (before, None, sender.clone(), None),
                     };
                     return Line {
                         time: Some(time.to_string()).filter(|t| !t.is_empty()),
@@ -394,14 +435,65 @@ mod tests {
     }
 
     #[test]
+    fn the_launchd_record_forms_of_a_live_phone_name_their_process() {
+        let lines: Vec<Line> = FIXTURE.split_inclusive('\n').map(parse).collect();
+        let subject = |i: usize| {
+            (
+                lines[i].process.clone(),
+                lines[i].pid,
+                lines[i].service.clone().unwrap_or_default(),
+            )
+        };
+        let app = "user/501/UIKitApplication:dev.tomacco.SampleApp[3f2a][rb-legacy]";
+        // An app's service in the user domain, with and without its PID.
+        assert_eq!(subject(12), ("SampleApp".into(), Some(413), app.into()));
+        assert_eq!(subject(13), ("SampleApp".into(), None, app.into()));
+        // The domain of one process: the bracket is its name, not a PID.
+        assert_eq!(subject(14), ("exampled".into(), Some(89), "pid/89".into()));
+        // A service in a process's domain is that service, without a PID.
+        assert_eq!(
+            subject(15),
+            (
+                "com.example.Endpoint".into(),
+                None,
+                "pid/74/com.example.Endpoint".into()
+            )
+        );
+        // A bare domain is launchd's own record about it.
+        assert_eq!(subject(16), ("launchd".into(), Some(1), "user/501".into()));
+        assert_eq!(subject(17), ("launchd".into(), Some(1), "system".into()));
+        // A boot task keeps its name.
+        assert_eq!(
+            subject(18),
+            ("example-boot".into(), None, "example-boot".into())
+        );
+        assert_eq!(
+            (subject(19).0, lines[19].level.as_deref()),
+            ("com.example.agent".into(), Some("error"))
+        );
+        assert_eq!(
+            (lines[20].process.as_str(), lines[20].pid),
+            ("dyld", Some(1))
+        );
+        // A record cut by a kernel print in the middle stays the kernel's line.
+        assert_eq!(lines[21].process, "kernel");
+        assert_eq!(
+            lines[21].message,
+            "ampled [88]) <Notice>: job state = running"
+        );
+        assert!(split_domain("users/501").is_none());
+        assert!(split_domain("user/x/name").is_none());
+    }
+
+    #[test]
     fn a_read_returns_complete_filtered_lines_and_where_to_go_on() {
         let root = tempfile::tempdir().unwrap();
         let file = root.path().join("uart.log");
         fs::write(&file, FIXTURE).unwrap();
         let all = read(&file, Some(0), 100, ("", &[], "")).unwrap();
         let lines = all["lines"].as_array().unwrap();
-        // Twelve complete lines, one of them empty; the unfinished one waits.
-        assert_eq!(lines.len(), 11);
+        // Twenty-two complete lines, one of them empty; the unfinished one waits.
+        assert_eq!(lines.len(), 21);
         let finished = FIXTURE.rfind('\n').unwrap() as u64 + 1;
         assert_eq!(all["next_offset"], finished);
         assert_eq!(all["more"], false);
@@ -413,7 +505,7 @@ mod tests {
         );
         // By process (name or service, any case), level and text.
         let app = read(&file, Some(0), 100, ("sampleapp", &[], "")).unwrap();
-        assert_eq!(app["lines"].as_array().unwrap().len(), 3);
+        assert_eq!(app["lines"].as_array().unwrap().len(), 5);
         let levels = vec!["fault".to_string(), "error".to_string()];
         let bad = read(&file, Some(0), 100, ("", &levels, "")).unwrap();
         let names: Vec<_> = bad["lines"]
@@ -424,18 +516,22 @@ mod tests {
             .collect();
         assert_eq!(
             names,
-            vec![json!("dev.tomacco.SampleApp"), json!("backboardd")]
+            vec![
+                json!("dev.tomacco.SampleApp"),
+                json!("backboardd"),
+                json!("com.example.agent")
+            ]
         );
         let none = vec!["none".to_string()];
         let plain = read(&file, Some(0), 100, ("", &none, "")).unwrap();
-        assert_eq!(plain["lines"].as_array().unwrap().len(), 3);
+        assert_eq!(plain["lines"].as_array().unwrap().len(), 5);
         let text = read(&file, Some(0), 100, ("", &[], "respawn")).unwrap();
         assert_eq!(text["lines"].as_array().unwrap().len(), 1);
         // Following: a short page says more, and the rest comes from its offset.
         let page = read(&file, Some(0), 4, ("", &[], "")).unwrap();
         assert_eq!(page["more"], true);
         let rest = read(&file, page["next_offset"].as_u64(), 100, ("", &[], "")).unwrap();
-        assert_eq!(rest["lines"].as_array().unwrap().len(), 7);
+        assert_eq!(rest["lines"].as_array().unwrap().len(), 17);
         // The unfinished line comes once it ends; a stale offset starts over.
         let mut grown = FIXTURE.to_string();
         grown.push_str(" now\n");
@@ -447,7 +543,7 @@ mod tests {
         );
         let stale = read(&file, Some(1 << 30), 100, ("", &[], "")).unwrap();
         assert_eq!(stale["reset"], true);
-        assert_eq!(stale["lines"].as_array().unwrap().len(), 12);
+        assert_eq!(stale["lines"].as_array().unwrap().len(), 22);
     }
 
     #[test]
