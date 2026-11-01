@@ -122,6 +122,20 @@ operations and their JSON results.
   the virtual iPhone need; and how to install a JDK and Gradle 9 there. Tested with made-up machines.
 - [Linux distributions and hardware](docs/linux-hosts.md): what ran in which clean container, each `kvm.status`, the
   emulator's window and renderer, small computers, Fedora's atomic desktops, NixOS and SteamOS.
+- Virtual iPhone: the `guest_memory_import` boot setting (`dma-buf`; the launcher's `--guest-memory-import`) lets the GPU
+  write render Stores straight into the guest's pages instead of copying each frame there on the CPU. The launcher lays
+  guest RAM on a sealed memfd, and the renderer imports it in 64 MiB windows (the kernel's `udmabuf.size_limit_mb`)
+  through `/dev/udmabuf` as dma-bufs, on first use. The development host's driver (RADV on an RX 6900 XT, Mesa 26.2.5)
+  refuses to import the shared memory guest RAM otherwise is. Without `/dev/udmabuf` or memfds the start keeps shared
+  RAM, and a refused import keeps the CPU copies. Off by default. On a live phone, two starts each way with the same
+  engine and script under a host load average of 15 to 31: every Store went to the GPU (2 847 in one boot, none
+  declined), Store work on the drain fell from 12.6-22.7 to 2.7-4.9 ms a frame while swiping and from 6.6-25.2 to
+  2.1-2.9 ms while scrolling, but the present now converts its own frame and rose from 2.1-4.3 to 6.8-9.9 ms. Swiping
+  showed 1.2-2.8 instead of 0.8-2.0 changed frames a second in the recording; presents a second did not rise clearly
+  (swiping 5.3-10.1 against 5.6-8.3, scrolling 6.3-11.7 against 7.5-17.1). Screenshots of Settings and of an opened app
+  matched pixel for pixel below the status bar clock, no frame was black, deploys and verified stops worked, and 124
+  windows, 7.75 of the 8 GiB of guest RAM, stayed pinned for the session.
+  [Usage](docs/virtual-ios/usage.md#gpu-access-to-guest-ram-experimental) has the table.
 
 ### Changed
 

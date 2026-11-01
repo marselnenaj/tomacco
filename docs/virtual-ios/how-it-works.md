@@ -95,15 +95,35 @@ What to know before changing it:
   generation ends, and depth and hash-keyed targets only by age above half the card; sole copies stay. A budget that retired images while a draw was being prepared ended the engine, so
   the session [stops the careful way](usage.md#the-graphics-memory-guard) instead (`tools/ios_host_pressure.py`,
   `tools/run_ios_paravirt.py`).
+- **The GPU and guest RAM.** The renderer can let the GPU read and write guest RAM directly, which spares a render
+  Store its CPU copy into the guest's pages. On the development host (RX 6900 XT, Mesa 26.2.5) the driver imports a
+  host pointer only over private anonymous memory: 2 GiB of shared anonymous memory, of a memfd mapped shared or
+  private and of a `/dev/shm` file are refused with `ERROR_INVALID_EXTERNAL_HANDLE`. Guest RAM is shared memory once the
+  guest channel's vhost-user device maps it too, so there every block logs `host_ram_import ... ok=false` and Stores
+  copy on the CPU. `--guest-memory-import dma-buf` (`guest_memory_import` on the paravirtual start) is the other route:
+  the launcher lays guest RAM on a memfd sealed against resizing, which QEMU maps through `memory-backend-file` at the
+  2 MiB alignment `memory-backend-ram,share=on` used, and sets `REIMS_VGPU_GUEST_IMPORT_DMA_BUF=on`. The renderer
+  (`reims-guest-ram-dma-buf.patch`) cuts each window of guest RAM from the memfd with `/dev/udmabuf` and imports it as a
+  dma-buf. A window is the kernel's `udmabuf.size_limit_mb`, 64 MiB unless raised, is imported on the first reference
+  into it and pins its pages while imported. The request receipt's `guest_memory_import` names the backing and any
+  fallback; `renderer/fail.log` has `guest_dma_buf=armed` on its `vk_caps` line and `host_ram_import id=...
+  route=dma_buf ... ok=true` per window, or `host_ram_import_dma_buf_refused` with the check that refused. Off the phone
+  on that host, a sealed 2 GiB memfd imported as 32 windows in 316-323 ms, a GPU fill of a used 64 MiB window took
+  2.5-2.7 ms, and the CPU saw the GPU's writes. On a live phone every render Store and GVA Store then went to the GPU
+  (`render_flush_gpu_direct`, `gva_flush_gpu_direct`; 2 847 in one boot, none declined, no window refused) and the
+  windows in use reached 124 and 125 of 128; the present, which used to take the frame a Store had read back, reads and converts
+  its own (`present_capture_fresh_nothing`). [GPU access to guest RAM](usage.md#gpu-access-to-guest-ram-experimental) has
+  the measurements and why the setting stays off by default.
 - **Frames.** `ios.emulator.control` `frame` with `transport:"file"` writes an uncompressed PPM into a private, memory-backed directory, and reports whether the picture changed. A viewer can skip the reload then.
 - **A frame's cost on the drain.** With no host window carrying the frame, each frame's render Store reads the RGBA16F front
   surface back, converts it into the BGRA8 frame the present and the frame mailbox use, and copies it into the guest's
-  pages; the conversion runs beside the copy. The renderer's census in `renderer/fail.log` times each part (`store_routes`:
+  pages; the conversion runs beside the copy. With guest RAM imported as dma-bufs the GPU writes the guest's pages and
+  the present reads back and converts the frame instead. The renderer's census in `renderer/fail.log` times each part (`store_routes`:
   `native_float_readback_us`, `store_capture_convert_us`, `native_float_publish_us`; `frame_mailbox`: `offer_us`).
-- **No GPU access to guest RAM on the development host.** Every session there logs `host_ram_import ... ok=false`
-  (`ERROR_INVALID_EXTERNAL_HANDLE`) for each 2 GiB block of guest RAM, so the renderer's GPU-direct writeback and gather
-  rails are never used and Stores copy on the CPU. Guest RAM is shared memory there, for the guest channel's
-  vhost-user device; that the driver refuses to import shared memory is a likely cause, not a measured one.
+- **No GPU access to shared guest RAM on the development host.** Without `guest_memory_import` `dma-buf`, every session
+  there logs `host_ram_import ... ok=false` (`ERROR_INVALID_EXTERNAL_HANDLE`) for each 2 GiB block of guest RAM, so the
+  renderer's GPU-direct writeback and gather rails are not used and Stores copy on the CPU. That the driver refuses
+  shared memory is measured: see the GPU and guest RAM above.
 
 Device contracts: [reims-device-capabilities.md](../../integrations/ios-emulator/reims-device-capabilities.md),
 [reims-display-panel.md](../../integrations/ios-emulator/reims-display-panel.md),
