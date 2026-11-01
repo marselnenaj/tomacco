@@ -12,6 +12,7 @@ mod pmp_debug;
 pub mod research;
 pub mod restore;
 pub mod setup_chain;
+pub mod startup;
 pub mod syslog;
 pub mod ui_testing;
 pub mod usb_bridge;

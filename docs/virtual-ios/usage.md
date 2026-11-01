@@ -454,6 +454,21 @@ pixels of the screenshot and compare whole screens with a baseline, because the 
 elements in. The [agent guide](../agents.md#ui-tests-on-the-virtual-iphone) has the steps and a table of what works on
 Android, here and on an iPhone, and what ran on a live phone.
 
+## App startup
+
+```sh
+tomaccoctl call profile.startup '{"device":"virtual-iphone","bundle_id":"dev.example.myapp","mode":"hot","runs":5}'
+```
+
+`profile.startup` with `device` `virtual-iphone` opens an installed app several times through the guest's `open` and
+times each launch on frames from the frame mailbox: to the first picture that differs from the one before and stays
+different, to the open request returning with the app's process, and to the screen keeping still. `hot` presses Home before
+each launch. `cold` ends the app with `restart_ui`, which restarts iOS's interface, so each cold run also waits for that
+restart. The report has Android's metric names, such as `startup_hot_median_ms`, `device_kind` `virtual-iphone` and a note:
+the guest runs emulated, so these launches are far slower than on an iPhone, and the numbers only compare with other
+virtual-iPhone reports. The [agent guide](../agents.md#app-performance) says what each number means. Tested with fixtures
+only; not measured on a live phone.
+
 ## Deploy your own app
 
 To build a SwiftUI app for it on Linux, first import the SDK from an `Xcode.xip` you
