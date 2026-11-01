@@ -176,6 +176,7 @@ var titles = {
     "ios.signing": QT_TRANSLATE_NOOP("Operations", "iPhone signing overview"),
     "ios.apps": QT_TRANSLATE_NOOP("Operations", "Show iPhone apps"),
     "ios.app_files": QT_TRANSLATE_NOOP("Operations", "iPhone app files"),
+    "ios.record": QT_TRANSLATE_NOOP("Operations", "Record iPhone screen"),
     "ios.emulator.inspect": QT_TRANSLATE_NOOP("Operations", "Check iOS emulator"),
     "ios.emulator.probe": QT_TRANSLATE_NOOP("Operations", "Examine iOS kernel boot"),
     "ios.emulator.exec": QT_TRANSLATE_NOOP("Operations", "Run iOS guest command"),

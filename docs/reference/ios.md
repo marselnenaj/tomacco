@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-48 operations. Generated from `assets/operations.json`; [all areas](README.md).
+49 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -231,6 +231,25 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call ios.app_files '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### ios.record
+
+**Record iPhone screen**
+
+Record a USB-connected iPhone's screen for seconds into an H.264 MP4 at path, as a durable job: go-ios screenshot --stream serves the phone's screenshots as MJPEG on a local port, and the latest picture is handed to ffmpeg fps times a second (ffmpeg must be installed). A picture that has not changed, or one that came late, repeats the last, so the video lasts as long as the recording; how many distinct pictures the phone delivers a second depends on the phone. The job's result names the file and counts frames_written, frames_distinct and pictures_received; a stream that ends stops the recording early with what it has (ended_early). job.send stop ends it early and keeps the video (stopped_early). One recording per iPhone at a time. Needs the developer image mounted (ios.prepare). For a live view use runtime.start.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; iPhone UDID from device.list |
+| `path` | string | yes |  | non-empty; Absolute path of the MP4 to write, ending in .mp4; an existing file is replaced when the recording succeeds. |
+| `seconds` | integer |  | `30` | 1 to 600; How long to record. |
+| `fps` | integer |  | `10` | 1 to 30; Frames per second of the video. |
+
+```sh
+tomaccoctl call ios.record '{"device":"<device>","path":"<path>"}'
 ```
 
 ### ios.crash_reports

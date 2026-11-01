@@ -1594,7 +1594,7 @@
   {
     "name": "device.screenshot",
     "title": "Device screenshot",
-    "description": "Capture an actual device display to a file.",
+    "description": "Capture an actual device display to a file. On an iPhone this uses idevicescreenshot, or go-ios screenshot when idevicescreenshot is not installed; both need the developer image mounted (ios.prepare).",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -6959,6 +6959,51 @@
       "required": [
         "device",
         "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "ios.record",
+    "title": "Record iPhone screen",
+    "description": "Record a USB-connected iPhone's screen for seconds into an H.264 MP4 at path, as a durable job: go-ios screenshot --stream serves the phone's screenshots as MJPEG on a local port, and the latest picture is handed to ffmpeg fps times a second (ffmpeg must be installed). A picture that has not changed, or one that came late, repeats the last, so the video lasts as long as the recording; how many distinct pictures the phone delivers a second depends on the phone. The job's result names the file and counts frames_written, frames_distinct and pictures_received; a stream that ends stops the recording early with what it has (ended_early). job.send stop ends it early and keeps the video (stopped_early). One recording per iPhone at a time. Needs the developer image mounted (ios.prepare). For a live view use runtime.start.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "iPhone UDID from device.list"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the MP4 to write, ending in .mp4; an existing file is replaced when the recording succeeds."
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600,
+          "default": 30,
+          "description": "How long to record."
+        },
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 10,
+          "description": "Frames per second of the video."
+        }
+      },
+      "required": [
+        "device",
+        "path"
       ],
       "additionalProperties": false
     },

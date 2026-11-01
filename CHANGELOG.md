@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 202 operations.
+`tomaccoctl` now has one typed API of 203 operations.
 
 ### Added
 
@@ -44,6 +44,9 @@ operations and their JSON results.
     `runtime.start` keeps: selectors are read against WebDriverAgent's XML source (`resource_id` is the
     accessibility identifier), and click, fill, tap, swipe, keys, launch, stop and screenshots map to it, with
     the same report and `junit.xml`. Steps without an iPhone equivalent are refused before the run.
+  - `ios.record` records an iPhone's screen to an MP4 as a job, from `go-ios screenshot --stream` encoded by
+    ffmpeg; `job.send stop` keeps what was recorded. `device.screenshot` and `device.capture` use
+    `go-ios screenshot` when `idevicescreenshot` is not installed.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

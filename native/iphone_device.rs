@@ -728,6 +728,77 @@ pub fn app_files_worker(request: &str) -> Result<()> {
     Ok(())
 }
 
+/// `ios.record`: the phone's screen for `seconds` into an MP4, as a job
+/// (tools/ios_device_record.py): go-ios's MJPEG screenshot stream, encoded by
+/// ffmpeg at `fps`. job.send stop ends it early and keeps the video.
+pub fn record(a: &Value) -> Result {
+    let device = udid(s(a, "device"))?;
+    let target = output_path(s(a, "path"))?;
+    if target.extension().is_none_or(|x| x != "mp4") {
+        return Err(Error::new(
+            "invalid_path",
+            "The recording is an MP4; name the path FILE.mp4",
+        ));
+    }
+    let seconds = a["seconds"].as_u64().unwrap_or(30);
+    let fps = a["fps"].as_u64().unwrap_or(10);
+    if !(1..=600).contains(&seconds) || !(1..=30).contains(&fps) {
+        return Err(Error::new(
+            "invalid_argument",
+            "seconds must be 1 to 600 and fps 1 to 30",
+        ));
+    }
+    let args = vec![
+        tc::find("python3")?,
+        crate::ios_emulator::research::script("ios_device_record.py")?
+            .to_string_lossy()
+            .into_owned(),
+        "--go-ios".into(),
+        tc::find("go-ios")?,
+        "--udid".into(),
+        device.into(),
+        "--output".into(),
+        target.to_string_lossy().into_owned(),
+        "--seconds".into(),
+        seconds.to_string(),
+        "--fps".into(),
+        fps.to_string(),
+        "--ffmpeg".into(),
+        tc::find("ffmpeg")?,
+    ];
+    fs::create_dir_all(target.parent().unwrap())?;
+    crate::jobs::submit(
+        "Record iPhone screen",
+        json!({"cwd":home()?,"timeout":seconds + 180,"exclusive":format!("iphone-record:{device}"),
+            "env":tc::environment()?,
+            "steps":[{"argv":args,"artifacts":[target],"stoppable":true}]}),
+    )
+}
+
+/// The command `device.screenshot` runs for an iPhone: libimobiledevice's
+/// idevicescreenshot, or go-ios screenshot without it.
+pub fn screenshot_command(device: &str, target: &std::path::Path) -> Result<Vec<String>> {
+    udid(device)?;
+    if let Some(tool) = tc::find_optional("idevicescreenshot")? {
+        return Ok(argv(&[&tool, "-u", device, &target.to_string_lossy()]));
+    }
+    let go = tc::find_optional("go-ios")?.ok_or_else(|| {
+        Error::new(
+            "tool_missing",
+            "An iPhone screenshot needs idevicescreenshot or go-ios",
+        )
+        .remedy(
+            "Install libimobiledevice or go-ios, and mount the developer image with ios.prepare",
+        )
+    })?;
+    Ok(argv(&[
+        &go,
+        "screenshot",
+        &format!("--output={}", target.to_string_lossy()),
+        &format!("--udid={device}"),
+    ]))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -333,6 +333,7 @@ tomaccoctl call ios.signing '{"device":"ACTUAL_UDID","path":"/absolute/MyiOSApp"
 tomaccoctl call device.app '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"stop"}'
 tomaccoctl call ios.app_files '{"device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"pull","path":"Documents","output":"/absolute/documents.tar"}'
 tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute/ui-results","devices":["ACTUAL_UDID"],"platform":"ios"}'
+tomaccoctl call ios.record '{"device":"ACTUAL_UDID","path":"/absolute/screen.mp4","seconds":20}'
 ```
 
 - `ios.device_status` says whether the phone is paired, trusted, unlocked and in Developer Mode. Show the user its
@@ -345,6 +346,8 @@ tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute
 - `testing.run` with `platform:"ios"` runs scenarios through the WebDriverAgent of each iPhone's `runtime.start` session;
   start that first. `resource_id` is the accessibility identifier, `tap` and `swipe` take points, and the
   [table in the guide](iphone.md#ui-tests) shows the rest.
+- `ios.record` records the screen to an MP4 as a job from go-ios's screenshot stream; `job.send` `stop` keeps what was recorded.
+  `device.screenshot` falls back to go-ios when `idevicescreenshot` is missing.
 
 ### Xcode projects, Flutter, crash reports and the App Store
 

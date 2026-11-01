@@ -232,6 +232,25 @@ run starts. The report and `junit.xml` are the same as on Android, with a screen
 failure; crashes are not read during the run, so use `ios.crash_reports` afterwards. A press
 lasts at most one second.
 
+### Screenshots and screen recordings
+
+`device.screenshot` and `device.capture` take a PNG with libimobiledevice's
+`idevicescreenshot`, or with `go-ios screenshot` when that is not installed. `ios.record`
+records the screen to an MP4: go-ios serves the phone's screenshots as a stream, and ffmpeg,
+which must be installed, encodes them. Both need the developer image mounted
+(`ios.prepare` with `action:"developer-image"`).
+
+```sh
+tomaccoctl call device.screenshot '{"platform":"ios","device":"ACTUAL_UDID","path":"/absolute/screen.png"}'
+tomaccoctl call ios.record '{"device":"ACTUAL_UDID","path":"/absolute/screen.mp4","seconds":20,"fps":10}'
+```
+
+The recording is a job. `job.send` with `stop` ends it early and keeps what was recorded.
+A picture that has not changed or came late is repeated, so the video lasts as long as the
+recording; the result says how many distinct pictures arrived. How many the phone delivers
+a second was not measured, since no phone was connected. For a smooth live picture, use
+`runtime.start`, whose WebDriverAgent stream runs at up to 30 frames per second.
+
 ### Profiles and signing certificates
 
 `ios.signing` shows which provisioning profiles there are and how long they last. It reads
@@ -385,8 +404,9 @@ default is `xctest`, and a plain launch of the runner app is not enough. A per-d
 lock prevents two Tomacco sessions from controlling one iPhone.
 
 **Choosing the bundle id.** An ambiguous id at launch is an error. Pass the exact
-`bundle_id` from `ios.apps`. `device.install` needs a signed IPA. Device screenshots
-through `device.capture` use libimobiledevice; for logs see [Logs of one app](#logs-of-one-app).
+`bundle_id` from `ios.apps`. `device.install` needs a signed IPA. For screenshots see
+[Screenshots and screen recordings](#screenshots-and-screen-recordings), for logs
+[Logs of one app](#logs-of-one-app).
 
 **The desktop.** `preview.configure` with `native:{platform:"ios",apple_target:"device",setup:true}`
 shows the setup dialog without implying a connected device.

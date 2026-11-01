@@ -353,7 +353,7 @@ fn screenshot(a: &Value) -> Result {
     if s(a, "platform") == "ios" {
         submit(
             "iOS screenshot",
-            json!([{"argv":[tc::find("idevicescreenshot")?,"-u",device,target],"artifacts":[target]}]),
+            json!([{"argv":crate::iphone_device::screenshot_command(device, &target)?,"artifacts":[target]}]),
             120,
             json!({}),
         )

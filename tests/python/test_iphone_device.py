@@ -333,5 +333,70 @@ class IphoneScenarioTests(IphoneTools):
         self.assertEqual(refused.exception.code, "step_unsupported")
 
 
+# go-ios screenshot --stream: an MJPEG server on --port with one picture, sent in pieces.
+STREAMING_GO_IOS = """import os,sys,time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+Path(os.environ['TOMACCO_TEST_ROOT'],'stream-args.txt').write_text(' '.join(sys.argv[1:]))
+picture=Path(os.environ['TOMACCO_TEST_ROOT'],'picture.jpg').read_bytes()
+port=int(next(a for a in sys.argv if a.startswith('--port=')).split('=')[1])
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self,*a): pass
+    def do_GET(self):
+        self.send_response(200); self.send_header('Content-Type','multipart/x-mixed-replace; boundary=--frame'); self.end_headers()
+        try:
+            while True:
+                part=b'--frame\\r\\nContent-Type: image/jpeg\\r\\n\\r\\n'+picture+b'\\r\\n'
+                self.wfile.write(part[:7]); self.wfile.flush(); self.wfile.write(part[7:]); self.wfile.flush(); time.sleep(.05)
+        except (BrokenPipeError,ConnectionResetError): pass
+HTTPServer(('127.0.0.1',port),Handler).serve_forever()
+"""
+
+
+class IphoneScreenTests(IphoneTools):
+    def test_the_screen_is_recorded_from_the_go_ios_stream_into_an_mp4(self):
+        import shutil
+        import subprocess
+        ffmpeg = shutil.which("ffmpeg")
+        if not ffmpeg:
+            self.skipTest("needs ffmpeg")
+        subprocess.run([ffmpeg, "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "color=c=red:s=64x48",
+                        "-frames:v", "1", str(self.root / "picture.jpg")], check=True)
+        self.tool("go-ios", STREAMING_GO_IOS)
+        target = self.root / "out/screen.mp4"
+        job = dispatch("ios.record", {"device": UDID, "path": str(target), "seconds": 1, "fps": 5})
+        done = jobs.wait(job["id"], 60)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"]))
+        self.assertEqual(target.read_bytes()[4:8], b"ftyp")
+        summary = json.loads([line for line in jobs.logs(job["id"])["text"].splitlines() if line.startswith("{")][-1])
+        self.assertEqual((summary["state"], summary["frames_written"]), ("recorded", 5))
+        self.assertGreater(summary["pictures_received"], 0)
+        args = (self.root / "stream-args.txt").read_text().split()
+        self.assertEqual(args[:2], ["screenshot", "--stream"])
+        self.assertIn("--udid=" + UDID, args)
+        with self.assertRaises(StudioError):
+            dispatch("ios.record", {"device": UDID, "path": str(self.root / "screen.mov")})
+
+    def test_a_screenshot_falls_back_to_go_ios(self):
+        self.tool("go-ios", "import sys\nfrom pathlib import Path\nPath(sys.argv[2].split('=',1)[1]).write_bytes(b'\\x89PNG fake')\n")
+        self.without_path_tools()
+        target = self.root / "shot.png"
+        job = dispatch("device.screenshot", {"platform": "ios", "device": UDID, "path": str(target)})
+        self.assertEqual(job["plan"]["steps"][0]["argv"][1:], ["screenshot", "--output=" + str(target), "--udid=" + UDID])
+        self.assertEqual(jobs.wait(job["id"], 15)["state"], "succeeded", jobs.logs(job["id"]))
+        self.assertTrue(target.read_bytes().startswith(b"\x89PNG"))
+
+
+class MjpegTests(unittest.TestCase):
+    def test_pictures_are_cut_from_a_stream_in_any_pieces(self):
+        import ios_device_record as recorder
+        stream = b"--frame\r\n\r\n\xff\xd8one\xff\xd9\r\n--frame\r\n\r\n\xff\xd8two\xff\xd9junk"
+        for size in (1, 3, len(stream)):
+            pictures, found = recorder.Pictures(), []
+            for at in range(0, len(stream), size):
+                found += pictures.feed(stream[at:at + size])
+            self.assertEqual(found, [b"\xff\xd8one\xff\xd9", b"\xff\xd8two\xff\xd9"], size)
+
+
 if __name__ == "__main__":
     unittest.main()

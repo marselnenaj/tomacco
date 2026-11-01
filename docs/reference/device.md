@@ -97,7 +97,7 @@ tomaccoctl call device.app '{"platform":"android","device":"<device>","bundle_id
 
 **Device screenshot**
 
-Capture an actual device display to a file.
+Capture an actual device display to a file. On an iPhone this uses idevicescreenshot, or go-ios screenshot when idevicescreenshot is not installed; both need the developer image mounted (ios.prepare).
 
 Annotations: writes, not idempotent, open world.
 

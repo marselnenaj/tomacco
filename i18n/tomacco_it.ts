@@ -3699,6 +3699,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Rapporti sugli arresti anomali dell'iPhone</translation>
     </message>
     <message>
+        <source>Record iPhone screen</source>
+        <translation>Registra lo schermo dell'iPhone</translation>
+    </message>
+    <message>
         <source>iPhone app files</source>
         <translation>File di un'app iPhone</translation>
     </message>

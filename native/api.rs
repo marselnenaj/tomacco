@@ -140,6 +140,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "ios.signing" => crate::iphone_device::signing(&a),
         "ios.device_status" => crate::iphone_device::status(&a),
         "ios.app_files" => crate::iphone_device::app_files(&a),
+        "ios.record" => crate::iphone_device::record(&a),
         "ios.doctor" | "ios.prepare" | "ios.wda_prepare" | "ios.apps" | "ios.crash_reports" => {
             crate::iphone_setup::handle(name, &a)
         }
