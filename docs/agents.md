@@ -89,14 +89,14 @@ The server also offers three prompts, short recipes a client can show as command
 
 ### A shorter tool list
 
-The full tool list is every operation with its whole schema, 265,234 bytes of `tools/list` response in this
+The full tool list is every operation with its whole schema, 290,460 bytes of `tools/list` response in this
 version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env` of the client's server entry:
 
 | Value | Tools | `tools/list` response |
 | --- | --- | --- |
-| `full` (the default) | One per operation, with every description. | 265,234 bytes |
-| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 136,247 bytes |
-| `grouped` | One per area, such as `android` or `job`: 28 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 29,261 bytes |
+| `full` (the default) | One per operation, with every description. | 290,460 bytes |
+| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 145,533 bytes |
+| `grouped` | One per area, such as `android` or `job`: 28 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 31,557 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
