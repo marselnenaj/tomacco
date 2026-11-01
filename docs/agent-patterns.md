@@ -147,6 +147,25 @@ Some calls are not destructive by the annotation but still need the user's word,
 [agent guide](agents.md) says: publishing with `play.commit` or `ios.store_ship` with `upload`, and
 downloads that accept a license.
 
+## When a guard refuses
+
+The person may limit what an agent does through Tomacco ([guardrails](agents.md#guardrails)). `agent.policy`
+says what this session may do:
+
+```sh
+tomaccoctl call agent.policy '{}'
+```
+
+A refusal is an error like any other, and nothing ran:
+
+| Code | What to do |
+| --- | --- |
+| `policy_denied` | The policy does not allow the operation. Do not look for another operation that does the same. Tell the person what you wanted to run and why. |
+| `approval_denied` | The person said no at the desktop, or did not answer in time. Do not repeat the call unless they ask you to. |
+| `path_outside_roots` | Write inside the project or one of the roots the `remedy` lists, or ask the person to add the folder. |
+| `session_job_limit` | Wait for a job you started with `job.wait`, or cancel one you no longer need, then try again. |
+| `result_too_large` | The call ran. Read its result with `result.read` from the `result_id` in `details`, passing `next_offset` back as `offset`; do not call the operation again for it. |
+
 ## Recover from failures
 
 - **Find out before retrying.** A failed job's log and `job.events` say where it stopped. Change

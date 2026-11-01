@@ -4,6 +4,42 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+`tomaccoctl` now has one typed API of 227 operations.
+
+### Added
+
+- **Guardrails for agents.** Every operation called through `tomaccoctl call` or `tomaccoctl mcp` passes a guard first;
+  with nothing configured, everything works as before. [docs/agents.md](docs/agents.md#guardrails) has the details.
+  - An agent policy, `agent_policy` in settings.json, set with `settings.configure` from a terminal and refused over MCP:
+    `full`, `no_destructive` (no `destructiveHint` operations), `read_only` (only `readOnlyHint` ones) or a named policy
+    with allow and deny lists of names and prefixes, chosen per channel, per MCP client by the name it sends in
+    `initialize`, or for one server with `tomaccoctl mcp --policy NAME` or `TOMACCO_POLICY`. The steps of `android.each`
+    are checked too. A refused call answers `policy_denied` with the reason and a remedy; `agent.policy` shows what a
+    caller gets.
+  - Write roots: under any policy but `full`, the destinations an operation takes as arguments (screenshots, reports,
+    exports, keystores, `files.write`'s and `project.create`'s folders: arguments of 46 operations) must be inside
+    the data directory, the temporary directory, the server's working directory, the policy's `write_roots` or
+    `TOMACCO_WRITE_ROOTS`, links resolved; settings.json, the audit log and saved results stay closed
+    (`path_outside_roots`).
+  - Desktop approval, off by default: with `approval.destructive`, a destructive MCP call waits until the person approves
+    it in a desktop dialog that shows the agent, the operation and its arguments with secrets masked. Deny, Escape or the
+    end of the countdown (5 to 30 s) answers `approval_denied`. Tested offscreen with a stand-in agent.
+  - An audit log, `audit/audit.jsonl` in the data directory, owner-only: each call that may change something and each
+    refused call, with the channel, the MCP client's name and version, the operation, masked arguments (texts by length
+    and SHA-256), the result code, the job, the policy and the approval. It rotates at 4 MiB and keeps four older
+    files; `audit.list` reads it with filters.
+  - Session limits: an MCP session runs at most 8 jobs at once by default (`session_job_limit`), and a result over
+    2 MiB is saved instead of sent (`result_too_large`), to be read in pieces with `result.read`.
+- SECURITY.md describes what an agent with Tomacco's tools can do to the computer and its devices, and what the guards
+  do and do not cover.
+
+### Changed
+
+- The desktop runs `tomaccoctl` with `TOMACCO_CALLER=desktop`, so the person's own calls pass no agent guard and are not
+  audited.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
