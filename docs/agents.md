@@ -655,7 +655,7 @@ tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"de
 
 ### UI tests on the virtual iPhone
 
-Pass `virtual-iphone` as the device to `testing.run` while the virtual iPhone runs. The
+Pass `virtual-iphone` as the device to `testing.run` and `testing.crashes` while the virtual iPhone runs. The
 guest tools report no UI hierarchy, so nothing can find an element by its label there: `testing.find`, `testing.action`,
 `testing.lint`, `testing.accessibility` and the selector steps (`wait`, `assert`, `click`, `long_click`, `fill`) answer
 `ui_hierarchy_unavailable`, whose `details.testing` lists what works.
@@ -670,12 +670,21 @@ guest tools report no UI hierarchy, so nothing can find an element by its label 
   fails with `screen_mismatch`, and `wait_screen` takes screenshots until one matches or `timeout` passes (`screen_timeout`). A failure
   writes the difference image beside the screenshot. Make the baseline with `ios.virtual.screenshot`, or with
   `testing.visual_diff` and `update_baseline:true` after you have looked at it.
+- **Crashes.** `testing.crashes` needs `process`, the app's executable name or another report name prefix, and reads the guest's crash
+  reports through its `crash_reports` operation. Each report with an exception becomes an event like Android's: `kind` `crash`, `time`
+  (the report's capture time), `package` (the bundle identifier), `process`, `pid`, `thread`, `exception` (such as `EXC_CRASH`),
+  `signal`, `message` (the abort message, the exception's subtype or the termination), `termination` and `stack`, the crashed thread's
+  frames. Reports that give no event are listed under `unparsed` with the reason. The guest returns at most three reports per directory,
+  so `collection_complete:false` means some were left out, and an empty list never proves that nothing crashed. `testing.run` does not
+  read crash reports after an iPhone scenario; its result says so in `crashes_error`.
 
 ```sh
 tomaccoctl call testing.run '{"path":"/absolute/open-settings.json","directory":"/absolute/iphone-results","devices":["virtual-iphone"]}'
+tomaccoctl call testing.crashes '{"device":"virtual-iphone","process":"MyApp","job_id":"JOB_ID"}'
 ```
 
-All of this, the screen steps on Android included, is unit-tested with recorded guest replies and screenshots; none of it has been run on a live phone or an emulator yet.
+All of this, the screen steps on Android included, is unit-tested with recorded guest replies, screenshots and synthetic crash
+reports; none of it has been run on a live phone or an emulator yet.
 
 What has been run: `testing.visual_diff`, `testing.accessibility` (on the Settings app), `testing.crashes` (with a crash from
 `am crash`) and the crash list of `testing.run` on an API 36 x86_64 emulator, and `testing.results` on a `testing.run` report. ANRs,

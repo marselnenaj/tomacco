@@ -956,6 +956,10 @@ mod tests {
         .unwrap();
         let error = lint(&json!({"path":file,"device":"virtual-iphone"})).unwrap_err();
         assert_eq!(error.code, "ui_hierarchy_unavailable");
+        // On Android, process is refused rather than ignored.
+        let error = crate::crashes::crashes(&json!({"device":"emulator-5554","process":"MyApp"}))
+            .unwrap_err();
+        assert_eq!(error.code, "invalid_argument");
     }
     #[test]
     fn lint_reports_missing_ambiguous_and_disabled_elements_and_bad_points() {

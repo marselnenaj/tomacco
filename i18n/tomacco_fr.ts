@@ -3979,8 +3979,8 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Vérifier les mises à jour des dépendances</translation>
     </message>
     <message>
-        <source>Find Android crashes</source>
-        <translation>Trouver les plantages Android</translation>
+        <source>Find app crashes</source>
+        <translation>Trouver les plantages des apps</translation>
     </message>
     <message>
         <source>Check Android accessibility</source>

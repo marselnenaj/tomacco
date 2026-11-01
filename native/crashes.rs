@@ -246,16 +246,9 @@ pub fn on_device(device: &str, bundle_id: &str, since: f64) -> Result<Vec<Value>
     Ok(select(parse(&log), bundle_id, since, f64::INFINITY))
 }
 
-pub fn crashes(a: &Value) -> Result {
-    let device = identifier(s(a, "device"), "device", None)?;
-    let bundle_id = s(a, "bundle_id");
-    if !bundle_id.is_empty() {
-        identifier(
-            bundle_id,
-            "application ID",
-            Some(r"[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)+"),
-        )?;
-    }
+/// The window of testing.crashes: from `since` or the start of `job_id`'s
+/// job (whichever is later) to the end of that job when it has ended.
+pub fn window(a: &Value) -> Result<(Option<f64>, f64)> {
     let mut since = a["since"].as_f64();
     let mut until = f64::INFINITY;
     if !s(a, "job_id").is_empty() {
@@ -271,6 +264,30 @@ pub fn crashes(a: &Value) -> Result {
             until = job["updated"].as_f64().unwrap_or(f64::INFINITY) + 2.0;
         }
     }
+    Ok((since, until))
+}
+
+pub fn crashes(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "device", None)?;
+    let bundle_id = s(a, "bundle_id");
+    if !bundle_id.is_empty() {
+        identifier(
+            bundle_id,
+            "application ID",
+            Some(r"[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+)+"),
+        )?;
+    }
+    use crate::ios_emulator::ui_testing;
+    if ui_testing::is_virtual(device) {
+        return ui_testing::crashes(&mut ui_testing::LivePhone::default(), a);
+    }
+    if !s(a, "process").is_empty() {
+        return Err(Error::new(
+            "invalid_argument",
+            "process is for the virtual iPhone; on Android, bundle_id selects an app",
+        ));
+    }
+    let (since, until) = window(a)?;
     let log = read_log(device, since, n(a, "lines"))?;
     let events = select(parse(&log), bundle_id, since.unwrap_or(0.0), until);
     let count = |kind: &str| events.iter().filter(|e| e["kind"] == kind).count();

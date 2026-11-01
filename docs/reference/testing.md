@@ -176,16 +176,17 @@ tomaccoctl call testing.accessibility
 
 ### testing.crashes
 
-**Find Android crashes**
+**Find app crashes**
 
-Read logcat's crash, system and main buffers and return Java crashes (FATAL EXCEPTION), ANRs and native crashes (Fatal signal) as structured events with package, pid, exception, message, stack and reason. Window: since (epoch seconds on the device clock), the life of job_id, or the last lines lines.
+Read logcat's crash, system and main buffers and return Java crashes (FATAL EXCEPTION), ANRs and native crashes (Fatal signal) as structured events with package, pid, exception, message, stack and reason. Window: since (epoch seconds on the device clock), the life of job_id, or the last lines lines. With device virtual-iphone, reads the running virtual iPhone's crash reports whose names start with process through the guest service, as ios.virtual.crash_reports does, and returns each one with an exception as a crash event: package (bundle identifier), process, pid, thread, exception, signal, message, termination and the crashed thread's frames as stack, timed by the report's capture time; unparsed lists the rest with the reason. The guest returns at most three reports per directory, so collection_complete false means some were left out, and an empty list never proves that nothing crashed.
 
 Annotations: read-only, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `device` | string | yes |  | non-empty; Android serial from device.list |
+| `device` | string | yes |  | non-empty; Android serial from device.list, or virtual-iphone |
 | `bundle_id` | string |  |  | Only events of this app and its processes |
+| `process` | string |  |  | non-empty, up to 255 characters; virtual-iphone only, and required there: the report name prefix, usually the app's executable name |
 | `since` | number |  |  | at least 0; Only events from this time on, in seconds since 1970 on the device clock |
 | `job_id` | string |  |  | Only events while this job ran, such as a project.run or testing.run job; uses the computer's clock, which an emulator shares |
 | `lines` | integer |  | `20000` | 1 to 200000; Without since or job_id, how many recent log lines to read |

@@ -30,10 +30,11 @@ pub fn no_hierarchy(operation: &str) -> Error {
 
 /// What the virtual iPhone supports for UI tests.
 pub fn capabilities() -> Value {
-    json!({"ui_hierarchy":false,"selectors":false,"run_coordinates":true,"run_selectors":false,"run_screens":true,"run_launch":true,"run_stop_clear":false,"visual_diff":true,"lint":false,"accessibility":false,"unicode_text":false})
+    json!({"ui_hierarchy":false,"selectors":false,"run_coordinates":true,"run_selectors":false,"run_screens":true,"run_launch":true,"run_stop_clear":false,"visual_diff":true,"lint":false,"accessibility":false,"unicode_text":false,"crashes":true,"run_crash_check":false})
 }
 
-/// The running phone as the scenario runner uses it. Tests replace it with recorded replies.
+/// The running phone as the scenario runner and testing.crashes use
+/// it. Tests replace it with recorded replies.
 pub trait Phone {
     /// The size of the screen in pixels, as screenshots have it.
     fn screen(&mut self) -> Result<(u64, u64)>;
@@ -297,6 +298,214 @@ pub fn run_device(phone: &mut impl Phone, scenario: &Value, directory: &Path, ta
             "message":"Crash reports of the virtual iPhone are not read after a scenario; call testing.crashes with the app's process name"}})
 }
 
+/// How many frames of the crashed thread an event keeps.
+const STACK_FRAMES: usize = 40;
+
+/// A time as crash reports write it, `2026-10-13 07:12:27.12 +0000`, in
+/// seconds since 1970.
+fn report_time(text: &str) -> Option<f64> {
+    static PATTERN: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let pattern = PATTERN.get_or_init(|| {
+        regex::Regex::new(
+            r"^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)(\.\d+)? ([+-])(\d\d)(\d\d)$",
+        )
+        .unwrap()
+    });
+    let c = pattern.captures(text)?;
+    let number = |i: usize| c[i].parse::<i64>().ok();
+    let (year, month, day) = (number(1)?, number(2)?, number(3)?);
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return None;
+    }
+    // Days from 1970-01-01 to the civil date (proleptic Gregorian).
+    let y = if month <= 2 { year - 1 } else { year };
+    let era = y.div_euclid(400);
+    let year_of_era = y - era * 400;
+    let day_of_year = (153 * ((month + 9) % 12) + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    let days = era * 146_097 + day_of_era - 719_468;
+    let fraction = c
+        .get(7)
+        .and_then(|m| m.as_str().parse::<f64>().ok())
+        .unwrap_or(0.0);
+    let offset = (number(9)? * 3600 + number(10)? * 60) * if &c[8] == "-" { -1 } else { 1 };
+    Some(
+        (days * 86_400 + number(4)? * 3600 + number(5)? * 60 + number(6)? - offset) as f64
+            + fraction,
+    )
+}
+
+/// One crash report's bytes (a JSON .ips: a header line, then the body) as
+/// the event testing.crashes returns for Android: kind, time, package,
+/// process, pid, thread, exception, message, signal and the crashed thread's
+/// frames as `stack`. A report without an exception is not a crash.
+pub fn crash_event(
+    bytes: &[u8],
+    name: &str,
+    owner: &str,
+) -> std::result::Result<Value, &'static str> {
+    let newline = bytes
+        .iter()
+        .position(|byte| *byte == b'\n')
+        .filter(|at| *at <= 4096)
+        .ok_or("unsupported-report-format")?;
+    let header: Value =
+        serde_json::from_slice(&bytes[..newline]).map_err(|_| "unsupported-report-format")?;
+    let body: Value =
+        serde_json::from_slice(&bytes[newline + 1..]).map_err(|_| "unsupported-report-format")?;
+    if !header.is_object() || !body.is_object() {
+        return Err("unsupported-report-format");
+    }
+    let exception = body["exception"].as_object().ok_or("no-exception")?;
+    let text = |value: &Value| value.as_str().unwrap_or_default().to_string();
+    let threads = body["threads"].as_array().cloned().unwrap_or_default();
+    let faulting = body["faultingThread"]
+        .as_u64()
+        .map(|index| index as usize)
+        .filter(|index| *index < threads.len())
+        .or_else(|| {
+            threads
+                .iter()
+                .position(|thread| thread["triggered"] == true)
+        });
+    let images = body["usedImages"].as_array().cloned().unwrap_or_default();
+    let (thread, stack) = match faulting {
+        Some(index) => {
+            let thread = &threads[index];
+            let label = [&thread["name"], &thread["queue"]]
+                .iter()
+                .find_map(|value| value.as_str().filter(|text| !text.is_empty()))
+                .map_or_else(|| format!("Thread {index}"), String::from);
+            let frames: Vec<Value> = thread["frames"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .take(STACK_FRAMES)
+                .enumerate()
+                .map(|(number, frame)| {
+                    let image = frame["imageIndex"]
+                        .as_u64()
+                        .and_then(|i| images.get(i as usize))
+                        .and_then(|image| image["name"].as_str())
+                        .unwrap_or("???");
+                    match frame["symbol"].as_str() {
+                        Some(symbol) => json!(format!(
+                            "{number} {image} {symbol} + {}",
+                            frame["symbolLocation"].as_u64().unwrap_or(0)
+                        )),
+                        None => json!(format!(
+                            "{number} {image} +0x{:x}",
+                            frame["imageOffset"].as_u64().unwrap_or(0)
+                        )),
+                    }
+                })
+                .collect();
+            (json!(label), json!(frames))
+        }
+        None => (json!(""), json!([])),
+    };
+    // What says why: the abort messages, else the exception's subtype, else
+    // the termination's indicator.
+    let abort: Vec<String> = body["asi"]
+        .as_object()
+        .into_iter()
+        .flat_map(|asi| asi.values())
+        .flat_map(|messages| messages.as_array().cloned().unwrap_or_default())
+        .filter_map(|message| message.as_str().map(String::from))
+        .collect();
+    let message = if !abort.is_empty() {
+        abort.join(" ")
+    } else if let Some(subtype) = exception.get("subtype").and_then(Value::as_str) {
+        subtype.to_string()
+    } else {
+        text(&body["termination"]["indicator"])
+    };
+    let capture = text(&body["captureTime"]);
+    let package = body["bundleInfo"]["CFBundleIdentifier"]
+        .as_str()
+        .or(header["bundleID"].as_str())
+        .unwrap_or_default();
+    Ok(json!({"kind":"crash",
+        "time":report_time(&capture).map_or_else(|| json!(capture), |time| json!(time)),
+        "package":package,"process":text(&body["procName"]),
+        "pid":body["pid"].as_u64().filter(|pid| *pid > 0 && *pid <= i32::MAX as u64),
+        "thread":thread,"exception":text(exception.get("type").unwrap_or(&Value::Null)),
+        "signal":text(exception.get("signal").unwrap_or(&Value::Null)),
+        "message":message,"termination":text(&body["termination"]["indicator"]),"stack":stack,
+        "report":{"name":name,"owner":owner,"incident_id":header["incident_id"],"bug_type":header["bug_type"]}}))
+}
+
+/// The crash events in a guest's `crash_reports` reply, and the reports
+/// that gave none with the reason.
+fn crash_events(response: &Value) -> (Vec<Value>, Vec<Value>) {
+    let mut events = Vec::new();
+    let mut unparsed = Vec::new();
+    for report in response["reports"].as_array().into_iter().flatten() {
+        let name = s(report, "name");
+        let owner = s(report, "owner");
+        let bytes = report["content_base64"]
+            .as_str()
+            .and_then(|text| STANDARD.decode(text).ok());
+        let outcome = match bytes {
+            _ if report["content_complete"] != true => Err("incomplete-content"),
+            Some(bytes) if Some(bytes.len() as u64) == report["content_bytes"].as_u64() => {
+                crash_event(&bytes, name, owner)
+            }
+            _ => Err("content-size-mismatch"),
+        };
+        match outcome {
+            Ok(event) => events.push(event),
+            Err(reason) => unparsed.push(json!({"name":name,"owner":owner,"reason":reason})),
+        }
+    }
+    (events, unparsed)
+}
+
+/// testing.crashes for the virtual iPhone: the crash reports whose names
+/// start with `process`, as events. `bundle_id`, `since` and `job_id` select
+/// as on Android, by the report's capture time, which is the guest's clock.
+pub fn crashes(phone: &mut impl Phone, a: &Value) -> Result {
+    let process = s(a, "process");
+    if !guest_control::crash_report_filter_valid(process) {
+        return Err(Error::new(
+            "invalid_argument",
+            "On the virtual iPhone, testing.crashes needs process: the app's executable name or another report name prefix",
+        ));
+    }
+    let bundle_id = s(a, "bundle_id");
+    let (since, until) = crate::crashes::window(a)?;
+    let reply = phone.guest(json!({"operation":"crash_reports","argument":process,
+        "timeout_seconds":60}))?;
+    let response = &reply["response"];
+    if response["ok"] != true {
+        return Err(Error::new(
+            "ios_guest_crash_reports_failed",
+            "The guest could not read its crash reports",
+        )
+        .details(json!({"response":response})));
+    }
+    let (events, unparsed) = crash_events(response);
+    let events: Vec<Value> = events
+        .into_iter()
+        .filter(|event| bundle_id.is_empty() || s(event, "package") == bundle_id)
+        .filter(|event| match event["time"].as_f64() {
+            Some(time) => time >= since.unwrap_or(0.0) && time <= until,
+            None => true,
+        })
+        .collect();
+    let value = json!({"device":DEVICE,"bundle_id":bundle_id,"process":process,"since":since,
+        "until":if until.is_finite() {json!(until)} else {Value::Null},
+        "crashed":!events.is_empty(),
+        "counts":{"crash":events.len(),"anr":0,"native_crash":0},
+        "events":events,"unparsed":unparsed,
+        "collection_complete":response["collection_complete"] == true,
+        "absence_proves_no_crash":false});
+    if !s(a, "report").is_empty() {
+        atomic_json(&output_path(s(a, "report"))?, &value)?;
+    }
+    Ok(value)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -517,6 +726,181 @@ mod tests {
         let missing = json!({"name":"x","steps":[{"action":"assert_screen","baseline":directory.path().join("none.png")}]});
         let result = run_device(&mut phone, &missing, directory.path(), "d");
         assert_eq!(result["error"]["code"], "baseline_missing");
+    }
+
+    #[test]
+    fn report_times_are_seconds_since_1970() {
+        assert_eq!(report_time("1970-01-01 00:00:00 +0000"), Some(0.0));
+        assert_eq!(
+            report_time("2026-10-13 07:12:27.50 +0000"),
+            Some(1_791_875_547.5)
+        );
+        assert_eq!(
+            report_time("2026-10-13 09:12:27.50 +0200"),
+            Some(1_791_875_547.5)
+        );
+        assert_eq!(
+            report_time("2024-02-29 00:00:00 -0100"),
+            Some(1_709_168_400.0)
+        );
+        assert_eq!(report_time("2026-13-01 00:00:00 +0000"), None);
+        assert_eq!(report_time("yesterday"), None);
+    }
+
+    /// A crash report in the JSON .ips layout, written for this test.
+    fn ips(process: &str, capture: &str) -> String {
+        let header = json!({"app_name":process,"bug_type":"309","bundleID":format!("dev.example.{process}"),
+            "incident_id":"00000000-0000-4000-8000-000000000001","name":process});
+        let body = json!({"procName":process,"pid":412,"captureTime":capture,
+            "bundleInfo":{"CFBundleIdentifier":format!("dev.example.{process}")},
+            "exception":{"type":"EXC_CRASH","signal":"SIGABRT","codes":"0x0, 0x0"},
+            "asi":{"libsystem_c.dylib":["abort() called"]},
+            "termination":{"namespace":"SIGNAL","indicator":"Abort trap: 6"},
+            "faultingThread":1,
+            "threads":[{"frames":[]},{"queue":"com.apple.main-thread","triggered":true,"frames":[
+                {"imageIndex":0,"symbol":"__pthread_kill","symbolLocation":8,"imageOffset":100},
+                {"imageIndex":1,"imageOffset":4660},
+                {"imageIndex":7,"imageOffset":1}]}],
+            "usedImages":[{"name":"libsystem_kernel.dylib"},{"name":process}]});
+        format!("{header}\n{body}")
+    }
+
+    fn reply(reports: &[(&str, String)]) -> Value {
+        let reports: Vec<Value> = reports
+            .iter()
+            .map(|(name, text)| {
+                json!({"name":name,"owner":"mobile","content_complete":true,
+                "content_bytes":text.len(),"observed_file_bytes":text.len(),
+                "content_base64":STANDARD.encode(text)})
+            })
+            .collect();
+        json!({"response":{"ok":true,"operation":"crash_reports","process":"MyApp",
+            "collection_complete":true,"reports":reports}})
+    }
+
+    #[test]
+    fn a_crash_report_becomes_an_event_like_androids() {
+        let event = crash_event(
+            ips("MyApp", "2026-10-13 07:12:27.50 +0000").as_bytes(),
+            "MyApp-2026-10-13-071227.ips",
+            "mobile",
+        )
+        .unwrap();
+        assert_eq!(event["kind"], "crash");
+        assert_eq!(event["time"], 1_791_875_547.5);
+        assert_eq!(event["package"], "dev.example.MyApp");
+        assert_eq!(event["process"], "MyApp");
+        assert_eq!(event["pid"], 412);
+        assert_eq!(event["exception"], "EXC_CRASH");
+        assert_eq!(event["signal"], "SIGABRT");
+        assert_eq!(event["message"], "abort() called");
+        assert_eq!(event["termination"], "Abort trap: 6");
+        assert_eq!(event["thread"], "com.apple.main-thread");
+        assert_eq!(
+            event["stack"],
+            json!([
+                "0 libsystem_kernel.dylib __pthread_kill + 8",
+                "1 MyApp +0x1234",
+                "2 ??? +0x1"
+            ])
+        );
+        assert_eq!(event["report"]["owner"], "mobile");
+        // Without abort messages the exception's subtype says why.
+        let mut body: Value =
+            serde_json::from_str(ips("MyApp", "x").split_once('\n').unwrap().1).unwrap();
+        body.as_object_mut().unwrap().remove("asi");
+        body["exception"]["subtype"] = json!("KERN_INVALID_ADDRESS at 0x0");
+        let text = format!("{{}}\n{body}");
+        let event = crash_event(text.as_bytes(), "n", "root").unwrap();
+        assert_eq!(event["message"], "KERN_INVALID_ADDRESS at 0x0");
+        assert_eq!(event["time"], "x");
+        // A report that is no crash, or no report at all.
+        assert_eq!(
+            crash_event(b"{}\n{\"procName\":\"x\"}", "n", "mobile"),
+            Err("no-exception")
+        );
+        assert_eq!(
+            crash_event(b"Process: x", "n", "mobile"),
+            Err("unsupported-report-format")
+        );
+    }
+
+    #[test]
+    fn testing_crashes_reads_the_guests_reports_and_selects_by_app_and_time() {
+        let mut partial = reply(&[("MyApp-b.ips", ips("MyApp", "2026-10-13 07:12:27 +0000"))]);
+        partial["response"]["reports"][0]["content_complete"] = json!(false);
+        let mut phone = Recorded {
+            guest: reply(&[
+                (
+                    "MyApp-2026-10-13-071227.ips",
+                    ips("MyApp", "2026-10-13 07:12:27 +0000"),
+                ),
+                (
+                    "MyApp-2026-10-12-000000.ips",
+                    ips("MyApp", "2026-10-12 00:00:00 +0000"),
+                ),
+                (
+                    "MyAppHelper-2026-10-13.ips",
+                    ips("MyAppHelper", "2026-10-13 08:00:00 +0000"),
+                ),
+                ("MyApp-broken.ips", "not a report".into()),
+            ]),
+            ..Default::default()
+        };
+        phone.guest["response"]["reports"]
+            .as_array_mut()
+            .unwrap()
+            .push(partial["response"]["reports"][0].clone());
+        let all = crashes(&mut phone, &json!({"device":DEVICE,"process":"MyApp"})).unwrap();
+        assert_eq!(
+            phone.calls[0],
+            json!({"operation":"crash_reports","argument":"MyApp","timeout_seconds":60})
+        );
+        assert_eq!(all["counts"]["crash"], 3);
+        assert_eq!(all["crashed"], true);
+        assert_eq!(all["absence_proves_no_crash"], false);
+        let reasons: Vec<&str> = all["unparsed"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| s(row, "reason"))
+            .collect();
+        assert_eq!(reasons, ["unsupported-report-format", "incomplete-content"]);
+        let one = crashes(
+            &mut phone,
+            &json!({"device":DEVICE,"process":"MyApp","bundle_id":"dev.example.MyApp","since":1_791_800_000.0}),
+        )
+        .unwrap();
+        assert_eq!(one["counts"]["crash"], 1);
+        assert_eq!(
+            one["events"][0]["report"]["name"],
+            "MyApp-2026-10-13-071227.ips"
+        );
+        let directory = tempfile::tempdir().unwrap();
+        let report = directory.path().join("crashes.json");
+        crashes(
+            &mut phone,
+            &json!({"device":DEVICE,"process":"MyApp","report":report}),
+        )
+        .unwrap();
+        assert_eq!(read_json(&report, None).unwrap()["counts"]["crash"], 3);
+        // A process is required, and must be a report name prefix.
+        for refused in [
+            json!({"device":DEVICE}),
+            json!({"device":DEVICE,"process":"../x"}),
+        ] {
+            assert_eq!(
+                crashes(&mut phone, &refused).unwrap_err().code,
+                "invalid_argument"
+            );
+        }
+        phone.guest = json!({"response":{"ok":false}});
+        assert_eq!(
+            crashes(&mut phone, &json!({"device":DEVICE,"process":"MyApp"}))
+                .unwrap_err()
+                .code,
+            "ios_guest_crash_reports_failed"
+        );
     }
 
     #[test]
