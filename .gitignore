@@ -12,6 +12,7 @@ backups/
 *.log
 preview*.png
 references/
+!/integrations/agent-skill/tomacco/references/
 *.pid
 *.port
 /verification.json
