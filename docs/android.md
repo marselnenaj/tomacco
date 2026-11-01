@@ -525,7 +525,8 @@ and p90. `profile.frames` counts janky, slow and frozen frames and the frame tim
 while you use the app or a UI test scenario runs. `profile.memory` reads PSS, RSS and heap
 sizes and can pull a heap dump. `profile.usage` measures CPU time and estimated battery use
 over an interval. `profile.budget` checks the results against limits, and UI test
-scenarios can measure and check them too. See [app performance](agents.md#app-performance) in the agent guide.
+scenarios can measure and check them too. `profile.compare` shows how each result changed from a saved
+baseline. See [app performance](agents.md#app-performance) in the agent guide.
 
 ## Debugging, tests, profiling and release
 

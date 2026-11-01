@@ -170,21 +170,76 @@ UNION ALL SELECT 'jank_frames', SUM(CASE WHEN f.jank_type NOT IN ('None','') THE
 fn compare(a: &Value) -> Result {
     let baseline = read_json(&path(s(a, "baseline"), false, true)?, None)?;
     let current = read_json(&path(s(a, "current"), false, true)?, None)?;
+    let value = compare_reports(&baseline, &current, &a["budgets"])?;
+    if !s(a, "report").is_empty() {
+        atomic_json(&output_path(s(a, "report"))?, &value)?;
+    }
+    Ok(value)
+}
+/// The change of every metric from a baseline report to a current one, and
+/// the verdict of the budgets on it. Without budgets nothing can fail.
+fn compare_reports(baseline: &Value, current: &Value, budgets: &Value) -> Result {
     if baseline["bundle_id"] != current["bundle_id"] {
         return Err(Error::new(
             "profile_mismatch",
             "Compare reports for the same application",
         ));
     }
-    let budgets = a["budgets"]
-        .as_object()
-        .ok_or_else(|| Error::new("invalid_argument", "Provide metric budgets"))?;
-    if budgets.is_empty() {
+    if baseline["kind"] != current["kind"] {
         return Err(Error::new(
-            "invalid_argument",
-            "Provide at least one regression budget",
+            "profile_mismatch",
+            "Compare reports of the same kind of measurement",
         ));
     }
+    let empty = serde_json::Map::new();
+    let budgets = match budgets {
+        Value::Null => &empty,
+        value => value
+            .as_object()
+            .filter(|budgets| !budgets.is_empty())
+            .ok_or_else(|| {
+                Error::new("invalid_argument", "Provide at least one regression budget")
+            })?,
+    };
+    let increase = |old: f64, new: f64| {
+        if old == 0.0 {
+            if new == 0.0 { 0.0 } else { f64::INFINITY }
+        } else {
+            (new - old) / old.abs() * 100.0
+        }
+    };
+    let finite = |value: f64| {
+        if value.is_finite() {
+            json!(value)
+        } else {
+            Value::Null
+        }
+    };
+    let mut names: Vec<&String> = Vec::new();
+    for report in [baseline, current] {
+        for name in report["metrics"]
+            .as_object()
+            .into_iter()
+            .flatten()
+            .map(|m| m.0)
+        {
+            if !names.contains(&name) {
+                names.push(name);
+            }
+        }
+    }
+    let changes: Vec<Value> = names
+        .iter()
+        .map(|metric| {
+            let old = baseline["metrics"][metric.as_str()].as_f64();
+            let new = current["metrics"][metric.as_str()].as_f64();
+            match (old, new) {
+                (Some(old), Some(new)) => json!({"metric":metric,"baseline":old,"current":new,
+                    "delta":new-old,"delta_percent":finite(increase(old,new))}),
+                _ => json!({"metric":metric,"baseline":old,"current":new,"delta":null,"delta_percent":null}),
+            }
+        })
+        .collect();
     let mut results = Vec::new();
     let mut passed = true;
     for (metric, budget) in budgets {
@@ -194,14 +249,10 @@ fn compare(a: &Value) -> Result {
             (Some(old), Some(new)) => {
                 let max_absolute = budget["maximum"].as_f64().unwrap_or(f64::INFINITY);
                 let max_regression = budget["increase_percent"].as_f64().unwrap_or(f64::INFINITY);
-                let increase = if old == 0.0 {
-                    if new == 0.0 { 0.0 } else { f64::INFINITY }
-                } else {
-                    (new - old) / old.abs() * 100.0
-                };
+                let increase = increase(old, new);
                 let ok = new <= max_absolute && increase <= max_regression;
                 passed &= ok;
-                json!({"metric":metric,"baseline":old,"current":new,"increase_percent":if increase.is_finite(){json!(increase)}else{Value::Null},"passed":ok})
+                json!({"metric":metric,"baseline":old,"current":new,"increase_percent":finite(increase),"passed":ok})
             }
             _ => {
                 passed = false;
@@ -210,11 +261,9 @@ fn compare(a: &Value) -> Result {
         };
         results.push(result);
     }
-    let value = json!({"passed":passed,"bundle_id":current["bundle_id"],"results":results});
-    if !s(a, "report").is_empty() {
-        atomic_json(&output_path(s(a, "report"))?, &value)?;
-    }
-    Ok(value)
+    Ok(
+        json!({"passed":passed,"bundle_id":current["bundle_id"],"kind":current["kind"],"results":results,"changes":changes}),
+    )
 }
 #[cfg(test)]
 mod tests {
@@ -226,5 +275,57 @@ mod tests {
             vec!["a,\"b", "3"]
         );
         assert!(csv("\"unfinished").is_err());
+    }
+    #[test]
+    fn a_comparison_lists_every_change_and_gates_only_on_budgets() {
+        let baseline = json!({"bundle_id":"dev.example","kind":"startup","metrics":{"startup_cold_median_ms":400.0,"startup_cold_p90_ms":500.0,"frames_total":0.0,"gone":1.0}});
+        let current = json!({"bundle_id":"dev.example","kind":"startup","metrics":{"startup_cold_median_ms":460.0,"startup_cold_p90_ms":450.0,"frames_total":3.0,"new":2.0}});
+        let value = compare_reports(&baseline, &current, &Value::Null).unwrap();
+        assert_eq!(value["passed"], true);
+        assert_eq!(value["results"], json!([]));
+        let changes = value["changes"].as_array().unwrap();
+        let names: Vec<&str> = changes.iter().map(|c| s(c, "metric")).collect();
+        assert_eq!(
+            names,
+            [
+                "startup_cold_median_ms",
+                "startup_cold_p90_ms",
+                "frames_total",
+                "gone",
+                "new"
+            ]
+        );
+        assert_eq!(
+            (
+                changes[0]["delta"].clone(),
+                changes[0]["delta_percent"].clone()
+            ),
+            (json!(60.0), json!(15.0))
+        );
+        assert_eq!(changes[1]["delta_percent"], -10.0);
+        assert!(
+            changes[2]["delta_percent"].is_null(),
+            "an increase from zero has no percentage"
+        );
+        assert!(changes[3]["current"].is_null() && changes[3]["delta"].is_null());
+        let budgets = json!({"startup_cold_median_ms":{"increase_percent":10},"startup_cold_p90_ms":{"maximum":480}});
+        let value = compare_reports(&baseline, &current, &budgets).unwrap();
+        assert_eq!(value["passed"], false);
+        assert_eq!(value["results"][0]["passed"], false);
+        assert_eq!(value["results"][1]["passed"], true);
+        assert_eq!(value["changes"].as_array().unwrap().len(), 5);
+        let other = json!({"bundle_id":"dev.example","kind":"memory","metrics":{}});
+        assert_eq!(
+            compare_reports(&baseline, &other, &Value::Null)
+                .unwrap_err()
+                .code,
+            "profile_mismatch"
+        );
+        assert_eq!(
+            compare_reports(&baseline, &current, &json!({}))
+                .unwrap_err()
+                .code,
+            "invalid_argument"
+        );
     }
 }

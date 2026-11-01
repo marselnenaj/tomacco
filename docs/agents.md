@@ -753,6 +753,17 @@ scenario. A metric outside fails the scenario as `budget_exceeded`; each result 
 On the same emulator, a `testing.run` of such a scenario with a memory step passed its budget, and `profile.budget` failed a saved
 startup report of 303 ms against a maximum of 300.
 
+**Baselines.** Save a report as the baseline, measure again later, and `profile.compare` lists under `changes` every metric of either
+report with its `baseline` and `current` value, `delta` and `delta_percent`. Both reports must be of the same app and kind. `budgets`
+are optional here: a `maximum` or an `increase_percent` over the baseline fails the comparison, and without budgets `passed` stays true.
+
+```sh
+tomaccoctl call profile.compare '{"baseline":"/absolute/startup-baseline.json","current":"/absolute/startup.json","budgets":{"startup_cold_median_ms":{"increase_percent":25}}}'
+```
+
+On the same emulator, two cold startup reports of three runs each differed by 226 ms in their median (303 and 529 ms), which failed an
+`increase_percent` of 25: an emulator's launch times vary that much between runs, so compare medians of more runs on a quiet host.
+
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.

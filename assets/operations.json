@@ -5225,15 +5225,17 @@
   {
     "name": "profile.compare",
     "title": "Compare performance reports",
-    "description": "Compare captured performance reports against explicit limits; unavailable required measurements fail the gate.",
+    "description": "Compare a current performance report with a saved baseline report of the same app and kind (from profile.analyze, profile.startup, profile.frames, profile.memory or profile.usage). changes lists every metric of either report with its baseline and current value, delta and delta_percent (null when a value is missing or the baseline is zero). budgets optionally gate metrics by maximum and increase_percent; an unavailable measurement fails its budget, and without budgets passed stays true. report saves the result as JSON.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "baseline": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute path of the saved baseline report"
         },
         "current": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute path of the current report"
         },
         "budgets": {
           "type": "object",
@@ -5252,16 +5254,17 @@
                 "minimum": 0
               }
             }
-          }
+          },
+          "description": "Optional gates per metric: maximum (absolute) and increase_percent (over the baseline)"
         },
         "report": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute path to save the comparison as JSON"
         }
       },
       "required": [
         "baseline",
-        "current",
-        "budgets"
+        "current"
       ],
       "additionalProperties": false
     },

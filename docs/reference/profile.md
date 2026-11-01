@@ -46,19 +46,19 @@ tomaccoctl call profile.analyze '{"path":"<path>","bundle_id":"<bundle_id>"}'
 
 **Compare performance reports**
 
-Compare captured performance reports against explicit limits; unavailable required measurements fail the gate.
+Compare a current performance report with a saved baseline report of the same app and kind (from profile.analyze, profile.startup, profile.frames, profile.memory or profile.usage). changes lists every metric of either report with its baseline and current value, delta and delta_percent (null when a value is missing or the baseline is zero). budgets optionally gate metrics by maximum and increase_percent; an unavailable measurement fails its budget, and without budgets passed stays true. report saves the result as JSON.
 
 Annotations: writes, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `baseline` | string | yes |  |  |
-| `current` | string | yes |  |  |
-| `budgets` | object | yes |  |  |
-| `report` | string |  |  |  |
+| `baseline` | string | yes |  | Absolute path of the saved baseline report |
+| `current` | string | yes |  | Absolute path of the current report |
+| `budgets` | object |  |  | Optional gates per metric: maximum (absolute) and increase_percent (over the baseline) |
+| `report` | string |  |  | Absolute path to save the comparison as JSON |
 
 ```sh
-tomaccoctl call profile.compare '{"baseline":"<baseline>","current":"<current>","budgets":{"<name>":{"maximum":0}}}'
+tomaccoctl call profile.compare '{"baseline":"<baseline>","current":"<current>"}'
 ```
 
 ### profile.startup

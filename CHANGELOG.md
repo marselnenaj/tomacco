@@ -36,6 +36,8 @@ operations and their JSON results.
     fails a metric no report measured. `testing.run` scenarios gain `measure` steps for startup, frames, memory and usage, and a
     budget per step, per scenario or for the whole run fails a scenario as `budget_exceeded`. `profile.compare` is now titled
     **Compare performance reports**.
+  - `profile.compare` lists every metric's change from the baseline report (`delta`, `delta_percent`) under `changes`, works on
+    the new reports, refuses reports of different kinds, and no longer requires `budgets`.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

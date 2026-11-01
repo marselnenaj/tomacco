@@ -1125,6 +1125,25 @@ class AndroidControlTests(Isolated):
             dispatch("profile.budget", {"reports": [str(startup), str(memory)], "budget": str(budget)})
         self.assertEqual(mismatch.exception.code, "profile_mismatch")
 
+    def test_a_measurement_is_compared_with_a_saved_baseline(self):
+        self.replies(**{"dumpsys meminfo dev.test.app": self.MEMINFO})
+        baseline, current = self.root / "baseline.json", self.root / "current.json"
+        dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app", "report": str(baseline)})
+        self.replies(**{"dumpsys meminfo dev.test.app": self.MEMINFO.replace("61440", "67584")})
+        dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app", "report": str(current)})
+        value = dispatch("profile.compare", {"baseline": str(baseline), "current": str(current)})
+        self.assertTrue(value["passed"])
+        change = next(c for c in value["changes"] if c["metric"] == "memory_pss_mb")
+        self.assertEqual((change["baseline"], change["current"], change["delta"], change["delta_percent"]), (60, 66, 6, 10))
+        value = dispatch("profile.compare", {"baseline": str(baseline), "current": str(current),
+                                             "budgets": {"memory_pss_mb": {"increase_percent": 5}}})
+        self.assertEqual((value["passed"], value["results"][0]["increase_percent"]), (False, 10))
+        startup = self.root / "startup.json"
+        startup.write_text(json.dumps({"bundle_id": "dev.test.app", "kind": "startup", "metrics": {}}))
+        with self.assertRaises(StudioError) as mismatch:
+            dispatch("profile.compare", {"baseline": str(startup), "current": str(current)})
+        self.assertEqual(mismatch.exception.code, "profile_mismatch")
+
     def test_a_scenario_measures_the_app_and_fails_outside_its_budget(self):
         self.replies(**{"resolve-activity": "dev.test.app/.Main\n", "am start -W": self.COLD_START,
                         "gfxinfo dev.test.app reset": "", "gfxinfo dev.test.app": self.GFXINFO})
