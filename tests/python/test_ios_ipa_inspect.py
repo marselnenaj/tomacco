@@ -258,6 +258,60 @@ class InspectTests(Fixture):
         self.assertFalse(rows[1]["ok"])
 
 
+class ProfileOverviewTests(Fixture):
+    """ios.signing's reading of profiles and signers, on synthetic files."""
+
+    def profile(self, name, created, expires, devices=("00008110-000A1B2C3D4E5F60",), certificates=(SIGNER,)):
+        plist = {"Name": name, "UUID": name.upper(), "TeamIdentifier": ["TEAM123456"], "TeamName": "Jane Doe",
+                 "CreationDate": created, "ExpirationDate": expires, "DeveloperCertificates": list(certificates),
+                 "Entitlements": {"application-identifier": "TEAM123456.dev.example.*", "get-task-allow": True}}
+        if devices is not None:
+            plist["ProvisionedDevices"] = list(devices)
+        path = self.root / f"{name}.mobileprovision"
+        path.write_bytes(cms([], plistlib.dumps(plist)))
+        return path
+
+    def test_free_expiring_expired_and_uncovered_profiles_are_warned_about(self):
+        free = self.profile("free", datetime.datetime(2026, 10, 29), datetime.datetime(2026, 11, 5))
+        paid = self.profile("paid", datetime.datetime(2026, 1, 1), datetime.datetime(2027, 1, 1))
+        soon = self.profile("soon", datetime.datetime(2025, 11, 2), datetime.datetime(2026, 11, 2),
+                            devices=("00008110-FFFFFFFFFFFFFFFF",))
+        old = self.profile("old", datetime.datetime(2025, 1, 1), datetime.datetime(2026, 1, 1))
+        broken = self.root / "broken.mobileprovision"
+        broken.write_bytes(b"not a profile")
+        app = self.app({"Info.plist": plistlib.dumps(INFO), "Demo": signed_executable(),
+                        "embedded.mobileprovision": paid.read_bytes()})
+        result = tool.overview([free, paid, soon, old, broken], [app], "00008110-000a1b2c3d4e5f60", NOW)
+        rows = {Path(row["path"]).stem: row for row in result["profiles"]}
+        self.assertTrue(rows["free"]["free_account"])
+        self.assertEqual(rows["free"]["days_left"], 5)
+        self.assertTrue(any("free Apple account" in text for text in rows["free"]["warnings"]))
+        self.assertTrue(any("Expires in 5 day" in text for text in rows["free"]["warnings"]))
+        self.assertEqual((rows["paid"]["free_account"], rows["paid"]["warnings"]), (False, []))
+        self.assertTrue(rows["paid"]["covers_device"])
+        self.assertFalse(rows["soon"]["covers_device"])
+        self.assertTrue(any("Does not list the device" in text for text in rows["soon"]["warnings"]))
+        self.assertTrue(any("Expires in 2 day" in text for text in rows["soon"]["warnings"]))
+        self.assertTrue(rows["old"]["expired"])
+        self.assertFalse(rows["broken"]["ok"])
+        self.assertEqual(len(result["identities"]), 1)
+        identity = result["identities"][0]
+        self.assertEqual(identity["name"], "Apple Development: Jane Doe (ABCDE12345)")
+        self.assertEqual((identity["team_id"], identity["days_left"], identity["expired"]), ("TEAM123456", 62, False))
+        self.assertIn(str(app), identity["seen_in"])
+        self.assertEqual(result["apps"][0]["certificate_sha1"], hashlib.sha1(SIGNER).hexdigest())
+        self.assertTrue(any(text.startswith("free.mobileprovision: ") for text in result["warnings"]))
+        self.assertFalse(any(text.startswith("paid.mobileprovision") for text in result["warnings"]))
+
+    def test_the_command_line_answers_in_json(self):
+        paid = self.profile("paid", datetime.datetime(2026, 1, 1), datetime.datetime(2099, 1, 1))
+        done = subprocess.run([sys.executable, "-I", str(Path(tool.__file__)), "profiles", "--device",
+                               "00008110-000A1B2C3D4E5F60", str(paid)], capture_output=True, text=True, check=True)
+        reply = json.loads(done.stdout)
+        self.assertTrue(reply["ok"])
+        self.assertTrue(reply["profiles"][0]["covers_device"])
+
+
 class HelperTests(unittest.TestCase):
     def test_application_identifiers_with_and_without_wildcards(self):
         self.assertTrue(tool.identifier_matches("TEAM123456.*", "TEAM123456", "a.b"))

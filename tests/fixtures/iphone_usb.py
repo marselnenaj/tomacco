@@ -36,6 +36,10 @@ class Handler(BaseHTTPRequestHandler):
             log.write(json.dumps({'method':self.command,'path':self.path,'body':body})+'\n')
         value = None
         if self.path.endswith('/window/size'): value = {'width':390,'height':844}
+        elif self.path.endswith('/source'):
+            source = root/'wda-source.xml'
+            value = source.read_text() if source.exists() else '<AppiumAUT/>'
+        elif self.path.endswith('/element/active'): value = {'ELEMENT':'fixture-element'}
         elif self.path.endswith('/screenshot'):
             value = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jD1sAAAAASUVORK5CYII='
         response = {'value':value}

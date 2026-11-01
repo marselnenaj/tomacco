@@ -277,22 +277,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
     match op {
         "ios.doctor" => doctor(a),
         "ios.crash_reports" => crash_reports(a),
-        "ios.apps" => {
-            identifier(s(a, "device"), "iPhone UDID", Some("[A-Fa-f0-9-]{16,64}"))?;
-            let value = tc::run(
-                &argv(&[
-                    &tc::find("go-ios")?,
-                    "apps",
-                    &format!("--udid={}", s(a, "device")),
-                ]),
-                30,
-                None,
-                true,
-            )?;
-            Ok(
-                json!({"device":a["device"],"apps":serde_json::from_str::<Value>(s(&value,"stdout"))?}),
-            )
-        }
+        "ios.apps" => crate::iphone_device::app_inventory(a),
         "ios.prepare" => {
             let action = s(a, "action");
             if action == "login" {

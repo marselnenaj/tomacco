@@ -329,6 +329,33 @@ bundle id. It reads what the files claim and verifies no signature.
 This route builds xtool's SwiftPM format; `project.import_xcode` writes it for an `.xcodeproj`. Tomacco neither ships nor downloads the SDK.
 Read Xcode's license first.
 
+### On the connected iPhone
+
+[Guide](iphone.md#working-with-the-connected-iphone). Tested with stand-ins only; no iPhone was connected.
+
+```sh
+tomaccoctl call ios.device_status '{"device":"ACTUAL_UDID"}'
+tomaccoctl call device.logs '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","duration":60}'
+tomaccoctl call ios.signing '{"device":"ACTUAL_UDID","path":"/absolute/MyiOSApp"}'
+tomaccoctl call device.app '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"stop"}'
+tomaccoctl call ios.app_files '{"device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"pull","path":"Documents","output":"/absolute/documents.tar"}'
+tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute/ui-results","devices":["ACTUAL_UDID"],"platform":"ios"}'
+tomaccoctl call ios.record '{"device":"ACTUAL_UDID","path":"/absolute/screen.mp4","seconds":20}'
+```
+
+- `ios.device_status` says whether the phone is paired, trusted, unlocked and in Developer Mode. Show the user its
+  `next_steps`: the steps on the phone (tap Trust, unlock, turn on Developer Mode) only they can do.
+- `device.logs` with `bundle_id` keeps that app's process; the job names it as `process`.
+- `ios.signing` lists profiles on the phone and in the project with expiry, team and devices, and the signing
+  certificates they name. Read `warnings`: a free account's profile lasts 7 days.
+- `device.app` launches, stops and uninstalls with go-ios; `ios.apps` has one plain row per app under `installed`.
+  `ios.app_files` lists or pulls a development build's container as `android.app_files` does.
+- `testing.run` with `platform:"ios"` runs scenarios through the WebDriverAgent of each iPhone's `runtime.start` session;
+  start that first. `resource_id` is the accessibility identifier, `tap` and `swipe` take points, and the
+  [table in the guide](iphone.md#ui-tests) shows the rest.
+- `ios.record` records the screen to an MP4 as a job from go-ios's screenshot stream; `job.send` `stop` keeps what was recorded.
+  `device.screenshot` falls back to go-ios when `idevicescreenshot` is missing.
+
 ### Xcode projects, Flutter, crash reports and the App Store
 
 Full guide, with what was run for real and what was not:
@@ -567,6 +594,8 @@ Native debugging is qualified on API 36 x86_64. ARM64 is built but not run on a 
 runs JSON scenarios on a bounded parallel device matrix, returning JUnit results and capturing failures; `examples/native-navigation.json` shows the format.
 Besides the selector steps, a scenario can `tap` or `swipe` at pixel coordinates (`x`, `y`, `end_x`, `end_y`, `duration` in
 milliseconds) and type `text` into the focused field.
+With `platform:"ios"` the same scenarios run on USB iPhones through WebDriverAgent; see
+[UI tests on an iPhone](iphone.md#ui-tests).
 
 `testing.record` writes such a scenario from what you do. Between `start` and `stop`, the taps, swipes, text and keys sent to that
 Android device through `android.input`, `runtime.input` (also from the desktop's live display) and `testing.action` become steps. Before

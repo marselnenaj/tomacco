@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 205 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 209 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -135,9 +135,13 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`ios.store_ship`](ios.md#iosstore_ship) | Prepare for App Store | writes |
 | [`ios.doctor`](ios.md#iosdoctor) | Check iPhone development on Linux | read-only |
 | [`ios.prepare`](ios.md#iosprepare) | Set up iPhone connection | writes |
+| [`ios.device_status`](ios.md#iosdevice_status) | iPhone readiness | read-only |
 | [`ios.wda_prepare`](ios.md#ioswda_prepare) | Prepare iPhone control | writes |
 | [`ios.apps`](ios.md#iosapps) | Show iPhone apps | read-only |
+| [`ios.app_files`](ios.md#iosapp_files) | iPhone app files | writes |
+| [`ios.record`](ios.md#iosrecord) | Record iPhone screen | writes |
 | [`ios.crash_reports`](ios.md#ioscrash_reports) | iPhone crash reports | writes |
+| [`ios.signing`](ios.md#iossigning) | iPhone signing overview | read-only |
 | [`ios.emulator.inspect`](ios.md#iosemulatorinspect) | Check iOS emulator | read-only |
 | [`ios.emulator.probe`](ios.md#iosemulatorprobe) | Examine iOS kernel boot | writes |
 | [`ios.emulator.exec`](ios.md#iosemulatorexec) | Run iOS guest command | writes |

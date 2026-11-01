@@ -49,11 +49,14 @@ einrichten*) shows what is missing and offers each step. Agents and scripts use 
 same operations:
 
 1. **Check what is there.** `ACTUAL_UDID` below is the real device id from `device.list`.
+   `ios.device_status` then says what the phone itself still needs; see
+   [Is the phone ready?](#is-the-phone-ready).
 
    ```sh
    tomaccoctl call settings.configure '{"executables":{"go-ios":"/absolute/go-ios"}}'
    tomaccoctl call ios.doctor '{"path":"/absolute/MyiOSApp"}'
    tomaccoctl call device.list '{"platform":"ios"}'
+   tomaccoctl call ios.device_status '{"device":"ACTUAL_UDID"}'
    ```
 
 2. **Log in and import the SDK.** The login opens `xtool auth login` in a local
@@ -135,6 +138,140 @@ would stop an install, such as an expired profile.
 It reads what the files claim. It checks no signature, so it cannot tell you a bundle is
 genuine. It has unit tests on synthetic files only; no IPA from xtool or Xcode has been read
 with it yet.
+
+## Working with the connected iPhone
+
+These operations look at and act on an iPhone connected by USB. They were tested with
+stand-ins only; no iPhone was connected. So they check what Tomacco asks of go-ios,
+libimobiledevice and WebDriverAgent and how it reads the answers, not that a real phone
+answers that way.
+
+### Is the phone ready?
+
+`ios.device_status` says in one call whether the phone is connected, paired and trusted,
+unlocked, in Developer Mode and has the developer image mounted, and what to do next.
+
+```sh
+tomaccoctl call ios.device_status '{"device":"ACTUAL_UDID"}'
+```
+
+`next_steps` lists plain sentences, most urgent first, such as "On the iPhone, tap Trust and
+enter the passcode." Where Tomacco can do the step, it names the operation, for example
+`ios.prepare` with `action:"pair"`. With one iPhone connected, `device` can be left out.
+
+Until the phone is paired, the check uses only libimobiledevice's simple connection, so it
+does not make a Trust prompt appear on the phone. It does not check whether a tunnel is
+running.
+
+### Logs of one app
+
+`device.logs` with a `bundle_id` keeps the lines of that app's process. The process name is
+the app's executable, which `go-ios apps` reports; the job's answer names it as `process`.
+`filter` keeps only lines that contain that text.
+
+```sh
+tomaccoctl call device.logs '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","duration":60}'
+```
+
+With libimobiledevice's `idevicesyslog` installed, it does the filtering. Without it, Tomacco
+runs `go-ios syslog` and filters the lines itself.
+
+### Apps on the phone
+
+`ios.apps` lists the installed apps; `installed` has one row per app with `bundle_id`, `name`,
+`version`, `build` and `executable`. `"all":true` adds Apple's own apps. `device.app` launches,
+stops and uninstalls an app with go-ios, as it does on Android. xtool renames the bundle id it
+signs (`XTL-` and your team), and you can pass the id without that prefix. iOS has no clearing
+of app data: uninstall and install again instead.
+
+```sh
+tomaccoctl call ios.apps '{"device":"ACTUAL_UDID"}'
+tomaccoctl call device.app '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"stop"}'
+```
+
+`ios.app_files` lists or copies the files in an app's container (`Documents`, `Library`,
+`tmp`) with go-ios. `pull` writes them as one `.tar` archive, as `android.app_files` does.
+iOS opens the container of development builds only, such as one `project.run` installed.
+
+```sh
+tomaccoctl call ios.app_files '{"device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","path":"Documents"}'
+tomaccoctl call ios.app_files '{"device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"pull","path":"Documents","output":"/absolute/documents.tar"}'
+```
+
+The file list is read from the tree go-ios draws, so it has paths but no sizes or dates.
+
+### UI tests
+
+`testing.run` with `"platform":"ios"` runs the same JSON scenarios as on Android, on iPhones
+with a connected `runtime.start` session. The session's WebDriverAgent reads the screen and
+taps, so start it first, with the runner from `ios.wda_prepare`.
+
+```sh
+tomaccoctl call runtime.start '{"platform":"ios","device":"ACTUAL_UDID","runner_bundle_id":"INSTALLED_RUNNER_ID"}'
+tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute/ui-results","devices":["ACTUAL_UDID"],"platform":"ios"}'
+```
+
+How the steps map to WebDriverAgent:
+
+| Scenario | On the iPhone |
+| --- | --- |
+| `text` | The element's label, or its value when it has no label (a text field) |
+| `text_contains` | Part of the label or value |
+| `resource_id` | The accessibility identifier |
+| `description` | The label |
+| `class` | The element type, such as `Button` or `XCUIElementTypeButton` |
+| `click`, `long_click` | A tap or a press in the middle of the element |
+| `fill` | Tap the field, clear it and type the text |
+| `tap`, `swipe` | Coordinates in points, not pixels |
+| `key` | `home`, `enter`, `backspace`, `delete` or `tab` |
+| `launch`, `stop` | `device.app` through go-ios |
+
+Only elements WebDriverAgent reports as visible are matched. `clickable`, `checked` and
+`package` selectors and the `clear` step have no iPhone equivalent and are refused before the
+run starts. The report and `junit.xml` are the same as on Android, with a screenshot on
+failure; crashes are not read during the run, so use `ios.crash_reports` afterwards. A press
+lasts at most one second.
+
+### Screenshots and screen recordings
+
+`device.screenshot` and `device.capture` take a PNG with libimobiledevice's
+`idevicescreenshot`, or with `go-ios screenshot` when that is not installed. `ios.record`
+records the screen to an MP4: go-ios serves the phone's screenshots as a stream, and ffmpeg,
+which must be installed, encodes them. Both need the developer image mounted
+(`ios.prepare` with `action:"developer-image"`).
+
+```sh
+tomaccoctl call device.screenshot '{"platform":"ios","device":"ACTUAL_UDID","path":"/absolute/screen.png"}'
+tomaccoctl call ios.record '{"device":"ACTUAL_UDID","path":"/absolute/screen.mp4","seconds":20,"fps":10}'
+```
+
+The recording is a job. `job.send` with `stop` ends it early and keeps what was recorded.
+A picture that has not changed or came late is repeated, so the video lasts as long as the
+recording; the result says how many distinct pictures arrived. How many the phone delivers
+a second was not measured, since no phone was connected. For a smooth live picture, use
+`runtime.start`, whose WebDriverAgent stream runs at up to 30 frames per second.
+
+### Profiles and signing certificates
+
+`ios.signing` shows which provisioning profiles there are and how long they last. It reads
+the profiles installed on the phone (copied off it with libimobiledevice's
+`ideviceprovision` and deleted again afterwards), the profile inside each app xtool built in
+the project, and any `.mobileprovision` files you name.
+
+```sh
+tomaccoctl call ios.signing '{"device":"ACTUAL_UDID","path":"/absolute/MyiOSApp"}'
+```
+
+Each profile lists its team, kind, expiry, `days_left`, the device ids it covers and whether
+it covers this phone. `free_account` is true for a profile that lasts 7 days or less, as
+profiles from a free Apple account do. `identities` lists the signing certificates those
+profiles name and the apps are signed with, with team and expiry. `warnings` names what would
+stop an app from installing or opening: an expired profile, one that runs out within 7 days,
+or one that does not list the phone. Apps signed with a free account stop opening when their
+profile runs out; build and install again with xtool to renew it.
+
+It reads what the files claim and checks no signature. It does not contact Apple and does not
+read xtool's login, so it cannot list certificates that are only in your Apple account.
 
 ## Flutter, Xcode projects, crash reports and the App Store
 
@@ -257,8 +394,8 @@ orientation, PNG capture and XML accessibility.
 
 **What you do not get.** A gesture runs when you release it; this is not continuous
 finger streaming. Pinch, shake, hinge, and hardware or sensor emulation are not
-implemented on this route. Video is MJPEG capped at 30 frames per second. There is no
-iPhone test-matrix runner.
+implemented on this route. Video is MJPEG capped at 30 frames per second. For
+scenarios across iPhones see [UI tests](#ui-tests).
 
 **How it connects.** The runtime owns a `go-ios runwda` process and `iproxy` forwards
 bound to 127.0.0.1, which carry the runner's HTTP and video over USB. No public port is
@@ -267,8 +404,9 @@ default is `xctest`, and a plain launch of the runner app is not enough. A per-d
 lock prevents two Tomacco sessions from controlling one iPhone.
 
 **Choosing the bundle id.** An ambiguous id at launch is an error. Pass the exact
-`bundle_id` from `ios.apps`. `device.install` needs a signed IPA. Device screenshots
-and syslog through `device.capture` and `device.logs` use libimobiledevice.
+`bundle_id` from `ios.apps`. `device.install` needs a signed IPA. For screenshots see
+[Screenshots and screen recordings](#screenshots-and-screen-recordings), for logs
+[Logs of one app](#logs-of-one-app).
 
 **The desktop.** `preview.configure` with `native:{platform:"ios",apple_target:"device",setup:true}`
 shows the setup dialog without implying a connected device.

@@ -358,7 +358,7 @@ fn screenshot(a: &Value) -> Result {
     if s(a, "platform") == "ios" {
         submit(
             "iOS screenshot",
-            json!([{"argv":[tc::find("idevicescreenshot")?,"-u",device,target],"artifacts":[target]}]),
+            json!([{"argv":crate::iphone_device::screenshot_command(device, &target)?,"artifacts":[target]}]),
             120,
             json!({}),
         )
@@ -578,13 +578,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
             let action = s(a, "action");
             let activity = s(a, "activity");
             let command = if platform == "ios" {
-                if !["launch", "uninstall"].contains(&action) {
-                    return Err(Error::new(
-                        "action_unsupported",
-                        "xtool supports launch and uninstall; stopping requires a compatible device debugger",
-                    ));
-                }
-                argv(&[&tc::find("xtool")?, action, "--udid", device, id])
+                crate::iphone_device::app_command(device, id, action)?
             } else {
                 match action {
                     "launch" => {
@@ -646,11 +640,10 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "device.logs" => {
             identifier(device, "device ID", None)?;
             let filter = s(a, "filter");
+            let mut process = String::new();
             let mut command = if platform == "ios" {
-                let mut args = argv(&[&tc::find("idevicesyslog")?, "-u", device]);
-                if !filter.is_empty() {
-                    args.extend(argv(&["-m", filter]));
-                }
+                let (args, name) = crate::iphone_device::syslog_command(device, filter, id)?;
+                process = name;
                 args
             } else {
                 let mut args = adb(device)?;
@@ -664,12 +657,16 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 }
                 args
             };
-            submit(
+            let mut job = submit(
                 "Device logs",
                 json!([{"argv":std::mem::take(&mut command),"duration":n(a,"duration")}]),
                 n(a, "duration") + 10,
                 json!({}),
-            )
+            )?;
+            if !process.is_empty() {
+                job["process"] = json!(process);
+            }
+            Ok(job)
         }
         "android.input" => {
             let action = s(a, "action");

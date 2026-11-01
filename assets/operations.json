@@ -1661,7 +1661,7 @@
   {
     "name": "device.app",
     "title": "Control app",
-    "description": "Launch, stop, uninstall or clear application data. iOS supports launch/uninstall through xtool.",
+    "description": "Launch, stop, uninstall or clear application data. On an iPhone, go-ios launches, stops and uninstalls the installed app bundle_id names (xtool's XTL- prefix may be left out); without go-ios, xtool launches and uninstalls. iOS has no clear-data.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1716,7 +1716,7 @@
   {
     "name": "device.screenshot",
     "title": "Device screenshot",
-    "description": "Capture an actual device display to a file.",
+    "description": "Capture an actual device display to a file. On an iPhone this uses idevicescreenshot, or go-ios screenshot when idevicescreenshot is not installed; both need the developer image mounted (ios.prepare).",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1827,7 +1827,7 @@
   {
     "name": "device.logs",
     "title": "Device logs",
-    "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running.",
+    "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running. On an iPhone, bundle_id follows the app's process, its executable as go-ios apps names it, and the job names it as process; idevicesyslog filters when it is installed, otherwise go-ios syslog runs through Tomacco's filter. filter keeps lines containing that text.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1857,7 +1857,7 @@
         },
         "bundle_id": {
           "type": "string",
-          "description": "",
+          "description": "Android application ID, or iPhone bundle id as ios.apps lists it (an xtool XTL- prefix may be left out)",
           "default": ""
         }
       },
@@ -4488,7 +4488,7 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On Android, a measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it. On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop, clear and measure fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes.",
+    "description": "Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On Android, a measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it. On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop, clear and measure fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes. With platform ios, it runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4508,6 +4508,15 @@
             "minLength": 1
           },
           "description": "Android serials from device.list, or virtual-iphone for the running virtual iPhone"
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "default": "android",
+          "description": "android: adb devices; ios: USB iPhones, each with a connected runtime.start session"
         },
         "shard": {
           "type": "boolean",
@@ -7211,6 +7220,29 @@
     }
   },
   {
+    "name": "ios.device_status",
+    "title": "iPhone readiness",
+    "description": "Say in one call whether a USB-connected iPhone is ready for development from Linux, and what to do if not: connected, pairing (paired, trust_pending, denied, locked, not_paired or unknown), trusted, unlocked, developer_mode (true, false, not_applicable before iOS 16, or null when unknown), developer_image (mounted, not_mounted or unknown), ios_version and name, ready, and next_steps: plain sentences, most urgent first, each with the Tomacco operation that does it where there is one (unlock the phone, tap Trust, pair, turn on Developer Mode, mount the developer image, keep a tunnel on iOS 17 and newer). Until the phone is paired only libimobiledevice's simple connection is used, so the check shows no Trust prompt. Without device, the one connected iPhone is checked. The tunnel is not checked.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "default": "",
+          "description": "UDID from device.list; empty: the only connected iPhone"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "ios.wda_prepare",
     "title": "Prepare iPhone control",
     "description": "Download the pinned official WebDriverAgent device build, verify SHA-256 and extract it. With device set, xtool signs and installs it using an existing Apple login. Requires no Mac.",
@@ -7256,13 +7288,18 @@
   {
     "name": "ios.apps",
     "title": "Show iPhone apps",
-    "description": "List applications on the USB-connected iPhone with go-ios, including the installed runner bundle identifier.",
+    "description": "List applications on the USB-connected iPhone with go-ios, including the installed runner bundle identifier. apps is go-ios's own listing; installed has one row per app with bundle_id, name, version, build and executable. all also lists Apple's system apps.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "device": {
           "type": "string",
           "minLength": 1
+        },
+        "all": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also list system apps"
         }
       },
       "required": [
@@ -7274,6 +7311,100 @@
       "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "ios.app_files",
+    "title": "iPhone app files",
+    "description": "List or pull the files in an iPhone app's container (Documents, Library, tmp) with go-ios fsync. list returns files, each path relative to the container as read from go-ios's tree drawing, and the drawing itself as tree; pull returns a job that writes the path as one .tar archive. iOS opens the container of development builds only, such as one installed by project.run; others answer app_container_unavailable.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "iPhone UDID from device.list"
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Bundle id as ios.apps lists it; xtool's XTL- prefix may be left out"
+        },
+        "action": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "list",
+            "pull"
+          ],
+          "default": "list"
+        },
+        "path": {
+          "type": "string",
+          "description": "File or directory inside the app's container, relative to it, such as Documents or Library/Preferences",
+          "default": "."
+        },
+        "output": {
+          "type": "string",
+          "description": "Absolute local path of the .tar archive, for pull",
+          "default": ""
+        }
+      },
+      "required": [
+        "device",
+        "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "ios.record",
+    "title": "Record iPhone screen",
+    "description": "Record a USB-connected iPhone's screen for seconds into an H.264 MP4 at path, as a durable job: go-ios screenshot --stream serves the phone's screenshots as MJPEG on a local port, and the latest picture is handed to ffmpeg fps times a second (ffmpeg must be installed). A picture that has not changed, or one that came late, repeats the last, so the video lasts as long as the recording; how many distinct pictures the phone delivers a second depends on the phone. The job's result names the file and counts frames_written, frames_distinct and pictures_received; a stream that ends stops the recording early with what it has (ended_early). job.send stop ends it early and keeps the video (stopped_early). One recording per iPhone at a time. Needs the developer image mounted (ios.prepare). For a live view use runtime.start.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "iPhone UDID from device.list"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the MP4 to write, ending in .mp4; an existing file is replaced when the recording succeeds."
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600,
+          "default": 30,
+          "description": "How long to record."
+        },
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 10,
+          "description": "Frames per second of the video."
+        }
+      },
+      "required": [
+        "device",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
       "openWorldHint": true
     }
   },
@@ -7308,6 +7439,44 @@
       "readOnlyHint": false,
       "destructiveHint": false,
       "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "ios.signing",
+    "title": "iPhone signing overview",
+    "description": "List the provisioning profiles installed on a USB-connected iPhone (copied off it with libimobiledevice's ideviceprovision and removed again), those embedded in an xtool project's built apps under path/xtool and any named profiles, each with name, uuid, team, kind, created, expires, days_left, the device ids it covers, covers_device for the given device, free_account (a profile lasting 7 days or less, as a free Apple account's do) and its own warnings. identities lists the signing certificates those profiles name and the project's apps are signed with, once each by SHA-1, with team, expiry and where each was seen. warnings sums up what would stop an app from installing or opening: expired or expiring within 7 days, a free account's 7-day profile, a device a profile does not list. It reads what the files claim, verifies no signature, contacts no Apple service and does not read xtool's login.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "default": "",
+          "description": "UDID of the USB-connected iPhone whose installed profiles to list and check coverage for; empty: no phone"
+        },
+        "path": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of an xtool project; its built apps under xtool/ are read"
+        },
+        "profiles": {
+          "type": "array",
+          "maxItems": 100,
+          "default": [],
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Absolute paths of .mobileprovision files to read as well"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
       "openWorldHint": true
     }
   },

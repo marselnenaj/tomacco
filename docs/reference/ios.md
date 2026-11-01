@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-45 operations. Generated from `assets/operations.json`; [all areas](README.md).
+49 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -161,6 +161,22 @@ Annotations: writes, not idempotent, open world.
 tomaccoctl call ios.prepare '{"action":"login"}'
 ```
 
+### ios.device_status
+
+**iPhone readiness**
+
+Say in one call whether a USB-connected iPhone is ready for development from Linux, and what to do if not: connected, pairing (paired, trust_pending, denied, locked, not_paired or unknown), trusted, unlocked, developer_mode (true, false, not_applicable before iOS 16, or null when unknown), developer_image (mounted, not_mounted or unknown), ios_version and name, ready, and next_steps: plain sentences, most urgent first, each with the Tomacco operation that does it where there is one (unlock the phone, tap Trust, pair, turn on Developer Mode, mount the developer image, keep a tunnel on iOS 17 and newer). Until the phone is paired only libimobiledevice's simple connection is used, so the check shows no Trust prompt. Without device, the one connected iPhone is checked. The tunnel is not checked.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string |  | `""` | UDID from device.list; empty: the only connected iPhone |
+
+```sh
+tomaccoctl call ios.device_status
+```
+
 ### ios.wda_prepare
 
 **Prepare iPhone control**
@@ -184,16 +200,56 @@ tomaccoctl call ios.wda_prepare
 
 **Show iPhone apps**
 
-List applications on the USB-connected iPhone with go-ios, including the installed runner bundle identifier.
+List applications on the USB-connected iPhone with go-ios, including the installed runner bundle identifier. apps is go-ios's own listing; installed has one row per app with bundle_id, name, version, build and executable. all also lists Apple's system apps.
 
 Annotations: read-only, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `device` | string | yes |  | non-empty |
+| `all` | boolean |  | `false` | Also list system apps |
 
 ```sh
 tomaccoctl call ios.apps '{"device":"<device>"}'
+```
+
+### ios.app_files
+
+**iPhone app files**
+
+List or pull the files in an iPhone app's container (Documents, Library, tmp) with go-ios fsync. list returns files, each path relative to the container as read from go-ios's tree drawing, and the drawing itself as tree; pull returns a job that writes the path as one .tar archive. iOS opens the container of development builds only, such as one installed by project.run; others answer app_container_unavailable.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; iPhone UDID from device.list |
+| `bundle_id` | string | yes |  | Bundle id as ios.apps lists it; xtool's XTL- prefix may be left out |
+| `action` | string |  | `"list"` | one of `list`, `pull` |
+| `path` | string |  | `"."` | File or directory inside the app's container, relative to it, such as Documents or Library/Preferences |
+| `output` | string |  | `""` | Absolute local path of the .tar archive, for pull |
+
+```sh
+tomaccoctl call ios.app_files '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### ios.record
+
+**Record iPhone screen**
+
+Record a USB-connected iPhone's screen for seconds into an H.264 MP4 at path, as a durable job: go-ios screenshot --stream serves the phone's screenshots as MJPEG on a local port, and the latest picture is handed to ffmpeg fps times a second (ffmpeg must be installed). A picture that has not changed, or one that came late, repeats the last, so the video lasts as long as the recording; how many distinct pictures the phone delivers a second depends on the phone. The job's result names the file and counts frames_written, frames_distinct and pictures_received; a stream that ends stops the recording early with what it has (ended_early). job.send stop ends it early and keeps the video (stopped_early). One recording per iPhone at a time. Needs the developer image mounted (ios.prepare). For a live view use runtime.start.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; iPhone UDID from device.list |
+| `path` | string | yes |  | non-empty; Absolute path of the MP4 to write, ending in .mp4; an existing file is replaced when the recording succeeds. |
+| `seconds` | integer |  | `30` | 1 to 600; How long to record. |
+| `fps` | integer |  | `10` | 1 to 30; Frames per second of the video. |
+
+```sh
+tomaccoctl call ios.record '{"device":"<device>","path":"<path>"}'
 ```
 
 ### ios.crash_reports
@@ -212,6 +268,24 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call ios.crash_reports '{"device":"<device>"}'
+```
+
+### ios.signing
+
+**iPhone signing overview**
+
+List the provisioning profiles installed on a USB-connected iPhone (copied off it with libimobiledevice's ideviceprovision and removed again), those embedded in an xtool project's built apps under path/xtool and any named profiles, each with name, uuid, team, kind, created, expires, days_left, the device ids it covers, covers_device for the given device, free_account (a profile lasting 7 days or less, as a free Apple account's do) and its own warnings. identities lists the signing certificates those profiles name and the project's apps are signed with, once each by SHA-1, with team, expiry and where each was seen. warnings sums up what would stop an app from installing or opening: expired or expiring within 7 days, a free account's 7-day profile, a device a profile does not list. It reads what the files claim, verifies no signature, contacts no Apple service and does not read xtool's login.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string |  | `""` | UDID of the USB-connected iPhone whose installed profiles to list and check coverage for; empty: no phone |
+| `path` | string |  | `""` | Absolute path of an xtool project; its built apps under xtool/ are read |
+| `profiles` | array of string |  | `[]` | up to 100 items; Absolute paths of .mobileprovision files to read as well |
+
+```sh
+tomaccoctl call ios.signing
 ```
 
 ### ios.emulator.inspect

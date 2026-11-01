@@ -427,7 +427,7 @@ pub fn frames(a: &Value) -> Result {
             "frames-{}",
             &uuid::Uuid::new_v4().simple().to_string()[..12]
         );
-        let result = crate::automation::run_device(device, scenario, &directory, &tag);
+        let result = crate::automation::run_device(device, scenario, &directory, &tag, "android");
         if !b(&result, "passed") {
             return Err(Error::new(
                 "scenario_failed",
