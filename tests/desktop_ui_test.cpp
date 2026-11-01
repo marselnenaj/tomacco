@@ -2622,6 +2622,7 @@ for line in sys.stdin:
         auto *view=object("nativeWorkspace");QVERIFY(view);
         const auto path=directory.filePath("project");
         QSettings().remove("projects/preferences");workspace->setProperty("projectPreferences",QVariantMap{});
+        QVERIFY(QMetaObject::invokeMethod(view,"choosePlatform",Q_ARG(QVariant,"android")));
         auto *configuration=item("buildConfiguration");auto *format=item("buildFormat");auto *buildPlatform=item("buildPlatform");
         QVERIFY(configuration && format && buildPlatform);
         buildPlatform->setProperty("currentIndex",0);QVERIFY(QMetaObject::invokeMethod(buildPlatform,"activated",Q_ARG(int,0)));
@@ -3111,7 +3112,7 @@ for line in sys.stdin:
             workspace->setProperty("jobs",QVariantList{build,done,failed});
             auto *panel=object("activityPanel");QVERIFY(panel);
             panel->setProperty("logTail","Running Gradle task 'assembleDebug'...\n✓ Built build/app/outputs/flutter-apk/app-debug.apk");
-            QVERIFY(QMetaObject::invokeMethod(panel,"noteCall",Q_ARG(QVariant,QString("configure"))));
+            QVERIFY(QMetaObject::invokeMethod(panel,"noteCall",Q_ARG(QVariant,-95),Q_ARG(QVariant,QString("configure"))));
             view->setProperty("pendingAvd","Tomacco-pixel-11");
             shot(variant,"device-booting");
             view->setProperty("pendingAvd","");
