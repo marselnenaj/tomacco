@@ -675,7 +675,32 @@ fn milliseconds(seconds: f64) -> u64 {
 /// nothing for a call that is no input. `recording` is the recording's
 /// file; a streamed touch is kept in it from touch_down to touch_up, and
 /// `now` is the time in seconds.
+///
+/// A gap of a second or more since the previous input becomes a `pause`
+/// step first, so a replay waits as the person did: under emulation an app
+/// takes seconds to open, and a tap sent at once lands on the screen before.
 pub fn control_step(a: &Value, recording: &mut Value, now: f64) -> Option<Step> {
+    // A streamed touch began at its touch_down.
+    let began = match s(a, "action") {
+        "touch_up" => recording["touch"]["started"].as_f64().unwrap_or(now),
+        _ => now,
+    };
+    let step = control_input(a, recording, now);
+    if let Some(Ok(_)) = &step {
+        if let Some(last) = recording["last_input"].as_f64() {
+            let gap = began - last;
+            if gap >= 1.0 {
+                if let Some(steps) = recording["steps"].as_array_mut() {
+                    steps.push(json!({"action":"pause","duration":milliseconds(gap)}));
+                }
+            }
+        }
+        recording["last_input"] = json!(now);
+    }
+    step
+}
+
+fn control_input(a: &Value, recording: &mut Value, now: f64) -> Option<Step> {
     let action = s(a, "action");
     let size = (
         recording["screen"]["width"].as_u64().filter(|w| *w > 0),
@@ -1229,6 +1254,48 @@ mod tests {
                 .code,
             "ios_guest_crash_reports_failed"
         );
+    }
+
+    #[test]
+    fn a_recording_waits_where_the_person_waited() {
+        let mut recording = json!({"screen":{"width":1000,"height":2000},"steps":[]});
+        let mut record = |a: Value, now: f64| {
+            if let Some(Ok(step)) = control_step(&a, &mut recording, now) {
+                recording["steps"].as_array_mut().unwrap().push(step);
+            }
+        };
+        record(json!({"action":"click","x":0.5,"y":0.25}), 100.0);
+        // An app opening: the next tap came 6.5 s later.
+        record(json!({"action":"click","x":0.5,"y":0.5}), 106.5);
+        // Quick input follows without a pause; quiet calls do not count.
+        record(json!({"action":"frame"}), 106.9);
+        record(json!({"action":"text","text":"hi"}), 107.0);
+        // A streamed touch waits from its touch_down, not its release.
+        record(json!({"action":"touch_down","x":0.1,"y":0.1}), 109.0);
+        record(json!({"action":"touch_up"}), 109.1);
+        // A long wait is capped at the longest pause a step takes.
+        record(json!({"action":"home"}), 200.0);
+        let actions: Vec<Value> = recording["steps"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|step| json!([step["action"], step["duration"]]))
+            .collect();
+        assert_eq!(
+            actions,
+            vec![
+                json!(["tap", null]),
+                json!(["pause", 6500]),
+                json!(["tap", null]),
+                json!(["text", null]),
+                json!(["pause", 2000]),
+                json!(["tap", null]),
+                json!(["pause", 10000]),
+                json!(["key", null]),
+            ]
+        );
+        let scenario = json!({"name":"x","steps":recording["steps"]});
+        automation::check_scenario(&scenario).unwrap();
     }
 
     #[test]
