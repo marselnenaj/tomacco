@@ -1,4 +1,4 @@
-use crate::{api, core::*, mcp_tools};
+use crate::{api, core::*, mcp_consent as consent, mcp_tools};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
 use std::{
@@ -34,6 +34,11 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
     }
     let sink = Mutex::new(sink);
     let active = Mutex::new(std::collections::HashMap::<String, Cancellation>::new());
+    // Requests this server sent the client, by ID, waiting for its answer.
+    let pending = Mutex::new(std::collections::HashMap::<String, Sender<Value>>::new());
+    let next_request = std::sync::atomic::AtomicU64::new(1);
+    // Whether the client takes elicitation/create in form mode.
+    let elicitation = AtomicBool::new(false);
     // Log messages are sent once the client asks for them with logging/setLevel.
     let level: Level = Arc::new(std::sync::atomic::AtomicU8::new(u8::MAX));
     std::thread::scope(|scope| -> Result<()> {
@@ -45,6 +50,8 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
                 .take(JSON_LIMIT + 1)
                 .read_until(b'\n', &mut line)?;
             if line.is_empty() {
+                // A question still waiting for an answer gets none now.
+                pending.lock().unwrap().clear();
                 return Ok(());
             }
             if line.len() as u64 > JSON_LIMIT {
@@ -61,6 +68,16 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
                     continue;
                 }
             };
+            if request.get("method").is_none()
+                && (request.get("result").is_some() || request.get("error").is_some())
+            {
+                // The client's answer to a request of ours, such as elicitation/create.
+                let waiting = pending.lock().unwrap().remove(&request["id"].to_string());
+                if let Some(waiting) = waiting {
+                    let _ = waiting.send(request);
+                }
+                continue;
+            }
             if !request.is_object() || request["jsonrpc"] != "2.0" || !request["method"].is_string()
             {
                 respond(
@@ -96,6 +113,10 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
             if method == "initialize" {
                 initialized = true;
                 let protocol = s(&params, "protocolVersion");
+                elicitation.store(
+                    elicits(protocol, &params["capabilities"]),
+                    Ordering::Relaxed,
+                );
                 respond(
                     &sink,
                     &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{},"logging":{},"completions":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To see what this computer can do right now (Android emulator and devices, iOS builds, iPhones, the virtual iPhone), call capabilities. To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
@@ -153,8 +174,47 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
             let method = method.to_owned();
             let sink = &sink;
             let active = &active;
+            let pending = &pending;
+            let next_request = &next_request;
+            let elicitation = &elicitation;
             let level = level.clone();
             scope.spawn(move || {
+                // Asks the person through the client and waits for the answer,
+                // or None when the client cannot ask, the request is cancelled
+                // or the client goes away.
+                let ask = |message: &str, schema: &Value| -> Option<Value> {
+                    if !elicitation.load(Ordering::Relaxed) {
+                        return None;
+                    }
+                    let id = format!("tomacco-{}", next_request.fetch_add(1, Ordering::Relaxed));
+                    let (answer, answered) = std::sync::mpsc::channel();
+                    pending
+                        .lock()
+                        .unwrap()
+                        .insert(json!(id).to_string(), answer);
+                    let request = json!({"jsonrpc":"2.0","id":id,"method":"elicitation/create",
+                        "params":{"mode":"form","message":message,"requestedSchema":schema}});
+                    if respond(sink, &request).is_err() {
+                        pending.lock().unwrap().remove(&json!(id).to_string());
+                        return None;
+                    }
+                    let deadline = std::time::Instant::now() + ELICITATION_WAIT;
+                    let reply = loop {
+                        match answered.recv_timeout(TICK) {
+                            Ok(reply) => break Some(reply),
+                            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break None,
+                            Err(std::sync::mpsc::RecvTimeoutError::Timeout)
+                                if token.load(Ordering::Relaxed)
+                                    || std::time::Instant::now() > deadline =>
+                            {
+                                break None;
+                            }
+                            Err(_) => {}
+                        }
+                    };
+                    pending.lock().unwrap().remove(&json!(id).to_string());
+                    reply.and_then(|reply| reply.get("result").cloned())
+                };
                 let follower = Follower::new(&method, &params, level);
                 let (done, finished) = std::sync::mpsc::channel::<()>();
                 let result = std::thread::scope(|inner| {
@@ -174,8 +234,9 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
                             }
                         });
                     }
-                    let result =
-                        with_cancellation(Some(token.clone()), || response(id, &method, &params));
+                    let result = with_cancellation(Some(token.clone()), || {
+                        response_asking(id, &method, &params, &ask)
+                    });
                     drop(done);
                     result
                 });
@@ -187,6 +248,22 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
         }
     })
 }
+/// How long a question to the person waits for an answer.
+const ELICITATION_WAIT: std::time::Duration = std::time::Duration::from_secs(600);
+type Sender<T> = std::sync::mpsc::Sender<T>;
+/// Whether a client that initialized with this protocol version and these
+/// capabilities takes elicitation/create in form mode: from 2025-06-18 on,
+/// when it declares `elicitation` as `{}` or with `form`.
+fn elicits(protocol: &str, capabilities: &Value) -> bool {
+    let declared = &capabilities["elicitation"];
+    let form = declared
+        .as_object()
+        .is_some_and(|modes| modes.contains_key("form") || !modes.contains_key("url"));
+    PROTOCOLS.contains(&protocol) && protocol >= "2025-06-18" && form
+}
+/// Asks the person a question through the client; see `serve`.
+pub type Ask<'a> = dyn Fn(&str, &Value) -> Option<Value> + 'a;
+
 /// How often a running tool call reports its progress.
 const TICK: std::time::Duration = std::time::Duration::from_secs(1);
 
@@ -323,14 +400,21 @@ impl Follower {
 }
 
 fn response(id: Value, method: &str, params: &Value) -> Value {
-    match handle(method, params) {
+    response_asking(id, method, params, &|_, _| None)
+}
+fn response_asking(id: Value, method: &str, params: &Value, ask: &Ask) -> Value {
+    match handle_asking(method, params, ask) {
         Ok(Some(value)) => json!({"jsonrpc":"2.0","id":id,"result":value}),
         Ok(None) => rpc_error(id, -32601, "Method not found"),
         Err(error) => rpc_error(id, -32602, &error.message),
     }
 }
 
+#[cfg(test)]
 fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
+    handle_asking(method, params, &|_, _| None)
+}
+fn handle_asking(method: &str, params: &Value, ask: &Ask) -> Result<Option<Value>> {
     Ok(Some(match method {
         "ping" => json!({}),
         "tools/list" => json!({"tools":mcp_tools::list(mcp_tools::Mode::from_env())}),
@@ -346,7 +430,7 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
                     (name, result)
                 }
                 Ok((name, arguments)) => {
-                    let result = crate::session_log::call(&name, &arguments);
+                    let result = consent::call(&name, arguments, ask, crate::session_log::call);
                     (name, result)
                 }
             };
@@ -867,6 +951,20 @@ mod tests {
                 guide.name
             );
         }
+    }
+    #[test]
+    fn only_a_client_that_declares_form_elicitation_is_asked() {
+        let form = json!({"elicitation":{}});
+        assert!(elicits("2025-11-25", &form));
+        assert!(elicits("2025-06-18", &form));
+        assert!(elicits(
+            "2025-11-25",
+            &json!({"elicitation":{"form":{},"url":{}}})
+        ));
+        assert!(!elicits("2025-11-25", &json!({"elicitation":{"url":{}}})));
+        assert!(!elicits("2024-11-05", &form));
+        assert!(!elicits("2025-11-25", &json!({})));
+        assert!(!elicits("2099-01-01", &form));
     }
     #[test]
     fn templates_mirror_read_only_operations() {

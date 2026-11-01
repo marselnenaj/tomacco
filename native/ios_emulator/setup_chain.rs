@@ -956,7 +956,10 @@ fn run(l: &Layout, all: &[Stage], name: &str, confirm: bool, inputs: &Value) -> 
             "{} Call again with confirm:true once they agree.",
             stage.why_ask.unwrap_or("")
         ))
-        .details(json!({"stage":describe(stage)})));
+        .details(json!({"stage":describe(stage),"consent":{
+            "argument":"confirm","value":true,
+            "question":format!("{} now? {}", stage.what, stage.why_ask.unwrap_or("")).trim_end(),
+        }})));
     }
     fs::create_dir_all(&l.work)?;
     let job = match &stage.action {
@@ -1194,6 +1197,13 @@ mod tests {
         let all = stages(&layout);
         let error = run(&layout, &all, "", false, &inputs).unwrap_err();
         assert_eq!(error.code, "ios_setup_confirm");
+        // The argument that carries the person's yes, for MCP elicitation.
+        let consent = &error.details.as_ref().unwrap()["consent"];
+        assert_eq!(
+            (s(consent, "argument"), &consent["value"]),
+            ("confirm", &json!(true))
+        );
+        assert!(s(consent, "question").ends_with('?') || s(consent, "question").ends_with('.'));
         let error = run(&layout, &all, "linker", false, &inputs).unwrap_err();
         assert_eq!(error.code, "ios_setup_out_of_order");
         let error = run(&layout, &all, "nothing", false, &inputs).unwrap_err();

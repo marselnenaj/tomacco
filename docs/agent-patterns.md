@@ -145,7 +145,8 @@ tomaccoctl call storage.prune '{"older_than_days":14,"apply":true}'
 from `files.read` as `if_match`, so it refuses to overwrite a file the user changed in between.
 Some calls are not destructive by the annotation but still need the user's word, as the
 [agent guide](agents.md) says: publishing with `play.commit` or `ios.store_ship` with `upload`, and
-downloads that accept a license.
+downloads that accept a license. Over MCP, a client that supports elicitation shows the person the question
+itself before these calls run; a `consent_declined` error means they said no, so do not repeat the call.
 
 ## Recover from failures
 

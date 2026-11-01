@@ -1840,6 +1840,44 @@ class ProtocolTests(Isolated):
         self.assertLess(sizes["compact"], sizes["full"] * 0.6)
         self.assertLess(sizes["grouped"], sizes["full"] * 0.2)
 
+    def test_mcp_asks_the_person_through_elicitation_before_publishing(self):
+        import queue
+        process = subprocess.Popen([binary(), "mcp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        replies = queue.Queue()
+        def read():
+            for line in process.stdout: replies.put(json.loads(line))
+        reader = threading.Thread(target=read, daemon=True); reader.start()
+        def send(value): process.stdin.write(json.dumps({"jsonrpc": "2.0", **value}) + "\n"); process.stdin.flush()
+        commit = {"name": "play.commit", "arguments": {"credentials": str(self.root / "missing.json"), "package": "dev.test.app", "edit_id": "e1"}}
+        try:
+            send({"id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25", "capabilities": {"elicitation": {"form": {}}}}})
+            self.assertEqual(replies.get(timeout=5)["id"], 1)
+            for request, answer in ((2, {"action": "decline"}), (3, {"action": "accept", "content": {"approve": True}})):
+                send({"id": request, "method": "tools/call", "params": commit})
+                question = replies.get(timeout=5)
+                self.assertEqual(question["method"], "elicitation/create")
+                self.assertEqual(question["params"]["mode"], "form")
+                self.assertIn("e1 of dev.test.app", question["params"]["message"])
+                self.assertEqual(question["params"]["requestedSchema"]["required"], ["approve"])
+                send({"id": question["id"], "result": answer})
+                reply = replies.get(timeout=10)
+                self.assertEqual(reply["id"], request)
+                code = reply["result"]["structuredContent"]["error"]["code"]
+                # A no stops the call; a yes runs it, and it then fails for the missing credentials.
+                self.assertEqual(code == "consent_declined", request == 2, reply)
+            process.stdin.close(); process.wait(5 * PATIENCE)
+        finally:
+            if process.poll() is None: process.kill(); process.wait()
+            if not process.stdin.closed: process.stdin.close()
+            process.stdout.close(); process.stderr.close()
+        # A client that does not declare elicitation is not asked.
+        requests = [{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}},
+                    {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": commit}]
+        output = subprocess.check_output([binary(), "mcp"], input="\n".join(map(json.dumps, requests)) + "\n", text=True, timeout=30)
+        messages = [json.loads(line) for line in output.splitlines()]
+        self.assertEqual([m.get("id") for m in messages], [1, 2])
+        self.assertNotEqual(messages[1]["result"]["structuredContent"]["error"]["code"], "consent_declined")
+
     def test_mcp_wait_does_not_block_other_requests_and_cancellation_preserves_job(self):
         import queue
         job=self.submit([{"argv":[sys.executable,"-c","import time;print('ready',flush=True);time.sleep(30)"]}],timeout=40)

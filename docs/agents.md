@@ -78,6 +78,13 @@ The server also offers three prompts, short recipes a client can show as command
 - A tool result also comes as `structuredContent`: an object result as it is, any other result
   as `{"result": ...}`, and an error as `{"error": {...}}`. The text content is unchanged.
 - Native screenshots up to 4 MiB are embedded as MCP images. Larger ones keep a path and digest.
+- A client that declares `elicitation` (form mode, protocol 2025-06-18 or later) is asked to put a yes-or-no
+  question to the person, with `elicitation/create`, before these steps:
+  `android.sdk_install` without `accept_licenses` (a yes sets it; a no installs without accepting, as before),
+  `play.commit`, `ios.store_ship` with `upload` and `apple.store` with `upload` (a no stops the call), and an
+  `ios.virtual.setup` stage marked `ask_first` (a yes repeats the call with `confirm:true`). A no answers
+  `consent_declined`, with the question and the client's `action` under `details`. A question waits up to 10
+  minutes. A client without elicitation is never asked, and these calls behave as from the CLI.
 
 ### A shorter tool list
 
