@@ -115,6 +115,23 @@ that are not documentation point at GitHub; `--ref` sets the branch or tag they 
 `assets/site.css`. `python3 -m unittest tests.python.test_build_site_docs` checks that every
 document renders, that every link and anchor in the output resolves and that no page has a script.
 
+## Robustness harnesses
+
+Five harnesses attack the control plane with bad input and abrupt ends. None needs a device, a toolchain or the
+network, and each uses a scratch `TOMACCO_HOME`. The Python ones run against a debug build and take
+`TOMACCOCTL=target/debug/tomaccoctl PYTHONPATH=tools:tests/python:tests:.`.
+
+| Harness | What it does | Command | Time |
+| --- | --- | --- | --- |
+| Argument validation | `native/validation_tests.rs` builds, from every operation's input schema, values that satisfy it, values that break exactly one rule, and arbitrary JSON; validation must not panic, must accept the first and must answer the others with `invalid_argument` and a remedy. | `cargo test --locked validation` (more: `TOMACCO_FUZZ_ROUNDS=2000`, another seed: `TOMACCO_FUZZ_SEED=7`) | 9 s; 2000 rounds about 8 min |
+| MCP protocol | `tests/python/test_mcp_robustness.py`: malformed and oversized JSON-RPC, odd IDs and parameters, unknown methods, notifications, cancellations, the 16-call limit, a reader that went away, stdin closing mid-call. | `python3 -m unittest tests.python.test_mcp_robustness` | 12 s |
+| Job soak | `tests/python/test_job_soak.py` starts hundreds of jobs in parallel with cancellations, failures, timeouts and `kill -9` of workers, then checks that none is lost or stuck, that the database passes `integrity_check`, that no worker or child remains and that workers stay under 64 descriptors and 32 threads. | `TOMACCO_SOAK=1 TOMACCO_SOAK_JOBS=1500 python3 -m unittest tests.python.test_job_soak` (40 jobs without the flag) | 1500 jobs: 37 s |
+| MCP memory | `tests/python/test_mcp_memory.py` makes thousands of mixed calls in one session and prints the server's resident memory every tenth of the run. | `TOMACCO_SOAK=1 python3 -m unittest tests.python.test_mcp_memory` (`TOMACCO_MEMORY_CALLS`; 600 calls without the flag) | 6000 calls: 17 s |
+| Installer kills | `tests/python/test_install_fuzz.py` kills `tomaccoctl _install` (debug builds only, `TOMACCO_INSTALL_TEST_KILL_AT` and `_BATCH`) at random publications during an update, a first installation and an uninstallation, then rolls back, installs again or uninstalls and compares the tree with the expected one. | `TOMACCO_FUZZ_RUNS=100 python3 -m unittest tests.python.test_install_fuzz` (6 runs of each by default) | 6 runs: about 3 min |
+
+A failing run prints its seed; `TOMACCO_FUZZ_SEED` repeats it. On the development host a 6000-call MCP session held
+31.4 MB resident from the first 600 calls to the last.
+
 ## Translations
 
 The desktop speaks English, German, French, Spanish and Italian. The translations are in `i18n/tomacco_de.ts`,

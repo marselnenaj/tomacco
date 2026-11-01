@@ -582,6 +582,12 @@ pub fn closest<'a>(name: &str, candidates: impl IntoIterator<Item = &'a str>) ->
         }
         d[a.len()][b.len()]
     }
+    // A name this long is not a slip of the finger; comparing it with every
+    // candidate cost quadratic time and memory (a 100 000 character tool name
+    // kept an MCP server busy for minutes).
+    if name.chars().count() > 256 {
+        return None;
+    }
     let name = name.to_ascii_lowercase();
     let limit = (name.chars().count() / 3).max(2);
     let suffix = format!(".{name}");
@@ -590,6 +596,9 @@ pub fn closest<'a>(name: &str, candidates: impl IntoIterator<Item = &'a str>) ->
     for candidate in candidates {
         if candidate.ends_with(&suffix) {
             suffixed.push(candidate);
+        }
+        if name.chars().count().abs_diff(candidate.chars().count()) > limit {
+            continue;
         }
         let d = distance(&name, candidate);
         if d <= limit && best.is_none_or(|(e, _)| d < e) {
@@ -676,6 +685,15 @@ pub fn validate(value: &Value, schema: &Value, name: &str) -> Result<()> {
             }
             for (i, item) in items.iter().enumerate() {
                 validate(item, &schema["items"], &format!("{name}[{i}]"))?;
+            }
+            if schema["uniqueItems"] == true {
+                for (i, item) in items.iter().enumerate() {
+                    if let Some(first) = items[..i].iter().position(|earlier| earlier == item) {
+                        return Err(fail(format!(
+                            "{name}[{i}] repeats {name}[{first}]; the items must be unique"
+                        )));
+                    }
+                }
             }
         }
         "string" => {

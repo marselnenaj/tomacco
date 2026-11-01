@@ -52,14 +52,37 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
             if line.is_empty() {
                 // A question still waiting for an answer gets none now.
                 pending.lock().unwrap().clear();
+                // The client closed its end: calls still running get a few
+                // seconds to answer (a piped script reads its answers after
+                // closing), then are cancelled so the server can exit.
+                let deadline = std::time::Instant::now() + EOF_GRACE;
+                while !active.lock().unwrap().is_empty() && std::time::Instant::now() < deadline {
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                }
+                for token in active.lock().unwrap().values() {
+                    token.store(true, Ordering::Relaxed);
+                }
                 return Ok(());
             }
             if line.len() as u64 > JSON_LIMIT {
+                // Refused at once; the rest of the oversized line is then read
+                // and dropped, a piece at a time, so the next message is read
+                // from its own start.
+                let mut ended = line.last() == Some(&b'\n');
+                drop(line);
                 respond(
                     &sink,
                     &rpc_error(Value::Null, -32700, "Message exceeds 2 MiB"),
                 )?;
-                return Ok(());
+                while !ended {
+                    let mut piece = Vec::new();
+                    source
+                        .by_ref()
+                        .take(64 * 1024)
+                        .read_until(b'\n', &mut piece)?;
+                    ended = piece.is_empty() || piece.last() == Some(&b'\n');
+                }
+                continue;
             }
             let request: Value = match serde_json::from_slice(&line) {
                 Ok(value) => value,
@@ -249,6 +272,8 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
         }
     })
 }
+/// How long calls in progress may run on after the client closes its input.
+const EOF_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
 /// How long a question to the person waits for an answer.
 const ELICITATION_WAIT: std::time::Duration = std::time::Duration::from_secs(600);
 type Sender<T> = std::sync::mpsc::Sender<T>;

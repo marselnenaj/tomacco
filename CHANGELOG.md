@@ -224,6 +224,15 @@ operations and their JSON results.
 
 ### Tests
 
+- `tests/python/test_mcp_robustness.py` drives `tomaccoctl mcp` with malformed and oversized JSON-RPC, odd IDs and
+  parameters, unknown methods, notifications, cancellations, the 16-call limit, a vanished reader and stdin closing
+  mid-call. `tests/python/test_install_fuzz.py` kills the Rust installer at random publications during updates, first
+  installations and uninstallations and checks every recovery.
+
+- Property tests build values for each of the 236 input schemas, valid ones and ones that break exactly one rule, and
+  arbitrary JSON, and check that validation never panics, accepts the valid and answers the rest with
+  `invalid_argument` and a remedy (`TOMACCO_FUZZ_SEED`, `TOMACCO_FUZZ_ROUNDS`; see docs/building.md).
+
 - The installer's specifications in `tests/python/test_install.py`, `test_release_files.py` and `test_update.py` also
   run against `tomaccoctl _install` (`TOMACCOCTL`), including runs killed at a chosen rename by a debug build's
   `TOMACCO_INSTALL_TEST_KILL_AT`; `CrossInstallerTests` has each installer update, roll back and uninstall what the
@@ -235,6 +244,13 @@ operations and their JSON results.
 
 ### Fixed
 
+- The MCP server ended the whole session when one message exceeded 2 MiB; it now answers that message with a parse
+  error, skips the rest of its line and carries on. When the client closes its input in the middle of a call, the call
+  gets 5 seconds to answer and is then cancelled, so the server exits instead of waiting for a long `job.wait`.
+- A tool or operation name of 100 000 characters kept the server busy for minutes while it looked for the closest
+  name to suggest; names over 256 characters now get no suggestion and are refused at once.
+- An argument array whose schema says `uniqueItems` (such as the `state` filter of `job.list`) accepted a repeated item;
+  it is now refused as `invalid_argument` naming both positions.
 - A windowed `android.avd_start` from a session whose `QT_QPA_PLATFORM` named only `wayland` started an emulator
   that aborted at once: its Qt has only the X11 plugin. The emulator now gets `QT_QPA_PLATFORM=xcb`; on the
   development host such a start then booted. Without `DISPLAY` (no graphical session, or Wayland without XWayland)
