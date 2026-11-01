@@ -257,6 +257,12 @@ tomaccoctl call project.watch '{"path":"/absolute/NewApp","platform":"android","
 tomaccoctl call job.logs '{"job_id":"WATCH_JOB_ID"}'
 ```
 
+With `device:"virtual-iphone"` an xtool project is rebuilt and deployed on the running virtual iPhone on each save (see
+[deploying an app](#deploying-an-app-to-the-virtual-ios-device)); `xtool`, `.xtool` and `.bsp` (xtool's output) are not watched, and a phone that is off is refused
+before the job. Its line reads like `cycle 2: 1 file changed (Sources/MyApp/ContentView.swift): built in 38.0 s, deployed in 24.1 s,
+pid 612, no new crash report in 10 s; succeeded after 74.9 s (job ID)`, or `unchanged, opened in 3.2 s` when the signed app did not change.
+Unit-tested; not run on a live phone.
+
 A Flutter session from `project.run` takes `job.send` with `reload` (Hot Reload), `restart` (Hot Restart) or `quit`, and while it
 runs `job.get` shows its Dart VM service and, when Flutter serves them, DevTools URIs under `result.flutter`. A React Native or Expo
 debug run takes `reload` through Metro's `/reload` endpoint. See [Android](android.md#flutter).
@@ -447,7 +453,9 @@ tool makes those. Stop and tell the user when the IM4M is what is missing, rathe
   false means the next start will be refused with `ios_virtual_disk_space`; its remedy says how much to free.
   `ios.virtual.cleanup` (a dry run unless `dry_run:false`) deletes older disk copies; ask the user before deleting.
 - `ios.virtual.syslog {process, levels, contains, offset}` reads the phone's console log as lines with `process`, `pid`,
-  `level` and `message`; pass `next_offset` back as `offset` to follow it.
+  `level` and `message`; pass `next_offset` back as `offset` to follow it. `bundle_id` keeps one listed app's lines: its
+  executable's own (the name comes from the bundle on the host) and launchd's about its service, by name, so they continue
+  across relaunches.
 - `ios.virtual.profiles` lists the profile directories configured so far; `ios.virtual.configure {directory}` switches
   between them only while the current phone is off (`ios_virtual_running` otherwise).
 - `ios.virtual.state_save {name}` keeps the last verified run under a name without copying it, `ios.virtual.states` lists
@@ -505,7 +513,24 @@ tomaccoctl call job.logs '{"job_id":"DEPLOY_JOB","offset":0}'
 
 It signs a copy, exchanges spare trust-cache entries of the boot for its hashes while the guest is briefly stopped, sends the bundle over
 the guest channel, names it to the signing adapter, installs it through installd and opens it (about 25 s). The profile lists the app
-afterwards, so the next start carries it too. `ios.virtual.configure` with `add_application` and `deploy` does the add and the deploy in one
+afterwards, so the next start carries it too. When this run already installed the same signed app (the same cdhash after signing, which
+covers every file of the bundle), the deploy log has `unchanged` after `signed`, nothing is sent and the app is only opened; `force:true`
+installs it again. This skip has unit tests only; it was not run on a live phone.
+
+**From an xtool project in one job.** `project.run` with `device:"virtual-iphone"` builds with `xtool dev build`, deploys the one
+`xtool/*.app` with `ios.virtual.deploy` (which opens it) and, after `crash_check_seconds` (default 10, `0` skips it), reads the app's
+crash reports. A report that was not there before the deploy makes the job fail as `crashed`. It is refused before any job with
+`ios_virtual_not_running` when the phone is off, and with `action_unsupported` for a project that is not an xtool project.
+
+```sh
+tomaccoctl call project.run '{"path":"/absolute/MyApp","platform":"ios","device":"virtual-iphone"}'
+tomaccoctl call job.wait '{"job_id":"RUN_JOB","seconds":60}'
+```
+
+The job writes `build/tomacco/virtual_iphone_run.json` in the project and lists it in its artifacts: `state` (`launched`, `crashed`,
+`failed`, or `building` when the build failed), `build_seconds`, `deploy` with its `job_id`, `seconds`, `unchanged` and `steps`, the
+opened app's `pid`, and `crash_check` with the new reports as `testing.crashes` events. No crash report never proves the app did not
+crash. The last log line says the same in one line. Unit-tested with recorded replies; not run on a live phone. `ios.virtual.configure` with `add_application` and `deploy` does the add and the deploy in one
 call. A boot has 512 spare entries and the adapter's per-boot table holds 32 apps, frameworks and extensions. To debug the app, build it
 with `get-task-allow` and run `ios.virtual.debug {target}` — but iOS refuses it with Developer Mode off and arming it did not hold across a boot, so
 lldb cannot attach yet.

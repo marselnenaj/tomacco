@@ -447,6 +447,9 @@ pub fn run(a: &Value) -> Result {
     let config = s(a, "configuration");
     let root = s(&project, "path");
     let mut env = serde_json::to_value(tc::environment()?)?;
+    if device == crate::virtual_run::DEVICE {
+        return crate::virtual_run::submit(&project, a, env);
+    }
     if kind(&project, "flutter") {
         if platform == "ios" && !cfg!(target_os = "macos") {
             return Err(Error::new(

@@ -1190,11 +1190,16 @@ class Phone:
               "while the adapter is active. See the setup helper's last state in the development log "
               "(ios.emulator.guest logs development)")
 
-    def deploy(self, bundle, entitlements, open_app):
+    def deploy(self, bundle, entitlements, open_app, force=False):
         """Install an app on the running phone without a reboot: sign it, exchange
         spare trust-cache entries for its hashes while the guest is stopped, send
         it over, name it to the adapter, let installd install it and open it. The
-        profile lists it afterwards, so the next start carries it as usual."""
+        profile lists it afterwards, so the next start carries it as usual.
+
+        When this run's record says the same signed app (its cdhash, which
+        seals every file of the bundle) is installed already, nothing is
+        trusted, sent or installed: the step is `unchanged` and the app is only
+        opened. `force` installs it all the same."""
         started = time.monotonic()
         stage = lambda name, **details: emit("deploy", step=name, seconds=round(time.monotonic() - started, 1), **details)
         if not self.guest_running():
@@ -1211,23 +1216,13 @@ class Phone:
             taken = {}
             rows, application = stage_application(bundle, entitlements, payload, str(Path(toolchain["ldid"]).resolve(strict=True)), taken)
             bundle_id = application["bundle_id"]
-            signed = payload / application["path"]
             stage("signed", bundle_id=bundle_id, cdhash=application["cdhash"], programs=len(rows))
-            module = with_hashes(module_path.read_bytes(), [bytes.fromhex(row["cdhash"]) for row in rows])
-            write_private(module_path.with_name("system.boot.tc.next"), module)
-            self.call("ios.emulator.control", {"job_id": job, "action": "trust_cache_update",
-                                               "path": str(module_path.with_name("system.boot.tc.next"))})
-            os.replace(module_path.with_name("system.boot.tc.next"), module_path)
-            stage("trusted", spare_entries=spare_entries(module))
-            guest_path = self.send_bundle(job, signed)
-            stage("sent", guest_path=guest_path)
-            for identity, cdhash in policy_entries(rows):
-                response = self.deploy_request(job, "policy_add", f"{cdhash.hex()}:{identity}")
-                if response.get("ok") is not True:
-                    raise RuntimeError(f"The guest refused the signing policy of {identity}: "
-                                       + str(response.get("error")))
-            self.install(job, guest_path, bundle_id)
-            stage("installed")
+            unchanged = not force and (self.state.get("applications") or {}).get(bundle_id) == application["cdhash"]
+            if unchanged:
+                stage("unchanged", bundle_id=bundle_id, cdhash=application["cdhash"])
+            else:
+                self.deploy_signed(job, module_path, rows, payload / application["path"], bundle_id, stage)
+                stage("installed")
         installed = dict(self.state.get("applications") or {})
         installed[bundle_id] = application["cdhash"]
         self.save(applications=installed)
@@ -1242,7 +1237,25 @@ class Phone:
             if response.get("ok") is not True:
                 raise RuntimeError(f"{bundle_id} installed, but it did not open: " + json.dumps(response)[:600])
             stage("opened", pid=response.get("pid"))
-        stage("done", bundle_id=bundle_id)
+        stage("done", bundle_id=bundle_id, unchanged=unchanged)
+
+    def deploy_signed(self, job, module_path, rows, signed, bundle_id, stage):
+        """Trust a signed bundle's hashes, send it, name it to the adapter and
+        let installd install it."""
+        module = with_hashes(module_path.read_bytes(), [bytes.fromhex(row["cdhash"]) for row in rows])
+        write_private(module_path.with_name("system.boot.tc.next"), module)
+        self.call("ios.emulator.control", {"job_id": job, "action": "trust_cache_update",
+                                           "path": str(module_path.with_name("system.boot.tc.next"))})
+        os.replace(module_path.with_name("system.boot.tc.next"), module_path)
+        stage("trusted", spare_entries=spare_entries(module))
+        guest_path = self.send_bundle(job, signed)
+        stage("sent", guest_path=guest_path)
+        for identity, cdhash in policy_entries(rows):
+            response = self.deploy_request(job, "policy_add", f"{cdhash.hex()}:{identity}")
+            if response.get("ok") is not True:
+                raise RuntimeError(f"The guest refused the signing policy of {identity}: "
+                                   + str(response.get("error")))
+        self.install(job, guest_path, bundle_id)
 
     def deploy_request(self, job, operation, argument):
         """One guest request. The guest refuses a new one while an earlier worker
@@ -2231,6 +2244,8 @@ def main():
     parser.add_argument("--tools", type=lambda value: Path(value).absolute(),
                         help="Guest-tools build to install instead of the current one")
     parser.add_argument("--no-app", action="store_true", help="Boot and wait for the guest service only")
+    parser.add_argument("--force", action="store_true",
+                        help="deploy: install even when this run has the same signed app installed")
     parser.add_argument("--model", help="Device model to describe the phone as (see ios.virtual.status); default: the profile's own")
     parser.add_argument("--unlock", choices=("home", "swipe"), default="home",
                         help="How this device leaves its lock screen")
@@ -2246,7 +2261,7 @@ def main():
             if args.action == "start":
                 phone.start(args.tools, not args.no_app)
             elif args.action == "deploy":
-                phone.deploy(args.bundle, args.entitlements, not args.no_app)
+                phone.deploy(args.bundle, args.entitlements, not args.no_app, args.force)
             else:
                 phone.stop()
             print(json.dumps({"state": "ok", "phase": phone.state.get("phase"), "run": phone.state.get("run"),

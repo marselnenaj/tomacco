@@ -1070,7 +1070,7 @@ tomaccoctl call ios.virtual.state_use '{"name":"<name>"}'
 
 **Install app on running virtual iOS device**
 
-One step from a built .app directory to the app on the running phone, without a reboot: inspect the bundle, sign a copy ad hoc, exchange spare entries of this boot's trust cache for its hashes while the guest is stopped for a moment, send it over the guest channel, name it to the signing adapter, install it through installd and open it. A durable job: follow job.logs, whose deploy events carry each step's seconds. The profile lists the app afterwards, so the next start stages it. Refused with ios_virtual_not_running when the phone is off: use ios.virtual.configure add_application and start it. A boot has 512 spare entries and the adapter's table of the boot takes 32 apps, frameworks and extensions.
+One step from a built .app directory to the app on the running phone, without a reboot: inspect the bundle, sign a copy ad hoc, exchange spare entries of this boot's trust cache for its hashes while the guest is stopped for a moment, send it over the guest channel, name it to the signing adapter, install it through installd and open it. A durable job: follow job.logs, whose deploy events carry each step's seconds. When this run installed the same signed app before (the cdhash of the ad hoc signed copy, which seals every file of the bundle), nothing is trusted, sent or installed: the deploy event unchanged follows signed and the app is only opened; force installs it again. The profile lists the app afterwards, so the next start stages it. Refused with ios_virtual_not_running when the phone is off: use ios.virtual.configure add_application and start it. A boot has 512 spare entries and the adapter's table of the boot takes 32 apps, frameworks and extensions.
 
 Annotations: writes, not idempotent, closed world.
 
@@ -1079,6 +1079,7 @@ Annotations: writes, not idempotent, closed world.
 | `bundle` | string | yes |  | non-empty; Host path of an .app directory built for arm64 iOS. |
 | `entitlements` | string |  |  | Entitlements plist to request; empty: the executable's embedded entitlements, or only application-identifier. |
 | `open_app` | boolean |  | `true` | False installs without opening. |
+| `force` | boolean |  | `false` | Install even when this run has the same signed app installed already. |
 
 ```sh
 tomaccoctl call ios.virtual.deploy '{"bundle":"<bundle>"}'
@@ -1123,13 +1124,14 @@ tomaccoctl call ios.virtual.crash_reports '{"process":"<process>"}'
 
 **Log of virtual iOS device**
 
-Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)\[pid\]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.
+Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)\[pid\]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). bundle_id keeps one app's lines, across relaunches, and the reply names its executable under app; refused with ios_virtual_application_unknown for an app the profile does not list. Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.
 
 Annotations: read-only, idempotent, closed world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `process` | string |  | `""` | up to 128 characters; Only lines whose process or service contains this, ignoring case. Empty: all. |
+| `bundle_id` | string |  | `""` | up to 255 characters; Only this app's lines: those of the process named after its executable (read from the bundle the profile lists) and launchd's lines about its service. By name, so a relaunched app's lines match too. Empty: all. |
 | `levels` | array of string |  |  | items one of `emergency`, `alert`, `critical`, `error`, `fault`, `warning`, `notice`, `info`, `debug`, `default`, `none`; up to 11 items; Only lines with one of these levels; none matches lines without a level, such as the kernel's. Empty or absent: all. |
 | `contains` | string |  | `""` | up to 256 characters; Only lines whose message contains this text. |
 | `offset` | integer |  |  | at least 0; Byte offset to read on from: a previous reply's next_offset. Absent: the last 256 KiB. |

@@ -55,6 +55,7 @@ the code and that none is missing.
 | `ios_virtual_application_conflict` | Two listed bundles use the same bundle identifier. | Remove one with `ios.virtual.configure {remove_application}`. |
 | `ios_virtual_application_unknown` | No listed bundle has this path or bundle identifier. | `ios.virtual.apps` lists them. |
 | `ios_virtual_busy` | A start or stop is in progress. | Wait for it. The details name its job. |
+| `ios_virtual_deploy_failed` | In a `project.run` report: the deploy job it started failed. | Read the message, then `job.logs` of `deploy.job_id`. |
 | `ios_virtual_disk_space` | The start's disk copy does not fit on the filesystem of the profile's `installs`. | Free the space the remedy names. See [starting](#starting). |
 | `ios_virtual_guest_state_unknown` | The guest job could not be observed. | Read `job.get` for the job in the details. |
 | `ios_virtual_log_unavailable` | The guest job has no console log yet. | Start the phone, or wait until its boot has begun, then read `ios.virtual.syslog` again. |
@@ -135,7 +136,13 @@ The phone's console log, where the kernel prints and launchd forwards log record
 tomaccoctl call ios.virtual.syslog '{"process":"MyApp"}'
 tomaccoctl call ios.virtual.syslog '{"levels":["error","fault"],"max_lines":100}'
 tomaccoctl call ios.virtual.syslog '{"process":"MyApp","offset":123456}'
+tomaccoctl call ios.virtual.syslog '{"bundle_id":"dev.example.MyApp","offset":123456}'
 ```
+
+`bundle_id` keeps one app's lines: those its process writes under its executable's name (read from the bundle the profile
+lists, named in the reply's `app`) and launchd's lines about its service, such as `exited due to SIGABRT`. It matches names,
+not a PID, so following it with `offset` keeps the app's lines after a relaunch or a redeploy. An app the profile does not
+list is refused with `ios_virtual_application_unknown`.
 
 Each line has `time`, `process`, `pid`, `service`, `sender`, `level` and `message`; a line of no known form is the kernel's.
 Without `offset` it reads the last 256 KiB; pass the reply's `next_offset` back to follow the log. It reads the guest job's

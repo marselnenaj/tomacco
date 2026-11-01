@@ -118,4 +118,5 @@ round-trip and one carrying a widget extension; see
 
 1. [Set it up](setup.md) from your restore images to the first start.
 2. [Use it](usage.md): start, stop, apps, models, touch and gestures.
+   [Your first SwiftUI app](../tutorial-virtual-iphone.md) goes from a starter project to a build, run and watch loop.
 3. [Fix it](troubleshooting.md) when something goes wrong.

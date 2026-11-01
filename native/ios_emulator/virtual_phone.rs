@@ -490,6 +490,37 @@ fn bundle_infos(bundles: &[String]) -> std::collections::HashMap<String, Value> 
     found
 }
 
+/// The executable name of an app the profile lists, by bundle identifier
+/// (any case), read from its bundle's Info.plist on the host.
+pub(crate) fn listed_executable(bundle_id: &str) -> Result<String> {
+    let (profile, _) = records(&directory()?)?;
+    let bundles: Vec<String> = applications(&profile)?
+        .iter()
+        .map(|row| s(row, "bundle").to_string())
+        .collect();
+    executable_of(bundle_id, &bundles, &bundle_infos(&bundles))
+}
+
+fn executable_of(
+    bundle_id: &str,
+    bundles: &[String],
+    infos: &std::collections::HashMap<String, Value>,
+) -> Result<String> {
+    bundles
+        .iter()
+        .filter_map(|bundle| infos.get(bundle))
+        .find(|info| s(info, "bundle_id").eq_ignore_ascii_case(bundle_id))
+        .and_then(|info| info["executable"].as_str().filter(|e| !e.is_empty()))
+        .map(str::to_string)
+        .ok_or_else(|| {
+            Error::new(
+                "ios_virtual_application_unknown",
+                format!("The profile lists no readable app {bundle_id}"),
+            )
+            .remedy("Deploy it with ios.virtual.deploy or add it with ios.virtual.configure add_application; ios.virtual.apps lists the apps")
+        })
+}
+
 /// One row per app the phone knows of: the owned diagnostic, each app the
 /// profile lists (with the version its bundle on the host has now) and any
 /// app installed on the current run's volume that the profile no longer
@@ -1314,6 +1345,19 @@ pub fn deploy(a: &Value) -> Result {
             "The phone is not running; add the app with ios.virtual.configure and start the phone",
         ));
     }
+    submit_with(
+        "ios.virtual.deploy",
+        "deploy",
+        "Install app on virtual iOS device",
+        1800,
+        a,
+        deploy_arguments(&bundle, entitlements.as_deref(), a["force"] == true),
+    )
+}
+
+/// The deploy script's own arguments: the bundle, the entitlements to
+/// request, and `--force` to install an unchanged app again.
+fn deploy_arguments(bundle: &Path, entitlements: Option<&Path>, force: bool) -> Vec<String> {
     let mut arguments = vec![
         "--bundle".to_string(),
         bundle.to_string_lossy().into_owned(),
@@ -1324,14 +1368,10 @@ pub fn deploy(a: &Value) -> Result {
             file.to_string_lossy().into_owned(),
         ]);
     }
-    submit_with(
-        "ios.virtual.deploy",
-        "deploy",
-        "Install app on virtual iOS device",
-        1800,
-        a,
-        arguments,
-    )
+    if force {
+        arguments.push("--force".to_string());
+    }
+    arguments
 }
 
 /// A debugger's way to a process of the running phone: a job holding a port on
@@ -1417,7 +1457,7 @@ fn guest_control_debug_target(value: &str) -> bool {
 
 /// The guest job of the running phone and the model it was started as
 /// (empty: the Home-button phone), or `ios_virtual_not_running`.
-pub(super) fn running_guest() -> Result<(String, String)> {
+pub(crate) fn running_guest() -> Result<(String, String)> {
     let (_, state) = records(&directory()?)?;
     if !guest_is_running(&state) {
         return Err(Error::new(
@@ -1484,6 +1524,45 @@ pub fn stop(a: &Value) -> Result {
 #[cfg(test)]
 mod debug_target_tests {
     use super::*;
+
+    #[test]
+    fn a_listed_app_names_its_executable_and_an_unknown_one_is_refused() {
+        let bundles = vec!["/a/Demo.app".to_string(), "/a/Gone.app".to_string()];
+        let mut infos = std::collections::HashMap::new();
+        infos.insert(
+            "/a/Demo.app".to_string(),
+            json!({"bundle_id":"dev.example.Demo","executable":"DemoExe"}),
+        );
+        assert_eq!(
+            executable_of("dev.example.demo", &bundles, &infos).unwrap(),
+            "DemoExe"
+        );
+        assert_eq!(
+            executable_of("dev.example.Gone", &bundles, &infos)
+                .unwrap_err()
+                .code,
+            "ios_virtual_application_unknown"
+        );
+    }
+
+    #[test]
+    fn force_reaches_the_deploy_script_only_when_asked() {
+        let bundle = Path::new("/apps/Demo.app");
+        assert_eq!(
+            deploy_arguments(bundle, None, false),
+            ["--bundle", "/apps/Demo.app"]
+        );
+        assert_eq!(
+            deploy_arguments(bundle, Some(Path::new("/apps/e.plist")), true),
+            [
+                "--bundle",
+                "/apps/Demo.app",
+                "--entitlements",
+                "/apps/e.plist",
+                "--force"
+            ]
+        );
+    }
 
     #[test]
     fn a_debug_target_never_reads_as_an_option() {
