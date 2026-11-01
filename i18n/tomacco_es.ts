@@ -77,11 +77,11 @@
     </message>
     <message>
         <source>No call failed.</source>
-        <translation>Ninguna llamada ha fallado.</translation>
+        <translation>Ninguna invocación ha fallado.</translation>
     </message>
     <message>
         <source>No call matches.</source>
-        <translation>Ninguna llamada coincide.</translation>
+        <translation>Ninguna invocación coincide.</translation>
     </message>
     <message>
         <source>failed</source>
@@ -509,7 +509,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
     </message>
     <message>
         <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
-        <translation>Todavía no hay registro de sesión en %1. Aparece con la primera llamada del agente.</translation>
+        <translation>Todavía no hay registro de sesión en %1. Aparece con la primera invocación del agente.</translation>
     </message>
 </context>
 <context>
@@ -5099,7 +5099,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     </message>
     <message>
         <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
-        <translation>Copiar esta llamada como comando tomaccoctl para una terminal o un script</translation>
+        <translation>Copiar esta invocación como comando tomaccoctl para una terminal o un script</translation>
     </message>
     <message>
         <source>Try again</source>
