@@ -426,7 +426,7 @@ pub fn profiles(_a: &Value) -> Result {
                     "error":null,"run":state["run"],"phase":state["phase"],"closed":state["closed"],
                     "running":guest_is_running(&state),"application":profile["application"],
                     "installs":profile["installs"],
-                    "start_disks":profile["start_disks"].as_str().unwrap_or("copy"),
+                    "start_disks":disk_overlay::start_disks(&profile),
                     "saved_states":states::saved(&directory).map(|m| m.len()).ok()})
                 }
                 Err(error) => json!({"directory":directory,"current":selected,"valid":false,
@@ -1360,7 +1360,7 @@ pub fn status(a: &Value) -> Result {
         // Whether the next start's disk copy fits in the profile's installs,
         // and whether it copies the root disk or lays an overlay on it.
         "start_disk":start_disk(&profile,&state,&states::pinned(&directory),false),
-        "start_disks":profile["start_disks"].as_str().unwrap_or("copy"),
+        "start_disks":disk_overlay::start_disks(&profile),
         "error":state["error"],"updated":state["updated"],
         "guest_job":state["guest_job"],"guest_state":guest_state,"guest_state_known":guest_known,
         "guest_report_readable":report_readable,
@@ -2565,7 +2565,8 @@ mod start_disk_tests {
         for name in COPIED_DISKS {
             fs::write(next.join(name), vec![0u8; 4096]).unwrap();
         }
-        let copies = json!({"installs":installs,"prepare":{"helper_engine":helper.join("qemu-system-x86_64")}});
+        let copies = json!({"installs":installs,"start_disks":"copy",
+            "prepare":{"helper_engine":helper.join("qemu-system-x86_64")}});
         let disk = start_disk(&copies, &json!({"closed":true,"install":next}), &[], true);
         assert_eq!(disk["method"], "flatten");
         assert_eq!(disk["needed_bytes"], 66 * 4096 + COPY_HEADROOM);

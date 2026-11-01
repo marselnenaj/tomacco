@@ -63,9 +63,10 @@ is its mailbox, `vphone-asmf.c` its shared measurement registers, and `vphone-vs
 synthetic replies, so SEP services work only as far as the firmware's own code works.
 
 **Storage.** Apple VirtIO devices for the root and auxiliary disks. Writable disks must be asked for by name, and the launcher
-locks the real files. A flush is a real flush with error reporting. The root disk is raw, or with `start_disks: "overlay"` a qcow2 overlay on the previous
-run's root disk (`tools/ios_disk_overlay.py`); the launcher then attaches it with the `qcow2` block driver and lets the file grow to
-the disk's virtual size. A live phone booted, saved and stopped this way twice, the second time on a two-layer chain.
+locks the real files. A flush is a real flush with error reporting. The root disk is a qcow2 overlay on the previous
+run's root disk (`tools/ios_disk_overlay.py`) whenever a `qemu-img` is found, or with `start_disks: "copy"` or without
+`qemu-img` a raw copy. The launcher attaches an overlay with the `qcow2` block driver and lets the file grow to the disk's
+virtual size.
 
 **Input.** A USB touchscreen and keyboard (`vphone-usb` and `vphone-hid`), with Home and the side button as GPIO or HID. iOS
 ignores the virtio keyboard, which is why `key` has no effect. Touch has one contact.

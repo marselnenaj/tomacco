@@ -144,6 +144,16 @@ def find_qemu_img(helper_engine=None, which=None):
     return (which or shutil.which)("qemu-img")
 
 
+def start_disks(profile, qemu_img):
+    """How starts make their root disk: profile.json's start_disks when it
+    names copy or overlay, else overlay when a qemu-img was found and copy
+    without one."""
+    named = profile.get("start_disks")
+    if named in ("copy", "overlay"):
+        return named
+    return "overlay" if qemu_img else "copy"
+
+
 def plan(base, output, mode="copy", qemu_img=None, max_chain=MAX_CHAIN):
     """How the next start makes its root disk from the base's root disk `base`.
 

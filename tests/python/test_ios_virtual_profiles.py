@@ -1,5 +1,6 @@
 """Several virtual iPhone profiles: listed, and switched only while the phone is off."""
 import json
+import shutil
 from pathlib import Path
 import unittest
 
@@ -37,7 +38,9 @@ class Profiles(Isolated):
         self.assertEqual(listed["current"], str(second))
         self.assertEqual([(row["directory"], row["current"], row["run"]) for row in listed["profiles"]],
                          [(str(second), True, 9), (str(first), False, 3)])
-        self.assertTrue(all(row["valid"] and row["start_disks"] == "copy" and row["saved_states"] == 0
+        # A profile that names no start_disks lays overlays only with a qemu-img.
+        default = "overlay" if shutil.which("qemu-img") else "copy"
+        self.assertTrue(all(row["valid"] and row["start_disks"] == default and row["saved_states"] == 0
                             for row in listed["profiles"]))
         # Choosing one again moves it to the front; nothing is listed twice.
         dispatch("ios.virtual.configure", {"directory": str(first)})

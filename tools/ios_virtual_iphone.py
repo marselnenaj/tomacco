@@ -947,12 +947,13 @@ class Phone:
             # updates; the running kernel only works while the module matches it.
             pinned = Path(prepare.get("support", "")) / "apfs/vmlinuz"
             prepare["helper_kernel"] = str(pinned) if pinned.is_file() else f"/usr/lib/modules/{os.uname().release}/vmlinuz"
-        # A copy-free start (profile start_disks "overlay") makes the root disk
-        # an overlay on the base's; qemu-img also flattens an overlay base.
+        # A copy-free start makes the root disk an overlay on the base's: the
+        # default while a qemu-img is found, or profile start_disks "overlay".
+        # qemu-img also flattens an overlay base.
         qemu_img = ios_disk_overlay.find_qemu_img(prepare.get("helper_engine"))
         if qemu_img:
             prepare["qemu_img"] = qemu_img
-        if self.profile.get("start_disks") == "overlay":
+        if ios_disk_overlay.start_disks(self.profile, qemu_img) == "overlay":
             prepare["root_overlay"] = bool(qemu_img)
             if not qemu_img:
                 emit("start-disks", method="copy", reason="no qemu-img beside the helper engine or on PATH")

@@ -106,13 +106,25 @@ pub(super) fn qemu_img(profile: &Value) -> Option<PathBuf> {
     toolchain::find("qemu-img").ok().map(PathBuf::from)
 }
 
+/// How starts make their root disk: profile.json's start_disks when it
+/// names copy or overlay, else overlay when a qemu-img is found and copy
+/// without one.
+pub(super) fn start_disks(profile: &Value) -> &'static str {
+    match profile["start_disks"].as_str() {
+        Some("copy") => "copy",
+        Some("overlay") => "overlay",
+        _ if qemu_img(profile).is_some() => "overlay",
+        _ => "copy",
+    }
+}
+
 /// How the next start makes its root disk from the base `install`
 /// (`plan` in the script): overlay, copy or flatten, with the reason.
 pub(super) fn start_method(profile: &Value, install: &Path) -> (&'static str, String) {
     let layers = chain(install);
     let tool = qemu_img(profile);
     let overlay_base = qcow2(&layers[0]).is_some();
-    if profile["start_disks"] == "overlay" {
+    if profile["start_disks"] == "overlay" || (profile["start_disks"].is_null() && tool.is_some()) {
         if tool.is_none() {
             let method = if overlay_base { "flatten" } else { "copy" };
             return (
@@ -132,7 +144,12 @@ pub(super) fn start_method(profile: &Value, install: &Path) -> (&'static str, St
         );
     }
     let method = if overlay_base { "flatten" } else { "copy" };
-    (method, "the profile asks for copies".into())
+    let reason = if profile["start_disks"].is_null() {
+        "no qemu-img beside the helper engine or on PATH, so starts copy"
+    } else {
+        "the profile asks for copies"
+    };
+    (method, reason.into())
 }
 
 /// The bytes of an install's root disk as a raw disk: a raw file's length,
@@ -240,8 +257,14 @@ pub(crate) mod tests {
         let (method, reason) = start_method(&profile, &installs[MAX_CHAIN]);
         assert_eq!(method, "flatten");
         assert!(reason.contains("layers"), "{reason}");
-        let copies = json!({"prepare":{"helper_engine":helper}});
+        let copies = json!({"start_disks":"copy","prepare":{"helper_engine":helper}});
         assert_eq!(start_method(&copies, &installs[0]).0, "copy");
         assert_eq!(start_method(&copies, &installs[1]).0, "flatten");
+        assert_eq!(start_disks(&copies), "copy");
+        // A profile that names none lays overlays while a qemu-img is found.
+        let unnamed = json!({"prepare":{"helper_engine":helper}});
+        assert_eq!(start_disks(&unnamed), "overlay");
+        assert_eq!(start_method(&unnamed, &installs[0]).0, "overlay");
+        assert_eq!(start_method(&unnamed, &installs[MAX_CHAIN]).0, "flatten");
     }
 }

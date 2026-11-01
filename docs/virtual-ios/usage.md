@@ -191,14 +191,16 @@ copies, as `overlay-backing` of the later runs.
 
 ### Copy-free starts (experimental)
 
-Every start copies the base run's 32 GiB root disk, which takes minutes on a filesystem that cannot clone files (ext4), and
-every stop hashes the whole copy. A profile can ask for an overlay instead:
+A copy of the base run's 32 GiB root disk takes minutes on a filesystem that cannot clone files (ext4), and a stop then
+hashes the whole copy. So a start lays an overlay instead whenever it finds a `qemu-img`, and copies only without one.
+A profile can choose either way:
 
 ```sh
 tomaccoctl call ios.virtual.configure '{"start_disks":"overlay"}'
+tomaccoctl call ios.virtual.configure '{"start_disks":"copy"}'
 ```
 
-The next start then makes the run's root disk `system.qcow2`, an empty qcow2 file whose backing file is the base's root
+A start that lays an overlay makes the run's root disk `system.qcow2`, an empty qcow2 file whose backing file is the base's root
 disk, with `qemu-img create`. The guest writes into the overlay; the base is only read. The auxiliary and SEP disks are
 small and still copied. `qemu-img` is taken from beside the profile's helper engine (setup builds it there) or from
 `PATH`. The engine and the Linux helper that installs the guest tools open the overlay as qcow2, and the host reads APFS
@@ -210,8 +212,9 @@ through the chain to check the Preboot volume as before.
 - A copy an overlay reads is never deleted while the run on top of it is kept: the start's own pruning and
   `ios.virtual.cleanup` list it under `kept` with the reason `overlay-backing`.
 - Backing files are named by absolute path, so moving the profile's `installs` breaks the runs made this way.
-- Without `qemu-img` the start copies, and its log says why. `start_disk` in `ios.virtual.status` has the `method`
-  (`copy`, `overlay` or `flatten`), and `start_disks` the choice.
+- Without `qemu-img` the start copies, and its log says why. With `"start_disks":"overlay"` and no `qemu-img`,
+  `ios.virtual.host_check` and `ios.virtual.doctor` warn (`qemu_img`) and name where it must be. `start_disk` in
+  `ios.virtual.status` has the `method` (`copy`, `overlay` or `flatten`), and `start_disks` the choice in effect.
 
 **What ran on a live phone.** Two starts of the iPhone 18 Pro profile on the development host (ext4 on NVMe), the second
 layered on the first, then a start with `"start_disks":"copy"`, which flattened that two-layer chain into a raw disk:
@@ -222,6 +225,11 @@ layered on the first, then a start with `"start_disks":"copy"`, which flattened 
 | Start until the app's launch was accepted | 524 s | 217 s | 230 s | 569 s |
 | Verified stop | 258 s | 4.9 s | 4.4 s | 199 s |
 | New disk space for the run | 32 GiB | 0.4 GiB | 0.4 GiB | 24 GiB (sparse) |
+
+Two later starts layered on a raw base, the second from a profile that names no `start_disks`, took 16 to 18 s of
+preparation (5.1 s for the overlay, 0.3 to 0.6 s of input hashing), 307 and 342 s in all, and 4.3 and 4.8 s to stop
+verified. The flattening that 8 overlays trigger has not run inside a start; run on a 9-overlay chain over that base
+with the start's own plan and command, `qemu-img convert` took 47.9 s and wrote 24.1 GiB.
 
 The engine opened `system.qcow2` with the `qcow2` block driver, the helper installed the guest tools through it, all stops
 ended with exit code 0, a confirmed flush and complete hashes, and the second start's overlay named the first's as its

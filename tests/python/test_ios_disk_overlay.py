@@ -241,6 +241,12 @@ class StartPlans(unittest.TestCase):
         self.assertEqual(overlay.find_qemu_img(helper, which=lambda _name: "/usr/bin/qemu-img"), str(tool))
         self.assertIsNone(overlay.find_qemu_img(None, which=lambda _name: None))
 
+    def test_starts_lay_overlays_by_default_while_a_qemu_img_is_found(self):
+        self.assertEqual(overlay.start_disks({}, "/opt/qemu-img"), "overlay")
+        self.assertEqual(overlay.start_disks({}, None), "copy")
+        self.assertEqual(overlay.start_disks({"start_disks": "copy"}, "/opt/qemu-img"), "copy")
+        self.assertEqual(overlay.start_disks({"start_disks": "overlay"}, None), "overlay")
+
     @unittest.skipUnless(shutil.which("qemu-img"), "needs qemu-img")
     def test_a_real_qemu_img_overlay_reads_as_its_base(self):
         planned = overlay.plan(self.base / "system.raw", self.output, "overlay", shutil.which("qemu-img"))
