@@ -131,7 +131,8 @@ The destructive ones are `catalog.remove`, `project.configure`, `job.cancel`, `s
 `device.install`, `device.app`, `android.each`, `android.avd_profile`, `android.emulator`,
 `remote.run`, `workspace.remove`, `files.write`, `release.version`, `release.notes`, `apple.simulator`,
 `apple.device`, `play.commit`, `play.abort`, `ios.emulator.restore`, `ios.virtual.cleanup`,
-`ios.virtual.state_delete`, `update.apply` and `update.rollback`. The [reference](reference/README.md) marks each.
+`ios.virtual.state_delete`, `testing.baselines`, `update.apply` and
+`update.rollback`. The [reference](reference/README.md) marks each.
 
 Two of them are dry runs unless told otherwise. Show the user what the dry run lists, and only
 then repeat it:

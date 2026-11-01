@@ -4,6 +4,33 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+`tomaccoctl` now has one typed API of 229 operations.
+
+### Added
+
+- **Testing.**
+  - `testing.coverage` reads the JaCoCo XML reports of unit and instrumented tests (the Android Gradle plugin's
+    `enableUnitTestCoverage` and `enableAndroidTestCoverage`, the `jacoco` plugin, Kover) into totals, each file with
+    its missed lines and each class, merges several reports line by line, and with `baseline` lists what changed.
+    `minimum` and `max_drop` set `passed`. `project.execute` takes `coverage:true` for Gradle `test` and
+    `instrumented-test` and runs the report tasks the build files enable; `project.inspect` lists them in `test_setup`.
+    Run on a copy of the Android example with an API 36 emulator: both reports written, read and merged.
+  - `testing.run` writes a self-contained `report.html` (scenarios, steps with timings, screenshots, baselines,
+    difference images, crashes, metrics; no scripts), and `project.execute` test jobs write
+    `build/tomacco/test-report.html`, also when tests fail. `testing.report` writes one for any run or results path.
+  - `testing.history`: both add their outcomes to a test history; its summary gives each test's pass rate, flips,
+    recent outcomes and last failure, flaky tests first. `record` adds earlier results.
+  - `testing.impact` selects the Gradle test classes and `testing.run` scenarios a change likely affects, from
+    `git diff` or a list of files, by module dependencies, package and name rules, lists the Gradle commands and can
+    run them. It does not run Gradle to decide and can miss tests reached through reflection or generated code.
+  - `testing.run` takes a `baselines` directory for relative or unnamed screen baselines, and `record_baselines` to
+    collect every new screen in one run. `testing.baselines` reviews a run's new and changed screens and approves
+    screenshots as baselines, refusing two devices' different images for one baseline.
+  - `project.execute` takes `managed_device` (a Gradle Managed Device, group or `all` from the build files) and
+    `shards` for instrumented tests. Unit-tested only; no managed device run has been made.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
