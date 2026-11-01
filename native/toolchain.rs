@@ -644,13 +644,12 @@ pub fn doctor() -> Result {
     let desktop = results.pop().unwrap_or(Value::Null);
     let ios = results.pop().unwrap_or(Value::Null);
     let tools = results;
-    let kvm = fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("/dev/kvm")
-        .is_ok();
+    let host = crate::host::current();
+    let kvm = host.kvm.accessible;
+    let assessed = crate::host::assess(&host);
+    let advice = &assessed["kvm"];
     Ok(
-        json!({"tools":tools,"android_sdk":android_sdk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"android_ndk":android_ndk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"ios_sdk":ios,"desktop":desktop,"kvm":{"exists":Path::new("/dev/kvm").exists(),"accessible":kvm},"settings":settings()?,"data_directory":home()?,"ios_runtime":"Apple Simulator requires macOS; Linux builds use xtool and a real device"}),
+        json!({"host":assessed,"tools":tools,"android_sdk":android_sdk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"android_ndk":android_ndk()?.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),"ios_sdk":ios,"desktop":desktop,"kvm":{"exists":host.kvm.exists,"accessible":kvm,"status":advice["status"],"message":advice["message"],"commands":advice["commands"]},"settings":settings()?,"data_directory":home()?,"ios_runtime":"Apple Simulator requires macOS; Linux builds use xtool and a real device"}),
     )
 }
 

@@ -26,6 +26,7 @@ mod diagnostics;
 mod download;
 mod files;
 mod gradle_model;
+mod host;
 mod instrumentation;
 mod ios_emulator;
 mod iphone_automation;
