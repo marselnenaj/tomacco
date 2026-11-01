@@ -1774,6 +1774,46 @@ class ReleaseContractTests(Isolated):
                                       "release_name": "2.0.0", "release_notes": result["release_notes"]})
         self.assertNotEqual(refused.exception.code, "invalid_argument")
 
+    def test_signing_health_reads_keytool_and_checks_the_play_setup(self):
+        listing = ("Alias name: upload\nEntry type: PrivateKeyEntry\nCertificate[1]:\nOwner: CN=Upload\nIssuer: CN=Upload\n"
+                   "Valid from: Sun Nov 01 10:00:00 UTC 2026 until: Fri Nov 01 10:00:00 UTC 2030\n"
+                   "Certificate fingerprints:\n\t SHA1: 01:02\n\t SHA256: " + ":".join(["AB"] * 32) + "\n"
+                   "Signature algorithm name: SHA256withRSA\nSubject Public Key Algorithm: 4096-bit RSA key\n")
+        log = self.root / "keytool.json"
+        self.tool("keytool", f"import json,sys\nfrom pathlib import Path\nPath({str(log)!r}).write_text(json.dumps(sys.argv[1:]))\n"
+                             f"print({listing!r})\n")
+        password = self.root / "password"
+        password.write_text("fixture-password\n")
+        password.chmod(0o600)
+        keystore = self.root / "upload.p12"
+        keystore.write_bytes(b"store")
+        base = {"keystore": str(keystore), "password_file": str(password)}
+        value = dispatch("release.signing_health", {**base, "upload_certificate_sha256": "ab" * 32})
+        entry = value["entries"][0]
+        self.assertEqual((entry["alias"], entry["key_size"], entry["valid_until"], entry["play_role"]), ("upload", 4096, "2030-11-01", "upload"))
+        self.assertEqual(value["findings"][0]["code"], "play_minimum_validity")
+        self.assertTrue(value["passed"])
+        argv = json.loads(log.read_text())
+        self.assertIn("-J-Duser.timezone=UTC", argv)
+        self.assertEqual(argv[argv.index("-storepass:file") + 1], str(password))
+        self.assertNotIn("fixture-password", json.dumps(value))
+        value = dispatch("release.signing_health", {**base, "warn_days": 2000, "app_signing_certificate_sha256": "cd" * 32})
+        self.assertEqual([f["code"] for f in value["findings"]], ["expires_soon", "play_minimum_validity", "not_play_key"])
+        self.assertFalse(value["passed"])
+        # An artifact signed with another key fails.
+        import zipfile
+        apk = self.root / "app.apk"
+        with zipfile.ZipFile(apk, "w") as archive:
+            archive.writestr("AndroidManifest.xml", b"")
+        self.tool("aapt2", "print(\"package: name='dev.test.app' versionCode='3' versionName='1.2'\")\n")
+        self.tool("apksigner", "print('Verifies\\nSigner #1 certificate DN: CN=Other\\nSigner #1 certificate SHA-256 digest: " + "ee" * 32 + "')\n")
+        value = dispatch("release.signing_health", {**base, "artifact": str(apk)})
+        self.assertEqual((value["artifact"]["matches_keystore"], value["findings"][-1]["code"]), (False, "artifact_other_key"))
+        password.chmod(0o644)
+        with self.assertRaises(StudioError) as refused:
+            dispatch("release.signing_health", base)
+        self.assertEqual(refused.exception.code, "secret_permissions")
+
     def test_a_secret_given_instead_of_its_file_is_not_echoed(self):
         secret = "hunter2-correct-horse"
         output = str(self.root / "release.p12")

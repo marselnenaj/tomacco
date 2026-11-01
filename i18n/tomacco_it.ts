@@ -4167,6 +4167,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Verifica firma della release</translation>
     </message>
     <message>
+        <source>Check signing keys</source>
+        <translation>Controlla le chiavi di firma</translation>
+    </message>
+    <message>
         <source>View build plan</source>
         <translation>Vedi piano di build</translation>
     </message>

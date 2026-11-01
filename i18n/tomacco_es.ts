@@ -4167,6 +4167,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Verificar firma de publicación</translation>
     </message>
     <message>
+        <source>Check signing keys</source>
+        <translation>Comprobar las claves de firma</translation>
+    </message>
+    <message>
         <source>View build plan</source>
         <translation>Ver plan de compilación</translation>
     </message>

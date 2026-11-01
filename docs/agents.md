@@ -697,6 +697,20 @@ The result's `release_notes` is the `release_notes` argument of `play.prepare`, 
 tomaccoctl call release.notes '{"changelog":"/absolute/app/CHANGELOG.md","section":"2.0.0","directory":"/absolute/app/fastlane/metadata/android","translations":[{"language":"de-DE","changelog":"/absolute/app/CHANGELOG.de.md"}]}'
 ```
 
+`release.signing_health` reads a keystore with `keytool -list -v` and reports each key's owner, validity (`valid_until`,
+`days_left`), key algorithm and size, signature algorithm and SHA-256 fingerprint. Findings: `expired` (an error),
+`expires_soon` within `warn_days` (default 365), `play_minimum_validity` for a key that ends before 22 October 2033, which
+Google Play requires of app signing keys, `weak_key` under 2048 bits (an error), `dsa_key` and `weak_signature` (MD5 or
+SHA-1). Pass the upload and app signing certificate fingerprints from Play Console's app integrity page as
+`upload_certificate_sha256` and `app_signing_certificate_sha256`: each key gets a `play_role` (`upload`, `app_signing` or
+`none`), no match is the error `not_play_key`, and Play's app signing key in the same keystore as a different upload key is
+the warning `app_signing_key_local`. `artifact` checks that an APK or AAB is signed with one of the keys. Nothing is sent
+to Play; `passed` is false when a finding is an error.
+
+```sh
+tomaccoctl call release.signing_health '{"keystore":"/absolute/upload.p12","password_file":"/absolute/upload.password","upload_certificate_sha256":"AB:CD:..."}'
+```
+
 `play.prepare` creates an edit, uploads the AAB, sets the track and validates, without committing. Inspect that before an explicitly authorized `play.commit`;
 `play.abort` discards it. Live store submission has not been qualified, on Play or on the App Store.
 

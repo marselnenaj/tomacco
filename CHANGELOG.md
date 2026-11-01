@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 201 operations.
+`tomaccoctl` now has one typed API of 202 operations.
 
 ### Added
 
@@ -22,6 +22,10 @@ operations and their JSON results.
   - `android.size_report` breaks an APK or AAB down by size per category, ABI, density and module with its largest
     files, estimates the download per ABI and density (from `bundletool get-size total` for an AAB when bundletool is
     configured), and compares with a `baseline` build.
+  - `release.signing_health` reports each key of a keystore with its expiry, days left, key algorithm and size and
+    fingerprint, warns about keys expiring within a year or before Play's 22 October 2033 minimum, weak keys and SHA-1
+    signatures, matches the keys with the upload and app signing certificates Play Console shows, and checks that an
+    APK or AAB is signed with one of them.
 - **Testing.**
   - `testing.record` records a UI test on an Android device: taps, swipes, text and keys sent through
     `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`

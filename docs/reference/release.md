@@ -2,7 +2,7 @@
 
 # `release` operations
 
-5 operations. Generated from `assets/operations.json`; [all areas](README.md).
+6 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### release.keystore
 
@@ -59,6 +59,28 @@ Annotations: read-only, idempotent, open world.
 
 ```sh
 tomaccoctl call release.verify '{"path":"<path>"}'
+```
+
+### release.signing_health
+
+**Check signing keys**
+
+Read every key of an Android keystore, or one alias, with keytool: owner, certificate validity and days left, key algorithm and size, signature algorithm and SHA-256 fingerprint. Findings: expired (error), expires_soon within warn_days, play_minimum_validity for a key that ends before 22 October 2033 as Google Play requires of app signing keys, weak_key under 2048 bits (error), dsa_key, weak_signature for MD5 or SHA-1. Given the upload and app signing certificate fingerprints from Play Console's app integrity page, each key gets play_role upload, app_signing or none; not_play_key is an error. artifact checks that an APK or AAB is signed with a key of this keystore. Reads files only and contacts no store.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `keystore` | string | yes |  | non-empty; Absolute path of the keystore (PKCS12 or JKS) |
+| `password_file` | string | yes |  | Owner-only file containing the keystore password; never stored in job arguments |
+| `alias` | string |  | `""` | Check only this key; empty checks every entry |
+| `warn_days` | integer |  | `365` | 1 to 36500; Warn about keys that expire within this many days |
+| `upload_certificate_sha256` | string |  | `""` | SHA-256 fingerprint of the upload key certificate as Play Console shows it |
+| `app_signing_certificate_sha256` | string |  | `""` | SHA-256 fingerprint of the app signing key certificate as Play Console shows it |
+| `artifact` | string |  | `""` | Absolute path of an APK or AAB whose signer should be a key of this keystore |
+
+```sh
+tomaccoctl call release.signing_health '{"keystore":"<keystore>","password_file":"<password_file>"}'
 ```
 
 ### release.version

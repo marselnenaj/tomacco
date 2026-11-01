@@ -5741,6 +5741,63 @@
     }
   },
   {
+    "name": "release.signing_health",
+    "title": "Check signing keys",
+    "description": "Read every key of an Android keystore, or one alias, with keytool: owner, certificate validity and days left, key algorithm and size, signature algorithm and SHA-256 fingerprint. Findings: expired (error), expires_soon within warn_days, play_minimum_validity for a key that ends before 22 October 2033 as Google Play requires of app signing keys, weak_key under 2048 bits (error), dsa_key, weak_signature for MD5 or SHA-1. Given the upload and app signing certificate fingerprints from Play Console's app integrity page, each key gets play_role upload, app_signing or none; not_play_key is an error. artifact checks that an APK or AAB is signed with a key of this keystore. Reads files only and contacts no store.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "keystore": {
+          "type": "string",
+          "description": "Absolute path of the keystore (PKCS12 or JKS)",
+          "minLength": 1
+        },
+        "password_file": {
+          "type": "string",
+          "description": "Owner-only file containing the keystore password; never stored in job arguments"
+        },
+        "alias": {
+          "type": "string",
+          "default": "",
+          "description": "Check only this key; empty checks every entry"
+        },
+        "warn_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 36500,
+          "default": 365,
+          "description": "Warn about keys that expire within this many days"
+        },
+        "upload_certificate_sha256": {
+          "type": "string",
+          "default": "",
+          "description": "SHA-256 fingerprint of the upload key certificate as Play Console shows it"
+        },
+        "app_signing_certificate_sha256": {
+          "type": "string",
+          "default": "",
+          "description": "SHA-256 fingerprint of the app signing key certificate as Play Console shows it"
+        },
+        "artifact": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of an APK or AAB whose signer should be a key of this keystore"
+        }
+      },
+      "required": [
+        "keystore",
+        "password_file"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "release.version",
     "title": "Set app version",
     "description": "Set one version name and build number in every version file of a project at once: pubspec.yaml, Expo's app.json (expo.version, android.versionCode, ios.buildNumber), the package.json of a React Native or Expo app, the Android app's Gradle file with the versions catalog entry or gradle.properties key it reads, and the Info.plist an xtool.yml names. bump computes the next version from the current one and the build number as the highest current one plus 1. dry_run lists the changes without writing. Each changed file gets a recoverable backup; a version only the build computes is refused.",

@@ -45,6 +45,7 @@ mod remote;
 mod runtime;
 mod session_log;
 mod setup;
+mod signing_health;
 mod storage;
 mod swift;
 mod test_results;

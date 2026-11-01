@@ -4167,6 +4167,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Vérifier la signature de version</translation>
     </message>
     <message>
+        <source>Check signing keys</source>
+        <translation>Vérifier les clés de signature</translation>
+    </message>
+    <message>
         <source>View build plan</source>
         <translation>Voir le plan de build</translation>
     </message>

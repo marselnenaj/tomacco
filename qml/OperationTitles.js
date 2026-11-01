@@ -147,6 +147,7 @@ var titles = {
     "release.keystore": QT_TRANSLATE_NOOP("Operations", "Create signing key"),
     "release.sign": QT_TRANSLATE_NOOP("Operations", "Sign Android release"),
     "release.verify": QT_TRANSLATE_NOOP("Operations", "Verify release signature"),
+    "release.signing_health": QT_TRANSLATE_NOOP("Operations", "Check signing keys"),
     "release.version": QT_TRANSLATE_NOOP("Operations", "Set app version"),
     "release.notes": QT_TRANSLATE_NOOP("Operations", "Write Play release notes"),
     "apple.devices": QT_TRANSLATE_NOOP("Operations", "Apple devices on the Mac"),

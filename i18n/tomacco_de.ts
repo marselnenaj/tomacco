@@ -4163,6 +4163,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Release-Signatur prüfen</translation>
     </message>
     <message>
+        <source>Check signing keys</source>
+        <translation>Signaturschlüssel prüfen</translation>
+    </message>
+    <message>
         <source>View build plan</source>
         <translation>Build-Plan ansehen</translation>
     </message>
