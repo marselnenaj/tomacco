@@ -30,6 +30,9 @@ operations and their JSON results.
   - `project.analyze` runs `dart analyze --format=json` for Dart and Flutter projects, and the project's own
     `eslint` and `tsc --noEmit` for JavaScript and TypeScript projects, as a job whose `report.json` lists each
     issue with file, line, column, severity and code.
+  - Flutter tests: `project.execute` with `action` `test` also writes the JSON reporter's output to
+    `build/tomacco/flutter_test.json`, and `testing.results` reads it, or any `flutter test --machine` output, into its
+    summary. Failed golden-file comparisons are listed under `golden_failures` with flutter_test's diff images.
 - **Session log and replay.** With `TOMACCO_SESSION_LOG` set to a file, every operation called through `tomaccoctl call`
   or `tomaccoctl mcp` is appended to it as a JSON line: arguments with recognised secrets masked, outcome, a short
   result summary and the duration. `tomaccoctl replay FILE [--dry-run]` calls the logged operations that change

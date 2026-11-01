@@ -1,8 +1,10 @@
-//! JUnit XML results of a project's tests, read into one summary.
+//! JUnit XML results of a project's tests, and the JSON reporter output of
+//! Dart and Flutter tests, read into one summary.
 //!
 //! Gradle writes them to build/test-results (unit tests) and
 //! build/outputs/androidTest-results (instrumented tests); testing.run writes
-//! junit.xml into its report directory.
+//! junit.xml into its report directory; project.execute writes Flutter's
+//! `--file-reporter json:` output to build/tomacco.
 use crate::{core::*, jobs};
 use serde_json::{Value, json};
 use std::{
@@ -26,6 +28,7 @@ pub fn files(root: &Path) -> Result<Vec<PathBuf>> {
         "*.xml",
         "**/build/test-results/**/*.xml",
         "**/build/outputs/androidTest-results/**/*.xml",
+        "build/tomacco/*.json",
     ] {
         for file in glob_paths(&format!("{base}/{pattern}"))? {
             let text = file.to_string_lossy();
@@ -62,11 +65,54 @@ pub struct Summary {
     pub errors: u64,
     pub skipped: u64,
     pub time: f64,
+    pub goldens: Vec<Value>,
+}
+
+/// The golden-file comparison a Flutter test failure reports, with the
+/// images flutter_test wrote for it that exist: `masterImage`, `testImage`,
+/// `isolatedDiff` and `maskedDiff`, in `failures/` beside the golden files.
+pub fn golden(error: &str, test_file: &str) -> Option<Value> {
+    let found = regex::Regex::new(r#"Golden "([^"]+)": ?([^\n]*)"#)
+        .unwrap()
+        .captures(error)?;
+    let name = found[1].to_string();
+    let directory = regex::Regex::new(r"Failure feedback can be found at (\S+)")
+        .unwrap()
+        .captures(error)
+        .map(|c| PathBuf::from(c[1].trim_end_matches('.')))
+        .or_else(|| {
+            let file = test_file.strip_prefix("file://").unwrap_or(test_file);
+            Path::new(file).parent().map(|p| p.join("failures"))
+        });
+    let stem = Path::new(&name)
+        .file_stem()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    let images: serde_json::Map<String, Value> = directory
+        .iter()
+        .flat_map(|dir| {
+            let stem = &stem;
+            ["masterImage", "testImage", "isolatedDiff", "maskedDiff"]
+                .into_iter()
+                .map(move |kind| (kind, dir.join(format!("{stem}_{kind}.png"))))
+        })
+        .filter(|(_, file)| file.is_file())
+        .map(|(kind, file)| (kind.to_string(), json!(file)))
+        .collect();
+    Some(json!({
+        "golden":name,"message":found[2].trim(),
+        "failures_directory":directory,"images":images,
+    }))
 }
 
 impl Summary {
-    /// Adds one file. A file that is not JUnit XML is listed in `ignored`.
+    /// Adds one file. A file that is neither JUnit XML nor Dart's JSON
+    /// reporter output is listed in `ignored`.
     pub fn add(&mut self, file: &Path, text: &str) {
+        if text.trim_start().starts_with('{') {
+            return self.add_dart_json(file, text);
+        }
         let document = match roxmltree::Document::parse(text) {
             Ok(document) => document,
             Err(error) => {
@@ -137,6 +183,122 @@ impl Summary {
         }
     }
 
+    /// Adds the event stream of `dart test` or `flutter test` with the JSON
+    /// reporter (`--machine`, `--reporter json` or `--file-reporter json:`):
+    /// one suite per test file, hidden loading tests counted only when they
+    /// fail, and golden-file failures listed with their diff images.
+    pub fn add_dart_json(&mut self, file: &Path, text: &str) {
+        use std::collections::BTreeMap;
+        let mut suites: BTreeMap<u64, (String, [u64; 4], f64)> = BTreeMap::new();
+        let mut tests: BTreeMap<u64, Value> = BTreeMap::new();
+        let mut problems: BTreeMap<u64, Vec<Value>> = BTreeMap::new();
+        let mut events = 0;
+        for line in text.lines() {
+            let Ok(event) = serde_json::from_str::<Value>(line.trim()) else {
+                continue;
+            };
+            match s(&event, "type") {
+                "start" => events += 1,
+                "suite" => {
+                    events += 1;
+                    let suite = &event["suite"];
+                    suites.insert(n(suite, "id"), (s(suite, "path").into(), [0; 4], 0.0));
+                }
+                "testStart" => {
+                    let mut test = event["test"].clone();
+                    test["started"] = event["time"].clone();
+                    tests.insert(n(&event["test"], "id"), test);
+                }
+                "error" => problems.entry(n(&event, "testID")).or_default().push(event),
+                "testDone" => {
+                    let id = n(&event, "testID");
+                    let Some(test) = tests.get(&id) else { continue };
+                    let result = s(&event, "result");
+                    if b(&event, "hidden") && result == "success" {
+                        continue;
+                    }
+                    let entry = suites
+                        .entry(n(test, "suiteID"))
+                        .or_insert_with(|| (String::new(), [0; 4], 0.0));
+                    let seconds =
+                        (n(&event, "time").saturating_sub(n(test, "started"))) as f64 / 1000.0;
+                    entry.1[0] += 1;
+                    entry.2 += seconds;
+                    if result == "success" {
+                        if b(&event, "skipped") {
+                            entry.1[3] += 1;
+                        }
+                        continue;
+                    }
+                    let kind = if result == "failure" {
+                        "failure"
+                    } else {
+                        "error"
+                    };
+                    entry.1[if kind == "failure" { 1 } else { 2 }] += 1;
+                    let errors = problems.get(&id).cloned().unwrap_or_default();
+                    let message = errors
+                        .first()
+                        .map(|e| s(e, "error").to_string())
+                        .unwrap_or_default();
+                    let details = errors
+                        .iter()
+                        .map(|e| format!("{}\n{}", s(e, "error"), s(e, "stackTrace")))
+                        .collect::<Vec<_>>()
+                        .join("\n\n");
+                    let suite_path = entry.0.clone();
+                    let test_file = [s(test, "root_url"), s(test, "url"), &suite_path]
+                        .into_iter()
+                        .find(|u| !u.is_empty())
+                        .unwrap_or_default()
+                        .to_string();
+                    let mut failure = json!({
+                        "suite":suite_path,"class":"","name":s(test, "name"),"kind":kind,
+                        "type":"","message":shorten(message.lines().next().unwrap_or("")),
+                        "details":shorten(&details),"device":"","file":file,
+                    });
+                    let line = n(test, "root_line").max(n(test, "line"));
+                    if line > 0 {
+                        failure["line"] = json!(line);
+                    }
+                    if let Some(found) = errors
+                        .iter()
+                        .find_map(|e| golden(s(e, "error"), &test_file))
+                    {
+                        let mut found = found;
+                        found["test"] = json!(s(test, "name"));
+                        found["suite"] = json!(suite_path);
+                        failure["golden"] = found.clone();
+                        self.goldens.push(found);
+                    }
+                    if self.failures.len() < MAX_FAILURES {
+                        self.failures.push(failure);
+                    }
+                }
+                _ => (),
+            }
+        }
+        if events == 0 {
+            self.ignored
+                .push(json!({"file":file,"reason":"not a Dart JSON test report"}));
+            return;
+        }
+        for (name, [tests, failed, errors, skipped], time) in suites.into_values() {
+            if tests == 0 {
+                continue;
+            }
+            self.tests += tests;
+            self.failed += failed;
+            self.errors += errors;
+            self.skipped += skipped;
+            self.time += time;
+            self.suites.push(json!({
+                "name":name,"file":file,"tests":tests,"failures":failed,"errors":errors,
+                "skipped":skipped,"time":(time * 1000.0).round() / 1000.0,"timestamp":"","device":"",
+            }));
+        }
+    }
+
     pub fn value(&self) -> Value {
         json!({
             "passed":self.tests > 0 && self.failed == 0 && self.errors == 0,
@@ -148,6 +310,7 @@ impl Summary {
             "suites":self.suites,"failures":self.failures,
             "failures_truncated":(self.failed + self.errors) as usize > self.failures.len(),
             "ignored":self.ignored,
+            "golden_failures":self.goldens,
         })
     }
 }
@@ -189,7 +352,7 @@ pub fn results(a: &Value) -> Result {
             if older > 0 {
                 format!("{older} JUnit files under {} are older than the run", root.display())
             } else {
-                format!("No JUnit XML results under {}", root.display())
+                format!("No JUnit XML or Dart JSON test results under {}", root.display())
             },
         )
         .remedy("Run the tests first: project.execute with action test or instrumented-test, or testing.run")
@@ -249,6 +412,88 @@ mod tests {
         assert_eq!(failures[1]["kind"], "error");
         assert_eq!(failures[1]["device"], "Pixel_API_36(AVD) - 16");
         assert_eq!(value["ignored"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn flutter_json_results_list_failures_and_golden_diffs() {
+        let project = tempfile::tempdir().unwrap();
+        let test_file = project.path().join("test/widget_test.dart");
+        let failures = project.path().join("test/failures");
+        fs::create_dir_all(&failures).unwrap();
+        for kind in ["masterImage", "testImage", "isolatedDiff"] {
+            fs::write(failures.join(format!("home_{kind}.png")), b"png").unwrap();
+        }
+        let golden_error = format!(
+            "Golden \"goldens/home.png\": Pixel test failed, 2.50%, 1200px diff detected.\nFailure feedback can be found at {}",
+            failures.display()
+        );
+        let events = [
+            json!({"protocolVersion":"0.1.1","runnerVersion":"1.25.0","pid":1,"type":"start","time":0}),
+            json!({"suite":{"id":0,"platform":"vm","path":test_file},"type":"suite","time":0}),
+            json!({"test":{"id":1,"name":"loading test/widget_test.dart","suiteID":0,"groupIDs":[],"metadata":{"skip":false},"line":null,"column":null,"url":null},"type":"testStart","time":1}),
+            json!({"testID":1,"result":"success","skipped":false,"hidden":true,"type":"testDone","time":400}),
+            json!({"test":{"id":3,"name":"counter increments","suiteID":0,"groupIDs":[2],"metadata":{"skip":false},"line":12,"column":3,"url":format!("file://{}", test_file.display())},"type":"testStart","time":410}),
+            json!({"testID":3,"result":"success","skipped":false,"hidden":false,"type":"testDone","time":600}),
+            json!({"test":{"id":4,"name":"home matches golden","suiteID":0,"groupIDs":[2],"metadata":{"skip":false},"line":20,"column":3,"url":format!("file://{}", test_file.display())},"type":"testStart","time":610}),
+            json!({"testID":4,"error":golden_error,"stackTrace":"package:flutter_test/src/_matchers_io.dart 87:9","isFailure":true,"type":"error","time":900}),
+            json!({"testID":4,"result":"failure","skipped":false,"hidden":false,"type":"testDone","time":910}),
+            json!({"test":{"id":5,"name":"later","suiteID":0,"groupIDs":[2],"metadata":{"skip":true,"skipReason":"todo"},"line":30,"column":3,"url":null},"type":"testStart","time":920}),
+            json!({"testID":5,"result":"success","skipped":true,"hidden":false,"type":"testDone","time":921}),
+            json!({"test":{"id":6,"name":"throws","suiteID":0,"groupIDs":[2],"metadata":{"skip":false},"line":40,"column":3,"url":null},"type":"testStart","time":930}),
+            json!({"testID":6,"error":"Bad state: no element","stackTrace":"dart:core","isFailure":false,"type":"error","time":940}),
+            json!({"testID":6,"result":"error","skipped":false,"hidden":false,"type":"testDone","time":950}),
+            json!({"success":false,"type":"done","time":1000}),
+        ];
+        let text: String = events.iter().map(|e| format!("{e}\n")).collect();
+        let report = project.path().join("build/tomacco/flutter_test.json");
+        fs::create_dir_all(report.parent().unwrap()).unwrap();
+        fs::write(&report, text).unwrap();
+        assert_eq!(files(project.path()).unwrap(), vec![report.clone()]);
+        let value = results(&json!({"path":project.path()})).unwrap();
+        assert_eq!(
+            value["totals"],
+            json!({"tests":4,"passed":1,"failed":1,"errors":1,"skipped":1,"time":0.511})
+        );
+        assert_eq!(value["suites"][0]["name"], json!(test_file));
+        let failed = value["failures"].as_array().unwrap();
+        assert_eq!(failed[0]["name"], "home matches golden");
+        assert_eq!(failed[0]["line"], 20);
+        assert_eq!(
+            failed[0]["message"],
+            "Golden \"goldens/home.png\": Pixel test failed, 2.50%, 1200px diff detected."
+        );
+        assert_eq!(failed[1]["kind"], "error");
+        let golden = &value["golden_failures"][0];
+        assert_eq!(golden["golden"], "goldens/home.png");
+        assert_eq!(
+            golden["message"],
+            "Pixel test failed, 2.50%, 1200px diff detected."
+        );
+        assert_eq!(golden["test"], "home matches golden");
+        assert_eq!(
+            golden["images"]["isolatedDiff"],
+            json!(failures_path(&failures, "isolatedDiff"))
+        );
+        assert!(golden["images"].get("maskedDiff").is_none());
+        let mut summary = Summary::default();
+        summary.add(Path::new("/p/other.json"), "{\"not\":\"a report\"}");
+        assert_eq!(summary.ignored.len(), 1);
+    }
+
+    fn failures_path(dir: &Path, kind: &str) -> PathBuf {
+        dir.join(format!("home_{kind}.png"))
+    }
+
+    #[test]
+    fn a_golden_without_a_feedback_line_is_looked_up_beside_its_test() {
+        let found = golden(
+            "Golden \"goldens/a.png\": Image sizes do not match.",
+            "file:///p/test/a_test.dart",
+        )
+        .unwrap();
+        assert_eq!(found["failures_directory"], "/p/test/failures");
+        assert_eq!(found["images"], json!({}));
+        assert!(golden("Expected: <1>", "").is_none());
     }
 
     #[test]

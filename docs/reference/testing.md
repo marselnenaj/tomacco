@@ -199,13 +199,13 @@ tomaccoctl call testing.crashes '{"device":"<device>"}'
 
 **Read test results**
 
-Read the JUnit XML results of a project's tests into one summary: totals, suites and each failure with its message and stack. Finds Gradle unit (build/test-results) and instrumented (build/outputs/androidTest-results) results, or reads a given directory or file such as testing.run's junit.xml. since or job_id leaves out results older than the run.
+Read the JUnit XML results of a project's tests, or the JSON reporter output of Dart and Flutter tests, into one summary: totals, suites and each failure with its message and stack. Finds Gradle unit (build/test-results) and instrumented (build/outputs/androidTest-results) results and the Flutter reports project.execute writes to build/tomacco, or reads a given directory or file such as testing.run's junit.xml or a flutter test --machine output. golden_failures lists each failed Flutter golden-file comparison with its message and the masterImage, testImage, isolatedDiff and maskedDiff images flutter_test wrote. since or job_id leaves out results older than the run.
 
 Annotations: read-only, idempotent, closed world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `path` | string | yes |  | non-empty; Absolute path of the project, a results directory or one XML file |
+| `path` | string | yes |  | non-empty; Absolute path of the project, a results directory, or one JUnit XML or Dart JSON reporter file |
 | `since` | number |  |  | at least 0; Leave out files modified before this time, in seconds since 1970 |
 | `job_id` | string |  |  | Leave out files older than this job, such as the project.execute test job |
 | `report` | string |  |  | Absolute path to also write the summary as JSON |

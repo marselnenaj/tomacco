@@ -109,6 +109,25 @@ its lockfile implies, whether `node_modules` has the framework, and how
 These runs are covered by tests with stand-in tools; no React Native, Expo or Capacitor
 app was built with them yet.
 
+## Flutter
+
+`project.execute` with `"action":"test"` runs `flutter test --reporter expanded
+--file-reporter=json:build/tomacco/flutter_test.json`: the log stays readable and the
+JSON reporter's file is kept as an artifact, even when tests fail. `testing.results`
+on the project reads it into the summary it gives for JUnit results, one suite per test
+file. A failed golden-file comparison is listed under `golden_failures` with the
+golden's name, flutter_test's message (such as `Pixel test failed, 1.20%, 480px diff
+detected.`) and the paths of the diff images it wrote to `failures/`: `masterImage`,
+`testImage`, `isolatedDiff` and `maskedDiff`.
+
+```sh
+tomaccoctl call project.execute '{"path":"/absolute/MyApp","action":"test"}'
+tomaccoctl call testing.results '{"path":"/absolute/MyApp","job_id":"JOB_ID"}'
+```
+
+Tested with a stand-in `flutter` that writes the JSON reporter's events; Flutter is not
+installed here.
+
 ## Kotlin Multiplatform and Compose Multiplatform
 
 `project.inspect` adds the kinds `kotlin-multiplatform` and, with the

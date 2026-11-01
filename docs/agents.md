@@ -617,6 +617,12 @@ tomaccoctl call project.execute '{"path":"/absolute/MyApp","platform":"android",
 tomaccoctl call testing.results '{"path":"/absolute/MyApp","job_id":"JOB_ID","report":"/absolute/test-summary.json"}'
 ```
 
+Flutter tests read the same way. `project.execute` with `"action":"test"` runs `flutter test` with its JSON reporter writing
+`build/tomacco/flutter_test.json` beside the readable log, and `testing.results` on the project reads it: one suite per test file,
+each failure with its test's line, and `golden_failures`, every failed golden-file comparison with flutter_test's message and the
+paths of the `masterImage`, `testImage`, `isolatedDiff` and `maskedDiff` images it wrote. Any `flutter test --machine` or
+`dart test --reporter json` output file works as `path` too. See [Android](android.md#flutter).
+
 `testing.crashes` reads the device's crash, system and main logs and returns Java crashes (`FATAL EXCEPTION`), ANRs and native crashes
 (`Fatal signal`) as `events`: `kind` (`crash`, `anr` or `native_crash`), `time`, `package`, `process`, `pid`, and for a crash the
 `exception`, `message`, `stack` and `caused_by`, for an ANR the `reason`, for a native crash the `signal`. `bundle_id` keeps one app's

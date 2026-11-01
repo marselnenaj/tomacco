@@ -4748,14 +4748,14 @@
   {
     "name": "testing.results",
     "title": "Read test results",
-    "description": "Read the JUnit XML results of a project's tests into one summary: totals, suites and each failure with its message and stack. Finds Gradle unit (build/test-results) and instrumented (build/outputs/androidTest-results) results, or reads a given directory or file such as testing.run's junit.xml. since or job_id leaves out results older than the run.",
+    "description": "Read the JUnit XML results of a project's tests, or the JSON reporter output of Dart and Flutter tests, into one summary: totals, suites and each failure with its message and stack. Finds Gradle unit (build/test-results) and instrumented (build/outputs/androidTest-results) results and the Flutter reports project.execute writes to build/tomacco, or reads a given directory or file such as testing.run's junit.xml or a flutter test --machine output. golden_failures lists each failed Flutter golden-file comparison with its message and the masterImage, testImage, isolatedDiff and maskedDiff images flutter_test wrote. since or job_id leaves out results older than the run.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "path": {
           "type": "string",
           "minLength": 1,
-          "description": "Absolute path of the project, a results directory or one XML file"
+          "description": "Absolute path of the project, a results directory, or one JUnit XML or Dart JSON reporter file"
         },
         "since": {
           "type": "number",

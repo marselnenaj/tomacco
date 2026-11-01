@@ -207,6 +207,8 @@ pub fn plan(a: &Value) -> Result {
     let mut cwd = root.to_path_buf();
     let mut args = Vec::new();
     let mut artifacts = Vec::<String>::new();
+    // Reports kept even when the job fails, as failing tests do.
+    let mut always = Vec::<String>::new();
     let action = s(a, "action");
     let platform = s(a, "platform");
     let configuration = s(a, "configuration");
@@ -231,7 +233,17 @@ pub fn plan(a: &Value) -> Result {
     } else if kind(&project, "flutter") {
         let tool = tc::find("flutter")?;
         match action {
-            "test" => args = argv(&[&tool, "test", "--reporter", "expanded"]),
+            // The JSON reporter's file is what testing.results reads.
+            "test" => {
+                args = argv(&[
+                    &tool,
+                    "test",
+                    "--reporter",
+                    "expanded",
+                    &format!("--file-reporter=json:{FLUTTER_TEST_REPORT}"),
+                ]);
+                always = argv(&[FLUTTER_TEST_REPORT]);
+            }
             "lint" => args = argv(&[&tool, "analyze", "--no-pub"]),
             _ => {
                 if platform == "ios" && !cfg!(target_os = "macos") {
@@ -364,12 +376,26 @@ pub fn plan(a: &Value) -> Result {
         )
         .remedy("Use an explicitly configured project task for framework-specific commands"));
     }
-    Ok(
-        json!({"project":project["path"],"cwd":cwd,"steps":[{"argv":args}],"env":tc::environment()?,"artifacts":artifacts,"exclusive":root,"label":format!("{} · {action} · {platform} · {configuration}",s(&project,"name"))}),
-    )
+    let mut value = json!({"project":project["path"],"cwd":cwd,"steps":[{"argv":args}],"env":tc::environment()?,"artifacts":artifacts,"exclusive":root,"label":format!("{} · {action} · {platform} · {configuration}",s(&project,"name"))});
+    if !always.is_empty() {
+        value["always_artifacts"] = json!(always);
+    }
+    Ok(value)
 }
+/// Where a Flutter test job's JSON reporter writes, relative to the project.
+pub const FLUTTER_TEST_REPORT: &str = "build/tomacco/flutter_test.json";
+
 pub fn execute(a: &Value) -> Result {
     let mut value = plan(a)?;
+    // Flutter's file reporter writes into build/tomacco.
+    if value["steps"][0]["argv"].as_array().is_some_and(|args| {
+        args.iter().any(|arg| {
+            arg.as_str()
+                .is_some_and(|a| a.starts_with("--file-reporter="))
+        })
+    }) {
+        fs::create_dir_all(Path::new(s(&value, "cwd")).join("build/tomacco"))?;
+    }
     let label = s(&value, "label").to_string();
     value["timeout"] = a["timeout"].clone();
     value["single_active"] = json!(true);

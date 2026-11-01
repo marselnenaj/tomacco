@@ -288,6 +288,57 @@ class AnalyzeTests(Isolated):
         self.assertEqual(report["totals"]["warning"], 1)
 
 
+FLUTTER_TEST = r"""import json,os,sys
+args=sys.argv[1:]
+report=next(a.split(':',1)[1] for a in args if a.startswith('--file-reporter=json:'))
+test=os.path.join(os.getcwd(),'test','home_test.dart')
+failures=os.path.join(os.getcwd(),'test','failures')
+os.makedirs(failures,exist_ok=True)
+for kind in ('masterImage','testImage','isolatedDiff','maskedDiff'):
+    open(os.path.join(failures,'home_'+kind+'.png'),'wb').write(b'png')
+error='Golden "goldens/home.png": Pixel test failed, 1.20%, 480px diff detected.\nFailure feedback can be found at '+failures
+events=[{'type':'start','protocolVersion':'0.1.1','time':0},
+        {'type':'suite','suite':{'id':0,'platform':'vm','path':test},'time':0},
+        {'type':'testStart','test':{'id':1,'name':'home renders','suiteID':0,'line':5,'url':'file://'+test},'time':10},
+        {'type':'testDone','testID':1,'result':'success','skipped':False,'hidden':False,'time':60},
+        {'type':'testStart','test':{'id':2,'name':'home matches golden','suiteID':0,'line':9,'url':'file://'+test},'time':70},
+        {'type':'error','testID':2,'error':error,'stackTrace':'','isFailure':True,'time':90},
+        {'type':'testDone','testID':2,'result':'failure','skipped':False,'hidden':False,'time':100},
+        {'type':'done','success':False,'time':120}]
+with open(report,'w') as f:
+    for e in events: f.write(json.dumps(e)+'\n')
+print('00:01 +1 -1: Some tests failed.')
+sys.exit(1)
+"""
+
+
+class FlutterTestResultTests(Isolated):
+    def flutter_project(self):
+        root = self.root / "FlutterApp"
+        (root / "test").mkdir(parents=True)
+        (root / "pubspec.yaml").write_text("flutter:\n")
+        return root
+
+    def test_flutter_tests_are_read_with_their_golden_diffs(self):
+        self.tool("flutter", FLUTTER_TEST)
+        root = self.flutter_project()
+        plan = dispatch("project.plan", {"path": str(root), "action": "test"})
+        self.assertEqual(plan["steps"][0]["argv"][1:], ["test", "--reporter", "expanded", "--file-reporter=json:build/tomacco/flutter_test.json"])
+        job = dispatch("project.execute", {"path": str(root), "action": "test"})
+        done = jobs.wait(job["id"], 30)
+        self.assertEqual(done["state"], "failed", jobs.logs(job["id"])["text"])
+        self.assertTrue(any(a["path"].endswith("build/tomacco/flutter_test.json") for a in done["result"]["artifacts"]))
+        results = dispatch("testing.results", {"path": str(root), "job_id": job["id"]})
+        self.assertEqual(results["totals"]["tests"], 2)
+        self.assertEqual(results["totals"]["failed"], 1)
+        self.assertEqual(results["failures"][0]["name"], "home matches golden")
+        golden = results["golden_failures"][0]
+        self.assertEqual(golden["golden"], "goldens/home.png")
+        self.assertEqual(golden["message"], "Pixel test failed, 1.20%, 480px diff detected.")
+        self.assertEqual(sorted(golden["images"]), ["isolatedDiff", "maskedDiff", "masterImage", "testImage"])
+        self.assertTrue(golden["images"]["isolatedDiff"].endswith("test/failures/home_isolatedDiff.png"))
+
+
 class WatchTests(Isolated):
     def test_a_source_change_rebuilds_and_relaunches_and_build_output_does_not(self):
         import time
