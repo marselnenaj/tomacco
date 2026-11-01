@@ -2003,7 +2003,7 @@ private slots:
         QVERIFY(QQmlProperty::write(guestView,"guest",QVariantMap{{"state",QVariantMap{{"running",true}}},{"input_transport","usb-hid"},{"power_button_supported",true}}));
         window->requestActivate();QTRY_VERIFY_WITH_TIMEOUT(window->isActive(),patient(3000));
         QTRY_VERIFY_WITH_TIMEOUT(guestView->property("shortcutsActive").toBool(),patient(3000));
-        // The keys pressed on the way to a shortcut (Ctrl, Shift) still reach the guest as keys.
+        // Only the shortcuts' actions are read here, not keys.
         const auto take=[&]{
             QVariantList queue;
             for(const auto &input:guestView->property("inputQueue").toList())if(input.toMap().value("action")!="key")queue.append(input);
@@ -2185,6 +2185,202 @@ for line in sys.stdin:
         }
         QCOMPARE(lifts(),2);
         qunsetenv("TOMACCO_FAKE_TOUCH_LOG");
+    }
+    void ios_guest_keyboard_speed_and_window_follow_the_user() {
+        // Typing goes to the phone while its view has the keyboard: characters as text, joined while they
+        // wait, other keys by name; Ctrl+Shift+K gives the keyboard back. The speed overlay measures input to
+        // picture, a trackpad's coasting is dropped, and the phone's own window keeps its gestures, a
+        // stay-on-top pin and its place.
+        open("ios-research");
+        auto *view=object("iosResearch");QVERIFY(view);
+        auto *dialog=object("iosResearchDialog");QVERIFY(dialog);
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        const QString job="0123456789abcdef0123456789abcdef";
+        QVariant virtualJob=QVariantMap{{"id",job},{"state","running"},{"created",1242},
+            {"plan",QVariantMap{{"operation_key",QVariantMap{{"operation","ios.emulator.paravirtual"},
+            {"arguments",QVariantMap{{"engine","/agent/virtual-engine"},{"interactive",true},{"seconds",600}}}}}}}};
+        QVERIFY(QMetaObject::invokeMethod(view,"adoptJob",Q_ARG(QVariant,virtualJob)));
+        auto *guestView=object("iosGuestView");QVERIFY(guestView);
+        auto *contact=qobject_cast<QQuickItem *>(object("iosGuestContact"));QVERIFY(contact);
+        QImage frameImage(390,844,QImage::Format_RGB32);frameImage.fill(QColor("#33475b"));
+        QVERIFY(frameImage.save(directory.filePath("keyboard-frame.png")));
+        guestView->setProperty("running",true);
+        QVERIFY(QQmlProperty::write(guestView,"guest",QVariantMap{{"state",QVariantMap{{"running",true}}},{"input_transport","usb-hid"},{"power_button_supported",true}}));
+        guestView->setProperty("frameWidth",390);guestView->setProperty("frameHeight",844);
+        guestView->setProperty("frameSource",QUrl::fromLocalFile(directory.filePath("keyboard-frame.png")).toString());
+        QTRY_VERIFY_WITH_TIMEOUT(contact->isEnabled() && contact->width()>100,patient(5000));
+        QTRY_COMPARE_WITH_TIMEOUT(guestView->property("pending").toInt(),0,patient(8000));
+        // A request that never ends keeps the lane busy, so inputs wait in the queue to be read.
+        guestView->setProperty("pending",987654);
+        const auto take=[&]{const auto queue=guestView->property("inputQueue").toList();guestView->setProperty("inputQueue",QVariantList{});return queue;};
+        window->requestActivate();QTRY_VERIFY_WITH_TIMEOUT(window->isActive(),patient(3000));
+        QVERIFY(QMetaObject::invokeMethod(guestView,"setKeyboardToPhone",Q_ARG(QVariant,true)));
+        QTRY_VERIFY_WITH_TIMEOUT(guestView->property("keyboardHeld").toBool(),patient(3000));
+        auto *keyboard=item("iosGuestKeyboard");QVERIFY(keyboard);
+        QVERIFY(keyboard->property("selected").toBool());QCOMPARE(keyboard->property("text").toString(),QString("Keyboard to phone"));
+        QVERIFY(keyboard->property("tip").toString().contains("Ctrl+Shift+K"));
+        // Characters, @ included, go out as one text; a modifier alone sends nothing.
+        take();
+        QTest::keyClick(window,Qt::Key_Shift);
+        QVERIFY(take().isEmpty());
+        const auto typeText=[&](const char *text){for(;*text;++text)QTest::keyClick(window,*text);};
+        typeText("Hi @ok");
+        auto inputs=take();
+        QCOMPARE(inputs.size(),1);
+        QCOMPARE(inputs[0].toMap().value("action").toString(),QString("text"));
+        QCOMPARE(inputs[0].toMap().value("args").toMap().value("text").toString(),QString("Hi @ok"));
+        // Enter, Backspace and the arrows by name, after the text that came before them.
+        typeText("a");QTest::keyClick(window,Qt::Key_Return);QTest::keyClick(window,Qt::Key_Backspace);QTest::keyClick(window,Qt::Key_Left);
+        inputs=take();
+        QCOMPARE(inputs.size(),4);
+        QCOMPARE(inputs[0].toMap().value("action").toString(),QString("text"));
+        QCOMPARE(inputs[1].toMap().value("args").toMap().value("keys").toStringList(),QStringList{"ret"});
+        QCOMPARE(inputs[2].toMap().value("args").toMap().value("keys").toStringList(),QStringList{"backspace"});
+        QCOMPARE(inputs[3].toMap().value("args").toMap().value("keys").toStringList(),QStringList{"left"});
+        // A shortcut with Ctrl stays a key with its modifier.
+        QTest::keyClick(window,Qt::Key_A,Qt::ControlModifier);
+        inputs=take();
+        QCOMPARE(inputs.size(),1);QCOMPARE(inputs[0].toMap().value("args").toMap().value("keys").toStringList(),(QStringList{"ctrl","a"}));
+        // Ctrl+Shift+K gives the keyboard back to the desktop: nothing more reaches the phone.
+        QTest::keyClick(window,Qt::Key_K,Qt::ControlModifier|Qt::ShiftModifier);
+        QTRY_VERIFY_WITH_TIMEOUT(!guestView->property("keyboardHeld").toBool(),patient(3000));
+        QVERIFY(!guestView->property("keyboardToPhone").toBool());
+        QCOMPARE(keyboard->property("text").toString(),QString("Keyboard to desktop"));
+        QVERIFY(take().isEmpty());
+        QVERIFY(!guestView->property("activeFocus").toBool());
+        QVERIFY(!QMetaObject::invokeMethod(guestView,"typeKey",Q_ARG(QVariant,int(Qt::Key_X)),Q_ARG(QVariant,0),Q_ARG(QVariant,QString("x"))) || take().isEmpty());
+        // And again takes it for the phone.
+        QTest::keyClick(window,Qt::Key_K,Qt::ControlModifier|Qt::ShiftModifier);
+        QTRY_VERIFY_WITH_TIMEOUT(guestView->property("keyboardHeld").toBool(),patient(3000));
+        // The button, clicked, switches it without taking the focus itself.
+        const auto clickKeyboard=[&]{QTest::mouseClick(window,Qt::LeftButton,{},keyboard->mapToScene(QPointF(keyboard->width()/2,keyboard->height()/2)).toPoint());};
+        clickKeyboard();
+        QTRY_VERIFY_WITH_TIMEOUT(!guestView->property("keyboardHeld").toBool(),patient(3000));
+        clickKeyboard();
+        QTRY_VERIFY_WITH_TIMEOUT(guestView->property("keyboardHeld").toBool(),patient(3000));
+        // A button that acts on the phone leaves the keyboard with it.
+        auto *paste=item("iosGuestPaste");QVERIFY(paste);
+        QGuiApplication::clipboard()->setText(QString("x"));
+        QTest::mouseClick(window,Qt::LeftButton,{},paste->mapToScene(QPointF(paste->width()/2,paste->height()/2)).toPoint());
+        QTRY_VERIFY_WITH_TIMEOUT(guestView->property("keyboardHeld").toBool(),patient(3000));
+        take();
+        // Text joins only up to what one text action takes.
+        const QVariant longText=QVariantMap{{"text",QString(1000,QChar('a'))}},moreText=QVariantMap{{"text",QString(30,QChar('b'))}};
+        QVERIFY(QMetaObject::invokeMethod(guestView,"send",Q_ARG(QVariant,QString("text")),Q_ARG(QVariant,longText)));
+        QVERIFY(QMetaObject::invokeMethod(guestView,"send",Q_ARG(QVariant,QString("text")),Q_ARG(QVariant,moreText)));
+        QCOMPARE(take().size(),2);
+        // A trackpad's coasting after the fingers lift is dropped; lifting them sends the burst at once.
+        const QPointF centre=contact->mapToScene(QPointF(contact->width()/2,contact->height()/2));
+        auto *surface=contact->window();
+        const auto wheel=[&](QPoint pixels,Qt::ScrollPhase phase){
+            QWheelEvent event(centre,surface->mapToGlobal(centre),pixels,pixels,Qt::NoButton,Qt::NoModifier,phase,false);
+            QCoreApplication::sendEvent(surface,&event);
+        };
+        wheel(QPoint(0,-80),Qt::ScrollMomentum);
+        QCOMPARE(guestView->property("wheelY").toReal(),0.0);
+        wheel(QPoint(0,-80),Qt::ScrollUpdate);
+        QVERIFY(guestView->property("wheelY").toReal()<0);
+        wheel(QPoint(0,0),Qt::ScrollEnd);
+        inputs=take();
+        QCOMPARE(inputs.size(),1);
+        QCOMPARE(inputs[0].toMap().value("action").toString(),QString("drag"));
+        QVERIFY(inputs[0].toMap().value("args").toMap().value("to_y").toReal()<.5);
+        QVERIFY(inputs[0].toMap().value("args").toMap().value("hold_ms").toInt()>0);
+        // The speed overlay: off until chosen, then the frame rates and input to picture.
+        guestView->setProperty("showSpeed",false);
+        auto *speed=qobject_cast<QQuickItem *>(object("iosGuestSpeed"));QVERIFY(speed);
+        QVERIFY(!speed->isVisible());
+        QVERIFY(QMetaObject::invokeMethod(object("iosGuestSpeedToggle"),"clicked"));
+        QVERIFY(guestView->property("showSpeed").toBool());
+        QTRY_VERIFY_WITH_TIMEOUT(speed->isVisible(),patient(3000));
+        auto *speedText=object("iosGuestSpeedText");QVERIFY(speedText);
+        QVERIFY(speedText->property("text").toString().contains("not measured yet"));
+        // An input, then the first new picture asked for after it.
+        guestView->setProperty("pending",0);guestView->setProperty("latencyMs",-1);
+        QVERIFY(QMetaObject::invokeMethod(guestView,"pump"));
+        QTRY_VERIFY_WITH_TIMEOUT(guestView->property("pending").toInt()!=0,patient(3000));
+        int frameId=guestView->property("pending").toInt();
+        auto context=mapOf(guestView->property("requests")).value(QString::number(frameId)).toMap();
+        QCOMPARE(context.value("action").toString(),QString("frame"));
+        guestView->setProperty("inputAt",context.value("sentAt").toReal()-250);
+        control->apiFinished(frameId,"ios.emulator.control",QVariantMap{{"ok",true},{"result",QVariantMap{{"result",QVariantMap{
+            {"path",directory.filePath("keyboard-frame.png")},{"sequence",7},{"changed",true},{"width",390},{"height",844}}}}}});
+        const int latency=guestView->property("latencyMs").toInt();
+        QVERIFY2(latency>=250 && latency<5000,qPrintable(QString::number(latency)));
+        QCOMPARE(guestView->property("inputAt").toReal(),0.0);
+        QVERIFY(speedText->property("text").toString().contains(QString("Input to picture: %1 ms").arg(latency)));
+        guestView->setProperty("pending",987654);
+        guestView->setProperty("showSpeed",false);
+        // The framed screenshot is offered for the virtual iPhone's own guest and reports a refusal.
+        auto *framed=item("iosGuestFramedScreenshot");QVERIFY(framed);
+        guestView->setProperty("framedScreenshots",true);
+        QTRY_VERIFY_WITH_TIMEOUT(framed->isVisible(),patient(3000));
+        guestView->setProperty("framedRequest",424242);
+        QVERIFY(!framed->isEnabled());
+        control->apiFinished(424242,"ios.virtual.screenshot",QVariantMap{{"ok",false},{"error",QVariantMap{{"code","ios_virtual_not_running"},{"message","The virtual iPhone is not running"}}}});
+        QCOMPARE(guestView->property("framedRequest").toInt(),0);
+        QCOMPARE(guestView->property("notice").toString(),QString("The virtual iPhone is not running"));
+        guestView->setProperty("framedScreenshots",false);
+        // The phone's own window: the system gestures, the keyboard and speed on its rail, a pin that
+        // keeps it above other windows, and the place it had.
+        QVariantMap iphone;for(const auto &p:backend->models())if(p.toMap()["id"]=="18pro")iphone=p.toMap();
+        QVERIFY(QQmlProperty::write(guestView,"deviceProfile",iphone));
+        guestView->setProperty("frameWidth",1206);guestView->setProperty("frameHeight",2622);
+        guestView->setProperty("windowOnTop",false);
+        guestView->setProperty("detached",true);
+        auto *guestWindow=qobject_cast<QQuickWindow *>(object("iosGuestWindow"));QVERIFY(guestWindow);
+        QTRY_VERIFY_WITH_TIMEOUT(guestWindow->isVisible(),patient(3000));
+        auto *pin=guestWindow->findChild<QQuickItem *>("deviceWindowPin");QVERIFY(pin);
+        QVERIFY(pin->isVisible());QVERIFY(!guestWindow->flags().testFlag(Qt::WindowStaysOnTopHint));
+        QVERIFY(QMetaObject::invokeMethod(pin,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(guestWindow->flags().testFlag(Qt::WindowStaysOnTopHint),patient(3000));
+        QVERIFY(guestView->property("windowOnTop").toBool());
+        QVERIFY(QMetaObject::invokeMethod(pin,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!guestWindow->flags().testFlag(Qt::WindowStaysOnTopHint),patient(3000));
+        QVERIFY(!guestView->property("windowOnTop").toBool());
+        take();
+        const auto rail=[&](const char *name){return visualItem(guestWindow->contentItem(),QString::fromLatin1(name));};
+        QQuickItem *controlCenter=nullptr;
+        QTRY_VERIFY_WITH_TIMEOUT((controlCenter=rail("deviceWindowExtra_controlCenter")),patient(3000));
+        QVERIFY(controlCenter->property("tip").toString().endsWith("Ctrl+Shift+C"));
+        QVERIFY(QMetaObject::invokeMethod(controlCenter,"clicked"));
+        inputs=take();
+        QCOMPARE(inputs.size(),1);
+        QCOMPARE(inputs[0].toMap().value("args").toMap(),guestView->property("systemGestures").toMap().value("controlCenter").toMap());
+        QVERIFY(rail("deviceWindowExtra_appSwitcher"));
+        QVERIFY(rail("deviceWindowExtra_notificationCenter"));
+        auto *railKeyboard=rail("deviceWindowExtra_keyboard");QVERIFY(railKeyboard);
+        QVERIFY(QMetaObject::invokeMethod(railKeyboard,"clicked"));
+        QVERIFY(!guestView->property("keyboardToPhone").toBool());
+        QVERIFY(!guestWindow->property("forwardHardwareKeys").toBool());
+        QVERIFY(QMetaObject::invokeMethod(railKeyboard,"clicked"));
+        QVERIFY(guestView->property("keyboardToPhone").toBool());
+        // Typed in the phone's own window, a character is text there too.
+        QVERIFY(QMetaObject::invokeMethod(guestWindow,"hardwareKeyRequested",Q_ARG(int,int(Qt::Key_At)),Q_ARG(int,0),Q_ARG(QString,QString("@"))));
+        inputs=take();
+        QCOMPARE(inputs.size(),1);QCOMPARE(inputs[0].toMap().value("args").toMap().value("text").toString(),QString("@"));
+        QVERIFY(QMetaObject::invokeMethod(rail("deviceWindowExtra_speed"),"clicked"));
+        QVERIFY(guestView->property("showSpeed").toBool());
+        guestView->setProperty("showSpeed",false);
+        // A place on a monitor is taken again; one off every monitor is not.
+        guestView->setProperty("windowX",30);guestView->setProperty("windowY",20);
+        QVERIFY(QMetaObject::invokeMethod(guestView,"placeWindow"));
+        QCOMPARE(guestWindow->x(),30);QCOMPARE(guestWindow->y(),20);
+        guestView->setProperty("windowX",-90000);
+        QVERIFY(QMetaObject::invokeMethod(guestView,"placeWindow"));
+        QCOMPARE(guestWindow->x(),30);
+        // Moved, the window's place is kept.
+        guestWindow->setX(44);
+        QTRY_COMPARE_WITH_TIMEOUT(guestView->property("windowX").toReal(),44.0,patient(3000));
+        guestView->setProperty("detached",false);QVERIFY(QQmlProperty::write(guestView,"deviceProfile",QVariantMap{}));
+        QTRY_VERIFY_WITH_TIMEOUT(!guestWindow->isVisible(),patient(3000));
+        guestView->setProperty("inputQueue",QVariantList{});guestView->setProperty("pending",0);
+        QTRY_COMPARE_WITH_TIMEOUT(guestView->property("pending").toInt(),0,patient(8000));
+        guestView->setProperty("running",false);guestView->setProperty("frameWidth",0);guestView->setProperty("frameHeight",0);guestView->setProperty("frameSource","");
+        window->requestActivate();QTRY_VERIFY_WITH_TIMEOUT(window->isActive(),patient(3000));
+        view->setProperty("jobId","");view->setProperty("mode","ios");
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void ios_dialog_stop_always_leaves_a_way_to_end_the_guest() {
         auto *view=object("iosResearch");QVERIFY(view);

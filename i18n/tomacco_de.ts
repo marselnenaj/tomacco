@@ -1065,6 +1065,14 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Smaller · Ctrl+mouse wheel</source>
         <translation>Kleiner · Strg+Mausrad</translation>
     </message>
+    <message>
+        <source>Stop keeping this window above the others</source>
+        <translation>Dieses Fenster nicht mehr über den anderen halten</translation>
+    </message>
+    <message>
+        <source>Keep this window above the others</source>
+        <translation>Dieses Fenster über den anderen halten</translation>
+    </message>
 </context>
 <context>
     <name>FileWorkspace</name>
@@ -1340,6 +1348,58 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
         <translation>Den Text der Zwischenablage in das Feld mit dem Fokus tippen</translation>
+    </message>
+    <message>
+        <source>Keyboard to phone</source>
+        <translation>Tastatur zum Telefon</translation>
+    </message>
+    <message>
+        <source>Keyboard to desktop</source>
+        <translation>Tastatur zum Desktop</translation>
+    </message>
+    <message>
+        <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
+        <translation>Getipptes geht an das Telefon · Strg+Umschalt+K gibt die Tastatur dem Desktop zurück</translation>
+    </message>
+    <message>
+        <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
+        <translation>Auf den Bildschirm klicken oder Strg+Umschalt+K drücken, um auf dem Telefon zu tippen</translation>
+    </message>
+    <message>
+        <source>Speed</source>
+        <translation>Tempo</translation>
+    </message>
+    <message>
+        <source>Show frames per second and the time from an input to the picture</source>
+        <translation>Bilder pro Sekunde und die Zeit von einer Eingabe bis zum Bild zeigen</translation>
+    </message>
+    <message>
+        <source>Screenshot with frame</source>
+        <translation>Screenshot mit Rahmen</translation>
+    </message>
+    <message>
+        <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
+        <translation>Screenshot mit schlichtem Geräterahmen und runden Ecken speichern und kopieren</translation>
+    </message>
+    <message>
+        <source>%1 new · %2 fetched frames/s</source>
+        <translation>%1 neue · %2 abgeholte Bilder/s</translation>
+    </message>
+    <message>
+        <source>Input to picture: %1 ms</source>
+        <translation>Eingabe bis Bild: %1 ms</translation>
+    </message>
+    <message>
+        <source>Input to picture: not measured yet</source>
+        <translation>Eingabe bis Bild: noch nicht gemessen</translation>
+    </message>
+    <message>
+        <source>The screenshot failed</source>
+        <translation>Der Screenshot ist fehlgeschlagen</translation>
+    </message>
+    <message>
+        <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
+        <translation>Tastatur zum Telefon · Strg+Umschalt+K wechselt zum Desktop und zurück</translation>
     </message>
 </context>
 <context>

@@ -1065,6 +1065,14 @@ Le modèle détermine l'écran et le cadre. Android provient de l'image système
         <source>Smaller · Ctrl+mouse wheel</source>
         <translation>Réduire · Ctrl+molette</translation>
     </message>
+    <message>
+        <source>Stop keeping this window above the others</source>
+        <translation>Ne plus garder cette fenêtre au-dessus des autres</translation>
+    </message>
+    <message>
+        <source>Keep this window above the others</source>
+        <translation>Garder cette fenêtre au-dessus des autres</translation>
+    </message>
 </context>
 <context>
     <name>FileWorkspace</name>
@@ -1340,6 +1348,58 @@ Le modèle détermine l'écran et le cadre. Android provient de l'image système
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
         <translation>Saisir le texte du presse-papiers dans le champ qui a le focus</translation>
+    </message>
+    <message>
+        <source>Keyboard to phone</source>
+        <translation>Clavier vers le téléphone</translation>
+    </message>
+    <message>
+        <source>Keyboard to desktop</source>
+        <translation>Clavier vers le bureau</translation>
+    </message>
+    <message>
+        <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
+        <translation>La saisie va au téléphone · Ctrl+Shift+K rend le clavier au bureau</translation>
+    </message>
+    <message>
+        <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
+        <translation>Cliquez sur l&apos;écran ou appuyez sur Ctrl+Shift+K pour taper sur le téléphone</translation>
+    </message>
+    <message>
+        <source>Speed</source>
+        <translation>Vitesse</translation>
+    </message>
+    <message>
+        <source>Show frames per second and the time from an input to the picture</source>
+        <translation>Afficher les images par seconde et le temps entre une saisie et l&apos;image</translation>
+    </message>
+    <message>
+        <source>Screenshot with frame</source>
+        <translation>Capture avec cadre</translation>
+    </message>
+    <message>
+        <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
+        <translation>Enregistrer et copier une capture avec un cadre d&apos;appareil simple et des coins arrondis</translation>
+    </message>
+    <message>
+        <source>%1 new · %2 fetched frames/s</source>
+        <translation>%1 nouvelles · %2 images reçues/s</translation>
+    </message>
+    <message>
+        <source>Input to picture: %1 ms</source>
+        <translation>De la saisie à l&apos;image : %1 ms</translation>
+    </message>
+    <message>
+        <source>Input to picture: not measured yet</source>
+        <translation>De la saisie à l&apos;image : pas encore mesuré</translation>
+    </message>
+    <message>
+        <source>The screenshot failed</source>
+        <translation>La capture a échoué</translation>
+    </message>
+    <message>
+        <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
+        <translation>Clavier vers le téléphone · Ctrl+Shift+K le bascule vers le bureau et inversement</translation>
     </message>
 </context>
 <context>

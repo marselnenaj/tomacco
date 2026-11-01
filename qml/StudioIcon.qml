@@ -29,6 +29,8 @@ Canvas {
         case "pin": line([8,3,16,3]);line([10,3,10,10,6,14,18,14,14,10,14,3]);line([12,14,12,21]);break
         case "edit": line([4,20,4,16,15,5,19,9,8,20,4,20]);line([12,8,16,12]);break
         case "record": c.beginPath();c.arc(12,12,6.5,0,Math.PI*2);c.fill();break
+        case "bell": line([5,17,7,15,7,10,9,6,12,5,15,6,17,10,17,15,19,17,5,17]);line([10,20,14,20]);break
+        case "cards": box(6,6,12,15);line([8,3,16,3]);break
         case "grid": box(2,4,5,16);box(9.5,4,5,16);box(17,4,5,16);break
         case "files": line([3,20,3,4,9.5,4,12,7,21,7,21,20,3,20]);break
         case "devices": box(2,4,13,12);line([5,20,12,20]);line([8.5,16,8.5,20]);box(17,9,5,12);break

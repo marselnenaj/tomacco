@@ -24,6 +24,14 @@ Window {
     property bool flipped: false
     property bool controlsEnabled: true
     property bool forwardHardwareKeys: false
+    // Kept above other windows; offered on the rail where showPin is set.
+    property bool stayOnTop: false
+    property bool showPin: false
+    // More rail buttons the device's owner offers, between its own buttons
+    // and the zoom: {name, icon, tip}, each answered by extraRequested(name).
+    // The names in extraSelected show as switched on.
+    property var extraButtons: []
+    property var extraSelected: []
     // Keyboard shortcuts the device's owner offers for these buttons, shown
     // in their tooltips; empty where there is none.
     property string homeShortcut: ""
@@ -47,7 +55,8 @@ Window {
     signal homeRequested()
     signal powerRequested()
     signal backRequested()
-    signal hardwareKeyRequested(int key, int modifiers)
+    signal hardwareKeyRequested(int key, int modifiers, string text)
+    signal extraRequested(string name)
     signal rotateRequested()
     signal screenshotRequested()
     // The user chose a zoom (Ctrl+wheel, Ctrl+plus/minus/0 or the rail), as
@@ -61,7 +70,7 @@ Window {
     function chooseZoom(value) {const before=zoom;setZoom(value);if(zoom!==before)zoomChosen(zoom)}
     function move() {startSystemMove()}
     title: caption ? "Tomacco – "+caption : qsTr("Tomacco – Device")
-    flags: Qt.Window | Qt.FramelessWindowHint
+    flags: Qt.Window | Qt.FramelessWindowHint | (stayOnTop ? Qt.WindowStaysOnTopHint : 0)
     // Independent of the main window: Qt would otherwise keep this window
     // hidden for as long as its transient parent is not shown.
     transientParent: null
@@ -95,7 +104,7 @@ Window {
             else if(control && event.key===Qt.Key_0)win.chooseZoom(Math.min(1,win.fitZoom))
             else if(control && (event.modifiers & Qt.ShiftModifier) && event.key===Qt.Key_S && win.controlsEnabled)win.screenshotRequested()
             else if(win.forwardHardwareKeys) {
-                win.hardwareKeyRequested(event.key,event.modifiers);event.accepted=true;return
+                win.hardwareKeyRequested(event.key,event.modifiers,event.text);event.accepted=true;return
             } else return
             event.accepted=true
         }
@@ -130,6 +139,18 @@ Window {
                 StudioButton {objectName:"deviceWindowBack";iconName:"back";quiet:true;tip:qsTr("Back")+(win.backShortcut?" · "+win.backShortcut:"");visible:win.showBack;enabled:win.controlsEnabled;onClicked:win.backRequested()}
                 StudioButton {iconName:"rotate";quiet:true;tip:qsTr("Rotate");visible:win.showRotate;enabled:win.controlsEnabled;onClicked:win.rotateRequested()}
                 StudioButton {objectName:"deviceWindowFlip";iconName:"flip";quiet:true;selected:win.flipped;tip:win.flipped?qsTr("Show the front"):qsTr("Show the back");visible:win.showFlip;onClicked:win.flipped=!win.flipped}
+                Repeater {
+                    model:win.extraButtons
+                    StudioButton {
+                        required property var modelData
+                        objectName:"deviceWindowExtra_"+modelData.name
+                        iconName:modelData.icon;quiet:true;tip:modelData.tip
+                        selected:win.extraSelected.indexOf(modelData.name)>=0
+                        enabled:win.controlsEnabled
+                        onClicked:win.extraRequested(modelData.name)
+                    }
+                }
+                StudioButton {objectName:"deviceWindowPin";iconName:"pin";quiet:true;selected:win.stayOnTop;visible:win.showPin;tip:win.stayOnTop?qsTr("Stop keeping this window above the others"):qsTr("Keep this window above the others");onClicked:win.stayOnTop=!win.stayOnTop}
                 StudioButton {iconName:"camera";quiet:true;objectName:"deviceWindowScreenshot";tip:qsTr("Save and copy a screenshot · Ctrl+Shift+S");enabled:win.controlsEnabled;onClicked:win.screenshotRequested()}
                 Rectangle {Layout.alignment:Qt.AlignHCenter;width:Theme.gapXl;height:1;color:Theme.subtle}
                 StudioButton {objectName:"deviceWindowZoomIn";iconName:"plus";quiet:true;tip:qsTr("Larger · Ctrl+mouse wheel");enabled:win.zoom<Math.min(win.maxZoom,win.fitZoom);onClicked:win.chooseZoom(win.zoom+.1)}
