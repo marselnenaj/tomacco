@@ -254,7 +254,7 @@ class StartPlans(unittest.TestCase):
 
 FAKE_QEMU_IMG = """#!/usr/bin/env python3
 import sys
-sys.path.insert(0, {tests!r})
+sys.path[:0] = [{tests!r}, {tools!r}]
 from test_ios_disk_overlay import write_qcow2
 args = sys.argv[1:]
 with open({log!r}, "a") as log:
@@ -277,7 +277,7 @@ class MakingRootDisks(unittest.TestCase):
         self.output.mkdir()
         self.tool = self.root / "qemu-img"
         self.log = self.root / "qemu-img.log"
-        self.tool.write_text(FAKE_QEMU_IMG.format(tests=str(Path(__file__).parent), log=str(self.log)))
+        self.tool.write_text(FAKE_QEMU_IMG.format(tests=str(Path(__file__).parent), tools=str(Path(__file__).resolve().parents[2] / "tools"), log=str(self.log)))
         self.tool.chmod(0o755)
 
     def tearDown(self):
@@ -299,7 +299,7 @@ class MakingRootDisks(unittest.TestCase):
             make_root(planned, time.monotonic() + 30)
         # A tool that makes no backing reference is refused.
         target.unlink()
-        self.tool.write_text(FAKE_QEMU_IMG.format(tests=str(Path(__file__).parent), log=str(self.log))
+        self.tool.write_text(FAKE_QEMU_IMG.format(tests=str(Path(__file__).parent), tools=str(Path(__file__).resolve().parents[2] / "tools"), log=str(self.log))
                              .replace('backing=args[args.index("-b") + 1]', "backing=None"))
         with self.assertRaisesRegex(ValueError, "without the backing file"):
             make_root(planned, time.monotonic() + 30)
