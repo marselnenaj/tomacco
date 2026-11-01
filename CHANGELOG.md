@@ -4,6 +4,25 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Added
+
+- Virtual iPhone: the `guest_memory_import` boot setting (`dma-buf`; the launcher's `--guest-memory-import`) lets the GPU
+  write render Stores straight into the guest's pages instead of copying each frame there on the CPU. The launcher lays
+  guest RAM on a sealed memfd, and the renderer imports it in 64 MiB windows (the kernel's `udmabuf.size_limit_mb`)
+  through `/dev/udmabuf` as dma-bufs, on first use. The development host's driver (RADV on an RX 6900 XT, Mesa 26.2.5)
+  refuses to import the shared memory guest RAM otherwise is. Without `/dev/udmabuf` or memfds the start keeps shared
+  RAM, and a refused import keeps the CPU copies. Off by default. On a live phone, two starts each way with the same
+  engine and script under a host load average of 15 to 31: every Store went to the GPU (2 847 in one boot, none
+  declined), Store work on the drain fell from 12.6-22.7 to 2.7-4.9 ms a frame while swiping and from 6.6-25.2 to
+  2.1-2.9 ms while scrolling, but the present now converts its own frame and rose from 2.1-4.3 to 6.8-9.9 ms. Swiping
+  showed 1.2-2.8 instead of 0.8-2.0 changed frames a second in the recording; presents a second did not rise clearly
+  (swiping 5.3-10.1 against 5.6-8.3, scrolling 6.3-11.7 against 7.5-17.1). Screenshots of Settings and of an opened app
+  matched pixel for pixel below the status bar clock, no frame was black, deploys and verified stops worked, and 124
+  windows, 7.75 of the 8 GiB of guest RAM, stayed pinned for the session.
+  [Usage](docs/virtual-ios/usage.md#gpu-access-to-guest-ram-experimental) has the table.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
@@ -277,14 +296,6 @@ The first published 1.2 release; `v1.2.0` was tagged but not released.
     overlay on its rail, a pin that keeps it above other windows, and opens where it was last (not on Wayland).
   - A trackpad's coasting after the fingers lift no longer scrolls the phone, and lifting them sends the scroll at once.
   - All offscreen tests only; not tried on a live phone.
-- Virtual iPhone renderer: the launcher's `--guest-memory-import dma-buf` (the paravirtual start's `guest_memory_import`)
-  lays guest RAM on a sealed memfd, and the renderer imports it in windows through `/dev/udmabuf` as dma-bufs, so the
-  GPU can write render Stores straight into the guest's pages. On the development host (RX 6900 XT, Mesa 26.2.5) the
-  driver refuses a host-pointer import of shared memory: 2 GiB of shared anonymous memory, of a memfd and of a
-  `/dev/shm` file are refused with `ERROR_INVALID_EXTERNAL_HANDLE`, private anonymous memory imports, and the same memfd
-  imports as 64 MiB dma-bufs, with GPU writes visible to the CPU. Windows are the kernel's `udmabuf.size_limit_mb`
-  (64 MiB by default) and are imported on first use. Without `/dev/udmabuf` or memfds the launcher keeps today's shared
-  RAM, and a refused import keeps the CPU copies. Off by default; not run on a live phone.
 
 ### Changed
 
