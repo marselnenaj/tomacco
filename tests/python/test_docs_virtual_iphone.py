@@ -387,7 +387,7 @@ class AgentGuideTests(DocumentTest):
 
 
 # The error-code families of the virtual iOS device the troubleshooting table must list in full.
-CODE_FAMILIES = re.compile(r'"((?:ios_virtual|ios_guest|ios_control|ios_touch|ios_frame|ios_prepare)'
+CODE_FAMILIES = re.compile(r'"((?:ios_virtual|ios_guest|ios_control|ios_touch|ios_frame|ios_prepare|ios_setup)'
                            r'_[a-z0-9_]+|ios_emulator_busy|ios_boot_failed)"')
 
 

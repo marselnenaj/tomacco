@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-46 operations. Generated from `assets/operations.json`; [all areas](README.md).
+47 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -792,6 +792,39 @@ Annotations: read-only, idempotent, closed world.
 
 ```sh
 tomaccoctl call ios.virtual.host_check
+```
+
+### ios.virtual.setup
+
+**Set up the virtual iOS device**
+
+Walk the virtual iOS device's setup chain (docs/virtual-ios/setup.md) as one guided sequence. step plan (the default) reads which of the 17 stages are done from their outputs under work and the checkout's .tooling and writes nothing but work/inputs.json: stages lists each with stage, what, state (done, pending, partial when an earlier run stopped halfway, unknown when only the person can tell), detail, needs (arguments it still lacks), ask_first, why_ask, manual and the commands it would run; next is the first stage not done; inputs is tools/check_ios_inputs.py's check of the person's own files and host is ios.virtual.host_check. step run starts the next stage, or the one named by stage, as a durable job (or the operation it is, such as ios.emulator.prepare_userland) and returns it; a done stage is skipped without running anything. run refuses with ios_setup_out_of_order before an earlier stage is done, ios_setup_needs_input when the person's files are not given, ios_setup_inputs_invalid when they are the wrong ones, ios_setup_partial for a half-finished output (move it aside; nothing is deleted), ios_setup_confirm for stages that build for long or need the person's template until confirm is true, ios_setup_manual for the restore, which boots a guest and is run by hand from its commands, and ios_setup_needs_checkout for the engine without a source checkout. Nothing of Apple's is fetched: the restore images, decrypted, the public template and the IM4M stay the person's to supply.
+
+Annotations: writes, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `step` | string |  | `"plan"` | one of `plan`, `run`; plan reports; run starts a stage |
+| `work` | string | yes |  | non-empty; Absolute directory for the chain's outputs (boot, trees, storage, userland, cryptex, kernel, guest tools, profile); created by the first stage that writes there |
+| `stage` | string |  |  | one of `engine`, `support`, `linker`, `gpu_plugin`, `boot`, `trees`, `manifest`, `userland`, `restore_runtime`, `restore`, `cryptex_first`, `guest_tools`, `cryptex`, `kernel`, `first_install`, `profile`, `configure`; With run: the stage to start; by default the first that is not done |
+| `confirm` | boolean |  | `false` | With run: the person agreed to a stage that asks first |
+| `restored` | boolean |  | `false` | The restore finished with restore_completed:true, so the stages after it may run |
+| `iphone_firmware` | string |  |  | non-empty; Absolute unpacked iPhone17,3 24A446 restore image |
+| `pcc_firmware` | string |  |  | non-empty; Absolute unpacked PCC 23E5207q restore image |
+| `iphone_os_image` | string |  |  | non-empty; Absolute decrypted iPhone OS image; by default found under decrypted/ in iphone_firmware |
+| `iphone_systemos_image` | string |  |  | non-empty; Absolute decrypted iPhone SystemOS Cryptex image; by default found under decrypted/ in iphone_firmware |
+| `pcc_system_image` | string |  |  | non-empty; Absolute decrypted PCC system image; by default found under decrypted/ in pcc_firmware |
+| `template` | string |  |  | non-empty; Absolute public ticket.shsh2 research template, for the manifest stage |
+| `manifest` | string |  |  | non-empty; Absolute IM4M; by default work/your.im4m, which the manifest stage makes |
+| `vphone_cli` | string |  |  | non-empty; Absolute vphone-cli checkout at the pinned revision, for the GPU plugin |
+| `swift_lib` | string |  |  | non-empty; Absolute Linux Swift toolchain's usr/lib/swift, for the linker |
+| `clang` | string |  |  | non-empty; Absolute clang 22, for the guest tools |
+| `helper_kernel` | string |  |  | non-empty; Absolute kernel for the disk-preparing helper; by default the support's apfs/vmlinuz, else the running kernel's |
+| `jobs` | integer |  | `8` | 1 to 64; Parallel build jobs for the engine and linker |
+| `cpu_optimization` | string |  | `"portable"` | one of `portable`, `native`; Engine build: portable, or native for this CPU only (what was measured) |
+
+```sh
+tomaccoctl call ios.virtual.setup '{"work":"<work>"}'
 ```
 
 ### ios.virtual.configure

@@ -97,6 +97,7 @@ class InputCheckTest(unittest.TestCase):
         report = self.run_check(everything=False)
         self.assertTrue(report["ok"])
         self.assertEqual({row["status"] for row in report["checks"]}, {"skipped"})
+        self.assertEqual(report["summary"], "no inputs were given to check")
 
     def test_another_build_is_named_with_the_one_the_chain_needs(self):
         manifest = plistlib.loads((self.root / "iphone/BuildManifest.plist").read_bytes())

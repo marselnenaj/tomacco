@@ -4167,6 +4167,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Dispositivo iOS virtuale: stato</translation>
     </message>
     <message>
+        <source>Set up the virtual iOS device</source>
+        <translation>Configurare il dispositivo iOS virtuale</translation>
+    </message>
+    <message>
         <source>Check this machine for the virtual iOS device</source>
         <translation>Verificare questo computer per il dispositivo iOS virtuale</translation>
     </message>

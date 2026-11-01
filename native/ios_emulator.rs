@@ -10,6 +10,7 @@ pub mod pmp;
 mod pmp_debug;
 pub mod research;
 pub mod restore;
+pub mod setup_chain;
 pub mod usb_bridge;
 pub mod userland;
 pub mod virtual_phone;

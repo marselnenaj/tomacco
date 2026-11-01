@@ -248,9 +248,13 @@ def inspect(args):
     rows.append(guarded("IM4M template", args.template, lambda: template_check(args.template)))
     rows.append(guarded("IM4M", args.manifest, lambda: im4m_check(args.manifest, iphone, args.device_tree)))
     failed = [row for row in rows if row["status"] == "fail"]
-    return {"ok": not failed, "checks": rows,
-            "summary": (f"{len(failed)} of the given inputs need attention before any long step"
-                        if failed else "every given input is the one the chain needs")}
+    if failed:
+        summary = f"{len(failed)} of the given inputs need attention before any long step"
+    elif all(row["status"] == "skipped" for row in rows):
+        summary = "no inputs were given to check"
+    else:
+        summary = "every given input is the one the chain needs"
+    return {"ok": not failed, "checks": rows, "summary": summary}
 
 
 def parser():

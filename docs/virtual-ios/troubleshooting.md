@@ -42,6 +42,13 @@ the code and that none is missing.
 | `ios_guest_stopped` | The guest job has stopped. | Start the phone again. |
 | `ios_guest_timeout` | The guest did not reply before the request's deadline. | Ask again. Under load the guest answers slowly. |
 | `ios_prepare_busy` | Another job is preparing into this output. | Wait for that job or `job.cancel` it. |
+| `ios_setup_confirm` | `ios.virtual.setup` reached a stage that builds for long or needs the person's template. | Ask the person, then call again with `confirm:true`. |
+| `ios_setup_inputs_invalid` | Some of the person's own files are not the ones the chain needs. | Read each failed entry's `problem` and `fix` in `inputs`. Nothing long has started. |
+| `ios_setup_manual` | The next stage is the restore, which boots a guest and is run by hand. | Run the three `commands` in order, then pass `restored:true`. |
+| `ios_setup_needs_checkout` | The engine is built in a source checkout's `.tooling`. | Use the `tomaccoctl` of a Tomacco checkout for this stage. |
+| `ios_setup_needs_input` | A stage needs files only the person has. `needs` names the arguments. | Pass them. [Setup](setup.md#what-no-tool-does-for-you) says where each comes from. |
+| `ios_setup_out_of_order` | An earlier stage of the chain is not done. | Run that stage first; the error names it. |
+| `ios_setup_partial` | An earlier run stopped halfway and left its output. | Move the output aside (nothing is deleted for you) and run the stage again. |
 | `ios_touch_has_no_hover` | A touchscreen has no pointer that moves without a contact. | Use `click` or `drag`. |
 | `ios_touch_lane_required` | A one-shot `tomaccoctl call` cannot hold a finger down. | Use `drag`, or `touch_down` through `tomaccoctl mcp`. |
 | `ios_touch_not_down` | No contact is held down, or it was lifted after 5 seconds without an event. | Press again with `touch_down`; `touch_move` keeps a contact alive. |

@@ -44,6 +44,29 @@ The decrypted images are looked for where step 4 below puts them, under `decrypt
 image directory; `--iphone-os-image`, `--iphone-systemos-image` and `--pcc-system-image` name
 others. This check has unit tests with synthetic files only.
 
+## Guided setup
+
+`ios.virtual.setup` walks the chain below for you, one stage at a time. Give it a `work`
+directory for the outputs and, as you get them, your own files. `plan` (the default) lists the
+17 stages in order, each `done`, `pending`, `partial` or `unknown`, with what it still needs
+from you and the exact commands it would run, and checks your files and this machine first:
+
+```sh
+tomaccoctl call ios.virtual.setup '{"work":"/phone","iphone_firmware":"/phone/iphone-ipsw","pcc_firmware":"/phone/pcc","template":"/phone/ticket.shsh2","vphone_cli":"/phone/vphone-cli","swift_lib":"/absolute/swift/usr/lib/swift","clang":"/absolute/clang-22/clang"}'
+```
+
+`step:"run"` with the same arguments starts the next stage that is not done as a durable job;
+`job.wait` it, then call `run` again. A stage whose output is complete is skipped, so calling
+it again after an interruption carries on where it stopped. A stage that stopped halfway is
+reported as `partial`, and you move its output aside: nothing is deleted for you. The engine
+build and the IM4M stage ask first (`confirm:true`). The restore boots a guest and stays a
+step you run by hand from the three commands the plan shows; pass `restored:true` once it has
+reported `restore_completed:true`. The [error codes](troubleshooting.md#error-codes) list what
+`run` refuses with and why.
+
+What was run: `plan` and the refusals of `run` on the development host with nothing prepared
+under `work`. No stage has been started through it yet; its stage logic has unit tests.
+
 `tomaccoctl doctor` gives a coarser view without your files: its `virtual_ios` step names the
 next stage of the chain (`next_stage`) and lists every stage under `chain`, with `done` true for
 the engine and helper builds it finds in the checkout's `.tooling`. Stages that depend on your
@@ -74,7 +97,8 @@ Tomacco distributes no Apple images. You obtain and prepare these inputs yoursel
      one, equals the prepared tree's. The guest's restore and sealing read its other entries.
    - The helper sets these declarations from your firmware manifests and prepared tree.
      Its output is a local research input, not a valid Apple-signed restore ticket.
-4. **Unwrapping the boot components** in step 3 is by hand, with the `ipsw` that step 2 downloads.
+4. **Unwrapping the boot components** in step 3 uses the `ipsw` that step 2 downloads, by hand or with
+   `tools/prepare_ios_boot_inputs.py`.
 5. **The Linux Swift toolchain, clang 22 and the `vphone-cli` checkout** are your installs,
    named by path below.
 
@@ -292,6 +316,17 @@ directory of yours, and `/absolute` for your checkout.
    | `kernelcache.research.vphone600` | `kernel` |
    | the identity's `RestoreRamDisk` | `ramdisk.dmg` |
    | the identity's `RestoreTrustCache` | `ramdisk.tc` |
+
+   `tools/prepare_ios_boot_inputs.py` does the same in one command: it finds each file through
+   identity 5 of your PCC image, unwraps it into a new directory, refuses a research kernel
+   whose digest is not the one named above, and writes `boot-inputs.json` with each source and
+   digest and the PCC `StaticTrustCache` that step 8 takes as `gpu_trustcache`. It has unit tests
+   with synthetic files only.
+
+   ```sh
+   python3 tools/prepare_ios_boot_inputs.py --pcc-firmware /phone/pcc \
+     --ipsw .tooling/ios-sptm/support/ipsw/ipsw --output /phone/boot
+   ```
 
 4. **One device, two trees, and its disks.** `--entropy-from` keeps one device identity (ECID)
    across both.

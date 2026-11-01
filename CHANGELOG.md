@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 200 operations.
+`tomaccoctl` now has one typed API of 201 operations.
 
 ### Added
 
@@ -80,6 +80,16 @@ operations and their JSON results.
     architecture, processors and VT-x/AMD-V, `/dev/kvm`, memory, free disk where the chain or the profile's installs
     go, Vulkan drivers and graphics memory, the helper's APFS module against the running kernel, and `passt`, each as
     pass, warn or fail with a remedy. It is read-only.
+  - `ios.virtual.setup` walks the setup chain as one guided sequence. `plan` lists its 17 stages in order with what is
+    done (read from their outputs), what each still needs from the person and the commands it would run, together with
+    the input check and `ios.virtual.host_check`. `step:"run"` starts the next stage as a durable job and skips stages
+    that are done, so it carries on after an interruption; a half-finished output is reported, never deleted. The engine
+    build and the IM4M ask first, and the restore, which boots a guest, stays a step run by hand. Its refusals are
+    `ios_setup_*` codes with remedies. Only `plan` and the refusals have been run; the stages have unit tests.
+  - `tools/prepare_ios_boot_inputs.py` unwraps the seven boot components from the person's PCC image in one command,
+    found through its research identity, refuses a research kernel with another digest, and records each source and
+    digest and the PCC StaticTrustCache in `boot-inputs.json`.
+  - The `doctor` step for an unconfigured virtual iOS device names `ios.virtual.host_check` and `ios.virtual.setup`.
 
 ### Changed
 

@@ -8766,6 +8766,144 @@
     }
   },
   {
+    "name": "ios.virtual.setup",
+    "title": "Set up the virtual iOS device",
+    "description": "Walk the virtual iOS device's setup chain (docs/virtual-ios/setup.md) as one guided sequence. step plan (the default) reads which of the 17 stages are done from their outputs under work and the checkout's .tooling and writes nothing but work/inputs.json: stages lists each with stage, what, state (done, pending, partial when an earlier run stopped halfway, unknown when only the person can tell), detail, needs (arguments it still lacks), ask_first, why_ask, manual and the commands it would run; next is the first stage not done; inputs is tools/check_ios_inputs.py's check of the person's own files and host is ios.virtual.host_check. step run starts the next stage, or the one named by stage, as a durable job (or the operation it is, such as ios.emulator.prepare_userland) and returns it; a done stage is skipped without running anything. run refuses with ios_setup_out_of_order before an earlier stage is done, ios_setup_needs_input when the person's files are not given, ios_setup_inputs_invalid when they are the wrong ones, ios_setup_partial for a half-finished output (move it aside; nothing is deleted), ios_setup_confirm for stages that build for long or need the person's template until confirm is true, ios_setup_manual for the restore, which boots a guest and is run by hand from its commands, and ios_setup_needs_checkout for the engine without a source checkout. Nothing of Apple's is fetched: the restore images, decrypted, the public template and the IM4M stay the person's to supply.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "step": {
+          "type": "string",
+          "enum": [
+            "plan",
+            "run"
+          ],
+          "default": "plan",
+          "description": "plan reports; run starts a stage"
+        },
+        "work": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute directory for the chain's outputs (boot, trees, storage, userland, cryptex, kernel, guest tools, profile); created by the first stage that writes there"
+        },
+        "stage": {
+          "type": "string",
+          "enum": [
+            "engine",
+            "support",
+            "linker",
+            "gpu_plugin",
+            "boot",
+            "trees",
+            "manifest",
+            "userland",
+            "restore_runtime",
+            "restore",
+            "cryptex_first",
+            "guest_tools",
+            "cryptex",
+            "kernel",
+            "first_install",
+            "profile",
+            "configure"
+          ],
+          "description": "With run: the stage to start; by default the first that is not done"
+        },
+        "confirm": {
+          "type": "boolean",
+          "default": false,
+          "description": "With run: the person agreed to a stage that asks first"
+        },
+        "restored": {
+          "type": "boolean",
+          "default": false,
+          "description": "The restore finished with restore_completed:true, so the stages after it may run"
+        },
+        "iphone_firmware": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute unpacked iPhone17,3 24A446 restore image"
+        },
+        "pcc_firmware": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute unpacked PCC 23E5207q restore image"
+        },
+        "iphone_os_image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute decrypted iPhone OS image; by default found under decrypted/ in iphone_firmware"
+        },
+        "iphone_systemos_image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute decrypted iPhone SystemOS Cryptex image; by default found under decrypted/ in iphone_firmware"
+        },
+        "pcc_system_image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute decrypted PCC system image; by default found under decrypted/ in pcc_firmware"
+        },
+        "template": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute public ticket.shsh2 research template, for the manifest stage"
+        },
+        "manifest": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute IM4M; by default work/your.im4m, which the manifest stage makes"
+        },
+        "vphone_cli": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute vphone-cli checkout at the pinned revision, for the GPU plugin"
+        },
+        "swift_lib": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute Linux Swift toolchain's usr/lib/swift, for the linker"
+        },
+        "clang": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute clang 22, for the guest tools"
+        },
+        "helper_kernel": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute kernel for the disk-preparing helper; by default the support's apfs/vmlinuz, else the running kernel's"
+        },
+        "jobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64,
+          "default": 8,
+          "description": "Parallel build jobs for the engine and linker"
+        },
+        "cpu_optimization": {
+          "type": "string",
+          "enum": [
+            "portable",
+            "native"
+          ],
+          "default": "portable",
+          "description": "Engine build: portable, or native for this CPU only (what was measured)"
+        }
+      },
+      "required": [
+        "work"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "ios.virtual.configure",
     "title": "Set up virtual iOS device",
     "description": "Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job).",
