@@ -66,6 +66,9 @@ operations and their JSON results.
   `tomaccoctl setup` show it. For the portable package it also checks the X11 and Wayland plugins and WebEngine's helper,
   and `desktop.portable` says which package it is. Run in debian:12, ubuntu:22.04, ubuntu:24.04 and fedora:44 containers,
   the one command made the 1.1.0 portable desktop loadable.
+- `tomaccoctl verify FILE [--sig FILE.sig] [--sha256 FILE.sha256] [--json]` checks a downloaded release file against its
+  checksum and its Ed25519 signature with the release keys built into `tomaccoctl`, in plain text or as one JSON envelope, and
+  exits 0 only when both match. It verified the published 1.1.0 package and refused a copy with one byte appended.
 - **Release key rotation.** `tomaccoctl` trusts the release key in `native/product.rs` and, during a rotation, the next key
   beside it, `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`; a package signed by either installs, one signed by another key is refused.
   `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.

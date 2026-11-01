@@ -15,6 +15,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("replay", "Replay a session log"),
     ("update", "Check for and install a new release"),
     ("uninstall", "Remove this installation"),
+    ("verify", "Check a release file's checksum and signature"),
     ("completions", "Print a shell completion script"),
 ];
 pub const SHELLS: &[&str] = &["bash", "zsh", "fish"];
@@ -53,6 +54,13 @@ _tomaccoctl() {{
         replay) words="--dry-run --pretty --compact" ;;
         setup) words="--yes" ;;
         update) words="--check" ;;
+        verify)
+            if [[ $cur == -* ]]; then
+                words="--sig --sha256 --json"
+            else
+                COMPREPLY=($(compgen -f -- "$cur"))
+                return
+            fi ;;
         completions) words="{shells}" ;;
         esac
     fi
@@ -90,6 +98,7 @@ _tomaccoctl() {{
     replay) _files; compadd -- --dry-run --pretty --compact ;;
     setup) compadd -- --yes ;;
     update) compadd -- --check ;;
+    verify) _files; compadd -- --sig --sha256 --json ;;
     completions) compadd {shells} ;;
     esac
 }}
@@ -129,6 +138,10 @@ complete -c tomaccoctl -n '__fish_seen_subcommand_from replay' -F
 complete -c tomaccoctl -n '__fish_seen_subcommand_from replay' -l dry-run -d 'Only list the calls'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from setup' -l yes -d 'Answer yes to every question'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from update' -l check -d 'Only check for a new release'
+complete -c tomaccoctl -n '__fish_seen_subcommand_from verify' -F
+complete -c tomaccoctl -n '__fish_seen_subcommand_from verify' -l sig -r -F -d 'The signature file'
+complete -c tomaccoctl -n '__fish_seen_subcommand_from verify' -l sha256 -r -F -d 'The checksum file'
+complete -c tomaccoctl -n '__fish_seen_subcommand_from verify' -l json -d 'One JSON envelope'
 complete -c tomaccoctl -n '__fish_seen_subcommand_from completions' -a '{}'
 ",
                 SHELLS.join(" ")

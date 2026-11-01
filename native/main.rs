@@ -47,6 +47,7 @@ mod swift;
 mod test_results;
 mod toolchain;
 mod update;
+mod verify;
 mod visual;
 mod watch;
 mod workspaces;
@@ -65,7 +66,7 @@ fn main() {
     std::process::exit(code);
 }
 /// The flags of the public commands, wherever they stand on the line. The
-/// internal `_worker` commands, and `setup`, `update` and `uninstall`, which
+/// internal `_worker` commands, and `setup`, `update`, `uninstall` and `verify`, which
 /// read their own, keep theirs.
 #[derive(Debug, Default, PartialEq)]
 struct Options {
@@ -75,7 +76,7 @@ struct Options {
 impl Options {
     const FLAGS: &[&str] = &["--names", "--pretty", "--compact", "--wait", "--dry-run"];
     /// Commands that parse their own arguments.
-    const OWN: &[&str] = &["setup", "update", "uninstall"];
+    const OWN: &[&str] = &["setup", "update", "uninstall", "verify"];
     /// What every command that prints an envelope takes.
     const OUTPUT: &[&str] = &["--pretty", "--compact"];
     fn parse(args: Vec<String>) -> (Vec<String>, Options) {
@@ -288,6 +289,12 @@ Usage:
   tomaccoctl uninstall
                     Remove this installation; keeps your data and the files
                     you changed, and prints how to undo it.
+  tomaccoctl verify FILE [--sig FILE.sig] [--sha256 FILE.sha256] [--json]
+                    Check a downloaded release file against its checksum and
+                    its Ed25519 signature with the release keys built into
+                    this program (FILE.sha256 and FILE.sig unless named).
+                    Plain text, or one JSON envelope with --json; exits 0
+                    only when the file is verified.
   tomaccoctl --version, -V
   tomaccoctl --help, -h
 
@@ -336,6 +343,7 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         Some("setup") => return setup::run(&args[1..]),
         Some("update") => return update::update_command(&args[1..]),
         Some("uninstall") => return update::uninstall_command(&args[1..]),
+        Some("verify") => return verify::command(&args[1..]),
         Some("mcp") => {
             mcp::serve(std::io::stdin().lock(), std::io::stdout())?;
             return Ok(0);

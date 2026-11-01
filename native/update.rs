@@ -115,13 +115,25 @@ fn test_endpoints() -> Option<Endpoints> {
         api_host: host,
         api,
         loopback: true,
-        // One key, or several separated by commas.
-        public_keys: std::env::var("TOMACCO_UPDATE_TEST_PUBLIC_KEY")
-            .unwrap_or_default()
-            .split(',')
-            .filter_map(decode_key)
-            .collect(),
+        public_keys: test_keys().unwrap_or_default(),
     })
+}
+
+/// The keys of a debug build's tests: one, or several separated by commas.
+#[cfg(debug_assertions)]
+fn test_keys() -> Option<Vec<[u8; 32]>> {
+    let keys = std::env::var("TOMACCO_UPDATE_TEST_PUBLIC_KEY").ok()?;
+    Some(keys.split(',').filter_map(decode_key).collect())
+}
+
+/// The keys `tomaccoctl verify` accepts: the compiled ones, or in a debug
+/// build the tests' own.
+pub(crate) fn trusted_keys() -> Vec<[u8; 32]> {
+    #[cfg(debug_assertions)]
+    if let Some(keys) = test_keys() {
+        return keys;
+    }
+    release_keys()
 }
 
 /// This program's version. A debug build reads a marker a test appended to its
@@ -628,28 +640,33 @@ pub(crate) fn verify_signature(
     package: &[u8],
     signature: &[u8],
 ) -> Result<usize> {
-    let refuse = |why: &str| {
+    signing_key(keys, package, signature).map_err(|why| {
         Error::new(
             "update_signature_invalid",
             format!("Refused the update: {why}. Nothing was installed."),
         )
-    };
-    let text =
-        std::str::from_utf8(signature).map_err(|_| refuse("its signature file is not text"))?;
+    })
+}
+
+/// Which of `keys` made `signature` over `message`, or why none did.
+pub(crate) fn signing_key(
+    keys: &[[u8; 32]],
+    message: &[u8],
+    signature: &[u8],
+) -> std::result::Result<usize, &'static str> {
+    let text = std::str::from_utf8(signature).map_err(|_| "its signature file is not text")?;
     let bytes: [u8; 64] = STANDARD
         .decode(text.trim())
         .ok()
         .and_then(|bytes| bytes.try_into().ok())
-        .ok_or_else(|| refuse("its signature file is not an Ed25519 signature"))?;
+        .ok_or("its signature file is not an Ed25519 signature")?;
     let signature = Signature::from_bytes(&bytes);
     keys.iter()
         .position(|key| {
             VerifyingKey::from_bytes(key)
-                .is_ok_and(|key| key.verify_strict(package, &signature).is_ok())
+                .is_ok_and(|key| key.verify_strict(message, &signature).is_ok())
         })
-        .ok_or_else(|| {
-            refuse("its signature does not match the package and this program's release keys")
-        })
+        .ok_or("its signature does not match the package and this program's release keys")
 }
 
 fn verify_checksum(package: &[u8], text: &[u8]) -> Result<()> {
