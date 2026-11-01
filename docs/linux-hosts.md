@@ -58,7 +58,13 @@ instead of Arch's, and a KVM step with these commands appears while `/dev/kvm` i
 
 The verdicts are tested with made-up machines in `native/host.rs`. On the development host
 (Omarchy, Intel and AMD graphics, Wayland with XWayland) `doctor` reported KVM ready and the
-`auto` renderer.
+`auto` renderer. A static build of this code ran `doctor` in `debian:12`, `ubuntu:24.04`,
+`fedora:44` and `opensuse/tumbleweed` containers and in the SteamOS-like and `nixos/nix`
+containers described below: each named its distribution and JDK package (the `nixos/nix` image
+has no `/etc/os-release`, so it got the general advice), `not_in_container` for KVM, and
+`swiftshader`, since no `/dev/dri` was passed in. In `debian:12` with `/dev/kvm` passed in and
+limited to its group, `kvm.status` was `not_in_group`, then `log_in_again` after `usermod` in the
+same session, then `ready` in a new login.
 
 ## KVM
 
