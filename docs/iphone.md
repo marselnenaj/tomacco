@@ -176,6 +176,30 @@ tomaccoctl call device.logs '{"platform":"ios","device":"ACTUAL_UDID","bundle_id
 With libimobiledevice's `idevicesyslog` installed, it does the filtering. Without it, Tomacco
 runs `go-ios syslog` and filters the lines itself.
 
+### Apps on the phone
+
+`ios.apps` lists the installed apps; `installed` has one row per app with `bundle_id`, `name`,
+`version`, `build` and `executable`. `"all":true` adds Apple's own apps. `device.app` launches,
+stops and uninstalls an app with go-ios, as it does on Android. xtool renames the bundle id it
+signs (`XTL-` and your team), and you can pass the id without that prefix. iOS has no clearing
+of app data: uninstall and install again instead.
+
+```sh
+tomaccoctl call ios.apps '{"device":"ACTUAL_UDID"}'
+tomaccoctl call device.app '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"stop"}'
+```
+
+`ios.app_files` lists or copies the files in an app's container (`Documents`, `Library`,
+`tmp`) with go-ios. `pull` writes them as one `.tar` archive, as `android.app_files` does.
+iOS opens the container of development builds only, such as one `project.run` installed.
+
+```sh
+tomaccoctl call ios.app_files '{"device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","path":"Documents"}'
+tomaccoctl call ios.app_files '{"device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"pull","path":"Documents","output":"/absolute/documents.tar"}'
+```
+
+The file list is read from the tree go-ios draws, so it has paths but no sizes or dates.
+
 ### Profiles and signing certificates
 
 `ios.signing` shows which provisioning profiles there are and how long they last. It reads

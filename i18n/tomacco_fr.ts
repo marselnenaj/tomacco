@@ -3699,6 +3699,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Rapports de plantage de l'iPhone</translation>
     </message>
     <message>
+        <source>iPhone app files</source>
+        <translation>Fichiers d'une app iPhone</translation>
+    </message>
+    <message>
         <source>iPhone readiness</source>
         <translation>État de préparation de l'iPhone</translation>
     </message>

@@ -573,13 +573,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
             let action = s(a, "action");
             let activity = s(a, "activity");
             let command = if platform == "ios" {
-                if !["launch", "uninstall"].contains(&action) {
-                    return Err(Error::new(
-                        "action_unsupported",
-                        "xtool supports launch and uninstall; stopping requires a compatible device debugger",
-                    ));
-                }
-                argv(&[&tc::find("xtool")?, action, "--udid", device, id])
+                crate::iphone_device::app_command(device, id, action)?
             } else {
                 match action {
                     "launch" => {

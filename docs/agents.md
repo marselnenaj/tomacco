@@ -330,6 +330,8 @@ Read Xcode's license first.
 tomaccoctl call ios.device_status '{"device":"ACTUAL_UDID"}'
 tomaccoctl call device.logs '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","duration":60}'
 tomaccoctl call ios.signing '{"device":"ACTUAL_UDID","path":"/absolute/MyiOSApp"}'
+tomaccoctl call device.app '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"stop"}'
+tomaccoctl call ios.app_files '{"device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","action":"pull","path":"Documents","output":"/absolute/documents.tar"}'
 ```
 
 - `ios.device_status` says whether the phone is paired, trusted, unlocked and in Developer Mode. Show the user its
@@ -337,6 +339,8 @@ tomaccoctl call ios.signing '{"device":"ACTUAL_UDID","path":"/absolute/MyiOSApp"
 - `device.logs` with `bundle_id` keeps that app's process; the job names it as `process`.
 - `ios.signing` lists profiles on the phone and in the project with expiry, team and devices, and the signing
   certificates they name. Read `warnings`: a free account's profile lasts 7 days.
+- `device.app` launches, stops and uninstalls with go-ios; `ios.apps` has one plain row per app under `installed`.
+  `ios.app_files` lists or pulls a development build's container as `android.app_files` does.
 
 ### Xcode projects, Flutter, crash reports and the App Store
 

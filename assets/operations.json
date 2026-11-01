@@ -1539,7 +1539,7 @@
   {
     "name": "device.app",
     "title": "Control app",
-    "description": "Launch, stop, uninstall or clear application data. iOS supports launch/uninstall through xtool.",
+    "description": "Launch, stop, uninstall or clear application data. On an iPhone, go-ios launches, stops and uninstalls the installed app bundle_id names (xtool's XTL- prefix may be left out); without go-ios, xtool launches and uninstalls. iOS has no clear-data.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -6885,13 +6885,18 @@
   {
     "name": "ios.apps",
     "title": "Show iPhone apps",
-    "description": "List applications on the USB-connected iPhone with go-ios, including the installed runner bundle identifier.",
+    "description": "List applications on the USB-connected iPhone with go-ios, including the installed runner bundle identifier. apps is go-ios's own listing; installed has one row per app with bundle_id, name, version, build and executable. all also lists Apple's system apps.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "device": {
           "type": "string",
           "minLength": 1
+        },
+        "all": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also list system apps"
         }
       },
       "required": [
@@ -6903,6 +6908,55 @@
       "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "ios.app_files",
+    "title": "iPhone app files",
+    "description": "List or pull the files in an iPhone app's container (Documents, Library, tmp) with go-ios fsync. list returns files, each path relative to the container as read from go-ios's tree drawing, and the drawing itself as tree; pull returns a job that writes the path as one .tar archive. iOS opens the container of development builds only, such as one installed by project.run; others answer app_container_unavailable.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "iPhone UDID from device.list"
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Bundle id as ios.apps lists it; xtool's XTL- prefix may be left out"
+        },
+        "action": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "list",
+            "pull"
+          ],
+          "default": "list"
+        },
+        "path": {
+          "type": "string",
+          "description": "File or directory inside the app's container, relative to it, such as Documents or Library/Preferences",
+          "default": "."
+        },
+        "output": {
+          "type": "string",
+          "description": "Absolute local path of the .tar archive, for pull",
+          "default": ""
+        }
+      },
+      "required": [
+        "device",
+        "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
       "openWorldHint": true
     }
   },

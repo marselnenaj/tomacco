@@ -426,6 +426,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             )?;
             return Ok(0);
         }
+        Some("_iphone_app_files") => {
+            iphone_device::app_files_worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing app files request"))?,
+            )?;
+            return Ok(0);
+        }
         Some("_ios_emulator_probe") => {
             ios_emulator::worker(args.get(1).ok_or_else(|| {
                 Error::new("invalid_request", "Missing emulator probe specification")

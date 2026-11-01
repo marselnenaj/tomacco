@@ -520,9 +520,247 @@ pub fn status(a: &Value) -> Result {
     Ok(state)
 }
 
+/// The command `device.app` runs for an iPhone: go-ios launches, stops
+/// (kill) and uninstalls the installed app the bundle id names, xtool's
+/// prefix included; without go-ios, xtool launches and uninstalls.
+pub fn app_command(device: &str, bundle: &str, action: &str) -> Result<Vec<String>> {
+    udid(device)?;
+    identifier(bundle, "application ID", Some(BUNDLE))?;
+    if !["launch", "stop", "uninstall"].contains(&action) {
+        return Err(Error::new(
+            "action_unsupported",
+            "An iPhone app can be launched, stopped or uninstalled; iOS has no clearing of app data",
+        )
+        .remedy("Uninstall and install the app again to start from empty data"));
+    }
+    if let Some(go) = tc::find_optional("go-ios")? {
+        let listed = apps(device, false)?;
+        let installed = s(installed(&listed, bundle)?, "CFBundleIdentifier").to_string();
+        identifier(&installed, "installed application ID", Some(BUNDLE))?;
+        let verb = if action == "stop" { "kill" } else { action };
+        return Ok(argv(&[&go, verb, &installed, &format!("--udid={device}")]));
+    }
+    if action == "stop" {
+        return Err(
+            Error::new("tool_missing", "Stopping an iPhone app needs go-ios")
+                .remedy("Install go-ios and configure it with settings.configure"),
+        );
+    }
+    Ok(argv(&[
+        &tc::find("xtool")?,
+        action,
+        "--udid",
+        device,
+        bundle,
+    ]))
+}
+
+/// `ios.apps`: the installed apps, raw as go-ios lists them and as one row
+/// each with the fields scripts use.
+pub fn app_inventory(a: &Value) -> Result {
+    let device = udid(s(a, "device"))?;
+    let listed = apps(device, b(a, "all"))?;
+    let rows: Vec<Value> = listed
+        .iter()
+        .map(|app| {
+            json!({"bundle_id":app["CFBundleIdentifier"],"name":app.get("CFBundleDisplayName").or(app.get("CFBundleName")),
+                "version":app["CFBundleShortVersionString"],"build":app["CFBundleVersion"],"executable":app["CFBundleExecutable"]})
+        })
+        .collect();
+    Ok(json!({"device":device,"apps":listed,"installed":rows}))
+}
+
+/// A path in an app's container, relative to it, as go-ios wants it: from /.
+fn container_path(value: &str) -> Result<String> {
+    let value = if value.is_empty() { "." } else { value };
+    if value.starts_with('/') || value.split('/').any(|part| part == "..") {
+        return Err(Error::new(
+            "invalid_path",
+            "Give a path inside the app's container, relative to it, such as Documents",
+        ));
+    }
+    identifier(value, "app path", Some(r"[A-Za-z0-9_.@+=,/ -]{1,400}"))?;
+    let trimmed = value.trim_start_matches("./").trim_end_matches('/');
+    Ok(if trimmed.is_empty() || trimmed == "." {
+        "/".into()
+    } else {
+        format!("/{trimmed}")
+    })
+}
+
+/// The paths in go-ios's `fsync tree` drawing, relative to the container.
+/// Each level indents by four columns of tree glyphs.
+fn tree_paths(text: &str) -> Vec<String> {
+    let mut stack: Vec<String> = Vec::new();
+    let mut found = Vec::new();
+    for line in text.lines() {
+        if line.trim().is_empty() || line.trim_start().starts_with('{') {
+            continue;
+        }
+        let glyphs = line
+            .chars()
+            .take_while(|c| " \t│├└─|`+-".contains(*c))
+            .count();
+        let name: String = line.chars().skip(glyphs).collect();
+        let name = name.trim();
+        if name.is_empty() {
+            continue;
+        }
+        if glyphs == 0 {
+            // The root the drawing starts from.
+            stack.clear();
+            continue;
+        }
+        let depth = (glyphs / 4).max(1);
+        stack.truncate(depth - 1);
+        stack.push(name.to_string());
+        found.push(stack.join("/"));
+    }
+    found
+}
+
+/// `ios.app_files`: list or pull the files in an app's container with go-ios
+/// fsync. iOS opens the container of development builds only.
+pub fn app_files(a: &Value) -> Result {
+    let device = udid(s(a, "device"))?;
+    let bundle = identifier(s(a, "bundle_id"), "application ID", Some(BUNDLE))?;
+    let remote = container_path(s(a, "path"))?;
+    let go = tc::find("go-ios")?;
+    let listed = apps(device, false)?;
+    let installed = s(installed(&listed, bundle)?, "CFBundleIdentifier").to_string();
+    identifier(&installed, "installed application ID", Some(BUNDLE))?;
+    let app = format!("--app={installed}");
+    let udid_flag = format!("--udid={device}");
+    if s(a, "action") != "pull" {
+        let done = tc::run(
+            &argv(&[
+                &go,
+                "fsync",
+                &udid_flag,
+                &app,
+                "tree",
+                &format!("--path={remote}"),
+            ]),
+            60,
+            None,
+            false,
+        )?;
+        if done["exit_code"] != 0 {
+            return Err(container_refused(&installed, &done));
+        }
+        let text = s(&done, "stdout");
+        return Ok(json!({"device":device,"bundle_id":installed,"path":remote,
+            "files":tree_paths(text).into_iter().map(|p| json!({"path":p})).collect::<Vec<_>>(),"tree":text}));
+    }
+    let target = output_path(s(a, "output"))?;
+    if target.extension().is_none_or(|x| x != "tar") {
+        return Err(Error::new(
+            "invalid_path",
+            "The pulled files are written as one .tar archive; name the output FILE.tar",
+        ));
+    }
+    fs::create_dir_all(target.parent().unwrap())?;
+    let request = json!({"go_ios":go,"device":device,"bundle_id":installed,"path":remote,
+        "tar":tc::find("tar")?,"output":target});
+    crate::devices::submit(
+        &format!("Pull files of {installed}"),
+        json!([{"argv":[own_executable()?,"_iphone_app_files",request.to_string()],"artifacts":[target]}]),
+        600,
+        json!({}),
+    )
+}
+
+fn container_refused(bundle: &str, done: &Value) -> Error {
+    Error::new(
+        "app_container_unavailable",
+        format!("The iPhone did not open the container of {bundle}"),
+    )
+    .remedy("iOS opens the container of development builds only, such as one installed by project.run; check the path with action list")
+    .details(json!({"exit_code":done["exit_code"],"output":format!("{}{}", s(done,"stdout"), s(done,"stderr")).chars().take(2000).collect::<String>()}))
+}
+
+/// `_iphone_app_files`: pull a container path into a private directory with
+/// go-ios, pack it as one .tar at output and remove the copy.
+pub fn app_files_worker(request: &str) -> Result<()> {
+    let request: Value = serde_json::from_str(request)?;
+    let target = std::path::PathBuf::from(s(&request, "output"));
+    let staging = home()?
+        .join("iphone-files")
+        .join(uuid::Uuid::new_v4().simple().to_string());
+    private_dir(&staging)?;
+    let result = (|| -> Result {
+        let done = tc::run(
+            &argv(&[
+                s(&request, "go_ios"),
+                "fsync",
+                &format!("--udid={}", udid(s(&request, "device"))?),
+                &format!("--app={}", s(&request, "bundle_id")),
+                "pull",
+                &format!("--srcPath={}", s(&request, "path")),
+                &format!("--dstPath={}", staging.to_string_lossy()),
+            ]),
+            540,
+            None,
+            false,
+        )?;
+        if done["exit_code"] != 0 {
+            return Err(container_refused(s(&request, "bundle_id"), &done));
+        }
+        let partial = target.with_extension("tar.part");
+        tc::run(
+            &argv(&[
+                s(&request, "tar"),
+                "-cf",
+                &partial.to_string_lossy(),
+                "-C",
+                &staging.to_string_lossy(),
+                ".",
+            ]),
+            120,
+            None,
+            true,
+        )?;
+        fs::rename(&partial, &target)?;
+        Ok(json!({"output":target,"bytes":fs::metadata(&target)?.len()}))
+    })();
+    let _ = fs::remove_dir_all(&staging);
+    println!("{}", result?);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn container_paths_and_the_tree_drawing_are_read() {
+        assert_eq!(container_path("").unwrap(), "/");
+        assert_eq!(container_path(".").unwrap(), "/");
+        assert_eq!(container_path("Documents/").unwrap(), "/Documents");
+        assert_eq!(
+            container_path("./Library/Caches").unwrap(),
+            "/Library/Caches"
+        );
+        for bad in ["/etc", "../x", "Documents/../..", "a;b"] {
+            assert!(container_path(bad).is_err(), "{bad}");
+        }
+        let tree = "/\n├── Documents\n│   ├── notes.txt\n│   └── db\n│       └── app.sqlite\n└── Library\n    └── Preferences\n";
+        assert_eq!(
+            tree_paths(tree),
+            [
+                "Documents",
+                "Documents/notes.txt",
+                "Documents/db",
+                "Documents/db/app.sqlite",
+                "Library",
+                "Library/Preferences"
+            ]
+        );
+        assert_eq!(
+            tree_paths("/\n|-- a.txt\n`-- b\n    |-- c\n"),
+            ["a.txt", "b", "b/c"]
+        );
+    }
 
     #[test]
     fn pairing_and_image_answers_are_read() {

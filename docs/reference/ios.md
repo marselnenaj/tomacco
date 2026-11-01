@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-47 operations. Generated from `assets/operations.json`; [all areas](README.md).
+48 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -200,16 +200,37 @@ tomaccoctl call ios.wda_prepare
 
 **Show iPhone apps**
 
-List applications on the USB-connected iPhone with go-ios, including the installed runner bundle identifier.
+List applications on the USB-connected iPhone with go-ios, including the installed runner bundle identifier. apps is go-ios's own listing; installed has one row per app with bundle_id, name, version, build and executable. all also lists Apple's system apps.
 
 Annotations: read-only, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `device` | string | yes |  | non-empty |
+| `all` | boolean |  | `false` | Also list system apps |
 
 ```sh
 tomaccoctl call ios.apps '{"device":"<device>"}'
+```
+
+### ios.app_files
+
+**iPhone app files**
+
+List or pull the files in an iPhone app's container (Documents, Library, tmp) with go-ios fsync. list returns files, each path relative to the container as read from go-ios's tree drawing, and the drawing itself as tree; pull returns a job that writes the path as one .tar archive. iOS opens the container of development builds only, such as one installed by project.run; others answer app_container_unavailable.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; iPhone UDID from device.list |
+| `bundle_id` | string | yes |  | Bundle id as ios.apps lists it; xtool's XTL- prefix may be left out |
+| `action` | string |  | `"list"` | one of `list`, `pull` |
+| `path` | string |  | `"."` | File or directory inside the app's container, relative to it, such as Documents or Library/Preferences |
+| `output` | string |  | `""` | Absolute local path of the .tar archive, for pull |
+
+```sh
+tomaccoctl call ios.app_files '{"device":"<device>","bundle_id":"<bundle_id>"}'
 ```
 
 ### ios.crash_reports

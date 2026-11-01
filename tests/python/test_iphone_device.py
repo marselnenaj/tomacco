@@ -24,6 +24,13 @@ root=Path(os.environ['TOMACCO_TEST_ROOT'])
 with (root/'go-ios.log').open('a') as log: log.write(json.dumps(sys.argv[1:])+'\\n')
 command=sys.argv[1]
 if command=='apps': print('time="x" level=info msg="listing"'); print(json.dumps(%s))
+elif command=='fsync':
+    flags=dict(arg[2:].split('=',1) for arg in sys.argv[2:] if arg.startswith('--') and '=' in arg)
+    if flags.get('app')!='XTL-AB12.dev.example.counter': print('house_arrest refused',file=sys.stderr); sys.exit(1)
+    if 'tree' in sys.argv: print('/Documents'); print('├── notes.txt'); print('└── db'); print('    └── app.sqlite')
+    elif 'pull' in sys.argv:
+        target=Path(flags['dstPath'])/'Documents'; (target/'db').mkdir(parents=True)
+        (target/'notes.txt').write_text('hello'); (target/'db/app.sqlite').write_bytes(b'SQLite')
 elif command=='syslog':
     for line in ['Oct 31 12:00:00 iPhone Counter(UIKitCore)[123] <Notice>: tapped Save',
                  'Oct 31 12:00:01 iPhone SpringBoard[55] <Notice>: tapped Save',
@@ -189,6 +196,59 @@ print({{'ProductVersion':{version!r},'DeviceName':'Test iPhone','DeveloperModeSt
         result = dispatch("ios.device_status", {"device": "00008110-FFFFFFFFFFFFFFFF"})
         self.assertFalse(result["connected"])
         self.assertIn("USB cable", result["next_steps"][0]["step"])
+
+
+class IphoneAppTests(IphoneTools):
+    def test_apps_are_launched_stopped_and_uninstalled_by_their_installed_id(self):
+        self.go_ios()
+        for action, verb in (("launch", "launch"), ("stop", "kill"), ("uninstall", "uninstall")):
+            job = dispatch("device.app", {"platform": "ios", "device": UDID, "bundle_id": "dev.example.counter",
+                                          "action": action})
+            self.assertEqual(jobs.wait(job["id"], 10)["state"], "succeeded", jobs.logs(job["id"]))
+            self.assertEqual(self.calls()[-1], [verb, "XTL-AB12.dev.example.counter", "--udid=" + UDID])
+        with self.assertRaises(StudioError) as refused:
+            dispatch("device.app", {"platform": "ios", "device": UDID, "bundle_id": "dev.example.counter",
+                                    "action": "clear-data"})
+        self.assertEqual(refused.exception.code, "action_unsupported")
+        with self.assertRaises(StudioError) as missing:
+            dispatch("device.app", {"platform": "ios", "device": UDID, "bundle_id": "dev.example.gone"})
+        self.assertEqual(missing.exception.code, "app_not_installed")
+
+    def test_the_inventory_has_one_plain_row_per_app(self):
+        self.go_ios()
+        result = dispatch("ios.apps", {"device": UDID})
+        self.assertEqual(result["apps"], APPS)
+        self.assertEqual(result["installed"][0], {"bundle_id": "XTL-AB12.dev.example.counter", "name": "Counter",
+                                                  "version": "1.2", "build": "7", "executable": "Counter"})
+        dispatch("ios.apps", {"device": UDID, "all": True})
+        self.assertEqual(self.calls()[-1], ["apps", "--udid=" + UDID, "--all"])
+
+    def test_container_files_are_listed_and_pulled_as_one_tar(self):
+        import tarfile
+        self.go_ios()
+        listed = dispatch("ios.app_files", {"device": UDID, "bundle_id": "dev.example.counter", "path": "Documents"})
+        self.assertEqual([row["path"] for row in listed["files"]], ["notes.txt", "db", "db/app.sqlite"])
+        self.assertEqual(self.calls()[-1], ["fsync", "--udid=" + UDID, "--app=XTL-AB12.dev.example.counter", "tree",
+                                            "--path=/Documents"])
+        output = self.root / "out/counter.tar"
+        job = dispatch("ios.app_files", {"device": UDID, "bundle_id": "dev.example.counter", "action": "pull",
+                                         "path": "Documents", "output": str(output)})
+        done = jobs.wait(job["id"], 15)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"]))
+        with tarfile.open(output) as archive:
+            names = sorted(name.lstrip("./") for name in archive.getnames())
+            self.assertIn("Documents/db/app.sqlite", names)
+            self.assertEqual(archive.extractfile("./Documents/notes.txt").read(), b"hello")
+        self.assertFalse(any((self.root / "state/iphone-files").iterdir()))
+        for bad in ("../x", "/etc"):
+            with self.assertRaises(StudioError):
+                dispatch("ios.app_files", {"device": UDID, "bundle_id": "dev.example.counter", "path": bad})
+        with self.assertRaises(StudioError):
+            dispatch("ios.app_files", {"device": UDID, "bundle_id": "dev.example.counter", "action": "pull",
+                                       "output": str(self.root / "x.zip")})
+        with self.assertRaises(StudioError) as refused:
+            dispatch("ios.app_files", {"device": UDID, "bundle_id": "com.apple.Maps"})
+        self.assertEqual(refused.exception.code, "app_container_unavailable")
 
 
 if __name__ == "__main__":

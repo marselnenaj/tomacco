@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 201 operations.
+`tomaccoctl` now has one typed API of 202 operations.
 
 ### Added
 
@@ -35,6 +35,11 @@ operations and their JSON results.
   - `ios.device_status` says in one call whether an iPhone is connected, paired and trusted, unlocked, in
     Developer Mode and has the developer image, with plain `next_steps` naming the operation for each step it
     can do. Before pairing it uses only libimobiledevice's simple connection, so no Trust prompt appears.
+  - `device.app` stops an iPhone app (`go-ios kill`); before, only launch and uninstall worked there. Launch,
+    stop and uninstall go through go-ios and accept the bundle id without xtool's `XTL-` prefix. `ios.apps`
+    adds one plain row per app under `installed`, and `all` for system apps.
+  - `ios.app_files` lists or pulls the files in a development build's container with `go-ios fsync`, the pull
+    as one `.tar` archive, like `android.app_files`.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

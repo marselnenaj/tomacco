@@ -77,7 +77,7 @@ tomaccoctl call device.install '{"platform":"android","device":"<device>","paths
 
 **Control app**
 
-Launch, stop, uninstall or clear application data. iOS supports launch/uninstall through xtool.
+Launch, stop, uninstall or clear application data. On an iPhone, go-ios launches, stops and uninstalls the installed app bundle_id names (xtool's XTL- prefix may be left out); without go-ios, xtool launches and uninstalls. iOS has no clear-data.
 
 Annotations: **destructive**, not idempotent, open world.
 
