@@ -2,7 +2,7 @@
 
 # `profile` operations
 
-3 operations. Generated from `assets/operations.json`; [all areas](README.md).
+8 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### profile.capture
 
@@ -44,19 +44,117 @@ tomaccoctl call profile.analyze '{"path":"<path>","bundle_id":"<bundle_id>"}'
 
 ### profile.compare
 
-**Check performance budget**
+**Compare performance reports**
 
-Compare captured performance reports against explicit limits; unavailable required measurements fail the gate.
+Compare a current performance report with a saved baseline report of the same app and kind (from profile.analyze, profile.startup, profile.frames, profile.memory or profile.usage). changes lists every metric of either report with its baseline and current value, delta and delta_percent (null when a value is missing or the baseline is zero). budgets optionally gate metrics by maximum and increase_percent; an unavailable measurement fails its budget, and without budgets passed stays true. report saves the result as JSON.
 
 Annotations: writes, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `baseline` | string | yes |  |  |
-| `current` | string | yes |  |  |
-| `budgets` | object | yes |  |  |
-| `report` | string |  |  |  |
+| `baseline` | string | yes |  | Absolute path of the saved baseline report |
+| `current` | string | yes |  | Absolute path of the current report |
+| `budgets` | object |  |  | Optional gates per metric: maximum (absolute) and increase_percent (over the baseline) |
+| `report` | string |  |  | Absolute path to save the comparison as JSON |
 
 ```sh
-tomaccoctl call profile.compare '{"baseline":"<baseline>","current":"<current>","budgets":{"<name>":{"maximum":0}}}'
+tomaccoctl call profile.compare '{"baseline":"<baseline>","current":"<current>"}'
+```
+
+### profile.startup
+
+**Measure app startup**
+
+Launch an Android app several times cold, warm or hot with am start -W and report each launch's TotalTime and WaitTime in milliseconds with count, min, max, mean, median and p90. cold stops the app before each launch; warm keeps the process and recreates the activity; hot returns to the running activity from the home screen. Each run lists the launch state Android reported, and mismatched_runs counts launches whose state differs from mode. metrics (startup_&lt;mode&gt;_median_ms and others) feed profile.compare and profile.budget; report saves the result as JSON.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the installed app |
+| `activity` | string |  |  | Activity to start, as package/class, .Class or a class name; the launcher activity by default |
+| `mode` | string |  | `"cold"` | one of `cold`, `warm`, `hot` |
+| `runs` | integer |  | `5` | 1 to 30; Measured launches; warm and hot add one unmeasured launch first |
+| `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
+
+```sh
+tomaccoctl call profile.startup '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### profile.frames
+
+**Measure frame rendering**
+
+Reset a running Android app's frame statistics (dumpsys gfxinfo reset), wait seconds or run a testing.run scenario on the device, then read them: frames rendered, janky frames and jank_percent, slow frames (17 ms or more) and frozen frames (700 ms or more) from the frame time histogram, the 50th, 90th, 95th and 99th percentile frame times, and the per-process counters such as missed vsync and slow UI thread. A process that rendered nothing leaves the metrics null. A failed scenario answers scenario_failed with its steps. report saves the result as JSON.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the running app |
+| `seconds` | integer |  | `5` | 0 to 300; How long to wait between reset and read when no scenario is given; use the app meanwhile |
+| `scenario` | string |  |  | Absolute path of a testing.run scenario JSON to run between reset and read, instead of waiting |
+| `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
+
+```sh
+tomaccoctl call profile.frames '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### profile.memory
+
+**Measure app memory**
+
+Read a running Android app's memory from dumpsys meminfo: per process the App Summary in KB (PSS and RSS for Java heap, native heap, code, stack, graphics and the rest), total PSS, RSS and swap, the size, allocated and free parts of the native and Dalvik heaps, and object counts such as activities and views. metrics sum the processes in MB (memory_pss_mb, memory_rss_mb, java_heap_pss_mb and others). heap_dump also writes an HPROF heap dump of the main process to that path (am dumpheap), which needs a debuggable app or a debuggable system image; convert it with hprof-conv for tools other than Android Studio. report saves the result as JSON.
+
+Annotations: writes, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the running app |
+| `heap_dump` | string |  |  | Absolute path to write an HPROF heap dump of the app's main process |
+| `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
+
+```sh
+tomaccoctl call profile.memory '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### profile.usage
+
+**Measure CPU and battery use**
+
+Measure a running Android app's CPU and battery use over seconds. CPU comes from the user and system time of the app's processes in /proc before and after: cpu_ms, cpu_percent (of one core; above 100 means more than one core) and cpu_device_percent (of all cores), and per process. Battery is the change of the app's UID in batterystats' estimated power use (mAh since the last charge, from the device's power profile), in total and per part such as cpu and sensors; battery names the UID, whether a charger is connected and the level. Nothing on the device is reset. report saves the result as JSON.
+
+Annotations: writes, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the running app |
+| `seconds` | integer |  | `10` | 1 to 600; Length of the interval; use the app meanwhile |
+| `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
+
+```sh
+tomaccoctl call profile.usage '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### profile.budget
+
+**Check performance budget**
+
+Check saved performance reports of one app (from profile.startup, profile.frames, profile.memory, profile.usage or profile.analyze) against a budget: per metric a maximum, a minimum or both, such as {"startup_cold_median_ms":{"maximum":800},"jank_percent":{"maximum":5},"memory_pss_mb":{"maximum":200}}. Give the budget as a JSON file (budget) or inline (budgets). Each result names the metric, its value, its limits, passed and the report it came from; a metric no report measured fails as measurement_unavailable. testing.run takes the same budget for measure steps. report saves the result as JSON.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `reports` | array of string | yes |  | 1 to 20 items; Absolute paths of saved reports; a later report's value of a metric replaces an earlier one |
+| `budget` | string |  |  | Absolute path of a budget JSON file |
+| `budgets` | object |  |  | The budget inline: per metric an object with maximum, minimum or both |
+| `report` | string |  |  | Absolute path to save the result as JSON |
+
+```sh
+tomaccoctl call profile.budget '{"reports":["<report>"]}'
 ```

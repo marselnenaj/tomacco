@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 200 operations.
+`tomaccoctl` now has one typed API of 205 operations.
 
 ### Added
 

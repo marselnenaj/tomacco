@@ -992,6 +992,183 @@ class AndroidControlTests(Isolated):
         self.assertFalse(any(call[:1] == ["push"] for call in self.calls()))
 
 
+    COLD_START = ("Starting: Intent { cmp=dev.test.app/.Main }\nStatus: ok\nLaunchState: COLD\n"
+                  "Activity: dev.test.app/.Main\nTotalTime: 412\nWaitTime: 420\nComplete\n")
+
+    def test_startup_is_measured_over_cold_launches_and_saved_as_a_report(self):
+        self.replies(**{"resolve-activity": "priority=0 preferredOrder=0\ndev.test.app/.Main\n", "am start -W": self.COLD_START})
+        target = self.root / "startup.json"
+        value = dispatch("profile.startup", {"device": "emulator-5554", "bundle_id": "dev.test.app", "runs": 3, "report": str(target)})
+        self.assertEqual((value["mode"], value["component"], value["mismatched_runs"]), ("cold", "dev.test.app/.Main", 0))
+        self.assertEqual(value["metrics"]["startup_cold_median_ms"], 412)
+        self.assertEqual(value["total_ms"]["count"], 3)
+        self.assertEqual(json.loads(target.read_text())["metrics"], value["metrics"])
+        shell = self.shell_calls()
+        self.assertEqual(sum(args[:2] == ["am", "force-stop"] for args in shell), 3)
+        self.assertEqual(sum(args[:3] == ["am", "start", "-W"] for args in shell), 3)
+        # Warm keeps the process: one unmeasured launch, then the activity is recreated.
+        (self.root / "adb-calls.jsonl").unlink()
+        value = dispatch("profile.startup", {"device": "emulator-5554", "bundle_id": "dev.test.app", "mode": "warm", "runs": 1,
+                                             "activity": ".Main"})
+        self.assertEqual(value["mismatched_runs"], 1)
+        shell = self.shell_calls()
+        self.assertFalse(any("force-stop" in args for args in shell))
+        self.assertIn(["am", "start", "-W", "--activity-clear-task", "-n", "dev.test.app/.Main"], shell)
+        self.replies(**{"resolve-activity": "dev.test.app/.Main\n", "am start -W": "Error: Activity class {dev.test.app/.Main} does not exist.\n"})
+        with self.assertRaises(StudioError) as failed:
+            dispatch("profile.startup", {"device": "emulator-5554", "bundle_id": "dev.test.app", "runs": 1})
+        self.assertEqual(failed.exception.code, "launch_failed")
+
+    GFXINFO = ("** Graphics info for pid 3095 [dev.test.app] **\nTotal frames rendered: 80\nJanky frames: 4 (5.00%)\n"
+               "50th percentile: 18ms\n90th percentile: 29ms\n95th percentile: 32ms\n99th percentile: 85ms\n"
+               "Number Missed Vsync: 1\nHISTOGRAM: 16ms=70 17ms=6 85ms=2 700ms=1 4950ms=1\n")
+
+    def test_frames_are_counted_between_a_reset_and_a_read_around_a_scenario(self):
+        self.replies(**{"gfxinfo dev.test.app reset": "", "gfxinfo dev.test.app": self.GFXINFO})
+        scenario = self.root / "scroll.json"
+        scenario.write_text(json.dumps({"name": "Scroll", "steps": [{"action": "swipe", "x": 500, "y": 1800, "end_x": 500, "end_y": 400}]}))
+        target = self.root / "frames.json"
+        value = dispatch("profile.frames", {"device": "emulator-5554", "bundle_id": "dev.test.app", "scenario": str(scenario),
+                                            "report": str(target)})
+        self.assertEqual(value["scenario"], "Scroll")
+        self.assertEqual({k: value["metrics"][k] for k in ("frames_total", "jank_percent", "slow_frames", "frozen_frames", "frame_p90_ms")},
+                         {"frames_total": 80, "jank_percent": 5, "slow_frames": 10, "frozen_frames": 2, "frame_p90_ms": 29})
+        self.assertEqual(value["processes"][0]["counters"]["missed_vsync"], 1)
+        self.assertTrue(target.exists())
+        shell = self.shell_calls()
+        order = [i for i, args in enumerate(shell) if args[:1] in (["dumpsys"], ["input"])]
+        self.assertEqual([shell[i][:2] if shell[i][0] == "input" else shell[i][1:] for i in order],
+                         [["gfxinfo", "dev.test.app", "reset"], ["input", "swipe"], ["gfxinfo", "dev.test.app"]])
+        self.replies(**{"gfxinfo": "No process found for: dev.test.app\n"})
+        with self.assertRaises(StudioError) as stopped:
+            dispatch("profile.frames", {"device": "emulator-5554", "bundle_id": "dev.test.app", "seconds": 0})
+        self.assertEqual(stopped.exception.code, "app_not_running")
+
+    MEMINFO = ("** MEMINFO in pid 3095 [dev.test.app] **\n"
+               "  Dalvik Heap     9747     9648        0        0    16328    15105     7553     7552\n"
+               " App Summary\n                       Pss(KB)                        Rss(KB)\n"
+               "                        ------                         ------\n"
+               "           Java Heap:    11264                          48396\n"
+               "           TOTAL PSS:    61440            TOTAL RSS:   221696      TOTAL SWAP (KB):        0\n"
+               " Objects\n               Views:      164         ViewRootImpl:        1\n"
+               "         AppContexts:        9           Activities:        2\n")
+
+    def test_memory_is_read_from_meminfo_and_a_heap_dump_is_pulled_and_removed(self):
+        self.tool("adb", self.ADB.replace("command=' '.join(a[2:])\n", "command=' '.join(a[2:])\n"
+                                          "if a[2:3]==['pull']: Path(a[-1]).write_bytes(b'JAVA PROFILE 1.0.3\\0'+b'x'*64); sys.exit(0)\n"))
+        self.replies(**{"dumpsys meminfo dev.test.app": self.MEMINFO, "am dumpheap": "File: x\nWaiting for dump to finish...\n"})
+        dump = self.root / "app.hprof"
+        value = dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app", "heap_dump": str(dump)})
+        self.assertEqual((value["metrics"]["memory_pss_mb"], value["metrics"]["java_heap_pss_mb"], value["metrics"]["activities"]), (60, 11, 2))
+        self.assertEqual(value["processes"][0]["heaps"]["dalvik"]["allocated"], 7553)
+        self.assertEqual(value["heap_dump"]["path"], str(dump))
+        remote = next(args[3] for args in self.shell_calls() if args[:2] == ["am", "dumpheap"])
+        self.assertIn(["rm", "-f", remote], self.shell_calls())
+        self.replies(**{"dumpsys meminfo": self.MEMINFO, "am dumpheap": "java.lang.SecurityException: Process not debuggable\n"})
+        with self.assertRaises(StudioError) as refused:
+            dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app", "heap_dump": str(dump)})
+        self.assertEqual(refused.exception.code, "heap_dump_failed")
+        self.replies(**{"dumpsys meminfo": "No process found for: dev.test.app\n"})
+        with self.assertRaises(StudioError) as stopped:
+            dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app"})
+        self.assertEqual(stopped.exception.code, "app_not_running")
+
+    def test_cpu_and_battery_use_are_the_change_over_the_interval(self):
+        # Each read of /proc and of batterystats answers the next sample.
+        samples = {"/proc/stat": ["100\ncpu  1000 0 1000 8000 0 0 0 0\n3095 (dev.test.app) S 1 1 0 0 -1 0 0 0 0 0 100 50 0 0\n",
+                                  "100\ncpu  1100 0 1100 8800 0 0 0 0\n3095 (dev.test.app) S 1 1 0 0 -1 0 0 0 0 0 150 60 0 0\n"],
+                   "batterystats": ["  UID u0a200: 0.010\n      cpu=0.010\n", "  UID u0a200: 0.025\n      cpu=0.020 wakelock=0.005\n"]}
+        (self.root / "samples.json").write_text(json.dumps(samples))
+        self.tool("adb", self.ADB.replace("command=' '.join(a[2:])\n", "command=' '.join(a[2:])\n"
+                                          "for key,answers in json.loads((root/'samples.json').read_text()).items():\n"
+                                          "    if key in command:\n"
+                                          "        counter=root/('count-'+key.strip('/').replace('/','-'))\n"
+                                          "        n=int(counter.read_text()) if counter.exists() else 0\n"
+                                          "        counter.write_text(str(n+1)); print(answers[min(n,len(answers)-1)],end=''); sys.exit(0)\n"))
+        self.replies(**{"list packages -U": "package:dev.test.app uid:10200\n", "ps -A": "  PID NAME\n 3095 dev.test.app\n 3300 dev.test.application\n",
+                        "dumpsys battery": "  AC powered: false\n  USB powered: false\n  level: 81\n"})
+        value = dispatch("profile.usage", {"device": "emulator-5554", "bundle_id": "dev.test.app", "seconds": 1})
+        self.assertEqual(value["metrics"]["cpu_ms"], 600)
+        self.assertEqual(value["metrics"]["cpu_device_percent"], 6)
+        self.assertAlmostEqual(value["metrics"]["power_mah"], 0.015)
+        self.assertAlmostEqual(value["battery"]["parts_mah"]["wakelock"], 0.005)
+        self.assertEqual((value["battery"]["uid"], value["battery"]["charging"], value["battery"]["level"]), (10200, False, 81))
+        self.assertEqual([p["pid"] for p in value["processes"]], [3095])
+        self.assertGreater(value["metrics"]["cpu_percent"], 0)
+        self.replies(**{"list packages -U": ""})
+        with self.assertRaises(StudioError) as missing:
+            dispatch("profile.usage", {"device": "emulator-5554", "bundle_id": "dev.test.app", "seconds": 1})
+        self.assertEqual(missing.exception.code, "app_not_installed")
+
+    def test_saved_reports_are_checked_against_a_budget_file_or_inline(self):
+        startup, memory = self.root / "startup.json", self.root / "memory.json"
+        startup.write_text(json.dumps({"bundle_id": "dev.test.app", "metrics": {"startup_cold_median_ms": 640, "startup_cold_p90_ms": 910}}))
+        memory.write_text(json.dumps({"bundle_id": "dev.test.app", "metrics": {"memory_pss_mb": 180.5}}))
+        budget = self.root / "budget.json"
+        budget.write_text(json.dumps({"startup_cold_median_ms": {"maximum": 800}, "memory_pss_mb": {"maximum": 200}}))
+        target = self.root / "verdict.json"
+        value = dispatch("profile.budget", {"reports": [str(startup), str(memory)], "budget": str(budget), "report": str(target)})
+        self.assertTrue(value["passed"])
+        self.assertEqual([(r["metric"], r["value"], r["report"]) for r in value["results"]],
+                         [("startup_cold_median_ms", 640, str(startup)), ("memory_pss_mb", 180.5, str(memory))])
+        self.assertTrue(json.loads(target.read_text())["passed"])
+        value = dispatch("profile.budget", {"reports": [str(startup)], "budgets": {"startup_cold_p90_ms": {"maximum": 900},
+                                                                                   "jank_percent": {"maximum": 5}}})
+        self.assertFalse(value["passed"])
+        self.assertEqual([(r["passed"], r.get("reason")) for r in value["results"]], [(False, None), (False, "measurement_unavailable")])
+        for arguments in ({"reports": [str(startup)]}, {"reports": [str(startup)], "budget": str(budget), "budgets": {"x": {"maximum": 1}}}):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("profile.budget", arguments)
+            self.assertEqual(refused.exception.code, "invalid_argument")
+        memory.write_text(json.dumps({"bundle_id": "dev.other.app", "metrics": {}}))
+        with self.assertRaises(StudioError) as mismatch:
+            dispatch("profile.budget", {"reports": [str(startup), str(memory)], "budget": str(budget)})
+        self.assertEqual(mismatch.exception.code, "profile_mismatch")
+
+    def test_a_measurement_is_compared_with_a_saved_baseline(self):
+        self.replies(**{"dumpsys meminfo dev.test.app": self.MEMINFO})
+        baseline, current = self.root / "baseline.json", self.root / "current.json"
+        dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app", "report": str(baseline)})
+        self.replies(**{"dumpsys meminfo dev.test.app": self.MEMINFO.replace("61440", "67584")})
+        dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app", "report": str(current)})
+        value = dispatch("profile.compare", {"baseline": str(baseline), "current": str(current)})
+        self.assertTrue(value["passed"])
+        change = next(c for c in value["changes"] if c["metric"] == "memory_pss_mb")
+        self.assertEqual((change["baseline"], change["current"], change["delta"], change["delta_percent"]), (60, 66, 6, 10))
+        value = dispatch("profile.compare", {"baseline": str(baseline), "current": str(current),
+                                             "budgets": {"memory_pss_mb": {"increase_percent": 5}}})
+        self.assertEqual((value["passed"], value["results"][0]["increase_percent"]), (False, 10))
+        startup = self.root / "startup.json"
+        startup.write_text(json.dumps({"bundle_id": "dev.test.app", "kind": "startup", "metrics": {}}))
+        with self.assertRaises(StudioError) as mismatch:
+            dispatch("profile.compare", {"baseline": str(startup), "current": str(current)})
+        self.assertEqual(mismatch.exception.code, "profile_mismatch")
+
+    def test_a_scenario_measures_the_app_and_fails_outside_its_budget(self):
+        self.replies(**{"resolve-activity": "dev.test.app/.Main\n", "am start -W": self.COLD_START,
+                        "gfxinfo dev.test.app reset": "", "gfxinfo dev.test.app": self.GFXINFO})
+        scenario = self.root / "scroll.json"
+        steps = [{"action": "measure", "measure": "startup", "bundle_id": "dev.test.app", "runs": 1,
+                  "budget": {"startup_cold_median_ms": {"maximum": 500}}},
+                 {"action": "measure", "measure": "frames_reset", "bundle_id": "dev.test.app"},
+                 {"action": "swipe", "x": 500, "y": 1800, "end_x": 500, "end_y": 400},
+                 {"action": "measure", "measure": "frames", "bundle_id": "dev.test.app"}]
+        scenario.write_text(json.dumps({"name": "Scroll", "steps": steps}))
+        budget = self.root / "budget.json"
+        budget.write_text(json.dumps({"jank_percent": {"maximum": 10}, "frames_total": {"minimum": 60}}))
+        run = lambda directory, **extra: jobs.wait(dispatch("testing.run", {"path": str(scenario), "directory": str(self.root / directory),
+                                                                            "devices": ["emulator-5554"], **extra})["id"], 60 * PATIENCE)
+        self.assertEqual(run("within", budget=str(budget))["state"], "succeeded")
+        result = json.loads((self.root / "within/report.json").read_text())["results"][0]
+        self.assertEqual((result["metrics"]["startup_cold_median_ms"], result["metrics"]["jank_percent"]), (412, 5))
+        self.assertTrue(result["budget"]["passed"])
+        self.assertTrue(result["steps"][0]["result"]["budget"][0]["passed"])
+        # The scenario's budget fails the run; the step's own budget passed.
+        self.assertEqual(run("outside", budgets={"jank_percent": {"maximum": 2}})["state"], "failed")
+        result = json.loads((self.root / "outside/report.json").read_text())["results"][0]
+        self.assertEqual((result["passed"], result["error"]["code"]), (False, "budget_exceeded"))
+        self.assertEqual([r["metric"] for r in result["budget"]["results"] if not r["passed"]], ["jank_percent"])
+
     def test_app_logs_follow_the_user_id_from_android_12_and_the_pid_before(self):
         self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": "package:dev.test.app.extra uid:10201\npackage:dev.test.app uid:10200\n"})
         job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1})

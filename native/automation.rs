@@ -215,15 +215,16 @@ pub fn action(a: &Value) -> Result {
 }
 fn step_schema() -> Value {
     json!({"type":"object","additionalProperties":false,"required":["action"],"properties":{
-    "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot","tap","swipe","text","pause","assert_screen","wait_screen"]},"selector":selector_schema(),
+    "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot","tap","swipe","text","pause","assert_screen","wait_screen","measure"]},"selector":selector_schema(),
     "baseline":{"type":"string","minLength":1},"threshold":{"type":"number","minimum":0,"maximum":1},"tolerance":{"type":"integer","minimum":0,"maximum":255},
+    "measure":{"type":"string","enum":["startup","frames_reset","frames","memory","usage"]},"mode":{"type":"string","enum":["cold","warm","hot"]},"runs":{"type":"integer","minimum":1,"maximum":30},"seconds":{"type":"integer","minimum":1,"maximum":600},"activity":{"type":"string"},"budget":crate::perf::budget_schema(),
     "x":{"type":"integer","minimum":0,"maximum":16384},"y":{"type":"integer","minimum":0,"maximum":16384},"end_x":{"type":"integer","minimum":0,"maximum":16384},"end_y":{"type":"integer","minimum":0,"maximum":16384},"duration":{"type":"integer","minimum":1,"maximum":10000},"state":{"type":"string","enum":["present","absent"]},"text":{"type":"string"},"key":{"type":"string"},"bundle_id":{"type":"string"},"label":{"type":"string","maxLength":150},"timeout":{"type":"integer","minimum":0,"maximum":60}}})
 }
 /// A scenario's shape and each step's required fields.
 pub fn check_scenario(scenario: &Value) -> Result<()> {
     validate(
         scenario,
-        &json!({"type":"object","additionalProperties":false,"required":["name","steps"],"properties":{"name":{"type":"string","minLength":1,"maxLength":150},"retries":{"type":"integer","minimum":0,"maximum":5},"steps":{"type":"array","minItems":1,"maxItems":500,"items":step_schema()}}}),
+        &json!({"type":"object","additionalProperties":false,"required":["name","steps"],"properties":{"name":{"type":"string","minLength":1,"maxLength":150},"retries":{"type":"integer","minimum":0,"maximum":5},"budget":crate::perf::budget_schema(),"steps":{"type":"array","minItems":1,"maxItems":500,"items":step_schema()}}}),
         "scenario",
     )?;
     for step in scenario["steps"].as_array().unwrap() {
@@ -236,6 +237,15 @@ pub fn check_scenario(scenario: &Value) -> Result<()> {
             }
             "launch" | "stop" | "clear" => {
                 identifier(s(step, "bundle_id"), "application ID", None)?;
+            }
+            "measure" => {
+                identifier(s(step, "bundle_id"), "application ID", None)?;
+                if step.get("measure").is_none() {
+                    return Err(Error::new(
+                        "invalid_argument",
+                        "A measure step requires measure",
+                    ));
+                }
             }
             "tap" | "swipe" => {
                 let keys: &[&str] = if s(step, "action") == "tap" {
@@ -319,6 +329,15 @@ pub fn run(a: &Value) -> Result {
     } else {
         s(&scenarios[0], "name").to_string()
     };
+    let mut scenarios = scenarios;
+    if let Some(budget) = crate::perf::budget_argument(a)? {
+        // The run's budget applies to each scenario without its own.
+        for scenario in &mut scenarios {
+            if scenario.get("budget").is_none() {
+                scenario["budget"] = budget.clone();
+            }
+        }
+    }
     let devices = strings(&a["devices"]);
     let unique: std::collections::HashSet<_> = devices.iter().collect();
     if unique.len() != devices.len() {
@@ -769,7 +788,7 @@ pub(crate) fn screen_step(
         thread::sleep(Duration::from_millis(500));
     }
 }
-fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Value {
+pub fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Value {
     if ui_testing::is_virtual(device) {
         return match device_lock(device) {
             Ok(_lock) => ui_testing::run_device(
@@ -787,6 +806,10 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
     // The emulator shares this computer's clock; a second of margin.
     let since = now() - 1.0;
     let mut steps = Vec::new();
+    // The metrics of the scenario's measure steps; a later one replaces an
+    // earlier value.
+    let mut metrics = serde_json::Map::new();
+    let mut budget = Value::Null;
     let result = (|| -> Result<()> {
         let _lock = device_lock(device)?;
         for (index, step) in scenario["steps"].as_array().unwrap().iter().enumerate() {
@@ -842,6 +865,20 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
                         &directory.join(format!("{tag}-{index:03}-diff.png")),
                         |path| screenshot(device, path).map(|_| ()),
                     ),
+                    "measure" => {
+                        let mut report = crate::perf::measure(device, step)?;
+                        let values = report["metrics"].as_object().cloned().unwrap_or_default();
+                        metrics.extend(values.clone());
+                        if step.get("budget").is_some() {
+                            let (passed, results) =
+                                crate::perf::check_budget(&step["budget"], &values);
+                            if !passed {
+                                return Err(crate::perf::budget_error(&results));
+                            }
+                            report["budget"] = json!(results);
+                        }
+                        Ok(report)
+                    }
                     _ => Err(Error::new("invalid_step", "Unknown scenario action")),
                 }
             })();
@@ -854,6 +891,13 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
                 return Err(error);
             }
         }
+        if scenario.get("budget").is_some() {
+            let (passed, results) = crate::perf::check_budget(&scenario["budget"], &metrics);
+            budget = json!({"passed":passed,"results":results});
+            if !passed {
+                return Err(crate::perf::budget_error(&results));
+            }
+        }
         Ok(())
     })();
     let (crashes, crashes_error) = match crate::crashes::on_device(device, "", since) {
@@ -864,7 +908,7 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
         Some(error) => Err(error),
         None => Ok(()),
     });
-    json!({"device":device,"passed":result.is_ok(),"duration_seconds":started.elapsed().as_secs_f64(),"steps":steps,"error":result.err().map(|e|e.value()),"crashes":crashes,"crashes_error":crashes_error})
+    json!({"device":device,"passed":result.is_ok(),"duration_seconds":started.elapsed().as_secs_f64(),"steps":steps,"error":result.err().map(|e|e.value()),"crashes":crashes,"crashes_error":crashes_error,"metrics":metrics,"budget":budget})
 }
 fn screenshot(device: &str, path: &Path) -> Result {
     let mut command = devices::adb(device)?;
@@ -960,6 +1004,34 @@ mod tests {
         let error = crate::crashes::crashes(&json!({"device":"emulator-5554","process":"MyApp"}))
             .unwrap_err();
         assert_eq!(error.code, "invalid_argument");
+    }
+    #[test]
+    fn measure_steps_and_budgets_are_checked() {
+        let measure = json!({"action":"measure","measure":"startup","bundle_id":"dev.example.app","mode":"cold","runs":3,
+                             "budget":{"startup_cold_median_ms":{"maximum":800}}});
+        let mut scenario =
+            json!({"name":"x","steps":[measure],"budget":{"jank_percent":{"maximum":5}}});
+        check_scenario(&scenario).unwrap();
+        for (key, bad) in [
+            ("measure", json!("battery")),
+            ("budget", json!({"jank_percent":5})),
+            ("mode", json!("lukewarm")),
+        ] {
+            let mut broken = scenario.clone();
+            broken["steps"][0][key] = bad;
+            assert!(check_scenario(&broken).is_err(), "{key}");
+        }
+        scenario["steps"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("measure");
+        assert_eq!(
+            check_scenario(&scenario).unwrap_err().message,
+            "A measure step requires measure"
+        );
+        scenario["steps"][0]["measure"] = json!("memory");
+        scenario["steps"][0]["bundle_id"] = json!("");
+        assert!(check_scenario(&scenario).is_err());
     }
     #[test]
     fn lint_reports_missing_ambiguous_and_disabled_elements_and_bad_points() {

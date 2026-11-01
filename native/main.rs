@@ -31,6 +31,7 @@ mod jdwp;
 mod jobs;
 mod mcp;
 mod package_updates;
+mod perf;
 mod play_store;
 mod preview;
 mod product;

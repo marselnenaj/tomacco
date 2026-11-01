@@ -738,6 +738,106 @@ failure (`flaky`) has been seen only with a stand-in adb in the tests.
 `profile.capture` records Android Perfetto traces. Configure the official `trace_processor`, then use `profile.analyze` and `profile.compare`. Metrics that are
 not available are null, not zero. A count of frames with jank tags is not the same as visible drops.
 
+### App performance
+
+These operations read Android's own counters, without Perfetto. Each returns a report with flat `metrics`; give `report` an
+absolute path to save it as JSON.
+
+`profile.startup` launches an app `runs` times (5 by default) with `am start -W` and reports TotalTime and WaitTime in
+milliseconds: every run, and their count, min, max, mean, median and p90 (nearest rank). `mode` `cold` stops the app before each
+launch, `warm` keeps the process and recreates the activity (`--activity-clear-task`), and `hot` brings the running activity back
+from the home screen; warm and hot start the app once first, unmeasured. Each run names the launch state Android reported, and
+`mismatched_runs` counts the runs whose state differs from `mode`. The metrics are `startup_<mode>_median_ms`, `_p90_ms`, `_min_ms`,
+`_max_ms` and `_mean_ms`. `activity` picks another activity than the launcher's.
+
+```sh
+tomaccoctl call profile.startup '{"device":"emulator-5554","bundle_id":"com.android.settings","mode":"cold","runs":5}'
+```
+
+On an API 36 x86_64 emulator, five runs each of the Settings app reported COLD, WARM and HOT for every run of the matching mode.
+
+`profile.frames` resets a running app's frame statistics (`dumpsys gfxinfo reset`), waits `seconds` (5 by default) or runs a
+`testing.run` scenario given as `scenario`, and reads them again. The metrics are `frames_total`, `janky_frames`, `jank_percent`,
+`slow_frames` (17 ms or more) and `frozen_frames` (700 ms or more), both counted from the frame time histogram, and
+`frame_p50_ms`, `frame_p90_ms`, `frame_p95_ms` and `frame_p99_ms` as dumpsys gives them for the app's main process. `processes`
+keeps each process's counters, such as `missed_vsync` and `slow_ui_thread`. An app that drew nothing in that time has null metrics,
+not zero; an app that is not running answers `app_not_running`, and a failed scenario `scenario_failed` with its steps.
+
+```sh
+tomaccoctl call profile.frames '{"device":"emulator-5554","bundle_id":"com.android.settings","scenario":"/absolute/scroll.json"}'
+```
+
+On the same emulator, a scenario of three swipes in Settings gave 94 frames, 2 of them janky.
+
+`profile.memory` reads a running app's `dumpsys meminfo`. Each process in `processes` has the App Summary in KB (PSS and RSS of the
+Java heap, native heap, code, stack, graphics and the rest), `total_pss`, `total_rss` and `total_swap`, the size, allocated and free
+parts of the native and Dalvik heaps, and object counts such as `activities` and `views`. The metrics add the processes up in MB:
+`memory_pss_mb`, `memory_rss_mb`, `java_heap_pss_mb`, `native_heap_pss_mb`, `code_pss_mb`, `stack_pss_mb` and `graphics_pss_mb`,
+and the `activities` and `views` counts. With `heap_dump`, it also writes an HPROF heap dump of the main process there, through a
+file on the device that is removed afterwards. That needs a debuggable app or a debuggable system image, otherwise it answers
+`heap_dump_failed`; Android Studio opens the file, other tools after `hprof-conv` from the platform tools.
+
+```sh
+tomaccoctl call profile.memory '{"device":"emulator-5554","bundle_id":"com.android.settings","heap_dump":"/absolute/settings.hprof"}'
+```
+
+On the same emulator, Settings used 54 MB PSS, and its heap dump was a 47 MB HPROF file.
+
+`profile.usage` measures a running app over `seconds` (10 by default). CPU is the user and system time of the app's processes in
+`/proc` before and after: `cpu_ms`, `cpu_percent` of one core (above 100 when it used more than one) and `cpu_device_percent` of all
+cores, also per process in `processes`. Battery is the change of the app's UID in batterystats' estimated power use, in mAh, in total
+(`power_mah`) and per part such as `cpu` or `sensors`. That estimate comes from the device's power profile, which on an emulator is not
+a real phone's; `battery` also says which UID it is (system apps share one), whether a charger is connected, and the level. Nothing on
+the device is reset.
+
+```sh
+tomaccoctl call profile.usage '{"device":"emulator-5554","bundle_id":"com.android.settings","seconds":5}'
+```
+
+On the same emulator, Settings scrolled for five seconds used 1790 ms of CPU, 35 % of one core.
+
+**Budgets.** A budget gives metrics a `maximum`, a `minimum` or both:
+
+```json
+{"startup_cold_median_ms": {"maximum": 800}, "jank_percent": {"maximum": 5}, "memory_pss_mb": {"maximum": 200}}
+```
+
+`profile.budget` checks saved reports of one app against it, given as a file (`budget`) or inline (`budgets`). Each result has the
+metric, its value and limits, `passed`, and the report it came from; a metric no report measured fails as `measurement_unavailable`.
+
+```sh
+tomaccoctl call profile.budget '{"reports":["/absolute/startup.json","/absolute/memory.json"],"budget":"/absolute/budget.json"}'
+```
+
+In a `testing.run` scenario, a `measure` step records metrics of the app named by `bundle_id`: `measure` is `startup` (with `mode`,
+`runs` and `activity`), `frames_reset` and later `frames`, `memory`, or `usage` (with `seconds`). A step's own `budget` is checked
+against that step's metrics, and a scenario's `budget`, or the run's `budget` file or inline `budgets`, against all the metrics of the
+scenario. A metric outside fails the scenario as `budget_exceeded`; each result in `report.json` carries its `metrics` and `budget`.
+
+```json
+{"name": "Settings performance",
+ "budget": {"startup_cold_median_ms": {"maximum": 2000}, "jank_percent": {"maximum": 20}},
+ "steps": [
+  {"action": "measure", "measure": "startup", "bundle_id": "com.android.settings", "runs": 3},
+  {"action": "measure", "measure": "frames_reset", "bundle_id": "com.android.settings"},
+  {"action": "swipe", "x": 500, "y": 1800, "end_x": 500, "end_y": 400},
+  {"action": "measure", "measure": "frames", "bundle_id": "com.android.settings"}]}
+```
+
+On the same emulator, a `testing.run` of such a scenario with a memory step passed its budget, and `profile.budget` failed a saved
+startup report of 303 ms against a maximum of 300.
+
+**Baselines.** Save a report as the baseline, measure again later, and `profile.compare` lists under `changes` every metric of either
+report with its `baseline` and `current` value, `delta` and `delta_percent`. Both reports must be of the same app and kind. `budgets`
+are optional here: a `maximum` or an `increase_percent` over the baseline fails the comparison, and without budgets `passed` stays true.
+
+```sh
+tomaccoctl call profile.compare '{"baseline":"/absolute/startup-baseline.json","current":"/absolute/startup.json","budgets":{"startup_cold_median_ms":{"increase_percent":25}}}'
+```
+
+On the same emulator, two cold startup reports of three runs each differed by 226 ms in their median (303 and 529 ms), which failed an
+`increase_percent` of 25: an emulator's launch times vary that much between runs, so compare medians of more runs on a quiet host.
+
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.

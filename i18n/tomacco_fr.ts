@@ -3499,6 +3499,26 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Vérifier le budget de performances</translation>
     </message>
     <message>
+        <source>Compare performance reports</source>
+        <translation>Comparer des rapports de performances</translation>
+    </message>
+    <message>
+        <source>Measure app startup</source>
+        <translation>Mesurer le démarrage de l'app</translation>
+    </message>
+    <message>
+        <source>Measure frame rendering</source>
+        <translation>Mesurer le rendu des images</translation>
+    </message>
+    <message>
+        <source>Measure app memory</source>
+        <translation>Mesurer la mémoire de l'app</translation>
+    </message>
+    <message>
+        <source>Measure CPU and battery use</source>
+        <translation>Mesurer l'usage CPU et batterie</translation>
+    </message>
+    <message>
         <source>Check toolchain</source>
         <translation>Vérifier la chaîne d'outils</translation>
     </message>
