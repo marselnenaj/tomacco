@@ -79,13 +79,17 @@ fn identity(report: &Value, filter: &str, remaining: &mut usize) -> Value {
         return result;
     }
     let Some(process) = body["procName"].as_str().filter(|process| {
-        let own = format!("{process}-");
+        // The name's stem: the process, or a report kind and the process
+        // (`ExcUserFault_chronod-<date>.ips` on a live phone).
+        let Some(stem) = report["name"]
+            .as_str()
+            .and_then(|name| report_stem(name, process))
+        else {
+            return false;
+        };
         crash_report_filter_valid(process)
             && header["app_name"].as_str() == Some(process)
-            && report["name"]
-                .as_str()
-                .is_some_and(|name| name.starts_with(&own))
-            && (process.starts_with(filter) || filter.starts_with(&own))
+            && (stem.starts_with(filter) || filter.starts_with(&format!("{stem}-")))
     }) else {
         result["state"] = json!("process-mismatch");
         return result;
@@ -97,6 +101,19 @@ fn identity(report: &Value, filter: &str, remaining: &mut usize) -> Value {
     result["capture_time"] = text_field(&body, "captureTime", 128);
     result["incident_id"] = text_field(&header, "incident_id", 128);
     result
+}
+
+/// The part of a report's file name before its date: `PROCESS` when the name
+/// is `PROCESS-…`, or `KIND_PROCESS` when it is `KIND_PROCESS-…` with a kind of
+/// ASCII letters, as iOS names the reports of faults and resource limits.
+pub(crate) fn report_stem<'a>(name: &'a str, process: &str) -> Option<&'a str> {
+    let own = format!("{process}-");
+    if name.starts_with(&own) {
+        return Some(&name[..process.len()]);
+    }
+    let (kind, rest) = name.split_once('_')?;
+    (!kind.is_empty() && kind.bytes().all(|c| c.is_ascii_alphabetic()) && rest.starts_with(&own))
+        .then(|| &name[..kind.len() + 1 + process.len()])
 }
 
 pub(super) fn project(response: &Value) -> Value {
@@ -400,6 +417,40 @@ mod tests {
             assert_eq!(identity["pid"], Value::Null, "{filter:?} {name}");
             assert_eq!(identity["process"], Value::Null, "{filter:?} {name}");
         }
+        // A fault report is named with its kind before the process, as a
+        // live phone's `ExcUserFault_chronod-<date>.ips`.
+        let fault = "ExcUserFault_exampled-2026-10-09-024105.ips";
+        for filter in [
+            "ExcUserFault",
+            "ExcUserFault_example",
+            "ExcUserFault_exampled-2026",
+        ] {
+            let row = project(&json!({"ok":true,"process":filter,
+                "reports":[item("exampled", "exampled", fault)]}));
+            let identity = &row["identities"][0];
+            assert_eq!(identity["state"], "parsed", "{filter:?}");
+            assert_eq!(identity["process"], "exampled", "{filter:?}");
+            assert_eq!(identity["pid"], 353, "{filter:?}");
+        }
+        for (filter, name) in [
+            // The kind belongs to the name, not to another filter.
+            ("Exc", "Exc1_exampled-2026-10-09-024105.ips"),
+            ("ExcUserFault", "ExcUserFault_otherd-2026-10-09-024105.ips"),
+            ("ExcUserFaultX", fault),
+        ] {
+            let row = project(&json!({"ok":true,"process":filter,
+                "reports":[item("exampled", "exampled", name)]}));
+            assert_eq!(
+                row["identities"][0]["state"], "process-mismatch",
+                "{filter:?} {name}"
+            );
+        }
+        assert_eq!(
+            report_stem(fault, "exampled"),
+            Some("ExcUserFault_exampled")
+        );
+        assert_eq!(report_stem("exampled-1.ips", "exampled"), Some("exampled"));
+        assert_eq!(report_stem("_exampled-1.ips", "exampled"), None);
         // A report without its file name supplies no identity either.
         let mut unnamed = item("TomaccoProbe", "TomaccoProbe", probe);
         unnamed["name"] = Value::Null;
