@@ -94,7 +94,9 @@ rollback and uninstall, see [installing](docs/building.md#installing).
 
 ## For agents
 
-`tomaccoctl setup` connects Claude Code and Codex for you. To do it by hand:
+`tomaccoctl setup` connects Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed and OpenCode, asking
+first for each; [connect a client](docs/agents.md#connect-a-client) says which file it changes for each.
+To connect Claude Code or Codex by hand:
 
 ```sh
 codex mcp add tomacco -- "$(command -v tomaccoctl)" mcp

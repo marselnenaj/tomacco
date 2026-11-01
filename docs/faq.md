@@ -77,12 +77,9 @@ device is not available. See [how it works](virtual-ios/how-it-works.md).
 ## How do coding agents connect?
 
 `tomaccoctl mcp` is a local MCP server over standard input and output, with no network
-port and no token. `tomaccoctl setup` registers it with Claude Code and Codex; by hand:
-
-```sh
-claude mcp add --transport stdio --scope user tomacco -- "$(command -v tomaccoctl)" mcp
-codex mcp add tomacco -- "$(command -v tomaccoctl)" mcp
-```
+port and no token. `tomaccoctl setup` registers it with Claude Code, Codex, Gemini CLI, Cursor,
+VS Code, Zed and OpenCode, asking first for each. [Connect a client](agents.md#connect-a-client)
+has the commands to do it by hand and says what was tested.
 
 Any stdio MCP client can use the same tools. Without MCP, an agent runs
 `tomaccoctl call OPERATION '{...}'`, which prints one JSON result, and `tomaccoctl schema`
