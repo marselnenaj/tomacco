@@ -252,6 +252,10 @@ tomaccoctl call project.watch '{"path":"/absolute/NewApp","platform":"android","
 tomaccoctl call job.logs '{"job_id":"WATCH_JOB_ID"}'
 ```
 
+A Flutter session from `project.run` takes `job.send` with `reload` (Hot Reload), `restart` (Hot Restart) or `quit`, and while it
+runs `job.get` shows its Dart VM service and, when Flutter serves them, DevTools URIs under `result.flutter`. A React Native or Expo
+debug run takes `reload` through Metro's `/reload` endpoint. See [Android](android.md#flutter).
+
 Then look: `device.capture` for evidence, `android.hierarchy` for the UI tree, and assert the app's state
 after each action. Prefer `testing.find` and `testing.action` over coordinates when the app exposes
 accessible controls.

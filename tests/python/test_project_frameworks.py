@@ -67,6 +67,7 @@ class FrameworkTests(Isolated):
         self.assertEqual(steps[0]["argv"][-2:], ["--console=plain", ":app:installDebug"])
         self.assertEqual(steps[1]["argv"][1], "_serve_then")
         self.assertTrue(steps[1]["interactive"])
+        self.assertEqual(steps[1]["metro_port"], 8081)
         serve = json.loads(steps[1]["argv"][2])
         self.assertEqual(serve["serve"][1:], ["react-native", "start", "--port", "8081"])
         self.assertEqual(serve["then"][0][1:], ["-s", "emulator-5554", "reverse", "tcp:8081", "tcp:8081"])
@@ -111,11 +112,52 @@ class FrameworkTests(Isolated):
         self.assertEqual(step["argv"][1:], ["expo", "run:android", "--device", "emulator-5554"])
         self.assertTrue(step["interactive"])
         self.assertEqual(job["plan"]["env"]["ANDROID_SERIAL"], "emulator-5554")
+        self.assertEqual(step["metro_port"], 8081)
         jobs.cancel(job["id"])
         jobs.wait(job["id"], 10)
         release = dispatch("project.run", {**args, "configuration": "release"})
         self.assertEqual(release["plan"]["steps"][0]["argv"][5:], ["--variant", "release", "--no-bundler"])
         self.assertFalse(release["plan"]["steps"][0]["interactive"])
+
+    def test_job_send_reloads_a_metro_session_through_its_reload_endpoint(self):
+        import threading
+        import time
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        from host_patience import PATIENCE
+        requests = []
+
+        class Metro(BaseHTTPRequestHandler):
+            def do_POST(self):
+                requests.append(self.path)
+                self.send_response(200 if self.path == "/reload" else 404)
+                self.send_header("Content-Length", "2")
+                self.end_headers()
+                self.wfile.write(b"OK")
+
+            def log_message(self, *args):
+                pass
+
+        server = HTTPServer(("127.0.0.1", 0), Metro)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.shutdown)
+        port = server.server_address[1]
+        job = self.submit([{"argv": [sys.executable, "-c", "import time;time.sleep(30)"], "interactive": True, "metro_port": port}], timeout=60)
+        deadline = time.monotonic() + 10 * PATIENCE
+        while jobs.get(job["id"])["state"] != "running":
+            self.assertLess(time.monotonic(), deadline)
+            time.sleep(.05)
+        sent = dispatch("job.send", {"job_id": job["id"], "command": "reload"})
+        self.assertEqual((sent["via"], sent["status"]), ("metro", 200))
+        dispatch("job.send", {"job_id": job["id"], "command": "restart"})
+        self.assertEqual(requests, ["/reload", "/reload"])
+        with self.assertRaises(StudioError) as refused:
+            dispatch("job.send", {"job_id": job["id"], "command": "quit"})
+        self.assertEqual(refused.exception.code, "invalid_argument")
+        server.shutdown()
+        server.server_close()
+        with self.assertRaises(StudioError) as refused:
+            dispatch("job.send", {"job_id": job["id"], "command": "reload"})
+        self.assertEqual(refused.exception.code, "metro_unreachable")
 
     def test_capacitor_builds_syncs_installs_and_launches(self):
         log = self.root / "calls.log"

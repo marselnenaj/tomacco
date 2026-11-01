@@ -114,7 +114,7 @@ tomaccoctl call job.cancel '{"job_id":"<job_id>"}'
 
 **Send a command to a job**
 
-Send reload, restart or quit to a running Flutter session, or stop to a running recording (android.record, ios.virtual.record): it ends early and keeps the video recorded so far.
+Send reload (Hot Reload), restart (Hot Restart) or quit to a running Flutter session; reload or restart to a React Native or Expo debug run from project.run, which asks its Metro server on port 8081 to reload the app through Metro's /reload endpoint and returns Metro's HTTP status; or stop to a running recording (android.record, ios.virtual.record): it ends early and keeps the video recorded so far.
 
 Annotations: writes, not idempotent, open world.
 

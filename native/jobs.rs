@@ -738,6 +738,31 @@ pub fn send(id: &str, command: &str) -> Result {
             "This job has no interactive session",
         ));
     }
+    // A React Native or Expo session reloads through its Metro server.
+    if let Some(port) = plan["steps"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find_map(|step| step["metro_port"].as_u64())
+    {
+        if !matches!(command, "reload" | "restart") {
+            return Err(Error::new(
+                "invalid_argument",
+                "A Metro session takes reload or restart; cancel the job to stop it",
+            ));
+        }
+        let port =
+            u16::try_from(port).map_err(|_| Error::new("invalid_job", "Invalid Metro port"))?;
+        let status = crate::javascript::metro_reload(port)?;
+        if !(200..300).contains(&status) {
+            return Err(Error::new(
+                "reload_failed",
+                format!("Metro answered HTTP {status} to /reload"),
+            )
+            .remedy("This bundler may not offer /reload; reload from the app's developer menu"));
+        }
+        return Ok(json!({"id":id,"sent":command,"via":"metro","port":port,"status":status}));
+    }
     let text = match command {
         "reload" => "r",
         "restart" => "R",

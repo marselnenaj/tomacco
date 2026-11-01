@@ -79,8 +79,8 @@ test on an Android 16 emulator and ran with `project.run`.
   build files. An app with product flavors needs `variant`, such as `freeDebug`. To
   override the ID, set `applicationId` with `project.configure`, or pass `bundle_id`.
 - Release signing stays in the project's Gradle configuration and keystore.
-- A Flutter run supports hot reload through `job.send`, and holds the project's
-  workspace lock until it exits.
+- A Flutter run takes `reload` (Hot Reload), `restart` (Hot Restart) and `quit`
+  through `job.send`, and holds the project's workspace lock until it exits.
 - `project.watch` runs the app again whenever its sources change, or sends a Flutter
   session Hot Reload; see [the agent guide](agents.md#android).
 
@@ -97,6 +97,12 @@ its lockfile implies, whether `node_modules` has the framework, and how
 - **Expo.** `project.run` runs `npx expo run:android --device SERIAL`, which writes
   `android/` with prebuild when it is missing and serves the JavaScript with Metro
   until you cancel the job. A release run passes `--variant release --no-bundler`.
+- **Reload.** While a React Native or Expo debug run serves Metro, `job.send` with
+  `reload` (or `restart`, which does the same) sends `POST /reload` to Metro on port
+  8081, which tells the connected app to reload its JavaScript. The answer has Metro's
+  HTTP status; a bundler that does not offer `/reload` answers `reload_failed`, and one
+  that is not up yet `metro_unreachable`. Tested against a stand-in HTTP server, not a
+  real Metro.
 - **Capacitor and Ionic.** `project.run` runs the package's `build` script when it
   has one, then `npx cap sync android`, installs `android/` with Gradle and launches
   the app ID from the Gradle files, or `appId` from `capacitor.config.json` or `.ts`.

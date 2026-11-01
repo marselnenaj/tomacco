@@ -158,6 +158,8 @@ pub fn run_expo(project: &Value, a: &Value, mut env: Value) -> Result {
     let mut spec = json!({"steps":[{"argv":args,"interactive":serves}],"cwd":root,"env":env,"artifacts":["android/**/build/outputs/apk/**/*.apk"],"exclusive":root,"single_active":true});
     if serves {
         spec["timeout"] = json!(86400);
+        // job.send reload asks Expo's Metro to reload the app.
+        spec["steps"][0]["metro_port"] = json!(METRO_PORT);
     }
     jobs::submit(&format!("Run {}", s(project, "name")), spec)
 }
@@ -176,7 +178,7 @@ pub fn metro_step(project: &Value, device: &str, launch: Vec<String>) -> Result<
         ],
     });
     Ok(
-        json!({"argv":[own_executable()?,"_serve_then",spec.to_string()],"cwd":root,"interactive":true}),
+        json!({"argv":[own_executable()?,"_serve_then",spec.to_string()],"cwd":root,"interactive":true,"metro_port":METRO_PORT}),
     )
 }
 
@@ -206,6 +208,41 @@ pub fn capacitor_steps(project: &Value) -> Result<Vec<Value>> {
     }
     steps.push(json!({"argv":[npx,"cap","sync","android"],"cwd":root}));
     Ok(steps)
+}
+
+/// Asks the Metro server on `port` to reload the apps connected to it, through
+/// its `/reload` endpoint. Returns Metro's HTTP status.
+pub fn metro_reload(port: u16) -> Result<u16> {
+    use std::io::{Read, Write};
+    let address = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    let mut stream = TcpStream::connect_timeout(&address, Duration::from_secs(2)).map_err(|e| {
+        Error::new(
+            "metro_unreachable",
+            format!("Metro does not answer on port {port}: {e}"),
+        )
+        .remedy(
+            "Wait until the job's log says Metro is serving, or run the app again with project.run",
+        )
+    })?;
+    stream.set_read_timeout(Some(Duration::from_secs(5)))?;
+    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+    write!(
+        stream,
+        "POST /reload HTTP/1.1\r\nHost: localhost:{port}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    )?;
+    let mut head = [0u8; 64];
+    let read = stream.read(&mut head)?;
+    let text = String::from_utf8_lossy(&head[..read]);
+    text.split_whitespace()
+        .nth(1)
+        .filter(|_| text.starts_with("HTTP/"))
+        .and_then(|code| code.parse().ok())
+        .ok_or_else(|| {
+            Error::new(
+                "reload_failed",
+                format!("Port {port} did not answer as an HTTP server"),
+            )
+        })
 }
 
 fn listening(port: u16) -> bool {
@@ -340,6 +377,31 @@ mod tests {
         assert!(error.remedy.contains("android/"));
         let project = json!({"path":"/work/app","gradle_directory":"/work/app/android"});
         assert!(require_android(&project, "capacitor").is_ok());
+    }
+
+    #[test]
+    fn metro_reload_posts_to_the_reload_endpoint() {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0u8; 512];
+            let read = stream.read(&mut request).unwrap();
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK")
+                .unwrap();
+            String::from_utf8_lossy(&request[..read]).into_owned()
+        });
+        assert_eq!(metro_reload(port).unwrap(), 200);
+        assert!(
+            server
+                .join()
+                .unwrap()
+                .starts_with("POST /reload HTTP/1.1\r\n")
+        );
+        let closed = free_port();
+        assert_eq!(metro_reload(closed).unwrap_err().code, "metro_unreachable");
     }
 
     fn free_port() -> u16 {
