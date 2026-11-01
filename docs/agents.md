@@ -1093,6 +1093,56 @@ tomaccoctl call profile.startup '{"device":"emulator-5554","bundle_id":"com.andr
 
 On an API 36 x86_64 emulator, five runs each of the Settings app reported COLD, WARM and HOT for every run of the matching mode.
 
+**Startup on an iPhone.** `profile.startup` also takes the virtual iPhone (`device` `virtual-iphone`) and a USB-connected
+iPhone (`platform` `ios` with its UDID). Neither has a launch timer like `am start -W`, so the screen is timed. Before each
+launch the app is ended (`cold`) or sent to the background (`hot`), and the screen is left to keep still; that picture is the
+baseline. Then the app is opened, and the screen is read until it has kept still for `settle_ms` (2000 by default, 200 to
+10000). Each picture is reduced to a 32 × 64 grid of grey cells; a cell has changed when its grey moved by more than 12 of 255.
+
+- `first_frame_ms`: from the open request to the first picture that differs from the baseline in at least 5 % of the cells
+  and stays different. It is the value of the usual metrics, `startup_<mode>_median_ms`, `_p90_ms`, `_min_ms`, `_max_ms` and
+  `_mean_ms`. On the virtual iPhone's Home screen the ticking Clock icon and the status bar change under 0.5 % of the cells;
+  an app's window changes over 90 %.
+- `launched_ms`: until the open request returned. On the virtual iPhone that is when FrontBoard's completion named the app's
+  process, on an iPhone when `go-ios launch` printed its pid. Metrics `startup_<mode>_launched_median_ms` and `_p90_ms`.
+- `settled_ms`: until the last change of at least 0.5 % of the cells before the screen kept still. Metrics
+  `startup_<mode>_settled_median_ms` and `_p90_ms`; null, and so failing a budget, when the screen never kept still.
+- On a USB iPhone also `first_log_ms`: when the app's first syslog line after the request arrived, with
+  `startup_<mode>_first_log_median_ms` and `_p90_ms`.
+
+Every measurement starts with one unmeasured launch, which shows that the app opens and names its process. Each run's
+`launch_state` is `cold` when the launch started a new process and `hot` when it found the one from before, by process ID;
+`mismatched_runs` counts the runs whose state differs from `mode`, and a run without a process ID names none. `warm` is
+refused: an iPhone app cannot be made to recreate its scene from outside, and Home and reopen is what Android calls hot. A
+cold launch here still finds the system's caches warm, so it is what Apple calls a warm launch; launches after a reboot are not
+measured. `resolution_ms` is the median time between two looks at the screen. The report has `device_kind`
+(`virtual-iphone` or `iphone`) and a `note` on what its times mean, and `profile.compare` and `profile.budget` read its
+metrics as they read Android's. Compare reports of the same kind of device only.
+
+```sh
+tomaccoctl call profile.startup '{"device":"virtual-iphone","bundle_id":"dev.example.myapp","mode":"hot","runs":5}'
+tomaccoctl call profile.startup '{"platform":"ios","device":"00008110-0011223344556677","bundle_id":"dev.example.myapp"}'
+```
+
+On the virtual iPhone, `cold` ends the app with the guest's `restart_ui`, which restarts iOS's interface: no guest operation
+ends one app, so every cold run takes the seconds that restart takes, and the lock screen it may bring back is left first, as
+for a scenario. `hot` presses Home and waits until the app is no longer in front. Frames come from `ios.emulator.control`'s
+file transport, from the frame mailbox; a frame number the last read already had is the same picture and is not read again.
+The guest runs on an emulated processor with a software renderer, so its launches take far longer than an iPhone's and say
+nothing about one.
+
+On a USB iPhone, `cold` runs `go-ios kill BUNDLE --udid=UDID` and `hot` opens Settings with
+`go-ios launch com.apple.Preferences --udid=UDID`, as go-ios has no Home button. The launch is `go-ios launch BUNDLE
+--udid=UDID` with the installed bundle ID (xtool's prefix included), the screen is go-ios's MJPEG stream from
+`go-ios screenshot --stream --port=PORT --udid=UDID`, read over HTTP/1.0 and scaled to the grid by ffmpeg, and the log is
+`go-ios syslog --udid=UDID`. These times are coarse: a change is seen when the next streamed picture arrives, plus the stream's
+own delay, and every time includes go-ios connecting to the phone for the launch request. The phone needs the developer image,
+and on iOS 17 and newer a tunnel ([ios.prepare](iphone.md#is-the-phone-ready)).
+
+Tested with fixtures only; not measured on a live phone. The change detection is checked against grids of real
+virtual-iPhone screenshots (its Home screen, the same screen with an icon pressed and the clock moved, the research app's
+window), the runs with a recorded launch sequence, and the iPhone route with stand-ins for go-ios and ffmpeg.
+
 `profile.frames` resets a running app's frame statistics (`dumpsys gfxinfo reset`), waits `seconds` (5 by default) or runs a
 `testing.run` scenario given as `scenario`, and reads them again. The metrics are `frames_total`, `janky_frames`, `jank_percent`,
 `slow_frames` (17 ms or more) and `frozen_frames` (700 ms or more), both counted from the frame time histogram, and

@@ -251,6 +251,26 @@ recording; the result says how many distinct pictures arrived. How many the phon
 a second was not measured, since no phone was connected. For a smooth live picture, use
 `runtime.start`, whose WebDriverAgent stream runs at up to 30 frames per second.
 
+### App startup
+
+`profile.startup` with `platform` `ios` launches an app several times and times each launch on
+the screen: from `go-ios launch` to the first streamed picture that differs from the one before
+and stays different, to `go-ios launch` returning with the app's process, to the screen keeping
+still, and to the app's first syslog line. `cold` ends the app with `go-ios kill` before each
+launch; `hot` sends it to the background by opening Settings and opens it again. The report has
+the same metric names as Android's, such as `startup_cold_median_ms`, for `profile.compare` and
+`profile.budget`. It needs go-ios, ffmpeg and the developer image, and on iOS 17 and newer a
+tunnel.
+
+```sh
+tomaccoctl call profile.startup '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.myapp","mode":"cold","runs":5}'
+```
+
+The times are coarse: they cannot be finer than the stream's pictures (`resolution_ms`), and they
+include go-ios connecting to the phone for each launch request. The
+[agent guide](agents.md#app-performance) says what each number means. Tested with stand-ins for
+go-ios and ffmpeg only; not measured on a live phone.
+
 ### Profiles and signing certificates
 
 `ios.signing` shows which provisioning profiles there are and how long they last. It reads

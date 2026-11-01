@@ -94,6 +94,15 @@ operations and their JSON results.
     screenshots as baselines, refusing two devices' different images for one baseline.
   - `project.execute` takes `managed_device` (a Gradle Managed Device, group or `all` from the build files) and
     `shards` for instrumented tests. Unit-tested only; no managed device run has been made.
+- `profile.startup` measures app startup on the virtual iPhone (`device` `virtual-iphone`) and on a USB-connected iPhone
+  (`platform` `ios`, through go-ios). Without a launch timer like `am start -W`, each launch is timed on the screen: to
+  the first picture that differs from the one before and stays different (the `startup_<mode>_*_ms` metrics), to the open
+  request returning with the app's process, to the screen keeping still for `settle_ms`, and on an iPhone to the app's
+  first syslog line. Modes are `cold` (go-ios `kill`, or `restart_ui` on the virtual iPhone) and `hot` (Home, or Settings
+  on an iPhone); each run's `launch_state` compares the app's process with the one before. The report names its
+  `device_kind` and says that iPhone times are coarse and virtual-iPhone times emulated; `profile.compare` and
+  `profile.budget` read it like Android's. New error code `startup_unobserved`. Tested with fixtures only; not measured on
+  a live phone.
 
 ### Changed
 
