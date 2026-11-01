@@ -349,3 +349,6 @@ mod tests {
         assert_eq!(arguments("preview.state", &json!({})).unwrap(), json!({}));
     }
 }
+#[cfg(test)]
+#[path = "validation_tests.rs"]
+mod validation_tests;

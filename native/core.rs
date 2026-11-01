@@ -677,6 +677,15 @@ pub fn validate(value: &Value, schema: &Value, name: &str) -> Result<()> {
             for (i, item) in items.iter().enumerate() {
                 validate(item, &schema["items"], &format!("{name}[{i}]"))?;
             }
+            if schema["uniqueItems"] == true {
+                for (i, item) in items.iter().enumerate() {
+                    if let Some(first) = items[..i].iter().position(|earlier| earlier == item) {
+                        return Err(fail(format!(
+                            "{name}[{i}] repeats {name}[{first}]; the items must be unique"
+                        )));
+                    }
+                }
+            }
         }
         "string" => {
             let s = value.as_str().unwrap();
