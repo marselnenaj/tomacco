@@ -76,6 +76,9 @@ operations and their JSON results.
 - **Agent activity.** The activity panel lists what agents called, newest first, with time, duration and result:
   the calls to the window and, with an agent's `TOMACCO_SESSION_LOG` named in **Settings**, every operation from
   that log. **All** and **Failed** and a search narrow it; a call that started a job opens it.
+- **Command palette.** Ctrl+K matches loosely and ranks the results (word starts, letters in a row and whole words
+  first) with the matched letters marked; the entries chosen last come first, marked **Recent**; PgUp and PgDn page
+  through the list.
 
 ### Changed
 

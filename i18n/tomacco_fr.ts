@@ -658,16 +658,20 @@ Le modèle détermine l'écran et le cadre. Android provient de l'image système
         <translation>Vue</translation>
     </message>
     <message>
-        <source>↑ ↓  Select     ↵  Open     Esc  Close</source>
-        <translation>↑ ↓  Sélectionner     ↵  Ouvrir     Esc  Fermer</translation>
-    </message>
-    <message>
         <source>Search views, commands or tools…</source>
         <translation>Rechercher vues, commandes ou outils…</translation>
     </message>
     <message>
         <source>Ctrl</source>
         <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>Recent</source>
+        <translation>Récent</translation>
+    </message>
+    <message>
+        <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
+        <translation>↑ ↓  Sélectionner     PgPréc PgSuiv  Page     ↵  Ouvrir     Esc  Fermer</translation>
     </message>
 </context>
 <context>

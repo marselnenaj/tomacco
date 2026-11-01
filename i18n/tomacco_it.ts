@@ -658,16 +658,20 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Vista</translation>
     </message>
     <message>
-        <source>↑ ↓  Select     ↵  Open     Esc  Close</source>
-        <translation>↑ ↓  Seleziona     ↵  Apri     Esc  Chiudi</translation>
-    </message>
-    <message>
         <source>Search views, commands or tools…</source>
         <translation>Cerca viste, comandi o strumenti…</translation>
     </message>
     <message>
         <source>Ctrl</source>
         <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>Recent</source>
+        <translation>Recente</translation>
+    </message>
+    <message>
+        <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
+        <translation>↑ ↓  Seleziona     PagSu PagGiù  Pagina     ↵  Apri     Esc  Chiudi</translation>
     </message>
 </context>
 <context>

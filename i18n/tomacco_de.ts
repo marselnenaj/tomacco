@@ -658,16 +658,20 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Ansicht</translation>
     </message>
     <message>
-        <source>↑ ↓  Select     ↵  Open     Esc  Close</source>
-        <translation>↑ ↓  Auswählen     ↵  Öffnen     Esc  Schließen</translation>
-    </message>
-    <message>
         <source>Search views, commands or tools…</source>
         <translation>Ansichten, Befehle oder Tools suchen…</translation>
     </message>
     <message>
         <source>Ctrl</source>
         <translation>Strg</translation>
+    </message>
+    <message>
+        <source>Recent</source>
+        <translation>Zuletzt</translation>
+    </message>
+    <message>
+        <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
+        <translation>↑ ↓  Auswählen     Bild↑ Bild↓  Seite     ↵  Öffnen     Esc  Schließen</translation>
     </message>
 </context>
 <context>

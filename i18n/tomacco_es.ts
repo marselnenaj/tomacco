@@ -658,16 +658,20 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Vista</translation>
     </message>
     <message>
-        <source>↑ ↓  Select     ↵  Open     Esc  Close</source>
-        <translation>↑ ↓  Seleccionar     ↵  Abrir     Esc  Cerrar</translation>
-    </message>
-    <message>
         <source>Search views, commands or tools…</source>
         <translation>Buscar vistas, comandos o herramientas…</translation>
     </message>
     <message>
         <source>Ctrl</source>
         <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>Recent</source>
+        <translation>Reciente</translation>
+    </message>
+    <message>
+        <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
+        <translation>↑ ↓  Seleccionar     RePág AvPág  Página     ↵  Abrir     Esc  Cerrar</translation>
     </message>
 </context>
 <context>

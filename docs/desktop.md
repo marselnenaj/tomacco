@@ -134,6 +134,15 @@ the size itself. `--capture` and `--smoke-test` keep the default size.
 | Save the current source file | Ctrl+S |
 | Save a screenshot of the live device and copy it to the clipboard | Ctrl+Shift+S |
 
+The command palette (Ctrl+K) matches loosely: the letters typed have to appear in
+order in a name, so `opproj` finds **Open project** and `dev log` finds the device
+logs operation. Matches at the start of words, letters in a row and whole words rank
+higher, the matched letters are marked, and letters scattered across a long name do
+not count. The eight entries chosen last come first in an empty palette, marked
+**Recent** (*Zuletzt*), and rank higher when they match. Views and commands show
+their shortcut on the right; ↑ ↓ select, PgUp and PgDn move eight rows, Enter or a
+click opens and Esc closes.
+
 Tab moves through the title bar, the rail, the device bar and the page, in that
 order; the control with keyboard focus has a two-pixel ring. The lists of jobs,
 agent tools and project files take the keyboard too: Tab into the list, the

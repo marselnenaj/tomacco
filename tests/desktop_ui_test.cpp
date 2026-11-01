@@ -244,6 +244,56 @@ private slots:
         QVERIFY(palette->property("visible").toBool());
         QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!palette->property("visible").toBool());
     }
+    void command_palette_matches_loosely_ranks_and_puts_recent_first() {
+        QSettings().remove("palette/recent");
+        auto *palette=object("commandPalette");QVERIFY(palette);
+        palette->setProperty("recent",QVariantList{});
+        const auto results=[&]{return palette->property("results").value<QJSValue>();};
+        const auto title=[&](int index){return results().property(index).property("title").toString();};
+        const auto key=[&](int index){return results().property(index).property("key").toString();};
+        QVERIFY(QMetaObject::invokeMethod(palette,"open"));
+        QTRY_VERIFY(item("commandSearch") && item("commandSearch")->hasActiveFocus());
+        // Letters in order, from word starts: "opproj" is Open project; a whole word ranks above loose letters.
+        type("opproj");
+        QTRY_COMPARE(title(0),QString("Open project"));
+        QTRY_VERIFY(item("commandTitle")->property("text").toString().contains("<b>"));
+        item("commandSearch")->setProperty("text","settings");
+        QTRY_COMPARE(title(0),QString("Settings"));
+        // Words in any field, each of them: "copy context" and "context copy".
+        item("commandSearch")->setProperty("text","context copy");
+        QTRY_COMPARE(title(0),QString("Copy context"));
+        item("commandSearch")->setProperty("text","dev log");
+        QTRY_VERIFY(results().property("length").toInt()>0);
+        QVERIFY([&]{for(int i=0;i<5;++i)if(key(i)=="operation:device.logs")return true;return false;}());
+        // Scattered letters are no match.
+        item("commandSearch")->setProperty("text","zqxj");
+        QTRY_COMPARE(results().property("length").toInt(),0);
+        // Page down moves eight rows at a time.
+        item("commandSearch")->setProperty("text","");
+        QTRY_VERIFY(results().property("length").toInt()>20);
+        QTest::keyClick(window,Qt::Key_PageDown);QCOMPARE(item("commandResults")->property("currentIndex").toInt(),8);
+        QTest::keyClick(window,Qt::Key_PageUp);QCOMPARE(item("commandResults")->property("currentIndex").toInt(),0);
+        // What was chosen comes first next time, marked, and ranks higher when it matches.
+        item("commandSearch")->setProperty("text","keyboard shortcuts");
+        QTRY_COMPARE(title(0),QString("Keyboard shortcuts"));
+        QTest::keyClick(window,Qt::Key_Return);
+        auto *shortcuts=object("shortcutsDialog");
+        if(shortcuts)QTRY_VERIFY(shortcuts->property("visible").toBool());
+        if(shortcuts)QVERIFY(QMetaObject::invokeMethod(shortcuts,"close"));
+        QVERIFY(QSettings().value("palette/recent").toString().contains("command:shortcuts"));
+        QVERIFY(QMetaObject::invokeMethod(palette,"open"));
+        QTRY_VERIFY(palette->property("visible").toBool());
+        QTRY_COMPARE(key(0),QString("command:shortcuts"));
+        QVERIFY(results().property(0).property("recent").toBool());
+        QTRY_VERIFY(item("commandRecent") && item("commandRecent")->isVisible());
+        capture("command-palette-recent");
+        // A click chooses a row too.
+        clickItem("commandRecent");
+        QTRY_VERIFY(!palette->property("visible").toBool());
+        if(shortcuts){QTRY_VERIFY(shortcuts->property("visible").toBool());QVERIFY(QMetaObject::invokeMethod(shortcuts,"close"));}
+        QSettings().remove("palette/recent");palette->setProperty("recent",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void tool_forms_explain_fields_check_numbers_ask_before_destructive_calls_and_copy_the_command() {
         open("tools");window->resize(1380,970);QTest::qWait(50);
         workspace->setProperty("pending",QVariantMap{});
