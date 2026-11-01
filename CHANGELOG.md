@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 202 operations.
+`tomaccoctl` now has one typed API of 203 operations.
 
 ### Added
 
@@ -30,6 +30,8 @@ operations and their JSON results.
     rendered, janky frames and their percentage, slow and frozen frames from the histogram, and the frame time percentiles.
   - `profile.memory` reads an app's `dumpsys meminfo` into PSS, RSS and swap totals, the App Summary per category, heap sizes and
     object counts per process, with totals in MB, and with `heap_dump` pulls an HPROF heap dump of the app to a path.
+  - `profile.usage` measures an app's CPU time from `/proc`, per process and as a share of one core and of all cores, and the change
+    of its estimated battery use in batterystats, over an interval, without resetting anything on the device.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

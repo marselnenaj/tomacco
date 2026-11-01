@@ -3511,6 +3511,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Mesurer la mémoire de l'app</translation>
     </message>
     <message>
+        <source>Measure CPU and battery use</source>
+        <translation>Mesurer l'usage CPU et batterie</translation>
+    </message>
+    <message>
         <source>Check toolchain</source>
         <translation>Vérifier la chaîne d'outils</translation>
     </message>

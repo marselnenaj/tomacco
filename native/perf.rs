@@ -1,6 +1,6 @@
-//! Android app performance read from `am` and `dumpsys`: startup time, frame
-//! rendering and memory, each measurement a report whose flat `metrics`
-//! profile.compare reads.
+//! Android app performance read from `am`, `dumpsys` and `/proc`: startup
+//! time, frame rendering, memory, and CPU and battery use, each measurement a
+//! report whose flat `metrics` profile.compare reads.
 use crate::{core::*, devices, toolchain as tc};
 use serde_json::{Map, Value, json};
 use std::time::{Duration, Instant};
@@ -74,6 +74,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "profile.startup" => startup(a),
         "profile.frames" => frames(a),
         "profile.memory" => memory(a),
+        "profile.usage" => usage(a),
         _ => Err(Error::new("operation_not_found", op)),
     }
 }
@@ -654,6 +655,242 @@ pub fn memory(a: &Value) -> Result {
     finish(a, value)
 }
 
+/// The app's processes in `ps -A -o PID,NAME`: the package and its
+/// `package:name` processes.
+pub fn app_pids(ps: &str, id: &str) -> Vec<(u64, String)> {
+    ps.lines()
+        .filter_map(|line| {
+            let mut parts = line.split_whitespace();
+            let pid = parts.next()?.parse::<u64>().ok()?;
+            let name = parts.next()?;
+            (name == id
+                || name
+                    .strip_prefix(id)
+                    .is_some_and(|rest| rest.starts_with(':')))
+            .then(|| (pid, name.to_string()))
+        })
+        .collect()
+}
+
+/// CPU time counters at one moment: clock ticks per second, the ticks of all
+/// CPUs from /proc/stat, and user plus system ticks per app process.
+#[derive(Debug, Default)]
+pub struct CpuSample {
+    pub clock: u64,
+    pub total: u64,
+    pub processes: std::collections::BTreeMap<u64, (String, u64)>,
+}
+
+/// Reads `getconf CLK_TCK`, the `cpu` line of /proc/stat and /proc/PID/stat
+/// lines. A process's name comes from ps, as /proc truncates it.
+pub fn parse_cpu_sample(output: &str, pids: &[(u64, String)]) -> CpuSample {
+    let mut sample = CpuSample {
+        clock: 100,
+        ..Default::default()
+    };
+    for (index, line) in output.lines().enumerate() {
+        let line = line.trim();
+        if index == 0 {
+            if let Ok(clock) = line.parse::<u64>() {
+                sample.clock = clock.max(1);
+                continue;
+            }
+        }
+        if let Some(rest) = line.strip_prefix("cpu ") {
+            // user nice system idle iowait irq softirq steal; guest time is
+            // already part of user.
+            sample.total = rest
+                .split_whitespace()
+                .take(8)
+                .filter_map(|v| v.parse::<u64>().ok())
+                .sum();
+        } else if let Some((head, tail)) = line.rsplit_once(") ") {
+            let Some(pid) = head.split_whitespace().next().and_then(|p| p.parse().ok()) else {
+                continue;
+            };
+            let Some((_, name)) = pids.iter().find(|(p, _)| *p == pid) else {
+                continue;
+            };
+            // After the name: state is field 3, utime 14 and stime 15.
+            let fields: Vec<&str> = tail.split_whitespace().collect();
+            let ticks = |i: usize| fields.get(i).and_then(|v| v.parse::<u64>().ok());
+            if let (Some(user), Some(system)) = (ticks(11), ticks(12)) {
+                sample.processes.insert(pid, (name.clone(), user + system));
+            }
+        }
+    }
+    sample
+}
+
+fn cpu_sample(device: &str, id: &str) -> Result<(CpuSample, Instant)> {
+    let pids = app_pids(&shell_out(device, &["ps", "-A", "-o", "PID,NAME"], 30)?, id);
+    let mut script = String::from("getconf CLK_TCK; head -n 1 /proc/stat");
+    for (pid, _) in &pids {
+        script.push_str(&format!("; cat /proc/{pid}/stat 2>/dev/null"));
+    }
+    script.push_str("; true");
+    let output = shell_out(device, &["sh", "-c", &script], 30)?;
+    Ok((parse_cpu_sample(&output, &pids), Instant::now()))
+}
+
+/// CPU use between two samples. A process that started in between counts
+/// from zero; one that ended counts for nothing.
+pub fn cpu_usage(before: &CpuSample, after: &CpuSample, seconds: f64) -> Value {
+    let clock = after.clock as f64;
+    let mut ticks = 0;
+    let processes: Vec<Value> = after
+        .processes
+        .iter()
+        .map(|(pid, (name, now))| {
+            let earlier = before.processes.get(pid).map_or(0, |(_, t)| *t);
+            let used = if earlier > *now { *now } else { now - earlier };
+            ticks += used;
+            json!({"pid":pid,"process":name,"cpu_ms":round(used as f64*1000.0/clock)})
+        })
+        .collect();
+    let cpu_ms = ticks as f64 * 1000.0 / clock;
+    let total = after.total.saturating_sub(before.total);
+    json!({"cpu_ms":round(cpu_ms),
+           "cpu_percent":if seconds>0.0 {json!(round(cpu_ms/(seconds*1000.0)*100.0))} else {Value::Null},
+           "cpu_device_percent":if total>0 {json!(round(ticks as f64/total as f64*100.0))} else {Value::Null},
+           "processes":processes})
+}
+
+/// The UID as batterystats prints it: `1000`, or `u0a191` for 10191.
+pub fn battery_uid(uid: u64) -> String {
+    let (user, app) = (uid / 100_000, uid % 100_000);
+    if app < 10_000 {
+        if user == 0 {
+            app.to_string()
+        } else {
+            format!("u{user}s{app}")
+        }
+    } else {
+        format!("u{user}a{}", app - 10_000)
+    }
+}
+
+/// The UID's line in batterystats' "Estimated power use (mAh)": its total
+/// and the parts on the line after it (cpu, sensors, wakelock and others).
+pub fn parse_power(text: &str, label: &str) -> Option<(f64, Map<String, Value>)> {
+    let prefix = format!("UID {label}: ");
+    let mut lines = text.lines().map(str::trim);
+    let total = lines.by_ref().find_map(|line| {
+        line.strip_prefix(&prefix)
+            .and_then(|rest| rest.split_whitespace().next())
+            .and_then(|v| v.parse::<f64>().ok())
+    })?;
+    let part = regex::Regex::new(r"(?:^|\s)([A-Za-z_]+)=([0-9.eE+-]+)").unwrap();
+    let mut parts = Map::new();
+    if let Some(line) = lines
+        .next()
+        .filter(|l| !l.starts_with("UID ") && !l.starts_with('('))
+    {
+        for c in part.captures_iter(line) {
+            if let Ok(value) = c[2].parse::<f64>() {
+                parts.insert(c[1].to_string(), json!(value));
+            }
+        }
+    }
+    Some((total, parts))
+}
+
+/// Whether `dumpsys battery` names a connected charger, and the level.
+pub fn parse_battery(text: &str) -> Value {
+    let mut charging = false;
+    let mut level = Value::Null;
+    for line in text.lines().map(str::trim) {
+        if let Some((key, value)) = line.split_once(": ") {
+            if key.ends_with(" powered") && value == "true" {
+                charging = true;
+            } else if key == "level" {
+                level = value.parse::<u64>().map_or(Value::Null, |v| json!(v));
+            }
+        }
+    }
+    json!({"charging":charging,"level":level})
+}
+
+/// mAh to a millionth, as batterystats prints them.
+fn micro(value: f64) -> f64 {
+    (value * 1e6).round() / 1e6
+}
+
+/// Battery use estimated by Android's power model over the interval: the
+/// change of the UID's mAh since the last charge, part by part.
+pub fn power_delta(
+    before: Option<&(f64, Map<String, Value>)>,
+    after: Option<&(f64, Map<String, Value>)>,
+) -> Value {
+    let Some((total, parts)) = after else {
+        return json!({"power_mah":null,"parts_mah":{}});
+    };
+    let (old_total, old_parts) = before.map_or((0.0, None), |(t, p)| (*t, Some(p)));
+    let mut delta = Map::new();
+    for (name, value) in parts {
+        let old = old_parts
+            .and_then(|p| p.get(name).and_then(Value::as_f64))
+            .unwrap_or(0.0);
+        delta.insert(
+            name.clone(),
+            json!(micro((value.as_f64().unwrap_or(0.0) - old).max(0.0))),
+        );
+    }
+    json!({"power_mah":micro((total-old_total).max(0.0)),"parts_mah":delta})
+}
+
+/// The app's CPU time from /proc and its estimated battery use from
+/// batterystats over `seconds`.
+pub fn usage(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "device", None)?;
+    let id = bundle(s(a, "bundle_id"))?;
+    let seconds = a["seconds"].as_u64().unwrap_or(10).clamp(1, 600);
+    let listing = shell_out(
+        device,
+        &["cmd", "package", "list", "packages", "-U", id],
+        30,
+    )?;
+    let uid = devices::package_uid(&listing, id)
+        .and_then(|uid| uid.parse::<u64>().ok())
+        .ok_or_else(|| {
+            Error::new("app_not_installed", format!("{id} is not installed"))
+                .remedy("Install the app with device.install or project.run")
+        })?;
+    let label = battery_uid(uid);
+    let power = || -> Result<Option<(f64, Map<String, Value>)>> {
+        let text = shell_out(device, &["dumpsys", "batterystats", "--charged", id], 60)?;
+        Ok(parse_power(&text, &label))
+    };
+    let power_before = power()?;
+    let (before, started) = cpu_sample(device, id)?;
+    pause(Duration::from_secs(seconds))?;
+    let (after, ended) = cpu_sample(device, id)?;
+    let power_after = power()?;
+    if before.processes.is_empty() && after.processes.is_empty() {
+        return Err(
+            Error::new("app_not_running", format!("{id} is not running"))
+                .remedy("Launch the app first, for example with device.app"),
+        );
+    }
+    let elapsed = (ended - started).as_secs_f64();
+    let cpu = cpu_usage(&before, &after, elapsed);
+    let mut battery = power_delta(power_before.as_ref(), power_after.as_ref());
+    let state = parse_battery(&shell_out(device, &["dumpsys", "battery"], 30)?);
+    battery["uid"] = json!(uid);
+    battery["charging"] = state["charging"].clone();
+    battery["level"] = state["level"].clone();
+    let mut metrics = Map::new();
+    for key in ["cpu_percent", "cpu_device_percent", "cpu_ms"] {
+        metrics.insert(key.into(), cpu[key].clone());
+    }
+    metrics.insert("power_mah".into(), battery["power_mah"].clone());
+    let mut value = report("usage", device, id, metrics);
+    value["seconds"] = json!(round(elapsed));
+    value["processes"] = cpu["processes"].clone();
+    value["battery"] = battery;
+    finish(a, value)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -840,5 +1077,78 @@ mod tests {
         );
         assert_eq!(metrics["java_heap_pss_mb"], 11.844);
         assert!(memory_metrics(&[])["memory_pss_mb"].is_null());
+    }
+    #[test]
+    fn cpu_use_is_the_change_of_process_ticks_over_the_interval() {
+        let ps = "  PID NAME\n 3095 com.android.settings\n 3100 com.android.settings:remote\n 3200 com.android.settings.intelligence\n";
+        let pids = app_pids(ps, "com.android.settings");
+        assert_eq!(
+            pids,
+            [
+                (3095, "com.android.settings".to_string()),
+                (3100, "com.android.settings:remote".to_string())
+            ]
+        );
+        // Recorded from an API 36 x86_64 emulator; the name in /proc is cut short.
+        let before = parse_cpu_sample(
+            "100\ncpu  4840 3102 6545 11540 655 182 207 86 0 0\n3095 (ndroid.settings) S 493 493 0 0 -1 4194624 37887 0 116 0 194 182 0 0 10 -10 39 0 3716\n",
+            &pids,
+        );
+        assert_eq!(before.total, 27157);
+        assert_eq!(
+            before.processes[&3095],
+            ("com.android.settings".to_string(), 376)
+        );
+        let after = parse_cpu_sample(
+            "100\ncpu  5040 3102 6645 12540 655 182 207 86 0 0\n3095 (ndroid.settings) S 493 493 0 0 -1 4194624 37887 0 116 0 244 207 0 0 10 -10 39 0 3716\n3100 (a (b) c) S 493 493 0 0 -1 0 0 0 0 0 10 5 0 0\n",
+            &pids,
+        );
+        let usage = cpu_usage(&before, &after, 2.0);
+        // 75 ticks of the app process and 15 of a new one, of 1300 in all.
+        assert_eq!(usage["cpu_ms"], 900.0);
+        assert_eq!(usage["cpu_percent"], 45.0);
+        assert_eq!(usage["cpu_device_percent"], 6.923);
+        assert_eq!(usage["processes"][1]["cpu_ms"], 150.0);
+    }
+
+    // Recorded from an API 36 x86_64 emulator (shortened).
+    const BATTERYSTATS: &str = "  Estimated power use (mAh):\n    Capacity: 1000, Computed drain: 0, actual drain: 0\n    Global\n    cpu: 0.00121 apps: 0.00116 duration: 43s 643ms \n  UID u0a144: 0.0717 fg: 0.000425 (260ms) bg: 0.0665 (39s 689ms) fgs: 0.00319 (1s 941ms) cached: 0.00161 (978ms)\n      cpu=0.000184 cpu:fg=0.00000100 cpu:bg=0.000171 sensors=0.0716 sensors:fg=0.000424\n      (on battery, screen on) cpu=0.000184 sensors=0.0716\n  UID 1000: 0.000327 bg: 0.000327\n      cpu=0.000327 cpu:bg=0.000327\n";
+
+    #[test]
+    fn battery_use_is_read_per_uid_and_compared() {
+        assert_eq!(battery_uid(1000), "1000");
+        assert_eq!(battery_uid(10144), "u0a144");
+        assert_eq!(battery_uid(1010144), "u10a144");
+        let after = parse_power(BATTERYSTATS, "u0a144").unwrap();
+        assert_eq!(after.0, 0.0717);
+        assert_eq!(
+            after.1,
+            *json!({"cpu":0.000184,"sensors":0.0716})
+                .as_object()
+                .unwrap()
+        );
+        assert_eq!(parse_power(BATTERYSTATS, "1000").unwrap().0, 0.000327);
+        assert!(parse_power(BATTERYSTATS, "u0a1").is_none());
+        let before = parse_power(
+            &BATTERYSTATS.replace("0.0717", "0.0517").replace(
+                "cpu=0.000184 cpu:fg=0.00000100 cpu:bg=0.000171 sensors=0.0716",
+                "sensors=0.0516",
+            ),
+            "u0a144",
+        )
+        .unwrap();
+        let delta = power_delta(Some(&before), Some(&after));
+        assert!((delta["power_mah"].as_f64().unwrap() - 0.02).abs() < 1e-9);
+        assert!((delta["parts_mah"]["sensors"].as_f64().unwrap() - 0.02).abs() < 1e-9);
+        assert_eq!(
+            delta["parts_mah"]["cpu"], 0.000184,
+            "a part new since the first read"
+        );
+        assert_eq!(power_delta(None, Some(&after))["power_mah"], 0.0717);
+        assert!(power_delta(Some(&before), None)["power_mah"].is_null());
+        let battery = parse_battery(
+            "Current Battery Service state:\n  AC powered: true\n  USB powered: false\n  level: 100\n",
+        );
+        assert_eq!(battery, json!({"charging":true,"level":100}));
     }
 }

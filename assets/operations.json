@@ -5390,6 +5390,48 @@
     }
   },
   {
+    "name": "profile.usage",
+    "title": "Measure CPU and battery use",
+    "description": "Measure a running Android app's CPU and battery use over seconds. CPU comes from the user and system time of the app's processes in /proc before and after: cpu_ms, cpu_percent (of one core; above 100 means more than one core) and cpu_device_percent (of all cores), and per process. Battery is the change of the app's UID in batterystats' estimated power use (mAh since the last charge, from the device's power profile), in total and per part such as cpu and sensors; battery names the UID, whether a charger is connected and the level. Nothing on the device is reset. report saves the result as JSON.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID of the running app",
+          "minLength": 1
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600,
+          "default": 10,
+          "description": "Length of the interval; use the app meanwhile"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the result as JSON, for profile.compare"
+        }
+      },
+      "required": [
+        "device",
+        "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "workspace.list",
     "title": "Read workspaces",
     "description": "List saved project and device contexts.",

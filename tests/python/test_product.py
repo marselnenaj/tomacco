@@ -1073,6 +1073,33 @@ class AndroidControlTests(Isolated):
             dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app"})
         self.assertEqual(stopped.exception.code, "app_not_running")
 
+    def test_cpu_and_battery_use_are_the_change_over_the_interval(self):
+        # Each read of /proc and of batterystats answers the next sample.
+        samples = {"/proc/stat": ["100\ncpu  1000 0 1000 8000 0 0 0 0\n3095 (dev.test.app) S 1 1 0 0 -1 0 0 0 0 0 100 50 0 0\n",
+                                  "100\ncpu  1100 0 1100 8800 0 0 0 0\n3095 (dev.test.app) S 1 1 0 0 -1 0 0 0 0 0 150 60 0 0\n"],
+                   "batterystats": ["  UID u0a200: 0.010\n      cpu=0.010\n", "  UID u0a200: 0.025\n      cpu=0.020 wakelock=0.005\n"]}
+        (self.root / "samples.json").write_text(json.dumps(samples))
+        self.tool("adb", self.ADB.replace("command=' '.join(a[2:])\n", "command=' '.join(a[2:])\n"
+                                          "for key,answers in json.loads((root/'samples.json').read_text()).items():\n"
+                                          "    if key in command:\n"
+                                          "        counter=root/('count-'+key.strip('/').replace('/','-'))\n"
+                                          "        n=int(counter.read_text()) if counter.exists() else 0\n"
+                                          "        counter.write_text(str(n+1)); print(answers[min(n,len(answers)-1)],end=''); sys.exit(0)\n"))
+        self.replies(**{"list packages -U": "package:dev.test.app uid:10200\n", "ps -A": "  PID NAME\n 3095 dev.test.app\n 3300 dev.test.application\n",
+                        "dumpsys battery": "  AC powered: false\n  USB powered: false\n  level: 81\n"})
+        value = dispatch("profile.usage", {"device": "emulator-5554", "bundle_id": "dev.test.app", "seconds": 1})
+        self.assertEqual(value["metrics"]["cpu_ms"], 600)
+        self.assertEqual(value["metrics"]["cpu_device_percent"], 6)
+        self.assertAlmostEqual(value["metrics"]["power_mah"], 0.015)
+        self.assertAlmostEqual(value["battery"]["parts_mah"]["wakelock"], 0.005)
+        self.assertEqual((value["battery"]["uid"], value["battery"]["charging"], value["battery"]["level"]), (10200, False, 81))
+        self.assertEqual([p["pid"] for p in value["processes"]], [3095])
+        self.assertGreater(value["metrics"]["cpu_percent"], 0)
+        self.replies(**{"list packages -U": ""})
+        with self.assertRaises(StudioError) as missing:
+            dispatch("profile.usage", {"device": "emulator-5554", "bundle_id": "dev.test.app", "seconds": 1})
+        self.assertEqual(missing.exception.code, "app_not_installed")
+
     def test_app_logs_follow_the_user_id_from_android_12_and_the_pid_before(self):
         self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": "package:dev.test.app.extra uid:10201\npackage:dev.test.app uid:10200\n"})
         job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1})

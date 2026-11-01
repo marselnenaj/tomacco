@@ -3515,6 +3515,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>App-Speicher messen</translation>
     </message>
     <message>
+        <source>Measure CPU and battery use</source>
+        <translation>CPU- und Akkuverbrauch messen</translation>
+    </message>
+    <message>
         <source>Check toolchain</source>
         <translation>Toolchain prüfen</translation>
     </message>

@@ -709,6 +709,19 @@ tomaccoctl call profile.memory '{"device":"emulator-5554","bundle_id":"com.andro
 
 On the same emulator, Settings used 54 MB PSS, and its heap dump was a 47 MB HPROF file.
 
+`profile.usage` measures a running app over `seconds` (10 by default). CPU is the user and system time of the app's processes in
+`/proc` before and after: `cpu_ms`, `cpu_percent` of one core (above 100 when it used more than one) and `cpu_device_percent` of all
+cores, also per process in `processes`. Battery is the change of the app's UID in batterystats' estimated power use, in mAh, in total
+(`power_mah`) and per part such as `cpu` or `sensors`. That estimate comes from the device's power profile, which on an emulator is not
+a real phone's; `battery` also says which UID it is (system apps share one), whether a charger is connected, and the level. Nothing on
+the device is reset.
+
+```sh
+tomaccoctl call profile.usage '{"device":"emulator-5554","bundle_id":"com.android.settings","seconds":5}'
+```
+
+On the same emulator, Settings scrolled for five seconds used 1790 ms of CPU, 35 % of one core.
+
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.

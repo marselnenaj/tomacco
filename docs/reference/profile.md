@@ -2,7 +2,7 @@
 
 # `profile` operations
 
-6 operations. Generated from `assets/operations.json`; [all areas](README.md).
+7 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### profile.capture
 
@@ -119,4 +119,23 @@ Annotations: writes, idempotent, open world.
 
 ```sh
 tomaccoctl call profile.memory '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### profile.usage
+
+**Measure CPU and battery use**
+
+Measure a running Android app's CPU and battery use over seconds. CPU comes from the user and system time of the app's processes in /proc before and after: cpu_ms, cpu_percent (of one core; above 100 means more than one core) and cpu_device_percent (of all cores), and per process. Battery is the change of the app's UID in batterystats' estimated power use (mAh since the last charge, from the device's power profile), in total and per part such as cpu and sensors; battery names the UID, whether a charger is connected and the level. Nothing on the device is reset. report saves the result as JSON.
+
+Annotations: writes, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the running app |
+| `seconds` | integer |  | `10` | 1 to 600; Length of the interval; use the app meanwhile |
+| `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
+
+```sh
+tomaccoctl call profile.usage '{"device":"<device>","bundle_id":"<bundle_id>"}'
 ```

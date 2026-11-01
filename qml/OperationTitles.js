@@ -136,6 +136,7 @@ var titles = {
     "profile.startup": QT_TRANSLATE_NOOP("Operations", "Measure app startup"),
     "profile.frames": QT_TRANSLATE_NOOP("Operations", "Measure frame rendering"),
     "profile.memory": QT_TRANSLATE_NOOP("Operations", "Measure app memory"),
+    "profile.usage": QT_TRANSLATE_NOOP("Operations", "Measure CPU and battery use"),
     "workspace.list": QT_TRANSLATE_NOOP("Operations", "Read workspaces"),
     "workspace.save": QT_TRANSLATE_NOOP("Operations", "Save workspace"),
     "workspace.remove": QT_TRANSLATE_NOOP("Operations", "Remove workspace"),
