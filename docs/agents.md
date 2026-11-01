@@ -653,6 +653,30 @@ order are not checked.
 tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
 ```
 
+### UI tests on the virtual iPhone
+
+Pass `virtual-iphone` as the device to `testing.run` while the virtual iPhone runs. The
+guest tools report no UI hierarchy, so nothing can find an element by its label there: `testing.find`, `testing.action`,
+`testing.lint`, `testing.accessibility` and the selector steps (`wait`, `assert`, `click`, `long_click`, `fill`) answer
+`ui_hierarchy_unavailable`, whose `details.testing` lists what works.
+
+- **Steps.** `tap` and `swipe` take pixels of the screenshot (`ios.virtual.screenshot` with `frame:"none"`) and go through
+  `ios.emulator.control` as `click` and `drag`; a contact lasts at most 2 seconds, and a swipe that stays put is a long press.
+  `text` types on the USB keyboard into the focused field. `key` takes a QEMU key name such as `ret`, `home` for the Home button,
+  or an Android key code that has a counterpart (`KEYCODE_ENTER`, `KEYCODE_DEL`, `KEYCODE_HOME`, the arrows). `launch` opens an app
+  through the guest service's `open`; `stop` and `clear` are not available.
+- **Screens instead of elements.** On both platforms, `screenshot` keeps a PNG in the report directory, `pause` waits `duration`
+  milliseconds, `assert_screen` compares the screen with a `baseline` PNG as `testing.visual_diff` does (`threshold`, `tolerance`) and
+  fails with `screen_mismatch`, and `wait_screen` takes screenshots until one matches or `timeout` passes (`screen_timeout`). A failure
+  writes the difference image beside the screenshot. Make the baseline with `ios.virtual.screenshot`, or with
+  `testing.visual_diff` and `update_baseline:true` after you have looked at it.
+
+```sh
+tomaccoctl call testing.run '{"path":"/absolute/open-settings.json","directory":"/absolute/iphone-results","devices":["virtual-iphone"]}'
+```
+
+All of this, the screen steps on Android included, is unit-tested with recorded guest replies and screenshots; none of it has been run on a live phone or an emulator yet.
+
 What has been run: `testing.visual_diff`, `testing.accessibility` (on the Settings app), `testing.crashes` (with a crash from
 `am crash`) and the crash list of `testing.run` on an API 36 x86_64 emulator, and `testing.results` on a `testing.run` report. ANRs,
 native crashes and Gradle's own result files have been read only from sample text in the unit tests.

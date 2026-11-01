@@ -8,7 +8,7 @@
 
 **Find Android element**
 
-Wait for native UI elements using semantic properties; return bounds and attributes.
+Wait for native UI elements using semantic properties; return bounds and attributes. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.
 
 Annotations: read-only, idempotent, open world.
 
@@ -38,7 +38,7 @@ tomaccoctl call testing.find '{"device":"<device>","selector":{"text":"<text>"}}
 
 **Operate Android element**
 
-Click, long-click or fill a uniquely matched native Android element.
+Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.
 
 Annotations: writes, not idempotent, open world.
 
@@ -70,7 +70,7 @@ tomaccoctl call testing.action '{"device":"<device>","selector":{"text":"<text>"
 
 **Run native tests**
 
-Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.
+Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop and clear fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes.
 
 Annotations: writes, not idempotent, open world.
 
@@ -78,7 +78,7 @@ Annotations: writes, not idempotent, open world.
 | --- | --- | --- | --- | --- |
 | `path` | string | yes |  | Absolute path of a scenario JSON, or of a directory whose .json files are scenarios, run in name order |
 | `directory` | string | yes |  |  |
-| `devices` | array of string | yes |  | 1 to 32 items |
+| `devices` | array of string | yes |  | 1 to 32 items; Android serials from device.list, or virtual-iphone for the running virtual iPhone |
 | `shard` | boolean |  | `false` | Split the scenarios across the devices, each scenario once, on the next free device, instead of running every scenario on every device. At most parallelism devices are used. |
 | `parallelism` | integer |  | `2` | 1 to 8 |
 | `timeout` | integer |  | `3600` | 10 to 86400 |
@@ -112,7 +112,7 @@ tomaccoctl call testing.record '{"device":"<device>","action":"start"}'
 
 **Check UI test scenario**
 
-Check a testing.run scenario without acting on the device: its format, and each step against the current Android screen (or a saved android.hierarchy XML). findings name the step and a code: not_found (no element here matches; a warning, since an earlier step may open the screen it is on), ambiguous (several match: an error for click, long_click and fill, which need one), disabled, present (an element expected absent is there), off_screen (a tap or swipe point outside the screen) and invalid_key. steps lists each step's match count. A scenario that does not parse answers valid false with the error. passed is false when any finding is an error.
+Check a testing.run scenario without acting on the device: its format, and each step against the current Android screen (or a saved android.hierarchy XML). findings name the step and a code: not_found (no element here matches; a warning, since an earlier step may open the screen it is on), ambiguous (several match: an error for click, long_click and fill, which need one), disabled, present (an element expected absent is there), off_screen (a tap or swipe point outside the screen) and invalid_key. steps lists each step's match count. A scenario that does not parse answers valid false with the error. passed is false when any finding is an error. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.
 
 Annotations: read-only, idempotent, open world.
 
@@ -156,7 +156,7 @@ tomaccoctl call testing.visual_diff '{"actual":"<actual>","baseline":"<baseline>
 
 **Check Android accessibility**
 
-Audit an Android screen's UI hierarchy: clickable elements without a label (missing_label), touch targets under min_target_dp (small_target) and text shorter than min_text_height_dp (small_text). Returns structured findings with bounds in pixels and sizes in dp. Heuristics, not a certificate: no contrast, font size or focus order.
+Audit an Android screen's UI hierarchy: clickable elements without a label (missing_label), touch targets under min_target_dp (small_target) and text shorter than min_text_height_dp (small_text). Returns structured findings with bounds in pixels and sizes in dp. Heuristics, not a certificate: no contrast, font size or focus order. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.
 
 Annotations: read-only, idempotent, open world.
 

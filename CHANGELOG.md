@@ -23,6 +23,12 @@ operations and their JSON results.
   - `testing.run` takes a directory of scenarios as `path`, and with `shard:true` splits them across the devices,
     each scenario once on the next free device, into one report and one `junit.xml`. Without it every device runs
     every scenario.
+  - UI tests on the virtual iPhone, as device `virtual-iphone`: `testing.run` plays `tap`, `swipe`, `text`, `key` and
+    `launch` steps through `ios.emulator.control` and the guest service. The guest
+    reports no UI hierarchy, so selectors, `testing.lint` and `testing.accessibility` answer
+    `ui_hierarchy_unavailable` there. Unit-tested with recorded guest replies; not run on a live phone.
+  - Scenarios gain `pause`, `assert_screen` (compare the screen with a baseline PNG) and `wait_screen` (wait until it
+    matches), on Android and the virtual iPhone. Unit-tested with recorded screenshots; not run on a device.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

@@ -4193,7 +4193,7 @@
   {
     "name": "testing.find",
     "title": "Find Android element",
-    "description": "Wait for native UI elements using semantic properties; return bounds and attributes.",
+    "description": "Wait for native UI elements using semantic properties; return bounds and attributes. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4274,7 +4274,7 @@
   {
     "name": "testing.action",
     "title": "Operate Android element",
-    "description": "Click, long-click or fill a uniquely matched native Android element.",
+    "description": "Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4366,7 +4366,7 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.",
+    "description": "Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop and clear fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4384,7 +4384,8 @@
           "items": {
             "type": "string",
             "minLength": 1
-          }
+          },
+          "description": "Android serials from device.list, or virtual-iphone for the running virtual iPhone"
         },
         "shard": {
           "type": "boolean",
@@ -4477,7 +4478,7 @@
   {
     "name": "testing.lint",
     "title": "Check UI test scenario",
-    "description": "Check a testing.run scenario without acting on the device: its format, and each step against the current Android screen (or a saved android.hierarchy XML). findings name the step and a code: not_found (no element here matches; a warning, since an earlier step may open the screen it is on), ambiguous (several match: an error for click, long_click and fill, which need one), disabled, present (an element expected absent is there), off_screen (a tap or swipe point outside the screen) and invalid_key. steps lists each step's match count. A scenario that does not parse answers valid false with the error. passed is false when any finding is an error.",
+    "description": "Check a testing.run scenario without acting on the device: its format, and each step against the current Android screen (or a saved android.hierarchy XML). findings name the step and a code: not_found (no element here matches; a warning, since an earlier step may open the screen it is on), ambiguous (several match: an error for click, long_click and fill, which need one), disabled, present (an element expected absent is there), off_screen (a tap or swipe point outside the screen) and invalid_key. steps lists each step's match count. A scenario that does not parse answers valid false with the error. passed is false when any finding is an error. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4599,7 +4600,7 @@
   {
     "name": "testing.accessibility",
     "title": "Check Android accessibility",
-    "description": "Audit an Android screen's UI hierarchy: clickable elements without a label (missing_label), touch targets under min_target_dp (small_target) and text shorter than min_text_height_dp (small_text). Returns structured findings with bounds in pixels and sizes in dp. Heuristics, not a certificate: no contrast, font size or focus order.",
+    "description": "Audit an Android screen's UI hierarchy: clickable elements without a label (missing_label), touch targets under min_target_dp (small_target) and text shorter than min_text_height_dp (small_text). Returns structured findings with bounds in pixels and sizes in dp. Heuristics, not a certificate: no contrast, font size or focus order. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {

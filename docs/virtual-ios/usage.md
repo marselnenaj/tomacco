@@ -193,6 +193,12 @@ ffmpeg and checked with ffprobe; a live phone has not been recorded with it yet.
 under `Videos/Tomacco`, stops it on a second press and shows the file in the file manager. The stop was checked with a
 synthetic frame source and a real ffmpeg; not on a live phone.
 
+## UI tests
+
+`testing.run` takes `virtual-iphone` as the device while the phone runs. Steps act at
+pixels of the screenshot and compare whole screens with a baseline, because the guest reports no UI hierarchy to find
+elements in. The [agent guide](../agents.md#ui-tests-on-the-virtual-iphone) has the steps. Unit-tested with recorded guest replies; not run on a live phone.
+
 ## Deploy your own app
 
 To build a SwiftUI app for it on Linux, first import the SDK from an `Xcode.xip` you
