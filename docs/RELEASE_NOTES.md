@@ -12,7 +12,7 @@ agent see the screen. The [changelog](../CHANGELOG.md) lists every change.
   - Android: stopping a Tomacco-managed emulator saves its Quick Boot snapshot, and the next start
     resumes from it: 8.6 s instead of a 21.4 s cold boot for a Pixel 11 Pro Fold emulator.
   - Agents: `TOMACCO_MCP_TOOLS=compact` or `grouped` shrinks the tool list an agent reads from
-    316 KB to 156 KB or 33 KB.
+    322 KB to 158 KB or 33 KB.
   - Desktop: ready after 346 instead of 404 ms (median, offscreen).
   - Installing no longer needs Python; the package's own `tomaccoctl` installs it, in about a second.
 - **Seeing the screen.** `screen.marks` draws numbered boxes over what can be tapped and
