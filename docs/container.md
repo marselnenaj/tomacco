@@ -14,7 +14,7 @@ two minutes to build here, the emulator variant about nine more.
 | In the image | Version |
 | --- | --- |
 | Ubuntu 24.04, pinned by digest (glibc 2.39) | |
-| `tomaccoctl`, from the signed release package | 1.2.0 by default (`TOMACCO_VERSION`) |
+| `tomaccoctl`, from the signed release package | 1.2.1 by default (`TOMACCO_VERSION`) |
 | OpenJDK 17 (headless), curl, unzip, OpenSSL, Git, tini | Ubuntu's packages |
 | Gradle, checked against its published SHA-256 | 9.3.1 |
 | Android SDK command-line tools, checked against Google's SHA-1 and a pinned SHA-256 | 22.0 |

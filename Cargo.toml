@@ -1,6 +1,6 @@
 [package]
 name = "tomacco-core"
-version = "1.2.0"
+version = "1.2.1"
 edition = "2024"
 rust-version = "1.89"
 description = "Tomacco: Give your agent a phone. Build, run and test iOS and Android apps from Linux. No Mac needed. Made for Omarchy."

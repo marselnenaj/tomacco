@@ -58,6 +58,9 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="1.2.1" date="2026-11-01">
+      <url type="details">https://github.com/marselnenaj/tomacco/blob/v1.2.1/docs/RELEASE_NOTES.md</url>
+    </release>
     <release version="1.2.0" date="2026-11-01">
       <url type="details">https://github.com/marselnenaj/tomacco/blob/v1.2.0/docs/RELEASE_NOTES.md</url>
     </release>

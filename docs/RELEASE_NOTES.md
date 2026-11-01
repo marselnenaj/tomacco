@@ -1,7 +1,9 @@
-# Tomacco 1.2.0
+# Tomacco 1.2.1
 
 Tomacco: Give your agent a phone. It builds, runs and tests Android and iOS apps from Linux.
-This release adds 31 operations, for 224 in all. The [changelog](../CHANGELOG.md) lists every change.
+This release adds 31 operations, for 224 in all. 1.2.1 is the first published 1.2 release: it also
+fixes the installer on Python 3.10 and makes the virtual iPhone's renderer faster. The
+[changelog](../CHANGELOG.md) lists every change.
 
 ## Highlights
 
@@ -15,6 +17,9 @@ This release adds 31 operations, for 224 in all. The [changelog](../CHANGELOG.md
   project, deploys it, opens it and checks for a crash; an unchanged app only reopens. Run live
   with `examples/hello-virtual-iphone`: built in 9.5 s, installed and opened in 13.4 s.
   `project.watch` redeploys on every save.
+- **A smoother virtual iPhone.** A rebuilt engine converts and copies each frame side by side. On a
+  live phone, one boot each: 5.9 instead of 3.6 distinct frames a second while swiping, and 7.3
+  instead of 16.6 ms of Store work per frame, with pixel-identical screenshots.
 - **Tests.** Record a UI test by tapping, lint it without acting, retry flaky scenarios and shard
   them across devices. Scenarios run on the virtual iPhone at screen coordinates and compare the
   screen with a baseline.
@@ -54,7 +59,8 @@ still apply. In addition:
   React Native, Expo and Kotlin Multiplatform runs, Wi-Fi pairing, and the Zed, VS Code and OpenCode
   agent setups.
 - On the virtual iPhone, the Settings app's top-level list can show a placeholder symbol instead of
-  each row's icon; the pages behind it show their icons. UI tests there work at screen
+  each row's icon; [troubleshooting](virtual-ios/troubleshooting.md) has the call that brings them
+  back after a restart. UI tests there work at screen
   coordinates only, because the guest reports no UI hierarchy.
 - The Docker image is not published: it contains Google's Android SDK, whose license you accept
   when you build it.

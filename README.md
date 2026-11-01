@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0--or--later-6cb6ff" alt="License: GPL-2.0-or-later"></a>
-  <img src="https://img.shields.io/badge/version-1.2.0-7dffd0" alt="Version 1.2.0">
+  <img src="https://img.shields.io/badge/version-1.2.1-7dffd0" alt="Version 1.2.1">
   <img src="https://img.shields.io/badge/iOS_runtime-experimental-b58cff" alt="iOS runtime: experimental">
   <img src="https://img.shields.io/badge/made_for-Omarchy-b58cff" alt="Made for Omarchy">
 </p>
@@ -157,8 +157,8 @@ image: `tomaccoctl` from the signed release package, a JDK, Gradle and the Andro
 iPhone. Building it accepts Google's Android SDK license:
 
 ```sh
-docker build --build-arg ACCEPT_ANDROID_SDK_LICENSE=1 -t tomacco-container:1.2.0 packaging/container
-claude mcp add --transport stdio --scope user tomacco -- docker run -i --rm -v tomacco-data:/data tomacco-container:1.2.0 mcp
+docker build --build-arg ACCEPT_ANDROID_SDK_LICENSE=1 -t tomacco-container:1.2.1 packaging/container
+claude mcp add --transport stdio --scope user tomacco -- docker run -i --rm -v tomacco-data:/data tomacco-container:1.2.1 mcp
 ```
 
 [Container image](docs/container.md) covers the emulator, KVM, USB phones and what was tested.
@@ -219,7 +219,7 @@ Every guest processor is emulated, so performance is far below a physical phone.
 
 ## Status and limits
 
-Tomacco 1.2.0 was developed and tested on one workstation: x86_64 Arch Linux with Omarchy,
+Tomacco 1.2.1 was developed and tested on one workstation: x86_64 Arch Linux with Omarchy,
 Qt 6.12 and Rust 1.99. The portable package passed its checks in clean Debian 12, Ubuntu 22.04,
 Ubuntu 24.04 and Fedora 44 containers but has not been run on a real desktop of those
 distributions. Other machines have not been qualified.

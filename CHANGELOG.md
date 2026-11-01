@@ -4,6 +4,39 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## 1.2.1
+
+The first published 1.2 release; `v1.2.0` was tagged but not released.
+
+### Fixed
+
+- The installer's uninstall and rollback ran only on Python 3.11 or newer; it now also runs on Python 3.10, as on
+  Ubuntu 22.04. The release check found it in a clean Ubuntu 22.04 container.
+- `ios.virtual.deploy`, and so `project.run`, installed an app and then failed with `ios_virtual_application_conflict`
+  when the profile listed the same bundle identifier from another path, such as an earlier copy of the project. The
+  deploy now replaces that listing (its log says `relisted`) and keeps the app the start opens; the same live
+  `project.run` then opened the app.
+- A start refused for a `.tomacco-engine-tmp` that others may enter said to free space; it now says `chmod 700` it or
+  remove it.
+- Settings showing a "?" square for every top-level row's icon is iOS serving icons it kept from an earlier session.
+  Troubleshooting has the `icon_cache` `clear` call: on a live phone the icons came back in a Settings started after
+  it, about 2 minutes after the next start, not in the Settings that had kept running.
+
+### Changed
+
+- Virtual iPhone renderer: less work per frame on the drain, under the lock the guest's processors also wait for. The
+  render Store converts the frame for the present beside its copy into the guest's pages instead of before it; the frame
+  mailbox's hand-off copy runs in up to four bands; and the sampled-texture cache's content digest, which only picks the
+  candidate a byte compare then decides, is a four-lane multiply hash instead of two SipHash passes. A recorded live run
+  had spent about 1.9 ms a frame on that conversion, 2.3 ms on that copy, 1.5 ms on the hand-off and up to 305 ms a
+  second on digests. Offline on the development host: conversion plus copy 6.0-7.0 ms against 3.8-4.4 ms side by side,
+  the hand-off 1.1-1.4 ms against 0.3-0.5 ms, a 2 MB digest 0.55 ms against 0.09 ms. On a live phone, one boot each with the old and the new engine and the same
+  script: 5.9 instead of 3.6 distinct frames a second while swiping, 11.3 instead of 8.8 presents a second, and 7.3
+  instead of 16.6 ms of Store work per present; Settings scrolled at 18.1 instead of 15.9 presents a second.
+  Screenshots matched pixel for pixel, with no black or stale frames.
+- The virtual iPhone example has an app icon of its own, a white T on tomato red, named with xtool's `iconPath`.
+  On a live phone `project.run` built it in 3.3 s, installed and opened it, and the icon showed on the Home screen.
+
 ## 1.2.0
 
 `tomaccoctl` now has one typed API of 224 operations.
@@ -29,9 +62,8 @@ operations and their JSON results.
   - `ios.virtual.syslog` takes `bundle_id` and returns only that app's lines: its executable's own and launchd's about its
     service, matched by name, so following with `offset` keeps them across relaunches. Tested on synthetic console lines.
   - `examples/hello-virtual-iphone`, a SwiftUI starter in xtool's format for the virtual iPhone, and the walkthrough
-    [Your first SwiftUI app on the virtual iPhone](docs/tutorial-virtual-iphone.md). It has an app icon of its own, a white T
-    on tomato red, named with xtool's `iconPath`. On a live phone `project.run` of a copy built it in 3.3 s, installed
-    and opened it, and the icon showed on the Home screen.
+    [Your first SwiftUI app on the virtual iPhone](docs/tutorial-virtual-iphone.md). Its build and `project.app` check ran;
+    running it on a live phone did not.
 - `tomaccoctl setup` also connects OpenCode (`~/.config/opencode/opencode.json`, `mcp`). Apps that run these
   agents, such as T3 Code, then reach Tomacco through them; docs/agents.md says so.
 - **Release.**
@@ -267,13 +299,6 @@ operations and their JSON results.
   0.5 GiB of data, the copy took 3.9 s instead of 13.6 s and the launcher's hash 5.4 s instead of 32.4 s, with the same
   SHA-256. The start's space check and `start_disk.needed_bytes` count the data the base's disks hold instead of their
   full size, so a start fits on a fuller disk. Not run on a live phone.
-- Virtual iPhone renderer: less work per frame on the drain, under the lock the guest's processors also wait for. The
-  render Store converts the frame for the present beside its copy into the guest's pages instead of before it; the frame
-  mailbox's hand-off copy runs in up to four bands; and the sampled-texture cache's content digest, which only picks the
-  candidate a byte compare then decides, is a four-lane multiply hash instead of two SipHash passes. A recorded live run
-  had spent about 1.9 ms a frame on that conversion, 2.3 ms on that copy, 1.5 ms on the hand-off and up to 305 ms a
-  second on digests. Offline on the development host: conversion plus copy 6.0-7.0 ms against 3.8-4.4 ms side by side,
-  the hand-off 1.1-1.4 ms against 0.3-0.5 ms, a 2 MB digest 0.55 ms against 0.09 ms. Not measured on a live phone.
 - The virtual iOS device's troubleshooting guide opens with a table of every error code it returns, with what each
   means and what to do. A test fails when a code there or in a symptom does not exist in the code, or when a code the
   code returns is missing from the table.
@@ -281,15 +306,6 @@ operations and their JSON results.
 ### Fixed
 
 - **Virtual iPhone, found on a live phone.**
-  - `ios.virtual.deploy`, and so `project.run`, installed an app and then failed with `ios_virtual_application_conflict`
-    when the profile listed the same bundle identifier from another path, such as an earlier copy of the project. The
-    deploy now replaces that listing (its log says `relisted`) and keeps the app the start opens; the same live
-    `project.run` then opened the app.
-  - A start refused for a `.tomacco-engine-tmp` that others may enter said to free space; it now says `chmod 700` it or
-    remove it.
-  - Settings showing a "?" square for every top-level row's icon is iOS serving icons it kept from an earlier session.
-    Troubleshooting has the `icon_cache` `clear` call: on a live phone the icons came back in a Settings started after
-    it, about 2 minutes after the next start, not in the Settings that had kept running.
   - `ios.virtual.host_check` asked for room for a 32 GiB copy when the profile starts with an overlay; it now asks for
     what the overlay start needs (1 GiB on the test profile).
   - `ios.virtual.setup` named the engine build as the next stage, and `run` asked to build it, for a profile that was
