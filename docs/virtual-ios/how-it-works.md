@@ -97,9 +97,11 @@ What to know before changing it:
   `tools/run_ios_paravirt.py`).
 - **Frames.** `ios.emulator.control` `frame` with `transport:"file"` writes an uncompressed PPM into a private, memory-backed directory, and reports whether the picture changed. A viewer can skip the reload then.
 - **A frame's cost on the drain.** With no host window carrying the frame, each frame's render Store reads the RGBA16F front
-  surface back, converts it into the BGRA8 frame the present and the frame mailbox use, and copies it into the guest's
-  pages; the conversion runs beside the copy. The renderer's census in `renderer/fail.log` times each part (`store_routes`:
-  `native_float_readback_us`, `store_capture_convert_us`, `native_float_publish_us`; `frame_mailbox`: `offer_us`).
+  surface back, copies it into the guest's pages and converts it into the BGRA8 frame the present and the frame mailbox
+  use. The copy runs on up to four threads in row parts with streaming stores, and each part converts its rows right
+  after copying them; `REIMS_VGPU_STORE_PUBLISH_BANDS=off` brings back the single copy with the conversion beside it.
+  The renderer's census in `renderer/fail.log` times each part (`store_routes`: `native_float_readback_us`,
+  `native_float_publish_us`, `store_capture_convert_us` summed over the parts; `frame_mailbox`: `offer_us`).
 - **No GPU access to guest RAM on the development host.** Every session there logs `host_ram_import ... ok=false`
   (`ERROR_INVALID_EXTERNAL_HANDLE`) for each 2 GiB block of guest RAM, so the renderer's GPU-direct writeback and gather
   rails are never used and Stores copy on the CPU. Guest RAM is shared memory there, for the guest channel's

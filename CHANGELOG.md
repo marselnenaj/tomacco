@@ -4,6 +4,21 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Changed
+
+- Virtual iPhone renderer: the render Store copies the frame into the guest's pages on up to four threads, in row parts
+  the threads claim in turn, with streaming stores that do not read the guest's memory first, and each part converts
+  its rows for the present right after copying them instead of a second pass over the whole frame beside the copy. The
+  half-float to BGRA8 conversion uses the CPU's half-float instructions where it has them, with the same bytes, and the
+  frame mailbox's hand-off copy uses streaming stores. A recorded live run of 1.2.1 spent 4.5-4.8 ms a Store on the copy
+  with the conversion beside it. Offline on the development host, with caches emptied before each run: that copy and
+  conversion 3.5-3.9 ms before and 2.5-2.8 ms now; one thread converting a frame 4.1 ms before and 1.9 ms now; the
+  hand-off 1.7-1.8 ms before and 1.2-1.4 ms now, though slower than before (0.6-0.7 against 0.3-0.6 ms) when both buffers
+  are still in the cache. Not yet measured on a live phone. `REIMS_VGPU_STORE_PUBLISH_BANDS=off` restores the previous
+  Store.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
