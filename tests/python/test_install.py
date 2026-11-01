@@ -7,6 +7,55 @@ from pathlib import Path
 from install import APP_ID, Installer
 
 ROOT = Path(__file__).resolve().parents[2]
+# The specifications below run against install.py and, for the classes named
+# Native*, against `tomaccoctl _install` of the build in TOMACCOCTL.
+NATIVE = {"program": None}
+
+
+def native_program():
+    """TOMACCOCTL when it is a tomaccoctl that installs, else None."""
+    import os
+    import subprocess
+    program = os.environ.get("TOMACCOCTL")
+    if not program:
+        return None
+    try:
+        probe = subprocess.run([program, "_install", "--version"], capture_output=True, text=True, timeout=60)
+    except OSError:
+        return None
+    return program if probe.returncode == 0 and probe.stdout.startswith("Tomacco installer ") else None
+
+
+def run_native(home, package, *arguments, environment=None, expect=0):
+    """`tomaccoctl _install` for `home`, installing `package` (the tree of an
+    unpacked release; by default one made from this checkout beside the home)."""
+    import os
+    import subprocess
+    command = [NATIVE["program"], "_install", "--user-home", str(home)]
+    if not {"--rollback", "--uninstall", "--list-backups", "--version"} & set(arguments):
+        if package is None:
+            from install import VERSION
+            package = home.parent / "checkout-package" / f"tomacco-{VERSION}-Linux-x86_64"
+            if not package.is_dir():
+                fake_package(home.parent / "checkout-package", {}, VERSION)
+        command += ["--package", str(package)]
+    result = subprocess.run(command + list(arguments), capture_output=True, text=True, timeout=300,
+                            env={**os.environ, **(environment or {})})
+    if expect is not None and result.returncode != expect:
+        raise AssertionError(f"exit {result.returncode}: {result.stderr}")
+    return json.loads(result.stdout) if expect == 0 and result.stdout.strip() else result
+
+
+class Native:
+    """Runs a class's installer specifications against `tomaccoctl _install`."""
+
+    def setUp(self):
+        program = native_program()
+        if not program:
+            self.skipTest("TOMACCOCTL is not a tomaccoctl that installs")
+        NATIVE["program"] = program
+        self.addCleanup(NATIVE.__setitem__, "program", None)
+        super().setUp()
 
 
 class InstallerTests(unittest.TestCase):
@@ -317,6 +366,8 @@ class UninstallTests(unittest.TestCase):
     def run_installer(home, *arguments):
         import subprocess
         import sys
+        if NATIVE["program"]:
+            return run_native(home, None, *arguments)
         # Always an alternate home: the tests never touch the real one.
         result = subprocess.run([sys.executable, str(ROOT / "install.py"), "--user-home", str(home), *arguments],
                                 capture_output=True, text=True, timeout=120)
@@ -699,6 +750,8 @@ class PortablePackageTests(unittest.TestCase):
     def install(package, home, *arguments):
         import subprocess
         import sys
+        if NATIVE["program"]:
+            return run_native(home, package, "--no-window-rule", *arguments)
         result = subprocess.run([sys.executable, str(package / "install.py"), "--user-home", str(home), "--no-window-rule", *arguments],
                                 capture_output=True, text=True, timeout=120)
         if result.returncode:
@@ -849,6 +902,11 @@ class BatchedJournalTests(unittest.TestCase):
         the given rename, as on a power cut or SIGKILL."""
         import subprocess
         import sys
+        if NATIVE["program"]:
+            # A debug build's hooks: batches of four, exit 9 before the given publication.
+            run_native(home, package, "--no-window-rule", expect=9,
+                       environment={"TOMACCO_INSTALL_TEST_BATCH": "4", "TOMACCO_INSTALL_TEST_KILL_AT": str(replacements)})
+            return
         script = (
             "import os, sys\n"
             f"sys.path.insert(0, {str(package)!r})\n"
@@ -902,6 +960,15 @@ class BatchedJournalTests(unittest.TestCase):
             package = fake_package(root / "a", PortablePackageTests.RUNTIME)
             PortablePackageTests.install(package, home)
             copy = home / ".local/lib/tomacco/install.py"
+            if NATIVE["program"]:
+                run_native(home, None, "--uninstall", expect=9,
+                           environment={"TOMACCO_INSTALL_TEST_BATCH": "4", "TOMACCO_INSTALL_TEST_KILL_AT": "6"})
+                self.assertTrue(copy.exists() or (home / ".local/lib/tomacco").exists())
+                result = PortablePackageTests.install(package, home, "--uninstall")
+                self.assertEqual(result["kept"], [])
+                self.assertEqual(sorted(str(p) for p in (home / ".local/lib").rglob("*")), [])
+                self.assertFalse((home / ".local/bin/tomaccoctl").exists())
+                return
             script = ("import os, sys\n"
                       f"sys.path.insert(0, {str(copy.parent)!r})\n"
                       f"sys.argv = ['install.py', '--user-home', {str(home)!r}, '--uninstall']\n"
@@ -1030,3 +1097,213 @@ class PanelAndDocumentationTests(unittest.TestCase):
         self.assertFalse("One device window exists at a time" in readme, "the desktop guide still promises a single device window")
         self.assertTrue("Each device view, the native device and the virtual iOS device, can be detached into its own window" in readme,
                         "the desktop guide does not say that each device view has its own window")
+
+
+class NativeUninstallTests(Native, UninstallTests):
+    pass
+
+
+class NativeRepeatedInstallationTests(Native, RepeatedInstallationTests):
+    pass
+
+
+class NativeAgentSkillTests(Native, AgentSkillTests):
+    """The Python Installer these tests call in places rolls back and writes
+    beside the Rust installer: the two share one journal."""
+
+
+class NativePortablePackageTests(Native, PortablePackageTests):
+    pass
+
+
+class NativeKillTests(Native, unittest.TestCase):
+    """BatchedJournalTests' killed runs, with `tomaccoctl _install` killed by its
+    debug build's hooks."""
+
+    def setUp(self):
+        super().setUp()
+        if "/debug/" not in NATIVE["program"]:
+            self.skipTest("only a debug build can be killed at a chosen point")
+
+    test_a_killed_installation_rolls_back_reinstalls_and_uninstalls_cleanly = \
+        BatchedJournalTests.test_a_killed_installation_rolls_back_reinstalls_and_uninstalls_cleanly
+    test_a_killed_uninstallation_finishes_when_run_again = \
+        BatchedJournalTests.test_a_killed_uninstallation_finishes_when_run_again
+    kill_installation_after = BatchedJournalTests.kill_installation_after
+    staged = staticmethod(BatchedJournalTests.staged)
+
+
+def tree(home):
+    """Every file and link in `home` but the backups, with its content or target and mode."""
+    import os
+    found = {}
+    for path in sorted(home.rglob("*")):
+        if "install-backups" in path.parts or path.name == "mimeinfo.cache":
+            continue
+        if path.is_symlink():
+            found[str(path.relative_to(home))] = ("link", os.readlink(path))
+        elif path.is_file():
+            found[str(path.relative_to(home))] = (path.read_bytes(), path.stat().st_mode & 0o777)
+    return found
+
+
+class CrossInstallerTests(Native, unittest.TestCase):
+    """Either installer rolls back and uninstalls what the other installed: one
+    journal format, one backup layout."""
+
+    RUNTIME = PortablePackageTests.RUNTIME
+
+    def home(self, root):
+        home = root / "home"
+        (home / ".config/hypr").mkdir(parents=True)
+        (home / ".config/hypr/hyprland.lua").write_text('require("hypr.looknfeel")\n')
+        (home / ".config/omarchy").mkdir(parents=True)
+        (home / ".config/omarchy/shell.json").write_text(json.dumps({"bar": {"layout": {"right": [{"id": "omarchy.agents"}]}}}))
+        (home / ".claude").mkdir()
+        (home / ".codex/skills").mkdir(parents=True)
+        (home / ".local/share/tomacco").mkdir(parents=True)
+        (home / ".local/share/tomacco/profiles.json").write_text("[]")
+        return home
+
+    @staticmethod
+    def python(package, home, *arguments):
+        import os
+        import subprocess
+        import sys
+        done = subprocess.run([sys.executable, str(package / "install.py"), "--user-home", str(home), *arguments],
+                              capture_output=True, text=True, timeout=300, env={**os.environ, "TOMACCO_INSTALL_PYTHON": "1"})
+        if done.returncode:
+            raise AssertionError(done.stderr)
+        return json.loads(done.stdout)
+
+    @staticmethod
+    def rust(package, home, *arguments):
+        return run_native(home, package, *arguments)
+
+    def check(self, first, second):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            home = self.home(root)
+            before = tree(home)
+            old = fake_package(root / "a", self.RUNTIME, "1.0.0")
+            new = fake_package(root / "b", {"lib/libQt6Core.so.6": (b"\x7fELF qt 1.0.1", False)}, "1.0.1")
+            first(old, home, "--omarchy")
+            installed_old = tree(home)
+            # The other installer updates over it, as the same installer would.
+            updated = second(new, home, "--update")
+            self.assertGreater(updated["changed"], 0)
+            installed_new = tree(home)
+            self.assertFalse((home / ".local/lib/tomacco/runtime/lib/libavcodec.so.63").exists())
+            # Installing again with the first one changes nothing.
+            self.assertEqual(first(new, home, "--update")["changed"], 0)
+            # The first rolls the second's update back.
+            first(old, home, "--rollback", Path(updated["backups"]).name)
+            self.assertEqual(tree(home), installed_old)
+            # The second uninstalls what the first installed, and the first rolls that back.
+            removed = second(old, home, "--uninstall")
+            self.assertEqual(removed["kept"], [])
+            self.assertEqual(tree(home), {**before, ".config/omarchy/shell.json": tree(home)[".config/omarchy/shell.json"]})
+            self.assertEqual(json.loads((home / ".config/omarchy/shell.json").read_text()),
+                             {"bar": {"layout": {"right": [{"id": "omarchy.agents"}]}}})
+            first(old, home, "--rollback", Path(removed["backups"]).name)
+            self.assertEqual(tree(home), installed_old)
+            # Both list the same backups.
+            self.assertEqual(first(old, home, "--list-backups"), second(old, home, "--list-backups"))
+            del installed_new
+
+    def test_python_installs_and_rust_updates_rolls_back_and_uninstalls(self):
+        self.check(self.python, self.rust)
+
+    def test_rust_installs_and_python_updates_rolls_back_and_uninstalls(self):
+        self.check(self.rust, self.python)
+
+    def test_both_write_the_same_files_and_journal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            package = fake_package(root / "a", self.RUNTIME, "1.0.0")
+            found = []
+            for installer in (self.python, self.rust):
+                home = self.home(root / installer.__name__)
+                result = installer(package, home, "--omarchy")
+                # The same bytes once the home's own path is taken out, so a
+                # manifest's digests differ only for files that name the home.
+                files = {name: (content.replace(str(home).encode(), b"HOME"), mode) if isinstance(content, bytes)
+                         else (content, mode.replace(str(home), "HOME")) for name, (content, mode) in tree(home).items()}
+                manifest = json.loads((Path(result["backups"]) / "manifest.json").read_text())
+                entries = [(entry["path"], entry["before"], entry["after"] and {key: value for key, value in entry["after"].items()
+                                                                                if key != "sha256"}) for entry in manifest["files"]]
+                result = json.loads(json.dumps({key: value for key, value in result.items() if key != "backups"}).replace(str(home), "HOME"))
+                found.append((files, json.loads(json.dumps(entries).replace(str(home), "HOME")), result))
+            self.assertEqual(found[0], found[1])
+            self.assertEqual(found[1][2]["agent_skill"]["linked"], ["HOME/.claude/skills/tomacco", "HOME/.codex/skills/tomacco"])
+
+
+class NativeShimTests(Native, unittest.TestCase):
+    """install.py hands over to a tomaccoctl that installs: from the package,
+    beside an installed copy, and in the home for a kept copy that rolls back,
+    as older install.sh scripts and updaters run it."""
+
+    def package(self, root):
+        import shutil
+        top = fake_package(root, {}, "1.0.0")
+        (top / "bin/tomaccoctl").unlink()
+        shutil.copy2(NATIVE["program"], top / "bin/tomaccoctl")
+        return top
+
+    @staticmethod
+    def python(script, *arguments, environment=None):
+        import os
+        import subprocess
+        import sys
+        return subprocess.run([sys.executable, "-I", str(script), *arguments], capture_output=True, text=True,
+                              timeout=300, env={**os.environ, **(environment or {})})
+
+    def test_old_install_sh_and_old_updaters_reach_the_rust_installer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            home = root / "home"
+            top = self.package(root / "a")
+            debug = "/debug/" in NATIVE["program"]
+            if debug:
+                # Only the Rust installer has this hook: exit 9 at the first publication.
+                killed = self.python(top / "install.py", "--user-home", str(home),
+                                     environment={"TOMACCO_INSTALL_TEST_KILL_AT": "1"})
+                self.assertEqual(killed.returncode, 9, killed.stderr)
+            done = self.python(top / "install.py", "--user-home", str(home), "--no-window-rule")
+            self.assertEqual(done.returncode, 0, done.stderr)
+            installed = json.loads(done.stdout)
+            self.assertIn("agent_skill", installed)
+            # An updater of 1.2.1: python3 -I install.py --update from the package, then
+            # --rollback from the copy it kept, which has no tomaccoctl of its own.
+            kept = root / "kept"
+            (kept / "share/tomacco").mkdir(parents=True)
+            (kept / "install.py").write_bytes((top / "install.py").read_bytes())
+            (kept / "share/tomacco/VERSION").write_text("1.0.0\n")
+            update = self.python(top / "install.py", "--user-home", str(home), "--update")
+            self.assertEqual(update.returncode, 0, update.stderr)
+            if debug:
+                killed = self.python(kept / "install.py", "--user-home", str(home), "--rollback", Path(installed["backups"]).name,
+                                     environment={"TOMACCO_INSTALL_TEST_KILL_AT": "1"})
+                self.assertEqual(killed.returncode, 9, killed.stderr)
+            back = self.python(kept / "install.py", "--user-home", str(home), "--rollback", Path(installed["backups"]).name)
+            self.assertEqual(back.returncode, 0, back.stderr)
+            self.assertFalse((home / ".local/lib/tomacco").exists() and (home / ".local/lib/tomacco/VERSION").exists())
+            # The copy in ~/.local/lib/tomacco hands over to the tomaccoctl beside it.
+            self.assertEqual(self.python(top / "install.py", "--user-home", str(home)).returncode, 0)
+            copy = home / ".local/lib/tomacco/install.py"
+            refused = self.python(copy, "--user-home", str(home), "--binary", str(top / "bin/tomacco"))
+            self.assertEqual(refused.returncode, 2)
+            self.assertIn("only uninstalls", refused.stderr)
+            self.assertNotIn("or a checkout", refused.stderr, "the Python installer answered")
+            removed = self.python(copy, "--user-home", str(home), "--uninstall")
+            self.assertEqual(removed.returncode, 0, removed.stderr)
+            self.assertEqual(json.loads(removed.stdout)["kept"], [])
+            self.assertFalse((home / ".local/lib/tomacco").exists())
+
+    def test_without_a_tomaccoctl_that_installs_python_installs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            top = fake_package(root / "a", {}, "1.0.0")
+            done = self.python(top / "install.py", "--user-home", str(root / "home"), "--no-window-rule",
+                               environment={"TOMACCO_INSTALL_TEST_KILL_AT": "1"})
+            self.assertEqual(done.returncode, 0, done.stderr)

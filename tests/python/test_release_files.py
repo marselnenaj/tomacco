@@ -17,6 +17,10 @@ ROOT = Path(__file__).resolve().parents[2]
 APP_ID = "io.github.marselnenaj.tomacco"
 
 
+# The tomaccoctl a Native* class puts in the tree, so install.py hands over to it.
+NATIVE_CLI = []
+
+
 def package_tree(top):
     """The tree CMake's install rules make, built by hand with stand-in binaries."""
     for name in ("tomacco", "tomaccoctl"):
@@ -24,6 +28,8 @@ def package_tree(top):
         binary.parent.mkdir(parents=True, exist_ok=True)
         binary.write_bytes(b"\x7fELF" + name.encode())
         binary.chmod(0o755)
+    if NATIVE_CLI:
+        shutil.copy2(NATIVE_CLI[0], top / "bin/tomaccoctl")
     shutil.copy2(ROOT / "install.py", top / "install.py")
     share = top / "share/tomacco"
     share.mkdir(parents=True)
@@ -107,6 +113,23 @@ class TarballInstaller(unittest.TestCase):
         from install import PACKAGE_PATHS
         self.assertEqual(PACKAGE_PATHS["integrations/agent-skill"], "share/tomacco/agent-skill")
         self.assertIn("install(DIRECTORY integrations/agent-skill DESTINATION share/tomacco)", cmake)
+
+
+class NativeTree:
+    """Runs a class's tests with the tomaccoctl of TOMACCOCTL in the tree."""
+
+    def setUp(self):
+        program = os.environ.get("TOMACCOCTL")
+        probe = program and subprocess.run([program, "_install", "--version"], capture_output=True, text=True)
+        if not probe or probe.returncode != 0:
+            self.skipTest("TOMACCOCTL is not a tomaccoctl that installs")
+        NATIVE_CLI.append(program)
+        self.addCleanup(NATIVE_CLI.clear)
+        super().setUp()
+
+
+class NativeTarballInstaller(NativeTree, TarballInstaller):
+    """The same tarball, installed by its tomaccoctl through install.py."""
 
 
 class InstalledDocuments(unittest.TestCase):

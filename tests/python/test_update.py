@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_release_files import package_tree
+from test_release_files import NativeTree, package_tree
 
 ROOT = Path(__file__).resolve().parents[2]
 TOMACCOCTL = os.environ.get("TOMACCOCTL", str(ROOT / "build/tomaccoctl"))
@@ -126,6 +126,10 @@ class InstallerUpdateMode(unittest.TestCase):
             self.assertTrue(plugin.is_file())
             self.assertEqual(json.loads(shell.read_text())["disabledPlugins"], ["io.github.marselnenaj.tomacco"])
             self.assertFalse((home / ".config/hypr/tomacco.lua").exists())
+
+
+class NativeInstallerUpdateMode(NativeTree, InstallerUpdateMode):
+    """--update as an older updater passes it to install.py, which hands over to tomaccoctl."""
 
 
 class PublicDocuments(unittest.TestCase):
