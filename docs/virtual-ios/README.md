@@ -36,7 +36,7 @@ For contributors, [how it works](how-it-works.md) goes deeper.
 | A graphics card | Vulkan, with about 16 GiB of memory. Measured on a Radeon RX 6800-class card. |
 | A fast CPU | Every guest processor is emulated. Measured on an i9-13900K. |
 | Memory | 8 GiB for the guest, and up to 2 GiB for translated code. |
-| Disk | About 100 GiB for setup. Each session's disk copy is 32 GiB, and at most two are kept. |
+| Disk | About 100 GiB for setup. Each session's disk copy is a 32 GiB disk that takes the space of its data, and at most two are kept. |
 | Time | Half an hour for the restore itself. After that, about 9 minutes from a start to your app. |
 
 Other machines and graphics drivers have not been qualified. Read the

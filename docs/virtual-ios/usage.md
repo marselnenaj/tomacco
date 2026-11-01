@@ -71,7 +71,10 @@ way by itself, and repeats that every twenty seconds while the guest is busy. On
 refused at the limit is the guest frozen. `ios.virtual.status` reports a guest that ended by itself as
 `guest_ended`, with `guest_saved` saying whether it closed cleanly.
 
-Disk copies are 32 GiB each, and at most two are kept. Only copies Tomacco made in the profile's `installs`
+Disk copies are 32 GiB disks, and at most two are kept. On a filesystem that cannot clone files the copy is streamed: it
+keeps the base's holes and leaves out every 4 MiB chunk of zeros, so it takes the space of the disk's data, and the
+hashes taken before and after a session read only that data. On a synthetic 4 GiB disk with 0.5 GiB of data this took
+the copy from 13.6 s to 3.9 s and the launcher's hash from 32.4 s to 5.4 s; it has not been run on a live phone. Only copies Tomacco made in the profile's `installs`
 directory are ever deleted.
 
 To free that space yourself, `ios.virtual.cleanup` deletes the older copies. Without arguments it is a dry run:
@@ -123,7 +126,7 @@ start's attempt, another name or a copy an overlay reads. `kept_because` says wh
 In the desktop, the iOS test system dialog has the same under **Saved states** (*Gesicherte Zustände*): a list, **Save
 state**, **Start from it** while the phone is off, and **Delete**, which asks a second time.
 
-Each named run keeps its own 32 GiB copy on a filesystem that cannot share blocks. The operations have unit tests and
+Each named run keeps its own copy, up to 32 GiB, on a filesystem that cannot share blocks. The operations have unit tests and
 control-plane tests; they have not been used with a live phone yet.
 
 ### Copy-free starts (experimental)

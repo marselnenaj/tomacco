@@ -134,6 +134,64 @@ class UserlandTests(unittest.TestCase):
             copied = userland.snapshot(root, "disk", self.root / "copy2", time.monotonic() + 2)
         self.assertEqual((copied["copy_method"], (self.root / "copy2").read_bytes()), ("stream", image()))
 
+    def streamed(self, name, writer):
+        """A streamed (not reflinked) copy of a file `writer` fills."""
+        root = self.source()
+        with (root / name).open("wb") as stream:
+            writer(stream)
+        unsupported = OSError(userland.errno.EOPNOTSUPP, "no reflink")
+        with patch.object(userland.fcntl, "ioctl", side_effect=unsupported):
+            copied = userland.snapshot(root, name, self.root / (name + ".copy"), time.monotonic() + 30)
+        return root / name, self.root / (name + ".copy"), copied
+
+    def test_a_streamed_copy_keeps_holes_and_leaves_zero_chunks_out(self):
+        chunk = userland.COPY_CHUNK
+        def write(stream):
+            stream.seek(3 * chunk)  # a hole the filesystem knows
+            stream.write(b"A" * 4096)
+            stream.write(bytes(2 * chunk))  # zeros written out as data
+            stream.write(b"B" * 100)  # a short last chunk
+        source, copy, copied = self.streamed("disk", write)
+        self.assertEqual(copy.read_bytes(), source.read_bytes())
+        self.assertEqual(copy.stat().st_size, source.stat().st_size)
+        self.assertEqual(copied["copy_method"], "stream")
+        sparse = copied["sparse_copy"]
+        # Only the chunks that hold data are written: the one with the As
+        # (and the zeros after them in that chunk) and the one with the Bs.
+        self.assertLessEqual(sparse["data_bytes_written"], 2 * chunk)
+        self.assertEqual(sparse["data_bytes_written"] + sparse["zero_bytes_skipped"], source.stat().st_size)
+        self.assertLess(copy.stat().st_blocks * 512, source.stat().st_blocks * 512)
+
+    def test_a_dense_disk_of_zeros_is_copied_as_a_hole_with_its_size(self):
+        source, copy, copied = self.streamed("zeros", lambda stream: stream.write(bytes(3 * userland.COPY_CHUNK + 512)))
+        self.assertEqual(copy.read_bytes(), source.read_bytes())
+        self.assertEqual(copied["sparse_copy"]["data_bytes_written"], 0)
+        self.assertEqual(copy.stat().st_blocks, 0)
+
+    def test_without_extent_queries_the_copy_still_skips_zero_chunks(self):
+        real_lseek = userland.os.lseek
+        def unsupported(fd, offset, whence):
+            if whence in (userland.os.SEEK_DATA, userland.os.SEEK_HOLE):
+                raise OSError(userland.errno.EINVAL, "unsupported")
+            return real_lseek(fd, offset, whence)
+        chunk = userland.COPY_CHUNK
+        with patch.object(userland.os, "lseek", side_effect=unsupported):
+            source, copy, copied = self.streamed("plain", lambda stream: stream.write(
+                bytes(chunk) + b"C" * chunk + bytes(chunk)))
+        self.assertEqual(copy.read_bytes(), source.read_bytes())
+        self.assertEqual(copied["sparse_copy"], {"data_bytes_written": chunk, "zero_bytes_skipped": 2 * chunk,
+                                                 "extent_queries": "unavailable"})
+
+    def test_an_invalid_extent_report_stops_the_copy(self):
+        def stuck(_fd, offset, _whence):
+            return offset  # data and hole at the same place: no progress
+        root = self.source()
+        (root / "disk").write_bytes(b"D" * 8192)
+        with patch.object(userland.fcntl, "ioctl", side_effect=OSError(userland.errno.EOPNOTSUPP, "no")), \
+                patch.object(userland.os, "lseek", side_effect=stuck), \
+                self.assertRaisesRegex(ValueError, "invalid data range"):
+            userland.snapshot(root, "disk", self.root / "copy", time.monotonic() + 5)
+
     def test_raw_apfs_geometry_required_even_with_matching_digest(self):
         for index, data in enumerate((b"AEA1" + bytes(4092), b"not an image", image() + b"trailing")):
             source = self.root / f"disk-{index}"

@@ -224,7 +224,10 @@ def admit_translation_cache(qmp, requested_mib, receipt):
 LARGE_HASH_BYTES = 256 << 20
 HASH_READ_BYTES = 4 << 20
 HASH_BYTES_PER_SECOND = 128 << 20
-SPARSE_HASH_QUERY_LIMIT = 4096
+# Two queries per data extent. A disk copied sparsely (prepare_ios_userland's
+# sparse_copy) can have thousands of extents; past the limit the rest is read
+# as data, holes too. A query costs microseconds, so the bound stays small.
+SPARSE_HASH_QUERY_LIMIT = 1 << 18
 
 
 def hash_region(stream, position, size, sparse):

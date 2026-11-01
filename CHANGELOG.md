@@ -166,6 +166,12 @@ operations and their JSON results.
   GID 0, so two builds of a commit in the same directory give the same package. Before, the tarball's time stamps and the
   time Qt's `rcc` stored for the translations differed per build.
 - The Arch PKGBUILD and .SRCINFO build 1.1.0 from its source tarball.
+- Virtual iPhone: a start's streamed disk copy keeps the base's holes and leaves out every 4 MiB chunk of zeros, so the copy
+  takes the space of the disk's data, and the hashes the launcher takes before and after a session read only that data;
+  it hashes holes as zeros without reading them, and its limit of extent queries rose from 4096 to 262144. Before, every
+  copy was written out to its full 32 GiB, and both hashes read all of it at 128 MiB/s. On a synthetic 4 GiB disk with
+  0.5 GiB of data, the copy took 3.9 s instead of 13.6 s and the launcher's hash 5.4 s instead of 32.4 s, with the same
+  SHA-256. Not run on a live phone.
 - The virtual iOS device's troubleshooting guide opens with a table of every error code it returns, with what each
   means and what to do. A test fails when a code there or in a symptom does not exist in the code, or when a code the
   code returns is missing from the table.
