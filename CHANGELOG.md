@@ -72,6 +72,10 @@ operations and their JSON results.
     versions, the CPU of a `native` build and the checkouts with the earlier `build-manifest.json`, and checks the
     engine's digest. `--plan` prints whether it would build and every reason, without building or writing anything;
     `--rebuild` builds anyway. A reproducibility check, a profile-guided stage and configure pins always build.
+  - `tools/check_ios_inputs.py` checks the person's own inputs before any long step and explains each mismatch in
+    plain words: another build than the pinned one (with the build it found), the iPhone and PCC directories swapped,
+    components the unpacking left out, an image still AEA-encrypted or not APFS, a template other than the documented
+    one, an IM4M for another iPhone image or another device's ECID. It reads manifests and headers only.
 
 ### Changed
 

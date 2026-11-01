@@ -134,7 +134,7 @@ install(PROGRAMS tools/build_ios_emulator.py tools/prepare_ios_emulator.py tools
 install(PROGRAMS tools/prepare_ios_research_runtime.py tools/prepare_ios_exclave.py tools/prepare_ios_pmp.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/prepare_ios_userland.py tools/build_ios_gpu_plugin.py tools/build_ios_linker.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/prepare_ios_cryptex.py DESTINATION share/tomacco/tools)
-install(PROGRAMS tools/prepare_ios_research_manifest.py DESTINATION share/tomacco/tools)
+install(PROGRAMS tools/prepare_ios_research_manifest.py tools/check_ios_inputs.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/build_ios_guest_tools.py tools/prepare_ios_guest_tools.py tools/rebase_ios_guest_tools.py tools/build_ios_guest_control.py tools/ios_application_bundle.py tools/build_ios_sample_app.py tools/install_apple_dev.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/collect_ios_crash_reports.py tools/ios_persistence_probe.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/collect_ios_service_artifacts.py DESTINATION share/tomacco/tools)

@@ -15,6 +15,24 @@ IM4M with the command in step 4 before proceeding to the restore runtime.
 python3 tools/ios_virtual_profile.py --check
 ```
 
+**Check your own files first.** Before any long step, this looks at the images, the template and
+the IM4M you have so far and says in plain words what is wrong: another build than the one the
+chain needs, the two directories swapped, a component the unpacking left out, an image still
+encrypted or not APFS, a template other than the documented one, or an IM4M made for another
+iPhone image or another prepared device. Leave out what you do not have yet. It reads manifests
+and file headers only, so it takes moments; the import checks the large images' digests later.
+It exits with 1 when something needs attention, and its JSON lists each input under `checks`
+with `status` `pass`, `warn`, `fail` or `skipped`, the `problem` and the `fix`.
+
+```sh
+python3 tools/check_ios_inputs.py --iphone-firmware /phone/iphone-ipsw --pcc-firmware /phone/pcc \
+  --template /phone/ticket.shsh2 --manifest /phone/your.im4m --device-tree /phone/dtree.restore
+```
+
+The decrypted images are looked for where step 4 below puts them, under `decrypted/` in each
+image directory; `--iphone-os-image`, `--iphone-systemos-image` and `--pcc-system-image` name
+others. This check has unit tests with synthetic files only.
+
 `tomaccoctl doctor` gives a coarser view without your files: its `virtual_ios` step names the
 next stage of the chain (`next_stage`) and lists every stage under `chain`, with `done` true for
 the engine and helper builds it finds in the checkout's `.tooling`. Stages that depend on your
