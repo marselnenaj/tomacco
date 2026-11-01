@@ -128,8 +128,10 @@ makepkg
 ```
 
 For 1.0.0, `makepkg` built the package in about a minute and a half on the development host, and the packaged desktop passed
-`--smoke-test` offscreen. For 1.1.0, `makepkg -d` built it in 1 min 54 s, and the packaged `SOURCE.md` names the tag's commit.
-Installing it with pacman was not part of either check.
+`--smoke-test` offscreen. For 1.1.0, `makepkg -d` built it in 1 min 54 s, and the packaged `SOURCE.md` names the tag's commit. For 1.2.1, the
+downloaded tarball matched the release's `.sha256`, `makepkg -d` built it in 2 min 55 s while another build ran, the packaged
+`SOURCE.md` names the tag's commit and the packaged `tomaccoctl --version` printed 1.2.1.
+Installing it with pacman was not part of these checks.
 
 **Portable package.** The regular package links the system's Qt and FFmpeg, so it runs only where those match the build host's
 (Arch). `tools/build_portable.py` builds `tomacco-VERSION-Linux-x86_64-portable.tar.gz`, which bundles them, in a container:
