@@ -442,6 +442,52 @@ class EngineFileLimitTests(unittest.TestCase):
         self.assertEqual(run.engine_file_limit([], None, mailbox=True), 32 << 20)
 
 
+class EngineScratchTests(unittest.TestCase):
+    """The engine's TMPDIR, where the renderer translates every shader."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.engine = Path(self.temp.name) / "build" / "qemu-system-aarch64"
+        self.engine.parent.mkdir()
+        self.engine.write_text("")
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_it_is_a_private_directory_beside_the_engine_that_took_a_probe(self):
+        directory, problem = run.engine_scratch(self.engine, probe_bytes=2 << 20)
+        self.assertIsNone(problem)
+        self.assertEqual(directory, self.engine.parent / ".tomacco-engine-tmp")
+        self.assertTrue(run.private_directory(directory))
+        # The probe is gone, and a second launch reuses the directory.
+        self.assertEqual(list(directory.iterdir()), [])
+        self.assertEqual(run.engine_scratch(self.engine, probe_bytes=1 << 20), (directory, None))
+
+    def test_a_full_or_over_quota_filesystem_is_named_before_the_launch(self):
+        import errno as errnos
+        real_write = os.write
+        def write(descriptor, data):
+            if os.readlink(f"/proc/self/fd/{descriptor}").endswith(f".probe-{os.getpid()}"):
+                raise OSError(errnos.EDQUOT, os.strerror(errnos.EDQUOT))
+            return real_write(descriptor, data)
+        with patch.object(run.os, "write", write):
+            directory, problem = run.engine_scratch(self.engine, probe_bytes=1 << 20)
+        self.assertIn("cannot take 1 MiB", problem)
+        self.assertIn(os.strerror(errnos.EDQUOT), problem)
+        self.assertEqual(list(directory.iterdir()), [])
+
+    def test_a_directory_others_may_enter_is_refused(self):
+        directory = self.engine.parent / ".tomacco-engine-tmp"
+        directory.mkdir(mode=0o755)
+        directory.chmod(0o755)
+        self.assertEqual(run.engine_scratch(self.engine)[1], "it is not a private directory of this user")
+
+    def test_the_launcher_hands_it_to_the_engine_as_tmpdir(self):
+        source = Path(run.__file__).read_text()
+        self.assertIn('"TMPDIR": str(scratch)', source)
+        self.assertLess(source.index("engine_scratch(engine)"), source.index("subprocess.Popen(command"))
+
+
 class FrameMailboxTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

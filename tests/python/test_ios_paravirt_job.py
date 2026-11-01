@@ -248,6 +248,20 @@ class ParavirtualJobTests(Isolated):
         receipt = json.loads((directory / "request.json").read_text())
         self.assertEqual(receipt["render_store_writeback"], "eager")
 
+    def test_the_engine_gets_its_own_scratch_directory_not_the_shells_tmp(self):
+        import os
+        from unittest.mock import patch
+        args = self.arguments()
+        Path(args["engine"]).write_text("#!/bin/sh\nprintf 'TMPDIR=%s\\n' \"$TMPDIR\"\n")
+        with patch.dict(os.environ, {"TMPDIR": "/tmp"}):
+            job = dispatch("ios.emulator.paravirtual", args)
+            done = jobs.wait(job["id"], 10)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"]))
+        directory = Path(job["report_directory"]) / "paravirtual"
+        scratch = Path(args["engine"]).parent / ".tomacco-engine-tmp"
+        self.assertEqual((directory / "host.log").read_text().strip(), f"TMPDIR={scratch}")
+        self.assertEqual(json.loads((directory / "request.json").read_text())["engine_temporary"], str(scratch))
+
     def test_display_panel_rejects_invalid_geometry_before_starting_a_job(self):
         args = self.arguments()
         for profile in ("1170x2532@60:141x65", "8193x8193@60:100x100", "1170x2532@121:65x141",

@@ -487,6 +487,47 @@ def private_directory(path):
     return stat.S_ISDIR(status.st_mode) and status.st_uid == os.geteuid() and not status.st_mode & 0o077
 
 
+# What the engine's scratch directory must take before a launch: more than
+# the shader translator and the renderer's pipeline cache write at once.
+ENGINE_SCRATCH_PROBE_BYTES = 16 << 20
+
+
+def engine_scratch(engine, probe_bytes=ENGINE_SCRATCH_PROBE_BYTES):
+    """The engine's TMPDIR: a private directory beside the engine, on its
+    filesystem rather than a shared /tmp. The renderer translates every Metal
+    shader through scratch files there and remembers a translation that failed
+    for the rest of the session, so a full or over-quota /tmp (seen live:
+    llvm-dis "Disk quota exceeded") left every pipeline refused and the
+    display black for the whole run. The directory keeps the renderer's
+    pipeline cache from boot to boot. Returns (path, None), or (path, reason)
+    when it cannot take probe_bytes now."""
+    directory = engine.parent / ".tomacco-engine-tmp"
+    try:
+        directory.mkdir(mode=0o700, exist_ok=True)
+    except OSError as error:
+        return directory, f"cannot make it: {error.strerror or error}"
+    if not private_directory(directory):
+        return directory, "it is not a private directory of this user"
+    probe = directory / f".probe-{os.getpid()}"
+    try:
+        descriptor = os.open(probe, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+        try:
+            chunk = bytes(1 << 20)
+            for _ in range(max(1, probe_bytes >> 20)):
+                os.write(descriptor, chunk)
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    except OSError as error:
+        return directory, f"cannot take {probe_bytes >> 20} MiB: {error.strerror or error}"
+    finally:
+        try:
+            probe.unlink()
+        except FileNotFoundError:
+            pass
+    return directory, None
+
+
 def sweep_frame_mailboxes(root, now=None):
     """Remove the mailboxes of launchers that have ended: each live launcher
     holds an exclusive lock on its own directory for as long as it runs."""
@@ -1643,6 +1684,10 @@ def main():
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             parser.error("This virtual iPhone engine already has an active session")
+        scratch, scratch_problem = engine_scratch(engine)
+        if scratch_problem:
+            parser.error(f"The engine's scratch directory {scratch} {scratch_problem}; the renderer "
+                         "translates every shader through it and would show a black display. Free space there")
         protected = [engine, *inputs.values(), *disks.values()]
         if boot_manifest_path:
             protected.append(boot_manifest_path)
@@ -1893,6 +1938,7 @@ def main():
             # after it took.
             inputs_hashed = len(hash_observations)
             record["timing"] = timing_of(hash_observations, "input")
+            record["engine_temporary"] = str(scratch)
             if nvram is not None:
                 record["nvram_handoff"] = {**nvram, "prepared_tree": original_tree}
             if pcc_config is not None:
@@ -1970,7 +2016,8 @@ def main():
             env = {**os.environ, "REIMS_VGPU_RAIL": "vulkan",
                    "REIMS_VGPU_WINDOW": "1" if args.window else "0",
                    "REIMS_VGPU_LOG_DIRECTORY": str(graphics_log_directory),
-                   "REIMS_VGPU_LAZY_WRITEBACK": "off"}
+                   "REIMS_VGPU_LAZY_WRITEBACK": "off",
+                   "TMPDIR": str(scratch)}
             # Profile selection is part of the owned launch request, so an
             # inherited shell override must not silently change the device.
             env.pop("REIMS_VGPU_PANEL", None)
