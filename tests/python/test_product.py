@@ -1709,6 +1709,124 @@ temp=file.with_suffix('.tmp');temp.write_text(json.dumps(mine));temp.replace(fil
             self.assertTrue(refused.exception.details["device_definition"])
             self.assertEqual(refused.exception.details["form_factor"], kind)
 
+    def test_emulator_sensors_go_through_the_console(self):
+        self.replies(**{"sensor get acceleration": "acceleration = 9.80665:0:0\nOK\n",
+                        "sensor get proximity": "proximity = 0\nOK\n",
+                        "sensor get light": "light = 5000\nOK\n",
+                        "sensor get hinge-angle0": "hinge-angle0 = 90\nOK\n",
+                        "sensor status": "acceleration: enabled.\nlight: enabled.\nhinge-angle0: enabled.\nheart-rate: disabled.\nOK\n",
+                        "dumpsys window displays": "  mRotation=1 mDeferredRotationPauseCount=0\n",
+                        "accelerometer_rotation": "1\n", "print-state": "2\n", "emu": "OK\n"})
+        sensors = lambda **a: dispatch("android.sensors", {"device": "emulator-5554", **a})
+        turned = sensors(action="orientation", orientation="landscape")
+        self.assertEqual((turned["rotation"], turned["applied"]), (90, True))
+        self.assertFalse(sensors(action="orientation", orientation="reverse-portrait")["applied"])
+        self.assertTrue(sensors(action="proximity", near=True)["near"])
+        self.assertEqual(sensors(action="light", lux=5000)["lux"], 5000)
+        sensors(action="fingerprint", finger_id=2)
+        status = sensors(action="status")["sensors"]
+        self.assertEqual(status["acceleration"], {"enabled": True, "values": [9.80665, 0, 0]})
+        self.assertEqual(status["heart-rate"], {"enabled": False, "values": None})
+        folded = sensors(action="posture", posture="half-open")
+        self.assertEqual((folded["hinge_angle"], folded["device_state"]), (90, "half-open"))
+        sensors(action="posture", posture="closed")
+        sensors(action="set", sensor="pressure", values=[990])
+        consoles = [call[1:] for call in self.calls() if call[:1] == ["emu"]]
+        for expected in (["sensor", "set", "acceleration", "9.80665:0:0"], ["sensor", "set", "proximity", "0"],
+                         ["sensor", "set", "light", "5000"], ["finger", "touch", "2"], ["finger", "remove"],
+                         ["posture", "2"], ["fold"], ["sensor", "set", "pressure", "990"]):
+            self.assertIn(expected, consoles)
+        sensors(action="shake")
+        shakes = [c for c in [call[1:] for call in self.calls() if call[:1] == ["emu"]] if c[:3] == ["sensor", "set", "acceleration"]]
+        self.assertGreaterEqual(len(shakes), 10)
+        self.assertEqual(shakes[-1], ["sensor", "set", "acceleration", "9.80665:0:0"], "the shake puts gravity back")
+        self.replies(**{"sensor status": "acceleration: enabled.\nhinge-angle0: disabled.\nOK\n", "emu": "OK\n"})
+        for arguments, code in (({"action": "posture", "posture": "closed"}, "not_foldable"),
+                                ({"action": "set", "sensor": "light"}, "invalid_argument"),
+                                ({"action": "set", "sensor": "x;reboot", "values": [1]}, "invalid_argument")):
+            with self.assertRaises(StudioError) as refused:
+                sensors(**arguments)
+            self.assertEqual(refused.exception.code, code)
+        with self.assertRaises(StudioError) as phone:
+            dispatch("android.sensors", {"device": "R5CT1234", "action": "status"})
+        self.assertEqual(phone.exception.code, "not_emulator")
+
+    def test_app_links_are_read_verified_resolved_and_set(self):
+        self.replies(**{"pm path dev.example.app": "package:/data/app/base.apk\n", "pm path": "FAIL:",
+                        "get-app-links": "  dev.example.app:\n    ID: 1\n    Domain verification state:\n      example.com: verified\n      shop.example.com: none\n    User 0:\n      Verification link handling allowed: true\n",
+                        "resolve-activity": "priority=0 match=0x508000\ndev.example.app/.LinkActivity\n",
+                        "query-activities": "2 activities found:\n  Activity #0:\n    dev.example.app/.LinkActivity\n  Activity #1:\n    com.android.chrome/.Main\n"})
+        links = lambda **a: dispatch("android.app_links", {"device": "emulator-5554", "bundle_id": "dev.example.app", **a})
+        status = links()
+        self.assertEqual(status["verified"], ["example.com"])
+        self.assertEqual(status["unverified"], ["shop.example.com"])
+        resolved = links(action="resolve", url="https://example.com/item/1?x=1")
+        self.assertEqual((resolved["handler"], resolved["package"], resolved["opens_in_app"], resolved["chooser"]),
+                         ("dev.example.app/.LinkActivity", "dev.example.app", True, False))
+        self.assertEqual(len(resolved["candidates"]), 2)
+        self.assertEqual(links(action="verify", seconds=0)["waited_seconds"], 0)
+        links(action="set", state="denied", domains=["shop.example.com"])
+        links(action="set", state="none")
+        calls = self.shell_calls()
+        self.assertIn(["pm", "verify-app-links", "--re-verify", "dev.example.app"], calls)
+        self.assertIn(["pm", "set-app-links", "--package", "dev.example.app", "STATE_DENIED", "shop.example.com"], calls)
+        self.assertIn(["pm", "set-app-links", "--package", "dev.example.app", "STATE_NO_RESPONSE", "all"], calls)
+        resolve = next(c for c in calls if "resolve-activity" in c)
+        self.assertEqual(resolve[resolve.index("-d") + 1], "https://example.com/item/1?x=1")
+        self.assertIn("0x10000", resolve)
+        self.replies(**{"resolve-activity": "priority=0\nandroid/com.android.internal.app.ResolverActivity\n", "query-activities": ""})
+        chooser = dispatch("android.app_links", {"device": "emulator-5554", "action": "resolve", "url": "https://example.com/"})
+        self.assertEqual((chooser["chooser"], chooser["handler"]), (True, None))
+        self.replies(**{"pm path": "FAIL:"})
+        for arguments, code in (({"bundle_id": "dev.missing.app"}, "app_not_installed"),
+                                ({"action": "resolve", "url": "example.com"}, "invalid_url"),
+                                ({"action": "status"}, "invalid_argument")):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.app_links", {"device": "emulator-5554", **arguments})
+            self.assertEqual(refused.exception.code, code, arguments)
+
+    def test_network_capture_is_opt_in_and_one_app_is_captured_through_nflog(self):
+        capture = lambda **a: dispatch("android.network_capture", {"device": "emulator-5554", **a})
+        with self.assertRaises(StudioError) as refused:
+            capture(action="start")
+        self.assertEqual(refused.exception.code, "opt_in_required")
+        self.assertEqual(self.calls(), [], "nothing runs without opt_in")
+        self.replies(**{"id -u": "0\n", "list packages -U": "package:dev.example.app uid:10123\n",
+                        "setsid tcpdump": "4242\n", "test -s": "ready\n"})
+        started = capture(action="start", opt_in=True, bundle_id="dev.example.app")
+        self.assertEqual((started["scope"], started["interface"]), ("app", "nflog:47"))
+        with self.assertRaises(StudioError) as twice:
+            capture(action="start", opt_in=True)
+        self.assertEqual(twice.exception.code, "capture_running")
+        # A pcap with one HTTP request, where the stand-in adb's pull leaves it.
+        request = b"GET /items/7?token=secret HTTP/1.1\r\nHost: example.com\r\n\r\n"
+        tcp = (40000).to_bytes(2, "big") + (80).to_bytes(2, "big") + bytes(8) + bytes([0x50, 0x18]) + bytes(6) + request
+        ip = bytes([0x45, 0]) + (20 + len(tcp)).to_bytes(2, "big") + bytes([0, 0, 0x40, 0, 64, 6, 0, 0, 10, 0, 2, 16, 93, 184, 215, 14]) + tcp
+        frame = (0x0800).to_bytes(2, "big") + bytes(18) + ip
+        output = self.root / "app.pcap"
+        output.write_bytes(bytes.fromhex("d4c3b2a102000400") + bytes(8) + (65535).to_bytes(4, "little") + (276).to_bytes(4, "little")
+                           + bytes(8) + len(frame).to_bytes(4, "little") * 2 + frame)
+        summary = capture(action="stop", path=str(output))
+        self.assertEqual((summary["scope"], summary["bundle_id"], summary["packets"]), ("app", "dev.example.app", 1))
+        self.assertEqual(summary["http_requests"], [{"method": "GET", "host": "example.com", "path": "/items/7", "count": 1}])
+        self.assertNotIn("secret", json.dumps(summary))
+        self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+        scripts = [c[4] for c in self.shell_calls() if c[:4] == ["su", "0", "sh", "-c"]]
+        rule = "OUTPUT -m owner --uid-owner 10123 -j NFLOG --nflog-group 47"
+        self.assertIn(f"iptables -I {rule}; ip6tables -I {rule}", scripts)
+        self.assertIn(f"iptables -D {rule}; ip6tables -D {rule}", scripts)
+        self.assertIn("kill -INT 4242", scripts)
+        self.assertIn("rm -f /data/local/tmp/tomacco-capture-emulator-5554.pcap", scripts)
+        self.assertTrue(any("tcpdump -i nflog:47" in s for s in scripts))
+        with self.assertRaises(StudioError) as stopped:
+            capture(action="stop")
+        self.assertEqual(stopped.exception.code, "capture_not_running")
+        self.assertEqual(dispatch("android.network_capture", {"action": "summary", "path": str(output)})["packets"], 1)
+        self.replies(**{"id -u": "2000\n"})
+        with self.assertRaises(StudioError) as user:
+            capture(action="start", opt_in=True)
+        self.assertEqual(user.exception.code, "root_unavailable")
+
 class AndroidPackageTests(Isolated):
     """android.package_inspect reads a package with stand-ins for the SDK tools."""
     @staticmethod

@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 224 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 227 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -48,6 +48,9 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`android.emulator`](android.md#androidemulator) | Control emulator | **destructive** |
 | [`android.package_inspect`](android.md#androidpackage_inspect) | Inspect APK or AAB | read-only |
 | [`android.size_report`](android.md#androidsize_report) | Report APK or AAB size | read-only |
+| [`android.sensors`](android.md#androidsensors) | Emulator sensors | writes |
+| [`android.app_links`](android.md#androidapp_links) | App Links | writes |
+| [`android.network_capture`](android.md#androidnetwork_capture) | Network capture | writes |
 
 ## [apple](apple.md)
 

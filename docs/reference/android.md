@@ -2,7 +2,7 @@
 
 # `android` operations
 
-29 operations. Generated from `assets/operations.json`; [all areas](README.md).
+32 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### android.screen
 
@@ -479,7 +479,7 @@ tomaccoctl call android.avd_configure '{"name":"<name>"}'
 
 **Start emulator**
 
-Start or reuse an Android virtual device. CPU acceleration remains enabled independently of the selected GPU renderer.
+Start or reuse an Android virtual device. A Tomacco-managed AVD resumes from its Quick Boot snapshot when android.emulator saved one at its last stop; the result's boot says quick or cold and why. CPU acceleration remains enabled independently of the selected GPU renderer.
 
 Annotations: writes, idempotent, open world.
 
@@ -489,9 +489,11 @@ Annotations: writes, idempotent, open world.
 | `headless` | boolean |  | `false` |  |
 | `software` | boolean |  | `false` |  |
 | `gpu` | string |  | `"configured"` | one of `configured`, `auto`, `host`, `software`, `swiftshader`, `lavapipe`; configured respects the saved AVD renderer; auto selects a compatible renderer; host uses the computer GPU. An override applies to this start. Changing renderer requires stopping the emulator first. |
-| `cold_boot` | boolean |  | `false` | Skip saved VM snapshots, for example after changing the GPU renderer. App data is retained. |
+| `cold_boot` | boolean |  | `false` | Boot fully instead of loading the Quick Boot snapshot, for example after changing the GPU renderer. App data is retained. |
 | `audio` | boolean |  | `true` | Enable the emulator host audio backend independently of headless mode. Embedded clients can disable this and use runtime.audio instead. Applied only to a new emulator process. |
 | `vulkan` | string |  | `"configured"` | one of `configured`, `auto`, `on`, `off`; Vulkan compatibility override; off keeps OpenGL ES and avoids the Vulkan interoperability path. Requires a cold restart. |
+| `camera_image` | string |  |  | non-empty; Absolute path of a PNG or JPEG the emulated camera shows instead of its scene, for QR code and document scanning. Applied only to a new emulator process, which then boots cold. |
+| `camera_facing` | string |  | `"back"` | one of `back`, `front`; Which camera shows camera_image |
 
 ```sh
 tomaccoctl call android.avd_start '{"name":"<name>"}'
@@ -501,7 +503,7 @@ tomaccoctl call android.avd_start '{"name":"<name>"}'
 
 **Control emulator**
 
-Stop an emulator; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.
+Stop an emulator, saving the Quick Boot snapshot of a Tomacco-managed one so its next start resumes in seconds; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.
 
 Annotations: **destructive**, not idempotent, open world.
 
@@ -516,6 +518,7 @@ Annotations: **destructive**, not idempotent, open world.
 | `charging` | boolean |  | `true` | Whether the charger is connected, for battery |
 | `network_speed` | string |  | `"full"` | one of `gsm`, `hscsd`, `gprs`, `edge`, `umts`, `hsdpa`, `lte`, `evdo`, `5g`, `full`; Network speed preset, for network; full means no limit |
 | `network_delay` | string |  | `"none"` | one of `gprs`, `edge`, `umts`, `none`; Network latency, for network: gprs 150-550 ms, edge 80-400 ms, umts 35-200 ms, none adds no latency |
+| `save_quick_boot` | boolean |  | `true` | For stop: save the Quick Boot snapshot of a Tomacco-managed emulator first, which its next android.avd_start loads. Other emulators are never saved. |
 
 ```sh
 tomaccoctl call android.emulator '{"device":"<device>","action":"stop"}'
@@ -554,4 +557,70 @@ Annotations: read-only, idempotent, open world.
 
 ```sh
 tomaccoctl call android.size_report '{"path":"<path>"}'
+```
+
+### android.sensors
+
+**Emulator sensors**
+
+Simulate the sensors of an Android emulator through its console. status lists every sensor with its values; set gives one sensor values; orientation turns the device by gravity and reads back the display rotation Android chose; shake shakes the accelerometer for about a second; proximity covers or uncovers the proximity sensor; light sets the ambient light; fingerprint touches the fingerprint sensor with an enrolled finger, for a biometric prompt; posture folds, half-opens or opens a foldable emulator.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Emulator serial from device.list, such as emulator-5554 |
+| `action` | string | yes |  | one of `status`, `set`, `orientation`, `shake`, `proximity`, `light`, `fingerprint`, `posture` |
+| `sensor` | string |  |  | non-empty; For set: a sensor name from status, such as acceleration or magnetic-field |
+| `values` | array of number |  |  | 1 to 6 items; For set: the sensor's values, such as x, y and z |
+| `orientation` | string |  | `"portrait"` | one of `portrait`, `landscape`, `reverse-portrait`, `reverse-landscape`; For orientation: how the device is held |
+| `near` | boolean |  | `true` | For proximity: whether something covers the sensor |
+| `lux` | number |  | `300` | 0 to 100000; For light: ambient light in lux |
+| `finger_id` | integer |  | `1` | 1 to 10; For fingerprint: the enrolled finger, as the emulator numbers them |
+| `posture` | string |  | `"open"` | one of `closed`, `half-open`, `open`; For posture: the foldable's hinge |
+
+```sh
+tomaccoctl call android.sensors '{"device":"<device>","action":"status"}'
+```
+
+### android.app_links
+
+**App Links**
+
+Check an app's Android App Links. status reads each web domain the app declares with autoVerify and its verification state (verified, none, denied, or the verifier's error code) and the user's link choices; verify asks Android to verify the domains again and waits up to seconds for the answers, which need the domains' assetlinks.json and a network; resolve names the app and activity a link opens, or that Android shows a chooser, and every app that could open it; set approves, denies or resets domains by hand, as tests of a debug build need. Opening a link is android.deep_link.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `action` | string |  | `"status"` | one of `status`, `verify`, `resolve`, `set` |
+| `bundle_id` | string |  |  | non-empty; The app's application ID; for resolve it adds opens_in_app |
+| `url` | string |  |  | non-empty; For resolve: the link, such as https://example.com/item/1 |
+| `seconds` | integer |  | `30` | 0 to 120; For verify: how long to wait for the verifier |
+| `state` | string |  | `"approved"` | one of `approved`, `denied`, `none`; For set: the state to give the domains |
+| `domains` | array of string |  |  | For set: domains the app declares; all of them when left out |
+
+```sh
+tomaccoctl call android.app_links '{"device":"<device>"}'
+```
+
+### android.network_capture
+
+**Network capture**
+
+Capture the network traffic of an emulator, or only what one app sends, and summarise it: hosts with bytes and connections, TLS server names, HTTP requests with method, host and path but no query, and DNS queries. Contents are never in the summary; HTTPS stays encrypted, as no certificate is installed. start needs opt_in:true, a running emulator whose image allows root through su (Google APIs or AOSP, not Google Play) and runs the image's tcpdump; bundle_id limits it to the app's outgoing packets through an iptables rule that stop removes. stop ends it, copies the pcap file, readable only by you, to path and summarises it; summary reads any pcap file.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string |  |  | non-empty; Emulator serial from device.list, such as emulator-5554 |
+| `action` | string | yes |  | one of `start`, `stop`, `summary` |
+| `opt_in` | boolean |  | `false` | For start: confirm that every packet, contents included, may be recorded |
+| `bundle_id` | string |  |  | non-empty; For start: capture only what this app sends |
+| `path` | string |  |  | non-empty; For stop: where to write the pcap file, absolute; by default under Tomacco's data. For summary: the pcap file to read |
+
+```sh
+tomaccoctl call android.network_capture '{"action":"start"}'
 ```
