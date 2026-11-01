@@ -123,7 +123,10 @@ tomaccoctl call ios.crash_symbolicate '{"report":"/absolute/crashes/mobile/MyApp
 Each report lands in `mobile/` or `root/` under the directory, after the CrashReporter directory it came from, and the
 reply lists its `path`, `sha256` and the `pid` and `capture_time` read from it. The guest hands over at most three reports
 per directory and 512 KiB in all, so `collection_complete:false` means some were left out, and an empty list does not
-prove that nothing crashed. The saving has unit tests; it has not been run against a live phone yet.
+prove that nothing crashed. iOS names some reports with their kind before the process, such as
+`ExcUserFault_chronod-<date>.ips`; pass the kind as `process` to get them. On a live phone this saved three such reports
+in 0.1 s with their PID, process and capture time. `testing.crashes` lists a report of that form under `unparsed` as
+`not-a-crash`: it records a fault the process lived through.
 
 `logs development` shows the adapter's `active` line with `entries`, and an `entry` line per further identifier.
 That tells an inactive signing library from a refused bundle.
@@ -139,9 +142,14 @@ tomaccoctl call ios.virtual.syslog '{"process":"MyApp","offset":123456}'
 
 Each line has `time`, `process`, `pid`, `service`, `sender`, `level` and `message`; a line of no known form is the kernel's.
 Without `offset` it reads the last 256 KiB; pass the reply's `next_offset` back to follow the log. It reads the guest job's
-`uart.log` on the host and asks the guest nothing, so it also works after the phone stopped, for the last run. The parsing
-is tested against synthetic console lines; which forms a live phone prints, and how many of its records reach the console,
-has not been surveyed yet.
+`uart.log` on the host and asks the guest nothing, so it also works after the phone stopped, for the last run.
+
+What a live phone's console holds: in one run's log (1.2 MiB, 9,283 lines from boot to stop) 8,238 lines were launchd's
+records, 1,043 the kernel's and 2 dyld's. No app's own log records reached the console, so `process` finds launchd's
+records about the app's service, such as when it was spawned and why it exited, not what the app logs itself. launchd names
+a service with its domain (`user/501/SERVICE [PID]`); an app's service is `UIKitApplication:BUNDLE_ID[…]`, listed under the
+last part of its bundle identifier, and `pid/PID [NAME]` is the process `NAME`. A record about a whole domain, such as
+`system` or `user/501`, is launchd's own. A record that a kernel print cut in two stays the kernel's line.
 
 ## While it runs
 

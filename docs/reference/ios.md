@@ -922,7 +922,7 @@ Annotations: writes, idempotent, closed world.
 | `clang` | string |  |  | Host path of the clang 22 executable the start rebuilds guest tools with (profile.json toolchain.clang); empty removes it, so a clang-22 on PATH or the build's recorded toolchain is used. |
 | `deploy` | boolean |  | `false` | With add_application: install it on the running phone now, without a reboot. Refused with ios_virtual_not_running when the phone is off. |
 | `deploy_open_app` | boolean |  | `true` | With deploy: open the app afterwards. |
-| `start_disks` | string |  |  | one of `copy`, `overlay`; How the next start makes its root disk (profile.json start_disks): copy (the default) copies the base run's 32 GiB root disk; overlay makes an empty qcow2 overlay on it with qemu-img (beside the profile's helper engine or on PATH) and copies only the small auxiliary and SEP disks. Without qemu-img, or after 8 overlays on one base, the start copies or flattens instead and says why. Experimental: unit-tested only. |
+| `start_disks` | string |  |  | one of `copy`, `overlay`; How the next start makes its root disk (profile.json start_disks): copy (the default) copies the base run's 32 GiB root disk; overlay makes an empty qcow2 overlay on it with qemu-img (beside the profile's helper engine or on PATH) and copies only the small auxiliary and SEP disks. Without qemu-img, or after 8 overlays on one base, the start copies or flattens instead and says why. Experimental: run on a live phone, overlays layered twice; the flattening is unit-tested only. |
 
 ```sh
 tomaccoctl call ios.virtual.configure

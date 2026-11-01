@@ -9911,7 +9911,7 @@
             "copy",
             "overlay"
           ],
-          "description": "How the next start makes its root disk (profile.json start_disks): copy (the default) copies the base run's 32 GiB root disk; overlay makes an empty qcow2 overlay on it with qemu-img (beside the profile's helper engine or on PATH) and copies only the small auxiliary and SEP disks. Without qemu-img, or after 8 overlays on one base, the start copies or flattens instead and says why. Experimental: unit-tested only."
+          "description": "How the next start makes its root disk (profile.json start_disks): copy (the default) copies the base run's 32 GiB root disk; overlay makes an empty qcow2 overlay on it with qemu-img (beside the profile's helper engine or on PATH) and copies only the small auxiliary and SEP disks. Without qemu-img, or after 8 overlays on one base, the start copies or flattens instead and says why. Experimental: run on a live phone, overlays layered twice; the flattening is unit-tested only."
         }
       },
       "required": [],

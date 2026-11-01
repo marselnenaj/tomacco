@@ -735,12 +735,16 @@ guest tools report no UI hierarchy, so nothing can find an element by its label 
   `ios.emulator.control` as `click` and `drag`; a contact lasts at most 2 seconds, and a swipe that stays put is a long press.
   `text` types on the USB keyboard into the focused field. `key` takes a QEMU key name such as `ret`, `home` for the Home button,
   or an Android key code that has a counterpart (`KEYCODE_ENTER`, `KEYCODE_DEL`, `KEYCODE_HOME`, the arrows). `launch` opens an app
-  through the guest service's `open`; `stop` and `clear` are not available.
+  through the guest service's `open`; `stop` and `clear` are not available. `launch` returns once iOS accepted the request,
+  and the app shows a few seconds later (about 7 s on the development host), so follow it with a `wait_screen` before
+  tapping.
 - **Screens instead of elements.** On both platforms, `screenshot` keeps a PNG in the report directory, `pause` waits `duration`
   milliseconds, `assert_screen` compares the screen with a `baseline` PNG as `testing.visual_diff` does (`threshold`, `tolerance`) and
   fails with `screen_mismatch`, and `wait_screen` takes screenshots until one matches or `timeout` passes (`screen_timeout`). A failure
   writes the difference image beside the screenshot. Make the baseline with `ios.virtual.screenshot`, or with
-  `testing.visual_diff` and `update_baseline:true` after you have looked at it.
+  `testing.visual_diff` and `update_baseline:true` after you have looked at it. `ignore` leaves out regions in pixels as in
+  `testing.visual_diff`: on the phone, the status bar (the top 170 pixels of a 1206×2622 screen) and the Clock app's icon
+  change with the time.
 - **Crashes.** `testing.crashes` needs `process`, the app's executable name or another report name prefix, and reads the guest's crash
   reports through its `crash_reports` operation. Each report with an exception becomes an event like Android's: `kind` `crash`, `time`
   (the report's capture time), `package` (the bundle identifier), `process`, `pid`, `thread`, `exception` (such as `EXC_CRASH`),
@@ -751,7 +755,8 @@ guest tools report no UI hierarchy, so nothing can find an element by its label 
 - **Recording.** `testing.record` with `virtual-iphone` notes the screen's size at `start`, then turns the `ios.emulator.control`
   input sent to the running phone into steps: `click` becomes a `tap`, `drag` a `swipe`, a streamed touch from `touch_down` to
   `touch_up` (the desktop's phone window sends these) a tap, a long press or a swipe, and `text`, `key` and `home` their steps. A
-  key combination and the side button are listed under `skipped`. Every tap is at coordinates.
+  key combination and the side button are listed under `skipped`. Every tap is at coordinates. A gap of a second or more
+  between two inputs becomes a `pause` step of that length, up to 10 s, so a replay waits where the person waited.
 
 ```sh
 tomaccoctl call testing.record '{"device":"virtual-iphone","action":"start","name":"Open Settings"}'
@@ -761,11 +766,15 @@ tomaccoctl call testing.run '{"path":"/absolute/open-settings.json","directory":
 tomaccoctl call testing.crashes '{"device":"virtual-iphone","process":"MyApp","job_id":"JOB_ID"}'
 ```
 
-All of this, the screen steps on Android included, is unit-tested with recorded guest replies, screenshots and synthetic crash
-reports; none of it has been run on a live phone or an emulator yet.
+What ran on a live virtual iPhone (iPhone 18 Pro, iOS 27): a scenario that presses Home, launches an app, waits for its screen,
+taps a button and asserts the result against baselines taken live passed in 10 s, with `threshold` 0 and the status bar
+ignored (changed fraction 0.0); the same assertion against the screen before the tap failed with `screen_mismatch` (0.41 % of
+the pixels changed) and wrote its difference image. `testing.record` turned a tap on an icon, a 9 s wait and Home into `tap`,
+`pause` and `key`, and the replay with a `wait_screen` for the Home screen passed. `testing.crashes` read the phone's three
+fault reports and listed them as `not-a-crash`; no app had crashed, so no crash event was seen live. On Android the screen
+steps are unit-tested only.
 
-What works where, kept equal to the code by a unit test (`capabilities` returns the same as `testing`). A Yes for the virtual
-iPhone means implemented and unit-tested, not yet run on a live phone.
+What works where, kept equal to the code by a unit test (`capabilities` returns the same as `testing`).
 
 <!-- testing-matrix:begin -->
 | Feature | Android | Virtual iPhone | iPhone (USB) |

@@ -64,14 +64,24 @@ step you run by hand from the three commands the plan shows; pass `restored:true
 reported `restore_completed:true`. The [error codes](troubleshooting.md#error-codes) list what
 `run` refuses with and why.
 
+Once the work directory's profile is written and selected, the plan says `ready:true` and names no
+next stage, and `run` without a `stage` starts nothing: the phone starts from the profile, whatever
+state the earlier outputs are in.
+
 What was run: `plan` and the refusals of `run` on the development host with nothing prepared
-under `work`. No stage has been started through it yet; its stage logic has unit tests.
+under `work`, and `plan` and `run` on a work directory whose profile runs a live phone but whose
+earlier outputs were made by hand or by an older Tomacco (three of them `partial`): it answered
+`ready:true`, and `run` started nothing. No stage has been started through it yet; its stage logic
+has unit tests.
 
 `tomaccoctl doctor` gives a coarser view without your files: its `virtual_ios` step names the
 next stage of the chain (`next_stage`) and lists every stage under `chain`, with `done` true for
 the engine and helper builds it finds in the checkout's `.tooling`. Stages that depend on your
 images say `null`, because only the check above can tell. With a profile configured, it names
-what stops the next start instead, such as too little disk space. These steps have unit tests only.
+what stops the next start instead, such as too little disk space. With that live profile, `doctor`
+named no virtual iOS step, and `ios.virtual.host_check` passed everything but `passt`, which is not
+installed there; with `start_disks:"overlay"` its disk check asks for the 1 GiB an overlay start
+needs, not a 32 GiB copy.
 
 ## What no tool does for you
 

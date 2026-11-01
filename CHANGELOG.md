@@ -137,18 +137,24 @@ operations and their JSON results.
     auxiliary and SEP disks. The engine and the guest-tools helper attach it as qcow2, the host reads APFS through the
     chain, pruning and `ios.virtual.cleanup` keep the copies an overlay reads, and after 8 layers a start flattens the
     chain. `ios.emulator.prepare_guest_tools` takes `root_overlay` and `qemu_img`, and `start_disk` in
-    `ios.virtual.status` names the `method`. Unit-tested only, not run on a live phone.
+    `ios.virtual.status` names the `method`. Run on a live phone twice, the second start layered on the first: the disk
+    preparation took 16 s instead of 89 s for a copy, a verified stop 4.4 to 4.9 s instead of 258 s, and a run 0.4 GiB
+    instead of 32 GiB. The flattening after 8 layers has not run live.
   - Saved phone states: `ios.virtual.state_save` keeps the last verified run under a name without copying it,
     `ios.virtual.states` lists the names, `ios.virtual.state_use` makes one the base of the next start and
     `ios.virtual.state_delete` removes a name and the copy only it kept. Pruning and `ios.virtual.cleanup` keep named runs.
-    Unit-tested only, not run on a live phone. The iOS test system dialog lists them under **Saved states** with
-    **Save state**, **Start from it** and a **Delete** that asks twice.
+    Run on a live profile: save, the refusal for an unsaved base, `state_use` back and forth, a start from the chosen
+    state, and deletes that kept copies later overlays read. The iOS test system dialog lists them under **Saved states**
+    with **Save state**, **Start from it** and a **Delete** that asks twice.
   - `ios.virtual.profiles` lists every profile directory configured so far with its run, phase and whether its phone runs.
     `ios.virtual.configure` refuses another directory while the current phone runs (`ios_virtual_running`) or a start or
-    stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile.
+    stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile. The
+    refusal was seen with a live phone.
   - `ios.virtual.syslog` reads the phone's console log (the guest job's `uart.log`) as structured lines with time, process,
-    PID, level and message, filtered by process, level or text, and followed with `next_offset`. Tested against synthetic
-    console lines, not yet against a live phone's log.
+    PID, level and message, filtered by process, level or text, and followed with `next_offset`. Read against a live
+    phone's log: 9,283 lines, 8,238 of them launchd's records about services, 1,043 the kernel's and no app's own log
+    records. launchd's domains (`user/501/…`, `pid/PID [NAME]`, `system`) are read as the service's process, not as
+    processes named `501` or `system`.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
 
@@ -172,6 +178,19 @@ operations and their JSON results.
 
 ### Fixed
 
+- **Virtual iPhone, found on a live phone.**
+  - `ios.virtual.host_check` asked for room for a 32 GiB copy when the profile starts with an overlay; it now asks for
+    what the overlay start needs (1 GiB on the test profile).
+  - `ios.virtual.setup` named the engine build as the next stage, and `run` asked to build it, for a profile that was
+    written, selected and running but whose earlier outputs were elsewhere or older. The plan now says `ready` and names
+    no next stage.
+  - `ios.virtual.crash_reports` left pid, process and capture time empty for reports named with their kind first, such as
+    `ExcUserFault_chronod-…`; `testing.crashes` counted those fault reports as crashes and showed every frame's image as
+    `???`. They are now read, listed as `not-a-crash`, and frames show the image's UUID when the report names none.
+  - `assert_screen` and `wait_screen` take `ignore` regions, as `testing.visual_diff` does: the status bar's clock
+    otherwise fails an exact comparison a minute later.
+  - `testing.record` on the virtual iPhone keeps a wait of a second or more between inputs as a `pause` step; a replay
+    sent a recorded tap, swipe and Home within 0.4 s, before the app had opened.
 - THIRD_PARTY_NOTICES.md named SQLite 3.50.2; the locked `libsqlite3-sys` 0.39.1 embeds 3.54.1. A test keeps them in step.
 - The recipes and troubleshooting said `android.input` types ASCII only; since 1.1.0 it pastes other text through the
   device clipboard. Getting started and building showed 1.0.0 package names and said a release has no portable package.

@@ -26,8 +26,9 @@ Phases in the status, in order: `preparing`, `booting`, `installing` (only when 
 `phase_elapsed_seconds` is how long the current phase has run, and `phases` lists each phase of the
 current start or stop with its seconds. While `preparing`, `copy_progress` has the disk copy's
 `bytes_done`, `bytes_total` and `percent`, with the preparation's `step` and `disk`. It compares the
-size of the new copy's files with the base's, so a reflinked copy shows as complete at once. These
-fields have unit tests; they have not been watched during a live start yet.
+size of the new copy's files with the base's, so a reflinked copy or an overlay shows as complete at once. Watched during
+two live overlay starts: `step` went from `validate-payloads` to `validate-storage` and `copy-storage`, and the phases were
+`preparing` 16 s, `booting` 155 to 163 s, `unlocking` 37 to 58 s.
 
 Accepted is not the same as visible. After an accepted launch the start looks at the panel for up
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
@@ -46,7 +47,8 @@ tomaccoctl call ios.virtual.configure '{"directory":"/absolute/other-profile"}'
 
 Choosing another directory is refused with `ios_virtual_running` while the current profile's phone runs, and with
 `ios_virtual_busy` while a start or stop is in progress; `can_switch` in the list says whether it would work now. Stop the
-phone first. The list and the refusal have control-plane tests; switching has not been tried with a live phone.
+phone first. With a live phone running, the list showed it as `running` with `can_switch:false`, and choosing another
+valid profile was refused with `ios_virtual_running`; the configured directory stayed the same.
 
 ### What a stop saves
 
@@ -85,8 +87,9 @@ It lists each copy it would delete with its `bytes`, and `reclaimable_bytes` in 
 with its base, so less is freed than that. It deletes only copies the start recorded in `state.json`, never the verified
 base, the current run or a start's attempt, which it lists under `kept`. A copy whose disks a running guest holds is
 refused, not deleted. A `guest-install*` directory the state does not know is listed under `unrecorded` and left alone;
-delete it yourself if it is yours. A real cleanup waits until no start or stop runs. The cleanup has unit tests and a
-control-plane test; it has not been run on a real profile yet.
+delete it yourself if it is yours. A real cleanup waits until no start or stop runs. The dry run was run on a real profile
+with a two-layer overlay chain: it listed nothing to delete and kept the base and both copies it reads (`overlay-backing`);
+a real cleanup has not been run on a real profile yet.
 
 A start checks the space first. When the filesystem of `installs` lacks room for the copy (the base's disks
 plus 1 GiB, counting the older copies the start would delete first), `ios.virtual.start` refuses at once with
@@ -123,13 +126,16 @@ start's attempt, another name or a copy an overlay reads. `kept_because` says wh
 In the desktop, the iOS test system dialog has the same under **Saved states** (*Gesicherte Zustände*): a list, **Save
 state**, **Start from it** while the phone is off, and **Delete**, which asks a second time.
 
-Each named run keeps its own 32 GiB copy on a filesystem that cannot share blocks. The operations have unit tests and
-control-plane tests; they have not been used with a live phone yet.
+Each named run keeps its own 32 GiB copy on a filesystem that cannot share blocks; a run made as an overlay keeps only its
+overlay (0.4 GiB after a session). What ran on a live profile: a save while the phone ran (it named the last verified run),
+`state_use` refused with `ios_virtual_state_unsaved` for an unsaved overlay run, then switched the base back and forth
+between two saved runs, the next start began from the chosen one, and `state_delete` removed both names but kept both
+copies, as `overlay-backing` of the later runs.
 
 ### Copy-free starts (experimental)
 
-Every start copies the base run's 32 GiB root disk, which takes about 9 minutes on a filesystem that cannot clone files
-(ext4). A profile can ask for an overlay instead:
+Every start copies the base run's 32 GiB root disk, which takes minutes on a filesystem that cannot clone files (ext4), and
+every stop hashes the whole copy. A profile can ask for an overlay instead:
 
 ```sh
 tomaccoctl call ios.virtual.configure '{"start_disks":"overlay"}'
@@ -150,10 +156,22 @@ through the chain to check the Preboot volume as before.
 - Without `qemu-img` the start copies, and its log says why. `start_disk` in `ios.virtual.status` has the `method`
   (`copy`, `overlay` or `flatten`), and `start_disks` the choice.
 
-The plan, the qcow2 reading, the pruning and the launcher's block device have unit tests. None of it has run on a live
-phone yet. What a first live run has to show: that the patched engine boots iOS from `system.qcow2` (`-blockdev`
-driver `qcow2`, backing opened read-only by QEMU), that the helper installs the guest tools through it, that a stop
-still ends with exit code 0 and complete hashes, that the next start layers on that run, and how long a start takes then.
+**What ran on a live phone.** Two starts of the iPhone 18 Pro profile on the development host (ext4 on NVMe), the second
+layered on the first:
+
+| | Copy (the run before) | Overlay, first | Overlay, layered |
+| --- | --- | --- | --- |
+| Disk copy and guest-tools install | 89 s | 16.3 s | 16.2 s |
+| Start until the app's launch was accepted | 524 s | 217 s | 230 s |
+| Verified stop | 258 s | 4.9 s | 4.4 s |
+| New disk space for the run | 32 GiB | 0.4 GiB | 0.4 GiB |
+
+The engine opened `system.qcow2` with the `qcow2` block driver, the helper installed the guest tools through it, both stops
+ended with exit code 0, a confirmed flush and complete hashes, and the second start's overlay named the first's as its
+backing file, which named the raw base. The copy run's boot itself was slower that day (435 s from the copy to the
+accepted launch), so most of the difference in the second row is not the disk; the first and third rows are. Not run live yet: the
+flattening after 8 layers, and a start without `qemu-img`. A profile whose helper was assembled by hand may lack
+`qemu-img` beside it; the start then copies and says so in its log.
 
 ## The graphics memory guard
 
@@ -251,8 +269,8 @@ tomaccoctl call ios.virtual.screenshot '{"path":"/absolute/phone-framed.png","fr
 `rounded` cuts the corners round with the radius of the model the phone runs as and makes outside them transparent;
 the Home-button phone keeps square corners. `device` also draws a plain black bezel around it: a drawing, not a
 picture of the phone, with circular corners rather than Apple's continuous curves. Over MCP the PNG comes back inline
-when it is at most 4 MiB. The framing and the PNG writer have unit tests; a screenshot of a live phone has not been
-taken with it yet.
+when it is at most 4 MiB. On a live iPhone 18 Pro a plain screenshot (1206×2622) took 0.2 s, `rounded` (corner radius
+186) 0.35 s and `device` (1302×2718 with a 48-pixel bezel) 0.55 s.
 
 ```sh
 tomaccoctl call ios.virtual.record '{"path":"/absolute/phone.mp4","seconds":20,"fps":10}'
@@ -264,19 +282,21 @@ be installed. It asks for a frame `fps` times a second (up to 30) and repeats th
 poll was slow, so the video lasts as long as the recording. The guest itself draws only about 10 changed frames a second,
 so a higher `fps` mostly repeats pictures; the result's `frames_distinct` says how many differed. A phone that stops ends
 the recording early with what it has. The pacing has unit tests, and an MP4 was made from synthetic frames with a real
-ffmpeg and checked with ffprobe; a live phone has not been recorded with it yet.
+ffmpeg and checked with ffprobe. A live phone recorded for 12 s at 10 fps, with Home and two swipes, gave a 1206×2622
+H.264 MP4 of 12.0 s with 120 frames, 19 of them distinct (426 KiB).
 
 `job.send` with `command` `stop` ends a recording early and keeps the video so far; the result then has
 `stopped_early`. The desktop's **Record** button beside the phone's picture starts a recording of up to 10 minutes
 under `Videos/Tomacco`, stops it on a second press and shows the file in the file manager. The stop was checked with a
-synthetic frame source and a real ffmpeg; not on a live phone.
+synthetic frame source and a real ffmpeg, and on a live phone: a 60 s recording stopped after 5 s kept 4.9 s with
+`stopped_early:true`.
 
 ## UI tests
 
 `testing.run`, `testing.record` and `testing.crashes` take `virtual-iphone` as the device while the phone runs. Steps act at
 pixels of the screenshot and compare whole screens with a baseline, because the guest reports no UI hierarchy to find
 elements in. The [agent guide](../agents.md#ui-tests-on-the-virtual-iphone) has the steps and a table of what works on
-Android, here and on an iPhone. Unit-tested with recorded guest replies; not run on a live phone.
+Android, here and on an iPhone, and what ran on a live phone.
 
 ## Deploy your own app
 
