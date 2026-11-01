@@ -80,7 +80,12 @@ pub fn find(a: &Value) -> Result {
     let device = s(a, "device");
     identifier(device, "device", None)?;
     if ui_testing::is_virtual(device) {
-        return Err(ui_testing::no_hierarchy("testing.find"));
+        if !crate::screen_ocr::supports(&a["selector"]) {
+            return Err(ui_testing::no_hierarchy("testing.find"));
+        }
+        return crate::screen::with_screen(device, |screen| {
+            crate::screen::ocr_find(screen, &mut crate::screen_ocr::Tesseract, a)
+        });
     }
     let timeout = a["timeout"].as_u64().unwrap_or(10);
     let expected = a["state"].as_str().unwrap_or("present");
@@ -123,7 +128,12 @@ pub fn find(a: &Value) -> Result {
 }
 pub fn action(a: &Value) -> Result {
     if ui_testing::is_virtual(s(a, "device")) {
-        return Err(ui_testing::no_hierarchy("testing.action"));
+        if !crate::screen_ocr::supports(&a["selector"]) {
+            return Err(ui_testing::no_hierarchy("testing.action"));
+        }
+        return crate::screen::with_screen(s(a, "device"), |screen| {
+            crate::screen::ocr_action(screen, &mut crate::screen_ocr::Tesseract, a)
+        });
     }
     if s(a, "action") == "fill" && a.get("text").is_none() {
         return Err(Error::new(
@@ -216,7 +226,7 @@ pub fn action(a: &Value) -> Result {
 }
 fn step_schema() -> Value {
     json!({"type":"object","additionalProperties":false,"required":["action"],"properties":{
-    "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot","tap","swipe","text","pause","assert_screen","wait_screen","measure"]},"selector":selector_schema(),
+    "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot","tap","swipe","text","pause","assert_screen","wait_screen","wait_text","wait_stable","measure"]},"source":{"type":"string","enum":["auto","hierarchy","ocr"]},"selector":selector_schema(),
     "baseline":{"type":"string","minLength":1},"threshold":{"type":"number","minimum":0,"maximum":1},"tolerance":{"type":"integer","minimum":0,"maximum":255},
     "ignore":{"type":"array","maxItems":100,"items":{"type":"object","additionalProperties":false,"required":["x","y","width","height"],
         "properties":{"x":{"type":"integer","minimum":0},"y":{"type":"integer","minimum":0},"width":{"type":"integer","minimum":1},"height":{"type":"integer","minimum":1}}}},
@@ -265,6 +275,12 @@ pub fn check_scenario(scenario: &Value) -> Result<()> {
             }
             "text" if step.get("text").is_none() => {
                 return Err(Error::new("invalid_argument", "A text step requires text"));
+            }
+            "wait_text" if s(step, "text").trim().is_empty() => {
+                return Err(Error::new(
+                    "invalid_argument",
+                    "A wait_text step requires text",
+                ));
             }
             "pause" if step.get("duration").is_none() => {
                 return Err(Error::new(
@@ -1048,6 +1064,12 @@ pub fn run_device(
                         thread::sleep(Duration::from_millis(n(step, "duration")));
                         Ok(json!({"paused_ms":n(step, "duration")}))
                     }
+                    "wait_text" | "wait_stable" => crate::screen::step(
+                        &mut crate::screen::Android(device.to_string()),
+                        &mut crate::screen_ocr::Tesseract,
+                        &args,
+                        device,
+                    ),
                     "assert_screen" | "wait_screen" => screen_step(
                         &args,
                         &directory.join(format!("{tag}-{index:03}.png")),
@@ -1256,7 +1278,8 @@ mod tests {
     }
     #[test]
     fn element_operations_on_the_virtual_iphone_say_it_has_no_hierarchy() {
-        let selector = json!({"text":"OK"});
+        // A selector by text is read off the screenshot; any other needs the hierarchy.
+        let selector = json!({"resource_id":"dev.example:id/ok"});
         let refused = [
             find(&json!({"device":"virtual-iphone","selector":selector})),
             action(&json!({"device":"virtual-iphone","selector":selector,"action":"click"})),

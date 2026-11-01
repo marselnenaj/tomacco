@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 470 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -258,6 +258,9 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `lldb_server_missing` | The configured NDK has no … lldb-server. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
 | `macos_required` | project.execute builds Flutter iOS apps only on macOS. | On Linux call ios.flutter_build (it needs ios.toolkit_install), or use remote.run with an SSH Mac workspace. |
 | `managed_device_not_found` | The Gradle managed device or group is not declared in the build files. | Use a name from the managedDevices block, or all. |
+| `mark_not_found` | The last screen.marks of this device has no mark with that number. | Use a number from the marks in the last screen.marks result, or call screen.marks again. |
+| `mark_stale` | The screen no longer matches what the mark was made from, so nothing was tapped. | The screen changed since screen.marks; call it again and tap the new number. |
+| `marks_missing` | screen.tap was given a mark but no screen.marks or screen.tree has been made for this device. | Call screen.marks for the device, look at the result, then tap a number from it. |
 | `mdns_unavailable` | adb cannot discover devices on the network: … | Update the Android platform tools, or pair with the code through android.connect. |
 | `meminfo_unreadable` | dumpsys meminfo named no process of the app. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `metro_unreachable` | Metro does not answer on port …: … | Wait until the job's log says Metro is serving, or run the app again with project.run. |
@@ -287,6 +290,10 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `nothing_to_analyze` | No analyser applies: the project has no pubspec.yaml, and no eslint or tsc (with tsconfig.json) in node_modules/.bin. | Install eslint or typescript as a dev dependency, or open a Dart or Flutter project. |
 | `nothing_to_check` | No versioned dependency or plugin in the versions catalog or build files. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `notification_not_snoozed` | Android did not snooze … | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
+| `ocr_action_unsupported` | A field cannot be filled by text read off the screen. | Tap the field with a click, then type with a text step or ios.emulator.control. |
+| `ocr_failed` | tesseract could not read the screenshot. | Read the message and details.stderr; check that the image is a valid PNG, and try again or read a smaller region. |
+| `ocr_language_missing` | tesseract has no data for the language asked for. | Install the language's data (tesseract --list-langs lists what is installed) or use language eng. |
+| `ocr_unavailable` | Reading text off a screenshot needs tesseract, and it is not installed. | Install tesseract and its English data (Arch: pacman -S tesseract tesseract-data-eng; Debian and Ubuntu: apt install tesseract-ocr), or set TOMACCO_TESSERACT to the executable; capabilities.ocr says whether it is found. |
 | `off_screen` | (…, …) lies outside the …x… screen. | Use coordinates inside the screen size the message gives. |
 | `offline` | The Maven repositories cannot be reached: … did not resolve. | Connect to the network, or try again later. |
 | `operation_not_found` | Unknown operation: … | Use the operation the remedy suggests; tomaccoctl schema --names lists every operation. |
@@ -371,6 +378,7 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `scrcpy_server_missing` | The native Android view requires the scrcpy 4.1 server. | Install scrcpy 4.1 or pass the server JAR path to runtime.start. |
 | `scrcpy_timeout` | Android display server did not connect. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `screen_not_found` | No screen with this id is in the run being reviewed. | List the ids with testing.baselines review. |
+| `screen_unstable` | The screen kept changing until the timeout, as a video, an animation or a spinner does. | details.last_changed_fraction says how much; use ignore for the part that moves, raise threshold, or wait for text instead. |
 | `screenshot_missing` | The screenshot the review names is gone from the run directory. | Run the scenario again with record_baselines. |
 | `sdk_missing` | Configure the Android SDK first. | Set android_sdk with settings.configure. |
 | `sdk_platform_missing` | Something the request names does not exist or is not set up. | Install an Android platform with android.sdk_install, then build again. |
@@ -395,6 +403,7 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `terminal_missing` | Something the request names does not exist or is not set up. | Run xtool auth login in a terminal yourself; only the person signs in. |
 | `test_runtime_required` | The request was refused; the message says why. | Run portable Swift unit tests on Linux; Android behavior needs a device integration test. |
 | `text_requires_accessibility` | For non-ASCII text use runtime.input action=fill with the field coordinates; this replaces its full accessible value. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
+| `text_timeout` | The text did not appear, or go away, within the timeout. | Read details.seen for what the screen showed; check the text, try source ocr or hierarchy, raise the timeout, or look at a screenshot. |
 | `text_too_long` | Text through the clipboard is limited to {PASTE_LIMIT} bytes. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `text_unsupported` | Text outside ASCII goes through the device clipboard, which needs the scrcpy 4.1 server. | Configure scrcpy with settings.configure, or run testing.setup and use testing.action with fill. |
 | `tool_failed` | A tool Tomacco ran exited with an error. | Read the tool's output in the message or the job's log (job.logs) and fix its cause. |
@@ -407,7 +416,7 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `toolkit_toolchain_missing` | The private omarchy-apple-dev toolchain is not installed. | Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up. |
 | `trace_output` | Unterminated trace processor CSV value. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `transport_failed` | The MCP server could not write to its client. | Restart the client's connection to tomaccoctl mcp. |
-| `ui_hierarchy_unavailable` | … needs a UI hierarchy, and the virtual iPhone's guest tools do not report one. | Use testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates. |
+| `ui_hierarchy_unavailable` | … needs a UI hierarchy, and the virtual iPhone's guest tools do not report one. | Find text by its words instead (a selector with text or text_contains is read off the screenshot with OCR), or use screen.marks with source ocr, testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates. |
 | `unsafe_data_directory` | The Tomacco data directory is not a directory owned by this user: … | Set TOMACCO_HOME to a directory you own. |
 | `unsafe_runtime_directory` | Runtime directory is not a private directory of this user: … | Remove it, or set TMPDIR to a directory only you can write. |
 | `unsigned_artifact` | Bundle signature could not be verified. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
@@ -421,6 +430,7 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `unsupported_input` | This action is not supported by the Android runtime. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `unsupported_key` | Unknown Android key. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `unsupported_native_arch` | The ELF architecture is not supported by the Android NDK debugger. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
+| `unsupported_selector` | The virtual iPhone has no UI hierarchy, so a selector there can only have text or text_contains, and index. | Use text or text_contains, or tap and swipe at pixel coordinates. |
 | `unsupported_step` | … is not available on the virtual iPhone. | Pass one of the supported kinds the message or the operation's schema names. |
 | `unsupported_working_image` | Working images require boot_media=true and an engine providing boot-storage. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `update_auto_off` | Updates are not set to install by themselves. | Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused. |

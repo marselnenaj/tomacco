@@ -24,6 +24,8 @@ const DESTINATIONS: &[(&str, &[&str])] = &[
     ("device.screenshot", &["path"]),
     ("device.capture", &["path"]),
     ("android.screen", &["path"]),
+    ("screen.marks", &["path", "xml_path"]),
+    ("screen.tree", &["xml_path"]),
     ("android.record", &["path"]),
     ("android.pair", &["path"]),
     ("android.store_screenshots", &["directory"]),

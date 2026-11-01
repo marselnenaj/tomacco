@@ -4370,6 +4370,30 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>UI-Test aufzeichnen</translation>
     </message>
     <message>
+        <source>Mark tappable elements</source>
+        <translation>Tippbare Elemente markieren</translation>
+    </message>
+    <message>
+        <source>Tap a mark</source>
+        <translation>Markierung antippen</translation>
+    </message>
+    <message>
+        <source>Read UI tree as text</source>
+        <translation>UI-Baum als Text lesen</translation>
+    </message>
+    <message>
+        <source>Read text on screen</source>
+        <translation>Text auf dem Bildschirm lesen</translation>
+    </message>
+    <message>
+        <source>Compare two screens</source>
+        <translation>Zwei Bildschirme vergleichen</translation>
+    </message>
+    <message>
+        <source>Wait for text or a steady screen</source>
+        <translation>Auf Text oder ruhigen Bildschirm warten</translation>
+    </message>
+    <message>
         <source>Check UI test scenario</source>
         <translation>UI-Test-Szenario prüfen</translation>
     </message>

@@ -4,10 +4,14 @@
 //! `crash_reports` for crashes.
 //!
 //! The guest tools report no UI hierarchy, so nothing here can find an
-//! element by its label: scenario steps act at pixel coordinates of the
-//! screenshot, and wait for or compare whole screens instead.
+//! element from one: scenario steps act at pixel coordinates of the
+//! screenshot, and wait for or compare whole screens instead. Text on the
+//! screen is found by reading the screenshot with OCR (screen_ocr), which is
+//! pixel-based and says so.
 use super::*;
 use crate::automation;
+use crate::screen::{self, Screen};
+use crate::screen_ocr::{self, Recognizer};
 
 /// The device name testing.* operations take for the virtual iPhone.
 pub const DEVICE: &str = "virtual-iphone";
@@ -24,7 +28,7 @@ pub fn no_hierarchy(operation: &str) -> Error {
             "{operation} needs a UI hierarchy, and the virtual iPhone's guest tools do not report one"
         ),
     )
-    .remedy("Use testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates")
+    .remedy("Find text by its words instead (a selector with text or text_contains is read off the screenshot with OCR), or use testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates")
     .details(json!({"device":DEVICE,"testing":capabilities()}))
 }
 
@@ -126,6 +130,54 @@ pub const MATRIX: &[Feature] = &[
         iphone: (false, ""),
     },
     Feature {
+        id: "ocr_selectors",
+        label: "`testing.find`, `testing.action` and the `wait`, `assert`, `click`, `long_click` steps by text (OCR)",
+        android: (
+            false,
+            "selectors read the UI hierarchy; `screen.ocr` reads pixels",
+        ),
+        virtual_iphone: (
+            true,
+            "pixel-based: `text` and `text_contains` only, read with tesseract",
+        ),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "screen_marks",
+        label: "`screen.marks`, `screen.tap`",
+        android: (true, "elements from the UI hierarchy"),
+        virtual_iphone: (true, "lines of text read with tesseract"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "screen_tree",
+        label: "`screen.tree`",
+        android: (true, ""),
+        virtual_iphone: (false, "no UI hierarchy"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "screen_ocr",
+        label: "`screen.ocr`",
+        android: (true, "tesseract"),
+        virtual_iphone: (true, "tesseract"),
+        iphone: (false, "give an image"),
+    },
+    Feature {
+        id: "screen_diff",
+        label: "`screen.diff`",
+        android: (true, "UI hierarchy or pixels"),
+        virtual_iphone: (true, "pixels, and text with OCR"),
+        iphone: (false, "give two images"),
+    },
+    Feature {
+        id: "screen_wait",
+        label: "`screen.wait`, the `wait_text` and `wait_stable` steps",
+        android: (true, "text from the hierarchy, or OCR"),
+        virtual_iphone: (true, "text by OCR; stable by pixels"),
+        iphone: (false, ""),
+    },
+    Feature {
         id: "unicode_text",
         label: "`testing.setup` (Unicode text)",
         android: (true, ""),
@@ -183,6 +235,8 @@ pub fn capabilities() -> Value {
         map.insert(feature.id.into(), json!(feature.virtual_iphone.0));
     }
     map.insert("ui_hierarchy".into(), json!(false));
+    // OCR needs tesseract on this computer, which the matrix cannot know.
+    map.insert("ocr_available".into(), json!(screen_ocr::available()));
     Value::Object(map)
 }
 
@@ -287,6 +341,38 @@ fn normalized(phone: &mut impl Phone, step: &Value, x: &str, y: &str) -> Result<
     ))
 }
 
+/// A tap at pixels of the screenshot, or a press held for `hold_ms`.
+pub fn tap_pixel(phone: &mut impl Phone, x: i64, y: i64, hold_ms: Option<u64>) -> Result {
+    if x < 0 || y < 0 {
+        return Err(Error::new(
+            "off_screen",
+            format!("({x}, {y}) lies outside the screen"),
+        ));
+    }
+    let (nx, ny) = normalized(phone, &json!({"x":x,"y":y}), "x", "y")?;
+    match hold_ms {
+        Some(ms) => phone.control(
+            json!({"action":"click","x":nx,"y":ny,"duration_ms":ms.clamp(1, CONTROL_DURATION)}),
+        ),
+        None => phone.control(json!({"action":"click","x":nx,"y":ny})),
+    }
+}
+
+/// A phone as the screen the screen.* operations look at: pixels only.
+pub struct PhoneScreen<'a, P: Phone>(pub &'a mut P);
+impl<P: Phone> Screen for PhoneScreen<'_, P> {
+    fn capture(&mut self, path: &Path) -> Result<(u32, u32)> {
+        self.0.screenshot(path)?;
+        screen::png_size(path)
+    }
+    fn hierarchy(&mut self) -> Result<Option<String>> {
+        Ok(None)
+    }
+    fn tap(&mut self, x: i64, y: i64, hold_ms: Option<u64>) -> Result {
+        tap_pixel(self.0, x, y, hold_ms)
+    }
+}
+
 /// The QEMU key name for a scenario's key: QEMU names as they are, `home`
 /// for the Home button, and the Android key codes that have an iPhone
 /// counterpart.
@@ -334,6 +420,7 @@ const TEXT_CHUNK: usize = 1024;
 /// run's `tag` and the step's index in their name.
 fn run_step(
     phone: &mut impl Phone,
+    recognizer: &mut dyn Recognizer,
     step: &Value,
     directory: &Path,
     tag: &str,
@@ -413,6 +500,23 @@ fn run_step(
                 s(step, "action")
             ),
         )),
+        "wait_text" | "wait_stable" => screen::wait(
+            &screen::step_arguments(step, DEVICE)?,
+            &mut PhoneScreen(phone),
+            recognizer,
+        ),
+        "wait" | "assert" | "click" | "long_click" | "fill"
+            if screen_ocr::supports(&step["selector"]) && s(step, "action") != "fill" =>
+        {
+            let mut arguments = step.clone();
+            arguments["device"] = json!(DEVICE);
+            let mut screen = PhoneScreen(phone);
+            if matches!(s(step, "action"), "wait" | "assert") {
+                screen::ocr_find(&mut screen, recognizer, &arguments)
+            } else {
+                screen::ocr_action(&mut screen, recognizer, &arguments)
+            }
+        }
         "wait" | "assert" | "click" | "long_click" | "fill" => {
             Err(no_hierarchy(&format!("A {} step", s(step, "action"))))
         }
@@ -425,6 +529,17 @@ fn run_step(
 /// Crash reports are not read afterwards: their names follow the app's
 /// executable, which a scenario does not name.
 pub fn run_device(phone: &mut impl Phone, scenario: &Value, directory: &Path, tag: &str) -> Value {
+    run_device_with(phone, &mut screen_ocr::Tesseract, scenario, directory, tag)
+}
+
+/// `run_device` with the recogniser that reads text off the screen.
+pub fn run_device_with(
+    phone: &mut impl Phone,
+    recognizer: &mut dyn Recognizer,
+    scenario: &Value,
+    directory: &Path,
+    tag: &str,
+) -> Value {
     let started = Instant::now();
     let mut steps = Vec::new();
     // Taps on a lock screen go nowhere: the phone may have locked itself
@@ -448,7 +563,7 @@ pub fn run_device(phone: &mut impl Phone, scenario: &Value, directory: &Path, ta
             if step.get("timeout").is_none() {
                 step["timeout"] = json!(10);
             }
-            let result = run_step(phone, &step, directory, tag, index);
+            let result = run_step(phone, recognizer, &step, directory, tag, index);
             steps.push(
                 json!({"index":index,"action":step["action"],"label":step["label"],
                 "duration_seconds":begin.elapsed().as_secs_f64(),"passed":result.is_ok(),
@@ -991,6 +1106,88 @@ mod tests {
         assert!(directory.path().join("t-008.png").is_file());
     }
 
+    /// Answers Tesseract's TSV from a list, the last one again when it runs out.
+    struct Reads(Vec<String>);
+    impl Recognizer for Reads {
+        fn tsv(&mut self, _image: &Path, _language: &str) -> Result<String> {
+            Ok(if self.0.len() > 1 {
+                self.0.remove(0)
+            } else {
+                self.0[0].clone()
+            })
+        }
+    }
+    fn words(rows: &[(i64, i64, i64, i64, &str)]) -> String {
+        let mut out = String::from(
+            "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n",
+        );
+        for (i, (l, t, w, h, text)) in rows.iter().enumerate() {
+            out.push_str(&format!(
+                "5\t1\t1\t1\t1\t{}\t{l}\t{t}\t{w}\t{h}\t92.0\t{text}\n",
+                i + 1
+            ));
+        }
+        out
+    }
+
+    #[test]
+    fn selector_steps_by_text_read_the_screenshot_and_tap_where_the_words_are() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut phone = Recorded {
+            screen: (100, 200),
+            pictures: vec![png(100, 200, [250, 250, 250])],
+            ..Default::default()
+        };
+        let empty = words(&[]);
+        let mut reads = Reads(vec![
+            // The click's screenshot: normal reading, inverted reading.
+            words(&[(10, 20, 30, 20, "Sign"), (45, 20, 20, 20, "in")]),
+            empty.clone(),
+            // wait_text, twice: not yet, then there.
+            words(&[(10, 20, 30, 20, "Loading")]),
+            empty.clone(),
+            words(&[(10, 20, 60, 20, "Welcome")]),
+            empty,
+        ]);
+        let scenario = json!({"name":"x","steps":[
+            {"action":"click","selector":{"text":"sign in"}},
+            {"action":"wait_text","text":"welcome","timeout":5}]});
+        let result = run_device_with(&mut phone, &mut reads, &scenario, directory.path(), "o");
+        assert_eq!(result["passed"], true, "{result}");
+        let click = phone.calls.iter().find(|c| c["action"] == "click").unwrap();
+        // The middle of the words' box (10..65, 20..40) on a 100x200 screen.
+        assert_eq!(click["x"], 0.375);
+        assert_eq!(click["y"], 0.1525);
+        assert_eq!(result["steps"][0]["result"]["source"], "ocr");
+        assert_eq!(result["steps"][0]["result"]["pixel_based"], true);
+        assert_eq!(result["steps"][1]["result"]["source"], "ocr");
+    }
+
+    #[test]
+    fn a_text_that_is_not_on_the_screen_fails_the_step_with_what_was_read() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut phone = Recorded {
+            screen: (100, 200),
+            pictures: vec![png(100, 200, [250, 250, 250])],
+            ..Default::default()
+        };
+        let mut reads = Reads(vec![words(&[(10, 20, 60, 20, "Settings")])]);
+        let scenario = json!({"name":"x","steps":[
+            {"action":"click","selector":{"text":"Sign in"},"timeout":0}]});
+        let result = run_device_with(&mut phone, &mut reads, &scenario, directory.path(), "o");
+        assert_eq!(result["error"]["code"], "element_timeout");
+        assert_eq!(result["error"]["details"]["seen"], json!(["Settings"]));
+        assert!(phone.calls.iter().all(|c| c["action"] != "click"));
+    }
+
+    #[test]
+    fn ocr_selectors_are_in_the_matrix_and_the_capability_flag_is_set() {
+        let flags = capabilities();
+        assert_eq!(flags["ocr_selectors"], true);
+        assert_eq!(flags["selectors"], false);
+        assert!(flags["ocr_available"].is_boolean());
+    }
+
     #[test]
     fn a_long_text_is_typed_in_pieces() {
         let directory = tempfile::tempdir().unwrap();
@@ -1013,11 +1210,11 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         for (step, code) in [
             (
-                json!({"action":"click","selector":{"text":"OK"}}),
+                json!({"action":"click","selector":{"resource_id":"dev.example:id/ok"}}),
                 "ui_hierarchy_unavailable",
             ),
             (
-                json!({"action":"assert","selector":{"text":"OK"}}),
+                json!({"action":"fill","selector":{"text":"Name"},"text":"Ada"}),
                 "ui_hierarchy_unavailable",
             ),
             (

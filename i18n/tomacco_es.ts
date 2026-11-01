@@ -4362,6 +4362,30 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Grabar prueba de interfaz</translation>
     </message>
     <message>
+        <source>Mark tappable elements</source>
+        <translation>Marcar elementos pulsables</translation>
+    </message>
+    <message>
+        <source>Tap a mark</source>
+        <translation>Pulsar una marca</translation>
+    </message>
+    <message>
+        <source>Read UI tree as text</source>
+        <translation>Leer el árbol de la interfaz como texto</translation>
+    </message>
+    <message>
+        <source>Read text on screen</source>
+        <translation>Leer el texto de la pantalla</translation>
+    </message>
+    <message>
+        <source>Compare two screens</source>
+        <translation>Comparar dos pantallas</translation>
+    </message>
+    <message>
+        <source>Wait for text or a steady screen</source>
+        <translation>Esperar texto o una pantalla estable</translation>
+    </message>
+    <message>
         <source>Check UI test scenario</source>
         <translation>Comprobar escenario de prueba de interfaz</translation>
     </message>

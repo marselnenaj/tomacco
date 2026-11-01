@@ -444,6 +444,7 @@ fn handle_asking(method: &str, params: &Value, ask: &Ask) -> Result<Option<Value
                         "device.capture",
                         "runtime.capture",
                         "ios.virtual.screenshot",
+                        "screen.marks",
                     ]
                     .contains(&name)
                     {

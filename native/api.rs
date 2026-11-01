@@ -119,6 +119,8 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "project.watch" => crate::watch::watch(&a),
         "project.dependency_updates" => crate::dependencies::updates(&a),
         "project.analyze" => crate::analyze::analyze(&a),
+        "screen.marks" | "screen.tap" | "screen.tree" | "screen.ocr" | "screen.diff"
+        | "screen.wait" => crate::screen::handle(name, &a),
         "testing.find" => automation::find(&a),
         "testing.action" => crate::recorder::testing_action(
             &crate::recorder::Store::home()?,
