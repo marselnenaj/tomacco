@@ -16,10 +16,6 @@
         <translation>Diesen Auftrag beenden</translation>
     </message>
     <message>
-        <source>Agent calls to this window</source>
-        <translation>Agenten-Aufrufe an dieses Fenster</translation>
-    </message>
-    <message>
         <source>Recent</source>
         <translation>Zuletzt</translation>
     </message>
@@ -54,6 +50,50 @@
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
         <translation>Gerade läuft nichts. Builds und Agenten-Aufträge erscheinen hier, sobald sie starten.</translation>
+    </message>
+    <message>
+        <source>%1 ms</source>
+        <translation>%1 ms</translation>
+    </message>
+    <message>
+        <source>%1 s</source>
+        <translation>%1 s</translation>
+    </message>
+    <message>
+        <source>Agent activity</source>
+        <translation>Agenten-Aktivität</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation>Fehler</translation>
+    </message>
+    <message>
+        <source>Find an operation</source>
+        <translation>Operation suchen</translation>
+    </message>
+    <message>
+        <source>No call failed.</source>
+        <translation>Kein Aufruf ist fehlgeschlagen.</translation>
+    </message>
+    <message>
+        <source>No call matches.</source>
+        <translation>Kein Aufruf passt.</translation>
+    </message>
+    <message>
+        <source>failed</source>
+        <translation>fehlgeschlagen</translation>
+    </message>
+    <message>
+        <source>running</source>
+        <translation>läuft</translation>
+    </message>
+    <message>
+        <source>done</source>
+        <translation>erledigt</translation>
     </message>
 </context>
 <context>
@@ -462,6 +502,14 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
     <message>
         <source>The recordings folder could not be created.</source>
         <translation>Der Ordner für Aufnahmen konnte nicht angelegt werden.</translation>
+    </message>
+    <message>
+        <source>The session log must be an absolute path.</source>
+        <translation>Das Sitzungsprotokoll braucht einen absoluten Pfad.</translation>
+    </message>
+    <message>
+        <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
+        <translation>Noch kein Sitzungsprotokoll unter %1. Es entsteht mit dem ersten Aufruf des Agenten.</translation>
     </message>
 </context>
 <context>
@@ -3410,6 +3458,18 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Show the device&apos;s or a job&apos;s log beside the device</source>
         <translation>Das Log des Geräts oder eines Auftrags neben dem Gerät zeigen</translation>
+    </message>
+    <message>
+        <source>Agent activity</source>
+        <translation>Agenten-Aktivität</translation>
+    </message>
+    <message>
+        <source>Session log, e.g. %1</source>
+        <translation>Sitzungsprotokoll, z. B. %1</translation>
+    </message>
+    <message>
+        <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
+        <translation>Setze TOMACCO_SESSION_LOG in den MCP-Einstellungen deines Agenten auf diese Datei, dann listet die Aktivität jede Operation, die er aufruft, mit Dauer und Ergebnis.</translation>
     </message>
 </context>
 <context>

@@ -151,12 +151,23 @@ The virtual iOS device's **Screenshot** button copies its capture the same way.
 ## Activity
 
 The panel beside the device (Ctrl+J) shows the device's state in large type, the
-jobs that are running with the newest one's log, the calls agents make to this
-window through its preview socket, and recent jobs. Jobs come from every client.
-Calls an agent makes directly to `tomaccoctl` leave no record unless they start a
-job, so they do not appear. The panel closes by itself below 1120 px wide and
-opens on request. The status line at the bottom always names the device's state
-and how many jobs run.
+jobs that are running with the newest one's log, what agents called under **Agent
+activity** (*Agenten-Aktivität*), and recent jobs. Jobs come from every client.
+The panel closes by itself below 1120 px wide and opens on request. The status
+line at the bottom always names the device's state and how many jobs run.
+
+**Agent activity** lists, newest first, the calls agents make to this window through
+its preview socket and, when you name an agent's session log, every operation the
+agent called: its name, the time, how long it took and whether it worked, with the
+error's message when it did not. Repeats of the same call to the window fold into one
+line with the latest result. **All** and **Failed** (*Alle*, *Fehler*) and a search
+field narrow the list; a call that started a job opens it under **Builds & jobs**.
+To name the session log, enter its absolute path under **Agent activity** in
+**Settings** (Ctrl+,) and set `TOMACCO_SESSION_LOG` to the same file in the `env` of
+your agent's MCP server entry (see [the session log](agents.md#session-log-and-replay)); **Copy MCP
+configuration** in the panel then includes it. A desktop started with
+`TOMACCO_SESSION_LOG` set uses that file. Without a session log, calls an agent
+makes directly to `tomaccoctl` leave no record unless they start a job.
 
 Repeated app/build requests reuse the active job, and each device uses one
 native display session. A running Flutter app exposes **Hot Reload** and a **Stop**

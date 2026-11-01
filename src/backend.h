@@ -136,6 +136,14 @@ public:
     // or opens its folder; false when the file is missing. An offscreen run
     // only emits fileRevealed.
     Q_INVOKABLE bool revealFile(const QString &path);
+    // The entries an agent's session log (TOMACCO_SESSION_LOG) gained from
+    // offset on: {entries, next_offset, reset, error}. Only whole lines are
+    // read, at most 256 KiB at a time; a line that is no JSON object is
+    // skipped. A file shorter than offset was started anew: it is read from
+    // the beginning and reset is true.
+    Q_INVOKABLE QVariantMap readSessionLog(const QString &path, qint64 offset) const;
+    // The session log this desktop was started with, if any.
+    Q_INVOKABLE QString sessionLogFromEnvironment() const;
     Q_INVOKABLE void testResult(const QVariantMap &result);
     Q_INVOKABLE void reloadModels();
 signals:

@@ -2858,6 +2858,51 @@ for line in sys.stdin:
         emit control->previewRequest(-90,"state",{});emit control->previewRequest(-91,"state",{});
         QCOMPARE(mapOf(panel->property("calls").value<QJSValue>().property(0).toVariant()).value("count").toInt(),2);
         QTRY_VERIFY(item("activityCall"));
+        // Each call shows how it ended and how long it took; the folded line, its latest.
+        const auto timeline=[&]{return panel->property("timeline").toList();};
+        QCOMPARE(mapOf(timeline().value(0)).value("state").toString(),QString("busy"));
+        emit control->previewFinished(-90,QString());QTest::qWait(30);emit control->previewFinished(-91,"No page is loaded");
+        QTRY_COMPARE(mapOf(timeline().value(0)).value("state").toString(),QString("failed"));
+        QVERIFY(mapOf(timeline().value(0)).value("ms").toInt()>=0);
+        QCOMPARE(mapOf(timeline().value(0)).value("error").toString(),QString("No page is loaded"));
+        QTRY_COMPARE(item("activityCallError")->property("text").toString(),QString("No page is loaded"));
+        // An agent's session log: every operation it called, with time, duration and result.
+        const auto log=directory.filePath("agent-session.jsonl");
+        {QFile file(log);QVERIFY(file.open(QIODevice::WriteOnly));
+         file.write(QString(R"({"time":%1,"operation":"device.list","ok":true,"duration_seconds":0.25,"result":{"keys":["devices"]}})" "\n").arg(now-60).toUtf8());
+         file.write(QString(R"({"time":%1,"operation":"project.run","ok":true,"duration_seconds":1.5,"result":{"job_id":"activity-ui-job","state":"running"}})" "\n").arg(now-50).toUtf8());
+         file.write(QString(R"({"time":%1,"operation":"device.install","ok":false,"duration_seconds":0.1,"error":{"code":"no_device","message":"No device emulator-5554"}})" "\n").arg(now-40).toUtf8());}
+        view->setProperty("sessionLogPath",log);
+        QTRY_COMPARE(timeline().size(),4);
+        QCOMPARE(panel->property("sessionError").toString(),QString());
+        const auto shown=[&]{return panel->property("shownActivity").toList();};
+        QCOMPARE(mapOf(shown().value(1)).value("operation").toString(),QString("device.install"));
+        QCOMPARE(mapOf(shown().value(3)).value("ms").toInt(),250);
+        QVariant spelled;QVERIFY(QMetaObject::invokeMethod(panel,"duration",Q_RETURN_ARG(QVariant,spelled),Q_ARG(QVariant,1500)));
+        QCOMPARE(spelled.toString(),QString("1.5 s"));
+        // Filters: failed calls only, then by name.
+        clickItem("activityFilter-failed");
+        QTRY_COMPARE(shown().size(),2);
+        item("activitySearch")->setProperty("text","install");
+        QTRY_COMPARE(shown().size(),1);
+        item("activitySearch")->setProperty("text","project.run");
+        QTRY_VERIFY(item("activityNoMatch")->isVisible());
+        clickItem("activityFilter-all");
+        QTRY_COMPARE(shown().size(),1);
+        capture("activity-timeline");
+        // A call that started a job opens it.
+        QTRY_VERIFY(item("activityCallName") && item("activityCallName")->property("text").toString()==QString("project.run"));
+        clickItem("activityCall");
+        QTRY_COMPARE(workspace->property("section").toString(),QString("jobs"));
+        QCOMPARE(workspace->property("selectedJob").toString(),QString("activity-ui-job"));
+        open("runtime");
+        item("activitySearch")->setProperty("text","");
+        // A log that is not there yet is said, not hidden.
+        view->setProperty("sessionLogPath",directory.filePath("no-session.jsonl"));
+        QTRY_VERIFY(panel->property("sessionError").toString().contains("No session log"));
+        QTRY_VERIFY(item("activitySessionError")->isVisible());
+        view->setProperty("sessionLogPath",QString());
+        QSettings().remove("Activity/sessionLog");
         // The panel gives way in a narrow window and comes back on request.
         window->resize(900,700);QTRY_VERIFY(!qobject_cast<QQuickItem *>(panel)->isVisible());
         QTest::keyClick(window,Qt::Key_J,Qt::ControlModifier);QTRY_VERIFY(qobject_cast<QQuickItem *>(panel)->isVisible());

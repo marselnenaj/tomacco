@@ -73,6 +73,9 @@ operations and their JSON results.
   target, and the build's platform, configuration and format, and chooses them again when the project opens.
 - **Log beside the device.** The device view can show the device's live log or the newest job's log beside it, with a
   handle to resize it; shown or not, which log and the width are kept.
+- **Agent activity.** The activity panel lists what agents called, newest first, with time, duration and result:
+  the calls to the window and, with an agent's `TOMACCO_SESSION_LOG` named in **Settings**, every operation from
+  that log. **All** and **Failed** and a search narrow it; a call that started a job opens it.
 
 ### Changed
 

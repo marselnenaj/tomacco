@@ -357,6 +357,7 @@ void Control::accept() {
 }
 
 void Control::complete(int id,const QVariant &result,const QString &error) {
+    emit previewFinished(id,error);
     auto socket=m_clients.value(id);
     if(!socket)return;
     QJsonObject response{{"id",QJsonValue::fromVariant(m_ids.value(id))}};

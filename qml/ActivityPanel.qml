@@ -5,9 +5,10 @@ import "."
 
 // What is happening right now, next to the device. It shows what the control
 // plane records and this window sees: the jobs of every client (job.list), the
-// newest running job's log, and the calls agents make to this window through
-// its preview socket. Calls an agent makes to tomaccoctl directly leave no record
-// unless they start a job, so they cannot appear here.
+// newest running job's log, the calls agents make to this window through its
+// preview socket, and, when an agent writes a session log (TOMACCO_SESSION_LOG)
+// that this panel is told about, every operation it calls. Other calls an agent
+// makes to tomaccoctl leave no record unless they start a job.
 Rectangle {
     id: panel
     required property var workspace
@@ -24,16 +25,67 @@ Rectangle {
     property var calls: []
     property bool copied: false
     Timer {id:copiedTimer;interval:2000;onTriggered:panel.copied=false}
-    readonly property bool firstRun: stateTone==="idle" && !workspace.jobs.length && !calls.length
+    readonly property bool firstRun: stateTone==="idle" && !workspace.jobs.length && !calls.length && !sessionEntries.length
     property real now: Date.now()/1000
 
-    // Older calls drop off; repeats of the same call fold into one line.
-    function noteCall(method) {
+    // Older calls drop off; repeats of the same call fold into one line, which
+    // shows how the latest of them ended and how long it took.
+    property var callStarts: ({})
+    function noteCall(id,method) {
         const at=new Date()
+        callStarts[id]=at.getTime()
         let rows=calls.slice()
-        if(rows.length && rows[0].method===method)rows[0]={method:method,at:at,count:rows[0].count+1}
-        else rows.unshift({method:method,at:at,count:1})
-        calls=rows.slice(0,12)
+        if(rows.length && rows[0].method===method)rows[0]=Object.assign({},rows[0],{at:at,count:rows[0].count+1,ids:rows[0].ids.concat([id]),pending:true})
+        else rows.unshift({method:method,at:at,count:1,ids:[id],pending:true,ms:-1,error:""})
+        calls=rows.slice(0,20)
+    }
+    function finishCall(id,error) {
+        const started=callStarts[id]
+        if(started===undefined)return
+        delete callStarts[id]
+        calls=calls.map(row=>row.ids.indexOf(id)<0?row:Object.assign({},row,{pending:false,ms:Date.now()-started,error:error || ""}))
+    }
+    // An agent's session log: a file it appends each operation it calls to.
+    property string sessionLog: ""
+    property var sessionEntries: []
+    property real sessionOffset: 0
+    property string sessionError: ""
+    onSessionLogChanged: {sessionEntries=[];sessionOffset=0;sessionError="";readSession()}
+    function readSession() {
+        if(!sessionLog){sessionError="";return}
+        const read=Studio.readSessionLog(sessionLog,sessionOffset)
+        sessionError=read.error
+        if(read.reset)sessionEntries=[]
+        sessionOffset=read.next_offset
+        if(read.entries.length)sessionEntries=sessionEntries.concat(read.entries).slice(-200)
+    }
+    Timer {interval:2000;repeat:true;running:panel.visible && !!panel.sessionLog;onTriggered:panel.readSession()}
+    // Both, newest first: what was called, when, how long it took and how it ended.
+    readonly property var timeline: {
+        let rows=calls.map(x=>({key:"call-"+x.ids[0],operation:"preview."+x.method,at:x.at.getTime(),count:x.count,ms:x.pending?-1:x.ms,
+                                state:x.pending?"busy":x.error?"failed":"ok",error:x.error,job:""}))
+        for(let i=0;i<sessionEntries.length;++i) {
+            const x=sessionEntries[i]
+            const result=x.result || {}
+            rows.push({key:"log-"+i,operation:String(x.operation || ""),at:Number(x.time || 0)*1000,count:1,ms:x.duration_seconds===undefined?-1:Math.round(Number(x.duration_seconds)*1000),
+                       state:x.ok?"ok":"failed",error:x.ok?"":(x.error && x.error.message) || "",job:result.job_id || ""})
+        }
+        return rows.sort((a,b)=>b.at-a.at)
+    }
+    property string activityFilter: "all"
+    property string activityQuery: ""
+    readonly property var shownActivity: timeline.filter(x=>(activityFilter==="all" || x.state==="failed")
+        && (!activityQuery || (x.operation+" "+x.error).toLowerCase().indexOf(activityQuery.toLowerCase())>=0)).slice(0,40)
+    // The MCP server entry; with a session log set, the agent writes its calls there.
+    function mcpServer() {
+        let entry={command:Agent.cliPath,args:["mcp"]}
+        if(sessionLog)entry.env={TOMACCO_SESSION_LOG:sessionLog}
+        return entry
+    }
+    function duration(ms) {
+        if(ms<0)return ""
+        if(ms<1000)return qsTr("%1 ms").arg(ms)
+        return ms<60000?qsTr("%1 s").arg((ms/1000).toFixed(1)):elapsed(ms/1000)
     }
     function elapsed(seconds) {
         const s=Math.max(0,Math.round(seconds))
@@ -65,7 +117,8 @@ Rectangle {
     }
     Connections {
         target: Agent
-        function onPreviewRequest(id,method,args) {panel.noteCall(method)}
+        function onPreviewRequest(id,method,args) {panel.noteCall(id,method)}
+        function onPreviewFinished(id,error) {panel.finishCall(id,error)}
         function onApiFinished(id,operation,response) {
             if(id!==panel.logRequest)return
             panel.logRequest=0
@@ -105,7 +158,7 @@ Rectangle {
                     StudioButton {
                         objectName:"activityCopyMcp";Layout.topMargin:Theme.gapMd;inverted:true;invertedFill:Theme.background;invertedText:Theme.text
                         text:panel.copied?qsTr("Copied"):qsTr("Copy MCP configuration");iconName:panel.copied?"check":"copy"
-                        onClicked:{Studio.copy(JSON.stringify({mcpServers:{[Agent.cliPath.split("/").pop()]:{command:Agent.cliPath,args:["mcp"]}}},null,2));panel.copied=true;copiedTimer.restart()}
+                        onClicked:{Studio.copy(JSON.stringify({mcpServers:{[Agent.cliPath.split("/").pop()]:panel.mcpServer()}},null,2));panel.copied=true;copiedTimer.restart()}
                     }
                     Text {Layout.fillWidth:true;Layout.topMargin:Theme.gapMd;text:qsTr("1  Copy the configuration.")+"\n"+qsTr("2  Paste it into your agent's MCP settings.")+"\n"+qsTr("3  Ask it to run your app.");color:Theme.background;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;lineHeight:1.5;wrapMode:Text.WordWrap}
                 }
@@ -228,25 +281,74 @@ Rectangle {
                 elide: Text.ElideLeft
             }
 
-            // Calls agents made to this window.
-            Rectangle {visible:panel.calls.length>0;Layout.fillWidth:true;Layout.preferredHeight:1;color:Theme.subtle}
+            // What agents called: this window, and the operations of a session log.
+            Rectangle {visible:panel.timeline.length>0 || !!panel.sessionError;Layout.fillWidth:true;Layout.preferredHeight:1;color:Theme.subtle}
             StudioSection {
-                visible: panel.calls.length>0
+                visible: panel.timeline.length>0 || !!panel.sessionError
                 Layout.fillWidth: true; Layout.leftMargin: Theme.gapLg; Layout.topMargin: Theme.gapMd; Layout.bottomMargin: Theme.gapXs
-                text: qsTr("Agent calls to this window")
+                text: qsTr("Agent activity")+(panel.timeline.length?" · "+panel.timeline.length:"")
+            }
+            Text {
+                objectName: "activitySessionError"
+                visible: !!panel.sessionError
+                Layout.fillWidth: true; Layout.leftMargin: Theme.gapLg; Layout.rightMargin: Theme.gapLg; Layout.bottomMargin: Theme.gapXs
+                text: panel.sessionError; color: Theme.warning; font.pixelSize: Theme.fontSmall; wrapMode: Text.WordWrap
+            }
+            RowLayout {
+                visible: panel.timeline.length>0
+                Layout.fillWidth: true; Layout.leftMargin: Theme.gapLg; Layout.rightMargin: Theme.gapLg; Layout.bottomMargin: Theme.gapXs
+                spacing: Theme.gapXs
+                StudioSegmented {
+                    objectName: "activityFilter"
+                    current: panel.activityFilter
+                    model: [{id:"all",label:qsTr("All"),objectName:"activityFilter-all"},{id:"failed",label:qsTr("Failed"),objectName:"activityFilter-failed"}]
+                    onChosen: id=>panel.activityFilter=id
+                }
+                StudioTextField {objectName:"activitySearch";Layout.fillWidth:true;placeholderText:qsTr("Find an operation");onTextChanged:panel.activityQuery=text}
+            }
+            Text {
+                objectName: "activityNoMatch"
+                visible: panel.timeline.length>0 && panel.shownActivity.length===0
+                Layout.fillWidth: true; Layout.leftMargin: Theme.gapLg; Layout.rightMargin: Theme.gapLg
+                text: panel.activityFilter==="failed" && !panel.activityQuery ? qsTr("No call failed.") : qsTr("No call matches.")
+                color: Theme.muted; font.pixelSize: Theme.fontSmall
             }
             Repeater {
-                model: panel.calls
-                RowLayout {
+                model: panel.shownActivity
+                ItemDelegate {
+                    id: callRow
                     required property var modelData
                     objectName: "activityCall"
-                    Layout.fillWidth: true; Layout.leftMargin: Theme.gapLg; Layout.rightMargin: Theme.gapLg; Layout.preferredHeight: Theme.controlSmall-Theme.gapXs
-                    spacing: Theme.gapSm
-                    Text {Layout.fillWidth:true;text:"preview."+parent.modelData.method+(parent.modelData.count>1?" ×"+parent.modelData.count:"");color:Theme.muted;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;elide:Text.ElideRight}
-                    Text {text:Qt.formatTime(parent.modelData.at,"HH:mm:ss");color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}
+                    Layout.fillWidth: true
+                    focusPolicy: callRow.modelData.job ? Qt.StrongFocus : Qt.NoFocus
+                    Accessible.name: modelData.operation+", "+(modelData.state==="failed"?qsTr("failed"):modelData.state==="busy"?qsTr("running"):qsTr("done"))
+                    padding: 0; leftPadding: Theme.gapLg; rightPadding: Theme.gapLg; topPadding: Theme.gapXxs; bottomPadding: Theme.gapXxs
+                    background: Rectangle {color:callRow.hovered && !!callRow.modelData.job?Theme.hover:"transparent";border.width:callRow.visualFocus?2:0;border.color:Theme.accentInk}
+                    contentItem: ColumnLayout {
+                        spacing: 0
+                        RowLayout {
+                            Layout.fillWidth: true; spacing: Theme.gapSm
+                            StudioStatus {tone:callRow.modelData.state}
+                            Text {objectName:"activityCallName";Layout.fillWidth:true;text:callRow.modelData.operation+(callRow.modelData.count>1?" ×"+callRow.modelData.count:"");color:Theme.muted;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;elide:Text.ElideRight}
+                            Text {objectName:"activityCallDuration";text:panel.duration(callRow.modelData.ms);color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}
+                            Text {text:Qt.formatTime(new Date(callRow.modelData.at),"HH:mm:ss");color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}
+                        }
+                        Text {
+                            objectName: "activityCallError"
+                            Layout.fillWidth: true; Layout.leftMargin: Theme.gapMd+Theme.gapXs
+                            visible: !!callRow.modelData.error
+                            text: callRow.modelData.error; color: Theme.danger; font.pixelSize: Theme.fontMicro
+                            wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
+                        }
+                    }
+                    onClicked: {
+                        if(!modelData.job)return
+                        const job=panel.workspace.jobs.find(x=>x.id===modelData.job) || {id:modelData.job}
+                        panel.openJob(job)
+                    }
                 }
             }
-            Item {visible:panel.calls.length>0;Layout.preferredHeight:Theme.gapSm}
+            Item {visible:panel.timeline.length>0;Layout.preferredHeight:Theme.gapSm}
 
             // Lately.
             Rectangle {visible:panel.finished.length>0;Layout.fillWidth:true;Layout.preferredHeight:1;color:Theme.subtle}

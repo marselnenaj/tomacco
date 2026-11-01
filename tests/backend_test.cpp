@@ -97,6 +97,37 @@ private slots:
         QVERIFY(backend.jobLogPath(root.filePath("jobs/"+QString(32,'c')+".log")).isEmpty());
         QVERIFY(backend.jobLogPath(QString()).isEmpty());
     }
+    void anAgentsSessionLogIsReadOnwardLineByLine() {
+        QTemporaryDir root; QVERIFY(root.isValid());
+        const auto log=root.filePath("session.jsonl");
+        Backend backend(QString(),nullptr,false);
+        QVERIFY(backend.readSessionLog(log,0).value("error").toString().contains("No session log"));
+        QVERIFY(!backend.readSessionLog("relative.jsonl",0).value("error").toString().isEmpty());
+        QVERIFY(backend.readSessionLog(QString(),0).value("entries").toList().isEmpty());
+        // Whole lines only; a line that is no JSON object is passed over.
+        const QByteArray first=R"({"time":1,"operation":"device.list","ok":true,"duration_seconds":0.2})" "\n";
+        write(log,first+"not json\n"+R"({"time":2,"operation":"project.run","ok":false)");
+        auto read=backend.readSessionLog(log,0);
+        QCOMPARE(read.value("error").toString(),QString());
+        auto entries=read.value("entries").toList();
+        QCOMPARE(entries.size(),1);
+        QCOMPARE(entries.first().toMap().value("operation").toString(),QString("device.list"));
+        const auto offset=read.value("next_offset").toLongLong();
+        QCOMPARE(offset,qint64(first.size()+9));
+        // The rest of the line arrives: read from where the last read stopped.
+        {QFile file(log);QVERIFY(file.open(QIODevice::Append));file.write(R"(,"error":{"code":"no_device","message":"No device"}})" "\n");}
+        read=backend.readSessionLog(log,offset);
+        entries=read.value("entries").toList();
+        QCOMPARE(entries.size(),1);
+        QCOMPARE(entries.first().toMap().value("error").toMap().value("code").toString(),QString("no_device"));
+        QVERIFY(!read.value("reset").toBool());
+        QVERIFY(backend.readSessionLog(log,read.value("next_offset").toLongLong()).value("entries").toList().isEmpty());
+        // A log started anew is read from its beginning.
+        write(log,first);
+        read=backend.readSessionLog(log,offset+200);
+        QVERIFY(read.value("reset").toBool());
+        QCOMPARE(read.value("entries").toList().size(),1);
+    }
     void notificationsReachTheServiceAndComeBackWhenClicked() {
 #ifndef TOMACCO_HAVE_DBUS
         QSKIP("Built without Qt D-Bus: the desktop sends no notifications");

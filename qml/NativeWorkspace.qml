@@ -264,6 +264,9 @@ Rectangle {
     // than notifyAfterSeconds are left out; cancelled ones too, someone ended them.
     property bool notifyJobs: true
     Settings {category:"Notifications";property alias jobs:view.notifyJobs}
+    // The agent's session log the activity panel reads; the one this desktop was started with by default.
+    property string sessionLogPath: Studio.sessionLogFromEnvironment()
+    Settings {category:"Activity";property alias sessionLog:view.sessionLogPath}
     property bool appActive: Qt.application.state===Qt.ApplicationActive
     readonly property int notifyAfterSeconds: 10
     property var seenJobStates: ({})
@@ -940,6 +943,7 @@ Rectangle {
                         objectName:"activityPanel";visible:view.activityVisible
                         Layout.preferredWidth:Theme.panelWidth;Layout.fillWidth:view.activityOnly;Layout.fillHeight:true
                         workspace:view.workspace
+                        sessionLog:view.sessionLogPath
                         stateLabel:view.deviceStateLabel;stateTone:view.deviceTone
                         deviceName:view.deviceName;deviceMetrics:view.deviceMetrics
                     }
@@ -1010,6 +1014,16 @@ Rectangle {
             ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
                 Text {text:qsTr("Notifications");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 StudioCheckBox {objectName:"jobNotificationsToggle";Layout.fillWidth:true;text:qsTr("When a job ends in the background");checked:view.notifyJobs;onToggled:view.notifyJobs=checked}
+            }
+            // An agent's session log, read into the activity panel.
+            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+                Text {text:qsTr("Agent activity");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                StudioTextField {
+                    objectName:"sessionLogField";Layout.fillWidth:true;font.family:Theme.mono;font.pixelSize:Theme.fontSmall
+                    text:view.sessionLogPath;placeholderText:qsTr("Session log, e.g. %1").arg("/home/me/agent-session.jsonl")
+                    onEditingFinished:view.sessionLogPath=text.trim()
+                }
+                Text {Layout.fillWidth:true;text:qsTr("Set TOMACCO_SESSION_LOG to this file in your agent's MCP settings, and the activity panel lists every operation it calls, with its duration and result.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             }
             UpdateSection {Layout.fillWidth:true;model:updates}
             // Moving to another computer: the preferences as a JSON file.
