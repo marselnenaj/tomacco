@@ -1109,6 +1109,7 @@ class VirtualPhoneLogic(unittest.TestCase):
         # A recorded path outside the profile's installs directory is never removed.
         self.assertTrue(outside.is_dir() and self.base.is_dir())
         self.assertEqual(state["created"], [str(outside), str(copies[1]), str(copies[2])])
+        self.assertTrue(state["verdict"]["verified"])
         # Unverified storage is reported as a failure and keeps the earlier base.
         self.write_state(run=11, install="/x", tools="/t", closed=False, guest_job="guest11",
                          verified={"run": 10, "install": str(copies[2]), "tools": str(self.tools)})
@@ -1204,6 +1205,12 @@ class VirtualPhoneLogic(unittest.TestCase):
             state = self.state()
             self.assertEqual((state["closed"], state["phase"], state["verified"]), (False, "unverified", verified))
             self.assertEqual(state["outcome"], {"outcome": None, **clean, "guest_storage_flushed": False})
+            # The same evidence in plain words, in the state and in the stop's error.
+            self.assertFalse(state["verdict"]["verified"])
+            self.assertIn("ios.virtual.stop", state["verdict"]["remedy"])
+            self.assertIn("flush", str(error.exception))
+            if stop is None:
+                self.assertIn("No stop asked the guest to flush its storage first", str(error.exception))
         self.assertTrue(current.is_dir())
 
     def test_a_failed_or_interrupted_start_does_not_block_or_outlive_the_next_one(self):

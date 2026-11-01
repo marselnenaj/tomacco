@@ -1055,6 +1055,25 @@ fn phase_times(state: &Value, now: f64) -> Value {
         "phases":phases})
 }
 
+/// The plain-word verdict the script recorded when the last run finished
+/// (`verdict`, tools/ios_run_verdict.py), or null for a state from before it
+/// or a record of another shape.
+fn last_run(state: &Value) -> Value {
+    let verdict = &state["verdict"];
+    if verdict["verified"].is_boolean()
+        && verdict["summary"].is_string()
+        && verdict["reasons"]
+            .as_array()
+            .is_some_and(|reasons| reasons.iter().all(Value::is_string))
+        && (verdict["remedy"].is_string() || verdict["remedy"].is_null())
+    {
+        json!({"verified":verdict["verified"],"outcome":verdict["outcome"].as_str(),
+            "summary":verdict["summary"],"reasons":verdict["reasons"],"remedy":verdict["remedy"]})
+    } else {
+        Value::Null
+    }
+}
+
 fn application_process_observation(profile: &Value, state: &Value, running: bool) -> Value {
     let launch = &state["launch_receipt"];
     if running
@@ -1205,6 +1224,9 @@ pub fn status(_a: &Value) -> Result {
         "models":paravirtual::device_models().iter().map(|model| json!({"id":model["id"],
             "name":model["name"],"panel":model["panel"],"source":model["source"]})).collect::<Vec<_>>(),
         "guest_ended":ended,"guest_saved":saved,"guest_gpu_memory_stop":gpu_memory_stop,
+        // How the last finished run ended, in plain words: verified, outcome,
+        // summary, the reasons it was not verified and a remedy.
+        "last_run":last_run(&state),
     }))
 }
 
@@ -1589,6 +1611,39 @@ mod status_record_tests {
         assert!(time_zone(&json!({"time_zone":"Europe/Vienna"})).is_null());
         assert!(time_zone(&json!({"time_zone":{"zone":"Europe/Vienna"}})).is_null());
         assert!(time_zone(&json!({"time_zone":{"zone":"Europe/Vienna","outcome":7}})).is_null());
+    }
+
+    #[test]
+    fn the_last_runs_verdict_is_reported_as_recorded_and_nothing_else() {
+        let verdict = json!({"verified":false,"outcome":"emulator-error",
+            "summary":"The emulator exited with exit code 134.",
+            "reasons":["The emulator exited with exit code 134, not 0."],
+            "remedy":"The next start uses the last verified run.","extra":1});
+        let reported = last_run(&json!({"verdict":verdict}));
+        assert_eq!(reported["verified"], false);
+        assert_eq!(reported["outcome"], "emulator-error");
+        assert_eq!(
+            reported["reasons"][0],
+            "The emulator exited with exit code 134, not 0."
+        );
+        assert!(reported.get("extra").is_none());
+        // A verified run has no remedy; a missing outcome stays null.
+        let clean = last_run(
+            &json!({"verdict":{"verified":true,"summary":"Fine.","reasons":[],"remedy":null}}),
+        );
+        assert_eq!(
+            (clean["verified"].clone(), clean["outcome"].clone()),
+            (json!(true), Value::Null)
+        );
+        // States from before verdicts, and records of another shape.
+        assert!(last_run(&json!({})).is_null());
+        assert!(last_run(&json!({"verdict":"verified"})).is_null());
+        assert!(
+            last_run(&json!({"verdict":{"verified":"yes","summary":"x","reasons":[]}})).is_null()
+        );
+        assert!(
+            last_run(&json!({"verdict":{"verified":true,"summary":"x","reasons":[7]}})).is_null()
+        );
     }
 
     #[test]

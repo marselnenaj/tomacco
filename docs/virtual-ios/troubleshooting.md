@@ -169,9 +169,23 @@ has not been surveyed yet.
 | --- | --- | --- |
 | `ios_guest_busy` or `ios_guest_not_idle` | The guest answers but is working. It is never ended by force. | Try again when it is done. In the desktop, **Stop without saving** ends it at once, and what it has not saved is lost. |
 | "The guest did not answer and was ended without saving" | Four attempts, twenty seconds apart, got no answer. | Start again. It goes back to the last verified run. |
-| "The guest stopped without verified storage" | The flush, exit code or hashes did not check out. | The same. Your last verified run is unchanged. |
+| "The guest stopped without verified storage" | The flush, exit code or hashes did not check out. The message goes on to say which, in words. | The same. Your last verified run is unchanged. `last_run` in `ios.virtual.status` keeps the reasons and a remedy. |
 | The next start says it went back to an older run | The previous run was not verified. | This is on purpose. Stop runs with `ios.virtual.stop` to keep their changes. |
 | `output_exists` | A leftover disk copy has this name. A leftover that a guest still has locked counts as in use. | Stop that guest. Only copies Tomacco made inside the profile's `installs` directory are removed. |
+
+**Why was my run not verified?** `last_run` in `ios.virtual.status` answers for the last run that finished:
+
+```json
+{"verified": false, "outcome": "emulator-exited",
+ "summary": "The emulator exited on its own with exit code 0.",
+ "reasons": ["No stop asked the guest to flush its storage first: it ended on its own or was ended by force."],
+ "remedy": "Stop the phone with ios.virtual.stop while it answers; a stop that has to end an unanswering guest cannot save it. The next start uses the last verified run."}
+```
+
+`outcome` is the launcher's classification of the run (for example `kernel-panic`, `guest-process-crash` or
+`host-pressure-blocked`), and `summary` says it in words. A run can be verified and still name a problem: a crash of an iOS
+process the emulator is not known to cause, or the graphics memory guard, is listed while the saved disks stay usable.
+The wording is unit-tested against recorded launcher records, not yet read off a live phone.
 
 ## Still stuck
 

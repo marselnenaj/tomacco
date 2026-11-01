@@ -64,6 +64,10 @@ last verified run and says so in its log. Whatever happened in between is lost.
 - In the desktop's dialog, **Stop** (*Beenden*) asks the guest to save first. When that is refused, it
   offers **Stop without saving** (*Ohne Sichern beenden*).
 
+`last_run` in `ios.virtual.status` says how the last finished run ended, in words: `verified`, the launcher's
+`outcome`, a `summary`, each of the `reasons` it was not verified and a `remedy`. A failed stop's message carries the
+same reasons. [Troubleshooting](troubleshooting.md#stopping) has an example. Unit-tested only, not read off a live phone.
+
 ### Time and disk limits
 
 **A session lasts at most 24 hours.** About ten minutes before the limit, the phone stops the careful

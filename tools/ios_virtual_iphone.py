@@ -37,6 +37,7 @@ import zlib
 from build_ios_guest_tools import policy_entries, stage_application
 from ios_application_bundle import inspect_bundle
 import ios_disk_overlay
+import ios_run_verdict
 from ios_hot_install import (BUNDLE_PORT, connect_port, guest_socket, reserve, send_bundle, spare_entries,
                              with_hashes, write_private)
 from ios_graphics_location import BUNDLE_PATH, COMPILER_LIBRARY_NAME, PLUGIN_PERSONALITY
@@ -652,7 +653,9 @@ class Phone:
                   and flushed)
         changes = {"closed": closed, "phase": "stopped" if closed else "unverified",
                    "outcome": {**{key: summary.get(key) for key in ("outcome", "exit_code", "storage_hashes_complete")},
-                               "guest_storage_flushed": flushed}}
+                               "guest_storage_flushed": flushed},
+                   # The same evidence in plain words, for ios.virtual.status and the job's error.
+                   "verdict": ios_run_verdict.explain(summary, stop)}
         if closed:
             changes["verified"] = self.base()
         self.save(**changes)
@@ -776,6 +779,7 @@ class Phone:
         self.save(run=verified["run"], install=verified["install"], tools=verified["tools"], closed=True,
                   guest_job=None, phase="stopped", error=None, application_launch_accepted=None,
                   outcome={"outcome": "cancelled-before-boot"},
+                  verdict=ios_run_verdict.explain({"outcome": "cancelled-before-boot"}, {}),
                   created=[item for item in self.state.get("created", []) if item != str(path)])
 
     def prepare_and_boot(self, tools):
@@ -1329,8 +1333,10 @@ class Phone:
                     # The guest never ran; nothing about the phone failed.
                     raise RuntimeError("The host was too busy (I/O or memory pressure) to boot the guest; "
                                        "start again once it is quieter")
+                summary = (self.state.get("verdict") or {}).get("summary")
                 raise RuntimeError("The guest stopped during boot"
-                                   + (f" ({outcome})" if outcome else "") + "; see ios.emulator.report")
+                                   + (f" ({outcome})" if outcome else "")
+                                   + (f": {summary}" if summary else "") + "; see ios.emulator.report")
             if time.monotonic() > deadline:
                 raise RuntimeError("The guest service did not answer within an hour")
             time.sleep(15)
@@ -2215,8 +2221,10 @@ class Phone:
             self.abandon()
             return
         if not self.finalize():
+            verdict = self.state.get("verdict") or {}
+            why = (": " + ios_run_verdict.sentence(verdict)) if verdict.get("summary") else ""
             raise RuntimeError(("The guest did not answer and was ended without saving" if forced else
-                                "The guest stopped without verified storage")
+                                "The guest stopped without verified storage") + why
                                + "; the next start uses the last verified run")
 
 
