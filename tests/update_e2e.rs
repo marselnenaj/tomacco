@@ -1,7 +1,8 @@
 //! A real update through the real binary: install an old version from a package,
 //! `update.apply` against a local HTTP fixture with a test key, and
 //! `update.rollback` back to the old one, all in a temporary home. Needs the
-//! test hooks, which only debug builds have, and Python for the installer.
+//! test hooks, which only debug builds have. No Python: the installer is the
+//! package's own `bin/tomaccoctl _install`.
 #![cfg(debug_assertions)]
 
 use base64::{Engine, engine::general_purpose::STANDARD};
@@ -237,10 +238,6 @@ fn the_sandbox_follows_tmpdir_or_stays_in_target() {
 
 #[test]
 fn install_update_and_roll_back_through_the_real_binary() {
-    if Command::new("python3").arg("--version").output().is_err() {
-        eprintln!("skipped: the installer needs Python");
-        return;
-    }
     let directory = sandbox_directory();
     let home = directory.path().join("home");
     let data = directory.path().join("data");
@@ -262,9 +259,8 @@ fn install_update_and_roll_back_through_the_real_binary() {
     let arch = std::env::consts::ARCH;
     let old = trees.join(format!("tomacco-1.0.0-Linux-{arch}"));
     package_tree(&old, "1.0.0");
-    let installed = Command::new("python3")
-        .arg(old.join("install.py"))
-        .args(["--no-window-rule", "--user-home"])
+    let installed = Command::new(old.join("bin/tomaccoctl"))
+        .args(["_install", "--no-window-rule", "--user-home"])
         .arg(&home)
         .env("HOME", &home)
         .output()
@@ -306,13 +302,8 @@ fn install_update_and_roll_back_through_the_real_binary() {
     // installer installs it, the health check fails, the journal restores.
     let broken = trees.join(format!("broken/tomacco-1.0.1-Linux-{arch}"));
     package_tree(&broken, "1.0.1");
-    let script = fs::read_to_string(broken.join("install.py")).unwrap();
-    let replaced = script.replace(
-        "installer.write(app / \"tomaccoctl\", cli.read_bytes(), 0o755)",
-        "installer.write(app / \"tomaccoctl\", b\"#!/bin/sh\\nexit 3\\n\", 0o755)",
-    );
-    assert_ne!(script, replaced);
-    fs::write(broken.join("install.py"), replaced).unwrap();
+    // A debug build's installer then installs a tomaccoctl that exits 3.
+    fs::write(broken.join("share/tomacco/TEST-BROKEN-CLI"), b"").unwrap();
     let bad = package(&broken);
     publish(&pages, &address, "1.0.1", &bad, Some(sign(&bad)));
     let job = sandbox.apply();
@@ -380,4 +371,35 @@ fn install_update_and_roll_back_through_the_real_binary() {
     let before = sandbox.ok("update.status", json!({}))["checked_at"].clone();
     sandbox.ok("update.check", json!({}));
     assert_eq!(sandbox.ok("update.status", json!({}))["checked_at"], before);
+
+    // `tomaccoctl uninstall` runs the installer in its own process and says
+    // how to undo it: the removed program, kept in the uninstallation's backup.
+    let done = sandbox.command(&["uninstall"]).output().unwrap();
+    assert!(
+        done.status.success(),
+        "{}",
+        String::from_utf8_lossy(&done.stderr)
+    );
+    let removed: Value = serde_json::from_slice(&done.stdout).unwrap();
+    assert_eq!(removed["kept"], json!([]), "{removed}");
+    assert!(!library.exists());
+    assert!(!home.join(".local/bin/tomaccoctl").exists());
+    let hint = String::from_utf8_lossy(&done.stderr).into_owned();
+    let undo = hint
+        .lines()
+        .find_map(|line| line.strip_prefix("To undo: "))
+        .unwrap_or_else(|| panic!("{hint}"));
+    let words: Vec<&str> = undo.split_whitespace().collect();
+    let restored = Command::new(words[0])
+        .args(&words[1..])
+        .env("HOME", &home)
+        .output()
+        .unwrap();
+    assert!(
+        restored.status.success(),
+        "{}",
+        String::from_utf8_lossy(&restored.stderr)
+    );
+    assert_eq!(sandbox.version(), "1.0.0");
+    assert_eq!(fs::read(library.join("tomaccoctl")).unwrap(), old_binary);
 }

@@ -8,13 +8,14 @@
 //! `install.py` writes, so either installer rolls back or uninstalls what the
 //! other installed.
 //!
-//! Where an integration is added (a file the installation owns, or an edit to
-//! the user's own configuration): its own method on [`Installer`] like
-//! [`Installer::window_rule`], called from [`install_package`] after the
-//! program's files; what it owns outright goes into [`OWNED`] (and
-//! [`OWNED_DIRECTORIES`]) so `--uninstall` removes it, and an edit to the
-//! user's configuration gets an `unedit_*` counterpart called first in
-//! [`Installer::uninstall`].
+//! Where an integration is added (a file the installation owns, a link or an
+//! edit to the user's own configuration): its own method on [`Installer`] like
+//! [`Installer::window_rule`] or [`Installer::agent_skill`], called from
+//! [`install_package`] after the program's files; what it owns outright goes
+//! into [`OWNED`] (and [`OWNED_DIRECTORIES`]) so `--uninstall` removes it, and
+//! an edit or link in the user's configuration gets a counterpart called first
+//! in [`Installer::uninstall`] (`unedit_*`, `remove_skill_links`). The same
+//! change goes into install.py, which still installs from a checkout.
 use crate::{core::*, product::*};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
@@ -112,7 +113,12 @@ fn refuse(message: impl Into<String>) -> Error {
 }
 
 fn io_context(what: &Path) -> impl Fn(io::Error) -> Error + '_ {
-    move |error| Error::new("io_error", format!("{}: {error}", what.display()))
+    move |error| {
+        Error::from(io::Error::new(
+            error.kind(),
+            format!("{}: {error}", what.display()),
+        ))
+    }
 }
 
 fn hex_digest(bytes: &[u8]) -> String {
@@ -657,7 +663,9 @@ impl Installer {
         let mut created = Vec::new();
         for directory in missing.iter().rev() {
             fs::create_dir(directory).map_err(io_context(directory))?;
-            created.push(normal(directory.strip_prefix(&self.user).unwrap_or(directory)));
+            created.push(normal(
+                directory.strip_prefix(&self.user).unwrap_or(directory),
+            ));
         }
         let parent = path.parent().unwrap_or(&self.user).to_path_buf();
         self.sweep(&parent)?;
@@ -846,9 +854,8 @@ impl Installer {
                 "This backup has no rollback manifest; its files remain available for manual recovery",
             ));
         }
-        let manifest: Value = serde_json::from_slice(
-            &fs::read(&manifest_path).map_err(io_context(&manifest_path))?,
-        )?;
+        let manifest: Value =
+            serde_json::from_slice(&fs::read(&manifest_path).map_err(io_context(&manifest_path))?)?;
         let entries = match (&manifest["format"], manifest["files"].as_array()) {
             (Value::Number(format), Some(files)) if format.as_u64() == Some(1) => files.clone(),
             _ => return Err(refuse("Unsupported backup manifest")),
@@ -938,8 +945,10 @@ impl Installer {
         })?;
         self.remove_created(&created)?;
         self.finish()?;
-        Ok(json!({"restored": identifier, "changed": self.changed.len(),
-            "backups": self.backup.to_string_lossy()}))
+        Ok(
+            json!({"restored": identifier, "changed": self.changed.len(),
+            "backups": self.backup.to_string_lossy()}),
+        )
     }
 
     pub fn launchers(&mut self, portable: bool) -> Result<()> {
@@ -1045,7 +1054,14 @@ impl Installer {
     pub fn agent_skill(&mut self, source: &Path, link: bool, update: bool) -> Result {
         let skill = Path::new(SKILL);
         let mut keep = HashSet::new();
-        for path in files_below(source)? {
+        // A package from before the skill has none; like install.py, the
+        // links are made all the same.
+        let files = if source.exists() {
+            files_below(source)?
+        } else {
+            Vec::new()
+        };
+        for path in files {
             let relative = skill.join(path.strip_prefix(source).unwrap_or(&path));
             let data = fs::read(&path).map_err(io_context(&path))?;
             self.write(&relative, &data, 0o644)?;
@@ -1161,7 +1177,9 @@ impl Installer {
         if !value["bar"]["layout"].is_object() {
             let default = Path::new("/usr/share/omarchy/config/omarchy/shell.json");
             if !is_file(default) {
-                return Err(refuse("No Omarchy bar layout found; configure a bar first."));
+                return Err(refuse(
+                    "No Omarchy bar layout found; configure a bar first.",
+                ));
             }
             let found: Value =
                 serde_json::from_slice(&fs::read(default).map_err(io_context(default))?)?;
@@ -1210,9 +1228,8 @@ impl Installer {
         let build = hex_digest(&panel)[..12].to_string();
         let entry = format!("{build}/MobilePanel.qml");
         let manifest_path = source.join("manifest.json");
-        let mut manifest: Value = serde_json::from_slice(
-            &fs::read(&manifest_path).map_err(io_context(&manifest_path))?,
-        )?;
+        let mut manifest: Value =
+            serde_json::from_slice(&fs::read(&manifest_path).map_err(io_context(&manifest_path))?)?;
         manifest["entryPoints"]["barWidget"] = json!(entry);
         let built = String::from_utf8_lossy(&panel).replace("@TOMACCO_PANEL_BUILD@", &build);
         // Bytes as they are where the panel is not UTF-8 text.
@@ -1234,7 +1251,11 @@ impl Installer {
         extras.sort();
         for extra in extras {
             let data = fs::read(&extra).map_err(io_context(&extra))?;
-            self.write(plugin.join(extra.file_name().unwrap_or_default()), &data, 0o644)?;
+            self.write(
+                plugin.join(extra.file_name().unwrap_or_default()),
+                &data,
+                0o644,
+            )?;
         }
         // The manifest switches the entry point only after its file exists.
         self.write_text(plugin.join("manifest.json"), &config_json(&manifest))?;
@@ -1264,10 +1285,7 @@ impl Installer {
         for path in stale {
             let parent = path.parent().unwrap_or(&installed).to_path_buf();
             if is_file(&path) && !is_symlink(&path) && !is_symlink(&parent) {
-                let relative = path
-                    .strip_prefix(&self.user)
-                    .unwrap_or(&path)
-                    .to_path_buf();
+                let relative = path.strip_prefix(&self.user).unwrap_or(&path).to_path_buf();
                 self.remove(&relative)?;
                 self.flush()?;
                 if parent != installed
@@ -1413,10 +1431,7 @@ impl Installer {
         self.write_text(HYPR_RULES_FILE, HYPR_RULES)?;
         let text = fs::read_to_string(&config).map_err(io_context(&config))?;
         if !text.contains(HYPR_REQUIRE) {
-            let edited = format!(
-                "{}\n\n{HYPR_COMMENT}\n{HYPR_REQUIRE}\n",
-                text.trim_end()
-            );
+            let edited = format!("{}\n\n{HYPR_COMMENT}\n{HYPR_REQUIRE}\n", text.trim_end());
             let mode = mode_of(&config).map_err(io_context(&config))?;
             self.write(HYPR_CONFIG, edited.as_bytes(), mode)?;
         }
@@ -1447,7 +1462,11 @@ fn current_state(target: &Path) -> Result<Option<Value>> {
             mode_of(target).map_err(io_context(target))?,
         )));
     }
-    Ok(if target.exists() { None } else { Some(Value::Null) })
+    Ok(if target.exists() {
+        None
+    } else {
+        Some(Value::Null)
+    })
 }
 
 fn replace_bytes(data: &[u8], from: &[u8], to: &[u8]) -> Vec<u8> {
@@ -1594,7 +1613,9 @@ fn manifest_paths(user: &Path) -> Vec<(String, PathBuf)> {
 fn launcher_script(name: &str, target: &Path, portable: bool) -> String {
     let mut environment = String::new();
     if name == DESKTOP_NAME {
-        environment.push_str("export QT_QPA_PLATFORMTHEME=generic\nexport QT_QUICK_CONTROLS_STYLE=Basic\n");
+        environment.push_str(
+            "export QT_QPA_PLATFORMTHEME=generic\nexport QT_QUICK_CONTROLS_STYLE=Basic\n",
+        );
         if portable {
             // The bundled Qt loads only its own plugins and QML modules.
             environment.push_str("unset QT_PLUGIN_PATH QML_IMPORT_PATH QML2_IMPORT_PATH\n");
@@ -1640,7 +1661,8 @@ pub struct Package {
 
 impl Package {
     pub fn open(root: &Path) -> Option<Package> {
-        let version = fs::read_to_string(root.join("share").join(PACKAGE_PREFIX).join("VERSION")).ok()?;
+        let version =
+            fs::read_to_string(root.join("share").join(PACKAGE_PREFIX).join("VERSION")).ok()?;
         Some(Package {
             root: root.to_path_buf(),
             version: version.trim().to_string(),
@@ -1770,7 +1792,11 @@ pub fn install_package(installer: &mut Installer, package: &Package, options: &O
         for (name, path) in sorted_files(&root.join("share/doc/tomacco"))? {
             installer.write(Path::new(DOCUMENTS).join(&name), &read(&path)?, 0o644)?;
         }
-        installer.write(MANUAL_PAGE, &read(&root.join("share/man/man1/tomaccoctl.1"))?, 0o644)?;
+        installer.write(
+            MANUAL_PAGE,
+            &read(&root.join("share/man/man1/tomaccoctl.1"))?,
+            0o644,
+        )?;
         installer.write(
             ICON,
             &read(&root.join(format!("share/icons/hicolor/scalable/apps/{APP_ID}.svg")))?,
@@ -1801,8 +1827,7 @@ pub fn install_package(installer: &mut Installer, package: &Package, options: &O
     } else if options.update && installer.widget_placed() {
         installer.omarchy(&omarchy, false)?;
     }
-    if !options.no_window_rule
-        && (!options.update || installer.user.join(HYPR_RULES_FILE).exists())
+    if !options.no_window_rule && (!options.update || installer.user.join(HYPR_RULES_FILE).exists())
     {
         installer.window_rule()?;
     }
@@ -1863,8 +1888,10 @@ pub fn list_backups(user: &Path) -> Value {
         else {
             continue;
         };
-        entries.push(json!({"id": id, "version": value.get("version").cloned().unwrap_or(Value::Null),
-            "files": value["files"].as_array().map_or(0, Vec::len)}));
+        entries.push(
+            json!({"id": id, "version": value.get("version").cloned().unwrap_or(Value::Null),
+            "files": value["files"].as_array().map_or(0, Vec::len)}),
+        );
     }
     Value::Array(entries)
 }
@@ -1961,7 +1988,10 @@ fn parse(args: &[String]) -> Result<Arguments> {
         let (flag, takes) = match LONG.iter().find(|(long, _)| *long == name) {
             Some(found) => *found,
             None => {
-                let matches: Vec<_> = LONG.iter().filter(|(long, _)| long.starts_with(name)).collect();
+                let matches: Vec<_> = LONG
+                    .iter()
+                    .filter(|(long, _)| long.starts_with(name))
+                    .collect();
                 match matches.as_slice() {
                     [found] => **found,
                     [] => return Err(usage(format!("unrecognized arguments: {argument}"))),

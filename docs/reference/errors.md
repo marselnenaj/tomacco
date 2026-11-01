@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 439 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -102,6 +102,7 @@ Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.
 | `heap_dump_failed` | The heap dump pulled from the device is empty. | Heap dumps need a debuggable app, or an emulator image without Google Play. |
 | `incomplete_research_inputs` | Research graft preparation requires kernel, boot_manifest and device_tree together. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `input_too_large` | JSON exceeds 2 MiB: … | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
+| `install_refused` | The installer refused a change: a path outside the home, a symbolic link, a command it did not install, a file changed since installation, or a damaged backup. | Read the message, move or restore the file it names, then run the installer again. |
 | `instrumentation_protocol` | Invalid Android response. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `instrumentation_required` | Unicode input requires Tomacco's Android instrumentation. | Run testing.setup for this device, wait for success, then retry. |
 | `instrumentation_unavailable` | Android UI automation is not ready. | Run testing.setup for the selected device, wait for success, then retry. |
@@ -386,8 +387,6 @@ Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.
 | `trace_output` | Unterminated trace processor CSV value. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `transport_failed` | The MCP server could not write to its client. | Restart the client's connection to tomaccoctl mcp. |
 | `ui_hierarchy_unavailable` | … needs a UI hierarchy, and the virtual iPhone's guest tools do not report one. | Use testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates. |
-| `uninstall_installer_missing` | … is missing: installations made by {PRODUCT_NAME} 1.0.0 do not keep it. | Download the release package and run python3 install.py --uninstall from it. |
-| `uninstall_python_missing` | Uninstalling needs Python 3, which the installer runs on. | Install Python 3, then try again. |
 | `unsafe_data_directory` | The Tomacco data directory is not a directory owned by this user: … | Set TOMACCO_HOME to a directory you own. |
 | `unsafe_runtime_directory` | Runtime directory is not a private directory of this user: … | Remove it, or set TMPDIR to a directory only you can write. |
 | `unsigned_artifact` | Bundle signature could not be verified. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
@@ -421,7 +420,6 @@ Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.
 | `update_nothing_to_roll_back` | There is no installed update to roll back. | Nothing to do: no update was installed. |
 | `update_off` | Updates are turned off. Install one from the Settings, or pass manual when the user asked for it. | Pass manual:true only when the person asked for this update. |
 | `update_offline` | GitHub could not be reached during the download. This computer may be offline. | Connect to the network and try again. |
-| `update_python_missing` | Installing an update needs Python 3.9 or newer, which {PRODUCT_NAME}'s installer runs on. Nothing was changed. | Install Python 3, then try again. |
 | `update_rollback_failed` | The update failed (…) and restoring the previous version failed too (…). Its files are in the backup …. | Run the installer with --rollback and this backup ID, or install again. |
 | `update_signature_invalid` | Refused the update: …. Nothing was installed. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `update_signing_key_missing` | This build of {PRODUCT_NAME} has no release signing key, so it cannot verify an update and will not install one. | Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused. |

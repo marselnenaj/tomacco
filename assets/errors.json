@@ -383,6 +383,10 @@
     "cause": "JSON exceeds 2 MiB: …",
     "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
   },
+  "install_refused": {
+    "cause": "The installer refused a change: a path outside the home, a symbolic link, a command it did not install, a file changed since installation, or a damaged backup.",
+    "remedy": "Read the message, move or restore the file it names, then run the installer again."
+  },
   "instrumentation_protocol": {
     "cause": "Invalid Android response.",
     "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
@@ -1519,14 +1523,6 @@
     "cause": "… needs a UI hierarchy, and the virtual iPhone's guest tools do not report one.",
     "remedy": "Use testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates."
   },
-  "uninstall_installer_missing": {
-    "cause": "… is missing: installations made by {PRODUCT_NAME} 1.0.0 do not keep it.",
-    "remedy": "Download the release package and run python3 install.py --uninstall from it."
-  },
-  "uninstall_python_missing": {
-    "cause": "Uninstalling needs Python 3, which the installer runs on.",
-    "remedy": "Install Python 3, then try again."
-  },
   "unsafe_data_directory": {
     "cause": "The Tomacco data directory is not a directory owned by this user: …",
     "remedy": "Set TOMACCO_HOME to a directory you own."
@@ -1658,10 +1654,6 @@
   "update_offline": {
     "cause": "GitHub could not be reached during the download. This computer may be offline.",
     "remedy": "Connect to the network and try again."
-  },
-  "update_python_missing": {
-    "cause": "Installing an update needs Python 3.9 or newer, which {PRODUCT_NAME}'s installer runs on. Nothing was changed.",
-    "remedy": "Install Python 3, then try again."
   },
   "update_rollback_failed": {
     "cause": "The update failed (…) and restoring the previous version failed too (…). Its files are in the backup ….",

@@ -1417,10 +1417,7 @@ fn apply(a: &Value) -> Result {
         })?;
     fs::set_permissions(scratch.path(), fs::Permissions::from_mode(0o700))?;
     let request = scratch.path().join("request.json");
-    atomic_json(
-        &request,
-        &json!({"home":user,"scratch":scratch.path()}),
-    )?;
+    atomic_json(&request, &json!({"home":user,"scratch":scratch.path()}))?;
     let job = jobs::submit(
         &format!("Install {PRODUCT_NAME} update"),
         json!({
@@ -1646,10 +1643,7 @@ fn unpack_package(verified: &Verified, scratch: &Path) -> Result<PathBuf> {
             "the version inside the package is not the release's",
         ));
     }
-    for file in [
-        format!("bin/{DESKTOP_NAME}"),
-        format!("bin/{CLI_NAME}"),
-    ] {
+    for file in [format!("bin/{DESKTOP_NAME}"), format!("bin/{CLI_NAME}")] {
         if !fs::symlink_metadata(root.join(&file)).is_ok_and(|meta| meta.is_file()) {
             return Err(refuse(&format!("the package has no {file}")));
         }
