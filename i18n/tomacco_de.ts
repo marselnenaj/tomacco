@@ -4206,6 +4206,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Start virtual iOS device from saved state</source>
         <translation>Virtuelles iOS-Gerät aus gesichertem Zustand starten</translation>
     </message>
+    <message>
+        <source>Profiles of virtual iOS device</source>
+        <translation>Profile des virtuellen iOS-Geräts</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

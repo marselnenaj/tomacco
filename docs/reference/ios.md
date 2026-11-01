@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-49 operations. Generated from `assets/operations.json`; [all areas](README.md).
+50 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -783,13 +783,13 @@ tomaccoctl call ios.virtual.status
 
 **Set up virtual iOS device**
 
-Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job).
+Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job). Choosing another directory is refused with ios_virtual_busy while a start or stop runs and with ios_virtual_running while the current profile's phone runs; each directory configured is remembered for ios.virtual.profiles.
 
 Annotations: writes, idempotent, closed world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `directory` | string |  |  | non-empty; Existing profile directory. |
+| `directory` | string |  |  | non-empty; Existing profile directory. Becomes the profile of the next start; refused while the current profile's phone runs or a start or stop is in progress. |
 | `model` | string |  |  | matching `^[a-z0-9-]{0,32}$`; Device model the next start describes the phone as (an id from ios.virtual.status models). Empty: the profile's own description, a phone with a Home button. Takes effect at the next start; the disks stay the same. |
 | `add_application` | string |  |  | non-empty; Host path of an .app directory built for arm64 iOS to add to the profile's applications. It is inspected first (Info.plist, arm64 executable, only allowlisted entitlements) and refused with the reason otherwise. The next start installs it; when the profile's guest tools do not carry it as it is now, the start rebuilds them with the profile's apps and pins the new signing adapter in a derived kernel itself (clang 22 needed: clang, or a clang-22 on PATH). |
 | `add_entitlements` | string |  |  | Entitlements plist to request for add_application; empty: the executable's embedded entitlements, or only application-identifier. |
@@ -802,6 +802,20 @@ Annotations: writes, idempotent, closed world.
 
 ```sh
 tomaccoctl call ios.virtual.configure
+```
+
+### ios.virtual.profiles
+
+**Profiles of virtual iOS device**
+
+List the virtual iOS device profile directories configured so far (up to 32, the newest first), each with current, valid (with error code and message when its profile.json or state.json cannot be used), run, phase, closed, running (its guest job is alive), application, installs, start_disks and saved_states (the number of saved states). current is the directory the next start uses; switch with ios.virtual.configure directory. can_switch is false while a start or stop runs (busy) or the current profile's phone runs. Reads files only.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call ios.virtual.profiles
 ```
 
 ### ios.virtual.apps

@@ -117,7 +117,7 @@ status is not 0. Branch on `code`; show the user `message`; follow `remedy`. Rea
 ## Safe and destructive operations
 
 Every operation carries the four MCP annotations, and `tomaccoctl schema` shows them under
-`annotations`. Of the 203 operations, 67 are read-only and 22 are destructive.
+`annotations`. Of the 204 operations, 68 are read-only and 22 are destructive.
 
 | Annotation | What it means for an agent |
 | --- | --- |

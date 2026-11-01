@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 203 operations.
+`tomaccoctl` now has one typed API of 204 operations.
 
 ### Added
 
@@ -78,6 +78,9 @@ operations and their JSON results.
     `ios.virtual.states` lists the names, `ios.virtual.state_use` makes one the base of the next start and
     `ios.virtual.state_delete` removes a name and the copy only it kept. Pruning and `ios.virtual.cleanup` keep named runs.
     Unit-tested only, not run on a live phone.
+  - `ios.virtual.profiles` lists every profile directory configured so far with its run, phase and whether its phone runs.
+    `ios.virtual.configure` refuses another directory while the current phone runs (`ios_virtual_running`) or a start or
+    stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile.
 
 ### Changed
 

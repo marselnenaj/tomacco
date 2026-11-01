@@ -178,7 +178,11 @@ pub fn configure(a: &Value) -> Result {
     if a.get("directory").is_some() {
         let directory = path(s(a, "directory"), true, true)?;
         records(&directory)?;
+        if text(&record, "directory") && record["directory"] != json!(directory) {
+            refuse_switch(Path::new(s(&record, "directory")))?;
+        }
         record["directory"] = json!(directory);
+        record["profiles"] = json!(remembered(&record, Some(&directory)));
     } else if !text(&record, "directory") {
         return Err(Error::new(
             "ios_virtual_unconfigured",
@@ -334,6 +338,91 @@ pub fn configure(a: &Value) -> Result {
             "open_app":a["deploy_open_app"].as_bool().unwrap_or(true)}))?;
     }
     Ok(reply)
+}
+
+/// The most profile directories `ios.virtual.profiles` remembers.
+const PROFILES_KEPT: usize = 32;
+
+/// The profile directories configured so far, newest last, with `added`
+/// moved to the end; the current one is always among them.
+fn remembered(record: &Value, added: Option<&Path>) -> Vec<PathBuf> {
+    let mut list: Vec<PathBuf> = record["profiles"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|item| item.as_str().filter(|p| !p.is_empty()).map(PathBuf::from))
+        .collect();
+    if text(record, "directory") {
+        list.push(PathBuf::from(s(record, "directory")));
+    }
+    if let Some(added) = added {
+        list.retain(|item| item != added);
+        list.push(added.to_path_buf());
+    }
+    let mut seen = Vec::new();
+    for item in list.into_iter().rev() {
+        if !seen.contains(&item) {
+            seen.push(item);
+        }
+    }
+    seen.truncate(PROFILES_KEPT);
+    seen.reverse();
+    seen
+}
+
+/// Another profile is chosen only while the current one is idle: no start
+/// or stop running and no guest of it alive, so no run loses its profile.
+fn refuse_switch(current: &Path) -> Result<()> {
+    if let Some(job) = jobs::active_exclusive(EXCLUSIVE)? {
+        return Err(Error::new(
+            "ios_virtual_busy",
+            "A start or stop is in progress; choose another profile when it has ended",
+        )
+        .details(json!({"job":job})));
+    }
+    if let Ok((_, state)) = records(current) {
+        if guest_is_running(&state) {
+            return Err(Error::new(
+                "ios_virtual_running",
+                "The phone of the current profile is running; stop it before choosing another profile",
+            )
+            .remedy("Call ios.virtual.stop, then ios.virtual.configure with the other directory")
+            .details(json!({"directory":current,"guest_job":state["guest_job"]})));
+        }
+    }
+    Ok(())
+}
+
+/// The profile directories configured so far, each with whether it can be
+/// used and what it holds. Reads files only.
+pub fn profiles(_a: &Value) -> Result {
+    let record = read_json(&location()?, Some(json!({})))?;
+    let current = text(&record, "directory").then(|| PathBuf::from(s(&record, "directory")));
+    let busy = jobs::active_exclusive(EXCLUSIVE)?.is_some();
+    let rows: Vec<Value> = remembered(&record, None)
+        .into_iter()
+        .rev()
+        .map(|directory| {
+            let selected = current.as_ref() == Some(&directory);
+            match records(&directory) {
+                Ok((profile, state)) => {
+                    json!({"directory":directory,"current":selected,"valid":true,
+                    "error":null,"run":state["run"],"phase":state["phase"],"closed":state["closed"],
+                    "running":guest_is_running(&state),"application":profile["application"],
+                    "installs":profile["installs"],
+                    "start_disks":profile["start_disks"].as_str().unwrap_or("copy"),
+                    "saved_states":states::saved(&directory).map(|m| m.len()).ok()})
+                }
+                Err(error) => json!({"directory":directory,"current":selected,"valid":false,
+                    "error":{"code":error.code,"message":error.message},"running":false}),
+            }
+        })
+        .collect();
+    let running = rows
+        .iter()
+        .any(|row| row["current"] == true && row["running"] == true);
+    Ok(json!({"current":current,"profiles":rows,"busy":busy,
+        "can_switch":!busy && !running}))
 }
 
 /// The outcome of the start's time-zone step as the state records it
@@ -1980,5 +2069,29 @@ mod start_disk_tests {
             copies_a_start_removes(&profile, &state, &[]),
             created[..2].to_vec()
         );
+    }
+}
+
+#[cfg(test)]
+mod profile_list_tests {
+    use super::*;
+
+    #[test]
+    fn the_list_keeps_each_directory_once_newest_last_and_bounded() {
+        let record = json!({"directory":"/b","profiles":["/a","/b","/a",""]});
+        assert_eq!(
+            remembered(&record, None),
+            vec![PathBuf::from("/a"), PathBuf::from("/b")]
+        );
+        assert_eq!(
+            remembered(&record, Some(Path::new("/a"))),
+            vec![PathBuf::from("/b"), PathBuf::from("/a")]
+        );
+        let many: Vec<String> = (0..40).map(|index| format!("/p{index}")).collect();
+        let list = remembered(&json!({"profiles":many}), Some(Path::new("/new")));
+        assert_eq!(list.len(), PROFILES_KEPT);
+        assert_eq!(list.last(), Some(&PathBuf::from("/new")));
+        assert!(!list.contains(&PathBuf::from("/p0")));
+        assert!(remembered(&json!({}), None).is_empty());
     }
 }

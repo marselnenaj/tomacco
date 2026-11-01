@@ -8750,14 +8750,14 @@
   {
     "name": "ios.virtual.configure",
     "title": "Set up virtual iOS device",
-    "description": "Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job).",
+    "description": "Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job). Choosing another directory is refused with ios_virtual_busy while a start or stop runs and with ios_virtual_running while the current profile's phone runs; each directory configured is remembered for ios.virtual.profiles.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "directory": {
           "type": "string",
           "minLength": 1,
-          "description": "Existing profile directory."
+          "description": "Existing profile directory. Becomes the profile of the next start; refused while the current profile's phone runs or a start or stop is in progress."
         },
         "model": {
           "type": "string",
@@ -8811,6 +8811,23 @@
     },
     "annotations": {
       "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "ios.virtual.profiles",
+    "title": "Profiles of virtual iOS device",
+    "description": "List the virtual iOS device profile directories configured so far (up to 32, the newest first), each with current, valid (with error code and message when its profile.json or state.json cannot be used), run, phase, closed, running (its guest job is alive), application, installs, start_disks and saved_states (the number of saved states). current is the directory the next start uses; switch with ios.virtual.configure directory. can_switch is false while a start or stop runs (busy) or the current profile's phone runs. Reads files only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false

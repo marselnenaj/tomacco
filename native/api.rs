@@ -164,6 +164,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "ios.virtual.status" => crate::ios_emulator::virtual_phone::status(&a),
         "ios.virtual.apps" => crate::ios_emulator::virtual_phone::apps(&a),
         "ios.virtual.cleanup" => crate::ios_emulator::virtual_phone::cleanup(&a),
+        "ios.virtual.profiles" => crate::ios_emulator::virtual_phone::profiles(&a),
         "ios.virtual.states" => crate::ios_emulator::virtual_phone::states::list(&a),
         "ios.virtual.state_save" => crate::ios_emulator::virtual_phone::states::save(&a),
         "ios.virtual.state_delete" => crate::ios_emulator::virtual_phone::states::delete(&a),

@@ -33,6 +33,21 @@ Accepted is not the same as visible. After an accepted launch the start looks at
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
 display defect, not a working phone.
 
+### Several profiles
+
+Each profile directory is its own phone with its own runs. `ios.virtual.profiles` lists every directory configured so far,
+the newest first, with its `run`, `phase`, whether it is `running`, `start_disks` and the number of `saved_states`; a
+profile that can no longer be used is listed with its `error`.
+
+```sh
+tomaccoctl call ios.virtual.profiles '{}'
+tomaccoctl call ios.virtual.configure '{"directory":"/absolute/other-profile"}'
+```
+
+Choosing another directory is refused with `ios_virtual_running` while the current profile's phone runs, and with
+`ios_virtual_busy` while a start or stop is in progress; `can_switch` in the list says whether it would work now. Stop the
+phone first. The list and the refusal have control-plane tests; switching has not been tried with a live phone.
+
 ### What a stop saves
 
 `ios.virtual.stop` flushes the guest's storage and records whether this run may be the base of the
