@@ -502,10 +502,23 @@ HEAD = """<!DOCTYPE html>
 </header>
 """
 
-FOOT = """<footer>
-  <div class="foot">
-    <p>Tomacco. Agent-first mobile development for Linux. &copy; 2026 Marsel Nenaj and contributors.</p>
-    <p class="fl"><a href="/docs/">Docs</a> <a href="/skill">Agent skill</a> <a href="/changelog">What's new</a> <a href="/agents">Agents</a> <a href="/imprint">Imprint</a> <a href="/privacy">Privacy</a> <a href="/disclaimer">Disclaimer</a></p>
+FOOT = """<footer class="site-foot">
+  <div class="sf-in">
+    <div class="sf-top">
+      <div class="sf-lead">
+        <img class="sf-logo" src="/assets/logo/tomacco-color.svg" alt="Tomacco" width="64" height="64">
+        <p class="sf-claim">Give your agent<br>a phone.</p>
+        <p class="sf-cmd">$ curl -fsSL https://tomacco.dev/install.sh | bash</p>
+      </div>
+      <nav aria-label="Product"><h2>Product</h2><ul><li><a href="/docs/">Docs</a></li><li><a href="/skill">Agent skill</a></li><li><a href="/agents">Connect an agent</a></li><li><a href="/changelog">What's new</a></li></ul></nav>
+      <nav aria-label="Project"><h2>Project</h2><ul><li><a href="https://github.com/marselnenaj/tomacco">GitHub</a></li><li><a href="https://github.com/marselnenaj/tomacco/releases">Releases</a></li><li><a href="https://github.com/sponsors/marselnenaj">Sponsor</a></li></ul></nav>
+      <nav aria-label="Legal"><h2>Legal</h2><ul><li><a href="/imprint">Imprint</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/disclaimer">Disclaimer</a></li></ul></nav>
+    </div>
+    <div class="sf-legal">
+      <p>Tomacco is an independent project, not affiliated with, endorsed by or sponsored by The Simpsons or Disney, Apple, Google, Samsung or the Omarchy project. Other names belong to their owners and only say what Tomacco works with.</p>
+      <p class="sf-copy"><span>© 2026 Marsel Nenaj and contributors</span> · <span>GPL-2.0-or-later</span></p>
+    </div>
+    <p class="sf-word" aria-hidden="true">tomacco</p>
   </div>
 </footer>
 </body>
