@@ -601,11 +601,15 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         "replay" => options
             .check(&["--dry-run"])
             .and_then(|()| match &args[1..] {
-                [file] => session_log::replay(
-                    &std::fs::read_to_string(path(file, false, true)?)?,
-                    options.given("--dry-run"),
-                    api::dispatch,
-                ),
+                [file] => {
+                    // Replayed calls pass the same guards as tomaccoctl call.
+                    guard::enter(guard::Channel::Cli, None);
+                    session_log::replay(
+                        &std::fs::read_to_string(path(file, false, true)?)?,
+                        options.given("--dry-run"),
+                        guard::dispatch,
+                    )
+                }
                 _ => Err(Error::new("invalid_request", "Name one session log file")),
             }),
         _ => Err(

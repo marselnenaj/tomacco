@@ -134,6 +134,23 @@ class GuardTests(Isolated):
         _, failed = self.mcp(client="cautious-agent").call("catalog.list", {})
         self.assertFalse(failed)
 
+    def test_an_unreadable_policy_stops_agents_until_a_terminal_replaces_it(self):
+        settings = self.root / "state/settings.json"
+        dispatch("settings.get", {})
+        settings.write_text(json.dumps({"agent_policy": {"mcp": "nonesuch"}}))
+        error, _ = self.mcp().call("doctor")
+        self.assertEqual(error["code"], "policy_invalid")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("catalog.list", {})
+        self.assertEqual(refused.exception.code, "policy_invalid")
+        dispatch("settings.configure", {"agent_policy": {"mcp": "read_only"}})
+        self.assertEqual(dispatch("agent.policy", {"channel": "mcp"})["policy"]["name"], "read_only")
+        # replay passes the guards too.
+        log = self.root / "session.jsonl"
+        log.write_text(json.dumps({"operation": "settings.configure", "arguments": {"agent_policy": {}}, "ok": True, "mutating": True}) + "\n")
+        replayed = subprocess.run([binary(), "replay", str(log)], env={**os.environ, "TOMACCO_POLICY": "read_only"}, capture_output=True, text=True)
+        self.assertEqual(json.loads(replayed.stdout)["error"]["details"]["calls"][0]["error"]["code"], "policy_denied")
+
     def test_writes_stay_in_the_roots_under_a_limiting_policy(self):
         project = self.project("app")
         temporary = self.root / "tmp"

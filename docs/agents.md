@@ -240,7 +240,7 @@ tomaccoctl call audit.list '{"channel":"mcp","limit":20}'
 - **Policy.** `full` allows everything, `no_destructive` refuses operations marked `destructiveHint`, and `read_only`
   allows only those marked `readOnlyHint`. `policies` defines named ones: a `mode` (one of the three), `allow` and `deny`
   lists of operation names, prefixes ending in a dot (`play.`) or `*`. A deny entry always wins; with an allow list,
-  nothing else runs. The steps of `android.each` are checked like calls. An MCP server's policy is, in this order, the
+  no other operation runs (the MCP resources, which only read, stay readable). The steps of `android.each` are checked like calls. An MCP server's policy is, in this order, the
   one `tomaccoctl mcp --policy NAME` or `TOMACCO_POLICY` names, the client's entry in `clients` (by the `clientInfo` name
   it sends in `initialize`), `mcp`, then `full`; `tomaccoctl call` uses `TOMACCO_POLICY`, then `cli`. An unknown name
   allows nothing. A refused call is `policy_denied`, before anything runs; `agent.policy` says what a caller gets.

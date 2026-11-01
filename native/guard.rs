@@ -144,6 +144,14 @@ pub fn dispatch(name: &str, arguments: &Value) -> Result {
                 },
             )
         }
+        // From a terminal, a new agent_policy replaces one that cannot be read.
+        Err(_)
+            if channel == Channel::Cli
+                && name == "settings.configure"
+                && arguments.get("agent_policy").is_some() =>
+        {
+            api::dispatch(name, arguments)
+        }
         Err(error) => {
             Err(Error::new(&error.code, error.message.clone()).remedy(error.remedy.clone()))
         }
