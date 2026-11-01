@@ -97,6 +97,24 @@ TOMACCOCTL="$PWD/build/tomaccoctl" TOMACCO_HOME=/path/to/isolated-state python3 
 - `android_native_debug_integration.py` installs its own JNI fixture on the device you select. Configure the SDK, NDK, JDK, Gradle and
   LLDB in that isolated state first.
 
+## The documentation on the website
+
+`tools/build_site_docs.py` turns the Markdown in `docs/` into the static pages served at
+`tomacco.dev/docs`: the guides, the virtual iOS device pages and the operation reference. It
+uses only the Python standard library and writes no script. Regenerate the pages after any
+change under `docs/`, with the website checkout's `docs/` directory as the output:
+
+```sh
+python3 tools/build_reference.py
+python3 tools/build_site_docs.py ../tomacco-site/docs --sitemap ../tomacco-site/sitemap.xml
+```
+
+The command fails, and says which page, when a link or anchor does not resolve. Links to files
+that are not documentation point at GitHub; `--ref` sets the branch or tag they use (default
+`main`). The stylesheet for these pages is the "Documentation pages" section of the website's
+`assets/site.css`. `python3 -m unittest tests.python.test_build_site_docs` checks that every
+document renders, that every link and anchor in the output resolves and that no page has a script.
+
 ## Translations
 
 The desktop speaks English, German, French, Spanish and Italian. The translations are in `i18n/tomacco_de.ts`,

@@ -10,6 +10,9 @@ operations and their JSON results.
 
 ### Added
 
+- `tools/build_site_docs.py` renders the Markdown in `docs/` as static pages for the website (guides, virtual iOS
+  device, operation reference), with a guide list, a table of contents per page and no script. A test checks that every
+  document renders and every link and anchor in the output resolves; `docs/building.md` says how to regenerate them.
 - An agent skill, `integrations/agent-skill/tomacco`, tells coding agents when to use Tomacco and how: MCP or
   `tomaccoctl`, `capabilities` first, waiting for jobs, reading `remedy`, asking before destructive calls, and where the
   installed guides are. `install.py` installs it in `~/.local/lib/tomacco/skills/tomacco` and links it into
