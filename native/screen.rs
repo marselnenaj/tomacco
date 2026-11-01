@@ -49,7 +49,7 @@ pub fn png_size(path: &Path) -> Result<(u32, u32)> {
 
 impl Screen for Android {
     fn capture(&mut self, path: &Path) -> Result<(u32, u32)> {
-        crate::devices::handle("android.screen", &json!({"device":self.0,"path":path}))?;
+        crate::android_device::screen(&json!({"device":self.0,"path":path}))?;
         png_size(path)
     }
     fn hierarchy(&mut self) -> Result<Option<String>> {
@@ -389,12 +389,8 @@ pub fn marks(
     let (found, truncated, from, scale, note) = match &xml {
         Some(xml) => {
             let nodes = tree::parse(xml)?;
-            let (screen_width, _) = tree::screen_size(&nodes);
-            let scale = if screen_width > 0 {
-                f64::from(width) / screen_width as f64
-            } else {
-                1.0
-            };
+            // UIAutomator bounds are pixels of the screenshot, so no scaling.
+            let scale = 1.0;
             let (found, truncated) = tree::marks(&nodes, limit);
             (
                 found,
