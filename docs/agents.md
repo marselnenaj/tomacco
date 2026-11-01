@@ -31,7 +31,8 @@ codex mcp add tomacco -- "$(command -v tomaccoctl)" mcp
 ```
 
 For another user or an uninstalled checkout, give that absolute path instead. This is a local
-stdio server: no network port and no token. The installer never changes client settings; only `tomaccoctl setup` does, after asking. See the
+stdio server: no network port and no token. The installer never changes client settings; only `tomaccoctl setup` does, after asking.
+The installer does link the [agent skill](#agent-skill) into the agents' skills directories. See the
 [Claude Code](https://code.claude.com/docs/en/mcp) and
 [Codex](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) documentation.
 
@@ -102,6 +103,30 @@ answers one operation's whole schema, as does the resource `tomacco://reference/
 annotations are its area's strictest: `destructiveHint` when any of its operations is destructive, so a client that
 asks before destructive tools asks for the whole area. Calling an operation by its own name works in every mode.
 An unknown value is the full list, with a warning on standard error.
+
+## Agent skill
+
+An agent only uses Tomacco when it knows Tomacco is there. The agent skill tells it: a `SKILL.md` with a description
+that names the tasks Tomacco is for (Android and iOS apps, emulators, the virtual iPhone, device screenshots and logs,
+UI tests, store screenshots, performance), how to reach Tomacco over MCP or `tomaccoctl`, the safe way to work (start
+with `capabilities` or `doctor`, wait for jobs, follow `remedy`, ask before destructive calls, `workflow.run` for
+several steps) and where the installed guides are. `examples.md` beside it has a call for each common task. The
+source is [`integrations/agent-skill/tomacco`](../integrations/agent-skill/tomacco/SKILL.md).
+
+`install.py` installs the skill in `~/.local/lib/tomacco/skills/tomacco` and links it as `tomacco` into
+`~/.claude/skills` (Claude Code), `~/.codex/skills` (Codex) and `~/.agents/skills` (read by other agents), for each of
+`~/.claude`, `~/.codex` and `~/.agents` that exists. It makes the `skills` directory when it is missing. An entry
+named `tomacco` that is not a link to the installed skill is left alone and reported under `agent_skill.skipped` in
+the installer's output. The links are recorded in the install journal: `--uninstall` and `--rollback` remove exactly
+the links and the `skills` directories an installation made. An update keeps the skill current through the same
+links and adds none that you removed. `--no-agent-skill` installs the skill without linking it, and removes links an
+earlier installation made.
+
+`tomaccoctl setup` offers the same link, asking first, for each of those agents that has its directory but no link,
+for example an agent installed after Tomacco. `tomaccoctl uninstall` also removes those links.
+
+The install, update, uninstall and rollback steps are tested in a scratch home directory with stand-in agent
+directories. Whether each agent then picks the skill up has not been checked here.
 
 ## The contract
 

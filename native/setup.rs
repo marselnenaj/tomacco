@@ -108,6 +108,67 @@ fn file_agents(home: &Path, config: &Path) -> Vec<FileAgent> {
     ]
 }
 
+/// Agents that read skills from `<directory>/skills`, as install.py links the
+/// agent skill: who reads it, and the directory under HOME.
+const SKILL_AGENTS: [(&str, &str); 3] = [
+    ("Claude Code", ".claude"),
+    ("Codex", ".codex"),
+    ("Agents that read ~/.agents", ".agents"),
+];
+
+#[derive(Debug, PartialEq)]
+enum SkillLink {
+    /// The agent's directory or the installed skill is not here.
+    Absent,
+    Present,
+    Declined,
+    Added,
+    /// Something else has the skill's name there; it stays.
+    Taken(PathBuf),
+}
+
+/// Links the installed agent skill into an agent's skills directory after the
+/// person's yes, as install.py does. An entry of that name that is not a link
+/// to the installed skill is left alone. `tomaccoctl uninstall` removes the
+/// link with the installation.
+fn link_skill(home: &Path, directory: &str, name: &str, answers: &Answers) -> Result<SkillLink> {
+    let skill = home
+        .join(product::INSTALLED_LIBRARY)
+        .join("skills")
+        .join(product::REPO_NAME);
+    let config = home.join(directory);
+    if !config.is_dir() || !skill.join("SKILL.md").is_file() {
+        return Ok(SkillLink::Absent);
+    }
+    let skills = config.join("skills");
+    let link = skills.join(product::REPO_NAME);
+    match std::fs::symlink_metadata(&link) {
+        Ok(meta) => {
+            let ours = meta.is_symlink()
+                && (std::fs::read_link(&link).is_ok_and(|target| target == skill)
+                    || std::fs::canonicalize(&link).ok() == std::fs::canonicalize(&skill).ok());
+            return Ok(if ours {
+                SkillLink::Present
+            } else {
+                SkillLink::Taken(link)
+            });
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(error.into()),
+    }
+    if !answers.ask(&format!(
+        "Add the {} skill to {name}? This links {} to {}.",
+        product::PRODUCT_NAME,
+        link.display(),
+        skill.display()
+    )) {
+        return Ok(SkillLink::Declined);
+    }
+    std::fs::create_dir_all(&skills)?;
+    std::os::unix::fs::symlink(&skill, &link)?;
+    Ok(SkillLink::Added)
+}
+
 #[derive(Debug, PartialEq)]
 enum Connection {
     /// Neither its directory nor its program is here.
@@ -549,6 +610,20 @@ fn connect_agents(answers: &Answers) -> Result<()> {
                 (agent.entry)(&program)
             ),
             Err(error) => println!("  failed   {name}: {}", error.message),
+        }
+    }
+    for (name, directory) in SKILL_AGENTS {
+        match link_skill(&home, directory, name, answers) {
+            Ok(SkillLink::Absent) => {}
+            Ok(SkillLink::Present | SkillLink::Added) => {
+                println!("  ok       {name} has the agent skill")
+            }
+            Ok(SkillLink::Declined) => println!("  skipped  Agent skill for {name}"),
+            Ok(SkillLink::Taken(link)) => println!(
+                "  manual   Agent skill for {name}: {} is not Tomacco's; left as it is",
+                link.display()
+            ),
+            Err(error) => println!("  failed   Agent skill for {name}: {}", error.message),
         }
     }
     Ok(())
@@ -1112,6 +1187,62 @@ mod tests {
             connect_file_agent(cursor, program, true, &yes).unwrap(),
             Connection::ByHand(reason) if reason.contains("not an object")
         ));
+    }
+
+    #[test]
+    fn the_agent_skill_is_linked_only_after_a_yes_and_never_over_another_entry() {
+        let home = tempfile::tempdir().unwrap();
+        let home = home.path();
+        let no = Answers {
+            yes: false,
+            interactive: false,
+        };
+        let yes = Answers {
+            yes: true,
+            interactive: false,
+        };
+        let skill = home.join(".local/lib/tomacco/skills/tomacco");
+        std::fs::create_dir_all(home.join(".claude")).unwrap();
+        // Not installed: nothing to link.
+        assert_eq!(
+            link_skill(home, ".claude", "Claude Code", &yes).unwrap(),
+            SkillLink::Absent
+        );
+        std::fs::create_dir_all(&skill).unwrap();
+        std::fs::write(skill.join("SKILL.md"), "---\nname: tomacco\n---\n").unwrap();
+        // No agent directory: nothing is asked or made.
+        assert_eq!(
+            link_skill(home, ".codex", "Codex", &yes).unwrap(),
+            SkillLink::Absent
+        );
+        assert!(!home.join(".codex").exists());
+        let link = home.join(".claude/skills/tomacco");
+        assert_eq!(
+            link_skill(home, ".claude", "Claude Code", &no).unwrap(),
+            SkillLink::Declined
+        );
+        assert!(std::fs::symlink_metadata(&link).is_err());
+        assert_eq!(
+            link_skill(home, ".claude", "Claude Code", &yes).unwrap(),
+            SkillLink::Added
+        );
+        assert_eq!(std::fs::read_link(&link).unwrap(), skill);
+        assert_eq!(
+            link_skill(home, ".claude", "Claude Code", &yes).unwrap(),
+            SkillLink::Present
+        );
+        // Another skill of that name stays as it is.
+        let other = home.join(".agents/skills/tomacco");
+        std::fs::create_dir_all(&other).unwrap();
+        std::fs::write(other.join("SKILL.md"), "theirs").unwrap();
+        assert_eq!(
+            link_skill(home, ".agents", "Agents", &yes).unwrap(),
+            SkillLink::Taken(other.clone())
+        );
+        assert_eq!(
+            std::fs::read_to_string(other.join("SKILL.md")).unwrap(),
+            "theirs"
+        );
     }
 
     #[test]

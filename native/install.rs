@@ -63,6 +63,14 @@ pub(crate) const OWNED: &[&str] = &[
 ];
 /// Directories the installation creates for itself, removed once empty.
 const OWNED_DIRECTORIES: &[&str] = &[INSTALLED_LIBRARY, DOCUMENTS, PLUGIN];
+/// The agent skill: installed with the program, and linked into the skills
+/// directory of each coding agent whose configuration directory exists.
+const SKILL: &str = ".local/lib/tomacco/skills/tomacco";
+const AGENT_SKILL_LINKS: &[&str] = &[
+    ".claude/skills/tomacco",
+    ".codex/skills/tomacco",
+    ".agents/skills/tomacco",
+];
 const HYPR_REQUIRE: &str = "require(\"hypr.tomacco\")";
 const HYPR_COMMENT: &str = "-- Tomacco mobile workspace.";
 /// A portable package carries Qt, Qt WebEngine and FFmpeg here; the
@@ -451,6 +459,11 @@ impl Installer {
     }
 
     fn destination(&self, relative: &Path) -> Result<PathBuf> {
+        self.destination_of(relative, false)
+    }
+
+    /// The path in the home; with `link`, the path may be a symbolic link itself.
+    fn destination_of(&self, relative: &Path, link: bool) -> Result<PathBuf> {
         if relative.is_absolute()
             || relative
                 .components()
@@ -463,7 +476,7 @@ impl Installer {
         }
         let path = self.user.join(relative);
         let parent = path.parent().unwrap_or(&self.user);
-        if !resolve(parent).starts_with(&self.user) || is_symlink(&path) {
+        if !resolve(parent).starts_with(&self.user) || (is_symlink(&path) && !link) {
             return Err(refuse(format!(
                 "Refusing to follow an installation symlink: {}",
                 path.display()
@@ -478,7 +491,18 @@ impl Installer {
         if !self.swept.insert(directory.to_path_buf()) {
             return Ok(());
         }
-        delete_staged(directory)
+        let Ok(entries) = fs::read_dir(directory) else {
+            return Ok(());
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if entry.file_name().as_bytes().starts_with(STAGED.as_bytes())
+                && (is_symlink(&path) || is_file(&path))
+            {
+                fs::remove_file(&path).map_err(io_context(&path))?;
+            }
+        }
+        Ok(())
     }
 
     /// Keeps the current content of `path` in this run's backup. A file is
@@ -503,7 +527,22 @@ impl Installer {
         after: Option<Value>,
         before: Option<Value>,
     ) -> Result<()> {
-        self.records.push(json!({"path": normal(relative), "before": before, "after": after}));
+        self.stage_with(relative, staged, after, before, Vec::new())
+    }
+
+    fn stage_with(
+        &mut self,
+        relative: &Path,
+        staged: Staged,
+        after: Option<Value>,
+        before: Option<Value>,
+        created: Vec<String>,
+    ) -> Result<()> {
+        let mut record = json!({"path": normal(relative), "before": before, "after": after});
+        if !created.is_empty() {
+            record["created"] = json!(created);
+        }
+        self.records.push(record);
         self.pending_paths.insert(staged.path.clone());
         self.pending.push(staged);
         if self.pending.len() >= if self.batched { self.hooks.batch } else { 1 } {
@@ -591,6 +630,92 @@ impl Installer {
         )
     }
 
+    /// Stages a symbolic link at `relative` to the absolute `target`. The
+    /// journal entry's state is {"symlink": target}; directories the link
+    /// needed are made now and listed under "created", so removing the link
+    /// can remove them again.
+    pub fn link(&mut self, relative: impl AsRef<Path>, target: &str) -> Result<()> {
+        let relative = relative.as_ref();
+        let path = self.destination_of(relative, true)?;
+        if self.pending_paths.contains(&path) {
+            self.flush()?;
+        }
+        if is_symlink(&path) {
+            if fs::read_link(&path).is_ok_and(|current| current.as_os_str() == target) {
+                return Ok(());
+            }
+        }
+        if is_symlink(&path) || path.exists() {
+            return Err(refuse(format!("Refusing to replace {}", path.display())));
+        }
+        let mut missing = Vec::new();
+        let mut parent = path.parent().unwrap_or(&self.user).to_path_buf();
+        while !is_dir(&parent) {
+            missing.push(parent.clone());
+            parent = parent.parent().unwrap_or(Path::new("/")).to_path_buf();
+        }
+        let mut created = Vec::new();
+        for directory in missing.iter().rev() {
+            fs::create_dir(directory).map_err(io_context(directory))?;
+            created.push(normal(directory.strip_prefix(&self.user).unwrap_or(directory)));
+        }
+        let parent = path.parent().unwrap_or(&self.user).to_path_buf();
+        self.sweep(&parent)?;
+        let token = uuid::Uuid::new_v4().simple().to_string();
+        let temp = parent.join(format!("{STAGED}{}", &token[..16]));
+        std::os::unix::fs::symlink(target, &temp).map_err(io_context(&temp))?;
+        self.stage_with(
+            relative,
+            Staged {
+                temp: Some(temp),
+                path,
+                saved: None,
+            },
+            Some(json!({"symlink": target})),
+            None,
+            created,
+        )
+    }
+
+    /// Stages the removal of the symbolic link at `relative`.
+    pub fn unlink(&mut self, relative: impl AsRef<Path>) -> Result<()> {
+        let relative = relative.as_ref();
+        let path = self.destination_of(relative, true)?;
+        if self.pending_paths.contains(&path) {
+            self.flush()?;
+        }
+        let target = fs::read_link(&path).map_err(io_context(&path))?;
+        self.stage(
+            relative,
+            Staged {
+                temp: None,
+                path,
+                saved: None,
+            },
+            None,
+            Some(json!({"symlink": target.to_string_lossy()})),
+        )
+    }
+
+    /// Removes the directories a link needed, deepest first, while they are empty.
+    fn remove_created(&mut self, directories: &[String]) -> Result<()> {
+        self.flush()?;
+        let mut unique: Vec<&String> = directories.iter().collect();
+        unique.sort();
+        unique.dedup();
+        unique.sort_by_key(|name| std::cmp::Reverse(Path::new(name).components().count()));
+        for relative in unique {
+            let path = self.user.join(relative);
+            if is_dir(&path)
+                && !is_symlink(&path)
+                && fs::read_dir(&path).is_ok_and(|mut entries| entries.next().is_none())
+            {
+                fs::remove_dir(&path).map_err(io_context(&path))?;
+            }
+        }
+        Ok(())
+    }
+
     /// Writes manifest.json with every change recorded so far; the caller makes it durable.
     fn journal(&mut self) -> Result<PathBuf> {
         self.private_backup()?;
@@ -639,6 +764,7 @@ impl Installer {
         let result = self.publish(&mut pending);
         for staged in &pending {
             if let Some(temp) = &staged.temp {
+                // A staged link may point nowhere yet.
                 let _ = fs::remove_file(temp);
             }
         }
@@ -732,23 +858,18 @@ impl Installer {
         // Validate the complete restore before changing any current file.
         for entry in &entries {
             let relative = PathBuf::from(entry["path"].as_str().unwrap_or(""));
-            let target = self.destination(&relative)?;
+            let symlink = [&entry["before"], &entry["after"]]
+                .iter()
+                .any(|state| state.get("symlink").is_some());
+            let target = self.destination_of(&relative, symlink)?;
             let changed_since = || {
                 refuse(format!(
                     "Preserved a file changed since installation: {}",
                     target.display()
                 ))
             };
-            if target.exists() && !is_file(&target) {
+            let Some(current) = current_state(&target)? else {
                 return Err(changed_since());
-            }
-            let current = if is_file(&target) {
-                state(
-                    file_digest(&target).map_err(io_context(&target))?,
-                    mode_of(&target).map_err(io_context(&target))?,
-                )
-            } else {
-                Value::Null
             };
             if current == entry["before"] {
                 // A journalled write may not have been published before interruption.
@@ -758,7 +879,11 @@ impl Installer {
                 return Err(changed_since());
             }
             let previous = entry["before"].clone();
-            let mut content = None;
+            if symlink {
+                changes.push((relative, previous, Change::Link(entry.clone())));
+                continue;
+            }
+            let mut content = Change::Remove;
             if !previous.is_null() {
                 let saved = source.join(&relative);
                 if is_symlink(&saved)
@@ -776,15 +901,25 @@ impl Installer {
                         relative.display()
                     )));
                 }
-                content = Some(saved);
+                content = Change::Restore(saved);
             }
             changes.push((relative, previous, content));
         }
         // The backups are read again one at a time, not held in memory together.
+        let mut created = Vec::new();
         self.batch(|this| {
-            for (relative, previous, saved) in &changes {
-                match saved {
-                    Some(saved) => {
+            for (relative, previous, change) in &changes {
+                match change {
+                    // A symbolic link, by its journal entry.
+                    Change::Link(entry) => {
+                        if !previous.is_null() {
+                            this.link(relative, s(previous, "symlink"))?;
+                        } else {
+                            this.unlink(relative)?;
+                            created.extend(strings(&entry["created"]));
+                        }
+                    }
+                    Change::Restore(saved) => {
                         let content = fs::read(saved).map_err(io_context(saved))?;
                         if hex_digest(&content) != s(previous, "sha256") {
                             return Err(refuse(format!(
@@ -796,11 +931,12 @@ impl Installer {
                         this.write(relative, &content, mode)?;
                     }
                     // Only a file recorded as newly created by this installation is removed.
-                    None => this.remove(relative)?,
+                    Change::Remove => this.remove(relative)?,
                 }
             }
             Ok(())
         })?;
+        self.remove_created(&created)?;
         self.finish()?;
         Ok(json!({"restored": identifier, "changed": self.changed.len(),
             "backups": self.backup.to_string_lossy()}))
@@ -897,6 +1033,106 @@ impl Installer {
             }
         }
         Ok(())
+    }
+
+    /// Installs the agent skill from `source` (the package's
+    /// share/tomacco/agent-skill/tomacco) beside the program and, with `link`,
+    /// links it into ~/.claude/skills, ~/.codex/skills and ~/.agents/skills
+    /// where that agent's configuration directory exists. An entry already
+    /// there that is not Tomacco's own link is left alone. An update adds no
+    /// link the person removed after an earlier installation made it. Without
+    /// `link`, links to the installed skill are removed.
+    pub fn agent_skill(&mut self, source: &Path, link: bool, update: bool) -> Result {
+        let skill = Path::new(SKILL);
+        let mut keep = HashSet::new();
+        for path in files_below(source)? {
+            let relative = skill.join(path.strip_prefix(source).unwrap_or(&path));
+            let data = fs::read(&path).map_err(io_context(&path))?;
+            self.write(&relative, &data, 0o644)?;
+            keep.insert(relative);
+        }
+        self.flush()?;
+        let history = self.history();
+        for (recorded, entries) in &history {
+            let relative = PathBuf::from(recorded);
+            if relative.starts_with(skill)
+                && !keep.contains(&relative)
+                && as_installed(entries, &self.user.join(&relative))
+            {
+                self.remove(&relative)?;
+            }
+        }
+        self.prune(skill)?;
+        if !link {
+            self.remove_skill_links(&history)?;
+            return Ok(json!({"linked": [], "skipped": []}));
+        }
+        let target = self.user.join(SKILL).to_string_lossy().into_owned();
+        let (mut linked, mut skipped) = (Vec::new(), Vec::new());
+        for relative in AGENT_SKILL_LINKS {
+            let path = self.user.join(relative);
+            let agent = path.parent().and_then(Path::parent).unwrap_or(&self.user);
+            if !is_dir(agent) {
+                continue;
+            }
+            let shown = path.to_string_lossy().into_owned();
+            if self.destination_of(Path::new(relative), true).is_err() {
+                skipped.push(shown);
+                continue;
+            }
+            let entries = history.get(*relative).map(Vec::as_slice).unwrap_or(&[]);
+            if is_symlink(&path) {
+                let current = fs::read_link(&path).map_err(io_context(&path))?;
+                if self.ours(&path) {
+                    linked.push(shown);
+                    continue;
+                }
+                let theirs = entries.last().is_none_or(|entry| {
+                    entry["after"] != json!({"symlink": current.to_string_lossy()})
+                });
+                if theirs {
+                    skipped.push(shown);
+                    continue;
+                }
+                // Tomacco's own link from an installation in another place.
+                self.unlink(relative)?;
+            } else if path.exists() {
+                skipped.push(shown);
+                continue;
+            } else if update && !entries.is_empty() {
+                continue;
+            }
+            self.link(relative, &target)?;
+            linked.push(shown);
+        }
+        Ok(json!({"linked": linked, "skipped": skipped}))
+    }
+
+    /// Whether the symbolic link at `path` points at the installed skill.
+    fn ours(&self, path: &Path) -> bool {
+        let target = self.user.join(SKILL);
+        is_symlink(path)
+            && (fs::read_link(path).is_ok_and(|current| current.as_os_str() == target.as_os_str())
+                || (is_dir(&target) && resolve(path) == resolve(&target)))
+    }
+
+    /// Removes the agent links to the installed skill, whoever made them, and
+    /// the skills directories an installation created for them once empty.
+    fn remove_skill_links(&mut self, history: &BTreeMap<String, Vec<Value>>) -> Result<()> {
+        let mut created = Vec::new();
+        for relative in AGENT_SKILL_LINKS {
+            let path = self.user.join(relative);
+            if self.destination_of(Path::new(relative), true).is_err() {
+                continue;
+            }
+            if self.ours(&path) {
+                self.unlink(relative)?;
+                for entry in history.get(*relative).into_iter().flatten() {
+                    created.extend(strings(&entry["created"]));
+                }
+            }
+        }
+        self.remove_created(&created)
     }
 
     /// Whether the bar names the widget.
@@ -1078,6 +1314,7 @@ impl Installer {
         // The user's own configuration first, so it never names a removed file.
         self.unedit_window_rule()?;
         self.unedit_omarchy()?;
+        self.remove_skill_links(&history)?;
         self.batch(|this| {
             for (recorded, entries) in &history {
                 let relative = PathBuf::from(recorded);
@@ -1185,6 +1422,32 @@ impl Installer {
         }
         Ok(())
     }
+}
+
+/// What a rollback does to one journalled path.
+enum Change {
+    /// A symbolic link, with its journal entry.
+    Link(Value),
+    /// The file comes back from this backup copy.
+    Restore(PathBuf),
+    /// The file was new; it goes.
+    Remove,
+}
+
+/// What a journal entry records for `target`: a symlink's target, a file's
+/// digest and mode, null when nothing is there; None for anything else.
+fn current_state(target: &Path) -> Result<Option<Value>> {
+    if is_symlink(target) {
+        let link = fs::read_link(target).map_err(io_context(target))?;
+        return Ok(Some(json!({"symlink": link.to_string_lossy()})));
+    }
+    if is_file(target) {
+        return Ok(Some(state(
+            file_digest(target).map_err(io_context(target))?,
+            mode_of(target).map_err(io_context(target))?,
+        )));
+    }
+    Ok(if target.exists() { None } else { Some(Value::Null) })
 }
 
 fn replace_bytes(data: &[u8], from: &[u8], to: &[u8]) -> Vec<u8> {
@@ -1418,6 +1681,7 @@ pub struct Options {
     pub cli: Option<PathBuf>,
     pub omarchy: bool,
     pub no_window_rule: bool,
+    pub no_agent_skill: bool,
     pub update: bool,
 }
 
@@ -1526,6 +1790,11 @@ pub fn install_package(installer: &mut Installer, package: &Package, options: &O
         )?;
         Ok(())
     })?;
+    let skill = installer.agent_skill(
+        &package.share("agent-skill/tomacco"),
+        !options.no_agent_skill,
+        options.update,
+    )?;
     let omarchy = package.share("omarchy");
     if options.omarchy {
         installer.omarchy(&omarchy, true)?;
@@ -1545,6 +1814,7 @@ pub fn install_package(installer: &mut Installer, package: &Package, options: &O
         "changed": installer.changed.len(),
         "backups": installer.backup.exists().then(|| installer.backup.to_string_lossy().into_owned()),
         "omarchy": options.omarchy,
+        "agent_skill": skill,
     }))
 }
 
@@ -1609,7 +1879,7 @@ fn usage(message: impl Into<String>) -> Error {
 }
 
 const USAGE: &str = "usage: tomaccoctl _install [-h] [--binary BINARY] [--cli CLI] [--user-home USER_HOME] [--omarchy]\n                \
-     [--no-window-rule] [--update] [--list-backups] [--rollback BACKUP_ID] [--uninstall] [--version]\n                \
+     [--no-window-rule] [--no-agent-skill] [--update] [--list-backups] [--rollback BACKUP_ID] [--uninstall] [--version]\n                \
      [--package DIRECTORY]";
 
 const HELP: &str = "\
@@ -1623,6 +1893,8 @@ options:
                         Alternate home for packaging/installation tests
   --omarchy             Install and enable the Omarchy bar/popup plugin
   --no-window-rule
+  --no-agent-skill      Do not link the agent skill into ~/.claude/skills, ~/.codex/skills and ~/.agents/skills,
+                        and remove such links an earlier installation made
   --update              Keep the integrations as they are: refresh the Omarchy panel and window rules only where
                         they are already in use
   --list-backups        List installations with a verified rollback manifest
@@ -1639,6 +1911,7 @@ struct Arguments {
     user_home: Option<PathBuf>,
     omarchy: bool,
     no_window_rule: bool,
+    no_agent_skill: bool,
     update: bool,
     list_backups: bool,
     rollback: Option<String>,
@@ -1655,6 +1928,7 @@ const LONG: &[(&str, bool)] = &[
     ("--user-home", true),
     ("--omarchy", false),
     ("--no-window-rule", false),
+    ("--no-agent-skill", false),
     ("--update", false),
     ("--list-backups", false),
     ("--rollback", true),
@@ -1725,6 +1999,7 @@ fn parse(args: &[String]) -> Result<Arguments> {
             "--user-home" => parsed.user_home = Some(path()),
             "--omarchy" => parsed.omarchy = true,
             "--no-window-rule" => parsed.no_window_rule = true,
+            "--no-agent-skill" => parsed.no_agent_skill = true,
             "--update" => parsed.update = true,
             "--list-backups" => parsed.list_backups = true,
             "--rollback" => parsed.rollback = value,
@@ -1853,6 +2128,7 @@ fn run(parsed: Arguments) -> Result<()> {
         cli: parsed.cli,
         omarchy: parsed.omarchy,
         no_window_rule: parsed.no_window_rule,
+        no_agent_skill: parsed.no_agent_skill,
         update: parsed.update,
     };
     let mut installer = Installer::new(&user, &package.version);

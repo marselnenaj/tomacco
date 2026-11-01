@@ -22,13 +22,13 @@ def flat(path):
 
 
 def guides():
-    """The tracked Markdown a reader follows: README, CONTRIBUTING, docs/ and examples/,
-    without the changelog and the generated reference."""
+    """The tracked Markdown a reader follows: README, CONTRIBUTING, docs/, examples/ and the
+    agent skill, without the changelog and the generated reference."""
     listed = subprocess.run(["git", "-C", str(ROOT), "ls-files", "--", "*.md"], capture_output=True, text=True).stdout.split()
     if not listed:
         listed = [str(path.relative_to(ROOT)) for path in ROOT.glob("**/*.md") if "target" not in path.parts]
     return sorted(path for path in listed
-                  if (path in ("README.md", "CONTRIBUTING.md") or path.startswith(("docs/", "examples/")))
+                  if (path in ("README.md", "CONTRIBUTING.md") or path.startswith(("docs/", "examples/", "integrations/agent-skill/")))
                   and not path.startswith("docs/reference/") and (ROOT / path).is_file())
 
 

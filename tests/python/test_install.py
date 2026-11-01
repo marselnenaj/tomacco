@@ -514,6 +514,150 @@ class RepeatedInstallationTests(unittest.TestCase):
         self.assertTrue(0 < organization < main.find("Backend::storedLanguage()"))
 
 
+class AgentSkillTests(unittest.TestCase):
+    """The agent skill is installed beside the program and linked into the skills
+    directories of the agents configured here, and only there."""
+
+    install = staticmethod(RepeatedInstallationTests.installed_over)
+
+    def test_the_skill_is_linked_where_an_agent_is_configured_and_removed_exactly(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory).resolve() / "home"
+            skill = home / ".local/lib/tomacco/skills/tomacco"
+            # Claude Code with a skill of its own, Codex without a skills directory,
+            # a non-Tomacco entry under ~/.agents/skills and no Gemini directory at all.
+            own = home / ".claude/skills/other/SKILL.md"
+            own.parent.mkdir(parents=True)
+            own.write_text("theirs")
+            (home / ".codex").mkdir()
+            foreign = home / ".agents/skills/tomacco/SKILL.md"
+            foreign.parent.mkdir(parents=True)
+            foreign.write_text("not Tomacco's")
+            result = self.install(home, "--no-window-rule")
+            self.assertEqual(result["agent_skill"], {"linked": [str(home / ".claude/skills/tomacco"), str(home / ".codex/skills/tomacco")],
+                                                     "skipped": [str(home / ".agents/skills/tomacco")]})
+            for agent in (".claude", ".codex"):
+                self.assertEqual(os.readlink(home / agent / "skills/tomacco"), str(skill))
+            self.assertEqual((home / ".claude/skills/tomacco/SKILL.md").read_bytes(),
+                             (ROOT / "integrations/agent-skill/tomacco/SKILL.md").read_bytes())
+            self.assertTrue((skill / "examples.md").is_file())
+            self.assertEqual(foreign.read_text(), "not Tomacco's")
+            self.assertFalse((home / ".gemini").exists())
+            # A second run changes nothing.
+            self.assertEqual(self.install(home, "--no-window-rule")["changed"], 0)
+
+            removed = UninstallTests.run_installer(home, "--uninstall")
+            self.assertEqual(removed["kept"], [])
+            self.assertFalse(os.path.lexists(home / ".claude/skills/tomacco"))
+            self.assertEqual(own.read_text(), "theirs")
+            # The skills directory the installation made for Codex goes with the link.
+            self.assertFalse((home / ".codex/skills").exists())
+            self.assertTrue((home / ".codex").is_dir())
+            self.assertEqual(foreign.read_text(), "not Tomacco's")
+            self.assertFalse(skill.exists())
+
+            # Rolling back the uninstallation restores the links; rolling that back removes them again.
+            restored = UninstallTests.run_installer(home, "--rollback", Path(removed["backups"]).name)
+            for agent in (".claude", ".codex"):
+                self.assertEqual(os.readlink(home / agent / "skills/tomacco"), str(skill))
+            self.assertTrue((home / ".codex/skills/tomacco/SKILL.md").is_file())
+            UninstallTests.run_installer(home, "--rollback", Path(restored["backups"]).name)
+            self.assertFalse(os.path.lexists(home / ".codex/skills/tomacco"))
+            self.assertFalse(os.path.lexists(home / ".claude/skills/tomacco"))
+
+    def test_rolling_back_an_installation_removes_its_links(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory).resolve() / "home"
+            (home / ".agents/skills").mkdir(parents=True)
+            result = self.install(home, "--no-window-rule")
+            link = home / ".agents/skills/tomacco"
+            self.assertTrue(link.is_symlink())
+            Installer(home).rollback(Path(result["backups"]).name)
+            self.assertFalse(os.path.lexists(link))
+            # The skills directory was the person's: it stays.
+            self.assertTrue((home / ".agents/skills").is_dir())
+
+    def test_a_link_changed_since_is_not_removed(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory).resolve() / "home"
+            (home / ".claude").mkdir(parents=True)
+            self.install(home, "--no-window-rule")
+            link = home / ".claude/skills/tomacco"
+            mine = home / "my-skill"
+            mine.mkdir()
+            link.unlink()
+            link.symlink_to(mine)
+            UninstallTests.run_installer(home, "--uninstall")
+            self.assertEqual(os.readlink(link), str(mine))
+            # And a later installation does not replace it.
+            result = self.install(home, "--no-window-rule")
+            self.assertEqual(result["agent_skill"]["skipped"], [str(link)])
+            self.assertEqual(os.readlink(link), str(mine))
+
+    def test_uninstall_removes_a_link_tomaccoctl_setup_made(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory).resolve() / "home"
+            self.install(home, "--no-window-rule")
+            # `tomaccoctl setup` links the installed skill without the journal.
+            link = home / ".codex/skills/tomacco"
+            link.parent.mkdir(parents=True)
+            link.symlink_to(home / ".local/lib/tomacco/skills/tomacco")
+            removed = UninstallTests.run_installer(home, "--uninstall")
+            self.assertFalse(os.path.lexists(link))
+            self.assertTrue((home / ".codex/skills").is_dir())
+            UninstallTests.run_installer(home, "--rollback", Path(removed["backups"]).name)
+            self.assertTrue(link.is_symlink())
+
+    def test_without_an_agent_directory_nothing_is_linked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory).resolve() / "home"
+            result = self.install(home, "--no-window-rule")
+            self.assertEqual(result["agent_skill"], {"linked": [], "skipped": []})
+            for agent in (".claude", ".codex", ".agents"):
+                self.assertFalse((home / agent).exists())
+            self.assertTrue((home / ".local/lib/tomacco/skills/tomacco/SKILL.md").is_file())
+
+    def test_no_agent_skill_links_nothing_and_removes_earlier_links(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory).resolve() / "home"
+            (home / ".claude/skills").mkdir(parents=True)
+            self.install(home, "--no-window-rule")
+            self.assertTrue((home / ".claude/skills/tomacco").is_symlink())
+            result = self.install(home, "--no-window-rule", "--no-agent-skill")
+            self.assertEqual(result["agent_skill"], {"linked": [], "skipped": []})
+            self.assertFalse(os.path.lexists(home / ".claude/skills/tomacco"))
+            self.assertTrue((home / ".claude/skills").is_dir())
+            # An update respects that: it adds no link the person removed.
+            self.install(home, "--no-window-rule", "--update")
+            self.assertFalse(os.path.lexists(home / ".claude/skills/tomacco"))
+
+    def test_an_update_links_a_new_agent_but_not_one_the_person_unlinked(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory).resolve() / "home"
+            (home / ".claude").mkdir(parents=True)
+            self.install(home, "--no-window-rule")
+            (home / ".claude/skills/tomacco").unlink()
+            # Codex installed after Tomacco.
+            (home / ".codex").mkdir()
+            # A file an older skill had, still as that installation left it, is removed.
+            stale = Installer(home)
+            stale.write(Path(".local/lib/tomacco/skills/tomacco/old.md"), "old")
+            stale.finish()
+            result = self.install(home, "--no-window-rule", "--update")
+            self.assertEqual(result["agent_skill"]["linked"], [str(home / ".codex/skills/tomacco")])
+            self.assertFalse(os.path.lexists(home / ".claude/skills/tomacco"))
+            self.assertFalse((home / ".local/lib/tomacco/skills/tomacco/old.md").exists())
+            # A plain installation links it again.
+            self.install(home, "--no-window-rule")
+            self.assertTrue((home / ".claude/skills/tomacco").is_symlink())
+
+
 def fake_package(root, runtime, version="1.0.0"):
     """A release tarball's tree as CMake installs it, with fake binaries and,
     for a portable package, the given runtime files (path -> (content, executable))."""

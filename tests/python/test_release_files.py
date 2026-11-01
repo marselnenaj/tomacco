@@ -31,6 +31,7 @@ def package_tree(top):
     (share / "tools").mkdir()
     shutil.copy2(ROOT / "tools/build_source_release.py", share / "tools")
     shutil.copytree(ROOT / "integrations/omarchy", share / "omarchy")
+    shutil.copytree(ROOT / "integrations/agent-skill", share / "agent-skill")
     (share / "examples/ios-restore-native").mkdir(parents=True)
     (share / "examples/ios-restore-native/example.c").write_text("int main(void){return 0;}\n")
     recipes = share / "integrations/ios-emulator"
@@ -65,7 +66,8 @@ class TarballInstaller(unittest.TestCase):
             shell = home / ".config/omarchy/shell.json"
             shell.parent.mkdir(parents=True)
             shell.write_text('{"bar": {"layout": {"right": []}}}\n')
-            install("--no-window-rule", "--omarchy")
+            (home / ".claude").mkdir()
+            installed = json.loads(install("--no-window-rule", "--omarchy").stdout)
             plugin = home / ".config/omarchy/plugins" / APP_ID
             self.assertEqual(json.loads((plugin / "manifest.json").read_text())["license"], "GPL-2.0-or-later")
             self.assertEqual(json.loads(shell.read_text())["bar"]["layout"]["right"], [{"id": APP_ID}])
@@ -82,10 +84,17 @@ class TarballInstaller(unittest.TestCase):
             self.assertTrue((home / f".local/share/icons/hicolor/scalable/apps/{APP_ID}.svg").is_file())
             self.assertTrue((home / f".local/share/metainfo/{APP_ID}.metainfo.xml").is_file())
             self.assertEqual((home / ".local/share/man/man1/tomaccoctl.1").read_bytes(), (ROOT / "docs/tomaccoctl.1").read_bytes())
+            # The agent skill comes from the tarball's share/tomacco/agent-skill.
+            skill = library / "skills/tomacco"
+            self.assertEqual((skill / "SKILL.md").read_bytes(), (ROOT / "integrations/agent-skill/tomacco/SKILL.md").read_bytes())
+            self.assertEqual(installed["agent_skill"]["linked"], [str(home / ".claude/skills/tomacco")])
+            self.assertEqual(os.readlink(home / ".claude/skills/tomacco"), str(skill.resolve()))
             result = json.loads(install("--uninstall").stdout)
             self.assertEqual(result["kept"], [])
             self.assertFalse((home / ".local/bin/tomacco").exists())
             self.assertFalse(library.exists())
+            self.assertFalse(os.path.lexists(home / ".claude/skills"))
+            self.assertTrue((home / ".claude").is_dir())
 
     def test_cmake_packages_what_the_installer_reads(self):
         cmake = (ROOT / "CMakeLists.txt").read_text()
@@ -93,6 +102,11 @@ class TarballInstaller(unittest.TestCase):
         self.assertRegex(cmake, r'install\(FILES "\$\{CMAKE_CURRENT_BINARY_DIR\}/VERSION" DESTINATION share/tomacco\)')
         self.assertIn("assets/operations.json DESTINATION lib/tomacco/assets", cmake)
         self.assertIn("install(FILES docs/tomaccoctl.1 DESTINATION share/man/man1)", cmake)
+        # install.py reads the skill from share/tomacco/agent-skill in a package.
+        sys.path.insert(0, str(ROOT))
+        from install import PACKAGE_PATHS
+        self.assertEqual(PACKAGE_PATHS["integrations/agent-skill"], "share/tomacco/agent-skill")
+        self.assertIn("install(DIRECTORY integrations/agent-skill DESTINATION share/tomacco)", cmake)
 
 
 class InstalledDocuments(unittest.TestCase):
