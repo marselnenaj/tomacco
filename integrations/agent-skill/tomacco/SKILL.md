@@ -12,7 +12,7 @@ description: >
 
 # Tomacco
 
-Tomacco builds, runs and tests mobile apps on Linux. Its control plane, `tomaccoctl`, offers 248
+Tomacco builds, runs and tests mobile apps on Linux. Its control plane, `tomaccoctl`, offers 250
 typed operations. The MCP server, the JSON CLI and the desktop app all call the same operations, so
 anything the desktop does, you can do.
 

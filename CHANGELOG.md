@@ -6,10 +6,19 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 248 operations.
+`tomaccoctl` now has one typed API of 250 operations.
 
 ### Added
 
+- `screen.export` writes a screen of a device as a documented, versioned bundle (format `tomacco.screen`, version 1):
+  `screen.png` at full resolution and `screen.json` with the device, display in pixels and dp or points, system bar and
+  cutout insets, theme, locale, foreground app and every element with its role, text, bounds in both units, state and
+  `screen.marks` number. Android elements come from the UI hierarchy; the virtual iPhone and a USB iPhone (`platform:"ios"`)
+  have none, so there they are OCR lines with `hierarchy:"unavailable"`. `screen.export_batch` exports several devices
+  into one directory with an `index.json`, and `screen.diff` compares two bundles. JSON Schemas are in `assets/schemas`
+  and [docs/screen-export.md](docs/screen-export.md) has the field reference and versioning rules. Run on an emulator
+  with hardware acceleration; the iPhone paths are unit-tested only. New errors: `invalid_export`,
+  `unsupported_export_version`, `unsupported_device`.
 - `tools/build_site_docs.py` renders the Markdown in `docs/` as static pages for the website (guides, virtual iOS
   device, operation reference), with a guide list, a table of contents per page and no script. A test checks that every
   document renders and every link and anchor in the output resolves; `docs/building.md` says how to regenerate them.
@@ -31,8 +40,8 @@ operations and their JSON results.
   an `ios.virtual.setup` stage marked `ask_first`, instead of the call failing or the agent having to ask. A no answers
   `consent_declined`. Other clients see no change.
 - `TOMACCO_MCP_TOOLS` picks a shorter MCP tool list for agents with a small context: `compact` (first sentences, no
-  argument descriptions; 156,075 bytes instead of 316,174) or `grouped` (one tool per area that takes an operation and
-  its arguments; 33,004 bytes). Both add a `schema` tool for one operation's whole schema.
+  argument descriptions; 157,922 bytes instead of 321,785) or `grouped` (one tool per area that takes an operation and
+  its arguments; 33,148 bytes). Both add a `schema` tool for one operation's whole schema.
 - **Quick Boot.** `android.emulator` `stop` saves a Tomacco-managed emulator's Quick Boot snapshot first
   (`save_quick_boot`, on by default), and `android.avd_start` resumes from it; its result's `boot` says `quick` or
   `cold` and why. After `android.avd_configure` or `android.avd_profile` the old snapshot is removed once. On the
