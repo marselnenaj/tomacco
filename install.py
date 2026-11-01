@@ -44,7 +44,8 @@ MANUAL_PAGE = Path(".local/share/man/man1/tomaccoctl.1")
 # are still exactly as installed; everything else it leaves alone.
 OWNED = (Path(".local/bin/tomacco"), Path(".local/bin/tomaccoctl"), Path(".local/lib/tomacco"),
          Path(".local/share/doc/tomacco"), MANUAL_PAGE, *identity_files(APP_ID),
-         Path(".config/omarchy/plugins") / APP_ID, Path(".config/hypr/tomacco.lua"))
+         Path(".config/omarchy/plugins") / APP_ID, Path(".config/hypr/tomacco.lua"),
+         Path(".config/hypr/tomacco-bindings.lua"))
 # Directories the installation creates for itself, removed once empty.
 OWNED_DIRECTORIES = (Path(".local/lib/tomacco"), Path(".local/share/doc/tomacco"),
                      Path(".config/omarchy/plugins") / APP_ID)
@@ -54,6 +55,16 @@ SKILL = Path(".local/lib/tomacco/skills/tomacco")
 AGENT_SKILL_LINKS = tuple(Path(agent) / "skills/tomacco" for agent in (".claude", ".codex", ".agents"))
 HYPR_REQUIRE = 'require("hypr.tomacco")'
 HYPR_COMMENT = "-- Tomacco mobile workspace."
+HYPR_BINDINGS_REQUIRE = 'require("hypr.tomacco-bindings")'
+HYPR_BINDINGS_COMMENT = "-- Tomacco keys."
+# Omarchy's menu reads the user's own entries from this file, beside its
+# defaults. Tomacco's entries sit between two comment lines.
+MENU_FILE = Path(".config/omarchy/extensions/omarchy-menu.jsonc")
+MENU_BEGIN = "  // >>> tomacco (managed by Tomacco; tomaccoctl uninstall removes it)"
+MENU_END = "  // <<< tomacco"
+# Where an installation keeps the panel's sources, so `tomaccoctl omarchy
+# repair` can install the panel again without the package.
+PANEL_SOURCE = Path(".local/lib/tomacco/integrations/omarchy")
 
 
 # The release tarball holds this file at its top, beside bin/, lib/ and share/
@@ -241,6 +252,93 @@ o.window({ class = "^io[.]github[.]marselnenaj[.]tomacco$", title = "^Tomacco â€
   opacity = "1.0 override 1.0 override",
 })
 '''
+
+
+# The keys --omarchy-bindings adds. Omarchy's own bindings leave
+# SUPER + CTRL + SHIFT + a letter free, which is where these sit; the bindings
+# file is the user's own, so the keys can be changed there.
+HYPR_BINDINGS = '''-- Tomacco: keys for the mobile workspace. Omarchy's own bindings leave
+-- SUPER + CTRL + SHIFT + a letter free. Change them here; an update keeps this file's name, not its edits.
+o.bind("SUPER + CTRL + SHIFT + T", "Tomacco", [[$HOME/.local/bin/tomaccoctl call desktop.open '{"tab":"runtime"}']])
+o.bind("SUPER + CTRL + SHIFT + P", "Tomacco device window", "omarchy-shell io.github.marselnenaj.tomacco window")
+o.bind("SUPER + CTRL + SHIFT + S", "Tomacco device screenshot", "$HOME/.local/bin/tomaccoctl omarchy screenshot")
+'''
+
+# Tomacco's entries in Omarchy's menu (Trigger > Tomacco), without the marker
+# lines. Each line ends in a comma, which the menu's reader allows.
+MENU_ENTRIES = r'''  "trigger.tomacco": {"icon":"\uf10b","label":"Tomacco","aliases":["tomacco"]},
+  "trigger.tomacco.open": {"icon":"\uf10b","label":"Open","action":"$HOME/.local/bin/tomaccoctl call desktop.open '{\"tab\":\"runtime\"}'"},
+  "trigger.tomacco.devices": {"icon":"\uf10b","label":"Devices and emulators","action":"$HOME/.local/bin/tomaccoctl call desktop.open '{\"tab\":\"devices\"}'"},
+  "trigger.tomacco.jobs": {"icon":"\uf10b","label":"Builds and jobs","action":"$HOME/.local/bin/tomaccoctl call desktop.open '{\"tab\":\"jobs\"}'"},
+  "trigger.tomacco.iphone": {"icon":"\uf10b","label":"Start the virtual iPhone","when":"test -d \"$HOME/.config/omarchy/plugins/io.github.marselnenaj.tomacco\"","action":"omarchy-shell io.github.marselnenaj.tomacco iphone start"},
+  "trigger.tomacco.window": {"icon":"\uf10b","label":"Device window","when":"test -d \"$HOME/.config/omarchy/plugins/io.github.marselnenaj.tomacco\"","action":"omarchy-shell io.github.marselnenaj.tomacco window"},
+  "trigger.tomacco.screenshot": {"icon":"\uf10b","label":"Device screenshot","action":"$HOME/.local/bin/tomaccoctl omarchy screenshot"},
+'''
+
+
+def strip_jsonc(text):
+    """Omarchy's reading of its menu files: whole-line comments and trailing
+    commas go before the JSON is parsed."""
+    text = "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("//"))
+    out, quoted, index = [], False, 0
+    while index < len(text):
+        char = text[index]
+        if quoted:
+            out.append(char)
+            if char == "\\":
+                index += 1
+                out.append(text[index:index + 1])
+            elif char == '"':
+                quoted = False
+        elif char == '"':
+            quoted = True
+            out.append(char)
+        elif char == ",":
+            following = text[index + 1:].lstrip()[:1]
+            if following not in ("}", "]"):
+                out.append(char)
+        else:
+            out.append(char)
+        index += 1
+    return "".join(out)
+
+
+def menu_without_block(text):
+    """The menu file's text without Tomacco's block, or None where it has none."""
+    lines = text.split("\n")
+    stripped = [line.strip() for line in lines]
+    if MENU_BEGIN.strip() not in stripped:
+        return None
+    begin = stripped.index(MENU_BEGIN.strip())
+    if MENU_END.strip() not in stripped[begin:]:
+        return None
+    end = begin + stripped[begin:].index(MENU_END.strip())
+    return "\n".join(lines[:begin] + lines[end + 1:])
+
+
+def menu_with_block(text, block):
+    """The menu file's text with `block` in it: replacing Tomacco's earlier
+    block, else right after the opening brace. None when the file is not an
+    object of entries."""
+    if not text.strip():
+        return "{\n" + block + "}\n"
+    without = menu_without_block(text)
+    if without is not None:
+        return menu_with_block(without, block)
+    try:
+        value = json.loads(strip_jsonc(text))
+    except ValueError:
+        return None
+    if not isinstance(value, dict) or isinstance(value.get("items"), dict):
+        return None
+    offset = 0
+    for line in text.splitlines(keepends=True):
+        if not line.lstrip().startswith("//") and "{" in line:
+            at = offset + line.index("{") + 1
+            rest = text[at:]
+            return text[:at] + "\n" + block + (rest[1:] if rest.startswith("\n") else rest)
+        offset += len(line)
+    return None
 
 
 def launcher_script(name, target, portable=False):
@@ -849,6 +947,7 @@ class Installer:
         # The user's own configuration first, so it never names a removed file.
         self.unedit_window_rule()
         self.unedit_omarchy()
+        self.unedit_menu()
         self.remove_skill_links(history)
         with self.batch():
             for relative, entries in sorted(history.items()):
@@ -881,8 +980,8 @@ class Installer:
         if not config.is_file() or config.is_symlink():
             return
         text = config.read_text()
-        ours = (HYPR_REQUIRE, HYPR_COMMENT)
-        if HYPR_REQUIRE not in text:
+        ours = (HYPR_REQUIRE, HYPR_COMMENT, HYPR_BINDINGS_REQUIRE, HYPR_BINDINGS_COMMENT)
+        if HYPR_REQUIRE not in text and HYPR_BINDINGS_REQUIRE not in text:
             return
         lines = [line for line in text.splitlines() if line.strip() not in ours]
         self.write(Path(".config/hypr/hyprland.lua"), "\n".join(lines).rstrip() + "\n", config.stat().st_mode & 0o777)
@@ -906,16 +1005,66 @@ class Installer:
                 layout[key] = [item for item in items if not ours(item)]
         self.write(Path(".config/omarchy/shell.json"), json.dumps(value, ensure_ascii=False, indent=2) + "\n", config.stat().st_mode & 0o777)
 
-    def window_rule(self):
-        """Install the rules and require them, once: a rollback checks each
-        journal entry against the file, so hyprland.lua gets one write a run."""
+    def window_rule(self, bindings=False):
+        """Install the rules, and with `bindings` the keys, and require them,
+        once: a rollback checks each journal entry against the file, so
+        hyprland.lua gets one write a run."""
         config = self.user / ".config/hypr/hyprland.lua"
         if not config.is_file():
             return
         self.write(Path(".config/hypr/tomacco.lua"), HYPR_RULES)
+        if bindings:
+            self.write(Path(".config/hypr/tomacco-bindings.lua"), HYPR_BINDINGS)
         text = config.read_text()
+        edited = text
         if HYPR_REQUIRE not in text:
-            self.write(Path(".config/hypr/hyprland.lua"), text.rstrip() + "\n\n" + HYPR_COMMENT + "\n" + HYPR_REQUIRE + "\n", config.stat().st_mode & 0o777)
+            edited = edited.rstrip() + "\n\n" + HYPR_COMMENT + "\n" + HYPR_REQUIRE + "\n"
+        if bindings and HYPR_BINDINGS_REQUIRE not in text:
+            edited = edited.rstrip() + "\n\n" + HYPR_BINDINGS_COMMENT + "\n" + HYPR_BINDINGS_REQUIRE + "\n"
+        if edited != text:
+            self.write(Path(".config/hypr/hyprland.lua"), edited, config.stat().st_mode & 0o777)
+
+    def menu_in_use(self):
+        """Whether the menu extensions hold Tomacco's entries."""
+        try:
+            return menu_without_block((self.user / MENU_FILE).read_text()) is not None
+        except OSError:
+            return False
+
+    def menu(self):
+        """Add Tomacco's entries to Omarchy's menu extensions, between marker
+        lines, or replace them there. A file that is not a JSON object, or
+        that wraps its entries in "items", is left alone; returns False then."""
+        path = self.user / MENU_FILE
+        if path.is_symlink():
+            return False
+        text = path.read_text() if path.is_file() else ""
+        edited = menu_with_block(text, MENU_BEGIN + "\n" + MENU_ENTRIES + MENU_END + "\n")
+        if edited is None:
+            return False
+        if edited != text:
+            self.write(MENU_FILE, edited, path.stat().st_mode & 0o777 if path.is_file() else 0o644)
+        return True
+
+    def unedit_menu(self):
+        """Take Tomacco's menu entries out again; a file left without any entry goes with them."""
+        path = self.user / MENU_FILE
+        if not path.is_file() or path.is_symlink():
+            return
+        edited = menu_without_block(path.read_text())
+        if edited is None:
+            return
+        if "".join(strip_jsonc(edited).split()) == "{}":
+            self.remove(MENU_FILE)
+        else:
+            self.write(MENU_FILE, edited, path.stat().st_mode & 0o777)
+
+    def panel_source(self, source):
+        """Keep the panel's sources beside the program, for `omarchy repair`."""
+        if source.is_dir():
+            for path in sorted(source.iterdir()):
+                if path.is_file():
+                    self.write(PANEL_SOURCE / path.name, path.read_bytes())
 
 
 # Set to 1, the Python installer runs even where a tomaccoctl that installs is found.
@@ -955,7 +1104,10 @@ def main():
     parser.add_argument("--binary", type=Path, default=ROOT / ("bin/tomacco" if PACKAGED else "build/tomacco"))
     parser.add_argument("--cli", type=Path, help="Native tomaccoctl binary; defaults to the desktop binary's directory")
     parser.add_argument("--user-home", type=Path, default=Path.home(), help="Alternate home for packaging/installation tests")
-    parser.add_argument("--omarchy", action="store_true", help="Install and enable the Omarchy bar/popup plugin")
+    parser.add_argument("--omarchy", action="store_true", help="Install and enable the Omarchy bar/popup plugin, and add Tomacco to Omarchy's menu")
+    parser.add_argument("--omarchy-bindings", action="store_true",
+                        help="Add Tomacco's keys (SUPER + CTRL + SHIFT + T, P, S) as a Hyprland bindings file")
+    parser.add_argument("--no-omarchy-menu", action="store_true", help="With --omarchy, leave Omarchy's menu as it is")
     parser.add_argument("--no-window-rule", action="store_true")
     parser.add_argument("--no-agent-skill", action="store_true",
                         help="Do not link the agent skill into ~/.claude/skills, ~/.codex/skills and ~/.agents/skills, and remove such links an earlier installation made")
@@ -1033,8 +1185,13 @@ def main():
         installer.omarchy()
     elif args.update and installer.widget_placed():
         installer.omarchy(enable=False)
-    if not args.no_window_rule and (not args.update or (installer.user / ".config/hypr/tomacco.lua").exists()):
-        installer.window_rule()
+    if args.omarchy or (args.update and installer.widget_placed()):
+        installer.panel_source(source_path("integrations/omarchy"))
+    if (args.omarchy and not args.no_omarchy_menu) or (args.update and installer.menu_in_use()):
+        installer.menu()
+    bindings = args.omarchy_bindings or (args.update and (installer.user / ".config/hypr/tomacco-bindings.lua").exists())
+    if not args.no_window_rule and (not args.update or bindings or (installer.user / ".config/hypr/tomacco.lua").exists()):
+        installer.window_rule(bindings)
     installer.finish()
     if installer.user == Path.home() and shutil.which("update-desktop-database"):
         subprocess.run(["update-desktop-database", str(installer.user / ".local/share/applications")], check=True)

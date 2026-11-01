@@ -452,6 +452,88 @@ class UninstallTests(unittest.TestCase):
             self.assertIn('require("hypr.tomacco")', hypr.read_text())
             self.assertEqual(installed["cli"], str(home / ".local/bin/tomaccoctl"))
 
+    def test_omarchy_keys_menu_entries_and_panel_source_are_installed_and_removed(self):
+        from install import HYPR_BINDINGS, MENU_BEGIN, MENU_END, MENU_ENTRIES, strip_jsonc
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / "home"
+            build = root / "build"
+            build.mkdir()
+            (build / "tomacco").write_bytes(b"\x7fELF desktop")
+            (build / "tomaccoctl").write_bytes(b"\x7fELF control plane")
+            hypr = home / ".config/hypr/hyprland.lua"
+            hypr.parent.mkdir(parents=True)
+            hypr.write_text('require("hypr.looknfeel")\n')
+            shell = home / ".config/omarchy/shell.json"
+            shell.parent.mkdir(parents=True)
+            shell.write_text(json.dumps({"bar": {"layout": {"right": [{"id": "custom.clock"}]}}}))
+            menu = home / ".config/omarchy/extensions/omarchy-menu.jsonc"
+            menu.parent.mkdir(parents=True)
+            own = '{\n  // my entries\n  "finder": {"label": "Finder", "action": "finder"},\n}\n'
+            menu.write_text(own)
+            self.run_installer(home, "--binary", str(build / "tomacco"))
+            # Without --omarchy the desktop's own configuration is left alone.
+            self.assertEqual(menu.read_text(), own)
+            self.assertFalse((home / ".config/hypr/tomacco-bindings.lua").exists())
+            self.run_installer(home, "--binary", str(build / "tomacco"), "--omarchy", "--omarchy-bindings")
+            keys = home / ".config/hypr/tomacco-bindings.lua"
+            self.assertEqual(keys.read_text(), HYPR_BINDINGS)
+            self.assertIn('require("hypr.tomacco-bindings")', hypr.read_text())
+            text = menu.read_text()
+            self.assertIn(MENU_BEGIN + "\n" + MENU_ENTRIES + MENU_END, text)
+            self.assertIn("// my entries", text)
+            entries = json.loads(strip_jsonc(text))
+            self.assertEqual(entries["finder"]["action"], "finder")
+            self.assertEqual(entries["trigger.tomacco.screenshot"]["action"], "$HOME/.local/bin/tomaccoctl omarchy screenshot")
+            self.assertTrue((home / ".local/lib/tomacco/integrations/omarchy/MobilePanel.qml").is_file())
+            # An update keeps both where they are and refreshes them.
+            keys.write_text("-- edited\n")
+            self.run_installer(home, "--binary", str(build / "tomacco"), "--update")
+            self.assertEqual(keys.read_text(), HYPR_BINDINGS)
+            self.assertEqual(menu.read_text(), text)
+            self.run_installer(home, "--uninstall")
+            self.assertEqual(menu.read_text(), own)
+            self.assertFalse(keys.exists())
+            self.assertEqual(hypr.read_text(), 'require("hypr.looknfeel")\n')
+            self.assertFalse((home / ".local/lib/tomacco").exists())
+
+    def test_the_menu_entries_are_left_out_on_request_and_a_file_of_ours_goes_with_them(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / "home"
+            build = root / "build"
+            build.mkdir()
+            (build / "tomacco").write_bytes(b"\x7fELF desktop")
+            (build / "tomaccoctl").write_bytes(b"\x7fELF control plane")
+            shell = home / ".config/omarchy/shell.json"
+            shell.parent.mkdir(parents=True)
+            shell.write_text(json.dumps({"bar": {"layout": {"right": [{"id": "custom.clock"}]}}}))
+            menu = home / ".config/omarchy/extensions/omarchy-menu.jsonc"
+            self.run_installer(home, "--binary", str(build / "tomacco"), "--omarchy", "--no-omarchy-menu")
+            self.assertFalse(menu.exists())
+            self.run_installer(home, "--binary", str(build / "tomacco"), "--omarchy")
+            self.assertTrue(menu.is_file())
+            self.run_installer(home, "--uninstall")
+            self.assertFalse(menu.exists())
+
+    def test_a_menu_file_that_wraps_its_entries_is_not_touched(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            home = root / "home"
+            build = root / "build"
+            build.mkdir()
+            (build / "tomacco").write_bytes(b"\x7fELF desktop")
+            (build / "tomaccoctl").write_bytes(b"\x7fELF control plane")
+            shell = home / ".config/omarchy/shell.json"
+            shell.parent.mkdir(parents=True)
+            shell.write_text(json.dumps({"bar": {"layout": {"right": []}}}))
+            menu = home / ".config/omarchy/extensions/omarchy-menu.jsonc"
+            menu.parent.mkdir(parents=True)
+            wrapped = '{"items": {"a": {"label": "A", "action": "a"}}}\n'
+            menu.write_text(wrapped)
+            self.run_installer(home, "--binary", str(build / "tomacco"), "--omarchy")
+            self.assertEqual(menu.read_text(), wrapped)
+
     def test_the_installed_copy_uninstalls_without_the_package(self):
         """`tomaccoctl uninstall` runs the copy in ~/.local/lib/tomacco, because the
         package the one-line installer unpacked is gone by then."""
@@ -1224,7 +1306,7 @@ class CrossInstallerTests(Native, unittest.TestCase):
             found = []
             for installer in (self.python, self.rust):
                 home = self.home(root / installer.__name__)
-                result = installer(package, home, "--omarchy")
+                result = installer(package, home, "--omarchy", "--omarchy-bindings")
                 # The same bytes once the home's own path is taken out, so a
                 # manifest's digests differ only for files that name the home.
                 files = {name: (content.replace(str(home).encode(), b"HOME"), mode) if isinstance(content, bytes)
@@ -1236,6 +1318,9 @@ class CrossInstallerTests(Native, unittest.TestCase):
                 found.append((files, json.loads(json.dumps(entries).replace(str(home), "HOME")), result))
             self.assertEqual(found[0], found[1])
             self.assertEqual(found[1][2]["agent_skill"]["linked"], ["HOME/.claude/skills/tomacco", "HOME/.codex/skills/tomacco"])
+            self.assertIn(".config/hypr/tomacco-bindings.lua", found[0][0])
+            self.assertIn(".config/omarchy/extensions/omarchy-menu.jsonc", found[0][0])
+            self.assertIn(".local/lib/tomacco/integrations/omarchy/MobilePanel.qml", found[0][0])
 
 
 class NativeShimTests(Native, unittest.TestCase):

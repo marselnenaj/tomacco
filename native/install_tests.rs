@@ -312,13 +312,13 @@ fn window_rules_are_installed_once_and_undone_in_place() {
     let (_directory, user) = home();
     // Without a Hyprland configuration nothing is written.
     let mut install = installer(&user);
-    install.window_rule().unwrap();
+    install.window_rule(false).unwrap();
     assert!(install.changed.is_empty());
     assert!(!user.join(".config/hypr").exists());
     let config = user.join(".config/hypr/hyprland.lua");
     write_file(&config, "require(\"hypr.looknfeel\")\n");
     let mut install = next(&user);
-    install.window_rule().unwrap();
+    install.window_rule(false).unwrap();
     assert_eq!(read(user.join(".config/hypr/tomacco.lua")), HYPR_RULES);
     assert_eq!(
         read(&config),
@@ -329,11 +329,205 @@ fn window_rules_are_installed_once_and_undone_in_place() {
         "require(\"hypr.looknfeel\")\n"
     );
     let mut again = next(&user);
-    again.window_rule().unwrap();
+    again.window_rule(false).unwrap();
     assert!(again.changed.is_empty());
     let mut undo = next(&user);
     undo.unedit_window_rule().unwrap();
     assert_eq!(read(&config), "require(\"hypr.looknfeel\")\n");
+}
+
+#[test]
+fn bindings_are_a_file_of_their_own_required_once_and_undone_in_place() {
+    let (_directory, user) = home();
+    let config = user.join(".config/hypr/hyprland.lua");
+    write_file(&config, "require(\"hypr.looknfeel\")\n");
+    let mut install = next(&user);
+    install.window_rule(true).unwrap();
+    assert_eq!(
+        read(user.join(".config/hypr/tomacco-bindings.lua")),
+        HYPR_BINDINGS
+    );
+    let text = read(&config);
+    assert!(text.contains("-- Tomacco mobile workspace.\nrequire(\"hypr.tomacco\")\n"));
+    assert!(text.ends_with("-- Tomacco keys.\nrequire(\"hypr.tomacco-bindings\")\n"));
+    let mut again = next(&user);
+    again.window_rule(true).unwrap();
+    assert!(again.changed.is_empty());
+    // Keys added to a rules-only installation write hyprland.lua once more.
+    let mut undo = next(&user);
+    undo.unedit_window_rule().unwrap();
+    assert_eq!(read(&config), "require(\"hypr.looknfeel\")\n");
+}
+
+#[test]
+fn the_keys_stay_clear_of_omarchys_own_bindings() {
+    let defaults = Path::new("/usr/share/omarchy/default/hypr/bindings");
+    if !defaults.is_dir() {
+        return;
+    }
+    let mut taken = String::new();
+    for entry in fs::read_dir(defaults).unwrap() {
+        taken.push_str(&fs::read_to_string(entry.unwrap().path()).unwrap_or_default());
+    }
+    for line in HYPR_BINDINGS
+        .lines()
+        .filter(|line| line.starts_with("o.bind("))
+    {
+        let keys = line.split('"').nth(1).unwrap();
+        assert!(
+            !taken.contains(&format!("\"{keys}\"")),
+            "{keys} is an Omarchy binding"
+        );
+    }
+}
+
+fn menu_block_text() -> String {
+    format!("{MENU_BEGIN}\n{MENU_ENTRIES}{MENU_END}\n")
+}
+
+#[test]
+fn the_menu_entries_are_valid_for_omarchys_reader() {
+    let text = menu_with_block("", &menu_block_text()).unwrap();
+    let value: Value = serde_json::from_str(&strip_jsonc(&text)).unwrap();
+    let object = value.as_object().unwrap();
+    assert!(object.contains_key("trigger.tomacco"));
+    for (id, entry) in object {
+        assert!(id.starts_with("trigger.tomacco"));
+        assert!(entry["label"].is_string());
+    }
+    // Every submenu entry has an action to run.
+    assert!(
+        object
+            .iter()
+            .filter(|(id, _)| *id != "trigger.tomacco")
+            .all(|(_, e)| e["action"].is_string())
+    );
+}
+
+#[test]
+fn menu_entries_join_the_users_own_and_leave_with_the_install() {
+    let (_directory, user) = home();
+    let path = user.join(".config/omarchy/extensions/omarchy-menu.jsonc");
+    // No file: one is made, and goes again.
+    let mut install = next(&user);
+    assert_eq!(install.menu().unwrap(), MenuState::Installed);
+    assert!(read(&path).starts_with("{\n  // >>> tomacco"));
+    let mut undo = next(&user);
+    undo.unedit_menu().unwrap();
+    assert!(!path.exists());
+    // The user's own entries and comments stay.
+    let own = "{\n  // mine\n  \"finder\": {\"label\": \"Finder\", \"action\": \"finder\"}\n}\n";
+    write_file(&path, own);
+    let mut install = next(&user);
+    install.menu().unwrap();
+    let text = read(&path);
+    assert!(text.contains("// mine") && text.contains("\"finder\""));
+    assert!(install.menu_in_use());
+    let value: Value = serde_json::from_str(&strip_jsonc(&text)).unwrap();
+    assert!(value["finder"].is_object() && value["trigger.tomacco.open"].is_object());
+    let mut again = next(&user);
+    again.menu().unwrap();
+    assert!(again.changed.is_empty());
+    let mut undo = next(&user);
+    undo.unedit_menu().unwrap();
+    assert_eq!(read(&path), own);
+}
+
+#[test]
+fn a_menu_file_the_entries_cannot_join_is_left_alone() {
+    let (_directory, user) = home();
+    let path = user.join(".config/omarchy/extensions/omarchy-menu.jsonc");
+    for text in [
+        "{\"items\": {\"a\": {\"label\": \"A\"}}}\n",
+        "[1, 2]\n",
+        "not json\n",
+    ] {
+        write_file(&path, text);
+        let mut install = next(&user);
+        assert_eq!(install.menu().unwrap(), MenuState::Foreign);
+        assert_eq!(read(&path), text);
+    }
+}
+
+#[test]
+fn status_names_what_is_outdated_and_repair_installs_it_again() {
+    let (_directory, user) = home();
+    write_file(
+        user.join(".config/omarchy/shell.json"),
+        &json!({"bar": {"layout": {"right": [{"id": "omarchy.agents"}]}}}).to_string(),
+    );
+    write_file(
+        user.join(".config/hypr/hyprland.lua"),
+        "require(\"hypr.looknfeel\")\n",
+    );
+    let state = |user: &Path, name: &str| {
+        let status = omarchy_status(user);
+        let found = status["components"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["name"] == name)
+            .unwrap()["state"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        found
+    };
+    // Nothing installed is healthy.
+    assert_eq!(omarchy_status(&user)["healthy"], true);
+    assert_eq!(state(&user, "panel"), "not_installed");
+    let mut install = next(&user);
+    install.omarchy(&omarchy_source(), true).unwrap();
+    install.panel_source(&omarchy_source()).unwrap();
+    install.window_rule(true).unwrap();
+    install.menu().unwrap();
+    install.finish().unwrap();
+    for name in ["panel", "rules", "bindings", "menu"] {
+        assert_eq!(state(&user, name), "ok", "{name}");
+    }
+    assert_eq!(omarchy_status(&user)["healthy"], true);
+    // Older rules, a vanished key file and an edited menu block are found.
+    write_file(user.join(".config/hypr/tomacco.lua"), "-- older\n");
+    fs::remove_file(user.join(".config/hypr/tomacco-bindings.lua")).unwrap();
+    let menu = user.join(".config/omarchy/extensions/omarchy-menu.jsonc");
+    write_file(&menu, &read(&menu).replace("Device window", "Phone"));
+    assert_eq!(state(&user, "rules"), "outdated");
+    assert_eq!(state(&user, "bindings"), "missing");
+    assert_eq!(state(&user, "menu"), "outdated");
+    assert_eq!(omarchy_status(&user)["healthy"], false);
+    assert_eq!(omarchy_status(&user)["repairable"], true);
+    let result = omarchy_repair(&user, "9.9.9").unwrap();
+    assert_eq!(result["repaired"], json!(["rules", "bindings", "menu"]));
+    assert_eq!(read(user.join(".config/hypr/tomacco.lua")), HYPR_RULES);
+    assert_eq!(omarchy_status(&user)["healthy"], true);
+    // A panel from another build is found, and a plugin disabled stays found.
+    let manifest = user
+        .join(".config/omarchy/plugins")
+        .join(APP_ID)
+        .join("manifest.json");
+    write_file(
+        &manifest,
+        &read(&manifest).replace("/MobilePanel.qml", "x/MobilePanel.qml"),
+    );
+    assert_eq!(state(&user, "panel"), "missing");
+    omarchy_repair(&user, "9.9.9").unwrap();
+    assert_eq!(state(&user, "panel"), "ok");
+}
+
+#[test]
+fn repair_without_the_kept_panel_source_says_so() {
+    let (_directory, user) = home();
+    write_file(
+        user.join(".config/omarchy/shell.json"),
+        &json!({"bar": {"layout": {"right": [{"id": APP_ID}]}}}).to_string(),
+    );
+    let status = omarchy_status(&user);
+    assert_eq!(status["healthy"], false);
+    assert_eq!(status["repairable"], false);
+    assert_eq!(
+        omarchy_repair(&user, "9.9.9").unwrap_err().code,
+        "omarchy_repair_unavailable"
+    );
 }
 
 #[test]
