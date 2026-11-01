@@ -256,11 +256,13 @@ removes the Arch package.
 | --- | --- |
 | `--binary` | Selects the desktop build (default: `build/tomacco`, or `bin/tomacco` in a release tarball) |
 | `--cli` | Selects a separate `tomaccoctl` build (default: next to the desktop binary) |
-| `--omarchy` | Adds the Omarchy panel and Hyprland rules |
+| `--omarchy` | Adds the Omarchy panel and Hyprland rules, and Tomacco's entries in Omarchy's menu |
+| `--omarchy-bindings` | Adds Tomacco's keys as a Hyprland bindings file, `~/.config/hypr/tomacco-bindings.lua` |
+| `--no-omarchy-menu` | With `--omarchy`, leaves Omarchy's menu as it is |
 | `--no-window-rule` | Leaves the Hyprland configuration alone |
 | `--no-agent-skill` | Links the agent skill into no agent's skills directory, and removes the links an earlier installation made |
 | `--user-home` | Stages an installation into another home |
-| `--update` | Keeps the integrations as they are: refreshes the Omarchy panel and window rules only where they are in use, and adds no agent skill link you removed (what an update passes) |
+| `--update` | Keeps the integrations as they are: refreshes the Omarchy panel, window rules, keys and menu entries only where they are in use, and adds no agent skill link you removed (what an update passes) |
 | `--list-backups` | Lists recovery points |
 | `--rollback ID` | Restores one, after verifying all current files; refuses to overwrite your later edits, and makes its own backup |
 | `--uninstall` | Removes what the installs wrote, while each file is still as installed; files you changed are kept and listed |

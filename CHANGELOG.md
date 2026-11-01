@@ -10,6 +10,16 @@ operations and their JSON results.
 
 ### Added
 
+- **Omarchy.** `--omarchy` adds Tomacco to Omarchy's menu (Trigger, Tomacco) through the user's
+  `~/.config/omarchy/extensions/omarchy-menu.jsonc`, between marker lines (`--no-omarchy-menu` skips it);
+  `--omarchy-bindings` adds `~/.config/hypr/tomacco-bindings.lua` with Super+Ctrl+Shift+T (workspace), P (device window)
+  and S (device screenshot), keys Omarchy's own bindings leave free. Both are journalled, refreshed by `--update` only where in use
+  and removed by `--uninstall`, in `install.py` and `tomaccoctl _install` alike. `tomaccoctl omarchy` shows what is
+  installed, outdated or missing (`status`), installs it again (`repair`), saves a device screenshot where Omarchy
+  keeps screenshots and copies it (`screenshot`), and with `notify on` sends a notification when a job of 15 seconds or more
+  ends while no desktop is open. The desktop's screenshots go to `OMARCHY_SCREENSHOT_DIR`, or the Pictures folder, on
+  Omarchy. The panel takes the shell theme's accent where it reads (`themeAccent`). Tested in a scratch home and unit tests; not
+  tried in a live Omarchy session.
 - An agent skill, `integrations/agent-skill/tomacco`, tells coding agents when to use Tomacco and how: MCP or
   `tomaccoctl`, `capabilities` first, waiting for jobs, reading `remedy`, asking before destructive calls, and where the
   installed guides are. `install.py` installs it in `~/.local/lib/tomacco/skills/tomacco` and links it into
