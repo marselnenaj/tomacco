@@ -107,9 +107,10 @@ tomaccoctl call ios.virtual.status '{"probe":true}'
 tomaccoctl call ios.virtual.configure '{"stall_seconds":600}'
 ```
 
-- `live`: a new frame, console output or a guest answer within `stall_seconds` (300 unless configured, 30 to 86400).
-- `quiet`: none of these for `stall_seconds`. A still screen is normal, since only changed frames are published; probe
-  to find out more.
+- `live`: a new frame or a guest answer within `stall_seconds` (300 unless configured, 30 to 86400).
+- `quiet`: neither for `stall_seconds`. A still screen is normal, since only changed frames are published; probe
+  to find out more. `console_only:true` says the console still printed: iOS keeps printing on a black or frozen
+  display, so console output alone does not make a phone `live`.
 - `stalled`: the guest service did not answer the last probe, and neither it nor the screen has shown life for
   `stall_seconds`.
 - `booting`: during `preparing` and `booting` nothing is judged.
