@@ -15,6 +15,7 @@ mod catalog;
 mod completions;
 mod contact_sheet;
 mod core;
+mod coverage;
 mod crashes;
 mod dap;
 mod debugger;
