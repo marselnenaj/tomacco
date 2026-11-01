@@ -66,6 +66,9 @@ operations and their JSON results.
   `tomaccoctl setup` show it. For the portable package it also checks the X11 and Wayland plugins and WebEngine's helper,
   and `desktop.portable` says which package it is. Run in debian:12, ubuntu:22.04, ubuntu:24.04 and fedora:44 containers,
   the one command made the 1.1.0 portable desktop loadable.
+- **Release key rotation.** `tomaccoctl` trusts the release key in `native/product.rs` and, during a rotation, the next key
+  beside it, `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`; a package signed by either installs, one signed by another key is refused.
+  `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.
 
 ### Changed
 

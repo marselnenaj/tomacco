@@ -60,11 +60,23 @@ class Commands:
             raise Refused(f"{shlex.join(argv)} failed")
 
 
-def constant(root, name):
+def constant(root, name, required=True):
     found = re.search(rf'pub const {name}: &str = "([^"]*)";', (root / "native/product.rs").read_text())
     if not found:
+        if not required:
+            return ""
         raise Refused(f"native/product.rs has no {name}")
     return found.group(1)
+
+
+def trusted_keys(root):
+    """The release keys the released program accepts: the current one and,
+    during a rotation, the next one (base64 of 32 bytes each)."""
+    current = constant(root, "RELEASE_SIGNING_PUBLIC_KEY_BASE64")
+    if not current:
+        raise Refused("native/product.rs has no public key, so this release could not update anything")
+    upcoming = constant(root, "NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64", required=False)
+    return [current] + ([upcoming] if upcoming else [])
 
 
 def versions(root):
@@ -120,13 +132,12 @@ def public_key_der(commands, key):
 
 
 def check_key(commands, root, key):
-    """A signature the released program would refuse is no use to anyone."""
-    expected = constant(root, "RELEASE_SIGNING_PUBLIC_KEY_BASE64")
-    if not expected:
-        raise Refused("native/product.rs has no public key, so this release could not update anything")
+    """A signature the released program would refuse is no use to anyone.
+    During a rotation the next key may sign, too: the program trusts both."""
+    expected = trusted_keys(root)
     actual = base64.b64encode(public_key_der(commands, key)[-32:]).decode()
-    if actual != expected:
-        raise Refused("This signing key does not belong to the public key in native/product.rs")
+    if actual not in expected:
+        raise Refused("This signing key does not belong to a public key in native/product.rs")
 
 
 def portable_name(prefix, version):

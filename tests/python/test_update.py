@@ -90,7 +90,7 @@ class UpdateOperations(unittest.TestCase):
         self.assertNotIn(b"TOMACCO_UPDATE_TEST_API", data)
         self.assertNotIn(b"Tomacco-TEST-VERSION", data)
         product = (Path(__file__).resolve().parents[2] / "native/product.rs").read_text()
-        has_key = 'RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "";' not in product
+        has_key = 'pub const RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "";' not in product
         self.assertEqual(self.call("update.status", forced=False)["result"]["signing_key_configured"], has_key)
 
 

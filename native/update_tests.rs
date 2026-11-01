@@ -23,7 +23,7 @@ fn github(key: Option<[u8; 32]>) -> Endpoints {
             "https://{GITHUB_HOST}/{REPO_OWNER}/{REPO_NAME}/releases/download/"
         ),
         loopback: false,
-        public_key: key,
+        public_keys: key.into_iter().collect(),
     }
 }
 
@@ -620,6 +620,71 @@ fn a_correctly_signed_package_verifies() {
     assert_eq!(verified.package, package);
 }
 
+/// A rotation: this binary trusts the current key and the next one. A
+/// package signed by the next key installs; one signed by any other is refused.
+#[test]
+fn during_a_rotation_the_next_key_is_accepted_and_an_unknown_key_refused() {
+    let next = SigningKey::from_bytes(&[8; 32]);
+    let keys = vec![test_key(), next.verifying_key().to_bytes()];
+    let endpoints = Endpoints {
+        public_keys: keys.clone(),
+        ..github(None)
+    };
+    let package = tarball(&[("a", b"b")]);
+    let by = |key: &SigningKey| STANDARD.encode(key.sign(&package).to_bytes()).into_bytes();
+    let verify = |signature: &[u8]| {
+        let scratch = tempfile::tempdir().unwrap();
+        download_and_verify(
+            &signed_release("2.0.0", &package, Some(signature)),
+            &endpoints,
+            None,
+            "1.0.0",
+            scratch.path(),
+            &mut None,
+            "stable",
+        )
+    };
+    assert_eq!(verify(&by(&next)).ok().unwrap().package, package);
+    assert_eq!(verify(&sign(&package)).ok().unwrap().package, package);
+    assert_eq!(verify_signature(&keys, &package, &by(&next)).unwrap(), 1);
+    assert_eq!(
+        verify_signature(&keys, &package, &sign(&package)).unwrap(),
+        0
+    );
+    let unknown = verify(&by(&SigningKey::from_bytes(&[9; 32])))
+        .err()
+        .unwrap();
+    assert_eq!(unknown.code, "update_signature_invalid");
+    assert!(
+        unknown.message.contains("release keys"),
+        "{}",
+        unknown.message
+    );
+}
+
+/// The keys compiled in are valid, the current one comes first, and an empty
+/// next key adds none.
+#[test]
+fn the_compiled_keys_decode_and_the_current_one_comes_first() {
+    let keys = release_keys();
+    assert_eq!(
+        keys.first(),
+        decode_key(RELEASE_SIGNING_PUBLIC_KEY_BASE64).as_ref()
+    );
+    let expected = [
+        RELEASE_SIGNING_PUBLIC_KEY_BASE64,
+        NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64,
+    ];
+    for text in expected.iter().filter(|text| !text.is_empty()) {
+        assert!(decode_key(text).is_some(), "{text} is not a 32-byte key");
+    }
+    assert_eq!(
+        keys.len(),
+        expected.iter().filter(|t| !t.is_empty()).count()
+    );
+    assert!(keys.windows(2).all(|pair| pair[0] != pair[1]));
+}
+
 #[test]
 fn an_unsigned_package_is_refused_before_it_is_downloaded() {
     let package = tarball(&[("a", b"b")]);
@@ -1037,6 +1102,6 @@ fn a_signature_made_by_openssl_verifies() {
     let message = b"tomacco update test vector\n";
     let signature =
         b"5halaIQ2vA/cDQvsEGhCr+tf5XNGpYkivRJJuyFWnJlWT7OWl++YEjodY8i9WbfMl2roqF1WHUG22i04v6s4Ag==";
-    verify_signature(&key, message, signature).unwrap();
-    assert!(verify_signature(&key, b"other", signature).is_err());
+    assert_eq!(verify_signature(&[key], message, signature).unwrap(), 0);
+    assert!(verify_signature(&[key], b"other", signature).is_err());
 }

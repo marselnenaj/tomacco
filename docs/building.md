@@ -209,8 +209,8 @@ installation back. An uninstall also leaves your preferences (`~/.config/marseln
 A release holds the package and the portable package, each with its `.sha256` and its `.sig`. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
 never offered as updates.
 
-Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against the public key compiled into `tomaccoctl`. A build without
-that key refuses to install updates and says so.
+Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against a public key compiled into `tomaccoctl`: the current
+release key and, while the key is being [rotated](#rotating-the-release-key), the next one. A build without a key refuses to install updates and says so.
 
 `native/product.rs` holds the product name, the repository and the installed paths the updater uses, so a rename changes them in one place. An update runs the package's own `install.py` with
 `--update`, which keeps the integrations as they are, so the journal, the backups and `--rollback` work as for any installation. `tests/update_e2e.rs` runs the whole path against a local
@@ -251,6 +251,29 @@ its commit, so it could not be matched against the commit the binary's SBOM name
 
 **Set by hand on GitHub.** The repository's social preview is `assets/readme/social-preview.png` (1280x640, the banner on a 2:1 canvas). Upload it under Settings, General,
 Social preview.
+
+## Rotating the release key
+
+`native/product.rs` holds two public keys: `RELEASE_SIGNING_PUBLIC_KEY_BASE64`, the key that signs releases now, and
+`NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`, empty except during a rotation. `tomaccoctl` accepts a package signed by either, and so does
+the container build, whose `public_keys` in `packaging/container/Dockerfile` a test keeps equal to them. `make_release.py` accepts a
+signing key whose public half is one of the two. To replace the key:
+
+1. Make a new Ed25519 key on the machine that signs releases, outside the repository and readable only by its owner, like the
+   current one.
+2. Put base64 of its 32-byte public half into `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64` and into `public_keys` in the container's
+   Dockerfile, after the current key. Update `install.sh` on the website the same way; it is not in this repository. Make a release
+   as usual, signed with the current key. Every copy that updates to it trusts both keys.
+3. Once that release has been out for a while, move the new key into `RELEASE_SIGNING_PUBLIC_KEY_BASE64`, empty
+   `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`, drop the old key from the Dockerfile and `install.sh`, and sign the next release with the new
+   key.
+
+A copy older than the release of step 2 does not know the new key: its update refuses the package with `update_signature_invalid` and
+installs nothing, and its user installs the new release with `install.sh` or by hand. If the old private key may have leaked, skip the
+waiting in step 3, since every copy still trusts the old key until it updates.
+
+The tests in `native/update_tests.rs` check that a package signed by the next key is accepted and one signed by an unknown key is
+refused; `tests/python/test_make_release.py` checks that `make_release.py` accepts the next key and still requires the current one.
 
 ## Reproducible engine builds
 

@@ -40,10 +40,16 @@ class Dockerfile(unittest.TestCase):
         self.assertIn("exit 1", DOCKERFILE[gate:gate + 400])
 
     def test_tomaccoctl_comes_from_a_package_checked_against_checksum_and_release_key(self):
-        public = re.search(r'RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "([^"]+)"', (ROOT / "native/product.rs").read_text()).group(1)
-        self.assertIn(f'public_key="{public}"', DOCKERFILE)
-        self.assertEqual(len(base64.b64decode(public)), 32)
-        step = DOCKERFILE[DOCKERFILE.index("public_key="):DOCKERFILE.index("tomaccoctl --version")]
+        product = (ROOT / "native/product.rs").read_text()
+        # The keys the updater trusts: the current one and, during a rotation, the next.
+        keys = [found for name in ("RELEASE_SIGNING_PUBLIC_KEY_BASE64", "NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64")
+                for found in re.findall(rf'pub const {name}: &str = "([^"]+)"', product)]
+        self.assertTrue(keys)
+        self.assertIn(f'public_keys="{" ".join(keys)}"', DOCKERFILE)
+        for key in keys:
+            self.assertEqual(len(base64.b64decode(key)), 32)
+        step = DOCKERFILE[DOCKERFILE.index("public_keys="):DOCKERFILE.index("tomaccoctl --version")]
+        self.assertIn('if [ -z "$verified" ]', step)
         checksum, verify, unpack = (step.index("sha256sum --check"), step.index("openssl pkeyutl -verify -rawin"), step.index("tar -xzf"))
         self.assertLess(checksum, unpack)
         self.assertLess(verify, unpack)

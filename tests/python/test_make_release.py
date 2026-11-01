@@ -86,10 +86,11 @@ class MakeRelease(unittest.TestCase):
         self.key.write_text("private")
         self.key.chmod(0o600)
 
-    def product(self, public):
+    def product(self, public, upcoming=None):
         (self.root / "native/product.rs").write_text(
             'pub const PRODUCT_NAME: &str = "Tomacco";\npub const REPO_OWNER: &str = "owner";\npub const REPO_NAME: &str = "repo";\n'
-            f'pub const PACKAGE_PREFIX: &str = "tomacco";\npub const RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "{public}";\n')
+            f'pub const PACKAGE_PREFIX: &str = "tomacco";\npub const RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "{public}";\n'
+            + (f'pub const NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "{upcoming}";\n' if upcoming is not None else ""))
 
     def make(self, *arguments, commands=None, environment=None):
         commands = commands or Fake(self.root)
@@ -294,6 +295,25 @@ class MakeRelease(unittest.TestCase):
         self.assertRefused("no public key", "--key", str(self.key))
         self.product(base64.b64encode(b"\x33" * 32).decode())
         self.assertRefused("does not belong", "--key", str(self.key))
+        self.product(base64.b64encode(b"\x33" * 32).decode(), "")
+        self.assertRefused("does not belong", "--key", str(self.key))
+
+    def test_during_a_rotation_the_next_key_may_sign(self):
+        # The key in hand is the next one: the released program trusts it.
+        self.product(base64.b64encode(b"\x33" * 32).decode(), PUBLIC)
+        code, _, errors, _ = self.make("--key", str(self.key))
+        self.assertEqual(code, 0, errors)
+        self.assertEqual(make_release.trusted_keys(self.root), [base64.b64encode(b"\x33" * 32).decode(), PUBLIC])
+        # A next key alone does not make a release: the current one must be set.
+        self.product("", PUBLIC)
+        self.assertRefused("no public key", "--key", str(self.key))
+
+    def test_the_product_names_the_current_and_the_next_key(self):
+        product = (ROOT / "native/product.rs").read_text()
+        self.assertRegex(product, r'pub const RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "[A-Za-z0-9+/]{43}=";')
+        self.assertRegex(product, r'pub const NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "(?:[A-Za-z0-9+/]{43}=)?";')
+        keys = make_release.trusted_keys(ROOT)
+        self.assertTrue(all(len(base64.b64decode(key)) == 32 for key in keys))
 
     def test_leftovers_in_dist_are_refused(self):
         (self.root / "dist").mkdir()

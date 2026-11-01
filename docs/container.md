@@ -66,7 +66,7 @@ python3 tools/build_container.py verify tomacco-container:1.1.0-emulator --emula
 ```
 
 The build downloads the release package with its `.sha256` and `.sig` from GitHub, checks the
-checksum and the Ed25519 signature against the release key (the same key as `install.sh` and
+checksum and the Ed25519 signature against the release keys (the same keys as `install.sh` and
 `tomaccoctl update`), and stops if either does not match. `--build-arg TOMACCO_PACKAGE=portable`
 takes `tomaccoctl` from the portable package instead (a 177 MB download for one 13 MB file).
 `build_container.py build --packages DIR` uses a package with its checksum and signature from
