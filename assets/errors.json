@@ -1704,8 +1704,8 @@
     "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
   },
   "workflow_needs_confirmation": {
-    "cause": "A workflow.run step is destructive and has no confirm.",
-    "remedy": "Tell the person what those steps delete or overwrite, and set confirm:true on each only after they agree."
+    "cause": "A workflow.run step is destructive or publishes and has no confirm.",
+    "remedy": "Tell the person what those steps delete, overwrite or publish, and set confirm:true on each only after they agree."
   },
   "workflow_step_failed": {
     "cause": "A workflow.run step failed or its job did not succeed; the later steps did not run.",

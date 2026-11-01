@@ -109,10 +109,13 @@ fn check(steps: &[Value]) -> Result<()> {
             )
             .remedy(error.remedy)
         })?;
-        if schema["annotations"]["destructiveHint"] == true && step["confirm"] != true {
+        let arguments = step.get("arguments").cloned().unwrap_or(json!({}));
+        let publishes = crate::mcp_consent::needs_yes(operation, &arguments);
+        if (schema["annotations"]["destructiveHint"] == true || publishes)
+            && step["confirm"] != true
+        {
             unconfirmed.push(format!("{index} ({operation})"));
         }
-        let arguments = step.get("arguments").cloned().unwrap_or(json!({}));
         let mut references = Vec::new();
         collect_references(&arguments, &mut references);
         for from in &references {
@@ -140,11 +143,11 @@ fn check(steps: &[Value]) -> Result<()> {
         return Err(Error::new(
             "workflow_needs_confirmation",
             format!(
-                "Destructive steps need confirm:true: {}",
+                "Destructive and publishing steps need confirm:true: {}",
                 unconfirmed.join(", ")
             ),
         )
-        .remedy("Tell the person what those steps delete or overwrite, and set confirm:true on each only after they agree"));
+        .remedy("Tell the person what those steps delete, overwrite or publish, and set confirm:true on each only after they agree"));
     }
     Ok(())
 }
@@ -345,6 +348,9 @@ mod tests {
         );
         assert_eq!(error.code, "workflow_needs_confirmation");
         assert!(error.message.contains("1 (job.cancel)"));
+        let commit = json!({"credentials":"/k.json","package":"dev.app","edit_id":"e1"});
+        let error = refuse(json!([{"operation":"play.commit","arguments":commit}]));
+        assert_eq!(error.code, "workflow_needs_confirmation");
         let error = refuse(json!([{"operation":"projct.run"}]));
         assert_eq!(error.code, "invalid_argument");
         assert!(error.remedy.contains("project.run"));

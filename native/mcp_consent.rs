@@ -57,6 +57,12 @@ fn before(name: &str, arguments: &Value) -> Option<Before> {
     }
 }
 
+/// Whether this call publishes or uploads, so that it runs only after the
+/// person's yes: `workflow.run` asks for `confirm` on such a step.
+pub fn needs_yes(name: &str, arguments: &Value) -> bool {
+    before(name, arguments).is_some_and(|gate| gate.no_stops)
+}
+
 /// The form a question is asked with: one yes-or-no field.
 fn form() -> Value {
     json!({"type":"object","properties":{"approve":{"type":"boolean","title":"Go ahead","description":"Yes to go ahead, no to stop","default":false}},"required":["approve"]})
@@ -255,7 +261,22 @@ mod tests {
         assert!(client.asked.borrow().is_empty());
         let client = Client::new(vec![Some(json!({"action":"decline"}))]);
         let upload = json!({"path":"/p","upload":true});
-        assert!(call("ios.store_ship", upload, &|q, s| client.ask(q, s), run).is_err());
+        assert!(
+            call(
+                "ios.store_ship",
+                upload.clone(),
+                &|q, s| client.ask(q, s),
+                run
+            )
+            .is_err()
+        );
+        assert!(needs_yes("ios.store_ship", &upload));
+        assert!(needs_yes("play.commit", &json!({})));
+        assert!(!needs_yes("ios.store_ship", &json!({"path":"/p"})));
+        assert!(!needs_yes(
+            "android.sdk_install",
+            &json!({"packages":["x"]})
+        ));
     }
     #[test]
     fn a_refusal_that_names_its_consent_is_asked_and_repeated() {

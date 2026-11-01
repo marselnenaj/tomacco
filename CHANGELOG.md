@@ -22,7 +22,7 @@ operations and their JSON results.
   an `ios.virtual.setup` stage marked `ask_first`, instead of the call failing or the agent having to ask. A no answers
   `consent_declined`. Other clients see no change.
 - `TOMACCO_MCP_TOOLS` picks a shorter MCP tool list for agents with a small context: `compact` (first sentences, no
-  argument descriptions; 136,247 bytes instead of 265,135) or `grouped` (one tool per area that takes an operation and
+  argument descriptions; 136,247 bytes instead of 265,234) or `grouped` (one tool per area that takes an operation and
   its arguments; 29,261 bytes). Both add a `schema` tool for one operation's whole schema.
 
 ### Changed

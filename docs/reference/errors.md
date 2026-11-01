@@ -432,7 +432,7 @@ Every error code `tomaccoctl` returns, 435 codes, generated from `assets/errors.
 | `video_protocol` | Invalid Android video packet length. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `worker_reaper_unavailable` | The request was refused; the message says why. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `worker_start_failed` | A step Tomacco ran did not succeed. | Read the message and the job's log (job.logs); fix the cause and try again. |
-| `workflow_needs_confirmation` | A workflow.run step is destructive and has no confirm. | Tell the person what those steps delete or overwrite, and set confirm:true on each only after they agree. |
+| `workflow_needs_confirmation` | A workflow.run step is destructive or publishes and has no confirm. | Tell the person what those steps delete, overwrite or publish, and set confirm:true on each only after they agree. |
 | `workflow_step_failed` | A workflow.run step failed or its job did not succeed; the later steps did not run. | Read details.steps for that step's error or job, fix the cause and run the workflow again. |
 | `workflow_timed_out` | workflow.run ran out of its timeout while following a job. | The job keeps running: follow it with job.wait, or stop it with job.cancel. |
 | `working_image_changed` | Working image was replaced before the job started. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |

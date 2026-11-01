@@ -88,12 +88,12 @@ The server also offers three prompts, short recipes a client can show as command
 
 ### A shorter tool list
 
-The full tool list is every operation with its whole schema, 265,135 bytes of `tools/list` response in this
+The full tool list is every operation with its whole schema, 265,234 bytes of `tools/list` response in this
 version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env` of the client's server entry:
 
 | Value | Tools | `tools/list` response |
 | --- | --- | --- |
-| `full` (the default) | One per operation, with every description. | 265,135 bytes |
+| `full` (the default) | One per operation, with every description. | 265,234 bytes |
 | `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 136,247 bytes |
 | `grouped` | One per area, such as `android` or `job`: 25 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 29,261 bytes |
 
@@ -232,8 +232,9 @@ tomaccoctl call workflow.run '{"steps":[{"operation":"project.execute","argument
 
 An argument value `{"from_step": N, "pointer": "/result/..."}` is replaced by that JSON pointer into
 step `N`'s record; for a followed job, `/result` is the finished job, so `/result/artifacts/0/path` is
-its first artifact. A destructive step, such as `device.install`, runs only with `"confirm":true` on that
-step; without it nothing runs and the answer is `workflow_needs_confirmation`. Set it only after the
+its first artifact. A destructive step, such as `device.install`, and one that publishes (`play.commit`, an
+upload with `ios.store_ship` or `apple.store`) runs only with `"confirm":true` on that step; without it
+nothing runs and the answer is `workflow_needs_confirmation`. Set it only after the
 person agreed. `timeout` (1800 seconds by default) covers the whole workflow; when it runs out, the
 current job keeps running. The call holds its MCP request or terminal until it ends, so for a single
 long build `project.execute` with `job.wait` is just as good.
