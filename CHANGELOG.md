@@ -151,6 +151,16 @@ operations and their JSON results.
     console lines, not yet against a live phone's log.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
+  - The desktop's phone view sends typed characters to the phone as text, so `@`, `ä` and the like arrive as the host's
+    layout types them, and Enter, Backspace, the arrows and keys with Ctrl, Alt or Meta by name. **Keyboard to phone**
+    shows when it has the keyboard; Ctrl+Shift+K gives the keyboard back to the desktop and takes it again. A modifier
+    pressed alone is no longer sent.
+  - **Speed** shows new and fetched frames per second and the time from an input to the first new frame after it, over
+    the picture. **Screenshot with frame** saves a framed screenshot through `ios.virtual.screenshot`.
+  - The phone's own window has App switcher, Notification Center, Control Center, the keyboard switch and the speed
+    overlay on its rail, a pin that keeps it above other windows, and opens where it was last (not on Wayland).
+  - A trackpad's coasting after the fingers lift no longer scrolls the phone, and lifting them sends the scroll at once.
+  - All offscreen tests only; not tried on a live phone.
 
 ### Changed
 

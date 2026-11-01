@@ -207,10 +207,32 @@ at the edge, which opens iOS's edge gestures by mouse. The wheel scrolls. Button
 | Ctrl+Shift+C | Control Center |
 | Ctrl+Shift+B | Back (swipe right from the left edge) |
 | Ctrl+V | Type the host clipboard's text into the focused field (**Paste**) |
+| Ctrl+Shift+K | Give the keyboard back to the desktop, or to the phone again |
 
 Ctrl+V and **Paste** type the host clipboard's text with the `text` action described below, in pieces of up to 1024
 characters; a clipboard of more than 4096 characters is refused with a notice. Characters the guest's keyboard layout
 cannot type make the guest refuse the piece. Tested in the desktop's offscreen tests; not tried on a live phone yet.
+
+**Typing.** While the phone's view has the keyboard, **Keyboard to phone** shows highlighted under the picture
+and the keys go to the phone: characters as `text`, so the host's layout decides what a key types (`@`, `ä`), and
+Enter, Backspace, Tab, Escape, the arrows and keys with Ctrl, Alt or Meta as `key`. Characters typed while the
+previous ones still wait are sent together. Ctrl+Shift+K, or the button, gives the keyboard back to the desktop, so
+Tab and Escape work in the dialog again; a click on the screen or Ctrl+Shift+K takes it back for the phone. In the
+phone's own window the rail's keyboard button does the same, and Escape still docks the window.
+
+**Scrolling.** A wheel burst or a two-finger scroll becomes one drag that rests before it lifts, so the content stops
+where the scroll stopped. The coasting a trackpad adds after the fingers lift is dropped, and lifting them sends the
+drag at once.
+
+**Speed.** **Speed** under the picture, or its button on the rail, shows how many new frames arrive per second, how
+many frames were fetched, and the time from the last input to the first new frame fetched after it. That time is an
+estimate: a frame that changed for another reason counts too, and an input that changes nothing within 5 seconds is
+not measured.
+
+**Screenshot with frame** saves and copies the screen through `ios.virtual.screenshot` with `frame` `device`
+(described below), under `Pictures/Tomacco`.
+
+All of this is tested in the desktop's offscreen tests only; not tried on a live phone.
 
 The phone's window is described in the [desktop guide](../desktop.md#device-window).
 
