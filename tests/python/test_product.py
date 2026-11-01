@@ -1983,6 +1983,114 @@ class ProtocolTests(Isolated):
 
 
 
+class AgentConversationTests(Isolated):
+    """One whole MCP session as a coding agent holds it, without devices: plan,
+    build an Android project on a fake Gradle wrapper, follow the job with
+    progress and log messages, and read the result. A regression guard for the
+    agent-facing protocol as a whole."""
+
+    def setUp(self):
+        super().setUp()
+        import queue
+        self.process = subprocess.Popen([binary(), "mcp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, text=True)
+        self.inbox = queue.Queue()
+        self.notifications = []
+        def read():
+            for line in self.process.stdout: self.inbox.put(json.loads(line))
+        threading.Thread(target=read, daemon=True).start()
+        self.next_id = 0
+
+    def tearDown(self):
+        if self.process.poll() is None:
+            self.process.stdin.close()
+            try: self.process.wait(5 * PATIENCE)
+            except subprocess.TimeoutExpired: self.process.kill(); self.process.wait()
+        self.process.stdout.close(); self.process.stderr.close()
+        super().tearDown()
+
+    def notify(self, method, params=None):
+        self.process.stdin.write(json.dumps({"jsonrpc": "2.0", "method": method, **({"params": params} if params else {})}) + "\n")
+        self.process.stdin.flush()
+
+    def request(self, method, params=None, timeout=60):
+        self.next_id += 1
+        request_id = self.next_id
+        message = {"jsonrpc": "2.0", "id": request_id, "method": method}
+        if params is not None: message["params"] = params
+        self.process.stdin.write(json.dumps(message) + "\n"); self.process.stdin.flush()
+        deadline = time.monotonic() + timeout * PATIENCE
+        while True:
+            reply = self.inbox.get(timeout=max(deadline - time.monotonic(), 0.1))
+            if reply.get("id") == request_id and "method" not in reply:
+                self.assertNotIn("error", reply, reply)
+                return reply["result"]
+            self.notifications.append(reply)
+
+    def call(self, name, arguments, **meta):
+        result = self.request("tools/call", {"name": name, "arguments": arguments, **({"_meta": meta} if meta else {})})
+        self.assertEqual(json.loads(result["content"][0]["text"]), result["structuredContent"])
+        return result
+
+    def test_plan_build_follow_and_read_an_android_build(self):
+        project = self.root / "MyApp"
+        (project / "app").mkdir(parents=True)
+        (project / "settings.gradle").touch()
+        (project / "gradlew").write_text("#!/bin/sh\nfor i in 1 2 3 4; do echo \"> Task :app:step$i\"; sleep 0.5; done\n"
+                                         "mkdir -p app/build/outputs/apk/debug && echo apk > app/build/outputs/apk/debug/app-debug.apk\n")
+        (project / "gradlew").chmod(0o755)
+
+        hello = self.request("initialize", {"protocolVersion": "2025-11-25", "capabilities": {},
+                                            "clientInfo": {"name": "conversation-test", "version": "1"}})
+        self.assertEqual(hello["protocolVersion"], "2025-11-25")
+        self.assertEqual(sorted(hello["capabilities"]), ["completions", "logging", "prompts", "resources", "tools"])
+        self.assertIn("capabilities", hello["instructions"])
+        self.notify("notifications/initialized")
+
+        tools = {tool["name"]: tool for tool in self.request("tools/list")["tools"]}
+        self.assertTrue(tools["job.wait"]["annotations"]["readOnlyHint"])
+        self.assertFalse(tools["project.execute"]["annotations"]["readOnlyHint"])
+        capabilities = json.loads(self.request("resources/read", {"uri": "tomacco://capabilities"})["contents"][0]["text"])
+        self.assertIsInstance(capabilities["android"]["build"]["ready"], bool)
+
+        inspected = self.call("project.inspect", {"path": str(project)})["structuredContent"]
+        self.assertIn("gradle", inspected["kinds"])
+        plan = self.call("project.plan", {"path": str(project), "platform": "android", "action": "build"})["structuredContent"]
+        self.assertEqual(plan["steps"][0]["argv"][-1], "assembleDebug")
+
+        self.request("logging/setLevel", {"level": "info"})
+        started = self.call("project.execute", {"path": str(project), "platform": "android", "action": "build"})
+        job_id = started["structuredContent"]["id"]
+        for attempt in range(10):
+            job = self.call("job.wait", {"job_id": job_id, "seconds": 30}, progressToken=f"build-{attempt}")["structuredContent"]
+            if job["state"] in ("succeeded", "failed", "cancelled", "timed_out"): break
+        self.assertEqual(job["state"], "succeeded", job)
+        artifact = job["result"]["artifacts"][0]
+        self.assertTrue(artifact["path"].endswith("app-debug.apk"))
+        self.assertTrue(artifact["modified_in_job"])
+
+        progress = [n["params"] for n in self.notifications if n.get("method") == "notifications/progress"]
+        self.assertTrue(progress, self.notifications)
+        self.assertTrue(all(p["progressToken"].startswith("build-") for p in progress))
+        lines = [n["params"]["data"] for n in self.notifications if n.get("method") == "notifications/message"]
+        self.assertTrue(any(line.startswith("> Task :app:step") for line in lines), lines)
+
+        log = self.request("resources/read", {"uri": f"tomacco://jobs/{job_id}/log"})["contents"][0]["text"]
+        self.assertIn("> Task :app:step4", log)
+        record = json.loads(self.request("resources/read", {"uri": f"tomacco://jobs/{job_id}"})["contents"][0]["text"])
+        self.assertEqual(record["state"], "succeeded")
+
+        # The same build and a look at its job in one call, then a failure the agent can act on.
+        workflow = self.call("workflow.run", {"steps": [
+            {"operation": "project.execute", "arguments": {"path": str(project), "platform": "android", "action": "build"}},
+            {"operation": "job.get", "arguments": {"job_id": {"from_step": 0, "pointer": "/result/id"}}}]})
+        self.assertFalse(workflow["isError"])
+        self.assertEqual(workflow["structuredContent"]["steps"][1]["result"]["state"], "succeeded")
+        failed = self.call("project.execute", {"path": str(self.root / "missing"), "platform": "android"})
+        self.assertTrue(failed["isError"])
+        self.assertTrue(failed["structuredContent"]["error"]["code"])
+
+
 class ProjectFilesTests(Isolated):
     def test_conflicts_binary_bounds_permissions_and_symlink_escape(self):
         file = self.root / "source.swift"

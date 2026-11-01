@@ -25,6 +25,12 @@ operations and their JSON results.
   argument descriptions; 136,247 bytes instead of 265,135) or `grouped` (one tool per area that takes an operation and
   its arguments; 29,261 bytes). Both add a `schema` tool for one operation's whole schema.
 
+### Tests
+
+- An end-to-end MCP session test (`AgentConversationTests` in `tests/python/test_product.py`) plans, builds an
+  Android project on a fake Gradle wrapper, follows the job with progress and log messages, reads the job and its log
+  as resources and runs the same build through `workflow.run`, with no device or SDK.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
