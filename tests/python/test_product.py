@@ -1708,6 +1708,37 @@ class ReleaseContractTests(Isolated):
                 dispatch("release.version", {"path": str(self.root), **arguments})
             self.assertEqual(refused.exception.code, "invalid_argument")
 
+    def test_release_notes_are_written_per_language_and_refused_over_the_limit(self):
+        english = self.root / "CHANGELOG.md"
+        english.write_text("# Changelog\n\n## [2.0.0] - 2026-11-01\n\n- **Dark mode** everywhere.\n- Faster `sync`.\n\n## 1.9.0\n\n- Old\n")
+        german = self.root / "CHANGELOG.de.md"
+        german.write_text("## 2.0.0\n\n- Dunkler Modus überall.\n")
+        spanish = self.root / "CHANGELOG.es.md"
+        spanish.write_text("## 2.0.0\n\n" + "".join(f"- Cambio número {i} con bastante texto\n" for i in range(30)))
+        out = self.root / "metadata"
+        base = {"changelog": str(english), "section": "2.0.0", "directory": str(out), "build_number": 20}
+        result = dispatch("release.notes", {**base, "translations": [{"language": "de-DE", "changelog": str(german)}]})
+        self.assertTrue(result["passed"] and result["written"])
+        self.assertEqual((out / "en-US/changelogs/20.txt").read_text(), "• Dark mode everywhere.\n• Faster sync.\n")
+        self.assertEqual((out / "de-DE/changelogs/20.txt").read_text(), "• Dunkler Modus überall.\n")
+        self.assertEqual(result["next"]["arguments"]["release_notes"][1], {"language": "de-DE", "text": "• Dunkler Modus überall."})
+        # One language over 500 characters: nothing is written for any.
+        spanish_too = {**base, "layout": "whatsnew", "translations": [{"language": "es-419", "changelog": str(spanish)}]}
+        result = dispatch("release.notes", spanish_too)
+        self.assertEqual((result["passed"], result["written"], result["findings"][0]["code"]), (False, False, "too_long"))
+        self.assertNotIn("release_notes", result)
+        self.assertFalse((out / "whatsnew-en-US").exists())
+        result = dispatch("release.notes", {**spanish_too, "truncate": True})
+        self.assertTrue(result["passed"])
+        self.assertLessEqual(len((out / "whatsnew-es-419").read_text().rstrip("\n")), 500)
+        self.assertEqual(result["findings"][0]["code"], "truncated")
+        self.assertFalse(dispatch("release.notes", {**base, "section": "3.0.0", "dry_run": True})["passed"])
+        # play.prepare takes the result's language codes, es-419 included.
+        with self.assertRaises(StudioError) as refused:
+            dispatch("play.prepare", {"credentials": str(self.root / "missing.json"), "package": "dev.example.app", "path": str(self.root / "a.aab"),
+                                      "release_name": "2.0.0", "release_notes": result["release_notes"]})
+        self.assertNotEqual(refused.exception.code, "invalid_argument")
+
     def test_a_secret_given_instead_of_its_file_is_not_echoed(self):
         secret = "hunter2-correct-horse"
         output = str(self.root / "release.p12")

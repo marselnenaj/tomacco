@@ -4027,6 +4027,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Imposta versione dell'app</translation>
     </message>
     <message>
+        <source>Write Play release notes</source>
+        <translation>Scrivi le note di rilascio Play</translation>
+    </message>
+    <message>
         <source>Set breakpoints</source>
         <translation>Imposta punti di interruzione</translation>
     </message>

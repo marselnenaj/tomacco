@@ -4023,6 +4023,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>App-Version setzen</translation>
     </message>
     <message>
+        <source>Write Play release notes</source>
+        <translation>Play-Versionshinweise schreiben</translation>
+    </message>
+    <message>
         <source>Set breakpoints</source>
         <translation>Haltepunkte setzen</translation>
     </message>

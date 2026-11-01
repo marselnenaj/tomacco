@@ -45,6 +45,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
     match op {
         "release.verify" => verify(&path(s(a, "path"), false, true)?),
         "release.version" => crate::release_version::version(a),
+        "release.notes" => crate::release_notes::notes(a),
         "release.keystore" | "release.sign" => {
             secret(s(a, "password_file"))?;
             identifier(s(a, "alias"), "key alias", Some("[A-Za-z0-9_.-]{1,100}"))?;

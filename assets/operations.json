@@ -5748,6 +5748,98 @@
     }
   },
   {
+    "name": "release.notes",
+    "title": "Write Play release notes",
+    "description": "Turn one section of a Markdown changelog into Google Play \"What's new\" text per language and check each against Play's 500-character limit. Bullets become •, emphasis, code and link markup is removed, and a bullet's continuation lines are joined. The files are written in the layout fastlane supply, Gradle Play Publisher or a whatsnew directory reads; nothing is written when a language fails. The result's release_notes is the release_notes argument of play.prepare. Reads and writes local files only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "changelog": {
+          "type": "string",
+          "description": "Absolute path of the Markdown changelog for language",
+          "minLength": 1
+        },
+        "section": {
+          "type": "string",
+          "default": "",
+          "description": "Heading of the section to use, such as 1.2.0 or Unreleased, matched without brackets, a leading v or what follows a space; empty takes the first section"
+        },
+        "language": {
+          "type": "string",
+          "pattern": "[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}",
+          "description": "Google Play language code, such as en-US, de-DE or es-419",
+          "default": "en-US"
+        },
+        "translations": {
+          "type": "array",
+          "maxItems": 80,
+          "description": "Changelogs of other languages with the same section",
+          "items": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "pattern": "[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}",
+                "description": "Google Play language code, such as en-US, de-DE or es-419"
+              },
+              "changelog": {
+                "type": "string",
+                "description": "Absolute path of this language's Markdown changelog",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "language",
+              "changelog"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "directory": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to write the files under: fastlane's metadata/android directory, Gradle Play Publisher's src/main/play, or a whatsnew directory"
+        },
+        "layout": {
+          "type": "string",
+          "enum": [
+            "fastlane",
+            "play-publisher",
+            "whatsnew"
+          ],
+          "default": "fastlane",
+          "description": "fastlane: LANGUAGE/changelogs/default.txt, or BUILD.txt with build_number; play-publisher: release-notes/LANGUAGE/default.txt; whatsnew: whatsnew-LANGUAGE"
+        },
+        "build_number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2100000000,
+          "description": "versionCode for fastlane's per-build file name"
+        },
+        "truncate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Drop whole lines from the end of a text over the limit instead of failing"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": false,
+          "description": "Return the texts and findings without writing"
+        }
+      },
+      "required": [
+        "changelog"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "apple.devices",
     "title": "Apple devices on the Mac",
     "description": "Read Simulator and connected physical-device inventories using Xcode on a configured SSH Mac.",
@@ -6276,7 +6368,7 @@
             "properties": {
               "language": {
                 "type": "string",
-                "pattern": "[A-Za-z-]{2,30}"
+                "pattern": "[A-Za-z0-9-]{2,30}"
               },
               "text": {
                 "type": "string",

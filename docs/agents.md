@@ -683,6 +683,19 @@ JSON files are written back with two-space indentation.
 tomaccoctl call release.version '{"path":"/absolute/app","bump":"patch","dry_run":true}'
 ```
 
+`release.notes` turns one section of a Markdown changelog into Google Play's "What's new" text for each language and checks
+it against Play's limit of 500 characters. `section` names the heading (`2.0.0` matches `## [2.0.0] - 2026-11-01`; empty takes
+the first section), `changelog` is the file for `language` (default `en-US`), and `translations` adds other languages' changelogs
+with the same section. Bullets become `•`, bold, code and link markup is removed. A text over the limit is a `too_long` error
+and no file is written for any language; `truncate:true` drops whole lines from its end instead and reports `truncated`. The
+files go under `directory` in the `layout` the upload tool reads: `fastlane` (`LANGUAGE/changelogs/default.txt`, or
+`BUILD.txt` with `build_number`), `play-publisher` (`release-notes/LANGUAGE/default.txt`) or `whatsnew` (`whatsnew-LANGUAGE`).
+The result's `release_notes` is the `release_notes` argument of `play.prepare`, which stages them with the bundle.
+
+```sh
+tomaccoctl call release.notes '{"changelog":"/absolute/app/CHANGELOG.md","section":"2.0.0","directory":"/absolute/app/fastlane/metadata/android","translations":[{"language":"de-DE","changelog":"/absolute/app/CHANGELOG.de.md"}]}'
+```
+
 `play.prepare` creates an edit, uploads the AAB, sets the track and validates, without committing. Inspect that before an explicitly authorized `play.commit`;
 `play.abort` discards it. Live store submission has not been qualified, on Play or on the App Store.
 

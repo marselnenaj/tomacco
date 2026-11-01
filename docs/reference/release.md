@@ -2,7 +2,7 @@
 
 # `release` operations
 
-4 operations. Generated from `assets/operations.json`; [all areas](README.md).
+5 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### release.keystore
 
@@ -79,4 +79,30 @@ Annotations: **destructive**, not idempotent, open world.
 
 ```sh
 tomaccoctl call release.version '{"path":"<path>"}'
+```
+
+### release.notes
+
+**Write Play release notes**
+
+Turn one section of a Markdown changelog into Google Play "What's new" text per language and check each against Play's 500-character limit. Bullets become •, emphasis, code and link markup is removed, and a bullet's continuation lines are joined. The files are written in the layout fastlane supply, Gradle Play Publisher or a whatsnew directory reads; nothing is written when a language fails. The result's release_notes is the release_notes argument of play.prepare. Reads and writes local files only.
+
+Annotations: **destructive**, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `changelog` | string | yes |  | non-empty; Absolute path of the Markdown changelog for language |
+| `section` | string |  | `""` | Heading of the section to use, such as 1.2.0 or Unreleased, matched without brackets, a leading v or what follows a space; empty takes the first section |
+| `language` | string |  | `"en-US"` | matching `[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}`; Google Play language code, such as en-US, de-DE or es-419 |
+| `translations` | array of object |  |  | up to 80 items; Changelogs of other languages with the same section |
+| `translations[].language` | string | yes |  | matching `[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}`; Google Play language code, such as en-US, de-DE or es-419 |
+| `translations[].changelog` | string | yes |  | non-empty; Absolute path of this language's Markdown changelog |
+| `directory` | string |  | `""` | Absolute path to write the files under: fastlane's metadata/android directory, Gradle Play Publisher's src/main/play, or a whatsnew directory |
+| `layout` | string |  | `"fastlane"` | one of `fastlane`, `play-publisher`, `whatsnew`; fastlane: LANGUAGE/changelogs/default.txt, or BUILD.txt with build_number; play-publisher: release-notes/LANGUAGE/default.txt; whatsnew: whatsnew-LANGUAGE |
+| `build_number` | integer |  |  | 1 to 2100000000; versionCode for fastlane's per-build file name |
+| `truncate` | boolean |  | `false` | Drop whole lines from the end of a text over the limit instead of failing |
+| `dry_run` | boolean |  | `false` | Return the texts and findings without writing |
+
+```sh
+tomaccoctl call release.notes '{"changelog":"<changelog>"}'
 ```
