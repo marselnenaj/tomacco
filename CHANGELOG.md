@@ -244,6 +244,14 @@ operations and their JSON results.
     overlay on its rail, a pin that keeps it above other windows, and opens where it was last (not on Wayland).
   - A trackpad's coasting after the fingers lift no longer scrolls the phone, and lifting them sends the scroll at once.
   - All offscreen tests only; not tried on a live phone.
+- Virtual iPhone renderer: the launcher's `--guest-memory-import dma-buf` (the paravirtual start's `guest_memory_import`)
+  lays guest RAM on a sealed memfd, and the renderer imports it in windows through `/dev/udmabuf` as dma-bufs, so the
+  GPU can write render Stores straight into the guest's pages. On the development host (RX 6900 XT, Mesa 26.2.5) the
+  driver refuses a host-pointer import of shared memory: 2 GiB of shared anonymous memory, of a memfd and of a
+  `/dev/shm` file are refused with `ERROR_INVALID_EXTERNAL_HANDLE`, private anonymous memory imports, and the same memfd
+  imports as 64 MiB dma-bufs, with GPU writes visible to the CPU. Windows are the kernel's `udmabuf.size_limit_mb`
+  (64 MiB by default) and are imported on first use. Without `/dev/udmabuf` or memfds the launcher keeps today's shared
+  RAM, and a refused import keeps the CPU copies. Off by default; not run on a live phone.
 
 ### Changed
 

@@ -95,6 +95,21 @@ What to know before changing it:
   generation ends, and depth and hash-keyed targets only by age above half the card; sole copies stay. A budget that retired images while a draw was being prepared ended the engine, so
   the session [stops the careful way](usage.md#the-graphics-memory-guard) instead (`tools/ios_host_pressure.py`,
   `tools/run_ios_paravirt.py`).
+- **The GPU and guest RAM.** The renderer can let the GPU read and write guest RAM directly, which spares a render
+  Store its CPU copy into the guest's pages. On the development host (RX 6900 XT, Mesa 26.2.5) the driver imports a
+  host pointer only over private anonymous memory: 2 GiB of shared anonymous memory, of a memfd mapped shared or
+  private and of a `/dev/shm` file are refused with `ERROR_INVALID_EXTERNAL_HANDLE`. Guest RAM is shared memory once the
+  guest channel's vhost-user device maps it too, so there every block logs `host_ram_import ... ok=false` and Stores
+  copy on the CPU. `--guest-memory-import dma-buf` (`guest_memory_import` on the paravirtual start) is the other route:
+  the launcher lays guest RAM on a memfd sealed against resizing, which QEMU maps through `memory-backend-file` at the
+  2 MiB alignment `memory-backend-ram,share=on` used, and sets `REIMS_VGPU_GUEST_IMPORT_DMA_BUF=on`. The renderer
+  (`reims-guest-ram-dma-buf.patch`) cuts each window of guest RAM from the memfd with `/dev/udmabuf` and imports it as a
+  dma-buf. A window is the kernel's `udmabuf.size_limit_mb`, 64 MiB unless raised, is imported on the first reference
+  into it and pins its pages while imported. The request receipt's `guest_memory_import` names the backing and any
+  fallback; `renderer/fail.log` has `guest_dma_buf=armed` on its `vk_caps` line and `host_ram_import id=...
+  route=dma_buf ... ok=true` per window, or `host_ram_import_dma_buf_refused` with the check that refused. Off the phone
+  on that host, a sealed 2 GiB memfd imported as 32 windows in 316-323 ms, a GPU fill of a used 64 MiB window took
+  2.5-2.7 ms, and the CPU saw the GPU's writes. Not yet run on a live phone.
 - **Frames.** `ios.emulator.control` `frame` with `transport:"file"` writes an uncompressed PPM into a private, memory-backed directory, and reports whether the picture changed. A viewer can skip the reload then.
 
 Device contracts: [reims-device-capabilities.md](../../integrations/ios-emulator/reims-device-capabilities.md),
