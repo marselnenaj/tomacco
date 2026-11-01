@@ -141,6 +141,10 @@ fn command_array(value: &Value) -> bool {
                 .all(|v| v.as_str().is_some_and(|s| !s.contains('\0')))
     })
 }
+/// The Gradle command of a project: its wrapper, or gradle.
+pub(crate) fn gradle_command(project: &Value) -> Result<Vec<String>> {
+    gradle(project)
+}
 fn gradle(project: &Value) -> Result<Vec<String>> {
     let wrapper = Path::new(s(project, "gradle_directory")).join("gradlew");
     if wrapper.is_file() {
