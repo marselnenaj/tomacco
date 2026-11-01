@@ -315,7 +315,99 @@ impl Summary {
     }
 }
 
-fn modified(file: &Path) -> f64 {
+/// Each test case of a JUnit XML or Dart JSON reporter file, passed or not:
+/// `class`, `name`, `outcome` (`passed`, `failed`, `error`, `skipped` or
+/// `flaky` for a JUnit case with flakyFailure elements), `time`, `device`
+/// and for a failure its `message`. Empty for anything else.
+pub fn cases(text: &str) -> Vec<Value> {
+    let mut found = Vec::new();
+    if text.trim_start().starts_with('{') {
+        let mut names = std::collections::BTreeMap::new();
+        let mut errors: std::collections::BTreeMap<u64, String> = Default::default();
+        for line in text.lines() {
+            let Ok(event) = serde_json::from_str::<Value>(line.trim()) else {
+                continue;
+            };
+            match s(&event, "type") {
+                "testStart" => {
+                    names.insert(
+                        n(&event["test"], "id"),
+                        (s(&event["test"], "name").to_string(), n(&event, "time")),
+                    );
+                }
+                "error" => {
+                    errors
+                        .entry(n(&event, "testID"))
+                        .or_insert_with(|| s(&event, "error").lines().next().unwrap_or("").into());
+                }
+                "testDone" => {
+                    let id = n(&event, "testID");
+                    let Some((name, started)) = names.get(&id) else {
+                        continue;
+                    };
+                    if b(&event, "hidden") && s(&event, "result") == "success" {
+                        continue;
+                    }
+                    let outcome = match s(&event, "result") {
+                        "success" if b(&event, "skipped") => "skipped",
+                        "success" => "passed",
+                        "failure" => "failed",
+                        _ => "error",
+                    };
+                    found.push(json!({"class":"","name":name,"outcome":outcome,
+                        "time":n(&event, "time").saturating_sub(*started) as f64 / 1000.0,"device":"",
+                        "message":shorten(errors.get(&id).map(String::as_str).unwrap_or(""))}));
+                }
+                _ => (),
+            }
+        }
+        return found;
+    }
+    let Ok(document) = roxmltree::Document::parse(text) else {
+        return found;
+    };
+    for suite in document
+        .descendants()
+        .filter(|n| n.has_tag_name("testsuite"))
+    {
+        let device = suite
+            .descendants()
+            .filter(|n| n.has_tag_name("property"))
+            .find(|n| n.attribute("name") == Some("device"))
+            .and_then(|n| n.attribute("value"))
+            .unwrap_or("");
+        for case in suite.children().filter(|n| n.has_tag_name("testcase")) {
+            let problem = case
+                .children()
+                .find(|n| n.has_tag_name("failure") || n.has_tag_name("error"));
+            let outcome = match problem {
+                Some(p) if p.has_tag_name("failure") => "failed",
+                Some(_) => "error",
+                None if case.children().any(|n| n.has_tag_name("skipped")) => "skipped",
+                None if case.children().any(|n| n.has_tag_name("flakyFailure")) => "flaky",
+                None => "passed",
+            };
+            found.push(json!({
+                "class":case.attribute("classname").unwrap_or(""),
+                "name":case.attribute("name").unwrap_or(""),"outcome":outcome,
+                "time":number(case, "time"),"device":device,
+                "message":shorten(problem.and_then(|p| p.attribute("message")).unwrap_or("")),
+            }));
+        }
+    }
+    found
+}
+
+/// The result files under `root` written at or after `since`.
+pub fn recent_files(root: &Path, since: f64) -> Result<Vec<PathBuf>> {
+    Ok(files(root)?
+        .into_iter()
+        .filter(|file| modified(file) >= since)
+        .filter(|file| fs::metadata(file).is_ok_and(|m| m.len() <= 64 * 1024 * 1024))
+        .collect())
+}
+
+pub fn modified(file: &Path) -> f64 {
     fs::metadata(file)
         .and_then(|m| m.modified())
         .ok()

@@ -2,7 +2,7 @@
 
 # `testing` operations
 
-11 operations. Generated from `assets/operations.json`; [all areas](README.md).
+16 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### testing.find
 
@@ -70,7 +70,7 @@ tomaccoctl call testing.action '{"device":"<device>","selector":{"text":"<text>"
 
 **Run native tests**
 
-Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On Android, a measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it. On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop, clear and measure fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes. With platform ios, it runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.
+Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports, failure screenshots and a self-contained report.html; each run's outcomes are added to the test history (testing.history). A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On Android, a measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it. On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop, clear and measure fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes. With platform ios, it runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.
 
 Annotations: writes, not idempotent, open world.
 
@@ -86,6 +86,8 @@ Annotations: writes, not idempotent, open world.
 | `retries` | integer |  | `0` | 0 to 5; Run a failed scenario again up to this many times per device; a scenario's own retries field takes precedence. A pass after a failure is flaky in report.json, with every attempt listed. |
 | `budget` | string |  |  | Absolute path of a budget JSON file (as for profile.budget) checked against each scenario's measure steps; a scenario's own budget takes precedence |
 | `budgets` | object |  |  | The budget inline instead of a file |
+| `baselines` | string |  |  | Absolute path of a baselines directory: an assert_screen or wait_screen step's relative baseline is a file in it, and a step without one gets SCENARIO/LABEL.png (or step-NNN.png) |
+| `record_baselines` | boolean |  | `false` | A screen step whose baseline is missing keeps its screenshot and the scenario goes on; the scenario then fails with baselines_missing. Approve the screenshots with testing.baselines |
 
 ```sh
 tomaccoctl call testing.run '{"path":"<path>","directory":"<directory>","devices":["<device>"]}'
@@ -216,6 +218,119 @@ Annotations: read-only, idempotent, closed world.
 
 ```sh
 tomaccoctl call testing.results '{"path":"<path>"}'
+```
+
+### testing.coverage
+
+**Read code coverage**
+
+Read the JaCoCo XML coverage reports of a project's tests into totals (instruction, branch, line, complexity, method, class: covered, missed, percent), each source file with its missed lines, and each class, least covered first. Finds the reports AGP writes for unit tests (enableUnitTestCoverage) and instrumented tests (enableAndroidTestCoverage) under build/reports/coverage, the jacoco plugin's under build/reports/jacoco and Kover's XML under build/reports/kover; project.execute with coverage:true runs the tasks. Several reports are merged line by line: a line is covered when any report covers it, and each class comes from the report that covers it most. baseline, a JSON report an earlier call wrote or JaCoCo XML, adds delta: the change of each total and each file whose line coverage moved, appeared or went away. minimum and max_drop are checks on line coverage that set passed.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute path of the project, a reports directory, or one JaCoCo or Kover XML report |
+| `since` | number |  |  | at least 0; Leave out files modified before this time, in seconds since 1970 |
+| `job_id` | string |  |  | Leave out files older than this job, such as the project.execute test job |
+| `baseline` | string |  |  | non-empty; Absolute path of a JSON report an earlier testing.coverage wrote with report, or of JaCoCo XML (a file or directory), to compare with |
+| `minimum` | number |  |  | 0 to 100; Least line coverage in percent that passes |
+| `max_drop` | number |  |  | 0 to 100; With baseline: the most line coverage may fall, in percentage points, and still pass |
+| `limit` | integer |  | `50` | 1 to 5000; Files and classes listed in the answer, least covered first; report keeps them all |
+| `report` | string |  |  | Absolute path to also write the full result as JSON, usable as a later baseline |
+
+```sh
+tomaccoctl call testing.coverage '{"path":"<path>"}'
+```
+
+### testing.report
+
+**Write HTML test report**
+
+Write one self-contained HTML file for a test run: for a testing.run report directory, each scenario and device with its outcome, attempts, steps and their timings, screenshots, baselines and difference images, crashes and metrics; for a project, a results directory or file, the JUnit and Dart JSON results with totals, suites, every test case and each failure with its stack and Flutter golden images. Styles are inline, images embedded as data URIs (up to 48 MiB in all, beyond that linked by path) and there are no scripts. testing.run and project.execute test jobs write theirs when they end; call this for another place or an earlier run. Returns the file as html with what it holds.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute path of a testing.run report directory, a project, a results directory or one result file |
+| `since` | number |  |  | at least 0; Leave out files modified before this time, in seconds since 1970 |
+| `job_id` | string |  |  | Leave out files older than this job, such as the project.execute test job |
+| `output` | string |  |  | Absolute path of the HTML file; by default report.html in a testing.run directory, build/tomacco/test-report.html in a project, or test-report.html beside a file |
+
+```sh
+tomaccoctl call testing.report '{"path":"<path>"}'
+```
+
+### testing.history
+
+**Test pass-rate history**
+
+Pass rates of tests and UI scenarios across runs, to find flaky ones. testing.run adds each scenario's outcome per device when it ends and a project.execute test or instrumented-test job each test case, to a store in Tomacco's data directory; record adds a testing.run directory, a project's or directory's current JUnit or Dart JSON results, or a file, once per file version. summary lists each test with runs, passed, failed, skipped, passed_after_retry, pass_rate (percent of runs that passed, retried passes included), flips (changes between pass and fail), recent (P passed, R passed after a retry, F failed, S skipped; newest last), last_failure and flaky (both outcomes in the window, or a retried pass), flaky tests first, the least reliable first. last limits each test to its newest runs.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `action` | string |  | `"summary"` | one of `summary`, `record` |
+| `path` | string |  |  | non-empty; record: absolute path of a testing.run report directory, a project, a results directory or one result file |
+| `since` | number |  |  | at least 0; Leave out files modified before this time, in seconds since 1970 |
+| `job_id` | string |  |  | Leave out files older than this job, such as the project.execute test job |
+| `suite` | string |  |  | up to 500 characters; record: the name the entries are grouped under (the path by default); summary: only entries whose suite contains this |
+| `name` | string |  |  | up to 500 characters; summary: only tests whose name contains this, ignoring case |
+| `by_device` | boolean |  | `false` | summary: one line per test and device |
+| `flaky_only` | boolean |  | `false` |  |
+| `last` | integer |  | `50` | 1 to 10000; summary: each test's newest runs counted |
+| `min_runs` | integer |  | `1` | 1 to 10000; summary: leave out tests with fewer runs |
+| `limit` | integer |  | `50` | 1 to 5000 |
+| `store` | string |  |  | Absolute path of another store file (JSON lines) instead of the default one |
+
+```sh
+tomaccoctl call testing.history
+```
+
+### testing.impact
+
+**Select affected tests**
+
+Pick the tests a change likely affects in a Gradle build, from the changed files: git diff against base (HEAD by default, so uncommitted and untracked changes) or files. A changed test class is selected itself; a changed Kotlin or Java source selects the unit and instrumented test classes of its module and of the modules that depend on it (project(...) and projects.x in their build files) that are named after it (NameTest, NameTests, NameIT, NameSpec, TestName) or use its name in the same package or with an import, and otherwise the tests of its package in its module. Resources or the manifest select the module's instrumented tests, a module's build file all its tests and its dependents', and the settings, versions catalog, gradle.properties, gradle/, buildSrc or build-logic everything (run_all). scenarios, a testing.run scenario file or directory, adds the scenarios that launch an app whose module a change touches. commands are the Gradle calls with --tests and the instrumentation runner's class argument; run unit or instrumented starts them as a job. The answer lists unmapped files. Heuristics over the files: Gradle is not run, and a test reached through reflection, dependency injection or generated code can be missed.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute path of the project |
+| `base` | string |  |  | up to 200 characters; Git revision to compare the working tree with; HEAD by default |
+| `files` | array of string |  |  | up to 5000 items; Changed files, relative to the project or absolute, instead of asking git |
+| `scenarios` | string |  |  | non-empty; Absolute path of a testing.run scenario file or directory to select from |
+| `configuration` | string |  | `"debug"` | one of `debug`, `release` |
+| `run` | string |  | `"none"` | one of `none`, `unit`, `instrumented`; none lists only; unit or instrumented starts the selected tests as a job |
+| `device` | string |  |  | run instrumented: the device serial ANDROID_SERIAL selects |
+| `timeout` | integer |  | `1800` | 1 to 86400 |
+
+```sh
+tomaccoctl call testing.impact '{"path":"<path>"}'
+```
+
+### testing.baselines
+
+**Review screenshot baselines**
+
+Manage the baselines of assert_screen and wait_screen steps. review lists each screen step of a testing.run report directory per device as new (no baseline yet), changed, size_changed, passed, failed or not_reached, with its id, baseline, screenshot (actual), difference image and changed_fraction; by default only the screens to review (new, changed, size_changed), all_screens lists every one. approve copies the screenshots of the named screens, or with all of every new and changed screen, over their baselines, and refuses before writing when two devices would write different images to one baseline. list shows the PNG baselines in a directory with their sizes. Pair it with testing.run's baselines directory and record_baselines.
+
+Annotations: **destructive**, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `action` | string |  | `"review"` | one of `review`, `approve`, `list` |
+| `run` | string |  |  | non-empty; review, approve: absolute path of the testing.run report directory |
+| `screens` | array of string |  |  | up to 1000 items; approve: the ids review lists |
+| `all` | boolean |  | `false` | approve: every new, changed and size_changed screen |
+| `all_screens` | boolean |  | `false` | review: list passed, failed and unreached screens too |
+| `directory` | string |  |  | non-empty; list: absolute path of the baselines directory |
+
+```sh
+tomaccoctl call testing.baselines
 ```
 
 ### testing.setup

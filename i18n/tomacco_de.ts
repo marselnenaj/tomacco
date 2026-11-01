@@ -4282,6 +4282,26 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Testergebnisse lesen</translation>
     </message>
     <message>
+        <source>Read code coverage</source>
+        <translation>Codeabdeckung lesen</translation>
+    </message>
+    <message>
+        <source>Write HTML test report</source>
+        <translation>HTML-Testbericht schreiben</translation>
+    </message>
+    <message>
+        <source>Test pass-rate history</source>
+        <translation>Verlauf der Testerfolgsquote</translation>
+    </message>
+    <message>
+        <source>Select affected tests</source>
+        <translation>Betroffene Tests auswählen</translation>
+    </message>
+    <message>
+        <source>Review screenshot baselines</source>
+        <translation>Referenz-Screenshots prüfen</translation>
+    </message>
+    <message>
         <source>Find app crashes</source>
         <translation>App-Abstürze finden</translation>
     </message>

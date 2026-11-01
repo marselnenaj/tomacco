@@ -84,6 +84,44 @@ test on an Android 16 emulator and ran with `project.run`.
 - `project.watch` runs the app again whenever its sources change, or sends a Flutter
   session Hot Reload; see [the agent guide](agents.md#android).
 
+### Coverage and Gradle Managed Devices
+
+`project.inspect` lists `test_setup` for a Gradle build, read from the build files: per module the build
+types with `enableUnitTestCoverage`, `enableAndroidTestCoverage` or the older `testCoverageEnabled`, whether
+it applies Kover or the `jacoco` plugin, and its Gradle Managed Devices and device groups.
+
+`project.execute` with `"coverage":true` adds the report tasks the build enables: for `test`
+`createDebugUnitTestCoverageReport`, `koverXmlReportDebug` (or `koverXmlReport` for a module without Android)
+and `jacocoTestReport`; for `instrumented-test` `createDebugAndroidTestCoverageReport` (or
+`createDebugCoverageReport` with `testCoverageEnabled`). A build that enables none answers
+`coverage_not_configured` with the line to add. `testing.coverage` then reads the reports; see
+[the agent guide](agents.md#coverage-reports-history-and-affected-tests).
+
+```sh
+tomaccoctl call project.execute '{"path":"/absolute/MyApp","action":"test","coverage":true}'
+tomaccoctl call project.execute '{"path":"/absolute/MyApp","action":"instrumented-test","coverage":true,"device":"emulator-5554"}'
+```
+
+`managed_device` runs the instrumented tests on a Gradle Managed Device the build files declare under
+`testOptions { managedDevices { ... } }`: a device's name runs `NAMEDebugAndroidTest`, a group's
+`GROUPGroupDebugAndroidTest`, and `all` `allDevicesDebugAndroidTest`. `shards` splits the tests across that many
+devices with the Android Gradle plugin's `android.experimental.androidTest.numManagedDeviceShards`. Gradle downloads
+the system image and starts the emulator itself; Tomacco does not manage those emulators. An unknown name answers
+`managed_device_not_found` with the names the build declares. `coverage` is refused with `managed_device`.
+
+```sh
+tomaccoctl call project.execute '{"path":"/absolute/MyApp","action":"instrumented-test","managed_device":"pixel2api30","shards":2}'
+```
+
+The managed device commands are unit-tested only; no Gradle Managed Device run has been made. Without one, Tomacco
+splits work across devices itself: `project.execute` runs the connected tests on the one device `device` names, and
+`testing.run` with `shard:true` splits UI scenarios across several running devices.
+
+What ran: on a copy of `examples/hello-android` with `enableUnitTestCoverage` and `enableAndroidTestCoverage` in its
+debug build type, a unit test and an instrumented test, Android Gradle plugin 9.1.1, Gradle 9.3.1 and an API 36 x86_64
+emulator, a `test` job and an `instrumented-test` job with `coverage` wrote both JaCoCo reports, and `testing.coverage`
+read and merged them. The Kover and `jacoco` plugin tasks are unit-tested only.
+
 ## React Native, Expo and Capacitor
 
 `project.inspect` names the framework under `javascript`, with the package manager
@@ -830,5 +868,6 @@ These are the same for agents and the desktop. See the sections in the agent gui
   the NDK. Native debugging is qualified on API 36 x86_64 only.
 - [UI tests and profiling](agents.md#ui-tests-and-profiling): semantic selectors,
   parallel test matrices, Perfetto traces.
+- [Coverage, reports, history and affected tests](agents.md#coverage-reports-history-and-affected-tests).
 - [Release](agents.md#release): keystores, signing, and Play edits. Live Play submission
   needs your account and has not been qualified.

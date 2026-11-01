@@ -4270,6 +4270,26 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Leer resultados de pruebas</translation>
     </message>
     <message>
+        <source>Read code coverage</source>
+        <translation>Leer cobertura de código</translation>
+    </message>
+    <message>
+        <source>Write HTML test report</source>
+        <translation>Escribir informe de pruebas HTML</translation>
+    </message>
+    <message>
+        <source>Test pass-rate history</source>
+        <translation>Historial de la tasa de éxito de pruebas</translation>
+    </message>
+    <message>
+        <source>Select affected tests</source>
+        <translation>Elegir pruebas afectadas</translation>
+    </message>
+    <message>
+        <source>Review screenshot baselines</source>
+        <translation>Revisar capturas de referencia</translation>
+    </message>
+    <message>
         <source>Write a bug report bundle</source>
         <translation>Crear un paquete de informe de errores</translation>
     </message>

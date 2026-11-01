@@ -452,7 +452,8 @@ pub fn run_device(phone: &mut impl Phone, scenario: &Value, directory: &Path, ta
             steps.push(
                 json!({"index":index,"action":step["action"],"label":step["label"],
                 "duration_seconds":begin.elapsed().as_secs_f64(),"passed":result.is_ok(),
-                "result":match &result {Ok(v) => v.clone(), Err(e) => json!({"error":e.value()})}}),
+                "result":match &result {Ok(v) => v.clone(), Err(e) => json!({"error":e.value()})},
+                "images":automation::step_images(directory, tag, index, &step)}),
             );
             if let Err(error) = result {
                 let capture = phone.screenshot(&directory.join(format!("{tag}-failure.png")));
@@ -461,7 +462,10 @@ pub fn run_device(phone: &mut impl Phone, scenario: &Value, directory: &Path, ta
                 return Err(error);
             }
         }
-        Ok(())
+        match automation::new_baselines(&steps) {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
     })();
     json!({"device":DEVICE,"passed":result.is_ok(),"duration_seconds":started.elapsed().as_secs_f64(),
         "steps":steps,"error":result.err().map(|e| e.value()),"screen":screen,"crashes":[],

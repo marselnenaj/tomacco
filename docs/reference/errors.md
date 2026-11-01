@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 459 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -33,7 +33,9 @@ Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.
 | `avd_exists` | An emulator with that name exists. | Choose another name, or use the existing one with android.avd_start. |
 | `avd_in_use` | Stop the emulator before changing its hardware settings. | Unrecognized emulator lock files are preserved. |
 | `avd_not_found` | Unknown AVD: … | Use android.avds or android.avd_create. |
+| `baseline_conflict` | Two devices would write different screenshots to the same baseline file. | Approve the screens one device at a time, or give each device its own baselines folder. |
 | `baseline_missing` | No baseline at … | Create the baseline with update_baseline:true after checking the image is right. |
+| `baselines_missing` | record_baselines ran screen steps whose baselines did not exist yet; it saved the screens instead of comparing them. | Review them with testing.baselines review and approve them, then run the scenario again. |
 | `binary_file` | This file is not UTF-8 text. | files.read and files.write handle UTF-8 text only. |
 | `budget_exceeded` | Outside the performance budget: … | Compare the report with its baseline (profile.compare) to find the regression, or raise the budget if it was intended. |
 | `builtin_profile` | The request was refused; the message says why. | Choose a new ID; built-in profiles cannot be replaced. |
@@ -51,6 +53,7 @@ Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.
 | `conflicting_storage` | The virtual iOS device or its research engine refused the request or stopped answering. | Select one access mode per virtual disk. |
 | `consent_declined` | The person said no, or closed the question, when the MCP client asked them before this step. | Do not repeat the call unless the person changes their mind; ask them what to do instead. |
 | `console_log_limit` | Guest console exceeded 8 MiB. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
+| `coverage_not_configured` | coverage was asked for, but the module's build files enable no coverage report (no enableUnitTestCoverage, jacoco or Kover). | Add the line the error names to the module's build file, then run again. |
 | `crash_report_unreadable` | The request was refused; the message says why. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `database_busy` | The job database stayed locked by another Tomacco process. | Try again in a moment; if it stays busy, check for a stuck tomaccoctl process. |
 | `database_error` | The job database could not be opened or read. | Check that TOMACCO_HOME is writable and its disk is not full; tomaccoctl report bundles the details. |
@@ -96,6 +99,7 @@ Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.
 | `flutter_setup_required` | This Flutter install still has Apple's macOS gen_snapshot. | Call ios.flutter_setup once per Flutter version. |
 | `form_factor_unsupported` | The system image is for TV, Wear, Automotive, XR or Desktop, which Tomacco does not create AVDs for. | Create it with avdmanager and the SDK device definition the error names, or use a phone or tablet image. |
 | `frame_missing` | The debugger could not start, attach or answer. | Read the stack before reading frame variables. |
+| `git_failed` | git could not list the changed files for testing.impact. | Run it in a Git working tree, or pass the changed files explicitly. |
 | `guest_diagnostic_failed` | The virtual iOS device or its research engine refused the request or stopped answering. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `guest_observation_timeout` | The guest did not complete both platform observations. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `guest_script_failed` | Guest script exited with … | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
@@ -111,6 +115,7 @@ Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.
 | `invalid_application_bundle` | This bundle uses the owned diagnostic app's bundle identifier; choose another. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_argument` | The arguments do not match the operation's schema: an unknown key, a wrong type, or a value out of range. Nothing ran. | Correct the argument the message names; tomaccoctl schema OPERATION lists the accepted keys, types and limits. The call is safe to repeat. |
 | `invalid_artifact` | Not a readable ZIP-based Android package. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
+| `invalid_baseline` | The coverage baseline is neither a saved testing.coverage report nor JaCoCo XML. | Pass a report saved by testing.coverage or a JaCoCo XML file. |
 | `invalid_boot_display` | Boot display dimensions must be 64..4096. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_bounds` | Selected node has no usable bounds. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_capture` | Live frame sequence is exhausted. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
@@ -249,6 +254,7 @@ Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.
 | `lldb_server_arch` | NDK lldb-server architecture does not match the target. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
 | `lldb_server_missing` | The configured NDK has no … lldb-server. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
 | `macos_required` | project.execute builds Flutter iOS apps only on macOS. | On Linux call ios.flutter_build (it needs ios.toolkit_install), or use remote.run with an SSH Mac workspace. |
+| `managed_device_not_found` | The Gradle managed device or group is not declared in the build files. | Use a name from the managedDevices block, or all. |
 | `mdns_unavailable` | adb cannot discover devices on the network: … | Update the Android platform tools, or pair with the code through android.connect. |
 | `meminfo_unreadable` | dumpsys meminfo named no process of the app. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `metro_unreachable` | Metro does not answer on port …: … | Wait until the job's log says Metro is serving, or run the app again with project.run. |
@@ -262,8 +268,10 @@ Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.
 | `native_process_mismatch` | The selected PID does not belong to the requested application. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
 | `native_process_missing` | The debugger could not start, attach or answer. | Select the PID of a running app process, or enable launch for a debuggable build. |
 | `ndk_missing` | Something the request names does not exist or is not set up. | Install an NDK with android.sdk_install and set settings.configure android_ndk. |
+| `no_coverage_reports` | No JaCoCo or Kover XML report was found where Gradle writes them. | Run the tests with coverage first (project.execute coverage true), or pass the report path. |
 | `no_devices` | No Android device is connected. | Start an emulator with android.avd_start or connect a phone, then check device.list. |
 | `no_test_results` | The request was refused; the message says why. | Run the tests first: project.execute with action test or instrumented-test, or testing.run. |
+| `not_a_run_directory` | The directory is not a testing.run output directory. | Pass the directory a testing.run job wrote (its report.json is there). |
 | `not_android_project` | No Android Gradle build in this project. | Pass the project root that holds settings.gradle(.kts), or its android/ directory. |
 | `not_directory` | Something the request names does not exist or is not set up. | Pass a directory. |
 | `not_emulator` | This operation requires an emulator serial. | Pass an emulator serial from device.list, such as emulator-5554. |
@@ -342,6 +350,7 @@ Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.
 | `result_not_found` | No saved result has this result_id, or it has been removed. | Run the operation again; large results are saved under the result_id its answer names. |
 | `result_too_large` | The result is larger than inline_result_kib, so it was saved instead of returned inline. | Read it in pages with result.read and the result_id from the error. |
 | `root_unavailable` | The device has no root shell (Google Play images and phones), which the capture needs for tcpdump. | Use an emulator with a Google APIs or AOSP image. |
+| `run_incomplete` | The run has no finished report to add to the history. | Wait for the job to end, then record it. |
 | `runtime_busy` | Runtime input queue is full. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `runtime_configuration_conflict` | This device already has a native session with different stream settings. | Reuse the existing session, or stop it before changing stream settings. |
 | `runtime_directory` | Runtime sockets require an owner-only directory. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
@@ -358,6 +367,8 @@ Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.
 | `scrcpy_protocol` | Expected scrcpy 4.1 display metadata. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `scrcpy_server_missing` | The native Android view requires the scrcpy 4.1 server. | Install scrcpy 4.1 or pass the server JAR path to runtime.start. |
 | `scrcpy_timeout` | Android display server did not connect. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
+| `screen_not_found` | No screen with this id is in the run being reviewed. | List the ids with testing.baselines review. |
+| `screenshot_missing` | The screenshot the review names is gone from the run directory. | Run the scenario again with record_baselines. |
 | `sdk_missing` | Configure the Android SDK first. | Set android_sdk with settings.configure. |
 | `sdk_platform_missing` | Something the request names does not exist or is not set up. | Install an Android platform with android.sdk_install, then build again. |
 | `secret_permissions` | The App Store Connect .p8 key must be readable only by its owner. | chmod 600 the file. |
