@@ -70,7 +70,7 @@ tomaccoctl call testing.action '{"device":"<device>","selector":{"text":"<text>"
 
 **Run native tests**
 
-Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.
+Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. A measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it.
 
 Annotations: writes, not idempotent, open world.
 
@@ -83,6 +83,8 @@ Annotations: writes, not idempotent, open world.
 | `parallelism` | integer |  | `2` | 1 to 8 |
 | `timeout` | integer |  | `3600` | 10 to 86400 |
 | `retries` | integer |  | `0` | 0 to 5; Run a failed scenario again up to this many times per device; a scenario's own retries field takes precedence. A pass after a failure is flaky in report.json, with every attempt listed. |
+| `budget` | string |  |  | Absolute path of a budget JSON file (as for profile.budget) checked against each scenario's measure steps; a scenario's own budget takes precedence |
+| `budgets` | object |  |  | The budget inline instead of a file |
 
 ```sh
 tomaccoctl call testing.run '{"path":"<path>","directory":"<directory>","devices":["<device>"]}'

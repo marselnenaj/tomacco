@@ -722,6 +722,37 @@ tomaccoctl call profile.usage '{"device":"emulator-5554","bundle_id":"com.androi
 
 On the same emulator, Settings scrolled for five seconds used 1790 ms of CPU, 35 % of one core.
 
+**Budgets.** A budget gives metrics a `maximum`, a `minimum` or both:
+
+```json
+{"startup_cold_median_ms": {"maximum": 800}, "jank_percent": {"maximum": 5}, "memory_pss_mb": {"maximum": 200}}
+```
+
+`profile.budget` checks saved reports of one app against it, given as a file (`budget`) or inline (`budgets`). Each result has the
+metric, its value and limits, `passed`, and the report it came from; a metric no report measured fails as `measurement_unavailable`.
+
+```sh
+tomaccoctl call profile.budget '{"reports":["/absolute/startup.json","/absolute/memory.json"],"budget":"/absolute/budget.json"}'
+```
+
+In a `testing.run` scenario, a `measure` step records metrics of the app named by `bundle_id`: `measure` is `startup` (with `mode`,
+`runs` and `activity`), `frames_reset` and later `frames`, `memory`, or `usage` (with `seconds`). A step's own `budget` is checked
+against that step's metrics, and a scenario's `budget`, or the run's `budget` file or inline `budgets`, against all the metrics of the
+scenario. A metric outside fails the scenario as `budget_exceeded`; each result in `report.json` carries its `metrics` and `budget`.
+
+```json
+{"name": "Settings performance",
+ "budget": {"startup_cold_median_ms": {"maximum": 2000}, "jank_percent": {"maximum": 20}},
+ "steps": [
+  {"action": "measure", "measure": "startup", "bundle_id": "com.android.settings", "runs": 3},
+  {"action": "measure", "measure": "frames_reset", "bundle_id": "com.android.settings"},
+  {"action": "swipe", "x": 500, "y": 1800, "end_x": 500, "end_y": 400},
+  {"action": "measure", "measure": "frames", "bundle_id": "com.android.settings"}]}
+```
+
+On the same emulator, a `testing.run` of such a scenario with a memory step passed its budget, and `profile.budget` failed a saved
+startup report of 303 ms against a maximum of 300.
+
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.

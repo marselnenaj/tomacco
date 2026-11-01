@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 203 operations.
+`tomaccoctl` now has one typed API of 204 operations.
 
 ### Added
 
@@ -32,6 +32,10 @@ operations and their JSON results.
     object counts per process, with totals in MB, and with `heap_dump` pulls an HPROF heap dump of the app to a path.
   - `profile.usage` measures an app's CPU time from `/proc`, per process and as a share of one core and of all cores, and the change
     of its estimated battery use in batterystats, over an interval, without resetting anything on the device.
+  - `profile.budget` checks saved reports against a budget of maximums and minimums per metric, from a file or inline, and
+    fails a metric no report measured. `testing.run` scenarios gain `measure` steps for startup, frames, memory and usage, and a
+    budget per step, per scenario or for the whole run fails a scenario as `budget_exceeded`. `profile.compare` is now titled
+    **Compare performance reports**.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

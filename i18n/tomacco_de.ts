@@ -3503,6 +3503,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Leistungsbudget prüfen</translation>
     </message>
     <message>
+        <source>Compare performance reports</source>
+        <translation>Leistungsberichte vergleichen</translation>
+    </message>
+    <message>
         <source>Measure app startup</source>
         <translation>App-Start messen</translation>
     </message>

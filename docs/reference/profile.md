@@ -2,7 +2,7 @@
 
 # `profile` operations
 
-7 operations. Generated from `assets/operations.json`; [all areas](README.md).
+8 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### profile.capture
 
@@ -44,7 +44,7 @@ tomaccoctl call profile.analyze '{"path":"<path>","bundle_id":"<bundle_id>"}'
 
 ### profile.compare
 
-**Check performance budget**
+**Compare performance reports**
 
 Compare captured performance reports against explicit limits; unavailable required measurements fail the gate.
 
@@ -138,4 +138,23 @@ Annotations: writes, idempotent, open world.
 
 ```sh
 tomaccoctl call profile.usage '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### profile.budget
+
+**Check performance budget**
+
+Check saved performance reports of one app (from profile.startup, profile.frames, profile.memory, profile.usage or profile.analyze) against a budget: per metric a maximum, a minimum or both, such as {"startup_cold_median_ms":{"maximum":800},"jank_percent":{"maximum":5},"memory_pss_mb":{"maximum":200}}. Give the budget as a JSON file (budget) or inline (budgets). Each result names the metric, its value, its limits, passed and the report it came from; a metric no report measured fails as measurement_unavailable. testing.run takes the same budget for measure steps. report saves the result as JSON.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `reports` | array of string | yes |  | 1 to 20 items; Absolute paths of saved reports; a later report's value of a metric replaces an earlier one |
+| `budget` | string |  |  | Absolute path of a budget JSON file |
+| `budgets` | object |  |  | The budget inline: per metric an object with maximum, minimum or both |
+| `report` | string |  |  | Absolute path to save the result as JSON |
+
+```sh
+tomaccoctl call profile.budget '{"reports":["<report>"]}'
 ```

@@ -1,6 +1,6 @@
 //! Android app performance read from `am`, `dumpsys` and `/proc`: startup
 //! time, frame rendering, memory, and CPU and battery use, each measurement a
-//! report whose flat `metrics` profile.compare reads.
+//! report whose flat `metrics` profile.compare reads, and budgets over them.
 use crate::{core::*, devices, toolchain as tc};
 use serde_json::{Map, Value, json};
 use std::time::{Duration, Instant};
@@ -75,6 +75,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "profile.frames" => frames(a),
         "profile.memory" => memory(a),
         "profile.usage" => usage(a),
+        "profile.budget" => budget(a),
         _ => Err(Error::new("operation_not_found", op)),
     }
 }
@@ -891,6 +892,137 @@ pub fn usage(a: &Value) -> Result {
     finish(a, value)
 }
 
+/// A budget: per metric a maximum, a minimum or both.
+pub fn budget_schema() -> Value {
+    json!({"type":"object","minProperties":1,"maxProperties":100,"additionalProperties":{
+        "type":"object","minProperties":1,"additionalProperties":false,
+        "properties":{"maximum":{"type":"number"},"minimum":{"type":"number"}}}})
+}
+
+/// Checks metrics against a budget. A metric that is missing or null fails,
+/// as an unmeasured value proves nothing.
+pub fn check_budget(budget: &Value, metrics: &Map<String, Value>) -> (bool, Vec<Value>) {
+    let mut passed = true;
+    let mut results = Vec::new();
+    for (metric, limit) in budget.as_object().into_iter().flatten() {
+        let mut result =
+            json!({"metric":metric,"maximum":limit["maximum"],"minimum":limit["minimum"]});
+        match metrics.get(metric).and_then(Value::as_f64) {
+            Some(value) => {
+                let ok = limit["maximum"].as_f64().is_none_or(|max| value <= max)
+                    && limit["minimum"].as_f64().is_none_or(|min| value >= min);
+                result["value"] = json!(value);
+                result["passed"] = json!(ok);
+                passed &= ok;
+            }
+            None => {
+                result["value"] = Value::Null;
+                result["passed"] = json!(false);
+                result["reason"] = json!("measurement_unavailable");
+                passed = false;
+            }
+        }
+        results.push(result);
+    }
+    (passed, results)
+}
+
+/// The error of a failed budget, naming the metrics over or under it.
+pub fn budget_error(results: &[Value]) -> Error {
+    let failed: Vec<&str> = results
+        .iter()
+        .filter(|r| !b(r, "passed"))
+        .map(|r| s(r, "metric"))
+        .collect();
+    Error::new(
+        "budget_exceeded",
+        format!("Outside the performance budget: {}", failed.join(", ")),
+    )
+    .details(json!({"results":results}))
+}
+
+/// A budget given inline as `budgets` or as a JSON file at `budget`.
+pub fn budget_argument(a: &Value) -> Result<Option<Value>> {
+    let value = match (s(a, "budget").is_empty(), a.get("budgets")) {
+        (true, None) => return Ok(None),
+        (false, Some(_)) => {
+            return Err(Error::new(
+                "invalid_argument",
+                "Give the budget either as a file (budget) or inline (budgets)",
+            ));
+        }
+        (true, Some(inline)) => inline.clone(),
+        (false, None) => read_json(&path(s(a, "budget"), false, true)?, None)?,
+    };
+    validate(&value, &budget_schema(), "budget")?;
+    Ok(Some(value))
+}
+
+/// Checks saved reports of one app against a budget.
+pub fn budget(a: &Value) -> Result {
+    let limits = budget_argument(a)?
+        .ok_or_else(|| Error::new("invalid_argument", "Give a budget file or budgets"))?;
+    let mut metrics = Map::new();
+    let mut sources = Map::new();
+    let mut app = Value::Null;
+    for file in strings(&a["reports"]) {
+        let file = path(&file, false, true)?;
+        let report = read_json(&file, None)?;
+        let Some(values) = report["metrics"].as_object() else {
+            return Err(Error::new(
+                "invalid_report",
+                format!("{} has no metrics", file.display()),
+            ));
+        };
+        if !app.is_null() && report["bundle_id"] != app {
+            return Err(Error::new(
+                "profile_mismatch",
+                "Check reports of the same application",
+            ));
+        }
+        app = report["bundle_id"].clone();
+        // A later report's value of a metric replaces an earlier one.
+        for (metric, value) in values {
+            metrics.insert(metric.clone(), value.clone());
+            sources.insert(metric.clone(), json!(file));
+        }
+    }
+    let (passed, mut results) = check_budget(&limits, &metrics);
+    for result in &mut results {
+        result["report"] = sources
+            .get(s(result, "metric"))
+            .cloned()
+            .unwrap_or(Value::Null);
+    }
+    let value = json!({"passed":passed,"bundle_id":app,"results":results,"created":now()});
+    finish(a, value)
+}
+
+/// One `measure` step of a testing.run scenario.
+pub fn measure(device: &str, step: &Value) -> Result {
+    let id = s(step, "bundle_id");
+    let mut args = json!({"device":device,"bundle_id":id});
+    for key in ["mode", "runs", "activity", "seconds"] {
+        if let Some(value) = step.get(key) {
+            args[key] = value.clone();
+        }
+    }
+    match s(step, "measure") {
+        "startup" => startup(&args),
+        "frames_reset" => {
+            frames_reset(device, id)?;
+            Ok(json!({"kind":"frames_reset","bundle_id":id,"metrics":{}}))
+        }
+        "frames" => frames_read(device, id),
+        "memory" => memory(&json!({"device":device,"bundle_id":id})),
+        "usage" => usage(&args),
+        other => Err(Error::new(
+            "invalid_step",
+            format!("Unknown measurement: {other}"),
+        )),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1150,5 +1282,47 @@ mod tests {
             "Current Battery Service state:\n  AC powered: true\n  USB powered: false\n  level: 100\n",
         );
         assert_eq!(battery, json!({"charging":true,"level":100}));
+    }
+    #[test]
+    fn a_budget_checks_maximums_minimums_and_missing_values() {
+        let metrics = json!({"startup_cold_median_ms":640.0,"jank_percent":7.5,"frames_total":90.0,"frame_p90_ms":null});
+        let metrics = metrics.as_object().unwrap();
+        let budget = json!({"startup_cold_median_ms":{"maximum":800},"jank_percent":{"maximum":5},
+                            "frames_total":{"minimum":60,"maximum":1000},"frame_p90_ms":{"maximum":32},"memory_pss_mb":{"maximum":200}});
+        validate(&budget, &budget_schema(), "budget").unwrap();
+        let (passed, results) = check_budget(&budget, metrics);
+        assert!(!passed);
+        let verdict: Vec<(&str, bool)> = results
+            .iter()
+            .map(|r| (s(r, "metric"), b(r, "passed")))
+            .collect();
+        assert_eq!(
+            verdict,
+            [
+                ("startup_cold_median_ms", true),
+                ("jank_percent", false),
+                ("frames_total", true),
+                ("frame_p90_ms", false),
+                ("memory_pss_mb", false)
+            ]
+        );
+        assert_eq!(results[3]["reason"], "measurement_unavailable");
+        assert_eq!(results[4]["reason"], "measurement_unavailable");
+        let error = budget_error(&results);
+        assert_eq!(error.code, "budget_exceeded");
+        assert_eq!(
+            error.message,
+            "Outside the performance budget: jank_percent, frame_p90_ms, memory_pss_mb"
+        );
+        assert!(check_budget(&json!({"frames_total":{"minimum":60}}), metrics).0);
+        assert!(validate(&json!({"jank_percent":5}), &budget_schema(), "budget").is_err());
+        assert!(
+            validate(
+                &json!({"jank_percent":{"most":5}}),
+                &budget_schema(),
+                "budget"
+            )
+            .is_err()
+        );
     }
 }

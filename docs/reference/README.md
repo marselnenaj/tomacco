@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 203 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 204 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -219,11 +219,12 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | --- | --- | --- |
 | [`profile.capture`](profile.md#profilecapture) | Capture Android profile | writes |
 | [`profile.analyze`](profile.md#profileanalyze) | Analyze performance profile | writes |
-| [`profile.compare`](profile.md#profilecompare) | Check performance budget | writes |
+| [`profile.compare`](profile.md#profilecompare) | Compare performance reports | writes |
 | [`profile.startup`](profile.md#profilestartup) | Measure app startup | writes |
 | [`profile.frames`](profile.md#profileframes) | Measure frame rendering | writes |
 | [`profile.memory`](profile.md#profilememory) | Measure app memory | writes |
 | [`profile.usage`](profile.md#profileusage) | Measure CPU and battery use | writes |
+| [`profile.budget`](profile.md#profilebudget) | Check performance budget | writes |
 
 ## [project](project.md)
 

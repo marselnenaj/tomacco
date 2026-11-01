@@ -1100,6 +1100,56 @@ class AndroidControlTests(Isolated):
             dispatch("profile.usage", {"device": "emulator-5554", "bundle_id": "dev.test.app", "seconds": 1})
         self.assertEqual(missing.exception.code, "app_not_installed")
 
+    def test_saved_reports_are_checked_against_a_budget_file_or_inline(self):
+        startup, memory = self.root / "startup.json", self.root / "memory.json"
+        startup.write_text(json.dumps({"bundle_id": "dev.test.app", "metrics": {"startup_cold_median_ms": 640, "startup_cold_p90_ms": 910}}))
+        memory.write_text(json.dumps({"bundle_id": "dev.test.app", "metrics": {"memory_pss_mb": 180.5}}))
+        budget = self.root / "budget.json"
+        budget.write_text(json.dumps({"startup_cold_median_ms": {"maximum": 800}, "memory_pss_mb": {"maximum": 200}}))
+        target = self.root / "verdict.json"
+        value = dispatch("profile.budget", {"reports": [str(startup), str(memory)], "budget": str(budget), "report": str(target)})
+        self.assertTrue(value["passed"])
+        self.assertEqual([(r["metric"], r["value"], r["report"]) for r in value["results"]],
+                         [("startup_cold_median_ms", 640, str(startup)), ("memory_pss_mb", 180.5, str(memory))])
+        self.assertTrue(json.loads(target.read_text())["passed"])
+        value = dispatch("profile.budget", {"reports": [str(startup)], "budgets": {"startup_cold_p90_ms": {"maximum": 900},
+                                                                                   "jank_percent": {"maximum": 5}}})
+        self.assertFalse(value["passed"])
+        self.assertEqual([(r["passed"], r.get("reason")) for r in value["results"]], [(False, None), (False, "measurement_unavailable")])
+        for arguments in ({"reports": [str(startup)]}, {"reports": [str(startup)], "budget": str(budget), "budgets": {"x": {"maximum": 1}}}):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("profile.budget", arguments)
+            self.assertEqual(refused.exception.code, "invalid_argument")
+        memory.write_text(json.dumps({"bundle_id": "dev.other.app", "metrics": {}}))
+        with self.assertRaises(StudioError) as mismatch:
+            dispatch("profile.budget", {"reports": [str(startup), str(memory)], "budget": str(budget)})
+        self.assertEqual(mismatch.exception.code, "profile_mismatch")
+
+    def test_a_scenario_measures_the_app_and_fails_outside_its_budget(self):
+        self.replies(**{"resolve-activity": "dev.test.app/.Main\n", "am start -W": self.COLD_START,
+                        "gfxinfo dev.test.app reset": "", "gfxinfo dev.test.app": self.GFXINFO})
+        scenario = self.root / "scroll.json"
+        steps = [{"action": "measure", "measure": "startup", "bundle_id": "dev.test.app", "runs": 1,
+                  "budget": {"startup_cold_median_ms": {"maximum": 500}}},
+                 {"action": "measure", "measure": "frames_reset", "bundle_id": "dev.test.app"},
+                 {"action": "swipe", "x": 500, "y": 1800, "end_x": 500, "end_y": 400},
+                 {"action": "measure", "measure": "frames", "bundle_id": "dev.test.app"}]
+        scenario.write_text(json.dumps({"name": "Scroll", "steps": steps}))
+        budget = self.root / "budget.json"
+        budget.write_text(json.dumps({"jank_percent": {"maximum": 10}, "frames_total": {"minimum": 60}}))
+        run = lambda directory, **extra: jobs.wait(dispatch("testing.run", {"path": str(scenario), "directory": str(self.root / directory),
+                                                                            "devices": ["emulator-5554"], **extra})["id"], 60 * PATIENCE)
+        self.assertEqual(run("within", budget=str(budget))["state"], "succeeded")
+        result = json.loads((self.root / "within/report.json").read_text())["results"][0]
+        self.assertEqual((result["metrics"]["startup_cold_median_ms"], result["metrics"]["jank_percent"]), (412, 5))
+        self.assertTrue(result["budget"]["passed"])
+        self.assertTrue(result["steps"][0]["result"]["budget"][0]["passed"])
+        # The scenario's budget fails the run; the step's own budget passed.
+        self.assertEqual(run("outside", budgets={"jank_percent": {"maximum": 2}})["state"], "failed")
+        result = json.loads((self.root / "outside/report.json").read_text())["results"][0]
+        self.assertEqual((result["passed"], result["error"]["code"]), (False, "budget_exceeded"))
+        self.assertEqual([r["metric"] for r in result["budget"]["results"] if not r["passed"]], ["jank_percent"])
+
     def test_app_logs_follow_the_user_id_from_android_12_and_the_pid_before(self):
         self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": "package:dev.test.app.extra uid:10201\npackage:dev.test.app uid:10200\n"})
         job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1})
