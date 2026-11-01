@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 225 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 228 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 435 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 441 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -50,6 +50,9 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`android.emulator`](android.md#androidemulator) | Control emulator | **destructive** |
 | [`android.package_inspect`](android.md#androidpackage_inspect) | Inspect APK or AAB | read-only |
 | [`android.size_report`](android.md#androidsize_report) | Report APK or AAB size | read-only |
+| [`android.sensors`](android.md#androidsensors) | Emulator sensors | writes |
+| [`android.app_links`](android.md#androidapp_links) | App Links | writes |
+| [`android.network_capture`](android.md#androidnetwork_capture) | Network capture | writes |
 
 ## [apple](apple.md)
 

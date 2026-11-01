@@ -3966,6 +3966,18 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>APK- oder AAB-Größe auswerten</translation>
     </message>
     <message>
+        <source>Emulator sensors</source>
+        <translation>Emulator-Sensoren</translation>
+    </message>
+    <message>
+        <source>App Links</source>
+        <translation>App-Links</translation>
+    </message>
+    <message>
+        <source>Network capture</source>
+        <translation>Netzwerkmitschnitt</translation>
+    </message>
+    <message>
         <source>Install iOS toolkit</source>
         <translation>iOS-Werkzeuge installieren</translation>
     </message>

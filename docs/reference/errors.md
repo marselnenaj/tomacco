@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 435 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -40,6 +40,8 @@ Every error code `tomaccoctl` returns, 435 codes, generated from `assets/errors.
 | `bundletool_failed` | bundletool reported no sizes. | Read the message and the job's log (job.logs); fix the cause and try again. |
 | `capture_failed` | Evidence capture failed. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `capture_incomplete` | Device screenshot has not completed successfully. | Inspect job.get and job.logs. |
+| `capture_not_running` | android.network_capture stop or summary was called with no capture running on that device. | Start one with android.network_capture start and opt_in true. |
+| `capture_running` | A network capture is already running on that device. | Stop it with android.network_capture stop before starting another. |
 | `capture_timeout` | ADB screenshot timed out. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `catalogue_full` | At most 1000 custom profiles are supported. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `checksum_mismatch` | The download from … does not match its published checksum and was deleted. | Try again; if it repeats, the download source changed and the pinned checksum needs an update in a new Tomacco version. |
@@ -91,6 +93,7 @@ Every error code `tomaccoctl` returns, 435 codes, generated from `assets/errors.
 | `firmware_modified` | PMP bundle changed after submission. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `flutter_ios_missing` | This is not a Flutter project with an ios directory. | Run flutter create --platforms ios . in the project. |
 | `flutter_setup_required` | This Flutter install still has Apple's macOS gen_snapshot. | Call ios.flutter_setup once per Flutter version. |
+| `form_factor_unsupported` | The system image is for TV, Wear, Automotive, XR or Desktop, which Tomacco does not create AVDs for. | Create it with avdmanager and the SDK device definition the error names, or use a phone or tablet image. |
 | `frame_missing` | The debugger could not start, attach or answer. | Read the stack before reading frame variables. |
 | `guest_diagnostic_failed` | The virtual iOS device or its research engine refused the request or stopped answering. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `guest_observation_timeout` | The guest did not complete both platform observations. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
@@ -265,6 +268,7 @@ Every error code `tomaccoctl` returns, 435 codes, generated from `assets/errors.
 | `not_emulator` | This operation requires an emulator serial. | Pass an emulator serial from device.list, such as emulator-5554. |
 | `not_executable` | Not executable: … | Point settings.configure executables at an executable file, or chmod +x it. |
 | `not_file` | Something the request names does not exist or is not set up. | Pass a regular file. |
+| `not_foldable` | A posture was set on an emulator whose AVD has no hinge. | Use a foldable profile (one with openWidth) in android.avd_create or android.avd_profile. |
 | `not_interactive` | This job has no interactive session. | Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up. |
 | `not_ios_emulator_job` | The virtual iOS device or its research engine refused the request or stopped answering. | Select an iOS emulator job. |
 | `not_stoppable` | This job has no running step that stop ends early. | job.cancel ends any job, without keeping its result. |
@@ -274,6 +278,7 @@ Every error code `tomaccoctl` returns, 435 codes, generated from `assets/errors.
 | `off_screen` | (…, …) lies outside the …x… screen. | Use coordinates inside the screen size the message gives. |
 | `offline` | The Maven repositories cannot be reached: … did not resolve. | Connect to the network, or try again later. |
 | `operation_not_found` | Unknown operation: … | Use the operation the remedy suggests; tomaccoctl schema --names lists every operation. |
+| `opt_in_required` | A network capture records traffic, so it starts only when asked for explicitly. | Pass opt_in true to android.network_capture start. |
 | `output_exists` | The request was refused; the message says why. | Choose a new output path, or move the old one aside. |
 | `outside_project` | The request was refused; the message says why. | Use a path inside the project, relative to its root. |
 | `package_missing` | No Package.swift found in … | Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up. |
@@ -330,6 +335,7 @@ Every error code `tomaccoctl` returns, 435 codes, generated from `assets/errors.
 | `research_tools_missing` | The virtual iOS device or its research engine refused the request or stopped answering. | Install the iOS research preparation tools. |
 | `resource_not_found` | No MCP resource has that URI. | resources/list and resources/templates/list name the resources this server has. |
 | `response_too_large` | Debugger response exceeds 2 MiB. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
+| `root_unavailable` | The device has no root shell (Google Play images and phones), which the capture needs for tcpdump. | Use an emulator with a Google APIs or AOSP image. |
 | `runtime_busy` | Runtime input queue is full. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `runtime_configuration_conflict` | This device already has a native session with different stream settings. | Reuse the existing session, or stop it before changing stream settings. |
 | `runtime_directory` | Runtime sockets require an owner-only directory. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |

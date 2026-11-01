@@ -1636,6 +1636,221 @@ temp=file.with_suffix('.tmp');temp.write_text(json.dumps(mine));temp.replace(fil
         self.assertEqual(refused.exception.code, "emulator_refused")
         self.assertIn("-read-only", str(refused.exception))
 
+    def managed_avd(self, name, config="hw.gpu.mode=auto\n"):
+        path = self.root / f"state/avds/{name}.avd"
+        path.mkdir(parents=True)
+        (path / "config.ini").write_text(config)
+        (path.parent / f"{name}.ini").write_text(f"path={path}\n")
+        return path
+
+    def test_a_stop_saves_quick_boot_for_a_managed_emulator_and_the_next_start_resumes(self):
+        path = self.managed_avd("Quick")
+        self.replies(**{"avd name": "Quick\nOK\n", "emu": "OK\n"})
+        stop = lambda **a: dispatch("android.emulator", {"device": "emulator-5554", "action": "stop", **a})
+        self.assertTrue(stop()["quick_boot"]["saved"])
+        consoles = lambda: [call[1:] for call in self.calls() if call[:1] == ["emu"]]
+        self.assertEqual(consoles(), [["avd", "name"], ["avd", "snapshot", "save", "default_boot"], ["kill"]])
+        # Another tool's emulator keeps its own settings.
+        (self.root / "adb-calls.jsonl").unlink()
+        self.replies(**{"avd name": "Elsewhere\nOK\n", "emu": "OK\n"})
+        self.assertFalse(stop()["quick_boot"]["saved"])
+        self.assertEqual(consoles(), [["avd", "name"], ["kill"]])
+        (self.root / "adb-calls.jsonl").unlink()
+        self.assertFalse(stop(save_quick_boot=False)["quick_boot"]["saved"])
+        self.assertEqual(consoles(), [["kill"]])
+        # A refused save still stops the emulator.
+        self.replies(**{"avd name": "Quick\nOK\n", "snapshot save": "KO: snapshot saving is disabled\n", "emu": "OK\n"})
+        refused = stop()["quick_boot"]
+        self.assertFalse(refused["saved"])
+        self.assertIn("disabled", refused["reason"])
+        self.assertEqual(consoles()[-1], ["kill"])
+
+        self.tool("emulator")
+        def start(**a):
+            job = dispatch("android.avd_start", {"name": "Quick", "headless": True, **a})
+            self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+            return job["boot"], job["plan"]["steps"][0]["argv"]
+        boot, argv = start()
+        self.assertEqual(boot["mode"], "cold")
+        self.assertIn("no Quick Boot snapshot", boot["reason"])
+        (path / "snapshots/default_boot").mkdir(parents=True)
+        boot, argv = start()
+        self.assertEqual(boot, {"mode": "quick", "snapshot": "default_boot"})
+        self.assertNotIn("-no-snapshot-load", argv)
+        self.assertIn("-no-snapshot-save", argv)
+        boot, argv = start(cold_boot=True)
+        self.assertEqual(boot["mode"], "cold")
+        self.assertIn("-no-snapshot-load", argv)
+        # After a hardware change the old snapshot is removed once.
+        (path / "config.ini").write_text("hw.gpu.mode=host\ntomacco.coldBoot=yes\n")
+        boot, argv = start()
+        self.assertIn("settings changed", boot["reason"])
+        self.assertIn("-no-snapshot-load", argv)
+        self.assertFalse((path / "snapshots/default_boot").exists())
+        self.assertEqual((path / "config.ini").read_text(), "hw.gpu.mode=host\n")
+
+    def test_a_start_can_show_an_image_as_the_camera(self):
+        self.managed_avd("Camera")
+        (self.root / "state/avds/Camera.avd/snapshots/default_boot").mkdir(parents=True)
+        self.tool("emulator")
+        image = self.root / "code.png"
+        image.write_bytes(b"png")
+        job = dispatch("android.avd_start", {"name": "Camera", "headless": True, "camera_image": str(image)})
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        argv = job["plan"]["steps"][0]["argv"]
+        self.assertEqual(argv[argv.index("-camera-back") + 1], f"imagefile:{image}")
+        self.assertIn("-no-snapshot-load", argv)
+        self.assertIn("camera image", job["boot"]["reason"])
+        job = dispatch("android.avd_start", {"name": "Camera", "camera_image": str(image), "camera_facing": "front"})
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        self.assertIn("-camera-front", job["plan"]["steps"][0]["argv"])
+        (self.root / "notes.txt").write_text("x")
+        for path, code in ((self.root / "missing.png", "invalid_path"), (self.root / "notes.txt", "invalid_argument")):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.avd_start", {"name": "Camera", "camera_image": str(path)})
+            self.assertEqual(refused.exception.code, code)
+
+    def test_a_foldable_profile_gets_a_hinge_and_tv_or_wear_images_are_refused(self):
+        path = self.managed_avd("Fold", "image.sysdir.1=system-images/android-36/google_apis/x86_64/\n")
+        result = dispatch("android.avd_profile", {"name": "Fold", "profile_id": "pixel-11-pro-fold"})
+        self.assertEqual(result["foldable"], {"open_resolution": [2076, 2152], "folded_resolution": [1080, 2342]})
+        config = (path / "config.ini").read_text().splitlines()
+        for line in ("hw.lcd.width=2076", "hw.lcd.height=2152", "hw.sensor.hinge=yes", "hw.sensor.hinge.areas=1038-0-0-2152",
+                     "hw.sensor.posture_list=1, 2, 3", "hw.displayRegion.0.1.width=1080", "hw.displayRegion.0.1.height=2342",
+                     "tomacco.coldBoot=yes"):
+            self.assertIn(line, config)
+        dispatch("android.avd_profile", {"name": "Fold", "profile_id": "pixel-11"})
+        config = (path / "config.ini").read_text().splitlines()
+        self.assertIn("hw.sensor.hinge=no", config)
+        self.assertIn("hw.lcd.width=1080", config)
+        self.assertEqual(sum(l.startswith("hw.sensor.hinge=") for l in config), 1)
+        for image, kind in (("system-images;android-36;google-tv;x86_64", "tv"),
+                            ("system-images;android-36;android-wear-signed;x86_64", "wear"),
+                            ("system-images;android-35-ext15;android-automotive;x86_64", "automotive")):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.avd_create", {"name": "Other", "system_image": image, "profile_id": "pixel-11"})
+            self.assertEqual(refused.exception.code, "form_factor_unsupported")
+            self.assertTrue(refused.exception.details["device_definition"])
+            self.assertEqual(refused.exception.details["form_factor"], kind)
+
+    def test_emulator_sensors_go_through_the_console(self):
+        self.replies(**{"sensor get acceleration": "acceleration = 9.80665:0:0\nOK\n",
+                        "sensor get proximity": "proximity = 0\nOK\n",
+                        "sensor get light": "light = 5000\nOK\n",
+                        "sensor get hinge-angle0": "hinge-angle0 = 90\nOK\n",
+                        "sensor status": "acceleration: enabled.\nlight: enabled.\nhinge-angle0: enabled.\nheart-rate: disabled.\nOK\n",
+                        "dumpsys window displays": "  mRotation=1 mDeferredRotationPauseCount=0\n",
+                        "accelerometer_rotation": "1\n", "print-state": "2\n", "emu": "OK\n"})
+        sensors = lambda **a: dispatch("android.sensors", {"device": "emulator-5554", **a})
+        turned = sensors(action="orientation", orientation="landscape")
+        self.assertEqual((turned["rotation"], turned["applied"]), (90, True))
+        self.assertFalse(sensors(action="orientation", orientation="reverse-portrait")["applied"])
+        self.assertTrue(sensors(action="proximity", near=True)["near"])
+        self.assertEqual(sensors(action="light", lux=5000)["lux"], 5000)
+        sensors(action="fingerprint", finger_id=2)
+        status = sensors(action="status")["sensors"]
+        self.assertEqual(status["acceleration"], {"enabled": True, "values": [9.80665, 0, 0]})
+        self.assertEqual(status["heart-rate"], {"enabled": False, "values": None})
+        folded = sensors(action="posture", posture="half-open")
+        self.assertEqual((folded["hinge_angle"], folded["device_state"]), (90, "half-open"))
+        sensors(action="posture", posture="closed")
+        sensors(action="set", sensor="pressure", values=[990])
+        consoles = [call[1:] for call in self.calls() if call[:1] == ["emu"]]
+        for expected in (["sensor", "set", "acceleration", "9.80665:0:0"], ["sensor", "set", "proximity", "0"],
+                         ["sensor", "set", "light", "5000"], ["finger", "touch", "2"], ["finger", "remove"],
+                         ["posture", "2"], ["fold"], ["sensor", "set", "pressure", "990"]):
+            self.assertIn(expected, consoles)
+        sensors(action="shake")
+        shakes = [c for c in [call[1:] for call in self.calls() if call[:1] == ["emu"]] if c[:3] == ["sensor", "set", "acceleration"]]
+        self.assertGreaterEqual(len(shakes), 10)
+        self.assertEqual(shakes[-1], ["sensor", "set", "acceleration", "9.80665:0:0"], "the shake puts gravity back")
+        self.replies(**{"sensor status": "acceleration: enabled.\nhinge-angle0: disabled.\nOK\n", "emu": "OK\n"})
+        for arguments, code in (({"action": "posture", "posture": "closed"}, "not_foldable"),
+                                ({"action": "set", "sensor": "light"}, "invalid_argument"),
+                                ({"action": "set", "sensor": "x;reboot", "values": [1]}, "invalid_argument")):
+            with self.assertRaises(StudioError) as refused:
+                sensors(**arguments)
+            self.assertEqual(refused.exception.code, code)
+        with self.assertRaises(StudioError) as phone:
+            dispatch("android.sensors", {"device": "R5CT1234", "action": "status"})
+        self.assertEqual(phone.exception.code, "not_emulator")
+
+    def test_app_links_are_read_verified_resolved_and_set(self):
+        self.replies(**{"pm path dev.example.app": "package:/data/app/base.apk\n", "pm path": "FAIL:",
+                        "get-app-links": "  dev.example.app:\n    ID: 1\n    Domain verification state:\n      example.com: verified\n      shop.example.com: none\n    User 0:\n      Verification link handling allowed: true\n",
+                        "resolve-activity": "priority=0 match=0x508000\ndev.example.app/.LinkActivity\n",
+                        "query-activities": "2 activities found:\n  Activity #0:\n    dev.example.app/.LinkActivity\n  Activity #1:\n    com.android.chrome/.Main\n"})
+        links = lambda **a: dispatch("android.app_links", {"device": "emulator-5554", "bundle_id": "dev.example.app", **a})
+        status = links()
+        self.assertEqual(status["verified"], ["example.com"])
+        self.assertEqual(status["unverified"], ["shop.example.com"])
+        resolved = links(action="resolve", url="https://example.com/item/1?x=1")
+        self.assertEqual((resolved["handler"], resolved["package"], resolved["opens_in_app"], resolved["chooser"]),
+                         ("dev.example.app/.LinkActivity", "dev.example.app", True, False))
+        self.assertEqual(len(resolved["candidates"]), 2)
+        self.assertEqual(links(action="verify", seconds=0)["waited_seconds"], 0)
+        links(action="set", state="denied", domains=["shop.example.com"])
+        links(action="set", state="none")
+        calls = self.shell_calls()
+        self.assertIn(["pm", "verify-app-links", "--re-verify", "dev.example.app"], calls)
+        self.assertIn(["pm", "set-app-links", "--package", "dev.example.app", "STATE_DENIED", "shop.example.com"], calls)
+        self.assertIn(["pm", "set-app-links", "--package", "dev.example.app", "STATE_NO_RESPONSE", "all"], calls)
+        resolve = next(c for c in calls if "resolve-activity" in c)
+        self.assertEqual(resolve[resolve.index("-d") + 1], "https://example.com/item/1?x=1")
+        self.assertIn("0x10000", resolve)
+        self.replies(**{"resolve-activity": "priority=0\nandroid/com.android.internal.app.ResolverActivity\n", "query-activities": ""})
+        chooser = dispatch("android.app_links", {"device": "emulator-5554", "action": "resolve", "url": "https://example.com/"})
+        self.assertEqual((chooser["chooser"], chooser["handler"]), (True, None))
+        self.replies(**{"pm path": "FAIL:"})
+        for arguments, code in (({"bundle_id": "dev.missing.app"}, "app_not_installed"),
+                                ({"action": "resolve", "url": "example.com"}, "invalid_url"),
+                                ({"action": "status"}, "invalid_argument")):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.app_links", {"device": "emulator-5554", **arguments})
+            self.assertEqual(refused.exception.code, code, arguments)
+
+    def test_network_capture_is_opt_in_and_one_app_is_captured_through_nflog(self):
+        capture = lambda **a: dispatch("android.network_capture", {"device": "emulator-5554", **a})
+        with self.assertRaises(StudioError) as refused:
+            capture(action="start")
+        self.assertEqual(refused.exception.code, "opt_in_required")
+        self.assertEqual(self.calls(), [], "nothing runs without opt_in")
+        self.replies(**{"id -u": "0\n", "list packages -U": "package:dev.example.app uid:10123\n",
+                        "setsid tcpdump": "4242\n", "test -s": "ready\n"})
+        started = capture(action="start", opt_in=True, bundle_id="dev.example.app")
+        self.assertEqual((started["scope"], started["interface"]), ("app", "nflog:47"))
+        with self.assertRaises(StudioError) as twice:
+            capture(action="start", opt_in=True)
+        self.assertEqual(twice.exception.code, "capture_running")
+        # A pcap with one HTTP request, where the stand-in adb's pull leaves it.
+        request = b"GET /items/7?token=secret HTTP/1.1\r\nHost: example.com\r\n\r\n"
+        tcp = (40000).to_bytes(2, "big") + (80).to_bytes(2, "big") + bytes(8) + bytes([0x50, 0x18]) + bytes(6) + request
+        ip = bytes([0x45, 0]) + (20 + len(tcp)).to_bytes(2, "big") + bytes([0, 0, 0x40, 0, 64, 6, 0, 0, 10, 0, 2, 16, 93, 184, 215, 14]) + tcp
+        frame = (0x0800).to_bytes(2, "big") + bytes(18) + ip
+        output = self.root / "app.pcap"
+        output.write_bytes(bytes.fromhex("d4c3b2a102000400") + bytes(8) + (65535).to_bytes(4, "little") + (276).to_bytes(4, "little")
+                           + bytes(8) + len(frame).to_bytes(4, "little") * 2 + frame)
+        summary = capture(action="stop", path=str(output))
+        self.assertEqual((summary["scope"], summary["bundle_id"], summary["packets"]), ("app", "dev.example.app", 1))
+        self.assertEqual(summary["http_requests"], [{"method": "GET", "host": "example.com", "path": "/items/7", "count": 1}])
+        self.assertNotIn("secret", json.dumps(summary))
+        self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+        scripts = [c[4] for c in self.shell_calls() if c[:4] == ["su", "0", "sh", "-c"]]
+        rule = "OUTPUT -m owner --uid-owner 10123 -j NFLOG --nflog-group 47"
+        self.assertIn(f"iptables -I {rule}; ip6tables -I {rule}", scripts)
+        self.assertIn(f"iptables -D {rule}; ip6tables -D {rule}", scripts)
+        self.assertIn("kill -INT 4242", scripts)
+        self.assertIn("rm -f /data/local/tmp/tomacco-capture-emulator-5554.pcap", scripts)
+        self.assertTrue(any("tcpdump -i nflog:47" in s for s in scripts))
+        with self.assertRaises(StudioError) as stopped:
+            capture(action="stop")
+        self.assertEqual(stopped.exception.code, "capture_not_running")
+        self.assertEqual(dispatch("android.network_capture", {"action": "summary", "path": str(output)})["packets"], 1)
+        self.replies(**{"id -u": "2000\n"})
+        with self.assertRaises(StudioError) as user:
+            capture(action="start", opt_in=True)
+        self.assertEqual(user.exception.code, "root_unavailable")
+
 class AndroidPackageTests(Isolated):
     """android.package_inspect reads a package with stand-ins for the SDK tools."""
     @staticmethod

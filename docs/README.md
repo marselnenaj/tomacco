@@ -1,7 +1,7 @@
 # Tomacco documentation
 
 Tomacco is a mobile development workbench for Linux. A Qt desktop and a command-line
-tool, `tomaccoctl`, share the same 225 typed operations, so a person and a coding agent
+tool, `tomaccoctl`, share the same 228 typed operations, so a person and a coding agent
 can do the same things. These guides describe version 1.2.1; the
 [release notes](RELEASE_NOTES.md) say what is new in it and what was not tested.
 

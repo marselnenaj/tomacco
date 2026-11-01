@@ -135,6 +135,14 @@
     "cause": "Device screenshot has not completed successfully.",
     "remedy": "Inspect job.get and job.logs."
   },
+  "capture_not_running": {
+    "cause": "android.network_capture stop or summary was called with no capture running on that device.",
+    "remedy": "Start one with android.network_capture start and opt_in true."
+  },
+  "capture_running": {
+    "cause": "A network capture is already running on that device.",
+    "remedy": "Stop it with android.network_capture stop before starting another."
+  },
   "capture_timeout": {
     "cause": "ADB screenshot timed out.",
     "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
@@ -338,6 +346,10 @@
   "flutter_setup_required": {
     "cause": "This Flutter install still has Apple's macOS gen_snapshot.",
     "remedy": "Call ios.flutter_setup once per Flutter version."
+  },
+  "form_factor_unsupported": {
+    "cause": "The system image is for TV, Wear, Automotive, XR or Desktop, which Tomacco does not create AVDs for.",
+    "remedy": "Create it with avdmanager and the SDK device definition the error names, or use a phone or tablet image."
   },
   "frame_missing": {
     "cause": "The debugger could not start, attach or answer.",
@@ -1035,6 +1047,10 @@
     "cause": "Something the request names does not exist or is not set up.",
     "remedy": "Pass a regular file."
   },
+  "not_foldable": {
+    "cause": "A posture was set on an emulator whose AVD has no hinge.",
+    "remedy": "Use a foldable profile (one with openWidth) in android.avd_create or android.avd_profile."
+  },
   "not_interactive": {
     "cause": "This job has no interactive session.",
     "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
@@ -1070,6 +1086,10 @@
   "operation_not_found": {
     "cause": "Unknown operation: …",
     "remedy": "Use the operation the remedy suggests; tomaccoctl schema --names lists every operation."
+  },
+  "opt_in_required": {
+    "cause": "A network capture records traffic, so it starts only when asked for explicitly.",
+    "remedy": "Pass opt_in true to android.network_capture start."
   },
   "output_exists": {
     "cause": "The request was refused; the message says why.",
@@ -1294,6 +1314,10 @@
   "response_too_large": {
     "cause": "Debugger response exceeds 2 MiB.",
     "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "root_unavailable": {
+    "cause": "The device has no root shell (Google Play images and phones), which the capture needs for tcpdump.",
+    "remedy": "Use an emulator with a Google APIs or AOSP image."
   },
   "runtime_busy": {
     "cause": "Runtime input queue is full.",

@@ -370,6 +370,27 @@ tomaccoctl call android.avd_configure '{"name":"TomaccoQA","gpu":"host","vulkan"
 tomaccoctl call android.avd_start '{"name":"TomaccoQA","headless":true}'
 ```
 
+`android.emulator` with `action` `stop` saves a Tomacco-managed emulator's Quick Boot snapshot first, and the next
+`android.avd_start` resumes from it; its result's `boot` says `quick` or `cold` and why. `cold_boot:true` boots fully.
+`camera_image` makes the emulator's camera show a PNG or JPEG, for apps that scan QR codes or documents. A foldable
+profile such as `pixel-11-pro-fold` gives the AVD a hinge. See [Android](android.md#quick-boot).
+
+`android.sensors` drives an emulator's simulated sensors: turn it by gravity, shake it, cover the proximity sensor,
+set the light, touch the fingerprint sensor for a biometric prompt, or fold a foldable:
+
+```sh
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"orientation","orientation":"landscape"}'
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"fingerprint"}'
+```
+
+`android.app_links` reads an app's App Links verification per domain, asks Android to verify them again, says which
+app a link opens (`resolve`), and approves or denies domains by hand for tests; `android.deep_link` opens the link and
+names the activity that took it.
+
+`android.network_capture` captures an emulator's traffic, or what one app sends, after `opt_in:true`, and summarises
+hosts, TLS server names, HTTP requests without their query and DNS queries. See
+[Android](android.md#network-capture) for what it records and what it needs.
+
 ## Swift on Android
 
 Full guide: [Swift on Android](android.md#swift-on-android). The tested toolchain is Swift 6.4 and NDK 30. Wait for

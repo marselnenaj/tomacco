@@ -3958,6 +3958,18 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Analyser la taille de l'APK ou de l'AAB</translation>
     </message>
     <message>
+        <source>Emulator sensors</source>
+        <translation>Capteurs de l'émulateur</translation>
+    </message>
+    <message>
+        <source>App Links</source>
+        <translation>Liens d'application</translation>
+    </message>
+    <message>
+        <source>Network capture</source>
+        <translation>Capture réseau</translation>
+    </message>
+    <message>
         <source>Install iOS toolkit</source>
         <translation>Installer les outils iOS</translation>
     </message>

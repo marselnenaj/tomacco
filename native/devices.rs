@@ -413,9 +413,17 @@ fn ini_values(path: &std::path::Path) -> BTreeMap<String, String> {
         .collect()
 }
 fn profile_pixels(profile: &Value) -> (u64, u64) {
+    pixels_of(profile, "pixels", "width", "height")
+}
+/// The inner display of a foldable profile when open, in pixels.
+fn open_pixels(profile: &Value) -> Option<(u64, u64)> {
+    profile.get("openWidth")?;
+    Some(pixels_of(profile, "openPixels", "openWidth", "openHeight"))
+}
+fn pixels_of(profile: &Value, pixels: &str, width: &str, height: &str) -> (u64, u64) {
     let physical: Vec<u64> = regex::Regex::new(r"\d+")
         .unwrap()
-        .find_iter(s(profile, "pixels"))
+        .find_iter(s(profile, pixels))
         .filter_map(|m| m.as_str().parse().ok())
         .collect();
     if physical.len() == 2 {
@@ -423,8 +431,8 @@ fn profile_pixels(profile: &Value) -> (u64, u64) {
     } else {
         let dpr = profile["dpr"].as_f64().unwrap_or(1.0);
         (
-            (profile["width"].as_f64().unwrap_or(0.0) * dpr).round() as u64,
-            (profile["height"].as_f64().unwrap_or(0.0) * dpr).round() as u64,
+            (profile[width].as_f64().unwrap_or(0.0) * dpr).round() as u64,
+            (profile[height].as_f64().unwrap_or(0.0) * dpr).round() as u64,
         )
     }
 }
@@ -743,7 +751,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
                     "Use a complete deep link with a scheme",
                 ));
             }
-            run(sh(
+            let mut result = run(sh(
                 device,
                 &[
                     "am",
@@ -754,7 +762,15 @@ pub fn handle(op: &str, a: &Value) -> Result {
                     "-d",
                     url,
                 ],
-            )?)
+            )?)?;
+            // `am start -W` names the activity that opened the link.
+            let activity = s(&result, "stdout")
+                .lines()
+                .find_map(|l| l.trim().strip_prefix("Activity: "))
+                .map(|a| a.trim().to_string());
+            result["package"] = json!(activity.as_deref().and_then(|a| a.split('/').next()));
+            result["activity"] = json!(activity);
+            Ok(result)
         }
         "android.performance" => {
             bundle(id)?;
@@ -900,8 +916,11 @@ pub fn handle(op: &str, a: &Value) -> Result {
             identifier(
                 s(a, "system_image"),
                 "system image",
-                Some(r"system-images;android-[0-9]+(?:\.[0-9]+)?;[a-z0-9_]+;[a-z0-9_]+"),
+                Some(
+                    r"system-images;android-[0-9]+(?:\.[0-9]+)?(?:-ext[0-9]+)?;[a-z0-9_-]+;[a-z0-9_-]+",
+                ),
             )?;
+            form_factor_supported(s(a, "system_image"))?;
             let profile = catalog::find(s(a, "profile_id"))?;
             if s(&profile, "platform") != "android" {
                 return Err(Error::new("invalid_profile", "Select an Android profile"));
@@ -965,8 +984,21 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 .filter(|p| p.is_absolute())
                 .unwrap_or_else(|| directory.join(format!("{name}.avd")));
             let config = ini_values(&avd.join("config.ini"));
-            if b(a, "cold_boot") || config.get("tomacco.coldBoot").is_some_and(|v| v == "yes") {
+            let camera = camera_image(a)?;
+            let boot = boot_plan(
+                &avd,
+                b(a, "cold_boot"),
+                config.get("tomacco.coldBoot").is_some_and(|v| v == "yes"),
+                camera.is_some(),
+            )?;
+            if s(&boot, "mode") == "cold" {
                 args.push("-no-snapshot-load".into());
+            }
+            if let Some((facing, image)) = &camera {
+                args.extend([
+                    format!("-camera-{facing}"),
+                    format!("imagefile:{}", image.display()),
+                ]);
             }
             let vulkan = if s(a, "vulkan") == "configured" {
                 config
@@ -995,10 +1027,12 @@ pub fn handle(op: &str, a: &Value) -> Result {
             }
             let mut env = serde_json::to_value(tc::environment()?)?;
             env["ANDROID_AVD_HOME"] = json!(directory);
-            jobs::submit(
+            let mut job = jobs::submit(
                 &format!("Emulator {name}"),
                 json!({"steps":[{"argv":args}],"cwd":home()?,"timeout":86400,"env":env,"exclusive":format!("android-avd:{name}"),"single_active":true,"resource":"emulator"}),
-            )
+            )?;
+            job["boot"] = boot;
+            Ok(job)
         }
         "android.settings" => settings(a),
         "android.emulator" => emulator(a),
@@ -1019,13 +1053,161 @@ pub fn handle(op: &str, a: &Value) -> Result {
         _ => Err(Error::new("operation_not_found", op)),
     }
 }
+/// The kind of device a system image is for, from its tag, such as
+/// `google-tv` or `android-wear-signed`.
+pub fn form_factor(system_image: &str) -> &'static str {
+    let tag = system_image.split(';').nth(2).unwrap_or("");
+    if tag.contains("-tv") || tag.starts_with("tv") {
+        "tv"
+    } else if tag.contains("wear") {
+        "wear"
+    } else if tag.contains("automotive") {
+        "automotive"
+    } else if tag.contains("xr") {
+        "xr"
+    } else if tag.contains("desktop") {
+        "desktop"
+    } else {
+        "phone"
+    }
+}
+/// Tomacco's profiles describe phones, foldables and tablets. A TV or Wear
+/// image needs the SDK's own hardware definition, which avdmanager has.
+fn form_factor_supported(system_image: &str) -> Result<()> {
+    let kind = form_factor(system_image);
+    let device = match kind {
+        "phone" => return Ok(()),
+        "tv" => "tv_1080p",
+        "wear" => "wearos_large_round",
+        "automotive" => "automotive_1024p_landscape",
+        "xr" => "xr_headset_device",
+        _ => "desktop_medium",
+    };
+    Err(Error::new(
+        "form_factor_unsupported",
+        format!("Tomacco's device profiles are phones, foldables and tablets; {system_image} is a {kind} image"),
+    )
+    .remedy(format!(
+        "Create it with the SDK's own definition: avdmanager create avd --name NAME --package \"{system_image}\" --device {device}. android.avd_start finds AVDs in ~/.android/avd too; Tomacco has not tested {kind} emulators"
+    ))
+    .details(json!({"form_factor":kind,"device_definition":device})))
+}
+
+/// The Quick Boot snapshot the emulator loads on start when it exists.
+const QUICK_BOOT: &str = "default_boot";
+
+/// The image a start shows as the back or front camera, from `camera_image`
+/// and `camera_facing`: an existing PNG or JPEG file.
+fn camera_image(a: &Value) -> Result<Option<(&'static str, PathBuf)>> {
+    let Some(given) = a.get("camera_image").and_then(Value::as_str) else {
+        return Ok(None);
+    };
+    let file = expand(given);
+    let extension = file
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if !file.is_absolute() || !file.is_file() {
+        return Err(
+            Error::new("invalid_path", format!("No image file at {given}"))
+                .remedy("Pass the absolute path of a PNG or JPEG file"),
+        );
+    }
+    if !["png", "jpg", "jpeg"].contains(&extension.as_str()) {
+        return Err(Error::new(
+            "invalid_argument",
+            "camera_image must be a PNG or JPEG file",
+        ));
+    }
+    let facing = if s(a, "camera_facing") == "front" {
+        "front"
+    } else {
+        "back"
+    };
+    Ok(Some((facing, file)))
+}
+
+/// Whether a start loads the Quick Boot snapshot or boots cold, and why.
+/// After a hardware change the old snapshot no longer fits, so it is removed
+/// and the flag cleared: the next stop saves one that fits.
+fn boot_plan(avd: &std::path::Path, cold: bool, changed: bool, camera: bool) -> Result {
+    let snapshot = avd.join("snapshots").join(QUICK_BOOT);
+    let saved = snapshot.is_dir();
+    if changed {
+        if snapshot.is_dir() {
+            fs::remove_dir_all(&snapshot)?;
+        }
+        let config = avd.join("config.ini");
+        if let Ok(content) = fs::read_to_string(&config) {
+            let lines: Vec<_> = content
+                .lines()
+                .filter(|l| l.split('=').next().unwrap_or("").trim() != "tomacco.coldBoot")
+                .collect();
+            atomic_write(&config, (lines.join("\n") + "\n").as_bytes())?;
+        }
+    }
+    let reason = if cold {
+        "cold_boot was asked for"
+    } else if !saved {
+        "no Quick Boot snapshot yet; stopping with android.emulator saves one"
+    } else if changed {
+        "the emulator's settings changed since its last Quick Boot snapshot"
+    } else if camera {
+        "a camera image changes the hardware a snapshot was saved with"
+    } else {
+        return Ok(json!({"mode":"quick","snapshot":QUICK_BOOT}));
+    };
+    Ok(json!({"mode":"cold","reason":reason}))
+}
+
+/// The directory of a Tomacco-managed AVD, which a stop may save into.
+fn managed_avd(name: &str) -> Result<Option<PathBuf>> {
+    if avd_name(name).is_err() {
+        return Ok(None);
+    }
+    let avds = home()?.join("avds");
+    let registry = ini_values(&avds.join(format!("{name}.ini")));
+    let directory = registry
+        .get("path")
+        .map(PathBuf::from)
+        .filter(|p| p.is_absolute())
+        .unwrap_or_else(|| avds.join(format!("{name}.avd")));
+    Ok(directory.join("config.ini").is_file().then_some(directory))
+}
+
+/// Saves the Quick Boot snapshot of a running Tomacco-managed emulator, so
+/// that its next start resumes instead of booting. Others' emulators are left
+/// alone.
+fn save_quick_boot(device: &str) -> Value {
+    let name = console(device, &["avd", "name"])
+        .ok()
+        .and_then(|o| o.lines().next().map(|l| l.trim().to_string()))
+        .unwrap_or_default();
+    match managed_avd(&name) {
+        Ok(Some(_)) => {}
+        _ => {
+            return json!({"saved":false,"reason":"not a Tomacco-managed emulator; its own settings decide"});
+        }
+    }
+    let started = std::time::Instant::now();
+    match console_within(device, &["avd", "snapshot", "save", QUICK_BOOT], 300) {
+        Ok(_) => json!({"saved":true,"avd":name,"snapshot":QUICK_BOOT,
+            "seconds":(started.elapsed().as_secs_f64()*10.0).round()/10.0}),
+        Err(error) => json!({"saved":false,"avd":name,"reason":error.message}),
+    }
+}
+
 /// Runs one emulator console command through `adb emu`. The console answers
 /// `KO: reason` for a refused command while adb itself exits with success.
-fn console(device: &str, command: &[&str]) -> Result<String> {
+pub fn console(device: &str, command: &[&str]) -> Result<String> {
+    console_within(device, command, 30)
+}
+fn console_within(device: &str, command: &[&str], timeout: u64) -> Result<String> {
     let mut args = adb(device)?;
     args.push("emu".into());
     args.extend(argv(command));
-    let result = run(args)?;
+    let result = tc::run(&args, timeout, None, true)?;
     let output = s(&result, "stdout").replace('\r', "");
     if let Some(reason) = output.lines().find_map(|l| l.trim().strip_prefix("KO")) {
         return Err(Error::new(
@@ -1079,8 +1261,13 @@ fn emulator(a: &Value) -> Result {
     let name = identifier(s(a, "name"), "snapshot name", Some("[A-Za-z0-9_-]+"))?;
     match action {
         "stop" => {
+            let quick_boot = if b(a, "save_quick_boot") {
+                save_quick_boot(device)
+            } else {
+                json!({"saved":false,"reason":"save_quick_boot was false"})
+            };
             console(device, &["kill"])?;
-            Ok(json!({"device":device,"action":action}))
+            Ok(json!({"device":device,"action":action,"quick_boot":quick_boot}))
         }
         "snapshot-save" | "snapshot-load" | "snapshot-delete" => {
             let verb = match action {
@@ -1359,6 +1546,20 @@ fn avd_profile(a: &Value) -> Result {
     let content = fs::read_to_string(&target)?;
     let mut values = values;
     let configured = ini_values(&target);
+    let foldable = open_pixels(&profile);
+    if foldable.is_some()
+        || configured
+            .get("hw.sensor.hinge")
+            .is_some_and(|v| v == "yes")
+    {
+        values.extend(hinge_values((w, h), foldable));
+    }
+    if let Some(open) = foldable {
+        values.insert("hw.lcd.width", open.0.to_string());
+        values.insert("hw.lcd.height", open.1.to_string());
+    }
+    // A snapshot keeps the old display; the next start boots cold.
+    values.insert("tomacco.coldBoot", "yes".into());
     for (key, value) in [
         ("hw.gpu.enabled", "yes"),
         ("hw.gpu.mode", "auto"),
@@ -1383,9 +1584,56 @@ fn avd_profile(a: &Value) -> Result {
         )
         .as_bytes(),
     )?;
-    Ok(
-        json!({"avd":name,"profile":s(a,"profile_id"),"resolution":[w,h],"density":values["hw.lcd.density"]}),
-    )
+    let mut result = json!({"avd":name,"profile":s(a,"profile_id"),"resolution":[w,h],"density":values["hw.lcd.density"]});
+    if let Some(open) = foldable {
+        result["foldable"] = json!({"open_resolution":[open.0,open.1],"folded_resolution":[w,h]});
+    }
+    Ok(result)
+}
+
+/// The emulator's hinge settings for a book-style foldable, as the SDK's
+/// own foldable definitions write them: one vertical hinge in the middle of
+/// the open display, closed below 30 degrees, half-open to 150, open above,
+/// and the folded display as region 0.1 when closed. Without `open`, the
+/// hinge is turned off again.
+fn hinge_values(folded: (u64, u64), open: Option<(u64, u64)>) -> Vec<(&'static str, String)> {
+    let Some((width, height)) = open else {
+        return vec![
+            ("hw.sensor.hinge", "no".into()),
+            ("hw.sensor.hinge.count", "0".into()),
+            ("hw.sensor.posture_list", "".into()),
+            ("hw.displayRegion.0.1.width", "0".into()),
+            ("hw.displayRegion.0.1.height", "0".into()),
+            ("hw.displayRegion.0.1.xOffset", "-1".into()),
+            ("hw.displayRegion.0.1.yOffset", "-1".into()),
+        ];
+    };
+    vec![
+        ("hw.sensor.hinge", "yes".into()),
+        ("hw.sensor.hinge.count", "1".into()),
+        ("hw.sensor.hinge.type", "1".into()),
+        ("hw.sensor.hinge.sub_type", "1".into()),
+        ("hw.sensor.hinge.ranges", "0-180".into()),
+        ("hw.sensor.hinge.defaults", "180".into()),
+        (
+            "hw.sensor.hinge.areas",
+            format!("{}-0-0-{height}", width / 2),
+        ),
+        ("hw.sensor.posture_list", "1, 2, 3".into()),
+        (
+            "hw.sensor.hinge_angles_posture_definitions",
+            "0-30, 30-150, 150-180".into(),
+        ),
+        (
+            "hw.sensor.hinge.fold_to_displayRegion.0.1_at_posture",
+            "1".into(),
+        ),
+        ("hw.sensor.hinge.resizable.config", "1".into()),
+        ("hw.displayRegion.0.1.width", folded.0.to_string()),
+        ("hw.displayRegion.0.1.height", folded.1.to_string()),
+        ("hw.displayRegion.0.1.xOffset", "0".into()),
+        ("hw.displayRegion.0.1.yOffset", "0".into()),
+    ]
 }
 
 fn avd_memory_mb(value: &str) -> Option<u64> {

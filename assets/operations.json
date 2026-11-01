@@ -3038,7 +3038,7 @@
   {
     "name": "android.avd_start",
     "title": "Start emulator",
-    "description": "Start or reuse an Android virtual device. CPU acceleration remains enabled independently of the selected GPU renderer.",
+    "description": "Start or reuse an Android virtual device. A Tomacco-managed AVD resumes from its Quick Boot snapshot when android.emulator saved one at its last stop; the result's boot says quick or cold and why. CPU acceleration remains enabled independently of the selected GPU renderer.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3070,7 +3070,7 @@
         "cold_boot": {
           "type": "boolean",
           "default": false,
-          "description": "Skip saved VM snapshots, for example after changing the GPU renderer. App data is retained."
+          "description": "Boot fully instead of loading the Quick Boot snapshot, for example after changing the GPU renderer. App data is retained."
         },
         "audio": {
           "type": "boolean",
@@ -3087,6 +3087,20 @@
           ],
           "description": "Vulkan compatibility override; off keeps OpenGL ES and avoids the Vulkan interoperability path. Requires a cold restart.",
           "default": "configured"
+        },
+        "camera_image": {
+          "type": "string",
+          "description": "Absolute path of a PNG or JPEG the emulated camera shows instead of its scene, for QR code and document scanning. Applied only to a new emulator process, which then boots cold.",
+          "minLength": 1
+        },
+        "camera_facing": {
+          "type": "string",
+          "enum": [
+            "back",
+            "front"
+          ],
+          "default": "back",
+          "description": "Which camera shows camera_image"
         }
       },
       "required": [
@@ -3104,7 +3118,7 @@
   {
     "name": "android.emulator",
     "title": "Control emulator",
-    "description": "Stop an emulator; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.",
+    "description": "Stop an emulator, saving the Quick Boot snapshot of a Tomacco-managed one so its next start resumes in seconds; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3183,6 +3197,11 @@
             "none"
           ],
           "default": "none"
+        },
+        "save_quick_boot": {
+          "type": "boolean",
+          "description": "For stop: save the Quick Boot snapshot of a Tomacco-managed emulator first, which its next android.avd_start loads. Other emulators are never saved.",
+          "default": true
         }
       },
       "required": [
@@ -3262,6 +3281,217 @@
       "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.sensors",
+    "title": "Emulator sensors",
+    "description": "Simulate the sensors of an Android emulator through its console. status lists every sensor with its values; set gives one sensor values; orientation turns the device by gravity and reads back the display rotation Android chose; shake shakes the accelerometer for about a second; proximity covers or uncovers the proximity sensor; light sets the ambient light; fingerprint touches the fingerprint sensor with an enrolled finger, for a biometric prompt; posture folds, half-opens or opens a foldable emulator.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Emulator serial from device.list, such as emulator-5554",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "status",
+            "set",
+            "orientation",
+            "shake",
+            "proximity",
+            "light",
+            "fingerprint",
+            "posture"
+          ]
+        },
+        "sensor": {
+          "type": "string",
+          "description": "For set: a sensor name from status, such as acceleration or magnetic-field",
+          "minLength": 1
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1,
+          "maxItems": 6,
+          "description": "For set: the sensor's values, such as x, y and z"
+        },
+        "orientation": {
+          "type": "string",
+          "enum": [
+            "portrait",
+            "landscape",
+            "reverse-portrait",
+            "reverse-landscape"
+          ],
+          "default": "portrait",
+          "description": "For orientation: how the device is held"
+        },
+        "near": {
+          "type": "boolean",
+          "default": true,
+          "description": "For proximity: whether something covers the sensor"
+        },
+        "lux": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100000,
+          "default": 300,
+          "description": "For light: ambient light in lux"
+        },
+        "finger_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "default": 1,
+          "description": "For fingerprint: the enrolled finger, as the emulator numbers them"
+        },
+        "posture": {
+          "type": "string",
+          "enum": [
+            "closed",
+            "half-open",
+            "open"
+          ],
+          "default": "open",
+          "description": "For posture: the foldable's hinge"
+        }
+      },
+      "required": [
+        "device",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.app_links",
+    "title": "App Links",
+    "description": "Check an app's Android App Links. status reads each web domain the app declares with autoVerify and its verification state (verified, none, denied, or the verifier's error code) and the user's link choices; verify asks Android to verify the domains again and waits up to seconds for the answers, which need the domains' assetlinks.json and a network; resolve names the app and activity a link opens, or that Android shows a chooser, and every app that could open it; set approves, denies or resets domains by hand, as tests of a debug build need. Opening a link is android.deep_link.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "status",
+            "verify",
+            "resolve",
+            "set"
+          ],
+          "default": "status"
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "The app's application ID; for resolve it adds opens_in_app",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "description": "For resolve: the link, such as https://example.com/item/1",
+          "minLength": 1
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120,
+          "default": 30,
+          "description": "For verify: how long to wait for the verifier"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "approved",
+            "denied",
+            "none"
+          ],
+          "default": "approved",
+          "description": "For set: the state to give the domains"
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "For set: domains the app declares; all of them when left out"
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.network_capture",
+    "title": "Network capture",
+    "description": "Capture the network traffic of an emulator, or only what one app sends, and summarise it: hosts with bytes and connections, TLS server names, HTTP requests with method, host and path but no query, and DNS queries. Contents are never in the summary; HTTPS stays encrypted, as no certificate is installed. start needs opt_in:true, a running emulator whose image allows root through su (Google APIs or AOSP, not Google Play) and runs the image's tcpdump; bundle_id limits it to the app's outgoing packets through an iptables rule that stop removes. stop ends it, copies the pcap file, readable only by you, to path and summarises it; summary reads any pcap file.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Emulator serial from device.list, such as emulator-5554",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "start",
+            "stop",
+            "summary"
+          ]
+        },
+        "opt_in": {
+          "type": "boolean",
+          "default": false,
+          "description": "For start: confirm that every packet, contents included, may be recorded"
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "For start: capture only what this app sends",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "description": "For stop: where to write the pcap file, absolute; by default under Tomacco's data. For summary: the pcap file to read",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
       "openWorldHint": true
     }
   },
