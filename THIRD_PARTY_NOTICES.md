@@ -12,7 +12,8 @@ notices those licenses require. It is installed as
 The table of Rust crates below was generated from `Cargo.lock` with
 `cargo metadata` and the license files shipped in each crate. It covers the
 Linux build and leaves out crates used only on Windows, macOS or WebAssembly.
-Regenerate it when `Cargo.lock` changes.
+Regenerate it when `Cargo.lock` changes; `tools/check_dependencies.py` fails while the
+tables and `Cargo.lock` disagree.
 
 ## How the licenses combine
 

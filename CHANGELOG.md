@@ -69,6 +69,10 @@ operations and their JSON results.
 - `tomaccoctl verify FILE [--sig FILE.sig] [--sha256 FILE.sha256] [--json]` checks a downloaded release file against its
   checksum and its Ed25519 signature with the release keys built into `tomaccoctl`, in plain text or as one JSON envelope, and
   exits 0 only when both match. It verified the published 1.1.0 package and refused a copy with one byte appended.
+- `tools/check_dependencies.py` checks the Rust dependencies offline: licenses compatible with GPL-2.0-or-later, Apache-2.0-only
+  crates named in the notices, no new crate in two incompatible versions, no yanked version in Cargo's index cache, and the
+  notices' crate tables in step with `Cargo.lock`; with cargo-deny installed, also `cargo deny check` with the new `deny.toml`.
+  `make_release.py` runs it.
 - **Release key rotation.** `tomaccoctl` trusts the release key in `native/product.rs` and, during a rotation, the next key
   beside it, `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`; a package signed by either installs, one signed by another key is refused.
   `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.

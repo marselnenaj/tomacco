@@ -1,0 +1,48 @@
+# cargo-deny's policy for the Rust dependencies; tools/check_dependencies.py
+# runs `cargo deny --offline check` with it when cargo-deny is installed.
+# The same policy without cargo-deny is in that script.
+
+[graph]
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
+
+[advisories]
+# The RustSec database cargo-deny keeps; --offline uses it as it is.
+db-path = "$CARGO_HOME/advisory-dbs"
+yanked = "deny"
+
+[licenses]
+# Licenses that may be combined with GPL-2.0-or-later code and distributed.
+# Apache-2.0 makes a distributed tomaccoctl GPL-3.0; THIRD_PARTY_NOTICES.md
+# says so and names the crates.
+allow = [
+    "0BSD",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-1-Clause",
+    "BSD-3-Clause",
+    "GPL-2.0-or-later",
+    "LGPL-2.1-or-later",
+    "MIT",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+confidence-threshold = 0.9
+unused-allowed-license = "allow"
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+allow-wildcard-paths = true
+# Two of our dependencies need different versions; see KNOWN_DUPLICATES in
+# tools/check_dependencies.py.
+skip = [
+    { crate = "base64@0.22", reason = "tonic 0.14 uses 0.22" },
+    { crate = "foldhash@0.1", reason = "hashbrown 0.15, build time only" },
+    { crate = "hashbrown@0.15", reason = "petgraph 0.8, build time only" },
+    { crate = "syn@2", reason = "prost, tonic-build and tracing's macros" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

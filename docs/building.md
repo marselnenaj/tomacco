@@ -33,6 +33,15 @@ cargo clippy --locked --all-targets -- -D warnings
 
 CTest runs five groups: `desktop-ui`, `backend`, `native-display`, `control-plane` (the Python suite) and `rust-core`.
 
+**Dependency policy.** `python3 tools/check_dependencies.py` checks the Rust dependencies offline, from `Cargo.lock` and the crates in
+Cargo's cache or `vendor/`. It fails on a crate whose license does not allow distribution with Tomacco under GPL-2.0-or-later, on an
+Apache-2.0-only crate in `tomaccoctl` that [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) does not name, on a crate locked in two
+semver-incompatible versions other than the four it lists with their reasons (`base64`, `foldhash`, `hashbrown` and `syn`, each needed in two
+versions by different dependencies), on a version Cargo's local index cache marks as yanked, and when the crate tables of the notices and
+`Cargo.lock` disagree. When [cargo-deny](https://github.com/EmbarkStudios/cargo-deny) is installed it also runs `cargo deny --offline check`
+with `deny.toml`. `make_release.py` runs it after Clippy. On the development host with cargo-deny 0.20.2, it found 133 crates in the Linux
+build, 112 of them in `tomaccoctl`, and no problem.
+
 Run the Python tests directly from `tests/python`:
 
 ```sh

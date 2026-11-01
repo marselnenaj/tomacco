@@ -110,7 +110,7 @@ class MakeRelease(unittest.TestCase):
         code, commands, errors, _ = self.make("--key", str(self.key))
         self.assertEqual(code, 0, errors)
         words = [" ".join(argv) for argv in commands.runs]
-        order = ["build_release_notes.py", "cargo fmt --check", "cargo clippy", "ctest", "--target package",
+        order = ["build_release_notes.py", "cargo fmt --check", "cargo clippy", "check_dependencies.py", "ctest", "--target package",
                  "build_portable.py build", "build_portable.py verify build-portable/tomacco-1.2.3-Linux-x86_64-portable.tar.gz",
                  "build_source_release.py", "pkeyutl -sign", "gh release create"]
         positions = [next(i for i, line in enumerate(words) if word in line) for word in order]

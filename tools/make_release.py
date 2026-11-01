@@ -151,6 +151,8 @@ def build(commands, root, tag, portable=None):
         [python, "tools/build_release_notes.py", "--tag", tag, "--output", NOTES],
         ["cargo", "fmt", "--check"],
         ["cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"],
+        # Licenses, duplicate and yanked crates, the notices' crate tables, and cargo-deny when installed.
+        [python, "tools/check_dependencies.py"],
         ["cmake", "-S", ".", "-B", BUILD, "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release"],
         ["cmake", "--build", BUILD],
         ["ctest", "--test-dir", BUILD, "--output-on-failure"],
