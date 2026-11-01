@@ -322,6 +322,14 @@ Usage:
   tomaccoctl uninstall
                     Remove this installation; keeps your data and the files
                     you changed, and prints how to undo it.
+  tomaccoctl omarchy [status|repair|screenshot [--quiet]|notify [on|off]] [--json]
+                    On an Omarchy desktop: status lists the panel, window
+                    rules, keys, menu entries and agent skill and what is
+                    outdated or missing (exit 1 then); repair installs those
+                    again; screenshot saves the connected device where Omarchy
+                    keeps screenshots and copies it; notify on sends a
+                    notice when a job of 15 s or more ends with no desktop
+                    open.
   tomaccoctl verify FILE [--sig FILE.sig] [--sha256 FILE.sha256] [--json]
                     Check a downloaded release file against its checksum and
                     its Ed25519 signature with the release keys built into

@@ -462,7 +462,7 @@ fn status_names_what_is_outdated_and_repair_installs_it_again() {
     );
     let state = |user: &Path, name: &str| {
         let status = omarchy_status(user);
-        let found = status["components"]
+        status["components"]
             .as_array()
             .unwrap()
             .iter()
@@ -470,8 +470,7 @@ fn status_names_what_is_outdated_and_repair_installs_it_again() {
             .unwrap()["state"]
             .as_str()
             .unwrap()
-            .to_string();
-        found
+            .to_string()
     };
     // Nothing installed is healthy.
     assert_eq!(omarchy_status(&user)["healthy"], true);
@@ -884,11 +883,23 @@ fn json_is_written_as_install_py_writes_it() {
 #[test]
 fn the_command_line_reads_as_argparse_reads_it() {
     let args = |line: &[&str]| parse(&line.iter().map(|s| s.to_string()).collect::<Vec<_>>());
-    let parsed = args(&["--user-home=/h", "--omar", "--rollback", "x", "--no-agent"]).unwrap();
+    let parsed = args(&[
+        "--user-home=/h",
+        "--omarchy",
+        "--rollback",
+        "x",
+        "--no-agent",
+    ])
+    .unwrap();
     assert_eq!(parsed.user_home, Some(PathBuf::from("/h")));
     assert!(parsed.omarchy && parsed.no_agent_skill);
     assert_eq!(parsed.rollback.as_deref(), Some("x"));
     assert!(args(&["--no"]).is_err(), "ambiguous");
+    // --omarchy is exact as written, and not taken for --omarchy-bindings; a prefix of both is ambiguous.
+    assert!(!parsed.omarchy_bindings);
+    assert!(args(&["--omar"]).is_err(), "ambiguous");
+    let parsed = args(&["--omarchy-b", "--no-omarchy-m"]).unwrap();
+    assert!(parsed.omarchy_bindings && parsed.no_omarchy_menu && !parsed.omarchy);
     assert!(args(&["--rollback"]).is_err());
     assert!(args(&["--frobnicate"]).is_err());
     assert!(args(&["stray"]).is_err());

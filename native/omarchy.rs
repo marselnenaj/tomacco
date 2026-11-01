@@ -29,7 +29,8 @@ pub fn command(args: &[String]) -> Result<i32> {
     match words.as_slice() {
         [] | ["status"] => status(json_output),
         ["repair"] => repair(json_output),
-        ["screenshot"] => screenshot(),
+        ["screenshot"] => screenshot(true),
+        ["screenshot", "--quiet"] => screenshot(false),
         ["notify"] => {
             let on = notifying()?;
             println!(
@@ -45,7 +46,7 @@ pub fn command(args: &[String]) -> Result<i32> {
         }
         _ => Err(Error::new(
             "invalid_request",
-            "Usage: tomaccoctl omarchy [status|repair|screenshot|notify [on|off]] [--json]",
+            "Usage: tomaccoctl omarchy [status|repair|screenshot [--quiet]|notify [on|off]] [--json]",
         )
         .remedy("Run tomaccoctl --help for the commands")),
     }
@@ -171,7 +172,7 @@ fn stamp() -> String {
     )
 }
 
-fn screenshot() -> Result<i32> {
+fn screenshot(announce: bool) -> Result<i32> {
     crate::guard::enter(crate::guard::Channel::Cli, None);
     let runtimes = crate::api::dispatch("runtime.list", &json!({}))?;
     let live = runtimes
@@ -204,16 +205,18 @@ fn screenshot() -> Result<i32> {
         &json!({"session": s(live, "session"), "path": target}),
     )?;
     let copied = copy_to_clipboard(&target);
-    notify(
-        "Device screenshot",
-        &format!(
-            "{}{}",
-            target.display(),
-            if copied { " (copied)" } else { "" }
-        ),
-        Some(&target),
-        false,
-    );
+    if announce {
+        notify(
+            "Device screenshot",
+            &format!(
+                "{}{}",
+                target.display(),
+                if copied { " (copied)" } else { "" }
+            ),
+            Some(&target),
+            false,
+        );
+    }
     println!("{}", json!({"path": target, "copied": copied}));
     Ok(0)
 }
