@@ -1,4 +1,5 @@
-//! Semantic native Android actions and durable, device-serialized scenario runs.
+//! Semantic native Android actions and durable, device-serialized scenario
+//! runs; iPhone scenario steps are in iphone_automation.
 use crate::{core::*, devices, jobs, toolchain};
 use serde_json::{Value, json};
 use std::{
@@ -300,8 +301,18 @@ pub fn run(a: &Value) -> Result {
     if unique.len() != devices.len() {
         return Err(Error::new("invalid_argument", "Device IDs must be unique"));
     }
+    let platform = a["platform"].as_str().unwrap_or("android");
     for device in &devices {
         identifier(device, "device", None)?;
+    }
+    if platform == "ios" {
+        for scenario in &scenarios {
+            crate::iphone_automation::check_scenario(scenario)?;
+        }
+        for device in &devices {
+            crate::iphone_device::udid(device)?;
+            crate::iphone_automation::session(device)?;
+        }
     }
     let output = path(s(a, "directory"), false, false)?;
     if output.exists() && fs::read_dir(&output)?.next().is_some() {
@@ -311,7 +322,7 @@ pub fn run(a: &Value) -> Result {
         ));
     }
     private_dir(&output)?;
-    let spec = json!({"name":name,"scenarios":scenarios,"devices":devices,"directory":output,"parallelism":a["parallelism"].as_u64().unwrap_or(2),"retries":a["retries"].as_u64().unwrap_or(0),"shard":b(a,"shard")});
+    let spec = json!({"name":name,"scenarios":scenarios,"devices":devices,"directory":output,"parallelism":a["parallelism"].as_u64().unwrap_or(2),"retries":a["retries"].as_u64().unwrap_or(0),"shard":b(a,"shard"),"platform":platform});
     atomic_json(&output.join("run.json"), &spec)?;
     jobs::submit(
         &format!("Native UI · {name}"),
@@ -465,6 +476,7 @@ pub fn worker(file: &str) -> Result<()> {
     let name = s(&spec, "name");
     let parallel = n(&spec, "parallelism").clamp(1, 8) as usize;
     let shard = b(&spec, "shard");
+    let platform = spec["platform"].as_str().unwrap_or("android");
     let partial = std::sync::Mutex::new(Vec::new());
     let results = schedule(
         &devices,
@@ -487,7 +499,7 @@ pub fn worker(file: &str) -> Result<()> {
                 } else {
                     format!("{tag}-a{attempt}")
                 };
-                run_device(device, scenario, &directory, &tag)
+                run_device(device, scenario, &directory, &tag, platform)
             });
             result["scenario"] = scenario["name"].clone();
             result["scenario_index"] = json!(index);
@@ -694,8 +706,15 @@ fn app_crash(events: &[Value], apps: &[String]) -> Option<Error> {
         .details(event.clone()),
     )
 }
-fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Value {
+fn run_device(
+    device: &str,
+    scenario: &Value,
+    directory: &Path,
+    tag: &str,
+    platform: &str,
+) -> Value {
     let started = Instant::now();
+    let iphone = platform == "ios";
     // The emulator shares this computer's clock; a second of margin.
     let since = now() - 1.0;
     let mut steps = Vec::new();
@@ -706,6 +725,11 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
                 .join(format!("automation-{}.lock", digest(device.as_bytes()))),
         )?;
         lock.acquire(false)?;
+        let session = if iphone {
+            crate::iphone_automation::session(device)?
+        } else {
+            String::new()
+        };
         for (index, step) in scenario["steps"].as_array().unwrap().iter().enumerate() {
             let begin = Instant::now();
             let mut args = step.clone();
@@ -713,7 +737,11 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
             if args.get("timeout").is_none() {
                 args["timeout"] = json!(10);
             }
+            let evidence = directory.join(format!("{tag}-{index:03}.png"));
             let result = (|| -> Result {
+                if iphone {
+                    return crate::iphone_automation::step(device, &session, &args, &evidence);
+                }
                 match s(step, "action") {
                     "wait" | "assert" => find(&args),
                     "click" | "long_click" | "fill" => action(&args),
@@ -746,16 +774,19 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
                                 .details(done))
                         }
                     }
-                    "screenshot" => {
-                        screenshot(device, &directory.join(format!("{tag}-{index:03}.png")))
-                    }
+                    "screenshot" => screenshot(device, &evidence),
                     _ => Err(Error::new("invalid_step", "Unknown scenario action")),
                 }
             })();
             let passed = result.is_ok();
             steps.push(json!({"index":index,"action":step["action"],"label":step["label"],"duration_seconds":begin.elapsed().as_secs_f64(),"passed":passed,"result":match &result{Ok(v)=>v.clone(),Err(e)=>json!({"error":e.value()})}}));
             if let Err(error) = result {
-                let capture = screenshot(device, &directory.join(format!("{tag}-failure.png")));
+                let failure = directory.join(format!("{tag}-failure.png"));
+                let capture = if iphone {
+                    crate::iphone_automation::capture(&session, &failure)
+                } else {
+                    screenshot(device, &failure)
+                };
                 steps.last_mut().unwrap()["failure_capture"] =
                     capture.unwrap_or_else(|e| json!({"error":e.value()}));
                 return Err(error);
@@ -763,9 +794,16 @@ fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Va
         }
         Ok(())
     })();
-    let (crashes, crashes_error) = match crate::crashes::on_device(device, "", since) {
-        Ok(events) => (events, Value::Null),
-        Err(error) => (Vec::new(), error.value()),
+    let (crashes, crashes_error) = if iphone {
+        (
+            Vec::new(),
+            json!({"code":"not_checked","message":"An iPhone run does not read crashes; ios.crash_reports lists them"}),
+        )
+    } else {
+        match crate::crashes::on_device(device, "", since) {
+            Ok(events) => (events, Value::Null),
+            Err(error) => (Vec::new(), error.value()),
+        }
     };
     let result = result.and_then(|()| match app_crash(&crashes, &scenario_apps(scenario)) {
         Some(error) => Err(error),

@@ -70,7 +70,7 @@ tomaccoctl call testing.action '{"device":"<device>","selector":{"text":"<text>"
 
 **Run native tests**
 
-Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.
+Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. platform ios runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.
 
 Annotations: writes, not idempotent, open world.
 
@@ -79,6 +79,7 @@ Annotations: writes, not idempotent, open world.
 | `path` | string | yes |  | Absolute path of a scenario JSON, or of a directory whose .json files are scenarios, run in name order |
 | `directory` | string | yes |  |  |
 | `devices` | array of string | yes |  | 1 to 32 items |
+| `platform` | string |  | `"android"` | one of `android`, `ios`; android: adb devices; ios: USB iPhones, each with a connected runtime.start session |
 | `shard` | boolean |  | `false` | Split the scenarios across the devices, each scenario once, on the next free device, instead of running every scenario on every device. At most parallelism devices are used. |
 | `parallelism` | integer |  | `2` | 1 to 8 |
 | `timeout` | integer |  | `3600` | 10 to 86400 |

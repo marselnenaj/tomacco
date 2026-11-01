@@ -24,6 +24,7 @@ mod files;
 mod gradle_model;
 mod instrumentation;
 mod ios_emulator;
+mod iphone_automation;
 mod iphone_device;
 mod iphone_setup;
 mod javascript;

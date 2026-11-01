@@ -200,6 +200,38 @@ tomaccoctl call ios.app_files '{"device":"ACTUAL_UDID","bundle_id":"dev.example.
 
 The file list is read from the tree go-ios draws, so it has paths but no sizes or dates.
 
+### UI tests
+
+`testing.run` with `"platform":"ios"` runs the same JSON scenarios as on Android, on iPhones
+with a connected `runtime.start` session. The session's WebDriverAgent reads the screen and
+taps, so start it first, with the runner from `ios.wda_prepare`.
+
+```sh
+tomaccoctl call runtime.start '{"platform":"ios","device":"ACTUAL_UDID","runner_bundle_id":"INSTALLED_RUNNER_ID"}'
+tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute/ui-results","devices":["ACTUAL_UDID"],"platform":"ios"}'
+```
+
+How the steps map to WebDriverAgent:
+
+| Scenario | On the iPhone |
+| --- | --- |
+| `text` | The element's label, or its value when it has no label (a text field) |
+| `text_contains` | Part of the label or value |
+| `resource_id` | The accessibility identifier |
+| `description` | The label |
+| `class` | The element type, such as `Button` or `XCUIElementTypeButton` |
+| `click`, `long_click` | A tap or a press in the middle of the element |
+| `fill` | Tap the field, clear it and type the text |
+| `tap`, `swipe` | Coordinates in points, not pixels |
+| `key` | `home`, `enter`, `backspace`, `delete` or `tab` |
+| `launch`, `stop` | `device.app` through go-ios |
+
+Only elements WebDriverAgent reports as visible are matched. `clickable`, `checked` and
+`package` selectors and the `clear` step have no iPhone equivalent and are refused before the
+run starts. The report and `junit.xml` are the same as on Android, with a screenshot on
+failure; crashes are not read during the run, so use `ios.crash_reports` afterwards. A press
+lasts at most one second.
+
 ### Profiles and signing certificates
 
 `ios.signing` shows which provisioning profiles there are and how long they last. It reads
@@ -343,8 +375,8 @@ orientation, PNG capture and XML accessibility.
 
 **What you do not get.** A gesture runs when you release it; this is not continuous
 finger streaming. Pinch, shake, hinge, and hardware or sensor emulation are not
-implemented on this route. Video is MJPEG capped at 30 frames per second. There is no
-iPhone test-matrix runner.
+implemented on this route. Video is MJPEG capped at 30 frames per second. For
+scenarios across iPhones see [UI tests](#ui-tests).
 
 **How it connects.** The runtime owns a `go-ios runwda` process and `iproxy` forwards
 bound to 127.0.0.1, which carry the runner's HTTP and video over USB. No public port is

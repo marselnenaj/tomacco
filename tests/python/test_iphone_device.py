@@ -251,5 +251,87 @@ class IphoneAppTests(IphoneTools):
         self.assertEqual(refused.exception.code, "app_container_unavailable")
 
 
+SOURCE = """<?xml version="1.0" encoding="UTF-8"?><AppiumAUT><XCUIElementTypeApplication type="XCUIElementTypeApplication" name="Counter" label="Counter" enabled="true" visible="true" x="0" y="0" width="390" height="844"><XCUIElementTypeStaticText type="XCUIElementTypeStaticText" name="count" label="Count: 0" enabled="true" visible="true" x="20" y="100" width="200" height="30"/><XCUIElementTypeButton type="XCUIElementTypeButton" name="add" label="Add" enabled="true" visible="true" x="20" y="200" width="100" height="44"/><XCUIElementTypeTextField type="XCUIElementTypeTextField" name="who" value="Name" enabled="true" visible="true" x="20" y="400" width="300" height="40"/></XCUIElementTypeApplication></AppiumAUT>"""
+
+
+class IphoneScenarioTests(IphoneTools):
+    """testing.run with platform ios against the WDA stand-in in tests/fixtures/iphone_usb.py."""
+
+    def connect(self):
+        from native_client import ROOT
+        self.tool("iproxy", (ROOT / "tests/fixtures/iphone_usb.py").read_text())
+        self.tool("go-ios", "import time\ntime.sleep(120)\n")
+        (self.root / "wda-source.xml").write_text(SOURCE)
+        live = dispatch("runtime.start", {"platform": "ios", "device": UDID, "runner_bundle_id": "dev.test.Runner.xctrunner"})
+        self.sessions.append(live["session"])
+        return live
+
+    def setUp(self):
+        super().setUp()
+        self.sessions = []
+
+    def tearDown(self):
+        # Before Isolated's tearDown puts TOMACCO_HOME back.
+        for session in self.sessions:
+            dispatch("runtime.stop", {"session": session})
+        super().tearDown()
+
+    def run_scenario(self, steps, name="report"):
+        scenario = self.root / f"{name}.json"
+        scenario.write_text(json.dumps({"name": "Counter", "steps": steps}))
+        directory = self.root / name
+        job = dispatch("testing.run", {"path": str(scenario), "directory": str(directory), "devices": [UDID],
+                                       "platform": "ios"})
+        done = jobs.wait(job["id"], 60)
+        return done, json.loads((directory / "report.json").read_text()), directory
+
+    def wda(self, suffix):
+        calls = [json.loads(line) for line in (self.root / "wda-calls.jsonl").read_text().splitlines()]
+        return [call for call in calls if call["path"].endswith(suffix)]
+
+    def test_a_scenario_finds_taps_and_fills_through_webdriveragent(self):
+        self.connect()
+        done, report, directory = self.run_scenario([
+            {"action": "assert", "selector": {"text": "Count: 0"}},
+            {"action": "click", "selector": {"resource_id": "add"}},
+            {"action": "fill", "selector": {"resource_id": "who"}, "text": "Zoë"},
+            {"action": "wait", "selector": {"text": "Gone"}, "state": "absent", "timeout": 0},
+            {"action": "tap", "x": 195, "y": 422},
+            {"action": "key", "key": "home"},
+            {"action": "screenshot"},
+        ])
+        self.assertEqual(done["state"], "succeeded", report)
+        self.assertTrue(report["passed"])
+        taps = [call["body"] for call in self.wda("/wda/tap")]
+        self.assertEqual(taps[0], {"x": 70, "y": 222})
+        self.assertEqual(taps[1], {"x": 170, "y": 420})
+        self.assertEqual(taps[2], {"x": 195, "y": 422})
+        self.assertEqual(self.wda("/element/fixture-element/value")[0]["body"], {"value": ["Zoë"]})
+        self.assertEqual(len(self.wda("/wda/homescreen")), 1)
+        self.assertTrue(list(directory.glob("*-006.png")))
+        self.assertEqual(report["results"][0]["crashes_error"]["code"], "not_checked")
+
+    def test_a_failing_step_fails_the_run_with_a_capture(self):
+        self.connect()
+        done, report, directory = self.run_scenario([
+            {"action": "click", "selector": {"text": "Missing"}, "timeout": 0}])
+        self.assertEqual(done["state"], "failed")
+        step = report["results"][0]["steps"][0]
+        self.assertEqual(step["result"]["error"]["code"], "element_timeout")
+        self.assertTrue(list(directory.glob("*-failure.png")))
+
+    def test_without_a_session_or_with_android_only_steps_the_run_is_refused(self):
+        scenario = self.root / "s.json"
+        scenario.write_text(json.dumps({"name": "x", "steps": [{"action": "assert", "selector": {"text": "Go"}}]}))
+        args = {"path": str(scenario), "directory": str(self.root / "out"), "devices": [UDID], "platform": "ios"}
+        with self.assertRaises(StudioError) as missing:
+            dispatch("testing.run", args)
+        self.assertEqual(missing.exception.code, "runtime_required")
+        scenario.write_text(json.dumps({"name": "x", "steps": [{"action": "clear", "bundle_id": "dev.example.app"}]}))
+        with self.assertRaises(StudioError) as refused:
+            dispatch("testing.run", args)
+        self.assertEqual(refused.exception.code, "step_unsupported")
+
+
 if __name__ == "__main__":
     unittest.main()

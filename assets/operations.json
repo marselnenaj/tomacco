@@ -4366,7 +4366,7 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure.",
+    "description": "Run JSON native Android scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. platform ios runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4385,6 +4385,15 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "default": "android",
+          "description": "android: adb devices; ios: USB iPhones, each with a connected runtime.start session"
         },
         "shard": {
           "type": "boolean",

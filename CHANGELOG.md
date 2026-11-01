@@ -40,6 +40,10 @@ operations and their JSON results.
     adds one plain row per app under `installed`, and `all` for system apps.
   - `ios.app_files` lists or pulls the files in a development build's container with `go-ios fsync`, the pull
     as one `.tar` archive, like `android.app_files`.
+  - `testing.run` with `platform:"ios"` runs the JSON scenarios on iPhones through the WebDriverAgent session
+    `runtime.start` keeps: selectors are read against WebDriverAgent's XML source (`resource_id` is the
+    accessibility identifier), and click, fill, tap, swipe, keys, launch, stop and screenshots map to it, with
+    the same report and `junit.xml`. Steps without an iPhone equivalent are refused before the run.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.
