@@ -25,6 +25,12 @@ operations and their JSON results.
   argument descriptions; 136,247 bytes instead of 265,135) or `grouped` (one tool per area that takes an operation and
   its arguments; 29,261 bytes). Both add a `schema` tool for one operation's whole schema.
 
+### Changed
+
+- Every error has a `remedy`: where the place that failed gave none, the error carries its code's general one. The
+  new [error reference](docs/reference/errors.md), generated from `assets/errors.json`, lists all 435 codes with what
+  each means and what to do, and a unit test fails when code returns an error code the catalogue lacks.
+
 ### Tests
 
 - An end-to-end MCP session test (`AgentConversationTests` in `tests/python/test_product.py`) plans, builds an

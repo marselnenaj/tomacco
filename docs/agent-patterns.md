@@ -94,14 +94,17 @@ status is not 0. Branch on `code`; show the user `message`; follow `remedy`. Rea
 
 ```json
 {"ok":false,"error":{"code":"invalid_argument","message":"Unknown argument: arguments.platfrom","remedy":"Did you mean arguments.platform?"}}
-{"ok":false,"error":{"code":"invalid_argument","message":"arguments.seconds is out of range","remedy":""}}
+{"ok":false,"error":{"code":"invalid_argument","message":"arguments.seconds is out of range","remedy":"Correct the argument the message names; tomaccoctl schema OPERATION lists the accepted keys, types and limits. The call is safe to repeat."}}
 {"ok":false,"error":{"code":"tool_missing","message":"adb is not installed/configured","remedy":"Install Android SDK platform-tools"}}
 {"ok":false,"error":{"code":"project_unrecognized","message":"No supported project in /absolute/notes","remedy":"Open a Flutter, Gradle, Swift, xtool, web or Xcode project, or add tomacco.json tasks"}}
 ```
 
 - `invalid_argument` is refused before anything runs, so the call is safe to correct and repeat.
   Read the schema (`tomaccoctl schema OPERATION`) instead of guessing other keys.
-- An empty `remedy` means there is no generic fix; the `message` is the information.
+- When the place that failed has no remedy of its own, `remedy` is the general one for its `code`. The
+  [error reference](reference/errors.md) lists every code with what it means and what to do. A code
+  passed on from another tool, such as a debug adapter, may still have an empty `remedy`; then the
+  `message` is the information.
 - A job that ended badly under `--wait` answers `job_failed`, `job_cancelled` or `job_timed_out`,
   with the final job under `error.details.job`. A real one, after a Kotlin syntax error:
 

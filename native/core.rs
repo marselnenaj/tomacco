@@ -66,12 +66,33 @@ impl Error {
         self.details = Some(Box::new(value));
         self
     }
-    /// The error as clients see it, with any secret it quotes masked.
+    /// The error as clients see it, with any secret it quotes masked. An
+    /// error without a remedy of its own gets its code's general one from
+    /// assets/errors.json.
     pub fn value(&self) -> Value {
         let mut value = serde_json::to_value(self).expect("error is serializable");
+        if self.remedy.is_empty() {
+            if let Some(remedy) = general_remedy(&self.code) {
+                value["remedy"] = json!(remedy);
+            }
+        }
         crate::redact::value(&mut value);
         value
     }
+}
+/// Every error code with what it means and what to do, as the error
+/// reference (docs/reference/errors.md) lists them.
+pub fn error_catalogue() -> &'static serde_json::Map<String, Value> {
+    static CATALOGUE: std::sync::OnceLock<serde_json::Map<String, Value>> =
+        std::sync::OnceLock::new();
+    CATALOGUE.get_or_init(|| {
+        serde_json::from_str(include_str!("../assets/errors.json"))
+            .expect("the error catalogue is a JSON object")
+    })
+}
+/// The general remedy for an error code, when the catalogue has one.
+pub fn general_remedy(code: &str) -> Option<&'static str> {
+    error_catalogue().get(code)?["remedy"].as_str()
 }
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -999,5 +1020,108 @@ mod directory_tests {
         let home = account_home().expect("the test account has a home directory");
         assert!(home.is_absolute());
         assert_ne!(home, Path::new("/tmp"));
+    }
+}
+
+#[cfg(test)]
+mod error_catalogue_tests {
+    use super::*;
+    /// A source file without its `#[cfg(test)] mod` blocks, whose errors
+    /// are made up for the tests.
+    fn without_tests(text: &str) -> String {
+        let pattern =
+            regex::Regex::new(r"#\[cfg\(test\)\]\s*(?:#\[[^\]]*\]\s*)*mod \w+\s*\{").unwrap();
+        let mut kept = String::new();
+        let mut from = 0;
+        while let Some(found) = pattern.find_at(text, from) {
+            kept.push_str(&text[from..found.start()]);
+            // An unclosed block, such as one whose strings hold braces, runs to the end.
+            let mut depth = 1;
+            let mut end = text.len();
+            for (offset, c) in text[found.end()..].char_indices() {
+                depth += match c {
+                    '{' => 1,
+                    '}' => -1,
+                    _ => 0,
+                };
+                if depth == 0 {
+                    end = found.end() + offset + 1;
+                    break;
+                }
+            }
+            from = end;
+        }
+        kept.push_str(&text[from..]);
+        kept
+    }
+    /// Every error code written as `Error::new("code", ...)` in native/,
+    /// with a file it is in.
+    fn codes_in_sources() -> std::collections::BTreeMap<String, String> {
+        let pattern = regex::Regex::new(r#"Error::new\(\s*"([a-z0-9_]+)""#).unwrap();
+        let mut codes = std::collections::BTreeMap::new();
+        let mut directories = vec![Path::new(env!("CARGO_MANIFEST_DIR")).join("native")];
+        while let Some(directory) = directories.pop() {
+            for entry in fs::read_dir(&directory).unwrap() {
+                let path = entry.unwrap().path();
+                let name = path.file_name().unwrap().to_string_lossy().into_owned();
+                if path.is_dir() {
+                    directories.push(path);
+                } else if name.ends_with(".rs") && !name.ends_with("_tests.rs") {
+                    let text = without_tests(&fs::read_to_string(&path).unwrap());
+                    for found in pattern.captures_iter(&text) {
+                        codes.entry(found[1].to_string()).or_insert(name.clone());
+                    }
+                }
+            }
+        }
+        codes
+    }
+    /// Codes made from a variable, which the scan cannot see.
+    const DYNAMIC: &[&str] = &["job_failed", "job_cancelled", "job_timed_out"];
+
+    #[test]
+    fn every_error_code_has_a_cause_and_a_remedy_in_the_catalogue() {
+        let catalogue = error_catalogue();
+        let codes = codes_in_sources();
+        assert!(
+            codes.len() > 400,
+            "the scan found only {} codes",
+            codes.len()
+        );
+        let missing: Vec<String> = codes
+            .iter()
+            .filter(|(code, _)| !catalogue.contains_key(*code))
+            .map(|(code, file)| format!("{code} ({file})"))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "add these codes to assets/errors.json with a cause and a remedy, then run python3 tools/build_reference.py: {}",
+            missing.join(", ")
+        );
+        for (code, entry) in catalogue {
+            for key in ["cause", "remedy"] {
+                assert!(
+                    entry[key]
+                        .as_str()
+                        .is_some_and(|text| text.trim().len() > 3),
+                    "{code} has no {key}"
+                );
+            }
+            assert!(
+                codes.contains_key(code) || DYNAMIC.contains(&code.as_str()),
+                "assets/errors.json lists {code}, which no code returns any more"
+            );
+        }
+    }
+    #[test]
+    fn an_error_without_a_remedy_gets_its_codes_general_one() {
+        let bare = Error::new("job_not_found", "Unknown job x").value();
+        assert_eq!(bare["remedy"], general_remedy("job_not_found").unwrap());
+        let own = Error::new("job_not_found", "Unknown job x")
+            .remedy("Use job.list")
+            .value();
+        assert_eq!(own["remedy"], "Use job.list");
+        let unknown = Error::new("from_an_adapter", "x").value();
+        assert_eq!(unknown["remedy"], "");
     }
 }

@@ -53,7 +53,7 @@ endif()
 add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tomaccoctl"
     COMMAND ${CMAKE_COMMAND} -E env ${TOMACCO_RUST_BUILD_ENV} "CARGO_TARGET_DIR=${TOMACCO_CARGO_TARGET}" ${CARGO_EXECUTABLE} build --release --locked --manifest-path "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TOMACCO_CARGO_TARGET}/release/tomaccoctl" "${CMAKE_CURRENT_BINARY_DIR}/tomaccoctl"
-    DEPENDS ${TOMACCO_RUST_SOURCES} Cargo.toml Cargo.lock build.rs native/protocol/idb.proto assets/models.json assets/device-profile.schema.json assets/operations.json assets/layout-audit.js
+    DEPENDS ${TOMACCO_RUST_SOURCES} Cargo.toml Cargo.lock build.rs native/protocol/idb.proto assets/models.json assets/device-profile.schema.json assets/operations.json assets/errors.json assets/layout-audit.js
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" VERBATIM)
 add_custom_target(tomacco-core ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/tomaccoctl")
 qt_add_executable(tomacco src/main.cpp src/backend.cpp src/backend.h src/control.cpp src/control.h src/nativeview.cpp src/nativeview.h)

@@ -1,0 +1,1742 @@
+{
+  "action_unsupported": {
+    "cause": "project.dependency_updates reads Gradle builds, pubspec.yaml, package.json dependencies and Package.resolved; this project has none.",
+    "remedy": "Use an explicitly configured project task for framework-specific commands."
+  },
+  "adb_forward": {
+    "cause": "ADB did not allocate a forwarding port.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "ambiguous_selector": {
+    "cause": "Selector matched … elements; refine it or specify index.",
+    "remedy": "Add properties to the selector, or pass index."
+  },
+  "analyzer_failed": {
+    "cause": "No analyser produced a result; see report.json.",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "analyzer_output": {
+    "cause": "dart analyze printed no JSON.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "android_project_missing": {
+    "cause": "No Gradle project in …/android.",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "app_action_failed": {
+    "cause": "Device action failed.",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "app_container_unavailable": {
+    "cause": "The iPhone did not open the container of …",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "app_crashed": {
+    "cause": "… … during the scenario.",
+    "remedy": "Read the crash with testing.crashes or device.logs, fix it and run again."
+  },
+  "app_not_built": {
+    "cause": "Expected one xtool/*.app in …, found …",
+    "remedy": "Run project.execute with platform ios for an xtool project, and wait for its job."
+  },
+  "app_not_debuggable": {
+    "cause": "Android refused run-as for this app; install a debuggable build for the current primary user.",
+    "remedy": "Install a debuggable build of the app, such as a debug build from project.run."
+  },
+  "app_not_installed": {
+    "cause": "… is not installed.",
+    "remedy": "Install the app with device.install or project.run."
+  },
+  "app_not_running": {
+    "cause": "… is not running.",
+    "remedy": "Launch the app first, for example with device.app."
+  },
+  "apple_companion_failed": {
+    "cause": "A display session with a device did not start or stopped answering.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "apple_companion_timeout": {
+    "cause": "The Mac simulator did not become ready within 75 seconds.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "apple_runtime": {
+    "cause": "A display session with a device did not start or stopped answering.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "application_id_ambiguous": {
+    "cause": "Several installed apps match …",
+    "remedy": "Pass the exact bundle_id from ios.apps."
+  },
+  "application_id_required": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Pass bundle_id with the app's bundle identifier."
+  },
+  "application_id_unknown": {
+    "cause": "The build files do not state this app's application ID.",
+    "remedy": "Pass bundle_id with the app's application ID."
+  },
+  "artifact_missing": {
+    "cause": "Screenshot command produced no artifact.",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "audio_stopping": {
+    "cause": "The previous audio stream is still stopping; retry shortly.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "audio_unsupported": {
+    "cause": "Output forwarding is currently available for Android 11 and newer.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "authentication_failed": {
+    "cause": "Google did not return an access token.",
+    "remedy": "Check that the service-account key is valid and has access in Play Console."
+  },
+  "avd_exists": {
+    "cause": "An emulator with that name exists.",
+    "remedy": "Choose another name, or use the existing one with android.avd_start."
+  },
+  "avd_in_use": {
+    "cause": "Stop the emulator before changing its hardware settings.",
+    "remedy": "Unrecognized emulator lock files are preserved."
+  },
+  "avd_not_found": {
+    "cause": "Unknown AVD: …",
+    "remedy": "Use android.avds or android.avd_create."
+  },
+  "baseline_missing": {
+    "cause": "No baseline at …",
+    "remedy": "Create the baseline with update_baseline:true after checking the image is right."
+  },
+  "binary_file": {
+    "cause": "This file is not UTF-8 text.",
+    "remedy": "files.read and files.write handle UTF-8 text only."
+  },
+  "budget_exceeded": {
+    "cause": "Outside the performance budget: …",
+    "remedy": "Compare the report with its baseline (profile.compare) to find the regression, or raise the budget if it was intended."
+  },
+  "builtin_profile": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Choose a new ID; built-in profiles cannot be replaced."
+  },
+  "bundle_id_mismatch": {
+    "cause": "The built app is …, not …",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "bundletool_failed": {
+    "cause": "bundletool reported no sizes.",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "capture_failed": {
+    "cause": "Evidence capture failed.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "capture_incomplete": {
+    "cause": "Device screenshot has not completed successfully.",
+    "remedy": "Inspect job.get and job.logs."
+  },
+  "capture_timeout": {
+    "cause": "ADB screenshot timed out.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "catalogue_full": {
+    "cause": "At most 1000 custom profiles are supported.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "checksum_mismatch": {
+    "cause": "The download from … does not match its published checksum and was deleted.",
+    "remedy": "Try again; if it repeats, the download source changed and the pinned checksum needs an update in a new Tomacco version."
+  },
+  "config_unsupported": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Update the bundle identifier in this project's xtool configuration manually."
+  },
+  "conflicting_display_profile": {
+    "cause": "This device model has its own display; omit display_profile.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "conflicting_storage": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Select one access mode per virtual disk."
+  },
+  "consent_declined": {
+    "cause": "The person said no, or closed the question, when the MCP client asked them before this step.",
+    "remedy": "Do not repeat the call unless the person changes their mind; ask them what to do instead."
+  },
+  "console_log_limit": {
+    "cause": "Guest console exceeded 8 MiB.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "crash_report_unreadable": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "database_busy": {
+    "cause": "The job database stayed locked by another Tomacco process.",
+    "remedy": "Try again in a moment; if it stays busy, check for a stuck tomaccoctl process."
+  },
+  "database_error": {
+    "cause": "The job database could not be opened or read.",
+    "remedy": "Check that TOMACCO_HOME is writable and its disk is not full; tomaccoctl report bundles the details."
+  },
+  "debug_adapter_error": {
+    "cause": "The debugger could not start, attach or answer.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "debug_disconnected": {
+    "cause": "Debug adapter closed stdout.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "debug_forward": {
+    "cause": "ADB did not allocate a local native-debug port.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "debug_overflow": {
+    "cause": "Too many unprocessed debug events.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "debug_protocol": {
+    "cause": "DAP header too large.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "debug_session_unavailable": {
+    "cause": "The debugger could not start, attach or answer.",
+    "remedy": "Start a new debug session or inspect debug.list."
+  },
+  "debug_timeout": {
+    "cause": "Adapter did not initialize the target.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "debug_worker_failed": {
+    "cause": "Debug worker exited; inspect …",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "dependencies_missing": {
+    "cause": "… is not installed in …/node_modules.",
+    "remedy": "Run `…` in …, then call project.run again."
+  },
+  "desktop_missing": {
+    "cause": "Tomacco desktop is not installed.",
+    "remedy": "Build with CMake and run python3 install.py."
+  },
+  "desktop_stale": {
+    "cause": "The running Tomacco desktop (…) is not the installed version … and cannot be asked to quit.",
+    "remedy": "Close that window, then open Tomacco again."
+  },
+  "desktop_start_failed": {
+    "cause": "Desktop exited during startup.",
+    "remedy": "Read …"
+  },
+  "desktop_start_timeout": {
+    "cause": "Desktop has not opened its control socket.",
+    "remedy": "Read …"
+  },
+  "desktop_unsaved": {
+    "cause": "The running Tomacco desktop (…) is not the installed version …, and it has unsaved files.",
+    "remedy": "Save or discard them in that window and close it, then open Tomacco again."
+  },
+  "device_busy": {
+    "cause": "This iPhone already has an active native session.",
+    "remedy": "Wait for the job or session using it to end (job.list), or stop it if the person agrees, then try again."
+  },
+  "device_debug_busy": {
+    "cause": "An existing debugger owns this Android device; use or disconnect that session first.",
+    "remedy": "Wait for the job or session using it to end (job.list), or stop it if the person agrees, then try again."
+  },
+  "device_failed": {
+    "cause": "Failed on …",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "device_required": {
+    "cause": "Several iPhones are connected; pass device.",
+    "remedy": "Pass device with an ID from device.list."
+  },
+  "display_unavailable": {
+    "cause": "The device did not report its density.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "display_unknown": {
+    "cause": "… reported no screen size and density.",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "download_failed": {
+    "cause": "Downloading … failed (curl exit …): …",
+    "remedy": "Check the network connection and try again; retry where the operation offers it."
+  },
+  "duplicate_component": {
+    "cause": "Research seal overrides must be unique.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "duplicate_profile": {
+    "cause": "Import contains duplicate IDs.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "element_disabled": {
+    "cause": "Selected element is disabled.",
+    "remedy": "Wait until the element is enabled, or check the app's state before acting."
+  },
+  "element_input_failed": {
+    "cause": "A step Tomacco ran did not succeed.",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "element_timeout": {
+    "cause": "Element did not become … within …s.",
+    "remedy": "Check with testing.find or a screenshot what the screen shows; raise the timeout if the app is only slow."
+  },
+  "emulator_refused": {
+    "cause": "The emulator refused …: …",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "engine_changed": {
+    "cause": "PMP engine changed after submission.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "engine_exited": {
+    "cause": "PMP engine exited before QMP.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "engine_log_limit": {
+    "cause": "PMP engine exceeded the 8 MiB log budget.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "engine_shutdown_failed": {
+    "cause": "Engine exited with …",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "engine_shutdown_timeout": {
+    "cause": "Engine did not finish flushing its working image.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "engine_timeout": {
+    "cause": "PMP engine did not open QMP.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "file_conflict": {
+    "cause": "The file changed after files.read gave its digest.",
+    "remedy": "Read it again with files.read, merge the changes, and write with the new digest as if_match."
+  },
+  "file_exists": {
+    "cause": "Export destination already exists: …",
+    "remedy": "Choose another destination, or remove the existing file if the person agrees."
+  },
+  "file_too_large": {
+    "cause": "Text editing is limited to files up to 1 MiB.",
+    "remedy": "Edit the file with another tool; files.read and files.write handle text up to 1 MiB."
+  },
+  "firmware_incomplete": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Extract the required boot components first."
+  },
+  "firmware_modified": {
+    "cause": "PMP bundle changed after submission.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "flutter_ios_missing": {
+    "cause": "This is not a Flutter project with an ios directory.",
+    "remedy": "Run flutter create --platforms ios . in the project."
+  },
+  "flutter_setup_required": {
+    "cause": "This Flutter install still has Apple's macOS gen_snapshot.",
+    "remedy": "Call ios.flutter_setup once per Flutter version."
+  },
+  "frame_missing": {
+    "cause": "The debugger could not start, attach or answer.",
+    "remedy": "Read the stack before reading frame variables."
+  },
+  "guest_diagnostic_failed": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "guest_observation_timeout": {
+    "cause": "The guest did not complete both platform observations.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "guest_script_failed": {
+    "cause": "Guest script exited with …",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "guest_shell_timeout": {
+    "cause": "No verified command response from the restore shell within the requested time.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "heap_dump_failed": {
+    "cause": "The heap dump pulled from the device is empty.",
+    "remedy": "Heap dumps need a debuggable app, or an emulator image without Google Play."
+  },
+  "incomplete_research_inputs": {
+    "cause": "Research graft preparation requires kernel, boot_manifest and device_tree together.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "input_too_large": {
+    "cause": "JSON exceeds 2 MiB: …",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "instrumentation_protocol": {
+    "cause": "Invalid Android response.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "instrumentation_required": {
+    "cause": "Unicode input requires Tomacco's Android instrumentation.",
+    "remedy": "Run testing.setup for this device, wait for success, then retry."
+  },
+  "instrumentation_unavailable": {
+    "cause": "Android UI automation is not ready.",
+    "remedy": "Run testing.setup for the selected device, wait for success, then retry."
+  },
+  "integration_test_missing": {
+    "cause": "This Flutter project has no integration_test directory.",
+    "remedy": "Add the integration_test package as a dev dependency and its tests in integration_test/, as Flutter's integration testing guide describes."
+  },
+  "invalid_application": {
+    "cause": "… is not among the apps a start stages: {RESEARCH_APPLICATION} and the listed bundles.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_application_bundle": {
+    "cause": "This bundle uses the owned diagnostic app's bundle identifier; choose another.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_argument": {
+    "cause": "The arguments do not match the operation's schema: an unknown key, a wrong type, or a value out of range. Nothing ran.",
+    "remedy": "Correct the argument the message names; tomaccoctl schema OPERATION lists the accepted keys, types and limits. The call is safe to repeat."
+  },
+  "invalid_artifact": {
+    "cause": "Not a readable ZIP-based Android package.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_boot_display": {
+    "cause": "Boot display dimensions must be 64..4096.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_bounds": {
+    "cause": "Selected node has no usable bounds.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_capture": {
+    "cause": "Live frame sequence is exhausted.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_capture_path": {
+    "cause": "Capture directory was replaced.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_command": {
+    "cause": "Missing command.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_control_action": {
+    "cause": "Unsupported input action.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_control_socket": {
+    "cause": "Missing control directory.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_controller_snapshot": {
+    "cause": "Expected bounded controller JSON.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_coordinates": {
+    "cause": "… must be between 0 and 1.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_credentials": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Pass the path of a Google service-account key JSON with access to the app."
+  },
+  "invalid_debug_session": {
+    "cause": "seconds must be 10 to 86400.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_debug_target": {
+    "cause": "target must be a PID or a process name: 1 to 64 ASCII letters, digits, '.', '_' or '-'.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_device_model": {
+    "cause": "This is not a device model the virtual iOS device can be described as.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_display_profile": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Use WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM; pixels 64..8192, Hz 1..120, mm 10..2000, with matching pixel and physical aspect ratios."
+  },
+  "invalid_duration": {
+    "cause": "Pointer duration must be 1–2000 ms.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_endpoint": {
+    "cause": "Unsupported store endpoint.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_engine": {
+    "cause": "Engine is not executable.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_engine_option": {
+    "cause": "bti must be keep or off.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_firmware": {
+    "cause": "Research components are missing.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_glob": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_guest_network": {
+    "cause": "guest_network must be off or nat.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_guest_receipt": {
+    "cause": "The guest operation receipt is incomplete or malformed.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_guest_request": {
+    "cause": "bundle_id must be an application identifier supplied with install.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_guest_response": {
+    "cause": "Guest response exceeds the protocol limit.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_guest_status": {
+    "cause": "The guest did not report its current worker state.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_guest_tools_request": {
+    "cause": "A previous trust cache requires the corresponding previous tools.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_hierarchy": {
+    "cause": "The hierarchy is larger than 16 MiB.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_hold": {
+    "cause": "Home hold must be 1–1000 ms.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_host_cpu_policy": {
+    "cause": "host_cpu_policy must be scheduler or performance.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_input": {
+    "cause": "Unknown Flutter command.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_interactive_guest": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Select an iOS job started with interactive=true."
+  },
+  "invalid_ios_application": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Name an .ipa archive or an .app directory."
+  },
+  "invalid_job": {
+    "cause": "Invalid artifact signature.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_json": {
+    "cause": "…: …",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_key": {
+    "cause": "… has no key on the virtual iPhone; use a QEMU key name or home.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_keys": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Supply one to eight QEMU key names."
+  },
+  "invalid_memory_range": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Use a hexadecimal physical address."
+  },
+  "invalid_metadata": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_native_binary": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Select an unstripped Android ELF library or executable."
+  },
+  "invalid_path": {
+    "cause": "The pulled files are written as one .tar archive; name the output FILE.tar.",
+    "remedy": "Name the file itself, or remove the link."
+  },
+  "invalid_pattern": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_pcc_boot": {
+    "cause": "PCC configuration requires a normal sealed-system boot with a root disk.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_platform_observations": {
+    "cause": "Non-UTF-8 platform data.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_pmp_breakpoint": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Use an aligned ARM64 instruction address in hexadecimal."
+  },
+  "invalid_pmp_bundle": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_pmp_cpu_identity": {
+    "cause": "Invalid …: use a hexadecimal value within mask 0x…",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_profile": {
+    "cause": "Custom catalogue must be an array.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_project": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Select an .xcodeproj or .xcworkspace."
+  },
+  "invalid_qmp": {
+    "cause": "Translation statistics must be a text report.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_reference": {
+    "cause": "Invalid object reference.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_report": {
+    "cause": "… has no metrics.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_report_path": {
+    "cause": "Control request is outside the owned guest directory.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_request": {
+    "cause": "Unknown option: …",
+    "remedy": "Run tomaccoctl --help for the commands."
+  },
+  "invalid_response": {
+    "cause": "go-ios returned no application array.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_restore_bridge": {
+    "cause": "Bridge receipt is too large.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_schema": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_screenshot": {
+    "cause": "Device returned an invalid or oversized PNG.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_secret": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Name a small .p8 private key file."
+  },
+  "invalid_selector": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Specify at least one semantic property."
+  },
+  "invalid_session": {
+    "cause": "Preview runtime directory is not owned by the current user.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_session_log": {
+    "cause": "Line … is not JSON: …",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_settings": {
+    "cause": "remotes.json must be an object.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_step": {
+    "cause": "Unknown scenario action.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_task": {
+    "cause": "Each task must be a non-empty command array.",
+    "remedy": "Define tasks in tomacco.json."
+  },
+  "invalid_tcg_profile": {
+    "cause": "tcg_profile must be true or false.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_temporary_directory": {
+    "cause": "Temporary directories must be private.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_text": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Supply 1 to 1024 characters of text."
+  },
+  "invalid_text_layout": {
+    "cause": "No key table for the layout …; name layout us or de.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_tool": {
+    "cause": "Unknown tool: …",
+    "remedy": "Name one of the tools doctor lists."
+  },
+  "invalid_toolchain": {
+    "cause": "clang must name an executable file (a clang 22 release).",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_translation_cache": {
+    "cause": "translation_cache_mib must be an integer between 1 and 4096; requests above 2048 require a range-independent engine chain capability.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_trust_cache": {
+    "cause": "path must name a trust-cache module file.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_url": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Use a complete deep link with a scheme."
+  },
+  "invalid_usb_guest": {
+    "cause": "An argument, file or response is not in the form Tomacco accepts.",
+    "remedy": "Select a paravirtual iOS job started with usb=true."
+  },
+  "invalid_variant": {
+    "cause": "The build files have no variant …",
+    "remedy": "Use one of: …"
+  },
+  "invalid_working_image": {
+    "cause": "Working image must be a separate owner-only regular copy, with one link and the same page-aligned size as the source ramdisk.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_workspaces": {
+    "cause": "Saved workspaces are malformed; restore workspaces.json from a backup.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_xcode_project": {
+    "cause": "… is not an .xcodeproj directory.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "ios_boot_failed": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_control_busy": {
+    "cause": "Another control action is in progress for this guest.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_control_ended": {
+    "cause": "The emulator is no longer running; the job is finishing.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_control_starting": {
+    "cause": "The guest has not published its control monitor yet.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_emulator_busy": {
+    "cause": "An iOS emulator job is already active.",
+    "remedy": "Reuse its job or cancel it before starting a different guest."
+  },
+  "ios_frame_file_unavailable": {
+    "cause": "No private runtime directory is available for live frames.",
+    "remedy": "Use the default inline frame transport."
+  },
+  "ios_guest_busy": {
+    "cause": "A native framework request is still in progress; the emulator was not stopped.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_guest_control_unavailable": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Select an iOS job with guest_control_backend enabled."
+  },
+  "ios_guest_crash_reports_failed": {
+    "cause": "The guest could not read its crash reports.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_guest_disconnected": {
+    "cause": "The guest control stream closed while sending.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_guest_not_idle": {
+    "cause": "The native worker has not confirmed it is idle; the emulator was not stopped.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_guest_paused": {
+    "cause": "The virtual iOS CPU is not running.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_guest_receipt_unavailable": {
+    "cause": "The guest could not read its operation receipt.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_guest_starting": {
+    "cause": "The guest control transport has not started.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_guest_stopped": {
+    "cause": "The virtual iOS job has stopped.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_guest_timeout": {
+    "cause": "The native guest did not reply before the request deadline.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_home_unavailable": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Start with input_transport=usb-hid for the iOS Home usage."
+  },
+  "ios_input_timeout": {
+    "cause": "Pointer sequence exceeded its deadline.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_power_button_unavailable": {
+    "cause": "The timed side button requires the tomacco-vphone machine.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_prepare_busy": {
+    "cause": "This guest-tools output has an active job.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_restore_busy": {
+    "cause": "This virtual guest already has an active restore.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_setup_confirm": {
+    "cause": "An ios.virtual.setup stage marked ask_first was run without confirm.",
+    "remedy": "Tell the person what the stage costs (why_ask under details.stage) and call again with confirm:true once they agree."
+  },
+  "ios_setup_inputs_invalid": {
+    "cause": "Some of the person's own inputs are not the ones the chain needs.",
+    "remedy": "Read each failed entry's problem under details.inputs and fix it; nothing long has started."
+  },
+  "ios_setup_manual": {
+    "cause": "… is run by hand.",
+    "remedy": "Run the stage's commands by hand as its manual entry says, then call plan again."
+  },
+  "ios_setup_needs_checkout": {
+    "cause": "The engine is built in a Tomacco source checkout's .tooling.",
+    "remedy": "Run tomaccoctl from a source checkout (git clone the project, then use its tomaccoctl)."
+  },
+  "ios_setup_needs_input": {
+    "cause": "… needs: …",
+    "remedy": "Check that pcc_firmware is the unpacked PCC 23E5207q image, move work/boot aside and run the boot stage again."
+  },
+  "ios_setup_out_of_order": {
+    "cause": "The … stage is not done yet (…); the chain runs in order.",
+    "remedy": "Run the stage the message names first; ios.virtual.setup step plan lists the order."
+  },
+  "ios_setup_partial": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Move the half-finished output aside (nothing is deleted for you), then run the stage again."
+  },
+  "ios_touch_has_no_hover": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Use click or drag for a touchscreen contact."
+  },
+  "ios_touch_lane_required": {
+    "cause": "touch_down needs a persistent client; a one-shot call would end with the contact down.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_touch_not_down": {
+    "cause": "No contact is held down for this guest.",
+    "remedy": "Press again with touch_down."
+  },
+  "ios_usb_bridge_busy": {
+    "cause": "This virtual guest already has a USB bridge job.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_application_conflict": {
+    "cause": "Another listed bundle already uses the bundle identifier …",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_application_unknown": {
+    "cause": "No listed app bundle has this path or bundle identifier.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_busy": {
+    "cause": "A start or stop is in progress; try again when it has ended.",
+    "remedy": "Wait for the start or stop to end (ios.virtual.status), then try again."
+  },
+  "ios_virtual_disk_space": {
+    "cause": "The start copies … of disks into …, but that filesystem has … free…",
+    "remedy": "Free disk space on that filesystem, or clean up with ios.virtual.cleanup and storage.prune."
+  },
+  "ios_virtual_guest_state_unknown": {
+    "cause": "The virtual iOS device job could not be observed; its state is unknown.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_locked": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Unlock the phone in its window (Home, or a swipe up on a model without one), then try again."
+  },
+  "ios_virtual_log_unavailable": {
+    "cause": "The guest job has no console log yet.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_no_verified_run": {
+    "cause": "The phone has no verified run to save; stop a run with ios.virtual.stop first.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_not_running": {
+    "cause": "The phone is not running; start it with ios.virtual.start.",
+    "remedy": "Start it with ios.virtual.start and follow the job until the phone is up."
+  },
+  "ios_virtual_profile_invalid": {
+    "cause": "The virtual iOS device guest job must be a job ID or null.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "ios_virtual_running": {
+    "cause": "The phone is running or its last run has not been stopped; stop it first.",
+    "remedy": "Stop it with ios.virtual.stop first."
+  },
+  "ios_virtual_state_exists": {
+    "cause": "A saved state is already called …",
+    "remedy": "Choose another name, or pass replace:true to point it at the current verified run."
+  },
+  "ios_virtual_state_missing": {
+    "cause": "The disks of the saved state … are gone.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_state_unknown": {
+    "cause": "No saved state is called …",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_state_unsaved": {
+    "cause": "The current verified run is not saved; a later start may delete its disks.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_unconfigured": {
+    "cause": "No virtual iOS device profile is configured.",
+    "remedy": "Set the virtual iOS device up as doctor's next_steps say, or with ios.virtual.setup."
+  },
+  "iphone_runtime": {
+    "cause": "A display session with a device did not start or stopped answering.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "jdwp_error": {
+    "cause": "JDWP …/… returned error …",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "job_cancelled": {
+    "cause": "A job followed with --wait was cancelled.",
+    "remedy": "Start it again if the cancellation was not intended; job.events shows who cancelled it and when."
+  },
+  "job_failed": {
+    "cause": "A job followed with --wait ended failed.",
+    "remedy": "Read the job's log with job.logs, fix the cause and start it again."
+  },
+  "job_not_found": {
+    "cause": "No job has that ID in this data directory.",
+    "remedy": "List recent jobs with job.list; jobs live under TOMACCO_HOME, so a different TOMACCO_HOME has other jobs."
+  },
+  "job_timed_out": {
+    "cause": "A job followed with --wait ran out of its timeout.",
+    "remedy": "Read job.logs for where it stopped; start it again with a longer timeout argument if it was only slow."
+  },
+  "launch_failed": {
+    "cause": "am start answered Status: …",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "launch_unmeasured": {
+    "cause": "am start -W reported no TotalTime for this launch.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "launcher_missing": {
+    "cause": "Application has no launcher activity.",
+    "remedy": "Install the app or pass an explicit activity to device.app."
+  },
+  "lldb_server_arch": {
+    "cause": "NDK lldb-server architecture does not match the target.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "lldb_server_missing": {
+    "cause": "The configured NDK has no … lldb-server.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "macos_required": {
+    "cause": "project.execute builds Flutter iOS apps only on macOS.",
+    "remedy": "On Linux call ios.flutter_build (it needs ios.toolkit_install), or use remote.run with an SSH Mac workspace."
+  },
+  "mdns_unavailable": {
+    "cause": "adb cannot discover devices on the network: …",
+    "remedy": "Update the Android platform tools, or pair with the code through android.connect."
+  },
+  "meminfo_unreadable": {
+    "cause": "dumpsys meminfo named no process of the app.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "metro_unreachable": {
+    "cause": "Metro does not answer on port …: …",
+    "remedy": "Wait until the job's log says Metro is serving, or run the app again with project.run."
+  },
+  "module_not_found": {
+    "cause": "No Android application module found.",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "native_arch_mismatch": {
+    "cause": "The unstripped binary and Android process have different architectures.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "native_debug_identity": {
+    "cause": "run-as did not return an application UID.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "native_debug_server_failed": {
+    "cause": "NDK lldb-server exited; inspect native-server.log.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "native_debug_setup": {
+    "cause": "Device debugger transfer failed; inspect native-transfer.log.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "native_debug_timeout": {
+    "cause": "Timed out transferring the NDK debugger.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "native_process_executable": {
+    "cause": "Expected an Android app process executable.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "native_process_mismatch": {
+    "cause": "The selected PID does not belong to the requested application.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "native_process_missing": {
+    "cause": "The debugger could not start, attach or answer.",
+    "remedy": "Select the PID of a running app process, or enable launch for a debuggable build."
+  },
+  "ndk_missing": {
+    "cause": "Something the request names does not exist or is not set up.",
+    "remedy": "Install an NDK with android.sdk_install and set settings.configure android_ndk."
+  },
+  "no_devices": {
+    "cause": "No Android device is connected.",
+    "remedy": "Start an emulator with android.avd_start or connect a phone, then check device.list."
+  },
+  "no_test_results": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Run the tests first: project.execute with action test or instrumented-test, or testing.run."
+  },
+  "not_android_project": {
+    "cause": "No Android Gradle build in this project.",
+    "remedy": "Pass the project root that holds settings.gradle(.kts), or its android/ directory."
+  },
+  "not_directory": {
+    "cause": "Something the request names does not exist or is not set up.",
+    "remedy": "Pass a directory."
+  },
+  "not_emulator": {
+    "cause": "This operation requires an emulator serial.",
+    "remedy": "Pass an emulator serial from device.list, such as emulator-5554."
+  },
+  "not_executable": {
+    "cause": "Not executable: …",
+    "remedy": "Point settings.configure executables at an executable file, or chmod +x it."
+  },
+  "not_file": {
+    "cause": "Something the request names does not exist or is not set up.",
+    "remedy": "Pass a regular file."
+  },
+  "not_interactive": {
+    "cause": "This job has no interactive session.",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "not_ios_emulator_job": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Select an iOS emulator job."
+  },
+  "not_stoppable": {
+    "cause": "This job has no running step that stop ends early.",
+    "remedy": "job.cancel ends any job, without keeping its result."
+  },
+  "nothing_to_analyze": {
+    "cause": "No analyser applies: the project has no pubspec.yaml, and no eslint or tsc (with tsconfig.json) in node_modules/.bin.",
+    "remedy": "Install eslint or typescript as a dev dependency, or open a Dart or Flutter project."
+  },
+  "nothing_to_check": {
+    "cause": "No versioned dependency or plugin in the versions catalog or build files.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "notification_not_snoozed": {
+    "cause": "Android did not snooze …",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "off_screen": {
+    "cause": "(…, …) lies outside the …x… screen.",
+    "remedy": "Use coordinates inside the screen size the message gives."
+  },
+  "offline": {
+    "cause": "The Maven repositories cannot be reached: … did not resolve.",
+    "remedy": "Connect to the network, or try again later."
+  },
+  "operation_not_found": {
+    "cause": "Unknown operation: …",
+    "remedy": "Use the operation the remedy suggests; tomaccoctl schema --names lists every operation."
+  },
+  "output_exists": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Choose a new output path, or move the old one aside."
+  },
+  "outside_project": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Use a path inside the project, relative to its root."
+  },
+  "package_missing": {
+    "cause": "No Package.swift found in …",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "page_load_failed": {
+    "cause": "The web layout preview did not load or answer.",
+    "remedy": "Check that the dev server answers at the URL, then preview.reload or start the preview again."
+  },
+  "page_timeout": {
+    "cause": "Page did not become ready.",
+    "remedy": "Check that the dev server answers at the URL, then preview.reload or start the preview again."
+  },
+  "pairing_failed": {
+    "cause": "adb could not pair: …",
+    "remedy": "Show a new QR code with android.pair and scan it again."
+  },
+  "pairing_timeout": {
+    "cause": "The phone did not offer this pairing code in time.",
+    "remedy": "Check that it is still running and reachable, then try once more."
+  },
+  "parent_missing": {
+    "cause": "Something the request names does not exist or is not set up.",
+    "remedy": "Create the parent directory first."
+  },
+  "parent_stopped": {
+    "cause": "The parent job has already stopped.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "paste_unconfirmed": {
+    "cause": "Android did not confirm the clipboard text.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "path_exists": {
+    "cause": "Choose an empty report directory.",
+    "remedy": "Choose another path, or pass overwrite:true."
+  },
+  "path_not_found": {
+    "cause": "A path does not exist.",
+    "remedy": "Check the path; it must be absolute and exist on this computer, or on the device for device paths."
+  },
+  "platform_unsupported": {
+    "cause": "The virtual iPhone runs iOS apps; pass platform ios.",
+    "remedy": "Pass a platform the project and the device support; project.inspect lists the project's platforms."
+  },
+  "pmp_breakpoint_unsupported": {
+    "cause": "Engine rejected the hardware instruction breakpoint.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_bus_fault": {
+    "cause": "PMP accessed unsupported hardware or an unsupported register transaction.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_capture_pending": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Wait for the PMP job to finish before reading its capture."
+  },
+  "pmp_controller_required": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Build an engine with tomacco-pmp-asc-research and ASC controller tracing."
+  },
+  "pmp_cpu_identity_mismatch": {
+    "cause": "Engine CPU identity differs from the requested configuration.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_cpu_policy_required": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Rebuild the engine with strict PMP system-register handling."
+  },
+  "pmp_debug_protocol": {
+    "cause": "Expected a stopped CPU.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_debug_stop": {
+    "cause": "CPU stopped at a different instruction.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_debug_timeout": {
+    "cause": "Debugger response timed out.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_engine_required": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Build an engine with tomacco-pmp-research."
+  },
+  "pmp_memory_capture": {
+    "cause": "Refusing to overwrite an existing RAM capture.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_memory_modified": {
+    "cause": "RAM capture metadata is inconsistent.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_memory_unavailable": {
+    "cause": "This job has no PMP RAM capture.",
+    "remedy": "Run ios.emulator.pmp with capture_ram:true."
+  },
+  "pmp_observation_timeout": {
+    "cause": "PMP observation expired; firmware boot is unverified.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_sysreg_fault": {
+    "cause": "PMP accessed an unimplemented CPU system register.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "pmp_trace_required": {
+    "cause": "PMP research requires architectural bus-fault tracing.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "port_busy": {
+    "cause": "Port … is already in use, perhaps by another Metro bundler.",
+    "remedy": "Stop the other bundler, or its project.run job, then run again."
+  },
+  "preview_disconnected": {
+    "cause": "Preview closed before replying.",
+    "remedy": "Check that the dev server answers at the URL, then preview.reload or start the preview again."
+  },
+  "preview_unavailable": {
+    "cause": "Cannot reach preview session …: …",
+    "remedy": "Start tomacco --preview-session …"
+  },
+  "process_missing": {
+    "cause": "No Android process to attach; launch a debuggable build.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "profile_mismatch": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Check reports of the same application."
+  },
+  "profile_not_found": {
+    "cause": "Unknown device profile: …",
+    "remedy": "catalog.list names the device profiles."
+  },
+  "project_unrecognized": {
+    "cause": "No supported project in …",
+    "remedy": "Open a Flutter, Gradle, Swift, xtool, web or Xcode project, or add tomacco.json tasks."
+  },
+  "prompt_not_found": {
+    "cause": "No MCP prompt has that name.",
+    "remedy": "prompts/list names the prompts this server has."
+  },
+  "qmp_closed": {
+    "cause": "Emulator closed its control channel.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "qmp_error": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "qmp_timeout": {
+    "cause": "Emulator control channel stopped responding.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "qr_too_long": {
+    "cause": "The pairing text does not fit a QR code.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "recording_active": {
+    "cause": "A recording already runs for this device.",
+    "remedy": "Stop it with action stop, or throw it away with action discard."
+  },
+  "recording_empty": {
+    "cause": "Nothing was recorded; the recording keeps running.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "recording_not_active": {
+    "cause": "No recording runs for this device.",
+    "remedy": "Start one with action start."
+  },
+  "reload_failed": {
+    "cause": "Port … did not answer as an HTTP server.",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "remote_not_found": {
+    "cause": "Unknown remote workspace: …",
+    "remedy": "remote.list names the configured remotes; add one with remote.configure."
+  },
+  "replay_failed": {
+    "cause": "… from line … failed: …",
+    "remedy": "Fix the cause and replay the rest, or edit the log."
+  },
+  "request_cancelled": {
+    "cause": "The MCP client cancelled the request.",
+    "remedy": "Nothing to fix; a job the request started keeps running, so check job.list before starting it again."
+  },
+  "research_bundle_required": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Prepare a full-system bundle with ios.emulator.prepare_research."
+  },
+  "research_environment": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Use ios.emulator.research for this full-system research bundle; it is not a command shell."
+  },
+  "research_hardware_missing": {
+    "cause": "Engine does not support …",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "research_log_limit": {
+    "cause": "Engine exceeded its log budget.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "research_serial_failed": {
+    "cause": "Serial reader terminated unexpectedly.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "research_tools_missing": {
+    "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
+    "remedy": "Install the iOS research preparation tools."
+  },
+  "resource_not_found": {
+    "cause": "No MCP resource has that URI.",
+    "remedy": "resources/list and resources/templates/list name the resources this server has."
+  },
+  "response_too_large": {
+    "cause": "Debugger response exceeds 2 MiB.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "runtime_busy": {
+    "cause": "Runtime input queue is full.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "runtime_configuration_conflict": {
+    "cause": "This device already has a native session with different stream settings.",
+    "remedy": "Reuse the existing session, or stop it before changing stream settings."
+  },
+  "runtime_directory": {
+    "cause": "Runtime sockets require an owner-only directory.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "runtime_protocol": {
+    "cause": "Runtime response exceeded its limit.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "runtime_required": {
+    "cause": "No connected iPhone session for …",
+    "remedy": "Start one with runtime.start platform=ios, device and runner_bundle_id, then run the scenario."
+  },
+  "runtime_start_failed": {
+    "cause": "A display session with a device did not start or stopped answering.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "runtime_start_timeout": {
+    "cause": "Native runtime is still starting; inspect runtime.state.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "runtime_stopped": {
+    "cause": "Connection was cancelled.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "runtime_timeout": {
+    "cause": "Device did not answer.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "runtime_unavailable": {
+    "cause": "A display session with a device did not start or stopped answering.",
+    "remedy": "Connect the Android runtime before enabling audio."
+  },
+  "scenario_failed": {
+    "cause": "One or more device scenarios failed; inspect report.json and screenshots.",
+    "remedy": "Read the job's report.json and screenshots for the failing step."
+  },
+  "scenario_missing": {
+    "cause": "Something the request names does not exist or is not set up.",
+    "remedy": "Save a scenario file in this workspace first."
+  },
+  "scrcpy_failed": {
+    "cause": "Android display server exited: …",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "scrcpy_protocol": {
+    "cause": "Expected scrcpy 4.1 display metadata.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "scrcpy_server_missing": {
+    "cause": "The native Android view requires the scrcpy 4.1 server.",
+    "remedy": "Install scrcpy 4.1 or pass the server JAR path to runtime.start."
+  },
+  "scrcpy_timeout": {
+    "cause": "Android display server did not connect.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "sdk_missing": {
+    "cause": "Configure the Android SDK first.",
+    "remedy": "Set android_sdk with settings.configure."
+  },
+  "sdk_platform_missing": {
+    "cause": "Something the request names does not exist or is not set up.",
+    "remedy": "Install an Android platform with android.sdk_install, then build again."
+  },
+  "secret_permissions": {
+    "cause": "The App Store Connect .p8 key must be readable only by its owner.",
+    "remedy": "chmod 600 the file."
+  },
+  "server_failed": {
+    "cause": "… exited (…) before it listened on port …",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "server_timeout": {
+    "cause": "Nothing listened on port … within … s.",
+    "remedy": "Check that it is still running and reachable, then try once more."
+  },
+  "setting_not_applied": {
+    "cause": "Android did not apply: …",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "setting_unsupported": {
+    "cause": "Switching airplane mode from adb needs Android 11 (API 30) or newer.",
+    "remedy": "Older Android changes the language only for the whole device, in its Settings app."
+  },
+  "setup_failed": {
+    "cause": "HOME is not set.",
+    "remedy": "Run tomaccoctl setup from a normal login shell with HOME set."
+  },
+  "step_failed": {
+    "cause": "… failed (…).",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "step_unsupported": {
+    "cause": "Step …: …",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "storage_flush_unverified": {
+    "cause": "Engine did not confirm flushing the disposable image.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "store_key_incomplete": {
+    "cause": "key_id, issuer_id and key_path go together.",
+    "remedy": "Pass key_id, issuer_id and key_path together, or none of them."
+  },
+  "store_key_required": {
+    "cause": "An upload needs key_id, issuer_id and key_path.",
+    "remedy": "Create a team key under Users and Access > Integrations in App Store Connect, and the app record once."
+  },
+  "store_request_failed": {
+    "cause": "Google Play request failed (HTTP …).",
+    "remedy": "Read the HTTP status and Google's message; a 403 usually means the service account lacks permission for the app."
+  },
+  "store_response_invalid": {
+    "cause": "Google did not return a bundle version code.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "swift_sdk_unconfigured": {
+    "cause": "Swift SDK is not connected to an Android NDK.",
+    "remedy": "Run swift.android_configure after installing the matching NDK."
+  },
+  "system_packages_missing": {
+    "cause": "Missing: …",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "temporary_directory_changed": {
+    "cause": "Temporary directory identity changed; preserved replacement.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "terminal_missing": {
+    "cause": "Something the request names does not exist or is not set up.",
+    "remedy": "Run xtool auth login in a terminal yourself; only the person signs in."
+  },
+  "test_runtime_required": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Run portable Swift unit tests on Linux; Android behavior needs a device integration test."
+  },
+  "text_requires_accessibility": {
+    "cause": "For non-ASCII text use runtime.input action=fill with the field coordinates; this replaces its full accessible value.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "text_too_long": {
+    "cause": "Text through the clipboard is limited to {PASTE_LIMIT} bytes.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "text_unsupported": {
+    "cause": "Text outside ASCII goes through the device clipboard, which needs the scrcpy 4.1 server.",
+    "remedy": "Configure scrcpy with settings.configure, or run testing.setup and use testing.action with fill."
+  },
+  "tool_failed": {
+    "cause": "A tool Tomacco ran exited with an error.",
+    "remedy": "Read the tool's output in the message or the job's log (job.logs) and fix its cause."
+  },
+  "tool_missing": {
+    "cause": "A tool the operation needs is not installed or not configured.",
+    "remedy": "Install it as doctor's next_steps say, or point settings.configure executables at it, then call again."
+  },
+  "tool_output": {
+    "cause": "A tool printed something Tomacco could not read.",
+    "remedy": "Run the tool by hand in the project to see its own error; an outdated tool version is a common cause."
+  },
+  "tool_start_failed": {
+    "cause": "A tool could not be started.",
+    "remedy": "Check that the configured path is an executable file (settings.get, doctor) and that the host has the libraries it needs."
+  },
+  "tool_timeout": {
+    "cause": "A tool Tomacco ran did not finish in its time.",
+    "remedy": "Check that the device or network it needs is reachable, then try again; a job's timeout argument can give it longer."
+  },
+  "toolkit_missing": {
+    "cause": "The pinned omarchy-apple-dev checkout has no …",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "toolkit_sdk_missing": {
+    "cause": "The private toolchain has no current SDK. An SDK from ios.sdk_install does not count: the pinned xtool fork refuses its older stamp.",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "toolkit_toolchain_missing": {
+    "cause": "The private omarchy-apple-dev toolchain is not installed.",
+    "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
+  },
+  "trace_output": {
+    "cause": "Unterminated trace processor CSV value.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "transport_failed": {
+    "cause": "The MCP server could not write to its client.",
+    "remedy": "Restart the client's connection to tomaccoctl mcp."
+  },
+  "ui_hierarchy_unavailable": {
+    "cause": "… needs a UI hierarchy, and the virtual iPhone's guest tools do not report one.",
+    "remedy": "Use testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates."
+  },
+  "uninstall_installer_missing": {
+    "cause": "… is missing: installations made by {PRODUCT_NAME} 1.0.0 do not keep it.",
+    "remedy": "Download the release package and run python3 install.py --uninstall from it."
+  },
+  "uninstall_python_missing": {
+    "cause": "Uninstalling needs Python 3, which the installer runs on.",
+    "remedy": "Install Python 3, then try again."
+  },
+  "unsafe_data_directory": {
+    "cause": "The Tomacco data directory is not a directory owned by this user: …",
+    "remedy": "Set TOMACCO_HOME to a directory you own."
+  },
+  "unsafe_runtime_directory": {
+    "cause": "Runtime directory is not a private directory of this user: …",
+    "remedy": "Remove it, or set TMPDIR to a directory only you can write."
+  },
+  "unsigned_artifact": {
+    "cause": "Bundle signature could not be verified.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "unsupported_artifact": {
+    "cause": "The input is of a kind this operation does not support.",
+    "remedy": "Select an APK or AAB."
+  },
+  "unsupported_boot_display": {
+    "cause": "This engine does not provide the guest boot framebuffer; rebuild the SPTM engine with Tomacco's patch.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "unsupported_boot_media": {
+    "cause": "This engine cannot register the RAM image with IOMedia; rebuild the SPTM engine with Tomacco's patch.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "unsupported_codec": {
+    "cause": "Android did not negotiate H.264.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "unsupported_engine": {
+    "cause": "Guest commands require the Darwin/SPTM restore-shell backend.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "unsupported_firmware": {
+    "cause": "No matching board/variant erase identity in the firmware.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "unsupported_image": {
+    "cause": "The input is of a kind this operation does not support.",
+    "remedy": "Pass one of the supported kinds the message or the operation's schema names."
+  },
+  "unsupported_input": {
+    "cause": "This action is not supported by the Android runtime.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "unsupported_key": {
+    "cause": "Unknown Android key.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "unsupported_native_arch": {
+    "cause": "The ELF architecture is not supported by the Android NDK debugger.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "unsupported_step": {
+    "cause": "… is not available on the virtual iPhone.",
+    "remedy": "Pass one of the supported kinds the message or the operation's schema names."
+  },
+  "unsupported_working_image": {
+    "cause": "Working images require boot_media=true and an engine providing boot-storage.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "update_auto_off": {
+    "cause": "Updates are not set to install by themselves.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_busy": {
+    "cause": "An update is being installed right now.",
+    "remedy": "Wait for the running installation to end; update.status shows it."
+  },
+  "update_check_failed": {
+    "cause": "Checking for, downloading or installing an update did not work.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_checksum_mismatch": {
+    "cause": "Refused the update: the package does not match its published checksum. Nothing was installed.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_download_failed": {
+    "cause": "Downloading … failed: GitHub answered with status ….",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_forced_off": {
+    "cause": "Checking for, downloading or installing an update did not work.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_health_check_failed": {
+    "cause": "Checking for, downloading or installing an update did not work.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_held": {
+    "cause": "This version failed to install or was rolled back, so it is not installed by itself again.",
+    "remedy": "Install it with update.apply manual:true only if the person wants to try it again."
+  },
+  "update_install_failed": {
+    "cause": "The installer reported no journal for this installation.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_installer_failed": {
+    "cause": "Checking for, downloading or installing an update did not work.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_invalid_package": {
+    "cause": "Refused the update: …. Nothing was installed.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_no_package": {
+    "cause": "Release … has no package ….",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_no_release": {
+    "cause": "No release is available yet.",
+    "remedy": "Nothing to do until a release is published."
+  },
+  "update_not_available": {
+    "cause": "No newer version is known yet.",
+    "remedy": "Nothing to do: this is the newest known version."
+  },
+  "update_not_newer": {
+    "cause": "Release … is not newer than …; an update never downgrades.",
+    "remedy": "Nothing to do: an update never downgrades."
+  },
+  "update_nothing_to_roll_back": {
+    "cause": "There is no installed update to roll back.",
+    "remedy": "Nothing to do: no update was installed."
+  },
+  "update_off": {
+    "cause": "Updates are turned off. Install one from the Settings, or pass manual when the user asked for it.",
+    "remedy": "Pass manual:true only when the person asked for this update."
+  },
+  "update_offline": {
+    "cause": "GitHub could not be reached during the download. This computer may be offline.",
+    "remedy": "Connect to the network and try again."
+  },
+  "update_python_missing": {
+    "cause": "Installing an update needs Python 3.9 or newer, which {PRODUCT_NAME}'s installer runs on. Nothing was changed.",
+    "remedy": "Install Python 3, then try again."
+  },
+  "update_rollback_failed": {
+    "cause": "The update failed (…) and restoring the previous version failed too (…). Its files are in the backup ….",
+    "remedy": "Run the installer with --rollback and this backup ID, or install again."
+  },
+  "update_signature_invalid": {
+    "cause": "Refused the update: …. Nothing was installed.",
+    "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "update_signing_key_missing": {
+    "cause": "This build of {PRODUCT_NAME} has no release signing key, so it cannot verify an update and will not install one.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_too_large": {
+    "cause": "Refused …: it exceeds the size limit.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_unsafe_package": {
+    "cause": "Refused the update: …. Nothing was installed.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_unsigned": {
+    "cause": "Refused the update: release … has no signature (….sig). Nothing was installed.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_unwritable": {
+    "cause": "… cannot be written (…).",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "update_wrong_host": {
+    "cause": "Refused the download address …: it is not this project's.",
+    "remedy": "Read the message; update.status shows the update state, and Tomacco keeps the installed version when an update is refused."
+  },
+  "variable_missing": {
+    "cause": "JDWP expressions support local variables and field paths.",
+    "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "variant_required": {
+    "cause": "This app has product flavors; name the build variant to install.",
+    "remedy": "Pass variant with one of the build variants the message lists."
+  },
+  "verify_unreadable": {
+    "cause": "Verification failed: …",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "version_ambiguous": {
+    "cause": "Expected exactly one …, found …",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "version_unsupported": {
+    "cause": "Info.plist is not an XML property list.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "video_protocol": {
+    "cause": "Invalid Android video packet length.",
+    "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
+  },
+  "worker_reaper_unavailable": {
+    "cause": "The request was refused; the message says why.",
+    "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "worker_start_failed": {
+    "cause": "A step Tomacco ran did not succeed.",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "workflow_needs_confirmation": {
+    "cause": "A workflow.run step is destructive and has no confirm.",
+    "remedy": "Tell the person what those steps delete or overwrite, and set confirm:true on each only after they agree."
+  },
+  "workflow_step_failed": {
+    "cause": "A workflow.run step failed or its job did not succeed; the later steps did not run.",
+    "remedy": "Read details.steps for that step's error or job, fix the cause and run the workflow again."
+  },
+  "workflow_timed_out": {
+    "cause": "workflow.run ran out of its timeout while following a job.",
+    "remedy": "The job keeps running: follow it with job.wait, or stop it with job.cancel."
+  },
+  "working_image_changed": {
+    "cause": "Working image was replaced before the job started.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "working_image_flush_failed": {
+    "cause": "Engine did not confirm flushing the working image.",
+    "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "workspace_busy": {
+    "cause": "This project already has an active build or app session.",
+    "remedy": "Wait for the named job with job.wait, or cancel it with job.cancel if the person agrees; do not work on a copy of the project."
+  },
+  "workspace_missing": {
+    "cause": "Unknown workspace: …",
+    "remedy": "workspace.list names the saved workspaces."
+  },
+  "xcode_import_failed": {
+    "cause": "A step Tomacco ran did not succeed.",
+    "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "xtool_project_required": {
+    "cause": "ship.sh builds xtool projects.",
+    "remedy": "Create one with project.create kind xtool, or use project.import_xcode."
+  }
+}

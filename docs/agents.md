@@ -127,7 +127,8 @@ tomaccoctl call project.execute @/absolute/build-request.json
 
 Arguments are inline, from a file (`@FILE`) or from standard input (`@-`). A response is one JSON
 object on stdout, `{"ok":true,"result":...}` or
-`{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. An error exits nonzero. In MCP mode,
+`{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. An error exits nonzero. The
+[error reference](reference/errors.md) lists every code with what it means and what to do. In MCP mode,
 standard output has protocol messages only. Opening or inspecting a project never runs its build
 scripts.
 
