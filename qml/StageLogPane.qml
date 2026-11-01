@@ -23,6 +23,8 @@ Rectangle {
         const jobs=workspace.jobs
         const launch=jobs.find(x=>x.id===launchJob)
         if(launch)return launch
+        // Just started, and not listed yet.
+        if(launchJob)return {id:launchJob,label:qsTr("App launch"),state:"queued"}
         const running=jobs.find(x=>["queued","running"].indexOf(x.state)>=0)
         return running || (jobs.length ? jobs[0] : null)
     }
@@ -97,13 +99,20 @@ Rectangle {
             title: qsTr("No device is live.")
             body: qsTr("Connect a device and its log runs here, beside its screen.")
         }
+        RowLayout {
+            objectName: "stageJobLogError"
+            Layout.fillWidth: true; spacing: Theme.gapSm
+            visible: pane.mode==="job" && !!pane.followedJob && !!pane.jobError
+            Text {Layout.fillWidth:true;text:pane.jobError;color:Theme.danger;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            StudioButton {objectName:"stageJobLogRetry";text:qsTr("Try again");iconName:"refresh";onClicked:{pane.jobError="";pane.readJob()}}
+        }
         StudioCodeView {
             objectName: "stageJobLog"
             Layout.fillWidth: true; Layout.fillHeight: true
             visible: pane.mode==="job" && !!pane.followedJob
             text: pane.jobText
             textColor: pane.jobError ? Theme.danger : Theme.muted
-            placeholderText: pane.jobError || qsTr("Waiting for log lines…")
+            placeholderText: qsTr("Waiting for log lines…")
         }
         StudioEmptyState {
             objectName: "stageJobLogEmpty"

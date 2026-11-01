@@ -157,6 +157,21 @@ the device window's rail (Ctrl+Shift+S there too), are saved in `~/Pictures/Toma
 (or the configured Pictures directory) and put on the clipboard as an image.
 The virtual iOS device's **Screenshot** button copies its capture the same way.
 
+### When something fails
+
+A request that fails on a workspace view (Project, Devices, Builds & jobs, Agents &
+tools, Debugger, UI tests, Performance, Files or Release) shows a red band above the
+page with what went wrong and, when the control plane names one, **What to do:**
+(*Was zu tun ist:*) with its remedy. **Try again** (*Erneut versuchen*) sends the same
+request once more; the close button hides the band. The notice line under the live
+device does the same for the device view's requests, and the live log under Devices
+and the log beside the device offer **Try again** when their log cannot be read.
+
+Views without anything to show say what is missing and offer the next step: **Files**
+without a project offers **Choose folder**; **Agents & tools** says when the control
+program has listed no tools, with its reason and **Try again**, and when the search
+finds no tool; **Builds & jobs** says when no job runs or failed under its filters.
+
 ## Activity
 
 The panel beside the device (Ctrl+J) shows the device's state in large type, the

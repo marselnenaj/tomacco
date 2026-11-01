@@ -1164,6 +1164,10 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <source>Project files</source>
         <translation>Archivos del proyecto</translation>
     </message>
+    <message>
+        <source>Choose folder</source>
+        <translation>Elegir carpeta</translation>
+    </message>
 </context>
 <context>
     <name>IosGuestView</name>
@@ -3475,6 +3479,14 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
         <translation>Configura TOMACCO_SESSION_LOG con este archivo en los ajustes MCP de tu agente y el panel de actividad mostrará cada operación que llame, con su duración y resultado.</translation>
     </message>
+    <message>
+        <source>Try again</source>
+        <translation>Reintentar</translation>
+    </message>
+    <message>
+        <source>What to do: %1</source>
+        <translation>Qué hacer: %1</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4455,6 +4467,14 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Waiting for log lines…</source>
         <translation>Esperando líneas del registro…</translation>
     </message>
+    <message>
+        <source>Try again</source>
+        <translation>Reintentar</translation>
+    </message>
+    <message>
+        <source>App launch</source>
+        <translation>Inicio de la app</translation>
+    </message>
 </context>
 <context>
     <name>StudioDialog</name>
@@ -5081,6 +5101,30 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
         <translation>Copiar esta llamada como comando tomaccoctl para una terminal o un script</translation>
     </message>
+    <message>
+        <source>Try again</source>
+        <translation>Reintentar</translation>
+    </message>
+    <message>
+        <source>Dismiss</source>
+        <translation>Descartar</translation>
+    </message>
+    <message>
+        <source>What to do: %1</source>
+        <translation>Qué hacer: %1</translation>
+    </message>
+    <message>
+        <source>No tools yet.</source>
+        <translation>Todavía no hay herramientas.</translation>
+    </message>
+    <message>
+        <source>The control program has not listed its tools yet.</source>
+        <translation>El programa de control todavía no ha listado sus herramientas.</translation>
+    </message>
+    <message>
+        <source>No tool matches “%1”.</source>
+        <translation>Ninguna herramienta coincide con «%1».</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5523,6 +5567,10 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
     <message>
         <source>Waiting for log lines…</source>
         <translation>Esperando líneas del registro…</translation>
+    </message>
+    <message>
+        <source>Try again</source>
+        <translation>Reintentar</translation>
     </message>
 </context>
 </TS>

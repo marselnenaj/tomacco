@@ -922,6 +922,7 @@ private slots:
         // An app that is not installed is said, not followed.
         app->setProperty("text","dev.missing.app");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
         QTRY_COMPARE_WITH_TIMEOUT(pane->property("error").toString(),QString("dev.missing.app is not installed"),patient(10000));
+        QTRY_VERIFY(item("deviceLogRetry") && item("deviceLogRetry")->isVisible());
         QVERIFY(pane->property("job").toString().isEmpty());
         // Closing the pane ends its capture.
         app->setProperty("text","");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
@@ -3139,6 +3140,56 @@ for line in sys.stdin:
         backend->setAppearance("system");backend->setLanguage("en");window->resize(1380,970);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void every_view_shows_an_error_with_its_remedy_and_tries_again() {
+        // A failed request says what went wrong and what to do on every workspace view, and runs again on request.
+        open("project");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        const auto project=directory.filePath("project");
+        const QString signature=QString(R"({"path":"%1","file":"no-such-file.txt"})").arg(project);
+        workspace->setProperty("pending",QVariantMap{{"-81",QVariantMap{{"operation","files.read"},{"quiet",false},{"signature",signature}}}});
+        control->apiFinished(-81,"files.read",QVariantMap{{"ok",false},{"error",QVariantMap{{"code","not_found"},{"message","no-such-file.txt does not exist"},{"remedy","Choose a file that exists in the project."}}}});
+        QVERIFY(workspace->property("failed").toBool());
+        QCOMPARE(item("workspaceFeedbackText")->property("text").toString(),QString("no-such-file.txt does not exist"));
+        QCOMPARE(item("workspaceRemedy")->property("text").toString(),QString("What to do: Choose a file that exists in the project."));
+        for(const auto &tab:{"project","devices","jobs","tools","debug","testing","profiling","files","release"}) {
+            QVERIFY(QMetaObject::invokeMethod(workspace,"showTab",Q_ARG(QVariant,QString::fromLatin1(tab))));
+            QTRY_VERIFY2(item("workspaceRetry")->isVisible() && item("workspaceRemedy")->isVisible(),tab);
+        }
+        capture("workspace-error");
+        // Try again sends the same request.
+        clickItem("workspaceRetry");
+        auto pending=mapOf(workspace->property("pending"));
+        QCOMPARE(pending.size(),1);
+        QCOMPARE(pending.first().toMap().value("operation").toString(),QString("files.read"));
+        QCOMPARE(pending.first().toMap().value("signature").toString(),signature);
+        QVERIFY(!item("workspaceRetry")->isVisible());
+        // The real answer: it fails again, with the control plane's own words.
+        QTRY_VERIFY_WITH_TIMEOUT(workspace->property("failed").toBool(),patient(10000));
+        QTRY_VERIFY(item("workspaceRetry")->isVisible());
+        QVERIFY(QMetaObject::invokeMethod(workspace,"retry"));
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty() && workspace->property("failed").toBool(),patient(10000));
+        workspace->setProperty("failed",false);
+        QVERIFY(!item("workspaceRetry")->isVisible());
+        QVERIFY(mapOf(workspace->property("failure")).isEmpty());
+        // A tool search that finds nothing says so.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showTab",Q_ARG(QVariant,"tools")));
+        item("toolSearch")->setProperty("text","zzz-no-such-tool");
+        QTRY_VERIFY(item("toolsNoMatch")->isVisible());
+        QVERIFY(!item("toolsUnavailable")->isVisible());
+        item("toolSearch")->setProperty("text","");
+        // The device view's notice line: the remedy, and the same request again.
+        open("runtime");
+        view->setProperty("requests",QVariantMap{{"-82",QVariantMap{{"op","device.list"},{"signature",R"({"platform":"all"})"}}}});
+        control->apiFinished(-82,"device.list",QVariantMap{{"ok",false},{"error",QVariantMap{{"code","adb_missing"},{"message","adb was not found"},{"remedy","Install the Android SDK platform tools."}}}});
+        QCOMPARE(view->property("notice").toString(),QString("adb was not found\nWhat to do: Install the Android SDK platform tools."));
+        QTRY_VERIFY(item("noticeRetry") && item("noticeRetry")->isVisible());
+        clickItem("noticeRetry");
+        QVERIFY(view->property("notice").toString().isEmpty());
+        const auto requests=mapOf(view->property("requests"));
+        QVERIFY(std::any_of(requests.begin(),requests.end(),[](const QVariant &r){return r.toMap().value("op").toString()=="device.list" && r.toMap().value("signature").toString()==R"({"platform":"all"})";}));
+        view->setProperty("notice",QString());view->setProperty("failed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void a_missing_or_broken_control_program_is_explained() {
         // Missing: known before any request, and every request answers with a sentence instead of a raw error.
         Control missing("ui-missing-cli",nullptr,directory.filePath("no-such/tomaccoctl"));
@@ -3176,6 +3227,19 @@ for line in sys.stdin:
         auto *view=other->findChild<QObject *>("nativeWorkspace");QVERIFY(view);
         QTRY_COMPARE(view->property("notice").toString(),missing.cliError());QVERIFY(view->property("failed").toBool());
         auto *status=other->findChild<QObject *>("agentStatus");QVERIFY(status);QVERIFY(!status->property("ready").toBool());
+        // The tools say why there are none and offer to ask again; the files ask for a project.
+        const auto find=[&](const char *name){return visualItem(other->contentItem(),QString::fromLatin1(name));};
+        QVERIFY(QMetaObject::invokeMethod(other,"showWorkspace",Q_ARG(QVariant,"tools"),Q_ARG(QVariant,QString()),Q_ARG(QVariant,QString()),Q_ARG(QVariant,1)));
+        QTRY_VERIFY(find("toolsUnavailable") && find("toolsUnavailable")->isVisible());
+        QCOMPARE(find("toolsUnavailable")->property("body").toString(),missing.cliError());
+        QVERIFY(find("toolsRetry") && find("toolsRetry")->isVisible());
+        QVERIFY(!find("toolsNoMatch")->isVisible());
+        replies.clear();
+        QVERIFY(QMetaObject::invokeMethod(find("toolsRetry"),"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(std::any_of(replies.begin(),replies.end(),[](const QList<QVariant> &r){return r.value(1).toString()=="schema";}),patient(5000));
+        QVERIFY(QMetaObject::invokeMethod(other,"showWorkspace",Q_ARG(QVariant,"files"),Q_ARG(QVariant,QString()),Q_ARG(QVariant,QString()),Q_ARG(QVariant,1)));
+        QTRY_VERIFY(find("filesEmpty") && find("filesEmpty")->isVisible());
+        QVERIFY(find("filesChooseProject")->isVisible());
         if(!qEnvironmentVariable("TOMACCO_UI_CAPTURES").isEmpty())QVERIFY(other->grabWindow().save(qEnvironmentVariable("TOMACCO_UI_CAPTURES")+"/missing-control-program.png"));
         other->close();
         QVERIFY2(errors.isEmpty(),qPrintable(errors.join('\n')));
@@ -3547,11 +3611,15 @@ for line in sys.stdin:
         // The job log: none yet, then the newest job's log, or why it cannot be read.
         clickItem("stageLogMode-job");
         QTRY_COMPARE(view->property("stageLogMode").toString(),QString("job"));
+        // Jobs of earlier checks may be listed; without any, the pane says so.
+        workspace->setProperty("jobs",QVariantList{});
         QVERIFY(item("stageJobLogEmpty")->isVisible());
-        const double now=QDateTime::currentSecsSinceEpoch();
-        workspace->setProperty("jobs",QVariantList{QVariantMap{{"id","00000000000000000000000000000000"},{"label","Build Android · debug"},{"state","failed"},{"created",now-30},{"updated",now}}});
+        // The app's launch comes first, also before job.list names it; a log that cannot be read says why.
+        pane->setProperty("launchJob",QString("00000000000000000000000000000000"));
         QTRY_VERIFY(item("stageJobLog")->isVisible());
         QTRY_VERIFY_WITH_TIMEOUT(!pane->property("jobError").toString().isEmpty(),patient(10000));
+        QTRY_VERIFY(item("stageJobLogError")->isVisible());
+        QVERIFY(item("stageJobLogRetry")->isVisible());
         QVERIFY(item("stageLogOpenJob")->isVisible());
         // Dragging the handle to the left widens the log; the width is stored.
         const auto edge=pane->mapToScene(QPointF(-2,pane->height()/2)).toPoint();
@@ -3563,7 +3631,7 @@ for line in sys.stdin:
         clickItem("stageLogClose");
         QTRY_VERIFY(!pane->isVisible());QVERIFY(!view->property("showStageLog").toBool());
         view->setProperty("stageLogWidth",420);view->setProperty("stageLogMode",QString("device"));view->setProperty("showActivity",true);
-        workspace->setProperty("jobs",QVariantList{});
+        pane->setProperty("launchJob",QString());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void touches_and_coordinates_show_on_the_live_device() {

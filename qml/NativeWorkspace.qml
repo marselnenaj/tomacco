@@ -65,6 +65,17 @@ Rectangle {
     }
     Settings {category:"NativeIphone";property alias runnerBundle:view.runnerBundle}
     property string notice: ""
+    // The request behind a failure on the notice line, to try again; any other notice drops it.
+    property var noticeRetry: null
+    onNoticeChanged: noticeRetry=null
+    function retryNotice() {
+        const again=noticeRetry
+        if(!again)return
+        notice=""
+        if(again.op==="runtime.start")connectTarget()
+        else if(again.op==="project.run")launch()
+        else request(again.op,again.args)
+    }
     property bool failed: false
     property bool connecting: false
     property bool autoAttach: true
@@ -494,7 +505,7 @@ Rectangle {
             if(!response.ok){
                 if(op==="project.run")view.launchPending=false
                 if(op==="runtime.start")view.connecting=false
-                if(!c.quiet){view.notice=response.error.message;view.failed=true}
+                if(!c.quiet){view.notice=response.error.message+(response.error.remedy?"\n"+qsTr("What to do: %1").arg(response.error.remedy):"");view.failed=true;view.noticeRetry={op:op,args:JSON.parse(c.signature)}}
                 // An awaited device is retried a few times, then given up with this reason.
                 if(op==="runtime.start" && view.pendingWanted && response.error.code!=="runtime_start_timeout") {
                     view.pendingFailures+=1
@@ -955,6 +966,7 @@ Rectangle {
             Rectangle {width:Theme.gapXxs;height:parent.height;color:view.failed?Theme.danger:Theme.accent}
             RowLayout {anchors.fill:parent;anchors.leftMargin:Theme.gapLg;anchors.rightMargin:Theme.gapSm;spacing:Theme.gapSm
                 Text {id:noticeLabel;Layout.fillWidth:true;text:view.notice;color:view.failed?Theme.danger:Theme.text;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;maximumLineCount:4;elide:Text.ElideRight}
+                StudioButton {objectName:"noticeRetry";text:qsTr("Try again");iconName:"refresh";visible:view.failed && !!view.noticeRetry;onClicked:view.retryNotice()}
                 StudioButton {text:qsTr("Open job");quiet:true;visible:!!view.launchJob;onClicked:workspace.showTab("jobs")}
                 StudioButton {iconName:"close";quiet:true;tip:qsTr("Dismiss notice");onClicked:view.notice=""}
             }

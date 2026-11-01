@@ -103,11 +103,17 @@ ColumnLayout {
             }
             ScrollBar.vertical:StudioScrollBar {}
         }
-        Text {
-            anchors.centerIn:parent;width:parent.width-Theme.gapXl;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap
-            visible:!pane.lines.length;objectName:"deviceLogState"
-            text:pane.error || (pane.paused?qsTr("Paused"):pane.query && pane.text?qsTr("No line contains this text."):qsTr("Waiting for log lines…"))
-            color:pane.error?Theme.danger:Theme.faint;font.pixelSize:Theme.fontSmall
+        Column {
+            anchors.centerIn:parent;width:parent.width-Theme.gapXl;spacing:Theme.gapSm
+            visible:!pane.lines.length
+            Text {
+                width:parent.width;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap
+                objectName:"deviceLogState"
+                text:pane.error || (pane.paused?qsTr("Paused"):pane.query && pane.text?qsTr("No line contains this text."):qsTr("Waiting for log lines…"))
+                color:pane.error?Theme.danger:Theme.faint;font.pixelSize:Theme.fontSmall
+            }
+            // The capture failed: start it again once the cause is dealt with.
+            StudioButton {objectName:"deviceLogRetry";anchors.horizontalCenter:parent.horizontalCenter;visible:!!pane.error;text:qsTr("Try again");iconName:"refresh";onClicked:pane.restart()}
         }
     }
 }

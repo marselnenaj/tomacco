@@ -113,6 +113,14 @@ Rectangle {
     property bool running: false
     onStatusChanged: running=false
     property bool failed: false
+    // The last request that failed on screen: what went wrong, what to do about it, and the request to try again.
+    property var failure: ({})
+    onFailedChanged: if(!failed) failure=({})
+    function retry() {
+        if(!failure.operation) return -1
+        const again=failure
+        return request(again.operation,again.args)
+    }
     property var pending: ({})
     property var formValues: ({})
     property var selectedOperation: null
@@ -157,9 +165,10 @@ Rectangle {
         let id=Agent.request(operation,args||{})
         if(operation==="project.run" || operation==="project.execute")projectRequestPending=true
         pending[id]={operation:operation,quiet:quiet||false,signature:signature}
-        if(!quiet) { failed=false; status=qsTr("Running…"); running=true }
+        if(!quiet) { failed=false; failure=({}); status=qsTr("Running…"); running=true }
         return id
     }
+    function chooseProjectFolder() { projectFolder.open() }
     function openProject(path) {
         projectPath.text=path
         request("project.inspect",{path:path})
@@ -248,8 +257,9 @@ Rectangle {
             delete panel.pending[id]
             if(operation==="project.run" || operation==="project.execute")panel.projectRequestPending=false
             if(!response.ok) {
-                if(!context.quiet) { panel.failed=true; panel.status=response.error.message+(response.error.remedy ? " · "+response.error.remedy : ""); panel.resultText=JSON.stringify(response,null,2) }
-                if(response.error.code==="workspace_busy" && response.error.details.job){panel.selectJob(response.error.details.job);panel.status=qsTr("A job is already running for this project. Use the running session or end it first.")}
+                if(!context.quiet) { panel.failed=true; panel.status=response.error.message+(response.error.remedy ? " · "+response.error.remedy : ""); panel.resultText=JSON.stringify(response,null,2)
+                    panel.failure={message:response.error.message,remedy:response.error.remedy || "",code:response.error.code || "",operation:operation,args:JSON.parse(context.signature)} }
+                if(response.error.code==="workspace_busy" && response.error.details.job){panel.selectJob(response.error.details.job);panel.failure=({});panel.status=qsTr("A job is already running for this project. Use the running session or end it first.")}
                 return
             }
             let value=response.result
@@ -306,7 +316,19 @@ Rectangle {
             visible: panel.failed || panel.running
             color: panel.failed ? Theme.dangerSurface : Theme.elevated
             Rectangle { width: Theme.gapXs; height: parent.height; color: panel.failed ? Theme.danger : Theme.accent }
-            Text { id: feedback; anchors.fill: parent; anchors.margins: Theme.gapSm; anchors.leftMargin: Theme.gapLg; text: panel.status; color: panel.failed ? Theme.danger : Theme.text; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall }
+            // A failure says what went wrong, what to do about it, and offers to try again.
+            ColumnLayout {
+                id: feedback; objectName: "workspaceFeedback"
+                anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.gapSm; leftMargin: Theme.gapLg }
+                spacing: Theme.gapXs
+                RowLayout {
+                    Layout.fillWidth: true; spacing: Theme.gapSm
+                    Text { objectName: "workspaceFeedbackText"; Layout.fillWidth: true; text: panel.failure.operation ? panel.failure.message : panel.status; color: panel.failed ? Theme.danger : Theme.text; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall; font.weight: panel.failure.operation ? Font.Bold : Font.Normal }
+                    StudioButton { objectName: "workspaceRetry"; visible: panel.failed && !!panel.failure.operation; text: qsTr("Try again"); iconName: "refresh"; onClicked: panel.retry() }
+                    StudioButton { visible: panel.failed; iconName: "close"; quiet: true; text: qsTr("Dismiss"); displayText: ""; tip: text; onClicked: panel.failed=false }
+                }
+                Text { objectName: "workspaceRemedy"; Layout.fillWidth: true; visible: !!panel.failure.remedy; text: qsTr("What to do: %1").arg(panel.failure.remedy || ""); color: Theme.text; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall }
+            }
         }
         StackLayout {
             currentIndex: panel.currentIndex; Layout.fillWidth: true; Layout.fillHeight: true
@@ -554,7 +576,7 @@ Rectangle {
                 spacing: 0
                 ColumnLayout {
                     Layout.preferredWidth: panel.width<760?216:296; Layout.maximumWidth: 296; Layout.fillHeight: true; spacing: 0
-                    StudioTextField { id: actionFilter; Layout.fillWidth: true; Layout.margins: Theme.gapSm; placeholderText: qsTr("Search tools…") }
+                    StudioTextField { id: actionFilter; objectName: "toolSearch"; Layout.fillWidth: true; Layout.margins: Theme.gapSm; placeholderText: qsTr("Search tools…") }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
                     ListView {
                         id: toolList; objectName: "toolList"
@@ -580,6 +602,24 @@ Rectangle {
                             onClicked: panel.chooseOperation(modelData)
                         }
                         ScrollBar.vertical: StudioScrollBar {}
+                        // No tools: the control program has not answered, and says why.
+                        StudioEmptyState {
+                            objectName: "toolsUnavailable"; actionName: "toolsRetry"
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.margins: Theme.gapLg
+                            visible: Agent.operations.length===0
+                            showMark: false
+                            title: qsTr("No tools yet.")
+                            body: Agent.cliError || qsTr("The control program has not listed its tools yet.")
+                            actionText: qsTr("Try again"); actionIcon: "refresh"
+                            onAction: Agent.request("schema")
+                        }
+                        Text {
+                            objectName: "toolsNoMatch"
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.margins: Theme.gapLg
+                            visible: Agent.operations.length>0 && toolList.count===0
+                            text: qsTr("No tool matches “%1”.").arg(actionFilter.text)
+                            color: Theme.muted; font.pixelSize: Theme.fontSmall; wrapMode: Text.WordWrap
+                        }
                     }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
                     StudioButton { text: qsTr("Copy MCP configuration"); displayText: panel.width<760?"MCP":text; tip: text; iconName: "copy"; quiet: true; Layout.fillWidth: true; Layout.margins: Theme.gapSm; onClicked: Studio.copy(JSON.stringify({mcpServers:{"tomacco":{command:Agent.cliPath,args:["mcp"]}}},null,2)) }

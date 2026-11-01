@@ -79,6 +79,9 @@ operations and their JSON results.
 - **Command palette.** Ctrl+K matches loosely and ranks the results (word starts, letters in a row and whole words
   first) with the matched letters marked; the entries chosen last come first, marked **Recent**; PgUp and PgDn page
   through the list.
+- **Errors you can act on.** A failed request on a workspace view or the device view shows its remedy as **What to do**
+  and a **Try again** button that sends it once more; the live logs offer **Try again** too. Files without a project,
+  tools the control program has not listed and a tool search without results each say so and offer the next step.
 
 ### Changed
 

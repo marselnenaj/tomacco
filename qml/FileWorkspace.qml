@@ -140,7 +140,7 @@ Item {
                         }
                         onClicked: view.searching?view.openFile(modelData.file,modelData.line):view.toggle(modelData)
                     }
-                    StudioEmptyState { anchors.centerIn: parent; width: parent.width-Theme.gapXl; visible: !view.root; title: ""; body: qsTr("Open a project first") }
+                    StudioEmptyState { objectName: "filesEmpty"; actionName: "filesChooseProject"; anchors.centerIn: parent; width: parent.width-Theme.gapXl; visible: !view.root; showMark: false; title: ""; body: qsTr("Open a project first"); actionText: qsTr("Choose folder"); actionIcon: "files"; onAction: view.workspace.chooseProjectFolder() }
                     ScrollBar.vertical: StudioScrollBar {}
                 }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
