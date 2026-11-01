@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 214 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 216 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -167,6 +167,8 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`ios.emulator.report`](ios.md#iosemulatorreport) | Read iOS test run | read-only |
 | [`ios.emulator.memory`](ios.md#iosemulatormemory) | Read PMP memory | read-only |
 | [`ios.virtual.status`](ios.md#iosvirtualstatus) | Virtual iOS device: status | read-only |
+| [`ios.virtual.host_check`](ios.md#iosvirtualhost_check) | Check this machine for the virtual iOS device | read-only |
+| [`ios.virtual.setup`](ios.md#iosvirtualsetup) | Set up the virtual iOS device | writes |
 | [`ios.virtual.configure`](ios.md#iosvirtualconfigure) | Set up virtual iOS device | writes |
 | [`ios.virtual.apps`](ios.md#iosvirtualapps) | Apps of virtual iOS device | read-only |
 | [`ios.virtual.start`](ios.md#iosvirtualstart) | Start virtual iOS device | writes |

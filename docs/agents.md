@@ -406,6 +406,16 @@ tomaccoctl call remote.run '{"name":"mac","argv":["xcodebuild","-list"]}'
 Experimental. Full guides: [what it is](virtual-ios/README.md), [setup](virtual-ios/setup.md),
 [usage](virtual-ios/usage.md). It needs the user's own restore images and an Image4 boot ticket (IM4M).
 
+**Can this machine run it?** `ios.virtual.host_check` answers before anything is built: architecture, processors and
+VT-x/AMD-V, `/dev/kvm`, memory, free disk on the filesystem of `directory` (or the profile's `installs`), Vulkan drivers
+and graphics memory, the helper's APFS module against the running kernel, and `passt`. Each entry in `checks` has a
+`status` of `pass`, `warn` or `fail` and a `remedy`; `ready` is false when one fails. It is read-only.
+
+**Setting it up.** `ios.virtual.setup {work}` with the person's files plans the whole chain from what is already done (`stages`, `next`,
+the person's files under `inputs`, the machine under `host`); `step:"run"` starts the next stage as a job and skips done
+ones. Its refusals are `ios_setup_*` codes with a remedy: `ios_setup_needs_input` names the person's files a stage lacks,
+`ios_setup_confirm` means ask the person first, `ios_setup_manual` is the restore, run by hand from `commands`.
+
 **No profile yet?** `python3 tools/ios_virtual_profile.py --check` lists every input of a start that is missing or
 wrong, in chain order, each with the command that makes it. The JSON on stdout has them under `missing` (`input`, `flag`,
 `path`, `problem`, `make`). With everything present, `--directory /absolute/profile` plus `--cryptex`, `--boot-inputs`,

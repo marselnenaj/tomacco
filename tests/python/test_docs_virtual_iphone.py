@@ -386,5 +386,48 @@ class AgentGuideTests(DocumentTest):
                          "the current run's `running_panel`")
 
 
+# The error-code families of the virtual iOS device the troubleshooting table must list in full.
+CODE_FAMILIES = re.compile(r'"((?:ios_virtual|ios_guest|ios_control|ios_touch|ios_frame|ios_prepare|ios_setup)'
+                           r'_[a-z0-9_]+|ios_emulator_busy|ios_boot_failed)"')
+
+
+def source_text(*directories):
+    return "".join(path.read_text(encoding="utf-8", errors="replace") for directory in directories
+                   for path in sorted((ROOT / directory).rglob("*")) if path.suffix in (".rs", ".py"))
+
+
+def table_rows(document):
+    """The cells of each table row of a Markdown document, header and rule rows left out."""
+    rows = []
+    for line in document.splitlines():
+        if line.startswith("| ") and not line.startswith("| ---"):
+            rows.append([cell.strip() for cell in line.strip().strip("|").split(" | ")])
+    return [row for row in rows if row[0] not in ("Code", "Symptom")]
+
+
+class TroubleshootingTests(DocumentTest):
+    PATH = "docs/virtual-ios/troubleshooting.md"
+
+    def test_every_code_and_message_a_symptom_names_exists_in_the_code(self):
+        source = source_text("native", "tools")
+        for row in table_rows(raw(self.PATH)):
+            for code in re.findall(r"`([a-z][a-z0-9]*_[a-z0-9_]*)(?::[a-z]+)?`", row[0]):
+                self.assertIn(f'"{code}"', source, f"{self.PATH} names {code}, which tomaccoctl never returns")
+            for message in re.findall(r'"([^"]+)"', row[0]):
+                for fragment in filter(None, (part.strip() for part in message.split("..."))):
+                    self.assertIn(fragment, source, f"{self.PATH} quotes a message tomaccoctl never prints: {fragment}")
+
+    def test_the_code_table_lists_every_virtual_device_code_once_in_order(self):
+        rows = table_rows(section(self.PATH, "## Error codes"))
+        listed = [row[0].strip("`") for row in rows]
+        self.assertEqual(listed, sorted(listed), "the error codes are not in alphabetical order")
+        self.assertEqual(len(listed), len(set(listed)), "an error code is listed twice")
+        returned = set(CODE_FAMILIES.findall(source_text("native")))
+        self.assertEqual(sorted(returned - set(listed)), [], "codes tomaccoctl returns are missing from the table")
+        self.assertEqual(sorted(set(listed) - returned), [], "the table lists codes tomaccoctl never returns")
+        for row in rows:
+            self.assertEqual(len(row), 3, f"{row[0]} needs a meaning and a fix")
+
+
 if __name__ == "__main__":
     unittest.main()

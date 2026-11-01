@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 214 operations.
+`tomaccoctl` now has one typed API of 216 operations.
 
 ### Added
 
@@ -143,6 +143,9 @@ operations and their JSON results.
   GID 0, so two builds of a commit in the same directory give the same package. Before, the tarball's time stamps and the
   time Qt's `rcc` stored for the translations differed per build.
 - The Arch PKGBUILD and .SRCINFO build 1.1.0 from its source tarball.
+- The virtual iOS device's troubleshooting guide opens with a table of every error code it returns, with what each
+  means and what to do. A test fails when a code there or in a symptom does not exist in the code, or when a code the
+  code returns is missing from the table.
 
 ### Fixed
 

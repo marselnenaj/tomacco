@@ -16,6 +16,51 @@ To read why a start failed, use the job from `busy` or from the start's own answ
 tomaccoctl call job.logs '{"job_id":"START_JOB","offset":0}'
 ```
 
+## Error codes
+
+Every error code of the virtual iOS device that `tomaccoctl` returns, in alphabetical order. The code is the
+`error.code` of the JSON answer; its message and remedy say more. A test checks that each code here exists in
+the code and that none is missing.
+
+| Code | What it means | What to do |
+| --- | --- | --- |
+| `ios_boot_failed` | `ios.emulator.probe` saw the boot fail early; the message is the diagnosis. | Read the diagnosis and `ios.emulator.report`. |
+| `ios_control_busy` | Another action holds the guest's control lane. | Ask again. |
+| `ios_control_ended` | The emulator has exited while its job finishes hashing the disks. | Wait for the job. Do not cancel it. |
+| `ios_control_starting` | The control monitor is not published yet. | Ask again in a moment. |
+| `ios_emulator_busy` | Another job holds this guest. The error names it. | Wait for that job or `job.cancel` it. |
+| `ios_frame_file_unavailable` | No private runtime directory exists, or the frame would exceed 64 MiB. | Use `frame` with `transport:"inline"`. |
+| `ios_guest_busy` | The guest answers but is working, so it is not stopped. | Try again when it is done. See [stopping](#stopping). |
+| `ios_guest_control_unavailable` | The run or job has no guest channel. | Start the phone with `ios.virtual.start`, which always has one. |
+| `ios_guest_crash_reports_failed` | The guest could not read its crash reports. | The `response` in the details says why. Try again later in the run. |
+| `ios_guest_disconnected` | The guest closed the control stream during a request. | Check `ios.virtual.status`: the guest may have stopped. |
+| `ios_guest_not_idle` | The guest is still working, so it is not stopped. | Try again when it is done. |
+| `ios_guest_paused` | The virtual CPU is not running. | Wait for the boot, or check `ios.virtual.status`. |
+| `ios_guest_progress_unavailable` | Install progress could not be read. It comes in `progress_error`; the install goes on. | Wait for the install's result. |
+| `ios_guest_receipt_unavailable` | The guest could not read its operation receipt. | Ask again. The details carry the guest's log. |
+| `ios_guest_starting` | The guest service is not up yet. | Wait, and watch `ios.virtual.status`. |
+| `ios_guest_stopped` | The guest job has stopped. | Start the phone again. |
+| `ios_guest_timeout` | The guest did not reply before the request's deadline. | Ask again. Under load the guest answers slowly. |
+| `ios_prepare_busy` | Another job is preparing into this output. | Wait for that job or `job.cancel` it. |
+| `ios_setup_confirm` | `ios.virtual.setup` reached a stage that builds for long or needs the person's template. | Ask the person, then call again with `confirm:true`. |
+| `ios_setup_inputs_invalid` | Some of the person's own files are not the ones the chain needs. | Read each failed entry's `problem` and `fix` in `inputs`. Nothing long has started. |
+| `ios_setup_manual` | The next stage is the restore, which boots a guest and is run by hand. | Run the three `commands` in order, then pass `restored:true`. |
+| `ios_setup_needs_checkout` | The engine is built in a source checkout's `.tooling`. | Use the `tomaccoctl` of a Tomacco checkout for this stage. |
+| `ios_setup_needs_input` | A stage needs files only the person has. `needs` names the arguments. | Pass them. [Setup](setup.md#what-no-tool-does-for-you) says where each comes from. |
+| `ios_setup_out_of_order` | An earlier stage of the chain is not done. | Run that stage first; the error names it. |
+| `ios_setup_partial` | An earlier run stopped halfway and left its output. | Move the output aside (nothing is deleted for you) and run the stage again. |
+| `ios_touch_has_no_hover` | A touchscreen has no pointer that moves without a contact. | Use `click` or `drag`. |
+| `ios_touch_lane_required` | A one-shot `tomaccoctl call` cannot hold a finger down. | Use `drag`, or `touch_down` through `tomaccoctl mcp`. |
+| `ios_touch_not_down` | No contact is held down, or it was lifted after 5 seconds without an event. | Press again with `touch_down`; `touch_move` keeps a contact alive. |
+| `ios_virtual_application_conflict` | Two listed bundles use the same bundle identifier. | Remove one with `ios.virtual.configure {remove_application}`. |
+| `ios_virtual_application_unknown` | No listed bundle has this path or bundle identifier. | `ios.virtual.apps` lists them. |
+| `ios_virtual_busy` | A start or stop is in progress. | Wait for it. The details name its job. |
+| `ios_virtual_disk_space` | The start's disk copy does not fit on the filesystem of the profile's `installs`. | Free the space the remedy names. See [starting](#starting). |
+| `ios_virtual_guest_state_unknown` | The guest job could not be observed. | Read `job.get` for the job in the details. |
+| `ios_virtual_not_running` | The phone is off. | `ios.virtual.start`. |
+| `ios_virtual_profile_invalid` | `profile.json` or `state.json` is missing or wrong. | `python3 tools/ios_virtual_profile.py --check`. See [setup](#setup). |
+| `ios_virtual_unconfigured` | No profile is selected. | Write one and call `ios.virtual.configure`. See [setup](setup.md). |
+
 ## Setup
 
 | Symptom | Cause | Fix |
@@ -111,3 +156,10 @@ That tells an inactive signing library from a refused bundle.
 `ios.emulator.report` with the guest job shows the emulator's outcome, and `userspace_failures` and `respawn_storms` list
 what went wrong inside iOS. An entry of kind `guard-ended` is expected. If you are still stuck, please open an issue
 with the report.
+
+`tomaccoctl report` writes one archive for that issue, on this computer only. Its `virtual-ios.json` holds this machine's
+readiness from `ios.virtual.host_check`, the profile's run settings, `ios.virtual.status`, which engine and guest-tools
+builds the profile uses, and how the last guest run ended (its outcome, evidence counts, and the first userspace
+failures and respawn storms); `virtual-ios/guest.log` is the end of that run's log. Recognised secrets are masked and
+your home directory is shown as `~`, but read the files before you share them. The archive holds no images, disks or
+other files of Apple's.

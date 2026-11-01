@@ -25,6 +25,8 @@ pub struct Contents {
     pub settings: Value,
     /// Each job record with its events, and the tail of its log.
     pub jobs: Vec<(Value, String)>,
+    /// The virtual iOS device's summary and the tail of its guest's log.
+    pub virtual_ios: Option<(Value, String)>,
     /// Replaced by `~` everywhere.
     pub home: Option<String>,
 }
@@ -117,6 +119,11 @@ version.json   Tomacco version and executable\n\
 host.json      Operating system, kernel, CPUs, memory, KVM, desktop session\n\
 doctor.json    The doctor report: tool versions, paths and readiness\n\
 settings.json  Configured paths and options\n\
+virtual-ios.json  The virtual iOS device: this machine's readiness (CPU,\n\
+               memory, disk, graphics card), the profile's settings, the\n\
+               current status, the engine and guest-tools builds, and how the\n\
+               last guest run ended\n\
+virtual-ios/guest.log  The end of the last guest run's log\n\
 jobs/          Recent jobs that failed, timed out or were cancelled: the\n\
                record with its timeline (ID.json) and the end of its log\n\
                (ID.log)\n\n\
@@ -135,6 +142,15 @@ pub fn files(contents: Contents) -> Vec<(String, Vec<u8>)> {
         ("doctor.json".into(), scrub_value(contents.doctor, home)),
         ("settings.json".into(), scrub_value(contents.settings, home)),
     ];
+    if let Some((summary, log)) = contents.virtual_ios {
+        files.push(("virtual-ios.json".into(), scrub_value(summary, home)));
+        if !log.is_empty() {
+            files.push((
+                "virtual-ios/guest.log".into(),
+                scrub_text(&log, home).into_bytes(),
+            ));
+        }
+    }
     for (job, log) in contents.jobs {
         let id = s(&job, "id").to_string();
         if identifier(&id, "job ID", Some("[0-9a-f]{32}")).is_err() {
@@ -184,6 +200,160 @@ pub fn write(output: &Path, files: &[(String, Vec<u8>)]) -> Result<()> {
     result
 }
 
+/// The settings of a profile that shape a run, without its app list.
+fn profile_summary(profile: &Value) -> Value {
+    let boot = &profile["boot"];
+    let mut picked = serde_json::Map::new();
+    for key in [
+        "target_page",
+        "bti",
+        "translation_cache_mib",
+        "display_profile",
+        "interactive",
+        "input_transport",
+        "clock_mode",
+        "host_cpu_policy",
+        "guest_network",
+        "boot_args",
+        "seconds",
+        "usb",
+    ] {
+        if !boot[key].is_null() {
+            picked.insert(key.into(), boot[key].clone());
+        }
+    }
+    json!({"engine":profile["engine"],"graphics":profile["graphics"],"tools":profile["tools"],
+        "installs":profile["installs"],"application":profile["application"],
+        "applications":profile["applications"].as_array().map_or(0, Vec::len),
+        "accel":profile["prepare"]["accel"],"boot":picked,"toolchain":profile["toolchain"]})
+}
+
+/// Which engine build this is, from its build-manifest.json.
+fn engine_summary(manifest: &Value) -> Value {
+    if manifest.is_null() {
+        return Value::Null;
+    }
+    let contract = &manifest["ordered_patch_contract"];
+    let count = |family: &str| contract[family].as_array().map_or(0, Vec::len);
+    json!({"engine_sha256":manifest["engine_sha256"],"source_commits":manifest["source_commits"],
+        "cpu_optimization":manifest["cpu_optimization"],"hardening":manifest["hardening"],
+        "experimental_patches":manifest["experimental_patches"],
+        "experimental_graphics_patches":manifest["experimental_graphics_patches"],
+        "patches":{"engine":count("engine"),"graphics":count("graphics"),"translator":count("translator")},
+        "build_elapsed_seconds":manifest["build_elapsed_seconds"],"reproducibility":manifest["reproducibility"]})
+}
+
+/// Which guest-tools build this is, from its guest-tools.json.
+fn tools_summary(report: &Value) -> Value {
+    if report.is_null() {
+        return Value::Null;
+    }
+    let programs: Vec<&str> = report["programs"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|program| program["name"].as_str().or(program["path"].as_str()))
+        .collect();
+    json!({"state":report["state"],"target":report["target"],"compiler":report["compiler"],
+        "agent":report["agent"],"quiet_services":report["quiet_services"],
+        "development_signing":!report["development_signing"].is_null(),
+        "sources_sha256":digest(report["sources"].to_string().as_bytes()),
+        "trustcache_sha256":report["trustcache"]["sha256"],"programs":programs,
+        "applications":report["applications"].as_array().map_or(0, Vec::len)})
+}
+
+/// How a guest run ended, as run_ios_paravirt.py classified it.
+fn run_summary(report: &Value) -> Value {
+    let record = &report["report"];
+    if record.is_null() {
+        return json!({"job_state":report["job_state"],"report":null});
+    }
+    let evidence: serde_json::Map<String, Value> = record["guest_evidence"]
+        .as_object()
+        .into_iter()
+        .flatten()
+        .map(|(key, value)| {
+            let shown = match value {
+                Value::Array(items) => json!(items.len()),
+                Value::Object(map) => json!(map.len()),
+                other => other.clone(),
+            };
+            (key.clone(), shown)
+        })
+        .collect();
+    let first = |key: &str, limit: usize| -> Value {
+        json!(
+            record[key].as_array().map(|items| items
+                .iter()
+                .take(limit)
+                .cloned()
+                .collect::<Vec<_>>())
+        )
+    };
+    json!({"job_state":report["job_state"],"outcome":record["outcome"],"exit_code":record["exit_code"],
+        "interrupted":record["interrupted"],"observation_error":record["observation_error"],
+        "vram_guard_stop":record["vram_guard_stop"],"guest_evidence":evidence,
+        "userspace_failures":first("userspace_failures", 16),"respawn_storms":first("respawn_storms", 16),
+        "stop":report["stop"]})
+}
+
+/// Reads a small JSON receipt beside an artifact, or null.
+fn receipt(path: &Path) -> Value {
+    if path.is_file() && fs::metadata(path).is_ok_and(|meta| meta.len() <= 16 * 1024 * 1024) {
+        read_json(path, None).unwrap_or(Value::Null)
+    } else {
+        Value::Null
+    }
+}
+
+/// The virtual iOS device's part of the bundle: readiness, profile, status,
+/// builds and the last run, and the tail of that run's log.
+fn virtual_ios(log_limit: u64) -> (Value, String) {
+    let host = crate::api::dispatch("ios.virtual.host_check", &json!({}))
+        .unwrap_or_else(|error| json!({"error":error.value()}));
+    let status = match crate::api::dispatch("ios.virtual.status", &json!({})) {
+        Ok(status) => status,
+        Err(error) => {
+            return (
+                json!({"host":host,"status_error":error.value()}),
+                String::new(),
+            );
+        }
+    };
+    if status["configured"] != true {
+        return (json!({"configured":false,"host":host}), String::new());
+    }
+    let profile = crate::ios_emulator::virtual_phone::directory()
+        .and_then(|directory| crate::ios_emulator::virtual_phone::records(&directory))
+        .map(|(profile, _)| profile)
+        .unwrap_or(Value::Null);
+    let engine = Path::new(s(&profile, "engine"));
+    let manifest = [engine.parent(), engine.parent().and_then(Path::parent)]
+        .into_iter()
+        .flatten()
+        .map(|directory| receipt(&directory.join("build-manifest.json")))
+        .find(|record| record["engine_sha256"].is_string())
+        .unwrap_or(Value::Null);
+    let tools = receipt(&Path::new(s(&profile, "tools")).join("guest-tools.json"));
+    let guest = s(&status, "guest_job").to_string();
+    let (run, log) = if guest.is_empty() {
+        (Value::Null, String::new())
+    } else {
+        let run = crate::api::dispatch("ios.emulator.report", &json!({"job_id":guest}))
+            .map(|report| run_summary(&report))
+            .unwrap_or_else(|error| json!({"error":error.value()}));
+        let log = jobs::get(&guest)
+            .map(|job| log_tail(Path::new(s(&job, "log_path")), log_limit))
+            .unwrap_or_default();
+        (run, log)
+    };
+    (
+        json!({"configured":true,"host":host,"profile":profile_summary(&profile),"status":status,
+            "engine":engine_summary(&manifest),"guest_tools":tools_summary(&tools),"last_run":run}),
+        log,
+    )
+}
+
 fn default_output() -> Result<PathBuf> {
     let directory = home()?.join("diagnostics");
     private_dir(&directory)?;
@@ -222,6 +392,10 @@ pub fn bundle(a: &Value) -> Result {
         .iter()
         .map(|(job, _)| s(job, "id").to_string())
         .collect();
+    let virtual_ios = a["virtual_ios"]
+        .as_bool()
+        .unwrap_or(true)
+        .then(|| virtual_ios(log_limit));
     let anonymize = a["anonymize_home"].as_bool().unwrap_or(true);
     let files = files(Contents {
         version: json!({
@@ -234,6 +408,7 @@ pub fn bundle(a: &Value) -> Result {
         doctor,
         settings,
         jobs: recent,
+        virtual_ios,
         home: anonymize.then(|| user_home().to_string_lossy().into_owned()),
     });
     write(&output, &files)?;
@@ -267,6 +442,11 @@ mod tests {
                     "events":[{"kind":"state","value":"failed"}]}),
                 "upload\nusing ghp_aaaaaaaaaaaaaaaaaaaaaaaa from /home/ana/app\n".to_string(),
             )],
+            virtual_ios: Some((
+                json!({"configured":true,"profile":{"engine":"/home/ana/phone/engine"},
+                    "status":{"error":"token ghp_bbbbbbbbbbbbbbbbbbbbbbbb rejected"}}),
+                "boot\nkernel log from /home/ana/phone\n".to_string(),
+            )),
             home: Some("/home/ana".into()),
         }
     }
@@ -284,6 +464,8 @@ mod tests {
                 "host.json",
                 "doctor.json",
                 "settings.json",
+                "virtual-ios.json",
+                "virtual-ios/guest.log",
                 &format!("jobs/{id}.json"),
                 &format!("jobs/{id}.log")
             ]
@@ -297,6 +479,7 @@ mod tests {
             "abcdefgh12345",
             "hunter2hunter2",
             "ghp_aaaa",
+            "ghp_bbbb",
             "/home/ana",
         ] {
             assert!(!all.contains(secret), "{secret} leaked");
@@ -332,6 +515,54 @@ mod tests {
             ));
         }
         assert_eq!(read, files);
+    }
+
+    #[test]
+    fn the_virtual_ios_summaries_keep_what_explains_a_run() {
+        let profile = json!({"engine":"/e/qemu","graphics":"/g","tools":"/t","installs":"/i","application":"app",
+            "applications":[{"bundle":"/a.app"}],"prepare":{"accel":"kvm"},
+            "boot":{"target_page":"16k","bti":"off","translation_cache_mib":2048,"kernel":"/k","sep":"/s"}});
+        let summary = profile_summary(&profile);
+        assert_eq!(summary["applications"], 1);
+        assert_eq!(
+            summary["boot"],
+            json!({"target_page":"16k","bti":"off","translation_cache_mib":2048})
+        );
+        let manifest = json!({"engine_sha256":"ab","source_commits":{"sptm":"c"},"cpu_optimization":"native",
+            "hardening":"qemu","ordered_patch_contract":{"engine":[{},{}],"graphics":[{}],"translator":[]},
+            "toolchain":{"rustc":{"path":"/usr/bin/rustc"}}});
+        let engine = engine_summary(&manifest);
+        assert_eq!(
+            engine["patches"],
+            json!({"engine":2,"graphics":1,"translator":0})
+        );
+        assert_eq!(engine["engine_sha256"], "ab");
+        assert!(engine.get("toolchain").is_none());
+        assert_eq!(engine_summary(&Value::Null), Value::Null);
+        let tools = tools_summary(&json!({"state":"built","target":"arm64-apple-ios27.0",
+            "programs":[{"name":"tomacco-agent"},{"path":"usr/local/bin/x"}],"sources":{"a.c":"1"},
+            "development_signing":{"policy":[]},"files":[{"path":"big"}]}));
+        assert_eq!(
+            tools["programs"],
+            json!(["tomacco-agent", "usr/local/bin/x"])
+        );
+        assert_eq!(tools["development_signing"], true);
+        assert!(tools.get("files").is_none());
+        let run = run_summary(
+            &json!({"job_state":"succeeded","report":{"outcome":"kernel-panic",
+            "guest_evidence":{"kernel_panic":true,"device_errors":["a","b"],"bus_faults":[]},
+            "userspace_failures":(0..40).map(|n| json!({"n":n})).collect::<Vec<_>>()}}),
+        );
+        assert_eq!(run["outcome"], "kernel-panic");
+        assert_eq!(
+            run["guest_evidence"],
+            json!({"kernel_panic":true,"device_errors":2,"bus_faults":0})
+        );
+        assert_eq!(run["userspace_failures"].as_array().unwrap().len(), 16);
+        assert_eq!(
+            run_summary(&json!({"job_state":"queued","report":null}))["report"],
+            Value::Null
+        );
     }
 
     #[test]

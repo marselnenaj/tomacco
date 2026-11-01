@@ -390,7 +390,7 @@ fn virtual_ios_steps(summary: &Value) -> Vec<Value> {
         steps.push(json!({"goal":"virtual_ios",
             "what":format!("Set up the virtual iOS device, only if the person wants it. Next: {}",
                 next["what"].as_str().unwrap_or("select the profile")),
-            "how":format!("{} The whole chain is in chain, in order; {DOCS}/virtual-ios/setup.md explains it. Read its IM4M section before anything is built or downloaded: it says what is required and whether setup can finish. It needs about 100 GiB and a 16 GiB graphics card.",
+            "how":format!("{} The whole chain is in chain, in order; {DOCS}/virtual-ios/setup.md explains it. ios.virtual.host_check says whether this machine can run it, and ios.virtual.setup with a work directory plans the chain from what is already done and runs it stage by stage. Read its IM4M section before anything is built or downloaded: it says what is required and whether setup can finish. It needs about 100 GiB and a 16 GiB graphics card.",
                 next["how"].as_str().unwrap_or("")),
             "ask_first":true,"next_stage":next["stage"],"chain":chain}));
         return steps;

@@ -4223,6 +4223,14 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Appareil iOS virtuel : état</translation>
     </message>
     <message>
+        <source>Set up the virtual iOS device</source>
+        <translation>Configurer l'appareil iOS virtuel</translation>
+    </message>
+    <message>
+        <source>Check this machine for the virtual iOS device</source>
+        <translation>Vérifier cet ordinateur pour l'appareil iOS virtuel</translation>
+    </message>
+    <message>
         <source>Wait for job</source>
         <translation>Attendre une tâche</translation>
     </message>
