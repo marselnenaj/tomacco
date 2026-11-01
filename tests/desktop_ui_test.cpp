@@ -106,6 +106,22 @@ class DesktopUiTest : public QObject {
         auto *face=QAccessible::queryAccessibleInterface(item);
         return face?face->text(QAccessible::Name):QString();
     }
+    // A request sent on the preview socket, as tomaccoctl sends it, without waiting for its answer.
+    std::unique_ptr<QLocalSocket> previewSend(const QString &method,const QVariantMap &params={}) {
+        const auto data=QDir::cleanPath(QFileInfo(Backend::dataDirectory()).absoluteFilePath());
+        auto runtime=data+"/runtime";
+        if(runtime.toUtf8().size()+54>=104)runtime=QStringLiteral("/tmp/tomacco-%1-%2").arg(getuid()).arg(QString::fromLatin1(QCryptographicHash::hash(data.toUtf8(),QCryptographicHash::Sha256).toHex().left(16)));
+        auto socket=std::make_unique<QLocalSocket>();socket->connectToServer(runtime+"/preview-ui-acceptance.sock");
+        if(!socket->waitForConnected(2000))return nullptr;
+        socket->write(QJsonDocument(QJsonObject{{"id",1},{"method",method},{"params",QJsonObject::fromVariantMap(params)}}).toJson(QJsonDocument::Compact)+"\n");socket->flush();
+        return socket;
+    }
+    // The answer to a request previewSend sent.
+    QVariantMap previewAnswer(QLocalSocket *socket,int milliseconds=30000) {
+        QElapsedTimer clock;clock.start();
+        while(!socket->canReadLine() && clock.elapsed()<patient(milliseconds))QTest::qWait(10);
+        return QJsonDocument::fromJson(socket->readLine()).object().toVariantMap();
+    }
     // One request on the preview socket, as tomaccoctl sends it: {result} or {error}.
     QVariantMap previewCall(const QString &method,const QVariantMap &params={}) {
         // Where Control puts it: the data directory's runtime/, or /tmp when that path is too long.
@@ -3886,6 +3902,51 @@ for line in sys.stdin:
         QVERIFY(reply.value("quitting").toBool());QVERIFY(!reply.value("unsaved").toBool());
         QTRY_COMPARE(quits,before+1);
         view->setProperty("quitting",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void a_destructive_agent_call_waits_for_the_persons_answer() {
+        // tomaccoctl asks with approve when agent_policy.approval.destructive is on; a stand-in agent asks here.
+        auto *dialog=object("approvalDialog");QVERIFY(dialog);
+        QVERIFY(!dialog->property("visible").toBool());
+        const QVariantMap question{{"operation","files.write"},{"title","Save source file"},{"client","stand-in-agent"},{"channel","mcp"},
+            {"arguments",QVariantMap{{"path",directory.filePath("project")},{"file","lib/main.dart"},{"token","[redacted]"}}},{"timeout_seconds",20}};
+        auto asking=previewSend("approve",question);QVERIFY(asking);
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        const auto summary=item("approvalSummary")->property("text").toString();
+        QVERIFY2(summary.contains("stand-in-agent") && summary.contains("Save source file") && summary.contains("(files.write)"),qPrintable(summary));
+        const auto shown=item("approvalArguments-text")->property("text").toString();
+        QVERIFY(shown.contains("lib/main.dart"));QVERIFY(shown.contains("[redacted]"));
+        QVERIFY(item("approvalCountdown")->property("text").toString().contains(QRegularExpression("(19|20)$")));
+        // Deny has the focus: Return or Space alone never approves.
+        QTRY_VERIFY(item("approvalDeny")->hasActiveFocus());
+        capture("approval-dialog");
+        clickItem("approvalApprove");
+        auto answer=previewAnswer(asking.get()).value("result").toMap();
+        QCOMPARE(answer.value("approved").toBool(),true);
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+
+        // Two at once: each is answered in turn; Deny and Escape are a no.
+        auto first=previewSend("approve",question);
+        auto second=previewSend("approve",[&]{auto other=question;other["operation"]="job.cancel";other["title"]="Cancel job";return other;}());
+        QVERIFY(first && second);
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        QTRY_VERIFY(item("approvalSummary")->property("text").toString().contains("(files.write)"));
+        clickItem("approvalDeny");
+        answer=previewAnswer(first.get()).value("result").toMap();
+        QCOMPARE(answer.value("approved").toBool(),false);QCOMPARE(answer.value("reason").toString(),QString("denied"));
+        QTRY_VERIFY(item("approvalSummary")->property("text").toString().contains("(job.cancel)"));
+        QVERIFY(dialog->property("visible").toBool());
+        QTest::keyClick(window,Qt::Key_Escape);
+        answer=previewAnswer(second.get()).value("result").toMap();
+        QCOMPARE(answer.value("approved").toBool(),false);
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+
+        // Nobody answers: the countdown says no.
+        auto silent=previewSend("approve",[&]{auto quick=question;quick["timeout_seconds"]=1;return quick;}());QVERIFY(silent);
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        answer=previewAnswer(silent.get(),5000).value("result").toMap();
+        QCOMPARE(answer.value("approved").toBool(),false);QCOMPARE(answer.value("reason").toString(),QString("timeout"));
+        QTRY_VERIFY(!dialog->property("visible").toBool());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void a_log_runs_beside_the_device_resizable_and_remembered() {

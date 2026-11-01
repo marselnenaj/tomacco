@@ -5844,4 +5844,39 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
         <translation>Erneut versuchen</translation>
     </message>
 </context>
+<context>
+    <name>ApprovalDialog</name>
+    <message>
+        <source>Allow this agent action?</source>
+        <translation>Diese Aktion des Agenten erlauben?</translation>
+    </message>
+    <message>
+        <source>An agent</source>
+        <translation>Ein Agent</translation>
+    </message>
+    <message>
+        <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
+        <translation>%1 möchte %2 (%3) ausführen. Tomacco kennzeichnet dies als destruktiv: Daten können gelöscht oder überschrieben werden.</translation>
+    </message>
+    <message>
+        <source>Its arguments, with secrets masked:</source>
+        <translation>Die Argumente, Geheimnisse maskiert:</translation>
+    </message>
+    <message>
+        <source>Arguments</source>
+        <translation>Argumente</translation>
+    </message>
+    <message>
+        <source>Seconds left before it is denied: %1</source>
+        <translation>Sekunden bis zur automatischen Ablehnung: %1</translation>
+    </message>
+    <message>
+        <source>Deny</source>
+        <translation>Ablehnen</translation>
+    </message>
+    <message>
+        <source>Approve</source>
+        <translation>Erlauben</translation>
+    </message>
+</context>
 </TS>

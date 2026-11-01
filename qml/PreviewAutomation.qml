@@ -55,6 +55,8 @@ Item {
     Connections {
         target: Agent
         function onPreviewRequest(id,method,args) {
+            // ApprovalDialog answers this one.
+            if(method==="approve")return
             try {
                 if(method==="state") { Agent.complete(id,automation.state()); return }
                 if(method==="show") { app.showWorkspace(args.tab || "project", args.path || "", args.file || "", args.line || 1); Agent.complete(id,{shown:true,session:Agent.session,version:Qt.application.version,tab:args.tab || "project"}); return }
