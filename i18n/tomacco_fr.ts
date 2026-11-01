@@ -3646,6 +3646,74 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>What to do: %1</source>
         <translation>Que faire : %1</translation>
     </message>
+    <message>
+        <source>Save the current layout</source>
+        <translation>Enregistrer la disposition actuelle</translation>
+    </message>
+    <message>
+        <source>Window layouts</source>
+        <translation>Dispositions de fenêtre</translation>
+    </message>
+    <message>
+        <source>Use window layout %1</source>
+        <translation>Utiliser la disposition %1</translation>
+    </message>
+    <message>
+        <source>At most %1 window layouts are kept. Delete one first.</source>
+        <translation>%1 dispositions au plus sont conservées. Supprimez-en d&apos;abord une.</translation>
+    </message>
+    <message>
+        <source>Window layout “%1” saved</source>
+        <translation>Disposition « %1 » enregistrée</translation>
+    </message>
+    <message>
+        <source>Window layout “%1”</source>
+        <translation>Disposition « %1 »</translation>
+    </message>
+    <message>
+        <source>Search settings</source>
+        <translation>Rechercher dans les paramètres</translation>
+    </message>
+    <message>
+        <source>No setting matches “%1”.</source>
+        <translation>Aucun paramètre ne correspond à « %1 ».</translation>
+    </message>
+    <message>
+        <source>Use the Omarchy theme&apos;s accent</source>
+        <translation>Utiliser la couleur d&apos;accent du thème Omarchy</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>Thème</translation>
+    </message>
+    <message>
+        <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
+        <translation>La couleur d&apos;accent de %1 se lit mal sur ce fond ; Tomacco garde la sienne.</translation>
+    </message>
+    <message>
+        <source>Accent from the Omarchy theme %1.</source>
+        <translation>Couleur d&apos;accent du thème Omarchy %1.</translation>
+    </message>
+    <message>
+        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
+        <translation>Une disposition retient la vue ouverte, le panneau d&apos;activité, le journal à côté de l&apos;appareil et sa largeur, les fenêtres d&apos;appareil et la taille de la fenêtre.</translation>
+    </message>
+    <message>
+        <source>Use</source>
+        <translation>Utiliser</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Supprimer</translation>
+    </message>
+    <message>
+        <source>Delete window layout %1</source>
+        <translation>Supprimer la disposition %1</translation>
+    </message>
+    <message>
+        <source>Name, e.g. testing or debugging</source>
+        <translation>Nom, p. ex. test ou débogage</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>

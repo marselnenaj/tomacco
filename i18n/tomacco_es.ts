@@ -3646,6 +3646,74 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>What to do: %1</source>
         <translation>Qué hacer: %1</translation>
     </message>
+    <message>
+        <source>Save the current layout</source>
+        <translation>Guardar la disposición actual</translation>
+    </message>
+    <message>
+        <source>Window layouts</source>
+        <translation>Disposiciones de ventana</translation>
+    </message>
+    <message>
+        <source>Use window layout %1</source>
+        <translation>Usar la disposición %1</translation>
+    </message>
+    <message>
+        <source>At most %1 window layouts are kept. Delete one first.</source>
+        <translation>Se guardan como máximo %1 disposiciones. Elimina una primero.</translation>
+    </message>
+    <message>
+        <source>Window layout “%1” saved</source>
+        <translation>Disposición «%1» guardada</translation>
+    </message>
+    <message>
+        <source>Window layout “%1”</source>
+        <translation>Disposición «%1»</translation>
+    </message>
+    <message>
+        <source>Search settings</source>
+        <translation>Buscar en los ajustes</translation>
+    </message>
+    <message>
+        <source>No setting matches “%1”.</source>
+        <translation>Ningún ajuste coincide con «%1».</translation>
+    </message>
+    <message>
+        <source>Use the Omarchy theme&apos;s accent</source>
+        <translation>Usar el color de acento del tema de Omarchy</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>Tema</translation>
+    </message>
+    <message>
+        <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
+        <translation>El color de acento de %1 no se lee bien sobre este fondo, así que Tomacco mantiene el suyo.</translation>
+    </message>
+    <message>
+        <source>Accent from the Omarchy theme %1.</source>
+        <translation>Color de acento del tema de Omarchy %1.</translation>
+    </message>
+    <message>
+        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
+        <translation>Una disposición guarda la vista abierta, el panel de actividad, el registro junto al dispositivo y su ancho, las ventanas de dispositivo y el tamaño de la ventana.</translation>
+    </message>
+    <message>
+        <source>Use</source>
+        <translation>Usar</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Eliminar</translation>
+    </message>
+    <message>
+        <source>Delete window layout %1</source>
+        <translation>Eliminar la disposición %1</translation>
+    </message>
+    <message>
+        <source>Name, e.g. testing or debugging</source>
+        <translation>Nombre, p. ej. pruebas o depuración</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>

@@ -4113,6 +4113,148 @@ for line in sys.stdin:
         workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void omarchy_theme_accent_is_followed_where_it_reads_and_only_when_chosen() {
+        open("runtime");
+        // A theme as Omarchy keeps the active one: $XDG_STATE_HOME/omarchy/current/theme/colors.toml.
+        const auto state=directory.filePath("xdg-state");
+        const auto themeDir=state+"/omarchy/current/theme";
+        QVERIFY(QDir().mkpath(themeDir));
+        const auto writeTheme=[&](const QByteArray &accent){
+            QFile file(themeDir+"/colors.toml");QVERIFY(file.open(QIODevice::WriteOnly|QIODevice::Truncate));
+            file.write("# fixture\nmode = \"dark\"\n\naccent = \""+accent+"\"\nbackground = \"#101418\"\nforeground = \"#f0f0f0\"\nred = \"not-a-colour\"\n");};
+        writeTheme("#4fb3ff");
+        {QFile name(state+"/omarchy/current/theme.name");QVERIFY(name.open(QIODevice::WriteOnly));name.write("fixture-blue\n");}
+        qputenv("XDG_STATE_HOME",state.toUtf8());
+        const auto noTheme=directory.filePath("state-home").toUtf8();
+        auto cleanup=qScopeGuard([&]{backend->setFollowOmarchyAccent(false);backend->setAppearance("system");qputenv("XDG_STATE_HOME",noTheme);backend->reloadOmarchyTheme();});
+        backend->reloadOmarchyTheme();
+        const auto theme=backend->omarchyTheme();
+        QVERIFY(theme.value("available").toBool());
+        QCOMPARE(theme.value("name").toString(),QString("fixture-blue"));
+        QCOMPARE(theme.value("accent").toString(),QString("#4fb3ff"));
+        QCOMPARE(theme.value("background").toString(),QString("#101418"));
+        QVERIFY(!theme.contains("red"));
+        const auto accent=[&]{return QQmlProperty::read(window,"palette.highlight").value<QColor>().name();};
+        // Off by default: the brand's red.
+        backend->setAppearance("dark");
+        QVERIFY(!backend->followOmarchyAccent());
+        QCOMPARE(accent(),QString("#f2361f"));
+        // Chosen in the settings: the theme's accent, at once.
+        QTest::keyClick(window,Qt::Key_Comma,Qt::ControlModifier);
+        auto *dialog=object("settingsDialog");QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *toggle=item("omarchyAccentToggle");QVERIFY(toggle);QTRY_VERIFY(toggle->isVisible());
+        QVERIFY(QMetaObject::invokeMethod(toggle,"toggle"));QVERIFY(QMetaObject::invokeMethod(toggle,"toggled"));
+        QTRY_VERIFY(backend->followOmarchyAccent());
+        QTRY_COMPARE(accent(),QString("#4fb3ff"));
+        capture("settings-omarchy-accent");
+        QCOMPARE(QSettings().value("appearance/omarchyAccent").toString(),QString("true"));
+        QVERIFY(object("omarchyAccentState")->property("text").toString().contains("fixture-blue"));
+        // On the light background this blue does not read clearly: the brand stays, and the settings say why.
+        backend->setAppearance("light");
+        QTRY_COMPARE(accent(),QString("#f2361f"));
+        QTRY_VERIFY(object("omarchyAccentState")->property("text").toString().contains("does not read clearly"));
+        backend->setAppearance("dark");
+        // Another theme set in Omarchy is noticed by itself.
+        writeTheme("#d8ff3d");
+        QTRY_COMPARE_WITH_TIMEOUT(accent(),QString("#d8ff3d"),patient(5000));
+        // Tomacco only reads the theme.
+        QFile file(themeDir+"/colors.toml");QVERIFY(file.open(QIODevice::ReadOnly));QVERIFY(file.readAll().contains("#d8ff3d"));
+        // Without an Omarchy theme the choice is not offered.
+        cleanup.dismiss();
+        backend->setFollowOmarchyAccent(false);qputenv("XDG_STATE_HOME",noTheme);backend->reloadOmarchyTheme();
+        QTRY_VERIFY(!toggle->isVisible());
+        QCOMPARE(accent(),QString("#f2361f"));
+        backend->setAppearance("system");
+        dialog->setProperty("visible",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void settings_search_filters_sections_and_takes_the_keyboard() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        QTest::keyClick(window,Qt::Key_Comma,Qt::ControlModifier);
+        auto *dialog=object("settingsDialog");QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *search=item("settingsSearch");QVERIFY(search);
+        // The search has the keyboard as soon as the dialog opens.
+        QTRY_VERIFY(search->hasActiveFocus());
+        const auto shown=[&](const char *name){return item(name)->isVisible();};
+        for(const auto *name:{"settingsAppearance","settingsLanguage","settingsNotifications","settingsAgent","settingsUpdates","settingsLayouts","settingsTransfer"})QVERIFY2(shown(name),name);
+        type("channel");
+        QTRY_VERIFY(shown("settingsUpdates"));
+        capture("settings-search");
+        QVERIFY(!shown("settingsAppearance"));QVERIFY(!shown("settingsLanguage"));QVERIFY(!shown("settingsTransfer"));
+        QVERIFY(!item("settingsNoMatch")->isVisible());
+        // Every word has to match, in any order and case; options and explanations count.
+        search->setProperty("text",QString("JOB background"));
+        QTRY_VERIFY(shown("settingsNotifications"));QVERIFY(!shown("settingsUpdates"));
+        search->setProperty("text",QString("dark"));
+        QTRY_VERIFY(shown("settingsAppearance"));QVERIFY(!shown("settingsNotifications"));
+        search->setProperty("text",QString("zzzz"));
+        QTRY_VERIFY(item("settingsNoMatch")->isVisible());
+        QVERIFY(object("settingsNoMatch")->property("text").toString().contains("zzzz"));
+        // Esc empties the search, then closes the dialog.
+        QTest::keyClick(window,Qt::Key_Escape);
+        QTRY_COMPARE(search->property("text").toString(),QString());
+        QVERIFY(dialog->property("visible").toBool());QVERIFY(shown("settingsLanguage"));
+        // Down leaves the search for the first setting.
+        QTest::keyClick(window,Qt::Key_Down);QTRY_VERIFY(!search->hasActiveFocus());
+        QTest::keyClick(window,Qt::Key_Escape);
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+        // Opened again it starts empty.
+        QTest::keyClick(window,Qt::Key_Comma,Qt::ControlModifier);
+        QTRY_VERIFY(dialog->property("visible").toBool());QTRY_VERIFY(search->hasActiveFocus());
+        QCOMPARE(search->property("text").toString(),QString());
+        dialog->setProperty("visible",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void window_layouts_are_saved_and_restored_by_name() {
+        open("runtime");window->showNormal();window->resize(760,580);QTest::qWait(50);
+        // Offscreen the screen is small; a layout's size stays within the screen.
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        QSettings().remove("layouts");view->setProperty("windowLayouts",QVariantMap{});
+        auto restore=qScopeGuard([&]{
+            QSettings().remove("layouts");view->setProperty("windowLayouts",QVariantMap{});
+            view->setProperty("notice",QString());view->setProperty("failed",false);
+            view->setProperty("showActivity",true);view->setProperty("showStageLog",false);view->setProperty("stageLogMode","device");view->setProperty("stageLogWidth",420);
+            open("runtime");window->resize(1380,970);});
+        const auto call=[&](const char *method,const QString &name){QVariant ok;return QMetaObject::invokeMethod(view,method,Q_RETURN_ARG(QVariant,ok),Q_ARG(QVariant,name)) && ok.toBool();};
+        // Debugging: the debugger, no activity panel, the job log beside the device at 500 px.
+        open("debug");
+        view->setProperty("showActivity",false);view->setProperty("showStageLog",true);view->setProperty("stageLogMode","job");view->setProperty("stageLogWidth",500);
+        QVERIFY(call("saveLayout","debugging"));
+        QVERIFY(QSettings().value("layouts/saved").toString().contains("debugging"));
+        // Testing: the live device with the activity panel, in a smaller window.
+        open("runtime");window->resize(620,500);QTest::qWait(50);
+        view->setProperty("showActivity",true);view->setProperty("showStageLog",false);view->setProperty("stageLogMode","device");view->setProperty("stageLogWidth",420);
+        QVERIFY(call("saveLayout","  testing  "));
+        QCOMPARE(view->property("layoutNames").toStringList(),QStringList({"debugging","testing"}));
+        QVERIFY(call("applyLayout","debugging"));
+        QTRY_COMPARE(view->property("currentSection").toString(),QString("debug"));
+        QVERIFY(!view->property("showActivity").toBool());QVERIFY(view->property("showStageLog").toBool());
+        QCOMPARE(view->property("stageLogMode").toString(),QString("job"));QCOMPARE(view->property("stageLogWidth").toInt(),500);
+        QTRY_COMPARE(window->width(),760);QTRY_COMPARE(window->height(),580);
+        QVERIFY(call("applyLayout","testing"));
+        QTRY_COMPARE(view->property("currentSection").toString(),QString("runtime"));
+        QVERIFY(view->property("showActivity").toBool());QVERIFY(!view->property("showStageLog").toBool());
+        QTRY_COMPARE(window->width(),620);
+        // The palette offers each layout, and the settings list them.
+        bool offered=false;
+        for(const auto &entry:view->property("commands").toList())offered=offered || mapOf(entry).value("id").toString()=="layout:debugging";
+        QVERIFY(offered);
+        QVERIFY(QMetaObject::invokeMethod(view,"openSettings",Q_ARG(QVariant,QString("Window layouts"))));
+        auto *dialog=object("settingsDialog");QTRY_VERIFY(dialog->property("visible").toBool());
+        QTRY_VERIFY(item("settingsLayouts")->isVisible());QVERIFY(!item("settingsAppearance")->isVisible());
+        capture("settings-layouts");
+        QVERIFY(item("useLayout-debugging"));
+        clickItem("deleteLayout-debugging");
+        QTRY_COMPARE(view->property("layoutNames").toStringList(),QStringList({"testing"}));
+        QVERIFY(!QSettings().value("layouts/saved").toString().contains("debugging"));
+        dialog->setProperty("visible",false);
+        // An unknown name does nothing; at most twelve are kept.
+        QVERIFY(!call("applyLayout","nothing"));
+        for(int i=0;i<11;++i)QVERIFY(call("saveLayout",QString("layout %1").arg(i)));
+        QVERIFY(!call("saveLayout","one too many"));
+        QVERIFY(call("saveLayout","testing"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void cleanupTestCase() {
         engine.reset();control.reset();backend.reset();
     }
