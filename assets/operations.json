@@ -1825,6 +1825,116 @@
     }
   },
   {
+    "name": "android.store_screenshots",
+    "title": "Capture store screenshots",
+    "description": "Capture store screenshots of an installed Android app as a job: on each device, for each app language (set with android.settings app_locale, Android 13 and newer) and each of light and dark mode, every screen in order: stop and launch the app, run the screen's testing.run steps, wait settle_ms and save the screen. Files go to DIRECTORY/THEME/LOCALE/images/KIND/NN_SCREEN.png, where KIND is phoneScreenshots, sevenInchScreenshots or tenInchScreenshots by the device's smallest width, so each THEME folder is a fastlane supply metadata directory. Animations are off while capturing; each device's dark mode, animations and app language are put back afterwards. report.json lists every file with its size and play_problems (a side under 320 or over 3840 pixels, or longer than 2:1).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID of the installed app",
+          "minLength": 1
+        },
+        "devices": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "description": "Serials from device.list, at most one per screen size group",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "locales": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 30,
+          "description": "App languages as Google Play's language codes, such as en-US or de-DE",
+          "items": {
+            "type": "string",
+            "pattern": "[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}"
+          }
+        },
+        "themes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "description": "Defaults to light only",
+          "items": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ]
+          }
+        },
+        "screens": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Screens in store order",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "[A-Za-z0-9_-]{1,40}",
+                "description": "File name part of this screen"
+              },
+              "steps": {
+                "type": "array",
+                "maxItems": 100,
+                "default": [],
+                "description": "testing.run scenario steps that lead from the launched app to this screen",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "directory": {
+          "type": "string",
+          "description": "Absolute path of an empty or new directory for the screenshots",
+          "minLength": 1
+        },
+        "settle_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30000,
+          "default": 1000,
+          "description": "Wait after the last step before capturing"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 86400,
+          "default": 3600,
+          "description": "Seconds for the whole job"
+        }
+      },
+      "required": [
+        "bundle_id",
+        "devices",
+        "locales",
+        "screens",
+        "directory"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "device.logs",
     "title": "Device logs",
     "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running. On an iPhone, bundle_id follows the app's process, its executable as go-ios apps names it, and the job names it as process; idevicesyslog filters when it is installed, otherwise go-ios syslog runs through Tomacco's filter. filter keeps lines containing that text.",
@@ -3031,6 +3141,48 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.size_report",
+    "title": "Report APK or AAB size",
+    "description": "Break an APK or AAB down by size without a device: totals, each category (dex, native, resources, assets, manifest, signature), each ABI, screen density and bundle module, and the largest files. estimate.by_abi_density adds up the compressed sizes one device would get without other ABIs' libraries and other densities' resources. For an AAB with bundletool configured, download has bundletool get-size total's download size per ABI and density, from APKs it builds in a temporary directory. baseline compares with an earlier build: the change of every total and the files that grew, shrank, appeared or went away the most.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute path of an .apk or .aab file",
+          "minLength": 1
+        },
+        "baseline": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of an earlier .apk or .aab to compare with"
+        },
+        "top": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 15,
+          "description": "How many of the largest and most changed files to list"
+        },
+        "bundletool": {
+          "type": "boolean",
+          "default": true,
+          "description": "For an AAB, also ask bundletool for the download size; false reads the file only"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
     }
   },
   {
@@ -6102,28 +6254,101 @@
     }
   },
   {
+    "name": "release.signing_health",
+    "title": "Check signing keys",
+    "description": "Read every key of an Android keystore, or one alias, with keytool: owner, certificate validity and days left, key algorithm and size, signature algorithm and SHA-256 fingerprint. Findings: expired (error), expires_soon within warn_days, play_minimum_validity for a key that ends before 22 October 2033 as Google Play requires of app signing keys, weak_key under 2048 bits (error), dsa_key, weak_signature for MD5 or SHA-1. Given the upload and app signing certificate fingerprints from Play Console's app integrity page, each key gets play_role upload, app_signing or none; not_play_key is an error. artifact checks that an APK or AAB is signed with a key of this keystore. Reads files only and contacts no store.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "keystore": {
+          "type": "string",
+          "description": "Absolute path of the keystore (PKCS12 or JKS)",
+          "minLength": 1
+        },
+        "password_file": {
+          "type": "string",
+          "description": "Owner-only file containing the keystore password; never stored in job arguments"
+        },
+        "alias": {
+          "type": "string",
+          "default": "",
+          "description": "Check only this key; empty checks every entry"
+        },
+        "warn_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 36500,
+          "default": 365,
+          "description": "Warn about keys that expire within this many days"
+        },
+        "upload_certificate_sha256": {
+          "type": "string",
+          "default": "",
+          "description": "SHA-256 fingerprint of the upload key certificate as Play Console shows it"
+        },
+        "app_signing_certificate_sha256": {
+          "type": "string",
+          "default": "",
+          "description": "SHA-256 fingerprint of the app signing key certificate as Play Console shows it"
+        },
+        "artifact": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of an APK or AAB whose signer should be a key of this keystore"
+        }
+      },
+      "required": [
+        "keystore",
+        "password_file"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "release.version",
     "title": "Set app version",
-    "description": "Update a literal Flutter/Android version and build number with a recoverable backup.",
+    "description": "Set one version name and build number in every version file of a project at once: pubspec.yaml, Expo's app.json (expo.version, android.versionCode, ios.buildNumber), the package.json of a React Native or Expo app, the Android app's Gradle file with the versions catalog entry or gradle.properties key it reads, and the Info.plist an xtool.yml names. bump computes the next version from the current one and the build number as the highest current one plus 1. dry_run lists the changes without writing. Each changed file gets a recoverable backup; a version only the build computes is refused.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "path": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute path of the project root"
         },
         "version": {
-          "type": "string"
+          "type": "string",
+          "description": "New version name, major.minor.patch with an optional -suffix; requires build_number"
         },
         "build_number": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 2100000000
+          "maximum": 2100000000,
+          "description": "New versionCode and build number; with bump, defaults to the highest current one plus 1"
+        },
+        "bump": {
+          "type": "string",
+          "enum": [
+            "major",
+            "minor",
+            "patch",
+            "build"
+          ],
+          "description": "Raise this part of the current version instead of passing version; build keeps the version and raises only the build number"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report the changes without writing"
         }
       },
       "required": [
-        "path",
-        "version",
-        "build_number"
+        "path"
       ],
       "additionalProperties": false
     },
@@ -6131,6 +6356,155 @@
       "readOnlyHint": false,
       "destructiveHint": true,
       "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "release.notes",
+    "title": "Write Play release notes",
+    "description": "Turn one section of a Markdown changelog into Google Play \"What's new\" text per language and check each against Play's 500-character limit. Bullets become •, emphasis, code and link markup is removed, and a bullet's continuation lines are joined. The files are written in the layout fastlane supply, Gradle Play Publisher or a whatsnew directory reads; nothing is written when a language fails. The result's release_notes is the release_notes argument of play.prepare. Reads and writes local files only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "changelog": {
+          "type": "string",
+          "description": "Absolute path of the Markdown changelog for language",
+          "minLength": 1
+        },
+        "section": {
+          "type": "string",
+          "default": "",
+          "description": "Heading of the section to use, such as 1.2.0 or Unreleased, matched without brackets, a leading v or what follows a space; empty takes the first section"
+        },
+        "language": {
+          "type": "string",
+          "pattern": "[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}",
+          "description": "Google Play language code, such as en-US, de-DE or es-419",
+          "default": "en-US"
+        },
+        "translations": {
+          "type": "array",
+          "maxItems": 80,
+          "description": "Changelogs of other languages with the same section",
+          "items": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "pattern": "[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}",
+                "description": "Google Play language code, such as en-US, de-DE or es-419"
+              },
+              "changelog": {
+                "type": "string",
+                "description": "Absolute path of this language's Markdown changelog",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "language",
+              "changelog"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "directory": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to write the files under: fastlane's metadata/android directory, Gradle Play Publisher's src/main/play, or a whatsnew directory"
+        },
+        "layout": {
+          "type": "string",
+          "enum": [
+            "fastlane",
+            "play-publisher",
+            "whatsnew"
+          ],
+          "default": "fastlane",
+          "description": "fastlane: LANGUAGE/changelogs/default.txt, or BUILD.txt with build_number; play-publisher: release-notes/LANGUAGE/default.txt; whatsnew: whatsnew-LANGUAGE"
+        },
+        "build_number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2100000000,
+          "description": "versionCode for fastlane's per-build file name"
+        },
+        "truncate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Drop whole lines from the end of a text over the limit instead of failing"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": false,
+          "description": "Return the texts and findings without writing"
+        }
+      },
+      "required": [
+        "changelog"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "release.checklist",
+    "title": "Check Android release readiness",
+    "description": "Check an Android app's release build before a Play upload, from its build files and manifest without running Gradle: target_sdk against the level Google Play requires (36 for new apps and updates since 31 August 2026), version_code above the previous release, debuggable off, minify on, a release signing config that is not the debug key, and no cleartext HTTP unless allow_cleartext. Each check has a status (pass, fail or unknown), a severity and its evidence; passed is false when an error-severity check fails. artifact reads targetSdk and versionCode from the built APK or AAB instead.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute path of the project root, or of its Gradle build",
+          "minLength": 1
+        },
+        "module": {
+          "type": "string",
+          "default": "",
+          "description": "Gradle path of the app module, such as :app; the first application module when empty"
+        },
+        "artifact": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of the built .apk or .aab to read targetSdk and versionCode from"
+        },
+        "previous_version_code": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2100000000,
+          "description": "versionCode of the last release on Google Play"
+        },
+        "baseline": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of the last released .apk or .aab, instead of previous_version_code"
+        },
+        "required_target_sdk": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Target API level to require instead of Google Play's current one"
+        },
+        "allow_cleartext": {
+          "type": "boolean",
+          "default": false,
+          "description": "Cleartext HTTP is intended; report it without failing"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
       "openWorldHint": true
     }
   },
@@ -6663,7 +7037,7 @@
             "properties": {
               "language": {
                 "type": "string",
-                "pattern": "[A-Za-z-]{2,30}"
+                "pattern": "[A-Za-z0-9-]{2,30}"
               },
               "text": {
                 "type": "string",

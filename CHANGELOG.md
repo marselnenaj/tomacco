@@ -6,10 +6,33 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 209 operations.
+`tomaccoctl` now has one typed API of 214 operations.
 
 ### Added
 
+- **Release.**
+  - `release.version` changes every version file of a project in one call: `pubspec.yaml`, Expo's `app.json`, a React
+    Native or Expo `package.json`, the Android Gradle file and the versions catalog entry or `gradle.properties` key it
+    reads, and an xtool project's `Info.plist`. `bump` raises the major, minor or patch part or only the build number,
+    and `dry_run` lists the changes without writing.
+  - `release.notes` writes Google Play "What's new" files per language from a section of a Markdown changelog, in
+    fastlane's, Gradle Play Publisher's or a whatsnew directory's layout, and refuses a text over Play's 500 characters
+    unless `truncate` cuts it at whole lines. Its result is `play.prepare`'s `release_notes`, which now also takes
+    language codes with digits such as `es-419`.
+  - `android.size_report` breaks an APK or AAB down by size per category, ABI, density and module with its largest
+    files, estimates the download per ABI and density (from `bundletool get-size total` for an AAB when bundletool is
+    configured), and compares with a `baseline` build.
+  - `release.signing_health` reports each key of a keystore with its expiry, days left, key algorithm and size and
+    fingerprint, warns about keys expiring within a year or before Play's 22 October 2033 minimum, weak keys and SHA-1
+    signatures, matches the keys with the upload and app signing certificates Play Console shows, and checks that an
+    APK or AAB is signed with one of them.
+  - `release.checklist` checks an Android release build before an upload, from the build files and manifest: targetSdk
+    against Play's required level, versionCode above the last release, not debuggable, minify on, a release signing
+    config other than the debug key, and no cleartext HTTP unless allowed, each as a structured check with evidence.
+  - `android.store_screenshots` captures an app's store screenshots as one job on each device, for each app
+    language and for light and dark mode, each screen reached by its own `testing.run` steps, into fastlane supply's
+    `phoneScreenshots`, `sevenInchScreenshots` and `tenInchScreenshots` folders, checks the sizes against Google Play's
+    rules and puts the device settings back afterwards.
 - **Testing.**
   - `testing.record` records a UI test on an Android device: taps, swipes, text and keys sent through
     `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`

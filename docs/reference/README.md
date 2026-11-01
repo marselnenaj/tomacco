@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 209 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 214 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -20,6 +20,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | Operation | Title | Annotation |
 | --- | --- | --- |
 | [`android.screen`](android.md#androidscreen) | Android screen preview | writes |
+| [`android.store_screenshots`](android.md#androidstore_screenshots) | Capture store screenshots | writes |
 | [`android.input`](android.md#androidinput) | Tap / swipe / input | writes |
 | [`android.hierarchy`](android.md#androidhierarchy) | Read UI tree | read-only |
 | [`android.launch`](android.md#androidlaunch) | Start Android activity | writes |
@@ -46,6 +47,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`android.avd_start`](android.md#androidavd_start) | Start emulator | writes |
 | [`android.emulator`](android.md#androidemulator) | Control emulator | **destructive** |
 | [`android.package_inspect`](android.md#androidpackage_inspect) | Inspect APK or AAB | read-only |
+| [`android.size_report`](android.md#androidsize_report) | Report APK or AAB size | read-only |
 
 ## [apple](apple.md)
 
@@ -253,7 +255,10 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`release.keystore`](release.md#releasekeystore) | Create signing key | writes |
 | [`release.sign`](release.md#releasesign) | Sign Android release | writes |
 | [`release.verify`](release.md#releaseverify) | Verify release signature | read-only |
+| [`release.signing_health`](release.md#releasesigning_health) | Check signing keys | read-only |
 | [`release.version`](release.md#releaseversion) | Set app version | **destructive** |
+| [`release.notes`](release.md#releasenotes) | Write Play release notes | **destructive** |
+| [`release.checklist`](release.md#releasechecklist) | Check Android release readiness | read-only |
 
 ## [remote](remote.md)
 

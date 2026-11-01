@@ -267,6 +267,11 @@ mode and an app's language, and reads them back:
 tomaccoctl call android.settings '{"device":"emulator-5554","dark_mode":"off","font_scale":1,"animations":false}'
 ```
 
+`android.store_screenshots` captures store screenshots as a job across devices, app languages and light and dark
+mode, each screen reached by its own `testing.run` steps, into fastlane supply's folders
+(`THEME/LOCALE/images/phoneScreenshots/01_home.png`), and puts each device's settings back afterwards.
+`report.json` flags sizes Google Play refuses under `play_problems`.
+
 `android.display` locks the orientation or overrides display size and density, and `reset` undoes
 both.
 
@@ -285,6 +290,7 @@ with each device's result in the job's `report.json`.
 
 `android.package_inspect` reads what a built APK or AAB declares, without a device: package,
 version, SDK levels, permissions, ABIs and signing certificate digests.
+`android.size_report` breaks one down by size per category, ABI and density, estimates the download, and compares with a `baseline` build.
 `device.install` also takes one `.aab` and installs it through bundletool.
 
 For the emulator's settings, `android.avd_configure` changes a stopped emulator:
@@ -870,6 +876,61 @@ On the same emulator, two cold startup reports of three runs each differed by 22
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.
+
+`release.version` sets one version name and build number in every version file it finds in the project: `pubspec.yaml`,
+Expo's `app.json` (`expo.version`, `expo.android.versionCode`, `expo.ios.buildNumber`), the `package.json` of a React
+Native or Expo app, `app/build.gradle(.kts)` or `android/app/build.gradle(.kts)`, and the `Info.plist` that `infoPath` in
+`xtool.yml` names. A Gradle `versionCode = libs.versions.appCode.get().toInt()` changes that entry of
+`gradle/libs.versions.toml`, and `providers.gradleProperty("appVersion")` that key of `gradle.properties`; a Flutter
+module's `flutter.versionCode` follows `pubspec.yaml` and is listed under `skipped`. Any other computed value is refused
+with `version_ambiguous` before a file changes. Instead of `version` and `build_number`, `bump` (`major`, `minor`, `patch`
+or `build`) raises the current version and sets the build number to the highest current one plus 1. `dry_run:true` returns
+the same `changes` (file, field, from, to) without writing; otherwise each changed file gets a backup, listed in `files`.
+JSON files are written back with two-space indentation.
+
+```sh
+tomaccoctl call release.version '{"path":"/absolute/app","bump":"patch","dry_run":true}'
+```
+
+`release.notes` turns one section of a Markdown changelog into Google Play's "What's new" text for each language and checks
+it against Play's limit of 500 characters. `section` names the heading (`2.0.0` matches `## [2.0.0] - 2026-11-01`; empty takes
+the first section), `changelog` is the file for `language` (default `en-US`), and `translations` adds other languages' changelogs
+with the same section. Bullets become `•`, bold, code and link markup is removed. A text over the limit is a `too_long` error
+and no file is written for any language; `truncate:true` drops whole lines from its end instead and reports `truncated`. The
+files go under `directory` in the `layout` the upload tool reads: `fastlane` (`LANGUAGE/changelogs/default.txt`, or
+`BUILD.txt` with `build_number`), `play-publisher` (`release-notes/LANGUAGE/default.txt`) or `whatsnew` (`whatsnew-LANGUAGE`).
+The result's `release_notes` is the `release_notes` argument of `play.prepare`, which stages them with the bundle.
+
+```sh
+tomaccoctl call release.notes '{"changelog":"/absolute/app/CHANGELOG.md","section":"2.0.0","directory":"/absolute/app/fastlane/metadata/android","translations":[{"language":"de-DE","changelog":"/absolute/app/CHANGELOG.de.md"}]}'
+```
+
+`release.signing_health` reads a keystore with `keytool -list -v` and reports each key's owner, validity (`valid_until`,
+`days_left`), key algorithm and size, signature algorithm and SHA-256 fingerprint. Findings: `expired` (an error),
+`expires_soon` within `warn_days` (default 365), `play_minimum_validity` for a key that ends before 22 October 2033, which
+Google Play requires of app signing keys, `weak_key` under 2048 bits (an error), `dsa_key` and `weak_signature` (MD5 or
+SHA-1). Pass the upload and app signing certificate fingerprints from Play Console's app integrity page as
+`upload_certificate_sha256` and `app_signing_certificate_sha256`: each key gets a `play_role` (`upload`, `app_signing` or
+`none`), no match is the error `not_play_key`, and Play's app signing key in the same keystore as a different upload key is
+the warning `app_signing_key_local`. `artifact` checks that an APK or AAB is signed with one of the keys. Nothing is sent
+to Play; `passed` is false when a finding is an error.
+
+```sh
+tomaccoctl call release.signing_health '{"keystore":"/absolute/upload.p12","password_file":"/absolute/upload.password","upload_certificate_sha256":"AB:CD:..."}'
+```
+
+`release.checklist` checks an Android app's release build before an upload, from its build files and manifest without
+running Gradle. Each entry of `checks` has a `status` (`pass`, `fail` or `unknown`), a `severity` and its `evidence`:
+`target_sdk` against the level Google Play requires (`required_target_sdk`, by default 36, Play's requirement for new apps
+and updates since 31 August 2026), `version_code` above `previous_version_code` or a `baseline` package's, `debuggable` off in
+the release build type and the manifest, `minify` on (a warning), `signing_config` set and not the debug key, and `cleartext`:
+`usesCleartextTraffic` or a network security config that permits cleartext HTTP fails unless `allow_cleartext`. `artifact`
+reads targetSdk and versionCode from the built APK or AAB, for builds that compute them. `passed` is false when an
+error-severity check fails.
+
+```sh
+tomaccoctl call release.checklist '{"path":"/absolute/app","previous_version_code":41}'
+```
 
 `play.prepare` creates an edit, uploads the AAB, sets the track and validates, without committing. Inspect that before an explicitly authorized `play.commit`;
 `play.abort` discards it. Live store submission has not been qualified, on Play or on the App Store.

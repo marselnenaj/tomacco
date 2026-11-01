@@ -3699,6 +3699,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Inspeccionar APK o AAB</translation>
     </message>
     <message>
+        <source>Report APK or AAB size</source>
+        <translation>Analizar el tamaño del APK o AAB</translation>
+    </message>
+    <message>
         <source>Install iOS toolkit</source>
         <translation>Instalar herramientas de iOS</translation>
     </message>
@@ -4067,6 +4071,14 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Establecer versión de la app</translation>
     </message>
     <message>
+        <source>Check Android release readiness</source>
+        <translation>Comprobar si la versión de Android está lista</translation>
+    </message>
+    <message>
+        <source>Write Play release notes</source>
+        <translation>Escribir notas de la versión de Play</translation>
+    </message>
+    <message>
         <source>Set breakpoints</source>
         <translation>Definir puntos de interrupción</translation>
     </message>
@@ -4199,6 +4211,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Verificar firma de publicación</translation>
     </message>
     <message>
+        <source>Check signing keys</source>
+        <translation>Comprobar las claves de firma</translation>
+    </message>
+    <message>
         <source>View build plan</source>
         <translation>Ver plan de compilación</translation>
     </message>
@@ -4229,6 +4245,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     <message>
         <source>Android screen preview</source>
         <translation>Vista previa de la pantalla de Android</translation>
+    </message>
+    <message>
+        <source>Capture store screenshots</source>
+        <translation>Capturar capturas de pantalla para la tienda</translation>
     </message>
 </context>
 <context>

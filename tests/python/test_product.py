@@ -1390,6 +1390,71 @@ class AndroidControlTests(Isolated):
         with self.assertRaises(StudioError):
             dispatch("android.settings", {"device": "emulator-5554", "font_scale": 3})
 
+    # A device that remembers what adb set on it: settings, dark mode and app
+    # languages per serial; screencap answers a PNG header of its screen size.
+    STATEFUL_ADB = """import json,os,shlex,struct,sys
+from pathlib import Path
+root=Path(os.environ['TOMACCO_TEST_ROOT']);a=sys.argv[1:]
+with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')
+serial,rest=(a[1],a[2:]) if a[:1]==['-s'] else ('',a)
+file=root/f'adb-state-{serial}.json';mine=json.loads(file.read_text()) if file.exists() else {}
+w,h,d={'tablet-1':(1600,2560,320)}.get(serial,(1080,2160,420))
+if rest[:1]==['exec-out']:
+    sys.stdout.buffer.write(b'\\x89PNG\\r\\n\\x1a\\n'+struct.pack('>I',13)+b'IHDR'+struct.pack('>II',w,h));sys.exit(0)
+c=shlex.split(rest[1]) if rest[:1]==['shell'] and len(rest)>1 else rest
+out=''
+defaults={'global/airplane_mode_on':'0','system/font_scale':'1.0','system/accelerometer_rotation':'1','system/user_rotation':'0'}
+if c[:2]==['getprop','ro.build.version.sdk']: out='34'
+elif c[:2]==['wm','size']: out=f'Physical size: {w}x{h}'
+elif c[:2]==['wm','density']: out=f'Physical density: {d}'
+elif c[:2]==['settings','get']: out=mine.get(c[2]+'/'+c[3],defaults.get(c[2]+'/'+c[3],'1'))
+elif c[:2]==['settings','put']: mine[c[2]+'/'+c[3]]=c[4]
+elif c[:3]==['cmd','uimode','night']:
+    if len(c)>3: mine['night']=c[3]
+    out='Night mode: '+mine.get('night','no')
+elif c[:3]==['cmd','locale','set-app-locales']: mine['locale']=c[5] if len(c)>5 else ''
+elif c[:3]==['cmd','locale','get-app-locales']: out='Locales for %s for user 0 are [%s]'%(c[3],mine.get('locale',''))
+elif 'resolve-activity' in ' '.join(c): out='dev.test.app/.Main'
+temp=file.with_suffix('.tmp');temp.write_text(json.dumps(mine));temp.replace(file);print(out)
+"""
+
+    def test_store_screenshots_cover_devices_languages_and_themes_and_put_settings_back(self):
+        self.tool("adb", self.STATEFUL_ADB)
+        out = self.root / "shots"
+        screens = [{"name": "home"}, {"name": "detail", "steps": [{"action": "key", "key": "KEYCODE_DPAD_DOWN"}]}]
+        base = {"bundle_id": "dev.test.app", "devices": ["emulator-5554", "tablet-1"], "locales": ["en-US", "de-DE"],
+                "themes": ["light", "dark"], "screens": screens, "directory": str(out), "settle_ms": 0}
+        job = dispatch("android.store_screenshots", base)
+        self.assertEqual(job["label"], "Store screenshots · 16")
+        done = jobs.wait(job["id"], 120)
+        report = json.loads((out / "report.json").read_text())
+        self.assertEqual(done["state"], "succeeded", report)
+        self.assertEqual((report["ok"], report["play_problems"]), (True, 0))
+        for theme in ("light", "dark"):
+            for locale in ("en-US", "de-DE"):
+                for kind in ("phoneScreenshots", "tenInchScreenshots"):
+                    for name in ("01_home.png", "02_detail.png"):
+                        self.assertTrue((out / theme / locale / "images" / kind / name).is_file(), (theme, locale, kind, name))
+        phone = next(d for d in report["devices"] if d["device"] == "emulator-5554")
+        self.assertEqual((phone["kind"], phone["captured"], phone["settings_restored"]), ("phoneScreenshots", 8, True))
+        self.assertEqual((phone["screenshots"][0]["width"], phone["screenshots"][0]["height"]), (1080, 2160))
+        shell = [shlex.split(c[3]) for c in self.calls_with_serial() if c[:2] == ["-s", "emulator-5554"] and c[2] == "shell"]
+        self.assertIn(["cmd", "locale", "set-app-locales", "dev.test.app", "--locales", "de-DE"], shell)
+        self.assertIn(["cmd", "uimode", "night", "yes"], shell)
+        self.assertIn(["input", "keyevent", "KEYCODE_DPAD_DOWN"], shell)
+        state = json.loads((self.root / "adb-state-emulator-5554.json").read_text())
+        self.assertEqual((state["night"], state["locale"], state["global/window_animation_scale"]), ("no", "", "1"))
+        # Refused before anything runs: a non-empty folder, two phones.
+        with self.assertRaises(StudioError) as refused:
+            dispatch("android.store_screenshots", base)
+        self.assertEqual(refused.exception.code, "path_exists")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("android.store_screenshots", {**base, "devices": ["emulator-5554", "emulator-5556"], "directory": str(self.root / "two")})
+        self.assertEqual(refused.exception.code, "invalid_argument")
+
+    def calls_with_serial(self):
+        return [json.loads(line) for line in (self.root / "adb-calls.jsonl").read_text().splitlines()]
+
     def test_display_orientation_size_and_density_are_set_and_read_back(self):
         state = {"wm size": "Physical size: 1080x2400\nOverride size: 720x1600\n", "wm density": "Physical density: 420\nOverride density: 320\n",
                  "accelerometer_rotation": "0\n", "user_rotation": "1\n"}
@@ -1609,6 +1674,41 @@ class AndroidPackageTests(Isolated):
             with self.assertRaises(StudioError) as refused:
                 dispatch("android.package_inspect", {"path": str(self.root / name)})
             self.assertEqual(refused.exception.code, "invalid_artifact")
+
+    def test_size_report_breaks_a_package_down_and_compares_two_builds(self):
+        import zipfile
+        def apk(name, files):
+            path = self.root / name
+            with zipfile.ZipFile(path, "w", zipfile.ZIP_STORED) as archive:
+                for entry, size in files.items():
+                    archive.writestr(entry, b"x" * size)
+            return path
+        old = apk("old.apk", {"classes.dex": 4000, "lib/arm64-v8a/libcore.so": 2000, "assets/intro.mp4": 900})
+        new = apk("new.apk", {"classes.dex": 4500, "lib/arm64-v8a/libcore.so": 2000, "lib/x86_64/libcore.so": 2100,
+                              "res/drawable-xxhdpi/hero.png": 300, "res/drawable-mdpi/hero.png": 100})
+        value = dispatch("android.size_report", {"path": str(new), "top": 3})
+        summary = value["summary"]
+        self.assertEqual((value["format"], summary["compressed"], summary["abis"]), ("apk", 9000, {"arm64-v8a": 2000, "x86_64": 2100}))
+        self.assertEqual(summary["estimate"]["by_abi_density"]["arm64-v8a/xxhdpi"], 4500 + 2000 + 300)
+        self.assertEqual([f["name"] for f in value["largest"]], ["classes.dex", "lib/x86_64/libcore.so", "lib/arm64-v8a/libcore.so"])
+        diff = dispatch("android.size_report", {"path": str(new), "baseline": str(old)})["delta"]
+        self.assertEqual(diff["summary"]["compressed"], 9000 - 6900)
+        self.assertEqual(diff["summary"]["categories"]["assets"]["compressed"], -900)
+        self.assertEqual([(f["name"], f["change"], f["delta"]) for f in diff["files"][:2]],
+                         [("lib/x86_64/libcore.so", "added", 2100), ("assets/intro.mp4", "removed", -900)])
+        # A bundle goes through bundletool's get-size when it is configured.
+        aab = self.root / "app.aab"
+        with zipfile.ZipFile(aab, "w") as archive:
+            archive.writestr("BundleConfig.pb", b"")
+            archive.writestr("base/dex/classes.dex", b"x" * 100)
+        self.tool("bundletool", "import sys\nfrom pathlib import Path\nif sys.argv[1]=='build-apks': Path(sys.argv[3].split('=',1)[1]).write_bytes(b'PK')\n"
+                                "else: print('SDK,ABI,SCREEN_DENSITY,MIN,MAX\\n21-,arm64-v8a,XXHDPI,90,95')\n")
+        download = dispatch("android.size_report", {"path": str(aab)})["download"]
+        self.assertEqual((download["method"], download["rows"][0]["max"]), ("bundletool get-size total", 95))
+        self.assertNotIn("download", dispatch("android.size_report", {"path": str(aab), "bundletool": False}))
+        with self.assertRaises(StudioError) as refused:
+            dispatch("android.size_report", {"path": str(self.root / "notes.txt") if (self.root / "notes.txt").write_text("x") else ""})
+        self.assertEqual(refused.exception.code, "unsupported_artifact")
 
 
 class ProtocolTests(Isolated):
@@ -1862,6 +1962,130 @@ class ReleaseContractTests(Isolated):
         gradle.write_text('versionName = providers.gradleProperty("appVersion").get()\nversionCode = 1\n')
         with self.assertRaises(StudioError): dispatch("release.version", {"path":str(self.root), "version":"2.0.0", "build_number":2})
         self.assertIn('providers.gradleProperty', gradle.read_text())
+
+    def test_version_bump_dry_run_lists_every_file_and_writes_nothing(self):
+        (self.root / "app").mkdir()
+        gradle = self.root / "app/build.gradle.kts"
+        gradle.write_text('android {\n  defaultConfig {\n    versionCode = libs.versions.appCode.get().toInt()\n    versionName = "1.4.2"\n  }\n}\n')
+        (self.root / "gradle").mkdir()
+        catalog = self.root / "gradle/libs.versions.toml"
+        catalog.write_text('[versions]\nappCode = "17"\n')
+        before = (gradle.read_text(), catalog.read_text())
+        plan = dispatch("release.version", {"path": str(self.root), "bump": "minor", "dry_run": True})
+        self.assertEqual((plan["version"], plan["build_number"], plan["dry_run"]), ("1.5.0", 18, True))
+        self.assertEqual(sorted((Path(c["file"]).name, c["from"], c["to"]) for c in plan["changes"]),
+                         [("build.gradle.kts", "1.4.2", "1.5.0"), ("libs.versions.toml", "17", "18")])
+        self.assertEqual((gradle.read_text(), catalog.read_text()), before)
+        result = dispatch("release.version", {"path": str(self.root), "bump": "build"})
+        self.assertEqual((result["version"], result["build_number"]), ("1.4.2", 18))
+        self.assertEqual(catalog.read_text(), '[versions]\nappCode = "18"\n')
+        self.assertEqual(sorted(Path(f["backup"]).read_text() for f in result["files"]), [before[1]])
+        for arguments in ({"bump": "patch", "version": "1.0.0"}, {}, {"version": "1.0.0"}):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("release.version", {"path": str(self.root), **arguments})
+            self.assertEqual(refused.exception.code, "invalid_argument")
+
+    def test_release_notes_are_written_per_language_and_refused_over_the_limit(self):
+        english = self.root / "CHANGELOG.md"
+        english.write_text("# Changelog\n\n## [2.0.0] - 2026-11-01\n\n- **Dark mode** everywhere.\n- Faster `sync`.\n\n## 1.9.0\n\n- Old\n")
+        german = self.root / "CHANGELOG.de.md"
+        german.write_text("## 2.0.0\n\n- Dunkler Modus überall.\n")
+        spanish = self.root / "CHANGELOG.es.md"
+        spanish.write_text("## 2.0.0\n\n" + "".join(f"- Cambio número {i} con bastante texto\n" for i in range(30)))
+        out = self.root / "metadata"
+        base = {"changelog": str(english), "section": "2.0.0", "directory": str(out), "build_number": 20}
+        result = dispatch("release.notes", {**base, "translations": [{"language": "de-DE", "changelog": str(german)}]})
+        self.assertTrue(result["passed"] and result["written"])
+        self.assertEqual((out / "en-US/changelogs/20.txt").read_text(), "• Dark mode everywhere.\n• Faster sync.\n")
+        self.assertEqual((out / "de-DE/changelogs/20.txt").read_text(), "• Dunkler Modus überall.\n")
+        self.assertEqual(result["next"]["arguments"]["release_notes"][1], {"language": "de-DE", "text": "• Dunkler Modus überall."})
+        # One language over 500 characters: nothing is written for any.
+        spanish_too = {**base, "layout": "whatsnew", "translations": [{"language": "es-419", "changelog": str(spanish)}]}
+        result = dispatch("release.notes", spanish_too)
+        self.assertEqual((result["passed"], result["written"], result["findings"][0]["code"]), (False, False, "too_long"))
+        self.assertNotIn("release_notes", result)
+        self.assertFalse((out / "whatsnew-en-US").exists())
+        result = dispatch("release.notes", {**spanish_too, "truncate": True})
+        self.assertTrue(result["passed"])
+        self.assertLessEqual(len((out / "whatsnew-es-419").read_text().rstrip("\n")), 500)
+        self.assertEqual(result["findings"][0]["code"], "truncated")
+        self.assertFalse(dispatch("release.notes", {**base, "section": "3.0.0", "dry_run": True})["passed"])
+        # play.prepare takes the result's language codes, es-419 included.
+        with self.assertRaises(StudioError) as refused:
+            dispatch("play.prepare", {"credentials": str(self.root / "missing.json"), "package": "dev.example.app", "path": str(self.root / "a.aab"),
+                                      "release_name": "2.0.0", "release_notes": result["release_notes"]})
+        self.assertNotEqual(refused.exception.code, "invalid_argument")
+
+    def test_signing_health_reads_keytool_and_checks_the_play_setup(self):
+        listing = ("Alias name: upload\nEntry type: PrivateKeyEntry\nCertificate[1]:\nOwner: CN=Upload\nIssuer: CN=Upload\n"
+                   "Valid from: Sun Nov 01 10:00:00 UTC 2026 until: Fri Nov 01 10:00:00 UTC 2030\n"
+                   "Certificate fingerprints:\n\t SHA1: 01:02\n\t SHA256: " + ":".join(["AB"] * 32) + "\n"
+                   "Signature algorithm name: SHA256withRSA\nSubject Public Key Algorithm: 4096-bit RSA key\n")
+        log = self.root / "keytool.json"
+        self.tool("keytool", f"import json,sys\nfrom pathlib import Path\nPath({str(log)!r}).write_text(json.dumps(sys.argv[1:]))\n"
+                             f"print({listing!r})\n")
+        password = self.root / "password"
+        password.write_text("fixture-password\n")
+        password.chmod(0o600)
+        keystore = self.root / "upload.p12"
+        keystore.write_bytes(b"store")
+        base = {"keystore": str(keystore), "password_file": str(password)}
+        value = dispatch("release.signing_health", {**base, "upload_certificate_sha256": "ab" * 32})
+        entry = value["entries"][0]
+        self.assertEqual((entry["alias"], entry["key_size"], entry["valid_until"], entry["play_role"]), ("upload", 4096, "2030-11-01", "upload"))
+        self.assertEqual(value["findings"][0]["code"], "play_minimum_validity")
+        self.assertTrue(value["passed"])
+        argv = json.loads(log.read_text())
+        self.assertIn("-J-Duser.timezone=UTC", argv)
+        self.assertEqual(argv[argv.index("-storepass:file") + 1], str(password))
+        self.assertNotIn("fixture-password", json.dumps(value))
+        value = dispatch("release.signing_health", {**base, "warn_days": 2000, "app_signing_certificate_sha256": "cd" * 32})
+        self.assertEqual([f["code"] for f in value["findings"]], ["expires_soon", "play_minimum_validity", "not_play_key"])
+        self.assertFalse(value["passed"])
+        # An artifact signed with another key fails.
+        import zipfile
+        apk = self.root / "app.apk"
+        with zipfile.ZipFile(apk, "w") as archive:
+            archive.writestr("AndroidManifest.xml", b"")
+        self.tool("aapt2", "print(\"package: name='dev.test.app' versionCode='3' versionName='1.2'\")\n")
+        self.tool("apksigner", "print('Verifies\\nSigner #1 certificate DN: CN=Other\\nSigner #1 certificate SHA-256 digest: " + "ee" * 32 + "')\n")
+        value = dispatch("release.signing_health", {**base, "artifact": str(apk)})
+        self.assertEqual((value["artifact"]["matches_keystore"], value["findings"][-1]["code"]), (False, "artifact_other_key"))
+        password.chmod(0o644)
+        with self.assertRaises(StudioError) as refused:
+            dispatch("release.signing_health", base)
+        self.assertEqual(refused.exception.code, "secret_permissions")
+
+    def test_checklist_reports_each_release_requirement_with_evidence(self):
+        app = self.root / "shop"
+        (app / "app/src/main/res/xml").mkdir(parents=True)
+        (app / "settings.gradle.kts").write_text('include(":app")\n')
+        build = app / "app/build.gradle.kts"
+        build.write_text('plugins { id("com.android.application") }\nandroid {\n  namespace = "dev.test.shop"\n  defaultConfig {\n'
+                         '    applicationId = "dev.test.shop"\n    targetSdk = 34\n    versionCode = 12\n    versionName = "1.2.0"\n  }\n'
+                         '  buildTypes {\n    release {\n      isMinifyEnabled = false\n      signingConfig = signingConfigs.getByName("debug")\n    }\n  }\n}\n')
+        (app / "app/src/main/AndroidManifest.xml").write_text(
+            '<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:networkSecurityConfig="@xml/network"/></manifest>')
+        (app / "app/src/main/res/xml/network.xml").write_text(
+            '<network-security-config><domain-config cleartextTrafficPermitted="true"><domain>10.0.2.2</domain></domain-config></network-security-config>')
+        value = dispatch("release.checklist", {"path": str(app), "previous_version_code": 12})
+        status = {c["check"]: (c["status"], c["severity"]) for c in value["checks"]}
+        self.assertEqual(status, {"target_sdk": ("fail", "error"), "version_code": ("fail", "error"), "debuggable": ("pass", "info"),
+                                  "minify": ("fail", "warning"), "signing_config": ("fail", "error"), "cleartext": ("fail", "warning")})
+        self.assertEqual((value["passed"], value["module"], value["required_target_sdk"]), (False, ":app", 36))
+        self.assertEqual(next(c for c in value["checks"] if c["check"] == "cleartext")["evidence"]["domains"], ["10.0.2.2"])
+        build.write_text(build.read_text().replace("targetSdk = 34", "targetSdk = 36").replace("versionCode = 12", "versionCode = 13")
+                         .replace("isMinifyEnabled = false", "isMinifyEnabled = true").replace('getByName("debug")', 'getByName("upload")'))
+        value = dispatch("release.checklist", {"path": str(app), "previous_version_code": 12, "allow_cleartext": True})
+        self.assertTrue(value["passed"])
+        self.assertEqual({c["status"] for c in value["checks"]}, {"pass"})
+        self.assertEqual(dispatch("release.checklist", {"path": str(app), "required_target_sdk": 37})["checks"][0]["status"], "fail")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("release.checklist", {"path": str(self.root / "missing-project")})
+        (self.root / "empty").mkdir()
+        with self.assertRaises(StudioError) as refused:
+            dispatch("release.checklist", {"path": str(self.root / "empty")})
+        self.assertEqual(refused.exception.code, "not_android_project")
 
     def test_a_secret_given_instead_of_its_file_is_not_echoed(self):
         secret = "hunter2-correct-horse"

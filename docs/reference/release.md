@@ -2,7 +2,7 @@
 
 # `release` operations
 
-4 operations. Generated from `assets/operations.json`; [all areas](README.md).
+7 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### release.keystore
 
@@ -61,20 +61,92 @@ Annotations: read-only, idempotent, open world.
 tomaccoctl call release.verify '{"path":"<path>"}'
 ```
 
+### release.signing_health
+
+**Check signing keys**
+
+Read every key of an Android keystore, or one alias, with keytool: owner, certificate validity and days left, key algorithm and size, signature algorithm and SHA-256 fingerprint. Findings: expired (error), expires_soon within warn_days, play_minimum_validity for a key that ends before 22 October 2033 as Google Play requires of app signing keys, weak_key under 2048 bits (error), dsa_key, weak_signature for MD5 or SHA-1. Given the upload and app signing certificate fingerprints from Play Console's app integrity page, each key gets play_role upload, app_signing or none; not_play_key is an error. artifact checks that an APK or AAB is signed with a key of this keystore. Reads files only and contacts no store.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `keystore` | string | yes |  | non-empty; Absolute path of the keystore (PKCS12 or JKS) |
+| `password_file` | string | yes |  | Owner-only file containing the keystore password; never stored in job arguments |
+| `alias` | string |  | `""` | Check only this key; empty checks every entry |
+| `warn_days` | integer |  | `365` | 1 to 36500; Warn about keys that expire within this many days |
+| `upload_certificate_sha256` | string |  | `""` | SHA-256 fingerprint of the upload key certificate as Play Console shows it |
+| `app_signing_certificate_sha256` | string |  | `""` | SHA-256 fingerprint of the app signing key certificate as Play Console shows it |
+| `artifact` | string |  | `""` | Absolute path of an APK or AAB whose signer should be a key of this keystore |
+
+```sh
+tomaccoctl call release.signing_health '{"keystore":"<keystore>","password_file":"<password_file>"}'
+```
+
 ### release.version
 
 **Set app version**
 
-Update a literal Flutter/Android version and build number with a recoverable backup.
+Set one version name and build number in every version file of a project at once: pubspec.yaml, Expo's app.json (expo.version, android.versionCode, ios.buildNumber), the package.json of a React Native or Expo app, the Android app's Gradle file with the versions catalog entry or gradle.properties key it reads, and the Info.plist an xtool.yml names. bump computes the next version from the current one and the build number as the highest current one plus 1. dry_run lists the changes without writing. Each changed file gets a recoverable backup; a version only the build computes is refused.
 
 Annotations: **destructive**, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `path` | string | yes |  |  |
-| `version` | string | yes |  |  |
-| `build_number` | integer | yes |  | 1 to 2100000000 |
+| `path` | string | yes |  | Absolute path of the project root |
+| `version` | string |  |  | New version name, major.minor.patch with an optional -suffix; requires build_number |
+| `build_number` | integer |  |  | 1 to 2100000000; New versionCode and build number; with bump, defaults to the highest current one plus 1 |
+| `bump` | string |  |  | one of `major`, `minor`, `patch`, `build`; Raise this part of the current version instead of passing version; build keeps the version and raises only the build number |
+| `dry_run` | boolean |  | `false` | Report the changes without writing |
 
 ```sh
-tomaccoctl call release.version '{"path":"<path>","version":"<version>","build_number":1}'
+tomaccoctl call release.version '{"path":"<path>"}'
+```
+
+### release.notes
+
+**Write Play release notes**
+
+Turn one section of a Markdown changelog into Google Play "What's new" text per language and check each against Play's 500-character limit. Bullets become •, emphasis, code and link markup is removed, and a bullet's continuation lines are joined. The files are written in the layout fastlane supply, Gradle Play Publisher or a whatsnew directory reads; nothing is written when a language fails. The result's release_notes is the release_notes argument of play.prepare. Reads and writes local files only.
+
+Annotations: **destructive**, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `changelog` | string | yes |  | non-empty; Absolute path of the Markdown changelog for language |
+| `section` | string |  | `""` | Heading of the section to use, such as 1.2.0 or Unreleased, matched without brackets, a leading v or what follows a space; empty takes the first section |
+| `language` | string |  | `"en-US"` | matching `[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}`; Google Play language code, such as en-US, de-DE or es-419 |
+| `translations` | array of object |  |  | up to 80 items; Changelogs of other languages with the same section |
+| `translations[].language` | string | yes |  | matching `[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}`; Google Play language code, such as en-US, de-DE or es-419 |
+| `translations[].changelog` | string | yes |  | non-empty; Absolute path of this language's Markdown changelog |
+| `directory` | string |  | `""` | Absolute path to write the files under: fastlane's metadata/android directory, Gradle Play Publisher's src/main/play, or a whatsnew directory |
+| `layout` | string |  | `"fastlane"` | one of `fastlane`, `play-publisher`, `whatsnew`; fastlane: LANGUAGE/changelogs/default.txt, or BUILD.txt with build_number; play-publisher: release-notes/LANGUAGE/default.txt; whatsnew: whatsnew-LANGUAGE |
+| `build_number` | integer |  |  | 1 to 2100000000; versionCode for fastlane's per-build file name |
+| `truncate` | boolean |  | `false` | Drop whole lines from the end of a text over the limit instead of failing |
+| `dry_run` | boolean |  | `false` | Return the texts and findings without writing |
+
+```sh
+tomaccoctl call release.notes '{"changelog":"<changelog>"}'
+```
+
+### release.checklist
+
+**Check Android release readiness**
+
+Check an Android app's release build before a Play upload, from its build files and manifest without running Gradle: target_sdk against the level Google Play requires (36 for new apps and updates since 31 August 2026), version_code above the previous release, debuggable off, minify on, a release signing config that is not the debug key, and no cleartext HTTP unless allow_cleartext. Each check has a status (pass, fail or unknown), a severity and its evidence; passed is false when an error-severity check fails. artifact reads targetSdk and versionCode from the built APK or AAB instead.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute path of the project root, or of its Gradle build |
+| `module` | string |  | `""` | Gradle path of the app module, such as :app; the first application module when empty |
+| `artifact` | string |  | `""` | Absolute path of the built .apk or .aab to read targetSdk and versionCode from |
+| `previous_version_code` | integer |  |  | 1 to 2100000000; versionCode of the last release on Google Play |
+| `baseline` | string |  | `""` | Absolute path of the last released .apk or .aab, instead of previous_version_code |
+| `required_target_sdk` | integer |  |  | 1 to 100; Target API level to require instead of Google Play's current one |
+| `allow_cleartext` | boolean |  | `false` | Cleartext HTTP is intended; report it without failing |
+
+```sh
+tomaccoctl call release.checklist '{"path":"<path>"}'
 ```

@@ -262,6 +262,25 @@ tomaccoctl call android.package_inspect '{"path":"/absolute/NewApp/app/build/out
 - Checked on APKs with the API 36 build-tools. AAB reading is covered by unit tests on
   generated bundles; no Gradle-built AAB has been read yet.
 
+## Size of an APK or AAB
+
+`android.size_report` breaks a package down by size without a device: the total, each category
+(`dex`, `native`, `resources`, `assets`, `manifest`, `signature`), each ABI, screen density and bundle
+module, and the `largest` files. `summary.estimate.by_abi_density` adds up what one device would get
+without other ABIs' libraries and other densities' resources; it uses the compressed sizes in the file,
+and Play recompresses, so treat it as an estimate. `baseline` compares with an earlier build: `delta`
+has the change of every total and the files that grew, shrank, appeared or went away the most.
+
+```sh
+tomaccoctl call android.size_report '{"path":"/absolute/app-release.aab","baseline":"/absolute/previous/app-release.aab"}'
+```
+
+- For an AAB with bundletool configured, `download` holds `bundletool get-size total`'s download
+  sizes per ABI and density, from APKs it builds in a temporary directory, and `delta.download` their
+  change. Without bundletool, `download` says why; `bundletool:false` skips it.
+- Run on two real debug APKs of about 22 MB. The bundletool path is covered by a test with a stand-in
+  bundletool; it has not run against the real tool yet.
+
 ## Install an AAB
 
 `device.install` with one `.aab` runs Google's
@@ -385,6 +404,29 @@ tomaccoctl call android.settings '{"device":"emulator-5554"}'
   per-app languages, which need Android 13 (API 33) or newer. An empty value returns
   the app to the device language. The language of the whole device is not changed:
   adb cannot do that without root.
+
+### Store screenshots
+
+`android.store_screenshots` captures an installed app's store screenshots as one job: on each device, for each
+app language and for light and dark mode, every screen in order. A screen is reached by stopping and launching
+the app and running its `steps`, which are `testing.run` scenario steps; `settle_ms` waits before the capture.
+
+```sh
+tomaccoctl call android.store_screenshots '{"bundle_id":"dev.example.newapp","devices":["emulator-5554"],"locales":["en-US","de-DE"],"themes":["light","dark"],"screens":[{"name":"home"},{"name":"settings","steps":[{"action":"click","selector":{"text":"Settings"}}]}],"directory":"/absolute/screenshots"}'
+```
+
+- Files go to `DIRECTORY/THEME/LOCALE/images/KIND/NN_SCREEN.png`. `KIND` is `phoneScreenshots`,
+  `sevenInchScreenshots` or `tenInchScreenshots` by the device's smallest width (under 600 dp, under 720 dp,
+  720 dp and more), so each theme's folder is a fastlane supply metadata directory. One device per kind.
+- The language is set per app with `android.settings` `app_locale`, so Android 13 or newer is needed.
+- Animations are off during the captures. Afterwards each device's dark mode, animations and the app's
+  language are set back to what they were.
+- `report.json` lists every file with its size and `play_problems`: a side under 320 or over 3840 pixels, or a
+  long side more than twice the short one, which Google Play refuses. A screen whose steps fail is listed with
+  the error and the job fails; the other screens are still captured.
+- Run on an API 36 emulator (Pixel 11 profile, 1080x2424) against the Settings app: two languages, two
+  themes and two screens gave eight files in 25 seconds, in German and dark mode where asked, with the settings
+  restored. Every file was flagged under `play_problems`, because 2424 pixels is more than twice 1080.
 
 ### Orientation, display size and density
 

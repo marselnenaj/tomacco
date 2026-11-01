@@ -519,7 +519,7 @@ fn project_dirs(text: &str) -> BTreeMap<String, String> {
         .collect()
 }
 
-fn build_file(dir: &Path) -> Option<PathBuf> {
+pub fn build_file(dir: &Path) -> Option<PathBuf> {
     ["build.gradle.kts", "build.gradle"]
         .iter()
         .map(|f| dir.join(f))

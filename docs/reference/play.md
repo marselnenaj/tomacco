@@ -22,7 +22,7 @@ Annotations: writes, not idempotent, open world.
 | `status` | string |  | `"draft"` | one of `draft`, `completed`, `inProgress` |
 | `user_fraction` | number |  |  | 1e-06 to 0.999999 |
 | `release_notes` | array of object |  |  | up to 100 items |
-| `release_notes[].language` | string | yes |  | matching `[A-Za-z-]{2,30}` |
+| `release_notes[].language` | string | yes |  | matching `[A-Za-z0-9-]{2,30}` |
 | `release_notes[].text` | string | yes |  | up to 500 characters |
 
 ```sh
