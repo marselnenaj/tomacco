@@ -69,6 +69,8 @@ operations and their JSON results.
 - **Tool forms.** Each field of a tool form in **Agents & tools** shows its description and a number's limits, and a
   value outside them is refused before the call. Operations marked destructive ask once more before they run, and
   **Copy as command** copies the call as a `tomaccoctl call` line.
+- **Per-project choices.** The desktop remembers per project the device it ran on last, with its platform and Apple
+  target, and the build's platform, configuration and format, and chooses them again when the project opens.
 
 ### Changed
 

@@ -27,6 +27,13 @@ the command palette (Ctrl+K) finds all of them as **Open recent project**
 A project folder dragged from the file manager onto the window opens as the
 project and shows its overview; a single file or an `.app` bundle does not.
 
+Each project keeps its own choices on this computer: the device it ran on last with its platform
+and Apple target, and the platform, configuration and format of its build under **Project**. When the
+project opens again they are chosen again; a device that is not connected yet is chosen as soon as it
+is, unless another device is live or you pick one first. Choosing a device, running the app or
+changing a build choice stores it. The 20 most recently used projects are kept; the settings export
+leaves these choices out, as they name folders.
+
 ### First start
 
 On the very first start the desktop shows **Welcome to Tomacco** (*Willkommen bei Tomacco*). It runs `doctor`

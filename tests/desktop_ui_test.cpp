@@ -2564,6 +2564,56 @@ for line in sys.stdin:
         view->setProperty("notice",QString());view->setProperty("failed",false);view->setProperty("requests",QVariantMap{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void a_project_reopens_with_its_last_device_and_build_choices() {
+        // The build choices and the device a project used last are stored per project and chosen
+        // again when it opens; a device that is not connected yet is chosen once it is.
+        open("project");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        const auto path=directory.filePath("project");
+        QSettings().remove("projects/preferences");workspace->setProperty("projectPreferences",QVariantMap{});
+        auto *configuration=item("buildConfiguration");auto *format=item("buildFormat");auto *buildPlatform=item("buildPlatform");
+        QVERIFY(configuration && format && buildPlatform);
+        buildPlatform->setProperty("currentIndex",0);QVERIFY(QMetaObject::invokeMethod(buildPlatform,"activated",Q_ARG(int,0)));
+        configuration->setProperty("currentIndex",1);QVERIFY(QMetaObject::invokeMethod(configuration,"activated",Q_ARG(int,1)));
+        QTRY_COMPARE(format->property("count").toInt(),2);
+        format->setProperty("currentIndex",1);QVERIFY(QMetaObject::invokeMethod(format,"activated",Q_ARG(int,1)));
+        const QVariantList devices{QVariantMap{{"id","emulator-5554"},{"name","Pixel"},{"platform","android"},{"kind","emulator"}},
+                                   QVariantMap{{"id","emulator-5556"},{"name","Tablet"},{"platform","android"},{"kind","emulator"}}};
+        view->setProperty("targets",devices);
+        view->setProperty("target",QString("emulator-5556"));QVERIFY(QMetaObject::invokeMethod(view,"rememberTarget"));
+        const auto saved=[&]{return QJsonDocument::fromJson(QSettings().value("projects/preferences").toString().toUtf8()).object().value(path).toObject();};
+        QCOMPARE(saved().value("configuration").toString(),QString("release"));
+        QCOMPARE(saved().value("format").toString(),QString("aab"));
+        QCOMPARE(saved().value("buildPlatform").toString(),QString("android"));
+        QCOMPARE(saved().value("device").toString(),QString("emulator-5556"));
+        QCOMPARE(saved().value("platform").toString(),QString("android"));
+        // Opened again, the project gets them back.
+        configuration->setProperty("currentIndex",0);format->setProperty("currentIndex",0);
+        view->setProperty("target",QString("emulator-5554"));
+        QVERIFY(QMetaObject::invokeMethod(workspace,"openProject",Q_ARG(QVariant,path)));
+        QTRY_COMPARE_WITH_TIMEOUT(configuration->property("currentText").toString(),QString("release"),patient(10000));
+        QTRY_COMPARE(format->property("currentText").toString(),QString("aab"));
+        QTRY_COMPARE(view->property("target").toString(),QString("emulator-5556"));
+        // The device is not connected yet: another is shown until it comes.
+        view->setProperty("targets",QVariantList{devices.first()});
+        QVERIFY(QMetaObject::invokeMethod(view,"applyProjectPreferences",Q_ARG(QVariant,path)));
+        QCOMPARE(view->property("target").toString(),QString("emulator-5554"));
+        view->setProperty("targets",devices);
+        QCOMPARE(view->property("target").toString(),QString("emulator-5556"));
+        // Choosing another device afterwards is not undone, and is what is stored.
+        view->setProperty("target",QString("emulator-5554"));QVERIFY(QMetaObject::invokeMethod(view,"rememberTarget"));
+        view->setProperty("targets",QVariantList{devices.last(),devices.first()});
+        QCOMPARE(view->property("target").toString(),QString("emulator-5554"));
+        QCOMPARE(saved().value("device").toString(),QString("emulator-5554"));
+        // Paths stay on this computer: the settings export leaves them out.
+        const auto exported=directory.filePath("preferences-export.json");
+        QVERIFY(backend->exportSettings(exported).isEmpty());
+        QFile file(exported);QVERIFY(file.open(QIODevice::ReadOnly));QVERIFY(!file.readAll().contains("projects/preferences"));
+        QSettings().remove("projects/preferences");workspace->setProperty("projectPreferences",QVariantMap{});
+        configuration->setProperty("currentIndex",0);format->setProperty("currentIndex",0);
+        view->setProperty("targets",QVariantList{});view->setProperty("target",QString());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void recent_projects_reopen_from_the_start_screen_and_the_palette() {
         // Every project opened is remembered, newest first, without duplicates or folders that are gone;
         // the start screen and the palette offer the others again.

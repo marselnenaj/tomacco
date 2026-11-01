@@ -60,7 +60,7 @@ Rectangle {
     property var pendingLaunch: null
     Connections {
         target: view.workspace
-        function onRuntimeRequested(platform,device) {let row=workspace.devices.find(d=>d.id===device && d.platform===platform) || {id:device,name:device,platform:platform,kind:"device"};if(!view.targets.some(d=>d.id===device && d.platform===platform))view.targets=view.targets.concat([row]);view.choosePlatform(platform);if(platform==="ios")view.chooseAppleTarget("device");view.target=device;view.workspace.close();view.connectTarget()}
+        function onRuntimeRequested(platform,device) {view.preferredTarget="";let row=workspace.devices.find(d=>d.id===device && d.platform===platform) || {id:device,name:device,platform:platform,kind:"device"};if(!view.targets.some(d=>d.id===device && d.platform===platform))view.targets=view.targets.concat([row]);view.choosePlatform(platform);if(platform==="ios")view.chooseAppleTarget("device");view.target=device;view.workspace.close();view.connectTarget()}
         function onIosSetupRequested() {view.choosePlatform("ios");view.chooseAppleTarget("device");view.workspace.close();iphoneSetup.open();view.diagnoseIos()}
     }
     Settings {category:"NativeIphone";property alias runnerBundle:view.runnerBundle}
@@ -296,7 +296,25 @@ Rectangle {
     readonly property var visibleTargets: targetRows()
     readonly property bool targetIsLive: display.state==="live" && live.device===target && live.platform===platform
     readonly property bool hasTarget: visibleTargets.some(x=>x.id===target)
-    function reconcileTarget() {let rows=targetRows();if(!rows.some(x=>x.id===target))target=rows.length?rows[0].id:""}
+    function reconcileTarget() {
+        let rows=targetRows()
+        if(preferredTarget && rows.some(x=>x.id===preferredTarget) && !live.session){target=preferredTarget;preferredTarget="";return}
+        if(!rows.some(x=>x.id===target))target=rows.length?rows[0].id:""
+    }
+    // The device the project opened last ran on, until it is chosen: as soon as it is
+    // connected, unless another device is live or the user chose one.
+    property string preferredTarget: ""
+    function rememberTarget() {preferredTarget="";if(projectPath)workspace.rememberForProject({platform:platform,device:target,appleTarget:appleTarget})}
+    function applyProjectPreferences(path) {
+        const saved=workspace.preferencesFor(path)
+        preferredTarget=saved.device || ""
+        // A live device stays; the choice applies to the next connection.
+        if(live.session)return
+        if(saved.platform==="android" || saved.platform==="ios")choosePlatform(saved.platform)
+        if(saved.appleTarget==="device" || saved.appleTarget==="simulator")chooseAppleTarget(saved.appleTarget)
+        reconcileTarget()
+    }
+    Connections {target:view.workspace;function onProjectPreferencesApplied(path) {view.applyProjectPreferences(path)}}
     function state() {
         const rect=display.contentRect, first=display.mapToItem(view,rect.x,rect.y), last=display.mapToItem(view,rect.x+rect.width,rect.y+rect.height)
         return {session:live.session || "",platform:live.platform || platform,device:live.device || target,
@@ -432,6 +450,7 @@ Rectangle {
     }
     function launch() {
         if(launchPending || launchJob || !projectPath || !targetRows().some(x=>x.id===target))return
+        rememberTarget()
         launchTarget={platform:platform,device:target,runner_bundle_id:runnerBundle,audio:forwardAudio}
         pendingLaunch={path:projectPath,platform:platform,device:target,configuration:"debug",bundle_id:workspace.project.configuration.applicationId || ""}
         // Start the automation runner first. project.run then installs the app
@@ -526,7 +545,7 @@ Rectangle {
                 if(r.state==="succeeded") {view.notice=qsTr("App launched");if(!view.live.session || view.live.device!==view.launchTarget.device)view.request("runtime.start",view.launchTarget)}
                 else {view.notice=qsTr("App launch: %1. Details under Builds & jobs.").arg(workspace.jobStateLabel(r));view.failed=true}
             }
-            if(op==="workspace.context") {workspace.openProject(r.project.path);view.platform=r.workspace.platform || "android";view.target=r.workspace.device || ""}
+            if(op==="workspace.context") {view.preferredTarget="";if(r.workspace.device)workspace.rememberForProject({platform:r.workspace.platform || "android",device:r.workspace.device},r.project.path);workspace.openProject(r.project.path);view.platform=r.workspace.platform || "android";view.target=r.workspace.device || ""}
             if(op==="device.install"){workspace.rememberJob(r,op,JSON.parse(c.signature));if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
             if(op==="runtime.capture"){view.notice=(Studio.copyImage(r.path)?qsTr("Screenshot saved and copied · %1"):qsTr("Capture saved · %1")).arg(r.path);view.failed=false}
         }
@@ -693,13 +712,13 @@ Rectangle {
                     ColumnLayout {
                         id:deviceBar;anchors.fill:parent;anchors.margins:Theme.gapSm;spacing:Theme.gapSm
                         RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
-                            StudioSegmented {current:view.platform;model:[{id:"android",label:"Android"},{id:"ios",label:"Apple"}];onChosen:id=>view.choosePlatform(id)}
+                            StudioSegmented {current:view.platform;model:[{id:"android",label:"Android"},{id:"ios",label:"Apple"}];onChosen:id=>{view.choosePlatform(id);view.rememberTarget()}}
                             RowLayout {
                                 visible:view.platform==="ios" && !view.compact;spacing:Theme.gapXs
-                                StudioComboBox {Layout.preferredWidth:180;model:[qsTr("iPhone via USB"),qsTr("Simulator on a Mac")];currentIndex:view.appleTarget==="device"?0:1;onActivated:view.chooseAppleTarget(currentIndex===0?"device":"simulator")}
+                                StudioComboBox {Layout.preferredWidth:180;model:[qsTr("iPhone via USB"),qsTr("Simulator on a Mac")];currentIndex:view.appleTarget==="device"?0:1;onActivated:{view.chooseAppleTarget(currentIndex===0?"device":"simulator");view.rememberTarget()}}
                                 StudioComboBox {visible:view.appleTarget==="simulator";Layout.preferredWidth:150;model:Object.keys(view.remotes);currentIndex:Object.keys(view.remotes).indexOf(view.remote);displayText:currentText || qsTr("Choose a Mac");onActivated:{view.remote=currentText;view.target="";view.loadApple()}}
                             }
-                            StudioComboBox {id:targetPicker;objectName:"targetPicker";Layout.fillWidth:true;Layout.minimumWidth:120;Layout.maximumWidth:360;textRole:"name";valueRole:"id";model:view.visibleTargets;currentIndex:view.visibleTargets.findIndex(x=>x.id===view.target);displayText:currentIndex>=0?currentText:qsTr("Choose a device");onActivated:view.target=currentValue}
+                            StudioComboBox {id:targetPicker;objectName:"targetPicker";Layout.fillWidth:true;Layout.minimumWidth:120;Layout.maximumWidth:360;textRole:"name";valueRole:"id";model:view.visibleTargets;currentIndex:view.visibleTargets.findIndex(x=>x.id===view.target);displayText:currentIndex>=0?currentText:qsTr("Choose a device");onActivated:{view.target=currentValue;view.rememberTarget()}}
                             StudioButton {iconName:"refresh";tip:qsTr("Search for devices again");quiet:true;onClicked:view.refresh()}
                             StudioButton {iconName:"plus";tip:qsTr("Set up another Android model");quiet:true;visible:view.platform==="android";onClicked:workspace.showTab("devices")}
                             StudioButton {visible:view.platform==="ios" && !view.compact;text:view.appleTarget==="device"?qsTr("Set up iPhone"):qsTr("Connect Mac");quiet:true;onClicked:{if(view.appleTarget==="device"){iphoneSetup.open();view.diagnoseIos()}else macSetup.open()}}
@@ -710,7 +729,7 @@ Rectangle {
                         }
                         RowLayout {
                             visible:view.platform==="ios" && view.compact;Layout.fillWidth:true;spacing:Theme.gapXs
-                            StudioComboBox {Layout.preferredWidth:170;model:[qsTr("iPhone via USB"),qsTr("Simulator on a Mac")];currentIndex:view.appleTarget==="device"?0:1;onActivated:view.chooseAppleTarget(currentIndex===0?"device":"simulator")}
+                            StudioComboBox {Layout.preferredWidth:170;model:[qsTr("iPhone via USB"),qsTr("Simulator on a Mac")];currentIndex:view.appleTarget==="device"?0:1;onActivated:{view.chooseAppleTarget(currentIndex===0?"device":"simulator");view.rememberTarget()}}
                             StudioComboBox {visible:view.appleTarget==="simulator";Layout.fillWidth:true;model:Object.keys(view.remotes);currentIndex:Object.keys(view.remotes).indexOf(view.remote);displayText:currentText || qsTr("Choose a Mac");onActivated:{view.remote=currentText;view.target="";view.loadApple()}}
                             Item {visible:view.appleTarget!=="simulator";Layout.fillWidth:true}
                             StudioButton {text:view.appleTarget==="device"?qsTr("Set up iPhone"):qsTr("Connect Mac");quiet:true;onClicked:{if(view.appleTarget==="device"){iphoneSetup.open();view.diagnoseIos()}else macSetup.open()}}

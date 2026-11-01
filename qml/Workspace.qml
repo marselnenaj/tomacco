@@ -73,6 +73,31 @@ Rectangle {
         const origin=jobOrigins[job.id]
         return request(origin.operation,origin.args)
     }
+    // What each project used last: the device and its platform, the Apple target, the build's
+    // platform, configuration and format. Stored on this computer for the 20 newest projects.
+    property var projectPreferences: { try { return JSON.parse(Studio.setting("projects/preferences","{}")) || {} } catch(e) { return {} } }
+    function preferencesFor(path) { return path && projectPreferences[path] ? projectPreferences[path] : {} }
+    function rememberForProject(values,path) {
+        const folder=path || project.path
+        if(!folder) return
+        let all=Object.assign({},projectPreferences)
+        all[folder]=Object.assign({},all[folder] || {},values,{at:Date.now()/1000})
+        const keep=Object.keys(all).sort((a,b)=>(all[b].at || 0)-(all[a].at || 0)).slice(0,20)
+        let kept={}
+        for(const key of keep) kept[key]=all[key]
+        projectPreferences=kept
+        Studio.saveSetting("projects/preferences",JSON.stringify(kept))
+    }
+    // The build choices of a project opened again, where they still apply.
+    function applyBuildPreferences(path) {
+        const saved=preferencesFor(path)
+        const index=["android","ios","web","linux"].indexOf(saved.buildPlatform)
+        if(index>=0 && (!project.platforms || !project.platforms.length || project.platforms.indexOf(saved.buildPlatform)>=0)) platform.currentIndex=index
+        if(saved.configuration) configuration.currentIndex=Math.max(0,["debug","release"].indexOf(saved.configuration))
+        if(saved.format) Qt.callLater(()=>{const at=format.model.indexOf(saved.format);if(at>=0)format.currentIndex=at})
+        if(saved.device && devices.some(x=>x.id===saved.device)) { selectedDevice=saved.device; selectedPlatform=saved.platform || selectedPlatform }
+    }
+    signal projectPreferencesApplied(string path)
     property string selectedJob: ""
     property int logOffset: 0
     property string logText: ""
@@ -242,6 +267,8 @@ Rectangle {
                 panel.project=value; Studio.rememberProject(value.path); if(panel.revealPath) { fileWorkspace.openFile(panel.revealPath,panel.revealLine);panel.revealPath="" } panel.status=value.name+" · "+value.kinds.join(" / ")
                 if(value.configuration.applicationId) bundleId.text=value.configuration.applicationId
                 if(value.platforms.length) platform.currentIndex=Math.max(0,["android","ios","web","linux"].indexOf(value.platforms[0]))
+                panel.applyBuildPreferences(value.path)
+                panel.projectPreferencesApplied(value.path)
             } else if(operation==="device.list") {
                 panel.devices=value.devices
                 if(!context.quiet && !value.devices.length) panel.status=value.diagnostics.length ? value.diagnostics.map(x=>x.message).join(" · ") : qsTr("No devices connected. Enable USB debugging or trust on the device.")
@@ -309,15 +336,15 @@ Rectangle {
                         GridLayout {Layout.fillWidth:true;columns:width<340?1:(platform.currentText==="android" || platform.currentText==="ios"?3:2);columnSpacing:Theme.gapSm;rowSpacing:Theme.gapSm
                             ColumnLayout {Layout.fillWidth:true;Layout.preferredWidth:1;spacing:Theme.gapXs
                                 StudioSection {text:qsTr("Platform")}
-                                StudioComboBox {id:platform;model:["android","ios","web","linux"];Layout.fillWidth:true;implicitWidth:80;displayText:({android:"Android",ios:"iOS",web:"Web",linux:"Linux"})[currentText] || currentText}
+                                StudioComboBox {id:platform;objectName:"buildPlatform";model:["android","ios","web","linux"];Layout.fillWidth:true;implicitWidth:80;onActivated:panel.rememberForProject({buildPlatform:currentText});displayText:({android:"Android",ios:"iOS",web:"Web",linux:"Linux"})[currentText] || currentText}
                             }
                             ColumnLayout {Layout.fillWidth:true;Layout.preferredWidth:1;spacing:Theme.gapXs
                                 StudioSection {text:qsTr("Configuration")}
-                                StudioComboBox {id:configuration;model:["debug","release"];Layout.fillWidth:true;implicitWidth:80;displayText:currentText==="debug"?"Debug":"Release"}
+                                StudioComboBox {id:configuration;objectName:"buildConfiguration";model:["debug","release"];Layout.fillWidth:true;implicitWidth:80;onActivated:panel.rememberForProject({configuration:currentText});displayText:currentText==="debug"?"Debug":"Release"}
                             }
                             ColumnLayout {visible:platform.currentText==="android" || platform.currentText==="ios";Layout.fillWidth:true;Layout.preferredWidth:1;spacing:Theme.gapXs
                                 StudioSection {text:qsTr("Package format")}
-                                StudioComboBox {id:format;Layout.fillWidth:true;implicitWidth:80;model:platform.currentText==="ios"?["ipa"]:platform.currentText==="android"?["apk","aab"]:["apk"];displayText:currentText.toUpperCase()}
+                                StudioComboBox {id:format;objectName:"buildFormat";Layout.fillWidth:true;implicitWidth:80;onActivated:panel.rememberForProject({format:currentText});model:platform.currentText==="ios"?["ipa"]:platform.currentText==="android"?["apk","aab"]:["apk"];displayText:currentText.toUpperCase()}
                             }
                         }
                         StudioCheckBox {id:signBuild;visible:platform.currentText==="ios";text:qsTr("Sign build");checked:true}
@@ -334,7 +361,7 @@ Rectangle {
                         visible:!!panel.project.path
                         title:qsTr("Run on device")
                         actions:[StudioButton {text:qsTr("Manage devices");quiet:true;onClicked:panel.showTab("devices")}]
-                        StudioComboBox {Layout.fillWidth:true;model:panel.devices;textRole:"name";valueRole:"id";currentIndex:panel.devices.findIndex(x=>x.id===panel.selectedDevice);displayText:currentIndex>=0?currentText:qsTr("Choose a smartphone or emulator");onActivated:{panel.selectedDevice=currentValue;panel.selectedPlatform=panel.devices[currentIndex].platform}}
+                        StudioComboBox {Layout.fillWidth:true;model:panel.devices;textRole:"name";valueRole:"id";currentIndex:panel.devices.findIndex(x=>x.id===panel.selectedDevice);displayText:currentIndex>=0?currentText:qsTr("Choose a smartphone or emulator");onActivated:{panel.selectedDevice=currentValue;panel.selectedPlatform=panel.devices[currentIndex].platform;panel.rememberForProject({device:panel.selectedDevice,platform:panel.selectedPlatform})}}
                         RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
                             StudioTextField {id:bundleId;Layout.fillWidth:true;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;placeholderText:qsTr("Application ID, e.g. com.example.app")}
                             StudioButton {text:panel.projectJob.id?qsTr("Job running"):qsTr("Build & run");iconName:"play";accent:true;enabled:!!panel.selectedDevice && !!panel.project.path && !panel.projectRequestPending && !panel.projectJob.id;onClicked:panel.request("project.run",{path:projectPath.text,platform:panel.selectedPlatform,device:panel.selectedDevice,bundle_id:bundleId.text,configuration:configuration.currentText})}
