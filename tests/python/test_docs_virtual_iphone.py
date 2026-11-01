@@ -51,7 +51,7 @@ GUIDES = ("README.md", "docs/README.md", "docs/getting-started.md", "docs/deskto
           "docs/virtual-ios/troubleshooting.md", "docs/virtual-ios/how-it-works.md", "examples/README.md",
           "docs/recipes.md", "docs/faq.md", "docs/tutorial-android.md", "docs/tutorial-virtual-iphone.md",
           "docs/agent-patterns.md", "integrations/agent-skill/tomacco/SKILL.md",
-          "integrations/agent-skill/tomacco/examples.md")
+          "integrations/agent-skill/tomacco/workflows.md")
 # A dotted name in a guide that looks like an operation and is a result's path instead.
 RESULT_PATHS = {"workspace.ios_research.guest.detach_pending"}
 # A JSON answer's `result` holds fields such as result.id; the result.* operations are named in full.

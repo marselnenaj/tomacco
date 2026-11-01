@@ -674,11 +674,23 @@ class AgentSkillTests(unittest.TestCase):
                 self.assertEqual(os.readlink(home / agent / "skills/tomacco"), str(skill))
             self.assertEqual((home / ".claude/skills/tomacco/SKILL.md").read_bytes(),
                              (ROOT / "integrations/agent-skill/tomacco/SKILL.md").read_bytes())
-            self.assertTrue((skill / "examples.md").is_file())
+            # The whole directory is installed and linked, not SKILL.md alone: workflows.md and
+            # every file of references/ are reachable through each agent's link.
+            source = ROOT / "integrations/agent-skill/tomacco"
+            for path in sorted(p for p in source.rglob("*") if p.is_file()):
+                relative = path.relative_to(source)
+                self.assertEqual((skill / relative).read_bytes(), path.read_bytes(), str(relative))
+                for agent in (".claude", ".codex"):
+                    self.assertEqual((home / agent / "skills/tomacco" / relative).read_bytes(), path.read_bytes())
+            self.assertTrue((home / ".codex/skills/tomacco/references/index.md").is_file())
             self.assertEqual(foreign.read_text(), "not Tomacco's")
             self.assertFalse((home / ".gemini").exists())
             # A second run changes nothing.
             self.assertEqual(self.install(home, "--no-window-rule")["changed"], 0)
+            # An update keeps every file of the skill in place behind the same links.
+            self.install(home, "--no-window-rule", "--update")
+            self.assertTrue((home / ".claude/skills/tomacco/references/errors.md").is_file())
+            self.assertTrue((home / ".codex/skills/tomacco/workflows.md").is_file())
 
             removed = UninstallTests.run_installer(home, "--uninstall")
             self.assertEqual(removed["kept"], [])
