@@ -177,6 +177,30 @@ class ParavirtualJobTests(Isolated):
                 dispatch("ios.emulator.paravirtual", {**self.arguments(), **invalid})
             self.assertEqual(error.exception.code, "invalid_argument")
 
+    def test_guest_memory_import_reaches_the_launcher_and_its_receipt(self):
+        # A profile's boot.guest_memory_import becomes the launcher's
+        # --guest-memory-import. Without a guest channel guest RAM is private
+        # memory, so dma-buf keeps it and the receipt says why. Omitted: the
+        # schema's default, shared.
+        cases = (({}, "shared"), ({"guest_memory_import": "shared"}, "shared"),
+                 ({"guest_memory_import": "dma-buf"}, "dma-buf"))
+        for options, requested in cases:
+            with self.subTest(options=options):
+                job = dispatch("ios.emulator.paravirtual", {**self.arguments(), **options})
+                argv = job["plan"]["steps"][0]["argv"]
+                self.assertEqual(argv[argv.index("--guest-memory-import") + 1], requested)
+                done = jobs.wait(job["id"], 10)
+                self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"]))
+                receipt = json.loads((Path(job["report_directory"]) / "paravirtual/request.json").read_text())
+                plan = receipt["guest_memory_import"]
+                self.assertEqual((plan["requested"], plan["backing"]), (requested, "private-ram"))
+                self.assertEqual("fallback" in plan, requested == "dma-buf")
+                self.assertFalse(any("memory-backend-file" in arg for arg in receipt["command"]))
+        for invalid in ({"guest_memory_import": "udmabuf"}, {"guest_memory_import": True}):
+            with self.subTest(invalid=invalid), self.assertRaises(StudioError) as error:
+                dispatch("ios.emulator.paravirtual", {**self.arguments(), **invalid})
+            self.assertEqual(error.exception.code, "invalid_argument")
+
     def test_long_instruction_session_reaches_runner_and_still_cancels(self):
         args = {**self.arguments(wait=True), "clock_mode": "instruction", "seconds": 21600}
         job = dispatch("ios.emulator.paravirtual", args)
