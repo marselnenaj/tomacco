@@ -72,6 +72,18 @@ Panel {
     // Pinned emulators first; device.list already lists pinned devices first.
     readonly property var idleAvds: avds.filter(a=>!devices.some(d=>d.avd===a.name)).sort((a,b)=>(b.pinned===true)-(a.pinned===true))
     readonly property var workspaceNames: Object.keys(snapshot.workspaces || {})
+    // update.status (no network): a new version, or one installed while the
+    // open workspace still runs the old one.
+    property var updateState: ({})
+    readonly property string desktopVersion: ((snapshot.sessions || []).find(x=>x.session==="main") || {}).version || ""
+    readonly property bool restartNeeded: desktopOpen && desktopVersion!=="" && !!updateState.current && updateState.current!==desktopVersion
+    readonly property bool updateAvailable: updateState.update_available===true && !restartNeeded
+    readonly property string updateNote: restartNeeded ? root.tr("Tomacco %1 is installed. Restart the workspace to use it · U","Tomacco %1 ist installiert. Workspace neu starten, um ihn zu nutzen · U").arg(updateState.current)
+        : updateAvailable ? root.tr("Tomacco %1 is available · U opens the workspace to install it","Tomacco %1 ist verfügbar · U öffnet den Workspace zum Installieren").arg(updateState.latest || "") : ""
+    // A small picture of the live device, refreshed while the popup is open.
+    property string thumbnail: ""
+    property string thumbnailDevice: ""
+    readonly property string thumbnailPath: snapshot.data_directory ? snapshot.data_directory+"/panel-thumbnail.png" : ""
     readonly property string summary: hasError ? root.tr("Not reachable","Nicht erreichbar")
         : busyLabel ? busyLabel
         : workJobs.length ? (workJobs.length===1 ? workJobs[0].label : workJobs.length+root.tr(" jobs running"," Aufträge laufen"))
@@ -93,6 +105,19 @@ Panel {
     function runtimeFor(id) { return liveRuntimes.find(x=>x.device===id) || null }
     function stateLabel(state) {
         return ({queued:root.tr("Waiting","Wartet"),running:root.tr("Running","Läuft"),succeeded:root.tr("Succeeded","Erfolgreich"),failed:root.tr("Failed","Fehlgeschlagen"),cancelled:root.tr("Cancelled","Abgebrochen"),timed_out:root.tr("Timed out","Zeitlimit")})[state] || state
+    }
+    // What a job is doing now: its phase, or why it waits.
+    function phaseLabel(job) {
+        if(job.state==="queued") return job.queued_reason ? root.tr("waiting: ","wartet: ")+job.queued_reason : ""
+        let phase=job.phase || ""
+        if(!phase || job.state!=="running") return ""
+        return ({building:root.tr("building","baut"),waiting:root.tr("waiting","wartet"),deploy:root.tr("installing","installiert"),session:root.tr("session running","Sitzung läuft"),streaming:root.tr("streaming","überträgt"),ready:root.tr("ready","bereit")})[phase] || phase.replace(/[_-]/g," ")
+    }
+    function captureThumbnail() {
+        if(!opened || !liveRuntime || !thumbnailPath || thumbScan.running) return
+        thumbScan.device=liveRuntime.device
+        thumbScan.command=[cli,"call","runtime.capture",JSON.stringify({session:liveRuntime.session,path:thumbnailPath})]
+        thumbScan.running=true
     }
     function stateColor(state) {
         return state==="succeeded" ? good : state==="failed" || state==="timed_out" ? bad : state==="running" || state==="queued" ? accent : faint
@@ -176,7 +201,7 @@ Panel {
         if(w.bundle_id) args.bundle_id=w.bundle_id
         run(name+root.tr(" building and starting"," wird gebaut und gestartet"),[["project.run",args]])
     }
-    onOpenedChanged: if(opened) { refresh(); scan() }
+    onOpenedChanged: if(opened) { refresh(); scan(); if(!updateScan.running) updateScan.running=true }
 
     Process {
         id: poll
@@ -245,6 +270,26 @@ Panel {
         }
     }
     Process {
+        id: updateScan
+        command: [root.cli,"call","update.status","{}"]
+        stdout: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: {
+                try { let result=JSON.parse(text); if(result.ok) root.updateState=result.result } catch(e) {}
+            }
+        }
+    }
+    Process {
+        id: thumbScan
+        property string device: ""
+        stdout: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: {
+                try { let result=JSON.parse(text); if(result.ok) { root.thumbnail="file://"+root.thumbnailPath+"?"+Date.now(); root.thumbnailDevice=thumbScan.device } } catch(e) {}
+            }
+        }
+    }
+    Process {
         id: action
         property var step: null
         property bool started: false
@@ -306,6 +351,7 @@ Panel {
         }
         function emulator(name: string): string { let avd=root.avds.find(a=>a.name===name); if(!avd) return root.tr("Unknown emulator","Unbekannter Emulator"); root.startAvd(avd); return "ok" }
         function busy(): string { return root.busyLabel+"|"+root.queue.length+"|"+root.message }
+        function update(): string { return root.restartNeeded ? "restart "+root.updateState.current : root.updateAvailable ? "available "+(root.updateState.latest || "") : "current "+(root.updateState.current || "") }
     }
     // Fast while this popup is open, and on the one bar that owns notifications while real work
     // runs. Emulators, audio bridges and the virtual iPhone live for hours and are not work, and
@@ -314,6 +360,9 @@ Panel {
     Timer { interval: 1000; repeat: true; running: root.opened; triggeredOnStart: true; onTriggered: root.now=Date.now()/1000 }
     // Devices are rescanned often while the popup is open and rarely otherwise.
     Timer { interval: root.opened ? 15000 : 90000; repeat: true; running: true; triggeredOnStart: true; onTriggered: root.scan() }
+    // The update state changes rarely and costs no network.
+    Timer { interval: 600000; repeat: true; running: true; triggeredOnStart: true; onTriggered: if(!updateScan.running) updateScan.running=true }
+    Timer { interval: 4000; repeat: true; running: root.opened && !!root.liveRuntime; triggeredOnStart: true; onTriggered: root.captureThumbnail() }
 
     component PhoneGlyph: Item {
         id: glyph
@@ -461,6 +510,7 @@ Panel {
                 else if(key==="a") root.openStudio("jobs")
                 else if(key==="v") root.openLog(root.latestJob)
                 else if(key==="r") { root.refresh(); root.scan() }
+                else if(key==="u") { if(root.restartNeeded || root.updateAvailable) root.openStudio("runtime") }
             }
             Flickable {
                 id: flick
@@ -490,6 +540,16 @@ Panel {
                         LabelText { id: notice; anchors.fill: parent; anchors.margins: Style.space(7); text: root.message; wrapMode: Text.Wrap; elide: Text.ElideNone; maximumLineCount: 4; font.pixelSize: Style.font.caption; color: root.messageIsError ? root.bad : root.foreground }
                     }
 
+                    // A new version, or one that waits for a restart of the workspace.
+                    Rectangle {
+                        objectName: "updateNote"
+                        visible: root.updateNote!==""
+                        width: parent.width; height: updateText.implicitHeight+Style.space(14); radius: Style.space(8)
+                        color: updateArea.containsMouse ? Style.hoverFill : root.alpha(root.accent,.12)
+                        LabelText { id: updateText; anchors.fill: parent; anchors.margins: Style.space(7); text: root.updateNote; wrapMode: Text.Wrap; elide: Text.ElideNone; maximumLineCount: 3; font.pixelSize: Style.font.caption }
+                        MouseArea { id: updateArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.openStudio("runtime") }
+                    }
+
                     Row {
                         id: tiles
                         width: parent.width; spacing: Style.space(7)
@@ -513,6 +573,33 @@ Panel {
                                 MouseArea { id: chipArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.openStudio(modelData[0]) }
                             }
                         }
+                    }
+
+                    // The live device with a small picture of its screen; a click opens it as a window.
+                    Rectangle {
+                        objectName: "liveDevice"
+                        visible: !!root.liveRuntime
+                        width: parent.width; height: Style.space(112); radius: Style.space(8)
+                        color: liveArea.containsMouse ? Style.hoverFill : Style.normalFill
+                        Item {
+                            id: thumbFrame
+                            x: Style.space(8); y: Style.space(8); width: Math.round(height*.5); height: parent.height-Style.space(16)
+                            Image {
+                                id: thumb
+                                anchors.fill: parent; fillMode: Image.PreserveAspectFit; cache: false; asynchronous: true; smooth: true; mipmap: true
+                                sourceSize.height: Math.round(height*2)
+                                source: root.liveRuntime && root.thumbnailDevice===root.liveRuntime.device ? root.thumbnail : ""
+                            }
+                            PhoneGlyph { anchors.fill: parent; visible: thumb.status!==Image.Ready; live: true }
+                        }
+                        Column {
+                            anchors.left: thumbFrame.right; anchors.leftMargin: Style.space(12); anchors.right: parent.right; anchors.rightMargin: Style.space(8); anchors.verticalCenter: parent.verticalCenter
+                            spacing: Style.space(2)
+                            LabelText { width: parent.width; text: root.liveRuntime ? root.deviceName(root.liveRuntime.device) : "" }
+                            LabelText { width: parent.width; text: root.liveRuntime ? (root.liveRuntime.platform==="ios" ? "Apple" : "Android")+" · live" : ""; color: root.dim; font.pixelSize: Style.font.caption }
+                            LabelText { width: parent.width; text: root.tr("F · as a window","F · als Fenster"); color: root.faint; font.pixelSize: Style.font.caption }
+                        }
+                        MouseArea { id: liveArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.popOut(null) }
                     }
 
                     PanelSeparator { foreground: root.foreground }
@@ -569,7 +656,8 @@ Panel {
                                 readonly property bool service: root.isService(modelData)
                                 dotColor: service ? root.good : root.accent; pulsing: !service
                                 title: modelData.label
-                                detail: (service ? root.tr("Service running","Dienst läuft") : root.stateLabel(modelData.state))+(modelData.created ? root.tr(" · for "," · seit ")+root.span(root.now-modelData.created) : "")
+                                readonly property string phase: service ? "" : root.phaseLabel(modelData)
+                                detail: (service ? root.tr("Service running","Dienst läuft") : root.stateLabel(modelData.state))+(phase ? " · "+phase : "")+(modelData.created ? root.tr(" · for "," · seit ")+root.span(root.now-modelData.created) : "")
                                 clickable: true; onTriggered: root.openStudio("jobs")
                                 IconAction { glyph: ""; hint: root.tr("Open log","Log öffnen"); onTriggered: root.openLog(modelData) }
                                 IconAction { glyph: ""; hint: service ? root.tr("Stop service","Dienst beenden") : root.tr("Cancel job","Auftrag abbrechen"); tint: root.bad; onTriggered: root.run(root.tr("Cancelling job","Auftrag wird abgebrochen"),[["job.cancel",{job_id:modelData.id}]]) }

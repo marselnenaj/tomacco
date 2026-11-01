@@ -320,6 +320,35 @@ fn loader_problems(text: &str) -> (Vec<String>, Vec<String>) {
     (libraries, versions)
 }
 
+/// A job as the panel lists it: what it is, its state, and the phase a
+/// running job is in with why a queued one waits.
+fn status_job(job: &Value) -> Value {
+    let mut row = json!({});
+    for key in [
+        "id",
+        "label",
+        "state",
+        "created",
+        "updated",
+        "exit_code",
+        "phase",
+        "queued_reason",
+    ] {
+        if !job[key].is_null() || !["phase", "queued_reason"].contains(&key) {
+            row[key] = job[key].clone();
+        }
+    }
+    row
+}
+/// A desktop session as the panel lists it, with the desktop's version, so the
+/// panel can tell when an installed update waits for a restart.
+fn status_session(session: &Value) -> Value {
+    let mut row = json!({});
+    for key in ["session", "device", "url", "loading", "version"] {
+        row[key] = session[key].clone();
+    }
+    row
+}
 pub fn status() -> Result {
     let current = jobs::listing(200)?;
     let all = current.as_array().unwrap();
@@ -327,28 +356,12 @@ pub fn status() -> Result {
         .iter()
         .filter(|j| ["queued", "running"].contains(&s(j, "state")))
         .count();
-    let jobs: Vec<_> = all
-        .iter()
-        .take(12)
-        .map(|j| {
-            let mut row = json!({});
-            for key in ["id", "label", "state", "created", "updated", "exit_code"] {
-                row[key] = j[key].clone();
-            }
-            row
-        })
-        .collect();
+    let jobs: Vec<_> = all.iter().take(12).map(status_job).collect();
     let sessions: Vec<_> = preview::sessions()?
         .as_array()
         .unwrap()
         .iter()
-        .map(|session| {
-            let mut row = json!({});
-            for key in ["session", "device", "url", "loading"] {
-                row[key] = session[key].clone();
-            }
-            row
-        })
+        .map(status_session)
         .collect();
     let workspaces = crate::workspaces::handle("workspace.list", &json!({}))?;
     let runtimes = crate::runtime::handle("runtime.list", &json!({}))?;
@@ -568,6 +581,25 @@ pub fn open(a: &Value) -> Result {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn status_rows_carry_the_phase_the_reason_and_the_desktop_version() {
+        let job = json!({"id":"a","label":"Build","state":"running","created":1.0,"updated":2.0,
+            "exit_code":null,"phase":"building","plan":{"steps":[]},"log_path":"/x"});
+        let row = super::status_job(&job);
+        assert_eq!(row["phase"], "building");
+        assert!(row.get("plan").is_none() && row.get("log_path").is_none());
+        assert!(row.get("queued_reason").is_none());
+        let queued = super::status_job(
+            &json!({"id":"b","state":"queued","phase":"queued","queued_reason":"device busy"}),
+        );
+        assert_eq!(queued["queued_reason"], "device busy");
+        let session = super::status_session(
+            &json!({"session":"main","version":"1.2.1","url":"","loading":false,"device":"x","tab":"jobs"}),
+        );
+        assert_eq!(session["version"], "1.2.1");
+        assert!(session.get("tab").is_none());
+    }
+
     use super::*;
     use std::cell::{Cell, RefCell};
 

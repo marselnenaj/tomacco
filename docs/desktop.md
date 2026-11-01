@@ -407,17 +407,25 @@ right click opens the native runtime workspace. The bar icon lights its screen
 while a device is live and shows an orbiting arc while a build or task runs;
 emulators and audio bridges are listed as services and do not count as activity.
 
+A running job shows its phase as `job.list` names it, such as building, installing or session running,
+and why a queued job waits; no job reports a percentage. While a device is live, the open panel shows it
+above the device list with a small picture of its screen, taken with `runtime.capture` every 4 seconds
+into the data directory (`panel-thumbnail.png`); a click opens it as a window. When a new version of
+Tomacco is available, or one is installed while the open workspace still runs the older one, a line
+above the tiles says so (from `update.status`, which uses no network; checked every 10 minutes and when
+the panel opens); U or a click opens the workspace, whose band installs or restarts.
+
 The panel lists connected devices (connect, disconnect, open as window, stop an
 emulator), stopped Android emulators with a start button, each under its nickname
 and with pinned devices first, running and recent
 jobs with their duration, and saved projects with build-and-run. Each job row
 has a button that opens the job's log file in the desktop's text viewer
 (`xdg-open`). Keys in the open panel: O workspace, F device window,
-S screenshot, G devices, A jobs, V log of the newest job, R refresh. The same
+S screenshot, G devices, A jobs, V log of the newest job, R refresh, U update. The same
 actions are available over IPC for Hyprland bindings, for example
 `omarchy-shell io.github.marselnenaj.tomacco window`, `screenshot`, `log`,
-`show jobs`, `emulator <name>`, `iphone start|window|stop`, `status`, `version`
-and `refresh`. Its native popup supports Escape and switching between panels.
+`show jobs`, `emulator <name>`, `iphone start|window|stop`, `status`, `version`,
+`update` and `refresh`. Its native popup supports Escape and switching between panels.
 Completion notifications can be turned off in the widget's settings, or with
 `"notifyBuilds": false` in its bar entry. Filesystem state and jobs are local; the control plane
 opens no network API server.
