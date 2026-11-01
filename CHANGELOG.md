@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 201 operations.
+`tomaccoctl` now has one typed API of 202 operations.
 
 ### Added
 
@@ -28,6 +28,8 @@ operations and their JSON results.
     TotalTime and WaitTime with their median and p90, the launch state Android reported, and metrics for `profile.compare`.
   - `profile.frames` resets an app's `dumpsys gfxinfo` statistics, waits or runs a `testing.run` scenario, and reports frames
     rendered, janky frames and their percentage, slow and frozen frames from the histogram, and the frame time percentiles.
+  - `profile.memory` reads an app's `dumpsys meminfo` into PSS, RSS and swap totals, the App Summary per category, heap sizes and
+    object counts per process, with totals in MB, and with `heap_dump` pulls an HPROF heap dump of the app to a path.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

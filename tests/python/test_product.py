@@ -1044,6 +1044,35 @@ class AndroidControlTests(Isolated):
             dispatch("profile.frames", {"device": "emulator-5554", "bundle_id": "dev.test.app", "seconds": 0})
         self.assertEqual(stopped.exception.code, "app_not_running")
 
+    MEMINFO = ("** MEMINFO in pid 3095 [dev.test.app] **\n"
+               "  Dalvik Heap     9747     9648        0        0    16328    15105     7553     7552\n"
+               " App Summary\n                       Pss(KB)                        Rss(KB)\n"
+               "                        ------                         ------\n"
+               "           Java Heap:    11264                          48396\n"
+               "           TOTAL PSS:    61440            TOTAL RSS:   221696      TOTAL SWAP (KB):        0\n"
+               " Objects\n               Views:      164         ViewRootImpl:        1\n"
+               "         AppContexts:        9           Activities:        2\n")
+
+    def test_memory_is_read_from_meminfo_and_a_heap_dump_is_pulled_and_removed(self):
+        self.tool("adb", self.ADB.replace("command=' '.join(a[2:])\n", "command=' '.join(a[2:])\n"
+                                          "if a[2:3]==['pull']: Path(a[-1]).write_bytes(b'JAVA PROFILE 1.0.3\\0'+b'x'*64); sys.exit(0)\n"))
+        self.replies(**{"dumpsys meminfo dev.test.app": self.MEMINFO, "am dumpheap": "File: x\nWaiting for dump to finish...\n"})
+        dump = self.root / "app.hprof"
+        value = dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app", "heap_dump": str(dump)})
+        self.assertEqual((value["metrics"]["memory_pss_mb"], value["metrics"]["java_heap_pss_mb"], value["metrics"]["activities"]), (60, 11, 2))
+        self.assertEqual(value["processes"][0]["heaps"]["dalvik"]["allocated"], 7553)
+        self.assertEqual(value["heap_dump"]["path"], str(dump))
+        remote = next(args[3] for args in self.shell_calls() if args[:2] == ["am", "dumpheap"])
+        self.assertIn(["rm", "-f", remote], self.shell_calls())
+        self.replies(**{"dumpsys meminfo": self.MEMINFO, "am dumpheap": "java.lang.SecurityException: Process not debuggable\n"})
+        with self.assertRaises(StudioError) as refused:
+            dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app", "heap_dump": str(dump)})
+        self.assertEqual(refused.exception.code, "heap_dump_failed")
+        self.replies(**{"dumpsys meminfo": "No process found for: dev.test.app\n"})
+        with self.assertRaises(StudioError) as stopped:
+            dispatch("profile.memory", {"device": "emulator-5554", "bundle_id": "dev.test.app"})
+        self.assertEqual(stopped.exception.code, "app_not_running")
+
     def test_app_logs_follow_the_user_id_from_android_12_and_the_pid_before(self):
         self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": "package:dev.test.app.extra uid:10201\npackage:dev.test.app uid:10200\n"})
         job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1})

@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 201 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 202 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -222,6 +222,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`profile.compare`](profile.md#profilecompare) | Check performance budget | writes |
 | [`profile.startup`](profile.md#profilestartup) | Measure app startup | writes |
 | [`profile.frames`](profile.md#profileframes) | Measure frame rendering | writes |
+| [`profile.memory`](profile.md#profilememory) | Measure app memory | writes |
 
 ## [project](project.md)
 

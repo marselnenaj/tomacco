@@ -695,6 +695,20 @@ tomaccoctl call profile.frames '{"device":"emulator-5554","bundle_id":"com.andro
 
 On the same emulator, a scenario of three swipes in Settings gave 94 frames, 2 of them janky.
 
+`profile.memory` reads a running app's `dumpsys meminfo`. Each process in `processes` has the App Summary in KB (PSS and RSS of the
+Java heap, native heap, code, stack, graphics and the rest), `total_pss`, `total_rss` and `total_swap`, the size, allocated and free
+parts of the native and Dalvik heaps, and object counts such as `activities` and `views`. The metrics add the processes up in MB:
+`memory_pss_mb`, `memory_rss_mb`, `java_heap_pss_mb`, `native_heap_pss_mb`, `code_pss_mb`, `stack_pss_mb` and `graphics_pss_mb`,
+and the `activities` and `views` counts. With `heap_dump`, it also writes an HPROF heap dump of the main process there, through a
+file on the device that is removed afterwards. That needs a debuggable app or a debuggable system image, otherwise it answers
+`heap_dump_failed`; Android Studio opens the file, other tools after `hprof-conv` from the platform tools.
+
+```sh
+tomaccoctl call profile.memory '{"device":"emulator-5554","bundle_id":"com.android.settings","heap_dump":"/absolute/settings.hprof"}'
+```
+
+On the same emulator, Settings used 54 MB PSS, and its heap dump was a 47 MB HPROF file.
+
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.

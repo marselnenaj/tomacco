@@ -3507,6 +3507,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Medir el renderizado de fotogramas</translation>
     </message>
     <message>
+        <source>Measure app memory</source>
+        <translation>Medir la memoria de la app</translation>
+    </message>
+    <message>
         <source>Check toolchain</source>
         <translation>Comprobar la cadena de herramientas</translation>
     </message>

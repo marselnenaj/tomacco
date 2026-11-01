@@ -5351,6 +5351,45 @@
     }
   },
   {
+    "name": "profile.memory",
+    "title": "Measure app memory",
+    "description": "Read a running Android app's memory from dumpsys meminfo: per process the App Summary in KB (PSS and RSS for Java heap, native heap, code, stack, graphics and the rest), total PSS, RSS and swap, the size, allocated and free parts of the native and Dalvik heaps, and object counts such as activities and views. metrics sum the processes in MB (memory_pss_mb, memory_rss_mb, java_heap_pss_mb and others). heap_dump also writes an HPROF heap dump of the main process to that path (am dumpheap), which needs a debuggable app or a debuggable system image; convert it with hprof-conv for tools other than Android Studio. report saves the result as JSON.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID of the running app",
+          "minLength": 1
+        },
+        "heap_dump": {
+          "type": "string",
+          "description": "Absolute path to write an HPROF heap dump of the app's main process"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the result as JSON, for profile.compare"
+        }
+      },
+      "required": [
+        "device",
+        "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "workspace.list",
     "title": "Read workspaces",
     "description": "List saved project and device contexts.",

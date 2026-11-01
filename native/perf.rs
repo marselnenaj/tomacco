@@ -1,5 +1,5 @@
-//! Android app performance read from `am` and `dumpsys`: startup time and
-//! frame rendering, each measurement a report whose flat `metrics`
+//! Android app performance read from `am` and `dumpsys`: startup time, frame
+//! rendering and memory, each measurement a report whose flat `metrics`
 //! profile.compare reads.
 use crate::{core::*, devices, toolchain as tc};
 use serde_json::{Map, Value, json};
@@ -73,6 +73,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
     match op {
         "profile.startup" => startup(a),
         "profile.frames" => frames(a),
+        "profile.memory" => memory(a),
         _ => Err(Error::new("operation_not_found", op)),
     }
 }
@@ -242,8 +243,18 @@ fn leading(value: &str) -> Option<f64> {
     value[..end].parse().ok()
 }
 
+/// `Slow UI thread` as `slow_ui_thread`, `ViewRootImpl` as `view_root_impl`.
 fn snake(words: &str) -> String {
-    words
+    let mut spaced = String::new();
+    let mut previous = ' ';
+    for c in words.chars() {
+        if c.is_ascii_uppercase() && previous.is_ascii_lowercase() {
+            spaced.push(' ');
+        }
+        spaced.push(c);
+        previous = c;
+    }
+    spaced
         .split(|c: char| !c.is_ascii_alphanumeric())
         .filter(|w| !w.is_empty())
         .map(str::to_ascii_lowercase)
@@ -433,6 +444,216 @@ pub fn frames(a: &Value) -> Result {
     finish(a, value)
 }
 
+/// The process sections of `dumpsys meminfo PACKAGE`, in KB: the App Summary
+/// (PSS and RSS per category and the totals), the size, allocated and free
+/// parts of the native and Dalvik heaps, and the object counts.
+pub fn parse_meminfo(text: &str) -> Vec<Value> {
+    let header = regex::Regex::new(r"^\*\* MEMINFO in pid (\d+) \[(.*)\] \*\*").unwrap();
+    let total = |name: &str| regex::Regex::new(&format!(r"{name}[^:]*:\s+(\d+)")).unwrap();
+    let (total_pss, total_rss, total_swap) = (
+        total(r"TOTAL PSS"),
+        total(r"TOTAL RSS"),
+        total(r"TOTAL SWAP"),
+    );
+    let pair = regex::Regex::new(r"([A-Za-z][A-Za-z ]*?):\s+(\d+)").unwrap();
+    let digits = regex::Regex::new(r"\d+").unwrap();
+    let mut processes: Vec<Value> = Vec::new();
+    let mut section = "";
+    // Where the Pss(KB) and Rss(KB) columns of the App Summary end.
+    let mut columns: Vec<(usize, &str)> = Vec::new();
+    for raw in text.lines() {
+        let line = raw.trim();
+        if let Some(c) = header.captures(line) {
+            processes.push(json!({"pid":c[1].parse::<u64>().unwrap_or(0),"process":&c[2],"summary":{},
+                                  "total_pss":null,"total_rss":null,"total_swap":null,"heaps":{},"objects":{}}));
+            section = "table";
+            continue;
+        }
+        let Some(process) = processes.last_mut() else {
+            continue;
+        };
+        match line {
+            "App Summary" => {
+                section = "summary";
+                continue;
+            }
+            "Objects" => {
+                section = "objects";
+                continue;
+            }
+            "SQL" | "DATABASES" | "Native Allocations" | "Dalvik Details" | "Asset Allocations" => {
+                section = "";
+                continue;
+            }
+            _ => (),
+        }
+        match section {
+            "table" => {
+                let heap = if line.starts_with("Native Heap") {
+                    "native"
+                } else if line.starts_with("Dalvik Heap") {
+                    "dalvik"
+                } else {
+                    continue;
+                };
+                let numbers: Vec<u64> = line
+                    .split_whitespace()
+                    .filter_map(|w| w.parse().ok())
+                    .collect();
+                // The last three columns are Heap Size, Heap Alloc and Heap Free.
+                if numbers.len() >= 7 {
+                    let n = numbers.len();
+                    process["heaps"][heap] =
+                        json!({"size":numbers[n-3],"allocated":numbers[n-2],"free":numbers[n-1]});
+                }
+            }
+            "summary" => {
+                if raw.contains("Pss(KB)") {
+                    columns = ["Pss(KB)", "Rss(KB)"]
+                        .iter()
+                        .filter_map(|h| raw.find(h).map(|i| (i + h.len(), *h)))
+                        .map(|(end, h)| (end, if h.starts_with('P') { "pss" } else { "rss" }))
+                        .collect();
+                } else if line.starts_with("TOTAL") {
+                    let read = |re: &regex::Regex| {
+                        re.captures(line)
+                            .and_then(|c| c[1].parse::<u64>().ok())
+                            .map_or(Value::Null, |v| json!(v))
+                    };
+                    process["total_pss"] = read(&total_pss);
+                    process["total_rss"] = read(&total_rss);
+                    process["total_swap"] = read(&total_swap);
+                    // Before Android 10 the summary total reads "TOTAL: n".
+                    if process["total_pss"].is_null() {
+                        process["total_pss"] = read(&total("TOTAL"));
+                    }
+                } else if let Some((name, values)) = raw.split_once(':') {
+                    let name = snake(name);
+                    let offset = raw.len() - values.len();
+                    let mut entry = json!({});
+                    for number in digits.find_iter(values) {
+                        let end = offset + number.end();
+                        if let Some((_, column)) =
+                            columns.iter().min_by_key(|(c, _)| c.abs_diff(end))
+                        {
+                            entry[*column] = json!(number.as_str().parse::<u64>().unwrap_or(0));
+                        }
+                    }
+                    if !name.is_empty() && !entry.as_object().unwrap().is_empty() {
+                        process["summary"][name] = entry;
+                    }
+                }
+            }
+            "objects" => {
+                for c in pair.captures_iter(line) {
+                    process["objects"][snake(&c[1])] = json!(c[2].parse::<u64>().unwrap_or(0));
+                }
+            }
+            _ => (),
+        }
+    }
+    processes
+}
+
+/// Memory metrics in MB over an app's processes, and their activity and
+/// view counts.
+pub fn memory_metrics(processes: &[Value]) -> Map<String, Value> {
+    let sum = |value: &dyn Fn(&Value) -> &Value| {
+        let values: Vec<f64> = processes.iter().filter_map(|p| value(p).as_f64()).collect();
+        (!values.is_empty()).then(|| values.iter().sum::<f64>())
+    };
+    let mb = |kb: Option<f64>| kb.map_or(Value::Null, |kb| json!(round(kb / 1024.0)));
+    let mut metrics = Map::new();
+    metrics.insert("memory_pss_mb".into(), mb(sum(&|p| &p["total_pss"])));
+    metrics.insert("memory_rss_mb".into(), mb(sum(&|p| &p["total_rss"])));
+    for part in ["java_heap", "native_heap", "code", "stack", "graphics"] {
+        metrics.insert(
+            format!("{part}_pss_mb"),
+            mb(sum(&|p| &p["summary"][part]["pss"])),
+        );
+    }
+    for object in ["activities", "views"] {
+        metrics.insert(
+            object.into(),
+            sum(&|p| &p["objects"][object]).map_or(Value::Null, |v| json!(v)),
+        );
+    }
+    metrics
+}
+
+/// Writes a heap dump of the app's main process to `target`, through a file
+/// on the device that is removed afterwards.
+fn heap_dump(device: &str, id: &str, target: &std::path::Path) -> Result {
+    let remote = format!(
+        "/data/local/tmp/tomacco-{}.hprof",
+        uuid::Uuid::new_v4().simple()
+    );
+    let result = (|| -> Result {
+        let output = shell_out(device, &["am", "dumpheap", id, &remote], 300)?;
+        if output.contains("Exception") || output.lines().any(|l| l.starts_with("Error")) {
+            return Err(
+                Error::new("heap_dump_failed", output.trim().to_string()).remedy(
+                    "Heap dumps need a debuggable app, or an emulator image without Google Play",
+                ),
+            );
+        }
+        let mut pull = devices::adb(device)?;
+        pull.extend(argv(&["pull", &remote, &target.to_string_lossy()]));
+        tc::run(&pull, 600, None, true)?;
+        let mut magic = [0u8; 12];
+        use std::io::Read;
+        std::fs::File::open(target)?
+            .read_exact(&mut magic)
+            .map_err(|_| {
+                Error::new(
+                    "heap_dump_failed",
+                    "The heap dump pulled from the device is empty",
+                )
+            })?;
+        if &magic != b"JAVA PROFILE" {
+            return Err(Error::new(
+                "heap_dump_failed",
+                "The file pulled from the device is not an HPROF heap dump",
+            ));
+        }
+        artifact(target, 0.0)
+    })();
+    let _ = tc::run(
+        &devices::shell(device, &argv(&["rm", "-f", &remote]))?,
+        30,
+        None,
+        false,
+    );
+    result
+}
+
+/// The app's memory from `dumpsys meminfo`, and a heap dump when asked.
+pub fn memory(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "device", None)?;
+    let id = bundle(s(a, "bundle_id"))?;
+    let target = if s(a, "heap_dump").is_empty() {
+        None
+    } else {
+        Some(output_path(s(a, "heap_dump"))?)
+    };
+    let output = shell_out(device, &["dumpsys", "meminfo", id], 60)?;
+    not_running(&output, id)?;
+    let processes = parse_meminfo(&output);
+    if processes.is_empty() {
+        return Err(Error::new(
+            "meminfo_unreadable",
+            "dumpsys meminfo named no process of the app",
+        )
+        .details(json!({"output":output})));
+    }
+    let mut value = report("memory", device, id, memory_metrics(&processes));
+    value["processes"] = json!(processes);
+    if let Some(target) = target {
+        value["heap_dump"] = heap_dump(device, id, &target)?;
+    }
+    finish(a, value)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -569,5 +790,55 @@ mod tests {
         let metrics = frame_metrics(&parse_gfxinfo(idle), "com.android.phone");
         assert!(metrics["frames_total"].is_null() && metrics["jank_percent"].is_null());
         assert!(not_running("No process found for: dev.example\n", "dev.example").is_err());
+    }
+    // Recorded from an API 36 x86_64 emulator, Settings app (shortened).
+    const MEMINFO: &str = "Applications Memory Usage (in Kilobytes):\nUptime: 58688 Realtime: 58688\n\n** MEMINFO in pid 3095 [com.android.settings] **\n                   Pss  Private  Private     Swap      Rss     Heap     Heap     Heap\n                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free\n                ------   ------   ------   ------   ------   ------   ------   ------\n  Native Heap    20060    20016        0        0    23720    34548    23594     7154\n  Dalvik Heap     9747     9648        0        0    16328    15105     7553     7552\n        Stack      788      788        0        0      796                           \n        TOTAL    62455    37076    16152        0   221696    49653    31147    14706\n \n App Summary\n                       Pss(KB)                        Rss(KB)\n                        ------                         ------\n           Java Heap:    11104                          48396\n         Native Heap:    20016                          23720\n                Code:    15968                         138324\n               Stack:      788                            796\n            Graphics:        0                              0\n       Private Other:     5352\n              System:     9227\n             Unknown:                                   10460\n \n           TOTAL PSS:    62455            TOTAL RSS:   221696      TOTAL SWAP (KB):        0\n \n Objects\n               Views:      164         ViewRootImpl:        1\n         AppContexts:        9           Activities:        1\n \n SQL\n         MEMORY_USED:      176\n";
+
+    #[test]
+    fn meminfo_gives_the_summary_heaps_and_objects() {
+        let processes = parse_meminfo(MEMINFO);
+        assert_eq!(processes.len(), 1);
+        let p = &processes[0];
+        assert_eq!(
+            (
+                p["total_pss"].clone(),
+                p["total_rss"].clone(),
+                p["total_swap"].clone()
+            ),
+            (json!(62455), json!(221696), json!(0))
+        );
+        assert_eq!(p["summary"]["java_heap"], json!({"pss":11104,"rss":48396}));
+        assert_eq!(p["summary"]["private_other"], json!({"pss":5352}));
+        assert_eq!(p["summary"]["unknown"], json!({"rss":10460}));
+        assert_eq!(
+            p["heaps"]["dalvik"],
+            json!({"size":15105,"allocated":7553,"free":7552})
+        );
+        assert_eq!(p["objects"]["view_root_impl"], 1);
+        assert_eq!(p["objects"]["activities"], 1);
+        assert!(p["objects"].get("memory_used").is_none());
+        let metrics = memory_metrics(&processes);
+        assert_eq!(metrics["memory_pss_mb"], 60.991);
+        assert_eq!(metrics["memory_rss_mb"], 216.5);
+        assert_eq!(metrics["java_heap_pss_mb"], 10.844);
+        assert_eq!(metrics["graphics_pss_mb"], 0.0);
+        assert_eq!(metrics["views"], 164.0);
+    }
+
+    #[test]
+    fn processes_add_up_and_the_old_total_line_is_read() {
+        let old = "** MEMINFO in pid 7 [dev.example:sync] **\n App Summary\n                       Pss(KB)\n                        ------\n           Java Heap:     1024\n           TOTAL:     2048       TOTAL SWAP PSS:       12\n";
+        let processes = parse_meminfo(&format!("{MEMINFO}{old}"));
+        assert_eq!(processes[1]["total_pss"], 2048);
+        assert_eq!(processes[1]["total_swap"], 12);
+        assert!(processes[1]["total_rss"].is_null());
+        let metrics = memory_metrics(&processes);
+        assert_eq!(metrics["memory_pss_mb"], 62.991);
+        assert_eq!(
+            metrics["memory_rss_mb"], 216.5,
+            "only processes that report RSS"
+        );
+        assert_eq!(metrics["java_heap_pss_mb"], 11.844);
+        assert!(memory_metrics(&[])["memory_pss_mb"].is_null());
     }
 }

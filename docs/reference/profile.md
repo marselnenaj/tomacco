@@ -2,7 +2,7 @@
 
 # `profile` operations
 
-5 operations. Generated from `assets/operations.json`; [all areas](README.md).
+6 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### profile.capture
 
@@ -100,4 +100,23 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call profile.frames '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### profile.memory
+
+**Measure app memory**
+
+Read a running Android app's memory from dumpsys meminfo: per process the App Summary in KB (PSS and RSS for Java heap, native heap, code, stack, graphics and the rest), total PSS, RSS and swap, the size, allocated and free parts of the native and Dalvik heaps, and object counts such as activities and views. metrics sum the processes in MB (memory_pss_mb, memory_rss_mb, java_heap_pss_mb and others). heap_dump also writes an HPROF heap dump of the main process to that path (am dumpheap), which needs a debuggable app or a debuggable system image; convert it with hprof-conv for tools other than Android Studio. report saves the result as JSON.
+
+Annotations: writes, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the running app |
+| `heap_dump` | string |  |  | Absolute path to write an HPROF heap dump of the app's main process |
+| `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
+
+```sh
+tomaccoctl call profile.memory '{"device":"<device>","bundle_id":"<bundle_id>"}'
 ```
