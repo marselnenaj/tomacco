@@ -35,7 +35,7 @@ For contributors, [how it works](how-it-works.md) goes deeper.
 | To build the engine | Tomacco ships no engine. Setup builds it on your machine from pinned sources, with the compilers [setup](setup.md) names. |
 | A graphics card | Vulkan, with about 16 GiB of memory. Measured on a Radeon RX 6800-class card. |
 | A fast CPU | Every guest processor is emulated. Measured on an i9-13900K. |
-| Memory | 8 GiB for the guest, and up to 2 GiB for translated code. |
+| Memory | 8 GiB for the guest, and up to 2 GiB for translated code. `ios.virtual.start` refuses to boot with less than 12 GiB in the computer (`ios_virtual_host_too_small`). |
 | Disk | About 100 GiB for setup. Each session's disk copy is a 32 GiB disk that takes the space of its data, and at most two are kept. |
 | Time | Half an hour for the restore itself. After that, about 9 minutes from a start to your app. |
 

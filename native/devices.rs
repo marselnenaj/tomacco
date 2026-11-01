@@ -1020,18 +1020,41 @@ pub fn handle(op: &str, a: &Value) -> Result {
             if !b(a, "audio") {
                 args.push("-no-audio".into());
             }
+            let host = crate::host::current();
+            let mut env = serde_json::to_value(tc::environment()?)?;
+            if !b(a, "headless") {
+                match crate::host::emulator_window(&host.env) {
+                    Err((message, remedy)) => {
+                        return Err(Error::new("emulator_no_display", message).remedy(remedy));
+                    }
+                    // The emulator's Qt has only the X11 plugin; a session
+                    // that asks for wayland alone would abort it.
+                    Ok(Some(platform)) => env["QT_QPA_PLATFORM"] = json!(platform),
+                    Ok(None) => {}
+                }
+            }
+            let recommended = crate::host::emulator_gpu(&host);
+            let gpu = start_gpu(
+                &config,
+                s(a, "gpu"),
+                b(a, "software"),
+                s(&recommended, "recommended"),
+            );
             if b(a, "software") {
                 args.extend(argv(&["-accel", "off", "-gpu", "swiftshader"]));
-            } else if s(a, "gpu") != "configured" {
-                args.extend(argv(&["-gpu", s(a, "gpu")]));
+            } else if let Some(mode) = gpu["argument"].as_str() {
+                args.extend(argv(&["-gpu", mode]));
             }
-            let mut env = serde_json::to_value(tc::environment()?)?;
             env["ANDROID_AVD_HOME"] = json!(directory);
             let mut job = jobs::submit(
                 &format!("Emulator {name}"),
                 json!({"steps":[{"argv":args}],"cwd":home()?,"timeout":86400,"env":env,"exclusive":format!("android-avd:{name}"),"single_active":true,"resource":"emulator"}),
             )?;
             job["boot"] = boot;
+            if gpu["source"] == "host" {
+                job["gpu"] =
+                    json!({"mode":gpu["argument"],"source":"host","reason":recommended["reason"]});
+            }
             Ok(job)
         }
         "android.settings" => settings(a),
@@ -1569,6 +1592,14 @@ fn avd_profile(a: &Value) -> Result {
             values.insert(key, value.into());
         }
     }
+    let adapted = host_hardware(
+        &configured,
+        values.get("hw.ramSize").map(String::as_str),
+        crate::host::emulator_limits(&crate::host::current()),
+    );
+    for (key, value) in &adapted {
+        values.insert(key, value.clone());
+    }
     let mut lines: Vec<_> = content
         .lines()
         .filter(|l| !values.contains_key(l.split('=').next().unwrap_or("").trim()))
@@ -1587,6 +1618,9 @@ fn avd_profile(a: &Value) -> Result {
     let mut result = json!({"avd":name,"profile":s(a,"profile_id"),"resolution":[w,h],"density":values["hw.lcd.density"]});
     if let Some(open) = foldable {
         result["foldable"] = json!({"open_resolution":[open.0,open.1],"folded_resolution":[w,h]});
+    }
+    if !adapted.is_empty() {
+        result["adapted_to_host"] = json!(adapted.iter().cloned().collect::<BTreeMap<_, _>>());
     }
     Ok(result)
 }
@@ -1634,6 +1668,67 @@ fn hinge_values(folded: (u64, u64), open: Option<(u64, u64)>) -> Vec<(&'static s
         ("hw.displayRegion.0.1.xOffset", "0".into()),
         ("hw.displayRegion.0.1.yOffset", "0".into()),
     ]
+}
+
+/// Set by android.avd_configure: the person chose the renderer, or the
+/// memory and processors, so Tomacco no longer adapts them to the host.
+const GPU_CHOSEN: &str = "tomacco.gpu.chosen";
+const HARDWARE_CHOSEN: &str = "tomacco.hardware.chosen";
+
+/// The memory and processor settings to lower for a small host: those above
+/// `limits` (MB, count), unless the person chose them. `memory` is the
+/// hw.ramSize about to be written, when the profile writes one.
+fn host_hardware(
+    configured: &BTreeMap<String, String>,
+    memory: Option<&str>,
+    limits: (Option<u64>, Option<u64>),
+) -> Vec<(&'static str, String)> {
+    if configured.get(HARDWARE_CHOSEN).is_some_and(|v| v == "yes") {
+        return Vec::new();
+    }
+    let mut lowered = Vec::new();
+    let current = memory
+        .or(configured.get("hw.ramSize").map(String::as_str))
+        .and_then(avd_memory_mb);
+    if let (Some(limit), Some(current)) = (limits.0, current)
+        && current > limit
+    {
+        lowered.push(("hw.ramSize", limit.to_string()));
+    }
+    let cores = configured
+        .get("hw.cpu.ncore")
+        .and_then(|v| v.trim().parse::<u64>().ok());
+    if let Some(limit) = limits.1
+        && cores.is_none_or(|cores| cores > limit)
+    {
+        lowered.push(("hw.cpu.ncore", limit.to_string()));
+    }
+    lowered
+}
+
+/// The renderer a start passes as -gpu, and where it came from: the start's
+/// own `gpu` (argument), the AVD's saved mode (configured, no flag), or this
+/// host's recommendation (host) when the AVD still has the default auto
+/// that nobody chose.
+fn start_gpu(
+    config: &BTreeMap<String, String>,
+    requested: &str,
+    software: bool,
+    recommended: &str,
+) -> Value {
+    if software {
+        return json!({"argument":"swiftshader","source":"software"});
+    }
+    if !requested.is_empty() && requested != "configured" {
+        return json!({"argument":requested,"source":"argument"});
+    }
+    let saved = config.get("hw.gpu.mode").map_or("auto", String::as_str);
+    let chosen = config.get(GPU_CHOSEN).is_some_and(|v| v == "yes");
+    if saved == "auto" && !chosen && !recommended.is_empty() && recommended != "auto" {
+        json!({"argument":recommended,"source":"host"})
+    } else {
+        json!({"argument":null,"source":"configured"})
+    }
 }
 
 fn avd_memory_mb(value: &str) -> Option<u64> {
@@ -1738,6 +1833,11 @@ fn avd_configure(a: &Value) -> Result {
     }
     if values.contains_key("hw.gpu.mode") {
         values.insert("hw.gpu.enabled", "yes".into());
+        // Chosen by the person: starts no longer pick a renderer for the host.
+        values.insert(GPU_CHOSEN, "yes".into());
+    }
+    if values.contains_key("hw.ramSize") || values.contains_key("hw.cpu.ncore") {
+        values.insert(HARDWARE_CHOSEN, "yes".into());
     }
     // Snapshots contain the old GPU and RAM layout. Keep cold boots enabled
     // for explicitly configured hardware; never erase the data partition.
@@ -1794,6 +1894,93 @@ fn avd_configuration_lock(directory: &std::path::Path) -> Result<Lock> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn ini(pairs: &[(&str, &str)]) -> BTreeMap<String, String> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn a_start_takes_the_hosts_renderer_only_for_an_unchosen_auto() {
+        let fresh = ini(&[("hw.gpu.mode", "auto")]);
+        assert_eq!(
+            start_gpu(&fresh, "configured", false, "swiftshader"),
+            json!({"argument":"swiftshader","source":"host"})
+        );
+        assert_eq!(
+            start_gpu(&fresh, "", false, "swiftshader")["source"],
+            "host"
+        );
+        // A host where auto suits passes nothing; the AVD's mode applies.
+        assert_eq!(
+            start_gpu(&fresh, "configured", false, "auto"),
+            json!({"argument":null,"source":"configured"})
+        );
+        // The start's own gpu and the old software flag win.
+        assert_eq!(
+            start_gpu(&fresh, "host", false, "swiftshader"),
+            json!({"argument":"host","source":"argument"})
+        );
+        assert_eq!(
+            start_gpu(&fresh, "auto", false, "swiftshader")["argument"],
+            "auto"
+        );
+        assert_eq!(
+            start_gpu(&fresh, "configured", true, "auto")["source"],
+            "software"
+        );
+        // A renderer saved with android.avd_configure stays.
+        let chosen = ini(&[("hw.gpu.mode", "auto"), (GPU_CHOSEN, "yes")]);
+        assert_eq!(
+            start_gpu(&chosen, "configured", false, "swiftshader")["source"],
+            "configured"
+        );
+        let host = ini(&[("hw.gpu.mode", "host")]);
+        assert_eq!(
+            start_gpu(&host, "configured", false, "swiftshader")["source"],
+            "configured"
+        );
+        // No hw.gpu.mode at all is the emulator's auto.
+        assert_eq!(
+            start_gpu(&ini(&[]), "configured", false, "swiftshader")["source"],
+            "host"
+        );
+    }
+
+    #[test]
+    fn a_small_host_lowers_new_emulators_memory_and_processors() {
+        let avdmanager = ini(&[("hw.ramSize", "2G"), ("hw.cpu.ncore", "4")]);
+        assert!(host_hardware(&avdmanager, None, (None, None)).is_empty());
+        assert_eq!(
+            host_hardware(&avdmanager, None, (Some(1536), Some(2))),
+            [
+                ("hw.ramSize", "1536".to_string()),
+                ("hw.cpu.ncore", "2".to_string())
+            ]
+        );
+        // 2048 MB is not above a 2048 MB limit.
+        assert_eq!(
+            host_hardware(&avdmanager, None, (Some(2048), None)),
+            Vec::<(&str, String)>::new()
+        );
+        // The value the profile is about to write counts, in MB or GB.
+        assert_eq!(
+            host_hardware(&ini(&[]), Some("4096"), (Some(2048), Some(1))),
+            [
+                ("hw.ramSize", "2048".to_string()),
+                ("hw.cpu.ncore", "1".to_string())
+            ]
+        );
+        // What the person set with android.avd_configure is kept.
+        let chosen = ini(&[
+            ("hw.ramSize", "4096"),
+            ("hw.cpu.ncore", "4"),
+            (HARDWARE_CHOSEN, "yes"),
+        ]);
+        assert!(host_hardware(&chosen, None, (Some(1536), Some(1))).is_empty());
+    }
 
     #[test]
     fn nicknames_show_in_place_of_the_name_and_pins_are_kept_by_avd() {

@@ -265,11 +265,14 @@ fn report(doctor: &Value) -> Vec<(bool, String)> {
     let mut line = |ok: bool, text: &str| lines.push((ok, text.to_string()));
     line(
         has(doctor, "java"),
-        "Java, for Android builds: install a JDK 17 or newer",
+        &format!("Java, for Android builds: {}", jdk_advice(doctor)),
     );
     line(
         has(doctor, "gradle"),
-        "Gradle, for new Android projects: install gradle",
+        &format!(
+            "Gradle, for new Android projects: {}",
+            gradle_advice(doctor)
+        ),
     );
     line(
         has(doctor, "sdkmanager"),
@@ -281,7 +284,7 @@ fn report(doctor: &Value) -> Vec<(bool, String)> {
     );
     line(
         doctor["kvm"]["accessible"] == true,
-        "KVM, for a fast Android emulator: enable virtualization and join the kvm group",
+        &format!("KVM, for a fast Android emulator: {}", kvm_advice(doctor)),
     );
     line(
         has(doctor, "swift"),
@@ -331,10 +334,17 @@ fn next_steps(doctor: &Value, emulator: bool, virtual_ios: &Value) -> Vec<Value>
         );
     }
     if !has(doctor, "java") || !has(doctor, "gradle") {
+        let mut how = Vec::new();
+        if !has(doctor, "java") {
+            how.push(format!("JDK: {}.", jdk_advice(doctor)));
+        }
+        if !has(doctor, "gradle") {
+            how.push(format!("Gradle: {}.", gradle_advice(doctor)));
+        }
         step(
             "android",
             "Install a JDK 17 or newer and Gradle",
-            "On Arch: sudo pacman -S --needed jdk-openjdk gradle".to_string(),
+            how.join(" "),
             true,
         );
     }
@@ -343,6 +353,17 @@ fn next_steps(doctor: &Value, emulator: bool, virtual_ios: &Value) -> Vec<Value>
             "android",
             "Install the Android SDK and create an emulator",
             "Run: tomaccoctl setup --yes. It downloads about 5 GB and accepts Google's Android SDK license, so tell the person that first.".to_string(),
+            true,
+        );
+    }
+    if doctor["kvm"]["accessible"] == false && doctor["kvm"]["status"].is_string() {
+        step(
+            "android",
+            &format!(
+                "Make KVM usable for a fast Android emulator: {}",
+                s(&doctor["kvm"], "message")
+            ),
+            kvm_advice(doctor),
             true,
         );
     }
@@ -359,6 +380,33 @@ fn next_steps(doctor: &Value, emulator: bool, virtual_ios: &Value) -> Vec<Value>
 }
 
 const DOCS: &str = "https://github.com/marselnenaj/tomacco/blob/main/docs";
+
+/// How to install a JDK here, from doctor's `host`, with the Arch command
+/// when doctor did not say.
+fn jdk_advice(doctor: &Value) -> String {
+    doctor["host"]["install"]["jdk"]
+        .as_str()
+        .unwrap_or("On Arch: sudo pacman -S --needed jdk-openjdk")
+        .to_string()
+}
+
+fn gradle_advice(doctor: &Value) -> String {
+    doctor["host"]["install"]["gradle"]
+        .as_str()
+        .unwrap_or("On Arch: sudo pacman -S --needed gradle")
+        .to_string()
+}
+
+/// What makes /dev/kvm usable here: the commands doctor found for this
+/// system, or the general advice.
+fn kvm_advice(doctor: &Value) -> String {
+    let commands = strings(&doctor["kvm"]["commands"]);
+    if commands.is_empty() {
+        "enable virtualization and join the kvm group".to_string()
+    } else {
+        commands.join("; ")
+    }
+}
 
 /// How to make the desktop start: the command that installs the missing
 /// system libraries where doctor knows their packages, else what it needs.
@@ -759,7 +807,7 @@ fn set_up_android(doctor: &Value, answers: &Answers) -> Result<()> {
         return Ok(());
     }
     if !has(doctor, "java") {
-        println!("  Android needs a JDK first. On Arch: sudo pacman -S jdk-openjdk gradle");
+        println!("  Android needs a JDK first. {}", jdk_advice(doctor));
         return Ok(());
     }
     let ready = has(doctor, "sdkmanager") && has(doctor, "adb") && has(doctor, "emulator");
@@ -849,12 +897,64 @@ mod tests {
     use super::*;
 
     #[test]
+    fn the_steps_name_this_hosts_jdk_and_kvm_commands() {
+        let doctor = json!({"tools":[{"name":"sdkmanager","available":true},{"name":"adb","available":true},
+                {"name":"emulator","available":true}],
+            "kvm":{"accessible":false,"status":"not_in_group","message":"/dev/kvm belongs to the kvm group, and you are not in it.",
+                "commands":["sudo usermod -aG kvm ada","Log out and back in"]},
+            "host":{"install":{"jdk":"sudo apt-get install openjdk-17-jdk-headless","gradle":"Unpack Gradle 9 from https://gradle.org/releases"}}});
+        let steps = next_steps(&doctor, true, &json!({"configured":true}));
+        let jdk = steps
+            .iter()
+            .find(|step| step["what"] == "Install a JDK 17 or newer and Gradle")
+            .unwrap();
+        assert_eq!(
+            jdk["how"],
+            "JDK: sudo apt-get install openjdk-17-jdk-headless. Gradle: Unpack Gradle 9 from https://gradle.org/releases."
+        );
+        let kvm = steps
+            .iter()
+            .find(|step| {
+                step["what"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("Make KVM usable")
+            })
+            .unwrap();
+        assert_eq!(kvm["how"], "sudo usermod -aG kvm ada; Log out and back in");
+        assert_eq!(kvm["ask_first"], true);
+        let lines = report(&doctor);
+        assert!(
+            lines[0]
+                .1
+                .ends_with("sudo apt-get install openjdk-17-jdk-headless")
+        );
+        assert!(
+            lines[4]
+                .1
+                .ends_with("sudo usermod -aG kvm ada; Log out and back in")
+        );
+        // Without doctor's host facts the advice is the one for Arch, and a
+        // usable KVM adds no step.
+        let mut plain = doctor.clone();
+        plain["host"] = Value::Null;
+        plain["kvm"] = json!({"accessible":true});
+        let steps = next_steps(&plain, true, &json!({"configured":true}));
+        assert!(steps[0]["how"].as_str().unwrap().contains("pacman"));
+        assert!(
+            !steps
+                .iter()
+                .any(|step| step["what"].as_str().unwrap().starts_with("Make KVM"))
+        );
+    }
+
+    #[test]
     fn a_missing_tool_names_its_remedy_and_a_present_one_only_its_name() {
         let doctor = json!({"tools":[{"name":"java","available":true},{"name":"gradle","available":false}],"kvm":{"accessible":true}});
         let lines = report(&doctor);
         assert!(lines[0].0);
         assert!(!lines[1].0);
-        assert!(lines[1].1.contains("install gradle"));
+        assert!(lines[1].1.contains("pacman -S --needed gradle"));
         assert!(
             lines
                 .iter()

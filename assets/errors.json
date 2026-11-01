@@ -307,6 +307,10 @@
     "cause": "Element did not become … within …s.",
     "remedy": "Check with testing.find or a screenshot what the screen shows; raise the timeout if the app is only slow."
   },
+  "emulator_no_display": {
+    "cause": "An emulator with a window needs X11 (DISPLAY, or XWayland on Wayland), and this session has none.",
+    "remedy": "Start it with headless true, or run it from a desktop session with XWayland."
+  },
   "emulator_refused": {
     "cause": "The emulator refused …: …",
     "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
@@ -898,6 +902,10 @@
   "ios_virtual_guest_state_unknown": {
     "cause": "The virtual iOS device job could not be observed; its state is unknown.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "ios_virtual_host_too_small": {
+    "cause": "The virtual iPhone needs an x86_64 host with at least 12 GiB of memory.",
+    "remedy": "Use a larger x86_64 machine; Android emulators still work here."
   },
   "ios_virtual_locked": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",

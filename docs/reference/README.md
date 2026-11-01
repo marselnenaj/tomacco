@@ -8,7 +8,7 @@ Each entry gives the arguments with their types, limits and defaults, what the o
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 459 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 461 error codes with what each means and what to do.
 
 ## [general](general.md)
 

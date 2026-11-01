@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 459 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 461 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -83,6 +83,7 @@ Every error code `tomaccoctl` returns, 459 codes, generated from `assets/errors.
 | `element_disabled` | Selected element is disabled. | Wait until the element is enabled, or check the app's state before acting. |
 | `element_input_failed` | A step Tomacco ran did not succeed. | Read the message and the job's log (job.logs); fix the cause and try again. |
 | `element_timeout` | Element did not become … within …s. | Check with testing.find or a screenshot what the screen shows; raise the timeout if the app is only slow. |
+| `emulator_no_display` | An emulator with a window needs X11 (DISPLAY, or XWayland on Wayland), and this session has none. | Start it with headless true, or run it from a desktop session with XWayland. |
 | `emulator_refused` | The emulator refused …: … | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `engine_changed` | PMP engine changed after submission. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `engine_exited` | PMP engine exited before QMP. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
@@ -231,6 +232,7 @@ Every error code `tomaccoctl` returns, 459 codes, generated from `assets/errors.
 | `ios_virtual_busy` | A start or stop is in progress; try again when it has ended. | Wait for the start or stop to end (ios.virtual.status), then try again. |
 | `ios_virtual_disk_space` | The start copies … of disks into …, but that filesystem has … free… | Free disk space on that filesystem, or clean up with ios.virtual.cleanup and storage.prune. |
 | `ios_virtual_guest_state_unknown` | The virtual iOS device job could not be observed; its state is unknown. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
+| `ios_virtual_host_too_small` | The virtual iPhone needs an x86_64 host with at least 12 GiB of memory. | Use a larger x86_64 machine; Android emulators still work here. |
 | `ios_virtual_locked` | The virtual iOS device or its research engine refused the request or stopped answering. | Unlock the phone in its window (Home, or a swipe up on a model without one), then try again. |
 | `ios_virtual_log_unavailable` | The guest job has no console log yet. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `ios_virtual_no_verified_run` | The phone has no verified run to save; stop a run with ios.virtual.stop first. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |

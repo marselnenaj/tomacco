@@ -637,7 +637,12 @@ tomaccoctl call android.avd_start '{"name":"First","headless":true}'
 
 `android.avd_start` can override `gpu` and `vulkan` for one run. Choosing the software
 GPU keeps CPU acceleration; the older `software` flag turns that off too. Use the host
-renderer only after checking its picture and stability on your machine.
+renderer only after checking its picture and stability on your machine. An AVD with the default
+`auto` renderer that nobody chose starts with `swiftshader` where `doctor` finds no hardware
+graphics driver; a start with a window needs X11 (`DISPLAY`) and is refused with
+`emulator_no_display` without it. On a computer with less than 10 GiB of memory or at most four
+processors, new emulators get less of both. [Linux distributions and
+hardware](linux-hosts.md#the-emulators-window-and-renderer) has the details.
 
 The desktop's Omarchy panel can boot an emulator without its own window and show just
 the phone; see the [desktop guide](desktop.md#device-window).

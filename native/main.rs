@@ -30,6 +30,7 @@ mod download;
 mod files;
 mod gradle_model;
 mod guard;
+mod host;
 mod instrumentation;
 mod ios_emulator;
 mod iphone_automation;
