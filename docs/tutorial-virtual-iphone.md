@@ -38,7 +38,9 @@ tomaccoctl call job.wait '{"job_id":"BUILD_JOB","seconds":60}'
 ```
 
 `project.inspect` names the kinds `xtool` and `swift`. The build runs `xtool dev build` and writes
-`xtool/HelloVirtual.app`, a thin arm64 executable of about 130 KB with no entitlements and no resources.
+`xtool/HelloVirtual.app`, a thin arm64 executable of about 130 KB with no entitlements and no resources besides
+`AppIcon.png`, the app icon that `iconPath` in `xtool.yml` names. Replace `Resources/AppIcon.png` with a 1024×1024 PNG of
+your own for your app.
 
 The starter is a counter with large **Add one** and **Reset** buttons: the virtual iPhone is driven with taps at screen
 coordinates, so big targets are easy to hit, and it has no animations. It writes `HelloVirtual launched` at launch and

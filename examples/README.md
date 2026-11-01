@@ -55,9 +55,10 @@ that check.
 ## hello-virtual-iphone
 
 A SwiftUI counter with large **Add one** and **Reset** buttons, made for Tomacco's virtual iPhone: an xtool project with
-no package dependencies, no entitlements and no resources, so the built bundle stays within the device's rules. Its bundle
-identifier is `dev.tomacco.examples.HelloVirtual`. It writes `HelloVirtual launched` and `HelloVirtual count N` with
-`NSLog`.
+no package dependencies, no entitlements and no resources besides its icon, so the built bundle stays within the device's
+rules. Its bundle identifier is `dev.tomacco.examples.HelloVirtual`. It writes `HelloVirtual launched` and
+`HelloVirtual count N` with `NSLog`. `iconPath` in `xtool.yml` names its app icon, `Resources/AppIcon.png`: a 1024×1024
+PNG drawn for this example (a white T on tomato red), which xtool copies into the bundle as `CFBundleIconFile`.
 
 ```sh
 cp -r examples/hello-virtual-iphone /absolute/HelloVirtual
@@ -67,7 +68,8 @@ tomaccoctl call project.run '{"path":"/absolute/HelloVirtual","platform":"ios","
 ```
 
 **What was run.** The build (xtool 1.20.1, 10.7 seconds, 6.3 seconds after an edit) and `project.app`, which accepted the
-bundle for the virtual iPhone. `project.run` on a live phone was not run. The walkthrough is
+bundle for the virtual iPhone. On a live phone, `project.run` of a copy with the icon built it in 3.3 s and installed it;
+the icon showed on the Home screen. The walkthrough is
 [Your first SwiftUI app on the virtual iPhone](../docs/tutorial-virtual-iphone.md).
 
 ## native-navigation.json

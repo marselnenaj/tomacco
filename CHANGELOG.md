@@ -29,8 +29,9 @@ operations and their JSON results.
   - `ios.virtual.syslog` takes `bundle_id` and returns only that app's lines: its executable's own and launchd's about its
     service, matched by name, so following with `offset` keeps them across relaunches. Tested on synthetic console lines.
   - `examples/hello-virtual-iphone`, a SwiftUI starter in xtool's format for the virtual iPhone, and the walkthrough
-    [Your first SwiftUI app on the virtual iPhone](docs/tutorial-virtual-iphone.md). Its build and `project.app` check ran;
-    running it on a live phone did not.
+    [Your first SwiftUI app on the virtual iPhone](docs/tutorial-virtual-iphone.md). It has an app icon of its own, a white T
+    on tomato red, named with xtool's `iconPath`. On a live phone `project.run` of a copy built it in 3.3 s, installed
+    and opened it, and the icon showed on the Home screen.
 - `tomaccoctl setup` also connects OpenCode (`~/.config/opencode/opencode.json`, `mcp`). Apps that run these
   agents, such as T3 Code, then reach Tomacco through them; docs/agents.md says so.
 - **Release.**
@@ -280,6 +281,15 @@ operations and their JSON results.
 ### Fixed
 
 - **Virtual iPhone, found on a live phone.**
+  - `ios.virtual.deploy`, and so `project.run`, installed an app and then failed with `ios_virtual_application_conflict`
+    when the profile listed the same bundle identifier from another path, such as an earlier copy of the project. The
+    deploy now replaces that listing (its log says `relisted`) and keeps the app the start opens; the same live
+    `project.run` then opened the app.
+  - A start refused for a `.tomacco-engine-tmp` that others may enter said to free space; it now says `chmod 700` it or
+    remove it.
+  - Settings showing a "?" square for every top-level row's icon is iOS serving icons it kept from an earlier session.
+    Troubleshooting has the `icon_cache` `clear` call: on a live phone the icons came back in a Settings started after
+    it, about 2 minutes after the next start, not in the Settings that had kept running.
   - `ios.virtual.host_check` asked for room for a 32 GiB copy when the profile starts with an overlay; it now asks for
     what the overlay start needs (1 GiB on the test profile).
   - `ios.virtual.setup` named the engine build as the next stage, and `run` asked to build it, for a profile that was

@@ -102,6 +102,7 @@ the code and that none is missing.
 | `display_visible:false` in the status | iOS accepted the launch, but every frame stayed black. This is a display defect, not a working phone. | Stop and start again. Look for "The boot kernel looks for the Metal driver at" or "The graphics payload's bridge opens the compiler plugin at" in the log: they name a kernel or payload built for another location. |
 | The start's `display` warning says the renderer "could not write its shader scratch files" | The renderer translates every Metal shader through scratch files and refuses a shader for the rest of the session once that fails. On a live phone a /tmp over its quota (`Disk_quota_exceeded` in `renderer/fail.log`) kept the display black for the whole run. The engine now writes them to `.tomacco-engine-tmp` beside the engine binary, checked for 16 MiB before the launch. | Free space or quota on the engine's filesystem, then stop and start again. |
 | A start fails with "The engine's scratch directory" and that it cannot take 16 MiB | The filesystem of the engine binary is full or over the user's quota. | Free space there; the directory also keeps the renderer's pipeline cache between boots. |
+| A start fails with "The engine's scratch directory" and "it is not a private directory of this user" | `.tomacco-engine-tmp` beside the engine was made by hand, or copied, with a mode others may enter. The launcher makes it with mode 700 itself. | `chmod 700` it, or remove it and start again. |
 | A start ends with "Unlock the virtual iPhone with its passcode before opening the app" | The guest's lock screen has a passcode. | Unlock it by hand in the window, then start again. |
 | "iOS refused the launch" | iOS itself said no. The reply is in the message. Tomacco does not bypass this. | Read the reply and the app's crash reports, below. |
 
@@ -193,6 +194,21 @@ last part of its bundle identifier, and `pid/PID [NAME]` is the process `NAME`. 
 | The phone ended by itself, `guest_gpu_memory_stop: true` | Under an eighth of the graphics card stayed free, so the [guard](usage.md#the-graphics-memory-guard) stopped the session. | Close other graphics work and start again. Watch `host.gpu` in `ios.virtual.status`: `level` turns `low` before the guard acts. |
 | A start answers with `warnings` | The graphics card is already short of memory, or the host is under I/O or memory pressure. | Close other graphics or disk-heavy work. The start goes on anyway; under pressure it waits up to five minutes and then refuses. |
 | The phone ended by itself, `guest_gpu_memory_stop: false` | The most likely reason is the [24-hour limit](usage.md#time-and-disk-limits). `guest_saved` says whether it closed cleanly. | Start again. An unsaved run is not used as a base. |
+| Settings shows a square with a "?" instead of the icon on its top-level rows, while the Home screen's icons and the pages inside Settings are fine | iOS keeps the icons it rendered in its icon store and serves them again on later boots, also ones rendered wrong in an earlier session. | Clear the store once, as below, then let Settings start anew: at the latest at the next start. |
+
+**Settings icons.** `icon_cache` `clear` moves iOS's icon store aside (nothing is deleted) and restarts SpringBoard, which
+leaves the phone on its lock screen. Clear it once per boot; rendering every icon again takes minutes under emulation.
+
+```sh
+tomaccoctl call ios.emulator.guest '{"job_id":"GUEST_JOB","operation":"icon_cache","argument":"clear","timeout_seconds":120}'
+tomaccoctl call ios.virtual.unlock '{}'
+```
+
+A Settings that was already running keeps the icons it holds. On a live phone it still showed the "?" squares 11 minutes
+after the clear; after a verified stop and a new start, the fresh Settings showed grey squares at first and every icon
+about 2 minutes later. The Home screen's app icons are rendered again too and may differ from the old ones in single
+pixels. The start does not clear the store by itself: it cannot see the "?" without opening Settings and judging its
+pixels, and a clear on every start would cost a SpringBoard restart and minutes of rendering.
 
 ## Stopping
 

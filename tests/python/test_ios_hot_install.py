@@ -397,6 +397,34 @@ class DeployTests(unittest.TestCase):
         self.assertEqual(json.loads((self.directory / "state.json").read_text())["applications"],
                          {"old.app": "11", "dev.app": self.hash})
 
+    def test_a_copy_listed_at_another_path_is_replaced_not_refused(self):
+        other = self.root / "Earlier" / "App.app"
+        profile = json.loads((self.directory / "profile.json").read_text())
+        profile["applications"] = [{"bundle": str(other), "bundle_id": "dev.app"},
+                                   {"bundle": "/x/Other.app", "bundle_id": "dev.other"}]
+        (self.directory / "profile.json").write_text(json.dumps(profile))
+        device = self.phone()
+        calls = []
+        plain = device.call
+        device.call = lambda operation, arguments, *rest, **kw: (
+            calls.append(arguments) if operation == "ios.virtual.configure" else None) or plain(operation, arguments, *rest, **kw)
+        self.deploy(device)
+        self.assertEqual(calls, [{"remove_application": str(other)}, {"add_application": str(self.bundle)}])
+        self.assertIn({"step": "relisted", "seconds": unittest.mock.ANY, "bundle_id": "dev.app",
+                       "previous": str(other)}, self.events)
+
+    def test_the_listing_keeps_the_app_the_start_opens(self):
+        profile = {"application": "dev.app", "applications": [{"bundle": "/old/App.app", "bundle_id": "dev.app"}]}
+        self.assertEqual(phone.listing_calls(profile, Path("/new/App.app"), "dev.app", Path("/e.plist")),
+                         [{"remove_application": "/old/App.app"},
+                          {"add_application": "/new/App.app", "add_entitlements": "/e.plist"},
+                          {"application": "dev.app"}])
+        # The same bundle listed already, or another identifier, is left alone.
+        same = {"application": "dev.app", "applications": [{"bundle": "/new/App.app", "bundle_id": "dev.app"},
+                                                           {"bundle": "/old/B.app", "bundle_id": "dev.b"}]}
+        self.assertEqual(phone.listing_calls(same, Path("/new/App.app"), "dev.app"),
+                         [{"add_application": "/new/App.app"}])
+
     def test_install_only_does_not_open(self):
         self.deploy(self.phone(), open_app=False)
         self.assertNotIn("open", self.steps)

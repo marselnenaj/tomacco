@@ -482,6 +482,15 @@ class EngineScratchTests(unittest.TestCase):
         directory.chmod(0o755)
         self.assertEqual(run.engine_scratch(self.engine)[1], "it is not a private directory of this user")
 
+    def test_each_refusal_names_its_own_remedy(self):
+        directory = self.engine.parent / ".tomacco-engine-tmp"
+        message = run.engine_scratch_message(directory, run.ENGINE_SCRATCH_NOT_PRIVATE)
+        self.assertIn(f"chmod 700 {directory}", message)
+        self.assertNotIn("Free space", message)
+        message = run.engine_scratch_message(directory, "cannot take 16 MiB: Disk quota exceeded")
+        self.assertTrue(message.endswith("Free space there"), message)
+        self.assertIn("would show a black display", message)
+
     def test_the_launcher_hands_it_to_the_engine_as_tmpdir(self):
         source = Path(run.__file__).read_text()
         self.assertIn('"TMPDIR": str(scratch)', source)

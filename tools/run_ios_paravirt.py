@@ -507,7 +507,7 @@ def engine_scratch(engine, probe_bytes=ENGINE_SCRATCH_PROBE_BYTES):
     except OSError as error:
         return directory, f"cannot make it: {error.strerror or error}"
     if not private_directory(directory):
-        return directory, "it is not a private directory of this user"
+        return directory, ENGINE_SCRATCH_NOT_PRIVATE
     probe = directory / f".probe-{os.getpid()}"
     try:
         descriptor = os.open(probe, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
@@ -526,6 +526,22 @@ def engine_scratch(engine, probe_bytes=ENGINE_SCRATCH_PROBE_BYTES):
         except FileNotFoundError:
             pass
     return directory, None
+
+
+ENGINE_SCRATCH_NOT_PRIVATE = "it is not a private directory of this user"
+
+
+def engine_scratch_message(directory, problem):
+    """The launch refusal for a scratch directory engine_scratch refused, with
+    the remedy that fits: a directory others may enter (seen live, made by hand
+    with mode 755 beside another engine) needs its mode, not free space."""
+    if problem == ENGINE_SCRATCH_NOT_PRIVATE:
+        remedy = (f"Make it private with chmod 700 {directory}, or remove it so that the launcher makes it "
+                  "again")
+    else:
+        remedy = "Free space there"
+    return (f"The engine's scratch directory {directory} {problem}; the renderer translates every shader "
+            f"through it and would show a black display. {remedy}")
 
 
 def sweep_frame_mailboxes(root, now=None):
@@ -1686,8 +1702,7 @@ def main():
             parser.error("This virtual iPhone engine already has an active session")
         scratch, scratch_problem = engine_scratch(engine)
         if scratch_problem:
-            parser.error(f"The engine's scratch directory {scratch} {scratch_problem}; the renderer "
-                         "translates every shader through it and would show a black display. Free space there")
+            parser.error(engine_scratch_message(scratch, scratch_problem))
         protected = [engine, *inputs.values(), *disks.values()]
         if boot_manifest_path:
             protected.append(boot_manifest_path)
