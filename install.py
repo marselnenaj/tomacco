@@ -260,8 +260,13 @@ SYNCFS = _syncfs()
 
 
 def file_digest(path):
+    # Not hashlib.file_digest: the installer also runs on Python 3.10
+    # (Ubuntu 22.04), which lacks it.
+    digest = hashlib.sha256()
     with open(path, "rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+        for block in iter(lambda: stream.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def make_durable(paths):
