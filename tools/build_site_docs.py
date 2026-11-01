@@ -56,6 +56,26 @@ SHORT_TITLES = {
     "RELEASE_NOTES": "Release notes",
 }
 
+# The web index uses the same groups as the directory, with task-focused headings.
+HOME_GROUPS = {
+    "Getting started": ("Start here.", "Install Tomacco and get your first app running."),
+    "Agents": ("Bring your agent.", "Connect a coding agent, write workflows or run headless."),
+    "Use Tomacco": ("Build. Run. Inspect.", "Android, iPhone and the Linux desktop."),
+    "Virtual iOS device": ("A virtual iPhone.", "Set up and use the experimental virtual iOS device."),
+    "Reference": ("Know the interface.", "Operations, arguments and error codes."),
+    "Help": ("Get unstuck.", "Troubleshooting and short answers."),
+    "Project": ("Inside Tomacco.", "The source, the architecture and the project’s limits."),
+}
+HOME_TITLES = {
+    "agents": "Connect your agent",
+    "reference/README": "Operation reference",
+    "virtual-ios/README": "About the virtual iPhone",
+    "virtual-ios/setup": "Set up the virtual iPhone",
+    "virtual-ios/usage": "Run your apps",
+    "virtual-ios/troubleshooting": "Troubleshooting",
+    "virtual-ios/how-it-works": "How it works",
+}
+
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})\s*([^`\s]*)[^`]*$")
 HEADING = re.compile(r"^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$")
 HRULE = re.compile(r"^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$")
@@ -474,6 +494,7 @@ HEAD = """<!DOCTYPE html>
     <nav class="dnav" aria-label="Site">
       <a href="/docs/" aria-current="page">Docs</a>
       <a href="/agents">Agents</a>
+      <a href="/skill">Skill</a>
       <a href="/changelog">What's new</a>
       <a href="{repo}">GitHub</a>
     </nav>
@@ -484,7 +505,7 @@ HEAD = """<!DOCTYPE html>
 FOOT = """<footer>
   <div class="foot">
     <p>Tomacco. Agent-first mobile development for Linux. &copy; 2026 Marsel Nenaj and contributors.</p>
-    <p class="fl"><a href="/docs/">Docs</a> <a href="/changelog">What's new</a> <a href="/agents">Agents</a> <a href="/imprint">Imprint</a> <a href="/privacy">Privacy</a> <a href="/disclaimer">Disclaimer</a></p>
+    <p class="fl"><a href="/docs/">Docs</a> <a href="/skill">Agent skill</a> <a href="/changelog">What's new</a> <a href="/agents">Agents</a> <a href="/imprint">Imprint</a> <a href="/privacy">Privacy</a> <a href="/disclaimer">Disclaimer</a></p>
   </div>
 </footer>
 </body>
@@ -503,16 +524,25 @@ def navigation(pages, current):
     if rest:
         groups.append(("More", rest))
     home_current = ' aria-current="page"' if current.key == "README" else ""
-    out = ['<nav class="docs-nav" aria-label="Documentation">',
-           f'<a class="docs-home" href="{URL_BASE}/"{home_current}>Overview</a>']
+    out = ['<nav class="docs-nav" aria-label="Documentation">', '<div class="docs-topics">',
+           f'<a class="docs-topic" href="{URL_BASE}/"{home_current}>Docs</a>']
+    quick = [("Start", "getting-started", "Getting started"), ("Agents", "agents", "Agents"),
+             ("Devices", "desktop", "Use Tomacco"), ("Virtual iOS", "virtual-ios/README", "Virtual iOS device"),
+             ("Reference", "reference/README", "Reference")]
+    for label, key, group in quick:
+        if key not in pages:
+            continue
+        active = any(current.key in keys for title, keys in GROUPS if title == group)
+        if group == "Reference" and current.key.startswith("reference/"):
+            active = True
+        marker = ' aria-current="location"' if active else ''
+        out.append(f'<a class="docs-topic" href="{pages[key].url}"{marker}>{label}</a>')
+    out.append('</div><details class="docs-directory"><summary>All guides</summary>'
+               '<div class="docs-directory-panel">')
     for title, entries in groups:
         if not entries:
             continue
-        active = any(p.key == current.key for p in entries)
-        if title == "Reference" and current.key.startswith("reference/"):
-            active = True
-        opened = " open" if active or (current.key == "README" and title == "Getting started") else ""
-        out.append(f'<details class="docs-group"{opened}>\n<summary>{html.escape(title)}</summary>\n<ul>')
+        out.append(f'<section class="docs-group">\n<h2>{html.escape(title)}</h2>\n<ul>')
         for p in entries:
             label = SHORT_TITLES.get(p.key, p.title)
             on = ' aria-current="page"' if p.key == current.key else ""
@@ -523,8 +553,9 @@ def navigation(pages, current):
                 out.append(f'<li><details class="docs-subgroup"{sub_open}><summary>Operation groups</summary><ul>' + "".join(
                     f'<li><a href="{q.url}"' + (' aria-current="page"' if q.key == current.key else '')
                     + f'>{html.escape(q.title)}</a></li>' for q in subs) + "</ul></details></li>")
-        out.append("</ul>\n</details>")
-    out.append("</nav>")
+        out.append("</ul>\n</section>")
+    out.append('<p class="docs-directory-skill"><a href="/skill">Get the Tomacco agent skill ↗</a></p>')
+    out.append("</div></details></nav>")
     return "\n".join(out)
 
 
@@ -573,16 +604,58 @@ def page_html(page, pages, ref):
                        canonical=SITE + page.url, repo=REPO)
     edit = f"{REPO}/blob/{ref}/{page.source}"
     nav = navigation(pages, page)
-    label = html.escape(SHORT_TITLES.get(page.key, page.title))
-    mobile = ('<details class="docs-mobile-menu"><summary><span class="docs-menu-label">'
-              'Browse docs</span><span class="docs-menu-current">' + label + '</span></summary>'
-              + nav + '</details>\n')
-    sidebar = '<aside class="docs-sidebar"><p class="docs-nav-title">Documentation</p>' + nav + '</aside>'
-    return (head + mobile + '<div class="docs">\n' + sidebar + '\n<main class="docs-body" id="main" tabindex="-1">\n'
-            + crumbs(page, pages) + "\n" + contents_after_title(page) + "\n"
+    home_class = ' docs-home-page' if page.key == "README" else ''
+    return (head + nav + f'<div class="docs{home_class}">\n<main class="docs-body" id="main" tabindex="-1">\n'
+            + crumbs(page, pages) + "\n" + document_body(page, pages, ref) + "\n"
             + page_neighbors(page, pages) + "\n"
             + f'<p class="source"><a href="{html.escape(edit)}">View this page as Markdown on GitHub</a></p>\n'
             + "</main>\n</div>\n" + FOOT)
+
+
+def topic_index(pages, ref):
+    """A typographic guide index, kept in step with the documentation directory."""
+    out = ['<section class="docs-topic-index" aria-labelledby="what-do-you-want-to-do">',
+           '<header class="docs-topic-index-heading"><h2 id="what-do-you-want-to-do">Pick a direction.</h2>'
+           '<p>Guides for you and your coding agent.</p></header>']
+    for number, (group, keys) in enumerate(GROUPS, 1):
+        title, description = HOME_GROUPS[group]
+        ident = "topic-" + slugify(group)
+        links = [(pages[key].url, HOME_TITLES.get(key, SHORT_TITLES.get(key, pages[key].title)))
+                 for key in keys if key in pages]
+        if group == "Use Tomacco":
+            links.append((f"{REPO}/blob/{ref}/examples/README.md", "Example apps"))
+        elif group == "Virtual iOS device" and "virtual-ios/setup" in pages:
+            links.append((pages["virtual-ios/setup"].url + "#obtain-the-apple-images", "Prepare Apple images"))
+        out.append(f'<section class="docs-topic-section" aria-labelledby="{ident}">'
+                   f'<header><p class="docs-topic-number" aria-hidden="true">{number:02}</p>'
+                   f'<h3 class="docs-topic-title" id="{ident}">{html.escape(title)}</h3>'
+                   f'<p class="docs-topic-description">{html.escape(description)}</p></header>'
+                   '<ul class="docs-topic-links">')
+        for href, label in links:
+            out.append(f'<li><a class="docs-topic-link" href="{html.escape(href)}">'
+                       f'<span>{html.escape(label)}</span><span class="docs-topic-arrow" aria-hidden="true">↗</span></a></li>')
+        out.append('</ul></section>')
+    out.append('</section>')
+    return "\n".join(out)
+
+
+def document_body(page, pages, ref):
+    body = contents_after_title(page)
+    if page.key != "README":
+        return body
+    intro = re.match(r'<h1[^>]*>.*?</h1>\s*(<p>.*?</p>)', body, re.S)
+    if not intro:
+        return body
+    remainder = body[intro.end():]
+    remainder = re.sub(r'<h2 id="what-do-you-want-to-do">.*?</h2>\s*'
+                       r'<div class="table-wrap"><table>.*?</table></div>',
+                       lambda _: topic_index(pages, ref), remainder, count=1, flags=re.S)
+    return ('<section class="docs-hero"><div><h1 id="tomacco-documentation">Tomacco<br>Docs.</h1>'
+            + intro.group(1) + '</div><img class="docs-hero-logo" src="/assets/logo/tomacco-color.svg" '
+            'alt="Tomacco logo: a tomato with a terminal prompt" width="256" height="256"></section>'
+            '<nav class="docs-intro-links" aria-label="Start here"><a href="/docs/getting-started">Get started ↗</a>'
+            '<a href="/skill">Get the agent skill ↗</a><a href="/docs/reference/">Operation reference ↗</a></nav>'
+            + remainder)
 
 
 def contents_after_title(page):

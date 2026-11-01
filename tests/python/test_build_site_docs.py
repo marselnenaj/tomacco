@@ -66,7 +66,7 @@ class RendersEveryDocument(unittest.TestCase):
                     path, _, fragment = url.partition("#")
                     if path.startswith("/") and not path.startswith(site.URL_BASE):
                         self.assertTrue(path in ("/", "/agents", "/changelog", "/imprint", "/privacy", "/disclaimer", "/favicon.svg",
-                                                 "/favicon.ico", "/assets/site.css"), path)
+                                                 "/favicon.ico", "/assets/site.css", "/skill", "/assets/logo/tomacco-color.svg"), path)
                         continue
                     target = self.target(path) if path else html_file
                     self.assertIsNotNone(target, "no generated page")
