@@ -111,7 +111,7 @@ virtual environment).
 ### SQLite
 
 `rusqlite` is built with its `bundled` feature, so `tomaccoctl` embeds SQLite
-3.50.2 from `libsqlite3-sys`. SQLite is in the public domain
+3.54.1 from `libsqlite3-sys` 0.39.1. SQLite is in the public domain
 (<https://sqlite.org/copyright.html>).
 
 ### idb protocol subset

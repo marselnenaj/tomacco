@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Make a draft release from a clean checkout of its tag: checks, package,
-portable package and source tarball with checksums, signatures, then
-`gh release create --draft`. Publishing the draft stays a person's decision.
+portable package and source tarball with checksums, signatures, a signed
+CycloneDX SBOM per package, then `gh release create --draft`. Publishing the
+draft stays a person's decision.
 
 With --container it also builds the headless image from the signed package
 (tools/build_container.py), checks it, and prints the `docker push` commands
@@ -19,6 +20,7 @@ import tempfile
 from pathlib import Path
 
 import build_container
+import build_sbom
 
 ROOT = Path(__file__).resolve().parents[1]
 KEY_ENVIRONMENT = "TOMACCO_RELEASE_SIGNING_KEY_FILE"
@@ -240,6 +242,16 @@ def sign(commands, key, package):
     return signature
 
 
+def bills_of_materials(commands, root, version, packages, portable, key):
+    """Writes <package>.cdx.json, a CycloneDX SBOM, for each package, and
+    signs it like the package."""
+    metadata, linked = build_sbom.read_cargo(root, commands.read)
+    epoch = commands.environment["SOURCE_DATE_EPOCH"]
+    for package in packages:
+        sbom = build_sbom.write(root, package, version, metadata, linked, package.name == portable, epoch)
+        sign(commands, key, sbom)
+
+
 def container(commands, version):
     """Builds and checks the image from the signed package in dist/, then
     prints how a person would publish it. Runs no push."""
@@ -290,6 +302,7 @@ def make(options, commands, root, environment):
         print(f"Would sign the package with {key} into {DIST}/{prefix}-{version}-Linux-*.tar.gz.sig, and verify the signature")
         if portable:
             print(f"Would move {PORTABLE}/{portable} and its checksum to {DIST}/, and sign it into {DIST}/{portable}.sig the same way")
+        print(f"Would write a CycloneDX SBOM beside each package ({build_sbom.SUFFIX}) and sign it the same way")
     else:
         packages = [collect_package(root, prefix, version)]
         if portable:
@@ -297,6 +310,7 @@ def make(options, commands, root, environment):
         verify_checksums(root)
         for package in packages:
             sign(commands, key, package)
+        bills_of_materials(commands, root, version, packages, portable, key)
     if options.container:
         container(commands, version)
     draft(commands, root, tag, version)

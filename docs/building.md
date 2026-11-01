@@ -230,7 +230,8 @@ installation back. An uninstall also leaves your preferences (`~/.config/marseln
 
 ## Releases and updates
 
-A release holds the package and the portable package, each with its `.sha256` and its `.sig`. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
+A release holds the package and the portable package, each with its `.sha256`, its `.sig`, and a software bill of materials
+(`.cdx.json`) with its own `.sig`. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
 never offered as updates.
 
 Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against a public key compiled into `tomaccoctl`: the current
@@ -259,6 +260,15 @@ Releases are made locally, not by a workflow. From a clean checkout of the tag, 
 [portable package](#packaging) (built and verified with `tools/build_portable.py`; `--no-portable` leaves it out) and the source tarball with their
 checksums, signs both packages and creates a draft release whose body comes from `docs/RELEASE_NOTES.md`, with relative links pointing into the tag. It refuses a dirty tree, a checkout that is not
 the tag, and versions that disagree. With `--dry-run` it only prints what it would do.
+
+**Software bills of materials.** After signing, `make_release.py` writes `PACKAGE.cdx.json` beside each package with
+`tools/build_sbom.py` and signs it the same way. It is CycloneDX 1.6 JSON: the package with its SHA-256; the crates linked into
+`tomaccoctl`, from `cargo tree` and `Cargo.lock`, with version, SPDX license, package URL and crates.io checksum; the SQLite they
+embed; the bundled fonts; and for the portable package each Qt module and ICU with the SHA-256 of its archive from
+`packaging/portable/qt-archives.txt`, FFmpeg with its tarball's SHA-256 from the Dockerfile, and the xcb-util libraries. Python is not
+listed, since neither package contains it. Qt's own SBOMs for its modules stay in the portable package's `lib/tomacco/runtime/sbom/`.
+The time stamp is `SOURCE_DATE_EPOCH`, so the same package gives the same file. `tests/python/test_build_sbom.py` checks the shape
+against the parts of the CycloneDX schema it uses; no CycloneDX validator was run on it.
 
 The builds run with `SOURCE_DATE_EPOCH` set to the release commit's time, which CPack and Qt's `rcc` use for their time stamps.
 Two builds of the same commit from fresh clones in the same directory, by the same user, gave the same package digest; without it,

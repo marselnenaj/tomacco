@@ -4,6 +4,7 @@ import base64
 import contextlib
 import hashlib
 import io
+import json
 import shutil
 import subprocess
 import tempfile
@@ -17,6 +18,14 @@ ROOT = Path(__file__).resolve().parents[2]
 RAW = b"\x11" * 32
 PUBLIC = base64.b64encode(RAW).decode()
 METAINFO = '<component><releases><release version="1.2.3"/></releases></component>'
+CRATE = "registry+https://github.com/rust-lang/crates.io-index#serde@1.0.0"
+METADATA = {"packages": [{"id": "path+file:///x#x@1.2.3", "name": "x", "version": "1.2.3", "license": "GPL-2.0-or-later",
+                          "manifest_path": "/x/Cargo.toml"},
+                         {"id": CRATE, "name": "serde", "version": "1.0.0", "license": "MIT OR Apache-2.0",
+                          "manifest_path": "/nowhere/serde-1.0.0/Cargo.toml"}],
+            "workspace_members": ["path+file:///x#x@1.2.3"],
+            "resolve": {"nodes": [{"id": "path+file:///x#x@1.2.3", "deps": [{"pkg": CRATE, "dep_kinds": [{"kind": None}]}]},
+                                  {"id": CRATE, "deps": []}]}}
 
 
 class Fake(make_release.Commands):
@@ -39,6 +48,10 @@ class Fake(make_release.Commands):
             return b"prefix" + RAW
         if argv[:2] == ["git", "log"]:
             return b"1700000000\n"
+        if argv[:2] == ["cargo", "metadata"]:
+            return json.dumps(METADATA).encode()
+        if argv[:2] == ["cargo", "tree"]:
+            return b"x v1.2.3 (/x)\nserde v1.0.0\n"
         return b""
 
     def run(self, argv):
@@ -81,6 +94,10 @@ class MakeRelease(unittest.TestCase):
         (self.root / "CMakeLists.txt").write_text("project(Tomacco VERSION 1.2.3 LANGUAGES CXX)\n")
         (self.root / "Cargo.toml").write_text('[package]\nname = "x"\nversion = "1.2.3"\n')
         (self.root / "assets/x.metainfo.xml").write_text(METAINFO)
+        (self.root / "Cargo.lock").write_text('[[package]]\nname = "serde"\nversion = "1.0.0"\nchecksum = "' + "ab" * 32 + '"\n')
+        (self.root / "packaging/portable").mkdir(parents=True)
+        for name in ("qt-archives.txt", "Dockerfile"):
+            shutil.copy2(ROOT / "packaging/portable" / name, self.root / "packaging/portable" / name)
         self.product(PUBLIC)
         self.key = base / "outside.pem"
         self.key.write_text("private")
@@ -127,13 +144,24 @@ class MakeRelease(unittest.TestCase):
         self.assertEqual(base64.b64decode(signature.read_bytes()), b"\x22" * 64)
         self.assertIn(str(signature.relative_to(self.root)), release)
         # The portable package is released beside it: checksum, signature, and nothing of its build tree.
+        regular, portable = "tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz"
         self.assertEqual(sorted(names), sorted([
-            "tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64.tar.gz.sha256", "tomacco-1.2.3-Linux-x86_64.tar.gz.sig",
-            "tomacco-1.2.3-Linux-x86_64-portable.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz.sha256",
-            "tomacco-1.2.3-Linux-x86_64-portable.tar.gz.sig", "tomacco-1.2.3-source.tar.gz", "tomacco-1.2.3-source.tar.gz.sha256"]))
+            regular, f"{regular}.sha256", f"{regular}.sig", f"{regular}.cdx.json", f"{regular}.cdx.json.sig",
+            portable, f"{portable}.sha256", f"{portable}.sig", f"{portable}.cdx.json", f"{portable}.cdx.json.sig",
+            "tomacco-1.2.3-source.tar.gz", "tomacco-1.2.3-source.tar.gz.sha256"]))
         signed = [argv[argv.index("-in") + 1] for argv in commands.runs if argv[:3] == ["openssl", "pkeyutl", "-sign"]]
         self.assertEqual([Path(path).name for path in signed],
-                         ["tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz"])
+                         [regular, portable, f"{regular}.cdx.json", f"{portable}.cdx.json"])
+        # Each SBOM describes its own package; only the portable one lists Qt and FFmpeg.
+        for name, bundles in ((regular, False), (portable, True)):
+            sbom = json.loads((self.root / "dist" / f"{name}.cdx.json").read_text())
+            self.assertEqual(sbom["bomFormat"], "CycloneDX")
+            self.assertEqual(sbom["metadata"]["component"]["hashes"][0]["content"],
+                             hashlib.sha256((self.root / "dist" / name).read_bytes()).hexdigest())
+            self.assertEqual(sbom["metadata"]["timestamp"], "2023-11-14T22:13:20Z")
+            names_in = {component["name"] for component in sbom["components"]}
+            self.assertIn("serde", names_in)
+            self.assertEqual({"qtbase", "FFmpeg"} <= names_in, bundles)
 
     def qt_sources(self, *names, corrupt=None):
         lines = ["# comment"]

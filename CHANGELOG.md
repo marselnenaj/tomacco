@@ -75,6 +75,9 @@ operations and their JSON results.
   `make_release.py` runs it.
 - With cargo-audit installed, `tools/check_dependencies.py` runs `cargo audit --no-fetch` against the local RustSec database,
   and `make_release.py` refuses a release it reports a vulnerability for. Building says how to install it.
+- **SBOM.** `make_release.py` writes a CycloneDX 1.6 SBOM beside each package, `PACKAGE.cdx.json`, with `tools/build_sbom.py`,
+  and signs it: the Rust crates linked into `tomaccoctl` with versions, licenses and checksums, the embedded SQLite, the fonts, and
+  for the portable package Qt, ICU, FFmpeg and the xcb-util libraries with the digests of their pinned archives.
 - **Release key rotation.** `tomaccoctl` trusts the release key in `native/product.rs` and, during a rotation, the next key
   beside it, `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`; a package signed by either installs, one signed by another key is refused.
   `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.
@@ -96,6 +99,7 @@ operations and their JSON results.
 
 ### Fixed
 
+- THIRD_PARTY_NOTICES.md named SQLite 3.50.2; the locked `libsqlite3-sys` 0.39.1 embeds 3.54.1. A test keeps them in step.
 - The recipes and troubleshooting said `android.input` types ASCII only; since 1.1.0 it pastes other text through the
   device clipboard. Getting started and building showed 1.0.0 package names and said a release has no portable package.
 - A test keeps the version, the operation count, the Rust and Qt build minimums, the desktop languages and the

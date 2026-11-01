@@ -51,6 +51,10 @@ It reads `FILE.sha256` and `FILE.sig` beside the file (`--sha256` and `--sig` na
 against the release keys built into `tomaccoctl`, and exits 0 only when the file is verified; `--json` prints the result
 as JSON. How the release key is replaced is in [building](docs/building.md#rotating-the-release-key).
 
+Each package also has a CycloneDX software bill of materials, `PACKAGE.cdx.json`, signed the same way, which lists the
+third-party components the package contains with their versions, licenses and digests. `tomaccoctl verify PACKAGE.cdx.json`
+checks its signature.
+
 ## What is not
 
 The virtual iOS device is an experimental research runtime. It disables or

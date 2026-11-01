@@ -138,7 +138,7 @@ install(PROGRAMS tools/prepare_ios_research_manifest.py DESTINATION share/tomacc
 install(PROGRAMS tools/build_ios_guest_tools.py tools/prepare_ios_guest_tools.py tools/rebase_ios_guest_tools.py tools/build_ios_guest_control.py tools/ios_application_bundle.py tools/build_ios_sample_app.py tools/install_apple_dev.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/collect_ios_crash_reports.py tools/ios_persistence_probe.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/collect_ios_service_artifacts.py DESTINATION share/tomacco/tools)
-install(PROGRAMS tools/build_source_release.py tools/build_release_notes.py tools/make_release.py tools/build_portable.py tools/build_reference.py tools/build_container.py tools/check_dependencies.py DESTINATION share/tomacco/tools)
+install(PROGRAMS tools/build_source_release.py tools/build_release_notes.py tools/make_release.py tools/build_portable.py tools/build_reference.py tools/build_container.py tools/check_dependencies.py tools/build_sbom.py DESTINATION share/tomacco/tools)
 install(FILES tools/ios_guest_tools.py tools/ios_guest_control.py DESTINATION share/tomacco/tools)
 install(FILES tools/ios_host_pressure.py tools/ios_hot_install.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/ios_debug_bridge.py tools/ios_virtual_record.py tools/ios_ipa_inspect.py DESTINATION share/tomacco/tools)
