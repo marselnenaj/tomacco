@@ -58,6 +58,8 @@ mod signing_health;
 mod storage;
 mod store_screenshots;
 mod swift;
+mod test_history;
+mod test_report;
 mod test_results;
 mod toolchain;
 mod update;
@@ -488,6 +490,14 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             debugger::worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing session ID"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_test_report") => {
+            test_report::job_worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing project"))?,
+                args.get(2).map_or("0", String::as_str),
             )?;
             return Ok(0);
         }

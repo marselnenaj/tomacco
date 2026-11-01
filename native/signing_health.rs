@@ -38,7 +38,7 @@ fn keytool_date(text: &str) -> Option<i64> {
     Some(days * 86_400 + h * 3600 + m * 60 + s)
 }
 
-fn iso(seconds: i64) -> String {
+pub(crate) fn iso(seconds: i64) -> String {
     let days = seconds.div_euclid(86_400);
     // Inverse of days_from_civil.
     let z = days + 719_468;

@@ -129,6 +129,8 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "testing.crashes" => crate::crashes::crashes(&a),
         "testing.results" => crate::test_results::results(&a),
         "testing.coverage" => crate::coverage::coverage(&a),
+        "testing.report" => crate::test_report::report(&a),
+        "testing.history" => crate::test_history::history(&a),
         "testing.setup" => crate::instrumentation::setup(&a),
         "testing.instrumentation" => crate::instrumentation::invoke(&a),
         "ios.toolkit_install"
