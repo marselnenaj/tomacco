@@ -1029,6 +1029,34 @@ mod tests {
     }
 
     #[test]
+    fn a_screen_step_leaves_out_the_regions_it_ignores() {
+        // The status bar's clock changes every minute on a live phone; a
+        // baseline taken a minute earlier differs there and nowhere else.
+        let directory = tempfile::tempdir().unwrap();
+        let baseline = directory.path().join("app.png");
+        fs::write(&baseline, png(4, 4, [255, 255, 255])).unwrap();
+        let mut clock = [255u8; 4 * 4 * 3].to_vec();
+        clock[..4 * 3].fill(0); // The top row, where the clock is.
+        let picture = virtual_screen::png(&clock, 4, 4, 3).unwrap();
+        let step = |ignore: Value| json!({"name":"x","steps":[{"action":"assert_screen","baseline":baseline,"ignore":ignore}]});
+        let mut phone = Recorded {
+            pictures: vec![picture.clone()],
+            ..Default::default()
+        };
+        let result = run_device(&mut phone, &step(json!([])), directory.path(), "a");
+        assert_eq!(result["error"]["code"], "screen_mismatch");
+        let mut phone = Recorded {
+            pictures: vec![picture],
+            ..Default::default()
+        };
+        let ignore = json!([{"x":0,"y":0,"width":4,"height":1}]);
+        let result = run_device(&mut phone, &step(ignore.clone()), directory.path(), "b");
+        assert_eq!(result["passed"], true, "{result}");
+        automation::check_scenario(&step(ignore)).unwrap();
+        assert!(automation::check_scenario(&step(json!([{"x":0,"y":0}]))).is_err());
+    }
+
+    #[test]
     fn report_times_are_seconds_since_1970() {
         assert_eq!(report_time("1970-01-01 00:00:00 +0000"), Some(0.0));
         assert_eq!(

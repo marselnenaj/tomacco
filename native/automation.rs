@@ -218,6 +218,8 @@ fn step_schema() -> Value {
     json!({"type":"object","additionalProperties":false,"required":["action"],"properties":{
     "action":{"type":"string","enum":["wait","assert","click","long_click","fill","key","launch","stop","clear","screenshot","tap","swipe","text","pause","assert_screen","wait_screen","measure"]},"selector":selector_schema(),
     "baseline":{"type":"string","minLength":1},"threshold":{"type":"number","minimum":0,"maximum":1},"tolerance":{"type":"integer","minimum":0,"maximum":255},
+    "ignore":{"type":"array","maxItems":100,"items":{"type":"object","additionalProperties":false,"required":["x","y","width","height"],
+        "properties":{"x":{"type":"integer","minimum":0},"y":{"type":"integer","minimum":0},"width":{"type":"integer","minimum":1},"height":{"type":"integer","minimum":1}}}},
     "measure":{"type":"string","enum":["startup","frames_reset","frames","memory","usage"]},"mode":{"type":"string","enum":["cold","warm","hot"]},"runs":{"type":"integer","minimum":1,"maximum":30},"seconds":{"type":"integer","minimum":1,"maximum":600},"activity":{"type":"string"},"budget":crate::perf::budget_schema(),
     "x":{"type":"integer","minimum":0,"maximum":16384},"y":{"type":"integer","minimum":0,"maximum":16384},"end_x":{"type":"integer","minimum":0,"maximum":16384},"end_y":{"type":"integer","minimum":0,"maximum":16384},"duration":{"type":"integer","minimum":1,"maximum":10000},"state":{"type":"string","enum":["present","absent"]},"text":{"type":"string"},"key":{"type":"string"},"bundle_id":{"type":"string"},"label":{"type":"string","maxLength":150},"timeout":{"type":"integer","minimum":0,"maximum":60}}})
 }
@@ -776,6 +778,10 @@ pub(crate) fn screen_step(
     let deadline = Instant::now() + Duration::from_secs(step["timeout"].as_u64().unwrap_or(10));
     let mut arguments = json!({"actual":actual,"baseline":step["baseline"],
         "threshold":step["threshold"].as_f64().unwrap_or(0.0),"tolerance":n(step, "tolerance")});
+    // Regions left out, such as the status bar's clock, which changes every minute.
+    if step["ignore"].is_array() {
+        arguments["ignore"] = step["ignore"].clone();
+    }
     loop {
         capture(actual)?;
         let last = !wait || Instant::now() >= deadline;
