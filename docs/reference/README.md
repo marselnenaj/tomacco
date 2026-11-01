@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 202 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 203 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -247,6 +247,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`release.signing_health`](release.md#releasesigning_health) | Check signing keys | read-only |
 | [`release.version`](release.md#releaseversion) | Set app version | **destructive** |
 | [`release.notes`](release.md#releasenotes) | Write Play release notes | **destructive** |
+| [`release.checklist`](release.md#releasechecklist) | Check Android release readiness | read-only |
 
 ## [remote](remote.md)
 

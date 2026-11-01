@@ -1814,6 +1814,37 @@ class ReleaseContractTests(Isolated):
             dispatch("release.signing_health", base)
         self.assertEqual(refused.exception.code, "secret_permissions")
 
+    def test_checklist_reports_each_release_requirement_with_evidence(self):
+        app = self.root / "shop"
+        (app / "app/src/main/res/xml").mkdir(parents=True)
+        (app / "settings.gradle.kts").write_text('include(":app")\n')
+        build = app / "app/build.gradle.kts"
+        build.write_text('plugins { id("com.android.application") }\nandroid {\n  namespace = "dev.test.shop"\n  defaultConfig {\n'
+                         '    applicationId = "dev.test.shop"\n    targetSdk = 34\n    versionCode = 12\n    versionName = "1.2.0"\n  }\n'
+                         '  buildTypes {\n    release {\n      isMinifyEnabled = false\n      signingConfig = signingConfigs.getByName("debug")\n    }\n  }\n}\n')
+        (app / "app/src/main/AndroidManifest.xml").write_text(
+            '<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:networkSecurityConfig="@xml/network"/></manifest>')
+        (app / "app/src/main/res/xml/network.xml").write_text(
+            '<network-security-config><domain-config cleartextTrafficPermitted="true"><domain>10.0.2.2</domain></domain-config></network-security-config>')
+        value = dispatch("release.checklist", {"path": str(app), "previous_version_code": 12})
+        status = {c["check"]: (c["status"], c["severity"]) for c in value["checks"]}
+        self.assertEqual(status, {"target_sdk": ("fail", "error"), "version_code": ("fail", "error"), "debuggable": ("pass", "info"),
+                                  "minify": ("fail", "warning"), "signing_config": ("fail", "error"), "cleartext": ("fail", "warning")})
+        self.assertEqual((value["passed"], value["module"], value["required_target_sdk"]), (False, ":app", 36))
+        self.assertEqual(next(c for c in value["checks"] if c["check"] == "cleartext")["evidence"]["domains"], ["10.0.2.2"])
+        build.write_text(build.read_text().replace("targetSdk = 34", "targetSdk = 36").replace("versionCode = 12", "versionCode = 13")
+                         .replace("isMinifyEnabled = false", "isMinifyEnabled = true").replace('getByName("debug")', 'getByName("upload")'))
+        value = dispatch("release.checklist", {"path": str(app), "previous_version_code": 12, "allow_cleartext": True})
+        self.assertTrue(value["passed"])
+        self.assertEqual({c["status"] for c in value["checks"]}, {"pass"})
+        self.assertEqual(dispatch("release.checklist", {"path": str(app), "required_target_sdk": 37})["checks"][0]["status"], "fail")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("release.checklist", {"path": str(self.root / "missing-project")})
+        (self.root / "empty").mkdir()
+        with self.assertRaises(StudioError) as refused:
+            dispatch("release.checklist", {"path": str(self.root / "empty")})
+        self.assertEqual(refused.exception.code, "not_android_project")
+
     def test_a_secret_given_instead_of_its_file_is_not_echoed(self):
         secret = "hunter2-correct-horse"
         output = str(self.root / "release.p12")

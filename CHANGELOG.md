@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 202 operations.
+`tomaccoctl` now has one typed API of 203 operations.
 
 ### Added
 
@@ -26,6 +26,9 @@ operations and their JSON results.
     fingerprint, warns about keys expiring within a year or before Play's 22 October 2033 minimum, weak keys and SHA-1
     signatures, matches the keys with the upload and app signing certificates Play Console shows, and checks that an
     APK or AAB is signed with one of them.
+  - `release.checklist` checks an Android release build before an upload, from the build files and manifest: targetSdk
+    against Play's required level, versionCode above the last release, not debuggable, minify on, a release signing
+    config other than the debug key, and no cleartext HTTP unless allowed, each as a structured check with evidence.
 - **Testing.**
   - `testing.record` records a UI test on an Android device: taps, swipes, text and keys sent through
     `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`

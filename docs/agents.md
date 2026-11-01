@@ -711,6 +711,19 @@ to Play; `passed` is false when a finding is an error.
 tomaccoctl call release.signing_health '{"keystore":"/absolute/upload.p12","password_file":"/absolute/upload.password","upload_certificate_sha256":"AB:CD:..."}'
 ```
 
+`release.checklist` checks an Android app's release build before an upload, from its build files and manifest without
+running Gradle. Each entry of `checks` has a `status` (`pass`, `fail` or `unknown`), a `severity` and its `evidence`:
+`target_sdk` against the level Google Play requires (`required_target_sdk`, by default 36, Play's requirement for new apps
+and updates since 31 August 2026), `version_code` above `previous_version_code` or a `baseline` package's, `debuggable` off in
+the release build type and the manifest, `minify` on (a warning), `signing_config` set and not the debug key, and `cleartext`:
+`usesCleartextTraffic` or a network security config that permits cleartext HTTP fails unless `allow_cleartext`. `artifact`
+reads targetSdk and versionCode from the built APK or AAB, for builds that compute them. `passed` is false when an
+error-severity check fails.
+
+```sh
+tomaccoctl call release.checklist '{"path":"/absolute/app","previous_version_code":41}'
+```
+
 `play.prepare` creates an edit, uploads the AAB, sets the track and validates, without committing. Inspect that before an explicitly authorized `play.commit`;
 `play.abort` discards it. Live store submission has not been qualified, on Play or on the App Store.
 

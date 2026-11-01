@@ -4031,6 +4031,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Establecer versión de la app</translation>
     </message>
     <message>
+        <source>Check Android release readiness</source>
+        <translation>Comprobar si la versión de Android está lista</translation>
+    </message>
+    <message>
         <source>Write Play release notes</source>
         <translation>Escribir notas de la versión de Play</translation>
     </message>

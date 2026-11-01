@@ -149,6 +149,7 @@ var titles = {
     "release.verify": QT_TRANSLATE_NOOP("Operations", "Verify release signature"),
     "release.signing_health": QT_TRANSLATE_NOOP("Operations", "Check signing keys"),
     "release.version": QT_TRANSLATE_NOOP("Operations", "Set app version"),
+    "release.checklist": QT_TRANSLATE_NOOP("Operations", "Check Android release readiness"),
     "release.notes": QT_TRANSLATE_NOOP("Operations", "Write Play release notes"),
     "apple.devices": QT_TRANSLATE_NOOP("Operations", "Apple devices on the Mac"),
     "apple.project": QT_TRANSLATE_NOOP("Operations", "Read Xcode project"),

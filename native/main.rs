@@ -38,6 +38,7 @@ mod projects;
 mod qr;
 mod recorder;
 mod redact;
+mod release_checks;
 mod release_notes;
 mod release_version;
 mod releases;

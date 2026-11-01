@@ -47,6 +47,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "release.version" => crate::release_version::version(a),
         "release.notes" => crate::release_notes::notes(a),
         "release.signing_health" => crate::signing_health::health(a),
+        "release.checklist" => crate::release_checks::checklist(a),
         "release.keystore" | "release.sign" => {
             secret(s(a, "password_file"))?;
             identifier(s(a, "alias"), "key alias", Some("[A-Za-z0-9_.-]{1,100}"))?;

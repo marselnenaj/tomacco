@@ -2,7 +2,7 @@
 
 # `release` operations
 
-6 operations. Generated from `assets/operations.json`; [all areas](README.md).
+7 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### release.keystore
 
@@ -127,4 +127,26 @@ Annotations: **destructive**, idempotent, closed world.
 
 ```sh
 tomaccoctl call release.notes '{"changelog":"<changelog>"}'
+```
+
+### release.checklist
+
+**Check Android release readiness**
+
+Check an Android app's release build before a Play upload, from its build files and manifest without running Gradle: target_sdk against the level Google Play requires (36 for new apps and updates since 31 August 2026), version_code above the previous release, debuggable off, minify on, a release signing config that is not the debug key, and no cleartext HTTP unless allow_cleartext. Each check has a status (pass, fail or unknown), a severity and its evidence; passed is false when an error-severity check fails. artifact reads targetSdk and versionCode from the built APK or AAB instead.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute path of the project root, or of its Gradle build |
+| `module` | string |  | `""` | Gradle path of the app module, such as :app; the first application module when empty |
+| `artifact` | string |  | `""` | Absolute path of the built .apk or .aab to read targetSdk and versionCode from |
+| `previous_version_code` | integer |  |  | 1 to 2100000000; versionCode of the last release on Google Play |
+| `baseline` | string |  | `""` | Absolute path of the last released .apk or .aab, instead of previous_version_code |
+| `required_target_sdk` | integer |  |  | 1 to 100; Target API level to require instead of Google Play's current one |
+| `allow_cleartext` | boolean |  | `false` | Cleartext HTTP is intended; report it without failing |
+
+```sh
+tomaccoctl call release.checklist '{"path":"<path>"}'
 ```

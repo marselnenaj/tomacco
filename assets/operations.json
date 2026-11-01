@@ -5939,6 +5939,63 @@
     }
   },
   {
+    "name": "release.checklist",
+    "title": "Check Android release readiness",
+    "description": "Check an Android app's release build before a Play upload, from its build files and manifest without running Gradle: target_sdk against the level Google Play requires (36 for new apps and updates since 31 August 2026), version_code above the previous release, debuggable off, minify on, a release signing config that is not the debug key, and no cleartext HTTP unless allow_cleartext. Each check has a status (pass, fail or unknown), a severity and its evidence; passed is false when an error-severity check fails. artifact reads targetSdk and versionCode from the built APK or AAB instead.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute path of the project root, or of its Gradle build",
+          "minLength": 1
+        },
+        "module": {
+          "type": "string",
+          "default": "",
+          "description": "Gradle path of the app module, such as :app; the first application module when empty"
+        },
+        "artifact": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of the built .apk or .aab to read targetSdk and versionCode from"
+        },
+        "previous_version_code": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2100000000,
+          "description": "versionCode of the last release on Google Play"
+        },
+        "baseline": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of the last released .apk or .aab, instead of previous_version_code"
+        },
+        "required_target_sdk": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Target API level to require instead of Google Play's current one"
+        },
+        "allow_cleartext": {
+          "type": "boolean",
+          "default": false,
+          "description": "Cleartext HTTP is intended; report it without failing"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "apple.devices",
     "title": "Apple devices on the Mac",
     "description": "Read Simulator and connected physical-device inventories using Xcode on a configured SSH Mac.",

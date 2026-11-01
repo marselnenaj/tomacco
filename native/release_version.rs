@@ -492,6 +492,16 @@ fn bumped(current: &str, part: &str) -> Result<String> {
     })
 }
 
+/// The version name and highest build number the project's version files
+/// hold now, or the error that stops reading them.
+pub fn current(root: &Path) -> Result<(Option<String>, Option<u64>)> {
+    let plan = plan(root, None)?;
+    Ok((
+        plan.versions.first().cloned(),
+        plan.builds.iter().max().copied(),
+    ))
+}
+
 pub fn version(a: &Value) -> Result {
     let root = path(s(a, "path"), true, true)?;
     let bump = s(a, "bump");
