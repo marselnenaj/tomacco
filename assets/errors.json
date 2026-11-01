@@ -1035,6 +1035,18 @@
     "cause": "The Gradle managed device or group is not declared in the build files.",
     "remedy": "Use a name from the managedDevices block, or all."
   },
+  "mark_not_found": {
+    "cause": "The last screen.marks of this device has no mark with that number.",
+    "remedy": "Use a number from the marks in the last screen.marks result, or call screen.marks again."
+  },
+  "mark_stale": {
+    "cause": "The screen no longer matches what the mark was made from, so nothing was tapped.",
+    "remedy": "The screen changed since screen.marks; call it again and tap the new number."
+  },
+  "marks_missing": {
+    "cause": "screen.tap was given a mark but no screen.marks or screen.tree has been made for this device.",
+    "remedy": "Call screen.marks for the device, look at the result, then tap a number from it."
+  },
   "mdns_unavailable": {
     "cause": "adb cannot discover devices on the network: …",
     "remedy": "Update the Android platform tools, or pair with the code through android.connect."
@@ -1154,6 +1166,22 @@
   "notification_not_snoozed": {
     "cause": "Android did not snooze …",
     "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
+  },
+  "ocr_action_unsupported": {
+    "cause": "A field cannot be filled by text read off the screen.",
+    "remedy": "Tap the field with a click, then type with a text step or ios.emulator.control."
+  },
+  "ocr_failed": {
+    "cause": "tesseract could not read the screenshot.",
+    "remedy": "Read the message and details.stderr; check that the image is a valid PNG, and try again or read a smaller region."
+  },
+  "ocr_language_missing": {
+    "cause": "tesseract has no data for the language asked for.",
+    "remedy": "Install the language's data (tesseract --list-langs lists what is installed) or use language eng."
+  },
+  "ocr_unavailable": {
+    "cause": "Reading text off a screenshot needs tesseract, and it is not installed.",
+    "remedy": "Install tesseract and its English data (Arch: pacman -S tesseract tesseract-data-eng; Debian and Ubuntu: apt install tesseract-ocr), or set TOMACCO_TESSERACT to the executable; capabilities.ocr says whether it is found."
   },
   "off_screen": {
     "cause": "(…, …) lies outside the …x… screen.",
@@ -1499,6 +1527,10 @@
     "cause": "No screen with this id is in the run being reviewed.",
     "remedy": "List the ids with testing.baselines review."
   },
+  "screen_unstable": {
+    "cause": "The screen kept changing until the timeout, as a video, an animation or a spinner does.",
+    "remedy": "details.last_changed_fraction says how much; use ignore for the part that moves, raise threshold, or wait for text instead."
+  },
   "screenshot_missing": {
     "cause": "The screenshot the review names is gone from the run directory.",
     "remedy": "Run the scenario again with record_baselines."
@@ -1595,6 +1627,10 @@
     "cause": "For non-ASCII text use runtime.input action=fill with the field coordinates; this replaces its full accessible value.",
     "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
   },
+  "text_timeout": {
+    "cause": "The text did not appear, or go away, within the timeout.",
+    "remedy": "Read details.seen for what the screen showed; check the text, try source ocr or hierarchy, raise the timeout, or look at a screenshot."
+  },
   "text_too_long": {
     "cause": "Text through the clipboard is limited to {PASTE_LIMIT} bytes.",
     "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
@@ -1645,7 +1681,7 @@
   },
   "ui_hierarchy_unavailable": {
     "cause": "… needs a UI hierarchy, and the virtual iPhone's guest tools do not report one.",
-    "remedy": "Use testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates."
+    "remedy": "Find text by its words instead (a selector with text or text_contains is read off the screenshot with OCR), or use screen.marks with source ocr, testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates."
   },
   "unsafe_data_directory": {
     "cause": "The Tomacco data directory is not a directory owned by this user: …",
@@ -1698,6 +1734,10 @@
   "unsupported_native_arch": {
     "cause": "The ELF architecture is not supported by the Android NDK debugger.",
     "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "unsupported_selector": {
+    "cause": "The virtual iPhone has no UI hierarchy, so a selector there can only have text or text_contains, and index.",
+    "remedy": "Use text or text_contains, or tap and swipe at pixel coordinates."
   },
   "unsupported_step": {
     "cause": "… is not available on the virtual iPhone.",

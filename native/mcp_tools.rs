@@ -351,7 +351,7 @@ mod tests {
         assert_eq!(named("general")["annotations"]["readOnlyHint"], true);
         assert!(s(named("job"), "description").contains("job.cancel (Cancel"));
         assert!(s(named("job"), "description").contains("; destructive)"));
-        assert!(tools.len() < 30);
+        assert!(tools.len() <= 30);
         // The agent guide names how many tools the grouped list has.
         let agents = include_str!("../docs/agents.md");
         assert!(agents.contains(&format!("`job`: {} tools.", tools.len() - 1)));

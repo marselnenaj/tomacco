@@ -22,7 +22,7 @@ tomaccoctl call doctor
 
 **What this computer can do**
 
-Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds. testing lists each UI testing feature (id, feature) and whether it works on android, virtual_iphone and iphone (supported, note).
+Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds. ocr says whether tesseract is installed for the screen.ocr operations and the OCR fallback of testing.find on the virtual iPhone. testing lists each UI testing feature (id, feature) and whether it works on android, virtual_iphone and iphone (supported, note).
 
 Annotations: read-only, idempotent, open world.
 

@@ -42,6 +42,11 @@ pub fn check_scenario(scenario: &Value) -> Result<()> {
                     "iOS cannot clear an app's data; uninstall and install it again".into(),
                 );
             }
+            "wait_text" | "wait_stable" => {
+                return refuse(
+                    "wait_text and wait_stable run on Android and the virtual iPhone, not on USB iPhones; use a wait step with a selector".into(),
+                );
+            }
             "key" if !KEYS.contains(&s(step, "key")) => {
                 return refuse(format!("an iPhone key is one of {}", KEYS.join(", ")));
             }

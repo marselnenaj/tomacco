@@ -89,14 +89,14 @@ The server also offers three prompts, short recipes a client can show as command
 
 ### A shorter tool list
 
-The full tool list is every operation with its whole schema, 290,460 bytes of `tools/list` response in this
+The full tool list is every operation with its whole schema, 316,174 bytes of `tools/list` response in this
 version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env` of the client's server entry:
 
 | Value | Tools | `tools/list` response |
 | --- | --- | --- |
-| `full` (the default) | One per operation, with every description. | 290,460 bytes |
-| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 145,533 bytes |
-| `grouped` | One per area, such as `android` or `job`: 28 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 31,557 bytes |
+| `full` (the default) | One per operation, with every description. | 316,174 bytes |
+| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 156,075 bytes |
+| `grouped` | One per area, such as `android` or `job`: 29 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 33,004 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
@@ -994,12 +994,81 @@ with 0 changed pixels; after one baseline was replaced by the other screen, the 
 (0.24 % of the pixels), its `report.html` embedded the screenshots, baselines and difference images, and approving
 that one screen fixed the baseline. Kover and the `jacoco` plugin are unit-tested only.
 
+### Seeing the screen
+
+Six operations help an agent understand what is on a screen instead of guessing coordinates. They work on an Android
+serial and on `virtual-iphone`; a USB iPhone is not covered. On Android they read the UI hierarchy. The virtual iPhone has
+none, only pixels, so there they read the screenshot with Tesseract OCR. Install `tesseract` and its English data for
+that (`capabilities` returns `ocr` with `ready` and `missing`; `TOMACCO_TESSERACT` names another executable). Every
+result that came from OCR says `source:"ocr"` and carries Tesseract's confidence. OCR reads pixels, not controls: small,
+low-contrast or decorative text is misread or missed, a space can be lost ("Signin"), an icon without text is invisible,
+and a screen with both light and dark areas is read as one, so read the other part alone with `region`. A dark theme is
+handled by also reading the colour-inverted picture (`invert`, on `auto`).
+
+- **`screen.marks`** writes a screenshot with numbered boxes over what can be tapped and returns a list from number to
+  element: label, text, description, `resource_id`, class, bounds and centre. On Android these are the enabled clickable,
+  long-clickable, checkable and editable elements of the hierarchy; with `source:"ocr"` (the default on the virtual
+  iPhone) they are the lines of text found on the pixels. Over MCP the marked PNG is returned inline. `xml_path` also keeps
+  the raw hierarchy.
+- **`screen.tap`** taps a number from the last `screen.marks` (or `screen.tree`) of that device. It first checks that the
+  screen still has what the mark was made from (the same element in the hierarchy, or unchanged pixels for an OCR mark)
+  and otherwise answers `mark_stale` and taps nothing; `duration` makes it a long press.
+- **`screen.tree`** is the hierarchy as short indented text for a model's context: only elements with text or a
+  description, or that can be pressed or scroll, with `id`, bounds, state and `#N` for tappable ones, cut at `max_chars`
+  with a line that says how much is missing. Android only.
+- **`screen.ocr`** gives every word and line with its box and confidence, and with `text` (whole words) or
+  `text_contains` the matches with their centre. It reads a device or an `image`.
+- **`screen.diff`** says what changed between two screens: two hierarchies (`.xml`: elements added, removed, changed in
+  text, state or position) or two screenshots (`.png`: regions with box, size, share of changed pixels and position, and
+  a note when only the status bar changed); `text:true` also lists lines of text added and removed. Give `device`
+  instead of `after` to compare with the screen now.
+- **`screen.wait`** waits for `text` to appear, for `text_gone`, or for the screen to be `stable` (no more than
+  `threshold` of the pixels changing for `stable_ms`); a timeout answers `text_timeout` or `screen_unstable` with what
+  it saw. The same waits are the `wait_text` and `wait_stable` steps of a `testing.run` scenario.
+
+On the virtual iPhone a selector with only `text` or `text_contains` (and `index`) in `testing.find`, `testing.action`
+and the `wait`, `assert`, `click` and `long_click` steps is answered the same way, from the screenshot; the result says
+`source:"ocr"` and `pixel_based:true`. `fill` and every other selector property still answer `ui_hierarchy_unavailable`.
+
+```sh
+# Look, then tap what the picture says is number 7
+tomaccoctl call screen.marks '{"device":"emulator-5554","path":"/absolute/marked.png"}'
+tomaccoctl call screen.tap '{"device":"emulator-5554","mark":7}'
+# A compact tree to read, and a text check without a hierarchy
+tomaccoctl call screen.tree '{"device":"emulator-5554","max_chars":3000}'
+tomaccoctl call screen.ocr '{"device":"virtual-iphone","text_contains":"Settings"}'
+# Wait for the screen to settle after an action, ignoring the clock
+tomaccoctl call screen.wait '{"device":"virtual-iphone","until":"stable","stable_ms":1000,"ignore":[{"x":0,"y":0,"width":1206,"height":170}]}'
+# What did that tap change?
+tomaccoctl call screen.diff '{"before":"/absolute/before.xml","device":"emulator-5554"}'
+```
+
+In a scenario:
+
+```json
+{"name":"Sign in","steps":[
+  {"action":"click","selector":{"text":"Sign in"}},
+  {"action":"wait_text","text":"Welcome","timeout":20},
+  {"action":"wait_stable","duration":1000,"timeout":10}]}
+```
+
+What ran: unit tests on recorded hierarchies, generated screenshots and fake Tesseract output, and one test that reads a
+rendered screenshot with the installed Tesseract 5 (white and inverted, with a `region`). On an API 36 x86_64 emulator
+(started without acceleration, so slow): `screen.tree` on a system "isn't responding" dialog gave three nodes and two
+marks; `screen.tap` on the "Wait" mark verified the element and dismissed the dialog, and `screen.diff` against the
+earlier hierarchy reported a different screen (the dialog's package to Settings). `screen.ocr` on a screenshot of
+another such dialog read "Close app" and "Wait" but "System Ul isn't responding" for "System UI", in 1.1 s for two
+passes. On that emulator `android.screen` itself timed out at 10 seconds (a `screencap` took 12.7 s), so `screen.marks`
+with its picture, `screen.wait` and a pixel `screen.diff` between two different screens were not run live. Nothing
+here ran on the virtual iPhone.
+
 ### UI tests on the virtual iPhone
 
 Pass `virtual-iphone` as the device to `testing.run`, `testing.record` and `testing.crashes` while the virtual iPhone runs. The
-guest tools report no UI hierarchy, so nothing can find an element by its label there: `testing.find`, `testing.action`,
-`testing.lint`, `testing.accessibility` and the selector steps (`wait`, `assert`, `click`, `long_click`, `fill`) answer
-`ui_hierarchy_unavailable`, whose `details.testing` lists what works.
+guest tools report no UI hierarchy, so nothing can find an element by its properties there: `testing.lint`,
+`testing.accessibility`, `fill` and a selector other than `text` or `text_contains` answer `ui_hierarchy_unavailable`, whose
+`details.testing` lists what works. A selector with `text` or `text_contains` is read off the screenshot with OCR instead
+(see [Seeing the screen](#seeing-the-screen)).
 
 - **Steps.** `tap` and `swipe` take pixels of the screenshot (`ios.virtual.screenshot` with `frame:"none"`) and go through
   `ios.emulator.control` as `click` and `drag`; a contact lasts at most 2 seconds, and a swipe that stays put is a long press.
@@ -1061,6 +1130,12 @@ What works where, kept equal to the code by a unit test (`capabilities` returns 
 | `testing.record` | Yes: taps named by element | Yes: taps at coordinates | No |
 | `testing.lint` | Yes | No: no UI hierarchy | No |
 | `testing.accessibility` | Yes | No: no UI hierarchy | No |
+| `testing.find`, `testing.action` and the `wait`, `assert`, `click`, `long_click` steps by text (OCR) | No: selectors read the UI hierarchy; `screen.ocr` reads pixels | Yes: pixel-based: `text` and `text_contains` only, read with tesseract | No |
+| `screen.marks`, `screen.tap` | Yes: elements from the UI hierarchy | Yes: lines of text read with tesseract | No |
+| `screen.tree` | Yes | No: no UI hierarchy | No |
+| `screen.ocr` | Yes: tesseract | Yes: tesseract | No: give an image |
+| `screen.diff` | Yes: UI hierarchy or pixels | Yes: pixels, and text with OCR | No: give two images |
+| `screen.wait`, the `wait_text` and `wait_stable` steps | Yes: text from the hierarchy, or OCR | Yes: text by OCR; stable by pixels | No |
 | `testing.setup` (Unicode text) | Yes | No: `text` types US or German keys | No |
 <!-- testing-matrix:end -->
 

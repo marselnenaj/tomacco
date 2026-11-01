@@ -19,7 +19,7 @@
   {
     "name": "capabilities",
     "title": "What this computer can do",
-    "description": "Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds. testing lists each UI testing feature (id, feature) and whether it works on android, virtual_iphone and iphone (supported, note).",
+    "description": "Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds. ocr says whether tesseract is installed for the screen.ocr operations and the OCR fallback of testing.find on the virtual iPhone. testing lists each UI testing feature (id, feature) and whether it works on android, virtual_iphone and iphone (supported, note).",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -298,6 +298,24 @@
               "iphone"
             ]
           }
+        },
+        "ocr": {
+          "type": "object",
+          "properties": {
+            "ready": {
+              "type": "boolean"
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "ready",
+            "missing"
+          ]
         }
       },
       "required": [
@@ -2064,6 +2082,559 @@
     },
     "annotations": {
       "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "screen.marks",
+    "title": "Mark tappable elements",
+    "description": "Take a screenshot with numbered boxes over what can be tapped, and a list that says what each number is (label, text, description, resource id, class, bounds, centre), so a vision-capable agent can answer \"tap 7\" and call screen.tap. On Android the marks are the enabled clickable, long-clickable, checkable and editable elements of the UI hierarchy, in document order; content an app draws itself (a canvas, a game, much of a WebView) is not in it. On the virtual iPhone, which has no UI hierarchy, they are the lines of text Tesseract reads off the screenshot, each with its confidence (source ocr, which Android can use too): an icon without a label gets no mark, and text it misreads or misses is wrong or absent. The numbers belong to this look at the device; screen.tap checks the screen still matches before it taps. The result's path is the marked PNG, which MCP returns inline. Needs tesseract only for source ocr.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the marked PNG to write; an existing file is replaced"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "hierarchy",
+            "ocr"
+          ],
+          "default": "auto",
+          "description": "hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract (any screen, and the only way on the virtual iPhone); auto takes the hierarchy where there is one"
+        },
+        "max_marks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 60,
+          "description": "Most marks; the first ones in reading order are kept and truncated says so"
+        },
+        "xml_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Also keep the UI hierarchy as UIAutomator XML at this absolute path, for screen.diff"
+        },
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 40,
+          "description": "Leave out words Tesseract reads with less confidence than this (0 to 100)"
+        },
+        "language": {
+          "type": "string",
+          "default": "eng",
+          "pattern": "^[A-Za-z0-9_+]+$",
+          "description": "Tesseract language code, such as eng or eng+deu; its data must be installed"
+        },
+        "region": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "description": "Read only this part of the screen, in pixels. Tesseract reads a screen with both light and dark areas as one and can miss the minority area; a region reads it alone",
+          "properties": {
+            "x": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "y": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      },
+      "required": [
+        "device",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "screen.tap",
+    "title": "Tap a mark",
+    "description": "Tap the centre of a numbered mark from the last screen.marks (or screen.tree) of this device. First it checks the screen still has what the mark was made from: on Android the same element (class, resource id, text and bounds) in the UI hierarchy; for a mark read by OCR, the pixels where it was, unchanged. If not it answers mark_stale and taps nothing, so a number never lands on another element after the screen moved on. Pass duration for a long press.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+        },
+        "mark": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "The mark's number in the last screen.marks result for this device"
+        },
+        "duration": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 5000,
+          "description": "Hold for this many milliseconds (a long press) instead of tapping"
+        },
+        "verify": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check the screen still matches the mark before tapping; false taps where the mark was whatever is there now"
+        }
+      },
+      "required": [
+        "device",
+        "mark"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "screen.tree",
+    "title": "Read UI tree as text",
+    "description": "Read the Android UI hierarchy as a short indented text for a model's context: only the elements that carry text or a description, can be pressed or scroll, each with its class, text, id, bounds and state (checked, disabled, focused, editable), and #N on those screen.tap can tap. The first line says the screen size and the app's package. The text stops at max_chars with a last line that says how many nodes are missing. Android only: the virtual iPhone has no UI hierarchy (ui_hierarchy_unavailable); use screen.marks with source ocr there.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+        },
+        "max_chars": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 100000,
+          "default": 6000,
+          "description": "Longest text, in characters"
+        },
+        "only_interactive": {
+          "type": "boolean",
+          "default": false,
+          "description": "Leave out text that cannot be pressed"
+        },
+        "xml_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Also keep the UI hierarchy as UIAutomator XML at this absolute path, for screen.diff"
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "screen.ocr",
+    "title": "Read text on screen",
+    "description": "Read the text on a device's screen or in a PNG with Tesseract, for screens that have no UI hierarchy: the virtual iPhone, games, WebViews. Answers every word and line with its box and Tesseract's confidence (0 to 100), and with text (whole words, any letter case) or text_contains (part of a word or line), the matches with their centre, ready to tap. The recognition is of pixels, not of controls: small, low-contrast or decorative text can be misread or missed, a space can be lost (\"Signin\"), and a picture with light and dark areas may need region. A dark theme is handled by also reading the inverted picture. Needs tesseract (capabilities.ocr says whether it is installed).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of a PNG to read, instead of a device"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Find these words, in this order, as whole words in one line"
+        },
+        "text_contains": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Find this text inside a line, also as part of a word"
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Keep only the nth match, top to bottom"
+        },
+        "fuzzy": {
+          "type": "boolean",
+          "default": false,
+          "description": "Let a word of five or more letters match with one letter misread"
+        },
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 40,
+          "description": "Leave out words Tesseract reads with less confidence than this (0 to 100)"
+        },
+        "language": {
+          "type": "string",
+          "default": "eng",
+          "pattern": "^[A-Za-z0-9_+]+$",
+          "description": "Tesseract language code, such as eng or eng+deu; its data must be installed"
+        },
+        "region": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "description": "Read only this part of the screen, in pixels. Tesseract reads a screen with both light and dark areas as one and can miss the minority area; a region reads it alone",
+          "properties": {
+            "x": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "y": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "invert": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "never",
+            "always"
+          ],
+          "default": "auto",
+          "description": "auto reads the picture as it is and with its colours inverted, and merges the words (twice the time, finds light text on dark ground); never reads it once; always reads only the inverted picture"
+        },
+        "max_words": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000,
+          "default": 400,
+          "description": "Most words and lines to list"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "screen.diff",
+    "title": "Compare two screens",
+    "description": "Describe what changed between two screens in structured form. before and after are both UIAutomator XML files (hierarchies: elements added, removed and changed in text, state or position, or a different screen, from screen.tree or screen.marks with xml_path) or both PNG screenshots (the regions where pixels changed, each with its box, size, share of changed pixels and position, and a summary; status bar regions are marked). Leave after out and give device to compare before with the screen now. With text:true the screenshots are also read with Tesseract and the lines added and removed are listed. Screens of different sizes (a rotation) answer size_changed.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "before": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of a .xml hierarchy or a .png screenshot"
+        },
+        "after": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the second one, the same kind"
+        },
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+        },
+        "tolerance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "default": 24,
+          "description": "A pixel counts as changed when a colour channel differs by more than this (screenshots)"
+        },
+        "ignore": {
+          "type": "array",
+          "maxItems": 100,
+          "description": "Regions in screen pixels that are not compared, such as the status bar clock",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "x",
+              "y",
+              "width",
+              "height"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "y": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "max_regions": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 12,
+          "description": "Most regions, or elements per list, to describe"
+        },
+        "text": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also list the lines of text added and removed, read with Tesseract (screenshots)"
+        },
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 40,
+          "description": "Leave out words Tesseract reads with less confidence than this (0 to 100)"
+        },
+        "language": {
+          "type": "string",
+          "default": "eng",
+          "pattern": "^[A-Za-z0-9_+]+$",
+          "description": "Tesseract language code, such as eng or eng+deu; its data must be installed"
+        }
+      },
+      "required": [
+        "before"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "screen.wait",
+    "title": "Wait for text or a steady screen",
+    "description": "Wait until text is on the screen, is gone, or the screen has stopped changing, polling every interval_ms. text and text_gone look in the UI hierarchy's text and descriptions where there is one (Android, case-insensitive, part of a text) and otherwise read the screenshot with Tesseract; source forces one. stable takes screenshots until stable_ms pass with at most threshold of the pixels (outside ignore) changed from one to the next, and answers screen_unstable with the last changed fraction when a video, animation or spinner keeps going. A timeout answers text_timeout or screen_unstable with what was seen. The same waits are the wait_text and wait_stable steps of testing.run scenarios.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+        },
+        "until": {
+          "type": "string",
+          "enum": [
+            "text",
+            "text_gone",
+            "stable"
+          ],
+          "description": "text: wait for it to appear; text_gone: wait for it to go; stable: wait for the screen to stop changing"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The text, for text and text_gone"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "hierarchy",
+            "ocr"
+          ],
+          "default": "auto",
+          "description": "hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract (any screen, and the only way on the virtual iPhone); auto takes the hierarchy where there is one"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 300,
+          "default": 30,
+          "description": "Seconds"
+        },
+        "interval_ms": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 10000,
+          "default": 500,
+          "description": "Milliseconds between looks"
+        },
+        "stable_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 60000,
+          "default": 1000,
+          "description": "For stable: how long the screen must stay unchanged"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.001,
+          "description": "For stable: the largest changed fraction of the pixels still counted as unchanged"
+        },
+        "tolerance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "default": 24,
+          "description": "For stable: a pixel counts as changed when a colour channel differs by more than this"
+        },
+        "ignore": {
+          "type": "array",
+          "maxItems": 100,
+          "description": "Regions in screen pixels that are not compared, such as the status bar clock",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "x",
+              "y",
+              "width",
+              "height"
+            ],
+            "properties": {
+              "x": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "y": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "width": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "fuzzy": {
+          "type": "boolean",
+          "default": false,
+          "description": "For text read by OCR: let a word of five or more letters match with one letter misread"
+        },
+        "min_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 40,
+          "description": "Leave out words Tesseract reads with less confidence than this (0 to 100)"
+        },
+        "language": {
+          "type": "string",
+          "default": "eng",
+          "pattern": "^[A-Za-z0-9_+]+$",
+          "description": "Tesseract language code, such as eng or eng+deu; its data must be installed"
+        },
+        "region": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "description": "Read only this part of the screen, in pixels. Tesseract reads a screen with both light and dark areas as one and can miss the minority area; a region reads it alone",
+          "properties": {
+            "x": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "y": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      },
+      "required": [
+        "device",
+        "until"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": true
@@ -4942,7 +5513,7 @@
   {
     "name": "testing.find",
     "title": "Find Android element",
-    "description": "Wait for native UI elements using semantic properties; return bounds and attributes. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
+    "description": "Wait for native UI elements using semantic properties; return bounds and attributes. The virtual iPhone (device virtual-iphone) reports no UI hierarchy, so a selector with only text or text_contains (and index) there is read off the screenshot with Tesseract instead: the matches carry source ocr, pixel_based true and a confidence, and the text can be misread or missed. Any other selector property answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -5023,7 +5594,7 @@
   {
     "name": "testing.action",
     "title": "Operate Android element",
-    "description": "Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy: it answers ui_hierarchy_unavailable, whose details.testing lists what works there.",
+    "description": "Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy, so there a selector with only text or text_contains (and index) clicks or long-clicks the middle of the text read off the screenshot with Tesseract (source ocr, pixel_based true); fill and any other selector property answer an error, and ui_hierarchy_unavailable lists in details.testing what works.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -5115,7 +5686,7 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports, failure screenshots and a self-contained report.html; each run's outcomes are added to the test history (testing.history). A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On Android, a measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it. On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop, clear and measure fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes. With platform ios, it runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.",
+    "description": "Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports, failure screenshots and a self-contained report.html; each run's outcomes are added to the test history (testing.history). A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG), wait_screen (until it matches), wait_text (until text is on the screen, or with state absent gone; from the UI hierarchy on Android, read with Tesseract where there is none or source is ocr) and wait_stable (until the screen has not changed for duration milliseconds). On Android, a measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it. On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and stop, clear and measure fail, and so do selector steps other than a text or text_contains selector, which is read off the screenshot with Tesseract (pixel-based; wait and assert, click and long_click, not fill): the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes. With platform ios, it runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.",
     "inputSchema": {
       "type": "object",
       "properties": {

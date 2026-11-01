@@ -106,6 +106,7 @@ fn summary(doctor: &Value, avds: &Value, devices: &Value, virtual_phone: Option<
         "android":{"build":android_build,"emulator":emulator,"devices":android_devices},
         "ios":{"build":ios_build,"devices":iphone,"virtual_iphone":virtual_iphone},
         "desktop":{"ready":doctor["desktop"]["loadable"] != false},
+        "ocr":capability(&[("tesseract", crate::screen_ocr::available())]),
         "testing":crate::ios_emulator::ui_testing::matrix(),
         "next":"doctor has next_steps for what is missing"
     })

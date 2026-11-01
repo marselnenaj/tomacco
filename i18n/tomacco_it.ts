@@ -4386,6 +4386,30 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Registra un test dell'interfaccia</translation>
     </message>
     <message>
+        <source>Mark tappable elements</source>
+        <translation>Contrassegna elementi toccabili</translation>
+    </message>
+    <message>
+        <source>Tap a mark</source>
+        <translation>Tocca un contrassegno</translation>
+    </message>
+    <message>
+        <source>Read UI tree as text</source>
+        <translation>Leggi l'albero dell'interfaccia come testo</translation>
+    </message>
+    <message>
+        <source>Read text on screen</source>
+        <translation>Leggi il testo sullo schermo</translation>
+    </message>
+    <message>
+        <source>Compare two screens</source>
+        <translation>Confronta due schermate</translation>
+    </message>
+    <message>
+        <source>Wait for text or a steady screen</source>
+        <translation>Attendi un testo o una schermata stabile</translation>
+    </message>
+    <message>
         <source>Check UI test scenario</source>
         <translation>Controlla scenario di test dell'interfaccia</translation>
     </message>
