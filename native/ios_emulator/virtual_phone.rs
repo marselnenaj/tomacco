@@ -706,6 +706,17 @@ fn allocated_bytes(directory: &Path) -> u64 {
         .sum()
 }
 
+/// What a streamed copy of a disk writes: its bytes on disk, at most its
+/// size. The copy keeps holes and leaves zero chunks out, so it never writes
+/// more than the source's allocated data (on a filesystem that compresses,
+/// the copy is compressed as well). None when it is not a readable file.
+fn copied_bytes(path: &Path) -> Option<u64> {
+    fs::metadata(path)
+        .ok()
+        .filter(|meta| meta.is_file())
+        .map(|meta| meta.len().min(meta.blocks() * 512))
+}
+
 /// Whether the filesystem of `installs` can clone `source` instead of
 /// copying it (FICLONE), as the copy tries first. The probe clones the
 /// base's smallest disk into a temporary file there and removes it again.
@@ -789,11 +800,17 @@ fn start_disk(profile: &Value, state: &Value, pins: &[(PathBuf, String)], probe:
     let Some(root) = disk_overlay::root_bytes(&base) else {
         return Value::Null;
     };
-    let mut disks = if method == "overlay" { 0 } else { root };
+    let mut disks = match method {
+        "overlay" => 0,
+        // A streamed copy writes the base's data only (sparse_copy in
+        // tools/prepare_ios_userland.py); a flattened chain its virtual size.
+        "copy" => copied_bytes(&base.join(disk_overlay::ROOT_RAW)).unwrap_or(root),
+        _ => root,
+    };
     for name in COPIED_DISKS {
-        match fs::metadata(base.join(name)) {
-            Ok(meta) if meta.is_file() => disks += meta.len(),
-            _ => return Value::Null,
+        match copied_bytes(&base.join(name)) {
+            Some(bytes) => disks += bytes,
+            None => return Value::Null,
         }
     }
     let Some(free) = free_bytes(&installs) else {
@@ -2025,6 +2042,13 @@ mod start_disk_tests {
             // Neither reading leaves anything in installs.
             assert_eq!(fs::read_dir(&installs).unwrap().count(), 0);
         }
+        // A sparse base needs room for its data only, as its copy keeps the holes.
+        let sparse = File::create(base.join("system.raw")).unwrap();
+        sparse.set_len(1 << 30).unwrap();
+        let disk = start_disk(&profile, &state, &[], false);
+        assert_eq!(disk["needed_bytes"], 2 * 4096 + COPY_HEADROOM);
+        assert_eq!(copied_bytes(&base.join("system.raw")), Some(0));
+        assert_eq!(copied_bytes(&base), None);
         // An open run without a verified base, or a base without its disks,
         // says nothing.
         assert!(

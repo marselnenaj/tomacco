@@ -101,8 +101,8 @@ refused, not deleted. A `guest-install*` directory the state does not know is li
 delete it yourself if it is yours. A real cleanup waits until no start or stop runs. The cleanup has unit tests and a
 control-plane test; it has not been run on a real profile yet.
 
-A start checks the space first. When the filesystem of `installs` lacks room for the copy (the base's disks
-plus 1 GiB, counting the older copies the start would delete first), `ios.virtual.start` refuses at once with
+A start checks the space first. When the filesystem of `installs` lacks room for the copy (the data the base's
+disks hold, which is what a streamed copy writes, plus 1 GiB, counting the older copies the start would delete first), `ios.virtual.start` refuses at once with
 `ios_virtual_disk_space`, before anything is deleted or copied. The refusal says how much to free. On a filesystem
 that clones files (btrfs, or XFS with reflink) the copy shares blocks with its base and needs only the 1 GiB.
 `start_disk` in `ios.virtual.status` gives the same reckoning before you start: `needed_bytes`, `free_bytes`,

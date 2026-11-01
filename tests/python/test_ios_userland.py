@@ -182,6 +182,17 @@ class UserlandTests(unittest.TestCase):
         self.assertEqual(copied["sparse_copy"], {"data_bytes_written": chunk, "zero_bytes_skipped": 2 * chunk,
                                                  "extent_queries": "unavailable"})
 
+    def test_a_sparse_source_needs_room_for_its_data_only(self):
+        root = self.source()
+        with (root / "disk").open("wb") as stream:
+            stream.truncate(8 << 30)  # 8 GiB, all of it a hole
+        free = SimpleNamespace(f_bavail=(1 << 30) // 4096 + 1, f_frsize=4096)
+        with patch.object(userland.fcntl, "ioctl", side_effect=OSError(userland.errno.EOPNOTSUPP, "no")), \
+                patch.object(userland.os, "statvfs", return_value=free):
+            copied = userland.snapshot(root, "disk", self.root / "copy", time.monotonic() + 30)
+        self.assertEqual(copied["sparse_copy"]["data_bytes_written"], 0)
+        self.assertEqual((self.root / "copy").stat().st_size, 8 << 30)
+
     def test_an_invalid_extent_report_stops_the_copy(self):
         def stuck(_fd, offset, _whence):
             return offset  # data and hole at the same place: no progress

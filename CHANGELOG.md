@@ -181,7 +181,8 @@ operations and their JSON results.
   it hashes holes as zeros without reading them, and its limit of extent queries rose from 4096 to 262144. Before, every
   copy was written out to its full 32 GiB, and both hashes read all of it at 128 MiB/s. On a synthetic 4 GiB disk with
   0.5 GiB of data, the copy took 3.9 s instead of 13.6 s and the launcher's hash 5.4 s instead of 32.4 s, with the same
-  SHA-256. Not run on a live phone.
+  SHA-256. The start's space check and `start_disk.needed_bytes` count the data the base's disks hold instead of their
+  full size, so a start fits on a fuller disk. Not run on a live phone.
 - The virtual iOS device's troubleshooting guide opens with a table of every error code it returns, with what each
   means and what to do. A test fails when a code there or in a symptom does not exist in the code, or when a code the
   code returns is missing from the table.

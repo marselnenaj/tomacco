@@ -194,11 +194,13 @@ def snapshot(root, relative, destination, deadline, *, source_fd=None):
             target.truncate(0)
             # A full copy that runs out of space part way leaves nothing usable
             # and a nearly full disk behind; refuse it before writing.
+            # The copy writes no more than the source's data (sparse_copy).
             space = os.statvfs(target_fd)
             available = space.f_bavail * space.f_frsize
-            if available < before.st_size + COPY_HEADROOM:
+            needed = min(before.st_size, before.st_blocks * 512) + COPY_HEADROOM
+            if available < needed:
                 raise OSError(errno.ENOSPC, f"Copying {Path(root) / relative} needs "
-                              f"{(before.st_size + COPY_HEADROOM) / 2**30:.1f} GiB in {destination.parent}; "
+                              f"{needed / 2**30:.1f} GiB in {destination.parent}; "
                               f"{available / 2**30:.1f} GiB are free")
             sparse = sparse_copy(source_fd, target_fd, before.st_size, deadline)
         target.flush()
