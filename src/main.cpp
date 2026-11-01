@@ -98,7 +98,8 @@ int main(int argc,char **argv) {
     if(!QStringList{"runtime","preview","project","devices","ios-research","jobs","tools","debug","testing","profiling","files","release"}.contains(parser.value("workspace"))) {
         fputs(qPrintable(QCoreApplication::translate("main","Unknown workspace. See --help for the available workspaces.\n")),stderr); return 2;
     }
-    Backend backend(parser.value("url"));
+    // The tool checks (xtool, swift) are for the web preview; it starts them when it is first shown.
+    Backend backend(parser.value("url"),nullptr,false);
     if(parser.isSet("device")) {
         bool found=false;
         for(const auto &value:backend.models()) if(value.toMap().value("id").toString()==parser.value("device"))found=true;

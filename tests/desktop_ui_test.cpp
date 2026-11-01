@@ -182,6 +182,8 @@ private slots:
         qputenv("TOMACCO_UPDATES","off");
         qputenv("XDG_CONFIG_HOME",directory.filePath("config").toUtf8());
         qputenv("XDG_CACHE_HOME",directory.filePath("cache").toUtf8());
+        // No Omarchy theme unless a test writes one.
+        qputenv("XDG_STATE_HOME",directory.filePath("state-home").toUtf8());
         QVERIFY(QDir().mkpath(directory.filePath("project")));
         QFile source(directory.filePath("project/pubspec.yaml"));QVERIFY(source.open(QIODevice::WriteOnly));source.write("name: tomacco_ui_test\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");source.close();
         // This version has started here before: no sheet for a first start or a new version.
@@ -220,6 +222,23 @@ private slots:
         const auto project=workspace->property("project");
         const auto projectMap=project.metaType()==QMetaType::fromType<QJSValue>()?project.value<QJSValue>().toVariant().toMap():project.toMap();
         QCOMPARE(projectMap.value("path").toString(),directory.filePath("project"));
+    }
+    void hidden_pages_are_built_when_first_shown() {
+        // The start builds what the first window shows; the debugger, UI tests, performance,
+        // release and the iOS test system wait until they are shown, then stay.
+        QVERIFY(!object("debugWorkspace"));QVERIFY(!object("iosResearch"));
+        open("debug");
+        QTRY_VERIFY(object("debugWorkspace"));
+        QVERIFY(!object("iosResearch"));
+        // The iOS test system: once the Apple devices are shown.
+        open("devices");
+        const auto platform=workspace->property("selectedPlatform").toString();
+        QVERIFY(QMetaObject::invokeMethod(workspace,"chooseDevicePlatform",Q_ARG(QVariant,QString("ios"))));
+        QTRY_VERIFY(object("iosResearch"));
+        QVERIFY(QMetaObject::invokeMethod(workspace,"chooseDevicePlatform",Q_ARG(QVariant,platform)));
+        open("runtime");
+        QVERIFY(object("debugWorkspace"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void command_palette_keyboard_and_focus() {
         QTest::keyClick(window,Qt::Key_K,Qt::ControlModifier);
@@ -839,6 +858,8 @@ private slots:
         QCOMPARE(revealed.size(),1);QCOMPARE(revealed.first().first().toString(),path);
         view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});
         // The virtual iPhone records through ios.virtual.record; with no phone running it says why.
+        // Its view is built when it is first needed.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"visit",Q_ARG(QVariant,QString("ios-research"))));
         auto *guest=object("iosGuestRecorder");QVERIFY(guest);
         const QVariantMap phoneArgs{{"path",videos.filePath("phone.mp4")},{"seconds",600}};
         QVERIFY(QMetaObject::invokeMethod(guest,"start",Q_ARG(QVariant,QString("ios.virtual.record")),Q_ARG(QVariant,phoneArgs)));

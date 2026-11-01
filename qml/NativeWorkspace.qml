@@ -718,7 +718,7 @@ Rectangle {
                         // The details on hover: the reason, or how many tools agents can call through the CLI and MCP.
                         HoverHandler {id:agentHover}
                         ToolTip.visible:agentHover.hovered;ToolTip.delay:550
-                        ToolTip.text:Agent.cliError || Agent.socketError || qsTr("%n tool(s) available to agents through the CLI and MCP","",Agent.operations.length)
+                        ToolTip.text:Agent.cliError || Agent.socketError || qsTr("%n tool(s) available to agents through the CLI and MCP","",workspace.operations.length)
                     }
                 }
                 Rectangle {anchors.right:parent.right;width:1;height:parent.height;color:Theme.subtle}

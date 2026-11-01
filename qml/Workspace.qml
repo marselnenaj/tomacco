@@ -24,9 +24,22 @@ Rectangle {
         {id:"release",tone:"red",title:qsTr("Signing & release"),description:qsTr("Sign it, version it and ship it.")}
     ]
     readonly property string section: sections[currentIndex].id
+    // Pages that only matter once they are shown are built then, not at the
+    // start: the debugger, UI tests, performance, release and the iOS test
+    // system. Once built they stay.
+    property var visited: ({})
+    function visit(name) { if(!visited[name]) visited=Object.assign({},visited,{[name]:true}) }
+    // The index, not section: that binding may not have followed yet.
+    onCurrentIndexChanged: if(opened) visit(sections[currentIndex].id)
+    readonly property var iosResearch: iosResearchLoader.item
+    // Before the iOS test system is built: what its state says about a phone nobody showed.
+    readonly property var idleIosResearch: ({guest:{running:false,detached:false,detach_pending:false,window_visible:false},virtual_phone:{},visible:false,job_id:"",job_state:"",report_directory:"",guest_observations_verified:false,graphical_apps_verified:false})
     function open() { opened=true }
     function close() { opened=false }
     property var project: ({})
+    // Every operation, converted from the control program's list once; each
+    // read of Agent.operations would convert all of them again.
+    readonly property var operations: Agent.operations
     property var savedWorkspaces: ({})
     property string revealPath: ""
     property int revealLine: 1
@@ -141,18 +154,18 @@ Rectangle {
     }
     function viewState() {
         return {visible:opened,tab:["project","devices","jobs","tools","debug","testing","profiling","files","release"][panel.currentIndex],path:project.path || "",file:fileWorkspace.current,files:fileWorkspace.tabs,dirty:fileWorkspace.dirtyFiles(),entries:fileWorkspace.entries.length,notice:fileWorkspace.notice,
-            ios_research:{guest:iosResearch.guestState(),virtual_phone:iosResearch.virtualPhone,visible:iosResearch.opened,job_id:iosResearch.jobId,job_state:iosResearch.jobState,report_directory:iosResearch.reportDirectory,guest_observations_verified:iosResearch.report.guest_observations_verified===true,graphical_apps_verified:false}}
+            ios_research:!iosResearch?idleIosResearch:{guest:iosResearch.guestState(),virtual_phone:iosResearch.virtualPhone,visible:iosResearch.opened,job_id:iosResearch.jobId,job_state:iosResearch.jobState,report_directory:iosResearch.reportDirectory,guest_observations_verified:iosResearch.report.guest_observations_verified===true,graphical_apps_verified:false}}
     }
     function hasUnsaved() { return fileWorkspace.hasUnsaved() }
-    function configureIosGuest(args) { iosResearch.configureGuest(args) }
+    function configureIosGuest(args) { visit("ios-research");iosResearchLoader.item.configureGuest(args) }
     // The virtual iPhone's own window takes part in the app's device-only mode.
     property bool guestSolo: false
-    readonly property bool guestWindowVisible: iosResearch.guestWindowVisible
+    readonly property bool guestWindowVisible: !!iosResearch && iosResearch.guestWindowVisible
     signal guestCloseRequested()
     signal guestDockRequested()
 
     function showTab(name) {
-        if(name==="ios-research") {currentIndex=1;chooseDevicePlatform("ios");open();Qt.callLater(()=>iosResearch.open());return}
+        if(name==="ios-research") {currentIndex=1;chooseDevicePlatform("ios");open();visit("ios-research");Qt.callLater(()=>iosResearch.open());return}
         let index=["project","devices","jobs","tools","debug","testing","profiling","files","release"].indexOf(name)
         if(index<0) throw new Error("Unknown workspace: "+name)
         panel.currentIndex=index
@@ -196,7 +209,7 @@ Rectangle {
     }
     function showAction(name) {
         panel.currentIndex=3
-        for(let operation of Agent.operations) if(operation.name===name) { chooseOperation(operation); break }
+        for(let operation of panel.operations) if(operation.name===name) { chooseOperation(operation); break }
     }
     // The form's values as the operation's arguments; throws with what is wrong.
     function formArguments() {
@@ -244,6 +257,7 @@ Rectangle {
     }
     onOpenedChanged: {
         if(!opened)return
+        visit(sections[currentIndex].id)
         request("workspace.list",{},true)
         request("job.list",{},true)
         request("device.list",{},true)
@@ -304,11 +318,11 @@ Rectangle {
             id: band
             Layout.fillWidth: true
             visible: !panel.fullBleed
-            roomy: panel.height>=680 && !(panel.section==="debug" && debugPage.active)
+            roomy: panel.height>=680 && !(panel.section==="debug" && !!debugPage.item && debugPage.item.active)
             title: panel.sections[panel.currentIndex].title
             lead: panel.sections[panel.currentIndex].description
             tone: panel.sections[panel.currentIndex].tone || "inverse"
-            detail: panel.section==="debug" ? debugPage.stateLabel : ""
+            detail: panel.section==="debug" && debugPage.item ? debugPage.item.stateLabel : ""
             StudioButton { text: "Toolchain"; iconName: "settings"; inverted: true; invertedFill: band.ink; invertedText: band.color; visible: panel.section==="project"; onClicked: { panel.showAction("doctor");panel.request("doctor",{}) } }
         }
         Rectangle {
@@ -421,7 +435,11 @@ Rectangle {
                     StudioButton {text:qsTr("Find devices");iconName:"refresh";onClicked:panel.request("device.list",{})}
                 }
                 AndroidDevices {id:androidLibrary;Layout.fillWidth:true;Layout.fillHeight:true;visible:panel.selectedPlatform==="android";workspace:panel}
-                IosResearch {id:iosResearch;Layout.fillWidth:true;visible:panel.selectedPlatform==="ios";workspace:panel;guestSolo:panel.guestSolo;onGuestCloseRequested:panel.guestCloseRequested();onGuestDockRequested:panel.guestDockRequested()}
+                Loader {
+                    id:iosResearchLoader;Layout.fillWidth:true;visible:panel.selectedPlatform==="ios"
+                    active:!!panel.visited["ios-research"] || (!!panel.visited.devices && panel.selectedPlatform==="ios")
+                    sourceComponent:Component {IosResearch {workspace:panel;guestSolo:panel.guestSolo;onGuestCloseRequested:panel.guestCloseRequested();onGuestDockRequested:panel.guestDockRequested()}}
+                }
                 ListView {
                     id:deviceList;Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:160
                     visible:panel.selectedPlatform==="ios"
@@ -585,7 +603,7 @@ Rectangle {
                         Keys.onReturnPressed: if(currentItem)currentItem.clicked()
                         Keys.onSpacePressed: if(currentItem)currentItem.clicked()
                         Accessible.role: Accessible.List; Accessible.name: qsTr("Tools")
-                        model: Agent.operations.filter(x=>(OperationTitles.title(x)+" "+x.title+" "+x.name).toLowerCase().indexOf(actionFilter.text.toLowerCase())>=0)
+                        model: panel.operations.filter(x=>(OperationTitles.title(x)+" "+x.title+" "+x.name).toLowerCase().indexOf(actionFilter.text.toLowerCase())>=0)
                         delegate: ItemDelegate {
                             id: toolRow
                             required property var modelData
@@ -606,7 +624,7 @@ Rectangle {
                         StudioEmptyState {
                             objectName: "toolsUnavailable"; actionName: "toolsRetry"
                             anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.margins: Theme.gapLg
-                            visible: Agent.operations.length===0
+                            visible: panel.operations.length===0
                             showMark: false
                             title: qsTr("No tools yet.")
                             body: Agent.cliError || qsTr("The control program has not listed its tools yet.")
@@ -616,7 +634,7 @@ Rectangle {
                         Text {
                             objectName: "toolsNoMatch"
                             anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.margins: Theme.gapLg
-                            visible: Agent.operations.length>0 && toolList.count===0
+                            visible: panel.operations.length>0 && toolList.count===0
                             text: qsTr("No tool matches “%1”.").arg(actionFilter.text)
                             color: Theme.muted; font.pixelSize: Theme.fontSmall; wrapMode: Text.WordWrap
                         }
@@ -669,11 +687,11 @@ Rectangle {
                     StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 80; clip: true; placeholderText: qsTr("The result shows up here."); accessibleName: qsTr("Result"); text: panel.resultText }
                 }
             }
-            DebugWorkspace { id: debugPage; workspace: panel }
-            TestWorkspace { workspace: panel }
-            ProfileWorkspace { workspace: panel }
+            Loader { id: debugPage; active: !!panel.visited.debug; sourceComponent: Component { DebugWorkspace { workspace: panel } } }
+            Loader { active: !!panel.visited.testing; sourceComponent: Component { TestWorkspace { workspace: panel } } }
+            Loader { active: !!panel.visited.profiling; sourceComponent: Component { ProfileWorkspace { workspace: panel } } }
             FileWorkspace { id: fileWorkspace; workspace: panel }
-            ReleaseWorkspace { workspace: panel }
+            Loader { active: !!panel.visited.release; sourceComponent: Component { ReleaseWorkspace { workspace: panel } } }
         }
     }
     FolderDialog { id: projectFolder; title: qsTr("Choose project"); onAccepted: panel.openProject(decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,""))) }

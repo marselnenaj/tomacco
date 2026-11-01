@@ -51,6 +51,10 @@ ApplicationWindow {
     property real requestedZoom: 0
     property string notice: ""
     property bool nativeMode: initialWorkspace!=="preview"
+    // The lab's tool checks (xtool, swift) wait until the lab is first shown.
+    onNativeModeChanged: if(!nativeMode) openLab()
+    function openLab() { if(!labProbed){labProbed=true;Studio.probeToolchain()} }
+    property bool labProbed: false
     property int testStep: 0
     property bool testFailed: false
     property var testResults: []
@@ -176,6 +180,7 @@ ApplicationWindow {
         categorySelections=Object.assign({},categorySelections,{[deviceCategory]:currentModel.id})
         root.rotated=initialLandscape; root.foldedOpen=initialUnfolded && !!root.currentModel.openWidth
         if(Studio.initialUrl.length) openUrl(Studio.initialUrl)
+        if(!nativeMode) openLab()
         if(initialProject.length) { workspace.initialPath=initialProject; workspace.openProject(initialProject) }
         if(initialWorkspace!=="preview" && initialWorkspace!=="runtime") workspace.showTab(initialWorkspace)
         if(Agent.socketError.length) toast(Agent.socketError)
