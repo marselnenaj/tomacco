@@ -5,6 +5,7 @@ import contextlib
 import hashlib
 import io
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -52,6 +53,8 @@ class Fake(make_release.Commands):
             return json.dumps(METADATA).encode()
         if argv[:2] == ["cargo", "tree"]:
             return b"x v1.2.3 (/x)\nserde v1.0.0\n"
+        if argv[0] == "ssh" and argv[-1].endswith("uname -m"):
+            return b"aarch64\n"
         return b""
 
     def run(self, argv):
@@ -68,9 +71,16 @@ class Fake(make_release.Commands):
             output = self.root / argv[argv.index("--output") + 1]
             output.mkdir(parents=True)
             (output / "work").mkdir()
-            package = output / "tomacco-1.2.3-Linux-x86_64-portable.tar.gz"
-            package.write_bytes(b"portable")
-            package.with_name(package.name + ".sha256").write_text(hashlib.sha256(b"portable").hexdigest() + "  " + package.name + "\n")
+            architecture = argv[argv.index("--arch") + 1] if "--arch" in argv else "x86_64"
+            package = output / f"tomacco-1.2.3-Linux-{architecture}-portable.tar.gz"
+            package.write_bytes(b"portable " + architecture.encode())
+            package.with_name(package.name + ".sha256").write_text(
+                hashlib.sha256(package.read_bytes()).hexdigest() + "  " + package.name + "\n")
+        if argv[0] == "scp" and argv[-1] == f"{self.root / make_release.ARM_BUILD}/":
+            # Fetching from the ARM build host.
+            package = self.root / make_release.ARM_BUILD / "tomacco-1.2.3-Linux-aarch64.tar.gz"
+            package.write_bytes(b"package aarch64")
+            package.with_name(package.name + ".sha256").write_text(hashlib.sha256(b"package aarch64").hexdigest() + "  " + package.name + "\n")
         if "tools/build_source_release.py" in argv:
             dist = self.root / make_release.DIST
             dist.mkdir(exist_ok=True)
@@ -96,7 +106,7 @@ class MakeRelease(unittest.TestCase):
         (self.root / "assets/x.metainfo.xml").write_text(METAINFO)
         (self.root / "Cargo.lock").write_text('[[package]]\nname = "serde"\nversion = "1.0.0"\nchecksum = "' + "ab" * 32 + '"\n')
         (self.root / "packaging/portable").mkdir(parents=True)
-        for name in ("qt-archives.txt", "Dockerfile"):
+        for name in ("qt-archives.txt", "Dockerfile", "qt-archives-aarch64.txt", "Dockerfile.aarch64"):
             shutil.copy2(ROOT / "packaging/portable" / name, self.root / "packaging/portable" / name)
         self.product(PUBLIC)
         self.key = base / "outside.pem"
@@ -184,6 +194,245 @@ class MakeRelease(unittest.TestCase):
             names_in = {component["name"] for component in sbom["components"]}
             self.assertIn("serde", names_in)
             self.assertEqual({"qtbase", "FFmpeg"} <= names_in, bundles)
+
+    def test_an_arm_host_builds_the_aarch64_package_from_the_source_tarball(self):
+        code, commands, errors, _ = self.make("--key", str(self.key), "--arm-host", "builder@arm",
+                                              "--arm-path", "~/.cache/tomacco-buildtools/bin")
+        self.assertEqual(code, 0, errors)
+        words = [" ".join(argv) for argv in commands.runs]
+        source = hashlib.sha256(b"source").hexdigest()
+        remote = [argv for argv in commands.runs if argv[0] in ("ssh", "scp")]
+        self.assertTrue(all(argv[1:3] == ["-o", "BatchMode=yes"] for argv in remote), remote)
+        scripts = [argv[-1] for argv in remote if argv[0] == "ssh"]
+        for script in scripts:
+            self.assertTrue(script.startswith('export PATH="$HOME"/.cache/tomacco-buildtools/bin:"$PATH" && '
+                                              "export SOURCE_DATE_EPOCH=1700000000 && "), script)
+        order = ["build_source_release.py", 'test "$(uname -m)" = aarch64', "rm -rf -- tomacco-build-release-1.2.3",
+                 "scp -o BatchMode=yes -q " + str(self.root / "dist/tomacco-1.2.3-source.tar.gz") + " builder@arm:tomacco-build-release-1.2.3/",
+                 f"printf '%s  %s\\n' {source} tomacco-1.2.3-source.tar.gz | sha256sum -c -",
+                 "cmake -S . -B build-product -G Ninja -DCMAKE_BUILD_TYPE=Release", "cmake --build build-product",
+                 "ctest --test-dir build-product --output-on-failure --no-tests=error -R '^(backend|desktop-ui|native-display)$'",
+                 "cmake --build build-product --target package",
+                 "builder@arm:tomacco-build-release-1.2.3/tomacco-1.2.3-source/build-product/tomacco-1.2.3-Linux-aarch64.tar.gz.sha256",
+                 "pkeyutl -sign", "gh release create"]
+        position = 0
+        for word in order:  # each after the one before
+            position = next((i for i in range(position, len(words)) if word in words[i]), None)
+            self.assertIsNotNone(position, f"{word} in order: {words}")
+        self.assertIn("cd -- tomacco-build-release-1.2.3/tomacco-1.2.3-source", scripts[2])
+        arm = "tomacco-1.2.3-Linux-aarch64.tar.gz"
+        dist = self.root / "dist"
+        for name in (arm, f"{arm}.sha256", f"{arm}.sig", f"{arm}.cdx.json", f"{arm}.cdx.json.sig"):
+            self.assertTrue((dist / name).is_file(), name)
+            self.assertIn(f"dist/{name}", commands.runs[-1])
+        self.assertFalse(any((self.root / make_release.ARM_BUILD).iterdir()), "the package moved to dist/")
+        signed = [Path(argv[argv.index("-in") + 1]).name for argv in commands.runs if argv[:3] == ["openssl", "pkeyutl", "-sign"]]
+        self.assertIn(arm, signed)
+        self.assertIn(f"{arm}.cdx.json", signed)
+        sbom = json.loads((dist / f"{arm}.cdx.json").read_text())
+        self.assertEqual(sbom["metadata"]["component"]["hashes"][0]["content"], hashlib.sha256(b"package aarch64").hexdigest())
+        self.assertNotIn("qtbase", {component["name"] for component in sbom["components"]})
+        statement = json.loads((dist / "tomacco-1.2.3-provenance.intoto.json").read_text())
+        self.assertIn(arm, {subject["name"] for subject in statement["subject"]})
+        self.assertTrue(statement["predicate"]["buildDefinition"]["externalParameters"]["aarch64_package"])
+        builder = statement["predicate"]["runDetails"]["builder"]["version"]
+        self.assertEqual(builder["aarch64-host machine"], "aarch64")
+        self.assertNotIn("builder@arm", json.dumps(statement), "the provenance does not name the host")
+
+    def test_the_arm_host_can_come_from_the_environment(self):
+        code, commands, errors, _ = self.make("--key", str(self.key), environment={
+            make_release.ARM_HOST_ENVIRONMENT: "arm", make_release.ARM_PATH_ENVIRONMENT: "/opt/tools/bin"})
+        self.assertEqual(code, 0, errors)
+        scripts = [argv[-1] for argv in commands.runs if argv[0] == "ssh"]
+        self.assertTrue(scripts)
+        self.assertTrue(all(script.startswith('export PATH=/opt/tools/bin:"$PATH"') for script in scripts))
+        self.assertTrue(all(argv[3] == "arm" for argv in commands.runs if argv[0] == "ssh"))
+        # Without either, nothing goes to a host.
+        shutil.rmtree(self.root / "dist")
+        for directory in (make_release.BUILD, make_release.PORTABLE, make_release.ARM_BUILD):
+            shutil.rmtree(self.root / directory, ignore_errors=True)
+        code, commands, errors, _ = self.make("--key", str(self.key))
+        self.assertEqual(code, 0, errors)
+        self.assertFalse(any(argv[0] in ("ssh", "scp") for argv in commands.runs))
+        self.assertFalse(any("aarch64" in path.name for path in (self.root / "dist").iterdir()))
+
+    def test_the_arm_tests_and_directory_can_be_chosen(self):
+        code, commands, errors, _ = self.make("--key", str(self.key), "--arm-host", "arm", "--arm-tests", "^backend$",
+                                              "--arm-directory", "tomacco-build-x")
+        self.assertEqual(code, 0, errors)
+        words = " ".join(argv[-1] for argv in commands.runs if argv[0] == "ssh")
+        self.assertIn("-R '^backend$'", words)
+        self.assertIn("cd -- tomacco-build-x/tomacco-1.2.3-source", words)
+
+    def test_unsafe_arm_hosts_and_directories_are_refused(self):
+        self.assertRefused("Not an SSH host name", "--key", str(self.key), "--arm-host", "-oProxyCommand=touch x")
+        self.assertRefused("Not an SSH host name", "--key", str(self.key), "--arm-host", "arm; rm -rf ~")
+        for directory in ("../outside", "/tmp/x", "a b", "~/x", "a/../../b"):
+            code, commands, errors, _ = self.make("--key", str(self.key), "--arm-host", "arm", "--arm-directory", directory)
+            self.assertEqual(code, 1, directory)
+            self.assertIn("plain path below the remote home", errors)
+            self.assertFalse(any(argv[0] in ("ssh", "scp") for argv in commands.runs))
+            for name in ("dist", make_release.BUILD, make_release.PORTABLE):
+                shutil.rmtree(self.root / name, ignore_errors=True)
+
+    def test_an_aarch64_package_that_does_not_match_its_checksum_is_refused(self):
+        class Corrupting(Fake):
+            def run(self, argv):
+                super().run(argv)
+                if argv[0] == "scp" and argv[-1].endswith(make_release.ARM_BUILD + "/"):
+                    (self.root / make_release.ARM_BUILD / "tomacco-1.2.3-Linux-aarch64.tar.gz").write_bytes(b"changed")
+        code, commands, errors, _ = self.make("--key", str(self.key), "--arm-host", "arm", commands=Corrupting(self.root))
+        self.assertEqual(code, 1)
+        self.assertIn("tomacco-1.2.3-Linux-aarch64.tar.gz does not match its checksum", errors)
+        self.assertFalse(any(argv[0] == "gh" for argv in commands.runs))
+        self.assertFalse(any(argv[:3] == ["openssl", "pkeyutl", "-sign"] for argv in commands.runs))
+
+    def test_a_source_tarball_changed_before_the_copy_is_refused(self):
+        class Corrupting(Fake):
+            def run(self, argv):
+                super().run(argv)
+                if "tools/build_source_release.py" in argv:
+                    (self.root / make_release.DIST / "tomacco-1.2.3-source.tar.gz").write_bytes(b"changed")
+        code, commands, errors, _ = self.make("--key", str(self.key), "--arm-host", "arm", commands=Corrupting(self.root))
+        self.assertEqual(code, 1)
+        self.assertIn("tomacco-1.2.3-source.tar.gz does not match its checksum", errors)
+        self.assertFalse(any(argv[0] in ("ssh", "scp") for argv in commands.runs))
+
+    def test_a_dry_run_prints_the_arm_steps_and_touches_nothing(self):
+        before = sorted(path.name for path in self.root.iterdir())
+        code, commands, errors, output = self.make("--dry-run", "--key", str(self.key), "--arm-host", "arm", "--arm-portable",
+                                                   commands=Fake(self.root, dry_run=True))
+        self.assertEqual(code, 0, errors)
+        self.assertEqual(sorted(path.name for path in self.root.iterdir()), before)
+        words = [" ".join(argv) for argv in commands.runs]
+        for step in ("sha256sum -c -", "cmake --build build-product --target package", "ctest --test-dir build-product",
+                     "build_portable.py build --arch aarch64 --output build-portable-aarch64",
+                     "build_portable.py verify build-portable-aarch64/tomacco-1.2.3-Linux-aarch64-portable.tar.gz"):
+            self.assertTrue(any(step in line for line in words), step)
+        self.assertTrue(any(argv[0] == "scp" for argv in commands.runs))
+        self.assertIn("build-aarch64/tomacco-1.2.3-Linux-aarch64.tar.gz and its checksum", output)
+        self.assertIn("build-portable-aarch64/tomacco-1.2.3-Linux-aarch64-portable.tar.gz", output)
+
+    def test_the_arm_portable_package_is_built_checked_signed_and_described(self):
+        code, commands, errors, _ = self.make("--key", str(self.key), "--arm-portable")
+        self.assertEqual(code, 0, errors)
+        words = [" ".join(argv) for argv in commands.runs]
+        order = ["build_portable.py build --output build-portable", "build_portable.py verify build-portable/",
+                 "build_portable.py build --arch aarch64 --output build-portable-aarch64",
+                 "build_portable.py verify build-portable-aarch64/tomacco-1.2.3-Linux-aarch64-portable.tar.gz",
+                 "build_source_release.py", "pkeyutl -sign", "gh release create"]
+        positions = [next(i for i, line in enumerate(words) if word in line) for word in order]
+        self.assertEqual(positions, sorted(positions), words)
+        arm = "tomacco-1.2.3-Linux-aarch64-portable.tar.gz"
+        for name in (arm, f"{arm}.sha256", f"{arm}.sig", f"{arm}.cdx.json", f"{arm}.cdx.json.sig"):
+            self.assertTrue((self.root / "dist" / name).is_file(), name)
+        sbom = json.loads((self.root / "dist" / f"{arm}.cdx.json").read_text())
+        qtbase = next(component for component in sbom["components"] if component["name"] == "qtbase")
+        self.assertIn("/linux_arm64/", qtbase["externalReferences"][0]["url"])
+        self.assertIn("ubuntu-24.04:libxcb-cursor", {component["bom-ref"] for component in sbom["components"]})
+        statement = json.loads((self.root / "dist/tomacco-1.2.3-provenance.intoto.json").read_text())
+        definition = statement["predicate"]["buildDefinition"]
+        self.assertTrue(definition["externalParameters"]["portable"])
+        self.assertTrue(definition["externalParameters"]["aarch64_portable"])
+        names = [entry.get("name", "") for entry in definition["resolvedDependencies"]]
+        self.assertIn("packaging/portable/Dockerfile", names)
+        self.assertIn("packaging/portable/Dockerfile.aarch64", names)
+        uris = " ".join(entry.get("uri", "") for entry in definition["resolvedDependencies"])
+        self.assertIn("AARCH64.7z", uris)
+        self.assertIn("cmake-4.4.5-linux-aarch64.tar.gz", uris)
+        self.assertIn("docker://ubuntu:24.04", uris)
+
+    def test_qt_sources_go_with_the_arm_portable_package_alone(self):
+        self.qt_sources("qtbase.tar.xz")
+        code, commands, errors, _ = self.make("--key", str(self.key), "--no-portable", "--arm-portable", "--with-qt-sources")
+        self.assertEqual(code, 0, errors)
+        self.assertTrue((self.root / "dist/qtbase.tar.xz").is_file())
+        self.assertFalse((self.root / "dist/tomacco-1.2.3-Linux-x86_64-portable.tar.gz").exists())
+
+    def test_the_release_and_the_portable_build_agree_on_the_aarch64_name(self):
+        import build_portable
+        self.assertEqual(build_portable.package_name("1.2.3", "tomacco", "aarch64") + ".tar.gz",
+                         make_release.portable_name("tomacco", "1.2.3", "aarch64"))
+        self.assertEqual(make_release.PORTABLE_ARM, build_portable.ARCHITECTURES["aarch64"].output)
+
+    def test_remote_paths_expand_the_remote_home_and_quote_the_rest(self):
+        self.assertEqual(make_release.remote_path("~/a b/bin:/opt/x"), '"$HOME"/\'a b/bin\':/opt/x')
+        self.assertEqual(make_release.remote_script(None, "1", "true"), "export SOURCE_DATE_EPOCH=1 && true")
+        self.assertEqual(make_release.remote_script(None, None, "a", "b"), "a && b")
+
+    @unittest.skipUnless(shutil.which("sh") and shutil.which("sha256sum") and shutil.which("tar"), "needs sh, sha256sum, tar")
+    def test_the_remote_commands_run_in_a_real_shell(self):
+        """The ssh and scp steps run here, in a scratch home, with stand-ins for uname, cmake and ctest on --arm-path."""
+        home = self.root.parent / "home"
+        tools = home / "tools"
+        tools.mkdir(parents=True)
+        log = home / "log"
+        stand_ins = {
+            "uname": "#!/bin/sh\necho aarch64\n",
+            "ctest": f"#!/bin/sh\necho \"ctest $*\" >> {log}\n",
+            "cmake": f"""#!/bin/sh
+echo "cmake $* SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> {log}
+case "$*" in *"--target package"*)
+    cd build-product && printf 'aarch64 package' > tomacco-1.2.3-Linux-aarch64.tar.gz &&
+    sha256sum tomacco-1.2.3-Linux-aarch64.tar.gz > tomacco-1.2.3-Linux-aarch64.tar.gz.sha256 ;;
+*"-B build-product"*) mkdir -p build-product ;;
+esac
+""",
+        }
+        for name, text in stand_ins.items():
+            (tools / name).write_text(text)
+            (tools / name).chmod(0o755)
+
+        class Local(Fake):
+            """ssh HOST SCRIPT runs SCRIPT in `home`; scp copies, HOST: meaning `home`."""
+
+            def run(self, argv):
+                self.runs.append(argv)
+                if argv[0] == "ssh":
+                    environment = {**os.environ, "HOME": str(home)}
+                    if subprocess.run(["sh", "-c", argv[-1]], cwd=home, env=environment, capture_output=True).returncode:
+                        raise make_release.Refused(f"{argv[-1]} failed")
+                elif argv[0] == "scp":
+                    *sources, target = [part.replace("arm:", f"{home}/") for part in argv[4:]]
+                    for source in sources:
+                        shutil.copy(source, target)
+                else:
+                    super().run(argv)
+
+        dist = self.root / "dist"
+        dist.mkdir()
+        with tempfile.TemporaryDirectory() as directory:
+            tree = Path(directory, "tomacco-1.2.3-source")
+            tree.mkdir()
+            (tree / "CMakeLists.txt").write_text("project(x)\n")
+            subprocess.run(["tar", "-czf", str(dist / "tomacco-1.2.3-source.tar.gz"), "-C", directory, tree.name], check=True)
+        digest = hashlib.sha256((dist / "tomacco-1.2.3-source.tar.gz").read_bytes()).hexdigest()
+        (dist / "tomacco-1.2.3-source.tar.gz.sha256").write_text(f"{digest}  tomacco-1.2.3-source.tar.gz\n")
+        commands = Local(self.root)
+        commands.environment["SOURCE_DATE_EPOCH"] = "1700000000"
+        package = make_release.build_on_arm_host(commands, self.root, "arm", "tomacco", "1.2.3", f"{tools}:/usr/bin:/bin")
+        fetched = self.root / make_release.ARM_BUILD / package
+        self.assertEqual(fetched.read_bytes(), b"aarch64 package")
+        self.assertTrue(fetched.with_name(package + ".sha256").is_file())
+        lines = log.read_text().splitlines()
+        self.assertEqual(lines[0], "cmake -S . -B build-product -G Ninja -DCMAKE_BUILD_TYPE=Release SOURCE_DATE_EPOCH=1700000000")
+        self.assertIn("ctest --test-dir build-product --output-on-failure --no-tests=error -R ^(backend|desktop-ui|native-display)$", lines)
+        self.assertEqual(lines[-1], "cmake --build build-product --target package SOURCE_DATE_EPOCH=1700000000")
+        # A tarball that does not match on the host stops there.
+        (dist / "tomacco-1.2.3-source.tar.gz.sha256").write_text("0" * 64 + "  tomacco-1.2.3-source.tar.gz\n")
+        with self.assertRaises(make_release.Refused):
+            make_release.build_on_arm_host(commands, self.root, "arm", "tomacco", "1.2.3", str(tools))
+        (dist / "tomacco-1.2.3-source.tar.gz.sha256").write_text(f"{digest}  tomacco-1.2.3-source.tar.gz\n")
+        (home / "tomacco-build-release-1.2.3").mkdir(exist_ok=True)
+        with unittest.mock.patch.object(make_release, "source_digest", return_value="0" * 64):
+            with self.assertRaisesRegex(make_release.Refused, "sha256sum -c"):
+                make_release.build_on_arm_host(commands, self.root, "arm", "tomacco", "1.2.3", f"{tools}:/usr/bin:/bin")
+        # A host that is not aarch64 stops before anything is copied.
+        (tools / "uname").write_text("#!/bin/sh\necho x86_64\n")
+        commands.runs.clear()
+        with self.assertRaises(make_release.Refused):
+            make_release.build_on_arm_host(commands, self.root, "arm", "tomacco", "1.2.3", f"{tools}:/usr/bin:/bin")
+        self.assertEqual([argv[0] for argv in commands.runs], ["ssh"])
 
     def qt_sources(self, *names, corrupt=None):
         lines = ["# comment"]
