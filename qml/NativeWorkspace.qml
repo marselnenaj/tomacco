@@ -582,6 +582,7 @@ Rectangle {
         {id:"copy-context",title:qsTr("Copy context"),detail:qsTr("Command"),icon:"copy",key:"",run:()=>view.copyContext()},
         {id:"appearance",title:Theme.isDark?qsTr("Switch to light appearance"):qsTr("Switch to dark appearance"),detail:qsTr("Command"),icon:Theme.isDark?"sun":"moon",key:"",run:()=>Studio.setAppearance(Theme.isDark?"light":"dark")},
         {id:"settings",title:qsTr("Settings"),detail:qsTr("Command"),icon:"settings",key:qsTr("Ctrl")+"+,",run:()=>settingsDialog.open()},
+        {id:"stage-log",title:view.showStageLog?qsTr("Hide the log beside the device"):qsTr("Show the log beside the device"),detail:qsTr("Command"),search:qsTr("Split view"),icon:"jobs",key:"",run:()=>{view.showStageLog=!view.showStageLog}},
         {id:"touches",title:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates"),detail:qsTr("Command"),icon:"testing",key:"",run:()=>{view.showTouches=!view.showTouches}},
         {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
@@ -597,6 +598,11 @@ Rectangle {
     readonly property bool activityVisible: showActivity && (width>=1120 || activityForced)
     function toggleActivity() {if(activityVisible){showActivity=false;activityForced=false}else{showActivity=true;activityForced=true}}
     Settings {category:"NativeDisplay";property alias showActivity:view.showActivity}
+    // The log beside the device: shown or not, which log and how wide, kept across starts.
+    property bool showStageLog: false
+    property string stageLogMode: "device"
+    property int stageLogWidth: 420
+    Settings {category:"StageLog";property alias shown:view.showStageLog;property alias mode:view.stageLogMode;property alias width:view.stageLogWidth}
     // One word for what the device is doing, used wherever its state shows.
     readonly property string deviceState: pending ? ((pendingAvd && !pendingTarget) ? "booting" : "connecting")
         : display.state==="live" ? "live"
@@ -740,164 +746,194 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth:true;Layout.fillHeight:true;spacing:0
                     // The stage: the device and nothing else.
-                    Item {
-                        id:frameDock
-                        Layout.fillWidth:true;Layout.fillHeight:true;clip:true;visible:!view.activityOnly
-                        NativeDeviceFrame {
-                            id:nativeFrame;objectName:"nativeDeviceFrame";anchors.centerIn:parent
-                            parent:view.detached?deviceWindow.host:frameDock
-                            onBezelPressed:if(view.detached)deviceWindow.move()
-                            profile:view.pending?(view.pendingProfile.id?view.pendingProfile:view.genericProfile):view.frameProfile
-                            sourceSize:view.pending?Qt.size(0,0):display.sourceSize
-                            framed:view.pending || (view.showDeviceFrame && view.hasFrame);finishIndex:view.frameFinish;unfolded:!view.pending && view.frameMatch.unfolded
-                            backgroundColor:view.detached?"transparent":Theme.background
-                            roundedScreen:view.detached
-                            scale:view.detached?deviceWindow.zoom:Math.max(.01,Math.min((frameDock.width-Theme.gapXl)/width,(frameDock.height-Theme.gapLg)/height))
-                            visible:view.deviceShown
-                            onHardwareKey:key=>view.input({action:"key",key:key})
-                            rearView:view.detached && deviceWindow.flipped
-                            Rectangle {
-                                objectName:"nativeBootScreen"
-                                parent:nativeFrame.screen;anchors.fill:parent;z:1;visible:view.pending;color:Theme.deviceScreen
-                                MouseArea {anchors.fill:parent;onPressed:if(view.detached)deviceWindow.move()}
-                                Column {
-                                    anchors.centerIn:parent;width:parent.width-Theme.gapXxxl;spacing:Theme.gapMd
-                                    BrandMark {anchors.horizontalCenter:parent.horizontalCenter;size:Theme.gapXxxl*3}
-                                    StudioHeading {width:parent.width;horizontalAlignment:Text.AlignHCenter;text:view.pendingLabel;color:Theme.deviceScreenText;size:Theme.fontDisplay;wrapMode:Text.NoWrap;elide:Text.ElideMiddle}
-                                    Text {width:parent.width;horizontalAlignment:Text.AlignHCenter;text:view.pendingTarget || !view.pendingAvd?qsTr("Connecting the picture…"):qsTr("Android is starting…");color:Theme.deviceScreenMuted;font.pixelSize:Theme.fontBody}
-                                    // Starting takes a while with no measure of how far along it is, so
-                                    // this says only that it is still going.
+                    // The device and, when asked, a log beside it; the handle between them resizes.
+                    SplitView {
+                        id:stageSplit;objectName:"stageSplit"
+                        Layout.fillWidth:true;Layout.fillHeight:true;visible:!view.activityOnly
+                        orientation:Qt.Horizontal
+                        handle:Rectangle {
+                            implicitWidth:Theme.gapXs
+                            color:SplitHandle.pressed?Theme.accent:SplitHandle.hovered?Theme.border:Theme.subtle
+                        }
+                        // The device with its own controls beside it.
+                        RowLayout {
+                            SplitView.fillWidth:true;SplitView.minimumWidth:Theme.gapXxxl*4;spacing:0
+                            Item {
+                                id:frameDock
+                                Layout.fillWidth:true;Layout.fillHeight:true;clip:true
+                                NativeDeviceFrame {
+                                    id:nativeFrame;objectName:"nativeDeviceFrame";anchors.centerIn:parent
+                                    parent:view.detached?deviceWindow.host:frameDock
+                                    onBezelPressed:if(view.detached)deviceWindow.move()
+                                    profile:view.pending?(view.pendingProfile.id?view.pendingProfile:view.genericProfile):view.frameProfile
+                                    sourceSize:view.pending?Qt.size(0,0):display.sourceSize
+                                    framed:view.pending || (view.showDeviceFrame && view.hasFrame);finishIndex:view.frameFinish;unfolded:!view.pending && view.frameMatch.unfolded
+                                    backgroundColor:view.detached?"transparent":Theme.background
+                                    roundedScreen:view.detached
+                                    scale:view.detached?deviceWindow.zoom:Math.max(.01,Math.min((frameDock.width-Theme.gapXl)/width,(frameDock.height-Theme.gapLg)/height))
+                                    visible:view.deviceShown
+                                    onHardwareKey:key=>view.input({action:"key",key:key})
+                                    rearView:view.detached && deviceWindow.flipped
+                                    Rectangle {
+                                        objectName:"nativeBootScreen"
+                                        parent:nativeFrame.screen;anchors.fill:parent;z:1;visible:view.pending;color:Theme.deviceScreen
+                                        MouseArea {anchors.fill:parent;onPressed:if(view.detached)deviceWindow.move()}
+                                        Column {
+                                            anchors.centerIn:parent;width:parent.width-Theme.gapXxxl;spacing:Theme.gapMd
+                                            BrandMark {anchors.horizontalCenter:parent.horizontalCenter;size:Theme.gapXxxl*3}
+                                            StudioHeading {width:parent.width;horizontalAlignment:Text.AlignHCenter;text:view.pendingLabel;color:Theme.deviceScreenText;size:Theme.fontDisplay;wrapMode:Text.NoWrap;elide:Text.ElideMiddle}
+                                            Text {width:parent.width;horizontalAlignment:Text.AlignHCenter;text:view.pendingTarget || !view.pendingAvd?qsTr("Connecting the picture…"):qsTr("Android is starting…");color:Theme.deviceScreenMuted;font.pixelSize:Theme.fontBody}
+                                            // Starting takes a while with no measure of how far along it is, so
+                                            // this says only that it is still going.
+                                            Item {
+                                                width:parent.width;height:Theme.gapXxs;clip:true
+                                                Rectangle {anchors.fill:parent;color:Theme.deviceScreenMuted;opacity:.25}
+                                                Rectangle {
+                                                    width:parent.width/3;height:parent.height;color:Theme.accent
+                                                    XAnimator on x {from:-parent.width/3;to:parent.width;duration:1400;loops:Animation.Infinite;running:view.pending && !Theme.reducedMotion}
+                                                }
+                                            }
+                                        }
+                                    }
+                                    NativeView {id:display;parent:nativeFrame.screen;objectName:"nativeDisplay";anchors.fill:parent;session:view.live;onInputError:message=>{view.notice=message;view.failed=true}}
+                                    // Touches and coordinates, for writing UI tests. Only passive
+                                    // handlers: every press still reaches the display below.
                                     Item {
-                                        width:parent.width;height:Theme.gapXxs;clip:true
-                                        Rectangle {anchors.fill:parent;color:Theme.deviceScreenMuted;opacity:.25}
+                                        id:touchOverlay;objectName:"nativeTouchOverlay"
+                                        parent:nativeFrame.screen;anchors.fill:parent;z:2
+                                        visible:view.showTouches && display.state==="live" && !view.pending
+                                        readonly property rect area:display.contentRect
+                                        // The device pixel and fraction under a point of this item.
+                                        function at(px,py) {
+                                            const r=area,w=display.sourceSize.width,h=display.sourceSize.height
+                                            const fx=Math.max(0,Math.min(1,(px-r.x)/r.width)),fy=Math.max(0,Math.min(1,(py-r.y)/r.height))
+                                            return {x:Math.min(w-1,Math.floor(fx*w)),y:Math.min(h-1,Math.floor(fy*h)),fx:fx,fy:fy}
+                                        }
+                                        readonly property bool pointing:hover.hovered || touchPoint.active
+                                        readonly property point pointer:touchPoint.active?touchPoint.point.position:hover.point.position
+                                        readonly property var spot:at(pointer.x,pointer.y)
+                                        readonly property string label:spot.x+", "+spot.y+"  ·  "+spot.fx.toFixed(3)+", "+spot.fy.toFixed(3)
+                                        HoverHandler {id:hover}
+                                        PointHandler {
+                                            id:touchPoint;acceptedButtons:Qt.LeftButton
+                                            onActiveChanged:if(active)touchMark.show();else touchMark.release()
+                                        }
                                         Rectangle {
-                                            width:parent.width/3;height:parent.height;color:Theme.accent
-                                            XAnimator on x {from:-parent.width/3;to:parent.width;duration:1400;loops:Animation.Infinite;running:view.pending && !Theme.reducedMotion}
+                                            id:touchMark;objectName:"nativeTouchMark"
+                                            // Scaled with the device, so it stays finger-sized on screen.
+                                            readonly property real size:34/Math.max(.01,nativeFrame.scale)
+                                            width:size;height:size;radius:size/2;visible:opacity>0;opacity:0
+                                            x:touchOverlay.pointer.x-width/2;y:touchOverlay.pointer.y-height/2
+                                            color:"#40ffffff";border.color:"#b0ffffff";border.width:1.5/Math.max(.01,nativeFrame.scale)
+                                            function show(){fade.stop();opacity=1}
+                                            function release(){fade.restart()}
+                                            NumberAnimation {id:fade;target:touchMark;property:"opacity";to:0;duration:Theme.reducedMotion?0:420}
+                                        }
+                                        Rectangle {
+                                            objectName:"nativeTouchCoordinates"
+                                            visible:touchOverlay.pointing
+                                            readonly property real unit:1/Math.max(.01,nativeFrame.scale)
+                                            scale:unit;transformOrigin:Item.TopLeft
+                                            width:coordinateText.implicitWidth+Theme.gapSm*2;height:coordinateText.implicitHeight+Theme.gapXs*2
+                                            // Beside the pointer, kept inside the screen.
+                                            x:Math.max(0,Math.min(touchOverlay.width-width*unit,touchOverlay.pointer.x+Theme.gapMd*unit))
+                                            y:Math.max(0,Math.min(touchOverlay.height-height*unit,touchOverlay.pointer.y+Theme.gapMd*unit))
+                                            radius:Theme.radiusSmall;color:Theme.ink;opacity:.88
+                                            Text {id:coordinateText;objectName:"nativeTouchCoordinatesText";anchors.centerIn:parent;text:touchOverlay.label;color:Theme.paper;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
                                         }
                                     }
                                 }
+                                // On a wide stage the room beside the phone says what it is and what is happening.
+                                ColumnLayout {
+                                    objectName:"stageCaption"
+                                    readonly property real spare:(frameDock.width-nativeFrame.width*nativeFrame.scale)/2
+                                    visible:!view.detached && view.deviceShown && spare>=260
+                                    x:Theme.gapXl;y:Theme.gapLg;width:spare-Theme.gapXxxl;spacing:Theme.gapXs
+                                    StudioHeading {Layout.fillWidth:true;text:view.deviceName;size:Math.min(Theme.fontGiant,Math.max(Theme.fontDisplay,parent.width/9))}
+                                    Text {Layout.fillWidth:true;visible:!!view.deviceMetrics;text:view.deviceMetrics;color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
+                                }
+                                ColumnLayout {
+                                    objectName:"stageJob"
+                                    readonly property real spare:(frameDock.width-nativeFrame.width*nativeFrame.scale)/2
+                                    visible:!view.detached && view.deviceShown && spare>=260 && view.runningJobs.length>0
+                                    x:Theme.gapXl;anchors.bottom:parent.bottom;anchors.bottomMargin:Theme.gapLg;width:spare-Theme.gapXxxl;spacing:Theme.gapXs
+                                    StudioStatus {tone:"busy";mono:true;text:view.runningJobs.length?view.workspace.jobStateLabel(view.runningJobs[0]):""}
+                                    StudioHeading {Layout.fillWidth:true;text:view.runningJobs.length?view.runningJobs[0].label:"";size:Theme.fontDisplay;maximumLineCount:3;elide:Text.ElideRight}
+                                }
+                                AppDropArea {
+                                    objectName:"nativeAppDrop";anchors.fill:parent;z:2;enabled:!view.detached
+                                    kinds:view.installKinds;targetName:view.deviceName;refusal:view.installRefusal
+                                    onAppsDropped:paths=>view.installApps(paths)
+                                    onRefused:reason=>{view.notice=reason;view.failed=true}
+                                }
+                                StudioEmptyState {
+                                    objectName:"nativeDetachedNotice";actionName:"nativeDockButton"
+                                    anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,480);visible:view.detached && view.deviceShown
+                                    title:qsTr("Your device is in its own window.")
+                                    body:qsTr("Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.")
+                                    actionText:qsTr("Bring it back");actionIcon:"dock"
+                                    onAction:view.detached=false
+                                }
+                                DeviceHero {
+                                    objectName:"nativeEmptyState"
+                                    anchors.fill:parent;visible:!view.deviceShown
+                                    title:view.connecting?qsTr("Connecting"):view.platform==="ios" && !view.hasTarget?(view.appleTarget==="device"?qsTr("Plug in your iPhone."):qsTr("Connect a Mac.")):qsTr("Give your agent a phone.")
+                                    body:view.platform==="ios" && !view.hasTarget?(view.appleTarget==="device"?qsTr("Plug it in and unlock it. Build Swift apps on Linux and control them from here."):qsTr("The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.")):qsTr("It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.")
+                                    actionText:view.hasTarget?qsTr("Connect %1").arg(view.deviceName):view.platform==="ios"?(view.appleTarget==="device"?qsTr("Set up iPhone"):qsTr("Set up Mac")):qsTr("Add a device")
+                                    errorText:display.error
+                                    secondaryText:view.projectPath?"":qsTr("Open a project")
+                                    onSecondary:projectFolder.open()
+                                    recent:view.recentProjects
+                                    onRecentChosen:path=>view.workspace.openProject(path)
+                                    steps:[
+                                        {key:"project",label:qsTr("Project"),detail:workspace.project.name || qsTr("Open a project"),done:!!view.projectPath},
+                                        {key:"device",label:qsTr("Device"),detail:view.deviceName || qsTr("Choose a device"),done:view.hasTarget},
+                                        {key:"run",label:qsTr("Run"),detail:qsTr("Run app"),done:view.appRunning}
+                                    ]
+                                    onAction:{if(view.hasTarget)view.connectTarget();else if(view.platform==="ios"){if(view.appleTarget==="device"){iphoneSetup.open();view.diagnoseIos()}else macSetup.open()}else workspace.showTab("devices")}
+                                    onStepChosen:key=>{if(key==="project")projectFolder.open();else if(key==="device")workspace.showTab("devices");else if(view.projectPath && view.hasTarget)view.launch();else commandPalette.open()}
+                                }
                             }
-                            NativeView {id:display;parent:nativeFrame.screen;objectName:"nativeDisplay";anchors.fill:parent;session:view.live;onInputError:message=>{view.notice=message;view.failed=true}}
-                            // Touches and coordinates, for writing UI tests. Only passive
-                            // handlers: every press still reaches the display below.
-                            Item {
-                                id:touchOverlay;objectName:"nativeTouchOverlay"
-                                parent:nativeFrame.screen;anchors.fill:parent;z:2
-                                visible:view.showTouches && display.state==="live" && !view.pending
-                                readonly property rect area:display.contentRect
-                                // The device pixel and fraction under a point of this item.
-                                function at(px,py) {
-                                    const r=area,w=display.sourceSize.width,h=display.sourceSize.height
-                                    const fx=Math.max(0,Math.min(1,(px-r.x)/r.width)),fy=Math.max(0,Math.min(1,(py-r.y)/r.height))
-                                    return {x:Math.min(w-1,Math.floor(fx*w)),y:Math.min(h-1,Math.floor(fy*h)),fx:fx,fy:fy}
-                                }
-                                readonly property bool pointing:hover.hovered || touchPoint.active
-                                readonly property point pointer:touchPoint.active?touchPoint.point.position:hover.point.position
-                                readonly property var spot:at(pointer.x,pointer.y)
-                                readonly property string label:spot.x+", "+spot.y+"  ·  "+spot.fx.toFixed(3)+", "+spot.fy.toFixed(3)
-                                HoverHandler {id:hover}
-                                PointHandler {
-                                    id:touchPoint;acceptedButtons:Qt.LeftButton
-                                    onActiveChanged:if(active)touchMark.show();else touchMark.release()
-                                }
-                                Rectangle {
-                                    id:touchMark;objectName:"nativeTouchMark"
-                                    // Scaled with the device, so it stays finger-sized on screen.
-                                    readonly property real size:34/Math.max(.01,nativeFrame.scale)
-                                    width:size;height:size;radius:size/2;visible:opacity>0;opacity:0
-                                    x:touchOverlay.pointer.x-width/2;y:touchOverlay.pointer.y-height/2
-                                    color:"#40ffffff";border.color:"#b0ffffff";border.width:1.5/Math.max(.01,nativeFrame.scale)
-                                    function show(){fade.stop();opacity=1}
-                                    function release(){fade.restart()}
-                                    NumberAnimation {id:fade;target:touchMark;property:"opacity";to:0;duration:Theme.reducedMotion?0:420}
-                                }
-                                Rectangle {
-                                    objectName:"nativeTouchCoordinates"
-                                    visible:touchOverlay.pointing
-                                    readonly property real unit:1/Math.max(.01,nativeFrame.scale)
-                                    scale:unit;transformOrigin:Item.TopLeft
-                                    width:coordinateText.implicitWidth+Theme.gapSm*2;height:coordinateText.implicitHeight+Theme.gapXs*2
-                                    // Beside the pointer, kept inside the screen.
-                                    x:Math.max(0,Math.min(touchOverlay.width-width*unit,touchOverlay.pointer.x+Theme.gapMd*unit))
-                                    y:Math.max(0,Math.min(touchOverlay.height-height*unit,touchOverlay.pointer.y+Theme.gapMd*unit))
-                                    radius:Theme.radiusSmall;color:Theme.ink;opacity:.88
-                                    Text {id:coordinateText;objectName:"nativeTouchCoordinatesText";anchors.centerIn:parent;text:touchOverlay.label;color:Theme.paper;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
+                            // The device's own controls, out of the picture's way.
+                            Rectangle {
+                                objectName:"deviceTools";visible:(display.state==="live" || !!view.live.session) && !view.activityOnly
+                                Layout.preferredWidth:Theme.controlHeight+Theme.gapSm*2;Layout.fillHeight:true;color:Theme.surface
+                                Rectangle {width:1;height:parent.height;color:Theme.subtle}
+                                Column {
+                                    anchors.horizontalCenter:parent.horizontalCenter;y:Theme.gapSm;spacing:Theme.gapXxs
+                                    StudioButton {text:qsTr("Back");displayText:"";iconName:"back";quiet:true;tip:text;visible:display.state==="live" && view.live.platform!=="ios";onClicked:view.input({action:"key",key:"back"})}
+                                    StudioButton {text:"Home";displayText:"";iconName:"home";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"key",key:"home"})}
+                                    StudioButton {text:qsTr("Rotate");displayText:"";iconName:"rotate";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"rotate",orientation:display.sourceSize.width>display.sourceSize.height?"portrait":"landscape_left"})}
+                                    StudioButton {objectName:"nativeScreenshot";text:"Screenshot";displayText:"";iconName:"camera";quiet:true;tip:qsTr("Save and copy a screenshot")+" · "+qsTr("Ctrl")+"+Shift+S";visible:display.state==="live";onClicked:view.capture()}
+                                    StudioButton {objectName:"nativeRecord";text:recorder.recording?qsTr("Stop recording"):qsTr("Record the screen");displayText:"";iconName:recorder.recording?"stop":"record";quiet:!recorder.recording;danger:recorder.recording;selected:recorder.recording;tip:recorder.recording?qsTr("Stop and save the recording · %1 s").arg(recorder.elapsed):qsTr("Record the screen to a video, at most 3 minutes");visible:display.state==="live" && view.live.platform==="android";enabled:!recorder.pending && !recorder.stopping;onClicked:view.toggleRecording()}
+                                    StudioButton {text:qsTr("Enter text");displayText:"";iconName:"keyboard";quiet:true;tip:text;visible:display.state==="live";onClicked:textEntry.open()}
+                                    StudioButton {objectName:"nativeDetachButton";text:view.detached?qsTr("Dock"):qsTr("Own window");displayText:"";iconName:view.detached?"dock":"window";quiet:true;selected:view.detached;tip:view.detached?text:qsTr("Detach the device into its own window");visible:display.state==="live";onClicked:view.detached=!view.detached}
+                                    StudioButton {objectName:"stageLogToggle";text:qsTr("Log beside the device");displayText:"";iconName:"jobs";quiet:true;selected:view.showStageLog;tip:view.showStageLog?qsTr("Hide the log beside the device"):qsTr("Show the device's or a job's log beside the device");visible:display.state==="live";onClicked:view.showStageLog=!view.showStageLog}
+                                    Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:display.state==="live"}
+                                    StudioButton {objectName:"nativeAudioToggle";text:view.audioPending?qsTr("Sound…"):view.liveAudio.error?qsTr("Sound error"):qsTr("Sound");displayText:"";iconName:view.liveAudio.enabled?"volume":"muted";selected:view.liveAudio.enabled;quiet:true;visible:view.live.platform==="android" && !!view.live.session;enabled:!view.audioPending && view.live.status==="connected";tip:view.liveAudio.error || (view.liveAudio.enabled?qsTr("Stop forwarding sound; restore output on the device"):qsTr("Play the app's sound on this computer"));onClicked:view.requestAudio(!view.liveAudio.enabled)}
+                                    StudioButton {objectName:"nativeAudioLog";iconName:"jobs";quiet:true;danger:true;visible:!!view.liveAudio.error && !!view.liveAudio.job_id;tip:qsTr("View the sound forwarding error");onClicked:workspace.request("job.get",{job_id:view.liveAudio.job_id})}
+                                    StudioButton {objectName:"nativeTouchToggle";text:qsTr("Touches and coordinates");displayText:"";iconName:"testing";selected:view.showTouches;quiet:true;visible:display.state==="live";tip:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates, for writing UI tests");onClicked:view.showTouches=!view.showTouches}
+                                    StudioButton {objectName:"nativeFrameToggle";text:qsTr("Frame");displayText:"";iconName:"frame";selected:view.showDeviceFrame;quiet:true;visible:view.hasFrame;tip:view.frameMatch.source==="display-match"?qsTr("Reference frame recognized from the display size; the frame geometry is approximated"):qsTr("Show the device frame; Android provides the real status bar");onClicked:view.showDeviceFrame=!view.showDeviceFrame}
+                                    StudioButton {text:qsTr("Color");displayText:"";iconName:"color";quiet:true;visible:view.hasFrame && view.showDeviceFrame && view.frameProfile.colors.length>1;tip:view.frameProfile.colorNames?ColorNames.name(view.frameProfile.colorNames[view.frameFinish]):qsTr("Case color");onClicked:view.frameFinish=(view.frameFinish+1)%view.frameProfile.colors.length}
+                                    Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:!!view.live.session}
+                                    StudioButton {text:qsTr("Disconnect");displayText:"";iconName:"unplug";quiet:true;tip:text;visible:!!view.live.session;onClicked:view.stop()}
                                 }
                             }
                         }
-                        // On a wide stage the room beside the phone says what it is and what is happening.
-                        ColumnLayout {
-                            objectName:"stageCaption"
-                            readonly property real spare:(frameDock.width-nativeFrame.width*nativeFrame.scale)/2
-                            visible:!view.detached && view.deviceShown && spare>=260
-                            x:Theme.gapXl;y:Theme.gapLg;width:spare-Theme.gapXxxl;spacing:Theme.gapXs
-                            StudioHeading {Layout.fillWidth:true;text:view.deviceName;size:Math.min(Theme.fontGiant,Math.max(Theme.fontDisplay,parent.width/9))}
-                            Text {Layout.fillWidth:true;visible:!!view.deviceMetrics;text:view.deviceMetrics;color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
-                        }
-                        ColumnLayout {
-                            objectName:"stageJob"
-                            readonly property real spare:(frameDock.width-nativeFrame.width*nativeFrame.scale)/2
-                            visible:!view.detached && view.deviceShown && spare>=260 && view.runningJobs.length>0
-                            x:Theme.gapXl;anchors.bottom:parent.bottom;anchors.bottomMargin:Theme.gapLg;width:spare-Theme.gapXxxl;spacing:Theme.gapXs
-                            StudioStatus {tone:"busy";mono:true;text:view.runningJobs.length?view.workspace.jobStateLabel(view.runningJobs[0]):""}
-                            StudioHeading {Layout.fillWidth:true;text:view.runningJobs.length?view.runningJobs[0].label:"";size:Theme.fontDisplay;maximumLineCount:3;elide:Text.ElideRight}
-                        }
-                        AppDropArea {
-                            objectName:"nativeAppDrop";anchors.fill:parent;z:2;enabled:!view.detached
-                            kinds:view.installKinds;targetName:view.deviceName;refusal:view.installRefusal
-                            onAppsDropped:paths=>view.installApps(paths)
-                            onRefused:reason=>{view.notice=reason;view.failed=true}
-                        }
-                        StudioEmptyState {
-                            objectName:"nativeDetachedNotice";actionName:"nativeDockButton"
-                            anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,480);visible:view.detached && view.deviceShown
-                            title:qsTr("Your device is in its own window.")
-                            body:qsTr("Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.")
-                            actionText:qsTr("Bring it back");actionIcon:"dock"
-                            onAction:view.detached=false
-                        }
-                        DeviceHero {
-                            objectName:"nativeEmptyState"
-                            anchors.fill:parent;visible:!view.deviceShown
-                            title:view.connecting?qsTr("Connecting"):view.platform==="ios" && !view.hasTarget?(view.appleTarget==="device"?qsTr("Plug in your iPhone."):qsTr("Connect a Mac.")):qsTr("Give your agent a phone.")
-                            body:view.platform==="ios" && !view.hasTarget?(view.appleTarget==="device"?qsTr("Plug it in and unlock it. Build Swift apps on Linux and control them from here."):qsTr("The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.")):qsTr("It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.")
-                            actionText:view.hasTarget?qsTr("Connect %1").arg(view.deviceName):view.platform==="ios"?(view.appleTarget==="device"?qsTr("Set up iPhone"):qsTr("Set up Mac")):qsTr("Add a device")
-                            errorText:display.error
-                            secondaryText:view.projectPath?"":qsTr("Open a project")
-                            onSecondary:projectFolder.open()
-                            recent:view.recentProjects
-                            onRecentChosen:path=>view.workspace.openProject(path)
-                            steps:[
-                                {key:"project",label:qsTr("Project"),detail:workspace.project.name || qsTr("Open a project"),done:!!view.projectPath},
-                                {key:"device",label:qsTr("Device"),detail:view.deviceName || qsTr("Choose a device"),done:view.hasTarget},
-                                {key:"run",label:qsTr("Run"),detail:qsTr("Run app"),done:view.appRunning}
-                            ]
-                            onAction:{if(view.hasTarget)view.connectTarget();else if(view.platform==="ios"){if(view.appleTarget==="device"){iphoneSetup.open();view.diagnoseIos()}else macSetup.open()}else workspace.showTab("devices")}
-                            onStepChosen:key=>{if(key==="project")projectFolder.open();else if(key==="device")workspace.showTab("devices");else if(view.projectPath && view.hasTarget)view.launch();else commandPalette.open()}
-                        }
-                    }
-                    // The device's own controls, out of the picture's way.
-                    Rectangle {
-                        objectName:"deviceTools";visible:(display.state==="live" || !!view.live.session) && !view.activityOnly
-                        Layout.preferredWidth:Theme.controlHeight+Theme.gapSm*2;Layout.fillHeight:true;color:Theme.surface
-                        Rectangle {width:1;height:parent.height;color:Theme.subtle}
-                        Column {
-                            anchors.horizontalCenter:parent.horizontalCenter;y:Theme.gapSm;spacing:Theme.gapXxs
-                            StudioButton {text:qsTr("Back");displayText:"";iconName:"back";quiet:true;tip:text;visible:display.state==="live" && view.live.platform!=="ios";onClicked:view.input({action:"key",key:"back"})}
-                            StudioButton {text:"Home";displayText:"";iconName:"home";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"key",key:"home"})}
-                            StudioButton {text:qsTr("Rotate");displayText:"";iconName:"rotate";quiet:true;tip:text;visible:display.state==="live";onClicked:view.input({action:"rotate",orientation:display.sourceSize.width>display.sourceSize.height?"portrait":"landscape_left"})}
-                            StudioButton {objectName:"nativeScreenshot";text:"Screenshot";displayText:"";iconName:"camera";quiet:true;tip:qsTr("Save and copy a screenshot")+" · "+qsTr("Ctrl")+"+Shift+S";visible:display.state==="live";onClicked:view.capture()}
-                            StudioButton {objectName:"nativeRecord";text:recorder.recording?qsTr("Stop recording"):qsTr("Record the screen");displayText:"";iconName:recorder.recording?"stop":"record";quiet:!recorder.recording;danger:recorder.recording;selected:recorder.recording;tip:recorder.recording?qsTr("Stop and save the recording · %1 s").arg(recorder.elapsed):qsTr("Record the screen to a video, at most 3 minutes");visible:display.state==="live" && view.live.platform==="android";enabled:!recorder.pending && !recorder.stopping;onClicked:view.toggleRecording()}
-                            StudioButton {text:qsTr("Enter text");displayText:"";iconName:"keyboard";quiet:true;tip:text;visible:display.state==="live";onClicked:textEntry.open()}
-                            StudioButton {objectName:"nativeDetachButton";text:view.detached?qsTr("Dock"):qsTr("Own window");displayText:"";iconName:view.detached?"dock":"window";quiet:true;selected:view.detached;tip:view.detached?text:qsTr("Detach the device into its own window");visible:display.state==="live";onClicked:view.detached=!view.detached}
-                            Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:display.state==="live"}
-                            StudioButton {objectName:"nativeAudioToggle";text:view.audioPending?qsTr("Sound…"):view.liveAudio.error?qsTr("Sound error"):qsTr("Sound");displayText:"";iconName:view.liveAudio.enabled?"volume":"muted";selected:view.liveAudio.enabled;quiet:true;visible:view.live.platform==="android" && !!view.live.session;enabled:!view.audioPending && view.live.status==="connected";tip:view.liveAudio.error || (view.liveAudio.enabled?qsTr("Stop forwarding sound; restore output on the device"):qsTr("Play the app's sound on this computer"));onClicked:view.requestAudio(!view.liveAudio.enabled)}
-                            StudioButton {objectName:"nativeAudioLog";iconName:"jobs";quiet:true;danger:true;visible:!!view.liveAudio.error && !!view.liveAudio.job_id;tip:qsTr("View the sound forwarding error");onClicked:workspace.request("job.get",{job_id:view.liveAudio.job_id})}
-                            StudioButton {objectName:"nativeTouchToggle";text:qsTr("Touches and coordinates");displayText:"";iconName:"testing";selected:view.showTouches;quiet:true;visible:display.state==="live";tip:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates, for writing UI tests");onClicked:view.showTouches=!view.showTouches}
-                            StudioButton {objectName:"nativeFrameToggle";text:qsTr("Frame");displayText:"";iconName:"frame";selected:view.showDeviceFrame;quiet:true;visible:view.hasFrame;tip:view.frameMatch.source==="display-match"?qsTr("Reference frame recognized from the display size; the frame geometry is approximated"):qsTr("Show the device frame; Android provides the real status bar");onClicked:view.showDeviceFrame=!view.showDeviceFrame}
-                            StudioButton {text:qsTr("Color");displayText:"";iconName:"color";quiet:true;visible:view.hasFrame && view.showDeviceFrame && view.frameProfile.colors.length>1;tip:view.frameProfile.colorNames?ColorNames.name(view.frameProfile.colorNames[view.frameFinish]):qsTr("Case color");onClicked:view.frameFinish=(view.frameFinish+1)%view.frameProfile.colors.length}
-                            Rectangle {width:Theme.controlHeight;height:1;color:Theme.subtle;visible:!!view.live.session}
-                            StudioButton {text:qsTr("Disconnect");displayText:"";iconName:"unplug";quiet:true;tip:text;visible:!!view.live.session;onClicked:view.stop()}
+                        StageLogPane {
+                            id:stageLog
+                            visible:view.showStageLog
+                            SplitView.preferredWidth:view.stageLogWidth
+                            SplitView.minimumWidth:Theme.panelWidth*.75
+                            SplitView.maximumWidth:Math.max(Theme.panelWidth*.75,stageSplit.width-Theme.gapXxxl*4)
+                            workspace:view.workspace
+                            device:display.state==="live" ? (view.live.device || "") : ""
+                            platform:view.live.platform || view.platform
+                            launchJob:view.launchJob
+                            mode:view.stageLogMode
+                            onModeChanged:view.stageLogMode=mode
+                            onCloseRequested:view.showStageLog=false
+                            onWidthChanged:if(stageSplit.resizing && visible)view.stageLogWidth=Math.round(width)
                         }
                     }
                     ActivityPanel {

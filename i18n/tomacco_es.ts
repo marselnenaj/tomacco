@@ -3391,6 +3391,26 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Record the screen to a video, at most 3 minutes</source>
         <translation>Grabar la pantalla en un vídeo, 3 minutos como máximo</translation>
     </message>
+    <message>
+        <source>Hide the log beside the device</source>
+        <translation>Ocultar el registro junto al dispositivo</translation>
+    </message>
+    <message>
+        <source>Show the log beside the device</source>
+        <translation>Mostrar el registro junto al dispositivo</translation>
+    </message>
+    <message>
+        <source>Split view</source>
+        <translation>Vista dividida</translation>
+    </message>
+    <message>
+        <source>Log beside the device</source>
+        <translation>Registro junto al dispositivo</translation>
+    </message>
+    <message>
+        <source>Show the device&apos;s or a job&apos;s log beside the device</source>
+        <translation>Mostrar el registro del dispositivo o de una tarea junto al dispositivo</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4331,6 +4351,45 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     <message>
         <source>Build number</source>
         <translation>Número de compilación</translation>
+    </message>
+</context>
+<context>
+    <name>StageLogPane</name>
+    <message>
+        <source>Device log</source>
+        <translation>Registro del dispositivo</translation>
+    </message>
+    <message>
+        <source>Job log</source>
+        <translation>Registro de la tarea</translation>
+    </message>
+    <message>
+        <source>Open under Builds &amp; jobs</source>
+        <translation>Abrir en Compilaciones y tareas</translation>
+    </message>
+    <message>
+        <source>Hide the log</source>
+        <translation>Ocultar el registro</translation>
+    </message>
+    <message>
+        <source>No device is live.</source>
+        <translation>Ningún dispositivo en directo.</translation>
+    </message>
+    <message>
+        <source>Connect a device and its log runs here, beside its screen.</source>
+        <translation>Conecta un dispositivo y su registro aparecerá aquí, junto a su pantalla.</translation>
+    </message>
+    <message>
+        <source>No job yet.</source>
+        <translation>Todavía no hay tareas.</translation>
+    </message>
+    <message>
+        <source>Run your app or start a build, and its log follows here.</source>
+        <translation>Ejecuta tu app o inicia una compilación y su registro aparecerá aquí.</translation>
+    </message>
+    <message>
+        <source>Waiting for log lines…</source>
+        <translation>Esperando líneas del registro…</translation>
     </message>
 </context>
 <context>

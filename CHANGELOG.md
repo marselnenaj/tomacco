@@ -71,6 +71,8 @@ operations and their JSON results.
   **Copy as command** copies the call as a `tomaccoctl call` line.
 - **Per-project choices.** The desktop remembers per project the device it ran on last, with its platform and Apple
   target, and the build's platform, configuration and format, and chooses them again when the project opens.
+- **Log beside the device.** The device view can show the device's live log or the newest job's log beside it, with a
+  handle to resize it; shown or not, which log and the width are kept.
 
 ### Changed
 

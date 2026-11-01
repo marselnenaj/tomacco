@@ -3391,6 +3391,26 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>Record the screen to a video, at most 3 minutes</source>
         <translation>Enregistrer l'écran en vidéo, 3 minutes au plus</translation>
     </message>
+    <message>
+        <source>Hide the log beside the device</source>
+        <translation>Masquer le journal à côté de l&apos;appareil</translation>
+    </message>
+    <message>
+        <source>Show the log beside the device</source>
+        <translation>Afficher le journal à côté de l&apos;appareil</translation>
+    </message>
+    <message>
+        <source>Split view</source>
+        <translation>Vue partagée</translation>
+    </message>
+    <message>
+        <source>Log beside the device</source>
+        <translation>Journal à côté de l&apos;appareil</translation>
+    </message>
+    <message>
+        <source>Show the device&apos;s or a job&apos;s log beside the device</source>
+        <translation>Afficher le journal de l&apos;appareil ou d&apos;une tâche à côté de l&apos;appareil</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4331,6 +4351,45 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
     <message>
         <source>Build number</source>
         <translation>Numéro de build</translation>
+    </message>
+</context>
+<context>
+    <name>StageLogPane</name>
+    <message>
+        <source>Device log</source>
+        <translation>Journal de l&apos;appareil</translation>
+    </message>
+    <message>
+        <source>Job log</source>
+        <translation>Journal de la tâche</translation>
+    </message>
+    <message>
+        <source>Open under Builds &amp; jobs</source>
+        <translation>Ouvrir dans Builds et tâches</translation>
+    </message>
+    <message>
+        <source>Hide the log</source>
+        <translation>Masquer le journal</translation>
+    </message>
+    <message>
+        <source>No device is live.</source>
+        <translation>Aucun appareil en direct.</translation>
+    </message>
+    <message>
+        <source>Connect a device and its log runs here, beside its screen.</source>
+        <translation>Connectez un appareil et son journal défile ici, à côté de son écran.</translation>
+    </message>
+    <message>
+        <source>No job yet.</source>
+        <translation>Aucune tâche pour l&apos;instant.</translation>
+    </message>
+    <message>
+        <source>Run your app or start a build, and its log follows here.</source>
+        <translation>Lancez votre app ou un build, et son journal s&apos;affiche ici.</translation>
+    </message>
+    <message>
+        <source>Waiting for log lines…</source>
+        <translation>En attente de lignes de journal…</translation>
     </message>
 </context>
 <context>

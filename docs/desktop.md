@@ -281,6 +281,16 @@ coordinates. Presses still reach the device as before. The choice is
 stored. It applies to the Android and iPhone picture, docked or in its own
 window; the virtual iOS device has its own touch mark and no coordinates.
 
+## Log beside the device
+
+**Log beside the device** in the tool strip beside a live device, or **Show the log beside the device**
+in the command palette (*Log neben dem Gerät zeigen*, found as "split view" too), opens a log to the right
+of the device view. **Device log** (*Geräte-Log*) is the live device's own log, with the same app, level
+and search controls as the live log under Devices; **Job log** (*Auftrags-Log*) follows the app's
+launch while it runs, otherwise the newest running job, otherwise the newest job, and opens it under
+**Builds & jobs** on request. Drag the handle between the device and the log to resize it. Whether the
+log is shown, which log and its width are kept across starts.
+
 ## Screen recording
 
 The record button in the tool strip beside a live Android device records its screen

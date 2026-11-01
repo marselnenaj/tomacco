@@ -3431,6 +3431,46 @@ for line in sys.stdin:
         view->setProperty("quitting",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void a_log_runs_beside_the_device_resizable_and_remembered() {
+        // The palette opens a log beside the device: the device's own log, or a job's. The handle
+        // between them resizes it, and the width is kept.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        view->setProperty("showActivity",false);view->setProperty("stageLogWidth",420);view->setProperty("stageLogMode",QString("device"));
+        auto *pane=item("stageLogPane");QVERIFY(pane);QVERIFY(!pane->isVisible());
+        auto *palette=object("commandPalette");QVERIFY(palette);
+        QVERIFY(QMetaObject::invokeMethod(palette,"open"));
+        QTRY_VERIFY(item("commandSearch") && item("commandSearch")->hasActiveFocus());
+        type("split view");
+        QTRY_COMPARE(palette->property("results").value<QJSValue>().property(0).property("title").toString(),QString("Show the log beside the device"));
+        QTest::keyClick(window,Qt::Key_Return);
+        QTRY_VERIFY(pane->isVisible());
+        QTRY_COMPARE(qRound(pane->width()),420);
+        // No live device: it says so instead of an empty list.
+        QVERIFY(item("stageDeviceLogEmpty")->isVisible());
+        QVERIFY(!object("stageDeviceLog"));
+        // The job log: none yet, then the newest job's log, or why it cannot be read.
+        clickItem("stageLogMode-job");
+        QTRY_COMPARE(view->property("stageLogMode").toString(),QString("job"));
+        QVERIFY(item("stageJobLogEmpty")->isVisible());
+        const double now=QDateTime::currentSecsSinceEpoch();
+        workspace->setProperty("jobs",QVariantList{QVariantMap{{"id","00000000000000000000000000000000"},{"label","Build Android · debug"},{"state","failed"},{"created",now-30},{"updated",now}}});
+        QTRY_VERIFY(item("stageJobLog")->isVisible());
+        QTRY_VERIFY_WITH_TIMEOUT(!pane->property("jobError").toString().isEmpty(),patient(10000));
+        QVERIFY(item("stageLogOpenJob")->isVisible());
+        // Dragging the handle to the left widens the log; the width is stored.
+        const auto edge=pane->mapToScene(QPointF(-2,pane->height()/2)).toPoint();
+        QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,edge);
+        for(int step=1;step<=10;++step)QTest::mouseMove(window,edge-QPoint(step*12,0));
+        QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,edge-QPoint(120,0));
+        QTRY_VERIFY2(view->property("stageLogWidth").toInt()>=520,qPrintable(QString::number(view->property("stageLogWidth").toInt())));
+        capture("stage-log");
+        clickItem("stageLogClose");
+        QTRY_VERIFY(!pane->isVisible());QVERIFY(!view->property("showStageLog").toBool());
+        view->setProperty("stageLogWidth",420);view->setProperty("stageLogMode",QString("device"));view->setProperty("showActivity",true);
+        workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void touches_and_coordinates_show_on_the_live_device() {
         // Switched on, the device view marks a press and names the pointer's device pixel and
         // fraction; the press still reaches the device. Off, nothing is drawn.

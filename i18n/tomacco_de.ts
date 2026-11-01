@@ -3391,6 +3391,26 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Record the screen to a video, at most 3 minutes</source>
         <translation>Bildschirm als Video aufnehmen, höchstens 3 Minuten</translation>
     </message>
+    <message>
+        <source>Hide the log beside the device</source>
+        <translation>Log neben dem Gerät ausblenden</translation>
+    </message>
+    <message>
+        <source>Show the log beside the device</source>
+        <translation>Log neben dem Gerät zeigen</translation>
+    </message>
+    <message>
+        <source>Split view</source>
+        <translation>Geteilte Ansicht</translation>
+    </message>
+    <message>
+        <source>Log beside the device</source>
+        <translation>Log neben dem Gerät</translation>
+    </message>
+    <message>
+        <source>Show the device&apos;s or a job&apos;s log beside the device</source>
+        <translation>Das Log des Geräts oder eines Auftrags neben dem Gerät zeigen</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4331,6 +4351,45 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Build number</source>
         <translation>Build-Nummer</translation>
+    </message>
+</context>
+<context>
+    <name>StageLogPane</name>
+    <message>
+        <source>Device log</source>
+        <translation>Geräte-Log</translation>
+    </message>
+    <message>
+        <source>Job log</source>
+        <translation>Auftrags-Log</translation>
+    </message>
+    <message>
+        <source>Open under Builds &amp; jobs</source>
+        <translation>Unter Builds &amp; Aufträge öffnen</translation>
+    </message>
+    <message>
+        <source>Hide the log</source>
+        <translation>Log ausblenden</translation>
+    </message>
+    <message>
+        <source>No device is live.</source>
+        <translation>Kein Gerät ist live.</translation>
+    </message>
+    <message>
+        <source>Connect a device and its log runs here, beside its screen.</source>
+        <translation>Verbinde ein Gerät, dann läuft sein Log hier neben seinem Bildschirm.</translation>
+    </message>
+    <message>
+        <source>No job yet.</source>
+        <translation>Noch kein Auftrag.</translation>
+    </message>
+    <message>
+        <source>Run your app or start a build, and its log follows here.</source>
+        <translation>Starte deine App oder einen Build, dann folgt sein Log hier.</translation>
+    </message>
+    <message>
+        <source>Waiting for log lines…</source>
+        <translation>Warte auf Log-Zeilen …</translation>
     </message>
 </context>
 <context>
