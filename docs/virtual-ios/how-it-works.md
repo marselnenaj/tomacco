@@ -142,9 +142,12 @@ operations. They only call public operations.
 7. **`launch-accepted`.** Then look at the panel for up to a minute, for `display_visible`.
 
 Every attempt is recorded before its disk copy exists, so a failed start cannot leave a copy that blocks the next one.
+`tools/ios_start_timing.py` puts each start's and stop's steps together from the start's own marks, the preparation's
+`step_times` and the launcher's `timing`, for `start_timing` and `stop_timing` in the status.
 
 A stop asks the guest to flush and write `stop.json`, lets the emulator exit, and then checks the flush, exit code 0 and complete disk
-hashes. Only that makes a run a base. Near the session limit, or when the [guard](usage.md#the-graphics-memory-guard) trips, the supervisor
+hashes. Only that makes a run a base. `tools/ios_run_verdict.py` puts that evidence and the launcher's outcome into
+words, which the state keeps as `verdict` and `ios.virtual.status` shows as `last_run`. Near the session limit, or when the [guard](usage.md#the-graphics-memory-guard) trips, the supervisor
 asks the control plane for this same stop.
 
 ## Where to read next

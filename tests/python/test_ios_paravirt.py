@@ -254,6 +254,23 @@ class SessionLimitTests(unittest.TestCase):
         self.assertFalse(run.gpu_memory_short((14 << 30, 16 << 30)))
         self.assertTrue(run.gpu_memory_short(((14 << 30) + 1, 16 << 30)))
 
+    def test_each_guard_check_is_published_for_the_status(self):
+        record = run.gpu_memory_record(((15 << 30), 16 << 30), 1, False, 1234.5678)
+        self.assertEqual(record, {"format": 1, "checked": 1234.568, "used_bytes": 15 << 30, "total_bytes": 16 << 30,
+                                  "free_bytes": 1 << 30, "limit_free_bytes": 2 << 30, "short_checks": 1,
+                                  "stopping": False})
+        # A card that reports nothing is published as unknown, not as empty.
+        self.assertEqual(run.gpu_memory_record(None, 0, False, 1.0)["free_bytes"], None)
+        self.assertEqual(run.gpu_memory_record((0, 0), 0, False, 1.0)["limit_free_bytes"], None)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            run.save_gpu_memory(output, record)
+            self.assertEqual(json.loads((output / run.GPU_MEMORY_RECORD).read_text()), record)
+            self.assertEqual((output / run.GPU_MEMORY_RECORD).stat().st_mode & 0o777, 0o600)
+            self.assertEqual(sorted(path.name for path in output.iterdir()), [run.GPU_MEMORY_RECORD])
+            # A directory that cannot take it costs the session nothing.
+            run.save_gpu_memory(output / "missing", record)
+
     def test_the_card_a_process_renders_on_is_read_from_its_open_files(self):
         with tempfile.TemporaryDirectory() as directory:
             card = Path(directory) / "bus/pci/devices/0000:03:00.0"
@@ -1694,6 +1711,14 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(media["sha256_after"], media["sha256_before"])
         self.assertTrue(receipt["storage_hashes_complete"])
         self.assertEqual(receipt["read_only_disks"], {})
+        # The launch's timing: hashing before the engine (every input and the
+        # disk), when the engine started and exited, and the disk's hash after.
+        timing = receipt["timing"]
+        hashed = receipt["storage_hash_observations"]
+        self.assertEqual(timing["output_hashing_bytes"], 512)
+        self.assertEqual(timing["input_hashing_bytes"] + 512, sum(row["bytes"] for row in hashed))
+        self.assertGreaterEqual(timing["input_hashing_seconds"], 0)
+        self.assertLessEqual(timing["emulator_started"], timing["engine_exited"])
         command = receipt["command"]
         self.assertNotIn("enable=virtio_blk_*", command)
         self.assertFalse(receipt["trace_storage"])

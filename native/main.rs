@@ -1,3 +1,5 @@
+// The status of the virtual iPhone is one large json! literal.
+#![recursion_limit = "256"]
 mod accessibility;
 mod analyze;
 mod android_debug;
@@ -59,6 +61,7 @@ mod test_results;
 mod toolchain;
 mod update;
 mod verify;
+mod virtual_run;
 mod visual;
 mod watch;
 mod workspaces;
@@ -493,6 +496,12 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
                     .ok_or_else(|| Error::new("invalid_request", "Missing watch specification"))?,
             )?;
             return Ok(0);
+        }
+        Some("_virtual_run") => {
+            let (Some(stage), Some(request)) = (args.get(1), args.get(2)) else {
+                return Err(Error::new("invalid_request", "Missing virtual run request"));
+            };
+            return virtual_run::worker(stage, request);
         }
         Some("_automation") => {
             automation::worker(

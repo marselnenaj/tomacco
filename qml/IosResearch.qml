@@ -168,7 +168,7 @@ Rectangle {
         else if(nativeGuestView.running)nativeGuestView.detached=true
         else {detachExpiry.restart();call("ios.virtual.status",{})}
     }
-    function guestState() {return {running:nativeGuestView.running,detached:nativeGuestView.detached,detach_pending:wantDetached && !nativeGuestView.detached,window_visible:nativeGuestView.windowVisible,frame_width:nativeGuestView.frameWidth,frame_height:nativeGuestView.frameHeight,frame_sha256:nativeGuestView.frameHash,captured_at:nativeGuestView.capturedAt,frames_per_second:nativeGuestView.framesPerSecond,frame_transport:nativeGuestView.fileFrames?"file":"inline",queued_inputs:nativeGuestView.inputQueue.length}}
+    function guestState() {return {running:nativeGuestView.running,detached:nativeGuestView.detached,detach_pending:wantDetached && !nativeGuestView.detached,window_visible:nativeGuestView.windowVisible,frame_width:nativeGuestView.frameWidth,frame_height:nativeGuestView.frameHeight,frame_sha256:nativeGuestView.frameHash,captured_at:nativeGuestView.capturedAt,frames_per_second:nativeGuestView.framesPerSecond,frames_answered_per_second:nativeGuestView.framesAskedPerSecond,input_to_frame_ms:nativeGuestView.latencyMs>=0?nativeGuestView.latencyMs:null,keyboard_to_phone:nativeGuestView.keyboardHeld,always_on_top:nativeGuestView.windowOnTop,frame_transport:nativeGuestView.fileFrames?"file":"inline",queued_inputs:nativeGuestView.inputQueue.length}}
     function call(operation, args) {
         let id=Agent.request(operation,args)
         requests[id]={operation:operation,jobId:args.job_id || "",arguments:args}
@@ -482,6 +482,7 @@ Rectangle {
                     // Only the phone's own guest is known to be a particular model.
                     deviceProfile:view.jobId && view.jobId===view.virtualPhone.guest_job && view.virtualPhone.running_model
                         ?(Studio.models.find(m=>m.id===view.virtualPhone.running_model && m.platform==="ios") || ({})):({})
+                    framedScreenshots:!!view.jobId && view.jobId===view.virtualPhone.guest_job
                     observing:dialog.visible && view.paravirtualMode && !view.cancelling
                     onPendingChanged:if(!pending)view.stopAfterPreview()
                     solo:view.guestSolo

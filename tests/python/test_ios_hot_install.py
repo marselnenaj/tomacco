@@ -324,6 +324,7 @@ class DeployTests(unittest.TestCase):
         device.call = call
         device.send_bundle = lambda job, bundle: self.steps.append("send") or "/guest/App.app"
         device.install = lambda job, path, identity: self.steps.append("install")
+        device.ensure_unlocked = lambda job, deadline: self.steps.append("unlock") or "unlocked"
         return device
 
     def staged(self, bundle, entitlements, payload, signer, taken):
@@ -332,18 +333,40 @@ class DeployTests(unittest.TestCase):
                   "signing_identifier": "dev.app"}],
                 {"bundle_id": "dev.app", "path": "Applications/App.app", "cdhash": self.hash})
 
-    def deploy(self, device, open_app=True):
+    def deploy(self, device, open_app=True, force=False):
         toolchain = {"ldid": sys.executable}
+        self.events = []
         with unittest.mock.patch.object(phone, "stage_application", self.staged), \
                 unittest.mock.patch.object(phone, "guest_toolchain", lambda *_: toolchain), \
-                unittest.mock.patch.object(phone, "emit", lambda *_a, **_k: None):
-            device.deploy(self.bundle, None, open_app)
+                unittest.mock.patch.object(phone, "emit", lambda *_a, **k: self.events.append(k)):
+            device.deploy(self.bundle, None, open_app, force)
+
+    def installed_before(self):
+        state = json.loads((self.directory / "state.json").read_text())
+        state["applications"]["dev.app"] = self.hash
+        (self.directory / "state.json").write_text(json.dumps(state))
+
+    def test_the_same_signed_app_is_not_sent_again_but_opened(self):
+        self.installed_before()
+        self.deploy(self.phone())
+        self.assertEqual(self.steps, ["ios.virtual.configure", "open"])
+        self.assertEqual(hot.spare_entries(self.module.read_bytes()), 3)
+        self.assertEqual([event["step"] for event in self.events], ["signed", "unchanged", "opened", "done"])
+        self.assertIs(self.events[-1]["unchanged"], True)
+
+    def test_force_installs_the_same_signed_app_again(self):
+        self.installed_before()
+        self.deploy(self.phone(), force=True)
+        self.assertEqual(self.steps, ["trust_cache_update", "send", "policy_add", "install",
+                                      "ios.virtual.configure", "open"])
+        self.assertIs(self.events[-1]["unchanged"], False)
 
     def test_trust_comes_first_and_the_app_is_listed_after_it_installed(self):
         device = self.phone()
         self.deploy(device)
+        # The lock screen is left before the app is opened over it.
         self.assertEqual(self.steps, ["trust_cache_update", "send", "policy_add", "install",
-                                      "ios.virtual.configure", "open"])
+                                      "ios.virtual.configure", "unlock", "open"])
         self.assertEqual(hot.spare_entries(self.module.read_bytes()), 2)
         self.assertEqual(json.loads((self.directory / "state.json").read_text())["applications"],
                          {"old.app": "11", "dev.app": self.hash})
@@ -351,6 +374,7 @@ class DeployTests(unittest.TestCase):
     def test_install_only_does_not_open(self):
         self.deploy(self.phone(), open_app=False)
         self.assertNotIn("open", self.steps)
+        self.assertNotIn("unlock", self.steps)
 
     def test_a_stopped_phone_is_told_to_start(self):
         with self.assertRaisesRegex(RuntimeError, "not running"):

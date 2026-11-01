@@ -208,6 +208,7 @@ pub fn configure(a: &Value) -> Result {
         "application",
         "clang",
         "start_disks",
+        "stall_seconds",
     ]
     .iter()
     .any(|key| a.get(key).is_some())
@@ -319,6 +320,21 @@ pub fn configure(a: &Value) -> Result {
                 ));
             }
             profile["start_disks"] = json!(mode);
+        }
+        if let Some(seconds) = a.get("stall_seconds") {
+            // How long a running phone may show no sign of life before the
+            // status calls it stalled (liveness).
+            match seconds.as_u64() {
+                Some(seconds) if liveness::STALL_SECONDS_RANGE.contains(&seconds) => {
+                    profile["stall_seconds"] = json!(seconds);
+                }
+                _ => {
+                    return Err(Error::new(
+                        "invalid_argument",
+                        "stall_seconds must be a whole number of seconds from 30 to 86400",
+                    ));
+                }
+            }
         }
         profile["applications"] = json!(listed);
         atomic_json(&directory.join("profile.json"), &profile)?;
@@ -490,6 +506,37 @@ fn bundle_infos(bundles: &[String]) -> std::collections::HashMap<String, Value> 
     found
 }
 
+/// The executable name of an app the profile lists, by bundle identifier
+/// (any case), read from its bundle's Info.plist on the host.
+pub(crate) fn listed_executable(bundle_id: &str) -> Result<String> {
+    let (profile, _) = records(&directory()?)?;
+    let bundles: Vec<String> = applications(&profile)?
+        .iter()
+        .map(|row| s(row, "bundle").to_string())
+        .collect();
+    executable_of(bundle_id, &bundles, &bundle_infos(&bundles))
+}
+
+fn executable_of(
+    bundle_id: &str,
+    bundles: &[String],
+    infos: &std::collections::HashMap<String, Value>,
+) -> Result<String> {
+    bundles
+        .iter()
+        .filter_map(|bundle| infos.get(bundle))
+        .find(|info| s(info, "bundle_id").eq_ignore_ascii_case(bundle_id))
+        .and_then(|info| info["executable"].as_str().filter(|e| !e.is_empty()))
+        .map(str::to_string)
+        .ok_or_else(|| {
+            Error::new(
+                "ios_virtual_application_unknown",
+                format!("The profile lists no readable app {bundle_id}"),
+            )
+            .remedy("Deploy it with ios.virtual.deploy or add it with ios.virtual.configure add_application; ios.virtual.apps lists the apps")
+        })
+}
+
 /// One row per app the phone knows of: the owned diagnostic, each app the
 /// profile lists (with the version its bundle on the host has now) and any
 /// app installed on the current run's volume that the profile no longer
@@ -576,6 +623,9 @@ pub fn apps(_a: &Value) -> Result {
 /// The disks a start copies from its base, in the order it copies them
 /// (`prepare` in tools/prepare_ios_guest_tools.py).
 use super::disk_overlay;
+pub mod doctor;
+mod host_load;
+mod liveness;
 pub mod states;
 
 /// The disks a start copies besides the root disk, which is a copy, an
@@ -706,6 +756,17 @@ fn allocated_bytes(directory: &Path) -> u64 {
         .sum()
 }
 
+/// What a streamed copy of a disk writes: its bytes on disk, at most its
+/// size. The copy keeps holes and leaves zero chunks out, so it never writes
+/// more than the source's allocated data (on a filesystem that compresses,
+/// the copy is compressed as well). None when it is not a readable file.
+fn copied_bytes(path: &Path) -> Option<u64> {
+    fs::metadata(path)
+        .ok()
+        .filter(|meta| meta.is_file())
+        .map(|meta| meta.len().min(meta.blocks() * 512))
+}
+
 /// Whether the filesystem of `installs` can clone `source` instead of
 /// copying it (FICLONE), as the copy tries first. The probe clones the
 /// base's smallest disk into a temporary file there and removes it again.
@@ -789,11 +850,17 @@ fn start_disk(profile: &Value, state: &Value, pins: &[(PathBuf, String)], probe:
     let Some(root) = disk_overlay::root_bytes(&base) else {
         return Value::Null;
     };
-    let mut disks = if method == "overlay" { 0 } else { root };
+    let mut disks = match method {
+        "overlay" => 0,
+        // A streamed copy writes the base's data only (sparse_copy in
+        // tools/prepare_ios_userland.py); a flattened chain its virtual size.
+        "copy" => copied_bytes(&base.join(disk_overlay::ROOT_RAW)).unwrap_or(root),
+        _ => root,
+    };
     for name in COPIED_DISKS {
-        match fs::metadata(base.join(name)) {
-            Ok(meta) if meta.is_file() => disks += meta.len(),
-            _ => return Value::Null,
+        match copied_bytes(&base.join(name)) {
+            Some(bytes) => disks += bytes,
+            None => return Value::Null,
         }
     }
     let Some(free) = free_bytes(&installs) else {
@@ -1067,6 +1134,109 @@ fn phase_times(state: &Value, now: f64) -> Value {
         "phases":phases})
 }
 
+/// The plain-word verdict the script recorded when the last run finished
+/// (`verdict`, tools/ios_run_verdict.py), or null for a state from before it
+/// or a record of another shape.
+fn last_run(state: &Value) -> Value {
+    let verdict = &state["verdict"];
+    if verdict["verified"].is_boolean()
+        && verdict["summary"].is_string()
+        && verdict["reasons"]
+            .as_array()
+            .is_some_and(|reasons| reasons.iter().all(Value::is_string))
+        && (verdict["remedy"].is_string() || verdict["remedy"].is_null())
+    {
+        json!({"verified":verdict["verified"],"outcome":verdict["outcome"].as_str(),
+            "summary":verdict["summary"],"reasons":verdict["reasons"],"remedy":verdict["remedy"]})
+    } else {
+        Value::Null
+    }
+}
+
+/// What to call next when a start or stop ended halfway, from the state the
+/// script left (tools/ios_virtual_iphone.py) and whether its guest runs. A
+/// start adopts a running guest instead of booting another: it makes no disk
+/// copy and goes on from the guest-service check, so a start that failed
+/// after the boot resumes with `ios.virtual.start`. Null when nothing is left
+/// halfway: the phone is ready, off, or its last run is described by
+/// `last_run`.
+fn next_step(state: &Value, running: bool, ended: bool, busy: Option<&Value>) -> Value {
+    let step = |action: &str, call: &str, arguments: Value, resumes: bool, why: &str| json!({"action":action,"call":call,"arguments":arguments,"resumes":resumes,"why":why});
+    if let Some(job) = busy {
+        return step(
+            "wait",
+            "job.wait",
+            json!({"job_id":job["id"]}),
+            false,
+            "A start or stop is in progress; follow its job.",
+        );
+    }
+    let phase = s(state, "phase");
+    if running {
+        return match phase {
+            "launch-uncertain" => step(
+                "resume",
+                "ios.virtual.start",
+                json!({"open_app":false}),
+                true,
+                "The guest runs, but whether iOS opened the app is unknown, and the launch is never sent twice                  on its own. A start with open_app false adopts the guest and finishes without it; open the app                  yourself afterwards.",
+            ),
+            "awaiting-unlock" => step(
+                "unlock_then_resume",
+                "ios.virtual.start",
+                json!({}),
+                true,
+                "The lock screen has a passcode. Unlock it in the phone window, then start again: the start                  adopts the running guest and opens the app.",
+            ),
+            "stopping" => step(
+                "stop",
+                "ios.virtual.stop",
+                json!({}),
+                false,
+                "A stop ended before the guest did. Stop again; a guest that answers is asked to save first.",
+            ),
+            "preparing" | "booting" | "installing" | "unlocking" | "failed" => step(
+                "resume",
+                "ios.virtual.start",
+                json!({}),
+                true,
+                "The last start ended while its guest kept running. Start again: it adopts that guest without                  a new disk copy and goes on from the guest-service check.",
+            ),
+            _ => Value::Null,
+        };
+    }
+    if ended {
+        return step(
+            "record_end",
+            "ios.virtual.stop",
+            json!({}),
+            false,
+            "The guest has ended on its own. A stop records whether it saved first, and last_run then says how              it ended; a start does the same before it begins from the last verified run.",
+        );
+    }
+    if phase == "failed" && state["closed"] == true {
+        return step(
+            "start_again",
+            "ios.virtual.start",
+            json!({}),
+            false,
+            "The last start failed before its guest ran, and its disk copy was removed. A new start begins              again from the last verified run; error says what went wrong.",
+        );
+    }
+    Value::Null
+}
+
+/// A start's or stop's step times as the script recorded them: an object
+/// with a list of steps, else null.
+fn timing(state: &Value, key: &str) -> Value {
+    match &state[key] {
+        value @ Value::Object(map) if map.get("steps").is_some_and(Value::is_array) => {
+            value.clone()
+        }
+        _ => Value::Null,
+    }
+}
+
 fn application_process_observation(profile: &Value, state: &Value, running: bool) -> Value {
     let launch = &state["launch_receipt"];
     if running
@@ -1082,7 +1252,7 @@ fn application_process_observation(profile: &Value, state: &Value, running: bool
     }
 }
 
-pub fn status(_a: &Value) -> Result {
+pub fn status(a: &Value) -> Result {
     let directory = match directory() {
         Ok(directory) => directory,
         Err(error) if error.code == "ios_virtual_unconfigured" => {
@@ -1184,6 +1354,9 @@ pub fn status(_a: &Value) -> Result {
         // or stop with its seconds, and the disk copy's progress while preparing.
         "phase_started":times["phase_started"],"phase_elapsed_seconds":times["phase_elapsed_seconds"],
         "phases":times["phases"],"copy_progress":copy_progress(&state),
+        // Where the last start and stop spent their time, step by step
+        // (tools/ios_start_timing.py); kept in the run's timing.json too.
+        "start_timing":timing(&state,"start_timing"),"stop_timing":timing(&state,"stop_timing"),
         // Whether the next start's disk copy fits in the profile's installs,
         // and whether it copies the root disk or lays an overlay on it.
         "start_disk":start_disk(&profile,&state,&states::pinned(&directory),false),
@@ -1217,6 +1390,21 @@ pub fn status(_a: &Value) -> Result {
         "models":paravirtual::device_models().iter().map(|model| json!({"id":model["id"],
             "name":model["name"],"panel":model["panel"],"source":model["source"]})).collect::<Vec<_>>(),
         "guest_ended":ended,"guest_saved":saved,"guest_gpu_memory_stop":gpu_memory_stop,
+        // How the last finished run ended, in plain words: verified, outcome,
+        // summary, the reasons it was not verified and a remedy.
+        "last_run":last_run(&state),
+        // What to call next when a start or stop ended halfway: resume the
+        // running guest instead of a new start, or record how a guest ended.
+        "next":next_step(&state,running,ended,busy.as_ref()),
+        // The graphics card's memory against the guard's limit, and the
+        // host's I/O and memory pressure, on every call.
+        "host":host_load::host(guest.as_ref()),
+        // Whether the running phone still shows signs of life, what it last
+        // showed, and the typed calls that recover a stalled one.
+        "liveness":match guest.as_ref() {
+            Some(job) if running => liveness::observe(job,&profile,s(&state,"phase"),a["probe"] == true),
+            _ => Value::Null,
+        },
     }))
 }
 
@@ -1233,7 +1421,7 @@ fn submit_with(
     arguments: Vec<String>,
 ) -> Result {
     let directory = directory()?;
-    records(&directory)?;
+    let (_, state) = records(&directory)?;
     let key = json!({"operation":operation,"arguments":{"directory":directory,
         "open_app":a["open_app"].as_bool().unwrap_or(true),"extra":arguments}});
     if let Some(mut active) = jobs::active_exclusive(EXCLUSIVE)? {
@@ -1268,6 +1456,10 @@ fn submit_with(
             // Such a device has no Home button; it is unlocked with a swipe.
             argv.extend(["--model".into(), model, "--unlock".into(), "swipe".into()]);
         }
+    } else if action != "stop" && !s(&state, "model").is_empty() {
+        // A deploy or an unlock leaves the lock screen of the running phone,
+        // which is unlocked as the model it was started as.
+        argv.extend(["--unlock".into(), "swipe".into()]);
     }
     jobs::submit(
         label,
@@ -1282,7 +1474,8 @@ pub fn start(a: &Value) -> Result {
     // no copy; any other start is refused here when its copy cannot fit.
     let directory = directory()?;
     let (profile, state) = records(&directory)?;
-    if jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state) {
+    let boots = jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state);
+    if boots {
         refuse_short_disk(&start_disk(
             &profile,
             &state,
@@ -1292,13 +1485,20 @@ pub fn start(a: &Value) -> Result {
     }
     // Preparation, a boot of many minutes and the unlock each have their own
     // bound inside the script; this is the outer limit of the whole job.
-    submit(
+    let mut job = submit(
         "ios.virtual.start",
         "start",
         "Start virtual iOS device",
         4800,
         a,
-    )
+    )?;
+    // A start that boots a guest says first when the card is already short
+    // of memory or the host under pressure; it is not refused for either.
+    if boots {
+        let host = host_load::host(None);
+        job["warnings"] = json!(host_load::warnings(&host["gpu"], &host["pressure"]));
+    }
+    Ok(job)
 }
 
 /// One step from a built bundle to the app on the running phone: inspected
@@ -1326,6 +1526,19 @@ pub fn deploy(a: &Value) -> Result {
             "The phone is not running; add the app with ios.virtual.configure and start the phone",
         ));
     }
+    submit_with(
+        "ios.virtual.deploy",
+        "deploy",
+        "Install app on virtual iOS device",
+        1800,
+        a,
+        deploy_arguments(&bundle, entitlements.as_deref(), a["force"] == true),
+    )
+}
+
+/// The deploy script's own arguments: the bundle, the entitlements to
+/// request, and `--force` to install an unchanged app again.
+fn deploy_arguments(bundle: &Path, entitlements: Option<&Path>, force: bool) -> Vec<String> {
     let mut arguments = vec![
         "--bundle".to_string(),
         bundle.to_string_lossy().into_owned(),
@@ -1336,14 +1549,10 @@ pub fn deploy(a: &Value) -> Result {
             file.to_string_lossy().into_owned(),
         ]);
     }
-    submit_with(
-        "ios.virtual.deploy",
-        "deploy",
-        "Install app on virtual iOS device",
-        1800,
-        a,
-        arguments,
-    )
+    if force {
+        arguments.push("--force".to_string());
+    }
+    arguments
 }
 
 /// A debugger's way to a process of the running phone: a job holding a port on
@@ -1429,7 +1638,7 @@ fn guest_control_debug_target(value: &str) -> bool {
 
 /// The guest job of the running phone and the model it was started as
 /// (empty: the Home-button phone), or `ios_virtual_not_running`.
-pub(super) fn running_guest() -> Result<(String, String)> {
+pub(crate) fn running_guest() -> Result<(String, String)> {
     let (_, state) = records(&directory()?)?;
     if !guest_is_running(&state) {
         return Err(Error::new(
@@ -1466,6 +1675,100 @@ fn guest_is_running(state: &Value) -> bool {
     })
 }
 
+/// Leaves the running phone's lock screen as a start does (`Phone.ensure_unlocked`
+/// in the script), as a short job: `screen` in its result is `unlocked`, or
+/// `not-checked` when the guest tools cannot report the screen. A passcode is
+/// never entered.
+pub fn unlock(a: &Value) -> Result {
+    let (_, state) = records(&directory()?)?;
+    if !guest_is_running(&state) {
+        return Err(Error::new(
+            "ios_virtual_not_running",
+            "The phone is not running; start it with ios.virtual.start",
+        ));
+    }
+    submit(
+        "ios.virtual.unlock",
+        "unlock",
+        "Unlock virtual iOS device",
+        900,
+        a,
+    )
+}
+
+/// What a screen_state reply says about the lock screen.
+#[derive(Debug, PartialEq)]
+pub(crate) enum LockScreen {
+    Unlocked,
+    /// Locked without a passcode: the unlock path can leave it.
+    Locked,
+    Passcode,
+    /// The guest could not say (older guest tools, a busy or slow guest).
+    Unknown(String),
+}
+
+pub(crate) fn lock_screen(reply: &Result) -> LockScreen {
+    let response = match reply {
+        Ok(reply) => &reply["response"],
+        Err(error) => return LockScreen::Unknown(error.code.clone()),
+    };
+    if response["ok"] != true || response["screen_state_known"] != true {
+        return LockScreen::Unknown(
+            response["error"]
+                .as_str()
+                .unwrap_or("screen_state_unknown")
+                .to_string(),
+        );
+    }
+    match (
+        response["screen_locked"].as_bool(),
+        response["passcode_enabled"].as_bool(),
+    ) {
+        (Some(false), _) => LockScreen::Unlocked,
+        (Some(true), Some(false)) => LockScreen::Locked,
+        (Some(true), Some(true)) => LockScreen::Passcode,
+        _ => LockScreen::Unknown("screen_state_unknown".into()),
+    }
+}
+
+fn locked(message: &str, details: Value) -> Error {
+    Error::new("ios_virtual_locked", message)
+        .remedy("Unlock the phone in its window (Home, or a swipe up on a model without one), then try again")
+        .details(details)
+}
+
+/// Makes sure the running phone is past its lock screen before something
+/// that needs the screen: asks the guest once, and when it is locked without
+/// a passcode runs the unlock job and waits for it. A guest that cannot say
+/// is not held up (`not-checked`); a passcode or a screen that stays locked is
+/// `ios_virtual_locked`.
+pub(crate) fn ensure_unlocked() -> Result {
+    let (job, _) = running_guest()?;
+    let reply =
+        guest_control::call(&json!({"job_id":job,"operation":"screen_state","timeout_seconds":30}));
+    match lock_screen(&reply) {
+        LockScreen::Unlocked => Ok(json!({"screen":"unlocked","unlock_job":null})),
+        LockScreen::Unknown(reason) => Ok(json!({"screen":"not-checked","reason":reason})),
+        LockScreen::Passcode => Err(locked(
+            "The virtual iPhone's lock screen has a passcode, which Tomacco does not enter",
+            json!({"job_id":job}),
+        )),
+        LockScreen::Locked => {
+            let submitted = unlock(&json!({}))?;
+            let id = s(&submitted, "id").to_string();
+            let ended = jobs::wait(&id, 900)?;
+            if s(&ended, "state") == "succeeded" {
+                Ok(json!({"screen":"unlocked","unlock_job":id}))
+            } else {
+                Err(locked(
+                    "The virtual iPhone stayed on its lock screen",
+                    json!({"job_id":job,"unlock_job":ended}),
+                ))
+            }
+        }
+    }
+}
+
 pub fn stop(a: &Value) -> Result {
     // Stopping wins over a start that is still running. The start is
     // cancelled; its guest is an independent job, which the stop then shuts
@@ -1496,6 +1799,45 @@ pub fn stop(a: &Value) -> Result {
 #[cfg(test)]
 mod debug_target_tests {
     use super::*;
+
+    #[test]
+    fn a_listed_app_names_its_executable_and_an_unknown_one_is_refused() {
+        let bundles = vec!["/a/Demo.app".to_string(), "/a/Gone.app".to_string()];
+        let mut infos = std::collections::HashMap::new();
+        infos.insert(
+            "/a/Demo.app".to_string(),
+            json!({"bundle_id":"dev.example.Demo","executable":"DemoExe"}),
+        );
+        assert_eq!(
+            executable_of("dev.example.demo", &bundles, &infos).unwrap(),
+            "DemoExe"
+        );
+        assert_eq!(
+            executable_of("dev.example.Gone", &bundles, &infos)
+                .unwrap_err()
+                .code,
+            "ios_virtual_application_unknown"
+        );
+    }
+
+    #[test]
+    fn force_reaches_the_deploy_script_only_when_asked() {
+        let bundle = Path::new("/apps/Demo.app");
+        assert_eq!(
+            deploy_arguments(bundle, None, false),
+            ["--bundle", "/apps/Demo.app"]
+        );
+        assert_eq!(
+            deploy_arguments(bundle, Some(Path::new("/apps/e.plist")), true),
+            [
+                "--bundle",
+                "/apps/Demo.app",
+                "--entitlements",
+                "/apps/e.plist",
+                "--force"
+            ]
+        );
+    }
 
     #[test]
     fn a_debug_target_never_reads_as_an_option() {
@@ -1601,6 +1943,39 @@ mod status_record_tests {
         assert!(time_zone(&json!({"time_zone":"Europe/Vienna"})).is_null());
         assert!(time_zone(&json!({"time_zone":{"zone":"Europe/Vienna"}})).is_null());
         assert!(time_zone(&json!({"time_zone":{"zone":"Europe/Vienna","outcome":7}})).is_null());
+    }
+
+    #[test]
+    fn the_last_runs_verdict_is_reported_as_recorded_and_nothing_else() {
+        let verdict = json!({"verified":false,"outcome":"emulator-error",
+            "summary":"The emulator exited with exit code 134.",
+            "reasons":["The emulator exited with exit code 134, not 0."],
+            "remedy":"The next start uses the last verified run.","extra":1});
+        let reported = last_run(&json!({"verdict":verdict}));
+        assert_eq!(reported["verified"], false);
+        assert_eq!(reported["outcome"], "emulator-error");
+        assert_eq!(
+            reported["reasons"][0],
+            "The emulator exited with exit code 134, not 0."
+        );
+        assert!(reported.get("extra").is_none());
+        // A verified run has no remedy; a missing outcome stays null.
+        let clean = last_run(
+            &json!({"verdict":{"verified":true,"summary":"Fine.","reasons":[],"remedy":null}}),
+        );
+        assert_eq!(
+            (clean["verified"].clone(), clean["outcome"].clone()),
+            (json!(true), Value::Null)
+        );
+        // States from before verdicts, and records of another shape.
+        assert!(last_run(&json!({})).is_null());
+        assert!(last_run(&json!({"verdict":"verified"})).is_null());
+        assert!(
+            last_run(&json!({"verdict":{"verified":"yes","summary":"x","reasons":[]}})).is_null()
+        );
+        assert!(
+            last_run(&json!({"verdict":{"verified":true,"summary":"x","reasons":[7]}})).is_null()
+        );
     }
 
     #[test]
@@ -1820,6 +2195,118 @@ mod process_observation_tests {
 }
 
 #[cfg(test)]
+mod lock_screen_tests {
+    use super::*;
+
+    fn reply(response: Value) -> Result {
+        Ok(json!({"job_id":"0".repeat(32),"request_id":"a".repeat(32),"response":response}))
+    }
+
+    #[test]
+    fn a_screen_state_reply_decides_whether_to_unlock() {
+        let known = |locked: bool, passcode: bool| {
+            reply(
+                json!({"ok":true,"operation":"screen_state","screen_state_known":true,
+                "screen_locked":locked,"passcode_enabled":passcode}),
+            )
+        };
+        assert_eq!(lock_screen(&known(false, true)), LockScreen::Unlocked);
+        assert_eq!(lock_screen(&known(true, false)), LockScreen::Locked);
+        assert_eq!(lock_screen(&known(true, true)), LockScreen::Passcode);
+        // Older guest tools, an unknown screen, a busy or silent guest: not judged.
+        assert_eq!(
+            lock_screen(&reply(
+                json!({"ok":false,"error":"screen_query_api_unavailable"})
+            )),
+            LockScreen::Unknown("screen_query_api_unavailable".into())
+        );
+        assert_eq!(
+            lock_screen(&reply(
+                json!({"ok":true,"screen_state_known":false,"screen_locked":true})
+            )),
+            LockScreen::Unknown("screen_state_unknown".into())
+        );
+        assert_eq!(
+            lock_screen(&reply(
+                json!({"ok":true,"screen_state_known":true,"screen_locked":true})
+            )),
+            LockScreen::Unknown("screen_state_unknown".into())
+        );
+        assert_eq!(
+            lock_screen(&Err(Error::new("ios_guest_timeout", "late"))),
+            LockScreen::Unknown("ios_guest_timeout".into())
+        );
+        let error = locked("stayed locked", json!({}));
+        assert_eq!(error.code, "ios_virtual_locked");
+        assert!(error.remedy.contains("Unlock the phone in its window"));
+    }
+}
+
+#[cfg(test)]
+mod next_step_tests {
+    use super::*;
+
+    fn action(state: Value, running: bool, ended: bool) -> Value {
+        next_step(&state, running, ended, None)["action"].clone()
+    }
+
+    #[test]
+    fn a_start_that_ended_while_its_guest_runs_is_resumed_not_repeated() {
+        for phase in ["preparing", "booting", "installing", "unlocking", "failed"] {
+            let state = json!({"phase":phase,"closed":false,"error":"iOS refused the launch"});
+            let step = next_step(&state, true, false, None);
+            assert_eq!(step["action"], "resume", "{phase}");
+            assert_eq!(step["call"], "ios.virtual.start");
+            assert_eq!(step["arguments"], json!({}));
+            assert_eq!(step["resumes"], true);
+        }
+        // An unknown launch is never sent again on its own.
+        let step = next_step(&json!({"phase":"launch-uncertain"}), true, false, None);
+        assert_eq!(
+            (step["action"].clone(), step["arguments"].clone()),
+            (json!("resume"), json!({"open_app":false}))
+        );
+        assert_eq!(
+            action(json!({"phase":"awaiting-unlock"}), true, false),
+            "unlock_then_resume"
+        );
+        assert_eq!(action(json!({"phase":"stopping"}), true, false), "stop");
+    }
+
+    #[test]
+    fn a_ready_or_stopped_phone_has_nothing_left_halfway() {
+        for phase in ["launch-accepted", "service-ready"] {
+            assert!(next_step(&json!({"phase":phase}), true, false, None).is_null());
+        }
+        for phase in ["stopped", "unverified", "configured"] {
+            assert!(next_step(&json!({"phase":phase,"closed":true}), false, false, None).is_null());
+        }
+    }
+
+    #[test]
+    fn an_ended_guest_a_failed_preparation_and_a_running_job() {
+        assert_eq!(
+            action(
+                json!({"phase":"launch-accepted","closed":false}),
+                false,
+                true
+            ),
+            "record_end"
+        );
+        let step = next_step(&json!({"phase":"failed","closed":true}), false, false, None);
+        assert_eq!(
+            (step["action"].clone(), step["resumes"].clone()),
+            (json!("start_again"), json!(false))
+        );
+        // A start or stop in progress comes first.
+        let busy = json!({"id":"a".repeat(32),"state":"running"});
+        let step = next_step(&json!({"phase":"failed"}), true, false, Some(&busy));
+        assert_eq!(step["action"], "wait");
+        assert_eq!(step["arguments"]["job_id"], busy["id"]);
+    }
+}
+
+#[cfg(test)]
 mod start_progress_tests {
     use super::*;
 
@@ -1835,6 +2322,17 @@ mod start_progress_tests {
         );
         // A clock that went back never gives negative seconds.
         assert_eq!(phase_times(&state, 150.0)["phase_elapsed_seconds"], 0.0);
+    }
+
+    #[test]
+    fn timing_is_the_recorded_steps_or_null() {
+        let steps = json!({"steps":[{"step":"disk_copy","seconds":300.0}],"total_seconds":300.0,
+            "slowest":"disk_copy","run":3});
+        let state = json!({"start_timing":steps,"stop_timing":{"steps":"x"}});
+        assert_eq!(timing(&state, "start_timing"), steps);
+        assert!(timing(&state, "stop_timing").is_null());
+        assert!(timing(&json!({}), "start_timing").is_null());
+        assert!(timing(&json!({"start_timing":[1]}), "start_timing").is_null());
     }
 
     #[test]
@@ -2012,6 +2510,13 @@ mod start_disk_tests {
             // Neither reading leaves anything in installs.
             assert_eq!(fs::read_dir(&installs).unwrap().count(), 0);
         }
+        // A sparse base needs room for its data only, as its copy keeps the holes.
+        let sparse = File::create(base.join("system.raw")).unwrap();
+        sparse.set_len(1 << 30).unwrap();
+        let disk = start_disk(&profile, &state, &[], false);
+        assert_eq!(disk["needed_bytes"], 2 * 4096 + COPY_HEADROOM);
+        assert_eq!(copied_bytes(&base.join("system.raw")), Some(0));
+        assert_eq!(copied_bytes(&base), None);
         // An open run without a verified base, or a base without its disks,
         // says nothing.
         assert!(

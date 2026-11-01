@@ -197,6 +197,12 @@ pub trait Phone {
     fn screenshot(&mut self, path: &Path) -> Result;
     /// An `ios.emulator.guest` call; the job is added.
     fn guest(&mut self, a: Value) -> Result;
+    /// Leave the lock screen before a scenario acts on the screen
+    /// (`virtual_phone::ensure_unlocked`): what was found, or
+    /// `ios_virtual_locked`. Recorded phones are taken as unlocked.
+    fn ensure_unlocked(&mut self) -> Result {
+        Ok(Value::Null)
+    }
 }
 
 /// The virtual iPhone that is running now.
@@ -248,6 +254,9 @@ impl Phone for LivePhone {
     fn guest(&mut self, mut a: Value) -> Result {
         a["job_id"] = json!(self.job()?);
         guest_control::call(&a)
+    }
+    fn ensure_unlocked(&mut self) -> Result {
+        virtual_phone::ensure_unlocked()
     }
 }
 
@@ -418,6 +427,15 @@ fn run_step(
 pub fn run_device(phone: &mut impl Phone, scenario: &Value, directory: &Path, tag: &str) -> Value {
     let started = Instant::now();
     let mut steps = Vec::new();
+    // Taps on a lock screen go nowhere: the phone may have locked itself
+    // since the start, so it is unlocked first, or the scenario fails here.
+    let screen = match phone.ensure_unlocked() {
+        Ok(screen) => screen,
+        Err(error) => {
+            return json!({"device":DEVICE,"passed":false,"duration_seconds":started.elapsed().as_secs_f64(),
+                "steps":[],"error":error.value(),"screen":null,"crashes":[]});
+        }
+    };
     let result = (|| -> Result<()> {
         for (index, step) in scenario["steps"]
             .as_array()
@@ -446,7 +464,7 @@ pub fn run_device(phone: &mut impl Phone, scenario: &Value, directory: &Path, ta
         Ok(())
     })();
     json!({"device":DEVICE,"passed":result.is_ok(),"duration_seconds":started.elapsed().as_secs_f64(),
-        "steps":steps,"error":result.err().map(|e| e.value()),"crashes":[],
+        "steps":steps,"error":result.err().map(|e| e.value()),"screen":screen,"crashes":[],
         "crashes_error":{"code":"crashes_not_checked",
             "message":"Crash reports of the virtual iPhone are not read after a scenario; call testing.crashes with the app's process name"}})
 }
@@ -881,6 +899,48 @@ mod tests {
             self.calls.push(a);
             Ok(self.guest.clone())
         }
+    }
+
+    /// A phone that stays on a lock screen the unlock path cannot leave.
+    struct Locked {
+        inner: Recorded,
+    }
+    impl Phone for Locked {
+        fn screen(&mut self) -> Result<(u64, u64)> {
+            self.inner.screen()
+        }
+        fn control(&mut self, a: Value) -> Result {
+            self.inner.control(a)
+        }
+        fn screenshot(&mut self, path: &Path) -> Result {
+            self.inner.screenshot(path)
+        }
+        fn guest(&mut self, a: Value) -> Result {
+            self.inner.guest(a)
+        }
+        fn ensure_unlocked(&mut self) -> Result {
+            Err(Error::new(
+                "ios_virtual_locked",
+                "The virtual iPhone stayed on its lock screen",
+            ))
+        }
+    }
+
+    #[test]
+    fn a_scenario_on_a_lock_screen_that_stays_locked_fails_before_its_first_step() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut phone = Locked {
+            inner: Recorded {
+                screen: (100, 200),
+                ..Default::default()
+            },
+        };
+        let scenario = json!({"name":"x","steps":[{"action":"tap","x":1,"y":1}]});
+        let result = run_device(&mut phone, &scenario, directory.path(), "l");
+        assert_eq!(result["passed"], false);
+        assert_eq!(result["error"]["code"], "ios_virtual_locked");
+        assert_eq!(result["steps"], json!([]));
+        assert!(phone.inner.calls.is_empty(), "nothing was tapped");
     }
 
     fn png(width: usize, height: usize, rgb: [u8; 3]) -> Vec<u8> {

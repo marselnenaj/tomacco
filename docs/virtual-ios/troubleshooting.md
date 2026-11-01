@@ -3,12 +3,19 @@
 Symptom, cause, fix. Error codes and messages are the ones Tomacco really prints. For the rest of
 the product, see the [general troubleshooting guide](../troubleshooting.md).
 
-**Start here.** These two say what state you are in:
+**Start here.** These say what state you are in:
 
 ```sh
+tomaccoctl call ios.virtual.doctor '{}'
 python3 tools/ios_virtual_profile.py --check
 tomaccoctl call ios.virtual.status '{}'
 ```
+
+`ios.virtual.doctor` is one pass, warn or fail report with a remedy per item: the profile's inputs (as
+`ios_virtual_profile.py --check` checks a new profile's), whether the guest tools and the engine were built from this
+checkout's sources, the saved states' disks, the last run's verdict, whether the next start's disk copy fits, every
+`ios.virtual.host_check` item, and the graphics card and host pressure right now. It reads files only. Its checks are
+unit-tested with profiles made in the tests; it has not been run against a full live profile yet.
 
 To read why a start failed, use the job from `busy` or from the start's own answer:
 
@@ -55,8 +62,10 @@ the code and that none is missing.
 | `ios_virtual_application_conflict` | Two listed bundles use the same bundle identifier. | Remove one with `ios.virtual.configure {remove_application}`. |
 | `ios_virtual_application_unknown` | No listed bundle has this path or bundle identifier. | `ios.virtual.apps` lists them. |
 | `ios_virtual_busy` | A start or stop is in progress. | Wait for it. The details name its job. |
+| `ios_virtual_deploy_failed` | In a `project.run` report: the deploy job it started failed. | Read the message, then `job.logs` of `deploy.job_id`. |
 | `ios_virtual_disk_space` | The start's disk copy does not fit on the filesystem of the profile's `installs`. | Free the space the remedy names. See [starting](#starting). |
 | `ios_virtual_guest_state_unknown` | The guest job could not be observed. | Read `job.get` for the job in the details. |
+| `ios_virtual_locked` | `testing.run` found the phone's lock screen and could not leave it: it has a passcode, or it stayed locked. | Unlock it in the phone window, then run again. See [the lock screen](usage.md#the-lock-screen). |
 | `ios_virtual_log_unavailable` | The guest job has no console log yet. | Start the phone, or wait until its boot has begun, then read `ios.virtual.syslog` again. |
 | `ios_virtual_no_verified_run` | There is no verified run to save as a state. | Stop a run with `ios.virtual.stop` so it ends verified, then save it. |
 | `ios_virtual_not_running` | The phone is off. | `ios.virtual.start`. |
@@ -87,7 +96,8 @@ the code and that none is missing.
 | "No verified run is recorded; the profile cannot start a guest" | `state.json` names no clean base. | Generate the profile from a finished [first install](setup.md#the-chain). |
 | `ios_virtual_disk_space`: "The start copies ... of disks into ..." | The filesystem of the profile's `installs` lacks room for the session's disk copy. | Free the space the remedy names on that filesystem, or point `installs` at one with room. btrfs, or XFS with reflink, shares blocks with the base. |
 | "The host was too busy (I/O or memory pressure) to boot the guest" | The machine was short of I/O or memory during boot. | Start again once it is quieter. |
-| "The guest service did not answer within an hour" | The boot never got as far as the guest service. The phase stays `booting`. | Stop, then read `ios.emulator.report` for the guest job. |
+| "The guest service did not answer within an hour" | The boot never got as far as the guest service. The phase stays `booting`. | Stop, then read `ios.emulator.report` for the guest job. Or start again: the start adopts the still-running guest. |
+| A failed start's error ends with "the guest is still running: call ios.virtual.start again" | The start failed after the boot, and its guest runs on. | Call `ios.virtual.start` again: it adopts that guest without a new disk copy. `next` in `ios.virtual.status` names the call. |
 | "The guest stopped during boot" | The emulator ended early. | Read `ios.emulator.report` for the guest job. |
 | `display_visible:false` in the status | iOS accepted the launch, but every frame stayed black. This is a display defect, not a working phone. | Stop and start again. Look for "The boot kernel looks for the Metal driver at" or "The graphics payload's bridge opens the compiler plugin at" in the log: they name a kernel or payload built for another location. |
 | A start ends with "Unlock the virtual iPhone with its passcode before opening the app" | The guest's lock screen has a passcode. | Unlock it by hand in the window, then start again. |
@@ -138,7 +148,13 @@ The phone's console log, where the kernel prints and launchd forwards log record
 tomaccoctl call ios.virtual.syslog '{"process":"MyApp"}'
 tomaccoctl call ios.virtual.syslog '{"levels":["error","fault"],"max_lines":100}'
 tomaccoctl call ios.virtual.syslog '{"process":"MyApp","offset":123456}'
+tomaccoctl call ios.virtual.syslog '{"bundle_id":"dev.example.MyApp","offset":123456}'
 ```
+
+`bundle_id` keeps one app's lines: those its process writes under its executable's name (read from the bundle the profile
+lists, named in the reply's `app`) and launchd's lines about its service, such as `exited due to SIGABRT`. It matches names,
+not a PID, so following it with `offset` keeps the app's lines after a relaunch or a redeploy. An app the profile does not
+list is refused with `ios_virtual_application_unknown`.
 
 Each line has `time`, `process`, `pid`, `service`, `sender`, `level` and `message`; a line of no known form is the kernel's.
 Without `offset` it reads the last 256 KiB; pass the reply's `next_offset` back to follow the log. It reads the guest job's
@@ -158,7 +174,11 @@ last part of its bundle identifier, and `pid/PID [NAME]` is the process `NAME`. 
 | `text` typed the wrong characters | iOS read the keys with another layout than you typed for. | Pass `layout` (`us` or `de`), or set the guest's language. |
 | `text` went nowhere | No field had the keyboard focus, or the app took it after the keys were sent. | Tap the field and check a frame, then `text`. |
 | `ios_virtual_not_running` from `deploy`/`debug` | The phone is off. | `ios.virtual.configure {add_application}` then `ios.virtual.start`. |
+| A deploy or `ios.virtual.unlock` fails with "The virtual iPhone stayed on its lock screen" | Ten minutes of the start's unlock steps did not leave the lock screen. | Unlock it in the phone window and try again. |
+| A deploy or `ios.virtual.unlock` fails with "Unlock the virtual iPhone with its passcode first" | The lock screen has a passcode, which Tomacco never enters. | Unlock it in the phone window and try again. |
 | `deploy` fails with `spare trust-cache entries` | The boot predates hot install, or its 512 entries are used up. | Stop and start the phone. |
+| `liveness.state` is `stalled` in the status | The guest service did not answer a probe, and no new frame came for `stall_seconds`. | Make the `recovery` calls in order: `ios.emulator.guest` `restart_ui`, probe again, and only then `ios.virtual.stop`. See [when the phone stops responding](usage.md#when-the-phone-stops-responding). |
+| `liveness.state` is `quiet` | Nothing new for `stall_seconds`. A still screen publishes no frames. | Call `ios.virtual.status '{"probe":true}'` to ask the guest service. |
 | The picture stands still after a while | Older guest tools let an idle phone lock and turn off its display. | Press Home or the side button. A guest that reports `auto_lock_supported` gets Auto-Lock off at start. |
 | A widget is empty | The widget's extension misses chronod's deadline under emulation. | Nothing yet. This is a [known limit](README.md#honest-limits). |
 | `ios_touch_lane_required` | A one-shot `tomaccoctl call` cannot hold a finger down. | Use `drag`, or `touch_down` through a client that stays connected (`tomaccoctl mcp`). |
@@ -168,7 +188,8 @@ last part of its bundle identifier, and `pid/PID [NAME]` is the process `NAME`. 
 | `ios_control_ended` | The emulator has exited while its job finishes hashing the disks. | Wait for the job. Do not cancel it. |
 | `ios_guest_starting` | The guest service is not up yet. | Wait, and watch `ios.virtual.status`. |
 | `ios_frame_file_unavailable` | No private runtime directory exists, or an uncompressed frame would exceed 64 MiB. | Use `frame` with `transport:"inline"`. |
-| The phone ended by itself, `guest_gpu_memory_stop: true` | Under an eighth of the graphics card stayed free, so the [guard](usage.md#the-graphics-memory-guard) stopped the session. | Close other graphics work and start again. |
+| The phone ended by itself, `guest_gpu_memory_stop: true` | Under an eighth of the graphics card stayed free, so the [guard](usage.md#the-graphics-memory-guard) stopped the session. | Close other graphics work and start again. Watch `host.gpu` in `ios.virtual.status`: `level` turns `low` before the guard acts. |
+| A start answers with `warnings` | The graphics card is already short of memory, or the host is under I/O or memory pressure. | Close other graphics or disk-heavy work. The start goes on anyway; under pressure it waits up to five minutes and then refuses. |
 | The phone ended by itself, `guest_gpu_memory_stop: false` | The most likely reason is the [24-hour limit](usage.md#time-and-disk-limits). `guest_saved` says whether it closed cleanly. | Start again. An unsaved run is not used as a base. |
 
 ## Stopping
@@ -177,9 +198,23 @@ last part of its bundle identifier, and `pid/PID [NAME]` is the process `NAME`. 
 | --- | --- | --- |
 | `ios_guest_busy` or `ios_guest_not_idle` | The guest answers but is working. It is never ended by force. | Try again when it is done. In the desktop, **Stop without saving** ends it at once, and what it has not saved is lost. |
 | "The guest did not answer and was ended without saving" | Four attempts, twenty seconds apart, got no answer. | Start again. It goes back to the last verified run. |
-| "The guest stopped without verified storage" | The flush, exit code or hashes did not check out. | The same. Your last verified run is unchanged. |
+| "The guest stopped without verified storage" | The flush, exit code or hashes did not check out. The message goes on to say which, in words. | The same. Your last verified run is unchanged. `last_run` in `ios.virtual.status` keeps the reasons and a remedy. |
 | The next start says it went back to an older run | The previous run was not verified. | This is on purpose. Stop runs with `ios.virtual.stop` to keep their changes. |
 | `output_exists` | A leftover disk copy has this name. A leftover that a guest still has locked counts as in use. | Stop that guest. Only copies Tomacco made inside the profile's `installs` directory are removed. |
+
+**Why was my run not verified?** `last_run` in `ios.virtual.status` answers for the last run that finished:
+
+```json
+{"verified": false, "outcome": "emulator-exited",
+ "summary": "The emulator exited on its own with exit code 0.",
+ "reasons": ["No stop asked the guest to flush its storage first: it ended on its own or was ended by force."],
+ "remedy": "Stop the phone with ios.virtual.stop while it answers; a stop that has to end an unanswering guest cannot save it. The next start uses the last verified run."}
+```
+
+`outcome` is the launcher's classification of the run (for example `kernel-panic`, `guest-process-crash` or
+`host-pressure-blocked`), and `summary` says it in words. A run can be verified and still name a problem: a crash of an iOS
+process the emulator is not known to cause, or the graphics memory guard, is listed while the saved disks stay usable.
+The wording is unit-tested against recorded launcher records, not yet read off a live phone.
 
 ## Still stuck
 

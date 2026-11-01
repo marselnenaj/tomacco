@@ -6,10 +6,26 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 222 operations.
+`tomaccoctl` now has one typed API of 224 operations.
 
 ### Added
 
+- **Virtual iPhone app loop.**
+  - `ios.virtual.deploy` skips the trust-cache exchange, the transfer and the install when this run already installed the
+    same signed app, and only opens it: the deploy log says `unchanged`. `force` installs it again. Unit-tested; not run
+    on a live phone.
+  - `project.run` with `device` `virtual-iphone` builds an xtool project, deploys it on the running virtual iPhone and opens
+    it in one job, then looks for a new crash report of the app for `crash_check_seconds` and fails the job as `crashed`
+    when one appears. The run's `build/tomacco/virtual_iphone_run.json` has the build and deploy seconds, `unchanged`, the
+    pid and the crash check. Refused at once when the phone is off. Unit-tested; not run on a live phone.
+  - `project.watch` with `device` `virtual-iphone` rebuilds and redeploys an xtool project on each save, leaves xtool's
+    `xtool`, `.xtool` and `.bsp` output out, and logs one line per cycle with the build and deploy seconds, `unchanged`,
+    the pid and the crash check. Unit-tested; not run on a live phone.
+  - `ios.virtual.syslog` takes `bundle_id` and returns only that app's lines: its executable's own and launchd's about its
+    service, matched by name, so following with `offset` keeps them across relaunches. Tested on synthetic console lines.
+  - `examples/hello-virtual-iphone`, a SwiftUI starter in xtool's format for the virtual iPhone, and the walkthrough
+    [Your first SwiftUI app on the virtual iPhone](docs/tutorial-virtual-iphone.md). Its build and `project.app` check ran;
+    running it on a live phone did not.
 - `tomaccoctl setup` also connects OpenCode (`~/.config/opencode/opencode.json`, `mcp`). Apps that run these
   agents, such as T3 Code, then reach Tomacco through them; docs/agents.md says so.
 - **Release.**
@@ -146,6 +162,16 @@ operations and their JSON results.
     Run on a live profile: save, the refusal for an unsaved base, `state_use` back and forth, a start from the chosen
     state, and deletes that kept copies later overlays read. The iOS test system dialog lists them under **Saved states**
     with **Save state**, **Start from it** and a **Delete** that asks twice.
+  - `start_timing` and `stop_timing` in `ios.virtual.status` break the last start and stop down into steps with their
+    seconds (checks, preparation, disk copy, guest-tools install, input hashing, boot, app install, guest settings,
+    unlock and launch; guest exit, output hashing), with the slowest step and the total, also kept in the run's
+    `timing.json`. The disk preparation now logs when each of its steps began (`step_times`), and the launcher's
+    `request.json` and `result.json` have `timing`: hashing seconds and bytes before and after the session and when
+    the engine started and exited. Unit-tested with synthetic step logs, not run on a live phone.
+  - `ios.virtual.host_check` adds `host` (logical processors, physical cores, memory) and `recommend`: what to change in
+    the configured profile's `host_cpu_policy` and `translation_cache_mib` for this host, with the current and suggested
+    value and why. It changes nothing. Unit-tested; the effect of a suggested setting has not been measured on a live
+    phone.
   - `ios.virtual.profiles` lists every profile directory configured so far with its run, phase and whether its phone runs.
     `ios.virtual.configure` refuses another directory while the current phone runs (`ios_virtual_running`) or a start or
     stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile. The
@@ -155,8 +181,44 @@ operations and their JSON results.
     phone's log: 9,283 lines, 8,238 of them launchd's records about services, 1,043 the kernel's and no app's own log
     records. launchd's domains (`user/501/…`, `pid/PID [NAME]`, `system`) are read as the service's process, not as
     processes named `501` or `system`.
+  - `last_run` in `ios.virtual.status` says in plain words how the last finished run ended: whether it was verified,
+    the launcher's outcome with a summary, each reason it was not verified (no exit code 0, incomplete storage hashes,
+    no confirmed flush, the graphics memory guard) and a remedy. A failed stop's error and a boot that ended early say
+    the same. Unit-tested against recorded launcher records, not read off a live phone.
+  - A start that fails after the boot ends with what to call next, and `next` in `ios.virtual.status` says the same:
+    resume with `ios.virtual.start`, which adopts the still-running guest without a new disk copy, with
+    `{"open_app":false}` when an app launch's outcome is unknown, after unlocking a passcode, or stop again. Unit-tested
+    over the start's phases, not tried on a live phone.
+  - `host` in `ios.virtual.status` shows the graphics card's memory against the graphics memory guard's limit on every
+    call, from the running guest's own guard checks (which the launcher now publishes as `gpu-memory.json`) or from
+    /sys, and the host's I/O and memory pressure. A start that boots returns `warnings` when the card is already low or
+    the host under pressure. Unit-tested with recorded values, not watched beside a live guest.
+  - `liveness` in `ios.virtual.status` says whether a running phone still shows signs of life (new frames, console
+    output, and with `{"probe":true}` an answer from the guest service): `live`, `quiet`, `stalled` or `booting`, with
+    what it last showed and when. A stalled phone gets `recovery`, the typed calls to make in order (`restart_ui`, then
+    `ios.virtual.stop`); the status itself never acts on the phone. `ios.virtual.configure {"stall_seconds"}` sets the
+    limit. Unit-tested only, not tried on a hung live phone.
+  - `ios.virtual.unlock` leaves the running phone's lock screen the way the start does, as a short job, and never
+    enters a passcode. `ios.virtual.deploy` unlocks first before it opens the app, and `testing.run` on
+    `virtual-iphone` before its first step, failing with the new `ios_virtual_locked` when it cannot. Tested with
+    scripted guest replies, not yet on a live phone.
+  - `ios.virtual.doctor` checks the configured phone in one pass, warn or fail report with a remedy per item: every
+    input `profile.json` names (with `tools/ios_virtual_profile.py`'s checks, run by the new
+    `tools/ios_virtual_doctor.py`), guest tools and engine against this checkout's sources, the saved states' disks,
+    the last run's verdict, the next start's disk copy, every `ios.virtual.host_check` item, and the graphics card and
+    host pressure right now. Unit-tested with profiles made in the tests, not run against a full live profile.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
+  - The desktop's phone view sends typed characters to the phone as text, so `@`, `ä` and the like arrive as the host's
+    layout types them, and Enter, Backspace, the arrows and keys with Ctrl, Alt or Meta by name. **Keyboard to phone**
+    shows when it has the keyboard; Ctrl+Shift+K gives the keyboard back to the desktop and takes it again. A modifier
+    pressed alone is no longer sent.
+  - **Speed** shows new and fetched frames per second and the time from an input to the first new frame after it, over
+    the picture. **Screenshot with frame** saves a framed screenshot through `ios.virtual.screenshot`.
+  - The phone's own window has App switcher, Notification Center, Control Center, the keyboard switch and the speed
+    overlay on its rail, a pin that keeps it above other windows, and opens where it was last (not on Wayland).
+  - A trackpad's coasting after the fingers lift no longer scrolls the phone, and lifting them sends the scroll at once.
+  - All offscreen tests only; not tried on a live phone.
 
 ### Changed
 
@@ -172,6 +234,13 @@ operations and their JSON results.
   GID 0, so two builds of a commit in the same directory give the same package. Before, the tarball's time stamps and the
   time Qt's `rcc` stored for the translations differed per build.
 - The Arch PKGBUILD and .SRCINFO build 1.1.0 from its source tarball.
+- Virtual iPhone: a start's streamed disk copy keeps the base's holes and leaves out every 4 MiB chunk of zeros, so the copy
+  takes the space of the disk's data, and the hashes the launcher takes before and after a session read only that data;
+  it hashes holes as zeros without reading them, and its limit of extent queries rose from 4096 to 262144. Before, every
+  copy was written out to its full 32 GiB, and both hashes read all of it at 128 MiB/s. On a synthetic 4 GiB disk with
+  0.5 GiB of data, the copy took 3.9 s instead of 13.6 s and the launcher's hash 5.4 s instead of 32.4 s, with the same
+  SHA-256. The start's space check and `start_disk.needed_bytes` count the data the base's disks hold instead of their
+  full size, so a start fits on a fuller disk. Not run on a live phone.
 - The virtual iOS device's troubleshooting guide opens with a table of every error code it returns, with what each
   means and what to do. A test fails when a code there or in a symptom does not exist in the code, or when a code the
   code returns is missing from the table.

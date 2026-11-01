@@ -224,7 +224,10 @@ def admit_translation_cache(qmp, requested_mib, receipt):
 LARGE_HASH_BYTES = 256 << 20
 HASH_READ_BYTES = 4 << 20
 HASH_BYTES_PER_SECOND = 128 << 20
-SPARSE_HASH_QUERY_LIMIT = 4096
+# Two queries per data extent. A disk copied sparsely (prepare_ios_userland's
+# sparse_copy) can have thousands of extents; past the limit the rest is read
+# as data, holes too. A query costs microseconds, so the bound stays small.
+SPARSE_HASH_QUERY_LIMIT = 1 << 18
 
 
 def hash_region(stream, position, size, sparse):
@@ -344,6 +347,12 @@ def file_digest(path, *, observation=None):
                            read_bytes_per_second_limit=HASH_BYTES_PER_SECOND if paced else None,
                            cache_noreuse_hint=advice)
     return digest.hexdigest()
+
+
+def timing_of(observations, kind):
+    """The seconds and bytes of these hash observations, as KIND_hashing_*."""
+    return {f"{kind}_hashing_seconds": round(sum(row.get("elapsed_seconds") or 0 for row in observations), 3),
+            f"{kind}_hashing_bytes": sum(row.get("bytes") or 0 for row in observations)}
 
 
 def save_result(output, record):
@@ -1344,6 +1353,34 @@ def saving_margin(seconds, cli, interactive, guest_control, job):
 GPU_MEMORY_CHECK_SECONDS = 5
 
 
+GPU_MEMORY_RECORD = "gpu-memory.json"
+
+
+def gpu_memory_record(memory, short_checks, stopping, now):
+    """What the graphics memory guard saw at its last check, for
+    ios.virtual.status: the card's used and total bytes (None when it reports
+    none), the free bytes below which a check counts as short, how many short
+    checks in a row there were (two stop the session) and whether it did."""
+    used, total = memory if memory is not None else (None, None)
+    return {"format": 1, "checked": round(now, 3), "used_bytes": used, "total_bytes": total,
+            "free_bytes": None if memory is None else max(0, total - used),
+            "limit_free_bytes": None if not total else total // 8,
+            "short_checks": short_checks, "stopping": stopping}
+
+
+def save_gpu_memory(output, record):
+    """Publish the guard's last check beside the result; a record that cannot
+    be written costs the session nothing."""
+    temporary = output / f".{GPU_MEMORY_RECORD}.tmp"
+    try:
+        with temporary.open("w") as stream:
+            os.fchmod(stream.fileno(), 0o600)
+            json.dump(record, stream)
+        os.replace(temporary, output / GPU_MEMORY_RECORD)
+    except OSError:
+        pass
+
+
 def saved_stop(cli, job):
     """Ask the control plane to stop this very guest the careful way: flush its
     storage, record that, then let the emulator exit. Used before the session
@@ -1850,6 +1887,12 @@ def main():
                            "format": "qcow2" if name in overlays else "raw",
                            **({"backing_chain": overlays[name]} if name in overlays else {})}
                     for name, path in writable.items()}
+            # Where the launch spends its time (ios_start_timing): the hashing
+            # of every input and disk before the engine starts, and below when
+            # the engine started and exited and how long the disks' hashing
+            # after it took.
+            inputs_hashed = len(hash_observations)
+            record["timing"] = timing_of(hash_observations, "input")
             if nvram is not None:
                 record["nvram_handoff"] = {**nvram, "prepared_tree": original_tree}
             if pcc_config is not None:
@@ -1944,6 +1987,7 @@ def main():
             qmp = None
             record["host_pressure_before_launch"] = pressure_preflight("before-emulator-launch", record)
             started = time.monotonic()
+            record["timing"]["emulator_started"] = time.time()
             parent_pid = os.getpid()
             def interrupt(signum, frame):
                 raise KeyboardInterrupt
@@ -2002,6 +2046,8 @@ def main():
                                                                  "elapsed_seconds": round(time.monotonic() - started)}
                                     if save_at is not None:
                                         save_at = 0
+                                save_gpu_memory(output, gpu_memory_record(
+                                    memory, gpu_short, "vram_guard_stop" in record, time.time()))
                             if save_at is not None and time.monotonic() - started >= save_at:
                                 attempt = saved_stop(args.cli, own_job)
                                 record.setdefault("session_limit_stop", []).append(attempt)
@@ -2036,6 +2082,7 @@ def main():
                         qmp.close()
                     record["exit_code"] = child.returncode
                     record["elapsed_seconds"] = round(time.monotonic() - started, 3)
+                    record["timing"]["engine_exited"] = time.time()
                     for sig, handler in previous_handlers.items():
                         signal.signal(sig, handler)
             record["guest_evidence"] = guest_evidence(output)
@@ -2063,6 +2110,7 @@ def main():
                         record["persistent_disks"][name]["sha256_after"] = observed_digest(
                             Path(f"/proc/self/fd/{stream.fileno()}"))
                     record["storage_hashes_complete"] = True
+                    record["timing"].update(timing_of(hash_observations[inputs_hashed:], "output"))
                 except (OSError, ValueError) as error:
                     record["storage_hash_error"] = str(error)
                     record["outcome"] = "observation-error"

@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-57 operations. Generated from `assets/operations.json`; [all areas](README.md).
+59 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -843,11 +843,13 @@ tomaccoctl call ios.emulator.memory '{"job_id":"<job_id>","address":"<address>"}
 
 **Virtual iOS device: status**
 
-Read whether a virtual iOS device profile is configured, its current run, phase, guest job and any start or stop that is in progress. A guest job started from another data directory has no guest_state here; that is unknown, not stopped. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. Also reports model (for the next start), running_model (of the current run), running_panel (the current run's panel as WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM, as its guest job's request gave it to the engine, so a later edit of the profile does not change it; null when that boot named no panel. Without a guest job: the model's own panel, or the profile's display profile for the Home-button phone; null for an unknown recorded model), models (the choice: id, name, panel, and source apple or derived) and guest_ended when the guest has ended on its own since the last start, with guest_saved telling whether it flushed its storage and closed cleanly first (as a session does at its time limit). application_process reports only the matching active job and application; it proves no process lifetime or visible scene. applications lists the developer apps the profile names (bundle path, bundle_id); the start installs them from the guest-tools build that carries them. phase_started and phase_elapsed_seconds tell when the current phase began and how long it has run, and phases lists each phase of the current start or stop with its started time and seconds (empty for a state written before phases were logged). copy_progress, only in the preparing phase, compares the bytes of the new disk copy with those of its base (bytes_done, bytes_total, percent) and names the preparation's step and disk; a reflinked copy is complete at once. start_disk says whether the next start's disk copy fits in the profile's installs: needed_bytes, free_bytes, reclaimable_bytes (older copies the start deletes first), reflink and enough, the check ios.virtual.start refuses with; the status writes nothing to find out, so on a filesystem that might clone files and lacks room for a full copy enough and reflink are null until a start probes it. start_disk.method is how that start makes its root disk (copy, overlay or flatten), and start_disks the profile's choice (copy or overlay). Null when the base's disks or the filesystem cannot be read.
+Read whether a virtual iOS device profile is configured, its current run, phase, guest job and any start or stop that is in progress. A guest job started from another data directory has no guest_state here; that is unknown, not stopped. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. Also reports model (for the next start), running_model (of the current run), running_panel (the current run's panel as WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM, as its guest job's request gave it to the engine, so a later edit of the profile does not change it; null when that boot named no panel. Without a guest job: the model's own panel, or the profile's display profile for the Home-button phone; null for an unknown recorded model), models (the choice: id, name, panel, and source apple or derived) and guest_ended when the guest has ended on its own since the last start, with guest_saved telling whether it flushed its storage and closed cleanly first (as a session does at its time limit). application_process reports only the matching active job and application; it proves no process lifetime or visible scene. applications lists the developer apps the profile names (bundle path, bundle_id); the start installs them from the guest-tools build that carries them. phase_started and phase_elapsed_seconds tell when the current phase began and how long it has run, and phases lists each phase of the current start or stop with its started time and seconds (empty for a state written before phases were logged). start_timing and stop_timing break the last start and stop down into steps with their seconds (start: checks, preparation, disk_copy with its method, guest_tools, boot_request, input_hashing with its bytes, launcher, boot, app_install, guest_settings, unlock_and_launch, display_check; stop: guest_exit, output_hashing, finalize), with total_seconds, slowest and run; a step whose times are unknown is folded into the next one, which lists it under includes; null before the first start that recorded them. copy_progress, only in the preparing phase, compares the bytes of the new disk copy with those of its base (bytes_done, bytes_total, percent) and names the preparation's step and disk; a reflinked copy is complete at once. start_disk says whether the next start's disk copy fits in the profile's installs: needed_bytes, free_bytes, reclaimable_bytes (older copies the start deletes first), reflink and enough, the check ios.virtual.start refuses with; the status writes nothing to find out, so on a filesystem that might clone files and lacks room for a full copy enough and reflink are null until a start probes it. start_disk.method is how that start makes its root disk (copy, overlay or flatten), and start_disks the profile's choice (copy or overlay). Null when the base's disks or the filesystem cannot be read. last_run says in plain words how the last finished run ended: verified, the launcher's outcome, a summary, each reason it was not verified (no exit code 0, incomplete storage hashes, no confirmed flush, the graphics memory guard) and a remedy; null before the first run that recorded it. next names what to call when a start or stop ended halfway, with action (resume, unlock_then_resume, stop, record_end, start_again or wait), call, arguments, resumes (true when the call goes on with the running guest without a new disk copy) and why; null when nothing is left halfway. host reports on every call the graphics card's memory (gpu: source guard, the running guest's last guard check, or sysfs, the card with the most memory; used_bytes, total_bytes, free_bytes, guard_limit_free_bytes, the eighth the graphics memory guard keeps, level ok, low under a quarter free or short under the guard's limit, and short_checks and guard_stopping from the guard; null when no card reports memory) and the host's pressure (pressure: Linux PSI full avg10 and avg60 for io and memory against the start's admission limits, blocked naming those over them, observed false without PSI). liveness, while the guest runs, says whether it still shows signs of life: state live, quiet (no new frame, console output or guest answer for stall_seconds; normal for a still screen), stalled (the guest service did not answer a probe and neither it nor the screen showed life for stall_seconds) or booting (not judged); last_seen with the newest frame's number, the console log's size and the guest's last answer, each with when it last changed; and for a stalled phone recovery, the typed calls to make in order: ios.emulator.guest restart_ui, then ios.virtual.stop. The status never acts on the phone itself; it remembers the signs in liveness.json in the guest job's run directory.
 
 Annotations: read-only, idempotent, closed world.
 
-Takes no arguments.
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `probe` | boolean |  |  | Also ask the running guest service for its status, bounded to 10 seconds, so that liveness can tell a still screen from a guest that no longer answers. Changes nothing in the guest. |
 
 ```sh
 tomaccoctl call ios.virtual.status
@@ -857,7 +859,7 @@ tomaccoctl call ios.virtual.status
 
 **Check this machine for the virtual iOS device**
 
-Check whether this machine can run the virtual iOS device, before any setup step or start: architecture (x86_64), CPU (logical processors, VT-x or AMD-V, AVX2), /dev/kvm for the disk-preparing helper, memory (fail under 12 GiB, warn under 16 GiB), free disk on the filesystem of directory (by default the configured profile's installs, needing 32 GiB for one start's disk copy, else the data directory, needing 100 GiB for the setup chain), Vulkan drivers and the card with the most graphics memory (fail under 8 GiB, warn under 16 GiB or when under an eighth is free), the helper support's APFS module against the running kernel, and passt for the guest network. Each entry in checks has check, status (pass, warn or fail), found, message and a remedy unless it passed; ready is false when any check fails. Reads /proc, /sys, PATH and the filesystem only; starts and writes nothing. A pass means the machine meets what the device was measured with, not that it was qualified on it.
+Check whether this machine can run the virtual iOS device, before any setup step or start: architecture (x86_64), CPU (logical processors, VT-x or AMD-V, AVX2), /dev/kvm for the disk-preparing helper, memory (fail under 12 GiB, warn under 16 GiB), free disk on the filesystem of directory (by default the configured profile's installs, needing 32 GiB for one start's disk copy, else the data directory, needing 100 GiB for the setup chain), Vulkan drivers and the card with the most graphics memory (fail under 8 GiB, warn under 16 GiB or when under an eighth is free), the helper support's APFS module against the running kernel, and passt for the guest network. Each entry in checks has check, status (pass, warn or fail), found, message and a remedy unless it passed; ready is false when any check fails. host has logical_cpus, physical_cores (one per package and core among the CPUs this process may use) and memory_total_bytes, and recommend compares the configured profile's boot settings with them: each entry names a setting (boot.host_cpu_policy: performance with at least two physical cores more than application processors, scheduler with fewer cores than processors; boot.translation_cache_mib: 1024 under 16 GiB of memory, 2048 from 32 GiB), its current and suggested value and the reason; empty when they suit the host or no profile is configured. Nothing is changed. Reads /proc, /sys, PATH and the filesystem only; starts and writes nothing. A pass means the machine meets what the device was measured with, not that it was qualified on it.
 
 Annotations: read-only, idempotent, closed world.
 
@@ -868,6 +870,20 @@ Annotations: read-only, idempotent, closed world.
 
 ```sh
 tomaccoctl call ios.virtual.host_check
+```
+
+### ios.virtual.doctor
+
+**Check the virtual iOS device**
+
+One pass, warn or fail report on whether the configured virtual iOS device can start and how its last run ended, each item with a remedy: profile (profile.json and state.json readable), profile_inputs (every input profile.json names, checked as tools/ios_virtual_profile.py checks a new profile: engine, guest-control backend, helper, boot files, trust cache, device tree, boot manifest, graphics payload, guest tools, kernel and the verified base), guest_tools_sources (the guest tools built from the guest sources this checkout has), engine_patches (the engine built from this checkout's engine patches, from its build-manifest.json), saved_states (each saved state and the verified base still have their disks), last_run (the verdict ios.virtual.status shows as last_run), start_disk (whether the next start's disk copy fits, as the start refuses it), every ios.virtual.host_check item, gpu_now (the graphics card's free memory against the graphics memory guard's limit) and pressure_now (host I/O and memory pressure against the start's admission limits). ready is false when any item fails; status is the worst. Without a profile, profile fails and the machine's items still run. Reads files only, which takes some seconds for the kernel and payloads; starts and writes nothing.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call ios.virtual.doctor
 ```
 
 ### ios.virtual.setup
@@ -923,6 +939,7 @@ Annotations: writes, idempotent, closed world.
 | `deploy` | boolean |  | `false` | With add_application: install it on the running phone now, without a reboot. Refused with ios_virtual_not_running when the phone is off. |
 | `deploy_open_app` | boolean |  | `true` | With deploy: open the app afterwards. |
 | `start_disks` | string |  |  | one of `copy`, `overlay`; How the next start makes its root disk (profile.json start_disks): copy (the default) copies the base run's 32 GiB root disk; overlay makes an empty qcow2 overlay on it with qemu-img (beside the profile's helper engine or on PATH) and copies only the small auxiliary and SEP disks. Without qemu-img, or after 8 overlays on one base, the start copies or flattens instead and says why. Experimental: run on a live phone, overlays layered twice; the flattening is unit-tested only. |
+| `stall_seconds` | integer |  |  | 30 to 86400; How long a running phone may show no new frame, console output or guest answer before ios.virtual.status calls it quiet, and, after a probe the guest service did not answer, stalled (profile.json stall_seconds; default 300). |
 
 ```sh
 tomaccoctl call ios.virtual.configure
@@ -960,7 +977,7 @@ tomaccoctl call ios.virtual.apps
 
 **Start virtual iOS device**
 
-Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB.
+Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB. A start that boots a guest returns warnings, a list of {check, message}: check gpu when under a quarter of the graphics card is free (the graphics memory guard stops a session under an eighth), check pressure when the host's I/O or memory pressure is over the admission limits the start waits for; neither refuses the start.
 
 Annotations: writes, not idempotent, closed world.
 
@@ -984,6 +1001,20 @@ Takes no arguments.
 
 ```sh
 tomaccoctl call ios.virtual.stop
+```
+
+### ios.virtual.unlock
+
+**Unlock virtual iOS device**
+
+Leave the running virtual iOS device's lock screen the way a start does, as one short job: observe the native screen state, then wake the display and press Home (or swipe up on a model without a Home button) with the start's pacing until a fresh observation says it is unlocked. The job's screen is unlocked, or not-checked when the guest tools cannot report the screen (nothing is pressed then). A passcode is never entered: a lock screen with one, or one that stays locked for 10 minutes, fails the job. ios.virtual.deploy (before it opens the app) and testing.run on the virtual-iphone device unlock the same way first; testing.run fails with ios_virtual_locked when it cannot. Refused with ios_virtual_not_running when the phone is off and ios_virtual_busy during a start or stop.
+
+Annotations: writes, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call ios.virtual.unlock
 ```
 
 ### ios.virtual.cleanup
@@ -1070,7 +1101,7 @@ tomaccoctl call ios.virtual.state_use '{"name":"<name>"}'
 
 **Install app on running virtual iOS device**
 
-One step from a built .app directory to the app on the running phone, without a reboot: inspect the bundle, sign a copy ad hoc, exchange spare entries of this boot's trust cache for its hashes while the guest is stopped for a moment, send it over the guest channel, name it to the signing adapter, install it through installd and open it. A durable job: follow job.logs, whose deploy events carry each step's seconds. The profile lists the app afterwards, so the next start stages it. Refused with ios_virtual_not_running when the phone is off: use ios.virtual.configure add_application and start it. A boot has 512 spare entries and the adapter's table of the boot takes 32 apps, frameworks and extensions.
+One step from a built .app directory to the app on the running phone, without a reboot: inspect the bundle, sign a copy ad hoc, exchange spare entries of this boot's trust cache for its hashes while the guest is stopped for a moment, send it over the guest channel, name it to the signing adapter, install it through installd and open it. A durable job: follow job.logs, whose deploy events carry each step's seconds. When this run installed the same signed app before (the cdhash of the ad hoc signed copy, which seals every file of the bundle), nothing is trusted, sent or installed: the deploy event unchanged follows signed and the app is only opened; force installs it again. The profile lists the app afterwards, so the next start stages it. Refused with ios_virtual_not_running when the phone is off: use ios.virtual.configure add_application and start it. A boot has 512 spare entries and the adapter's table of the boot takes 32 apps, frameworks and extensions.
 
 Annotations: writes, not idempotent, closed world.
 
@@ -1079,6 +1110,7 @@ Annotations: writes, not idempotent, closed world.
 | `bundle` | string | yes |  | non-empty; Host path of an .app directory built for arm64 iOS. |
 | `entitlements` | string |  |  | Entitlements plist to request; empty: the executable's embedded entitlements, or only application-identifier. |
 | `open_app` | boolean |  | `true` | False installs without opening. |
+| `force` | boolean |  | `false` | Install even when this run has the same signed app installed already. |
 
 ```sh
 tomaccoctl call ios.virtual.deploy '{"bundle":"<bundle>"}'
@@ -1123,13 +1155,14 @@ tomaccoctl call ios.virtual.crash_reports '{"process":"<process>"}'
 
 **Log of virtual iOS device**
 
-Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)\[pid\]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.
+Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)\[pid\]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). bundle_id keeps one app's lines, across relaunches, and the reply names its executable under app; refused with ios_virtual_application_unknown for an app the profile does not list. Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.
 
 Annotations: read-only, idempotent, closed world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `process` | string |  | `""` | up to 128 characters; Only lines whose process or service contains this, ignoring case. Empty: all. |
+| `bundle_id` | string |  | `""` | up to 255 characters; Only this app's lines: those of the process named after its executable (read from the bundle the profile lists) and launchd's lines about its service. By name, so a relaunched app's lines match too. Empty: all. |
 | `levels` | array of string |  |  | items one of `emergency`, `alert`, `critical`, `error`, `fault`, `warning`, `notice`, `info`, `debug`, `default`, `none`; up to 11 items; Only lines with one of these levels; none matches lines without a level, such as the kernel's. Empty or absent: all. |
 | `contains` | string |  | `""` | up to 256 characters; Only lines whose message contains this text. |
 | `offset` | integer |  |  | at least 0; Byte offset to read on from: a previous reply's next_offset. Absent: the last 256 KiB. |

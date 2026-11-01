@@ -1,7 +1,7 @@
 # Tomacco documentation
 
 Tomacco is a mobile development workbench for Linux. A Qt desktop and a command-line
-tool, `tomaccoctl`, share the same 222 typed operations, so a person and a coding agent
+tool, `tomaccoctl`, share the same 224 typed operations, so a person and a coding agent
 can do the same things. These guides describe version 1.1.0; the
 [release notes](RELEASE_NOTES.md) say what is new in it and what was not tested.
 
@@ -25,6 +25,7 @@ can do the same things. These guides describe version 1.1.0; the
 | Find the two Apple restore images and prepare their disk-image inputs | [Virtual iOS: image preparation](virtual-ios/setup.md#obtain-the-apple-images) |
 | Build the virtual iOS device from my own restore image | [Virtual iOS: setup](virtual-ios/setup.md) |
 | Start, stop and put my apps on the virtual iOS device | [Virtual iOS: usage](virtual-ios/usage.md) |
+| Build a SwiftUI app and keep it running on the virtual iPhone while I edit | [Your first SwiftUI app on the virtual iPhone](tutorial-virtual-iphone.md) |
 | Fix something on the virtual iOS device | [Virtual iOS: troubleshooting](virtual-ios/troubleshooting.md) |
 | Fix something anywhere else | [Troubleshooting](troubleshooting.md) |
 | Change the code | [Architecture](architecture.md) and [Building and testing](building.md) |

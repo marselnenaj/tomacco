@@ -349,6 +349,11 @@ into its own window. The virtual iOS device's window opens pixel for pixel where
 the monitor fits the panel, zooms with Ctrl+wheel up to one panel pixel per
 screen pixel and keeps only a zoom the user chose; docked, the picture takes
 the dialog's height and carries the model's island and rounded corners.
+Its rail also has App switcher, Notification Center and Control Center for a
+phone without a Home button, the keyboard switch, the speed overlay and a pin
+that keeps the window above the others. The pin and the window's place are kept
+for the next time; on Wayland the compositor places windows, so only the pin
+applies there. Offscreen tests only; not tried on a live phone.
 
 In **device-only mode** that window is the whole app: `tomacco --device-only`
 or `desktop.open` with `device_only` starts without showing the main window.
@@ -374,6 +379,12 @@ Command:
 | Ctrl+Shift+C | Control Center |
 | Ctrl+Shift+B | Back (swipe right from the left edge) |
 | Ctrl+V | Type the host clipboard's text into the focused field (**Paste**) |
+| Ctrl+Shift+K | Give the keyboard back to the desktop, or to the phone again |
+
+While the phone has the keyboard (**Keyboard to phone** under the picture), typed
+characters, Enter, Backspace, the arrows and the other keys go to it; see
+[using the virtual iOS device](virtual-ios/usage.md#touch-and-gestures) for
+typing, scrolling, the **Speed** overlay and **Screenshot with frame**.
 
 The frames are drawn to scale per model from Apple's dimensional drawings and
 the iOS 27 simulator: body, screen offset, island, notch or punch, continuous

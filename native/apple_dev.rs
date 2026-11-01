@@ -659,6 +659,27 @@ fn store_ship(a: &Value) -> Result {
 fn app_product(a: &Value) -> Result {
     let project = projects::inspect(s(a, "path"))?;
     let root = PathBuf::from(s(&project, "path"));
+    let app = built_app(&root)?;
+    match ios_emulator::virtual_phone::inspect_application(&app, None) {
+        Ok(found) => {
+            let id = s(&found, "bundle_id");
+            Ok(json!({"app":app,"bundle_id":id,"name":found["name"],
+                "virtual_device":{"accepted":true},
+                // No reboot when the phone runs: this one call does what `next` does.
+                "next_on_a_running_phone":{"operation":"ios.virtual.deploy","arguments":{"bundle":app}},
+                "next":[
+                    {"operation":"ios.virtual.configure","arguments":{"add_application":app}},
+                    {"operation":"ios.virtual.configure","arguments":{"application":id}},
+                    {"operation":"ios.virtual.start","arguments":{}}]}))
+        }
+        Err(error) => {
+            Ok(json!({"app":app,"virtual_device":{"accepted":false,"error":error.value()}}))
+        }
+    }
+}
+
+/// The one `.app` xtool built into the project's `xtool` directory.
+pub fn built_app(root: &Path) -> Result<PathBuf> {
     let apps = glob_paths(&format!(
         "{}/xtool/*.app",
         glob::Pattern::escape(&root.to_string_lossy())
@@ -676,22 +697,7 @@ fn app_product(a: &Value) -> Result {
             "Run project.execute with platform ios for an xtool project, and wait for its job",
         ));
     };
-    match ios_emulator::virtual_phone::inspect_application(app, None) {
-        Ok(found) => {
-            let id = s(&found, "bundle_id");
-            Ok(json!({"app":app,"bundle_id":id,"name":found["name"],
-                "virtual_device":{"accepted":true},
-                // No reboot when the phone runs: this one call does what `next` does.
-                "next_on_a_running_phone":{"operation":"ios.virtual.deploy","arguments":{"bundle":app}},
-                "next":[
-                    {"operation":"ios.virtual.configure","arguments":{"add_application":app}},
-                    {"operation":"ios.virtual.configure","arguments":{"application":id}},
-                    {"operation":"ios.virtual.start","arguments":{}}]}))
-        }
-        Err(error) => {
-            Ok(json!({"app":app,"virtual_device":{"accepted":false,"error":error.value()}}))
-        }
-    }
+    Ok(app.clone())
 }
 
 pub fn handle(op: &str, a: &Value) -> Result {

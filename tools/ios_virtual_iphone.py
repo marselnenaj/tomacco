@@ -37,6 +37,8 @@ import zlib
 from build_ios_guest_tools import policy_entries, stage_application
 from ios_application_bundle import inspect_bundle
 import ios_disk_overlay
+import ios_run_verdict
+import ios_start_timing
 from ios_hot_install import (BUNDLE_PORT, connect_port, guest_socket, reserve, send_bundle, spare_entries,
                              with_hashes, write_private)
 from ios_graphics_location import BUNDLE_PATH, COMPILER_LIBRARY_NAME, PLUGIN_PERSONALITY
@@ -510,6 +512,60 @@ def reserved_trust_cache(boot, output):
     return str(module)
 
 
+class UnlockPacing:
+    """When to press what against a passcode-free lock screen, between fresh
+    native screen observations; shared by the start's launch and by
+    Phone.ensure_unlocked. An attempt never establishes unlock: the caller
+    observes screen_state again after each one."""
+
+    def __init__(self):
+        self.next_at = 0
+        self.followup = False
+        self.short_poll = False
+        # Home cycles (a press and its follow-up) that left an awake lock
+        # screen locked; see Phone.rearm_lock_screen.
+        self.stale_home_cycles = 0
+
+    def pause(self):
+        """Home wakes the display first, with the backlight reaching state 2
+        only afterwards. A 15-second poll lets the lock screen sleep again;
+        after a wake or a first Home press the next look comes sooner, and
+        still requires a fresh locked/no-passcode reply before more input."""
+        time.sleep(max(0, self.next_at - time.monotonic()) if self.short_poll else 15)
+        self.short_poll = False
+
+    def attempt(self, phone, job, native):
+        """At most one input against the locked, passcode-free screen `native`."""
+        if time.monotonic() < self.next_at:
+            return
+        if phone.wake_for_unlock(job, native):
+            # Side can wake or lock. Its acknowledgement does not license Home
+            # against this earlier screen snapshot, even on an unknown reply.
+            # Recheck promptly so a woken display does not sleep again during
+            # the ordinary 15 s poll.
+            self.next_at = time.monotonic() + 2.5
+            self.short_poll = True
+            return
+        if (self.stale_home_cycles >= 2 and native.get("screen_awake_known") is True and
+                native.get("screen_awake") is True and phone.rearm_lock_screen(job)):
+            # The display is going to sleep; the next poll takes the ordinary wake path.
+            self.stale_home_cycles = 0
+            self.next_at = time.monotonic() + 2.5
+            self.short_poll = True
+            return
+        accepted = phone.unlock(job)
+        if self.followup:
+            self.followup = False
+            self.stale_home_cycles += 1
+            self.next_at = time.monotonic() + 60
+        elif accepted:
+            self.followup = True
+            self.short_poll = True
+            self.next_at = time.monotonic() + 2.5
+        else:
+            self.next_at = time.monotonic() + 60
+
+
 class Phone:
     def __init__(self, cli, directory, model=None, unlock="home"):
         self.cli, self.directory = cli, directory
@@ -522,6 +578,9 @@ class Phone:
             raise ValueError("Unsupported virtual iPhone profile")
         self.state_path = directory / "state.json"
         self.state = json.loads(self.state_path.read_text())
+        # Wall times of this start's steps, and the preparation record and
+        # launcher report they are read with (record_start_timing).
+        self.marks, self.preparation, self.report = {}, None, None
         if "verified" not in self.state and self.state.get("closed") is True:
             self.state["verified"] = self.base()
 
@@ -637,6 +696,7 @@ class Phone:
         result = self.observe("ios.emulator.report", {"job_id": self.state["guest_job"]}, missing=True)
         if result is None:
             result = {"report": {"outcome": "job-unknown"}}
+        self.report = result.get("report") if isinstance(result.get("report"), dict) else None
         # Evidence of the wrong shape counts as absent, never as proof.
         summary = dict(result["report"]) if isinstance(result.get("report"), dict) else {}
         stop = dict(result["stop"]) if isinstance(result.get("stop"), dict) else {}
@@ -652,7 +712,9 @@ class Phone:
                   and flushed)
         changes = {"closed": closed, "phase": "stopped" if closed else "unverified",
                    "outcome": {**{key: summary.get(key) for key in ("outcome", "exit_code", "storage_hashes_complete")},
-                               "guest_storage_flushed": flushed}}
+                               "guest_storage_flushed": flushed},
+                   # The same evidence in plain words, for ios.virtual.status and the job's error.
+                   "verdict": ios_run_verdict.explain(summary, stop)}
         if closed:
             changes["verified"] = self.base()
         self.save(**changes)
@@ -776,6 +838,7 @@ class Phone:
         self.save(run=verified["run"], install=verified["install"], tools=verified["tools"], closed=True,
                   guest_job=None, phase="stopped", error=None, application_launch_accepted=None,
                   outcome={"outcome": "cancelled-before-boot"},
+                  verdict=ios_run_verdict.explain({"outcome": "cancelled-before-boot"}, {}),
                   created=[item for item in self.state.get("created", []) if item != str(path)])
 
     def prepare_and_boot(self, tools):
@@ -855,10 +918,12 @@ class Phone:
         # Recorded before the copy exists: a start that fails or is cancelled
         # must not leave a copy behind that blocks or outlives later starts.
         self.save(phase="preparing", error=None, attempted=run, attempt={"run": run, "install": str(output)})
+        self.marks["preparing"] = time.time()
         try:
             job = self.wait(self.call("ios.emulator.prepare_guest_tools", prepare))
             record_path = output / "guest-tools-install.json"
             record = json.loads(record_path.read_text()) if record_path.is_file() else {}
+            self.preparation = record
             if job["state"] != "succeeded" or record.get("state") != "installed":
                 raise RuntimeError("Preparation failed: " + str(record.get("error") or job["state"]))
             # iOS's update cleanup once removed the Metal driver from Preboot
@@ -888,6 +953,7 @@ class Phone:
                   created=self.state.get("created", []) + [str(output)], application_launch_accepted=None,
                   attempt=None, model=self.model or "", applications=dict(base.get("applications") or {}),
                   guest_network=network, trust_cache_module=module)
+        self.marks["booting"] = time.time()
 
     def tools_for_start(self, tools):
         """The guest-tools build the next start installs: the one asked for,
@@ -1190,11 +1256,16 @@ class Phone:
               "while the adapter is active. See the setup helper's last state in the development log "
               "(ios.emulator.guest logs development)")
 
-    def deploy(self, bundle, entitlements, open_app):
+    def deploy(self, bundle, entitlements, open_app, force=False):
         """Install an app on the running phone without a reboot: sign it, exchange
         spare trust-cache entries for its hashes while the guest is stopped, send
         it over, name it to the adapter, let installd install it and open it. The
-        profile lists it afterwards, so the next start carries it as usual."""
+        profile lists it afterwards, so the next start carries it as usual.
+
+        When this run's record says the same signed app (its cdhash, which
+        seals every file of the bundle) is installed already, nothing is
+        trusted, sent or installed: the step is `unchanged` and the app is only
+        opened. `force` installs it all the same."""
         started = time.monotonic()
         stage = lambda name, **details: emit("deploy", step=name, seconds=round(time.monotonic() - started, 1), **details)
         if not self.guest_running():
@@ -1211,23 +1282,13 @@ class Phone:
             taken = {}
             rows, application = stage_application(bundle, entitlements, payload, str(Path(toolchain["ldid"]).resolve(strict=True)), taken)
             bundle_id = application["bundle_id"]
-            signed = payload / application["path"]
             stage("signed", bundle_id=bundle_id, cdhash=application["cdhash"], programs=len(rows))
-            module = with_hashes(module_path.read_bytes(), [bytes.fromhex(row["cdhash"]) for row in rows])
-            write_private(module_path.with_name("system.boot.tc.next"), module)
-            self.call("ios.emulator.control", {"job_id": job, "action": "trust_cache_update",
-                                               "path": str(module_path.with_name("system.boot.tc.next"))})
-            os.replace(module_path.with_name("system.boot.tc.next"), module_path)
-            stage("trusted", spare_entries=spare_entries(module))
-            guest_path = self.send_bundle(job, signed)
-            stage("sent", guest_path=guest_path)
-            for identity, cdhash in policy_entries(rows):
-                response = self.deploy_request(job, "policy_add", f"{cdhash.hex()}:{identity}")
-                if response.get("ok") is not True:
-                    raise RuntimeError(f"The guest refused the signing policy of {identity}: "
-                                       + str(response.get("error")))
-            self.install(job, guest_path, bundle_id)
-            stage("installed")
+            unchanged = not force and (self.state.get("applications") or {}).get(bundle_id) == application["cdhash"]
+            if unchanged:
+                stage("unchanged", bundle_id=bundle_id, cdhash=application["cdhash"])
+            else:
+                self.deploy_signed(job, module_path, rows, payload / application["path"], bundle_id, stage)
+                stage("installed")
         installed = dict(self.state.get("applications") or {})
         installed[bundle_id] = application["cdhash"]
         self.save(applications=installed)
@@ -1238,11 +1299,32 @@ class Phone:
         self.call("ios.virtual.configure", configured)
         self.profile = json.loads((self.directory / "profile.json").read_text())
         if open_app:
+            # iOS refuses to open an app over its lock screen; the phone may
+            # have locked itself since the start.
+            stage("screen", outcome=self.ensure_unlocked(job, time.monotonic() + 600))
             response = self.deploy_request(job, "open", bundle_id)
             if response.get("ok") is not True:
                 raise RuntimeError(f"{bundle_id} installed, but it did not open: " + json.dumps(response)[:600])
             stage("opened", pid=response.get("pid"))
-        stage("done", bundle_id=bundle_id)
+        stage("done", bundle_id=bundle_id, unchanged=unchanged)
+
+    def deploy_signed(self, job, module_path, rows, signed, bundle_id, stage):
+        """Trust a signed bundle's hashes, send it, name it to the adapter and
+        let installd install it."""
+        module = with_hashes(module_path.read_bytes(), [bytes.fromhex(row["cdhash"]) for row in rows])
+        write_private(module_path.with_name("system.boot.tc.next"), module)
+        self.call("ios.emulator.control", {"job_id": job, "action": "trust_cache_update",
+                                           "path": str(module_path.with_name("system.boot.tc.next"))})
+        os.replace(module_path.with_name("system.boot.tc.next"), module_path)
+        stage("trusted", spare_entries=spare_entries(module))
+        guest_path = self.send_bundle(job, signed)
+        stage("sent", guest_path=guest_path)
+        for identity, cdhash in policy_entries(rows):
+            response = self.deploy_request(job, "policy_add", f"{cdhash.hex()}:{identity}")
+            if response.get("ok") is not True:
+                raise RuntimeError(f"The guest refused the signing policy of {identity}: "
+                                   + str(response.get("error")))
+        self.install(job, guest_path, bundle_id)
 
     def deploy_request(self, job, operation, argument):
         """One guest request. The guest refuses a new one while an earlier worker
@@ -1296,6 +1378,16 @@ class Phone:
         return response["path"]
 
     def start(self, tools, open_app):
+        self.marks = {"begin": time.time()}
+        try:
+            self.start_steps(tools, open_app)
+        except Exception:
+            # A start that failed: its steps so far show where.
+            self.record_start_timing()
+            raise
+        self.record_start_timing()
+
+    def start_steps(self, tools, open_app):
         host = host_software()
         staged = None
         if not self.guest_running():
@@ -1329,11 +1421,14 @@ class Phone:
                     # The guest never ran; nothing about the phone failed.
                     raise RuntimeError("The host was too busy (I/O or memory pressure) to boot the guest; "
                                        "start again once it is quieter")
+                summary = (self.state.get("verdict") or {}).get("summary")
                 raise RuntimeError("The guest stopped during boot"
-                                   + (f" ({outcome})" if outcome else "") + "; see ios.emulator.report")
+                                   + (f" ({outcome})" if outcome else "")
+                                   + (f": {summary}" if summary else "") + "; see ios.emulator.report")
             if time.monotonic() > deadline:
                 raise RuntimeError("The guest service did not answer within an hour")
             time.sleep(15)
+        self.marks["guest_ready"] = time.time()
         self.apply_watchdog_scale(job, status["result"]["response"])
         # The staged apps go in before the launch (the app to open may be one of
         # them) and before the time-zone step: installd admits an ad-hoc app only
@@ -1354,23 +1449,70 @@ class Phone:
         except RuntimeError as error:
             self.save(applications_error=str(error))
             emit("installing", outcome="failed", error=str(error))
+        self.marks["applications_installed"] = time.time()
         # After the install for the reason above, before the launch so that
         # the app opened next comes from a SpringBoard with the right scale.
         self.apply_display_scale(job, status["result"]["response"])
         self.apply_time_zone(job, status["result"]["response"])
         self.apply_auto_lock(job, status["result"]["response"])
         self.apply_effects(job, status["result"]["response"])
+        self.marks["settings_applied"] = time.time()
         self.save(phase="unlocking")
         if open_app:
             self.launch(job, deadline)
         self.save(phase="launch-accepted" if open_app else "service-ready",
                   application_launch_accepted=bool(open_app), application_scene_verified=False,
                   display_visible=None)
+        self.marks["launched"] = time.time()
         if open_app:
             self.observe_display(job)
         # Only a start that ends with a picture vouches for the host it ran on.
         if self.state.get("display_visible") is True or not open_app:
             self.save(host_software=host, host_software_run=self.state.get("run"))
+
+    def launcher_request(self):
+        """The guest job's request.json, which holds the launcher's timing;
+        None when it cannot be read. Reading it is never worth a failed start."""
+        job = self.state.get("guest_job")
+        if not job:
+            return None
+        try:
+            reply = self.invoke("ios.emulator.report", {"job_id": job})
+            path = Path(reply["result"]["report_directory"]) / "paravirtual" / "request.json"
+            if path.is_symlink() or path.stat().st_size > 8 << 20:
+                return None
+            return json.loads(path.read_text())
+        except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError):
+            return None
+
+    def record_timing(self, kind, breakdown):
+        """Keep a start's or stop's steps in the state (ios.virtual.status
+        shows them) and in the run's own directory, timing.json, beside its
+        disks. Neither may fail the start or stop it describes."""
+        breakdown = {**breakdown, "run": self.state.get("run")}
+        emit("timing", kind=kind, **{key: breakdown[key] for key in ("total_seconds", "slowest", "steps")})
+        try:
+            self.save(**{kind + "_timing": breakdown})
+        except OSError as error:
+            emit("timing", kind=kind, state="not-saved", reason=str(error))
+        install = Path(self.state.get("install") or "")
+        if not self.state.get("install") or not self.owned(install):
+            return
+        path = install / "timing.json"
+        try:
+            kept = json.loads(path.read_text()) if path.is_file() and not path.is_symlink() else {}
+            kept = kept if isinstance(kept, dict) else {}
+            kept[kind] = breakdown
+            write_private(path, (json.dumps(kept, indent=2) + "\n").encode())
+        except (OSError, ValueError) as error:
+            emit("timing", kind=kind, state="not-written", reason=str(error))
+
+    def record_start_timing(self):
+        if self.marks.get("begin") is None:
+            return
+        self.marks.setdefault("finished", time.time())
+        request = self.launcher_request() if "booting" in self.marks else None
+        self.record_timing("start", ios_start_timing.start_breakdown(self.marks, self.preparation, request))
 
     def observe_display(self, job):
         """Look at the panel once the app is in front. iOS can accept launches
@@ -1724,6 +1866,56 @@ class Phone:
                                                  "to_x": 0.5, "to_y": 0.25, "duration_ms": 1500})
         return accepted
 
+    def ensure_unlocked(self, job, deadline):
+        """Leave a passcode-free lock screen before an operation that needs the
+        screen, the way the start's launch does (UnlockPacing). Returns
+        "unlocked" once a fresh native screen_state reply says so, or
+        "not-checked" when these guest tools cannot report the screen; raises
+        when the screen has a passcode or stays locked until the deadline."""
+        pacing = UnlockPacing()
+        first = True
+        while True:
+            if not first:
+                pacing.pause()
+            first = False
+            if time.monotonic() >= deadline:
+                raise RuntimeError("The virtual iPhone stayed on its lock screen; unlock it in the phone window "
+                                   "and try again")
+            status = self.invoke("ios.emulator.guest", {"job_id": job, "operation": "status",
+                                                        "timeout_seconds": 30}, 90)
+            if status.get("error", {}).get("code") == "ios_guest_stopped":
+                raise RuntimeError("The guest stopped before its screen could be unlocked")
+            worker = status.get("result", {}).get("response") or {}
+            if not status.get("ok") or worker.get("ok") is not True or worker.get("worker_running") is not False:
+                continue
+            if worker.get("screen_state_supported") is not True:
+                emit("unlock", screen_checked=False, reason="screen_state_unsupported")
+                return "not-checked"
+            screen = self.screen_reply(job, deadline)
+            native = screen.get("result", {}).get("response") or {}
+            if native.get("error") in ("virtual_screen_query_required", "screen_query_version_unavailable",
+                                       "screen_query_contract_unqualified", "screen_query_framework_unavailable",
+                                       "screen_query_api_unavailable", "screen_query_invalid_reply"):
+                emit("unlock", screen_checked=False, reason=native["error"])
+                return "not-checked"
+            if (not screen.get("ok") or native.get("ok") is not True or
+                    native.get("screen_state_known") is not True or
+                    type(native.get("screen_locked")) is not bool or
+                    type(native.get("passcode_enabled")) is not bool):
+                continue
+            if not native["screen_locked"]:
+                emit("unlock", screen_locked=False)
+                return "unlocked"
+            if native["passcode_enabled"]:
+                raise RuntimeError("Unlock the virtual iPhone with its passcode first; Tomacco does not enter it")
+            pacing.attempt(self, job, native)
+
+    def unlock_screen(self):
+        """The unlock action: the running phone's screen, unlocked or refused."""
+        if not self.guest_running():
+            raise RuntimeError("The phone is not running; start it with ios.virtual.start")
+        return self.ensure_unlocked(self.state["guest_job"], time.monotonic() + 600)
+
     def wake_for_unlock(self, job, native_screen):
         """A native side pulse for each independently observed wake cycle.
 
@@ -1981,12 +2173,7 @@ class Phone:
         receipt_pause = 0 if direct is not None else 15
         worker_idle_verified = False
         unlock_needed, retry_wait = True, False
-        next_unlock_at = 0
-        unlock_followup = False
-        short_unlock_poll = False
-        # Home cycles (a press and its follow-up) that left an awake lock
-        # screen locked; see rearm_lock_screen.
-        stale_home_cycles = 0
+        pacing = UnlockPacing()
         while True:
             if time.monotonic() >= deadline:
                 # Keep a pending identity for a later start to recover. No
@@ -2028,13 +2215,7 @@ class Phone:
                 worker_idle_verified = True
             else:
                 if retry_wait:
-                    # Home wakes the display first, with the backlight
-                    # reaching state 2 only afterwards.
-                    # A 15-second poll lets the lock screen sleep again.
-                    # One short follow-up still requires a fresh successful
-                    # native locked/no-passcode reply before ordinary input.
-                    time.sleep(max(0, next_unlock_at - time.monotonic()) if short_unlock_poll else 15)
-                    short_unlock_poll = False
+                    pacing.pause()
                 status = self.invoke("ios.emulator.guest", {"job_id": job, "operation": "status",
                                                             "timeout_seconds": 30}, 90)
                 if status.get("error", {}).get("code") == "ios_guest_stopped":
@@ -2064,37 +2245,7 @@ class Phone:
                             raise RuntimeError("Unlock the virtual iPhone with its passcode before opening the app")
                         # Home may only wake the display. Observe the native
                         # lock status again before submitting an app launch.
-                        if time.monotonic() >= next_unlock_at:
-                            if self.wake_for_unlock(job, native):
-                                # Side can wake or lock. Its acknowledgement
-                                # does not license Home against this earlier
-                                # screen snapshot, even on an unknown reply.
-                                # Recheck promptly so a woken display does not
-                                # sleep again during the ordinary 15 s poll.
-                                next_unlock_at = time.monotonic() + 2.5
-                                short_unlock_poll = True
-                                retry_wait = True
-                                continue
-                            if (stale_home_cycles >= 2 and native.get("screen_awake_known") is True and
-                                    native.get("screen_awake") is True and self.rearm_lock_screen(job)):
-                                # The display is going to sleep; the next poll
-                                # takes the ordinary wake path.
-                                stale_home_cycles = 0
-                                next_unlock_at = time.monotonic() + 2.5
-                                short_unlock_poll = True
-                                retry_wait = True
-                                continue
-                            accepted = self.unlock(job)
-                            if unlock_followup:
-                                unlock_followup = False
-                                stale_home_cycles += 1
-                                next_unlock_at = time.monotonic() + 60
-                            elif accepted:
-                                unlock_followup = True
-                                short_unlock_poll = True
-                                next_unlock_at = time.monotonic() + 2.5
-                            else:
-                                next_unlock_at = time.monotonic() + 60
+                        pacing.attempt(self, job, native)
                         retry_wait = True
                         continue
                 elif unlock_needed:
@@ -2172,6 +2323,20 @@ class Phone:
         if self.state.get("closed") is True or not self.state.get("guest_job"):
             emit("stopped", run=self.state.get("run"))
             return
+        begin = time.time()
+        try:
+            self.stop_guest()
+        except Exception:
+            self.record_stop_timing(begin)
+            raise
+        self.record_stop_timing(begin)
+
+    def record_stop_timing(self, begin):
+        # Only a stop that read the launcher's report (finalize) has its steps.
+        if self.report is not None:
+            self.record_timing("stop", ios_start_timing.stop_breakdown(begin, self.report, time.time()))
+
+    def stop_guest(self):
         job, forced = self.state["guest_job"], False
         # Until the guest service has answered once, iOS has not come up and
         # nobody could have changed anything in it.
@@ -2215,14 +2380,35 @@ class Phone:
             self.abandon()
             return
         if not self.finalize():
+            verdict = self.state.get("verdict") or {}
+            why = (": " + ios_run_verdict.sentence(verdict)) if verdict.get("summary") else ""
             raise RuntimeError(("The guest did not answer and was ended without saving" if forced else
-                                "The guest stopped without verified storage")
+                                "The guest stopped without verified storage") + why
                                + "; the next start uses the last verified run")
+
+
+def resume_hint(phone):
+    """What a failed start's error adds when its guest still runs: a start
+    adopts that guest without a new disk copy (ios.virtual.status `next`
+    says the same). Empty when the guest cannot be observed or does not run."""
+    try:
+        running = phone.guest_running()
+    except (GuestObservationError, OSError, ValueError, RuntimeError, subprocess.SubprocessError):
+        return ""
+    if not running:
+        return ""
+    phase = phone.state.get("phase")
+    if phase == "launch-uncertain":
+        return ("; the guest is still running: call ios.virtual.start with open_app false to finish without "
+                "sending the launch again")
+    if phase == "awaiting-unlock":
+        return "; the guest is still running: unlock it in the phone window, then call ios.virtual.start again"
+    return "; the guest is still running: call ios.virtual.start again to continue with it, without a new disk copy"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("action", choices=("start", "stop", "deploy"))
+    parser.add_argument("action", choices=("start", "stop", "deploy", "unlock"))
     parser.add_argument("--bundle", type=lambda value: Path(value).absolute(), help="deploy: the .app directory")
     parser.add_argument("--entitlements", type=lambda value: Path(value).absolute(),
                         help="deploy: the entitlements to request for it")
@@ -2231,6 +2417,8 @@ def main():
     parser.add_argument("--tools", type=lambda value: Path(value).absolute(),
                         help="Guest-tools build to install instead of the current one")
     parser.add_argument("--no-app", action="store_true", help="Boot and wait for the guest service only")
+    parser.add_argument("--force", action="store_true",
+                        help="deploy: install even when this run has the same signed app installed")
     parser.add_argument("--model", help="Device model to describe the phone as (see ios.virtual.status); default: the profile's own")
     parser.add_argument("--unlock", choices=("home", "swipe"), default="home",
                         help="How this device leaves its lock screen")
@@ -2243,15 +2431,19 @@ def main():
             return 1
         try:
             phone = Phone(args.cli, args.profile, args.model, args.unlock)
+            screen = None
             if args.action == "start":
                 phone.start(args.tools, not args.no_app)
             elif args.action == "deploy":
-                phone.deploy(args.bundle, args.entitlements, not args.no_app)
+                phone.deploy(args.bundle, args.entitlements, not args.no_app, args.force)
+            elif args.action == "unlock":
+                screen = phone.unlock_screen()
             else:
                 phone.stop()
             print(json.dumps({"state": "ok", "phase": phone.state.get("phase"), "run": phone.state.get("run"),
                               "guest_job": phone.state.get("guest_job"),
-                              "display_visible": phone.state.get("display_visible")}))
+                              "display_visible": phone.state.get("display_visible"),
+                              **({"screen": screen} if screen else {})}))
             return 0
         except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
             try:
@@ -2265,9 +2457,10 @@ def main():
                 changes = {"phase": "failed"} if not isinstance(error, GuestObservationError) and args.action == "start" and phone.state.get("phase") not in (
                     "booting", "launch-uncertain", "awaiting-unlock") else {}
                 phone.save(error=str(error), **changes)
+                hint = resume_hint(phone) if args.action == "start" else ""
             except (OSError, ValueError, KeyError):
-                pass
-            print(json.dumps({"state": "failed", "error": str(error)}))
+                hint = ""
+            print(json.dumps({"state": "failed", "error": str(error) + hint}))
             return 1
 
 

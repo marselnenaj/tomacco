@@ -34,6 +34,16 @@ ColumnLayout {
     // this view asked.
     property int framesThisSecond: 0
     property int framesPerSecond: 0
+    // Frames answered per second, new or not: how often this view could ask.
+    property int framesAskedThisSecond: 0
+    property int framesAskedPerSecond: 0
+    // Input to picture: when the oldest input not yet followed by a new
+    // picture was made (0: none waits), and how long the last one took until
+    // the first new picture asked for after it arrived (-1: not measured yet).
+    // An estimate: a picture that changed for another reason counts as well.
+    property real inputAt: 0
+    property int latencyMs: -1
+    function noteInput() {if(!inputAt)inputAt=Date.now()}
     // Consecutive identical frames; the preview slows down on a still screen.
     property int stillFrames: 0
     readonly property bool canInput: running && !!guest.state && guest.state.running
@@ -61,7 +71,16 @@ ColumnLayout {
     // the window lands on a smaller monitor, are never kept as a choice, so
     // a later open on a monitor that fits the panel is pixel-exact again.
     property real detachedZoom: 0
-    Settings {category:"IosGuestDisplay";property alias detachedZoom:view.detachedZoom}
+    // Where the phone's own window was last, kept between sessions; NaN until
+    // it has been placed once. Wayland lets no window place itself, so there
+    // the compositor decides and these stay unused.
+    property real windowX: NaN
+    property real windowY: NaN
+    // The phone's own window stays above the others.
+    property bool windowOnTop: false
+    // The speed overlay on the picture: frames per second and input to picture.
+    property bool showSpeed: false
+    Settings {category:"IosGuestDisplay";property alias detachedZoom:view.detachedZoom;property alias windowX:view.windowX;property alias windowY:view.windowY;property alias windowOnTop:view.windowOnTop;property alias showSpeed:view.showSpeed}
     // Height the docked picture may take; the dialog offers what it has.
     property int dockHeight: 0
     // The guest display can leave the dialog as its own phone-shaped window.
@@ -80,7 +99,7 @@ ColumnLayout {
     readonly property bool windowVisible: guestWindow.visible
     readonly property bool watching: (observing && visible) || (detached && running)
     onRunningChanged: {
-        if(!running){touchUp();inputEpoch+=1;detached=false;inputQueue=[];pending=0;inputRetry.stop();nextFrame.stop();wheelBurst.stop();wheelX=0;wheelY=0;framesThisSecond=0;framesPerSecond=0}
+        if(!running){touchUp();inputEpoch+=1;detached=false;inputQueue=[];pending=0;inputRetry.stop();nextFrame.stop();wheelBurst.stop();wheelX=0;wheelY=0;framesThisSecond=0;framesPerSecond=0;framesAskedThisSecond=0;framesAskedPerSecond=0;inputAt=0}
         Qt.callLater(pump)
     }
     spacing: 10
@@ -90,7 +109,7 @@ ColumnLayout {
         let stored=Object.assign({},args || {})
         if(Array.isArray(stored.keys))stored.keys=stored.keys.slice()
         let id=Agent.request("ios.emulator.control",Object.assign({},stored,{job_id:jobId,action:action}))
-        requests[id]={job:jobId,epoch:inputEpoch,action:action,args:stored,retries:retries || 0,file:action==="frame" && stored.transport==="file"}
+        requests[id]={job:jobId,epoch:inputEpoch,action:action,args:stored,retries:retries || 0,file:action==="frame" && stored.transport==="file",sentAt:Date.now()}
         pending=id
     }
     function send(action, args) {
@@ -103,11 +122,52 @@ ColumnLayout {
         }
         stillFrames=0
         inputNotice=""
+        // A button that acts on the phone (Home, Paste, a gesture) leaves the
+        // keyboard with the phone, as long as it is meant to be there.
+        if(keyboardToPhone && !detached && !view.activeFocus)view.forceActiveFocus()
         let stored=Object.assign({},args || {})
         if(Array.isArray(stored.keys))stored.keys=stored.keys.slice()
-        inputQueue=inputQueue.concat([{action:action,args:stored,retries:0}])
+        // Typed characters join the text still waiting to go out, up to what
+        // one text action takes, so fast typing does not fill the queue.
+        let last=inputQueue[inputQueue.length-1]
+        if(action==="text" && last && last.action==="text" && !last.retries && Array.from(last.args.text+stored.text).length<=pasteChunk) {
+            let queue=inputQueue.slice()
+            queue[queue.length-1]={action:"text",args:{text:last.args.text+stored.text},retries:0}
+            inputQueue=queue
+        } else inputQueue=inputQueue.concat([{action:action,args:stored,retries:0}])
+        noteInput()
         pump()
         return true
+    }
+    // Keyboard to phone: while the phone view has the keyboard, typed
+    // characters go to the phone as text (so the host's layout decides what
+    // a key types, @ and ä included) and other keys, Enter, Backspace, Tab,
+    // the arrows and shortcuts with Ctrl, Alt or Meta, as QEMU key names.
+    // Ctrl+Shift+K gives the keyboard back to the desktop; a press on the
+    // screen, the button or Ctrl+Shift+K again take it back for the phone.
+    property bool keyboardToPhone: true
+    readonly property bool keyboardHeld: canInput && keyboardToPhone && (detached?guestWindow.active:view.activeFocus)
+    function setKeyboardToPhone(value) {
+        keyboardToPhone=value
+        if(detached)return
+        if(value)view.forceActiveFocus()
+        else if(view.activeFocus) {
+            // Focus moves on to the next control, so Tab and Escape work again.
+            let next=view.nextItemInFocusChain(true)
+            if(next && next!==view)next.forceActiveFocus();else view.focus=false
+        }
+    }
+    function typeKey(key, modifiers, text) {
+        if(!keyboardToPhone || !canInput)return false
+        // A modifier pressed alone does nothing on the phone; it goes along
+        // with the key it modifies.
+        if([Qt.Key_Shift,Qt.Key_Control,Qt.Key_Alt,Qt.Key_Meta,Qt.Key_AltGr,Qt.Key_Super_L,Qt.Key_Super_R].indexOf(key)>=0)return true
+        const control=!!(modifiers & Qt.ControlModifier),alt=!!(modifiers & Qt.AltModifier)
+        // AltGr reaches Qt as Ctrl+Alt on some systems: its character is still text.
+        const shortcut=(control!==alt) || !!(modifiers & Qt.MetaModifier)
+        const code=text?text.codePointAt(0):0
+        if(text && !shortcut && code>=32 && code!==127)return send("text",{text:text})
+        return sendHardwareKey(key,modifiers)
     }
     // Translate Qt's key values to QEMU's physical key names. Modifiers are
     // pressed with the key in one send-key request, then released by QEMU.
@@ -146,7 +206,7 @@ ColumnLayout {
         send("key",{keys:keys,hold_ms:100})
         return true
     }
-    Keys.onPressed: event=>{if(sendHardwareKey(event.key,event.modifiers))event.accepted=true}
+    Keys.onPressed: event=>{if(typeKey(event.key,event.modifiers,event.text))event.accepted=true}
     // Decides what to do once nothing is in flight: queued input first, then
     // the next frame while someone is watching.
     // The zoom a window opens at when the user has chosen none: one panel
@@ -226,12 +286,24 @@ ColumnLayout {
     }
     function pasteClipboard() {return pasteText(Studio.clipboardText())}
     Shortcut {sequence:"Ctrl+V";context:Qt.ApplicationShortcut;enabled:view.shortcutsActive;onActivated:view.pasteClipboard()}
+    Shortcut {sequence:"Ctrl+Shift+K";context:Qt.ApplicationShortcut;enabled:view.shortcutsActive;onActivated:view.setKeyboardToPhone(!view.keyboardHeld)}
+    // A screenshot with the device's frame, drawn by ios.virtual.screenshot:
+    // offered for the virtual iPhone's own guest, which that operation reads.
+    property bool framedScreenshots: false
+    property int framedRequest: 0
+    function framedScreenshot() {
+        if(!running || framedRequest)return false
+        const path=Studio.screenshotPath("virtual-iphone-framed")
+        if(!path)return false
+        framedRequest=Agent.request("ios.virtual.screenshot",{path:path,frame:"device"})
+        return true
+    }
     onJobIdChanged: {
         // A contact on the guest before keeps its job and is lifted there.
         touchUp();liveTouch=true
         inputEpoch+=1;inputRetry.stop();nextFrame.stop();wheelBurst.stop()
         frameSource="";frameHash="";capturedAt="";guest=({});notice="";inputNotice="";pending=0;inputQueue=[]
-        frameWidth=0;frameHeight=0;framesThisSecond=0;framesPerSecond=0
+        frameWidth=0;frameHeight=0;framesThisSecond=0;framesPerSecond=0;framesAskedThisSecond=0;framesAskedPerSecond=0;inputAt=0;latencyMs=-1
         // Each guest gets the fast transport again; only its own refusal turns it off.
         fileFrames=true;stillFrames=0;wheelX=0;wheelY=0
         Qt.callLater(pump)
@@ -270,12 +342,14 @@ ColumnLayout {
         touchSerial+=1
         touch={serial:touchSerial,job:jobId,x:x,y:y,failed:false,ended:false,gesture:null,played:false}
         queueTouch("touch_down",x,y)
+        noteInput()
         touchKeep.restart()
     }
     function touchMove(x, y) {
         if(!touch || touch.failed || touch.ended)return
         touch.x=x;touch.y=y
         queueTouch("touch_move",x,y)
+        noteInput()
     }
     // Every contact ends with a release, whatever became of its press.
     function touchUp() {
@@ -333,22 +407,29 @@ ColumnLayout {
         wheelAtX=atX;wheelAtY=atY;wheelX+=dx;wheelY+=dy
         wheelBurst.restart()
     }
-    Timer {
-        id:wheelBurst;interval:140
-        onTriggered: {
-            // One notch moves the finger an eighth of the screen, at most half of it.
-            let far=value=>Math.max(-.5,Math.min(.5,value/120*.125))
-            let dx=far(view.wheelX),dy=far(view.wheelY)
-            view.wheelX=0;view.wheelY=0
-            if(Math.abs(dx)<.01 && Math.abs(dy)<.01)return
-            // Start away from the edges, where iOS has gestures of its own.
-            let inside=value=>Math.max(.12,Math.min(.88,value))
-            let x=inside(view.wheelAtX),y=inside(view.wheelAtY)
-            // Rest at the end so iOS does not read the burst as a fling and
-            // scroll on past where the wheel stopped.
-            view.send("drag",{x:x,y:y,to_x:Math.max(.02,Math.min(.98,x+dx)),to_y:Math.max(.02,Math.min(.98,y+dy)),duration_ms:360,hold_ms:150})
-        }
+    // A trackpad's scroll phases: the coasting it adds after the fingers
+    // lift is dropped (momentum off; the drag's rest already stops iOS's own
+    // fling), and lifting the fingers sends the burst at once.
+    function wheelPhase(phase, atX, atY, dx, dy) {
+        if(phase===Qt.ScrollMomentum)return false
+        if(dx!==0 || dy!==0)scroll(atX,atY,dx,dy)
+        if(phase===Qt.ScrollEnd && wheelBurst.running){wheelBurst.stop();flushWheel()}
+        return true
     }
+    function flushWheel() {
+        // One notch moves the finger an eighth of the screen, at most half of it.
+        let far=value=>Math.max(-.5,Math.min(.5,value/120*.125))
+        let dx=far(wheelX),dy=far(wheelY)
+        wheelX=0;wheelY=0
+        if(Math.abs(dx)<.01 && Math.abs(dy)<.01)return
+        // Start away from the edges, where iOS has gestures of its own.
+        let inside=value=>Math.max(.12,Math.min(.88,value))
+        let x=inside(wheelAtX),y=inside(wheelAtY)
+        // Rest at the end so iOS does not read the burst as a fling and
+        // scroll on past where the wheel stopped.
+        send("drag",{x:x,y:y,to_x:Math.max(.02,Math.min(.98,x+dx)),to_y:Math.max(.02,Math.min(.98,y+dy)),duration_ms:360,hold_ms:150})
+    }
+    Timer {id:wheelBurst;interval:140;onTriggered:view.flushWheel()}
     onObservingChanged: Qt.callLater(pump)
     onWatchingChanged: Qt.callLater(pump)
     // Frames follow each other with a short pause; inline PNG frames are far
@@ -360,7 +441,13 @@ ColumnLayout {
     // Restarts the loop after a refused request and keeps the rate display honest.
     Timer {
         interval:1000;repeat:true;running:view.watching && view.running
-        onTriggered:{view.framesPerSecond=view.framesThisSecond;view.framesThisSecond=0;view.pump()}
+        onTriggered:{
+            view.framesPerSecond=view.framesThisSecond;view.framesThisSecond=0
+            view.framesAskedPerSecond=view.framesAskedThisSecond;view.framesAskedThisSecond=0
+            // An input that changed nothing on the screen within 5 s is not measured.
+            if(view.inputAt && Date.now()-view.inputAt>5000)view.inputAt=0
+            view.pump()
+        }
     }
     DeviceWindow {
         id:guestWindow
@@ -377,11 +464,10 @@ ColumnLayout {
         showFlip:view.modern && !!view.deviceProfile.back
         homeShortcut:"Ctrl+Shift+H";powerShortcut:"Ctrl+Shift+L";backShortcut:"Ctrl+Shift+B"
         onBackRequested:view.systemGesture("back")
-        forwardHardwareKeys:true
         // Up to one panel pixel per screen pixel: the picture is never
         // enlarged beyond what the guest drew.
         maxZoom:Math.max(1.5,view.frameScale/guestWindow.pixelRatio)
-        onVisibleChanged:if(visible)setZoom(view.detachedZoom>0?view.detachedZoom:view.sharpZoom(fitZoom))
+        onVisibleChanged:if(visible){setZoom(view.detachedZoom>0?view.detachedZoom:view.sharpZoom(fitZoom));view.placeWindow()}
         // Only a zoom the user chose is kept (see detachedZoom).
         onZoomChosen:value=>view.detachedZoom=value
         solo:view.solo
@@ -391,9 +477,36 @@ ColumnLayout {
         onCloseRequested:{view.detached=false;view.closeRequested()}
         onHomeRequested:view.home()
         onPowerRequested:view.send("power_button")
-        onHardwareKeyRequested:(key,modifiers)=>view.sendHardwareKey(key,modifiers)
+        onHardwareKeyRequested:(key,modifiers,text)=>view.typeKey(key,modifiers,text)
+        // Keys reach the phone only while it has the keyboard.
+        forwardHardwareKeys:view.keyboardToPhone
+        showPin:true
+        stayOnTop:view.windowOnTop
+        onStayOnTopChanged:view.windowOnTop=stayOnTop
+        // The system gestures, the keyboard and the speed overlay, as in the dialog.
+        extraButtons:(view.modern?[
+            {name:"appSwitcher",icon:"cards",tip:qsTr("App switcher")+" · Ctrl+Shift+A"},
+            {name:"notificationCenter",icon:"bell",tip:qsTr("Notification Center")+" · Ctrl+Shift+N"},
+            {name:"controlCenter",icon:"settings",tip:qsTr("Control Center")+" · Ctrl+Shift+C"}]:[]).concat([
+            {name:"keyboard",icon:"keyboard",tip:qsTr("Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back")},
+            {name:"speed",icon:"activity",tip:qsTr("Show frames per second and the time from an input to the picture")}])
+        extraSelected:(view.keyboardToPhone?["keyboard"]:[]).concat(view.showSpeed?["speed"]:[])
+        onExtraRequested:name=>{
+            if(name==="keyboard")view.setKeyboardToPhone(!view.keyboardToPhone)
+            else if(name==="speed")view.showSpeed=!view.showSpeed
+            else view.systemGesture(name)
+        }
+        onXChanged:if(visible)windowPlace.restart()
+        onYChanged:if(visible)windowPlace.restart()
         onScreenshotRequested:view.send("screenshot")
     }
+    // The window goes back where it was, if that place is still on a monitor.
+    function placeWindow() {
+        if(isNaN(windowX) || isNaN(windowY))return
+        const onScreen=Qt.application.screens.some(s=>windowX>=s.virtualX-40 && windowY>=s.virtualY-40 && windowX<s.virtualX+s.width-80 && windowY<s.virtualY+s.height-80)
+        if(onScreen){guestWindow.x=windowX;guestWindow.y=windowY}
+    }
+    Timer {id:windowPlace;interval:400;onTriggered:if(guestWindow.visible){view.windowX=guestWindow.x;view.windowY=guestWindow.y}}
     // The body of a current iPhone: the same frame the web preview and the
     // Android devices use, drawn from the model's profile. The picture is cut
     // to the screen's corners. A notch or punch hole is the frame's; an island
@@ -429,6 +542,12 @@ ColumnLayout {
     Connections {
         target:Agent
         function onApiFinished(id,operation,response) {
+            if(id===view.framedRequest) {
+                view.framedRequest=0
+                if(!response.ok)view.notice=(response.error || {}).message || qsTr("The screenshot failed")
+                else {const path=response.result.path || "";view.notice=(Studio.copyImage(path)?qsTr("Screenshot saved and copied: %1"):qsTr("Capture saved: %1")).arg(path)}
+                return
+            }
             let touchEvent=view.touchRequests[id]
             if(touchEvent) {
                 delete view.touchRequests[id]
@@ -474,6 +593,9 @@ ColumnLayout {
             let result=response.result.result
             if(context.action==="status") {view.guest=result;view.pump()}
             else if(context.action==="frame") {
+                view.framesAskedThisSecond+=1
+                const fresh=context.file?result.changed!==false:result.sha256!==view.frameHash
+                if(fresh && view.inputAt && context.sentAt>=view.inputAt){view.latencyMs=Date.now()-view.inputAt;view.inputAt=0}
                 if(context.file) {
                     view.stillFrames=result.changed===false?view.stillFrames+1:0
                     if(result.changed!==false)view.framesThisSecond+=1
@@ -648,7 +770,7 @@ ColumnLayout {
                     return {x:edgeX>=0?edgeX:point.x,y:edgeY>=0?edgeY:point.y,edge:edgeX>=0 || edgeY>=0}
                 }
                 function begin(px,py) {
-                    if(!view.detached)view.forceActiveFocus()
+                    view.setKeyboardToPhone(true)
                     const start=edgeAt(px,py)
                     fromX=start.x;fromY=start.y;fromEdge=start.edge;pressX=px;pressY=py
                     pressedAt=Date.now();moved=false;touchMark.show(px,py)
@@ -694,7 +816,22 @@ ColumnLayout {
                     let dx=pixels?wheel.pixelDelta.x*2:wheel.angleDelta.x,dy=pixels?wheel.pixelDelta.y*2:wheel.angleDelta.y
                     // Shift turns a plain wheel sideways, as everywhere on the desktop.
                     if(wheel.modifiers & Qt.ShiftModifier && dx===0){dx=dy;dy=0}
-                    view.scroll(wheel.x/width,wheel.y/height,dx,dy)
+                    view.wheelPhase(wheel.phase,wheel.x/width,wheel.y/height,dx,dy)
+                }
+                // How fast the picture comes: new frames and frames answered per
+                // second, and the last time from an input to its picture.
+                Rectangle {
+                    objectName:"iosGuestSpeed"
+                    visible:view.showSpeed && view.running
+                    x:8;y:Math.max(8,parent.height*.06);z:4
+                    width:speedText.implicitWidth+16;height:speedText.implicitHeight+10;radius:Theme.radius
+                    color:"#c0101216"
+                    Text {
+                        id:speedText;objectName:"iosGuestSpeedText"
+                        anchors.centerIn:parent;color:"#f2f4f8";font.family:Theme.mono;font.pixelSize:11
+                        text:qsTr("%1 new · %2 fetched frames/s").arg(view.framesPerSecond).arg(view.framesAskedPerSecond)+"\n"
+                            +(view.latencyMs>=0?qsTr("Input to picture: %1 ms").arg(view.latencyMs):qsTr("Input to picture: not measured yet"))
+                    }
                 }
                 // The guest answers a touch late. The mark shows at once where
                 // the finger is, so a touch is never mistaken for a missed click.
@@ -750,6 +887,23 @@ ColumnLayout {
                 onClicked:view.systemGesture(modelData.name)
             }
         }
+    }
+    // The keyboard's state, the speed overlay and a framed screenshot.
+    RowLayout {
+        objectName:"iosGuestTools"
+        Layout.fillWidth:true
+        StudioButton {
+            objectName:"iosGuestKeyboard"
+            iconName:"keyboard";quiet:true;selected:view.keyboardHeld;enabled:view.canInput
+            // Pressing it must not take the keyboard from the phone itself.
+            focusPolicy:Qt.NoFocus
+            text:view.keyboardHeld?qsTr("Keyboard to phone"):qsTr("Keyboard to desktop")
+            tip:view.keyboardHeld?qsTr("Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop"):qsTr("Click the screen or press Ctrl+Shift+K to type on the phone")
+            onClicked:view.setKeyboardToPhone(!view.keyboardHeld)
+        }
+        Item {Layout.fillWidth:true}
+        StudioButton {objectName:"iosGuestSpeedToggle";text:qsTr("Speed");iconName:"activity";quiet:true;selected:view.showSpeed;focusPolicy:Qt.NoFocus;tip:qsTr("Show frames per second and the time from an input to the picture");onClicked:view.showSpeed=!view.showSpeed}
+        StudioButton {objectName:"iosGuestFramedScreenshot";text:qsTr("Screenshot with frame");iconName:"frame";quiet:true;visible:view.framedScreenshots;focusPolicy:Qt.NoFocus;enabled:view.running && !view.framedRequest;tip:qsTr("Save and copy a screenshot with a plain device frame and rounded corners");onClicked:view.framedScreenshot()}
     }
     // A recording of the screen through ios.virtual.record, saved under Videos/Tomacco.
     ScreenRecorder {id:guestRecorder;objectName:"iosGuestRecorder"}

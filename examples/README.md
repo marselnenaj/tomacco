@@ -9,6 +9,7 @@ with its `result.id` until the state is `succeeded`, `failed`, `cancelled` or
 | --- | --- | --- |
 | [hello-android](hello-android/) | The native Android starter, with a UI test | Android SDK with platform 36, a JDK, Gradle; an emulator or phone to run it |
 | [native-navigation.json](native-navigation.json) | The format of a `testing.run` scenario, for an app of your own | An Android device and an app with the named controls |
+| [hello-virtual-iphone](hello-virtual-iphone/) | A SwiftUI starter in xtool's project format for the virtual iPhone | xtool and the iOS SDK from your own Xcode download; a running virtual iPhone to run it |
 | [ios-restore-native](ios-restore-native/) | C and Embedded Swift programs for the iOS restore-shell guest | The virtual iOS research setup; see its README |
 
 ## hello-android
@@ -50,6 +51,24 @@ tomaccoctl call testing.run '{"path":"/absolute/HelloAndroid/ui-test.json","dire
 `project.execute` (Gradle 9.3.1, platform 36). `testing.run` accepted `ui-test.json`
 as a valid scenario. Running the app and the scenario on a device was not part of
 that check.
+
+## hello-virtual-iphone
+
+A SwiftUI counter with large **Add one** and **Reset** buttons, made for Tomacco's virtual iPhone: an xtool project with
+no package dependencies, no entitlements and no resources, so the built bundle stays within the device's rules. Its bundle
+identifier is `dev.tomacco.examples.HelloVirtual`. It writes `HelloVirtual launched` and `HelloVirtual count N` with
+`NSLog`.
+
+```sh
+cp -r examples/hello-virtual-iphone /absolute/HelloVirtual
+tomaccoctl call project.execute '{"path":"/absolute/HelloVirtual","platform":"ios"}'
+tomaccoctl call project.app '{"path":"/absolute/HelloVirtual"}'
+tomaccoctl call project.run '{"path":"/absolute/HelloVirtual","platform":"ios","device":"virtual-iphone"}'
+```
+
+**What was run.** The build (xtool 1.20.1, 10.7 seconds, 6.3 seconds after an edit) and `project.app`, which accepted the
+bundle for the virtual iPhone. `project.run` on a live phone was not run. The walkthrough is
+[Your first SwiftUI app on the virtual iPhone](../docs/tutorial-virtual-iphone.md).
 
 ## native-navigation.json
 

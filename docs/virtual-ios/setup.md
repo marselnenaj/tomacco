@@ -18,6 +18,13 @@ tomaccoctl call ios.virtual.host_check '{"directory":"/phone"}'
 On the development host it passed everything but `passt`, which was not installed. Its
 thresholds come from [what it needs](README.md#what-it-needs); a pass is not a qualification.
 
+Once a profile is configured, its `recommend` list compares the profile's boot settings with this host (`host` has its
+logical processors, physical cores and memory): `host_cpu_policy` `performance` when there are at least two physical
+cores more than the six application processors, `scheduler` when there are fewer cores than processors, and
+`translation_cache_mib` 1024 under 16 GiB of memory or 2048 from 32 GiB. Each entry has the `setting`, its `current`
+and `suggested` value and the `reason`. It changes nothing; edit `profile.json` yourself. The rules have unit tests;
+whether a changed setting makes a live phone faster has not been measured.
+
 **See where you stand at any time.** This lists inputs that are missing or wrong, in
 chain order. The JSON has the missing inputs under `missing`. Prepare the local
 IM4M with the command in step 4 before proceeding to the restore runtime.

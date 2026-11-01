@@ -1065,6 +1065,14 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <source>Smaller · Ctrl+mouse wheel</source>
         <translation>Più piccolo · Ctrl+rotellina</translation>
     </message>
+    <message>
+        <source>Stop keeping this window above the others</source>
+        <translation>Non tenere più questa finestra sopra le altre</translation>
+    </message>
+    <message>
+        <source>Keep this window above the others</source>
+        <translation>Tieni questa finestra sopra le altre</translation>
+    </message>
 </context>
 <context>
     <name>FileWorkspace</name>
@@ -1340,6 +1348,58 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
         <translation>Digita il testo degli appunti nel campo che ha il focus</translation>
+    </message>
+    <message>
+        <source>Keyboard to phone</source>
+        <translation>Tastiera al telefono</translation>
+    </message>
+    <message>
+        <source>Keyboard to desktop</source>
+        <translation>Tastiera al desktop</translation>
+    </message>
+    <message>
+        <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
+        <translation>Ciò che si digita va al telefono · Ctrl+Shift+K restituisce la tastiera al desktop</translation>
+    </message>
+    <message>
+        <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
+        <translation>Fai clic sullo schermo o premi Ctrl+Shift+K per digitare sul telefono</translation>
+    </message>
+    <message>
+        <source>Speed</source>
+        <translation>Velocità</translation>
+    </message>
+    <message>
+        <source>Show frames per second and the time from an input to the picture</source>
+        <translation>Mostra i fotogrammi al secondo e il tempo da un input all&apos;immagine</translation>
+    </message>
+    <message>
+        <source>Screenshot with frame</source>
+        <translation>Screenshot con cornice</translation>
+    </message>
+    <message>
+        <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
+        <translation>Salva e copia uno screenshot con una cornice semplice del dispositivo e angoli arrotondati</translation>
+    </message>
+    <message>
+        <source>%1 new · %2 fetched frames/s</source>
+        <translation>%1 nuovi · %2 fotogrammi ricevuti/s</translation>
+    </message>
+    <message>
+        <source>Input to picture: %1 ms</source>
+        <translation>Dall&apos;input all&apos;immagine: %1 ms</translation>
+    </message>
+    <message>
+        <source>Input to picture: not measured yet</source>
+        <translation>Dall&apos;input all&apos;immagine: non ancora misurato</translation>
+    </message>
+    <message>
+        <source>The screenshot failed</source>
+        <translation>Lo screenshot non è riuscito</translation>
+    </message>
+    <message>
+        <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
+        <translation>Tastiera al telefono · Ctrl+Shift+K la passa al desktop e ritorno</translation>
     </message>
 </context>
 <context>
@@ -4354,6 +4414,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Ferma dispositivo iOS virtuale</translation>
     </message>
     <message>
+        <source>Unlock virtual iOS device</source>
+        <translation>Sblocca dispositivo iOS virtuale</translation>
+    </message>
+    <message>
         <source>Install app on running virtual iOS device</source>
         <translation>Installa app sul dispositivo iOS virtuale in esecuzione</translation>
     </message>
@@ -4424,6 +4488,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     <message>
         <source>Check this machine for the virtual iOS device</source>
         <translation>Verificare questo computer per il dispositivo iOS virtuale</translation>
+    </message>
+    <message>
+        <source>Check the virtual iOS device</source>
+        <translation>Verificare il dispositivo iOS virtuale</translation>
     </message>
     <message>
         <source>Wait for job</source>
