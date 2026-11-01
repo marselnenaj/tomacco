@@ -36,6 +36,8 @@ signals:
     void cliChanged();
     void apiFinished(int requestId, const QString &operation, const QVariantMap &response);
     void previewRequest(int requestId, const QString &method, const QVariantMap &parameters);
+    // A preview request answered: error is empty when it worked.
+    void previewFinished(int requestId, const QString &error);
 private:
     void accept();
     void spawn(int requestId, const QString &operation, const QVariantMap &arguments);

@@ -421,6 +421,31 @@ QString Backend::jobLogPath(const QString &path) const {
     if(path.isEmpty() || !file.isFile() || file.isSymLink() || !name.match(file.fileName()).hasMatch() || file.dir().dirName()!=QLatin1String("jobs")) return {};
     return file.canonicalFilePath();
 }
+QVariantMap Backend::readSessionLog(const QString &path,qint64 offset) const {
+    QVariantMap out{{"entries",QVariantList{}},{"next_offset",offset},{"reset",false},{"error",QString()}};
+    if(path.isEmpty()) return out;
+    if(!QFileInfo(path).isAbsolute()) { out["error"]=tr("The session log must be an absolute path."); return out; }
+    QFile file(path);
+    if(!file.exists()) { out["error"]=tr("No session log at %1 yet. It appears with the agent's first call.").arg(path); return out; }
+    if(!file.open(QIODevice::ReadOnly)) { out["error"]=tr("%1 cannot be read.").arg(path); return out; }
+    if(offset<0 || offset>file.size()) { offset=0; out["reset"]=true; }
+    file.seek(offset);
+    const auto chunk=file.read(256*1024);
+    const auto end=chunk.lastIndexOf('\n');
+    // A line longer than one read is passed over; what follows of it is no JSON and is skipped too.
+    if(end<0) { out["next_offset"]=chunk.size()==256*1024 ? offset+chunk.size() : offset; return out; }
+    QVariantList entries;
+    for(const auto &line:chunk.left(end).split('\n')) {
+        const auto document=QJsonDocument::fromJson(line);
+        if(document.isObject()) entries<<document.object().toVariantMap();
+    }
+    out["entries"]=entries;
+    out["next_offset"]=offset+end+1;
+    return out;
+}
+QString Backend::sessionLogFromEnvironment() const {
+    return qEnvironmentVariable("TOMACCO_SESSION_LOG");
+}
 bool Backend::openJobLog(const QString &path) {
     const auto log=jobLogPath(path);
     if(log.isEmpty()) { emit message(tr("This job has no log file yet.")); return false; }

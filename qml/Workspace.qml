@@ -73,6 +73,31 @@ Rectangle {
         const origin=jobOrigins[job.id]
         return request(origin.operation,origin.args)
     }
+    // What each project used last: the device and its platform, the Apple target, the build's
+    // platform, configuration and format. Stored on this computer for the 20 newest projects.
+    property var projectPreferences: { try { return JSON.parse(Studio.setting("projects/preferences","{}")) || {} } catch(e) { return {} } }
+    function preferencesFor(path) { return path && projectPreferences[path] ? projectPreferences[path] : {} }
+    function rememberForProject(values,path) {
+        const folder=path || project.path
+        if(!folder) return
+        let all=Object.assign({},projectPreferences)
+        all[folder]=Object.assign({},all[folder] || {},values,{at:Date.now()/1000})
+        const keep=Object.keys(all).sort((a,b)=>(all[b].at || 0)-(all[a].at || 0)).slice(0,20)
+        let kept={}
+        for(const key of keep) kept[key]=all[key]
+        projectPreferences=kept
+        Studio.saveSetting("projects/preferences",JSON.stringify(kept))
+    }
+    // The build choices of a project opened again, where they still apply.
+    function applyBuildPreferences(path) {
+        const saved=preferencesFor(path)
+        const index=["android","ios","web","linux"].indexOf(saved.buildPlatform)
+        if(index>=0 && (!project.platforms || !project.platforms.length || project.platforms.indexOf(saved.buildPlatform)>=0)) platform.currentIndex=index
+        if(saved.configuration) configuration.currentIndex=Math.max(0,["debug","release"].indexOf(saved.configuration))
+        if(saved.format) Qt.callLater(()=>{const at=format.model.indexOf(saved.format);if(at>=0)format.currentIndex=at})
+        if(saved.device && devices.some(x=>x.id===saved.device)) { selectedDevice=saved.device; selectedPlatform=saved.platform || selectedPlatform }
+    }
+    signal projectPreferencesApplied(string path)
     property string selectedJob: ""
     property int logOffset: 0
     property string logText: ""
@@ -88,6 +113,14 @@ Rectangle {
     property bool running: false
     onStatusChanged: running=false
     property bool failed: false
+    // The last request that failed on screen: what went wrong, what to do about it, and the request to try again.
+    property var failure: ({})
+    onFailedChanged: if(!failed) failure=({})
+    function retry() {
+        if(!failure.operation) return -1
+        const again=failure
+        return request(again.operation,again.args)
+    }
     property var pending: ({})
     property var formValues: ({})
     property var selectedOperation: null
@@ -132,9 +165,10 @@ Rectangle {
         let id=Agent.request(operation,args||{})
         if(operation==="project.run" || operation==="project.execute")projectRequestPending=true
         pending[id]={operation:operation,quiet:quiet||false,signature:signature}
-        if(!quiet) { failed=false; status=qsTr("Running…"); running=true }
+        if(!quiet) { failed=false; failure=({}); status=qsTr("Running…"); running=true }
         return id
     }
+    function chooseProjectFolder() { projectFolder.open() }
     function openProject(path) {
         projectPath.text=path
         request("project.inspect",{path:path})
@@ -164,18 +198,49 @@ Rectangle {
         panel.currentIndex=3
         for(let operation of Agent.operations) if(operation.name===name) { chooseOperation(operation); break }
     }
-    function submitForm() {
-        try {
-            let args={}
-            for(let key in selectedOperation.inputSchema.properties) {
-                let value=formValues[key], spec=selectedOperation.inputSchema.properties[key]
-                if(value===undefined || value==="") { if(selectedOperation.inputSchema.required.indexOf(key)>=0) throw new Error(qsTr("%1 is missing").arg(key)); continue }
-                if(spec.type==="integer" || spec.type==="number") value=Number(value)
-                if((spec.type==="object" || spec.type==="array") && typeof value==="string") value=JSON.parse(value)
-                args[key]=value
+    // The form's values as the operation's arguments; throws with what is wrong.
+    function formArguments() {
+        let args={}
+        for(let key in selectedOperation.inputSchema.properties) {
+            let value=formValues[key], spec=selectedOperation.inputSchema.properties[key]
+            if(value===undefined || value==="") { if(selectedOperation.inputSchema.required.indexOf(key)>=0) throw new Error(qsTr("%1 is missing").arg(key)); continue }
+            if(spec.type==="integer" || spec.type==="number") {
+                value=Number(value)
+                if(isNaN(value) || (spec.type==="integer" && !Number.isInteger(value))) throw new Error(qsTr("%1 must be a number").arg(key))
+                if((spec.minimum!==undefined && value<spec.minimum) || (spec.maximum!==undefined && value>spec.maximum)) throw new Error(qsTr("%1 is out of range: %2").arg(key).arg(fieldLimits(spec)))
             }
+            if((spec.type==="object" || spec.type==="array") && typeof value==="string") value=JSON.parse(value)
+            args[key]=value
+        }
+        return args
+    }
+    // An operation that changes or removes something for good asks once before it runs.
+    readonly property bool destructiveOperation: !!selectedOperation && !!selectedOperation.annotations && selectedOperation.annotations.destructiveHint===true
+    property bool confirmingRun: false
+    onSelectedOperationChanged: confirmingRun=false
+    function submitForm(confirmed) {
+        try {
+            let args=formArguments()
+            if(destructiveOperation && !confirmed) { confirmingRun=true; return }
+            confirmingRun=false
             request(selectedOperation.name,args)
-        } catch(error) { status=error.message; failed=true }
+        } catch(error) { status=error.message; failed=true; confirmingRun=false }
+    }
+    // The limits of a number field, such as "1 – 3600" or "≥ 0".
+    function fieldLimits(spec) {
+        if(spec.minimum!==undefined && spec.maximum!==undefined) return spec.minimum+" – "+spec.maximum
+        if(spec.minimum!==undefined) return "≥ "+spec.minimum
+        if(spec.maximum!==undefined) return "≤ "+spec.maximum
+        return ""
+    }
+    // The same call for a terminal or a script: tomaccoctl call NAME 'JSON'.
+    function commandLine() {
+        const json=JSON.stringify(formArguments())
+        return "tomaccoctl call "+selectedOperation.name+" '"+json.replace(/'/g,"'\\''")+"'"
+    }
+    function copyCommand() {
+        try { Studio.copy(commandLine()); status=qsTr("Command copied"); failed=false }
+        catch(error) { status=error.message; failed=true }
     }
     onOpenedChanged: {
         if(!opened)return
@@ -192,8 +257,9 @@ Rectangle {
             delete panel.pending[id]
             if(operation==="project.run" || operation==="project.execute")panel.projectRequestPending=false
             if(!response.ok) {
-                if(!context.quiet) { panel.failed=true; panel.status=response.error.message+(response.error.remedy ? " · "+response.error.remedy : ""); panel.resultText=JSON.stringify(response,null,2) }
-                if(response.error.code==="workspace_busy" && response.error.details.job){panel.selectJob(response.error.details.job);panel.status=qsTr("A job is already running for this project. Use the running session or end it first.")}
+                if(!context.quiet) { panel.failed=true; panel.status=response.error.message+(response.error.remedy ? " · "+response.error.remedy : ""); panel.resultText=JSON.stringify(response,null,2)
+                    panel.failure={message:response.error.message,remedy:response.error.remedy || "",code:response.error.code || "",operation:operation,args:JSON.parse(context.signature)} }
+                if(response.error.code==="workspace_busy" && response.error.details.job){panel.selectJob(response.error.details.job);panel.failure=({});panel.status=qsTr("A job is already running for this project. Use the running session or end it first.")}
                 return
             }
             let value=response.result
@@ -211,6 +277,8 @@ Rectangle {
                 panel.project=value; Studio.rememberProject(value.path); if(panel.revealPath) { fileWorkspace.openFile(panel.revealPath,panel.revealLine);panel.revealPath="" } panel.status=value.name+" · "+value.kinds.join(" / ")
                 if(value.configuration.applicationId) bundleId.text=value.configuration.applicationId
                 if(value.platforms.length) platform.currentIndex=Math.max(0,["android","ios","web","linux"].indexOf(value.platforms[0]))
+                panel.applyBuildPreferences(value.path)
+                panel.projectPreferencesApplied(value.path)
             } else if(operation==="device.list") {
                 panel.devices=value.devices
                 if(!context.quiet && !value.devices.length) panel.status=value.diagnostics.length ? value.diagnostics.map(x=>x.message).join(" · ") : qsTr("No devices connected. Enable USB debugging or trust on the device.")
@@ -248,7 +316,19 @@ Rectangle {
             visible: panel.failed || panel.running
             color: panel.failed ? Theme.dangerSurface : Theme.elevated
             Rectangle { width: Theme.gapXs; height: parent.height; color: panel.failed ? Theme.danger : Theme.accent }
-            Text { id: feedback; anchors.fill: parent; anchors.margins: Theme.gapSm; anchors.leftMargin: Theme.gapLg; text: panel.status; color: panel.failed ? Theme.danger : Theme.text; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall }
+            // A failure says what went wrong, what to do about it, and offers to try again.
+            ColumnLayout {
+                id: feedback; objectName: "workspaceFeedback"
+                anchors { left: parent.left; right: parent.right; top: parent.top; margins: Theme.gapSm; leftMargin: Theme.gapLg }
+                spacing: Theme.gapXs
+                RowLayout {
+                    Layout.fillWidth: true; spacing: Theme.gapSm
+                    Text { objectName: "workspaceFeedbackText"; Layout.fillWidth: true; text: panel.failure.operation ? panel.failure.message : panel.status; color: panel.failed ? Theme.danger : Theme.text; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall; font.weight: panel.failure.operation ? Font.Bold : Font.Normal }
+                    StudioButton { objectName: "workspaceRetry"; visible: panel.failed && !!panel.failure.operation; text: qsTr("Try again"); iconName: "refresh"; onClicked: panel.retry() }
+                    StudioButton { visible: panel.failed; iconName: "close"; quiet: true; text: qsTr("Dismiss"); displayText: ""; tip: text; onClicked: panel.failed=false }
+                }
+                Text { objectName: "workspaceRemedy"; Layout.fillWidth: true; visible: !!panel.failure.remedy; text: qsTr("What to do: %1").arg(panel.failure.remedy || ""); color: Theme.text; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall }
+            }
         }
         StackLayout {
             currentIndex: panel.currentIndex; Layout.fillWidth: true; Layout.fillHeight: true
@@ -278,15 +358,15 @@ Rectangle {
                         GridLayout {Layout.fillWidth:true;columns:width<340?1:(platform.currentText==="android" || platform.currentText==="ios"?3:2);columnSpacing:Theme.gapSm;rowSpacing:Theme.gapSm
                             ColumnLayout {Layout.fillWidth:true;Layout.preferredWidth:1;spacing:Theme.gapXs
                                 StudioSection {text:qsTr("Platform")}
-                                StudioComboBox {id:platform;model:["android","ios","web","linux"];Layout.fillWidth:true;implicitWidth:80;displayText:({android:"Android",ios:"iOS",web:"Web",linux:"Linux"})[currentText] || currentText}
+                                StudioComboBox {id:platform;objectName:"buildPlatform";model:["android","ios","web","linux"];Layout.fillWidth:true;implicitWidth:80;onActivated:panel.rememberForProject({buildPlatform:currentText});displayText:({android:"Android",ios:"iOS",web:"Web",linux:"Linux"})[currentText] || currentText}
                             }
                             ColumnLayout {Layout.fillWidth:true;Layout.preferredWidth:1;spacing:Theme.gapXs
                                 StudioSection {text:qsTr("Configuration")}
-                                StudioComboBox {id:configuration;model:["debug","release"];Layout.fillWidth:true;implicitWidth:80;displayText:currentText==="debug"?"Debug":"Release"}
+                                StudioComboBox {id:configuration;objectName:"buildConfiguration";model:["debug","release"];Layout.fillWidth:true;implicitWidth:80;onActivated:panel.rememberForProject({configuration:currentText});displayText:currentText==="debug"?"Debug":"Release"}
                             }
                             ColumnLayout {visible:platform.currentText==="android" || platform.currentText==="ios";Layout.fillWidth:true;Layout.preferredWidth:1;spacing:Theme.gapXs
                                 StudioSection {text:qsTr("Package format")}
-                                StudioComboBox {id:format;Layout.fillWidth:true;implicitWidth:80;model:platform.currentText==="ios"?["ipa"]:platform.currentText==="android"?["apk","aab"]:["apk"];displayText:currentText.toUpperCase()}
+                                StudioComboBox {id:format;objectName:"buildFormat";Layout.fillWidth:true;implicitWidth:80;onActivated:panel.rememberForProject({format:currentText});model:platform.currentText==="ios"?["ipa"]:platform.currentText==="android"?["apk","aab"]:["apk"];displayText:currentText.toUpperCase()}
                             }
                         }
                         StudioCheckBox {id:signBuild;visible:platform.currentText==="ios";text:qsTr("Sign build");checked:true}
@@ -303,7 +383,7 @@ Rectangle {
                         visible:!!panel.project.path
                         title:qsTr("Run on device")
                         actions:[StudioButton {text:qsTr("Manage devices");quiet:true;onClicked:panel.showTab("devices")}]
-                        StudioComboBox {Layout.fillWidth:true;model:panel.devices;textRole:"name";valueRole:"id";currentIndex:panel.devices.findIndex(x=>x.id===panel.selectedDevice);displayText:currentIndex>=0?currentText:qsTr("Choose a smartphone or emulator");onActivated:{panel.selectedDevice=currentValue;panel.selectedPlatform=panel.devices[currentIndex].platform}}
+                        StudioComboBox {Layout.fillWidth:true;model:panel.devices;textRole:"name";valueRole:"id";currentIndex:panel.devices.findIndex(x=>x.id===panel.selectedDevice);displayText:currentIndex>=0?currentText:qsTr("Choose a smartphone or emulator");onActivated:{panel.selectedDevice=currentValue;panel.selectedPlatform=panel.devices[currentIndex].platform;panel.rememberForProject({device:panel.selectedDevice,platform:panel.selectedPlatform})}}
                         RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
                             StudioTextField {id:bundleId;Layout.fillWidth:true;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;placeholderText:qsTr("Application ID, e.g. com.example.app")}
                             StudioButton {text:panel.projectJob.id?qsTr("Job running"):qsTr("Build & run");iconName:"play";accent:true;enabled:!!panel.selectedDevice && !!panel.project.path && !panel.projectRequestPending && !panel.projectJob.id;onClicked:panel.request("project.run",{path:projectPath.text,platform:panel.selectedPlatform,device:panel.selectedDevice,bundle_id:bundleId.text,configuration:configuration.currentText})}
@@ -496,7 +576,7 @@ Rectangle {
                 spacing: 0
                 ColumnLayout {
                     Layout.preferredWidth: panel.width<760?216:296; Layout.maximumWidth: 296; Layout.fillHeight: true; spacing: 0
-                    StudioTextField { id: actionFilter; Layout.fillWidth: true; Layout.margins: Theme.gapSm; placeholderText: qsTr("Search tools…") }
+                    StudioTextField { id: actionFilter; objectName: "toolSearch"; Layout.fillWidth: true; Layout.margins: Theme.gapSm; placeholderText: qsTr("Search tools…") }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
                     ListView {
                         id: toolList; objectName: "toolList"
@@ -522,6 +602,24 @@ Rectangle {
                             onClicked: panel.chooseOperation(modelData)
                         }
                         ScrollBar.vertical: StudioScrollBar {}
+                        // No tools: the control program has not answered, and says why.
+                        StudioEmptyState {
+                            objectName: "toolsUnavailable"; actionName: "toolsRetry"
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.margins: Theme.gapLg
+                            visible: Agent.operations.length===0
+                            showMark: false
+                            title: qsTr("No tools yet.")
+                            body: Agent.cliError || qsTr("The control program has not listed its tools yet.")
+                            actionText: qsTr("Try again"); actionIcon: "refresh"
+                            onAction: Agent.request("schema")
+                        }
+                        Text {
+                            objectName: "toolsNoMatch"
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.margins: Theme.gapLg
+                            visible: Agent.operations.length>0 && toolList.count===0
+                            text: qsTr("No tool matches “%1”.").arg(actionFilter.text)
+                            color: Theme.muted; font.pixelSize: Theme.fontSmall; wrapMode: Text.WordWrap
+                        }
                     }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
                     StudioButton { text: qsTr("Copy MCP configuration"); displayText: panel.width<760?"MCP":text; tip: text; iconName: "copy"; quiet: true; Layout.fillWidth: true; Layout.margins: Theme.gapSm; onClicked: Studio.copy(JSON.stringify({mcpServers:{"tomacco":{command:Agent.cliPath,args:["mcp"]}}},null,2)) }
@@ -541,7 +639,8 @@ Rectangle {
                                     required property string modelData
                                     property var spec: panel.selectedOperation.inputSchema.properties[modelData]
                                     Layout.fillWidth: true; spacing: Theme.gapXs
-                                    Text { text: field.modelData+(panel.selectedOperation.inputSchema.required.indexOf(field.modelData)>=0?" *":""); color: Theme.muted; font.family: Theme.mono; font.pixelSize: Theme.fontSmall }
+                                    Text { text: field.modelData+(panel.selectedOperation.inputSchema.required.indexOf(field.modelData)>=0?" *":"")+(panel.fieldLimits(field.spec)?"  ·  "+panel.fieldLimits(field.spec):""); color: Theme.muted; font.family: Theme.mono; font.pixelSize: Theme.fontSmall }
+                                    Text { objectName: "toolFieldHelp-"+field.modelData; Layout.fillWidth: true; visible: !!field.spec.description; text: field.spec.description || ""; color: Theme.faint; font.pixelSize: Theme.fontSmall; wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight }
                                     Loader {
                                         Layout.fillWidth: true
                                         sourceComponent: field.spec.type==="boolean"?booleanField:field.spec.enum?enumField:textField
@@ -553,7 +652,20 @@ Rectangle {
                             }
                         }
                     }
-                    StudioButton { text: qsTr("Run"); iconName: "play"; accent: true; visible: panel.selectedOperation!==null; onClicked: panel.submitForm() }
+                    Rectangle {
+                        objectName: "toolConfirm"; Layout.fillWidth: true; visible: panel.confirmingRun
+                        implicitHeight: confirmRow.implicitHeight+Theme.gapSm*2; color: Theme.dangerSurface
+                        Rectangle { width: Theme.gapXs; height: parent.height; color: Theme.danger }
+                        RowLayout { id: confirmRow; anchors.fill: parent; anchors.margins: Theme.gapSm; anchors.leftMargin: Theme.gapLg; spacing: Theme.gapSm
+                            Text { Layout.fillWidth: true; text: qsTr("This tool changes or removes something and cannot be undone. Run it?"); color: Theme.danger; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall }
+                            StudioButton { objectName: "toolConfirmRun"; text: qsTr("Run anyway"); danger: true; onClicked: panel.submitForm(true) }
+                            StudioButton { text: qsTr("Cancel"); quiet: true; onClicked: panel.confirmingRun=false }
+                        }
+                    }
+                    RowLayout { visible: panel.selectedOperation!==null; spacing: Theme.gapSm
+                        StudioButton { objectName: "toolRun"; text: qsTr("Run"); iconName: "play"; accent: true; tip: panel.destructiveOperation?qsTr("Asks before it runs: this tool changes or removes something"):""; onClicked: panel.submitForm() }
+                        StudioButton { objectName: "toolCopyCommand"; text: qsTr("Copy as command"); iconName: "copy"; quiet: true; tip: qsTr("Copy this call as a tomaccoctl command for a terminal or a script"); onClicked: panel.copyCommand() }
+                    }
                     StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 80; clip: true; placeholderText: qsTr("The result shows up here."); accessibleName: qsTr("Result"); text: panel.resultText }
                 }
             }

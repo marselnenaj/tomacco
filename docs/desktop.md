@@ -27,6 +27,13 @@ the command palette (Ctrl+K) finds all of them as **Open recent project**
 A project folder dragged from the file manager onto the window opens as the
 project and shows its overview; a single file or an `.app` bundle does not.
 
+Each project keeps its own choices on this computer: the device it ran on last with its platform
+and Apple target, and the platform, configuration and format of its build under **Project**. When the
+project opens again they are chosen again; a device that is not connected yet is chosen as soon as it
+is, unless another device is live or you pick one first. Choosing a device, running the app or
+changing a build choice stores it. The 20 most recently used projects are kept; the settings export
+leaves these choices out, as they name folders.
+
 ### First start
 
 On the very first start the desktop shows **Welcome to Tomacco** (*Willkommen bei Tomacco*). It runs `doctor`
@@ -127,6 +134,15 @@ the size itself. `--capture` and `--smoke-test` keep the default size.
 | Save the current source file | Ctrl+S |
 | Save a screenshot of the live device and copy it to the clipboard | Ctrl+Shift+S |
 
+The command palette (Ctrl+K) matches loosely: the letters typed have to appear in
+order in a name, so `opproj` finds **Open project** and `dev log` finds the device
+logs operation. Matches at the start of words, letters in a row and whole words rank
+higher, the matched letters are marked, and letters scattered across a long name do
+not count. The eight entries chosen last come first in an empty palette, marked
+**Recent** (*Zuletzt*), and rank higher when they match. Views and commands show
+their shortcut on the right; ↑ ↓ select, PgUp and PgDn move eight rows, Enter or a
+click opens and Esc closes.
+
 Tab moves through the title bar, the rail, the device bar and the page, in that
 order; the control with keyboard focus has a two-pixel ring. The lists of jobs,
 agent tools and project files take the keyboard too: Tab into the list, the
@@ -141,15 +157,41 @@ the device window's rail (Ctrl+Shift+S there too), are saved in `~/Pictures/Toma
 (or the configured Pictures directory) and put on the clipboard as an image.
 The virtual iOS device's **Screenshot** button copies its capture the same way.
 
+### When something fails
+
+A request that fails on a workspace view (Project, Devices, Builds & jobs, Agents &
+tools, Debugger, UI tests, Performance, Files or Release) shows a red band above the
+page with what went wrong and, when the control plane names one, **What to do:**
+(*Was zu tun ist:*) with its remedy. **Try again** (*Erneut versuchen*) sends the same
+request once more; the close button hides the band. The notice line under the live
+device does the same for the device view's requests, and the live log under Devices
+and the log beside the device offer **Try again** when their log cannot be read.
+
+Views without anything to show say what is missing and offer the next step: **Files**
+without a project offers **Choose folder**; **Agents & tools** says when the control
+program has listed no tools, with its reason and **Try again**, and when the search
+finds no tool; **Builds & jobs** says when no job runs or failed under its filters.
+
 ## Activity
 
 The panel beside the device (Ctrl+J) shows the device's state in large type, the
-jobs that are running with the newest one's log, the calls agents make to this
-window through its preview socket, and recent jobs. Jobs come from every client.
-Calls an agent makes directly to `tomaccoctl` leave no record unless they start a
-job, so they do not appear. The panel closes by itself below 1120 px wide and
-opens on request. The status line at the bottom always names the device's state
-and how many jobs run.
+jobs that are running with the newest one's log, what agents called under **Agent
+activity** (*Agenten-Aktivität*), and recent jobs. Jobs come from every client.
+The panel closes by itself below 1120 px wide and opens on request. The status
+line at the bottom always names the device's state and how many jobs run.
+
+**Agent activity** lists, newest first, the calls agents make to this window through
+its preview socket and, when you name an agent's session log, every operation the
+agent called: its name, the time, how long it took and whether it worked, with the
+error's message when it did not. Repeats of the same call to the window fold into one
+line with the latest result. **All** and **Failed** (*Alle*, *Fehler*) and a search
+field narrow the list; a call that started a job opens it under **Builds & jobs**.
+To name the session log, enter its absolute path under **Agent activity** in
+**Settings** (Ctrl+,) and set `TOMACCO_SESSION_LOG` to the same file in the `env` of
+your agent's MCP server entry (see [the session log](agents.md#session-log-and-replay)); **Copy MCP
+configuration** in the panel then includes it. A desktop started with
+`TOMACCO_SESSION_LOG` set uses that file. Without a session log, calls an agent
+makes directly to `tomaccoctl` leave no record unless they start a job.
 
 Repeated app/build requests reuse the active job, and each device uses one
 native display session. A running Flutter app exposes **Hot Reload** and a **Stop**
@@ -200,6 +242,19 @@ the notification to the desktop's notification service over D-Bus
 (`org.freedesktop.Notifications`); a build without Qt D-Bus sends none. On
 Omarchy the panel can notify about builds too; turn one of them off if you get
 both.
+
+## Agents and tools
+
+**Agents & tools** (Ctrl+0, *Agenten & Werkzeuge*) lists every operation as a form, and the command palette
+(Ctrl+K) opens any of them by name. The form is built from the operation's schema: a check box for a
+yes/no value, a choice for a fixed list, a text field otherwise, with defaults filled in and required
+fields marked `*`. Each field shows its description and, for a number, its limits, such as `1 – 3600`;
+a value that is no number or lies outside the limits is refused before anything runs. **Run**
+(*Ausführen*) shows the JSON result, or follows the job it starts under **Builds & jobs**. An operation
+whose schema marks it as destructive, such as `job.cancel`, `files.write` or `storage.prune`, asks once
+more before it runs (**Run anyway**, *Trotzdem ausführen*). **Copy as command** (*Als Befehl kopieren*)
+copies the same call for a terminal or a script, for example
+`tomaccoctl call device.logs '{"platform":"android","device":"emulator-5554","duration":60}'`.
 
 ## Installing an app by dropping it
 
@@ -260,6 +315,16 @@ example `250, 1500  ·  0.250, 0.750`. `runtime.input` takes the fractions as it
 coordinates. Presses still reach the device as before. The choice is
 stored. It applies to the Android and iPhone picture, docked or in its own
 window; the virtual iOS device has its own touch mark and no coordinates.
+
+## Log beside the device
+
+**Log beside the device** in the tool strip beside a live device, or **Show the log beside the device**
+in the command palette (*Log neben dem Gerät zeigen*, found as "split view" too), opens a log to the right
+of the device view. **Device log** (*Geräte-Log*) is the live device's own log, with the same app, level
+and search controls as the live log under Devices; **Job log** (*Auftrags-Log*) follows the app's
+launch while it runs, otherwise the newest running job, otherwise the newest job, and opens it under
+**Builds & jobs** on request. Drag the handle between the device and the log to resize it. Whether the
+log is shown, which log and its width are kept across starts.
 
 ## Screen recording
 

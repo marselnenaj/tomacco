@@ -16,10 +16,6 @@
         <translation>Diesen Auftrag beenden</translation>
     </message>
     <message>
-        <source>Agent calls to this window</source>
-        <translation>Agenten-Aufrufe an dieses Fenster</translation>
-    </message>
-    <message>
         <source>Recent</source>
         <translation>Zuletzt</translation>
     </message>
@@ -54,6 +50,50 @@
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
         <translation>Gerade läuft nichts. Builds und Agenten-Aufträge erscheinen hier, sobald sie starten.</translation>
+    </message>
+    <message>
+        <source>%1 ms</source>
+        <translation>%1 ms</translation>
+    </message>
+    <message>
+        <source>%1 s</source>
+        <translation>%1 s</translation>
+    </message>
+    <message>
+        <source>Agent activity</source>
+        <translation>Agenten-Aktivität</translation>
+    </message>
+    <message>
+        <source>All</source>
+        <translation>Alle</translation>
+    </message>
+    <message>
+        <source>Failed</source>
+        <translation>Fehler</translation>
+    </message>
+    <message>
+        <source>Find an operation</source>
+        <translation>Operation suchen</translation>
+    </message>
+    <message>
+        <source>No call failed.</source>
+        <translation>Kein Aufruf ist fehlgeschlagen.</translation>
+    </message>
+    <message>
+        <source>No call matches.</source>
+        <translation>Kein Aufruf passt.</translation>
+    </message>
+    <message>
+        <source>failed</source>
+        <translation>fehlgeschlagen</translation>
+    </message>
+    <message>
+        <source>running</source>
+        <translation>läuft</translation>
+    </message>
+    <message>
+        <source>done</source>
+        <translation>erledigt</translation>
     </message>
 </context>
 <context>
@@ -463,6 +503,14 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>The recordings folder could not be created.</source>
         <translation>Der Ordner für Aufnahmen konnte nicht angelegt werden.</translation>
     </message>
+    <message>
+        <source>The session log must be an absolute path.</source>
+        <translation>Das Sitzungsprotokoll braucht einen absoluten Pfad.</translation>
+    </message>
+    <message>
+        <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
+        <translation>Noch kein Sitzungsprotokoll unter %1. Es entsteht mit dem ersten Aufruf des Agenten.</translation>
+    </message>
 </context>
 <context>
     <name>Colors</name>
@@ -610,16 +658,20 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Ansicht</translation>
     </message>
     <message>
-        <source>↑ ↓  Select     ↵  Open     Esc  Close</source>
-        <translation>↑ ↓  Auswählen     ↵  Öffnen     Esc  Schließen</translation>
-    </message>
-    <message>
         <source>Search views, commands or tools…</source>
         <translation>Ansichten, Befehle oder Tools suchen…</translation>
     </message>
     <message>
         <source>Ctrl</source>
         <translation>Strg</translation>
+    </message>
+    <message>
+        <source>Recent</source>
+        <translation>Zuletzt</translation>
+    </message>
+    <message>
+        <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
+        <translation>↑ ↓  Auswählen     Bild↑ Bild↓  Seite     ↵  Öffnen     Esc  Schließen</translation>
     </message>
 </context>
 <context>
@@ -1111,6 +1163,10 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
     <message>
         <source>Project files</source>
         <translation>Projektdateien</translation>
+    </message>
+    <message>
+        <source>Choose folder</source>
+        <translation>Ordner wählen</translation>
     </message>
 </context>
 <context>
@@ -3490,6 +3546,46 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Record the screen to a video, at most 3 minutes</source>
         <translation>Bildschirm als Video aufnehmen, höchstens 3 Minuten</translation>
     </message>
+    <message>
+        <source>Hide the log beside the device</source>
+        <translation>Log neben dem Gerät ausblenden</translation>
+    </message>
+    <message>
+        <source>Show the log beside the device</source>
+        <translation>Log neben dem Gerät zeigen</translation>
+    </message>
+    <message>
+        <source>Split view</source>
+        <translation>Geteilte Ansicht</translation>
+    </message>
+    <message>
+        <source>Log beside the device</source>
+        <translation>Log neben dem Gerät</translation>
+    </message>
+    <message>
+        <source>Show the device&apos;s or a job&apos;s log beside the device</source>
+        <translation>Das Log des Geräts oder eines Auftrags neben dem Gerät zeigen</translation>
+    </message>
+    <message>
+        <source>Agent activity</source>
+        <translation>Agenten-Aktivität</translation>
+    </message>
+    <message>
+        <source>Session log, e.g. %1</source>
+        <translation>Sitzungsprotokoll, z. B. %1</translation>
+    </message>
+    <message>
+        <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
+        <translation>Setze TOMACCO_SESSION_LOG in den MCP-Einstellungen deines Agenten auf diese Datei, dann listet die Aktivität jede Operation, die er aufruft, mit Dauer und Ergebnis.</translation>
+    </message>
+    <message>
+        <source>Try again</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <source>What to do: %1</source>
+        <translation>Was zu tun ist: %1</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4525,6 +4621,53 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     </message>
 </context>
 <context>
+    <name>StageLogPane</name>
+    <message>
+        <source>Device log</source>
+        <translation>Geräte-Log</translation>
+    </message>
+    <message>
+        <source>Job log</source>
+        <translation>Auftrags-Log</translation>
+    </message>
+    <message>
+        <source>Open under Builds &amp; jobs</source>
+        <translation>Unter Builds &amp; Aufträge öffnen</translation>
+    </message>
+    <message>
+        <source>Hide the log</source>
+        <translation>Log ausblenden</translation>
+    </message>
+    <message>
+        <source>No device is live.</source>
+        <translation>Kein Gerät ist live.</translation>
+    </message>
+    <message>
+        <source>Connect a device and its log runs here, beside its screen.</source>
+        <translation>Verbinde ein Gerät, dann läuft sein Log hier neben seinem Bildschirm.</translation>
+    </message>
+    <message>
+        <source>No job yet.</source>
+        <translation>Noch kein Auftrag.</translation>
+    </message>
+    <message>
+        <source>Run your app or start a build, and its log follows here.</source>
+        <translation>Starte deine App oder einen Build, dann folgt sein Log hier.</translation>
+    </message>
+    <message>
+        <source>Waiting for log lines…</source>
+        <translation>Warte auf Log-Zeilen …</translation>
+    </message>
+    <message>
+        <source>Try again</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <source>App launch</source>
+        <translation>App-Start</translation>
+    </message>
+</context>
+<context>
     <name>StudioDialog</name>
     <message>
         <source>Apply</source>
@@ -5117,6 +5260,62 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Live log</source>
         <translation>Live-Log</translation>
     </message>
+    <message>
+        <source>%1 must be a number</source>
+        <translation>%1 muss eine Zahl sein</translation>
+    </message>
+    <message>
+        <source>%1 is out of range: %2</source>
+        <translation>%1 liegt außerhalb des Bereichs: %2</translation>
+    </message>
+    <message>
+        <source>Command copied</source>
+        <translation>Befehl kopiert</translation>
+    </message>
+    <message>
+        <source>This tool changes or removes something and cannot be undone. Run it?</source>
+        <translation>Dieses Werkzeug ändert oder entfernt etwas und lässt sich nicht rückgängig machen. Ausführen?</translation>
+    </message>
+    <message>
+        <source>Run anyway</source>
+        <translation>Trotzdem ausführen</translation>
+    </message>
+    <message>
+        <source>Asks before it runs: this tool changes or removes something</source>
+        <translation>Fragt vor dem Ausführen: Dieses Werkzeug ändert oder entfernt etwas</translation>
+    </message>
+    <message>
+        <source>Copy as command</source>
+        <translation>Als Befehl kopieren</translation>
+    </message>
+    <message>
+        <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
+        <translation>Diesen Aufruf als tomaccoctl-Befehl für ein Terminal oder ein Skript kopieren</translation>
+    </message>
+    <message>
+        <source>Try again</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <source>Dismiss</source>
+        <translation>Ausblenden</translation>
+    </message>
+    <message>
+        <source>What to do: %1</source>
+        <translation>Was zu tun ist: %1</translation>
+    </message>
+    <message>
+        <source>No tools yet.</source>
+        <translation>Noch keine Werkzeuge.</translation>
+    </message>
+    <message>
+        <source>The control program has not listed its tools yet.</source>
+        <translation>Das Steuerprogramm hat seine Werkzeuge noch nicht aufgelistet.</translation>
+    </message>
+    <message>
+        <source>No tool matches “%1”.</source>
+        <translation>Kein Werkzeug passt zu „%1“.</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5559,6 +5758,10 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     <message>
         <source>Waiting for log lines…</source>
         <translation>Warte auf Log-Zeilen …</translation>
+    </message>
+    <message>
+        <source>Try again</source>
+        <translation>Erneut versuchen</translation>
     </message>
 </context>
 </TS>

@@ -244,6 +244,96 @@ private slots:
         QVERIFY(palette->property("visible").toBool());
         QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!palette->property("visible").toBool());
     }
+    void command_palette_matches_loosely_ranks_and_puts_recent_first() {
+        QSettings().remove("palette/recent");
+        auto *palette=object("commandPalette");QVERIFY(palette);
+        palette->setProperty("recent",QVariantList{});
+        const auto results=[&]{return palette->property("results").value<QJSValue>();};
+        const auto title=[&](int index){return results().property(index).property("title").toString();};
+        const auto key=[&](int index){return results().property(index).property("key").toString();};
+        QVERIFY(QMetaObject::invokeMethod(palette,"open"));
+        QTRY_VERIFY(item("commandSearch") && item("commandSearch")->hasActiveFocus());
+        // Letters in order, from word starts: "opproj" is Open project; a whole word ranks above loose letters.
+        type("opproj");
+        QTRY_COMPARE(title(0),QString("Open project"));
+        QTRY_VERIFY(item("commandTitle")->property("text").toString().contains("<b>"));
+        item("commandSearch")->setProperty("text","settings");
+        QTRY_COMPARE(title(0),QString("Settings"));
+        // Words in any field, each of them: "copy context" and "context copy".
+        item("commandSearch")->setProperty("text","context copy");
+        QTRY_COMPARE(title(0),QString("Copy context"));
+        item("commandSearch")->setProperty("text","dev log");
+        QTRY_VERIFY(results().property("length").toInt()>0);
+        QVERIFY([&]{for(int i=0;i<5;++i)if(key(i)=="operation:device.logs")return true;return false;}());
+        // Scattered letters are no match.
+        item("commandSearch")->setProperty("text","zqxj");
+        QTRY_COMPARE(results().property("length").toInt(),0);
+        // Page down moves eight rows at a time.
+        item("commandSearch")->setProperty("text","");
+        QTRY_VERIFY(results().property("length").toInt()>20);
+        QTest::keyClick(window,Qt::Key_PageDown);QCOMPARE(item("commandResults")->property("currentIndex").toInt(),8);
+        QTest::keyClick(window,Qt::Key_PageUp);QCOMPARE(item("commandResults")->property("currentIndex").toInt(),0);
+        // What was chosen comes first next time, marked, and ranks higher when it matches.
+        item("commandSearch")->setProperty("text","keyboard shortcuts");
+        QTRY_COMPARE(title(0),QString("Keyboard shortcuts"));
+        QTest::keyClick(window,Qt::Key_Return);
+        auto *shortcuts=object("shortcutsDialog");
+        if(shortcuts)QTRY_VERIFY(shortcuts->property("visible").toBool());
+        if(shortcuts)QVERIFY(QMetaObject::invokeMethod(shortcuts,"close"));
+        QVERIFY(QSettings().value("palette/recent").toString().contains("command:shortcuts"));
+        QVERIFY(QMetaObject::invokeMethod(palette,"open"));
+        QTRY_VERIFY(palette->property("visible").toBool());
+        QTRY_COMPARE(key(0),QString("command:shortcuts"));
+        QVERIFY(results().property(0).property("recent").toBool());
+        QTRY_VERIFY(item("commandRecent") && item("commandRecent")->isVisible());
+        capture("command-palette-recent");
+        // A click chooses a row too.
+        clickItem("commandRecent");
+        QTRY_VERIFY(!palette->property("visible").toBool());
+        if(shortcuts){QTRY_VERIFY(shortcuts->property("visible").toBool());QVERIFY(QMetaObject::invokeMethod(shortcuts,"close"));}
+        QSettings().remove("palette/recent");palette->setProperty("recent",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void tool_forms_explain_fields_check_numbers_ask_before_destructive_calls_and_copy_the_command() {
+        open("tools");window->resize(1380,970);QTest::qWait(50);
+        workspace->setProperty("pending",QVariantMap{});
+        // Each field says what it takes and its limits; a number outside them is refused before anything runs.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showAction",Q_ARG(QVariant,"device.logs")));
+        QTRY_VERIFY(item("toolFieldHelp-device") && item("toolFieldHelp-device")->isVisible());
+        QCOMPARE(item("toolFieldHelp-device")->property("text").toString(),QString("Device serial / UDID from device.list"));
+        QVERIFY(!item("toolFieldHelp-filter")->isVisible());
+        const QVariantMap range{{"minimum",1},{"maximum",3600}};
+        QVariant limits;QVERIFY(QMetaObject::invokeMethod(workspace,"fieldLimits",Q_RETURN_ARG(QVariant,limits),Q_ARG(QVariant,range)));
+        QCOMPARE(limits.toString(),QString("1 – 3600"));
+        workspace->setProperty("formValues",QVariantMap{{"platform","android"},{"device","emulator-5554"},{"duration","soon"}});
+        QVERIFY(QMetaObject::invokeMethod(workspace,"submitForm",Q_ARG(QVariant,false)));
+        QVERIFY(workspace->property("failed").toBool());QCOMPARE(workspace->property("status").toString(),QString("duration must be a number"));
+        workspace->setProperty("formValues",QVariantMap{{"platform","android"},{"device","emulator-5554"},{"duration","7200"}});
+        QVERIFY(QMetaObject::invokeMethod(workspace,"submitForm",Q_ARG(QVariant,false)));
+        QCOMPARE(workspace->property("status").toString(),QString("duration is out of range: 1 – 3600"));
+        QVERIFY(mapOf(workspace->property("pending")).isEmpty());
+        // A destructive tool asks first; the call can be copied for a terminal, quotes escaped.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showAction",Q_ARG(QVariant,"job.cancel")));
+        workspace->setProperty("formValues",QVariantMap{{"job_id","it's-00000000000000000000000000000000"}});
+        QVariant line;QVERIFY(QMetaObject::invokeMethod(workspace,"commandLine",Q_RETURN_ARG(QVariant,line)));
+        QCOMPARE(line.toString(),QString(R"(tomaccoctl call job.cancel '{"job_id":"it'\''s-00000000000000000000000000000000"}')"));
+        QVERIFY(QMetaObject::invokeMethod(item("toolCopyCommand"),"clicked"));
+        QCOMPARE(QGuiApplication::clipboard()->text(),line.toString());
+        QVERIFY(QMetaObject::invokeMethod(item("toolRun"),"clicked"));
+        QTRY_VERIFY(item("toolConfirm")->isVisible());
+        QVERIFY(mapOf(workspace->property("pending")).isEmpty());
+        capture("tool-confirm");
+        QVERIFY(QMetaObject::invokeMethod(item("toolConfirmRun"),"clicked"));
+        QVERIFY(!item("toolConfirm")->isVisible());
+        const auto pending=mapOf(workspace->property("pending"));
+        QCOMPARE(pending.size(),1);QCOMPARE(pending.first().toMap().value("operation").toString(),QString("job.cancel"));
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty(),patient(10000));
+        // A tool that changes nothing runs at once.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showAction",Q_ARG(QVariant,"doctor")));
+        QVERIFY(!workspace->property("destructiveOperation").toBool());
+        workspace->setProperty("status",QString());workspace->setProperty("failed",false);workspace->setProperty("resultText",QString("{}"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void file_edits_survive_navigation_and_save() {
         open("files","pubspec.yaml");
         auto *editor=item("sourceEditor");QVERIFY(editor);
@@ -832,6 +922,7 @@ private slots:
         // An app that is not installed is said, not followed.
         app->setProperty("text","dev.missing.app");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
         QTRY_COMPARE_WITH_TIMEOUT(pane->property("error").toString(),QString("dev.missing.app is not installed"),patient(10000));
+        QTRY_VERIFY(item("deviceLogRetry") && item("deviceLogRetry")->isVisible());
         QVERIFY(pane->property("job").toString().isEmpty());
         // Closing the pane ends its capture.
         app->setProperty("text","");QVERIFY(QMetaObject::invokeMethod(app,"editingFinished"));
@@ -2625,6 +2716,57 @@ for line in sys.stdin:
         view->setProperty("notice",QString());view->setProperty("failed",false);view->setProperty("requests",QVariantMap{});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void a_project_reopens_with_its_last_device_and_build_choices() {
+        // The build choices and the device a project used last are stored per project and chosen
+        // again when it opens; a device that is not connected yet is chosen once it is.
+        open("project");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        const auto path=directory.filePath("project");
+        QSettings().remove("projects/preferences");workspace->setProperty("projectPreferences",QVariantMap{});
+        QVERIFY(QMetaObject::invokeMethod(view,"choosePlatform",Q_ARG(QVariant,"android")));
+        auto *configuration=item("buildConfiguration");auto *format=item("buildFormat");auto *buildPlatform=item("buildPlatform");
+        QVERIFY(configuration && format && buildPlatform);
+        buildPlatform->setProperty("currentIndex",0);QVERIFY(QMetaObject::invokeMethod(buildPlatform,"activated",Q_ARG(int,0)));
+        configuration->setProperty("currentIndex",1);QVERIFY(QMetaObject::invokeMethod(configuration,"activated",Q_ARG(int,1)));
+        QTRY_COMPARE(format->property("count").toInt(),2);
+        format->setProperty("currentIndex",1);QVERIFY(QMetaObject::invokeMethod(format,"activated",Q_ARG(int,1)));
+        const QVariantList devices{QVariantMap{{"id","emulator-5554"},{"name","Pixel"},{"platform","android"},{"kind","emulator"}},
+                                   QVariantMap{{"id","emulator-5556"},{"name","Tablet"},{"platform","android"},{"kind","emulator"}}};
+        view->setProperty("targets",devices);
+        view->setProperty("target",QString("emulator-5556"));QVERIFY(QMetaObject::invokeMethod(view,"rememberTarget"));
+        const auto saved=[&]{return QJsonDocument::fromJson(QSettings().value("projects/preferences").toString().toUtf8()).object().value(path).toObject();};
+        QCOMPARE(saved().value("configuration").toString(),QString("release"));
+        QCOMPARE(saved().value("format").toString(),QString("aab"));
+        QCOMPARE(saved().value("buildPlatform").toString(),QString("android"));
+        QCOMPARE(saved().value("device").toString(),QString("emulator-5556"));
+        QCOMPARE(saved().value("platform").toString(),QString("android"));
+        // Opened again, the project gets them back.
+        configuration->setProperty("currentIndex",0);format->setProperty("currentIndex",0);
+        view->setProperty("target",QString("emulator-5554"));
+        QVERIFY(QMetaObject::invokeMethod(workspace,"openProject",Q_ARG(QVariant,path)));
+        QTRY_COMPARE_WITH_TIMEOUT(configuration->property("currentText").toString(),QString("release"),patient(10000));
+        QTRY_COMPARE(format->property("currentText").toString(),QString("aab"));
+        QTRY_COMPARE(view->property("target").toString(),QString("emulator-5556"));
+        // The device is not connected yet: another is shown until it comes.
+        view->setProperty("targets",QVariantList{devices.first()});
+        QVERIFY(QMetaObject::invokeMethod(view,"applyProjectPreferences",Q_ARG(QVariant,path)));
+        QCOMPARE(view->property("target").toString(),QString("emulator-5554"));
+        view->setProperty("targets",devices);
+        QCOMPARE(view->property("target").toString(),QString("emulator-5556"));
+        // Choosing another device afterwards is not undone, and is what is stored.
+        view->setProperty("target",QString("emulator-5554"));QVERIFY(QMetaObject::invokeMethod(view,"rememberTarget"));
+        view->setProperty("targets",QVariantList{devices.last(),devices.first()});
+        QCOMPARE(view->property("target").toString(),QString("emulator-5554"));
+        QCOMPARE(saved().value("device").toString(),QString("emulator-5554"));
+        // Paths stay on this computer: the settings export leaves them out.
+        const auto exported=directory.filePath("preferences-export.json");
+        QVERIFY(backend->exportSettings(exported).isEmpty());
+        QFile file(exported);QVERIFY(file.open(QIODevice::ReadOnly));QVERIFY(!file.readAll().contains("projects/preferences"));
+        QSettings().remove("projects/preferences");workspace->setProperty("projectPreferences",QVariantMap{});
+        configuration->setProperty("currentIndex",0);format->setProperty("currentIndex",0);
+        view->setProperty("targets",QVariantList{});view->setProperty("target",QString());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void recent_projects_reopen_from_the_start_screen_and_the_palette() {
         // Every project opened is remembered, newest first, without duplicates or folders that are gone;
         // the start screen and the palette offer the others again.
@@ -2869,6 +3011,51 @@ for line in sys.stdin:
         emit control->previewRequest(-90,"state",{});emit control->previewRequest(-91,"state",{});
         QCOMPARE(mapOf(panel->property("calls").value<QJSValue>().property(0).toVariant()).value("count").toInt(),2);
         QTRY_VERIFY(item("activityCall"));
+        // Each call shows how it ended and how long it took; the folded line, its latest.
+        const auto timeline=[&]{return panel->property("timeline").toList();};
+        QCOMPARE(mapOf(timeline().value(0)).value("state").toString(),QString("busy"));
+        emit control->previewFinished(-90,QString());QTest::qWait(30);emit control->previewFinished(-91,"No page is loaded");
+        QTRY_COMPARE(mapOf(timeline().value(0)).value("state").toString(),QString("failed"));
+        QVERIFY(mapOf(timeline().value(0)).value("ms").toInt()>=0);
+        QCOMPARE(mapOf(timeline().value(0)).value("error").toString(),QString("No page is loaded"));
+        QTRY_COMPARE(item("activityCallError")->property("text").toString(),QString("No page is loaded"));
+        // An agent's session log: every operation it called, with time, duration and result.
+        const auto log=directory.filePath("agent-session.jsonl");
+        {QFile file(log);QVERIFY(file.open(QIODevice::WriteOnly));
+         file.write(QString(R"({"time":%1,"operation":"device.list","ok":true,"duration_seconds":0.25,"result":{"keys":["devices"]}})" "\n").arg(now-60).toUtf8());
+         file.write(QString(R"({"time":%1,"operation":"project.run","ok":true,"duration_seconds":1.5,"result":{"job_id":"activity-ui-job","state":"running"}})" "\n").arg(now-50).toUtf8());
+         file.write(QString(R"({"time":%1,"operation":"device.install","ok":false,"duration_seconds":0.1,"error":{"code":"no_device","message":"No device emulator-5554"}})" "\n").arg(now-40).toUtf8());}
+        view->setProperty("sessionLogPath",log);
+        QTRY_COMPARE(timeline().size(),4);
+        QCOMPARE(panel->property("sessionError").toString(),QString());
+        const auto shown=[&]{return panel->property("shownActivity").toList();};
+        QCOMPARE(mapOf(shown().value(1)).value("operation").toString(),QString("device.install"));
+        QCOMPARE(mapOf(shown().value(3)).value("ms").toInt(),250);
+        QVariant spelled;QVERIFY(QMetaObject::invokeMethod(panel,"duration",Q_RETURN_ARG(QVariant,spelled),Q_ARG(QVariant,1500)));
+        QCOMPARE(spelled.toString(),QString("1.5 s"));
+        // Filters: failed calls only, then by name.
+        clickItem("activityFilter-failed");
+        QTRY_COMPARE(shown().size(),2);
+        item("activitySearch")->setProperty("text","install");
+        QTRY_COMPARE(shown().size(),1);
+        item("activitySearch")->setProperty("text","project.run");
+        QTRY_VERIFY(item("activityNoMatch")->isVisible());
+        clickItem("activityFilter-all");
+        QTRY_COMPARE(shown().size(),1);
+        capture("activity-timeline");
+        // A call that started a job opens it.
+        QTRY_VERIFY(item("activityCallName") && item("activityCallName")->property("text").toString()==QString("project.run"));
+        clickItem("activityCall");
+        QTRY_COMPARE(workspace->property("section").toString(),QString("jobs"));
+        QCOMPARE(workspace->property("selectedJob").toString(),QString("activity-ui-job"));
+        open("runtime");
+        item("activitySearch")->setProperty("text","");
+        // A log that is not there yet is said, not hidden.
+        view->setProperty("sessionLogPath",directory.filePath("no-session.jsonl"));
+        QTRY_VERIFY(panel->property("sessionError").toString().contains("No session log"));
+        QTRY_VERIFY(item("activitySessionError")->isVisible());
+        view->setProperty("sessionLogPath",QString());
+        QSettings().remove("Activity/sessionLog");
         // The panel gives way in a narrow window and comes back on request.
         window->resize(900,700);QTRY_VERIFY(!qobject_cast<QQuickItem *>(panel)->isVisible());
         QTest::keyClick(window,Qt::Key_J,Qt::ControlModifier);QTRY_VERIFY(qobject_cast<QQuickItem *>(panel)->isVisible());
@@ -3026,7 +3213,7 @@ for line in sys.stdin:
             workspace->setProperty("jobs",QVariantList{build,done,failed});
             auto *panel=object("activityPanel");QVERIFY(panel);
             panel->setProperty("logTail","Running Gradle task 'assembleDebug'...\n✓ Built build/app/outputs/flutter-apk/app-debug.apk");
-            QVERIFY(QMetaObject::invokeMethod(panel,"noteCall",Q_ARG(QVariant,QString("configure"))));
+            QVERIFY(QMetaObject::invokeMethod(panel,"noteCall",Q_ARG(QVariant,-95),Q_ARG(QVariant,QString("configure"))));
             view->setProperty("pendingAvd","Tomacco-pixel-11");
             shot(variant,"device-booting");
             view->setProperty("pendingAvd","");
@@ -3053,6 +3240,56 @@ for line in sys.stdin:
             if(QTest::currentTestFailed())return;
         }
         backend->setAppearance("system");backend->setLanguage("en");window->resize(1380,970);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void every_view_shows_an_error_with_its_remedy_and_tries_again() {
+        // A failed request says what went wrong and what to do on every workspace view, and runs again on request.
+        open("project");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        const auto project=directory.filePath("project");
+        const QString signature=QString(R"({"path":"%1","file":"no-such-file.txt"})").arg(project);
+        workspace->setProperty("pending",QVariantMap{{"-81",QVariantMap{{"operation","files.read"},{"quiet",false},{"signature",signature}}}});
+        control->apiFinished(-81,"files.read",QVariantMap{{"ok",false},{"error",QVariantMap{{"code","not_found"},{"message","no-such-file.txt does not exist"},{"remedy","Choose a file that exists in the project."}}}});
+        QVERIFY(workspace->property("failed").toBool());
+        QCOMPARE(item("workspaceFeedbackText")->property("text").toString(),QString("no-such-file.txt does not exist"));
+        QCOMPARE(item("workspaceRemedy")->property("text").toString(),QString("What to do: Choose a file that exists in the project."));
+        for(const auto &tab:{"project","devices","jobs","tools","debug","testing","profiling","files","release"}) {
+            QVERIFY(QMetaObject::invokeMethod(workspace,"showTab",Q_ARG(QVariant,QString::fromLatin1(tab))));
+            QTRY_VERIFY2(item("workspaceRetry")->isVisible() && item("workspaceRemedy")->isVisible(),tab);
+        }
+        capture("workspace-error");
+        // Try again sends the same request.
+        clickItem("workspaceRetry");
+        auto pending=mapOf(workspace->property("pending"));
+        QCOMPARE(pending.size(),1);
+        QCOMPARE(pending.first().toMap().value("operation").toString(),QString("files.read"));
+        QCOMPARE(pending.first().toMap().value("signature").toString(),signature);
+        QVERIFY(!item("workspaceRetry")->isVisible());
+        // The real answer: it fails again, with the control plane's own words.
+        QTRY_VERIFY_WITH_TIMEOUT(workspace->property("failed").toBool(),patient(10000));
+        QTRY_VERIFY(item("workspaceRetry")->isVisible());
+        QVERIFY(QMetaObject::invokeMethod(workspace,"retry"));
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty() && workspace->property("failed").toBool(),patient(10000));
+        workspace->setProperty("failed",false);
+        QVERIFY(!item("workspaceRetry")->isVisible());
+        QVERIFY(mapOf(workspace->property("failure")).isEmpty());
+        // A tool search that finds nothing says so.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showTab",Q_ARG(QVariant,"tools")));
+        item("toolSearch")->setProperty("text","zzz-no-such-tool");
+        QTRY_VERIFY(item("toolsNoMatch")->isVisible());
+        QVERIFY(!item("toolsUnavailable")->isVisible());
+        item("toolSearch")->setProperty("text","");
+        // The device view's notice line: the remedy, and the same request again.
+        open("runtime");
+        view->setProperty("requests",QVariantMap{{"-82",QVariantMap{{"op","device.list"},{"signature",R"({"platform":"all"})"}}}});
+        control->apiFinished(-82,"device.list",QVariantMap{{"ok",false},{"error",QVariantMap{{"code","adb_missing"},{"message","adb was not found"},{"remedy","Install the Android SDK platform tools."}}}});
+        QCOMPARE(view->property("notice").toString(),QString("adb was not found\nWhat to do: Install the Android SDK platform tools."));
+        QTRY_VERIFY(item("noticeRetry") && item("noticeRetry")->isVisible());
+        clickItem("noticeRetry");
+        QVERIFY(view->property("notice").toString().isEmpty());
+        const auto requests=mapOf(view->property("requests"));
+        QVERIFY(std::any_of(requests.begin(),requests.end(),[](const QVariant &r){return r.toMap().value("op").toString()=="device.list" && r.toMap().value("signature").toString()==R"({"platform":"all"})";}));
+        view->setProperty("notice",QString());view->setProperty("failed",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void a_missing_or_broken_control_program_is_explained() {
@@ -3092,6 +3329,19 @@ for line in sys.stdin:
         auto *view=other->findChild<QObject *>("nativeWorkspace");QVERIFY(view);
         QTRY_COMPARE(view->property("notice").toString(),missing.cliError());QVERIFY(view->property("failed").toBool());
         auto *status=other->findChild<QObject *>("agentStatus");QVERIFY(status);QVERIFY(!status->property("ready").toBool());
+        // The tools say why there are none and offer to ask again; the files ask for a project.
+        const auto find=[&](const char *name){return visualItem(other->contentItem(),QString::fromLatin1(name));};
+        QVERIFY(QMetaObject::invokeMethod(other,"showWorkspace",Q_ARG(QVariant,"tools"),Q_ARG(QVariant,QString()),Q_ARG(QVariant,QString()),Q_ARG(QVariant,1)));
+        QTRY_VERIFY(find("toolsUnavailable") && find("toolsUnavailable")->isVisible());
+        QCOMPARE(find("toolsUnavailable")->property("body").toString(),missing.cliError());
+        QVERIFY(find("toolsRetry") && find("toolsRetry")->isVisible());
+        QVERIFY(!find("toolsNoMatch")->isVisible());
+        replies.clear();
+        QVERIFY(QMetaObject::invokeMethod(find("toolsRetry"),"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(std::any_of(replies.begin(),replies.end(),[](const QList<QVariant> &r){return r.value(1).toString()=="schema";}),patient(5000));
+        QVERIFY(QMetaObject::invokeMethod(other,"showWorkspace",Q_ARG(QVariant,"files"),Q_ARG(QVariant,QString()),Q_ARG(QVariant,QString()),Q_ARG(QVariant,1)));
+        QTRY_VERIFY(find("filesEmpty") && find("filesEmpty")->isVisible());
+        QVERIFY(find("filesChooseProject")->isVisible());
         if(!qEnvironmentVariable("TOMACCO_UI_CAPTURES").isEmpty())QVERIFY(other->grabWindow().save(qEnvironmentVariable("TOMACCO_UI_CAPTURES")+"/missing-control-program.png"));
         other->close();
         QVERIFY2(errors.isEmpty(),qPrintable(errors.join('\n')));
@@ -3440,6 +3690,50 @@ for line in sys.stdin:
         QVERIFY(reply.value("quitting").toBool());QVERIFY(!reply.value("unsaved").toBool());
         QTRY_COMPARE(quits,before+1);
         view->setProperty("quitting",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void a_log_runs_beside_the_device_resizable_and_remembered() {
+        // The palette opens a log beside the device: the device's own log, or a job's. The handle
+        // between them resizes it, and the width is kept.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        view->setProperty("showActivity",false);view->setProperty("stageLogWidth",420);view->setProperty("stageLogMode",QString("device"));
+        auto *pane=item("stageLogPane");QVERIFY(pane);QVERIFY(!pane->isVisible());
+        auto *palette=object("commandPalette");QVERIFY(palette);
+        QVERIFY(QMetaObject::invokeMethod(palette,"open"));
+        QTRY_VERIFY(item("commandSearch") && item("commandSearch")->hasActiveFocus());
+        type("split view");
+        QTRY_COMPARE(palette->property("results").value<QJSValue>().property(0).property("title").toString(),QString("Show the log beside the device"));
+        QTest::keyClick(window,Qt::Key_Return);
+        QTRY_VERIFY(pane->isVisible());
+        QTRY_COMPARE(qRound(pane->width()),420);
+        // No live device: it says so instead of an empty list.
+        QVERIFY(item("stageDeviceLogEmpty")->isVisible());
+        QVERIFY(!object("stageDeviceLog"));
+        // The job log: none yet, then the newest job's log, or why it cannot be read.
+        clickItem("stageLogMode-job");
+        QTRY_COMPARE(view->property("stageLogMode").toString(),QString("job"));
+        // Jobs of earlier checks may be listed; without any, the pane says so.
+        workspace->setProperty("jobs",QVariantList{});
+        QVERIFY(item("stageJobLogEmpty")->isVisible());
+        // The app's launch comes first, also before job.list names it; a log that cannot be read says why.
+        pane->setProperty("launchJob",QString("00000000000000000000000000000000"));
+        QTRY_VERIFY(item("stageJobLog")->isVisible());
+        QTRY_VERIFY_WITH_TIMEOUT(!pane->property("jobError").toString().isEmpty(),patient(10000));
+        QTRY_VERIFY(item("stageJobLogError")->isVisible());
+        QVERIFY(item("stageJobLogRetry")->isVisible());
+        QVERIFY(item("stageLogOpenJob")->isVisible());
+        // Dragging the handle to the left widens the log; the width is stored.
+        const auto edge=pane->mapToScene(QPointF(-2,pane->height()/2)).toPoint();
+        QTest::mousePress(window,Qt::LeftButton,Qt::NoModifier,edge);
+        for(int step=1;step<=10;++step)QTest::mouseMove(window,edge-QPoint(step*12,0));
+        QTest::mouseRelease(window,Qt::LeftButton,Qt::NoModifier,edge-QPoint(120,0));
+        QTRY_VERIFY2(view->property("stageLogWidth").toInt()>=520,qPrintable(QString::number(view->property("stageLogWidth").toInt())));
+        capture("stage-log");
+        clickItem("stageLogClose");
+        QTRY_VERIFY(!pane->isVisible());QVERIFY(!view->property("showStageLog").toBool());
+        view->setProperty("stageLogWidth",420);view->setProperty("stageLogMode",QString("device"));view->setProperty("showActivity",true);
+        pane->setProperty("launchJob",QString());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void touches_and_coordinates_show_on_the_live_device() {
