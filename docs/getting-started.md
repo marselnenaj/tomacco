@@ -34,9 +34,11 @@ prints the result as JSON.
 tomaccoctl verify tomacco-1.2.1-Linux-x86_64.tar.gz
 ```
 
-Tomacco runs on x86_64 Linux. Arch Linux and Omarchy are the tested platform. For other
-distributions there is a portable package, checked in clean containers only; see
-[Debian, Ubuntu and Fedora](#debian-ubuntu-and-fedora). On Linux for Apple Silicon (M1,
+Tomacco runs on x86_64 Linux. Arch Linux and Omarchy are the tested platform. Other
+distributions should work, but they have not been qualified; [Linux distributions and
+hardware](linux-hosts.md) says what ran in which clean container. On SteamOS, whose pacman cannot
+install into its read-only system, add `-s -- --portable` at the end of the install command.
+NixOS lacks the standard loader Tomacco's programs need; see that page. On Linux for Apple Silicon (M1,
 M2, Asahi), the tools and agent API are experimental and the virtual iOS device is not
 available.
 
@@ -79,7 +81,9 @@ must be on your `PATH`. To upgrade, roll back or uninstall, see [Building](build
 ### Debian, Ubuntu and Fedora
 
 Only Arch Linux has been tested as a desktop. The package names below come from each distribution's
-package index; installing them and building Tomacco there has not been tried.
+package index; installing them and building Tomacco there has not been tried. Installing the 1.2.1
+portable package with the installer, `tomaccoctl doctor` and an Android starter build with the
+distribution's JDK did run in clean containers; see [what ran where](linux-hosts.md#what-ran-where).
 
 **Which package.** A release has two packages:
 
@@ -197,7 +201,8 @@ If you said yes to Android in `tomaccoctl setup`, skip to step 4. Its emulator i
 
 **1. Point Tomacco at your tools.** Install the
 [Android SDK command-line tools](https://developer.android.com/studio#command-line-tools-only),
-a JDK and Gradle (on Arch, `jdk-openjdk` and `gradle`). Unpack the command-line tools to `SDK/cmdline-tools/latest`, because that
+a JDK and Gradle 9 (on Arch, `jdk-openjdk` and `gradle`; elsewhere `tomaccoctl doctor`'s
+`host.install` names the JDK package, and Gradle 9 comes from gradle.org). Unpack the command-line tools to `SDK/cmdline-tools/latest`, because that
 is where Tomacco looks for `sdkmanager`. Then tell Tomacco where everything is:
 
 ```sh

@@ -1,0 +1,1229 @@
+reims-vgpu: import guest RAM as dma-bufs cut from its memfd, where a host pointer is refused.
+
+Guest RAM that the guest channel's vhost-user device also maps is a memfd
+mapped shared. radv/amdgpu import a host pointer only over private anonymous
+memory: measured on an RX 6900 XT with Mesa 26.2.5, vkAllocateMemory refuses
+2 GiB of shared anonymous memory, of a memfd mapped shared or private and of a
+/dev/shm file with ERROR_INVALID_EXTERNAL_HANDLE, after
+vkGetMemoryHostPointerPropertiesEXT accepted the pointer. So every RAMBlock
+import failed and every render Store copied on the CPU.
+
+REIMS_VGPU_GUEST_IMPORT_DMA_BUF=on asks for a second route. Where the device
+advertises VK_KHR_external_memory_fd and VK_EXT_external_memory_dma_buf,
+reports the dma-buf handle type importable for guest-import usage, and
+/dev/udmabuf opens, the route arms (vk_caps guest_dma_buf=armed). The import
+span then narrows to the kernel's udmabuf.size_limit_mb (64 MiB by default),
+because one dma-buf can be no larger. Each RAMBlock window finds the memfd
+behind its address from /proc/self/maps and /proc/self/fd, requires the shrink
+seal udmabuf needs, cuts the window with UDMABUF_CREATE, and imports it with
+VkImportMemoryFdInfoKHR. The bytes are the guest's own pages. A window that
+refuses anywhere logs host_ram_import_dma_buf_refused with the check and goes
+to the host-pointer route, and a refusal there to the copying rails, as before.
+
+dma-buf windows are not warmed at the handshake: udmabuf pins every page it
+covers, and warming would allocate and pin the whole of guest RAM. A window is
+cut on the first reference into it.
+diff --git c/reims-vgpu/crates/reims-vgpu-config/src/lib.rs i/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+index 0b7e140..666ea10 100644
+--- c/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ i/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -203,6 +203,25 @@ switches! {
+ /// comparable across compositing regimes and only one pair matched.
+ pub const GUEST_IMPORT: &str = "REIMS_VGPU_GUEST_IMPORT";
+ 
++/// `on` asks for guest RAM to reach the GPU as dma-bufs cut from the memfd
++/// behind each RAMBlock (`/dev/udmabuf`, `VK_EXT_external_memory_dma_buf`)
++/// instead of as host pointers.
++///
++/// For a launcher that laid guest RAM on a sealed memfd because the guest
++/// channel's vhost-user device needs shared memory: `radv`/`amdgpu` refuse a
++/// host-pointer import of any shared or file-backed mapping with
++/// `ERROR_INVALID_EXTERNAL_HANDLE`, so on that host the import rail never runs.
++///
++/// A request, not an override: it widens nothing the device did not measure.
++/// The route is taken only when the device advertises both extensions, reports
++/// the dma-buf handle type importable for guest-import usage, `/dev/udmabuf`
++/// opens, and the mapping is a memfd sealed against shrinking. Any check that
++/// refuses leaves that import on the host-pointer route, and a refusal there on
++/// the copying rails, exactly as with the variable unset. Imports are cut at
++/// the kernel's `udmabuf.size_limit_mb`, so the variable also shrinks the
++/// import span to that size.
++pub const GUEST_IMPORT_DMA_BUF: &str = "REIMS_VGPU_GUEST_IMPORT_DMA_BUF";
++
+ /// `off` keeps descriptor state on the allocated Vulkan 1.2 set path even when
+ /// the device advertises `VK_KHR_push_descriptor` and the layout fits its
+ /// reported limit.
+diff --git c/reims-vgpu/crates/reims-vgpu/Cargo.toml i/reims-vgpu/crates/reims-vgpu/Cargo.toml
+index ec29fc4..eaa6cc4 100644
+--- c/reims-vgpu/crates/reims-vgpu/Cargo.toml
++++ i/reims-vgpu/crates/reims-vgpu/Cargo.toml
+@@ -108,6 +108,10 @@ wayland-client = { version = "0.31", optional = true }
+ wayland-backend = { version = "0.3", features = ["client_system"], optional = true }
+ wayland-protocols = { version = "0.32", features = ["client", "unstable"], optional = true }
+ x11-dl = { version = "2.21", optional = true }
++# `/dev/udmabuf`'s ioctl and the memfd seal query for the guest-RAM dma-buf
++# route. Already in the graph (and in the lockfile) as this crate's macOS
++# dependency and as a transitive of `winit`.
++libc = "0.2"
+ 
+ # Metal encode is macOS-only; `backend-metal` is rejected on any other host.
+ [target.'cfg(target_os = "macos")'.dependencies]
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/dma_buf.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/dma_buf.rs
+new file mode 100644
+index 0000000..04e3783
+--- /dev/null
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/dma_buf.rs
+@@ -0,0 +1,268 @@
++//! Whether guest RAM may reach this device as dma-bufs cut from the memfd
++//! behind each RAMBlock, and the largest piece the kernel will cut.
++//!
++//! # Why a second route
++//!
++//! [`super::host_pointer`] is the route every host shares, and on Linux
++//! `radv`/`amdgpu` takes it only for private anonymous memory: the kernel's
++//! userptr import refuses a mapping that has a file behind it. Guest RAM that
++//! a vhost-user device must also map is exactly such a mapping — a memfd mapped
++//! shared — so on that host every RAMBlock import fails at `vkAllocateMemory`
++//! with `ERROR_INVALID_EXTERNAL_HANDLE` while the pointer probe before it
++//! succeeds. Measured on an RX 6900 XT under Mesa 26.2.5: a 2 GiB private
++//! anonymous mapping imports; 2 GiB of shared anonymous memory, of a memfd
++//! mapped shared or private, and of a `/dev/shm` file are all refused.
++//!
++//! The same pages import fine as a dma-buf. `/dev/udmabuf` turns a range of a
++//! memfd sealed against shrinking into one, and the device imports that through
++//! `VK_EXT_external_memory_dma_buf`. The bytes are the guest's own pages, so
++//! the GPU and the guest see each other's writes with no copy.
++//!
++//! # A request, then a measurement
++//!
++//! [`crate::config::GUEST_IMPORT_DMA_BUF`] asks for the route; every check here
++//! can still refuse it, and a refusal only leaves the host-pointer route as it
++//! was. The kernel's `udmabuf.size_limit_mb` bounds one dma-buf (64 MiB unless
++//! an administrator raised it), so an armed route also narrows the import span
++//! the guest-RAM map cuts RAMBlocks into.
++
++use ash::vk;
++
++/// Whether the dma-buf route may run, and when not, which check said so.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub enum DmaBufImport {
++    /// Requested, both extensions advertised, the handle type importable for
++    /// guest-import usage, `/dev/udmabuf` opened and its size limit read. The
++    /// only rung on which the route runs.
++    Armed,
++    /// Nobody asked. The default, and the answer on every host whose guest
++    /// RAM is not laid on a memfd for this route.
++    #[default]
++    NotRequested,
++    /// Not a Linux build: there is no `/dev/udmabuf` to cut a dma-buf with.
++    NotLinux,
++    /// The host-pointer rail is not available, and the guest-RAM map that
++    /// both routes feed is gated on it.
++    NoImportRail,
++    /// `VK_KHR_external_memory_fd` or `VK_EXT_external_memory_dma_buf` absent.
++    NoDmaBufExtension,
++    /// Both extensions advertised, and the device still declines the dma-buf
++    /// handle type for guest-import usage.
++    NotImportable,
++    /// `/dev/udmabuf` did not open for reading and writing.
++    NoUdmabuf,
++    /// The kernel's per-buffer limit could not be read, or is smaller than one
++    /// import granule.
++    NoSizeLimit,
++}
++
++impl DmaBufImport {
++    pub fn is_armed(self) -> bool {
++        matches!(self, Self::Armed)
++    }
++
++    /// Stable slug for the capability line.
++    pub fn slug(self) -> &'static str {
++        match self {
++            Self::Armed => "armed",
++            Self::NotRequested => "not_requested",
++            Self::NotLinux => "not_linux",
++            Self::NoImportRail => "no_import_rail",
++            Self::NoDmaBufExtension => "no_dma_buf_extension",
++            Self::NotImportable => "not_importable",
++            Self::NoUdmabuf => "no_udmabuf",
++            Self::NoSizeLimit => "no_size_limit",
++        }
++    }
++
++    /// Device extensions the rung requires; none unless armed.
++    pub fn required_extensions(self) -> Vec<*const std::os::raw::c_char> {
++        if self.is_armed() {
++            vec![
++                vk::KHR_EXTERNAL_MEMORY_FD_NAME.as_ptr(),
++                vk::EXT_EXTERNAL_MEMORY_DMA_BUF_NAME.as_ptr(),
++            ]
++        } else {
++            Vec::new()
++        }
++    }
++}
++
++/// The rung together with the largest single dma-buf this route will cut.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub struct DmaBufCaps {
++    pub rung: DmaBufImport,
++    /// Bytes in the largest dma-buf `/dev/udmabuf` will make, rounded down to
++    /// the import granule. Zero unless armed.
++    pub window: u64,
++}
++
++impl DmaBufCaps {
++    fn refused(rung: DmaBufImport) -> Self {
++        Self { rung, window: 0 }
++    }
++
++    pub fn is_armed(self) -> bool {
++        self.rung.is_armed()
++    }
++
++    /// The import span the guest-RAM map may cut: the host-pointer span, or
++    /// the dma-buf window when the route is armed and that is smaller.
++    pub fn narrow_span(self, span_max: u64) -> u64 {
++        if self.is_armed() && self.window != 0 {
++            span_max.min(self.window)
++        } else {
++            span_max
++        }
++    }
++}
++
++/// `/sys/module/udmabuf/parameters/size_limit_mb` as bytes.
++pub const UDMABUF_SIZE_LIMIT: &str = "/sys/module/udmabuf/parameters/size_limit_mb";
++
++/// The window for a size limit of `limit_mb` megabytes at granule `align`:
++/// the limit rounded down to the granule, or `None` when nothing fits.
++pub fn window_for_limit(limit_mb: u64, align: u64) -> Option<u64> {
++    if align == 0 || !align.is_power_of_two() {
++        return None;
++    }
++    let bytes = limit_mb.checked_mul(1 << 20)? & !(align - 1);
++    (bytes != 0).then_some(bytes)
++}
++
++/// Parse the module parameter's text.
++pub fn parse_size_limit(text: &str) -> Option<u64> {
++    text.trim().parse().ok()
++}
++
++/// Resolve the route against one physical device.
++///
++/// `import_rail` is whether the host-pointer rail resolved to supported, and
++/// `align` its granule.
++///
++/// # Safety
++///
++/// `pd` must be a physical device belonging to `instance`.
++pub unsafe fn query(
++    instance: &ash::Instance,
++    pd: vk::PhysicalDevice,
++    has_extension: &dyn Fn(&std::ffi::CStr) -> bool,
++    import_rail: bool,
++    align: u64,
++) -> DmaBufCaps {
++    match crate::config::read(crate::config::GUEST_IMPORT_DMA_BUF) {
++        (crate::config::Switch::On, _) => {}
++        (crate::config::Switch::Unrecognized, value) => {
++            crate::observe::fail(format!(
++                "vk_guest_dma_buf_env_unrecognized var={} value={:?} (expected on|off; the route \
++                 stays off)",
++                crate::config::GUEST_IMPORT_DMA_BUF,
++                value.unwrap_or_default()
++            ));
++            return DmaBufCaps::refused(DmaBufImport::NotRequested);
++        }
++        _ => return DmaBufCaps::refused(DmaBufImport::NotRequested),
++    }
++    if !cfg!(target_os = "linux") {
++        return DmaBufCaps::refused(DmaBufImport::NotLinux);
++    }
++    if !import_rail {
++        return DmaBufCaps::refused(DmaBufImport::NoImportRail);
++    }
++    if !has_extension(vk::KHR_EXTERNAL_MEMORY_FD_NAME)
++        || !has_extension(vk::EXT_EXTERNAL_MEMORY_DMA_BUF_NAME)
++    {
++        return DmaBufCaps::refused(DmaBufImport::NoDmaBufExtension);
++    }
++    let info = vk::PhysicalDeviceExternalBufferInfo::default()
++        .usage(super::host_pointer::GUEST_IMPORT_USAGE)
++        .handle_type(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
++    let mut props = vk::ExternalBufferProperties::default();
++    unsafe { instance.get_physical_device_external_buffer_properties(pd, &info, &mut props) };
++    if !props
++        .external_memory_properties
++        .external_memory_features
++        .contains(vk::ExternalMemoryFeatureFlags::IMPORTABLE)
++    {
++        return DmaBufCaps::refused(DmaBufImport::NotImportable);
++    }
++    if std::fs::OpenOptions::new()
++        .read(true)
++        .write(true)
++        .open("/dev/udmabuf")
++        .is_err()
++    {
++        return DmaBufCaps::refused(DmaBufImport::NoUdmabuf);
++    }
++    let Some(window) = std::fs::read_to_string(UDMABUF_SIZE_LIMIT)
++        .ok()
++        .as_deref()
++        .and_then(parse_size_limit)
++        .and_then(|mb| window_for_limit(mb, align))
++    else {
++        return DmaBufCaps::refused(DmaBufImport::NoSizeLimit);
++    };
++    DmaBufCaps {
++        rung: DmaBufImport::Armed,
++        window,
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn only_the_armed_rung_names_extensions_or_narrows_the_span() {
++        for rung in [
++            DmaBufImport::Armed,
++            DmaBufImport::NotRequested,
++            DmaBufImport::NotLinux,
++            DmaBufImport::NoImportRail,
++            DmaBufImport::NoDmaBufExtension,
++            DmaBufImport::NotImportable,
++            DmaBufImport::NoUdmabuf,
++            DmaBufImport::NoSizeLimit,
++        ] {
++            let caps = DmaBufCaps {
++                rung,
++                window: 64 << 20,
++            };
++            let armed = rung == DmaBufImport::Armed;
++            assert_eq!(caps.is_armed(), armed, "{}", rung.slug());
++            assert_eq!(rung.required_extensions().len(), if armed { 2 } else { 0 });
++            assert_eq!(
++                caps.narrow_span(2 << 30),
++                if armed { 64 << 20 } else { 2 << 30 },
++                "{}",
++                rung.slug()
++            );
++        }
++        assert_eq!(DmaBufCaps::default().rung, DmaBufImport::NotRequested);
++    }
++
++    #[test]
++    fn an_armed_window_never_widens_a_smaller_span() {
++        let caps = DmaBufCaps {
++            rung: DmaBufImport::Armed,
++            window: 2 << 30,
++        };
++        assert_eq!(caps.narrow_span(64 << 20), 64 << 20);
++    }
++
++    #[test]
++    fn the_size_limit_becomes_a_granule_aligned_window() {
++        assert_eq!(parse_size_limit("64\n"), Some(64));
++        assert_eq!(parse_size_limit(" 2048 "), Some(2048));
++        assert_eq!(parse_size_limit("lots"), None);
++        assert_eq!(window_for_limit(64, 4096), Some(64 << 20));
++        assert_eq!(window_for_limit(2048, 4096), Some(2 << 30));
++        // A limit below one granule cuts nothing.
++        assert_eq!(window_for_limit(0, 4096), None);
++        assert_eq!(window_for_limit(1, 4 << 20), None);
++        // A granule that is not a power of two is not one.
++        assert_eq!(window_for_limit(64, 0), None);
++        assert_eq!(window_for_limit(64, 3000), None);
++        assert_eq!(window_for_limit(u64::MAX, 4096), None);
++    }
++}
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/mod.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/mod.rs
+index 769eeac..15302d8 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/mod.rs
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/caps/mod.rs
+@@ -46,11 +46,13 @@
+ pub mod api_floor;
+ pub mod device_features;
+ pub mod device_select;
++pub mod dma_buf;
+ pub mod host_pointer;
+ pub mod linear_sampled;
+ pub mod linear_target;
+ pub mod push_descriptor;
+ 
++pub(crate) use dma_buf::DmaBufCaps;
+ pub(crate) use host_pointer::{HostPointerCaps, HostPointerImport};
+ // Moved to `reims-vgpu-vulkan`, which is the layer the architecture names as
+ // the only one that turns host capabilities into placement policy. Re-exported
+@@ -105,6 +107,11 @@ pub struct HostGpuCaps {
+     /// `runtime::guest_ram_map` through the granularity latch, by the import
+     /// site, and by nothing else.
+     pub host_pointer: HostPointerCaps,
++    /// Whether guest RAM may instead reach the device as dma-bufs cut from the
++    /// memfd behind each RAMBlock, and the largest one the kernel will cut.
++    /// Read by the import site, and through the span it narrows, by
++    /// `runtime::guest_ram_map`.
++    pub dma_buf: DmaBufCaps,
+     /// Whether descriptor writes may be recorded directly into a command
+     /// buffer, and the maximum total descriptors in such a set layout.
+     pub push_descriptor: PushDescriptorCaps,
+@@ -129,7 +136,7 @@ impl HostGpuCaps {
+     /// something the device reported.
+     pub fn selection_line(&self, device_name: &str) -> String {
+         format!(
+-            "vk_caps api={} baseline={} memory={} memory_signal={} device_local_mb={} host_visible_device_local_mb={} host_pointer_import={} host_pointer_align={} host_pointer_heap_mb={} max_alloc_mb={} push_descriptors={} portability_subset={} type={:?} name={device_name:?}",
++            "vk_caps api={} baseline={} memory={} memory_signal={} device_local_mb={} host_visible_device_local_mb={} host_pointer_import={} host_pointer_align={} host_pointer_heap_mb={} guest_dma_buf={} guest_dma_buf_window_mb={} max_alloc_mb={} push_descriptors={} portability_subset={} type={:?} name={device_name:?}",
+             api_floor::version_str(self.device_api_version),
+             api_floor::version_str(api_floor::MIN_SUPPORTED_API),
+             self.memory.topology.slug(),
+@@ -139,6 +146,8 @@ impl HostGpuCaps {
+             self.host_pointer.rung.slug(),
+             self.host_pointer.min_alignment,
+             self.host_pointer.heap_budget >> 20,
++            self.dma_buf.rung.slug(),
++            self.dma_buf.window >> 20,
+             self.max_allocation_size >> 20,
+             self.push_descriptor.max_descriptors,
+             self.portability_subset,
+@@ -166,6 +175,7 @@ mod tests {
+                 heap_budget: 8 << 30,
+                 span_max: host_pointer::IMPORT_SPAN_CEILING,
+             },
++            dma_buf: DmaBufCaps::default(),
+             push_descriptor: PushDescriptorCaps::default(),
+             portability_subset: false,
+             device_api_version: api,
+@@ -188,6 +198,24 @@ mod tests {
+         assert!(line.contains("baseline=1.2"), "{line}");
+     }
+ 
++    /// The dma-buf route's rung and window are on the line, so a boot that
++    /// asked for the route says whether it got it and how large the imports
++    /// were cut.
++    #[test]
++    fn the_selection_line_carries_the_dma_buf_rung_and_its_window() {
++        let mut c = caps(vk::API_VERSION_1_3, &fixtures::nvidia_discrete());
++        let line = c.selection_line("x");
++        assert!(line.contains("guest_dma_buf=not_requested"), "{line}");
++        assert!(line.contains("guest_dma_buf_window_mb=0"), "{line}");
++        c.dma_buf = DmaBufCaps {
++            rung: dma_buf::DmaBufImport::Armed,
++            window: 64 << 20,
++        };
++        let line = c.selection_line("x");
++        assert!(line.contains("guest_dma_buf=armed"), "{line}");
++        assert!(line.contains("guest_dma_buf_window_mb=64"), "{line}");
++    }
++
+     /// The host-pointer rung and its granularity are on the same line, and the
+     /// granularity is there because it is measured rather than assumed: a
+     /// MoltenVK device reports Apple's page size and a Linux driver may report
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
+index 5687b4b..0b3fec5 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/context.rs
+@@ -676,6 +676,10 @@ pub(crate) struct DeviceContext {
+     /// `None` is the answer on every host without the extension, and the import
+     /// site declines by name when it sees one.
+     pub external_memory_host: Option<ash::ext::external_memory_host::Device>,
++    /// `VK_KHR_external_memory_fd` entry points, loaded only where
++    /// [`HostGpuCaps::dma_buf`] is armed, which is the only rung on which the
++    /// extension was enabled.
++    pub external_memory_fd: Option<ash::khr::external_memory_fd::Device>,
+     /// `VK_KHR_push_descriptor` entry points, present only when the extension
+     /// was advertised, queried, and enabled for this device.
+     pub push_descriptor: Option<ash::khr::push_descriptor::Device>,
+@@ -1114,6 +1118,18 @@ impl DeviceContext {
+             &has_device_extension,
+             max_allocation_size,
+         );
++        // Whether guest RAM may also arrive as dma-bufs cut from its memfd,
++        // for a host whose driver refuses a host pointer over shared memory.
++        // Asked after the host-pointer rail because the guest-RAM map both
++        // routes feed is gated on that rail, and an armed route narrows the
++        // span the map cuts RAMBlocks into.
++        let dma_buf = crate::backend::vulkan::caps::dma_buf::query(
++            &instance,
++            pd,
++            &has_device_extension,
++            host_pointer.is_available(),
++            host_pointer.min_alignment,
++        );
+         let push_descriptor = crate::backend::vulkan::caps::push_descriptor::query(
+             &instance,
+             pd,
+@@ -1129,7 +1145,7 @@ impl DeviceContext {
+                 crate::runtime::guest_ram::latch_import_limits(
+                     host_pointer.min_alignment,
+                     host_pointer.heap_budget,
+-                    host_pointer.span_max,
++                    dma_buf.narrow_span(host_pointer.span_max),
+                 );
+             }
+             _ => crate::runtime::guest_ram::forget_import_limits(),
+@@ -1207,6 +1223,7 @@ impl DeviceContext {
+         // Only the `Supported` rung names `VK_EXT_external_memory_host`, so a
+         // host without it gets a device rather than a failed `vkCreateDevice`.
+         enabled_device_extensions.extend(host_pointer.rung.required_extensions());
++        enabled_device_extensions.extend(dma_buf.rung.required_extensions());
+         enabled_device_extensions.extend(push_descriptor.required_extensions());
+         // Built in `caps` too. Bound to a local here only because `push_next`
+         // borrows it for the lifetime of `dci`.
+@@ -1339,6 +1356,7 @@ impl DeviceContext {
+             max_allocation_size,
+             quirks: DriverQuirk::for_portability_subset(portability_subset),
+             host_pointer,
++            dma_buf,
+             push_descriptor,
+             portability_subset,
+             device_api_version: props.api_version,
+@@ -1350,6 +1368,11 @@ impl DeviceContext {
+             .host_pointer
+             .is_available()
+             .then(|| ash::ext::external_memory_host::Device::new(&instance, &device));
++        // Same rule for the dma-buf route's fd entry points.
++        let external_memory_fd = caps
++            .dma_buf
++            .is_armed()
++            .then(|| ash::khr::external_memory_fd::Device::new(&instance, &device));
+         let push_descriptor = caps
+             .push_descriptor
+             .is_available()
+@@ -1461,6 +1484,7 @@ impl DeviceContext {
+             caps,
+             memory_properties,
+             external_memory_host,
++            external_memory_fd,
+             push_descriptor,
+             extended_dynamic_state,
+             extended_dynamic_state3,
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/guest_dma_buf.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/guest_dma_buf.rs
+new file mode 100644
+index 0000000..b9e1851
+--- /dev/null
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/guest_dma_buf.rs
+@@ -0,0 +1,364 @@
++//! The memfd behind a guest-RAM mapping, and a dma-buf cut from it.
++//!
++//! The dma-buf route ([`crate::backend::vulkan::caps::dma_buf`]) needs a file
++//! descriptor and an offset where the host-pointer route needed only an
++//! address. The shim publishes addresses, so the descriptor is found from the
++//! address: `/proc/self/maps` names the file (device and inode) and the file
++//! offset of the mapping, and the one descriptor in `/proc/self/fd` with the
++//! same device and inode is the memfd. Reopening it through `/proc/self/fd`
++//! gives this module its own descriptor, so nothing here depends on the
++//! owner's descriptor staying open.
++//!
++//! `/dev/udmabuf` then cuts `offset..offset + len` of the memfd into a dma-buf.
++//! The kernel pins those pages for as long as the dma-buf lives, which is as
++//! long as the `VkDeviceMemory` that imported it; freeing the memory unpins.
++
++use std::collections::HashMap;
++use std::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, OwnedFd};
++use std::sync::{Arc, Mutex, OnceLock};
++
++/// One line of `/proc/self/maps`, the fields this module reads.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(crate) struct MapEntry {
++    pub start: usize,
++    pub end: usize,
++    pub offset: u64,
++    pub dev_major: u32,
++    pub dev_minor: u32,
++    pub inode: u64,
++}
++
++fn parse_line(line: &str) -> Option<MapEntry> {
++    let mut fields = line.split_ascii_whitespace();
++    let (start, end) = fields.next()?.split_once('-')?;
++    let _perms = fields.next()?;
++    let offset = fields.next()?;
++    let (major, minor) = fields.next()?.split_once(':')?;
++    let inode = fields.next()?;
++    Some(MapEntry {
++        start: usize::from_str_radix(start, 16).ok()?,
++        end: usize::from_str_radix(end, 16).ok()?,
++        offset: u64::from_str_radix(offset, 16).ok()?,
++        dev_major: u32::from_str_radix(major, 16).ok()?,
++        dev_minor: u32::from_str_radix(minor, 16).ok()?,
++        inode: inode.parse().ok()?,
++    })
++}
++
++/// Where `addr..addr + len` lives: the file and the file offset of `addr`.
++///
++/// The span may cross several lines when the kernel split one mapping into
++/// several areas (a `madvise` over part of it does), but only while the lines
++/// abut in both the address space and the file. `None` when any byte of the
++/// span is unmapped, anonymous, or in a different file.
++pub(crate) fn find_backing(maps: &str, addr: usize, len: u64) -> Option<(MapEntry, u64)> {
++    let len = usize::try_from(len).ok()?;
++    let end = addr.checked_add(len)?;
++    if len == 0 {
++        return None;
++    }
++    let mut lines = maps.lines().filter_map(parse_line);
++    let first = lines.find(|e| e.start <= addr && addr < e.end)?;
++    if first.inode == 0 {
++        return None;
++    }
++    let file_offset = first.offset.checked_add((addr - first.start) as u64)?;
++    let mut covered = first;
++    while covered.end < end {
++        let next = lines.next()?;
++        let continues = next.start == covered.end
++            && next.inode == first.inode
++            && (next.dev_major, next.dev_minor) == (first.dev_major, first.dev_minor)
++            && next.offset
++                == covered
++                    .offset
++                    .checked_add((covered.end - covered.start) as u64)?;
++        if !continues {
++            return None;
++        }
++        covered = next;
++    }
++    Some((first, file_offset))
++}
++
++/// Why no dma-buf could be cut for a span.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(crate) enum BackingRefusal {
++    /// `/proc/self/maps` could not be read.
++    MapsUnreadable,
++    /// Some byte of the span is unmapped, anonymous, or in another file.
++    NotOneFile,
++    /// No open descriptor names the mapping's file.
++    NoDescriptor,
++    /// The file is not a memfd sealed against shrinking (or it is sealed
++    /// against writing), which `/dev/udmabuf` requires.
++    NotSealed { seals: i32 },
++    /// `/dev/udmabuf` did not open.
++    NoUdmabuf { errno: i32 },
++    /// `UDMABUF_CREATE` failed.
++    Create { errno: i32 },
++}
++
++impl BackingRefusal {
++    pub(crate) fn slug(self) -> &'static str {
++        match self {
++            Self::MapsUnreadable => "dma_buf_maps_unreadable",
++            Self::NotOneFile => "dma_buf_not_one_file",
++            Self::NoDescriptor => "dma_buf_no_descriptor",
++            Self::NotSealed { .. } => "dma_buf_not_sealed",
++            Self::NoUdmabuf { .. } => "dma_buf_no_udmabuf",
++            Self::Create { .. } => "dma_buf_create",
++        }
++    }
++
++    pub(crate) fn detail(self) -> i32 {
++        match self {
++            Self::NotSealed { seals } => seals,
++            Self::NoUdmabuf { errno } | Self::Create { errno } => errno,
++            _ => 0,
++        }
++    }
++}
++
++/// Whether `seals` are what `/dev/udmabuf` accepts.
++pub(crate) fn seals_admit_udmabuf(seals: i32) -> bool {
++    seals & libc::F_SEAL_SHRINK != 0 && seals & libc::F_SEAL_WRITE == 0
++}
++
++type Key = (u32, u32, u64);
++
++/// Descriptors already found, by file. A RAMBlock is cut into many imports
++/// and every one of them names the same memfd.
++fn found() -> &'static Mutex<HashMap<Key, Arc<OwnedFd>>> {
++    static FOUND: OnceLock<Mutex<HashMap<Key, Arc<OwnedFd>>>> = OnceLock::new();
++    FOUND.get_or_init(Default::default)
++}
++
++fn descriptor_for(entry: &MapEntry) -> Result<Arc<OwnedFd>, BackingRefusal> {
++    use std::os::unix::fs::MetadataExt;
++    let key = (entry.dev_major, entry.dev_minor, entry.inode);
++    let mut found = found().lock().unwrap_or_else(|e| e.into_inner());
++    if let Some(fd) = found.get(&key) {
++        return Ok(fd.clone());
++    }
++    let dir = std::fs::read_dir("/proc/self/fd").map_err(|_| BackingRefusal::NoDescriptor)?;
++    for item in dir.flatten() {
++        let path = item.path();
++        let Ok(meta) = std::fs::metadata(&path) else {
++            continue;
++        };
++        let dev = meta.dev();
++        if meta.ino() != entry.inode
++            || (libc::major(dev), libc::minor(dev)) != (entry.dev_major, entry.dev_minor)
++        {
++            continue;
++        }
++        let Ok(file) = std::fs::OpenOptions::new()
++            .read(true)
++            .write(true)
++            .open(&path)
++        else {
++            continue;
++        };
++        let fd = Arc::new(OwnedFd::from(file));
++        found.insert(key, fd.clone());
++        return Ok(fd);
++    }
++    Err(BackingRefusal::NoDescriptor)
++}
++
++/// The memfd behind `addr..addr + len` and the file offset of `addr`.
++pub(crate) fn memfd_backing(addr: usize, len: u64) -> Result<(Arc<OwnedFd>, u64), BackingRefusal> {
++    let maps =
++        std::fs::read_to_string("/proc/self/maps").map_err(|_| BackingRefusal::MapsUnreadable)?;
++    let (entry, offset) = find_backing(&maps, addr, len).ok_or(BackingRefusal::NotOneFile)?;
++    let fd = descriptor_for(&entry)?;
++    // SAFETY: `fd` is an open descriptor this module owns.
++    let seals = unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_GET_SEALS) };
++    if seals < 0 || !seals_admit_udmabuf(seals) {
++        return Err(BackingRefusal::NotSealed { seals });
++    }
++    Ok((fd, offset))
++}
++
++/// `struct udmabuf_create` from `<linux/udmabuf.h>`.
++#[repr(C)]
++struct UdmabufCreate {
++    memfd: u32,
++    flags: u32,
++    offset: u64,
++    size: u64,
++}
++
++const UDMABUF_FLAGS_CLOEXEC: u32 = 0x01;
++/// `_IOW('u', 0x42, struct udmabuf_create)`.
++const UDMABUF_CREATE: libc::c_ulong = (1 << 30)
++    | ((std::mem::size_of::<UdmabufCreate>() as libc::c_ulong) << 16)
++    | ((b'u' as libc::c_ulong) << 8)
++    | 0x42;
++
++fn udmabuf_device() -> Result<&'static OwnedFd, BackingRefusal> {
++    static DEVICE: OnceLock<Result<OwnedFd, i32>> = OnceLock::new();
++    DEVICE
++        .get_or_init(|| {
++            std::fs::OpenOptions::new()
++                .read(true)
++                .write(true)
++                .open("/dev/udmabuf")
++                .map(OwnedFd::from)
++                .map_err(|e| e.raw_os_error().unwrap_or(0))
++        })
++        .as_ref()
++        .map_err(|&errno| BackingRefusal::NoUdmabuf { errno })
++}
++
++/// Cut `offset..offset + size` of `memfd` into a dma-buf.
++pub(crate) fn udmabuf_create(
++    memfd: BorrowedFd<'_>,
++    offset: u64,
++    size: u64,
++) -> Result<OwnedFd, BackingRefusal> {
++    let device = udmabuf_device()?;
++    let request = UdmabufCreate {
++        memfd: memfd.as_raw_fd() as u32,
++        flags: UDMABUF_FLAGS_CLOEXEC,
++        offset,
++        size,
++    };
++    // SAFETY: `request` is a correctly laid out `struct udmabuf_create` that
++    // outlives the call, and both descriptors are open.
++    let rc = unsafe { libc::ioctl(device.as_fd().as_raw_fd(), UDMABUF_CREATE as _, &request) };
++    if rc < 0 {
++        return Err(BackingRefusal::Create {
++            errno: std::io::Error::last_os_error().raw_os_error().unwrap_or(0),
++        });
++    }
++    // SAFETY: a successful `UDMABUF_CREATE` returns a new descriptor we own.
++    Ok(unsafe { OwnedFd::from_raw_fd(rc) })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    const MAPS: &str = "\
++55d0c0a00000-55d0c0a21000 r--p 00000000 103:02 1311 /usr/bin/qemu
++7f0000000000-7f0040000000 rw-s 00000000 00:01 4242 /memfd:tomacco-guest-memory (deleted)
++7f0040000000-7f0080000000 rw-s 40000000 00:01 4242 /memfd:tomacco-guest-memory (deleted)
++7f0080000000-7f0080200000 rw-p 00000000 00:00 0
++7f0080200000-7f0080400000 rw-s 00000000 00:01 77 /memfd:other (deleted)
++";
++
++    #[test]
++    fn the_unsplit_ioctl_number_matches_the_kernel_header() {
++        assert_eq!(UDMABUF_CREATE, 0x4018_7542);
++        assert_eq!(std::mem::size_of::<UdmabufCreate>(), 24);
++    }
++
++    #[test]
++    fn a_span_inside_one_area_names_its_file_offset() {
++        let (entry, offset) = find_backing(MAPS, 0x7f00_1000_0000, 64 << 20).expect("mapped");
++        assert_eq!(entry.inode, 4242);
++        assert_eq!((entry.dev_major, entry.dev_minor), (0, 1));
++        assert_eq!(offset, 0x1000_0000);
++        // In the second area, the offset is that area's file offset plus the
++        // distance into it.
++        let (_, offset) = find_backing(MAPS, 0x7f00_5000_0000, 4096).expect("mapped");
++        assert_eq!(offset, 0x5000_0000);
++    }
++
++    #[test]
++    fn a_span_may_cross_areas_only_where_they_continue_one_file() {
++        let (entry, offset) =
++            find_backing(MAPS, 0x7f00_3000_0000, 0x2000_0000).expect("continues the file");
++        assert_eq!((entry.inode, offset), (4242, 0x3000_0000));
++        // Into the anonymous area that follows: refused.
++        assert_eq!(find_backing(MAPS, 0x7f00_7000_0000, 0x2000_0000), None);
++        // Past the anonymous area into another file: refused.
++        assert_eq!(find_backing(MAPS, 0x7f00_8000_0000, 0x40_0000), None);
++    }
++
++    #[test]
++    fn anonymous_unmapped_and_empty_spans_have_no_backing() {
++        assert_eq!(find_backing(MAPS, 0x7f00_8000_0000, 4096), None);
++        assert_eq!(find_backing(MAPS, 0x1000, 4096), None);
++        assert_eq!(find_backing(MAPS, 0x7f00_0000_0000, 0), None);
++        assert_eq!(find_backing(MAPS, usize::MAX - 10, 4096), None);
++        assert_eq!(find_backing("garbage line\n", 0x1000, 1), None);
++    }
++
++    #[test]
++    fn udmabuf_needs_a_shrink_seal_and_no_write_seal() {
++        assert!(seals_admit_udmabuf(
++            libc::F_SEAL_SHRINK | libc::F_SEAL_GROW | libc::F_SEAL_SEAL
++        ));
++        assert!(!seals_admit_udmabuf(libc::F_SEAL_SEAL));
++        assert!(!seals_admit_udmabuf(
++            libc::F_SEAL_SHRINK | libc::F_SEAL_WRITE
++        ));
++    }
++
++    /// The whole walk on a real sealed memfd mapped shared, as a launcher lays
++    /// guest RAM: the descriptor is found from the address alone, and an
++    /// unsealed memfd is refused by name.
++    #[test]
++    fn a_sealed_memfd_mapping_is_found_from_its_address() {
++        unsafe fn map(sealed: bool) -> (OwnedFd, *mut libc::c_void, usize) {
++            let len = 4 << 20;
++            let flags = libc::MFD_CLOEXEC | if sealed { libc::MFD_ALLOW_SEALING } else { 0 };
++            let fd = unsafe { libc::memfd_create(c"reims-dma-buf-test".as_ptr(), flags) };
++            assert!(fd >= 0);
++            let fd = unsafe { OwnedFd::from_raw_fd(fd) };
++            assert_eq!(unsafe { libc::ftruncate(fd.as_raw_fd(), len as i64) }, 0);
++            if sealed {
++                let seals = libc::F_SEAL_SHRINK | libc::F_SEAL_GROW;
++                assert_eq!(
++                    unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_ADD_SEALS, seals) },
++                    0
++                );
++            }
++            let ptr = unsafe {
++                libc::mmap(
++                    std::ptr::null_mut(),
++                    len,
++                    libc::PROT_READ | libc::PROT_WRITE,
++                    libc::MAP_SHARED,
++                    fd.as_raw_fd(),
++                    0,
++                )
++            };
++            assert_ne!(ptr, libc::MAP_FAILED);
++            (fd, ptr, len)
++        }
++        unsafe {
++            let (_fd, ptr, len) = map(true);
++            let (found, offset) =
++                memfd_backing(ptr as usize + 8192, 8192).expect("a sealed memfd is admitted");
++            assert_eq!(offset, 8192);
++            let seals = libc::fcntl(found.as_raw_fd(), libc::F_GET_SEALS);
++            assert!(seals_admit_udmabuf(seals));
++            libc::munmap(ptr, len);
++
++            let (_fd, ptr, len) = map(false);
++            assert!(matches!(
++                memfd_backing(ptr as usize, 4096),
++                Err(BackingRefusal::NotSealed { .. })
++            ));
++            libc::munmap(ptr, len);
++
++            let anon = libc::mmap(
++                std::ptr::null_mut(),
++                4096,
++                libc::PROT_READ | libc::PROT_WRITE,
++                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
++                -1,
++                0,
++            );
++            assert!(matches!(
++                memfd_backing(anon as usize, 4096),
++                Err(BackingRefusal::NotOneFile)
++            ));
++            libc::munmap(anon, 4096);
++        }
++    }
++}
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
+index 6ef5231..3bfc3a4 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/host_ram.rs
+@@ -325,6 +325,13 @@ impl HostRamImports {
+         ctx: &super::context::DeviceContext,
+         import: &GuestRamImport,
+     ) -> Result<bool, HostRamDecline> {
++        // A dma-buf import pins every page it covers, and warming would cut
++        // and pin the whole of guest RAM before the guest has touched most of
++        // it. Those imports stay lazy: one window is cut on the first
++        // reference into it, and the cost is a pin of one window.
++        if dma_buf_route(ctx, import) {
++            return Ok(false);
++        }
+         unsafe { self.ensure(ctx, import) }.map(|(_, made)| made)
+     }
+ 
+@@ -521,6 +528,24 @@ unsafe fn import_ramblock(
+     use crate::backend::vulkan::caps::host_pointer::GUEST_IMPORT_USAGE;
+     use std::time::Instant;
+ 
++    // The dma-buf route first where it is armed: on the host it exists for,
++    // the host-pointer import below refuses every RAMBlock. A refusal here is
++    // logged and leaves this import to that route, as if the route were off.
++    #[cfg(target_os = "linux")]
++    if dma_buf_route(ctx, import) {
++        match unsafe { import_dma_buf(ctx, import) } {
++            Ok(made) => return Ok(made),
++            Err(refusal) => {
++                let (reason, detail) = refusal.describe();
++                crate::observe::off(format!(
++                    "host_ram_import_dma_buf_refused id={} bytes={} reason={reason} detail={detail} \
++                     (the host-pointer route is tried next)",
++                    import.id().get(),
++                    import.len(),
++                ));
++            }
++        }
++    }
+     let Some(loader) = ctx.external_memory_host.as_ref() else {
+         return Err(HostRamDecline::Unsupported {
+             rung: ctx.caps.host_pointer.rung,
+@@ -677,6 +702,174 @@ unsafe fn import_ramblock(
+     bound
+ }
+ 
++/// Whether `import` goes through the dma-buf route: the route is armed and
++/// the import is a RAMBlock window rather than a packed task alias, whose
++/// mapping is the shim's own and has no memfd behind it.
++fn dma_buf_route(ctx: &super::context::DeviceContext, import: &GuestRamImport) -> bool {
++    cfg!(target_os = "linux") && ctx.caps.dma_buf.is_armed() && import.gpa_base().is_some()
++}
++
++/// Why a RAMBlock window did not import as a dma-buf. Each is logged once per
++/// window and the host-pointer route runs next.
++#[cfg(target_os = "linux")]
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++enum DmaBufRefusal {
++    /// The fd entry points were not loaded, although the route is armed.
++    NoLoader,
++    /// No memfd, no seal, or no dma-buf; see the inner refusal.
++    Backing(super::guest_dma_buf::BackingRefusal),
++    FdProperties(vk::Result),
++    CreateBuffer(vk::Result),
++    TooSmall,
++    NoMemoryType {
++        fd_types: u32,
++        buffer_types: u32,
++    },
++    AllocateMemory(vk::Result),
++    BindBuffer(vk::Result),
++}
++
++#[cfg(target_os = "linux")]
++impl DmaBufRefusal {
++    fn describe(self) -> (&'static str, String) {
++        match self {
++            Self::NoLoader => ("dma_buf_no_loader", String::new()),
++            Self::Backing(inner) => (inner.slug(), inner.detail().to_string()),
++            Self::FdProperties(r) => ("dma_buf_fd_properties", format!("{r:?}")),
++            Self::CreateBuffer(r) => ("dma_buf_create_buffer", format!("{r:?}")),
++            Self::TooSmall => ("dma_buf_too_small", String::new()),
++            Self::NoMemoryType {
++                fd_types,
++                buffer_types,
++            } => (
++                "dma_buf_no_memory_type",
++                format!("fd_types={fd_types:#x},buffer_types={buffer_types:#x}"),
++            ),
++            Self::AllocateMemory(r) => ("dma_buf_allocate_memory", format!("{r:?}")),
++            Self::BindBuffer(r) => ("dma_buf_bind_buffer", format!("{r:?}")),
++        }
++    }
++}
++
++/// Import one RAMBlock window as a dma-buf cut from the memfd behind it.
++///
++/// The window's bytes are the guest's own pages, exactly as with a host
++/// pointer: the buffer spans the window and nothing past it, because the
++/// dma-buf is cut to the window's length.
++///
++/// # Safety
++///
++/// As [`HostRamImports::bind`].
++#[cfg(target_os = "linux")]
++unsafe fn import_dma_buf(
++    ctx: &super::context::DeviceContext,
++    import: &GuestRamImport,
++) -> Result<ImportedHostRam, DmaBufRefusal> {
++    use crate::backend::vulkan::caps::host_pointer::GUEST_IMPORT_USAGE;
++    use std::os::fd::{AsFd, FromRawFd, IntoRawFd, OwnedFd};
++    use std::time::Instant;
++    const HANDLE_TYPE: vk::ExternalMemoryHandleTypeFlags =
++        vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT;
++
++    let loader = ctx
++        .external_memory_fd
++        .as_ref()
++        .ok_or(DmaBufRefusal::NoLoader)?;
++    let size = import.len();
++    let started = Instant::now();
++    let (memfd, offset) = super::guest_dma_buf::memfd_backing(import.host_base(), size)
++        .map_err(DmaBufRefusal::Backing)?;
++    let dma_buf = super::guest_dma_buf::udmabuf_create(memfd.as_fd(), offset, size)
++        .map_err(DmaBufRefusal::Backing)?;
++    let cut_us = started.elapsed().as_micros() as u64;
++
++    let mut fd_props = vk::MemoryFdPropertiesKHR::default();
++    unsafe {
++        loader.get_memory_fd_properties(
++            HANDLE_TYPE,
++            std::os::fd::AsRawFd::as_raw_fd(&dma_buf),
++            &mut fd_props,
++        )
++    }
++    .map_err(DmaBufRefusal::FdProperties)?;
++
++    let mut external = vk::ExternalMemoryBufferCreateInfo::default().handle_types(HANDLE_TYPE);
++    let create = vk::BufferCreateInfo::default()
++        .size(size)
++        .usage(GUEST_IMPORT_USAGE)
++        .sharing_mode(vk::SharingMode::EXCLUSIVE)
++        .push_next(&mut external);
++    let buffer =
++        unsafe { ctx.device.create_buffer(&create, None) }.map_err(DmaBufRefusal::CreateBuffer)?;
++
++    let alloc_started = Instant::now();
++    let bound = (|| {
++        let reqs = unsafe { ctx.device.get_buffer_memory_requirements(buffer) };
++        if reqs.size > size {
++            return Err(DmaBufRefusal::TooSmall);
++        }
++        let types = fd_props.memory_type_bits & reqs.memory_type_bits;
++        let req = ctx
++            .caps
++            .memory_request(crate::backend::vulkan::caps::MemoryClass::Upload);
++        let pick = crate::backend::vulkan::caps::memory_topology::select_memory_type(
++            &ctx.memory_properties,
++            types,
++            &req,
++            size,
++            ctx.caps.max_allocation_size,
++        )
++        .map_err(|_| DmaBufRefusal::NoMemoryType {
++            fd_types: fd_props.memory_type_bits,
++            buffer_types: reqs.memory_type_bits,
++        })?;
++        // Vulkan owns the descriptor once the import succeeds, and only then.
++        let raw = dma_buf.into_raw_fd();
++        let mut fd_import = vk::ImportMemoryFdInfoKHR::default()
++            .handle_type(HANDLE_TYPE)
++            .fd(raw);
++        let allocate = vk::MemoryAllocateInfo::default()
++            .allocation_size(size)
++            .memory_type_index(pick.index)
++            .push_next(&mut fd_import);
++        let memory = unsafe { ctx.device.allocate_memory(&allocate, None) }.map_err(|result| {
++            // SAFETY: the failed import did not take `raw`, so it is still ours.
++            drop(unsafe { OwnedFd::from_raw_fd(raw) });
++            DmaBufRefusal::AllocateMemory(result)
++        })?;
++        match unsafe { ctx.device.bind_buffer_memory(buffer, memory, 0) } {
++            Ok(()) => Ok((memory, pick)),
++            Err(result) => {
++                unsafe { ctx.device.free_memory(memory, None) };
++                Err(DmaBufRefusal::BindBuffer(result))
++            }
++        }
++    })();
++    let (memory, pick) = match bound {
++        Ok(made) => made,
++        Err(refusal) => {
++            unsafe { ctx.device.destroy_buffer(buffer, None) };
++            return Err(refusal);
++        }
++    };
++    crate::observe::off(format!(
++        "host_ram_import id={} route=dma_buf bytes={size} mtype={} heap={} heap_mb={} cut_us={cut_us} \
++         alloc_us={} ok=true",
++        import.id().get(),
++        pick.index,
++        pick.heap_index,
++        pick.heap_bytes >> 20,
++        alloc_started.elapsed().as_micros() as u64,
++    ));
++    Ok(ImportedHostRam {
++        buffer,
++        memory,
++        memory_type_index: pick.index,
++        size,
++        alias: None,
++    })
++}
++
+ /// A check that stopped GPU-ordered access to the guest's own pages, so the
+ /// operation took its blocking CPU route instead.
+ ///
+@@ -1169,6 +1362,123 @@ mod tests {
+         crate::runtime::guest_ram_map::reset();
+     }
+ 
++    /// With the dma-buf route armed, a RAMBlock laid on a sealed memfd imports
++    /// one window at a time on first reference, and the handshake warm cuts
++    /// nothing.
++    ///
++    /// Runs only in a process whose device was created with
++    /// `REIMS_VGPU_GUEST_IMPORT_DMA_BUF=on` on a host where the route arms
++    /// (run this test alone with the variable set); skips everywhere else.
++    #[cfg(target_os = "linux")]
++    #[test]
++    fn an_armed_dma_buf_route_imports_one_window_on_first_reference() {
++        let window = {
++            let mut guard = super::super::lock_engine();
++            let super::super::EngineState {
++                ref mut owner,
++                ref counters,
++                ..
++            } = &mut *guard;
++            let Ok(ctx) = owner.ensure(counters) else {
++                eprintln!("skip: no Vulkan device");
++                return;
++            };
++            if !ctx.caps.dma_buf.is_armed() {
++                eprintln!("skip: the dma-buf route is not armed in this process");
++                return;
++            }
++            ctx.caps.dma_buf.window
++        };
++
++        // Two windows of a sealed memfd mapped shared, as a launcher lays
++        // guest RAM. Never unmapped: an import outlives the test.
++        let len = 2 * window;
++        let memfd = unsafe {
++            libc::memfd_create(
++                c"reims-dma-buf-route".as_ptr(),
++                libc::MFD_CLOEXEC | libc::MFD_ALLOW_SEALING,
++            )
++        };
++        assert!(memfd >= 0);
++        assert_eq!(unsafe { libc::ftruncate(memfd, len as i64) }, 0);
++        let seals = libc::F_SEAL_SHRINK | libc::F_SEAL_GROW;
++        assert_eq!(unsafe { libc::fcntl(memfd, libc::F_ADD_SEALS, seals) }, 0);
++        let base = unsafe {
++            libc::mmap(
++                std::ptr::null_mut(),
++                len as usize,
++                libc::PROT_READ | libc::PROT_WRITE,
++                libc::MAP_SHARED,
++                memfd,
++                0,
++            )
++        };
++        assert_ne!(base, libc::MAP_FAILED);
++
++        struct OneBlock(u64, u64);
++        impl crate::runtime::host::HostOps for OneBlock {
++            fn mono_ns(&self) -> u64 {
++                0
++            }
++            fn enqueue(&mut self, _action: crate::runtime::host::HostAction) {}
++            fn schedule_bh(&mut self) {}
++            fn guest_ram_regions(
++                &mut self,
++            ) -> Result<
++                Vec<crate::runtime::guest_ram::GuestRamRegion>,
++                crate::runtime::host::GuestRamRegionsError,
++            > {
++                Ok(vec![crate::runtime::guest_ram::GuestRamRegion {
++                    gpa_base: 0x1_0000_0000,
++                    host_va: self.0,
++                    len: self.1,
++                }])
++            }
++        }
++
++        crate::runtime::guest_ram_map::reset();
++        let mut host = OneBlock(base as u64, len);
++        let before = super::super::guest_import_census().0;
++        crate::runtime::guest_ram_map::warm(&mut host);
++        assert_eq!(
++            super::super::guest_import_census().0,
++            before,
++            "the warm cuts and pins nothing on the dma-buf route"
++        );
++        assert_eq!(
++            crate::runtime::guest_ram_map::span_census(),
++            (2, len),
++            "the block is cut into windows of the udmabuf limit"
++        );
++
++        let guest_ref = crate::runtime::guest_ram_map::reference(
++            &mut host,
++            0x1_0000_0000 + window + 4096,
++            8192,
++        )
++        .expect("a reference inside the second window");
++        {
++            let mut guard = super::super::lock_engine();
++            let super::super::EngineState {
++                ref mut owner,
++                ref counters,
++                ref mut pools,
++                ..
++            } = &mut *guard;
++            let ctx = owner.ensure(counters).expect("device created above");
++            let bound = unsafe { pools.bind_guest_ram(ctx, &guest_ref) }
++                .expect("the window imports as a dma-buf");
++            assert!(bound.offset + bound.len <= window);
++            assert!(bound.len >= 8192);
++        }
++        assert_eq!(
++            super::super::guest_import_census().0,
++            before + window,
++            "exactly one window was imported"
++        );
++        crate::runtime::guest_ram_map::reset();
++    }
++
+     /// A fresh map holds nothing and reports nothing imported. The count is the
+     /// reading that says whether the model held: it must stay at the number of
+     /// RAMBlocks for a whole boot rather than tracking the workload.
+diff --git c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+index 52160dc..98d7579 100644
+--- c/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
++++ i/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/mod.rs
+@@ -25,6 +25,8 @@ mod driver_breadcrumb;
+ mod exec;
+ mod exec_compute;
+ mod facade_decline;
++#[cfg(target_os = "linux")]
++mod guest_dma_buf;
+ mod guest_scatter;
+ mod host_ram;
+ pub mod init_decline;

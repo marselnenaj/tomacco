@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 228 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 236 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 439 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 459 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -16,6 +16,12 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | --- | --- | --- |
 | [`doctor`](general.md#doctor) | Check toolchain | read-only |
 | [`capabilities`](general.md#capabilities) | What this computer can do | read-only |
+
+## [agent](agent.md)
+
+| Operation | Title | Annotation |
+| --- | --- | --- |
+| [`agent.policy`](agent.md#agentpolicy) | Agent policy | read-only |
 
 ## [android](android.md)
 
@@ -68,6 +74,12 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`apple.device`](apple.md#appledevice) | Control iPhone on the Mac | **destructive** |
 | [`apple.profile`](apple.md#appleprofile) | Instruments recording | writes |
 | [`apple.store`](apple.md#applestore) | Upload App Store build | writes |
+
+## [audit](audit.md)
+
+| Operation | Title | Annotation |
+| --- | --- | --- |
+| [`audit.list`](audit.md#auditlist) | Audit log | read-only |
 
 ## [catalog](catalog.md)
 
@@ -286,6 +298,12 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`remote.run`](remote.md#remoterun) | Run on Mac | **destructive** |
 | [`remote.fetch`](remote.md#remotefetch) | Download Mac artifact | writes |
 
+## [result](result.md)
+
+| Operation | Title | Annotation |
+| --- | --- | --- |
+| [`result.read`](result.md#resultread) | Read a saved result | read-only |
+
 ## [runtime](runtime.md)
 
 | Operation | Title | Annotation |
@@ -335,6 +353,11 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`testing.accessibility`](testing.md#testingaccessibility) | Check Android accessibility | read-only |
 | [`testing.crashes`](testing.md#testingcrashes) | Find app crashes | read-only |
 | [`testing.results`](testing.md#testingresults) | Read test results | read-only |
+| [`testing.coverage`](testing.md#testingcoverage) | Read code coverage | read-only |
+| [`testing.report`](testing.md#testingreport) | Write HTML test report | writes |
+| [`testing.history`](testing.md#testinghistory) | Test pass-rate history | writes |
+| [`testing.impact`](testing.md#testingimpact) | Select affected tests | writes |
+| [`testing.baselines`](testing.md#testingbaselines) | Review screenshot baselines | **destructive** |
 | [`testing.setup`](testing.md#testingsetup) | Set up Android text input | writes |
 | [`testing.instrumentation`](testing.md#testinginstrumentation) | Check Android text input | read-only |
 

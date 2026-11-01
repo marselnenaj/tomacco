@@ -106,6 +106,22 @@ class DesktopUiTest : public QObject {
         auto *face=QAccessible::queryAccessibleInterface(item);
         return face?face->text(QAccessible::Name):QString();
     }
+    // A request sent on the preview socket, as tomaccoctl sends it, without waiting for its answer.
+    std::unique_ptr<QLocalSocket> previewSend(const QString &method,const QVariantMap &params={}) {
+        const auto data=QDir::cleanPath(QFileInfo(Backend::dataDirectory()).absoluteFilePath());
+        auto runtime=data+"/runtime";
+        if(runtime.toUtf8().size()+54>=104)runtime=QStringLiteral("/tmp/tomacco-%1-%2").arg(getuid()).arg(QString::fromLatin1(QCryptographicHash::hash(data.toUtf8(),QCryptographicHash::Sha256).toHex().left(16)));
+        auto socket=std::make_unique<QLocalSocket>();socket->connectToServer(runtime+"/preview-ui-acceptance.sock");
+        if(!socket->waitForConnected(2000))return nullptr;
+        socket->write(QJsonDocument(QJsonObject{{"id",1},{"method",method},{"params",QJsonObject::fromVariantMap(params)}}).toJson(QJsonDocument::Compact)+"\n");socket->flush();
+        return socket;
+    }
+    // The answer to a request previewSend sent.
+    QVariantMap previewAnswer(QLocalSocket *socket,int milliseconds=30000) {
+        QElapsedTimer clock;clock.start();
+        while(!socket->canReadLine() && clock.elapsed()<patient(milliseconds))QTest::qWait(10);
+        return QJsonDocument::fromJson(socket->readLine()).object().toVariantMap();
+    }
     // One request on the preview socket, as tomaccoctl sends it: {result} or {error}.
     QVariantMap previewCall(const QString &method,const QVariantMap &params={}) {
         // Where Control puts it: the data directory's runtime/, or /tmp when that path is too long.
@@ -182,6 +198,8 @@ private slots:
         qputenv("TOMACCO_UPDATES","off");
         qputenv("XDG_CONFIG_HOME",directory.filePath("config").toUtf8());
         qputenv("XDG_CACHE_HOME",directory.filePath("cache").toUtf8());
+        // No Omarchy theme unless a test writes one.
+        qputenv("XDG_STATE_HOME",directory.filePath("state-home").toUtf8());
         QVERIFY(QDir().mkpath(directory.filePath("project")));
         QFile source(directory.filePath("project/pubspec.yaml"));QVERIFY(source.open(QIODevice::WriteOnly));source.write("name: tomacco_ui_test\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");source.close();
         // This version has started here before: no sheet for a first start or a new version.
@@ -220,6 +238,23 @@ private slots:
         const auto project=workspace->property("project");
         const auto projectMap=project.metaType()==QMetaType::fromType<QJSValue>()?project.value<QJSValue>().toVariant().toMap():project.toMap();
         QCOMPARE(projectMap.value("path").toString(),directory.filePath("project"));
+    }
+    void hidden_pages_are_built_when_first_shown() {
+        // The start builds what the first window shows; the debugger, UI tests, performance,
+        // release and the iOS test system wait until they are shown, then stay.
+        QVERIFY(!object("debugWorkspace"));QVERIFY(!object("iosResearch"));
+        open("debug");
+        QTRY_VERIFY(object("debugWorkspace"));
+        QVERIFY(!object("iosResearch"));
+        // The iOS test system: once the Apple devices are shown.
+        open("devices");
+        const auto platform=workspace->property("selectedPlatform").toString();
+        QVERIFY(QMetaObject::invokeMethod(workspace,"chooseDevicePlatform",Q_ARG(QVariant,QString("ios"))));
+        QTRY_VERIFY(object("iosResearch"));
+        QVERIFY(QMetaObject::invokeMethod(workspace,"chooseDevicePlatform",Q_ARG(QVariant,platform)));
+        open("runtime");
+        QVERIFY(object("debugWorkspace"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void command_palette_keyboard_and_focus() {
         QTest::keyClick(window,Qt::Key_K,Qt::ControlModifier);
@@ -839,6 +874,8 @@ private slots:
         QCOMPARE(revealed.size(),1);QCOMPARE(revealed.first().first().toString(),path);
         view->setProperty("live",QVariantMap{});display->setProperty("session",QVariantMap{});view->setProperty("targets",QVariantList{});
         // The virtual iPhone records through ios.virtual.record; with no phone running it says why.
+        // Its view is built when it is first needed.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"visit",Q_ARG(QVariant,QString("ios-research"))));
         auto *guest=object("iosGuestRecorder");QVERIFY(guest);
         const QVariantMap phoneArgs{{"path",videos.filePath("phone.mp4")},{"seconds",600}};
         QVERIFY(QMetaObject::invokeMethod(guest,"start",Q_ARG(QVariant,QString("ios.virtual.record")),Q_ARG(QVariant,phoneArgs)));
@@ -3888,6 +3925,51 @@ for line in sys.stdin:
         view->setProperty("quitting",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void a_destructive_agent_call_waits_for_the_persons_answer() {
+        // tomaccoctl asks with approve when agent_policy.approval.destructive is on; a stand-in agent asks here.
+        auto *dialog=object("approvalDialog");QVERIFY(dialog);
+        QVERIFY(!dialog->property("visible").toBool());
+        const QVariantMap question{{"operation","files.write"},{"title","Save source file"},{"client","stand-in-agent"},{"channel","mcp"},
+            {"arguments",QVariantMap{{"path",directory.filePath("project")},{"file","lib/main.dart"},{"token","[redacted]"}}},{"timeout_seconds",20}};
+        auto asking=previewSend("approve",question);QVERIFY(asking);
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        const auto summary=item("approvalSummary")->property("text").toString();
+        QVERIFY2(summary.contains("stand-in-agent") && summary.contains("Save source file") && summary.contains("(files.write)"),qPrintable(summary));
+        const auto shown=item("approvalArguments-text")->property("text").toString();
+        QVERIFY(shown.contains("lib/main.dart"));QVERIFY(shown.contains("[redacted]"));
+        QVERIFY(item("approvalCountdown")->property("text").toString().contains(QRegularExpression("(19|20)$")));
+        // Deny has the focus: Return or Space alone never approves.
+        QTRY_VERIFY(item("approvalDeny")->hasActiveFocus());
+        capture("approval-dialog");
+        clickItem("approvalApprove");
+        auto answer=previewAnswer(asking.get()).value("result").toMap();
+        QCOMPARE(answer.value("approved").toBool(),true);
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+
+        // Two at once: each is answered in turn; Deny and Escape are a no.
+        auto first=previewSend("approve",question);
+        auto second=previewSend("approve",[&]{auto other=question;other["operation"]="job.cancel";other["title"]="Cancel job";return other;}());
+        QVERIFY(first && second);
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        QTRY_VERIFY(item("approvalSummary")->property("text").toString().contains("(files.write)"));
+        clickItem("approvalDeny");
+        answer=previewAnswer(first.get()).value("result").toMap();
+        QCOMPARE(answer.value("approved").toBool(),false);QCOMPARE(answer.value("reason").toString(),QString("denied"));
+        QTRY_VERIFY(item("approvalSummary")->property("text").toString().contains("(job.cancel)"));
+        QVERIFY(dialog->property("visible").toBool());
+        QTest::keyClick(window,Qt::Key_Escape);
+        answer=previewAnswer(second.get()).value("result").toMap();
+        QCOMPARE(answer.value("approved").toBool(),false);
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+
+        // Nobody answers: the countdown says no.
+        auto silent=previewSend("approve",[&]{auto quick=question;quick["timeout_seconds"]=1;return quick;}());QVERIFY(silent);
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        answer=previewAnswer(silent.get(),5000).value("result").toMap();
+        QCOMPARE(answer.value("approved").toBool(),false);QCOMPARE(answer.value("reason").toString(),QString("timeout"));
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void a_log_runs_beside_the_device_resizable_and_remembered() {
         // The palette opens a log beside the device: the device's own log, or a job's. The handle
         // between them resizes it, and the width is kept.
@@ -4090,6 +4172,212 @@ for line in sys.stdin:
         QCOMPARE(accessibleName(item("jobRow-a11y-failed")).left(14),QString("Lint, Failed, "));
         QAccessible::setActive(false);
         workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void omarchy_theme_accent_is_followed_where_it_reads_and_only_when_chosen() {
+        open("runtime");
+        // A theme as Omarchy keeps the active one: $XDG_STATE_HOME/omarchy/current/theme/colors.toml.
+        const auto state=directory.filePath("xdg-state");
+        const auto themeDir=state+"/omarchy/current/theme";
+        QVERIFY(QDir().mkpath(themeDir));
+        const auto writeTheme=[&](const QByteArray &accent){
+            QFile file(themeDir+"/colors.toml");QVERIFY(file.open(QIODevice::WriteOnly|QIODevice::Truncate));
+            file.write("# fixture\nmode = \"dark\"\n\naccent = \""+accent+"\"\nbackground = \"#101418\"\nforeground = \"#f0f0f0\"\nred = \"not-a-colour\"\n");};
+        writeTheme("#4fb3ff");
+        {QFile name(state+"/omarchy/current/theme.name");QVERIFY(name.open(QIODevice::WriteOnly));name.write("fixture-blue\n");}
+        qputenv("XDG_STATE_HOME",state.toUtf8());
+        const auto noTheme=directory.filePath("state-home").toUtf8();
+        auto cleanup=qScopeGuard([&]{backend->setFollowOmarchyAccent(false);backend->setAppearance("system");qputenv("XDG_STATE_HOME",noTheme);backend->reloadOmarchyTheme();});
+        backend->reloadOmarchyTheme();
+        const auto theme=backend->omarchyTheme();
+        QVERIFY(theme.value("available").toBool());
+        QCOMPARE(theme.value("name").toString(),QString("fixture-blue"));
+        QCOMPARE(theme.value("accent").toString(),QString("#4fb3ff"));
+        QCOMPARE(theme.value("background").toString(),QString("#101418"));
+        QVERIFY(!theme.contains("red"));
+        const auto accent=[&]{return QQmlProperty::read(window,"palette.highlight").value<QColor>().name();};
+        // Off by default: the brand's red.
+        backend->setAppearance("dark");
+        QVERIFY(!backend->followOmarchyAccent());
+        QCOMPARE(accent(),QString("#f2361f"));
+        // Chosen in the settings: the theme's accent, at once.
+        QTest::keyClick(window,Qt::Key_Comma,Qt::ControlModifier);
+        auto *dialog=object("settingsDialog");QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *toggle=item("omarchyAccentToggle");QVERIFY(toggle);QTRY_VERIFY(toggle->isVisible());
+        QVERIFY(QMetaObject::invokeMethod(toggle,"toggle"));QVERIFY(QMetaObject::invokeMethod(toggle,"toggled"));
+        QTRY_VERIFY(backend->followOmarchyAccent());
+        QTRY_COMPARE(accent(),QString("#4fb3ff"));
+        capture("settings-omarchy-accent");
+        QCOMPARE(QSettings().value("appearance/omarchyAccent").toString(),QString("true"));
+        QVERIFY(object("omarchyAccentState")->property("text").toString().contains("fixture-blue"));
+        // On the light background this blue does not read clearly: the brand stays, and the settings say why.
+        backend->setAppearance("light");
+        QTRY_COMPARE(accent(),QString("#f2361f"));
+        QTRY_VERIFY(object("omarchyAccentState")->property("text").toString().contains("does not read clearly"));
+        backend->setAppearance("dark");
+        // Another theme set in Omarchy is noticed by itself.
+        writeTheme("#d8ff3d");
+        QTRY_COMPARE_WITH_TIMEOUT(accent(),QString("#d8ff3d"),patient(5000));
+        // Tomacco only reads the theme.
+        QFile file(themeDir+"/colors.toml");QVERIFY(file.open(QIODevice::ReadOnly));QVERIFY(file.readAll().contains("#d8ff3d"));
+        // Without an Omarchy theme the choice is not offered.
+        cleanup.dismiss();
+        backend->setFollowOmarchyAccent(false);qputenv("XDG_STATE_HOME",noTheme);backend->reloadOmarchyTheme();
+        QTRY_VERIFY(!toggle->isVisible());
+        QCOMPARE(accent(),QString("#f2361f"));
+        backend->setAppearance("system");
+        dialog->setProperty("visible",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void settings_search_filters_sections_and_takes_the_keyboard() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        QTest::keyClick(window,Qt::Key_Comma,Qt::ControlModifier);
+        auto *dialog=object("settingsDialog");QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *search=item("settingsSearch");QVERIFY(search);
+        // The search has the keyboard as soon as the dialog opens.
+        QTRY_VERIFY(search->hasActiveFocus());
+        const auto shown=[&](const char *name){return item(name)->isVisible();};
+        for(const auto *name:{"settingsAppearance","settingsLanguage","settingsNotifications","settingsAgent","settingsUpdates","settingsLayouts","settingsTransfer"})QVERIFY2(shown(name),name);
+        type("channel");
+        QTRY_VERIFY(shown("settingsUpdates"));
+        capture("settings-search");
+        QVERIFY(!shown("settingsAppearance"));QVERIFY(!shown("settingsLanguage"));QVERIFY(!shown("settingsTransfer"));
+        QVERIFY(!item("settingsNoMatch")->isVisible());
+        // Every word has to match, in any order and case; options and explanations count.
+        search->setProperty("text",QString("JOB background"));
+        QTRY_VERIFY(shown("settingsNotifications"));QVERIFY(!shown("settingsUpdates"));
+        search->setProperty("text",QString("dark"));
+        QTRY_VERIFY(shown("settingsAppearance"));QVERIFY(!shown("settingsNotifications"));
+        search->setProperty("text",QString("zzzz"));
+        QTRY_VERIFY(item("settingsNoMatch")->isVisible());
+        QVERIFY(object("settingsNoMatch")->property("text").toString().contains("zzzz"));
+        // Esc empties the search, then closes the dialog.
+        QTest::keyClick(window,Qt::Key_Escape);
+        QTRY_COMPARE(search->property("text").toString(),QString());
+        QVERIFY(dialog->property("visible").toBool());QVERIFY(shown("settingsLanguage"));
+        // Down leaves the search for the first setting.
+        QTest::keyClick(window,Qt::Key_Down);QTRY_VERIFY(!search->hasActiveFocus());
+        QTest::keyClick(window,Qt::Key_Escape);
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+        // Opened again it starts empty.
+        QTest::keyClick(window,Qt::Key_Comma,Qt::ControlModifier);
+        QTRY_VERIFY(dialog->property("visible").toBool());QTRY_VERIFY(search->hasActiveFocus());
+        QCOMPARE(search->property("text").toString(),QString());
+        dialog->setProperty("visible",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void window_layouts_are_saved_and_restored_by_name() {
+        open("runtime");window->showNormal();window->resize(760,580);QTest::qWait(50);
+        // Offscreen the screen is small; a layout's size stays within the screen.
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        QSettings().remove("layouts");view->setProperty("windowLayouts",QVariantMap{});
+        auto restore=qScopeGuard([&]{
+            QSettings().remove("layouts");view->setProperty("windowLayouts",QVariantMap{});
+            view->setProperty("notice",QString());view->setProperty("failed",false);
+            view->setProperty("showActivity",true);view->setProperty("showStageLog",false);view->setProperty("stageLogMode","device");view->setProperty("stageLogWidth",420);
+            open("runtime");window->resize(1380,970);});
+        const auto call=[&](const char *method,const QString &name){QVariant ok;return QMetaObject::invokeMethod(view,method,Q_RETURN_ARG(QVariant,ok),Q_ARG(QVariant,name)) && ok.toBool();};
+        // Debugging: the debugger, no activity panel, the job log beside the device at 500 px.
+        open("debug");
+        view->setProperty("showActivity",false);view->setProperty("showStageLog",true);view->setProperty("stageLogMode","job");view->setProperty("stageLogWidth",500);
+        QVERIFY(call("saveLayout","debugging"));
+        QVERIFY(QSettings().value("layouts/saved").toString().contains("debugging"));
+        // Testing: the live device with the activity panel, in a smaller window.
+        open("runtime");window->resize(620,500);QTest::qWait(50);
+        view->setProperty("showActivity",true);view->setProperty("showStageLog",false);view->setProperty("stageLogMode","device");view->setProperty("stageLogWidth",420);
+        QVERIFY(call("saveLayout","  testing  "));
+        QCOMPARE(view->property("layoutNames").toStringList(),QStringList({"debugging","testing"}));
+        QVERIFY(call("applyLayout","debugging"));
+        QTRY_COMPARE(view->property("currentSection").toString(),QString("debug"));
+        QVERIFY(!view->property("showActivity").toBool());QVERIFY(view->property("showStageLog").toBool());
+        QCOMPARE(view->property("stageLogMode").toString(),QString("job"));QCOMPARE(view->property("stageLogWidth").toInt(),500);
+        QTRY_COMPARE(window->width(),760);QTRY_COMPARE(window->height(),580);
+        QVERIFY(call("applyLayout","testing"));
+        QTRY_COMPARE(view->property("currentSection").toString(),QString("runtime"));
+        QVERIFY(view->property("showActivity").toBool());QVERIFY(!view->property("showStageLog").toBool());
+        QTRY_COMPARE(window->width(),620);
+        // The palette offers each layout, and the settings list them.
+        bool offered=false;
+        for(const auto &entry:view->property("commands").toList())offered=offered || mapOf(entry).value("id").toString()=="layout:debugging";
+        QVERIFY(offered);
+        QVERIFY(QMetaObject::invokeMethod(view,"openSettings",Q_ARG(QVariant,QString("Window layouts"))));
+        auto *dialog=object("settingsDialog");QTRY_VERIFY(dialog->property("visible").toBool());
+        QTRY_VERIFY(item("settingsLayouts")->isVisible());QVERIFY(!item("settingsAppearance")->isVisible());
+        capture("settings-layouts");
+        QVERIFY(item("useLayout-debugging"));
+        clickItem("deleteLayout-debugging");
+        QTRY_COMPARE(view->property("layoutNames").toStringList(),QStringList({"testing"}));
+        QVERIFY(!QSettings().value("layouts/saved").toString().contains("debugging"));
+        dialog->setProperty("visible",false);
+        // An unknown name does nothing; at most twelve are kept.
+        QVERIFY(!call("applyLayout","nothing"));
+        for(int i=0;i<11;++i)QVERIFY(call("saveLayout",QString("layout %1").arg(i)));
+        QVERIFY(!call("saveLayout","one too many"));
+        QVERIFY(call("saveLayout","testing"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void notifications_list_what_happened_and_lead_back_to_it() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *centre=view->property("notificationCentre").value<QObject *>();QVERIFY(centre);
+        QVERIFY(QMetaObject::invokeMethod(centre,"clear"));
+        const auto entries=[&]{return centre->property("entries").toList();};
+        const auto first=[&]{return mapOf(entries().value(0));};
+        // A job this window sees end, also while the window is active.
+        const double now=QDateTime::currentSecsSinceEpoch();
+        QVariantMap job{{"id","note-ui-job"},{"label","Build Android · release"},{"state","running"},{"created",now-30},{"updated",now}};
+        workspace->setProperty("jobs",QVariantList{job});
+        job["state"]="failed";job["updated"]=now+12;
+        workspace->setProperty("jobs",QVariantList{job});
+        QTRY_COMPARE(entries().size(),1);
+        QCOMPARE(first().value("kind").toString(),QString("job"));QCOMPARE(first().value("tone").toString(),QString("failed"));
+        QCOMPARE(first().value("title").toString(),QString("Build Android · release"));
+        QVERIFY(first().value("body").toString().startsWith("Failed after"));
+        QCOMPARE(first().value("job").toString(),QString("note-ui-job"));
+        // An update.
+        auto *updates=object("updateModel");QVERIFY(updates);
+        updates->setProperty("background",false);
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        QSettings().remove("updates");updates->setProperty("dismissed",QString());
+        updates->setProperty("status",updateStatus("9.3.0"));
+        QTRY_COMPARE(entries().size(),2);
+        QCOMPARE(first().value("kind").toString(),QString("update"));QVERIFY(first().value("title").toString().contains("9.3.0"));
+        // The same version is listed once.
+        updates->setProperty("status",QVariantMap{});updates->setProperty("status",updateStatus("9.3.0"));
+        QTest::qWait(100);QCOMPARE(entries().size(),2);
+        updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
+        // An agent's call to this window that failed.
+        emit control->previewRequest(-300,"navigate",{});emit control->previewFinished(-300,"Invalid URL");
+        QTRY_COMPARE(entries().size(),3);
+        QCOMPARE(first().value("kind").toString(),QString("agent"));QVERIFY(first().value("title").toString().contains("preview.navigate"));
+        QCOMPARE(first().value("body").toString(),QString("Invalid URL"));
+        // The panel lists them; a click on the job leads to its log under Builds & jobs.
+        QTRY_VERIFY(item("notification-job"));QVERIFY(item("notification-update"));QVERIFY(item("notification-agent"));
+        capture("activity-notifications");
+        QVERIFY(QMetaObject::invokeMethod(item("notification-job"),"clicked"));
+        QTRY_VERIFY(workspace->property("opened").toBool());
+        QCOMPARE(workspace->property("section").toString(),QString("jobs"));
+        // A device's entry chooses that device as the live one.
+        open("runtime");
+        QVariant entry;
+        const QVariantMap deviceLink{{"platform","android"},{"device","emulator-5570"}};
+        QVERIFY(QMetaObject::invokeMethod(centre,"add",Q_RETURN_ARG(QVariant,entry),Q_ARG(QVariant,"device"),Q_ARG(QVariant,"warn"),Q_ARG(QVariant,"Pixel 9"),Q_ARG(QVariant,"Session ended"),
+            Q_ARG(QVariant,deviceLink)));
+        QVERIFY(QMetaObject::invokeMethod(view,"openNotification",Q_ARG(QVariant,entry)));
+        QCOMPARE(view->property("platform").toString(),QString("android"));QCOMPARE(view->property("target").toString(),QString("emulator-5570"));
+        QVERIFY(!workspace->property("opened").toBool());
+        // The update's entry opens the update settings.
+        QVERIFY(QMetaObject::invokeMethod(item("notification-update"),"clicked"));
+        auto *dialog=object("settingsDialog");QTRY_VERIFY(dialog->property("visible").toBool());
+        QTRY_VERIFY(item("settingsUpdates")->isVisible());QVERIFY(!item("settingsAppearance")->isVisible());
+        dialog->setProperty("visible",false);
+        // Kept across starts, and cleared on request.
+        QVERIFY(QSettings().value("Notifications/recent").toString().contains("emulator-5570"));
+        clickItem("notificationsClear");
+        QTRY_VERIFY(entries().isEmpty());
+        QCOMPARE(QSettings().value("Notifications/recent").toString(),QString("[]"));
+        workspace->setProperty("jobs",QVariantList{});
+        view->setProperty("notice",QString());view->setProperty("failed",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void cleanupTestCase() {

@@ -38,6 +38,68 @@ Backend::Backend(QString initialUrl, QObject *parent, bool autoProbe): QObject(p
     connect(&m_server,&QTcpServer::newConnection,this,&Backend::acceptConnections);
     if(qGuiApp) connect(QGuiApplication::styleHints(),&QStyleHints::colorSchemeChanged,this,&Backend::appearanceChanged);
     if(autoProbe) QTimer::singleShot(0,this,&Backend::probeToolchain);
+    // Omarchy replaces the theme's files when another theme is set; the
+    // reload waits a moment so it reads the new files, not half of them.
+    m_themeReload.setSingleShot(true);
+    m_themeReload.setInterval(250);
+    connect(&m_themeReload,&QTimer::timeout,this,&Backend::reloadOmarchyTheme);
+    connect(&m_themeWatcher,&QFileSystemWatcher::directoryChanged,&m_themeReload,qOverload<>(&QTimer::start));
+    connect(&m_themeWatcher,&QFileSystemWatcher::fileChanged,&m_themeReload,qOverload<>(&QTimer::start));
+    reloadOmarchyTheme();
+}
+QString Backend::omarchyThemeDirectory() {
+    const auto state=qEnvironmentVariableIsEmpty("XDG_STATE_HOME")?QDir::homePath()+"/.local/state":qEnvironmentVariable("XDG_STATE_HOME");
+    const auto config=qEnvironmentVariableIsEmpty("XDG_CONFIG_HOME")?QDir::homePath()+"/.config":qEnvironmentVariable("XDG_CONFIG_HOME");
+    for(const auto &directory:{state+"/omarchy/current/theme",config+"/omarchy/current/theme"})
+        if(QFileInfo(directory+"/colors.toml").isFile()) return directory;
+    return {};
+}
+QVariantMap Backend::parseOmarchyColors(const QByteArray &text) {
+    static const QRegularExpression line(QStringLiteral("^\\s*([a-z_]+)\\s*=\\s*[\"']([^\"']*)[\"']\\s*(#.*)?$"));
+    static const QRegularExpression colour(QStringLiteral("^#[0-9a-fA-F]{6}$"));
+    QVariantMap values;
+    for(const auto &raw:QString::fromUtf8(text).split(QLatin1Char('\n'))) {
+        const auto match=line.match(raw);
+        if(!match.hasMatch()) continue;
+        const auto key=match.captured(1),value=match.captured(2).trimmed();
+        if(key==QLatin1String("mode")) { if(value==QLatin1String("dark") || value==QLatin1String("light")) values.insert(key,value); }
+        else if(colour.match(value).hasMatch()) values.insert(key,value.toLower());
+    }
+    return values;
+}
+void Backend::reloadOmarchyTheme() {
+    QVariantMap theme{{"available",false}};
+    const auto directory=omarchyThemeDirectory();
+    QFile file(directory+"/colors.toml");
+    if(!directory.isEmpty() && file.size()<64*1024 && file.open(QIODevice::ReadOnly)) {
+        const auto colours=parseOmarchyColors(file.readAll());
+        if(colours.contains("accent") && colours.contains("background")) {
+            theme=colours;
+            theme.insert("available",true);
+            theme.insert("path",file.fileName());
+            QFile name(QFileInfo(directory).dir().filePath(QStringLiteral("theme.name")));
+            const auto named=name.size()<256 && name.open(QIODevice::ReadOnly)?QString::fromUtf8(name.readAll()).trimmed():QString();
+            theme.insert("name",named.isEmpty()?QFileInfo(directory).fileName():named);
+        }
+    }
+    // Watched read-only: the file, its directory and the one above, which a new theme replaces.
+    const auto watched=m_themeWatcher.files()+m_themeWatcher.directories();
+    if(!watched.isEmpty()) m_themeWatcher.removePaths(watched);
+    if(!directory.isEmpty()) {
+        m_themeWatcher.addPath(file.fileName());
+        m_themeWatcher.addPath(directory);
+        m_themeWatcher.addPath(QFileInfo(directory).absolutePath());
+    }
+    if(theme==m_omarchyTheme) return;
+    m_omarchyTheme=theme;
+    emit omarchyThemeChanged();
+}
+bool Backend::followOmarchyAccent() const {
+    return m_settings.value("appearance/omarchyAccent",false).toString()==QLatin1String("true");
+}
+void Backend::setFollowOmarchyAccent(bool follow) {
+    m_settings.setValue("appearance/omarchyAccent",follow);
+    emit appearanceChanged();
 }
 void Backend::reloadModels() {
     QFile file(":/assets/models.json");
@@ -137,7 +199,7 @@ QString Backend::probeLabel(const QString &value) {
 // this machine and stay; Tomacco keeps no credentials in its settings.
 static const QString settingsFormat=QStringLiteral("tomacco-desktop-settings");
 static bool portableSetting(const QString &key,const QJsonValue &value,QVariant *out) {
-    static const QStringList switches{QStringLiteral("Notifications/jobs"),QStringLiteral("NativeDisplay/showDeviceFrame"),QStringLiteral("NativeDisplay/showActivity"),
+    static const QStringList switches{QStringLiteral("Notifications/jobs"),QStringLiteral("appearance/omarchyAccent"),QStringLiteral("NativeDisplay/showDeviceFrame"),QStringLiteral("NativeDisplay/showActivity"),
         QStringLiteral("NativeDisplay/showTouches"),QStringLiteral("NativeAudio/forwardAudio")};
     static const QRegularExpression identifier(QStringLiteral("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"));
     if(switches.contains(key)) { if(!value.isBool()) return false; *out=value.toBool(); return true; }
@@ -153,7 +215,7 @@ static bool portableSetting(const QString &key,const QJsonValue &value,QVariant 
 QString Backend::exportSettings(const QString &path,const QVariantMap &extra) {
     QJsonObject values;
     QVariant checked;
-    for(const auto &key:{"appearance","language","device","Notifications/jobs","NativeDisplay/showDeviceFrame","NativeDisplay/showActivity","NativeDisplay/showTouches","NativeAudio/forwardAudio","NativeIphone/runnerBundle"}) {
+    for(const auto &key:{"appearance","appearance/omarchyAccent","language","device","Notifications/jobs","NativeDisplay/showDeviceFrame","NativeDisplay/showActivity","NativeDisplay/showTouches","NativeAudio/forwardAudio","NativeIphone/runnerBundle"}) {
         if(!m_settings.contains(key)) continue;
         auto value=m_settings.value(key);
         // QSettings keeps switches as the text "true" or "false".
@@ -188,6 +250,7 @@ QVariantMap Backend::importSettings(const QString &path) {
         if(it.key().startsWith(QLatin1String("updates/"))) extra.insert(it.key(),value);
         else if(it.key()==QLatin1String("language")) setLanguage(value.toString());
         else if(it.key()==QLatin1String("appearance")) setAppearance(value.toString());
+        else if(it.key()==QLatin1String("appearance/omarchyAccent")) setFollowOmarchyAccent(value.toBool());
         else m_settings.setValue(it.key(),value);
     }
     m_settings.sync();

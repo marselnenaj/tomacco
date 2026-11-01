@@ -20,6 +20,11 @@ tomacco --device duo --fold open --orientation landscape
 Open **Tomacco** in the application menu to enter the native project workspace. Explicit URL, folder or device arguments open the visual
 layout lab instead (see [Visual layout lab](#visual-layout-lab)).
 
+`TOMACCO_STARTUP_TIMING=1` prints on standard error how long the start took: until the window's
+first frame and until it is ready, which is when `tomaccoctl` has also answered the operation list and
+the first job list. The debugger, UI tests, performance, release and the iOS test system are built when
+they are first shown, and the web preview checks for xtool and swift when it is first shown.
+
 Tomacco remembers the last eight project folders you opened. The start screen
 shows the three newest besides the open one under **Recent** (*Zuletzt*), and
 the command palette (Ctrl+K) finds all of them as **Open recent project**
@@ -59,6 +64,14 @@ applies at once. `TOMACCO_THEME=dark|light` overrides it for one run. Animations
 stop when the desktop asks for reduced motion (Qt 6.12 or later). The fonts,
 Archivo and JetBrains Mono, ship with the app.
 
+On Omarchy, **Use the Omarchy theme's accent** (*Akzentfarbe des Omarchy-Themes verwenden*) under
+**Appearance** takes the accent colour of the active Omarchy theme instead of Tomacco's red. Tomacco reads
+the theme's `colors.toml` from `~/.local/state/omarchy/current/theme` (or `$XDG_STATE_HOME`; older
+releases keep it in `~/.config/omarchy/current/theme`) and never writes to it. The accent is used only
+where it reads clearly: at least 3:1 against Tomacco's background and against the theme's own
+background. Otherwise Tomacco keeps its red, and the setting says so. Another theme set in Omarchy is
+picked up while Tomacco runs. The choice is off by default and moves with the exported settings.
+
 ## Updates
 
 The **Updates** part of **Settings** (Ctrl+,) chooses how Tomacco treats new releases on GitHub:
@@ -88,6 +101,13 @@ start after installing, the previous one is restored by itself.
 An installation made by `install.py` can be updated. A source checkout, a system package or a directory you cannot write is left alone, and the section says so. Installing needs Python 3.9
 or newer, for the installer. [Privacy](privacy.md) says what the checks send.
 
+## Searching the settings
+
+**Settings** (Ctrl+,) opens with the keyboard in **Search settings** (*Einstellungen durchsuchen*). Typing
+keeps the sections whose title, options or explanations contain every word typed, in any order; for
+example `channel` leaves **Updates**, `job background` leaves **Notifications**. Down moves on into the
+settings; Esc empties the search, and Esc again closes the dialog.
+
 ## Moving settings to another computer
 
 **Export settings…** and **Import settings…** under **Another computer** in
@@ -109,6 +129,17 @@ not exported or imported where a build or `TOMACCO_UPDATES` fixes it.
   "settings": {"appearance": "dark", "language": "de", "Notifications/jobs": true}
 }
 ```
+
+## Window layouts
+
+A window layout keeps the open view, whether the activity panel is shown, the log beside the device with
+its mode and width, whether the device and the virtual iOS device are in their own windows, and the
+window's size or that it was maximised. Save one under **Window layouts** in **Settings**
+(*Fensteranordnungen*) with a name such as `testing` or `debugging`; **Save the current layout** in the
+command palette opens that section. A name used again replaces that layout. The palette lists each one as **Use window
+layout** *name*, and **Settings** has **Use** and a delete button beside each. A device window in a layout
+opens as soon as a device is live. A tiling window manager still decides the window's size itself. At most
+12 layouts are kept, in the desktop's settings on this computer; the settings export leaves them out.
 
 ## Navigation and shortcuts
 
@@ -186,6 +217,14 @@ agent called: its name, the time, how long it took and whether it worked, with t
 error's message when it did not. Repeats of the same call to the window fold into one
 line with the latest result. **All** and **Failed** (*Alle*, *Fehler*) and a search
 field narrow the list; a call that started a job opens it under **Builds & jobs**.
+**Notifications** (*Benachrichtigungen*) in the same panel lists, newest first, what happened while the
+window was open: a job that ended (completed, failed, timed out or cancelled, with its duration), a new
+version of Tomacco or one that waits for a restart, the end or failure of the live device's session, and an
+agent's call that failed or started a job. A click leads back: a job to its log under **Builds & jobs**, a
+device to the live device view with that device chosen, an update to **Updates** in **Settings**. The
+panel shows the six newest, **All** shows up to 50, and **Clear** empties the list. The last 50 are kept
+across starts.
+
 To name the session log, enter its absolute path under **Agent activity** in
 **Settings** (Ctrl+,) and set `TOMACCO_SESSION_LOG` to the same file in the `env` of
 your agent's MCP server entry (see [the session log](agents.md#session-log-and-replay)); **Copy MCP
@@ -407,17 +446,26 @@ right click opens the native runtime workspace. The bar icon lights its screen
 while a device is live and shows an orbiting arc while a build or task runs;
 emulators and audio bridges are listed as services and do not count as activity.
 
+A running job shows its phase as `job.list` names it, such as building, installing or session running,
+and why a queued job waits; no job reports a percentage. While a device is live, the open panel shows it
+above the device list with a small picture of its screen, taken with `runtime.capture` every 4 seconds
+into the data directory (`panel-thumbnail.png`); a click opens it as a window. When a new version of
+Tomacco is available, or one is installed while the open workspace still runs the older one, a line
+above the tiles says so (from `update.status`, which uses no network; checked every 10 minutes and when
+the panel opens); U or a click opens the workspace, whose band installs or restarts. These three are
+checked with qmllint and the panel's source tests, not yet in a running Omarchy shell.
+
 The panel lists connected devices (connect, disconnect, open as window, stop an
 emulator), stopped Android emulators with a start button, each under its nickname
 and with pinned devices first, running and recent
 jobs with their duration, and saved projects with build-and-run. Each job row
 has a button that opens the job's log file in the desktop's text viewer
 (`xdg-open`). Keys in the open panel: O workspace, F device window,
-S screenshot, G devices, A jobs, V log of the newest job, R refresh. The same
+S screenshot, G devices, A jobs, V log of the newest job, R refresh, U update. The same
 actions are available over IPC for Hyprland bindings, for example
 `omarchy-shell io.github.marselnenaj.tomacco window`, `screenshot`, `log`,
-`show jobs`, `emulator <name>`, `iphone start|window|stop`, `status`, `version`
-and `refresh`. Its native popup supports Escape and switching between panels.
+`show jobs`, `emulator <name>`, `iphone start|window|stop`, `status`, `version`,
+`update` and `refresh`. Its native popup supports Escape and switching between panels.
 Completion notifications can be turned off in the widget's settings, or with
 `"notifyBuilds": false` in its bar entry. Filesystem state and jobs are local; the control plane
 opens no network API server.

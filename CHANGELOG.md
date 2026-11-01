@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 228 operations.
+`tomaccoctl` now has one typed API of 236 operations.
 
 ### Added
 
@@ -50,6 +50,92 @@ operations and their JSON results.
   image's tcpdump as root, and summarises hosts, TLS server names, HTTP requests without their query and DNS queries.
   The pcap file is readable only by you. HTTPS stays encrypted: no certificate is installed. Run on the API 36
   emulator for the whole emulator and for Chrome alone.
+- **Guardrails for agents.** Every operation called through `tomaccoctl call` or `tomaccoctl mcp` passes a guard first;
+  with nothing configured, everything works as before. [docs/agents.md](docs/agents.md#guardrails) has the details.
+  - An agent policy, `agent_policy` in settings.json, set with `settings.configure` from a terminal and refused over MCP:
+    `full`, `no_destructive` (no `destructiveHint` operations), `read_only` (only `readOnlyHint` ones) or a named policy
+    with allow and deny lists of names and prefixes, chosen per channel, per MCP client by the name it sends in
+    `initialize`, or for one server with `tomaccoctl mcp --policy NAME` or `TOMACCO_POLICY`. The steps of `android.each`
+    are checked too. A refused call answers `policy_denied` with the reason and a remedy; `agent.policy` shows what a
+    caller gets.
+  - Write roots: under any policy but `full`, the destinations an operation takes as arguments (screenshots, reports,
+    exports, keystores, `files.write`'s and `project.create`'s folders: arguments of 46 operations) must be inside
+    the data directory, the temporary directory, the server's working directory, the policy's `write_roots` or
+    `TOMACCO_WRITE_ROOTS`, links resolved; settings.json, the audit log and saved results stay closed
+    (`path_outside_roots`).
+  - Desktop approval, off by default: with `approval.destructive`, a destructive MCP call waits until the person approves
+    it in a desktop dialog that shows the agent, the operation and its arguments with secrets masked. Deny, Escape or the
+    end of the countdown (5 to 30 s) answers `approval_denied`. Tested offscreen with a stand-in agent.
+  - An audit log, `audit/audit.jsonl` in the data directory, owner-only: each call that may change something and each
+    refused call, with the channel, the MCP client's name and version, the operation, masked arguments (texts by length
+    and SHA-256), the result code, the job, the policy and the approval. It rotates at 4 MiB and keeps four older
+    files; `audit.list` reads it with filters.
+  - Session limits: an MCP session runs at most 8 jobs at once by default (`session_job_limit`), and a result over
+    2 MiB is saved instead of sent (`result_too_large`), to be read in pieces with `result.read`.
+- SECURITY.md describes what an agent with Tomacco's tools can do to the computer and its devices, and what the guards
+  do and do not cover.
+- **Testing.**
+  - `testing.coverage` reads the JaCoCo XML reports of unit and instrumented tests (the Android Gradle plugin's
+    `enableUnitTestCoverage` and `enableAndroidTestCoverage`, the `jacoco` plugin, Kover) into totals, each file with
+    its missed lines and each class, merges several reports line by line, and with `baseline` lists what changed.
+    `minimum` and `max_drop` set `passed`. `project.execute` takes `coverage:true` for Gradle `test` and
+    `instrumented-test` and runs the report tasks the build files enable; `project.inspect` lists them in `test_setup`.
+    Run on a copy of the Android example with an API 36 emulator: both reports written, read and merged.
+  - `testing.run` writes a self-contained `report.html` (scenarios, steps with timings, screenshots, baselines,
+    difference images, crashes, metrics; no scripts), and `project.execute` test jobs write
+    `build/tomacco/test-report.html`, also when tests fail. `testing.report` writes one for any run or results path.
+  - `testing.history`: both add their outcomes to a test history; its summary gives each test's pass rate, flips,
+    recent outcomes and last failure, flaky tests first. `record` adds earlier results.
+  - `testing.impact` selects the Gradle test classes and `testing.run` scenarios a change likely affects, from
+    `git diff` or a list of files, by module dependencies, package and name rules, lists the Gradle commands and can
+    run them. It does not run Gradle to decide and can miss tests reached through reflection or generated code.
+  - `testing.run` takes a `baselines` directory for relative or unnamed screen baselines, and `record_baselines` to
+    collect every new screen in one run. `testing.baselines` reviews a run's new and changed screens and approves
+    screenshots as baselines, refusing two devices' different images for one baseline.
+  - `project.execute` takes `managed_device` (a Gradle Managed Device, group or `all` from the build files) and
+    `shards` for instrumented tests. Unit-tested only; no managed device run has been made.
+- **Desktop.**
+  - **Use the Omarchy theme's accent** under Appearance in Settings takes the active Omarchy theme's accent colour,
+    read from its `colors.toml` and never written, where it reads clearly: at least 3:1 against Tomacco's background
+    and the theme's own. Otherwise Tomacco keeps its red and the setting says why. A theme set while Tomacco runs is
+    picked up. Off by default. Tested offscreen with fixture theme files.
+  - Settings opens with the keyboard in a search field that keeps the sections whose title, options or explanations
+    contain every word typed. Esc empties it, then closes Settings.
+  - Named window layouts, such as `testing` or `debugging`: the open view, the activity panel, the log beside the
+    device with its mode and width, the device windows and the window's size. Saved and deleted under Window layouts
+    in Settings and used from there or the command palette; at most 12.
+  - **Notifications** in the activity panel: jobs that ended, new versions and restarts, the live device's session
+    ending or failing, and agent calls that failed or started a job, newest first, each leading back to its job, device or
+    the update settings. The last 50 are kept across starts.
+  - `TOMACCO_STARTUP_TIMING=1` prints the time to the window's first frame and to ready on standard error.
+- **Omarchy panel.** A running job shows its phase and why a queued job waits; the live device shows above the
+  device list with a small picture of its screen, refreshed every 4 seconds while the panel is open; a line says when
+  a new version is available or installed and waiting for the workspace to restart, and U opens the workspace.
+  `omarchy-shell io.github.marselnenaj.tomacco update` answers the same. `desktop.status` gives each job's `phase`
+  and `queued_reason` and each desktop session's `version` for it. The panel passes qmllint and its source tests; it
+  has not been run in a live Omarchy shell.
+- `doctor` has a `host` entry describing the computer: the distribution and whether it is immutable (SteamOS,
+  Fedora's ostree systems, NixOS, a read-only `/usr`) or a container; why `/dev/kvm` is not usable (module not
+  loaded, virtualization off, nested virtualization off, a container without the device, not in the group, a login
+  still to come, root-only) with the commands that fix it on that system, also in doctor's `kvm`; the graphics,
+  session and renderer for the Android emulator; memory, processors and free space against what the emulator and
+  the virtual iPhone need; and how to install a JDK and Gradle 9 there. Tested with made-up machines.
+- [Linux distributions and hardware](docs/linux-hosts.md): what ran in which clean container, each `kvm.status`, the
+  emulator's window and renderer, small computers, Fedora's atomic desktops, NixOS and SteamOS.
+- Virtual iPhone: the `guest_memory_import` boot setting (`dma-buf`; the launcher's `--guest-memory-import`) lets the GPU
+  write render Stores straight into the guest's pages instead of copying each frame there on the CPU. The launcher lays
+  guest RAM on a sealed memfd, and the renderer imports it in 64 MiB windows (the kernel's `udmabuf.size_limit_mb`)
+  through `/dev/udmabuf` as dma-bufs, on first use. The development host's driver (RADV on an RX 6900 XT, Mesa 26.2.5)
+  refuses to import the shared memory guest RAM otherwise is. Without `/dev/udmabuf` or memfds the start keeps shared
+  RAM, and a refused import keeps the CPU copies. Off by default. On a live phone, two starts each way with the same
+  engine and script under a host load average of 15 to 31: every Store went to the GPU (2 847 in one boot, none
+  declined), Store work on the drain fell from 12.6-22.7 to 2.7-4.9 ms a frame while swiping and from 6.6-25.2 to
+  2.1-2.9 ms while scrolling, but the present now converts its own frame and rose from 2.1-4.3 to 6.8-9.9 ms. Swiping
+  showed 1.2-2.8 instead of 0.8-2.0 changed frames a second in the recording; presents a second did not rise clearly
+  (swiping 5.3-10.1 against 5.6-8.3, scrolling 6.3-11.7 against 7.5-17.1). Screenshots of Settings and of an opened app
+  matched pixel for pixel below the status bar clock, no frame was black, deploys and verified stops worked, and 124
+  windows, 7.75 of the 8 GiB of guest RAM, stayed pinned for the session.
+  [Usage](docs/virtual-ios/usage.md#gpu-access-to-guest-ram-experimental) has the table.
 
 ### Changed
 
@@ -77,6 +163,29 @@ operations and their JSON results.
 - `android.avd_create` accepts system image tags with hyphens and extension levels, and refuses TV, Wear OS,
   Automotive and XR images with `form_factor_unsupported` and the avdmanager command that creates one: Tomacco's
   profiles describe phones, foldables and tablets.
+- The desktop runs `tomaccoctl` with `TOMACCO_CALLER=desktop`, so the person's own calls pass no agent guard and are not
+  audited.
+- The desktop starts with less work: the debugger, UI tests, performance, release and the iOS test system are built
+  when first shown, the web preview's tool checks (`xtool --version`, `swift --version`, `xtool sdk status`) run when
+  the preview is first shown, the operation list is asked for before the window is built, and the operation list is
+  converted once instead of on every read.
+  Measured offscreen on the development host with `TOMACCO_STARTUP_TIMING`, 15 alternating runs each with the QML
+  cache filled: the first frame after 291 instead of 320 ms (median) and ready after 346 instead of 404 ms; the main
+  thread's CPU time until ready 269 instead of 319 ms. With an empty cache, 8 runs each: ready after 971 instead of
+  1024 ms. Other work kept the host busy during the runs. The saved tool checks did not count there, as the test
+  home had no xtool or swift.
+- `next_steps` and `tomaccoctl setup` name the JDK package of the distribution they run on (`openjdk-17-jdk-headless`
+  on Debian 12, `openjdk-21-jdk-headless` on Debian 13 and Ubuntu 24.04, `java-25-openjdk-devel` on Fedora 44,
+  `java-21-openjdk-devel` on openSUSE) instead of Arch's, say that Gradle 9 comes from gradle.org outside Arch, and
+  add a KVM step with this system's commands while `/dev/kvm` is not usable.
+- `android.avd_start`: an AVD with the default `auto` renderer that nobody chose starts with `swiftshader` on a host
+  without a hardware graphics driver; the result's `gpu` says so. A `gpu` passed to the start or saved with
+  `android.avd_configure` wins.
+- `android.avd_profile`, and so `android.avd_create`, gives new emulators less memory (1536 MB under 6 GiB, 2048 MB
+  under 10 GiB) and half the processors on a host with at most four, unless `android.avd_configure` set them; the
+  result's `adapted_to_host` lists the change.
+- `ios.virtual.start` refuses to boot on a host that is not x86_64 or has less than 12 GiB of memory, as
+  `ios_virtual_host_too_small`.
 
 ### Tests
 
@@ -88,6 +197,13 @@ operations and their JSON results.
 - An end-to-end MCP session test (`AgentConversationTests` in `tests/python/test_product.py`) plans, builds an
   Android project on a fake Gradle wrapper, follows the job with progress and log messages, reads the job and its log
   as resources and runs the same build through `workflow.run`, with no device or SDK.
+
+### Fixed
+
+- A windowed `android.avd_start` from a session whose `QT_QPA_PLATFORM` named only `wayland` started an emulator
+  that aborted at once: its Qt has only the X11 plugin. The emulator now gets `QT_QPA_PLATFORM=xcb`; on the
+  development host such a start then booted. Without `DISPLAY` (no graphical session, or Wayland without XWayland)
+  the emulator also aborted; the start is now refused with `emulator_no_display` and the remedy `headless`.
 
 ## 1.2.1
 

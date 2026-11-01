@@ -118,6 +118,9 @@ pub fn inspect(value: &str) -> Result {
     let mut names: Vec<_> = tasks.keys().cloned().collect();
     names.sort();
     let mut value = json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"android":gradle.as_deref().map(gradle_model::read),"tasks":names,"configuration":config});
+    if let Some(dir) = &gradle {
+        value["test_setup"] = gradle_model::test_setup(dir);
+    }
     if let Some(mp) = multiplatform {
         value["multiplatform"] = mp;
     }
@@ -137,6 +140,10 @@ fn command_array(value: &Value) -> bool {
             && a.iter()
                 .all(|v| v.as_str().is_some_and(|s| !s.contains('\0')))
     })
+}
+/// The Gradle command of a project: its wrapper, or gradle.
+pub(crate) fn gradle_command(project: &Value) -> Result<Vec<String>> {
+    gradle(project)
 }
 fn gradle(project: &Value) -> Result<Vec<String>> {
     let wrapper = Path::new(s(project, "gradle_directory")).join("gradlew");
@@ -351,13 +358,57 @@ pub fn plan(a: &Value) -> Result {
             _ => String::new(),
         };
         if !target.is_empty() {
+            let setup = &project["test_setup"];
+            let mut tasks = vec![target];
+            let mut properties = Vec::new();
+            let managed = s(a, "managed_device");
+            let shards = a["shards"].as_u64().unwrap_or(0);
+            if !managed.is_empty() {
+                if action != "instrumented-test" {
+                    return Err(Error::new(
+                        "invalid_argument",
+                        "managed_device runs instrumented tests; use it with action instrumented-test",
+                    ));
+                }
+                if b(a, "coverage") {
+                    return Err(Error::new(
+                        "invalid_argument",
+                        "coverage is not offered for a Gradle Managed Device run",
+                    )
+                    .remedy("Run instrumented-test with coverage on a connected device instead (device)"));
+                }
+                tasks = vec![managed_device_task(setup, managed, suffix)?];
+                if shards > 1 {
+                    properties.push(format!(
+                        "-Pandroid.experimental.androidTest.numManagedDeviceShards={shards}"
+                    ));
+                }
+            } else if shards > 1 {
+                return Err(Error::new(
+                    "invalid_argument",
+                    "shards splits a Gradle Managed Device run; give managed_device too",
+                )
+                .remedy("For connected devices, testing.run with shard:true splits scenarios across devices"));
+            }
+            if b(a, "coverage") && ["test", "instrumented-test"].contains(&action) {
+                tasks.extend(coverage_tasks(setup, action, suffix)?);
+            }
             args = gradle(&project)?;
-            args.extend(["--console=plain".into(), target]);
+            args.push("--console=plain".into());
+            args.extend(properties);
+            args.extend(tasks);
             artifacts = argv(&[
                 "**/build/outputs/apk/**/*.apk",
                 "**/build/outputs/bundle/**/*.aab",
                 "**/build/reports/**/index.html",
             ]);
+            if b(a, "coverage") {
+                artifacts.extend(argv(&[
+                    "**/build/reports/coverage/**/report.xml",
+                    "**/build/reports/jacoco/**/*.xml",
+                    "**/build/reports/kover/**/*.xml",
+                ]));
+            }
         }
     } else if kind(&project, "web") && platform == "web" {
         let package = read_json(&root.join("package.json"), None)?;
@@ -411,11 +462,129 @@ pub fn plan(a: &Value) -> Result {
         env["ANDROID_SERIAL"] = json!(identifier(s(a, "device"), "device identifier", None)?);
     }
     let mut value = json!({"project":project["path"],"cwd":cwd,"steps":[{"argv":args}],"env":env,"artifacts":artifacts,"exclusive":root,"label":format!("{} · {action} · {platform} · {configuration}",s(&project,"name"))});
+    if b(a, "coverage")
+        && !(kind(&project, "gradle")
+            && platform == "android"
+            && ["test", "instrumented-test"].contains(&action))
+    {
+        return Err(Error::new(
+            "action_unsupported",
+            "coverage is offered for Gradle test and instrumented-test runs",
+        )
+        .remedy("Run flutter test --coverage as a tomacco.json task for a Flutter project"));
+    }
+    // A test run's HTML report and its test history entries, also when
+    // tests fail.
+    if ["test", "instrumented-test"].contains(&action) {
+        value["cleanup"] = json!([test_report_cleanup(root, now() - 2.0)?]);
+        always.push(root.join(TEST_REPORT_HTML).to_string_lossy().into_owned());
+    }
     if !always.is_empty() {
         value["always_artifacts"] = json!(always);
     }
     Ok(value)
 }
+/// The Gradle task that runs instrumented tests on a Gradle Managed Device
+/// or device group the build files declare: `NAMEDebugAndroidTest`,
+/// `GROUPGroupDebugAndroidTest`, or `allDevicesDebugAndroidTest` for `all`.
+fn managed_device_task(setup: &Value, name: &str, suffix: &str) -> Result<String> {
+    identifier(
+        name,
+        "managed device name",
+        Some(r"[A-Za-z][A-Za-z0-9_]{0,99}"),
+    )?;
+    let modules = setup["modules"].as_array().cloned().unwrap_or_default();
+    let devices: Vec<&str> = modules
+        .iter()
+        .flat_map(|m| m["managed_devices"].as_array().into_iter().flatten())
+        .map(|d| s(d, "name"))
+        .collect();
+    let groups: Vec<&str> = modules
+        .iter()
+        .flat_map(|m| m["managed_device_groups"].as_array().into_iter().flatten())
+        .filter_map(Value::as_str)
+        .collect();
+    if name == "all" && !devices.is_empty() {
+        return Ok(format!("allDevices{suffix}AndroidTest"));
+    }
+    if devices.contains(&name) {
+        return Ok(format!("{name}{suffix}AndroidTest"));
+    }
+    if groups.contains(&name) {
+        return Ok(format!("{name}Group{suffix}AndroidTest"));
+    }
+    Err(Error::new(
+        "managed_device_not_found",
+        format!("The build files declare no Gradle Managed Device or group named {name}"),
+    )
+    .remedy(if devices.is_empty() && groups.is_empty() {
+        "Declare one under android { testOptions { managedDevices { localDevices { create(\"pixel2api30\") { device = \"Pixel 2\"; apiLevel = 30; systemImageSource = \"aosp\" } } } } }, as the Android Gradle plugin documents".to_string()
+    } else {
+        "Use a name from project.inspect's test_setup: managed_devices, managed_device_groups, or all".to_string()
+    })
+    .details(json!({"managed_devices":devices,"managed_device_groups":groups})))
+}
+
+/// The Gradle tasks that write the coverage report of a test run, for what
+/// the build files enable.
+fn coverage_tasks(setup: &Value, action: &str, suffix: &str) -> Result<Vec<String>> {
+    let modules = setup["modules"].as_array().cloned().unwrap_or_default();
+    let variant = suffix.to_lowercase();
+    let enables = |key: &str| {
+        modules.iter().any(|m| {
+            m[key]
+                .as_array()
+                .is_some_and(|types| types.iter().any(|t| t == variant.as_str()))
+        })
+    };
+    let mut tasks = Vec::new();
+    if action == "test" {
+        if enables("unit_test_coverage") {
+            tasks.push(format!("create{suffix}UnitTestCoverageReport"));
+        }
+        if modules.iter().any(|m| b(m, "kover")) {
+            if modules.iter().any(|m| b(m, "kover") && b(m, "android")) {
+                tasks.push(format!("koverXmlReport{suffix}"));
+            } else {
+                tasks.push("koverXmlReport".into());
+            }
+        }
+        if modules.iter().any(|m| b(m, "jacoco_plugin")) {
+            tasks.push("jacocoTestReport".into());
+        }
+    } else if action == "instrumented-test" {
+        if enables("android_test_coverage") {
+            tasks.push(format!("create{suffix}AndroidTestCoverageReport"));
+        } else if enables("test_coverage_enabled") {
+            tasks.push(format!("create{suffix}CoverageReport"));
+        }
+    }
+    if tasks.is_empty() {
+        let setting = if action == "test" {
+            "enableUnitTestCoverage = true"
+        } else {
+            "enableAndroidTestCoverage = true"
+        };
+        return Err(Error::new(
+            "coverage_not_configured",
+            format!("The build files enable no coverage report for {action} in the {variant} build type"),
+        )
+        .remedy(format!("Add {setting} to android {{ buildTypes {{ {variant} {{ }} }} }} of the module, or apply the jacoco plugin or Kover, then run again")));
+    }
+    Ok(tasks)
+}
+
+/// The job cleanup that writes a test job's HTML report and records its
+/// results in the test history, whether the tests passed or not.
+pub(crate) fn test_report_cleanup(root: &Path, since: f64) -> Result<Value> {
+    Ok(
+        json!({"argv":[own_executable()?, "_test_report", root, format!("{since:.3}")],"timeout":120}),
+    )
+}
+
+/// Where a test job's HTML report goes, relative to the project.
+pub const TEST_REPORT_HTML: &str = "build/tomacco/test-report.html";
+
 /// Where a Flutter test job's JSON reporter writes, relative to the project.
 pub const FLUTTER_TEST_REPORT: &str = "build/tomacco/flutter_test.json";
 /// Where a Flutter integration test job's JSON reporter writes.
@@ -995,5 +1164,100 @@ mod configuration_tests {
             run(&json!({"path":path,"platform":"ios","device":"00008110-0011223344556677"}))
                 .unwrap_err();
         assert_eq!(error.code, "macos_required");
+    }
+
+    #[test]
+    fn gradle_tests_get_coverage_tasks_managed_devices_and_a_report_cleanup() {
+        let project = fixture(&[
+            ("settings.gradle.kts", "include(\":app\")"),
+            ("gradlew", "#!/bin/sh\n"),
+            (
+                "app/build.gradle.kts",
+                "plugins { id(\"com.android.application\") }\nandroid {\n namespace = \"dev.example\"\n defaultConfig { applicationId = \"dev.example\" }\n buildTypes { debug { enableUnitTestCoverage = true } }\n testOptions { managedDevices { localDevices { create(\"pixel2api30\") { device = \"Pixel 2\"; apiLevel = 30 } }\n groups { create(\"phones\") { } } } }\n}",
+            ),
+        ]);
+        let path = project.path();
+        let argv = |a: Value| -> Result<Vec<String>> {
+            let mut a = a;
+            a["path"] = json!(path);
+            a["platform"] = json!("android");
+            for (key, value) in [
+                ("configuration", "debug"),
+                ("format", "apk"),
+                ("managed_device", ""),
+                ("device", ""),
+            ] {
+                if a.get(key).is_none() {
+                    a[key] = json!(value);
+                }
+            }
+            plan(&a).map(|p| strings(&p["steps"][0]["argv"]))
+        };
+        let tail = |args: Vec<String>| {
+            let start = args.iter().position(|a| a == "--console=plain").unwrap() + 1;
+            args[start..].join(" ")
+        };
+        assert_eq!(
+            tail(argv(json!({"action":"test","coverage":true})).unwrap()),
+            "testDebugUnitTest createDebugUnitTestCoverageReport"
+        );
+        assert_eq!(
+            argv(json!({"action":"instrumented-test","coverage":true}))
+                .unwrap_err()
+                .code,
+            "coverage_not_configured"
+        );
+        assert_eq!(
+            tail(
+                argv(
+                    json!({"action":"instrumented-test","managed_device":"pixel2api30","shards":2})
+                )
+                .unwrap()
+            ),
+            "-Pandroid.experimental.androidTest.numManagedDeviceShards=2 pixel2api30DebugAndroidTest"
+        );
+        assert_eq!(
+            tail(argv(json!({"action":"instrumented-test","managed_device":"phones"})).unwrap()),
+            "phonesGroupDebugAndroidTest"
+        );
+        assert_eq!(
+            tail(argv(json!({"action":"instrumented-test","managed_device":"all"})).unwrap()),
+            "allDevicesDebugAndroidTest"
+        );
+        let missing =
+            argv(json!({"action":"instrumented-test","managed_device":"tablet"})).unwrap_err();
+        assert_eq!(missing.code, "managed_device_not_found");
+        assert_eq!(
+            argv(json!({"action":"test","managed_device":"pixel2api30"}))
+                .unwrap_err()
+                .code,
+            "invalid_argument"
+        );
+        assert_eq!(
+            argv(json!({"action":"instrumented-test","shards":2}))
+                .unwrap_err()
+                .code,
+            "invalid_argument"
+        );
+        assert_eq!(
+            argv(json!({"action":"build","coverage":true}))
+                .unwrap_err()
+                .code,
+            "action_unsupported"
+        );
+        let planned = plan(&json!({"path":path,"platform":"android","action":"test","configuration":"debug","format":"apk","managed_device":"","device":""})).unwrap();
+        assert_eq!(strings(&planned["cleanup"][0]["argv"])[1], "_test_report");
+        assert!(
+            strings(&planned["always_artifacts"])
+                .iter()
+                .any(|a| a.ends_with(TEST_REPORT_HTML))
+        );
+        let built = plan(&json!({"path":path,"platform":"android","action":"build","configuration":"debug","format":"apk","managed_device":"","device":""})).unwrap();
+        assert!(built.get("cleanup").is_none());
+        let inspected = inspect(&path.to_string_lossy()).unwrap();
+        assert_eq!(
+            inspected["test_setup"]["modules"][0]["managed_devices"][0]["name"],
+            "pixel2api30"
+        );
     }
 }

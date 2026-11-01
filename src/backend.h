@@ -1,5 +1,7 @@
 #pragma once
+#include <QFileSystemWatcher>
 #include <QHash>
+#include <QTimer>
 #include <QObject>
 #include <QSettings>
 #include <QTcpServer>
@@ -27,6 +29,11 @@ class Backend final : public QObject {
     // ("system"; dark when the desktop states none). TOMACCO_THEME=dark|light
     // overrides it for one run.
     Q_PROPERTY(bool dark READ dark NOTIFY appearanceChanged)
+    // The active Omarchy theme, read from its colors.toml (never written):
+    // {available, name, accent, background, foreground, mode, path}.
+    Q_PROPERTY(QVariantMap omarchyTheme READ omarchyTheme NOTIFY omarchyThemeChanged)
+    // Whether the interface takes its accent from that theme, where it reads clearly.
+    Q_PROPERTY(bool followOmarchyAccent READ followOmarchyAccent NOTIFY appearanceChanged)
     // For the About dialog.
     Q_PROPERTY(QString qtVersion READ qtVersion CONSTANT)
     // Project folders opened before, newest first; folders that are gone are left out.
@@ -48,6 +55,17 @@ public:
     QString appearance() const;
     bool dark() const;
     Q_INVOKABLE void setAppearance(const QString &choice);
+    QVariantMap omarchyTheme() const { return m_omarchyTheme; }
+    bool followOmarchyAccent() const;
+    Q_INVOKABLE void setFollowOmarchyAccent(bool follow);
+    // Reads the active Omarchy theme again; a change of theme is also noticed by itself.
+    Q_INVOKABLE void reloadOmarchyTheme();
+    // The directory of the active Omarchy theme: XDG_STATE_HOME (or
+    // ~/.local/state)/omarchy/current/theme, or XDG_CONFIG_HOME (or ~/.config)/omarchy/current/theme
+    // as older Omarchy releases keep it. Empty when neither has a colors.toml.
+    static QString omarchyThemeDirectory();
+    // The colours of an Omarchy colors.toml: each "key = \"#rrggbb\"" line, and mode.
+    static QVariantMap parseOmarchyColors(const QByteArray &text);
     // The interface font for everything that inherits no font from a control
     // (qml/Theme.js lists the same families); loads the bundled fonts. Call it before QML is loaded.
     static void applyInterfaceFont();
@@ -154,6 +172,7 @@ signals:
     void message(const QString &text);
     void languageChanged();
     void appearanceChanged();
+    void omarchyThemeChanged();
     void recentProjectsChanged();
     void notificationSent(const QString &title,const QString &body,const QString &tag);
     void notificationActivated(const QString &tag);
@@ -171,6 +190,9 @@ private:
     bool m_notificationsConnected=false;
     void probe(const QString &name, const QStringList &args, QString *destination);
     QSettings m_settings;
+    QVariantMap m_omarchyTheme;
+    QFileSystemWatcher m_themeWatcher;
+    QTimer m_themeReload;
     bool m_firstStart=false;
     Starter m_starter;
     QVariantList m_models;

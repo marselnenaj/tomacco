@@ -75,6 +75,10 @@
     "cause": "The build files do not state this app's application ID.",
     "remedy": "Pass bundle_id with the app's application ID."
   },
+  "approval_denied": {
+    "cause": "The desktop asked the person about a destructive agent call and they denied it, pressed Escape, or the request timed out.",
+    "remedy": "Ask the person, or have them approve it in the Tomacco window; desktop approval is set with settings.configure approval."
+  },
   "artifact_missing": {
     "cause": "Screenshot command produced no artifact.",
     "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
@@ -103,9 +107,17 @@
     "cause": "Unknown AVD: …",
     "remedy": "Use android.avds or android.avd_create."
   },
+  "baseline_conflict": {
+    "cause": "Two devices would write different screenshots to the same baseline file.",
+    "remedy": "Approve the screens one device at a time, or give each device its own baselines folder."
+  },
   "baseline_missing": {
     "cause": "No baseline at …",
     "remedy": "Create the baseline with update_baseline:true after checking the image is right."
+  },
+  "baselines_missing": {
+    "cause": "record_baselines ran screen steps whose baselines did not exist yet; it saved the screens instead of comparing them.",
+    "remedy": "Review them with testing.baselines review and approve them, then run the scenario again."
   },
   "binary_file": {
     "cause": "This file is not UTF-8 text.",
@@ -174,6 +186,10 @@
   "console_log_limit": {
     "cause": "Guest console exceeded 8 MiB.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "coverage_not_configured": {
+    "cause": "coverage was asked for, but the module's build files enable no coverage report (no enableUnitTestCoverage, jacoco or Kover).",
+    "remedy": "Add the line the error names to the module's build file, then run again."
   },
   "crash_report_unreadable": {
     "cause": "The request was refused; the message says why.",
@@ -291,6 +307,10 @@
     "cause": "Element did not become … within …s.",
     "remedy": "Check with testing.find or a screenshot what the screen shows; raise the timeout if the app is only slow."
   },
+  "emulator_no_display": {
+    "cause": "An emulator with a window needs X11 (DISPLAY, or XWayland on Wayland), and this session has none.",
+    "remedy": "Start it with headless true, or run it from a desktop session with XWayland."
+  },
   "emulator_refused": {
     "cause": "The emulator refused …: …",
     "remedy": "Read the message, change what it names and try again; docs/troubleshooting.md lists known errors."
@@ -355,6 +375,10 @@
     "cause": "The debugger could not start, attach or answer.",
     "remedy": "Read the stack before reading frame variables."
   },
+  "git_failed": {
+    "cause": "git could not list the changed files for testing.impact.",
+    "remedy": "Run it in a Git working tree, or pass the changed files explicitly."
+  },
   "guest_diagnostic_failed": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
@@ -418,6 +442,10 @@
   "invalid_artifact": {
     "cause": "Not a readable ZIP-based Android package.",
     "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
+  },
+  "invalid_baseline": {
+    "cause": "The coverage baseline is neither a saved testing.coverage report nor JaCoCo XML.",
+    "remedy": "Pass a report saved by testing.coverage or a JaCoCo XML file."
   },
   "invalid_boot_display": {
     "cause": "Boot display dimensions must be 64..4096.",
@@ -879,6 +907,10 @@
     "cause": "The virtual iOS device job could not be observed; its state is unknown.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
   },
+  "ios_virtual_host_too_small": {
+    "cause": "The virtual iPhone needs an x86_64 host with at least 12 GiB of memory.",
+    "remedy": "Use a larger x86_64 machine; Android emulators still work here."
+  },
   "ios_virtual_locked": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
     "remedy": "Unlock the phone in its window (Home, or a swipe up on a model without one), then try again."
@@ -971,6 +1003,10 @@
     "cause": "project.execute builds Flutter iOS apps only on macOS.",
     "remedy": "On Linux call ios.flutter_build (it needs ios.toolkit_install), or use remote.run with an SSH Mac workspace."
   },
+  "managed_device_not_found": {
+    "cause": "The Gradle managed device or group is not declared in the build files.",
+    "remedy": "Use a name from the managedDevices block, or all."
+  },
   "mdns_unavailable": {
     "cause": "adb cannot discover devices on the network: …",
     "remedy": "Update the Android platform tools, or pair with the code through android.connect."
@@ -1023,6 +1059,10 @@
     "cause": "Something the request names does not exist or is not set up.",
     "remedy": "Install an NDK with android.sdk_install and set settings.configure android_ndk."
   },
+  "no_coverage_reports": {
+    "cause": "No JaCoCo or Kover XML report was found where Gradle writes them.",
+    "remedy": "Run the tests with coverage first (project.execute coverage true), or pass the report path."
+  },
   "no_devices": {
     "cause": "No Android device is connected.",
     "remedy": "Start an emulator with android.avd_start or connect a phone, then check device.list."
@@ -1030,6 +1070,10 @@
   "no_test_results": {
     "cause": "The request was refused; the message says why.",
     "remedy": "Run the tests first: project.execute with action test or instrumented-test, or testing.run."
+  },
+  "not_a_run_directory": {
+    "cause": "The directory is not a testing.run output directory.",
+    "remedy": "Pass the directory a testing.run job wrote (its report.json is there)."
   },
   "not_android_project": {
     "cause": "No Android Gradle build in this project.",
@@ -1143,6 +1187,10 @@
     "cause": "A path does not exist.",
     "remedy": "Check the path; it must be absolute and exist on this computer, or on the device for device paths."
   },
+  "path_outside_roots": {
+    "cause": "Under an agent policy other than full, the call would write outside the allowed roots (the data directory, the temp directory, the server's working directory, the policy's write_roots or TOMACCO_WRITE_ROOTS).",
+    "remedy": "Write inside the project, or have the person add the folder to write_roots or TOMACCO_WRITE_ROOTS."
+  },
   "platform_unsupported": {
     "cause": "The virtual iPhone runs iOS apps; pass platform ios.",
     "remedy": "Pass a platform the project and the device support; project.inspect lists the project's platforms."
@@ -1210,6 +1258,14 @@
   "pmp_trace_required": {
     "cause": "PMP research requires architectural bus-fault tracing.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "policy_denied": {
+    "cause": "The agent policy in force does not allow this operation for this caller.",
+    "remedy": "Call agent.policy to see the policy; only the person can change it, from a terminal with settings.configure agent_policy."
+  },
+  "policy_invalid": {
+    "cause": "settings.json has an agent_policy that cannot be read, so agent calls are blocked until it is fixed.",
+    "remedy": "From a terminal, set a valid agent_policy with settings.configure."
   },
   "port_busy": {
     "cause": "Port … is already in use, perhaps by another Metro bundler.",
@@ -1319,9 +1375,21 @@
     "cause": "Debugger response exceeds 2 MiB.",
     "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
   },
+  "result_not_found": {
+    "cause": "No saved result has this result_id, or it has been removed.",
+    "remedy": "Run the operation again; large results are saved under the result_id its answer names."
+  },
+  "result_too_large": {
+    "cause": "The result is larger than inline_result_kib, so it was saved instead of returned inline.",
+    "remedy": "Read it in pages with result.read and the result_id from the error."
+  },
   "root_unavailable": {
     "cause": "The device has no root shell (Google Play images and phones), which the capture needs for tcpdump.",
     "remedy": "Use an emulator with a Google APIs or AOSP image."
+  },
+  "run_incomplete": {
+    "cause": "The run has no finished report to add to the history.",
+    "remedy": "Wait for the job to end, then record it."
   },
   "runtime_busy": {
     "cause": "Runtime input queue is full.",
@@ -1387,6 +1455,14 @@
     "cause": "Android display server did not connect.",
     "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
   },
+  "screen_not_found": {
+    "cause": "No screen with this id is in the run being reviewed.",
+    "remedy": "List the ids with testing.baselines review."
+  },
+  "screenshot_missing": {
+    "cause": "The screenshot the review names is gone from the run directory.",
+    "remedy": "Run the scenario again with record_baselines."
+  },
   "sdk_missing": {
     "cause": "Configure the Android SDK first.",
     "remedy": "Set android_sdk with settings.configure."
@@ -1406,6 +1482,10 @@
   "server_timeout": {
     "cause": "Nothing listened on port … within … s.",
     "remedy": "Check that it is still running and reachable, then try once more."
+  },
+  "session_job_limit": {
+    "cause": "This MCP session already runs as many jobs as jobs_per_session allows.",
+    "remedy": "Wait for a job to end with job.wait, or cancel one with job.cancel."
   },
   "setting_not_applied": {
     "cause": "Android did not apply: …",

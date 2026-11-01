@@ -6,7 +6,7 @@ use crate::{core::*, devices, jobs, toolchain};
 use serde_json::{Value, json};
 use std::{
     fs,
-    path::Path,
+    path::{Path, PathBuf},
     thread,
     time::{Duration, Instant},
 };
@@ -273,13 +273,21 @@ pub fn check_scenario(scenario: &Value) -> Result<()> {
                 ));
             }
             "assert_screen" | "wait_screen" if !Path::new(s(step, "baseline")).is_absolute() => {
-                return Err(Error::new(
-                    "invalid_argument",
-                    format!(
-                        "A {} step requires baseline, the absolute path of a PNG",
-                        s(step, "action")
-                    ),
-                ));
+                // A relative baseline, or none, names a file in testing.run's
+                // baselines directory; it must stay inside it.
+                let relative = s(step, "baseline");
+                if relative.starts_with('/')
+                    || relative.split('/').any(|part| part == "..")
+                    || (!relative.is_empty() && !relative.ends_with(".png"))
+                {
+                    return Err(Error::new(
+                        "invalid_argument",
+                        format!(
+                            "A {} step's baseline is the absolute path of a PNG, or a .png path inside testing.run's baselines directory",
+                            s(step, "action")
+                        ),
+                    ));
+                }
             }
             _ => (),
         }
@@ -359,6 +367,7 @@ pub fn run(a: &Value) -> Result {
             crate::iphone_automation::session(device)?;
         }
     }
+    resolve_baselines(&mut scenarios, a)?;
     let output = path(s(a, "directory"), false, false)?;
     if output.exists() && fs::read_dir(&output)?.next().is_some() {
         return Err(Error::new(
@@ -367,12 +376,120 @@ pub fn run(a: &Value) -> Result {
         ));
     }
     private_dir(&output)?;
-    let spec = json!({"name":name,"scenarios":scenarios,"devices":devices,"directory":output,"parallelism":a["parallelism"].as_u64().unwrap_or(2),"retries":a["retries"].as_u64().unwrap_or(0),"shard":b(a,"shard"),"platform":platform});
+    let spec = json!({"name":name,"scenarios":scenarios,"devices":devices,"directory":output,"parallelism":a["parallelism"].as_u64().unwrap_or(2),"retries":a["retries"].as_u64().unwrap_or(0),"shard":b(a,"shard"),"platform":platform,"source":source,"baselines":a["baselines"]});
     atomic_json(&output.join("run.json"), &spec)?;
     jobs::submit(
         &format!("Native UI · {name}"),
-        json!({"steps":[{"argv":[crate::core::own_executable()?,"_automation",output.join("run.json")],"artifacts":[output.join("report.json"),output.join("junit.xml")]}],"cwd":output,"timeout":a["timeout"].as_u64().unwrap_or(3600),"always_artifacts":["report.json","junit.xml","*.png"]}),
+        json!({"steps":[{"argv":[crate::core::own_executable()?,"_automation",output.join("run.json")],"artifacts":[output.join("report.json"),output.join("junit.xml")]}],"cwd":output,"timeout":a["timeout"].as_u64().unwrap_or(3600),"always_artifacts":["report.json","junit.xml","report.html","*.png"]}),
     )
+}
+/// The file name a screen step without a baseline gets in the baselines
+/// directory: the scenario's name and the step's label, or its index.
+fn baseline_name(scenario: &str, step: &Value, index: usize) -> String {
+    let slug = |text: &str| {
+        let mut out = String::new();
+        for c in text.chars() {
+            if c.is_ascii_alphanumeric() {
+                out.push(c.to_ascii_lowercase());
+            } else if !out.ends_with('-') {
+                out.push('-');
+            }
+        }
+        out.trim_matches('-').chars().take(80).collect::<String>()
+    };
+    let screen = match slug(s(step, "label")) {
+        label if !label.is_empty() => label,
+        _ => format!("step-{index:03}"),
+    };
+    let scenario = match slug(scenario) {
+        name if !name.is_empty() => name,
+        _ => "scenario".into(),
+    };
+    format!("{scenario}/{screen}.png")
+}
+/// Makes every screen step's baseline absolute: a relative one, or none,
+/// is a file in the baselines directory. With record_baselines, steps whose
+/// baseline is missing keep their screenshot and the scenario goes on.
+fn resolve_baselines(scenarios: &mut [Value], a: &Value) -> Result<()> {
+    let directory = if s(a, "baselines").is_empty() {
+        None
+    } else {
+        Some(path(s(a, "baselines"), false, false)?)
+    };
+    for scenario in scenarios.iter_mut() {
+        let name = s(scenario, "name").to_string();
+        for (index, step) in scenario["steps"]
+            .as_array_mut()
+            .into_iter()
+            .flatten()
+            .enumerate()
+        {
+            if !["assert_screen", "wait_screen"].contains(&s(step, "action")) {
+                continue;
+            }
+            if !Path::new(s(step, "baseline")).is_absolute() {
+                let Some(directory) = &directory else {
+                    return Err(Error::new(
+                        "invalid_argument",
+                        format!(
+                            "Step {index} of {name} has {}; give testing.run a baselines directory, or the step an absolute baseline",
+                            if s(step, "baseline").is_empty() {
+                                "no baseline".to_string()
+                            } else {
+                                format!("the relative baseline {}", s(step, "baseline"))
+                            }
+                        ),
+                    ));
+                };
+                let relative = match s(step, "baseline") {
+                    "" => baseline_name(&name, step, index),
+                    given => given.to_string(),
+                };
+                step["baseline"] = json!(directory.join(relative));
+            }
+            if b(a, "record_baselines") {
+                step["record_baselines"] = json!(true);
+            }
+        }
+    }
+    Ok(())
+}
+/// The images of a step in the report directory: its screenshot and
+/// difference image, and the baseline it was compared with.
+pub(crate) fn step_images(directory: &Path, tag: &str, index: usize, step: &Value) -> Value {
+    let mut images = serde_json::Map::new();
+    for (key, file) in [
+        (
+            "screenshot",
+            directory.join(format!("{tag}-{index:03}.png")),
+        ),
+        ("diff", directory.join(format!("{tag}-{index:03}-diff.png"))),
+        ("baseline", PathBuf::from(s(step, "baseline"))),
+    ] {
+        if file.is_absolute() && file.is_file() {
+            images.insert(key.into(), json!(file));
+        }
+    }
+    Value::Object(images)
+}
+/// The error that ends a scenario whose screen steps found no baseline in
+/// record_baselines mode, naming the screenshots kept for approval.
+pub(crate) fn new_baselines(steps: &[Value]) -> Option<Error> {
+    let new: Vec<Value> = steps
+        .iter()
+        .filter(|step| b(&step["result"], "new_baseline"))
+        .map(|step| json!({"index":step["index"],"baseline":step["result"]["baseline"],"actual":step["result"]["actual"]}))
+        .collect();
+    (!new.is_empty()).then(|| {
+        Error::new(
+            "baselines_missing",
+            format!("{} screens have no baseline yet", new.len()),
+        )
+        .remedy(
+            "Look at the screenshots with testing.baselines review, then approve the right ones",
+        )
+        .details(json!({"screens":new}))
+    })
 }
 /// testing.lint: checks a scenario against the screen now, without acting.
 pub fn lint(a: &Value) -> Result {
@@ -576,6 +693,7 @@ pub fn worker(file: &str) -> Result<()> {
         &json!({"name":name,"created":now(),"passed":passed,"complete":true,"scenarios":names,"shard":shard,
                 "retries":spec["retries"],"flaky":flaky,"results":results}),
     )?;
+    after_run(&directory, &spec);
     if !passed {
         return Err(Error::new(
             "scenario_failed",
@@ -583,6 +701,28 @@ pub fn worker(file: &str) -> Result<()> {
         ));
     }
     Ok(())
+}
+/// After a run: its HTML report and its test history entries. Neither
+/// changes the run's outcome; a failure is logged.
+fn after_run(directory: &Path, spec: &Value) {
+    match crate::test_report::write(directory, 0.0, None) {
+        Ok(value) => println!("HTML report: {}", s(&value["html"], "path")),
+        Err(error) => eprintln!("HTML report not written: {}", error.message),
+    }
+    let suite = match s(spec, "source") {
+        "" => s(spec, "name").to_string(),
+        source => source.to_string(),
+    };
+    let recorded = read_json(&directory.join("report.json"), None).and_then(|report| {
+        let store = crate::test_history::store_path(&json!({}))?;
+        crate::test_history::append(
+            &store,
+            crate::test_history::run_entries(directory, &report, &suite),
+        )
+    });
+    if let Err(error) = recorded {
+        eprintln!("Test history not recorded: {}", error.message);
+    }
 }
 /// Runs `count` scenarios on the devices, at most `parallel` devices at a
 /// time. Without shard every device runs every scenario; with shard each
@@ -782,6 +922,21 @@ pub(crate) fn screen_step(
     if step["ignore"].is_array() {
         arguments["ignore"] = step["ignore"].clone();
     }
+    let baseline = PathBuf::from(s(step, "baseline"));
+    if !baseline.is_file() {
+        capture(actual)?;
+        if b(step, "record_baselines") {
+            return Ok(
+                json!({"passed":true,"new_baseline":true,"baseline":baseline,"actual":actual}),
+            );
+        }
+        return Err(Error::new(
+            "baseline_missing",
+            format!("No baseline at {}", baseline.display()),
+        )
+        .remedy("Look at the screenshot; testing.baselines review lists it and approve keeps it as the baseline")
+        .details(json!({"baseline":baseline,"actual":actual})));
+    }
     loop {
         capture(actual)?;
         let last = !wait || Instant::now() >= deadline;
@@ -917,7 +1072,7 @@ pub fn run_device(
                 }
             })();
             let passed = result.is_ok();
-            steps.push(json!({"index":index,"action":step["action"],"label":step["label"],"duration_seconds":begin.elapsed().as_secs_f64(),"passed":passed,"result":match &result{Ok(v)=>v.clone(),Err(e)=>json!({"error":e.value()})}}));
+            steps.push(json!({"index":index,"action":step["action"],"label":step["label"],"duration_seconds":begin.elapsed().as_secs_f64(),"passed":passed,"result":match &result{Ok(v)=>v.clone(),Err(e)=>json!({"error":e.value()})},"images":step_images(directory, tag, index, step)}));
             if let Err(error) = result {
                 let failure = directory.join(format!("{tag}-failure.png"));
                 let capture = if iphone {
@@ -929,6 +1084,9 @@ pub fn run_device(
                     capture.unwrap_or_else(|e| json!({"error":e.value()}));
                 return Err(error);
             }
+        }
+        if let Some(error) = new_baselines(&steps) {
+            return Err(error);
         }
         if scenario.get("budget").is_some() {
             let (passed, results) = crate::perf::check_budget(&scenario["budget"], &metrics);
@@ -1011,18 +1169,90 @@ mod tests {
             json!({"action":"pause","duration":500}),
             json!({"action":"assert_screen","baseline":"/absolute/home.png","threshold":0.01,"tolerance":8}),
             json!({"action":"wait_screen","baseline":"/absolute/home.png","timeout":30}),
+            // Resolved in testing.run's baselines directory.
+            json!({"action":"assert_screen"}),
+            json!({"action":"wait_screen","baseline":"login/relative.png"}),
         ] {
             check_scenario(&scenario(step)).unwrap();
         }
         for step in [
             json!({"action":"pause"}),
-            json!({"action":"assert_screen"}),
-            json!({"action":"wait_screen","baseline":"relative.png"}),
+            json!({"action":"wait_screen","baseline":"../relative.png"}),
+            json!({"action":"wait_screen","baseline":"relative.txt"}),
             json!({"action":"assert_screen","baseline":"/a.png","threshold":2}),
             json!({"action":"assert_screen","baseline":"/a.png","tolerance":256}),
         ] {
             assert!(check_scenario(&scenario(step.clone())).is_err(), "{step}");
         }
+    }
+    #[test]
+    fn screen_steps_resolve_in_the_baselines_directory_and_record_new_screens() {
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path().join("baselines");
+        let mut scenarios = vec![json!({"name":"Log in","steps":[
+            {"action":"assert_screen","label":"Home screen"},
+            {"action":"wait_screen","baseline":"shared/done.png"},
+            {"action":"assert_screen"},
+            {"action":"assert_screen","baseline":"/elsewhere/x.png"},
+            {"action":"tap","x":1,"y":1}]})];
+        let refused = resolve_baselines(&mut scenarios.clone(), &json!({})).unwrap_err();
+        assert!(refused.message.contains("baselines directory"));
+        resolve_baselines(
+            &mut scenarios,
+            &json!({"baselines":base,"record_baselines":true}),
+        )
+        .unwrap();
+        let steps = &scenarios[0]["steps"];
+        assert_eq!(
+            steps[0]["baseline"],
+            json!(base.join("log-in/home-screen.png"))
+        );
+        assert_eq!(steps[1]["baseline"], json!(base.join("shared/done.png")));
+        assert_eq!(
+            steps[2]["baseline"],
+            json!(base.join("log-in/step-002.png"))
+        );
+        assert_eq!(steps[3]["baseline"], "/elsewhere/x.png");
+        assert_eq!(steps[0]["record_baselines"], true);
+        assert!(steps[4].get("record_baselines").is_none());
+        // A missing baseline: recorded as a candidate, or refused.
+        let actual = root.path().join("shot.png");
+        let picture = crate::visual::encode(&crate::visual::Image {
+            width: 1,
+            height: 1,
+            pixels: vec![1, 2, 3, 255],
+        })
+        .unwrap();
+        let capture = |path: &Path| -> Result<()> {
+            fs::write(path, &picture)?;
+            Ok(())
+        };
+        let recorded =
+            screen_step(&steps[0], &actual, &root.path().join("d.png"), capture).unwrap();
+        assert_eq!(recorded["new_baseline"], true);
+        assert!(actual.is_file());
+        assert!(!base.join("log-in/home-screen.png").exists());
+        let mut plain = steps[0].clone();
+        plain["record_baselines"] = json!(false);
+        let missing =
+            screen_step(&plain, &actual, &root.path().join("d.png"), capture).unwrap_err();
+        assert_eq!(missing.code, "baseline_missing");
+        assert_eq!(missing.details.unwrap()["actual"], json!(actual));
+        let report = [
+            json!({"index":0,"result":recorded}),
+            json!({"index":1,"result":{"passed":true}}),
+        ];
+        let error = new_baselines(&report).unwrap();
+        assert_eq!(error.code, "baselines_missing");
+        assert_eq!(error.details.unwrap()["screens"][0]["index"], 0);
+        assert!(new_baselines(&report[1..]).is_none());
+        // The step's images in the report directory.
+        fs::write(root.path().join("tag-000.png"), &picture).unwrap();
+        let images = step_images(root.path(), "tag", 0, &json!({"baseline":actual}));
+        assert_eq!(
+            images,
+            json!({"screenshot":root.path().join("tag-000.png"),"baseline":actual})
+        );
     }
     #[test]
     fn element_operations_on_the_virtual_iphone_say_it_has_no_hierarchy() {

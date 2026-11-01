@@ -1476,6 +1476,7 @@ pub fn start(a: &Value) -> Result {
     let (profile, state) = records(&directory)?;
     let boots = jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state);
     if boots {
+        refuse_small_host(&crate::host::current())?;
         refuse_short_disk(&start_disk(
             &profile,
             &state,
@@ -1499,6 +1500,17 @@ pub fn start(a: &Value) -> Result {
         job["warnings"] = json!(host_load::warnings(&host["gpu"], &host["pressure"]));
     }
     Ok(job)
+}
+
+/// A boot is refused on a host it cannot fit: not x86_64, or with less
+/// memory than the guest and its translated code take.
+fn refuse_small_host(facts: &crate::host::Facts) -> Result<()> {
+    match crate::host::virtual_iphone_refusal(facts) {
+        Some(reason) => Err(Error::new("ios_virtual_host_too_small", reason)
+            .remedy("Run the virtual iPhone on an x86_64 Linux computer with at least 16 GiB of memory; ios.virtual.host_check lists what it needs.")
+            .details(json!({"memory_total_bytes":facts.memory_total,"architecture":facts.architecture}))),
+        None => Ok(()),
+    }
 }
 
 /// One step from a built bundle to the app on the running phone: inspected
@@ -2627,5 +2639,36 @@ mod profile_list_tests {
         assert_eq!(list.last(), Some(&PathBuf::from("/new")));
         assert!(!list.contains(&PathBuf::from("/p0")));
         assert!(remembered(&json!({}), None).is_empty());
+    }
+}
+
+#[cfg(test)]
+mod small_host_tests {
+    use super::*;
+
+    #[test]
+    fn a_boot_is_refused_where_the_guest_cannot_fit() {
+        let gib = 1u64 << 30;
+        let mut facts = crate::host::Facts {
+            architecture: "x86_64".into(),
+            memory_total: Some(32 * gib),
+            ..Default::default()
+        };
+        assert!(refuse_small_host(&facts).is_ok());
+        facts.memory_total = Some(8 * gib);
+        let error = refuse_small_host(&facts).unwrap_err();
+        assert_eq!(error.code, "ios_virtual_host_too_small");
+        assert!(error.message.contains("8.0 GiB"));
+        assert!(error.remedy.contains("ios.virtual.host_check"));
+        // Unknown memory is not a reason to refuse.
+        facts.memory_total = None;
+        assert!(refuse_small_host(&facts).is_ok());
+        facts.architecture = "aarch64".into();
+        assert!(
+            refuse_small_host(&facts)
+                .unwrap_err()
+                .message
+                .contains("x86_64")
+        );
     }
 }

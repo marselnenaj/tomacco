@@ -19,11 +19,13 @@ StudioDialog {
     topPadding: 0
     title: ""
     // Everything the palette finds: views, commands and every operation, each with a key of its own.
+    // Only while open: nothing is searched in a closed palette.
     readonly property var entries: {
+        if(!visible)return []
         let pages=navigation.map(x=>({key:"page:"+x.id,id:x.id,title:x.label,detail:qsTr("View"),icon:x.icon,key2:qsTr("Ctrl")+"+"+x.key,page:true}))
         let actions=commands.map(x=>Object.assign({},x,{key:"command:"+x.id,key2:x.key}))
         // Operations match by their shown title, their English title and their name.
-        let operations=Agent.operations.map(x=>({key:"operation:"+x.name,id:x.name,title:OperationTitles.title(x),detail:x.name,search:x.title || "",icon:"agent",operation:x}))
+        let operations=workspace.operations.map(x=>({key:"operation:"+x.name,id:x.name,title:OperationTitles.title(x),detail:x.name,search:x.title || "",icon:"agent",operation:x}))
         return pages.concat(actions).concat(operations)
     }
     // What was chosen lately, newest first; it comes first and ranks higher.

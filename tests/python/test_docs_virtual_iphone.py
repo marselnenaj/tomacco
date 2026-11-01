@@ -54,6 +54,8 @@ GUIDES = ("README.md", "docs/README.md", "docs/getting-started.md", "docs/deskto
           "integrations/agent-skill/tomacco/examples.md")
 # A dotted name in a guide that looks like an operation and is a result's path instead.
 RESULT_PATHS = {"workspace.ios_research.guest.detach_pending"}
+# A JSON answer's `result` holds fields such as result.id; the result.* operations are named in full.
+RESULT_FIELDS = re.compile(r"result\.(?!read$)[a-z_]+")
 OPERATION_AREAS = {entry["name"].split(".")[0] for entry in operation_entries() if "." in entry["name"]}
 
 
@@ -275,7 +277,7 @@ class EveryGuideTests(DocumentTest):
         known = {entry["name"] for entry in operation_entries()}
         for path in GUIDES:
             for token in re.findall(r"`([a-z_]+(?:\.[a-z0-9_]+)+)`", raw(path)):
-                if token.split(".")[0] in OPERATION_AREAS and token not in RESULT_PATHS and not token.endswith((".json", ".md", ".py")):
+                if token.split(".")[0] in OPERATION_AREAS and token not in RESULT_PATHS and not RESULT_FIELDS.fullmatch(token) and not token.endswith((".json", ".jsonl", ".md", ".py")):
                     self.assertTrue(token in known, f"{path} names an operation the schema lacks: {token}")
 
     def test_every_argument_a_guide_names_exists(self):

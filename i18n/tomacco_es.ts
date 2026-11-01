@@ -95,6 +95,34 @@
         <source>done</source>
         <translation>terminada</translation>
     </message>
+    <message>
+        <source>An agent&apos;s call failed: %1</source>
+        <translation>Falló una invocación de un agente: %1</translation>
+    </message>
+    <message>
+        <source>An agent started a job: %1</source>
+        <translation>Un agente inició una tarea: %1</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Notificaciones</translation>
+    </message>
+    <message>
+        <source>Fewer</source>
+        <translation>Menos</translation>
+    </message>
+    <message>
+        <source>All %1</source>
+        <translation>Todas (%1)</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Borrar</translation>
+    </message>
+    <message>
+        <source>Clear the notifications</source>
+        <translation>Borrar las notificaciones</translation>
+    </message>
 </context>
 <context>
     <name>AndroidDevices</name>
@@ -3646,6 +3674,90 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>What to do: %1</source>
         <translation>Qué hacer: %1</translation>
     </message>
+    <message>
+        <source>Open the update settings to install it.</source>
+        <translation>Abre los ajustes de actualización para instalarla.</translation>
+    </message>
+    <message>
+        <source>Version %1 is installed. Restart to use it.</source>
+        <translation>La versión %1 está instalada. Reinicia para usarla.</translation>
+    </message>
+    <message>
+        <source>Updates</source>
+        <translation>Actualizaciones</translation>
+    </message>
+    <message>
+        <source>Cancelled after %1</source>
+        <translation>Cancelado tras %1</translation>
+    </message>
+    <message>
+        <source>Save the current layout</source>
+        <translation>Guardar la disposición actual</translation>
+    </message>
+    <message>
+        <source>Window layouts</source>
+        <translation>Disposiciones de ventana</translation>
+    </message>
+    <message>
+        <source>Use window layout %1</source>
+        <translation>Usar la disposición %1</translation>
+    </message>
+    <message>
+        <source>At most %1 window layouts are kept. Delete one first.</source>
+        <translation>Se guardan como máximo %1 disposiciones. Elimina una primero.</translation>
+    </message>
+    <message>
+        <source>Window layout “%1” saved</source>
+        <translation>Disposición «%1» guardada</translation>
+    </message>
+    <message>
+        <source>Window layout “%1”</source>
+        <translation>Disposición «%1»</translation>
+    </message>
+    <message>
+        <source>Search settings</source>
+        <translation>Buscar en los ajustes</translation>
+    </message>
+    <message>
+        <source>No setting matches “%1”.</source>
+        <translation>Ningún ajuste coincide con «%1».</translation>
+    </message>
+    <message>
+        <source>Use the Omarchy theme&apos;s accent</source>
+        <translation>Usar el color de acento del tema de Omarchy</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>Tema</translation>
+    </message>
+    <message>
+        <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
+        <translation>El color de acento de %1 no se lee bien sobre este fondo, así que Tomacco mantiene el suyo.</translation>
+    </message>
+    <message>
+        <source>Accent from the Omarchy theme %1.</source>
+        <translation>Color de acento del tema de Omarchy %1.</translation>
+    </message>
+    <message>
+        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
+        <translation>Una disposición guarda la vista abierta, el panel de actividad, el registro junto al dispositivo y su ancho, las ventanas de dispositivo y el tamaño de la ventana.</translation>
+    </message>
+    <message>
+        <source>Use</source>
+        <translation>Usar</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Eliminar</translation>
+    </message>
+    <message>
+        <source>Delete window layout %1</source>
+        <translation>Eliminar la disposición %1</translation>
+    </message>
+    <message>
+        <source>Name, e.g. testing or debugging</source>
+        <translation>Nombre, p. ej. pruebas o depuración</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4270,6 +4382,26 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Leer resultados de pruebas</translation>
     </message>
     <message>
+        <source>Read code coverage</source>
+        <translation>Leer cobertura de código</translation>
+    </message>
+    <message>
+        <source>Write HTML test report</source>
+        <translation>Escribir informe de pruebas HTML</translation>
+    </message>
+    <message>
+        <source>Test pass-rate history</source>
+        <translation>Historial de la tasa de éxito de pruebas</translation>
+    </message>
+    <message>
+        <source>Select affected tests</source>
+        <translation>Elegir pruebas afectadas</translation>
+    </message>
+    <message>
+        <source>Review screenshot baselines</source>
+        <translation>Revisar capturas de referencia</translation>
+    </message>
+    <message>
         <source>Write a bug report bundle</source>
         <translation>Crear un paquete de informe de errores</translation>
     </message>
@@ -4560,6 +4692,18 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     <message>
         <source>Log of virtual iOS device</source>
         <translation>Registro del dispositivo iOS virtual</translation>
+    </message>
+    <message>
+        <source>Agent policy</source>
+        <translation>Política de agentes</translation>
+    </message>
+    <message>
+        <source>Audit log</source>
+        <translation>Registro de auditoría</translation>
+    </message>
+    <message>
+        <source>Read a saved result</source>
+        <translation>Leer un resultado guardado</translation>
     </message>
 </context>
 <context>
@@ -5846,6 +5990,41 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
     <message>
         <source>Try again</source>
         <translation>Reintentar</translation>
+    </message>
+</context>
+<context>
+    <name>ApprovalDialog</name>
+    <message>
+        <source>Allow this agent action?</source>
+        <translation>¿Permitir esta acción del agente?</translation>
+    </message>
+    <message>
+        <source>An agent</source>
+        <translation>Un agente</translation>
+    </message>
+    <message>
+        <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
+        <translation>%1 pide ejecutar %2 (%3). Tomacco la marca como destructiva: puede borrar o sobrescribir datos.</translation>
+    </message>
+    <message>
+        <source>Its arguments, with secrets masked:</source>
+        <translation>Sus argumentos, con los secretos ocultos:</translation>
+    </message>
+    <message>
+        <source>Arguments</source>
+        <translation>Argumentos</translation>
+    </message>
+    <message>
+        <source>Seconds left before it is denied: %1</source>
+        <translation>Segundos hasta el rechazo automático: %1</translation>
+    </message>
+    <message>
+        <source>Deny</source>
+        <translation>Rechazar</translation>
+    </message>
+    <message>
+        <source>Approve</source>
+        <translation>Permitir</translation>
     </message>
 </context>
 </TS>

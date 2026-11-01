@@ -6,6 +6,8 @@ import "."
 ColumnLayout {
     id: section
     property var model
+    // What the settings' search finds this section by.
+    readonly property var keywords: [qsTr("Updates"),qsTr("Off"),qsTr("Notify"),qsTr("Automatic"),qsTr("Channel"),qsTr("Stable"),qsTr("Pre-release"),qsTr("Check now"),qsTr("Roll back"),"GitHub"]
     spacing: Theme.gapSm
     Text {text:qsTr("Updates");color:Theme.muted;font.pixelSize:Theme.fontSmall}
     StudioSegmented {

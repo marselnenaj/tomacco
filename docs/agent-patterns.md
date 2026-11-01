@@ -120,7 +120,7 @@ status is not 0. Branch on `code`; show the user `message`; follow `remedy`. Rea
 ## Safe and destructive operations
 
 Every operation carries the four MCP annotations, and `tomaccoctl schema` shows them under
-`annotations`. Of the 228 operations, 77 are read-only and 24 are destructive.
+`annotations`. Of the 236 operations, 81 are read-only and 25 are destructive.
 
 | Annotation | What it means for an agent |
 | --- | --- |
@@ -134,7 +134,7 @@ The destructive ones are `catalog.remove`, `project.configure`, `job.cancel`, `s
 `device.install`, `device.app`, `android.each`, `android.avd_profile`, `android.emulator`,
 `remote.run`, `workspace.remove`, `files.write`, `release.version`, `release.notes`, `apple.simulator`,
 `apple.device`, `play.commit`, `play.abort`, `ios.emulator.restore`, `ios.virtual.cleanup`,
-`ios.virtual.state_delete`, `update.apply`, `update.rollback` and `workflow.run`, which runs a destructive
+`ios.virtual.state_delete`, `testing.baselines`, `update.apply`, `update.rollback` and `workflow.run`, which runs a destructive
 step only when that step is confirmed. The [reference](reference/README.md) marks each.
 
 Two of them are dry runs unless told otherwise. Show the user what the dry run lists, and only
@@ -151,6 +151,25 @@ Some calls are not destructive by the annotation but still need the user's word,
 [agent guide](agents.md) says: publishing with `play.commit` or `ios.store_ship` with `upload`, and
 downloads that accept a license. Over MCP, a client that supports elicitation shows the person the question
 itself before these calls run; a `consent_declined` error means they said no, so do not repeat the call.
+
+## When a guard refuses
+
+The person may limit what an agent does through Tomacco ([guardrails](agents.md#guardrails)). `agent.policy`
+says what this session may do:
+
+```sh
+tomaccoctl call agent.policy '{}'
+```
+
+A refusal is an error like any other, and nothing ran:
+
+| Code | What to do |
+| --- | --- |
+| `policy_denied` | The policy does not allow the operation. Do not look for another operation that does the same. Tell the person what you wanted to run and why. |
+| `approval_denied` | The person said no at the desktop, or did not answer in time. Do not repeat the call unless they ask you to. |
+| `path_outside_roots` | Write inside the project or one of the roots the `remedy` lists, or ask the person to add the folder. |
+| `session_job_limit` | Wait for a job you started with `job.wait`, or cancel one you no longer need, then try again. |
+| `result_too_large` | The call ran. Read its result with `result.read` from the `result_id` in `details`, passing `next_offset` back as `offset`; do not call the operation again for it. |
 
 ## Recover from failures
 

@@ -442,7 +442,7 @@ tomaccoctl call android.avd_create '{"name":"<name>","system_image":"<system_ima
 
 **Set emulator display**
 
-Apply a profile's resolution/density to a stopped Tomacco AVD.
+Apply a profile's resolution/density to a stopped Tomacco AVD. On a host with less than 10 GiB of memory or at most 4 processors it also lowers the emulator's memory and processors (adapted_to_host), unless android.avd_configure set them.
 
 Annotations: **destructive**, idempotent, open world.
 
@@ -479,7 +479,7 @@ tomaccoctl call android.avd_configure '{"name":"<name>"}'
 
 **Start emulator**
 
-Start or reuse an Android virtual device. A Tomacco-managed AVD resumes from its Quick Boot snapshot when android.emulator saved one at its last stop; the result's boot says quick or cold and why. CPU acceleration remains enabled independently of the selected GPU renderer.
+Start or reuse an Android virtual device. A Tomacco-managed AVD resumes from its Quick Boot snapshot when android.emulator saved one at its last stop; the result's boot says quick or cold and why. CPU acceleration remains enabled independently of the selected GPU renderer. A start with a window needs X11 (DISPLAY, XWayland on Wayland) and is refused with emulator_no_display without it; the emulator gets QT_QPA_PLATFORM=xcb when the session names only wayland. With gpu configured and the AVD's default auto renderer, a host without a hardware GPU driver starts with swiftshader (gpu in the result says so).
 
 Annotations: writes, idempotent, open world.
 

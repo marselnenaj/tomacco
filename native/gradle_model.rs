@@ -1040,9 +1040,227 @@ pub fn multiplatform(dir: &Path) -> Option<Value> {
     }))
 }
 
+/// Whether a block assigns `true` to one of `names`.
+fn enabled(text: &str, names: &[&str]) -> bool {
+    property(text, names).is_some_and(|v| v.trim() == "true")
+}
+
+/// The Gradle Managed Devices and device groups a module declares under
+/// `testOptions { managedDevices { ... } }`: `localDevices` or `allDevices`
+/// with `create("name")`, `create<ManagedVirtualDevice>("name")`,
+/// `register` or `maybeCreate`, the Groovy `name(ManagedVirtualDevice)`
+/// form, and `groups { create("name") { ... } }`.
+fn managed_devices(script: &str) -> (Vec<Value>, Vec<String>) {
+    let named =
+        Regex::new(r#"(?:create|register|maybeCreate)\s*(?:<[\w.]+>)?\s*\(\s*["']([\w-]+)["']"#)
+            .unwrap();
+    let groovy = Regex::new(
+        r#"(?m)^\s*([A-Za-z_]\w*)\s*\(\s*(?:com\.android\.build\.api\.dsl\.)?ManagedVirtualDevice\s*\)"#,
+    )
+    .unwrap();
+    let mut devices = Vec::new();
+    let mut groups = Vec::new();
+    for managed in blocks(script, "managedDevices") {
+        let group_text: String = blocks(managed, "groups").join("\n");
+        for c in named.captures_iter(&group_text) {
+            if !groups.contains(&c[1].to_string()) {
+                groups.push(c[1].to_string());
+            }
+        }
+        for list in ["localDevices", "allDevices", "devices"] {
+            for body in blocks(managed, list) {
+                let mut found: Vec<(String, usize)> = named
+                    .captures_iter(body)
+                    .map(|c| (c[1].to_string(), c.get(0).unwrap().end()))
+                    .collect();
+                found.extend(
+                    groovy
+                        .captures_iter(body)
+                        .map(|c| (c[1].to_string(), c.get(0).unwrap().end())),
+                );
+                for (name, end) in found {
+                    if devices.iter().any(|d: &Value| d["name"] == name.as_str()) {
+                        continue;
+                    }
+                    // The device's settings, from the block that follows its name.
+                    let rest =
+                        body[end..].trim_start_matches(|c: char| c.is_whitespace() || c == ')');
+                    let rest = rest.strip_prefix(".apply").map_or(rest, str::trim_start);
+                    let settings = if rest.starts_with('{') {
+                        let open = body.len() - rest.len();
+                        closing(body, open).map_or("", |close| &body[open + 1..close - 1])
+                    } else {
+                        ""
+                    };
+                    let field = |names: &[&str]| {
+                        property(settings, names)
+                            .map(|v| unquote(&v).unwrap_or(v))
+                            .map_or(Value::Null, |v| match v.parse::<u64>() {
+                                Ok(number) => json!(number),
+                                Err(_) => json!(v),
+                            })
+                    };
+                    devices.push(json!({"name":name,"device":field(&["device"]),
+                        "api_level":field(&["apiLevel","sdkVersion"]),
+                        "system_image_source":field(&["systemImageSource"])}));
+                }
+            }
+        }
+    }
+    (devices, groups)
+}
+
+/// How each module of the Gradle build in `dir` measures coverage and which
+/// Gradle Managed Devices it declares, read from its build files: AGP's
+/// `enableUnitTestCoverage` and `enableAndroidTestCoverage` (or the older
+/// `testCoverageEnabled`) in a build type, the `jacoco` plugin, Kover.
+pub fn test_setup(dir: &Path) -> Value {
+    let catalog = catalog_file(dir)
+        .and_then(|p| read_text(&p))
+        .map(|t| parse_catalog(&t))
+        .unwrap_or_default();
+    let jacoco_plugin = Regex::new(r#"(?m)(?:\bid\s*\(?\s*["']jacoco["']|apply\s+plugin\s*:\s*["']jacoco["']|(?:^|[{;])\s*jacoco\s*(?:$|[};]))"#)
+            .unwrap();
+    let mut modules = Vec::new();
+    for (gradle_path, module_dir) in modules_of(dir) {
+        let Some(script) = build_file(&module_dir).and_then(|p| read_text(&p)) else {
+            continue;
+        };
+        let script = without_apply_false(&strip_comments(&script));
+        let mut unit = Vec::new();
+        let mut instrumented = Vec::new();
+        let mut legacy = Vec::new();
+        for types in blocks(&script, "buildTypes") {
+            for (name, body) in children(types) {
+                let body = flat(body);
+                if enabled(
+                    &body,
+                    &["enableUnitTestCoverage", "isEnableUnitTestCoverage"],
+                ) {
+                    unit.push(name.clone());
+                }
+                if enabled(
+                    &body,
+                    &["enableAndroidTestCoverage", "isEnableAndroidTestCoverage"],
+                ) {
+                    instrumented.push(name.clone());
+                }
+                if enabled(&body, &["testCoverageEnabled", "isTestCoverageEnabled"]) {
+                    legacy.push(name);
+                }
+            }
+        }
+        let kover = applies(
+            &script,
+            &catalog,
+            &["org.jetbrains.kotlinx.kover"],
+            &["kover", "kotlinxkover"],
+        );
+        let jacoco = jacoco_plugin.is_match(&script);
+        let android = script.contains("com.android.")
+            || applies(
+                &script,
+                &catalog,
+                &["com.android.application", "com.android.library"],
+                &["androidapplication", "androidlibrary"],
+            );
+        let (devices, groups) = managed_devices(&script);
+        if unit.is_empty()
+            && instrumented.is_empty()
+            && legacy.is_empty()
+            && !kover
+            && !jacoco
+            && devices.is_empty()
+        {
+            continue;
+        }
+        modules.push(json!({
+            "module": if gradle_path.is_empty() { ":".to_string() } else { format!(":{gradle_path}") },
+            "android": android,
+            "unit_test_coverage": unit,
+            "android_test_coverage": instrumented,
+            "test_coverage_enabled": legacy,
+            "kover": kover,
+            "jacoco_plugin": jacoco,
+            "managed_devices": devices,
+            "managed_device_groups": groups,
+        }));
+    }
+    json!({"modules":modules,"read_from":"build files, without running Gradle"})
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn coverage_settings_and_managed_devices_are_read_per_module() {
+        let root = tempfile::tempdir().unwrap();
+        write(
+            root.path(),
+            "settings.gradle.kts",
+            "include(\":app\", \":core\", \":plain\")",
+        );
+        write(
+            root.path(),
+            "app/build.gradle.kts",
+            r#"plugins { id("com.android.application") }
+android {
+    buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
+        }
+        release { isMinifyEnabled = true }
+    }
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel2api30") {
+                    device = "Pixel 2"
+                    apiLevel = 30
+                    systemImageSource = "aosp"
+                }
+                create<ManagedVirtualDevice>("tablet") { device = "Pixel Tablet"; apiLevel = 34 }
+            }
+            groups {
+                create("phones") { targetDevices.add(localDevices["pixel2api30"]) }
+            }
+        }
+    }
+}"#,
+        );
+        write(
+            root.path(),
+            "core/build.gradle",
+            "plugins {\n  id 'com.android.library'\n  id 'org.jetbrains.kotlinx.kover'\n}\nandroid {\n  buildTypes { debug { testCoverageEnabled true } }\n  testOptions { managedDevices { devices {\n    pixel6api33 (ManagedVirtualDevice) {\n      device = \"Pixel 6\"\n      apiLevel = 33\n    }\n  } } }\n}",
+        );
+        write(
+            root.path(),
+            "plain/build.gradle.kts",
+            "plugins { kotlin(\"jvm\"); jacoco }",
+        );
+        let setup = test_setup(root.path());
+        let modules = setup["modules"].as_array().unwrap();
+        assert_eq!(modules.len(), 3);
+        let app = &modules[0];
+        assert_eq!(app["module"], ":app");
+        assert_eq!(app["unit_test_coverage"], json!(["debug"]));
+        assert_eq!(app["android_test_coverage"], json!(["debug"]));
+        assert_eq!(
+            app["managed_devices"][0],
+            json!({"name":"pixel2api30","device":"Pixel 2","api_level":30,"system_image_source":"aosp"})
+        );
+        assert_eq!(app["managed_devices"][1]["name"], "tablet");
+        assert_eq!(app["managed_device_groups"], json!(["phones"]));
+        let core = &modules[1];
+        assert_eq!(core["kover"], true);
+        assert_eq!(core["test_coverage_enabled"], json!(["debug"]));
+        assert_eq!(core["managed_devices"][0]["name"], "pixel6api33");
+        assert_eq!(core["managed_devices"][0]["api_level"], 33);
+        assert_eq!(modules[2]["jacoco_plugin"], true);
+        assert_eq!(modules[2]["android"], false);
+    }
 
     fn write(root: &Path, relative: &str, text: &str) {
         let file = root.join(relative);

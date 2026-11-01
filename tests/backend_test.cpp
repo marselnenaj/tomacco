@@ -13,6 +13,7 @@
 #include <QCoreApplication>
 #include <QProcess>
 #include <QSignalSpy>
+#include <QScopeGuard>
 #include <QJsonDocument>
 #include <QJsonObject>
 #ifdef TOMACCO_HAVE_DBUS
@@ -247,6 +248,54 @@ private slots:
         QVERIFY(!backend.importSettings(root.filePath("missing.json")).value("ok").toBool());
         QCOMPARE(backend.appearance(),QString("light"));
         QVERIFY(!backend.exportSettings(root.filePath("no/such/dir/settings.json")).isEmpty());
+        QSettings().clear();
+    }
+    void theActiveOmarchyThemeIsReadNotWritten() {
+        // Omarchy's colors.toml: quoted colours, comments, a mode; anything else is left out.
+        const auto colours=Backend::parseOmarchyColors(
+            "# Nenaj\nmode = \"dark\"\naccent = \"#D8FF3D\" # lime\nbackground='#0a0a0a'\nforeground = \"#f2f0ea\"\n"
+            "red = \"red\"\nmuted = \"#123\"\n[section]\nselection = #38420f\n");
+        QCOMPARE(colours.value("mode").toString(),QString("dark"));
+        QCOMPARE(colours.value("accent").toString(),QString("#d8ff3d"));
+        QCOMPARE(colours.value("background").toString(),QString("#0a0a0a"));
+        QCOMPARE(colours.value("foreground").toString(),QString("#f2f0ea"));
+        for(const auto *left:{"red","muted","selection"})QVERIFY2(!colours.contains(left),left);
+        QVERIFY(Backend::parseOmarchyColors("mode = \"sepia\"").isEmpty());
+        // The active theme: XDG_STATE_HOME's omarchy/current/theme, then the configuration's, as older releases keep it.
+        QTemporaryDir root;QVERIFY(root.isValid());
+        const auto state=root.filePath("state"),config=root.filePath("config");
+        const auto oldState=qgetenv("XDG_STATE_HOME"),oldConfig=qgetenv("XDG_CONFIG_HOME");
+        auto restore=qScopeGuard([&]{qputenv("XDG_STATE_HOME",oldState);qputenv("XDG_CONFIG_HOME",oldConfig);});
+        qputenv("XDG_STATE_HOME",state.toUtf8());qputenv("XDG_CONFIG_HOME",config.toUtf8());
+        QCOMPARE(Backend::omarchyThemeDirectory(),QString());
+        QVERIFY(QDir().mkpath(config+"/omarchy/current/theme"));
+        write(config+"/omarchy/current/theme/colors.toml","accent = \"#4fb3ff\"\nbackground = \"#101418\"\n");
+        QCOMPARE(Backend::omarchyThemeDirectory(),config+"/omarchy/current/theme");
+        QVERIFY(QDir().mkpath(state+"/omarchy/current/theme"));
+        write(state+"/omarchy/current/theme/colors.toml","accent = \"#ee7a38\"\nbackground = \"#fafafa\"\nmode = \"light\"\n");
+        write(state+"/omarchy/current/theme.name","ember\n");
+        QCOMPARE(Backend::omarchyThemeDirectory(),state+"/omarchy/current/theme");
+        const auto before=QFileInfo(state+"/omarchy/current/theme/colors.toml").lastModified();
+        Backend backend(QString(),nullptr,false);
+        const auto theme=backend.omarchyTheme();
+        QVERIFY(theme.value("available").toBool());
+        QCOMPARE(theme.value("name").toString(),QString("ember"));QCOMPARE(theme.value("accent").toString(),QString("#ee7a38"));
+        QCOMPARE(theme.value("mode").toString(),QString("light"));
+        QCOMPARE(QFileInfo(state+"/omarchy/current/theme/colors.toml").lastModified(),before);
+        // A theme without an accent or a background is no theme to follow.
+        write(state+"/omarchy/current/theme/colors.toml","foreground = \"#000000\"\n");
+        backend.reloadOmarchyTheme();
+        QVERIFY(!backend.omarchyTheme().value("available").toBool());
+        // The choice to follow it is off by default and goes with the exported settings.
+        QVERIFY(!backend.followOmarchyAccent());
+        backend.setFollowOmarchyAccent(true);QVERIFY(backend.followOmarchyAccent());
+        const auto path=root.filePath("settings.json");
+        QCOMPARE(backend.exportSettings(path),QString());
+        QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
+        QCOMPARE(QJsonDocument::fromJson(file.readAll()).object().value("settings").toObject().value("appearance/omarchyAccent"),QJsonValue(true));
+        backend.setFollowOmarchyAccent(false);
+        QCOMPARE(backend.importSettings(path).value("applied").toInt()>=1,true);
+        QVERIFY(backend.followOmarchyAccent());
         QSettings().clear();
     }
     void aRestartGoesThroughTheInstalledLauncherWithThisProjectAndView() {

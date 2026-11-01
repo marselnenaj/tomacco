@@ -2,7 +2,7 @@
   {
     "name": "doctor",
     "title": "Check toolchain",
-    "description": "Report tool versions, paths, SDK and KVM readiness, and next_steps: what is left to set up, in order. Without a virtual iOS device profile, its step names the next stage of the setup chain (next_stage) and carries the whole chain in order (stage, what, done true, false or null when only the person's files or a later check can tell, how, ask_first). With a profile, steps name only what stops the next start: a profile ios.virtual.status refuses, too little disk space, a failed last start, or apps the last start did not install.",
+    "description": "Report tool versions, paths, SDK and KVM readiness, and next_steps: what is left to set up, in order. Without a virtual iOS device profile, its step names the next stage of the setup chain (next_stage) and carries the whole chain in order (stage, what, done true, false or null when only the person's files or a later check can tell, how, ask_first). With a profile, steps name only what stops the next start: a profile ios.virtual.status refuses, too little disk space, a failed last start, or apps the last start did not install. host describes this computer: the distribution and whether it is immutable or a container, why KVM is not usable with the commands that fix it here (also in kvm), the graphics and display the Android emulator would use with the renderer that suits them, memory, processors and disk against what the emulator and the virtual iPhone need, and how to install a JDK and Gradle here.",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -412,7 +412,7 @@
   {
     "name": "settings.configure",
     "title": "Set up toolchain",
-    "description": "Configure SDK, JDK and executable paths without installing or running them, how updates behave, and how many heavy jobs run at once.",
+    "description": "Configure SDK, JDK and executable paths without installing or running them, how updates behave, how many heavy jobs run at once, and the agent policy.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -487,6 +487,10 @@
           },
           "required": [],
           "additionalProperties": false
+        },
+        "agent_policy": {
+          "type": "object",
+          "description": "The agent policy, replacing the stored one ({} removes it): mcp, cli and clients name the policy for MCP servers, tomaccoctl call and MCP clients by name (full, no_destructive, read_only or one in policies); policies defines named ones (mode, allow, deny, writes roots or anywhere, write_roots); approval (destructive, timeout_seconds 5-30, without_desktop allow or deny, session); limits (jobs_per_session 0-64, inline_result_kib 1-16384); audit true or false. Refused over MCP and under a limiting policy"
         }
       },
       "required": [],
@@ -612,7 +616,7 @@
   {
     "name": "project.inspect",
     "title": "Open project",
-    "description": "Detect frameworks and available platforms without executing project code. For a Gradle build, android lists each app module's application ID, namespace, min, target and compile SDK, build types, flavors and variants as read from the build files and versions catalog; values only Gradle can compute are listed under unresolved.",
+    "description": "Detect frameworks and available platforms without executing project code. For a Gradle build, android lists each app module's application ID, namespace, min, target and compile SDK, build types, flavors and variants as read from the build files and versions catalog; values only Gradle can compute are listed under unresolved. test_setup lists per Gradle module the coverage the build files enable (unit_test_coverage, android_test_coverage, kover, jacoco_plugin) and its Gradle Managed Devices and groups.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -786,6 +790,23 @@
           "type": "string",
           "description": "Device serial from device.list for instrumented-test: required for a Flutter project's integration_test run, and for Gradle the device ANDROID_SERIAL selects",
           "default": ""
+        },
+        "coverage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Gradle test or instrumented-test: also run the coverage report tasks the build files enable (AGP's enableUnitTestCoverage or enableAndroidTestCoverage, the jacoco plugin, Kover); testing.coverage reads the reports"
+        },
+        "managed_device": {
+          "type": "string",
+          "default": "",
+          "maxLength": 100,
+          "description": "Gradle instrumented-test: run on this Gradle Managed Device or device group from the build files (project.inspect test_setup), or all, instead of a connected device"
+        },
+        "shards": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "With managed_device: split the instrumented tests across this many managed devices (AGP's numManagedDeviceShards)"
         }
       },
       "required": [
@@ -803,7 +824,7 @@
   {
     "name": "project.execute",
     "title": "Start build / test",
-    "description": "Execute a build, tests, lint or named project task as a durable cancellable job. For a Flutter project, test and instrumented-test (flutter test integration_test -d device) also write the JSON reporter's output to build/tomacco, which testing.results reads. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.",
+    "description": "Execute a build, tests, lint or named project task as a durable cancellable job. For a Flutter project, test and instrumented-test (flutter test integration_test -d device) also write the JSON reporter's output to build/tomacco, which testing.results reads. A test or instrumented-test job ends by writing build/tomacco/test-report.html (testing.report) and adding its results to the test history (testing.history), also when tests fail. For Gradle, coverage adds the coverage report tasks and managed_device runs the instrumented tests on a Gradle Managed Device, with shards to split them. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -867,6 +888,23 @@
           "type": "string",
           "description": "Device serial from device.list for instrumented-test: required for a Flutter project's integration_test run, and for Gradle the device ANDROID_SERIAL selects",
           "default": ""
+        },
+        "coverage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Gradle test or instrumented-test: also run the coverage report tasks the build files enable (AGP's enableUnitTestCoverage or enableAndroidTestCoverage, the jacoco plugin, Kover); testing.coverage reads the reports"
+        },
+        "managed_device": {
+          "type": "string",
+          "default": "",
+          "maxLength": 100,
+          "description": "Gradle instrumented-test: run on this Gradle Managed Device or device group from the build files (project.inspect test_setup), or all, instead of a connected device"
+        },
+        "shards": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "With managed_device: split the instrumented tests across this many managed devices (AGP's numManagedDeviceShards)"
         },
         "timeout": {
           "type": "integer",
@@ -1430,6 +1468,128 @@
       "destructiveHint": false,
       "idempotentHint": false,
       "openWorldHint": true
+    }
+  },
+  {
+    "name": "agent.policy",
+    "title": "Agent policy",
+    "description": "The agent policy a caller gets, from settings.json's agent_policy and the server's --policy or TOMACCO_POLICY: its mode, allow and deny lists and where it lets operations write, what chose it, desktop approval of destructive calls, the session limits and whether calls are audited. Without arguments, for this caller.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "channel": {
+          "type": "string",
+          "enum": [
+            "mcp",
+            "cli"
+          ],
+          "description": "mcp for an MCP server, cli for tomaccoctl call; this caller's by default"
+        },
+        "client": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "An MCP client's name as it sends it in initialize; this caller's by default"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "audit.list",
+    "title": "Audit log",
+    "description": "The newest entries of the audit log, newest first: every call through tomaccoctl call or MCP that may change something, and every call a guard refused, with the channel, the client's name, the operation, its arguments with secrets masked, how it ended and when. more is true when older entries match too.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 50
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Only operations whose name starts with this"
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "mcp",
+            "cli"
+          ]
+        },
+        "client": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Only calls from the MCP client of this name"
+        },
+        "failed": {
+          "type": "boolean",
+          "description": "Only calls that failed or were refused",
+          "default": false
+        },
+        "since": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Only calls at or after this time, in seconds since 1970"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "result.read",
+    "title": "Read a saved result",
+    "description": "Read a piece of a result too large for an MCP answer, which the result_too_large error saved under a result_id. Pass next_offset back as offset until eof is true; the pieces joined are the result's JSON. Saved results are kept for a week.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "result_id": {
+          "type": "string",
+          "pattern": "[a-f0-9]{32}",
+          "description": "result_id from the result_too_large error"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Byte offset to read from"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 1048576,
+          "default": 262144,
+          "description": "Most bytes to return"
+        }
+      },
+      "required": [
+        "result_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -2957,7 +3117,7 @@
   {
     "name": "android.avd_profile",
     "title": "Set emulator display",
-    "description": "Apply a profile's resolution/density to a stopped Tomacco AVD.",
+    "description": "Apply a profile's resolution/density to a stopped Tomacco AVD. On a host with less than 10 GiB of memory or at most 4 processors it also lowers the emulator's memory and processors (adapted_to_host), unless android.avd_configure set them.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3038,7 +3198,7 @@
   {
     "name": "android.avd_start",
     "title": "Start emulator",
-    "description": "Start or reuse an Android virtual device. A Tomacco-managed AVD resumes from its Quick Boot snapshot when android.emulator saved one at its last stop; the result's boot says quick or cold and why. CPU acceleration remains enabled independently of the selected GPU renderer.",
+    "description": "Start or reuse an Android virtual device. A Tomacco-managed AVD resumes from its Quick Boot snapshot when android.emulator saved one at its last stop; the result's boot says quick or cold and why. CPU acceleration remains enabled independently of the selected GPU renderer. A start with a window needs X11 (DISPLAY, XWayland on Wayland) and is refused with emulator_no_display without it; the emulator gets QT_QPA_PLATFORM=xcb when the session names only wayland. With gpu configured and the AVD's default auto renderer, a host without a hardware GPU driver starts with swiftshader (gpu in the result says so).",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -4950,7 +5110,7 @@
   {
     "name": "testing.run",
     "title": "Run native tests",
-    "description": "Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports and failure screenshots. A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On Android, a measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it. On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop, clear and measure fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes. With platform ios, it runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.",
+    "description": "Run JSON native UI scenarios (one file, or a directory of them) across devices with device locks, JUnit, JSON reports, failure screenshots and a self-contained report.html; each run's outcomes are added to the test history (testing.history). A device is an Android serial or virtual-iphone, the running virtual iPhone. By default every device runs every scenario; shard splits the scenarios across the devices and merges their results into one report. With retries, a failed scenario runs again; each result lists its attempts and flaky marks a pass after a failure. Besides selector steps, a scenario can tap and swipe at pixel coordinates, type text, send a key, pause, take a screenshot, assert_screen (compare the screen with a baseline PNG) and wait_screen (until it matches). On Android, a measure step records startup, frames, memory or usage metrics of an app, and a budget fails the scenario as budget_exceeded when a metric is outside it. On the virtual iPhone, steps go through ios.emulator.control at pixels of ios.virtual.screenshot, launch opens an app through the guest, and selector steps, stop, clear and measure fail: the guest reports no UI hierarchy. Its crash reports are not read after a scenario; use testing.crashes. With platform ios, it runs the same scenarios on USB iPhones through the WebDriverAgent session runtime.start keeps for each device (start it first): selectors are read against WDA's XML source, visible elements only, with text as the label (or the value of an element without one), resource_id as the accessibility identifier, description as the label and class as the element type; tap and swipe coordinates are in points; keys are home, enter, backspace, delete or tab. clickable, checked and package selectors and the clear step are refused there, and crashes are not read.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -5026,6 +5186,15 @@
               }
             }
           }
+        },
+        "baselines": {
+          "type": "string",
+          "description": "Absolute path of a baselines directory: an assert_screen or wait_screen step's relative baseline is a file in it, and a step without one gets SCENARIO/LABEL.png (or step-NNN.png)"
+        },
+        "record_baselines": {
+          "type": "boolean",
+          "default": false,
+          "description": "A screen step whose baseline is missing keeps its screenshot and the scenario goes on; the scenario then fails with baselines_missing. Approve the screenshots with testing.baselines"
         }
       },
       "required": [
@@ -5356,6 +5525,317 @@
     "annotations": {
       "readOnlyHint": true,
       "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "testing.coverage",
+    "title": "Read code coverage",
+    "description": "Read the JaCoCo XML coverage reports of a project's tests into totals (instruction, branch, line, complexity, method, class: covered, missed, percent), each source file with its missed lines, and each class, least covered first. Finds the reports AGP writes for unit tests (enableUnitTestCoverage) and instrumented tests (enableAndroidTestCoverage) under build/reports/coverage, the jacoco plugin's under build/reports/jacoco and Kover's XML under build/reports/kover; project.execute with coverage:true runs the tasks. Several reports are merged line by line: a line is covered when any report covers it, and each class comes from the report that covers it most. baseline, a JSON report an earlier call wrote or JaCoCo XML, adds delta: the change of each total and each file whose line coverage moved, appeared or went away. minimum and max_drop are checks on line coverage that set passed.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the project, a reports directory, or one JaCoCo or Kover XML report"
+        },
+        "since": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Leave out files modified before this time, in seconds since 1970"
+        },
+        "job_id": {
+          "type": "string",
+          "description": "Leave out files older than this job, such as the project.execute test job"
+        },
+        "baseline": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of a JSON report an earlier testing.coverage wrote with report, or of JaCoCo XML (a file or directory), to compare with"
+        },
+        "minimum": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Least line coverage in percent that passes"
+        },
+        "max_drop": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "With baseline: the most line coverage may fall, in percentage points, and still pass"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000,
+          "default": 50,
+          "description": "Files and classes listed in the answer, least covered first; report keeps them all"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to also write the full result as JSON, usable as a later baseline"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "testing.report",
+    "title": "Write HTML test report",
+    "description": "Write one self-contained HTML file for a test run: for a testing.run report directory, each scenario and device with its outcome, attempts, steps and their timings, screenshots, baselines and difference images, crashes and metrics; for a project, a results directory or file, the JUnit and Dart JSON results with totals, suites, every test case and each failure with its stack and Flutter golden images. Styles are inline, images embedded as data URIs (up to 48 MiB in all, beyond that linked by path) and there are no scripts. testing.run and project.execute test jobs write theirs when they end; call this for another place or an earlier run. Returns the file as html with what it holds.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of a testing.run report directory, a project, a results directory or one result file"
+        },
+        "since": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Leave out files modified before this time, in seconds since 1970"
+        },
+        "job_id": {
+          "type": "string",
+          "description": "Leave out files older than this job, such as the project.execute test job"
+        },
+        "output": {
+          "type": "string",
+          "description": "Absolute path of the HTML file; by default report.html in a testing.run directory, build/tomacco/test-report.html in a project, or test-report.html beside a file"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "testing.history",
+    "title": "Test pass-rate history",
+    "description": "Pass rates of tests and UI scenarios across runs, to find flaky ones. testing.run adds each scenario's outcome per device when it ends and a project.execute test or instrumented-test job each test case, to a store in Tomacco's data directory; record adds a testing.run directory, a project's or directory's current JUnit or Dart JSON results, or a file, once per file version. summary lists each test with runs, passed, failed, skipped, passed_after_retry, pass_rate (percent of runs that passed, retried passes included), flips (changes between pass and fail), recent (P passed, R passed after a retry, F failed, S skipped; newest last), last_failure and flaky (both outcomes in the window, or a retried pass), flaky tests first, the least reliable first. last limits each test to its newest runs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "summary",
+            "record"
+          ],
+          "default": "summary"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "record: absolute path of a testing.run report directory, a project, a results directory or one result file"
+        },
+        "since": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Leave out files modified before this time, in seconds since 1970"
+        },
+        "job_id": {
+          "type": "string",
+          "description": "Leave out files older than this job, such as the project.execute test job"
+        },
+        "suite": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "record: the name the entries are grouped under (the path by default); summary: only entries whose suite contains this"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "summary: only tests whose name contains this, ignoring case"
+        },
+        "by_device": {
+          "type": "boolean",
+          "default": false,
+          "description": "summary: one line per test and device"
+        },
+        "flaky_only": {
+          "type": "boolean",
+          "default": false
+        },
+        "last": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 50,
+          "description": "summary: each test's newest runs counted"
+        },
+        "min_runs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 1,
+          "description": "summary: leave out tests with fewer runs"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000,
+          "default": 50
+        },
+        "store": {
+          "type": "string",
+          "description": "Absolute path of another store file (JSON lines) instead of the default one"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "testing.impact",
+    "title": "Select affected tests",
+    "description": "Pick the tests a change likely affects in a Gradle build, from the changed files: git diff against base (HEAD by default, so uncommitted and untracked changes) or files. A changed test class is selected itself; a changed Kotlin or Java source selects the unit and instrumented test classes of its module and of the modules that depend on it (project(...) and projects.x in their build files) that are named after it (NameTest, NameTests, NameIT, NameSpec, TestName) or use its name in the same package or with an import, and otherwise the tests of its package in its module. Resources or the manifest select the module's instrumented tests, a module's build file all its tests and its dependents', and the settings, versions catalog, gradle.properties, gradle/, buildSrc or build-logic everything (run_all). scenarios, a testing.run scenario file or directory, adds the scenarios that launch an app whose module a change touches. commands are the Gradle calls with --tests and the instrumentation runner's class argument; run unit or instrumented starts them as a job. The answer lists unmapped files. Heuristics over the files: Gradle is not run, and a test reached through reflection, dependency injection or generated code can be missed.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the project"
+        },
+        "base": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Git revision to compare the working tree with; HEAD by default"
+        },
+        "files": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Changed files, relative to the project or absolute, instead of asking git"
+        },
+        "scenarios": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of a testing.run scenario file or directory to select from"
+        },
+        "configuration": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "release"
+          ],
+          "default": "debug"
+        },
+        "run": {
+          "type": "string",
+          "enum": [
+            "none",
+            "unit",
+            "instrumented"
+          ],
+          "default": "none",
+          "description": "none lists only; unit or instrumented starts the selected tests as a job"
+        },
+        "device": {
+          "type": "string",
+          "description": "run instrumented: the device serial ANDROID_SERIAL selects"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400,
+          "default": 1800
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "testing.baselines",
+    "title": "Review screenshot baselines",
+    "description": "Manage the baselines of assert_screen and wait_screen steps. review lists each screen step of a testing.run report directory per device as new (no baseline yet), changed, size_changed, passed, failed or not_reached, with its id, baseline, screenshot (actual), difference image and changed_fraction; by default only the screens to review (new, changed, size_changed), all_screens lists every one. approve copies the screenshots of the named screens, or with all of every new and changed screen, over their baselines, and refuses before writing when two devices would write different images to one baseline. list shows the PNG baselines in a directory with their sizes. Pair it with testing.run's baselines directory and record_baselines.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "review",
+            "approve",
+            "list"
+          ],
+          "default": "review"
+        },
+        "run": {
+          "type": "string",
+          "minLength": 1,
+          "description": "review, approve: absolute path of the testing.run report directory"
+        },
+        "screens": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "approve: the ids review lists"
+        },
+        "all": {
+          "type": "boolean",
+          "default": false,
+          "description": "approve: every new, changed and size_changed screen"
+        },
+        "all_screens": {
+          "type": "boolean",
+          "default": false,
+          "description": "review: list passed, failed and unreached screens too"
+        },
+        "directory": {
+          "type": "string",
+          "minLength": 1,
+          "description": "list: absolute path of the baselines directory"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
       "idempotentHint": true,
       "openWorldHint": false
     }
@@ -8716,6 +9196,15 @@
           "type": "string",
           "minLength": 1,
           "description": "The passt executable of guest_network nat; default: passt on PATH."
+        },
+        "guest_memory_import": {
+          "type": "string",
+          "enum": [
+            "shared",
+            "dma-buf"
+          ],
+          "default": "shared",
+          "description": "Guest RAM for the renderer's GPU import, with guest_control_backend. shared keeps QEMU's shared RAM, which radv/amdgpu refuse to import, so frames are copied on the CPU. dma-buf lays guest RAM on a sealed memfd that the renderer imports through /dev/udmabuf in windows of the kernel's udmabuf.size_limit_mb; it falls back to shared when /dev/udmabuf or memfds are unavailable, and to CPU copies when the import is refused. An imported window stays pinned until the session ends, which on a live boot was nearly all of guest RAM. The request receipt's guest_memory_import says which backing ran."
         }
       },
       "required": [
@@ -10294,7 +10783,7 @@
   {
     "name": "ios.virtual.start",
     "title": "Start virtual iOS device",
-    "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB. A start that boots a guest returns warnings, a list of {check, message}: check gpu when under a quarter of the graphics card is free (the graphics memory guard stops a session under an eighth), check pressure when the host's I/O or memory pressure is over the admission limits the start waits for; neither refuses the start.",
+    "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB. A start that boots a guest returns warnings, a list of {check, message}: check gpu when under a quarter of the graphics card is free (the graphics memory guard stops a session under an eighth), check pressure when the host's I/O or memory pressure is over the admission limits the start waits for; neither refuses the start. Refused with ios_virtual_host_too_small on a host that is not x86_64 or has less than 12 GiB of memory.",
     "inputSchema": {
       "type": "object",
       "properties": {

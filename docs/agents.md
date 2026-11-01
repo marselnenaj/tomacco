@@ -96,7 +96,7 @@ version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env`
 | --- | --- | --- |
 | `full` (the default) | One per operation, with every description. | 265,234 bytes |
 | `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 136,247 bytes |
-| `grouped` | One per area, such as `android` or `job`: 25 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 29,261 bytes |
+| `grouped` | One per area, such as `android` or `job`: 28 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 29,261 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
@@ -308,6 +308,49 @@ TOMACCO_SESSION_LOG=/absolute/session.jsonl tomaccoctl call project.run '{"path"
 tomaccoctl replay /absolute/session.jsonl --dry-run
 tomaccoctl replay /absolute/session.jsonl
 ```
+
+## Guardrails
+
+Every operation called through `tomaccoctl call` or `tomaccoctl mcp` passes a guard first. Nothing is configured
+by default, so an agent can do what the operations allow, as before. The person sets `agent_policy` from a terminal,
+with `settings.configure`; over MCP that call is refused, so an agent cannot loosen its own policy.
+
+```sh
+tomaccoctl call settings.configure '{"agent_policy":{"mcp":"no_destructive","clients":{"codex":"read_only"},"policies":{"builds":{"mode":"no_destructive","allow":["project.","job.","device.list","capabilities"],"deny":["project.watch"],"write_roots":["/home/me/src"]}},"approval":{"destructive":true,"timeout_seconds":30},"limits":{"jobs_per_session":4,"inline_result_kib":1024}}}'
+tomaccoctl call agent.policy '{"channel":"mcp","client":"codex"}'
+tomaccoctl call audit.list '{"channel":"mcp","limit":20}'
+```
+
+- **Policy.** `full` allows everything, `no_destructive` refuses operations marked `destructiveHint`, and `read_only`
+  allows only those marked `readOnlyHint`. `policies` defines named ones: a `mode` (one of the three), `allow` and `deny`
+  lists of operation names, prefixes ending in a dot (`play.`) or `*`. A deny entry always wins; with an allow list,
+  no other operation runs (the MCP resources, which only read, stay readable). The steps of `android.each` are checked like calls. An MCP server's policy is, in this order, the
+  one `tomaccoctl mcp --policy NAME` or `TOMACCO_POLICY` names, the client's entry in `clients` (by the `clientInfo` name
+  it sends in `initialize`), `mcp`, then `full`; `tomaccoctl call` uses `TOMACCO_POLICY`, then `cli`. An unknown name
+  allows nothing. A refused call is `policy_denied`, before anything runs; `agent.policy` says what a caller gets.
+- **Write roots.** Under any policy but `full`, and a named one unless its `writes` is `anywhere`, a destination an
+  operation takes (a screenshot, report, export, keystore, `files.write`'s project, `project.create`'s folder) must be
+  inside Tomacco's data directory, the temporary directory, the directory the server was started in (unless that is
+  `/` or the home directory or above it), the policy's `write_roots` or `TOMACCO_WRITE_ROOTS` (directories separated by
+  colons). Links are followed before the check. settings.json, the audit log and saved results stay closed. Otherwise
+  the call is `path_outside_roots`. What a build's own scripts write is not checked.
+- **Approval at the desktop.** With `approval.destructive`, a destructive call from an MCP agent waits until the person
+  at the Tomacco desktop approves it in a dialog that shows the agent's name, the operation and its arguments with
+  secrets masked. Deny, Escape and the end of `timeout_seconds` (5 to 30, 30 by default) are a no:
+  `approval_denied`. Without a desktop open the call runs, unless `without_desktop` is `deny`. `tomaccoctl call`
+  is not asked, nor is the desktop itself.
+- **Limits.** An MCP session runs at most `jobs_per_session` jobs at once (8 by default, 0 for no limit); one more is
+  `session_job_limit`. A result larger than `inline_result_kib` (2048 by default) is not sent: it is saved, and the
+  `result_too_large` error names a `result_id` that `result.read` reads back in pieces. The call itself ran.
+- **Audit log.** Each call that may change something, and each refused call, is appended to `audit/audit.jsonl` in the
+  data directory (owner-only): the time, `channel` (`cli` or `mcp`), `client` (the MCP client's name, or
+  `TOMACCO_CLIENT` for `tomaccoctl call`), the operation, its arguments with secrets masked and any `text` replaced by
+  its length and SHA-256, `ok`, the error `code`, the job ID, the policy and the approval. Past 4 MiB the file moves to
+  `audit.1.jsonl`; four older files are kept. `audit.list` reads it, newest first. `"audit":false` turns it off.
+
+These guard what an agent does through Tomacco's operations. An agent that can also run shell commands as you can edit
+settings.json or run the same tools without Tomacco; [the security policy](../SECURITY.md#an-agent-with-tomaccos-tools)
+says what is and is not covered.
 
 ## Android
 
@@ -858,6 +901,98 @@ order are not checked.
 ```sh
 tomaccoctl call testing.accessibility '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
 ```
+
+### Screenshot baselines in a folder
+
+Give `testing.run` a `baselines` directory and screen steps need no absolute path: a relative `baseline` such as
+`login/home.png` is a file in it, and a step without one gets `SCENARIO/LABEL.png` (the scenario's name and the step's
+`label`, in lower case with dashes), or `SCENARIO/step-NNN.png` without a label. Keep the directory in the project.
+A missing baseline fails the step with `baseline_missing` after its screenshot is taken. With `record_baselines:true`
+such a step keeps its screenshot and the scenario goes on, so one run collects every new screen; the scenario then
+fails with `baselines_missing`, which lists them.
+
+`testing.baselines` works on the run's report directory. `review` lists the screens to look at: each with an `id`, the
+scenario, device, step and label, its `baseline`, the screenshot as `actual`, the difference image and
+`changed_fraction`, and a `status`: `new`, `changed` or `size_changed`; `all_screens:true` adds the `passed`, `failed`
+and `not_reached` ones. Look at the images, then `approve` the right ones by `screens` (their ids), or every new and
+changed screen with `all:true`. Approve copies each screenshot over its baseline, and refuses with
+`baseline_conflict` before writing anything when two devices would write different images to one baseline. `list`
+shows the PNGs in a baselines directory with their size in pixels.
+
+```sh
+tomaccoctl call testing.run '{"path":"/absolute/ui-tests","directory":"/absolute/ui-results","devices":["emulator-5554"],"baselines":"/absolute/MyApp/baselines","record_baselines":true}'
+tomaccoctl call testing.baselines '{"run":"/absolute/ui-results"}'
+tomaccoctl call testing.baselines '{"action":"approve","run":"/absolute/ui-results","screens":["s000-004@emulator-5554"]}'
+```
+
+### Coverage, reports, history and affected tests
+
+`testing.coverage` reads the JaCoCo XML coverage reports of a project's tests: the ones the Android Gradle plugin
+writes for unit tests (`enableUnitTestCoverage`) and instrumented tests (`enableAndroidTestCoverage`), the `jacoco`
+plugin's and Kover's, which has the same format. `project.execute` with `coverage:true` runs the report tasks; see
+[Android](android.md#coverage-and-gradle-managed-devices). The answer has `totals` (`instruction`, `branch`, `line`,
+`complexity`, `method`, `class`, each `covered`, `missed`, `total` and `percent`), each report with its `kind` and
+module, `files` with their line and branch coverage and `missed_lines` as ranges such as `9-28`, and `classes`, least
+covered first, `limit` of each. Several reports, such as a module's unit and instrumented tests, are merged line by
+line: a line is covered when any report covers it, and each class comes from the report that covers it most.
+`report` writes the full result as JSON; give that file as `baseline` to a later call, and `delta` lists the change of
+each total and each file whose line coverage moved, appeared or went away, most dropped first. `minimum` (percent
+of lines) and `max_drop` (percentage points) set `passed`. Pass the test job's `job_id` so older reports are left out.
+
+```sh
+tomaccoctl call testing.coverage '{"path":"/absolute/MyApp","job_id":"JOB_ID","report":"/absolute/coverage-main.json"}'
+tomaccoctl call testing.coverage '{"path":"/absolute/MyApp","job_id":"JOB_ID","baseline":"/absolute/coverage-main.json","max_drop":0.5}'
+```
+
+Every `testing.run` writes `report.html` beside `report.json`, and every `test` or `instrumented-test` job of
+`project.execute` (and `testing.impact`) writes `build/tomacco/test-report.html` in the project, also when tests fail;
+both are listed among the job's artifacts. The file is self-contained: inline styles, images embedded as data URIs up
+to 48 MiB in all (beyond that linked by path) and no scripts. A run's report has each scenario and device with its
+outcome, attempts, steps and their times, screenshots, baselines, difference images, crashes and metrics; a project's
+has the totals, suites, every test case and each failure with its stack and Flutter golden images. `testing.report`
+writes one for any such path, at `output` if given.
+
+The same runs add their outcomes to a test history in Tomacco's data directory (`testing/history.jsonl`): one entry
+per scenario and device, or per test case. `testing.history` with `"action":"record"` adds a `testing.run` directory or
+the current results of a project, directory or file, each file version once. The summary lists each test with
+`runs`, `passed`, `failed`, `skipped`, `passed_after_retry`, `pass_rate`, `flips` (changes between pass and fail),
+`recent` (`P` passed, `R` passed after a retry, `F` failed, `S` skipped, newest last), `last_failure` and `flaky`
+(both outcomes among its last `last` runs, or a retried pass), flaky tests first. `name`, `suite`, `by_device`,
+`flaky_only` and `min_runs` narrow it; `store` names another history file.
+
+```sh
+tomaccoctl call testing.history '{"flaky_only":true,"min_runs":5}'
+```
+
+`testing.impact` picks the tests a change likely affects in a Gradle build. The changed files come from `git diff`
+against `base` (`HEAD` by default, so uncommitted and untracked files) or from `files`. A changed test class is
+selected itself. A changed Kotlin or Java file selects the unit and instrumented test classes of its module, and of the
+modules that depend on it through `project(...)` or `projects.x`, that are named after it (`NameTest`, `NameTests`,
+`NameIT`, `NameSpec`, `TestName`) or use its name in its package or with an import; when none does, the tests of its
+package in its module. Resources or the manifest select the module's instrumented tests, a module's build file all its
+tests and its dependents', and the settings, versions catalog, `gradle.properties`, `gradle/`, `buildSrc` or
+`build-logic` everything (`run_all`). `scenarios`, a scenario file or directory, adds the `testing.run` scenarios that
+launch an app whose module a change touches. `commands` are the Gradle calls (`--tests` for unit tests, the
+instrumentation runner's `class` argument for instrumented tests, one call per module); `run` `unit` or `instrumented`
+starts them as a job. `unmapped` lists files no rule covers. These are rules over the files, without Gradle: a test that
+reaches the code through reflection, dependency injection or generated code can be missed, so run everything before a
+release.
+
+```sh
+tomaccoctl call testing.impact '{"path":"/absolute/MyApp","scenarios":"/absolute/ui-tests"}'
+tomaccoctl call testing.impact '{"path":"/absolute/MyApp","run":"unit"}'
+```
+
+What ran, with an isolated Tomacco data directory, on a copy of `examples/hello-android` given a `Counter` class, a unit
+test and an instrumented test, and a temporary API 36 x86_64 emulator: `test` and `instrumented-test` jobs with
+`coverage` and their `test-report.html`; `testing.coverage` on both reports, merged, and against a saved baseline
+(line coverage 11.54 % to 19.23 %); `testing.impact` on an uncommitted change to `Counter` and its test, which selected
+`CounterTest`, `CounterDeviceTest` and the example's scenario and listed a notes file as unmapped, and its `run:"unit"`
+job; the history of those jobs and of four `testing.run` runs, which listed the scenario as flaky (`FFPF`, 25 %). A scenario with two unnamed `assert_screen` steps and
+`record_baselines` failed with `baselines_missing`, `approve` with `all` kept both screenshots, and the next run passed
+with 0 changed pixels; after one baseline was replaced by the other screen, the run failed with that step `changed`
+(0.24 % of the pixels), its `report.html` embedded the screenshots, baselines and difference images, and approving
+that one screen fixed the baseline. Kover and the `jacoco` plugin are unit-tested only.
 
 ### UI tests on the virtual iPhone
 
