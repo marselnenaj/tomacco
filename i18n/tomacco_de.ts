@@ -3507,6 +3507,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>App-Start messen</translation>
     </message>
     <message>
+        <source>Measure frame rendering</source>
+        <translation>Frame-Rendering messen</translation>
+    </message>
+    <message>
         <source>Check toolchain</source>
         <translation>Toolchain prüfen</translation>
     </message>

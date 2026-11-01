@@ -3503,6 +3503,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Mesurer le démarrage de l'app</translation>
     </message>
     <message>
+        <source>Measure frame rendering</source>
+        <translation>Mesurer le rendu des images</translation>
+    </message>
+    <message>
         <source>Check toolchain</source>
         <translation>Vérifier la chaîne d'outils</translation>
     </message>

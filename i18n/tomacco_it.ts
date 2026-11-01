@@ -3503,6 +3503,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Misura l'avvio dell'app</translation>
     </message>
     <message>
+        <source>Measure frame rendering</source>
+        <translation>Misura il rendering dei fotogrammi</translation>
+    </message>
+    <message>
         <source>Check toolchain</source>
         <translation>Verifica la toolchain</translation>
     </message>

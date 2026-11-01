@@ -134,6 +134,7 @@ var titles = {
     "profile.analyze": QT_TRANSLATE_NOOP("Operations", "Analyze performance profile"),
     "profile.compare": QT_TRANSLATE_NOOP("Operations", "Check performance budget"),
     "profile.startup": QT_TRANSLATE_NOOP("Operations", "Measure app startup"),
+    "profile.frames": QT_TRANSLATE_NOOP("Operations", "Measure frame rendering"),
     "workspace.list": QT_TRANSLATE_NOOP("Operations", "Read workspaces"),
     "workspace.save": QT_TRANSLATE_NOOP("Operations", "Save workspace"),
     "workspace.remove": QT_TRANSLATE_NOOP("Operations", "Remove workspace"),

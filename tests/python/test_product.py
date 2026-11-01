@@ -1019,6 +1019,31 @@ class AndroidControlTests(Isolated):
             dispatch("profile.startup", {"device": "emulator-5554", "bundle_id": "dev.test.app", "runs": 1})
         self.assertEqual(failed.exception.code, "launch_failed")
 
+    GFXINFO = ("** Graphics info for pid 3095 [dev.test.app] **\nTotal frames rendered: 80\nJanky frames: 4 (5.00%)\n"
+               "50th percentile: 18ms\n90th percentile: 29ms\n95th percentile: 32ms\n99th percentile: 85ms\n"
+               "Number Missed Vsync: 1\nHISTOGRAM: 16ms=70 17ms=6 85ms=2 700ms=1 4950ms=1\n")
+
+    def test_frames_are_counted_between_a_reset_and_a_read_around_a_scenario(self):
+        self.replies(**{"gfxinfo dev.test.app reset": "", "gfxinfo dev.test.app": self.GFXINFO})
+        scenario = self.root / "scroll.json"
+        scenario.write_text(json.dumps({"name": "Scroll", "steps": [{"action": "swipe", "x": 500, "y": 1800, "end_x": 500, "end_y": 400}]}))
+        target = self.root / "frames.json"
+        value = dispatch("profile.frames", {"device": "emulator-5554", "bundle_id": "dev.test.app", "scenario": str(scenario),
+                                            "report": str(target)})
+        self.assertEqual(value["scenario"], "Scroll")
+        self.assertEqual({k: value["metrics"][k] for k in ("frames_total", "jank_percent", "slow_frames", "frozen_frames", "frame_p90_ms")},
+                         {"frames_total": 80, "jank_percent": 5, "slow_frames": 10, "frozen_frames": 2, "frame_p90_ms": 29})
+        self.assertEqual(value["processes"][0]["counters"]["missed_vsync"], 1)
+        self.assertTrue(target.exists())
+        shell = self.shell_calls()
+        order = [i for i, args in enumerate(shell) if args[:1] in (["dumpsys"], ["input"])]
+        self.assertEqual([shell[i][:2] if shell[i][0] == "input" else shell[i][1:] for i in order],
+                         [["gfxinfo", "dev.test.app", "reset"], ["input", "swipe"], ["gfxinfo", "dev.test.app"]])
+        self.replies(**{"gfxinfo": "No process found for: dev.test.app\n"})
+        with self.assertRaises(StudioError) as stopped:
+            dispatch("profile.frames", {"device": "emulator-5554", "bundle_id": "dev.test.app", "seconds": 0})
+        self.assertEqual(stopped.exception.code, "app_not_running")
+
     def test_app_logs_follow_the_user_id_from_android_12_and_the_pid_before(self):
         self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": "package:dev.test.app.extra uid:10201\npackage:dev.test.app uid:10200\n"})
         job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1})

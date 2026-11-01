@@ -5305,6 +5305,52 @@
     }
   },
   {
+    "name": "profile.frames",
+    "title": "Measure frame rendering",
+    "description": "Reset a running Android app's frame statistics (dumpsys gfxinfo reset), wait seconds or run a testing.run scenario on the device, then read them: frames rendered, janky frames and jank_percent, slow frames (17 ms or more) and frozen frames (700 ms or more) from the frame time histogram, the 50th, 90th, 95th and 99th percentile frame times, and the per-process counters such as missed vsync and slow UI thread. A process that rendered nothing leaves the metrics null. A failed scenario answers scenario_failed with its steps. report saves the result as JSON.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID of the running app",
+          "minLength": 1
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 300,
+          "default": 5,
+          "description": "How long to wait between reset and read when no scenario is given; use the app meanwhile"
+        },
+        "scenario": {
+          "type": "string",
+          "description": "Absolute path of a testing.run scenario JSON to run between reset and read, instead of waiting"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the result as JSON, for profile.compare"
+        }
+      },
+      "required": [
+        "device",
+        "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "workspace.list",
     "title": "Read workspaces",
     "description": "List saved project and device contexts.",

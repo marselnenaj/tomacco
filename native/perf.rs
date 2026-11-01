@@ -1,5 +1,6 @@
-//! Android app performance read from `am` and `dumpsys`: startup time, with
-//! each measurement as a report whose flat `metrics` profile.compare reads.
+//! Android app performance read from `am` and `dumpsys`: startup time and
+//! frame rendering, each measurement a report whose flat `metrics`
+//! profile.compare reads.
 use crate::{core::*, devices, toolchain as tc};
 use serde_json::{Map, Value, json};
 use std::time::{Duration, Instant};
@@ -71,6 +72,7 @@ fn report(kind: &str, device: &str, id: &str, metrics: Map<String, Value>) -> Va
 pub fn handle(op: &str, a: &Value) -> Result {
     match op {
         "profile.startup" => startup(a),
+        "profile.frames" => frames(a),
         _ => Err(Error::new("operation_not_found", op)),
     }
 }
@@ -232,6 +234,205 @@ fn startup_report(
     finish(a, value)
 }
 
+/// The number a dumpsys value starts with, as in `12ms` or `15 (28.85%)`.
+fn leading(value: &str) -> Option<f64> {
+    let end = value
+        .find(|c: char| !(c.is_ascii_digit() || c == '.'))
+        .unwrap_or(value.len());
+    value[..end].parse().ok()
+}
+
+fn snake(words: &str) -> String {
+    words
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .map(str::to_ascii_lowercase)
+        .collect::<Vec<_>>()
+        .join("_")
+}
+
+/// The process sections of `dumpsys gfxinfo PACKAGE`: frames rendered, janky
+/// frames, the frame time percentiles, the `Number ...` counters and the
+/// frame time histogram as [milliseconds, frames] pairs.
+pub fn parse_gfxinfo(text: &str) -> Vec<Value> {
+    let header = regex::Regex::new(r"^\*\* Graphics info for pid (\d+) \[(.*)\] \*\*").unwrap();
+    let mut processes: Vec<Value> = Vec::new();
+    for line in text.lines() {
+        let line = line.trim();
+        if let Some(c) = header.captures(line) {
+            processes.push(json!({"pid":c[1].parse::<u64>().unwrap_or(0),"process":&c[2],"frames_total":null,
+                                  "janky_frames":null,"percentiles_ms":{},"counters":{},"histogram":[]}));
+            continue;
+        }
+        let (Some(process), Some((key, value))) = (processes.last_mut(), line.split_once(": "))
+        else {
+            continue;
+        };
+        match key {
+            "Total frames rendered" => process["frames_total"] = json!(leading(value)),
+            "Janky frames" => process["janky_frames"] = json!(leading(value)),
+            "HISTOGRAM" => {
+                process["histogram"] = json!(
+                    value
+                        .split_whitespace()
+                        .filter_map(|bucket| {
+                            let (ms, count) = bucket.split_once("ms=")?;
+                            Some([ms.parse::<u64>().ok()?, count.parse::<u64>().ok()?])
+                        })
+                        .collect::<Vec<_>>()
+                )
+            }
+            _ if key.ends_with("th percentile") && !key.contains("gpu") => {
+                process["percentiles_ms"][key.trim_end_matches("th percentile")] =
+                    json!(leading(value));
+            }
+            _ => {
+                if let Some(name) = key.strip_prefix("Number ") {
+                    process["counters"][snake(name)] = json!(leading(value));
+                }
+            }
+        }
+    }
+    processes
+}
+
+/// Frame metrics over an app's processes. Slow frames took 17 ms or more and
+/// frozen frames 700 ms or more, counted from the histogram; the percentiles
+/// are those dumpsys gives for the app's main process.
+pub fn frame_metrics(processes: &[Value], id: &str) -> Map<String, Value> {
+    let rendering: Vec<&Value> = processes
+        .iter()
+        .filter(|p| p["frames_total"].is_number())
+        .collect();
+    let mut metrics = Map::new();
+    let names = [
+        "frames_total",
+        "janky_frames",
+        "jank_percent",
+        "slow_frames",
+        "frozen_frames",
+        "frame_p50_ms",
+        "frame_p90_ms",
+        "frame_p95_ms",
+        "frame_p99_ms",
+    ];
+    for name in names {
+        metrics.insert(name.into(), Value::Null);
+    }
+    if rendering.is_empty() {
+        return metrics;
+    }
+    let sum = |key: &str| {
+        rendering
+            .iter()
+            .filter_map(|p| p[key].as_f64())
+            .sum::<f64>()
+    };
+    let total = sum("frames_total");
+    let janky = sum("janky_frames");
+    let histogram = |minimum: u64| {
+        rendering
+            .iter()
+            .flat_map(|p| p["histogram"].as_array().cloned().unwrap_or_default())
+            .filter(|bucket| bucket[0].as_u64().unwrap_or(0) >= minimum)
+            .filter_map(|bucket| bucket[1].as_f64())
+            .sum::<f64>()
+    };
+    metrics.insert("frames_total".into(), json!(total));
+    metrics.insert("janky_frames".into(), json!(janky));
+    metrics.insert("slow_frames".into(), json!(histogram(17)));
+    metrics.insert("frozen_frames".into(), json!(histogram(700)));
+    if total > 0.0 {
+        metrics.insert("jank_percent".into(), json!(round(janky / total * 100.0)));
+        let main = rendering
+            .iter()
+            .find(|p| s(p, "process") == id)
+            .unwrap_or(&rendering[0]);
+        for p in ["50", "90", "95", "99"] {
+            metrics.insert(format!("frame_p{p}_ms"), main["percentiles_ms"][p].clone());
+        }
+    }
+    metrics
+}
+
+fn not_running(output: &str, id: &str) -> Result<()> {
+    if output.contains("No process found") {
+        return Err(
+            Error::new("app_not_running", format!("{id} is not running"))
+                .remedy("Launch the app first, for example with device.app"),
+        );
+    }
+    Ok(())
+}
+
+/// Starts a new frame count for the app.
+pub fn frames_reset(device: &str, id: &str) -> Result<()> {
+    bundle(id)?;
+    not_running(
+        &shell_out(device, &["dumpsys", "gfxinfo", id, "reset"], 30)?,
+        id,
+    )
+}
+
+/// The frames the app rendered since the last reset, as a report.
+pub fn frames_read(device: &str, id: &str) -> Result {
+    bundle(id)?;
+    let output = shell_out(device, &["dumpsys", "gfxinfo", id], 30)?;
+    not_running(&output, id)?;
+    let processes = parse_gfxinfo(&output);
+    let mut value = report("frames", device, id, frame_metrics(&processes, id));
+    value["processes"] = json!(processes);
+    Ok(value)
+}
+
+/// Resets the app's frame statistics, waits `seconds` or runs a testing.run
+/// scenario, and reads them.
+pub fn frames(a: &Value) -> Result {
+    let device = identifier(s(a, "device"), "device", None)?;
+    let id = bundle(s(a, "bundle_id"))?;
+    let scenario = if s(a, "scenario").is_empty() {
+        None
+    } else {
+        let scenario = read_json(&path(s(a, "scenario"), false, true)?, None)?;
+        crate::automation::check_scenario(&scenario)?;
+        Some(scenario)
+    };
+    frames_reset(device, id)?;
+    let started = Instant::now();
+    if let Some(scenario) = &scenario {
+        // Screenshots of a failed step go beside the report.
+        let directory = if s(a, "report").is_empty() {
+            home()?.join("profile")
+        } else {
+            output_path(s(a, "report"))?
+                .parent()
+                .map(std::path::Path::to_path_buf)
+                .unwrap_or(home()?)
+        };
+        private_dir(&directory)?;
+        let tag = format!(
+            "frames-{}",
+            &uuid::Uuid::new_v4().simple().to_string()[..12]
+        );
+        let result = crate::automation::run_device(device, scenario, &directory, &tag);
+        if !b(&result, "passed") {
+            return Err(Error::new(
+                "scenario_failed",
+                "The scenario failed, so its frames were not read",
+            )
+            .details(result));
+        }
+    } else {
+        pause(Duration::from_secs(a["seconds"].as_u64().unwrap_or(5)))?;
+    }
+    let mut value = frames_read(device, id)?;
+    value["seconds"] = json!(round(started.elapsed().as_secs_f64()));
+    if let Some(scenario) = &scenario {
+        value["scenario"] = scenario["name"].clone();
+    }
+    finish(a, value)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -314,5 +515,59 @@ mod tests {
             "dev.other/.Main"
         );
         assert!(component("emulator-5554", "dev.example", "a;rm -rf /").is_err());
+    }
+    // Recorded from an API 36 x86_64 emulator: Settings scrolled up and down.
+    const GFXINFO: &str = "Applications Graphics Acceleration Info:\nUptime: 46410 Realtime: 46410\n\n** Graphics info for pid 3095 [com.android.settings] **\n\nStats since: 44928220974ns\nTotal frames rendered: 79\nJanky frames: 4 (5.06%)\nJanky frames (legacy): 51 (64.56%)\n50th percentile: 18ms\n90th percentile: 29ms\n95th percentile: 32ms\n99th percentile: 85ms\nNumber Missed Vsync: 0\nNumber High input latency: 146\nNumber Slow UI thread: 0\nNumber Slow bitmap uploads: 0\nNumber Slow issue draw commands: 4\nNumber Frame deadline missed: 4\nNumber Frame deadline missed (legacy): 4\nHISTOGRAM: 5ms=0 6ms=0 7ms=3 8ms=1 9ms=3 10ms=1 11ms=0 12ms=2 13ms=1 14ms=1 15ms=1 16ms=6 17ms=11 18ms=14 19ms=6 20ms=6 21ms=5 22ms=3 23ms=0 24ms=2 25ms=1 26ms=1 27ms=1 28ms=1 29ms=2 30ms=0 31ms=2 32ms=3 34ms=0 85ms=2 650ms=0 700ms=0 4950ms=0\n50th gpu percentile: 7ms\n90th gpu percentile: 22ms\nGPU HISTOGRAM: 1ms=0 5ms=9 4950ms=4\n\nPipeline=Skia (OpenGL)\nMemory policy:\n  Max surface area: 2617920\nTotal GPU memory usage:\n  22332776 bytes, 21.30 MB (19.22 MB is purgeable)\n";
+
+    #[test]
+    fn gfxinfo_gives_frames_jank_percentiles_and_histogram_counts() {
+        let processes = parse_gfxinfo(GFXINFO);
+        assert_eq!(processes.len(), 1);
+        assert_eq!(processes[0]["pid"], 3095);
+        assert_eq!(processes[0]["counters"]["high_input_latency"], 146.0);
+        assert_eq!(
+            processes[0]["counters"]["frame_deadline_missed_legacy"],
+            4.0
+        );
+        let metrics = frame_metrics(&processes, "com.android.settings");
+        assert_eq!(metrics["frames_total"], 79.0);
+        assert_eq!(metrics["janky_frames"], 4.0);
+        assert_eq!(metrics["jank_percent"], 5.063);
+        assert_eq!(metrics["frame_p90_ms"], 29.0);
+        assert_eq!(metrics["frame_p99_ms"], 85.0);
+        // 17 ms and slower: 11+14+6+6+5+3+2+1+1+1+1+2+2+3+2.
+        assert_eq!(metrics["slow_frames"], 60.0);
+        assert_eq!(metrics["frozen_frames"], 0.0);
+        let frozen = GFXINFO
+            .replace("700ms=0", "700ms=2")
+            .replace("4950ms=0\n", "4950ms=1\n");
+        assert_eq!(
+            frame_metrics(&parse_gfxinfo(&frozen), "com.android.settings")["frozen_frames"],
+            3.0
+        );
+    }
+
+    #[test]
+    fn processes_add_up_and_a_process_without_frames_is_unavailable() {
+        let two = format!(
+            "{GFXINFO}\n** Graphics info for pid 4000 [com.android.settings:remote] **\nTotal frames rendered: 21\nJanky frames: 6 (28.57%)\n50th percentile: 40ms\n"
+        );
+        let metrics = frame_metrics(&parse_gfxinfo(&two), "com.android.settings");
+        assert_eq!(
+            (
+                metrics["frames_total"].clone(),
+                metrics["janky_frames"].clone()
+            ),
+            (json!(100.0), json!(10.0))
+        );
+        assert_eq!(metrics["jank_percent"], 10.0);
+        assert_eq!(
+            metrics["frame_p50_ms"], 18.0,
+            "the main process's percentiles"
+        );
+        let idle = "** Graphics info for pid 1292 [com.android.phone] **\nGraphicBufferAllocator buffers:\nTotal imported by gralloc: 0KiB\n";
+        let metrics = frame_metrics(&parse_gfxinfo(idle), "com.android.phone");
+        assert!(metrics["frames_total"].is_null() && metrics["jank_percent"].is_null());
+        assert!(not_running("No process found for: dev.example\n", "dev.example").is_err());
     }
 }

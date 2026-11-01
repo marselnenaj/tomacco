@@ -682,6 +682,19 @@ tomaccoctl call profile.startup '{"device":"emulator-5554","bundle_id":"com.andr
 
 On an API 36 x86_64 emulator, five runs each of the Settings app reported COLD, WARM and HOT for every run of the matching mode.
 
+`profile.frames` resets a running app's frame statistics (`dumpsys gfxinfo reset`), waits `seconds` (5 by default) or runs a
+`testing.run` scenario given as `scenario`, and reads them again. The metrics are `frames_total`, `janky_frames`, `jank_percent`,
+`slow_frames` (17 ms or more) and `frozen_frames` (700 ms or more), both counted from the frame time histogram, and
+`frame_p50_ms`, `frame_p90_ms`, `frame_p95_ms` and `frame_p99_ms` as dumpsys gives them for the app's main process. `processes`
+keeps each process's counters, such as `missed_vsync` and `slow_ui_thread`. An app that drew nothing in that time has null metrics,
+not zero; an app that is not running answers `app_not_running`, and a failed scenario `scenario_failed` with its steps.
+
+```sh
+tomaccoctl call profile.frames '{"device":"emulator-5554","bundle_id":"com.android.settings","scenario":"/absolute/scroll.json"}'
+```
+
+On the same emulator, a scenario of three swipes in Settings gave 94 frames, 2 of them janky.
+
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.

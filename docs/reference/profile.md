@@ -2,7 +2,7 @@
 
 # `profile` operations
 
-4 operations. Generated from `assets/operations.json`; [all areas](README.md).
+5 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### profile.capture
 
@@ -80,4 +80,24 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call profile.startup '{"device":"<device>","bundle_id":"<bundle_id>"}'
+```
+
+### profile.frames
+
+**Measure frame rendering**
+
+Reset a running Android app's frame statistics (dumpsys gfxinfo reset), wait seconds or run a testing.run scenario on the device, then read them: frames rendered, janky frames and jank_percent, slow frames (17 ms or more) and frozen frames (700 ms or more) from the frame time histogram, the 50th, 90th, 95th and 99th percentile frame times, and the per-process counters such as missed vsync and slow UI thread. A process that rendered nothing leaves the metrics null. A failed scenario answers scenario_failed with its steps. report saves the result as JSON.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the running app |
+| `seconds` | integer |  | `5` | 0 to 300; How long to wait between reset and read when no scenario is given; use the app meanwhile |
+| `scenario` | string |  |  | Absolute path of a testing.run scenario JSON to run between reset and read, instead of waiting |
+| `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
+
+```sh
+tomaccoctl call profile.frames '{"device":"<device>","bundle_id":"<bundle_id>"}'
 ```

@@ -521,7 +521,8 @@ the NDK; repeat it after moving either one.
 ## App performance
 
 `profile.startup` measures cold, warm or hot launch times over several runs with their median
-and p90. See [app performance](agents.md#app-performance) in the agent guide.
+and p90. `profile.frames` counts janky, slow and frozen frames and the frame time percentiles
+while you use the app or a UI test scenario runs. See [app performance](agents.md#app-performance) in the agent guide.
 
 ## Debugging, tests, profiling and release
 
