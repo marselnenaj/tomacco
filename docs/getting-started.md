@@ -22,6 +22,15 @@ end to leave the widget out. On Arch it asks before installing the system packag
 
 To read it first: `curl -fsSL https://tomacco.dev/install.sh -o install.sh`.
 
+Once Tomacco is installed, `tomaccoctl verify` makes the same check for a package you download
+yourself: its SHA-256 against the `.sha256` beside it, and its Ed25519 signature in the `.sig`
+against the release keys built into `tomaccoctl`. It exits 0 only when both match; `--json`
+prints the result as JSON.
+
+```sh
+tomaccoctl verify tomacco-1.1.0-Linux-x86_64.tar.gz
+```
+
 Tomacco runs on x86_64 Linux. Arch Linux and Omarchy are the tested platform. Other
 distributions should work, but they have not been qualified. On Linux for Apple Silicon (M1,
 M2, Asahi), the tools and agent API are experimental and the virtual iOS device is not
@@ -31,7 +40,9 @@ available.
 <summary>By hand, or from source</summary>
 
 **From a release tarball.** Download the package, its `.sha256` and `.sig` from the
-[releases page](https://github.com/marselnenaj/tomacco/releases), then:
+[releases page](https://github.com/marselnenaj/tomacco/releases), then check it (`sha256sum`
+checks the checksum only; with an earlier Tomacco installed, `tomaccoctl verify` checks the
+signature as well):
 
 ```sh
 sha256sum -c tomacco-1.1.0-Linux-x86_64.tar.gz.sha256

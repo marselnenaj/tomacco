@@ -38,6 +38,25 @@ Only the latest release gets fixes.
 - Runtime and debugger sockets live in owner-only directories, in `TMPDIR` or, when that path is too long for a socket, in a private
   `XDG_RUNTIME_DIR` or `/tmp`.
 
+## Checking a release
+
+Each release package comes with a `.sha256` and a detached Ed25519 signature, `.sig`. `install.sh` and
+`tomaccoctl update` check both before they install anything. To check a package you downloaded yourself:
+
+```sh
+tomaccoctl verify tomacco-1.1.0-Linux-x86_64.tar.gz
+```
+
+It reads `FILE.sha256` and `FILE.sig` beside the file (`--sha256` and `--sig` name others), checks the signature
+against the release keys built into `tomaccoctl`, and exits 0 only when the file is verified; `--json` prints the result
+as JSON. How the release key is replaced is in [building](docs/building.md#rotating-the-release-key).
+
+Each package also has a CycloneDX software bill of materials, `PACKAGE.cdx.json`, signed the same way, which lists the
+third-party components the package contains with their versions, licenses and digests. `tomaccoctl verify PACKAGE.cdx.json`
+checks its signature. The release's provenance, `tomacco-VERSION-provenance.intoto.json`, records the commit, the build
+inputs and the builder, with the SHA-256 of every release file; `tomaccoctl verify` on it checks its signature and every listed
+file in the same directory.
+
 ## What is not
 
 The virtual iOS device is an experimental research runtime. It disables or

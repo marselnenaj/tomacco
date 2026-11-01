@@ -33,6 +33,30 @@ cargo clippy --locked --all-targets -- -D warnings
 
 CTest runs five groups: `desktop-ui`, `backend`, `native-display`, `control-plane` (the Python suite) and `rust-core`.
 
+**Dependency policy.** `python3 tools/check_dependencies.py` checks the Rust dependencies offline, from `Cargo.lock` and the crates in
+Cargo's cache or `vendor/`. It fails on a crate whose license does not allow distribution with Tomacco under GPL-2.0-or-later, on an
+Apache-2.0-only crate in `tomaccoctl` that [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) does not name, on a crate locked in two
+semver-incompatible versions other than the four it lists with their reasons (`base64`, `foldhash`, `hashbrown` and `syn`, each needed in two
+versions by different dependencies), on a version Cargo's local index cache marks as yanked, and when the crate tables of the notices and
+`Cargo.lock` disagree. When [cargo-deny](https://github.com/EmbarkStudios/cargo-deny) is installed it also runs `cargo deny --offline check`
+with `deny.toml`. `make_release.py` runs it after Clippy. On the development host with cargo-deny 0.20.2, it found 133 crates in the Linux
+build, 112 of them in `tomaccoctl`, and no problem.
+
+**Security advisories.** When [cargo-audit](https://github.com/rustsec/rustsec/tree/main/cargo-audit) is installed,
+`tools/check_dependencies.py` also runs `cargo audit --no-fetch` against the local copy of the [RustSec](https://rustsec.org) database, so a
+vulnerability it reports fails the check and `make_release.py` refuses the release. It fetches nothing; to install it and get or refresh
+the database:
+
+```sh
+cargo install cargo-audit --locked
+cargo audit
+```
+
+Without cargo-audit, cargo-deny's advisory check covers the same database: its `cargo deny check` reads the copy cargo-deny keeps in
+`~/.cargo/advisory-dbs`. On 1 November 2026, with that copy at RustSec commit `2295466` (30 October 2026), it reported no advisory for
+any locked version; 30 of the crates have advisories in the database, all for other versions. cargo-audit was not installed there, so
+`cargo audit` itself has not run.
+
 Run the Python tests directly from `tests/python`:
 
 ```sh
@@ -206,11 +230,12 @@ installation back. An uninstall also leaves your preferences (`~/.config/marseln
 
 ## Releases and updates
 
-A release holds the package and the portable package, each with its `.sha256` and its `.sig`. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
+A release holds the package and the portable package, each with its `.sha256`, its `.sig`, and a software bill of materials
+(`.cdx.json`) with its own `.sig`, and a signed [provenance](#making-a-release) of the whole release. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
 never offered as updates.
 
-Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against the public key compiled into `tomaccoctl`. A build without
-that key refuses to install updates and says so.
+Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against a public key compiled into `tomaccoctl`: the current
+release key and, while the key is being [rotated](#rotating-the-release-key), the next one. A build without a key refuses to install updates and says so.
 
 `native/product.rs` holds the product name, the repository and the installed paths the updater uses, so a rename changes them in one place. An update runs the package's own `install.py` with
 `--update`, which keeps the integrations as they are, so the journal, the backups and `--rollback` work as for any installation. `tests/update_e2e.rs` runs the whole path against a local
@@ -236,6 +261,28 @@ Releases are made locally, not by a workflow. From a clean checkout of the tag, 
 checksums, signs both packages and creates a draft release whose body comes from `docs/RELEASE_NOTES.md`, with relative links pointing into the tag. It refuses a dirty tree, a checkout that is not
 the tag, and versions that disagree. With `--dry-run` it only prints what it would do.
 
+**Software bills of materials.** After signing, `make_release.py` writes `PACKAGE.cdx.json` beside each package with
+`tools/build_sbom.py` and signs it the same way. It is CycloneDX 1.6 JSON: the package with its SHA-256; the crates linked into
+`tomaccoctl`, from `cargo tree` and `Cargo.lock`, with version, SPDX license, package URL and crates.io checksum; the SQLite they
+embed; the bundled fonts; and for the portable package each Qt module and ICU with the SHA-256 of its archive from
+`packaging/portable/qt-archives.txt`, FFmpeg with its tarball's SHA-256 from the Dockerfile, and the xcb-util libraries. Python is not
+listed, since neither package contains it. Qt's own SBOMs for its modules stay in the portable package's `lib/tomacco/runtime/sbom/`.
+The time stamp is `SOURCE_DATE_EPOCH`, so the same package gives the same file. `tests/python/test_build_sbom.py` checks the shape
+against the parts of the CycloneDX schema it uses; no CycloneDX validator was run on it.
+
+**Provenance.** Last, `make_release.py` writes `tomacco-VERSION-provenance.intoto.json` and signs it like a package: an
+[in-toto](https://in-toto.io) statement with a [SLSA](https://slsa.dev) provenance v1 predicate (`tools/build_provenance.py`). Its subjects are
+every file of the release except checksums and signatures, with their SHA-256. It records the tag and commit, `SOURCE_DATE_EPOCH`,
+the digest of `Cargo.lock`, for the portable package the digests of its Dockerfile, base image, Qt archives, CMake, rustup and FFmpeg
+tarballs, the builder's operating system, kernel and the versions of Python, rustc, Cargo, CMake, Ninja, the C++ compiler, OpenSSL,
+Git and Docker, and when the run started and ended. It is a JSON file with a detached signature, not a signed DSSE envelope, and it
+states what the maintainer's computer reported; nobody else attests it. `tomaccoctl verify` checks its signature and then each listed
+file in the same directory:
+
+```sh
+tomaccoctl verify tomacco-1.2.0-provenance.intoto.json
+```
+
 The builds run with `SOURCE_DATE_EPOCH` set to the release commit's time, which CPack and Qt's `rcc` use for their time stamps.
 Two builds of the same commit from fresh clones in the same directory, by the same user, gave the same package digest; without it,
 the tarball's times and the time `rcc` stored for the generated translations differed. The package still records the builder's
@@ -251,6 +298,29 @@ its commit, so it could not be matched against the commit the binary's SBOM name
 
 **Set by hand on GitHub.** The repository's social preview is `assets/readme/social-preview.png` (1280x640, the banner on a 2:1 canvas). Upload it under Settings, General,
 Social preview.
+
+## Rotating the release key
+
+`native/product.rs` holds two public keys: `RELEASE_SIGNING_PUBLIC_KEY_BASE64`, the key that signs releases now, and
+`NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`, empty except during a rotation. `tomaccoctl` accepts a package signed by either, and so does
+the container build, whose `public_keys` in `packaging/container/Dockerfile` a test keeps equal to them. `make_release.py` accepts a
+signing key whose public half is one of the two. To replace the key:
+
+1. Make a new Ed25519 key on the machine that signs releases, outside the repository and readable only by its owner, like the
+   current one.
+2. Put base64 of its 32-byte public half into `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64` and into `public_keys` in the container's
+   Dockerfile, after the current key. Update `install.sh` on the website the same way; it is not in this repository. Make a release
+   as usual, signed with the current key. Every copy that updates to it trusts both keys.
+3. Once that release has been out for a while, move the new key into `RELEASE_SIGNING_PUBLIC_KEY_BASE64`, empty
+   `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`, drop the old key from the Dockerfile and `install.sh`, and sign the next release with the new
+   key.
+
+A copy older than the release of step 2 does not know the new key: its update refuses the package with `update_signature_invalid` and
+installs nothing, and its user installs the new release with `install.sh` or by hand. If the old private key may have leaked, skip the
+waiting in step 3, since every copy still trusts the old key until it updates.
+
+The tests in `native/update_tests.rs` check that a package signed by the next key is accepted and one signed by an unknown key is
+refused; `tests/python/test_make_release.py` checks that `make_release.py` accepts the next key and still requires the current one.
 
 ## Reproducible engine builds
 

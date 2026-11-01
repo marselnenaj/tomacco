@@ -4,6 +4,7 @@ import base64
 import contextlib
 import hashlib
 import io
+import json
 import shutil
 import subprocess
 import tempfile
@@ -17,6 +18,14 @@ ROOT = Path(__file__).resolve().parents[2]
 RAW = b"\x11" * 32
 PUBLIC = base64.b64encode(RAW).decode()
 METAINFO = '<component><releases><release version="1.2.3"/></releases></component>'
+CRATE = "registry+https://github.com/rust-lang/crates.io-index#serde@1.0.0"
+METADATA = {"packages": [{"id": "path+file:///x#x@1.2.3", "name": "x", "version": "1.2.3", "license": "GPL-2.0-or-later",
+                          "manifest_path": "/x/Cargo.toml"},
+                         {"id": CRATE, "name": "serde", "version": "1.0.0", "license": "MIT OR Apache-2.0",
+                          "manifest_path": "/nowhere/serde-1.0.0/Cargo.toml"}],
+            "workspace_members": ["path+file:///x#x@1.2.3"],
+            "resolve": {"nodes": [{"id": "path+file:///x#x@1.2.3", "deps": [{"pkg": CRATE, "dep_kinds": [{"kind": None}]}]},
+                                  {"id": CRATE, "deps": []}]}}
 
 
 class Fake(make_release.Commands):
@@ -39,6 +48,10 @@ class Fake(make_release.Commands):
             return b"prefix" + RAW
         if argv[:2] == ["git", "log"]:
             return b"1700000000\n"
+        if argv[:2] == ["cargo", "metadata"]:
+            return json.dumps(METADATA).encode()
+        if argv[:2] == ["cargo", "tree"]:
+            return b"x v1.2.3 (/x)\nserde v1.0.0\n"
         return b""
 
     def run(self, argv):
@@ -81,15 +94,20 @@ class MakeRelease(unittest.TestCase):
         (self.root / "CMakeLists.txt").write_text("project(Tomacco VERSION 1.2.3 LANGUAGES CXX)\n")
         (self.root / "Cargo.toml").write_text('[package]\nname = "x"\nversion = "1.2.3"\n')
         (self.root / "assets/x.metainfo.xml").write_text(METAINFO)
+        (self.root / "Cargo.lock").write_text('[[package]]\nname = "serde"\nversion = "1.0.0"\nchecksum = "' + "ab" * 32 + '"\n')
+        (self.root / "packaging/portable").mkdir(parents=True)
+        for name in ("qt-archives.txt", "Dockerfile"):
+            shutil.copy2(ROOT / "packaging/portable" / name, self.root / "packaging/portable" / name)
         self.product(PUBLIC)
         self.key = base / "outside.pem"
         self.key.write_text("private")
         self.key.chmod(0o600)
 
-    def product(self, public):
+    def product(self, public, upcoming=None):
         (self.root / "native/product.rs").write_text(
             'pub const PRODUCT_NAME: &str = "Tomacco";\npub const REPO_OWNER: &str = "owner";\npub const REPO_NAME: &str = "repo";\n'
-            f'pub const PACKAGE_PREFIX: &str = "tomacco";\npub const RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "{public}";\n')
+            f'pub const PACKAGE_PREFIX: &str = "tomacco";\npub const RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "{public}";\n'
+            + (f'pub const NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "{upcoming}";\n' if upcoming is not None else ""))
 
     def make(self, *arguments, commands=None, environment=None):
         commands = commands or Fake(self.root)
@@ -109,7 +127,7 @@ class MakeRelease(unittest.TestCase):
         code, commands, errors, _ = self.make("--key", str(self.key))
         self.assertEqual(code, 0, errors)
         words = [" ".join(argv) for argv in commands.runs]
-        order = ["build_release_notes.py", "cargo fmt --check", "cargo clippy", "ctest", "--target package",
+        order = ["build_release_notes.py", "cargo fmt --check", "cargo clippy", "check_dependencies.py", "ctest", "--target package",
                  "build_portable.py build", "build_portable.py verify build-portable/tomacco-1.2.3-Linux-x86_64-portable.tar.gz",
                  "build_source_release.py", "pkeyutl -sign", "gh release create"]
         positions = [next(i for i, line in enumerate(words) if word in line) for word in order]
@@ -126,13 +144,46 @@ class MakeRelease(unittest.TestCase):
         self.assertEqual(base64.b64decode(signature.read_bytes()), b"\x22" * 64)
         self.assertIn(str(signature.relative_to(self.root)), release)
         # The portable package is released beside it: checksum, signature, and nothing of its build tree.
+        regular, portable = "tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz"
         self.assertEqual(sorted(names), sorted([
-            "tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64.tar.gz.sha256", "tomacco-1.2.3-Linux-x86_64.tar.gz.sig",
-            "tomacco-1.2.3-Linux-x86_64-portable.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz.sha256",
-            "tomacco-1.2.3-Linux-x86_64-portable.tar.gz.sig", "tomacco-1.2.3-source.tar.gz", "tomacco-1.2.3-source.tar.gz.sha256"]))
+            regular, f"{regular}.sha256", f"{regular}.sig", f"{regular}.cdx.json", f"{regular}.cdx.json.sig",
+            portable, f"{portable}.sha256", f"{portable}.sig", f"{portable}.cdx.json", f"{portable}.cdx.json.sig",
+            "tomacco-1.2.3-source.tar.gz", "tomacco-1.2.3-source.tar.gz.sha256",
+            "tomacco-1.2.3-provenance.intoto.json", "tomacco-1.2.3-provenance.intoto.json.sig"]))
         signed = [argv[argv.index("-in") + 1] for argv in commands.runs if argv[:3] == ["openssl", "pkeyutl", "-sign"]]
         self.assertEqual([Path(path).name for path in signed],
-                         ["tomacco-1.2.3-Linux-x86_64.tar.gz", "tomacco-1.2.3-Linux-x86_64-portable.tar.gz"])
+                         [regular, portable, f"{regular}.cdx.json", f"{portable}.cdx.json", "tomacco-1.2.3-provenance.intoto.json"])
+        # The provenance lists every file the release offers but checksums and signatures, with its digest.
+        statement = json.loads((self.root / "dist/tomacco-1.2.3-provenance.intoto.json").read_text())
+        self.assertEqual(statement["_type"], "https://in-toto.io/Statement/v1")
+        self.assertEqual(statement["predicateType"], "https://slsa.dev/provenance/v1")
+        listed = {subject["name"]: subject["digest"]["sha256"] for subject in statement["subject"]}
+        self.assertEqual(sorted(listed), sorted([regular, portable, f"{regular}.cdx.json", f"{portable}.cdx.json",
+                                                 "tomacco-1.2.3-source.tar.gz"]))
+        for name, digest in listed.items():
+            self.assertEqual(digest, hashlib.sha256((self.root / "dist" / name).read_bytes()).hexdigest())
+        definition = statement["predicate"]["buildDefinition"]
+        self.assertEqual(definition["externalParameters"]["ref"], "refs/tags/v1.2.3")
+        self.assertEqual(definition["externalParameters"]["portable"], True)
+        self.assertEqual(definition["internalParameters"], {"SOURCE_DATE_EPOCH": "1700000000"})
+        resolved = definition["resolvedDependencies"]
+        self.assertEqual(resolved[0]["digest"], {"gitCommit": "abc"})
+        self.assertEqual(resolved[1], {"name": "Cargo.lock", "digest": {"sha256": hashlib.sha256((self.root / "Cargo.lock").read_bytes()).hexdigest()}})
+        uris = [entry.get("uri", "") for entry in resolved]
+        self.assertTrue(any(uri.endswith("qtbase-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z") for uri in uris), uris)
+        self.assertTrue(any(uri.startswith("https://ffmpeg.org/releases/ffmpeg-") for uri in uris), uris)
+        builder = statement["predicate"]["runDetails"]["builder"]["version"]
+        self.assertIn("python", builder)
+        # Each SBOM describes its own package; only the portable one lists Qt and FFmpeg.
+        for name, bundles in ((regular, False), (portable, True)):
+            sbom = json.loads((self.root / "dist" / f"{name}.cdx.json").read_text())
+            self.assertEqual(sbom["bomFormat"], "CycloneDX")
+            self.assertEqual(sbom["metadata"]["component"]["hashes"][0]["content"],
+                             hashlib.sha256((self.root / "dist" / name).read_bytes()).hexdigest())
+            self.assertEqual(sbom["metadata"]["timestamp"], "2023-11-14T22:13:20Z")
+            names_in = {component["name"] for component in sbom["components"]}
+            self.assertIn("serde", names_in)
+            self.assertEqual({"qtbase", "FFmpeg"} <= names_in, bundles)
 
     def qt_sources(self, *names, corrupt=None):
         lines = ["# comment"]
@@ -294,6 +345,25 @@ class MakeRelease(unittest.TestCase):
         self.assertRefused("no public key", "--key", str(self.key))
         self.product(base64.b64encode(b"\x33" * 32).decode())
         self.assertRefused("does not belong", "--key", str(self.key))
+        self.product(base64.b64encode(b"\x33" * 32).decode(), "")
+        self.assertRefused("does not belong", "--key", str(self.key))
+
+    def test_during_a_rotation_the_next_key_may_sign(self):
+        # The key in hand is the next one: the released program trusts it.
+        self.product(base64.b64encode(b"\x33" * 32).decode(), PUBLIC)
+        code, _, errors, _ = self.make("--key", str(self.key))
+        self.assertEqual(code, 0, errors)
+        self.assertEqual(make_release.trusted_keys(self.root), [base64.b64encode(b"\x33" * 32).decode(), PUBLIC])
+        # A next key alone does not make a release: the current one must be set.
+        self.product("", PUBLIC)
+        self.assertRefused("no public key", "--key", str(self.key))
+
+    def test_the_product_names_the_current_and_the_next_key(self):
+        product = (ROOT / "native/product.rs").read_text()
+        self.assertRegex(product, r'pub const RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "[A-Za-z0-9+/]{43}=";')
+        self.assertRegex(product, r'pub const NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "(?:[A-Za-z0-9+/]{43}=)?";')
+        keys = make_release.trusted_keys(ROOT)
+        self.assertTrue(all(len(base64.b64decode(key)) == 32 for key in keys))
 
     def test_leftovers_in_dist_are_refused(self):
         (self.root / "dist").mkdir()

@@ -4,7 +4,7 @@
 //! `prerelease` channel, the newest release including pre-releases), `update.apply` is a
 //! durable job that downloads, verifies and installs it, and `update.rollback`
 //! undoes the last installation. A package is installed only when its detached
-//! Ed25519 signature verifies against the key compiled into this binary. The
+//! Ed25519 signature verifies against a key compiled into this binary. The
 //! installation itself is the package's own `install.py`, so that its journal,
 //! backups and `--rollback` hold for an update as for any other installation.
 use crate::{
@@ -66,11 +66,24 @@ struct Endpoints {
     download_prefix: String,
     /// Only ever true for the local fixture of a debug build's tests.
     loopback: bool,
-    public_key: Option<[u8; 32]>,
+    /// The trusted release keys: the current one and, during a rotation, the next.
+    public_keys: Vec<[u8; 32]>,
 }
 
 fn decode_key(text: &str) -> Option<[u8; 32]> {
     STANDARD.decode(text.trim()).ok()?.try_into().ok()
+}
+
+/// The release keys compiled into this binary, the current one first. An
+/// empty constant adds none.
+pub(crate) fn release_keys() -> Vec<[u8; 32]> {
+    [
+        RELEASE_SIGNING_PUBLIC_KEY_BASE64,
+        NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64,
+    ]
+    .iter()
+    .filter_map(|text| decode_key(text))
+    .collect()
 }
 
 fn endpoints() -> Endpoints {
@@ -86,7 +99,7 @@ fn endpoints() -> Endpoints {
             "https://{GITHUB_HOST}/{REPO_OWNER}/{REPO_NAME}/releases/download/"
         ),
         loopback: false,
-        public_key: decode_key(RELEASE_SIGNING_PUBLIC_KEY_BASE64),
+        public_keys: release_keys(),
     }
 }
 
@@ -102,10 +115,25 @@ fn test_endpoints() -> Option<Endpoints> {
         api_host: host,
         api,
         loopback: true,
-        public_key: std::env::var("TOMACCO_UPDATE_TEST_PUBLIC_KEY")
-            .ok()
-            .and_then(|key| decode_key(&key)),
+        public_keys: test_keys().unwrap_or_default(),
     })
+}
+
+/// The keys of a debug build's tests: one, or several separated by commas.
+#[cfg(debug_assertions)]
+fn test_keys() -> Option<Vec<[u8; 32]>> {
+    let keys = std::env::var("TOMACCO_UPDATE_TEST_PUBLIC_KEY").ok()?;
+    Some(keys.split(',').filter_map(decode_key).collect())
+}
+
+/// The keys `tomaccoctl verify` accepts: the compiled ones, or in a debug
+/// build the tests' own.
+pub(crate) fn trusted_keys() -> Vec<[u8; 32]> {
+    #[cfg(debug_assertions)]
+    if let Some(keys) = test_keys() {
+        return keys;
+    }
+    release_keys()
 }
 
 /// This program's version. A debug build reads a marker a test appended to its
@@ -605,26 +633,40 @@ fn package_file(version: &Version, portable: bool) -> String {
 // Authenticity
 // ---------------------------------------------------------------------------
 
-/// The signature file holds base64 of the 64 signature bytes.
-fn verify_signature(key: &[u8; 32], package: &[u8], signature: &[u8]) -> Result<()> {
-    let refuse = |why: &str| {
+/// The signature file holds base64 of the 64 signature bytes. Returns the
+/// position in `keys` of the key it verifies against.
+pub(crate) fn verify_signature(
+    keys: &[[u8; 32]],
+    package: &[u8],
+    signature: &[u8],
+) -> Result<usize> {
+    signing_key(keys, package, signature).map_err(|why| {
         Error::new(
             "update_signature_invalid",
             format!("Refused the update: {why}. Nothing was installed."),
         )
-    };
-    let text =
-        std::str::from_utf8(signature).map_err(|_| refuse("its signature file is not text"))?;
+    })
+}
+
+/// Which of `keys` made `signature` over `message`, or why none did.
+pub(crate) fn signing_key(
+    keys: &[[u8; 32]],
+    message: &[u8],
+    signature: &[u8],
+) -> std::result::Result<usize, &'static str> {
+    let text = std::str::from_utf8(signature).map_err(|_| "its signature file is not text")?;
     let bytes: [u8; 64] = STANDARD
         .decode(text.trim())
         .ok()
         .and_then(|bytes| bytes.try_into().ok())
-        .ok_or_else(|| refuse("its signature file is not an Ed25519 signature"))?;
-    let key = VerifyingKey::from_bytes(key).map_err(|_| refuse("the built-in key is not valid"))?;
-    key.verify_strict(package, &Signature::from_bytes(&bytes))
-        .map_err(|_| {
-            refuse("its signature does not match the package and this program's release key")
+        .ok_or("its signature file is not an Ed25519 signature")?;
+    let signature = Signature::from_bytes(&bytes);
+    keys.iter()
+        .position(|key| {
+            VerifyingKey::from_bytes(key)
+                .is_ok_and(|key| key.verify_strict(message, &signature).is_ok())
         })
+        .ok_or("its signature does not match the package and this program's release keys")
 }
 
 fn verify_checksum(package: &[u8], text: &[u8]) -> Result<()> {
@@ -1190,7 +1232,7 @@ fn report() -> Result {
     }
     let blocked = if let Some(forced) = mode.forced {
         forced_message(forced)
-    } else if endpoints.public_key.is_none() {
+    } else if endpoints.public_keys.is_empty() {
         missing_key().message
     } else if install.kind != "user_install" {
         install.message.clone()
@@ -1203,7 +1245,7 @@ fn report() -> Result {
         "mode":mode.effective,
         "channel":mode.channel,
         "forced":mode.forced,
-        "signing_key_configured":endpoints.public_key.is_some(),
+        "signing_key_configured":!endpoints.public_keys.is_empty(),
         "install":{"kind":install.kind,"message":install.message},
         "can_apply":blocked.is_empty(),
         "blocked_reason":blocked,
@@ -1371,7 +1413,7 @@ fn apply(a: &Value) -> Result {
     let state = read_state()?;
     admit(a, &mode, &state, &current_version())?;
     let endpoints = endpoints();
-    if endpoints.public_key.is_none() {
+    if endpoints.public_keys.is_empty() {
         return Err(missing_key());
     }
     let install = this_installation()?;
@@ -1520,7 +1562,9 @@ fn download_and_verify(
     attempted: &mut Option<Version>,
     channel: &str,
 ) -> Result<Verified> {
-    let key = endpoints.public_key.ok_or_else(missing_key)?;
+    if endpoints.public_keys.is_empty() {
+        return Err(missing_key());
+    }
     let release = match lookup(transport, endpoints, token, channel) {
         Lookup::Found(release) => release,
         Lookup::NoRelease => {
@@ -1593,7 +1637,7 @@ fn download_and_verify(
     }
     let package = fs::read(&path)?;
     eprintln!("Verifying the signature");
-    verify_signature(&key, &package, &signature)?;
+    verify_signature(&endpoints.public_keys, &package, &signature)?;
     if let Some(checksum) = asset(&format!("{name}.sha256")) {
         verify_checksum(
             &package,

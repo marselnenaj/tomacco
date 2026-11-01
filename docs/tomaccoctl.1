@@ -36,6 +36,14 @@ tomaccoctl \- the Tomacco control plane for building, running and testing mobile
 .br
 .B tomaccoctl uninstall
 .br
+.B tomaccoctl verify
+.I FILE
+.RB [ \-\-sig
+.IR FILE.sig ]
+.RB [ \-\-sha256
+.IR FILE.sha256 ]
+.RB [ \-\-json ]
+.br
 .B tomaccoctl report
 .RI [ FILE.tar.gz ]
 .br
@@ -136,6 +144,28 @@ only checks.
 .B uninstall
 Remove this installation. It keeps your data and the files you changed,
 and prints how to undo it.
+.TP
+.BI "verify " FILE
+Check a downloaded release file, such as a package, against its SHA-256
+checksum and its detached Ed25519 signature, with the release keys built
+into
+.BR tomaccoctl :
+the current key and, during a key rotation, the next one.
+The checksum is read from
+.IB FILE .sha256
+and the signature from
+.IB FILE .sig
+unless
+.B \-\-sha256
+or
+.B \-\-sig
+names another file. A missing checksum file is reported; a missing
+signature fails. For a release's provenance
+.RI ( PREFIX \- VERSION \-provenance.intoto.json ),
+each file it lists that lies in the same directory is also checked against
+its SHA-256; a listed file that is not there is reported. Prints a short report, or with
+.B \-\-json
+one JSON envelope, and exits 0 only when the file is verified.
 .TP
 .BR report " [" \fIFILE.tar.gz\fR ]
 Write a bug-report bundle: version, host, doctor, settings, and recent

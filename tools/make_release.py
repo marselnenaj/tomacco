@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Make a draft release from a clean checkout of its tag: checks, package,
-portable package and source tarball with checksums, signatures, then
+portable package and source tarball with checksums, signatures, a signed
+CycloneDX SBOM per package, a signed provenance of the whole release, then
 `gh release create --draft`. Publishing the draft stays a person's decision.
 
 With --container it also builds the headless image from the signed package
@@ -8,7 +9,9 @@ With --container it also builds the headless image from the signed package
 that would publish it. It never pushes."""
 import argparse
 import base64
+import datetime
 import hashlib
+import json
 import os
 import re
 import shlex
@@ -19,6 +22,8 @@ import tempfile
 from pathlib import Path
 
 import build_container
+import build_provenance
+import build_sbom
 
 ROOT = Path(__file__).resolve().parents[1]
 KEY_ENVIRONMENT = "TOMACCO_RELEASE_SIGNING_KEY_FILE"
@@ -60,11 +65,23 @@ class Commands:
             raise Refused(f"{shlex.join(argv)} failed")
 
 
-def constant(root, name):
+def constant(root, name, required=True):
     found = re.search(rf'pub const {name}: &str = "([^"]*)";', (root / "native/product.rs").read_text())
     if not found:
+        if not required:
+            return ""
         raise Refused(f"native/product.rs has no {name}")
     return found.group(1)
+
+
+def trusted_keys(root):
+    """The release keys the released program accepts: the current one and,
+    during a rotation, the next one (base64 of 32 bytes each)."""
+    current = constant(root, "RELEASE_SIGNING_PUBLIC_KEY_BASE64")
+    if not current:
+        raise Refused("native/product.rs has no public key, so this release could not update anything")
+    upcoming = constant(root, "NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64", required=False)
+    return [current] + ([upcoming] if upcoming else [])
 
 
 def versions(root):
@@ -120,13 +137,12 @@ def public_key_der(commands, key):
 
 
 def check_key(commands, root, key):
-    """A signature the released program would refuse is no use to anyone."""
-    expected = constant(root, "RELEASE_SIGNING_PUBLIC_KEY_BASE64")
-    if not expected:
-        raise Refused("native/product.rs has no public key, so this release could not update anything")
+    """A signature the released program would refuse is no use to anyone.
+    During a rotation the next key may sign, too: the program trusts both."""
+    expected = trusted_keys(root)
     actual = base64.b64encode(public_key_der(commands, key)[-32:]).decode()
-    if actual != expected:
-        raise Refused("This signing key does not belong to the public key in native/product.rs")
+    if actual not in expected:
+        raise Refused("This signing key does not belong to a public key in native/product.rs")
 
 
 def portable_name(prefix, version):
@@ -140,6 +156,8 @@ def build(commands, root, tag, portable=None):
         [python, "tools/build_release_notes.py", "--tag", tag, "--output", NOTES],
         ["cargo", "fmt", "--check"],
         ["cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"],
+        # Licenses, duplicate and yanked crates, the notices' crate tables, and cargo-deny when installed.
+        [python, "tools/check_dependencies.py"],
         ["cmake", "-S", ".", "-B", BUILD, "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release"],
         ["cmake", "--build", BUILD],
         ["ctest", "--test-dir", BUILD, "--output-on-failure"],
@@ -227,6 +245,31 @@ def sign(commands, key, package):
     return signature
 
 
+def bills_of_materials(commands, root, version, packages, portable, key):
+    """Writes <package>.cdx.json, a CycloneDX SBOM, for each package, and
+    signs it like the package."""
+    metadata, linked = build_sbom.read_cargo(root, commands.read)
+    epoch = commands.environment["SOURCE_DATE_EPOCH"]
+    for package in packages:
+        sbom = build_sbom.write(root, package, version, metadata, linked, package.name == portable, epoch)
+        sign(commands, key, sbom)
+
+
+def provenance(commands, root, tag, prefix, version, portable, options, started, key):
+    """Writes the release's provenance over everything in dist/ and signs it."""
+    commit = commands.read(["git", "rev-parse", "HEAD"]).decode().strip()
+    own = build_provenance.name(prefix, version)
+    document = build_provenance.statement(
+        root / DIST, own, commit, tag, commands.environment["SOURCE_DATE_EPOCH"],
+        build_provenance.inputs(root, commit, tag, bool(portable)), build_provenance.builder(commands.read, bool(portable)),
+        {"portable": bool(portable), "with_qt_sources": bool(options.with_qt_sources), "container": bool(options.container)},
+        started, datetime.datetime.now(datetime.timezone.utc))
+    path = root / DIST / own
+    path.write_text(json.dumps(document, indent=2) + "\n")
+    sign(commands, key, path)
+    return path
+
+
 def container(commands, version):
     """Builds and checks the image from the signed package in dist/, then
     prints how a person would publish it. Runs no push."""
@@ -261,6 +304,7 @@ def make(options, commands, root, environment):
         raise Refused(f"{DIST}/ is not empty: everything in it would be published")
     prefix = constant(root, "PACKAGE_PREFIX")
     portable = None if options.no_portable else portable_name(prefix, version)
+    started = datetime.datetime.now(datetime.timezone.utc)
     # Reproducible packages: CPack and Qt's rcc take their time stamps from
     # the release commit instead of the moment of the build.
     commands.environment.setdefault(
@@ -277,6 +321,8 @@ def make(options, commands, root, environment):
         print(f"Would sign the package with {key} into {DIST}/{prefix}-{version}-Linux-*.tar.gz.sig, and verify the signature")
         if portable:
             print(f"Would move {PORTABLE}/{portable} and its checksum to {DIST}/, and sign it into {DIST}/{portable}.sig the same way")
+        print(f"Would write a CycloneDX SBOM beside each package ({build_sbom.SUFFIX}) and sign it the same way")
+        print(f"Would write {DIST}/{build_provenance.name(prefix, version)} over every file in {DIST}/ and sign it")
     else:
         packages = [collect_package(root, prefix, version)]
         if portable:
@@ -284,6 +330,8 @@ def make(options, commands, root, environment):
         verify_checksums(root)
         for package in packages:
             sign(commands, key, package)
+        bills_of_materials(commands, root, version, packages, portable, key)
+        provenance(commands, root, tag, prefix, version, portable, options, started, key)
     if options.container:
         container(commands, version)
     draft(commands, root, tag, version)

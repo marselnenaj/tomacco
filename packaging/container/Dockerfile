@@ -43,7 +43,7 @@ ARG TOMACCO_VERSION=1.1.0
 ARG TOMACCO_PACKAGE=regular
 RUN --mount=type=bind,target=/context \
     set -eu; \
-    public_key="eUZ5PV5fqziL3khcVKTg8wiIbOYeIggiMD6mWLkEYwM="; \
+    public_keys="eUZ5PV5fqziL3khcVKTg8wiIbOYeIggiMD6mWLkEYwM="; \
     case "$TOMACCO_PACKAGE" in \
         regular) name="tomacco-${TOMACCO_VERSION}-Linux-x86_64" ;; \
         portable) name="tomacco-${TOMACCO_VERSION}-Linux-x86_64-portable" ;; \
@@ -55,9 +55,13 @@ RUN --mount=type=bind,target=/context \
         else curl -fsSL --retry 3 -o "$file" "https://github.com/marselnenaj/tomacco/releases/download/v${TOMACCO_VERSION}/$file"; fi; \
     done; \
     sha256sum --check --strict "$name.tar.gz.sha256"; \
-    { printf '\060\052\060\005\006\003\053\145\160\003\041\000'; printf '%s' "$public_key" | base64 -d; } > key.der; \
     base64 -d "$name.tar.gz.sig" > signature; \
-    openssl pkeyutl -verify -rawin -pubin -keyform DER -inkey key.der -in "$name.tar.gz" -sigfile signature; \
+    verified=; \
+    for public_key in $public_keys; do \
+        { printf '\060\052\060\005\006\003\053\145\160\003\041\000'; printf '%s' "$public_key" | base64 -d; } > key.der; \
+        if openssl pkeyutl -verify -rawin -pubin -keyform DER -inkey key.der -in "$name.tar.gz" -sigfile signature >/dev/null 2>&1; then verified=1; fi; \
+    done; \
+    if [ -z "$verified" ]; then echo "$name.tar.gz: the signature matches no release key" >&2; exit 1; fi; \
     tar -xzf "$name.tar.gz" "$name/bin/tomaccoctl" "$name/share/doc/tomacco" "$name/share/man/man1/tomaccoctl.1"; \
     install -D -m 0755 "$name/bin/tomaccoctl" /usr/local/bin/tomaccoctl; \
     install -D -m 0644 "$name/share/man/man1/tomaccoctl.1" /usr/local/share/man/man1/tomaccoctl.1; \

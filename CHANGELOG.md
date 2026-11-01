@@ -86,6 +86,25 @@ operations and their JSON results.
   `tomaccoctl setup` show it. For the portable package it also checks the X11 and Wayland plugins and WebEngine's helper,
   and `desktop.portable` says which package it is. Run in debian:12, ubuntu:22.04, ubuntu:24.04 and fedora:44 containers,
   the one command made the 1.1.0 portable desktop loadable.
+- `tomaccoctl verify FILE [--sig FILE.sig] [--sha256 FILE.sha256] [--json]` checks a downloaded release file against its
+  checksum and its Ed25519 signature with the release keys built into `tomaccoctl`, in plain text or as one JSON envelope, and
+  exits 0 only when both match. It verified the published 1.1.0 package and refused a copy with one byte appended.
+- `tools/check_dependencies.py` checks the Rust dependencies offline: licenses compatible with GPL-2.0-or-later, Apache-2.0-only
+  crates named in the notices, no new crate in two incompatible versions, no yanked version in Cargo's index cache, and the
+  notices' crate tables in step with `Cargo.lock`; with cargo-deny installed, also `cargo deny check` with the new `deny.toml`.
+  `make_release.py` runs it.
+- With cargo-audit installed, `tools/check_dependencies.py` runs `cargo audit --no-fetch` against the local RustSec database,
+  and `make_release.py` refuses a release it reports a vulnerability for. Building says how to install it.
+- **SBOM.** `make_release.py` writes a CycloneDX 1.6 SBOM beside each package, `PACKAGE.cdx.json`, with `tools/build_sbom.py`,
+  and signs it: the Rust crates linked into `tomaccoctl` with versions, licenses and checksums, the embedded SQLite, the fonts, and
+  for the portable package Qt, ICU, FFmpeg and the xcb-util libraries with the digests of their pinned archives.
+- **Provenance.** `make_release.py` writes and signs `tomacco-VERSION-provenance.intoto.json`, an in-toto statement with a SLSA
+  provenance v1 predicate: the tag and commit, `SOURCE_DATE_EPOCH`, the digests of `Cargo.lock` and of the portable package's
+  pinned downloads, the builder's OS and tool versions, and the SHA-256 of every release file. `tomaccoctl verify` checks its
+  signature and the listed files beside it.
+- **Release key rotation.** `tomaccoctl` trusts the release key in `native/product.rs` and, during a rotation, the next key
+  beside it, `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`; a package signed by either installs, one signed by another key is refused.
+  `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.
 
 ### Changed
 
@@ -104,6 +123,7 @@ operations and their JSON results.
 
 ### Fixed
 
+- THIRD_PARTY_NOTICES.md named SQLite 3.50.2; the locked `libsqlite3-sys` 0.39.1 embeds 3.54.1. A test keeps them in step.
 - The recipes and troubleshooting said `android.input` types ASCII only; since 1.1.0 it pastes other text through the
   device clipboard. Getting started and building showed 1.0.0 package names and said a release has no portable package.
 - A test keeps the version, the operation count, the Rust and Qt build minimums, the desktop languages and the

@@ -21,3 +21,7 @@ pub const UPDATES_ENVIRONMENT: &str = "TOMACCO_UPDATES";
 /// The public half of the release signing key: base64 of its 32 raw bytes.
 /// While this is empty no update can be verified, so none is installed.
 pub const RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "eUZ5PV5fqziL3khcVKTg8wiIbOYeIggiMD6mWLkEYwM=";
+/// During a key rotation, the public half of the key that is to sign later
+/// releases, in the same form; empty otherwise. A package signed by either key
+/// is accepted. docs/building.md#rotating-the-release-key has the steps.
+pub const NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64: &str = "";

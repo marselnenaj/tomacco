@@ -12,7 +12,8 @@ notices those licenses require. It is installed as
 The table of Rust crates below was generated from `Cargo.lock` with
 `cargo metadata` and the license files shipped in each crate. It covers the
 Linux build and leaves out crates used only on Windows, macOS or WebAssembly.
-Regenerate it when `Cargo.lock` changes.
+Regenerate it when `Cargo.lock` changes; `tools/check_dependencies.py` fails while the
+tables and `Cargo.lock` disagree.
 
 ## How the licenses combine
 
@@ -110,7 +111,7 @@ virtual environment).
 ### SQLite
 
 `rusqlite` is built with its `bundled` feature, so `tomaccoctl` embeds SQLite
-3.50.2 from `libsqlite3-sys`. SQLite is in the public domain
+3.54.1 from `libsqlite3-sys` 0.39.1. SQLite is in the public domain
 (<https://sqlite.org/copyright.html>).
 
 ### idb protocol subset

@@ -704,6 +704,7 @@ session or the virtual iOS device runs, for a source checkout, a system package 
 `update.rollback` restores the version before the last update. `settings.configure` takes `updates.mode` (`off`, `notify`, `auto`), `updates.channel` (`stable`, the default, or `prerelease`) and `updates.token_file`, an owner-only file. `TOMACCO_UPDATES=off`
 turns all of it off. After an update, restart `tomaccoctl mcp` to use the new version; the running server keeps working.
 From a terminal, `tomaccoctl update` runs the manual check and, when a release applies, `update.apply` and its job to the end.
+`tomaccoctl verify FILE [--json]` checks a downloaded release file against its `.sha256` and its `.sig` with the same release keys, without installing anything.
 
 ## Web layouts
 
