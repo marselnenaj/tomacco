@@ -71,7 +71,7 @@ class Licenses(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / policy.NOTICES).write_text(notices if notices is not None else NOTICES.format(linked=table(linked), build=table(build)))
-            return policy.check(metadata(linked, build), root, caches=[], deny=None, **options)
+            return policy.check(metadata(linked, build), root, caches=[], deny=None, **{"audit": None, **options})
 
     def test_an_incompatible_license_fails_and_a_compatible_one_passes(self):
         problems, _ = self.run_check([package("good", "1.0.0", "MIT OR Apache-2.0")])
@@ -180,6 +180,62 @@ class Graph(unittest.TestCase):
         if not ran:
             self.skipTest("cargo-deny is not installed")
         self.assertEqual(problems, ["cargo deny check failed: error[vulnerability]: something; error[banned]: other"])
+
+
+class Advisories(unittest.TestCase):
+    REPORT = {
+        "vulnerabilities": {"found": True, "count": 1, "list": [
+            {"advisory": {"id": "RUSTSEC-2099-0001", "title": "Something unsafe"}, "package": {"name": "tar", "version": "0.4.46"}}]},
+        "warnings": {"unmaintained": [{"package": {"name": "old", "version": "1.0.0"}}]},
+    }
+
+    def audit(self, report, installed=True, databases=(Path("/db"),)):
+        calls = []
+
+        class Done:
+            returncode = 1 if report.get("vulnerabilities", {}).get("found") else 0
+            stdout = json.dumps(report).encode()
+            stderr = b""
+
+        def run(argv, **options):
+            calls.append(argv)
+            return Done()
+        result = policy.cargo_audit(ROOT, run=run, which=lambda name: "/bin/x" if installed else None, databases=list(databases))
+        return result, calls
+
+    def test_a_reported_vulnerability_fails_and_a_warning_is_noted(self):
+        (note, problems), calls = self.audit(self.REPORT)
+        self.assertEqual(problems, ["tar 0.4.46: RUSTSEC-2099-0001 Something unsafe"])
+        self.assertIn("unmaintained old 1.0.0", note)
+        # Offline, against the local database.
+        self.assertEqual(calls[0][:5], ["cargo", "audit", "--no-fetch", "--db", "/db"])
+        self.assertIn("--json", calls[0])
+
+    def test_no_vulnerability_passes(self):
+        (note, problems), _ = self.audit({"vulnerabilities": {"found": False, "count": 0, "list": []}, "warnings": {}})
+        self.assertEqual(problems, [])
+        self.assertIn("0 vulnerabilities", note)
+
+    def test_without_cargo_audit_nothing_runs_and_without_a_database_it_fails(self):
+        (note, problems), calls = self.audit(self.REPORT, installed=False)
+        self.assertEqual((problems, calls), ([], []))
+        self.assertIn("not installed", note)
+        (note, problems), calls = self.audit(self.REPORT, databases=())
+        self.assertEqual(calls, [])
+        self.assertIn("no local advisory database", problems[0])
+
+    def test_a_vulnerability_fails_the_whole_check(self):
+        problems, notes = Licenses().run_check([package("a", "1.0.0", "MIT")], audit=lambda root: ("ran", ["tar: RUSTSEC"]))
+        self.assertEqual(problems, ["tar: RUSTSEC"])
+        self.assertIn("ran", notes)
+
+    def test_the_databases_are_cargo_audits_then_cargo_denys(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            self.assertEqual(policy.advisory_databases(home), [])
+            (home / "advisory-dbs/advisory-db-1").mkdir(parents=True)
+            (home / "advisory-db").mkdir()
+            self.assertEqual(policy.advisory_databases(home), [home / "advisory-db", home / "advisory-dbs/advisory-db-1"])
 
 
 if __name__ == "__main__":

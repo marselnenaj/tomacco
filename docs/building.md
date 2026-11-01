@@ -42,6 +42,21 @@ versions by different dependencies), on a version Cargo's local index cache mark
 with `deny.toml`. `make_release.py` runs it after Clippy. On the development host with cargo-deny 0.20.2, it found 133 crates in the Linux
 build, 112 of them in `tomaccoctl`, and no problem.
 
+**Security advisories.** When [cargo-audit](https://github.com/rustsec/rustsec/tree/main/cargo-audit) is installed,
+`tools/check_dependencies.py` also runs `cargo audit --no-fetch` against the local copy of the [RustSec](https://rustsec.org) database, so a
+vulnerability it reports fails the check and `make_release.py` refuses the release. It fetches nothing; to install it and get or refresh
+the database:
+
+```sh
+cargo install cargo-audit --locked
+cargo audit
+```
+
+Without cargo-audit, cargo-deny's advisory check covers the same database: its `cargo deny check` reads the copy cargo-deny keeps in
+`~/.cargo/advisory-dbs`. On 1 November 2026, with that copy at RustSec commit `2295466` (30 October 2026), it reported no advisory for
+any locked version; 30 of the crates have advisories in the database, all for other versions. cargo-audit was not installed there, so
+`cargo audit` itself has not run.
+
 Run the Python tests directly from `tests/python`:
 
 ```sh

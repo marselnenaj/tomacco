@@ -73,6 +73,8 @@ operations and their JSON results.
   crates named in the notices, no new crate in two incompatible versions, no yanked version in Cargo's index cache, and the
   notices' crate tables in step with `Cargo.lock`; with cargo-deny installed, also `cargo deny check` with the new `deny.toml`.
   `make_release.py` runs it.
+- With cargo-audit installed, `tools/check_dependencies.py` runs `cargo audit --no-fetch` against the local RustSec database,
+  and `make_release.py` refuses a release it reports a vulnerability for. Building says how to install it.
 - **Release key rotation.** `tomaccoctl` trusts the release key in `native/product.rs` and, during a rotation, the next key
   beside it, `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`; a package signed by either installs, one signed by another key is refused.
   `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.

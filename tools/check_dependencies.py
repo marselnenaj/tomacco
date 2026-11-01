@@ -14,6 +14,8 @@ Cargo.lock and the crates' own metadata:
 
 When cargo-deny is installed it also runs `cargo deny --offline check` with
 deny.toml (licenses, bans, sources, and advisories from its local database).
+When cargo-audit is installed it runs `cargo audit --no-fetch` against a local
+RustSec database, and a reported vulnerability fails the check.
 
 The metadata comes from `cargo metadata` and `cargo tree`, both --offline
 --locked, so they need the crates in Cargo's cache or vendor/ (as in the
@@ -334,7 +336,42 @@ def cargo_deny(root, run=subprocess.run):
     return True, []
 
 
-def check(metadata, root=ROOT, caches=None, deny=cargo_deny, edges=None):
+def advisory_databases(cargo_home=None):
+    """Local copies of the RustSec advisory database: cargo-audit's own,
+    then the ones cargo-deny keeps."""
+    home = Path(cargo_home or os.environ.get("CARGO_HOME") or Path.home() / ".cargo")
+    found = [home / "advisory-db"] if (home / "advisory-db").is_dir() else []
+    return found + sorted(path for path in home.glob("advisory-dbs/*") if path.is_dir())
+
+
+def cargo_audit(root, run=subprocess.run, which=shutil.which, databases=None):
+    """Runs `cargo audit` against a local advisory database, without fetching,
+    when cargo-audit is installed. Returns (note, problems): a vulnerability is
+    a problem, a warning (unmaintained, yanked, unsound) a note."""
+    if not which("cargo-audit"):
+        return "cargo-audit is not installed; no cargo audit ran", []
+    databases = advisory_databases() if databases is None else databases
+    if not databases:
+        return "", ["cargo-audit is installed but there is no local advisory database: run `cargo audit` once online"]
+    done = run(["cargo", "audit", "--no-fetch", "--db", str(databases[0]), "--file", str(root / "Cargo.lock"), "--json"],
+               cwd=root, capture_output=True, check=False)
+    try:
+        report = json.loads(done.stdout or b"")
+    except ValueError:
+        return "", ["cargo audit failed: " + (done.stderr or b"").decode(errors="replace").strip()[-400:]]
+    problems = []
+    for found in report.get("vulnerabilities", {}).get("list", []):
+        advisory, package = found.get("advisory", {}), found.get("package", {})
+        problems.append(f"{package.get('name')} {package.get('version')}: {advisory.get('id')} {advisory.get('title', '')}".rstrip())
+    warnings = [f"{kind} {entry.get('package', {}).get('name')} {entry.get('package', {}).get('version')}"
+                for kind, entries in sorted(report.get("warnings", {}).items()) for entry in entries]
+    note = f"cargo audit ran against {databases[0]}: {len(problems)} vulnerabilities"
+    if warnings:
+        note += "; warnings: " + ", ".join(warnings)
+    return note, problems
+
+
+def check(metadata, root=ROOT, caches=None, deny=cargo_deny, edges=None, audit=cargo_audit):
     """Runs every check; returns (problems, notes). `edges` is (linked, used)
     as `graph` returns it; by default the metadata's own graph."""
     shipped, used = edges or graph(metadata)
@@ -356,6 +393,10 @@ def check(metadata, root=ROOT, caches=None, deny=cargo_deny, edges=None):
         ran, found = deny(root)
         problems += found
         notes.append("cargo deny check ran" if ran else "cargo-deny is not installed; its checks were skipped")
+    if audit:
+        note, found = audit(root)
+        problems += found
+        notes += [note] if note else []
     return problems, notes
 
 
@@ -363,6 +404,7 @@ def main(arguments=None, root=ROOT):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--metadata", type=Path, help="Read saved `cargo metadata` JSON instead of running cargo")
     parser.add_argument("--no-cargo-deny", action="store_true", help="Do not run cargo-deny even when it is installed")
+    parser.add_argument("--no-cargo-audit", action="store_true", help="Do not run cargo-audit even when it is installed")
     options = parser.parse_args(arguments)
     try:
         if options.metadata:
@@ -371,7 +413,8 @@ def main(arguments=None, root=ROOT):
         else:
             metadata = cargo_metadata(root)
             edges = graph(metadata, root)
-        problems, notes = check(metadata, root, deny=None if options.no_cargo_deny else cargo_deny, edges=edges)
+        problems, notes = check(metadata, root, deny=None if options.no_cargo_deny else cargo_deny, edges=edges,
+                                audit=None if options.no_cargo_audit else cargo_audit)
     except Failed as error:
         print(f"Failed: {error}", file=sys.stderr)
         return 1
