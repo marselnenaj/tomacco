@@ -1,5 +1,6 @@
 """The virtual iPhone's console log as structured lines, through ios.virtual.syslog."""
 import json
+import plistlib
 from pathlib import Path
 import shutil
 import unittest
@@ -41,6 +42,20 @@ class GuestSyslog(Isolated):
                              ["partial line without its end now", "second batch"])
             with self.assertRaises(StudioError):
                 dispatch("ios.virtual.syslog", {"levels": ["loud"]})
+            # One listed app's lines, by its executable and its launchd service.
+            with self.assertRaises(StudioError) as error:
+                dispatch("ios.virtual.syslog", {"bundle_id": "dev.tomacco.SampleApp"})
+            self.assertEqual(error.exception.code, "ios_virtual_application_unknown")
+            app = self.root / "SampleApp.app"
+            app.mkdir()
+            (app / "Info.plist").write_bytes(plistlib.dumps({"CFBundleIdentifier": "dev.tomacco.SampleApp",
+                                                             "CFBundleExecutable": "SampleApp"}))
+            profile = json.loads((directory / "profile.json").read_text())
+            (directory / "profile.json").write_text(json.dumps({**profile, "applications": [{"bundle": str(app)}]}))
+            owned = dispatch("ios.virtual.syslog", {"bundle_id": "dev.tomacco.SampleApp", "offset": 0})
+            self.assertEqual(owned["app"], {"bundle_id": "dev.tomacco.SampleApp", "executable": "SampleApp"})
+            self.assertEqual([line["message"] for line in owned["lines"]],
+                             ["exited due to SIGABRT", "Caller wanted 1 of 2 rows", "Loaded 3 items", "second batch"])
         finally:
             jobs.cancel(guest)
             jobs.wait(guest, 30)

@@ -203,15 +203,51 @@ fn wanted(line: &Line, process: &str, levels: &[String], contains: &str) -> bool
         && (contains.is_empty() || line.message.contains(contains))
 }
 
+/// One app's lines: those its own process writes under its executable's
+/// name, and those launchd writes about its service, which names the bundle
+/// identifier (`UIKitApplication:ID[...]` or `user/501/ID`). Names, not PIDs,
+/// so a relaunched app's lines still match.
+pub(crate) struct App<'a> {
+    pub bundle_id: &'a str,
+    pub executable: &'a str,
+}
+impl App<'_> {
+    fn owns(&self, line: &Line) -> bool {
+        if !self.executable.is_empty() && line.process == self.executable {
+            return true;
+        }
+        line.service.as_deref().is_some_and(|service| {
+            let named = match service.strip_prefix("UIKitApplication:") {
+                Some(rest) => rest.split('[').next().unwrap_or(rest),
+                None => service.rsplit('/').next().unwrap_or(service),
+            };
+            named.eq_ignore_ascii_case(self.bundle_id)
+        })
+    }
+}
+
 /// Reads complete lines from `offset` (or the last TAIL_BYTES when None)
 /// of a console log, at most `max_lines` that pass the filters. Returns the
 /// lines with their byte offsets, the offset to read on from, whether that
 /// stopped short of the end, and whether a stale offset started over.
-pub(crate) fn read(
+#[cfg(test)]
+fn read(
     file: &Path,
     offset: Option<u64>,
     max_lines: usize,
     filter: (&str, &[String], &str),
+) -> Result {
+    read_lines(file, offset, max_lines, filter, None)
+}
+
+/// The lines of the log that pass the filters (see `read`), and with `app`
+/// only that app's lines.
+fn read_lines(
+    file: &Path,
+    offset: Option<u64>,
+    max_lines: usize,
+    filter: (&str, &[String], &str),
+    app: Option<&App>,
 ) -> Result {
     use std::io::{Read, Seek, SeekFrom};
     let mut handle = File::open(file)?;
@@ -252,7 +288,7 @@ pub(crate) fn read(
             continue;
         }
         let line = parse(&text);
-        if wanted(&line, filter.0, filter.1, filter.2) {
+        if wanted(&line, filter.0, filter.1, filter.2) && app.is_none_or(|app| app.owns(&line)) {
             lines.push(json!({"offset":at,"time":line.time,"process":line.process,"pid":line.pid,
                 "service":line.service,"sender":line.sender,"level":line.level,"message":line.message}));
         }
@@ -280,12 +316,26 @@ pub fn syslog(a: &Value) -> Result {
         .filter_map(|v| v.as_str().map(str::to_string))
         .collect();
     let max_lines = a["max_lines"].as_u64().unwrap_or(500).clamp(1, 5000) as usize;
-    let mut reply = read(
+    let bundle_id = s(a, "bundle_id");
+    let executable = if bundle_id.is_empty() {
+        String::new()
+    } else {
+        virtual_phone::listed_executable(bundle_id)?
+    };
+    let app = App {
+        bundle_id,
+        executable: &executable,
+    };
+    let mut reply = read_lines(
         &file,
         a["offset"].as_u64(),
         max_lines,
         (s(a, "process"), &levels, s(a, "contains")),
+        (!bundle_id.is_empty()).then_some(&app),
     )?;
+    if !bundle_id.is_empty() {
+        reply["app"] = json!({"bundle_id":bundle_id,"executable":executable});
+    }
     let running = jobs::TERMINAL.iter().all(|state| plan["state"] != *state);
     reply["job_id"] = json!(job);
     reply["running"] = json!(running);
@@ -414,6 +464,32 @@ mod tests {
         // By process (name or service, any case), level and text.
         let app = read(&file, Some(0), 100, ("sampleapp", &[], "")).unwrap();
         assert_eq!(app["lines"].as_array().unwrap().len(), 3);
+        // By app: its executable's lines and launchd's about its service.
+        let sample = App {
+            bundle_id: "dev.tomacco.SampleApp",
+            executable: "SampleApp",
+        };
+        let owned = read_lines(&file, Some(0), 100, ("", &[], ""), Some(&sample)).unwrap();
+        let messages: Vec<_> = owned["lines"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|l| l["message"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            messages,
+            [
+                "exited due to SIGABRT",
+                "Caller wanted 1 of 2 rows",
+                "Loaded 3 items"
+            ]
+        );
+        let other = App {
+            bundle_id: "dev.tomacco.Sample",
+            executable: "Sample",
+        };
+        let none = read_lines(&file, Some(0), 100, ("", &[], ""), Some(&other)).unwrap();
+        assert_eq!(none["lines"], json!([]));
         let levels = vec!["fault".to_string(), "error".to_string()];
         let bad = read(&file, Some(0), 100, ("", &levels, "")).unwrap();
         let names: Vec<_> = bad["lines"]

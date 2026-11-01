@@ -453,7 +453,9 @@ tool makes those. Stop and tell the user when the IM4M is what is missing, rathe
   false means the next start will be refused with `ios_virtual_disk_space`; its remedy says how much to free.
   `ios.virtual.cleanup` (a dry run unless `dry_run:false`) deletes older disk copies; ask the user before deleting.
 - `ios.virtual.syslog {process, levels, contains, offset}` reads the phone's console log as lines with `process`, `pid`,
-  `level` and `message`; pass `next_offset` back as `offset` to follow it.
+  `level` and `message`; pass `next_offset` back as `offset` to follow it. `bundle_id` keeps one listed app's lines: its
+  executable's own (the name comes from the bundle on the host) and launchd's about its service, by name, so they continue
+  across relaunches.
 - `ios.virtual.profiles` lists the profile directories configured so far; `ios.virtual.configure {directory}` switches
   between them only while the current phone is off (`ios_virtual_running` otherwise).
 - `ios.virtual.state_save {name}` keeps the last verified run under a name without copying it, `ios.virtual.states` lists

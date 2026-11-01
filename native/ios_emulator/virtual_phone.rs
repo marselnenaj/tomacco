@@ -490,6 +490,37 @@ fn bundle_infos(bundles: &[String]) -> std::collections::HashMap<String, Value> 
     found
 }
 
+/// The executable name of an app the profile lists, by bundle identifier
+/// (any case), read from its bundle's Info.plist on the host.
+pub(crate) fn listed_executable(bundle_id: &str) -> Result<String> {
+    let (profile, _) = records(&directory()?)?;
+    let bundles: Vec<String> = applications(&profile)?
+        .iter()
+        .map(|row| s(row, "bundle").to_string())
+        .collect();
+    executable_of(bundle_id, &bundles, &bundle_infos(&bundles))
+}
+
+fn executable_of(
+    bundle_id: &str,
+    bundles: &[String],
+    infos: &std::collections::HashMap<String, Value>,
+) -> Result<String> {
+    bundles
+        .iter()
+        .filter_map(|bundle| infos.get(bundle))
+        .find(|info| s(info, "bundle_id").eq_ignore_ascii_case(bundle_id))
+        .and_then(|info| info["executable"].as_str().filter(|e| !e.is_empty()))
+        .map(str::to_string)
+        .ok_or_else(|| {
+            Error::new(
+                "ios_virtual_application_unknown",
+                format!("The profile lists no readable app {bundle_id}"),
+            )
+            .remedy("Deploy it with ios.virtual.deploy or add it with ios.virtual.configure add_application; ios.virtual.apps lists the apps")
+        })
+}
+
 /// One row per app the phone knows of: the owned diagnostic, each app the
 /// profile lists (with the version its bundle on the host has now) and any
 /// app installed on the current run's volume that the profile no longer
@@ -1493,6 +1524,26 @@ pub fn stop(a: &Value) -> Result {
 #[cfg(test)]
 mod debug_target_tests {
     use super::*;
+
+    #[test]
+    fn a_listed_app_names_its_executable_and_an_unknown_one_is_refused() {
+        let bundles = vec!["/a/Demo.app".to_string(), "/a/Gone.app".to_string()];
+        let mut infos = std::collections::HashMap::new();
+        infos.insert(
+            "/a/Demo.app".to_string(),
+            json!({"bundle_id":"dev.example.Demo","executable":"DemoExe"}),
+        );
+        assert_eq!(
+            executable_of("dev.example.demo", &bundles, &infos).unwrap(),
+            "DemoExe"
+        );
+        assert_eq!(
+            executable_of("dev.example.Gone", &bundles, &infos)
+                .unwrap_err()
+                .code,
+            "ios_virtual_application_unknown"
+        );
+    }
 
     #[test]
     fn force_reaches_the_deploy_script_only_when_asked() {

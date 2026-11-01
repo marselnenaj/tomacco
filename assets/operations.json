@@ -10249,7 +10249,7 @@
   {
     "name": "ios.virtual.syslog",
     "title": "Log of virtual iOS device",
-    "description": "Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)[pid]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.",
+    "description": "Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)[pid]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). bundle_id keeps one app's lines, across relaunches, and the reply names its executable under app; refused with ios_virtual_application_unknown for an app the profile does not list. Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -10258,6 +10258,12 @@
           "maxLength": 128,
           "default": "",
           "description": "Only lines whose process or service contains this, ignoring case. Empty: all."
+        },
+        "bundle_id": {
+          "type": "string",
+          "maxLength": 255,
+          "default": "",
+          "description": "Only this app's lines: those of the process named after its executable (read from the bundle the profile lists) and launchd's lines about its service. By name, so a relaunched app's lines match too. Empty: all."
         },
         "levels": {
           "type": "array",

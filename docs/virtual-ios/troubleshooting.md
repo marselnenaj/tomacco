@@ -136,7 +136,13 @@ The phone's console log, where the kernel prints and launchd forwards log record
 tomaccoctl call ios.virtual.syslog '{"process":"MyApp"}'
 tomaccoctl call ios.virtual.syslog '{"levels":["error","fault"],"max_lines":100}'
 tomaccoctl call ios.virtual.syslog '{"process":"MyApp","offset":123456}'
+tomaccoctl call ios.virtual.syslog '{"bundle_id":"dev.example.MyApp","offset":123456}'
 ```
+
+`bundle_id` keeps one app's lines: those its process writes under its executable's name (read from the bundle the profile
+lists, named in the reply's `app`) and launchd's lines about its service, such as `exited due to SIGABRT`. It matches names,
+not a PID, so following it with `offset` keeps the app's lines after a relaunch or a redeploy. An app the profile does not
+list is refused with `ios_virtual_application_unknown`.
 
 Each line has `time`, `process`, `pid`, `service`, `sender`, `level` and `message`; a line of no known form is the kernel's.
 Without `offset` it reads the last 256 KiB; pass the reply's `next_offset` back to follow the log. It reads the guest job's
