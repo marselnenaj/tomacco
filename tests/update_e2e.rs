@@ -157,6 +157,15 @@ impl Sandbox {
             )
         })
     }
+    fn try_ok(&self, operation: &str, arguments: Value) -> Option<Value> {
+        let output = self
+            .command(&["call", operation, &arguments.to_string()])
+            .output()
+            .unwrap();
+        let value: Value = serde_json::from_slice(&output.stdout).ok()?;
+        assert_eq!(value["ok"], true, "{operation}: {value}");
+        Some(value["result"].clone())
+    }
     fn ok(&self, operation: &str, arguments: Value) -> Value {
         let reply = self.call(operation, arguments);
         assert_eq!(reply["ok"], true, "{operation}: {reply}");
@@ -174,7 +183,12 @@ impl Sandbox {
         let job = self.ok("update.apply", json!({}));
         let id = job["id"].as_str().unwrap().to_string();
         for _ in 0..40 {
-            let waited = self.ok("job.wait", json!({"job_id":id,"seconds":15}));
+            // While a broken update is installed, before its rollback, the
+            // launcher runs a program that answers nothing; ask again.
+            let Some(waited) = self.try_ok("job.wait", json!({"job_id":id,"seconds":15})) else {
+                std::thread::sleep(std::time::Duration::from_millis(200));
+                continue;
+            };
             if ["succeeded", "failed", "cancelled", "timed_out"]
                 .contains(&waited["state"].as_str().unwrap_or(""))
             {
