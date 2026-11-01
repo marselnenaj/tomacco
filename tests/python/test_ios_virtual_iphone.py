@@ -1665,6 +1665,15 @@ class VirtualPhoneOperations(Isolated):
         self.assertEqual((status["next"], status["last_run"]), (None, None))
         self.assertEqual(status["host"]["pressure"]["measure"], "psi")
         self.assertTrue(status["host"]["gpu"] is None or status["host"]["gpu"]["source"] == "sysfs")
+        # A phone that does not run has no liveness to judge, probed or not.
+        self.assertIsNone(status["liveness"])
+        self.assertIsNone(dispatch("ios.virtual.status", {"probe": True})["liveness"])
+        # The silence limit is a profile setting with bounds.
+        dispatch("ios.virtual.configure", {"stall_seconds": 120})
+        self.assertEqual(json.loads((directory / "profile.json").read_text())["stall_seconds"], 120)
+        for wrong in (5, 100000):
+            with self.assertRaises(StudioError):
+                dispatch("ios.virtual.configure", {"stall_seconds": wrong})
 
     def test_a_start_whose_disk_copy_cannot_fit_is_refused_before_any_job(self):
         base = self.root / "base"

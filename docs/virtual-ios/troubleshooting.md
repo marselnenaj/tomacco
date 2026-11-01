@@ -152,6 +152,8 @@ has not been surveyed yet.
 | `text` went nowhere | No field had the keyboard focus, or the app took it after the keys were sent. | Tap the field and check a frame, then `text`. |
 | `ios_virtual_not_running` from `deploy`/`debug` | The phone is off. | `ios.virtual.configure {add_application}` then `ios.virtual.start`. |
 | `deploy` fails with `spare trust-cache entries` | The boot predates hot install, or its 512 entries are used up. | Stop and start the phone. |
+| `liveness.state` is `stalled` in the status | The guest service did not answer a probe, and no new frame came for `stall_seconds`. | Make the `recovery` calls in order: `ios.emulator.guest` `restart_ui`, probe again, and only then `ios.virtual.stop`. See [when the phone stops responding](usage.md#when-the-phone-stops-responding). |
+| `liveness.state` is `quiet` | Nothing new for `stall_seconds`. A still screen publishes no frames. | Call `ios.virtual.status '{"probe":true}'` to ask the guest service. |
 | The picture stands still after a while | Older guest tools let an idle phone lock and turn off its display. | Press Home or the side button. A guest that reports `auto_lock_supported` gets Auto-Lock off at start. |
 | A widget is empty | The widget's extension misses chronod's deadline under emulation. | Nothing yet. This is a [known limit](README.md#honest-limits). |
 | `ios_touch_lane_required` | A one-shot `tomaccoctl call` cannot hold a finger down. | Use `drag`, or `touch_down` through a client that stays connected (`tomaccoctl mcp`). |

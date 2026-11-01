@@ -208,6 +208,7 @@ pub fn configure(a: &Value) -> Result {
         "application",
         "clang",
         "start_disks",
+        "stall_seconds",
     ]
     .iter()
     .any(|key| a.get(key).is_some())
@@ -319,6 +320,21 @@ pub fn configure(a: &Value) -> Result {
                 ));
             }
             profile["start_disks"] = json!(mode);
+        }
+        if let Some(seconds) = a.get("stall_seconds") {
+            // How long a running phone may show no sign of life before the
+            // status calls it stalled (liveness).
+            match seconds.as_u64() {
+                Some(seconds) if liveness::STALL_SECONDS_RANGE.contains(&seconds) => {
+                    profile["stall_seconds"] = json!(seconds);
+                }
+                _ => {
+                    return Err(Error::new(
+                        "invalid_argument",
+                        "stall_seconds must be a whole number of seconds from 30 to 86400",
+                    ));
+                }
+            }
         }
         profile["applications"] = json!(listed);
         atomic_json(&directory.join("profile.json"), &profile)?;
@@ -577,6 +593,7 @@ pub fn apps(_a: &Value) -> Result {
 /// (`prepare` in tools/prepare_ios_guest_tools.py).
 use super::disk_overlay;
 mod host_load;
+mod liveness;
 pub mod states;
 
 /// The disks a start copies besides the root disk, which is a copy, an
@@ -1163,7 +1180,7 @@ fn application_process_observation(profile: &Value, state: &Value, running: bool
     }
 }
 
-pub fn status(_a: &Value) -> Result {
+pub fn status(a: &Value) -> Result {
     let directory = match directory() {
         Ok(directory) => directory,
         Err(error) if error.code == "ios_virtual_unconfigured" => {
@@ -1307,6 +1324,12 @@ pub fn status(_a: &Value) -> Result {
         // The graphics card's memory against the guard's limit, and the
         // host's I/O and memory pressure, on every call.
         "host":host_load::host(guest.as_ref()),
+        // Whether the running phone still shows signs of life, what it last
+        // showed, and the typed calls that recover a stalled one.
+        "liveness":match guest.as_ref() {
+            Some(job) if running => liveness::observe(job,&profile,s(&state,"phase"),a["probe"] == true),
+            _ => Value::Null,
+        },
     }))
 }
 

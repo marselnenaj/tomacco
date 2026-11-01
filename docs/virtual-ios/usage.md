@@ -81,6 +81,29 @@ last verified run and says so in its log. Whatever happened in between is lost.
 `outcome`, a `summary`, each of the `reasons` it was not verified and a `remedy`. A failed stop's message carries the
 same reasons. [Troubleshooting](troubleshooting.md#stopping) has an example. Unit-tested only, not read off a live phone.
 
+### When the phone stops responding
+
+`liveness` in `ios.virtual.status` says whether a running phone still shows signs of life. Every status call looks at
+the newest frame in the guest's frame mailbox and the size of its console log, and with `{"probe":true}` it also asks
+the guest service for its status, for at most 10 seconds. `last_seen` has each sign with when it last changed.
+
+```sh
+tomaccoctl call ios.virtual.status '{"probe":true}'
+tomaccoctl call ios.virtual.configure '{"stall_seconds":600}'
+```
+
+- `live`: a new frame, console output or a guest answer within `stall_seconds` (300 unless configured, 30 to 86400).
+- `quiet`: none of these for `stall_seconds`. A still screen is normal, since only changed frames are published; probe
+  to find out more.
+- `stalled`: the guest service did not answer the last probe, and neither it nor the screen has shown life for
+  `stall_seconds`.
+- `booting`: during `preparing` and `booting` nothing is judged.
+
+The status never acts on the phone. A stalled phone gets `recovery`, the calls to make in order: first
+`ios.emulator.guest` with `restart_ui`, which restarts iOS's user interface without ending the guest, and then
+`ios.virtual.stop`, which asks the guest to save four times before it ends it without saving. The signs are kept in
+`liveness.json` in the guest job's run directory. Unit-tested only; no hung live phone has been judged with it yet.
+
 ### Time and disk limits
 
 **A session lasts at most 24 hours.** About ten minutes before the limit, the phone stops the careful

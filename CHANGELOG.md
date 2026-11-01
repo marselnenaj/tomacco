@@ -161,6 +161,11 @@ operations and their JSON results.
     call, from the running guest's own guard checks (which the launcher now publishes as `gpu-memory.json`) or from
     /sys, and the host's I/O and memory pressure. A start that boots returns `warnings` when the card is already low or
     the host under pressure. Unit-tested with recorded values, not watched beside a live guest.
+  - `liveness` in `ios.virtual.status` says whether a running phone still shows signs of life (new frames, console
+    output, and with `{"probe":true}` an answer from the guest service): `live`, `quiet`, `stalled` or `booting`, with
+    what it last showed and when. A stalled phone gets `recovery`, the typed calls to make in order (`restart_ui`, then
+    `ios.virtual.stop`); the status itself never acts on the phone. `ios.virtual.configure {"stall_seconds"}` sets the
+    limit. Unit-tested only, not tried on a hung live phone.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
 
