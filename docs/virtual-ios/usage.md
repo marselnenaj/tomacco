@@ -29,6 +29,16 @@ current start or stop with its seconds. While `preparing`, `copy_progress` has t
 size of the new copy's files with the base's, so a reflinked copy shows as complete at once. These
 fields have unit tests; they have not been watched during a live start yet.
 
+When a start or stop ends, `start_timing` and `stop_timing` in the status break it down into steps with their
+seconds, name the `slowest` and give `total_seconds`; the run's own `timing.json`, beside its disks, keeps both. A
+start's steps are `checks` (apps, a guest-tools rebuild, the kernel), `preparation`, `disk_copy` (with its `method`),
+`guest_tools` (the helper that installs them), `boot_request`, `input_hashing` (with its `bytes`), `launcher`, `boot`
+(until the guest service answers), `app_install`, `guest_settings`, `unlock_and_launch` and `display_check`; a failed
+start has the steps it reached. A stop's are `guest_exit` (the flush and the emulator's exit), `output_hashing` and
+`finalize`. A step whose times are unknown, for example from a launcher of an older version, is counted in the next
+one, which lists it under `includes`. The breakdown has unit tests with synthetic step logs; it has not been read from
+a live start yet.
+
 Accepted is not the same as visible. After an accepted launch the start looks at the panel for up
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
 display defect, not a working phone.

@@ -143,6 +143,12 @@ operations and their JSON results.
     `ios.virtual.state_delete` removes a name and the copy only it kept. Pruning and `ios.virtual.cleanup` keep named runs.
     Unit-tested only, not run on a live phone. The iOS test system dialog lists them under **Saved states** with
     **Save state**, **Start from it** and a **Delete** that asks twice.
+  - `start_timing` and `stop_timing` in `ios.virtual.status` break the last start and stop down into steps with their
+    seconds (checks, preparation, disk copy, guest-tools install, input hashing, boot, app install, guest settings,
+    unlock and launch; guest exit, output hashing), with the slowest step and the total, also kept in the run's
+    `timing.json`. The disk preparation now logs when each of its steps began (`step_times`), and the launcher's
+    `request.json` and `result.json` have `timing`: hashing seconds and bytes before and after the session and when
+    the engine started and exited. Unit-tested with synthetic step logs, not run on a live phone.
   - `ios.virtual.profiles` lists every profile directory configured so far with its run, phase and whether its phone runs.
     `ios.virtual.configure` refuses another directory while the current phone runs (`ios_virtual_running`) or a start or
     stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile.

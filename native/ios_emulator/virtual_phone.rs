@@ -1055,6 +1055,17 @@ fn phase_times(state: &Value, now: f64) -> Value {
         "phases":phases})
 }
 
+/// A start's or stop's step times as the script recorded them: an object
+/// with a list of steps, else null.
+fn timing(state: &Value, key: &str) -> Value {
+    match &state[key] {
+        value @ Value::Object(map) if map.get("steps").is_some_and(Value::is_array) => {
+            value.clone()
+        }
+        _ => Value::Null,
+    }
+}
+
 fn application_process_observation(profile: &Value, state: &Value, running: bool) -> Value {
     let launch = &state["launch_receipt"];
     if running
@@ -1172,6 +1183,9 @@ pub fn status(_a: &Value) -> Result {
         // or stop with its seconds, and the disk copy's progress while preparing.
         "phase_started":times["phase_started"],"phase_elapsed_seconds":times["phase_elapsed_seconds"],
         "phases":times["phases"],"copy_progress":copy_progress(&state),
+        // Where the last start and stop spent their time, step by step
+        // (tools/ios_start_timing.py); kept in the run's timing.json too.
+        "start_timing":timing(&state,"start_timing"),"stop_timing":timing(&state,"stop_timing"),
         // Whether the next start's disk copy fits in the profile's installs,
         // and whether it copies the root disk or lays an overlay on it.
         "start_disk":start_disk(&profile,&state,&states::pinned(&directory),false),
@@ -1823,6 +1837,17 @@ mod start_progress_tests {
         );
         // A clock that went back never gives negative seconds.
         assert_eq!(phase_times(&state, 150.0)["phase_elapsed_seconds"], 0.0);
+    }
+
+    #[test]
+    fn timing_is_the_recorded_steps_or_null() {
+        let steps = json!({"steps":[{"step":"disk_copy","seconds":300.0}],"total_seconds":300.0,
+            "slowest":"disk_copy","run":3});
+        let state = json!({"start_timing":steps,"stop_timing":{"steps":"x"}});
+        assert_eq!(timing(&state, "start_timing"), steps);
+        assert!(timing(&state, "stop_timing").is_null());
+        assert!(timing(&json!({}), "start_timing").is_null());
+        assert!(timing(&json!({"start_timing":[1]}), "start_timing").is_null());
     }
 
     #[test]
