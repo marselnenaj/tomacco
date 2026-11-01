@@ -386,6 +386,44 @@ class FlutterTestResultTests(Isolated):
         self.assertTrue(golden["images"]["isolatedDiff"].endswith("test/failures/home_isolatedDiff.png"))
 
 
+    def test_integration_tests_run_on_the_named_device_and_are_read(self):
+        self.tool("flutter", r"""import json,os,sys
+args=sys.argv[1:]
+assert args[:4]==['test','integration_test','-d','emulator-5554'], args
+report=next(a.split(':',1)[1] for a in args if a.startswith('--file-reporter=json:'))
+test=os.path.join(os.getcwd(),'integration_test','app_test.dart')
+events=[{'type':'start','time':0},{'type':'suite','suite':{'id':0,'platform':'android','path':test},'time':0},
+        {'type':'testStart','test':{'id':1,'name':'taps the button','suiteID':0,'line':8},'time':5},
+        {'type':'testDone','testID':1,'result':'success','skipped':False,'hidden':False,'time':2500},
+        {'type':'done','success':True,'time':2600}]
+open(report,'w').write(''.join(json.dumps(e)+'\n' for e in events))
+""")
+        root = self.flutter_project()
+        args = {"path": str(root), "action": "instrumented-test"}
+        with self.assertRaises(StudioError) as refused:
+            dispatch("project.plan", args)
+        self.assertEqual(refused.exception.code, "device_required")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("project.plan", {**args, "device": "emulator-5554"})
+        self.assertEqual(refused.exception.code, "integration_test_missing")
+        (root / "integration_test").mkdir()
+        job = dispatch("project.execute", {**args, "device": "emulator-5554"})
+        done = jobs.wait(job["id"], 30)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        results = dispatch("testing.results", {"path": str(root), "job_id": job["id"]})
+        self.assertEqual(results["totals"]["tests"], 1)
+        self.assertEqual(results["totals"]["passed"], 1)
+        self.assertTrue(results["suites"][0]["name"].endswith("integration_test/app_test.dart"))
+
+    def test_gradle_connected_tests_run_on_the_named_device(self):
+        root = self.root / "App"
+        (root / "app").mkdir(parents=True)
+        (root / "settings.gradle").write_text("include ':app'\n")
+        (root / "gradlew").write_text("#!/bin/sh\n")
+        plan = dispatch("project.plan", {"path": str(root), "action": "instrumented-test", "device": "emulator-5556"})
+        self.assertEqual(plan["steps"][0]["argv"][-1], "connectedDebugAndroidTest")
+        self.assertEqual(plan["env"]["ANDROID_SERIAL"], "emulator-5556")
+
 
 class FlutterSessionTests(Isolated):
     def test_a_flutter_session_reports_its_vm_service_and_devtools(self):

@@ -715,6 +715,11 @@
           "type": "string",
           "description": "Name of an explicitly configured project task",
           "default": ""
+        },
+        "device": {
+          "type": "string",
+          "description": "Device serial from device.list for instrumented-test: required for a Flutter project's integration_test run, and for Gradle the device ANDROID_SERIAL selects",
+          "default": ""
         }
       },
       "required": [
@@ -732,7 +737,7 @@
   {
     "name": "project.execute",
     "title": "Start build / test",
-    "description": "Execute a build, tests, lint or named project task as a durable cancellable job. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.",
+    "description": "Execute a build, tests, lint or named project task as a durable cancellable job. For a Flutter project, test and instrumented-test (flutter test integration_test -d device) also write the JSON reporter's output to build/tomacco, which testing.results reads. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -790,6 +795,11 @@
         "task": {
           "type": "string",
           "description": "Name of an explicitly configured project task",
+          "default": ""
+        },
+        "device": {
+          "type": "string",
+          "description": "Device serial from device.list for instrumented-test: required for a Flutter project's integration_test run, and for Gradle the device ANDROID_SERIAL selects",
           "default": ""
         },
         "timeout": {

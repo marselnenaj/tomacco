@@ -249,6 +249,35 @@ pub fn plan(a: &Value) -> Result {
                 if platform == "ios" && !cfg!(target_os = "macos") {
                     return Err(Error::new("macos_required","project.execute builds Flutter iOS apps only on macOS").remedy("On Linux call ios.flutter_build (it needs ios.toolkit_install), or use remote.run with an SSH Mac workspace"));
                 }
+                if action == "instrumented-test" {
+                    let device = s(a, "device");
+                    if device.is_empty() {
+                        return Err(Error::new(
+                            "device_required",
+                            "Flutter integration tests run on a device; name it with device",
+                        )
+                        .remedy("Pass device, a serial from device.list"));
+                    }
+                    identifier(device, "device identifier", None)?;
+                    if !root.join("integration_test").is_dir() {
+                        return Err(Error::new(
+                            "integration_test_missing",
+                            "This Flutter project has no integration_test directory",
+                        )
+                        .remedy("Add the integration_test package as a dev dependency and its tests in integration_test/, as Flutter's integration testing guide describes"));
+                    }
+                    args = argv(&[
+                        &tool,
+                        "test",
+                        "integration_test",
+                        "-d",
+                        device,
+                        "--reporter",
+                        "expanded",
+                        &format!("--file-reporter=json:{FLUTTER_INTEGRATION_REPORT}"),
+                    ]);
+                    always = argv(&[FLUTTER_INTEGRATION_REPORT]);
+                }
                 if action == "build" {
                     let target = match platform {
                         "android" => {
@@ -376,7 +405,12 @@ pub fn plan(a: &Value) -> Result {
         )
         .remedy("Use an explicitly configured project task for framework-specific commands"));
     }
-    let mut value = json!({"project":project["path"],"cwd":cwd,"steps":[{"argv":args}],"env":tc::environment()?,"artifacts":artifacts,"exclusive":root,"label":format!("{} · {action} · {platform} · {configuration}",s(&project,"name"))});
+    let mut env = serde_json::to_value(tc::environment()?)?;
+    // Gradle's connected tests run on the device ANDROID_SERIAL names.
+    if !s(a, "device").is_empty() && action == "instrumented-test" && kind(&project, "gradle") {
+        env["ANDROID_SERIAL"] = json!(identifier(s(a, "device"), "device identifier", None)?);
+    }
+    let mut value = json!({"project":project["path"],"cwd":cwd,"steps":[{"argv":args}],"env":env,"artifacts":artifacts,"exclusive":root,"label":format!("{} · {action} · {platform} · {configuration}",s(&project,"name"))});
     if !always.is_empty() {
         value["always_artifacts"] = json!(always);
     }
@@ -384,6 +418,8 @@ pub fn plan(a: &Value) -> Result {
 }
 /// Where a Flutter test job's JSON reporter writes, relative to the project.
 pub const FLUTTER_TEST_REPORT: &str = "build/tomacco/flutter_test.json";
+/// Where a Flutter integration test job's JSON reporter writes.
+pub const FLUTTER_INTEGRATION_REPORT: &str = "build/tomacco/integration_test.json";
 
 pub fn execute(a: &Value) -> Result {
     let mut value = plan(a)?;

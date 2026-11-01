@@ -75,6 +75,7 @@ Annotations: read-only, idempotent, open world.
 | `format` | string |  | `"apk"` | one of `apk`, `aab`, `ipa` |
 | `sign` | boolean |  | `false` |  |
 | `task` | string |  | `""` | Name of an explicitly configured project task |
+| `device` | string |  | `""` | Device serial from device.list for instrumented-test: required for a Flutter project's integration_test run, and for Gradle the device ANDROID_SERIAL selects |
 
 ```sh
 tomaccoctl call project.plan '{"path":"<path>"}'
@@ -84,7 +85,7 @@ tomaccoctl call project.plan '{"path":"<path>"}'
 
 **Start build / test**
 
-Execute a build, tests, lint or named project task as a durable cancellable job. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.
+Execute a build, tests, lint or named project task as a durable cancellable job. For a Flutter project, test and instrumented-test (flutter test integration_test -d device) also write the JSON reporter's output to build/tomacco, which testing.results reads. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.
 
 Annotations: writes, not idempotent, open world.
 
@@ -97,6 +98,7 @@ Annotations: writes, not idempotent, open world.
 | `format` | string |  | `"apk"` | one of `apk`, `aab`, `ipa` |
 | `sign` | boolean |  | `false` |  |
 | `task` | string |  | `""` | Name of an explicitly configured project task |
+| `device` | string |  | `""` | Device serial from device.list for instrumented-test: required for a Flutter project's integration_test run, and for Gradle the device ANDROID_SERIAL selects |
 | `timeout` | integer |  | `1800` | 1 to 86400 |
 
 ```sh

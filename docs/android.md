@@ -125,6 +125,17 @@ tomaccoctl call project.execute '{"path":"/absolute/MyApp","action":"test"}'
 tomaccoctl call testing.results '{"path":"/absolute/MyApp","job_id":"JOB_ID"}'
 ```
 
+`"action":"instrumented-test"` with a `device` runs the project's `integration_test`
+directory on that device: `flutter test integration_test -d SERIAL`, its JSON reporter
+writing `build/tomacco/integration_test.json`, which `testing.results` reads the same
+way. Without `device` it answers `device_required`, and without an `integration_test`
+directory `integration_test_missing`. For a Gradle project, `device` sets
+`ANDROID_SERIAL` for the connected tests.
+
+```sh
+tomaccoctl call project.execute '{"path":"/absolute/MyApp","action":"instrumented-test","device":"emulator-5554"}'
+```
+
 Tested with a stand-in `flutter` that writes the JSON reporter's events; Flutter is not
 installed here.
 

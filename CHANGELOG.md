@@ -40,6 +40,9 @@ operations and their JSON results.
   - A running Flutter session's job shows the app's Dart VM service URI and, when Flutter reports them, its DevTools
     and Dart Tooling Daemon URIs under `result.flutter` in `job.get`, with a `devtools_app_uri` that opens DevTools
     on the app.
+  - `project.execute` with `action` `instrumented-test` and the new `device` argument runs a Flutter project's
+    `integration_test` directory on that device (`flutter test integration_test -d SERIAL`), with results for
+    `testing.results` in `build/tomacco/integration_test.json`. For Gradle, `device` sets `ANDROID_SERIAL`.
 - **Session log and replay.** With `TOMACCO_SESSION_LOG` set to a file, every operation called through `tomaccoctl call`
   or `tomaccoctl mcp` is appended to it as a JSON line: arguments with recognised secrets masked, outcome, a short
   result summary and the duration. `tomaccoctl replay FILE [--dry-run]` calls the logged operations that change
