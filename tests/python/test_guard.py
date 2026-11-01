@@ -204,7 +204,7 @@ class GuardTests(Isolated):
 
         def stop():
             server.close()
-            path.unlink()
+            path.unlink(missing_ok=True)
             if directory.parent == Path("/tmp"):
                 directory.rmdir()
         self.addCleanup(stop)
