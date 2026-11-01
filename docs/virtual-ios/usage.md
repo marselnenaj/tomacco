@@ -213,21 +213,21 @@ through the chain to check the Preboot volume as before.
   (`copy`, `overlay` or `flatten`), and `start_disks` the choice.
 
 **What ran on a live phone.** Two starts of the iPhone 18 Pro profile on the development host (ext4 on NVMe), the second
-layered on the first:
+layered on the first, then a start with `"start_disks":"copy"`, which flattened that two-layer chain into a raw disk:
 
-| | Copy (the run before) | Overlay, first | Overlay, layered |
-| --- | --- | --- | --- |
-| Disk copy and guest-tools install | 89 s | 16.3 s | 16.2 s |
-| Start until the app's launch was accepted | 524 s | 217 s | 230 s |
-| Verified stop | 258 s | 4.9 s | 4.4 s |
-| New disk space for the run | 32 GiB | 0.4 GiB | 0.4 GiB |
+| | Copy (the run before) | Overlay, first | Overlay, layered | Flatten to raw |
+| --- | --- | --- | --- | --- |
+| Disk preparation and guest-tools install | 89 s | 16.3 s | 16.2 s | 66 s (`qemu-img convert` 54 s) |
+| Start until the app's launch was accepted | 524 s | 217 s | 230 s | 569 s |
+| Verified stop | 258 s | 4.9 s | 4.4 s | 199 s |
+| New disk space for the run | 32 GiB | 0.4 GiB | 0.4 GiB | 24 GiB (sparse) |
 
-The engine opened `system.qcow2` with the `qcow2` block driver, the helper installed the guest tools through it, both stops
+The engine opened `system.qcow2` with the `qcow2` block driver, the helper installed the guest tools through it, all stops
 ended with exit code 0, a confirmed flush and complete hashes, and the second start's overlay named the first's as its
-backing file, which named the raw base. The copy run's boot itself was slower that day (435 s from the copy to the
-accepted launch), so most of the difference in the second row is not the disk; the first and third rows are. Not run live yet: the
-flattening after 8 layers, and a start without `qemu-img`. A profile whose helper was assembled by hand may lack
-`qemu-img` beside it; the start then copies and says so in its log.
+backing file, which named the raw base. Most of the difference is hashing: `start_timing` and `stop_timing` of the raw
+start show 198 s to hash the 32 GiB disk before the boot and 198 s after it, which an overlay start does not spend on its
+base. Not run live yet: the flattening that 8 layers trigger by themselves, and a start without `qemu-img`. A profile
+whose helper was assembled by hand may lack `qemu-img` beside it; the start then copies and says so in its log.
 
 ## The graphics memory guard
 

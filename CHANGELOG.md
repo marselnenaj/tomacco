@@ -17,7 +17,10 @@ operations and their JSON results.
   - `project.run` with `device` `virtual-iphone` builds an xtool project, deploys it on the running virtual iPhone and opens
     it in one job, then looks for a new crash report of the app for `crash_check_seconds` and fails the job as `crashed`
     when one appears. The run's `build/tomacco/virtual_iphone_run.json` has the build and deploy seconds, `unchanged`, the
-    pid and the crash check. Refused at once when the phone is off. Unit-tested; not run on a live phone.
+    pid and the crash check. Refused at once when the phone is off. Run once on a live phone with
+    examples/hello-virtual-iphone: built in 4.7 s, deployed in 33.2 s, then iOS refused the open right after the install
+    (`InvalidRequest`) and the job failed; an open 40 s later was accepted. That boot's display stayed black, so the app
+    was not seen on screen.
   - `project.watch` with `device` `virtual-iphone` rebuilds and redeploys an xtool project on each save, leaves xtool's
     `xtool`, `.xtool` and `.bsp` output out, and logs one line per cycle with the build and deploy seconds, `unchanged`,
     the pid and the crash check. Unit-tested; not run on a live phone.
@@ -155,7 +158,8 @@ operations and their JSON results.
     chain. `ios.emulator.prepare_guest_tools` takes `root_overlay` and `qemu_img`, and `start_disk` in
     `ios.virtual.status` names the `method`. Run on a live phone twice, the second start layered on the first: the disk
     preparation took 16 s instead of 89 s for a copy, a verified stop 4.4 to 4.9 s instead of 258 s, and a run 0.4 GiB
-    instead of 32 GiB. The flattening after 8 layers has not run live.
+    instead of 32 GiB. Switching back to `copy` flattened the chain live in 54 s; the flattening that 8 layers trigger
+    has not run live.
   - Saved phone states: `ios.virtual.state_save` keeps the last verified run under a name without copying it,
     `ios.virtual.states` lists the names, `ios.virtual.state_use` makes one the base of the next start and
     `ios.virtual.state_delete` removes a name and the copy only it kept. Pruning and `ios.virtual.cleanup` keep named runs.
@@ -167,7 +171,9 @@ operations and their JSON results.
     unlock and launch; guest exit, output hashing), with the slowest step and the total, also kept in the run's
     `timing.json`. The disk preparation now logs when each of its steps began (`step_times`), and the launcher's
     `request.json` and `result.json` have `timing`: hashing seconds and bytes before and after the session and when
-    the engine started and exited. Unit-tested with synthetic step logs, not run on a live phone.
+    the engine started and exited. Read on a live start that flattened an overlay chain: preparation 10 s, disk copy
+    54 s, input hashing 198 s (the slowest), app install 69 s, guest settings 153 s, 614 s in all; its stop spent
+    198 s of 199 s hashing the output.
   - `ios.virtual.host_check` adds `host` (logical processors, physical cores, memory) and `recommend`: what to change in
     the configured profile's `host_cpu_policy` and `translation_cache_mib` for this host, with the current and suggested
     value and why. It changes nothing. Unit-tested; the effect of a suggested setting has not been measured on a live
@@ -184,7 +190,7 @@ operations and their JSON results.
   - `last_run` in `ios.virtual.status` says in plain words how the last finished run ended: whether it was verified,
     the launcher's outcome with a summary, each reason it was not verified (no exit code 0, incomplete storage hashes,
     no confirmed flush, the graphics memory guard) and a remedy. A failed stop's error and a boot that ended early say
-    the same. Unit-tested against recorded launcher records, not read off a live phone.
+    the same. Read off a live phone after a verified stop (`verified:true`, no reasons).
   - A start that fails after the boot ends with what to call next, and `next` in `ios.virtual.status` says the same:
     resume with `ios.virtual.start`, which adopts the still-running guest without a new disk copy, with
     `{"open_app":false}` when an app launch's outcome is unknown, after unlocking a passcode, or stop again. Unit-tested
@@ -192,21 +198,22 @@ operations and their JSON results.
   - `host` in `ios.virtual.status` shows the graphics card's memory against the graphics memory guard's limit on every
     call, from the running guest's own guard checks (which the launcher now publishes as `gpu-memory.json`) or from
     /sys, and the host's I/O and memory pressure. A start that boots returns `warnings` when the card is already low or
-    the host under pressure. Unit-tested with recorded values, not watched beside a live guest.
+    the host under pressure. Beside a live guest it read the guard's figures (3.2 GiB of 16 GiB used, level `ok`).
   - `liveness` in `ios.virtual.status` says whether a running phone still shows signs of life (new frames, console
     output, and with `{"probe":true}` an answer from the guest service): `live`, `quiet`, `stalled` or `booting`, with
     what it last showed and when. A stalled phone gets `recovery`, the typed calls to make in order (`restart_ui`, then
     `ios.virtual.stop`); the status itself never acts on the phone. `ios.virtual.configure {"stall_seconds"}` sets the
-    limit. Unit-tested only, not tried on a hung live phone.
+    limit. Not tried on a hung live phone. On a live phone whose display stayed black (`display_visible:false`), it said
+    `live` from console output while the frame had not changed for 410 s.
   - `ios.virtual.unlock` leaves the running phone's lock screen the way the start does, as a short job, and never
     enters a passcode. `ios.virtual.deploy` unlocks first before it opens the app, and `testing.run` on
     `virtual-iphone` before its first step, failing with the new `ios_virtual_locked` when it cannot. Tested with
-    scripted guest replies, not yet on a live phone.
+    scripted guest replies; on a live phone the deploy's unlock found the screen already unlocked.
   - `ios.virtual.doctor` checks the configured phone in one pass, warn or fail report with a remedy per item: every
     input `profile.json` names (with `tools/ios_virtual_profile.py`'s checks, run by the new
     `tools/ios_virtual_doctor.py`), guest tools and engine against this checkout's sources, the saved states' disks,
     the last run's verdict, the next start's disk copy, every `ios.virtual.host_check` item, and the graphics card and
-    host pressure right now. Unit-tested with profiles made in the tests, not run against a full live profile.
+    host pressure right now. Against the full live test profile it warned only about passt, which is not installed.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
   - The desktop's phone view sends typed characters to the phone as text, so `@`, `ä` and the like arrive as the host's
