@@ -13,7 +13,11 @@ Panel {
     readonly property color foreground: bar ? bar.foreground : Color.foreground
     readonly property color dim: root.alpha(foreground, 0.62)
     readonly property color faint: root.alpha(foreground, 0.4)
-    readonly property color accent: "#f2361f"
+    // The shell theme's accent where it stands out from the bar's text and reads on its
+    // background (as the desktop's "Use the Omarchy theme's accent" checks), else Tomacco's red.
+    // The panel setting themeAccent turns this off.
+    readonly property color brand: "#f2361f"
+    readonly property color accent: setting("themeAccent",true) && readable(Color.accent,Color.background) && readable(Color.accent,foreground,1.6) ? Color.accent : brand
     readonly property color good: "#2fa84f"
     readonly property color bad: bar ? bar.urgent : Color.urgent
     readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
@@ -97,6 +101,15 @@ Panel {
     implicitHeight: button.implicitHeight
 
     function alpha(c,a) { return Qt.rgba(c.r,c.g,c.b,a) }
+    function luminance(c) {
+        let f=v=>v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4)
+        return 0.2126*f(c.r)+0.7152*f(c.g)+0.0722*f(c.b)
+    }
+    // WCAG contrast ratio of two colours is at least `minimum`.
+    function readable(a,b,minimum) {
+        let x=luminance(a), y=luminance(b)
+        return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05) >= (minimum || 3)
+    }
     function isReady(device) { return device.state==="device" || device.state==="connected" || device.state==="online" }
     function refresh() { if(!poll.running) { poll.started=false; poll.running=true } }
     function unreachable(detail) { hasError=true; message=detail || root.tr("Tomacco is not reachable. Check the installation.","Tomacco ist nicht erreichbar. Installation prüfen."); messageIsError=true }
@@ -162,11 +175,12 @@ Panel {
             ["preview.configure",{session:"main",native:{platform:target.platform,device:target.id,connect:true,profile_id:target.profile_id || "",frame:true,detached:true}}]])
         close()
     }
+    // tomaccoctl omarchy screenshot saves the live device where Omarchy keeps
+    // screenshots (OMARCHY_SCREENSHOT_DIR, else the Pictures folder) and copies it.
     function screenshot() {
-        if(!liveRuntime) return
-        let stamp=Qt.formatDateTime(new Date(),"yyyy-MM-dd-HHmmss")
-        let path=home+"/Pictures/Tomacco/"+liveRuntime.device+"-"+stamp+".png"
-        run(root.tr("Saving screenshot","Screenshot wird gespeichert"),[["runtime.capture",{session:liveRuntime.session,path:path},root.tr("Screenshot saved: ","Screenshot gespeichert: ")+path]])
+        if(!liveRuntime || shot.running) return
+        busyLabel=root.tr("Saving screenshot","Screenshot wird gespeichert"); message=""
+        shot.running=true
     }
     // Opens a job's log in the desktop's viewer for text files; the control
     // plane names the file (job.get log_path).
@@ -313,6 +327,20 @@ Panel {
         // A program that cannot start reports neither output nor an exit.
         onRunningChanged: if(!running && !started) { finish(false,root.tr("Tomacco is not reachable. Check the installation.","Tomacco ist nicht erreichbar. Installation prüfen.")); Qt.callLater(root.next) }
         onExited: Qt.callLater(root.next)
+    }
+    Process {
+        id: shot
+        command: [root.cli,"omarchy","screenshot","--quiet"]
+        stdout: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: {
+                let value=null
+                try { value=JSON.parse(text) } catch(e) {}
+                root.busyLabel=""
+                if(value && value.path) { root.message=root.tr("Screenshot saved: ","Screenshot gespeichert: ")+value.path+(value.copied ? root.tr(" (copied)"," (kopiert)") : ""); root.messageIsError=false }
+                else { root.message=value && value.error ? value.error.message : root.tr("The action could not be completed.","Aktion konnte nicht abgeschlossen werden."); root.messageIsError=true }
+            }
+        }
     }
     Process {
         id: logLookup
