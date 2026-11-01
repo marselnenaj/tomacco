@@ -819,6 +819,18 @@ fn start_disk(profile: &Value, state: &Value, pins: &[(PathBuf, String)], probe:
         "reclaimable_bytes":reclaimable,"reflink":reflink,"enough":enough,"method":method})
 }
 
+/// `start_disk` of the configured profile, as `ios.virtual.status` reports
+/// it; null without a readable profile.
+pub(crate) fn next_start_disk() -> Value {
+    let Ok(directory) = directory() else {
+        return Value::Null;
+    };
+    match records(&directory) {
+        Ok((profile, state)) => start_disk(&profile, &state, &states::pinned(&directory), false),
+        Err(_) => Value::Null,
+    }
+}
+
 /// What a cleanup of the profile's `installs` would do: the disk copies the
 /// start recorded as its own (`created`) that are neither the verified base,
 /// the current run nor a start's attempt, and the reason each other copy is

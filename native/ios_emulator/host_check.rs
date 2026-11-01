@@ -383,6 +383,16 @@ fn support_directory(profile: Option<&Value>, given: &str) -> Option<PathBuf> {
     source_checkout().map(|root| root.join(".tooling/ios-sptm/support"))
 }
 
+/// What the next start of the configured profile needs on its `installs`,
+/// from `start_disk` in `ios.virtual.status`: an overlay start copies only the
+/// small disks, a copy (or a flattening) the whole root disk.
+fn start_need(disk: &Value) -> (u64, String) {
+    match (disk["method"].as_str(), disk["needed_bytes"].as_u64()) {
+        (Some("overlay"), Some(needed)) => (needed, "one overlay start".to_string()),
+        _ => (START_DISK, "one start's disk copy".to_string()),
+    }
+}
+
 pub(crate) fn gather(a: &Value) -> Result<Facts> {
     let profile = virtual_phone::directory()
         .ok()
@@ -395,11 +405,8 @@ pub(crate) fn gather(a: &Value) -> Result<Facts> {
             "the setup chain".to_string(),
         )
     } else if let Some(installs) = profile.as_ref().and_then(|p| p["installs"].as_str()) {
-        (
-            PathBuf::from(installs),
-            START_DISK,
-            "one start's disk copy".to_string(),
-        )
+        let (needed, needed_for) = start_need(&virtual_phone::next_start_disk());
+        (PathBuf::from(installs), needed, needed_for)
     } else {
         (home()?, SETUP_DISK, "the setup chain".to_string())
     };
@@ -575,6 +582,30 @@ mod tests {
                 .unwrap()
                 .contains("kvm group")
         );
+    }
+
+    #[test]
+    fn an_overlay_start_needs_only_its_small_disks() {
+        let overlay = json!({"method":"overlay","needed_bytes":GIB + 33 * (1 << 20)});
+        let (needed, what) = start_need(&overlay);
+        assert_eq!(needed, GIB + 33 * (1 << 20));
+        assert!(what.contains("overlay"));
+        // A copy, a flattening or an unreadable base reckon with a whole copy.
+        for disk in [
+            json!({"method":"copy","needed_bytes":GIB}),
+            json!({"method":"flatten","needed_bytes":GIB}),
+            Value::Null,
+        ] {
+            assert_eq!(
+                start_need(&disk),
+                (START_DISK, "one start's disk copy".to_string())
+            );
+        }
+        let mut facts = ready();
+        facts.free = Some(20 * GIB);
+        facts.needed = needed;
+        facts.needed_for = what;
+        assert_ne!(status(&facts, "disk").0, "fail");
     }
 
     #[test]
