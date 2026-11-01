@@ -4294,6 +4294,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Ejecutar en Mac</translation>
     </message>
     <message>
+        <source>Run steps in order</source>
+        <translation>Ejecutar pasos en orden</translation>
+    </message>
+    <message>
         <source>Run on every Android device</source>
         <translation>Ejecutar en todos los dispositivos Android</translation>
     </message>

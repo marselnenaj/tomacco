@@ -789,6 +789,30 @@ for line in sys.stdin:
         jobs.send(job['id'],'quit');self.assertEqual(jobs.wait(job['id'],5)['state'],'succeeded')
         again=dispatch('project.run',args);self.assertNotEqual(again['id'],job['id'])
 
+    def test_a_workflow_runs_its_steps_in_order_and_stops_at_the_first_failure(self):
+        self.tool('flutter', 'import sys\nprint("building", flush=True)\nsys.exit(1 if "fail" in open("mode").read() else 0)\n')
+        (self.root / 'pubspec.yaml').write_text('flutter:\n'); (self.root / 'android').mkdir()
+        (self.root / 'mode').write_text('pass')
+        build = {'operation': 'project.execute', 'arguments': {'path': str(self.root), 'platform': 'android', 'action': 'build'}}
+        status = {'operation': 'job.get', 'arguments': {'job_id': {'from_step': 0, 'pointer': '/result/id'}}}
+        done = dispatch('workflow.run', {'steps': [build, status], 'timeout': 60})
+        self.assertTrue(done['ok'])
+        self.assertEqual(done['steps'][0]['result']['state'], 'succeeded')
+        self.assertEqual(done['steps'][1]['result']['id'], done['steps'][0]['result']['id'])
+        (self.root / 'mode').write_text('fail')
+        with self.assertRaises(StudioError) as failed:
+            dispatch('workflow.run', {'steps': [build, status], 'timeout': 60})
+        self.assertEqual(failed.exception.code, 'workflow_step_failed')
+        self.assertEqual(failed.exception.details['steps'][0]['result']['state'], 'failed')
+        self.assertEqual(failed.exception.details['skipped'], ['job.get'])
+        # A destructive step without confirm stops the workflow before its first step.
+        jobs_before = len(jobs.listing(200))
+        cancel = {'operation': 'job.cancel', 'arguments': {'job_id': done['steps'][0]['result']['id']}}
+        with self.assertRaises(StudioError) as refused:
+            dispatch('workflow.run', {'steps': [build, cancel]})
+        self.assertEqual(refused.exception.code, 'workflow_needs_confirmation')
+        self.assertEqual(len(jobs.listing(200)), jobs_before)
+
     def test_repeated_build_reuses_active_job_and_allows_next_build_after_finish(self):
         self.tool('flutter','import time;print("building",flush=True);time.sleep(.7)\n')
         (self.root/'pubspec.yaml').write_text('flutter:\n');(self.root/'android').mkdir()

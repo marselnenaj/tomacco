@@ -66,6 +66,7 @@ mod verify;
 mod virtual_run;
 mod visual;
 mod watch;
+mod workflow;
 mod workspaces;
 use core::*;
 use serde_json::{Value, json};

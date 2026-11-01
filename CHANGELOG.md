@@ -6,7 +6,13 @@ operations and their JSON results.
 
 ## Unreleased
 
+`tomaccoctl` now has one typed API of 225 operations.
+
 ### Added
+
+- `workflow.run` runs up to 20 operations in order in one call, follows each job a step starts until it ends, stops at
+  the first step that fails and returns every step's result. A destructive step needs its own `confirm`; a later step
+  can take a value from an earlier step's result with `{"from_step": N, "pointer": "/result/..."}`.
 
 - MCP resource templates, listed by `resources/templates/list`: `tomacco://jobs/{id}` (the job), `tomacco://jobs/{id}/log`
   (the end of its log) and `tomacco://reference/{operation}` (the operation's help and schema), and the resource
@@ -16,8 +22,8 @@ operations and their JSON results.
   an `ios.virtual.setup` stage marked `ask_first`, instead of the call failing or the agent having to ask. A no answers
   `consent_declined`. Other clients see no change.
 - `TOMACCO_MCP_TOOLS` picks a shorter MCP tool list for agents with a small context: `compact` (first sentences, no
-  argument descriptions; 135,589 bytes instead of 263,295) or `grouped` (one tool per area that takes an operation and
-  its arguments; 28,661 bytes). Both add a `schema` tool for one operation's whole schema.
+  argument descriptions; 136,247 bytes instead of 265,135) or `grouped` (one tool per area that takes an operation and
+  its arguments; 29,261 bytes). Both add a `schema` tool for one operation's whole schema.
 
 ## 1.2.1
 

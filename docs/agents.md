@@ -88,14 +88,14 @@ The server also offers three prompts, short recipes a client can show as command
 
 ### A shorter tool list
 
-The full tool list is every operation with its whole schema, 263,295 bytes of `tools/list` result in this
+The full tool list is every operation with its whole schema, 265,135 bytes of `tools/list` response in this
 version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env` of the client's server entry:
 
-| Value | Tools | `tools/list` result |
+| Value | Tools | `tools/list` response |
 | --- | --- | --- |
-| `full` (the default) | One per operation, with every description. | 263,295 bytes |
-| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 135,589 bytes |
-| `grouped` | One per area, such as `android` or `job`: 24 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 28,661 bytes |
+| `full` (the default) | One per operation, with every description. | 265,135 bytes |
+| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 136,247 bytes |
+| `grouped` | One per area, such as `android` or `job`: 25 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 29,261 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
@@ -215,6 +215,27 @@ is. Interrupting `--wait` leaves the job running.
   order, each with a `time` in seconds since 1970; a state that ended carries `exit_code` and
   `error`. Pass the returned `next_after` as `after` to read only what is new. Jobs created by an
   earlier version have only their creation and end, marked `synthesized`.
+
+### Several steps in one call
+
+`workflow.run` runs up to 20 operations in order and answers with each step's result. A step that starts
+a job is followed until the job ends, or until its app is up (phase `ready`, as a Flutter run that keeps
+its job is), unless the step has `"wait":false`. The first step that fails, or whose job does not
+succeed, stops the rest: the answer is `workflow_step_failed` with every step so far under
+`details.steps` and the operations not run under `details.skipped`. Unknown operations and wrong
+arguments are refused before the first step runs.
+
+```sh
+tomaccoctl call workflow.run '{"steps":[{"operation":"project.execute","arguments":{"path":"/absolute/project","platform":"android","action":"build"}},{"operation":"job.get","arguments":{"job_id":{"from_step":0,"pointer":"/result/id"}}}]}'
+```
+
+An argument value `{"from_step": N, "pointer": "/result/..."}` is replaced by that JSON pointer into
+step `N`'s record; for a followed job, `/result` is the finished job, so `/result/artifacts/0/path` is
+its first artifact. A destructive step, such as `device.install`, runs only with `"confirm":true` on that
+step; without it nothing runs and the answer is `workflow_needs_confirmation`. Set it only after the
+person agreed. `timeout` (1800 seconds by default) covers the whole workflow; when it runs out, the
+current job keeps running. The call holds its MCP request or terminal until it ends, so for a single
+long build `project.execute` with `job.wait` is just as good.
 
 ### Cleaning up
 
