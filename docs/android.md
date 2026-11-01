@@ -328,7 +328,8 @@ For agents, the same device is reached by `runtime.input`, `runtime.capture` and
 display session, use `device.capture`, `device.logs`, `android.hierarchy`,
 `android.input`, `android.record`, `android.mirror`, `android.ports`,
 `android.permission`, `android.deep_link`, `android.performance`, `android.settings`,
-`android.display`, `android.notifications`, `android.app_files` and `android.emulator`.
+`android.display`, `android.notifications`, `android.app_files`, `android.emulator`,
+`android.sensors`, `android.app_links` and `android.network_capture`.
 
 `android.input` types ASCII text with `adb shell input text`. Other text, such as
 `Grüße` or emoji, cannot go that way, so Tomacco pastes it: it starts the configured
@@ -492,6 +493,66 @@ tomaccoctl call android.app_files '{"device":"emulator-5554","bundle_id":"dev.ex
 - Listing, pulling and the refusal for a non-debuggable app were checked on the API 36
   x86_64 emulator with a debug build.
 
+## App Links
+
+`android.app_links` checks an app's [Android App Links](https://developer.android.com/training/app-links): which web
+domains it asks Android to verify, whether they are verified, and which app a link opens.
+
+```sh
+tomaccoctl call android.app_links '{"device":"emulator-5554","bundle_id":"dev.example.newapp"}'
+tomaccoctl call android.app_links '{"device":"emulator-5554","bundle_id":"dev.example.newapp","action":"verify","seconds":30}'
+tomaccoctl call android.app_links '{"device":"emulator-5554","bundle_id":"dev.example.newapp","action":"resolve","url":"https://example.com/item/1"}'
+tomaccoctl call android.app_links '{"device":"emulator-5554","bundle_id":"dev.example.newapp","action":"set","state":"approved"}'
+tomaccoctl call android.deep_link '{"device":"emulator-5554","url":"https://example.com/item/1"}'
+```
+
+- `status` reads `pm get-app-links`: each domain the app declares with `autoVerify` and its state (`verified`,
+  `none`, `approved`, `denied`, `system_configured`, or a number from the verifier), sorted into `verified` and
+  `unverified`, and the user's choices. It needs Android 12 (API 31) or newer.
+- `verify` asks Android to verify again and waits up to `seconds` while a domain is still `none`. Android fetches
+  `https://DOMAIN/.well-known/assetlinks.json` for that, so the device needs a network and the file must list the
+  app's signing certificate. A state set by hand stays until `set` with `none` resets it.
+- `resolve` names the `handler` activity and `package` that the link opens, as Android resolves it when a link is
+  opened, or `chooser:true` when Android would ask; `candidates` lists every app that could open it, and with
+  `bundle_id`, `opens_in_app` says whether it is that app.
+- `set` approves, denies or resets (`none`) the app's domains, or the `domains` given, to test a debug build that
+  the live domain does not list.
+- `android.deep_link` opens the link and its result names the `activity` and `package` that took it.
+- On the API 36 x86_64 emulator, online, with YouTube's domains: `status` read them, `set` `denied` made `resolve`
+  answer Chrome instead of YouTube, and after `set` `none`, `verify` had all four domains verified in 1 s, after
+  which `resolve` answered YouTube. While a device with a screen lock has not been unlocked since it booted,
+  `resolve` found no handler even for Chrome.
+
+## Network capture
+
+`android.network_capture` records an emulator's network traffic, or only what one app sends, and summarises it.
+It needs `opt_in:true`, because the capture holds every packet, contents included.
+
+```sh
+tomaccoctl call android.network_capture '{"device":"emulator-5554","action":"start","opt_in":true,"bundle_id":"dev.example.newapp"}'
+tomaccoctl call android.network_capture '{"device":"emulator-5554","action":"stop","path":"/absolute/newapp.pcap"}'
+tomaccoctl call android.network_capture '{"action":"summary","path":"/absolute/newapp.pcap"}'
+```
+
+- The summary lists `hosts` with address, port, protocol, the names seen for them, bytes sent and received and
+  connections; `tls_server_names`; `http_requests` with method, host and path, without the query; and
+  `dns_queries`. It holds no contents, headers other than Host, or query strings.
+- HTTPS stays encrypted: no certificate is installed, so only the server names a TLS connection announces are
+  seen. With Private DNS, DNS goes over TLS and its names are not seen either.
+- **Privacy.** The pcap file holds every captured packet, including the contents of unencrypted requests. It is
+  written readable only by you, under `path` or Tomacco's data directory, and the copy on the emulator is deleted.
+  Capture only test accounts and test data, and delete the file when you are done.
+- It runs the system image's `tcpdump` as root through `su`, which Google APIs and AOSP emulator images allow and
+  Google Play images and phones do not (`root_unavailable`). adb itself is not restarted as root.
+- With `bundle_id`, an iptables rule logs the packets the app sends, by its user ID, and tcpdump reads only those;
+  `stop` removes the rule. Answers to the app are not captured, so `bytes_received` stays 0. Without `bundle_id`,
+  every interface of the emulator is captured in both directions.
+- On the API 36 x86_64 emulator: a capture of the whole emulator caught a plain HTTP request sent with `nc` as
+  `GET example.com/probe`, without its `?token=` query, and the DNS query for `example.com`; a capture of Chrome
+  alone listed its TLS server names, such as `accounts.google.com`, and one HTTP request. No iptables rule was left
+  afterwards. The emulator console's own `network capture` wrote an empty file on this emulator, which is why
+  tcpdump is used.
+
 ## Sound
 
 On Android 11 and newer, output sound is forwarded to the computer by default when
@@ -571,6 +632,98 @@ tomaccoctl call android.emulator '{"device":"emulator-5554","action":"network","
 - The console answers some refusals with `KO` while adb still succeeds, for example a
   snapshot load in an emulator started with `-read-only`. Tomacco reports those as
   `emulator_refused` with the console's reason.
+
+### Quick Boot
+
+A Tomacco-managed emulator resumes where it stopped instead of booting. `android.emulator` with `action` `stop`
+first saves its Quick Boot snapshot, and the next `android.avd_start` loads it. The start's result says how under
+`boot`: `{"mode":"quick","snapshot":"default_boot"}`, or `cold` with the `reason`.
+
+```sh
+tomaccoctl call android.emulator '{"device":"emulator-5554","action":"stop"}'
+tomaccoctl call android.avd_start '{"name":"First","headless":true}'
+tomaccoctl call android.avd_start '{"name":"First","headless":true,"cold_boot":true}'
+```
+
+- `cold_boot:true` boots fully and leaves the snapshot as it is. `save_quick_boot:false` stops without saving.
+- Only emulators in Tomacco's own registry are saved; one created by Android Studio or avdmanager keeps its own
+  settings.
+- After `android.avd_configure` or `android.avd_profile` the old snapshot no longer fits: the next start removes it
+  and boots cold, and the stop after that saves a new one.
+- A refused save, for example in an emulator started with `-read-only`, still stops the emulator; `quick_boot` says
+  why it was not saved.
+- A snapshot holds the emulator's memory: for a 4 GB emulator it took 3.7 GB on disk.
+- Measured on the development host, API 36 x86_64, from the call to `sys.boot_completed`: a Pixel 11 Pro Fold
+  emulator booted cold in 21.4 s and quick in 8.6 s, a Pixel 11 emulator in 23.8 s and 9.5 s (its snapshot saved
+  with the same console command before this was built in). Saving at the stop took 3.9 to 4.9 s.
+
+### Camera image
+
+`camera_image` makes the emulator's camera show a PNG or JPEG instead of its scene, for apps that scan QR codes,
+barcodes or documents. `camera_facing` picks `back` (the default) or `front`.
+
+```sh
+tomaccoctl call android.avd_start '{"name":"First","camera_image":"/absolute/qr-code.png"}'
+```
+
+- It applies when the emulator process starts, so stop a running emulator first. Such a start boots cold, because
+  a snapshot keeps the camera it was saved with.
+- The emulator fits the image to a 4:3 landscape frame. The stock Camera app, held upright, showed only the left
+  part of it, about 720 of 1280 pixels across. A 1280x960 image with the code inside its left half worked: zbar read
+  the code from a screenshot of the Camera app and from the photo it took, on the API 36 x86_64 emulator.
+- The image does not change while the emulator runs. To show another one, stop and start again.
+
+### Foldables, tablets, TV and Wear
+
+`android.avd_create` with a foldable profile, such as `pixel-11-pro-fold`, `galaxy-z-fold8` or
+`galaxy-z-fold8-ultra`, gives the AVD a hinge: the display is the open inner screen and the folded outer screen is
+its first display region, as in the SDK's own foldable definitions. `android.sensors` then changes its posture.
+Tablet profiles, such as `galaxy-tab-s12-plus`, set the tablet's resolution and density on a phone image.
+
+```sh
+tomaccoctl call android.avd_create '{"name":"Fold","system_image":"system-images;android-36;google_apis;x86_64","profile_id":"pixel-11-pro-fold"}'
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"posture","posture":"half-open"}'
+```
+
+- `posture` is `closed`, `half-open` or `open`. The result reads back the hinge angle and Android's device state,
+  which apps see through Jetpack WindowManager. On a Pixel 11 Pro Fold emulator the three postures gave the states
+  closed, half-open and open with hinge angles of 15, 90 and 165 degrees.
+- Without a window (`headless`) the display kept its open size of 2076x2152 when closed; only the device state
+  changed.
+- A TV, Wear OS, Automotive or XR system image, such as `system-images;android-36;google-tv;x86_64` or
+  `system-images;android-36;android-wear-signed;x86_64`, is refused with `form_factor_unsupported`: Tomacco's
+  profiles describe phones, foldables and tablets. The answer names the avdmanager command and the SDK's device
+  definition (`tv_1080p`, `wearos_large_round`) that create one; `android.avd_start` finds such an AVD in
+  `~/.android/avd`. No TV or Wear emulator has been run with Tomacco.
+
+### Sensors and fingerprint
+
+`android.sensors` sets the emulator's simulated sensors through its console.
+
+```sh
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"status"}'
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"orientation","orientation":"landscape"}'
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"shake"}'
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"proximity","near":true}'
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"light","lux":20000}'
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"set","sensor":"pressure","values":[990]}'
+tomaccoctl call android.sensors '{"device":"emulator-5554","action":"fingerprint","finger_id":1}'
+```
+
+- `status` lists every sensor, whether it is enabled and its values.
+- `orientation` turns the device by setting gravity on the accelerometer, waits up to 3 s for Android to turn
+  the display and reads the rotation back: `applied` says whether it did. Android turns only with auto-rotate on and
+  when the app allows it; phones do not turn to `reverse-portrait`. To lock a rotation regardless of sensors, use
+  `android.display`. In Settings on an API 36 Pixel 11 Pro Fold emulator, `landscape` gave a rotation of 90
+  degrees and `portrait` 0; on a Pixel 11 emulator, gravity for `reverse-portrait` did not turn the display.
+- `shake` swings the accelerometer between two sides for about a second and then puts gravity back. It was not
+  checked against an app's shake detection.
+- `fingerprint` touches the sensor with `finger_id` and lifts it. To enroll, set a screen lock (for example `adb
+  shell locksettings set-pin 1111`), open **Settings › Security › Fingerprint** and call it each time the screen asks
+  for a touch: twelve calls enrolled a finger on the API 36 emulator, and one more unlocked the lock screen. The same
+  touch answers an app's biometric prompt.
+- `set` takes any sensor name from `status` with its values, such as `magnetic-field` or `humidity`.
+- Phones answer `not_emulator`.
 
 ## Every device at once
 

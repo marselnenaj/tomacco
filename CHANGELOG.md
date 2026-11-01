@@ -4,6 +4,39 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+`tomaccoctl` now has one typed API of 227 operations.
+
+### Added
+
+- **Quick Boot.** `android.emulator` `stop` saves a Tomacco-managed emulator's Quick Boot snapshot first
+  (`save_quick_boot`, on by default), and `android.avd_start` resumes from it; its result's `boot` says `quick` or
+  `cold` and why. After `android.avd_configure` or `android.avd_profile` the old snapshot is removed once. On the
+  development host a Pixel 11 Pro Fold emulator (API 36 x86_64) booted cold in 21.4 s and quick in 8.6 s; the save
+  took 3.9 to 4.9 s and 3.7 GB for a 4 GB emulator.
+- `android.avd_start` takes `camera_image`: the emulator's back or front camera shows a PNG or JPEG, for QR code and
+  document scanning. A QR code in such an image was read by zbar from the stock Camera app's preview and photo.
+- `android.sensors` simulates an emulator's sensors: any sensor's values, the device turned by gravity with the
+  rotation read back, a shake, proximity, light, a fingerprint touch, and a foldable's posture. On the API 36
+  emulator, fingerprint touches enrolled a finger in Settings and unlocked the lock screen, and the postures gave
+  Android's closed, half-open and open device states.
+- A foldable profile such as `pixel-11-pro-fold` gives the AVD a hinge, with the open screen as its display and the
+  folded one as a display region.
+- `android.app_links` reads an app's App Links verification per domain, verifies again, names the app and activity a
+  link opens or the chooser, and approves, denies or resets domains for tests. Run online against YouTube's domains on
+  the API 36 emulator. `android.deep_link` names the `activity` and `package` that opened the link.
+- `android.network_capture` captures an emulator's traffic, or what one app sends, after `opt_in:true`, with the
+  image's tcpdump as root, and summarises hosts, TLS server names, HTTP requests without their query and DNS queries.
+  The pcap file is readable only by you. HTTPS stays encrypted: no certificate is installed. Run on the API 36
+  emulator for the whole emulator and for Chrome alone.
+
+### Changed
+
+- `android.avd_create` accepts system image tags with hyphens and extension levels, and refuses TV, Wear OS,
+  Automotive and XR images with `form_factor_unsupported` and the avdmanager command that creates one: Tomacco's
+  profiles describe phones, foldables and tablets.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
