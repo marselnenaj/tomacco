@@ -720,9 +720,24 @@ fn describe(stage: &Stage) -> Value {
         "manual":matches!(stage.action, Action::Manual{..}),"commands":commands(&stage.action)})
 }
 
-/// The first stage that is not done.
+/// The first stage that is not done, unless the phone is set up already.
 pub(crate) fn next(stages: &[Stage]) -> Option<&Stage> {
+    if ready(stages) {
+        return None;
+    }
     stages.iter().find(|stage| stage.state != "done")
+}
+
+/// Whether this work directory's profile is written and selected: the phone
+/// starts from it, so the chain has nothing left to run. Earlier outputs may
+/// have been moved, deleted or made by an older Tomacco; the start does not
+/// read them, and the plan still lists their state.
+pub(crate) fn ready(stages: &[Stage]) -> bool {
+    ["profile", "configure"].iter().all(|name| {
+        stages
+            .iter()
+            .any(|stage| stage.name == *name && stage.state == "done")
+    })
 }
 
 fn layout(a: &Value) -> Result<Layout> {
@@ -832,6 +847,7 @@ pub fn setup(a: &Value) -> Result {
         return Ok(json!({
             "work": l.work, "checkout": l.tooling.is_some(),
             "done": all.iter().all(|stage| stage.state == "done"),
+            "ready": ready(&all),
             "next": upcoming,
             "stages": all.iter().map(describe).collect::<Vec<_>>(),
             "inputs": inputs, "host": host,
@@ -843,6 +859,11 @@ pub fn setup(a: &Value) -> Result {
 
 fn run(l: &Layout, all: &[Stage], name: &str, confirm: bool, inputs: &Value) -> Result {
     let index = if name.is_empty() {
+        if ready(all) {
+            return Ok(
+                json!({"started":false,"done":true,"ready":true,"message":"The profile is written and selected. Start the phone with ios.virtual.start."}),
+            );
+        }
         match all.iter().position(|stage| stage.state != "done") {
             Some(index) => index,
             None => {
@@ -1233,6 +1254,31 @@ mod tests {
         let answer = run(&layout, &all, "", false, &json!({"ok":true})).unwrap();
         assert_eq!(answer["done"], true);
         assert!(next(&all).is_none());
+    }
+
+    #[test]
+    fn a_written_and_selected_profile_is_ready_whatever_came_before() {
+        // A work directory set up by hand or by an older Tomacco: the profile
+        // runs, but the engine is elsewhere and earlier outputs are partial.
+        let (_root, mut layout) = fixture();
+        touch(&layout.w("profile/profile.json"), "{}");
+        let all = stages(&layout);
+        assert_eq!(stage(&all, "profile").state, "done");
+        assert!(!ready(&all));
+        assert_eq!(next(&all).unwrap().name, "engine");
+        layout.configured = Some(layout.w("profile"));
+        let all = stages(&layout);
+        assert_ne!(stage(&all, "engine").state, "done");
+        assert!(ready(&all));
+        assert!(next(&all).is_none());
+        let answer = run(&layout, &all, "", false, &json!({"ok":true})).unwrap();
+        assert_eq!(
+            (answer["started"].clone(), answer["ready"].clone()),
+            (json!(false), json!(true))
+        );
+        // A stage asked for by name is still judged on its own.
+        let error = run(&layout, &all, "engine", false, &json!({"ok":true})).unwrap_err();
+        assert_eq!(error.code, "ios_setup_confirm");
     }
 
     #[test]
