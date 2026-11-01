@@ -97,6 +97,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxcb-dri3-0 libwayland-client0 libwayland-cursor0 libwayland-egl1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Qt WebEngine's aarch64 build links Chromium's media, image and storage
+# libraries from Ubuntu 24.04 instead of carrying its own copies: the package
+# bundles these (build_portable.py's ARCHITECTURES["aarch64"].libraries) with
+# their copyright files. Its xcb plugin also links libSM and libICE, which it
+# expects from the host like the other X11 libraries.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libopus0 libsnappy1v5 libwebp7 libwebpdemux2 libwebpmux3 libsharpyuv0 libminizip1t64 liblcms2-2 \
+        libsm6 libice6 \
+    && rm -rf /var/lib/apt/lists/*
+
 # ICU's license, for the copy of ICU 73.2 that comes with Qt's binaries.
 ARG ICU_LICENSE_SHA256=f3005e195ff74d8812cc1f182a1c446fab678d70a10e3dada497585befee5416
 RUN mkdir -p /opt/qt/licenses \

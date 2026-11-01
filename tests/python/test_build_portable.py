@@ -137,6 +137,47 @@ class Aarch64(unittest.TestCase):
         self.assertIn("ubuntu:24.04", arm.images)
         self.assertTrue(build_portable.SYSTEM.match("ld-linux-aarch64.so.1"))
 
+    def test_the_libraries_webengine_links_on_aarch64_are_bundled_with_their_licenses(self):
+        arm = build_portable.ARCHITECTURES["aarch64"]
+        dockerfile = (ROOT / "packaging/portable/Dockerfile.aarch64").read_text()
+        names = [name for name, _, _ in arm.libraries]
+        for library in ("libopus.so.0", "libsnappy.so.1", "libwebp.so.7", "libminizip.so.1", "liblcms2.so.2"):
+            self.assertIn(library, names)
+        for name, debian, license in arm.libraries:
+            self.assertRegex(dockerfile, rf"\b{re.escape(debian)}\b", debian)
+            self.assertFalse(build_portable.SYSTEM.match(name), f"{name} is bundled, not left to the host")
+            self.assertIn(license, ("BSD-3-Clause", "Zlib", "MIT"))
+        self.assertEqual(arm.bundled[:len(build_portable.BUNDLED_SYSTEM)], build_portable.BUNDLED_SYSTEM)
+        self.assertEqual(build_portable.ARCHITECTURES["x86_64"].bundled, build_portable.BUNDLED_SYSTEM)
+        # Its xcb plugin's session management libraries come from the host, which the checks install.
+        for name in ("libSM.so.6", "libICE.so.6"):
+            self.assertTrue(build_portable.SYSTEM.match(name), name)
+        self.assertLessEqual({"libsm6", "libice6"}, set(build_portable.APT_PACKAGES))
+        self.assertLessEqual({"libSM", "libICE"}, set(build_portable.DNF_PACKAGES))
+
+    def test_assemble_copies_the_bundled_libraries_and_leaves_the_rest_to_the_host(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            qt, ffmpeg, system, top = base / "qt", base / "ffmpeg", base / "system", base / "top"
+            for path in (qt / "lib", qt / "qml", qt / "resources", qt / "translations/qtwebengine_locales", qt / "libexec",
+                         ffmpeg / "lib", system, top / "bin"):
+                path.mkdir(parents=True)
+            for path in (top / "bin/tomacco", qt / "libexec/QtWebEngineProcess", qt / "lib/libQt6WebEngineCore.so.6",
+                         system / "libwebp.so.7", system / "libsharpyuv.so.0"):
+                path.write_bytes(b"\x7fELF")
+            graph = {"tomacco": ["libQt6WebEngineCore.so.6", "libc.so.6"], "QtWebEngineProcess": ["libc.so.6"],
+                     "libQt6WebEngineCore.so.6": ["libwebp.so.7", "libnss3.so"], "libwebp.so.7": ["libsharpyuv.so.0"],
+                     "libsharpyuv.so.0": ["libm.so.6"]}
+            patched = []
+            with unittest.mock.patch.object(build_portable, "needed", lambda path: graph.get(Path(path).name, [])), \
+                    unittest.mock.patch.object(build_portable, "run", lambda argv: patched.append(Path(argv[-1]).name)):
+                host = build_portable.assemble(top, qt, ffmpeg, system, build_portable.ARCHITECTURES["aarch64"].bundled)
+            library = top / build_portable.RUNTIME / "lib"
+            self.assertEqual(sorted(path.name for path in library.iterdir()),
+                             ["libQt6WebEngineCore.so.6", "libsharpyuv.so.0", "libwebp.so.7"])
+            self.assertEqual(host, ["libc.so.6", "libm.so.6", "libnss3.so"])
+            self.assertIn("libwebp.so.7", patched)
+
     def test_the_symbol_limits_are_the_architectures(self):
         with tempfile.TemporaryDirectory() as directory:
             top = Path(directory)

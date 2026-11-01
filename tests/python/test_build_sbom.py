@@ -136,8 +136,12 @@ class Shape(unittest.TestCase):
             self.assertEqual(component["externalReferences"][0]["hashes"][0]["content"], digest)
         self.assertEqual(by_name["FFmpeg"]["version"], build_sbom.dockerfile_argument(ROOT, "FFMPEG_VERSION", "aarch64"))
         self.assertEqual(by_name["libxcb-cursor"]["bom-ref"], "ubuntu-24.04:libxcb-cursor")
+        self.assertEqual(by_name["libopus"]["licenses"], [{"license": {"id": "BSD-3-Clause"}}])
+        self.assertEqual(by_name["libminizip"]["licenses"], [{"license": {"id": "Zlib"}}])
+        self.assertIn("libopus0", by_name["libopus"]["description"])
         # The x86_64 one keeps its own.
         x86, _ = self.write(True)
+        self.assertNotIn("libopus", {c["name"] for c in x86["components"]})
         self.assertEqual({c["name"]: c for c in x86["components"]}["libxcb-cursor"]["bom-ref"], "ubuntu-22.04:libxcb-cursor")
 
     def test_the_same_inputs_give_the_same_bytes(self):

@@ -42,7 +42,7 @@ RUNTIME = Path("lib/tomacco/runtime")
 class Architecture:
     """What differs between the x86_64 and the aarch64 portable package."""
 
-    def __init__(self, name, platform, dockerfile, archives, qt_repository, base, glibc, glibcxx, images):
+    def __init__(self, name, platform, dockerfile, archives, qt_repository, base, glibc, glibcxx, images, libraries=()):
         self.name = name
         self.platform = platform  # Docker's name for it
         self.dockerfile = dockerfile  # in packaging/portable
@@ -54,6 +54,14 @@ class Architecture:
         self.glibc = glibc
         self.glibcxx = glibcxx
         self.images = images  # the clean containers `verify` checks it in
+        # Libraries of the builder's distribution the package bundles besides BUNDLED_SYSTEM:
+        # (file name, Debian package, SPDX license).
+        self.libraries = libraries
+
+    @property
+    def bundled(self):
+        """Every library the package copies from the builder's system."""
+        return BUNDLED_SYSTEM + tuple(name for name, _, _ in self.libraries)
 
     @property
     def image(self):
@@ -70,8 +78,18 @@ ARCHITECTURES = {
                            (2, 35), (3, 4, 30), ("debian:12-slim", "ubuntu:22.04", "ubuntu:24.04", "fedora:44")),
     # Ubuntu 24.04: glibc 2.39, libstdc++ of GCC 14. Qt's aarch64 binaries are built on Ubuntu 24.04 and
     # need glibc 2.38 and GLIBCXX_3.4.32, so Debian 12 and Ubuntu 22.04 cannot run this package.
+    # Unlike the x86_64 build, Qt WebEngine's aarch64 build links Chromium's media, image and storage libraries
+    # from Ubuntu 24.04 instead of carrying its own copies, so the package bundles those.
     "aarch64": Architecture("aarch64", "linux/arm64", "Dockerfile.aarch64", "qt-archives-aarch64.txt", "linux_arm64",
-                            "Ubuntu 24.04", (2, 39), (3, 4, 33), ("debian:13-slim", "ubuntu:24.04", "fedora:44")),
+                            "Ubuntu 24.04", (2, 39), (3, 4, 33), ("debian:13-slim", "ubuntu:24.04", "fedora:44"),
+                            (("libopus.so.0", "libopus0", "BSD-3-Clause"),
+                             ("libsnappy.so.1", "libsnappy1v5", "BSD-3-Clause"),
+                             ("libwebp.so.7", "libwebp7", "BSD-3-Clause"),
+                             ("libwebpdemux.so.2", "libwebpdemux2", "BSD-3-Clause"),
+                             ("libwebpmux.so.3", "libwebpmux3", "BSD-3-Clause"),
+                             ("libsharpyuv.so.0", "libsharpyuv0", "BSD-3-Clause"),
+                             ("libminizip.so.1", "libminizip1t64", "Zlib"),
+                             ("liblcms2.so.2", "liblcms2-2", "MIT"))),
 }
 # The x86_64 package's, for the code that names no architecture.
 SYSTEM_LIBRARY_DIRECTORY = ARCHITECTURES["x86_64"].system_library_directory
@@ -109,6 +127,7 @@ SYSTEM = re.compile(r"""(
   | lib(glib|gobject|gio|gthread|gmodule)-2\.0\.so\.0
   | lib(nss3|nssutil3|smime3|nspr4|plc4|plds4)\.so
   | libX(11|11-xcb|composite|damage|ext|fixes|randr|tst|i|render|cursor|xf86vm)\.so\..*
+  | lib(SM|ICE)\.so\.6
   | libxkbcommon(-x11)?\.so\.0 | libxkbfile\.so\.1
   | libbrotli(common|dec)\.so\.1 | libgssapi_krb5\.so\.2
   | libxcb(-[a-z0-9-]+)?\.so\..*
@@ -121,11 +140,11 @@ APT_PACKAGES = ("python3 ca-certificates fonts-dejavu-core xvfb xauth libgl1 lib
                 "libxdamage1 libxext6 libxfixes3 libxrandr2 libxtst6 libasound2 libgbm1 libudev1 libexpat1 libzstd1 "
                 "libwayland-client0 libwayland-cursor0 libwayland-egl1 libxcb-glx0 libxcb-randr0 libxcb-render0 libxcb-shape0 "
                 "libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxcb-dri3-0 libxcb-xinput0 libxcb-xinerama0 libbrotli1 "
-                "libgssapi-krb5-2").split()
+                "libgssapi-krb5-2 libsm6 libice6").split()
 DNF_PACKAGES = ("python3 ca-certificates dejavu-sans-fonts xorg-x11-server-Xvfb xorg-x11-xauth libglvnd-glx libglvnd-egl "
                 "libglvnd-opengl fontconfig freetype glib2 dbus-libs nss nspr libxkbcommon libxkbcommon-x11 libxkbfile libX11 libX11-xcb libxcb "
                 "libXcomposite libXdamage libXext libXfixes libXrandr libXtst alsa-lib mesa-libgbm systemd-libs expat libzstd "
-                "libwayland-client libwayland-cursor libwayland-egl brotli krb5-libs tar gzip findutils procps-ng").split()
+                "libwayland-client libwayland-cursor libwayland-egl brotli krb5-libs libSM libICE tar gzip findutils procps-ng").split()
 VERIFY_IMAGES = ARCHITECTURES["x86_64"].images
 
 
@@ -359,7 +378,7 @@ def copy_tree(source, destination, skip=()):
         shutil.copy2(path, target)  # follows symbolic links: the package holds files only
 
 
-def assemble(top, qt=QT, ffmpeg=FFMPEG, system=SYSTEM_LIBRARY_DIRECTORY):
+def assemble(top, qt=QT, ffmpeg=FFMPEG, system=SYSTEM_LIBRARY_DIRECTORY, bundled=BUNDLED_SYSTEM):
     """Adds the runtime to an installed tree: Qt's plugins, QML modules,
     WebEngine's helper process and resources, and every library they and the
     desktop need from Qt, FFmpeg and BUNDLED_SYSTEM. Returns the libraries left
@@ -397,7 +416,7 @@ def assemble(top, qt=QT, ffmpeg=FFMPEG, system=SYSTEM_LIBRARY_DIRECTORY):
                     pending.append(library / name)
                     break
             else:
-                if name in BUNDLED_SYSTEM:
+                if name in bundled:
                     shutil.copy2(system / name, library / name)
                     pending.append(library / name)
                 else:
@@ -406,7 +425,7 @@ def assemble(top, qt=QT, ffmpeg=FFMPEG, system=SYSTEM_LIBRARY_DIRECTORY):
     # installed ~/.local/lib/tomacco; Qt's own files already say $ORIGIN.
     run(["patchelf", "--set-rpath", "$ORIGIN/../lib/tomacco/runtime/lib:$ORIGIN/runtime/lib", top / "bin/tomacco"])
     for name in sorted(library.iterdir()):
-        if name.name.startswith(("libav", "libsw")) or name.name in BUNDLED_SYSTEM:
+        if name.name.startswith(("libav", "libsw")) or name.name in bundled:
             run(["patchelf", "--set-rpath", "$ORIGIN", name])
     return sorted(host)
 
@@ -463,6 +482,10 @@ def notice(version, host, newest, qt=QT, ffmpeg=FFMPEG, architecture=ARCHITECTUR
         "  <https://ffmpeg.org/releases/> under LGPL-2.1-or-later, without GPL, version 3 or nonfree parts, with",
         f"  this configuration: `{configuration}`.",
         "- **xcb-util libraries** (" + ", ".join(BUNDLED_SYSTEM) + f") from {architecture.base}, MIT/X11 licenses.",
+        *([f"- **Libraries Qt WebEngine links** from {architecture.base}'s packages, each with its copyright file as",
+           "  `LICENSE.<package>` beside this file: " + ", ".join(f"{name} ({debian}, {license})"
+                                                            for name, debian, license in architecture.libraries) + "."]
+          if architecture.libraries else []),
         "",
         "All are shared libraries: replace any of them in `lib/tomacco/runtime/lib` with a compatible build of",
         "your own. The LGPL texts are `COPYING.LGPL-2.1` and `COPYING.LGPL-3.0` beside this file; the GPL",
@@ -509,7 +532,7 @@ def inside(options):
         shutil.rmtree(stage)
     top = stage / name
     run(["cmake", "--install", cmake, "--prefix", top])
-    host = assemble(top, system=architecture.system_library_directory)
+    host = assemble(top, system=architecture.system_library_directory, bundled=architecture.bundled)
     sbom = top / RUNTIME / "sbom"
     sbom.mkdir()
     for path in sorted((QT / "sbom").glob("*.spdx")):
@@ -519,6 +542,9 @@ def inside(options):
     shutil.copy2(FFMPEG / "share/licenses/COPYING.LGPLv2.1", doc / "COPYING.LGPL-2.1")
     shutil.copy2(FFMPEG / "share/licenses/COPYING.LGPLv3", doc / "COPYING.LGPL-3.0")
     shutil.copy2(QT / "licenses/LICENSE.ICU", doc / "LICENSE.ICU")
+    for _, debian, _ in architecture.libraries:
+        # Debian's machine-readable copyright file holds the license text.
+        shutil.copy2(Path("/usr/share/doc") / debian / "copyright", doc / f"LICENSE.{debian}")
     newest = check(top, host, architecture)
     (doc / "PORTABLE.md").write_text(notice(options.version, host, newest, architecture=architecture))
     print("Expected from the host:", " ".join(host))

@@ -71,6 +71,25 @@ exact versions and FFmpeg's configuration, and installs with the LGPL texts
 | FFmpeg: libavcodec, libavutil, libswscale | 9.0.2 from <https://ffmpeg.org/releases/>, built in `packaging/portable/Dockerfile` with only the H.264 and MJPEG decoders and parsers, without `--enable-gpl`, `--enable-version3`, `--enable-nonfree` or external libraries | LGPL-2.1-or-later | <https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz> (SHA-256 in the Dockerfile) |
 | xcb-util libraries: libxcb-cursor, libxcb-icccm, libxcb-image, libxcb-keysyms, libxcb-render-util, libxcb-util | Ubuntu 22.04's packages | MIT/X11 | Ubuntu's source packages |
 
+The aarch64 portable package, `tomacco-VERSION-Linux-aarch64-portable.tar.gz`,
+bundles the same components from Qt's official Linux aarch64 binaries of the same
+builds (`packaging/portable/qt-archives-aarch64.txt`), with the same FFmpeg
+built in `packaging/portable/Dockerfile.aarch64` and the xcb-util libraries from
+Ubuntu 24.04. Qt WebEngine's aarch64 build links some of Chromium's libraries
+from the system instead of carrying its own copies, so that package also
+bundles these from Ubuntu 24.04's packages, each with its Debian copyright file
+as `share/doc/tomacco/LICENSE.<package>`:
+
+| Component | Ubuntu 24.04 package | License |
+| --- | --- | --- |
+| Opus (libopus) | libopus0 | BSD-3-Clause |
+| Snappy (libsnappy) | libsnappy1v5 | BSD-3-Clause |
+| WebP (libwebp, libwebpdemux, libwebpmux, libsharpyuv) | libwebp7, libwebpdemux2, libwebpmux3, libsharpyuv0 | BSD-3-Clause |
+| Minizip (libminizip) | libminizip1t64 | Zlib |
+| Little CMS (liblcms2) | liblcms2-2 | MIT |
+
+Their source is in Ubuntu's source packages of the same names.
+
 Everything else the portable desktop loads (glibc, libstdc++, OpenGL, X11,
 Wayland, fontconfig, FreeType, GLib, D-Bus, NSS, ALSA, zlib) comes from the
 system, as for the regular package.

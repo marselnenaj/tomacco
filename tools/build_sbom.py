@@ -181,6 +181,11 @@ def portable_components(root, architecture="x86_64"):
         name = library.split(".so")[0]
         components.append({"type": "library", "bom-ref": f"{base.lower().replace(' ', '-')}:{name}", "name": name,
                            "description": f"{library} from {base}'s package", "licenses": [{"license": {"id": "MIT"}}]})
+    for library, debian, license in build_portable.ARCHITECTURES[architecture].libraries:
+        name = library.split(".so")[0]
+        components.append({"type": "library", "bom-ref": f"{base.lower().replace(' ', '-')}:{name}", "name": name,
+                           "description": f"{library} from {base}'s package {debian}, which Qt WebEngine links",
+                           "licenses": [{"license": {"id": license}}]})
     return components
 
 
