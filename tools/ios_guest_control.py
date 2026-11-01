@@ -10,6 +10,25 @@ import time
 
 # The longest Unix socket path: sun_path holds 108 bytes with its NUL.
 SOCKET_PATH_LIMIT = 107
+# Where QEMU maps a file-backed guest RAM: its own QEMU_VMALLOC_ALIGN on x86-64
+# Linux, which memory-backend-ram,share=on uses.
+GUEST_MEMORY_ALIGN = 2 << 20
+
+
+def sealed_guest_memory(size):
+    """A memfd of size bytes sealed against resizing, for guest RAM the GPU
+    imports as dma-bufs through /dev/udmabuf (which needs the shrink seal).
+    Inheritable, for QEMU's pass_fds. Raises OSError where memfds or seals are
+    missing."""
+    import fcntl
+    fd = os.memfd_create("tomacco-guest-memory", os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING)
+    try:
+        os.ftruncate(fd, size)
+        fcntl.fcntl(fd, fcntl.F_ADD_SEALS, fcntl.F_SEAL_SHRINK | fcntl.F_SEAL_GROW | fcntl.F_SEAL_SEAL)
+    except BaseException:
+        os.close(fd)
+        raise
+    return fd
 
 
 def socket_root(reserve, environ=None):
@@ -99,11 +118,18 @@ class GuestControl:
         if self.log is not None:
             self.log.close()
 
-    def qemu_arguments(self, memory):
+    def qemu_arguments(self, memory, memory_fd=None):
         # QEMU's shared RAM backend uses an fd with QEMU_VMALLOC_ALIGN.
         # Plain memory-backend-memfd only guarantees host-page alignment;
         # on 4 KiB Linux hosts it breaks the GPU's 16 KiB guest-page aliases.
-        return ["-object", f"memory-backend-ram,id=tomacco-guest-memory,size={memory},share=on",
+        # A sealed memfd from sealed_guest_memory() is mapped through the file
+        # backend instead, at the 2 MiB QEMU_VMALLOC_ALIGN has on x86-64 Linux.
+        if memory_fd is None:
+            backend = f"memory-backend-ram,id=tomacco-guest-memory,size={memory},share=on"
+        else:
+            backend = (f"memory-backend-file,id=tomacco-guest-memory,size={memory},"
+                       f"mem-path=/proc/self/fd/{memory_fd},share=on,align={GUEST_MEMORY_ALIGN}")
+        return ["-object", backend,
                 "-chardev", "socket,id=tomacco-guest-control,path=" + str(self.directory / "guest-vhost.sock"),
                 "-device", "vhost-user-vsock-pci,chardev=tomacco-guest-control,disable-legacy=on"]
 

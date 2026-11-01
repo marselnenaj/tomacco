@@ -449,6 +449,11 @@ FRAME_MAILBOX_VARIABLE = "REIMS_VGPU_FRAME_MAILBOX"
 # present into its console surface only when a screendump or refresh asks;
 # this variable restores the copy on every present.
 EAGER_CONSOLE_PAINT_VARIABLE = "REIMS_VGPU_EAGER_CONSOLE_PAINT"
+# reims-guest-ram-dma-buf: asks the renderer to import guest RAM as dma-bufs
+# cut from its memfd through /dev/udmabuf. radv/amdgpu refuse a host-pointer
+# import of shared memory, which guest RAM is when vhost-user needs it.
+GUEST_DMA_BUF_VARIABLE = "REIMS_VGPU_GUEST_IMPORT_DMA_BUF"
+UDMABUF_DEVICE = "/dev/udmabuf"
 # qemu-arm-pauth-bypass-inline: the CPU property that restores the per-
 # instruction pointer-authentication helpers (default: inline bypass).
 POINTER_AUTH_HELPERS = "max-arm-cpu.tomacco-pauth-fast=off"
@@ -471,6 +476,32 @@ FRAME_MAILBOX_ROOT = ("tomacco", "ios-mailbox")
 # A directory younger than this may belong to a launcher between creating and
 # locking it; only an older, unlocked one is a dead launcher's.
 FRAME_MAILBOX_STALE_SECONDS = 60
+
+
+def guest_memory_plan(requested, shared, memory, udmabuf=UDMABUF_DEVICE, create=None):
+    """How --guest-memory-import lays out guest RAM: (memfd or None, receipt).
+
+    A memfd comes back only for dma-buf on shared guest RAM, when this user can
+    open /dev/udmabuf and a sealed memfd can be made. Otherwise RAM stays as it
+    was and the receipt says why; the renderer then tries the host-pointer
+    import, and copies on the CPU where that is refused, as before.
+    """
+    receipt = {"requested": requested}
+    if requested != "dma-buf":
+        return None, {**receipt, "backing": "shared-ram" if shared else "private-ram"}
+    if not shared:
+        return None, {**receipt, "backing": "private-ram",
+                      "fallback": "guest RAM is private memory, which the host-pointer import takes"}
+    if not os.access(udmabuf, os.R_OK | os.W_OK):
+        return None, {**receipt, "backing": "shared-ram",
+                      "fallback": f"{udmabuf} is not readable and writable by this user"}
+    if create is None:
+        from ios_guest_control import sealed_guest_memory as create
+    try:
+        fd = create(memory)
+    except OSError as error:
+        return None, {**receipt, "backing": "shared-ram", "fallback": f"no sealed memfd: {error}"}
+    return fd, {**receipt, "backing": "sealed-memfd"}
 
 
 def frame_mailbox_bytes(profile):
@@ -1487,6 +1518,12 @@ def main():
                         help="QEMU console surface: lazy (default; with reims-lazy-console-paint and a frame "
                              "mailbox, copied only when a screendump or display refresh asks), or eager, "
                              "copied on every present as before")
+    parser.add_argument("--guest-memory-import", choices=("shared", "dma-buf"), default="shared",
+                        help="Guest RAM for the renderer's GPU import, with --guest-control-backend: shared "
+                             "(default; QEMU's shared RAM, which radv/amdgpu refuse to import), or dma-buf: "
+                             "a sealed memfd the renderer imports through /dev/udmabuf. Falls back to shared "
+                             "when /dev/udmabuf or memfds are unavailable, and to CPU copies when the import "
+                             "is refused")
     parser.add_argument("--host-cpu-policy", choices=("scheduler", "performance"), default="scheduler",
                         help="Host CPU placement: scheduler (default), or separate highest-frequency physical cores for AP threads; unsupported hosts keep scheduler placement")
     parser.add_argument("--input-transport", choices=("virtio", "usb-hid"), default="virtio",
@@ -1990,9 +2027,16 @@ def main():
                                   guest_evidence=guest_evidence(output))
                     save_result(output, record)
                     raise SystemExit(str(error)) from None
-                command.extend(guest_control.qemu_arguments(memory))
+                memory_fd, record["guest_memory_import"] = guest_memory_plan(
+                    args.guest_memory_import, True, memory)
+                if memory_fd is not None:
+                    session.callback(os.close, memory_fd)
+                command.extend(guest_control.qemu_arguments(memory, memory_fd))
                 record["guest_control"] = guest_control.receipt()
                 record["command"] = command
+            else:
+                memory_fd, record["guest_memory_import"] = guest_memory_plan(
+                    args.guest_memory_import, False, memory)
             graphics_log_directory = output / "renderer"
             graphics_log_directory.mkdir(mode=0o700)
             record["render_store_writeback"] = "eager"
@@ -2023,6 +2067,9 @@ def main():
             env.pop("REIMS_VGPU_PANEL", None)
             env.pop(FRAME_MAILBOX_VARIABLE, None)
             env.pop(EAGER_CONSOLE_PAINT_VARIABLE, None)
+            env.pop(GUEST_DMA_BUF_VARIABLE, None)
+            if memory_fd is not None:
+                env[GUEST_DMA_BUF_VARIABLE] = "on"
             if args.console_paint == "eager":
                 env[EAGER_CONSOLE_PAINT_VARIABLE] = "1"
             if mailbox is not None:
@@ -2044,7 +2091,8 @@ def main():
                 child = subprocess.Popen(command, stdout=log, stderr=log, env=env,
                                          start_new_session=True,
                                          pass_fds=(lock_fd, *(stream.fileno() for stream in media.values()),
-                                                   *((storage.fileno(),) if storage else ())),
+                                                   *((storage.fileno(),) if storage else ()),
+                                                   *((memory_fd,) if memory_fd is not None else ())),
                                          preexec_fn=lambda: child_limits(parent_pid, file_limit))
                 try:
                     while child.poll() is None and not qmp_path.exists():
