@@ -1426,7 +1426,7 @@ fn guest_control_debug_target(value: &str) -> bool {
 
 /// The guest job of the running phone and the model it was started as
 /// (empty: the Home-button phone), or `ios_virtual_not_running`.
-pub(super) fn running_guest() -> Result<(String, String)> {
+pub(crate) fn running_guest() -> Result<(String, String)> {
     let (_, state) = records(&directory()?)?;
     if !guest_is_running(&state) {
         return Err(Error::new(

@@ -129,6 +129,14 @@ tomaccoctl call ios.virtual.deploy '{"bundle":"/absolute/MyApp/xtool/MyApp.app"}
 tomaccoctl call job.logs '{"job_id":"JOB_ID","offset":0}'
 ```
 
+For an xtool project, one job builds it, deploys it and checks for a crash after the launch; `project.watch` with the same
+arguments does that again on every save. The [agent guide](agents.md#deploying-an-app-to-the-virtual-ios-device) describes
+the run's report. Not run on a live phone yet.
+
+```sh
+tomaccoctl call project.run '{"path":"/absolute/MyApp","platform":"ios","device":"virtual-iphone"}'
+```
+
 The bundle rules (thin arm64, size limits, allowed entitlements) are in
 [usage](virtual-ios/usage.md#deploy-your-own-app); a refusal names the file and the reason.
 To keep the app across restarts and open it at each start:

@@ -890,7 +890,7 @@
   {
     "name": "project.run",
     "title": "Build & run on device",
-    "description": "Build and deploy to a selected Android/iOS device. Flutter supports interactive hot reload via job.send. While a Flutter session runs, job.get's result.flutter has the app's VM service URI (vm_service_uri, and vm_service_http_uri for a browser) and, once Flutter reports them, devtools_uri, devtools_app_uri (DevTools opened on this app) and dtd_uri. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.",
+    "description": "Build and deploy to a selected Android/iOS device. With device virtual-iphone, an xtool project is built with xtool dev build and installed and opened on the running virtual iPhone with ios.virtual.deploy, which skips the install when the signed app is unchanged; then, after crash_check_seconds, its crash reports are read, and a report that was not there before the deploy fails the job as crashed. The job writes build/tomacco/virtual_iphone_run.json in the project: state (launched, crashed, failed, or building when the build failed), build_seconds, deploy (job_id, seconds, unchanged, steps), pid and crash_check. Refused with ios_virtual_not_running when the phone is off. Flutter supports interactive hot reload via job.send. While a Flutter session runs, job.get's result.flutter has the app's VM service URI (vm_service_uri, and vm_service_http_uri for a browser) and, once Flutter reports them, devtools_uri, devtools_app_uri (DevTools opened on this app) and dtd_uri. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -909,7 +909,7 @@
         },
         "device": {
           "type": "string",
-          "description": "Device serial / UDID from device.list",
+          "description": "Device serial / UDID from device.list, or virtual-iphone for the running virtual iPhone (xtool projects)",
           "minLength": 1
         },
         "bundle_id": {
@@ -930,6 +930,13 @@
           "type": "string",
           "description": "Gradle build variant to install, such as freeDebug. Required when the app has product flavors; otherwise the configuration's build type.",
           "default": ""
+        },
+        "crash_check_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120,
+          "default": 10,
+          "description": "Virtual iPhone only: how long after the app opened to look for a new crash report of it; 0 skips the check."
         }
       },
       "required": [
@@ -949,7 +956,7 @@
   {
     "name": "project.watch",
     "title": "Watch and rerun app",
-    "description": "Watch a project's source files and, whenever they change and have stayed unchanged for debounce_ms, build, install and launch the app again with project.run, as a durable job; it also runs the app once at the start. Build output, dependency and tool directories (build, .gradle, .dart_tool, node_modules, Pods, .git and others) are ignored. For a Flutter project it starts one Flutter session and sends it Hot Reload on each change, starting a new session when that one has ended. Each cycle writes one line to the job's log: the files that changed and how the run ended. Cancel the job to stop watching; runs it started are cancelled with it.",
+    "description": "Watch a project's source files and, whenever they change and have stayed unchanged for debounce_ms, build, install and launch the app again with project.run, as a durable job; it also runs the app once at the start. Build output, dependency and tool directories (build, .gradle, .dart_tool, node_modules, Pods, .git and others) are ignored. For a Flutter project it starts one Flutter session and sends it Hot Reload on each change, starting a new session when that one has ended. Each cycle writes one line to the job's log: the files that changed and how the run ended; with device virtual-iphone (xtool projects) it gives the build and deploy seconds, whether the app was unchanged, its pid and the crash check, and the xtool output directory is ignored too. Cancel the job to stop watching; runs it started are cancelled with it.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -968,7 +975,7 @@
         },
         "device": {
           "type": "string",
-          "description": "Device serial / UDID from device.list",
+          "description": "Device serial / UDID from device.list, or virtual-iphone for the running virtual iPhone (xtool projects)",
           "minLength": 1
         },
         "bundle_id": {
@@ -989,6 +996,13 @@
           "type": "string",
           "description": "Gradle build variant to install, such as freeDebug. Required when the app has product flavors; otherwise the configuration's build type.",
           "default": ""
+        },
+        "crash_check_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120,
+          "default": 10,
+          "description": "Virtual iPhone only: how long after the app opened to look for a new crash report of it; 0 skips the check."
         },
         "debounce_ms": {
           "type": "integer",

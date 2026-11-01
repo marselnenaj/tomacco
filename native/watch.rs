@@ -51,7 +51,12 @@ pub fn watch(a: &Value) -> Result {
         ignore.push(name);
     }
     let mut run = json!({"path":root,"platform":a["platform"],"device":a["device"]});
-    for key in ["bundle_id", "configuration", "variant"] {
+    for key in [
+        "bundle_id",
+        "configuration",
+        "variant",
+        "crash_check_seconds",
+    ] {
         if let Some(value) = a.get(key) {
             run[key] = value.clone();
         }

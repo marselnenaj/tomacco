@@ -507,7 +507,22 @@ It signs a copy, exchanges spare trust-cache entries of the boot for its hashes 
 the guest channel, names it to the signing adapter, installs it through installd and opens it (about 25 s). The profile lists the app
 afterwards, so the next start carries it too. When this run already installed the same signed app (the same cdhash after signing, which
 covers every file of the bundle), the deploy log has `unchanged` after `signed`, nothing is sent and the app is only opened; `force:true`
-installs it again. This skip has unit tests only; it was not run on a live phone. `ios.virtual.configure` with `add_application` and `deploy` does the add and the deploy in one
+installs it again. This skip has unit tests only; it was not run on a live phone.
+
+**From an xtool project in one job.** `project.run` with `device:"virtual-iphone"` builds with `xtool dev build`, deploys the one
+`xtool/*.app` with `ios.virtual.deploy` (which opens it) and, after `crash_check_seconds` (default 10, `0` skips it), reads the app's
+crash reports. A report that was not there before the deploy makes the job fail as `crashed`. It is refused before any job with
+`ios_virtual_not_running` when the phone is off, and with `action_unsupported` for a project that is not an xtool project.
+
+```sh
+tomaccoctl call project.run '{"path":"/absolute/MyApp","platform":"ios","device":"virtual-iphone"}'
+tomaccoctl call job.wait '{"job_id":"RUN_JOB","seconds":60}'
+```
+
+The job writes `build/tomacco/virtual_iphone_run.json` in the project and lists it in its artifacts: `state` (`launched`, `crashed`,
+`failed`, or `building` when the build failed), `build_seconds`, `deploy` with its `job_id`, `seconds`, `unchanged` and `steps`, the
+opened app's `pid`, and `crash_check` with the new reports as `testing.crashes` events. No crash report never proves the app did not
+crash. The last log line says the same in one line. Unit-tested with recorded replies; not run on a live phone. `ios.virtual.configure` with `add_application` and `deploy` does the add and the deploy in one
 call. A boot has 512 spare entries and the adapter's per-boot table holds 32 apps, frameworks and extensions. To debug the app, build it
 with `get-task-allow` and run `ios.virtual.debug {target}` — but iOS refuses it with Developer Mode off and arming it did not hold across a boot, so
 lldb cannot attach yet.

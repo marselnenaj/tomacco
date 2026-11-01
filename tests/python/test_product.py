@@ -2231,6 +2231,26 @@ class IphoneLinuxTests(Isolated):
         self.assertEqual(done['state'],'failed')
         self.assertFalse(marker.exists())
 
+    def test_a_virtual_iphone_run_is_refused_before_any_job_when_it_cannot_go(self):
+        project=self.root/'App';project.mkdir()
+        (project/'xtool.yml').write_text('bundleID: dev.test.app\n')
+        self.tool('xtool')
+        args={'path':str(project),'platform':'ios','device':'virtual-iphone'}
+        with self.assertRaises(StudioError) as caught:
+            dispatch('project.run',args)
+        self.assertEqual(caught.exception.code,'ios_virtual_unconfigured')
+        with self.assertRaises(StudioError) as caught:
+            dispatch('project.run',{**args,'platform':'android'})
+        self.assertEqual(caught.exception.code,'platform_unsupported')
+        other=self.root/'Web';other.mkdir();(other/'package.json').write_text('{"scripts":{"build":"true"}}')
+        with self.assertRaises(StudioError) as caught:
+            dispatch('project.run',{**args,'path':str(other)})
+        self.assertEqual(caught.exception.code,'action_unsupported')
+        with self.assertRaises(StudioError) as caught:
+            dispatch('project.watch',{**args,'crash_check_seconds':121})
+        self.assertEqual(caught.exception.code,'invalid_argument')
+        self.assertEqual(jobs.listing(10),[])
+
     def test_physical_runtime_owns_usb_processes_and_starts_xctest_without_mac(self):
         self.tool('iproxy', (ROOT/'tests/fixtures/iphone_usb.py').read_text())
         self.tool('go-ios', "import json,os,sys,time\nfrom pathlib import Path\nPath(os.environ['TOMACCO_TEST_ROOT'],'runner-process.json').write_text(json.dumps({'pid':os.getpid(),'argv':sys.argv[1:]}))\ntime.sleep(120)\n")

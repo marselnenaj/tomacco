@@ -14,6 +14,10 @@ operations and their JSON results.
   - `ios.virtual.deploy` skips the trust-cache exchange, the transfer and the install when this run already installed the
     same signed app, and only opens it: the deploy log says `unchanged`. `force` installs it again. Unit-tested; not run
     on a live phone.
+  - `project.run` with `device` `virtual-iphone` builds an xtool project, deploys it on the running virtual iPhone and opens
+    it in one job, then looks for a new crash report of the app for `crash_check_seconds` and fails the job as `crashed`
+    when one appears. The run's `build/tomacco/virtual_iphone_run.json` has the build and deploy seconds, `unchanged`, the
+    pid and the crash check. Refused at once when the phone is off. Unit-tested; not run on a live phone.
 - `tomaccoctl setup` also connects OpenCode (`~/.config/opencode/opencode.json`, `mcp`). Apps that run these
   agents, such as T3 Code, then reach Tomacco through them; docs/agents.md says so.
 - **Release.**

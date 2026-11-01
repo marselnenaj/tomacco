@@ -55,6 +55,7 @@ the code and that none is missing.
 | `ios_virtual_application_conflict` | Two listed bundles use the same bundle identifier. | Remove one with `ios.virtual.configure {remove_application}`. |
 | `ios_virtual_application_unknown` | No listed bundle has this path or bundle identifier. | `ios.virtual.apps` lists them. |
 | `ios_virtual_busy` | A start or stop is in progress. | Wait for it. The details name its job. |
+| `ios_virtual_deploy_failed` | In a `project.run` report: the deploy job it started failed. | Read the message, then `job.logs` of `deploy.job_id`. |
 | `ios_virtual_disk_space` | The start's disk copy does not fit on the filesystem of the profile's `installs`. | Free the space the remedy names. See [starting](#starting). |
 | `ios_virtual_guest_state_unknown` | The guest job could not be observed. | Read `job.get` for the job in the details. |
 | `ios_virtual_log_unavailable` | The guest job has no console log yet. | Start the phone, or wait until its boot has begun, then read `ios.virtual.syslog` again. |
