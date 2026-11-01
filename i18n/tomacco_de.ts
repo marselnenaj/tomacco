@@ -3707,6 +3707,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Absturzberichte des iPhones</translation>
     </message>
     <message>
+        <source>iPhone readiness</source>
+        <translation>iPhone-Bereitschaft</translation>
+    </message>
+    <message>
         <source>iPhone signing overview</source>
         <translation>iPhone-Signierung im Überblick</translation>
     </message>

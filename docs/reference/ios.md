@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-46 operations. Generated from `assets/operations.json`; [all areas](README.md).
+47 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -159,6 +159,22 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call ios.prepare '{"action":"login"}'
+```
+
+### ios.device_status
+
+**iPhone readiness**
+
+Say in one call whether a USB-connected iPhone is ready for development from Linux, and what to do if not: connected, pairing (paired, trust_pending, denied, locked, not_paired or unknown), trusted, unlocked, developer_mode (true, false, not_applicable before iOS 16, or null when unknown), developer_image (mounted, not_mounted or unknown), ios_version and name, ready, and next_steps: plain sentences, most urgent first, each with the Tomacco operation that does it where there is one (unlock the phone, tap Trust, pair, turn on Developer Mode, mount the developer image, keep a tunnel on iOS 17 and newer). Until the phone is paired only libimobiledevice's simple connection is used, so the check shows no Trust prompt. Without device, the one connected iPhone is checked. The tunnel is not checked.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string |  | `""` | UDID from device.list; empty: the only connected iPhone |
+
+```sh
+tomaccoctl call ios.device_status
 ```
 
 ### ios.wda_prepare

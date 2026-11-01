@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 200 operations.
+`tomaccoctl` now has one typed API of 201 operations.
 
 ### Added
 
@@ -32,6 +32,9 @@ operations and their JSON results.
     project's built apps and in named files, with team, expiry, covered devices and the signing certificates
     they name, and warns about expired profiles, ones running out within 7 days, free accounts' 7-day profiles
     and a phone a profile does not list.
+  - `ios.device_status` says in one call whether an iPhone is connected, paired and trusted, unlocked, in
+    Developer Mode and has the developer image, with plain `next_steps` naming the operation for each step it
+    can do. Before pairing it uses only libimobiledevice's simple connection, so no Trust prompt appears.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

@@ -327,10 +327,13 @@ Read Xcode's license first.
 [Guide](iphone.md#working-with-the-connected-iphone). Tested with stand-ins only; no iPhone was connected.
 
 ```sh
+tomaccoctl call ios.device_status '{"device":"ACTUAL_UDID"}'
 tomaccoctl call device.logs '{"platform":"ios","device":"ACTUAL_UDID","bundle_id":"dev.example.MyiOSApp","duration":60}'
 tomaccoctl call ios.signing '{"device":"ACTUAL_UDID","path":"/absolute/MyiOSApp"}'
 ```
 
+- `ios.device_status` says whether the phone is paired, trusted, unlocked and in Developer Mode. Show the user its
+  `next_steps`: the steps on the phone (tap Trust, unlock, turn on Developer Mode) only they can do.
 - `device.logs` with `bundle_id` keeps that app's process; the job names it as `process`.
 - `ios.signing` lists profiles on the phone and in the project with expiry, team and devices, and the signing
   certificates they name. Read `warnings`: a free account's profile lasts 7 days.

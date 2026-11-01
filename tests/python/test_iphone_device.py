@@ -129,5 +129,67 @@ shutil.copy({str(profile)!r}, Path(sys.argv[4]) / 'FREE.mobileprovision')
         self.assertEqual(nothing.exception.code, "invalid_argument")
 
 
+class IphoneStatusTests(IphoneTools):
+    """ios.device_status against stand-ins whose answers a test changes."""
+
+    def phone(self, paired=True, validate="SUCCESS: Validated pairing with device", developer_mode="true",
+              images='{"images":["abc"]}', version="18.1"):
+        self.tool("idevice_id", f"print({UDID!r})\n")
+        self.tool("idevicepair", f"""import json,os,sys
+from pathlib import Path
+with Path(os.environ['TOMACCO_TEST_ROOT'],'pair.log').open('a') as log: log.write(json.dumps(sys.argv[1:])+'\\n')
+if sys.argv[1]=='list': print({UDID if paired else ''!r})
+else:
+    print({validate!r}); sys.exit(0 if {validate!r}.startswith('SUCCESS') else 1)
+""")
+        self.tool("ideviceinfo", f"""import json,os,sys
+from pathlib import Path
+with Path(os.environ['TOMACCO_TEST_ROOT'],'info.log').open('a') as log: log.write(json.dumps(sys.argv[1:])+'\\n')
+key=sys.argv[sys.argv.index('-k')+1]
+print({{'ProductVersion':{version!r},'DeviceName':'Test iPhone','DeveloperModeStatus':{developer_mode!r}}}[key])
+""")
+        self.tool("go-ios", f"print({images!r})\n")
+
+    def test_a_ready_phone_has_no_steps_left(self):
+        self.phone()
+        result = dispatch("ios.device_status", {})
+        self.assertEqual(result["device"], UDID)
+        self.assertEqual((result["pairing"], result["trusted"], result["unlocked"]), ("paired", True, True))
+        self.assertEqual((result["developer_mode"], result["developer_image"]), (True, "mounted"))
+        self.assertEqual((result["ios_version"], result["name"]), ("18.1", "Test iPhone"))
+        self.assertTrue(result["ready"])
+        self.assertEqual([step["operation"]["arguments"]["action"] for step in result["next_steps"]], ["tunnel"])
+
+    def test_an_unpaired_phone_is_only_asked_through_the_simple_connection(self):
+        self.phone(paired=False)
+        result = dispatch("ios.device_status", {"device": UDID})
+        self.assertEqual(result["pairing"], "not_paired")
+        self.assertFalse(result["ready"])
+        self.assertEqual(result["next_steps"][0]["operation"]["arguments"], {"action": "pair", "device": UDID})
+        info = [json.loads(line) for line in (self.root / "info.log").read_text().splitlines()]
+        self.assertTrue(all("-s" in call for call in info), info)
+        pair = [json.loads(line) for line in (self.root / "pair.log").read_text().splitlines()]
+        self.assertEqual(pair, [["list"]])
+
+    def test_locked_waiting_and_developer_mode_off_give_plain_steps(self):
+        self.phone(validate="ERROR: Could not validate with device X because a passcode is set. Please enter the passcode on the device and retry.")
+        result = dispatch("ios.device_status", {"device": UDID})
+        self.assertEqual((result["pairing"], result["unlocked"]), ("locked", False))
+        self.assertIn("Unlock", result["next_steps"][0]["step"])
+        self.phone(validate="ERROR: Please accept the trust dialog on the screen of device X, then attempt to pair again.")
+        self.assertIn("tap Trust", dispatch("ios.device_status", {"device": UDID})["next_steps"][0]["step"])
+        self.phone(developer_mode="false", images='{"images":[]}')
+        result = dispatch("ios.device_status", {"device": UDID})
+        self.assertEqual((result["developer_mode"], result["developer_image"]), (False, "not_mounted"))
+        self.assertIn("Developer Mode", result["next_steps"][0]["step"])
+        self.assertEqual(result["next_steps"][1]["operation"]["arguments"]["action"], "developer-image")
+
+    def test_a_missing_phone_says_to_connect_it(self):
+        self.phone()
+        result = dispatch("ios.device_status", {"device": "00008110-FFFFFFFFFFFFFFFF"})
+        self.assertFalse(result["connected"])
+        self.assertIn("USB cable", result["next_steps"][0]["step"])
+
+
 if __name__ == "__main__":
     unittest.main()

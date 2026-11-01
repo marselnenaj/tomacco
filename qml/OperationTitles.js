@@ -170,6 +170,7 @@ var titles = {
     "runtime.hierarchy": QT_TRANSLATE_NOOP("Operations", "Native accessibility tree"),
     "ios.doctor": QT_TRANSLATE_NOOP("Operations", "Check iPhone development on Linux"),
     "ios.prepare": QT_TRANSLATE_NOOP("Operations", "Set up iPhone connection"),
+    "ios.device_status": QT_TRANSLATE_NOOP("Operations", "iPhone readiness"),
     "ios.wda_prepare": QT_TRANSLATE_NOOP("Operations", "Prepare iPhone control"),
     "ios.crash_reports": QT_TRANSLATE_NOOP("Operations", "iPhone crash reports"),
     "ios.signing": QT_TRANSLATE_NOOP("Operations", "iPhone signing overview"),

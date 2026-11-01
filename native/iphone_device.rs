@@ -315,9 +315,294 @@ pub fn signing(a: &Value) -> Result {
     result
 }
 
+/// Output and exit code of a tool whose failure is an answer, not an error.
+fn answer(args: &[String]) -> (bool, String) {
+    match tc::run(args, 20, None, false) {
+        Ok(done) => (
+            done["exit_code"] == 0,
+            format!("{}\n{}", s(&done, "stdout"), s(&done, "stderr")),
+        ),
+        Err(error) => (false, error.message),
+    }
+}
+
+/// What `idevicepair validate` says about the pairing: paired, waiting for
+/// Trust, refused, locked or not paired.
+fn pairing_state(ok: bool, text: &str) -> &'static str {
+    let lower = text.to_lowercase();
+    if lower.contains("passcode") {
+        "locked"
+    } else if lower.contains("trust dialog") && lower.contains("denied") {
+        "denied"
+    } else if lower.contains("trust dialog") {
+        "trust_pending"
+    } else if ok && lower.contains("success") {
+        "paired"
+    } else if lower.contains("not paired") || lower.contains("pairing record") {
+        "not_paired"
+    } else {
+        "unknown"
+    }
+}
+
+/// go-ios `image list`: a JSON line with a list of mounted image
+/// signatures, empty when none is mounted.
+fn image_state(ok: bool, text: &str) -> &'static str {
+    if !ok {
+        return "unknown";
+    }
+    for line in text.lines().rev() {
+        if let Ok(Value::Object(fields)) = serde_json::from_str::<Value>(line.trim()) {
+            if let Some(Value::Array(list)) = fields
+                .iter()
+                .find(|(_, value)| value.is_array())
+                .map(|(_, v)| v)
+            {
+                return if list.is_empty() {
+                    "not_mounted"
+                } else {
+                    "mounted"
+                };
+            }
+            if fields.values().any(|v| {
+                v.as_str()
+                    .is_some_and(|m| m.to_lowercase().contains("none"))
+            }) {
+                return "not_mounted";
+            }
+        }
+    }
+    "unknown"
+}
+
+fn major(version: &str) -> Option<u32> {
+    version.trim().split('.').next()?.parse().ok()
+}
+
+/// The plain next steps for a phone in this state, most urgent first.
+fn next_steps(state: &Value) -> Vec<Value> {
+    let step = |text: &str, operation: Value| json!({"step":text,"operation":operation});
+    let mut steps = Vec::new();
+    if !b(state, "connected") {
+        steps.push(step(
+            "Connect the iPhone with a USB cable and unlock it.",
+            Value::Null,
+        ));
+        return steps;
+    }
+    match s(state, "pairing") {
+        "locked" => steps.push(step("Unlock the iPhone with its passcode, then check again.", Value::Null)),
+        "trust_pending" => steps.push(step("On the iPhone, tap Trust and enter the passcode.", Value::Null)),
+        "denied" => steps.push(step(
+            "The iPhone refused this computer. Unplug it, plug it in again, tap Trust and enter the passcode.",
+            Value::Null,
+        )),
+        "not_paired" | "unknown" => steps.push(step(
+            "Pair this computer with the iPhone, then tap Trust on the iPhone and enter the passcode.",
+            json!({"operation":"ios.prepare","arguments":{"action":"pair","device":state["device"]}}),
+        )),
+        _ => (),
+    }
+    if s(state, "pairing") != "paired" {
+        return steps;
+    }
+    if state["developer_mode"] == false {
+        steps.push(step(
+            "Turn on Developer Mode on the iPhone: Settings, Privacy & Security, Developer Mode. The iPhone restarts; unlock it and confirm Turn On. If the switch is missing, install a development build once (project.run) and look again.",
+            Value::Null,
+        ));
+    }
+    if s(state, "developer_image") == "not_mounted" {
+        steps.push(step(
+            "Mount the developer image.",
+            json!({"operation":"ios.prepare","arguments":{"action":"developer-image","device":state["device"]}}),
+        ));
+    }
+    if major(s(state, "ios_version")).is_some_and(|v| v >= 17) {
+        steps.push(step(
+            "On iOS 17 and newer, keep a tunnel running while you use developer services.",
+            json!({"operation":"ios.prepare","arguments":{"action":"tunnel","device":state["device"]}}),
+        ));
+    }
+    steps
+}
+
+/// `ios.device_status`: whether a USB iPhone is connected, paired and
+/// trusted, unlocked, in Developer Mode and has the developer image, with
+/// plain next steps. Only libimobiledevice's simple connection is used
+/// before the phone is paired, so the check itself asks nothing of it.
+pub fn status(a: &Value) -> Result {
+    let listing = crate::devices::listing("ios")?;
+    let ids: Vec<String> = listing["devices"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|d| s(d, "id").to_string())
+        .collect();
+    let device = match (s(a, "device"), ids.as_slice()) {
+        ("", [one]) => one.clone(),
+        ("", []) => String::new(),
+        ("", _) => {
+            return Err(Error::new(
+                "device_required",
+                "Several iPhones are connected; pass device",
+            )
+            .details(json!({"devices":ids})));
+        }
+        (given, _) => udid(given)?.to_string(),
+    };
+    let connected = !device.is_empty() && ids.contains(&device);
+    let mut state = json!({"device":device,"connected":connected,"pairing":"unknown","trusted":false,
+        "unlocked":null,"developer_mode":null,"developer_image":"unknown","ios_version":null,
+        "name":null,"tunnel":"not_checked","diagnostics":listing["diagnostics"]});
+    if connected {
+        if let Some(info) = tc::find_optional("ideviceinfo")? {
+            for (key, field) in [("ProductVersion", "ios_version"), ("DeviceName", "name")] {
+                let (ok, text) = answer(&argv(&[&info, "-s", "-u", &device, "-k", key]));
+                let value = text.lines().next().unwrap_or("").trim();
+                if ok && !value.is_empty() {
+                    state[field] = json!(value);
+                }
+            }
+        }
+        let pair = tc::find("idevicepair")?;
+        let (listed_ok, listed) = answer(&argv(&[&pair, "list"]));
+        let recorded = listed_ok && listed.lines().any(|line| line.trim() == device);
+        state["pairing"] = json!(if recorded {
+            let (ok, text) = answer(&argv(&[&pair, "-u", &device, "validate"]));
+            pairing_state(ok, &text)
+        } else {
+            "not_paired"
+        });
+        let paired = s(&state, "pairing") == "paired";
+        state["trusted"] = json!(paired);
+        state["unlocked"] = match s(&state, "pairing") {
+            "locked" => json!(false),
+            "paired" => json!(true),
+            _ => Value::Null,
+        };
+        if paired {
+            if let Some(info) = tc::find_optional("ideviceinfo")? {
+                let (ok, text) = answer(&argv(&[
+                    &info,
+                    "-u",
+                    &device,
+                    "-q",
+                    "com.apple.security.mac.amfi",
+                    "-k",
+                    "DeveloperModeStatus",
+                ]));
+                state["developer_mode"] = match (ok, text.lines().next().unwrap_or("").trim()) {
+                    (true, "true") => json!(true),
+                    (true, "false") => json!(false),
+                    // Before iOS 16 there is no Developer Mode to turn on.
+                    _ if major(s(&state, "ios_version")).is_some_and(|v| v < 16) => {
+                        json!("not_applicable")
+                    }
+                    _ => Value::Null,
+                };
+            }
+            if let Some(go) = tc::find_optional("go-ios")? {
+                let (ok, text) =
+                    answer(&argv(&[&go, "image", "list", &format!("--udid={device}")]));
+                state["developer_image"] = json!(image_state(ok, &text));
+            }
+        }
+    }
+    let steps = next_steps(&state);
+    state["ready"] = json!(
+        connected
+            && s(&state, "pairing") == "paired"
+            && (state["developer_mode"] == true || state["developer_mode"] == "not_applicable")
+            && s(&state, "developer_image") == "mounted"
+    );
+    state["next_steps"] = json!(steps);
+    Ok(state)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pairing_and_image_answers_are_read() {
+        let device = "00008110-0011223344556677";
+        assert_eq!(
+            pairing_state(
+                true,
+                &format!("SUCCESS: Validated pairing with device {device}")
+            ),
+            "paired"
+        );
+        assert_eq!(
+            pairing_state(
+                false,
+                &format!(
+                    "ERROR: Could not validate with device {device} because a passcode is set. Please enter the passcode on the device and retry."
+                )
+            ),
+            "locked"
+        );
+        assert_eq!(
+            pairing_state(
+                false,
+                &format!(
+                    "ERROR: Please accept the trust dialog on the screen of device {device}, then attempt to pair again."
+                )
+            ),
+            "trust_pending"
+        );
+        assert_eq!(
+            pairing_state(
+                false,
+                &format!("ERROR: Device {device} said that the user denied the trust dialog.")
+            ),
+            "denied"
+        );
+        assert_eq!(
+            pairing_state(
+                false,
+                &format!("ERROR: Device {device} is not paired with this host")
+            ),
+            "not_paired"
+        );
+        assert_eq!(pairing_state(false, "something else"), "unknown");
+        assert_eq!(
+            image_state(true, "{\"msg\":\"x\"}\n{\"images\":[\"abc\"]}"),
+            "mounted"
+        );
+        assert_eq!(image_state(true, "{\"images\":[]}"), "not_mounted");
+        assert_eq!(
+            image_state(true, "{\"msg\":\"none mounted\"}"),
+            "not_mounted"
+        );
+        assert_eq!(image_state(false, "{\"images\":[\"abc\"]}"), "unknown");
+        assert_eq!(image_state(true, "plain text"), "unknown");
+    }
+
+    #[test]
+    fn next_steps_follow_the_first_thing_missing() {
+        let device = "00008110-0011223344556677";
+        let steps = next_steps(&json!({"device":device,"connected":false}));
+        assert!(s(&steps[0], "step").contains("USB cable"));
+        let steps = next_steps(&json!({"device":device,"connected":true,"pairing":"not_paired"}));
+        assert_eq!(steps.len(), 1);
+        assert_eq!(steps[0]["operation"]["arguments"]["action"], "pair");
+        let steps = next_steps(&json!({"device":device,"connected":true,"pairing":"locked"}));
+        assert!(s(&steps[0], "step").contains("Unlock"));
+        let steps = next_steps(&json!({"device":device,"connected":true,"pairing":"paired",
+            "developer_mode":false,"developer_image":"not_mounted","ios_version":"18.1"}));
+        let texts: Vec<_> = steps.iter().map(|v| s(v, "step")).collect();
+        assert!(texts[0].contains("Developer Mode"));
+        assert_eq!(
+            steps[1]["operation"]["arguments"]["action"],
+            "developer-image"
+        );
+        assert_eq!(steps[2]["operation"]["arguments"]["action"], "tunnel");
+        let ready = next_steps(&json!({"device":device,"connected":true,"pairing":"paired",
+            "developer_mode":true,"developer_image":"mounted","ios_version":"16.7"}));
+        assert!(ready.is_empty());
+    }
 
     #[test]
     fn syslog_lines_are_kept_by_process_and_text() {

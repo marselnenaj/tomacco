@@ -49,11 +49,14 @@ einrichten*) shows what is missing and offers each step. Agents and scripts use 
 same operations:
 
 1. **Check what is there.** `ACTUAL_UDID` below is the real device id from `device.list`.
+   `ios.device_status` then says what the phone itself still needs; see
+   [Is the phone ready?](#is-the-phone-ready).
 
    ```sh
    tomaccoctl call settings.configure '{"executables":{"go-ios":"/absolute/go-ios"}}'
    tomaccoctl call ios.doctor '{"path":"/absolute/MyiOSApp"}'
    tomaccoctl call device.list '{"platform":"ios"}'
+   tomaccoctl call ios.device_status '{"device":"ACTUAL_UDID"}'
    ```
 
 2. **Log in and import the SDK.** The login opens `xtool auth login` in a local
@@ -142,6 +145,23 @@ These operations look at and act on an iPhone connected by USB. They were tested
 stand-ins only; no iPhone was connected. So they check what Tomacco asks of go-ios,
 libimobiledevice and WebDriverAgent and how it reads the answers, not that a real phone
 answers that way.
+
+### Is the phone ready?
+
+`ios.device_status` says in one call whether the phone is connected, paired and trusted,
+unlocked, in Developer Mode and has the developer image mounted, and what to do next.
+
+```sh
+tomaccoctl call ios.device_status '{"device":"ACTUAL_UDID"}'
+```
+
+`next_steps` lists plain sentences, most urgent first, such as "On the iPhone, tap Trust and
+enter the passcode." Where Tomacco can do the step, it names the operation, for example
+`ios.prepare` with `action:"pair"`. With one iPhone connected, `device` can be left out.
+
+Until the phone is paired, the check uses only libimobiledevice's simple connection, so it
+does not make a Trust prompt appear on the phone. It does not check whether a tunnel is
+running.
 
 ### Logs of one app
 
