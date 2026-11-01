@@ -8425,6 +8425,15 @@
           "type": "string",
           "minLength": 1,
           "description": "The passt executable of guest_network nat; default: passt on PATH."
+        },
+        "guest_memory_import": {
+          "type": "string",
+          "enum": [
+            "shared",
+            "dma-buf"
+          ],
+          "default": "shared",
+          "description": "Guest RAM for the renderer's GPU import, with guest_control_backend. shared keeps QEMU's shared RAM, which radv/amdgpu refuse to import, so frames are copied on the CPU. dma-buf lays guest RAM on a sealed memfd that the renderer imports through /dev/udmabuf in windows of the kernel's udmabuf.size_limit_mb; it falls back to shared when /dev/udmabuf or memfds are unavailable, and to CPU copies when the import is refused. The request receipt's guest_memory_import says which backing ran."
         }
       },
       "required": [

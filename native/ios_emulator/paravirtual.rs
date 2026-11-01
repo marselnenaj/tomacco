@@ -55,6 +55,14 @@ pub fn start(a: &Value) -> Result {
             "guest_network must be off or nat",
         ));
     }
+    if a.get("guest_memory_import").is_some()
+        && !matches!(s(a, "guest_memory_import"), "shared" | "dma-buf")
+    {
+        return Err(Error::new(
+            "invalid_engine_option",
+            "guest_memory_import must be shared or dma-buf",
+        ));
+    }
     if a.get("guest_network_backend").is_some() && s(a, "guest_network") != "nat" {
         return Err(Error::new(
             "invalid_guest_network",
@@ -204,6 +212,7 @@ pub fn start(a: &Value) -> Result {
         "jump_probe",
         "target_page",
         "guest_network",
+        "guest_memory_import",
     ]) {
         if key.get(name).is_some() {
             argv.extend([
