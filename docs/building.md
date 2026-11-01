@@ -205,6 +205,7 @@ updates and removes the Arch package.
 | Menu entry and icon | `~/.local/share/applications/`, `~/.local/share/icons/` |
 | Documents | `~/.local/share/doc/tomacco/` |
 | Window rules, with `--omarchy` | `~/.config/hypr/tomacco.lua`, required from `hyprland.lua` |
+| Agent skill | `~/.local/lib/tomacco/skills/tomacco`, linked from `~/.claude/skills`, `~/.codex/skills` and `~/.agents/skills` where `~/.claude`, `~/.codex` or `~/.agents` exists ([agent skill](agents.md#agent-skill)) |
 | App preferences | `~/.config/marselnenaj/Tomacco.conf` |
 | Data, profiles, job history | `~/.local/share/tomacco`, or an absolute `TOMACCO_HOME` |
 
@@ -214,8 +215,9 @@ updates and removes the Arch package.
 | `--cli` | Selects a separate `tomaccoctl` build (default: next to the desktop binary) |
 | `--omarchy` | Adds the Omarchy panel and Hyprland rules |
 | `--no-window-rule` | Leaves the Hyprland configuration alone |
+| `--no-agent-skill` | Links the agent skill into no agent's skills directory, and removes the links an earlier installation made |
 | `--user-home` | Stages an installation into another home |
-| `--update` | Keeps the integrations as they are: refreshes the Omarchy panel and window rules only where they are in use (what an update passes) |
+| `--update` | Keeps the integrations as they are: refreshes the Omarchy panel and window rules only where they are in use, and adds no agent skill link you removed (what an update passes) |
 | `--list-backups` | Lists recovery points |
 | `--rollback ID` | Restores one, after verifying all current files; refuses to overwrite your later edits, and makes its own backup |
 | `--uninstall` | Removes what the installs wrote, while each file is still as installed; files you changed are kept and listed |
@@ -226,7 +228,7 @@ Every replaced file is backed up under `~/.local/share/tomacco/install-backups/<
 the disk with one `syncfs` (one `fsync` per file where that is missing), and only then renames them into place. After a crash or a kill,
 each file is either as before or as installed: `--rollback ID` accepts both, `--uninstall` finishes an interrupted uninstall, and the next
 run deletes the `.tomacco-staged-*` files a killed run left. An uninstall
-undoes its edits to `hyprland.lua` and `shell.json`, never touches `~/.local/share/tomacco`, and is itself journalled, so `--rollback ID` brings the
+undoes its edits to `hyprland.lua` and `shell.json`, removes the agent skill links, never touches `~/.local/share/tomacco`, and is itself journalled, so `--rollback ID` brings the
 installation back. An uninstall also leaves your preferences (`~/.config/marselnenaj/Tomacco.conf`) and caches (`~/.cache/marselnenaj/Tomacco`); delete those and
 `~/.local/share/tomacco` by hand to remove every trace.
 

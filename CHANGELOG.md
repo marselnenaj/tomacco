@@ -10,6 +10,12 @@ operations and their JSON results.
 
 ### Added
 
+- An agent skill, `integrations/agent-skill/tomacco`, tells coding agents when to use Tomacco and how: MCP or
+  `tomaccoctl`, `capabilities` first, waiting for jobs, reading `remedy`, asking before destructive calls, and where the
+  installed guides are. `install.py` installs it in `~/.local/lib/tomacco/skills/tomacco` and links it into
+  `~/.claude/skills`, `~/.codex/skills` and `~/.agents/skills` where `~/.claude`, `~/.codex` or `~/.agents` exists,
+  never over another entry. The links are journalled, so `--uninstall` and `--rollback` remove exactly what was added;
+  `--no-agent-skill` leaves them out. `tomaccoctl setup` offers the link too, asking first.
 - `workflow.run` runs up to 20 operations in order in one call, follows each job a step starts until it ends, stops at
   the first step that fails and returns every step's result. A destructive step needs its own `confirm`; a later step
   can take a value from an earlier step's result with `{"from_step": N, "pointer": "/result/..."}`.
