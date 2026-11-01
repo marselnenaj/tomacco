@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 204 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 205 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -174,6 +174,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`ios.virtual.deploy`](ios.md#iosvirtualdeploy) | Install app on running virtual iOS device | writes |
 | [`ios.virtual.debug`](ios.md#iosvirtualdebug) | Debug process on virtual iOS device | writes |
 | [`ios.virtual.crash_reports`](ios.md#iosvirtualcrash_reports) | Save crash reports of virtual iOS device | writes |
+| [`ios.virtual.syslog`](ios.md#iosvirtualsyslog) | Log of virtual iOS device | read-only |
 | [`ios.virtual.screenshot`](ios.md#iosvirtualscreenshot) | Screenshot of virtual iOS device | writes |
 | [`ios.virtual.record`](ios.md#iosvirtualrecord) | Record virtual iOS device screen | writes |
 

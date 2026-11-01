@@ -170,6 +170,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "ios.virtual.state_delete" => crate::ios_emulator::virtual_phone::states::delete(&a),
         "ios.virtual.state_use" => crate::ios_emulator::virtual_phone::states::use_state(&a),
         "ios.virtual.crash_reports" => crate::ios_emulator::crash_reports::collect(&a),
+        "ios.virtual.syslog" => crate::ios_emulator::syslog::syslog(&a),
         "ios.virtual.configure" => crate::ios_emulator::virtual_phone::configure(&a),
         "ios.virtual.start" => crate::ios_emulator::virtual_phone::start(&a),
         "ios.virtual.stop" => crate::ios_emulator::virtual_phone::stop(&a),

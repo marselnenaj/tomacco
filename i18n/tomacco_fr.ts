@@ -4210,6 +4210,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>Profiles of virtual iOS device</source>
         <translation>Profils de l'appareil iOS virtuel</translation>
     </message>
+    <message>
+        <source>Log of virtual iOS device</source>
+        <translation>Journal de l'appareil iOS virtuel</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

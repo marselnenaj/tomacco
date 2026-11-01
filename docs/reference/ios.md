@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-50 operations. Generated from `assets/operations.json`; [all areas](README.md).
+51 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -993,6 +993,26 @@ Annotations: writes, not idempotent, closed world.
 
 ```sh
 tomaccoctl call ios.virtual.crash_reports '{"process":"<process>"}'
+```
+
+### ios.virtual.syslog
+
+**Log of virtual iOS device**
+
+Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)\[pid\]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `process` | string |  | `""` | up to 128 characters; Only lines whose process or service contains this, ignoring case. Empty: all. |
+| `levels` | array of string |  |  | items one of `emergency`, `alert`, `critical`, `error`, `fault`, `warning`, `notice`, `info`, `debug`, `default`, `none`; up to 11 items; Only lines with one of these levels; none matches lines without a level, such as the kernel's. Empty or absent: all. |
+| `contains` | string |  | `""` | up to 256 characters; Only lines whose message contains this text. |
+| `offset` | integer |  |  | at least 0; Byte offset to read on from: a previous reply's next_offset. Absent: the last 256 KiB. |
+| `max_lines` | integer |  | `500` | 1 to 5000; The most lines returned in one reply. |
+
+```sh
+tomaccoctl call ios.virtual.syslog
 ```
 
 ### ios.virtual.screenshot

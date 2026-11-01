@@ -9120,6 +9120,69 @@
     }
   },
   {
+    "name": "ios.virtual.syslog",
+    "title": "Log of virtual iOS device",
+    "description": "Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)[pid]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "process": {
+          "type": "string",
+          "maxLength": 128,
+          "default": "",
+          "description": "Only lines whose process or service contains this, ignoring case. Empty: all."
+        },
+        "levels": {
+          "type": "array",
+          "maxItems": 11,
+          "items": {
+            "type": "string",
+            "enum": [
+              "emergency",
+              "alert",
+              "critical",
+              "error",
+              "fault",
+              "warning",
+              "notice",
+              "info",
+              "debug",
+              "default",
+              "none"
+            ]
+          },
+          "description": "Only lines with one of these levels; none matches lines without a level, such as the kernel's. Empty or absent: all."
+        },
+        "contains": {
+          "type": "string",
+          "maxLength": 256,
+          "default": "",
+          "description": "Only lines whose message contains this text."
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Byte offset to read on from: a previous reply's next_offset. Absent: the last 256 KiB."
+        },
+        "max_lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000,
+          "default": 500,
+          "description": "The most lines returned in one reply."
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.virtual.screenshot",
     "title": "Screenshot of virtual iOS device",
     "description": "Save the running virtual iPhone's current screen as a PNG at path, from the same frame ios.emulator.control frame with transport file gives a viewer. frame none (default) keeps the picture as it is; rounded cuts the screen's corners round with the radius of the model the phone runs as (square for the Home-button phone) and makes outside them transparent; device also puts a plain black bezel around it, a drawing with rounded outer corners and no buttons, not a picture of the phone. The corner radius is the circular arc of the device catalogue's value, not Apple's continuous curve. MCP returns a PNG of up to 4 MiB inline. Refused with ios_virtual_not_running when the phone is off.",

@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 204 operations.
+`tomaccoctl` now has one typed API of 205 operations.
 
 ### Added
 
@@ -81,6 +81,9 @@ operations and their JSON results.
   - `ios.virtual.profiles` lists every profile directory configured so far with its run, phase and whether its phone runs.
     `ios.virtual.configure` refuses another directory while the current phone runs (`ios_virtual_running`) or a start or
     stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile.
+  - `ios.virtual.syslog` reads the phone's console log (the guest job's `uart.log`) as structured lines with time, process,
+    PID, level and message, filtered by process, level or text, and followed with `next_offset`. Tested against synthetic
+    console lines, not yet against a live phone's log.
 
 ### Changed
 

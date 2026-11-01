@@ -1431,6 +1431,22 @@ pub(super) fn running_guest() -> Result<(String, String)> {
     ))
 }
 
+/// The guest job of the configured phone's current or last run, running or
+/// not, or `ios_virtual_not_running` when no run has one.
+pub(super) fn guest_job() -> Result<String> {
+    let (_, state) = records(&directory()?)?;
+    match state["guest_job"].as_str() {
+        Some(id) if !id.is_empty() => {
+            identifier(id, "job ID", Some("[0-9a-f]{32}"))?;
+            Ok(id.to_string())
+        }
+        _ => Err(Error::new(
+            "ios_virtual_not_running",
+            "The phone has no run with a guest job; start it with ios.virtual.start",
+        )),
+    }
+}
+
 /// Whether the state's guest job is still on its way or running.
 fn guest_is_running(state: &Value) -> bool {
     state["guest_job"].as_str().is_some_and(|id| {

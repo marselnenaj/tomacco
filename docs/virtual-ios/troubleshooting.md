@@ -76,6 +76,21 @@ prove that nothing crashed. The saving has unit tests; it has not been run again
 `logs development` shows the adapter's `active` line with `entries`, and an `entry` line per further identifier.
 That tells an inactive signing library from a refused bundle.
 
+The phone's console log, where the kernel prints and launchd forwards log records, comes as structured lines with
+`ios.virtual.syslog`, filtered by process, level or text:
+
+```sh
+tomaccoctl call ios.virtual.syslog '{"process":"MyApp"}'
+tomaccoctl call ios.virtual.syslog '{"levels":["error","fault"],"max_lines":100}'
+tomaccoctl call ios.virtual.syslog '{"process":"MyApp","offset":123456}'
+```
+
+Each line has `time`, `process`, `pid`, `service`, `sender`, `level` and `message`; a line of no known form is the kernel's.
+Without `offset` it reads the last 256 KiB; pass the reply's `next_offset` back to follow the log. It reads the guest job's
+`uart.log` on the host and asks the guest nothing, so it also works after the phone stopped, for the last run. The parsing
+is tested against synthetic console lines; which forms a live phone prints, and how many of its records reach the console,
+has not been surveyed yet.
+
 ## While it runs
 
 | Symptom | Cause | Fix |
