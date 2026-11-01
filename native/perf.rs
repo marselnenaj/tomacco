@@ -58,7 +58,7 @@ pub fn summary(values: &[f64]) -> Value {
 }
 
 /// Writes a report to `report` when given, and returns it.
-fn finish(a: &Value, report: Value) -> Result {
+pub(crate) fn finish(a: &Value, report: Value) -> Result {
     if !s(a, "report").is_empty() {
         atomic_json(&output_path(s(a, "report"))?, &report)?;
     }
@@ -165,6 +165,25 @@ fn startup_metrics(mode: &str, total: &Value) -> Map<String, Value> {
 /// keeps the process and recreates the activity (`--activity-clear-task`);
 /// hot brings the existing activity back from the home screen.
 pub fn startup(a: &Value) -> Result {
+    if crate::ios_emulator::ui_testing::is_virtual(s(a, "device")) {
+        return crate::ios_emulator::startup::measure(a);
+    }
+    match s(a, "platform") {
+        "" | "android" => (),
+        "ios" => return crate::ios_startup::iphone(a),
+        other => {
+            return Err(Error::new(
+                "invalid_argument",
+                format!("Unknown platform: {other}"),
+            ));
+        }
+    }
+    if a.get("settle_ms").is_some() {
+        return Err(Error::new(
+            "invalid_argument",
+            "settle_ms is for an iPhone; Android reports its own launch time",
+        ));
+    }
     let device = identifier(s(a, "device"), "device", None)?;
     let id = bundle(s(a, "bundle_id"))?;
     let mode = match s(a, "mode") {

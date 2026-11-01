@@ -65,17 +65,19 @@ tomaccoctl call profile.compare '{"baseline":"<baseline>","current":"<current>"}
 
 **Measure app startup**
 
-Launch an Android app several times cold, warm or hot with am start -W and report each launch's TotalTime and WaitTime in milliseconds with count, min, max, mean, median and p90. cold stops the app before each launch; warm keeps the process and recreates the activity; hot returns to the running activity from the home screen. Each run lists the launch state Android reported, and mismatched_runs counts launches whose state differs from mode. metrics (startup_&lt;mode&gt;_median_ms and others) feed profile.compare and profile.budget; report saves the result as JSON.
+Launch an app several times and report each launch's time in milliseconds with count, min, max, mean, median and p90. On Android it reads am start -W's TotalTime and WaitTime: cold stops the app before each launch; warm keeps the process and recreates the activity; hot returns to the running activity from the home screen. Each run lists the launch state Android reported, and mismatched_runs counts launches whose state differs from mode. On an iPhone (platform ios with its UDID, through go-ios) or the virtual iPhone (device virtual-iphone) there is no launch timer, so the screen is timed: from the open request to the first picture that differs from the one before and stays different (first_frame_ms, the startup_&lt;mode&gt;_\* metrics), to the request returning with the app's process (launched_ms) and to the screen keeping still for settle_ms (settled_ms); modes are cold (the app's process ended first: go-ios kill, or restart_ui on the virtual iPhone) and hot (sent to the background and opened again), and launch_state compares the app's process with the one before. iPhone times are coarse (resolution_ms); virtual-iPhone times are emulated and far slower than an iPhone's. metrics (startup_&lt;mode&gt;_median_ms and others) feed profile.compare and profile.budget; report saves the result as JSON.
 
 Annotations: writes, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
-| `bundle_id` | string | yes |  | non-empty; Application ID of the installed app |
-| `activity` | string |  |  | Activity to start, as package/class, .Class or a class name; the launcher activity by default |
-| `mode` | string |  | `"cold"` | one of `cold`, `warm`, `hot` |
-| `runs` | integer |  | `5` | 1 to 30; Measured launches; warm and hot add one unmeasured launch first |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list, or virtual-iphone |
+| `platform` | string |  |  | one of `android`, `ios`; ios for a USB-connected iPhone; Android when left out, and the virtual iPhone needs none |
+| `bundle_id` | string | yes |  | non-empty; Application ID or bundle ID of the installed app |
+| `activity` | string |  |  | Android only: activity to start, as package/class, .Class or a class name; the launcher activity by default |
+| `mode` | string |  | `"cold"` | one of `cold`, `warm`, `hot`; cold, warm or hot on Android; cold or hot on an iPhone |
+| `runs` | integer |  | `5` | 1 to 30; Measured launches; warm and hot on Android, and every iPhone measurement, add one unmeasured launch first |
+| `settle_ms` | integer |  |  | 200 to 10000; iPhone only: how long the screen must keep still to count as settled, 2000 by default |
 | `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
 
 ```sh

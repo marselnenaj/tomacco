@@ -1487,6 +1487,10 @@
     "cause": "HOME is not set.",
     "remedy": "Run tomaccoctl setup from a normal login shell with HOME set."
   },
+  "startup_unobserved": {
+    "cause": "The screen did not change for … s after the app was opened.",
+    "remedy": "Check that the app opens and draws on this phone (a screenshot after device.app launch), then try again."
+  },
   "step_failed": {
     "cause": "… failed (…).",
     "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."

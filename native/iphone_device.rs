@@ -72,7 +72,7 @@ pub fn installed<'a>(apps: &'a [Value], bundle: &str) -> Result<&'a Value> {
 }
 
 /// The process name an app's log lines carry: its executable.
-fn executable(app: &Value) -> Result<String> {
+pub(crate) fn executable(app: &Value) -> Result<String> {
     let name = s(app, "CFBundleExecutable");
     if name.is_empty()
         || name.len() > 255
@@ -149,7 +149,7 @@ fn syslog_text(line: &str) -> (String, Option<String>) {
     (line.to_string(), None)
 }
 
-fn keep(line: &str, process: &str, filter: &str) -> Option<String> {
+pub(crate) fn keep(line: &str, process: &str, filter: &str) -> Option<String> {
     let (text, named) = syslog_text(line.trim_end());
     if !process.is_empty() {
         let actual = named.as_deref().or_else(|| line_process(&text));

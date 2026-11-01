@@ -398,5 +398,144 @@ class MjpegTests(unittest.TestCase):
             self.assertEqual(found, [b"\xff\xd8one\xff\xd9", b"\xff\xd8two\xff\xd9"], size)
 
 
+# go-ios for startup measurements: a phone whose state lives in phone.json.
+# launch and kill change what is in front; screenshot --stream serves one
+# picture every 50 ms over HTTP whose single byte is the screen's shade; the
+# app draws 300 ms after its launch, and logs a line 100 ms after it.
+STARTUP_GO_IOS = """import json,os,socket,sys,time
+from pathlib import Path
+root=Path(os.environ['TOMACCO_TEST_ROOT'])
+with (root/'go-ios.log').open('a') as log: log.write(json.dumps(sys.argv[1:])+'\\n')
+state=root/'phone.json'
+SHADES={'home':40,'settings':120}
+def load():
+    return json.loads(state.read_text()) if state.exists() else {'front':'home','pid':0,'next':500,'since':0,'behind':40}
+def save(s):
+    temporary=root/'phone.tmp'; temporary.write_text(json.dumps(s)); os.replace(temporary,state)
+def shade(s):
+    if s['front']!='app': return SHADES[s['front']]
+    return 220 if time.time()-s['since']>0.3 else s['behind']
+command=sys.argv[1]
+if command=='apps': print(json.dumps(%s))
+elif command=='launch':
+    s=load()
+    if sys.argv[2]=='com.apple.Preferences': s['front']='settings'
+    else:
+        s['behind']=shade(s)
+        if not s['pid']: s['pid']=s['next']; s['next']+=1
+        s['front']='app'; s['since']=time.time()
+        print(json.dumps({'level':'info','msg':'Process launched','pid':s['pid']}),file=sys.stderr)
+    save(s)
+elif command=='kill':
+    s=load()
+    if not s['pid']: print('process not found',file=sys.stderr); sys.exit(1)
+    s['pid']=0; s['front']='home'; save(s)
+elif command=='screenshot':
+    port=int([a for a in sys.argv if a.startswith('--port=')][0][7:])
+    server=socket.socket(); server.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+    server.bind(('127.0.0.1',port)); server.listen(1)
+    connection,_=server.accept(); connection.recv(4096)
+    connection.sendall(b'HTTP/1.0 200 OK\\r\\nContent-Type: multipart/x-mixed-replace;boundary=b\\r\\n\\r\\n')
+    while True:
+        connection.sendall(b'--b\\r\\nContent-Type: image/jpeg\\r\\n\\r\\n\\xff\\xd8'+bytes([shade(load())])+b'\\xff\\xd9\\r\\n')
+        time.sleep(0.05)
+elif command=='syslog':
+    logged=0
+    while True:
+        s=load()
+        if s['front']=='app' and s['since']!=logged and time.time()-s['since']>0.1:
+            logged=s['since']
+            print(json.dumps({'msg':'Nov  1 10:00:00 iPhone Counter(UIKitCore)[%%d] <Notice>: scene active' %% s['pid']}),flush=True)
+        time.sleep(0.05)
+""" % json.dumps(APPS)
+
+# ffmpeg turning each stand-in picture into one 32 x 64 grey frame of its shade.
+FFMPEG = """import json,os,sys
+from pathlib import Path
+with (Path(os.environ['TOMACCO_TEST_ROOT'])/'ffmpeg.log').open('a') as log: log.write(json.dumps(sys.argv[1:])+'\\n')
+data=b''
+while True:
+    chunk=sys.stdin.buffer.read1(65536)
+    if not chunk: break
+    data+=chunk
+    while True:
+        start=data.find(b'\\xff\\xd8'); end=data.find(b'\\xff\\xd9',start+2) if start>=0 else -1
+        if start<0 or end<0: break
+        sys.stdout.buffer.write(bytes([data[start+2]])*2048); sys.stdout.buffer.flush(); data=data[end+2:]
+"""
+
+
+class IphoneStartupTests(IphoneTools):
+    """profile.startup on a USB iPhone, against stand-ins for go-ios and ffmpeg:
+    what is asked of them and how the screen times are read, not a phone."""
+
+    def setUp(self):
+        super().setUp()
+        self.tool("go-ios", STARTUP_GO_IOS)
+        self.without_path_tools()
+        # ffmpeg is found on PATH, which is now only the stand-in.
+        ffmpeg = self.root / "empty-path" / "ffmpeg"
+        ffmpeg.write_text("#!" + sys.executable + "\n" + FFMPEG)
+        ffmpeg.chmod(0o755)
+
+    def measure(self, **extra):
+        return dispatch("profile.startup", {"platform": "ios", "device": UDID, "bundle_id": "dev.example.counter",
+                                            "runs": 2, "settle_ms": 300, **extra})
+
+    def test_cold_launches_are_timed_on_the_screen_stream_after_go_ios_kill(self):
+        target = self.root / "startup.json"
+        value = self.measure(report=str(target))
+        self.assertEqual((value["device_kind"], value["mode"], value["kind"]), ("iphone", "cold", "startup"))
+        self.assertEqual(value["installed_bundle_id"], "XTL-AB12.dev.example.counter")
+        self.assertEqual([run["launch_state"] for run in value["runs"]], ["cold", "cold"])
+        self.assertEqual([run["pid"] for run in value["runs"]], [501, 502])
+        self.assertEqual(value["mismatched_runs"], 0)
+        for run in value["runs"]:
+            # The stand-in app draws 300 ms after its launch, seen in 50 ms pictures.
+            self.assertGreaterEqual(run["first_frame_ms"], 280)
+            self.assertLess(run["first_frame_ms"], 2000)
+            self.assertLessEqual(run["launched_ms"], run["first_frame_ms"])
+            self.assertIsNotNone(run["settled_ms"])
+            self.assertIsNotNone(run["first_log_ms"])
+            self.assertTrue(run["baseline_still"])
+        metrics = value["metrics"]
+        for name in ("startup_cold_median_ms", "startup_cold_p90_ms", "startup_cold_launched_median_ms",
+                     "startup_cold_settled_median_ms", "startup_cold_first_log_median_ms"):
+            self.assertIsInstance(metrics[name], (int, float), name)
+        self.assertEqual(json.loads(target.read_text())["metrics"], metrics)
+        calls = self.calls()
+        app = "XTL-AB12.dev.example.counter"
+        self.assertEqual(sum(call == ["kill", app, "--udid=" + UDID] for call in calls), 2)
+        self.assertEqual(sum(call == ["launch", app, "--udid=" + UDID] for call in calls), 3)
+        stream = next(call for call in calls if call[0] == "screenshot")
+        self.assertEqual((stream[1], stream[3]), ("--stream", "--udid=" + UDID))
+        self.assertIn(["syslog", "--udid=" + UDID], calls)
+        decoder = self.calls("ffmpeg.log")[0]
+        self.assertIn("scale=32:64:flags=area,format=gray", decoder)
+        # The saved report passes and fails budgets like an Android one.
+        verdict = dispatch("profile.budget", {"reports": [str(target)],
+                                              "budgets": {"startup_cold_median_ms": {"maximum": 60000},
+                                                          "startup_cold_settled_p90_ms": {"maximum": 1}}})
+        self.assertEqual([r["passed"] for r in verdict["results"]], [True, False])
+
+    def test_hot_launches_reopen_the_running_app_from_settings(self):
+        value = self.measure(mode="hot", runs=1)
+        self.assertEqual(value["runs"][0]["launch_state"], "hot")
+        self.assertEqual(value["runs"][0]["pid"], 500)
+        self.assertIn(["launch", "com.apple.Preferences", "--udid=" + UDID], self.calls())
+        self.assertFalse(any(call[0] == "kill" for call in self.calls()))
+        self.assertIsInstance(value["metrics"]["startup_hot_median_ms"], (int, float))
+
+    def test_android_only_modes_and_arguments_are_refused(self):
+        for extra in ({"mode": "warm"}, {"activity": ".Main"}):
+            with self.assertRaises(StudioError) as refused:
+                self.measure(**extra)
+            self.assertEqual(refused.exception.code, "invalid_argument")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("profile.startup", {"device": "emulator-5554", "bundle_id": "dev.example.counter", "settle_ms": 500})
+        self.assertEqual(refused.exception.code, "invalid_argument")
+        self.assertFalse(any(call[0] in ("launch", "kill") for call in self.calls()))
+
+
 if __name__ == "__main__":
     unittest.main()

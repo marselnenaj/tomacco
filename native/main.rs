@@ -32,6 +32,7 @@ mod gradle_model;
 mod guard;
 mod instrumentation;
 mod ios_emulator;
+mod ios_startup;
 mod iphone_automation;
 mod iphone_device;
 mod iphone_setup;

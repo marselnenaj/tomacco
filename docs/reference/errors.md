@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 459 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -378,6 +378,7 @@ Every error code `tomaccoctl` returns, 459 codes, generated from `assets/errors.
 | `setting_not_applied` | Android did not apply: … | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `setting_unsupported` | Switching airplane mode from adb needs Android 11 (API 30) or newer. | Older Android changes the language only for the whole device, in its Settings app. |
 | `setup_failed` | HOME is not set. | Run tomaccoctl setup from a normal login shell with HOME set. |
+| `startup_unobserved` | The screen did not change for … s after the app was opened. | Check that the app opens and draws on this phone (a screenshot after device.app launch), then try again. |
 | `step_failed` | … failed (…). | Read the message and the job's log (job.logs); fix the cause and try again. |
 | `step_unsupported` | Step …: … | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `storage_flush_unverified` | Engine did not confirm flushing the disposable image. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
