@@ -49,8 +49,8 @@ cargo clippy --locked --all-targets -- -D warnings
 
 `ctest` includes the Python suite in `tests/python`, which also checks the documentation: every
 relative link and anchor, every `tomaccoctl call` line against the schema, and that the operation
-reference in `docs/reference/` matches `assets/operations.json`. After changing an operation, run
-`python3 tools/build_reference.py`. The documentation checks alone take about a second, from the
+reference in `docs/reference/` matches `assets/operations.json`. After changing an operation or an error code, run
+`python3 tools/build_reference.py`; it also rewrites the agent skill's `references/`. The documentation checks alone take about a second, from the
 repository root:
 
 ```sh

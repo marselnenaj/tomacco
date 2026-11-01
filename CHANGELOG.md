@@ -10,6 +10,16 @@ operations and their JSON results.
 
 ### Added
 
+- The agent skill is now a router with references instead of one page. `SKILL.md` (about 1,600 words) has a description
+  that covers every area, including understanding a screen with marks and OCR, macrobenchmark and baseline profiles and
+  the Omarchy commands; how to reach Tomacco over MCP (with the `full`, `compact` and `grouped` tool lists) or the CLI;
+  jobs; safety; a table from task to area; the core loops; and how to read an error. `workflows.md` replaces
+  `examples.md` with call sequences for the common jobs. `references/` has a file per area with every operation, its
+  arguments, annotations and an example call, plus `errors.md` and `index.md`; `tools/build_reference.py` generates
+  them from `assets/operations.json` and `assets/errors.json`. Tests check that each operation is in exactly one file,
+  that the files are current, that every operation and argument the skill names exists and that `SKILL.md` stays within
+  its word budget. The installer already linked the whole directory; a test now checks that `references/` is reachable
+  through each agent's link, also after an update.
 - `tools/build_site_docs.py` renders the Markdown in `docs/` as static pages for the website (guides, virtual iOS
   device, operation reference), with a guide list, a table of contents per page and no script. A test checks that every
   document renders and every link and anchor in the output resolves; `docs/building.md` says how to regenerate them.
