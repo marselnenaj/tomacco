@@ -2,7 +2,7 @@
 
 # `android` operations
 
-27 operations. Generated from `assets/operations.json`; [all areas](README.md).
+28 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### android.screen
 
@@ -510,4 +510,23 @@ Annotations: read-only, idempotent, closed world.
 
 ```sh
 tomaccoctl call android.package_inspect '{"path":"<path>"}'
+```
+
+### android.size_report
+
+**Report APK or AAB size**
+
+Break an APK or AAB down by size without a device: totals, each category (dex, native, resources, assets, manifest, signature), each ABI, screen density and bundle module, and the largest files. estimate.by_abi_density adds up the compressed sizes one device would get without other ABIs' libraries and other densities' resources. For an AAB with bundletool configured, download has bundletool get-size total's download size per ABI and density, from APKs it builds in a temporary directory. baseline compares with an earlier build: the change of every total and the files that grew, shrank, appeared or went away the most.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute path of an .apk or .aab file |
+| `baseline` | string |  | `""` | Absolute path of an earlier .apk or .aab to compare with |
+| `top` | integer |  | `15` | 1 to 200; How many of the largest and most changed files to list |
+| `bundletool` | boolean |  | `true` | For an AAB, also ask bundletool for the download size; false reads the file only |
+
+```sh
+tomaccoctl call android.size_report '{"path":"<path>"}'
 ```

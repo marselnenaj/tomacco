@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 200 operations.
+`tomaccoctl` now has one typed API of 201 operations.
 
 ### Added
 
@@ -19,6 +19,9 @@ operations and their JSON results.
     fastlane's, Gradle Play Publisher's or a whatsnew directory's layout, and refuses a text over Play's 500 characters
     unless `truncate` cuts it at whole lines. Its result is `play.prepare`'s `release_notes`, which now also takes
     language codes with digits such as `es-419`.
+  - `android.size_report` breaks an APK or AAB down by size per category, ABI, density and module with its largest
+    files, estimates the download per ABI and density (from `bundletool get-size total` for an AAB when bundletool is
+    configured), and compares with a `baseline` build.
 - **Testing.**
   - `testing.record` records a UI test on an Android device: taps, swipes, text and keys sent through
     `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`

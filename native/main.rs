@@ -2,6 +2,7 @@ mod accessibility;
 mod android_debug;
 mod android_device;
 mod android_package;
+mod android_size;
 mod api;
 mod apple;
 mod apple_dev;

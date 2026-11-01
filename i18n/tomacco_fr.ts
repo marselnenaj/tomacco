@@ -3679,6 +3679,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Inspecter un APK ou AAB</translation>
     </message>
     <message>
+        <source>Report APK or AAB size</source>
+        <translation>Analyser la taille de l'APK ou de l'AAB</translation>
+    </message>
+    <message>
         <source>Install iOS toolkit</source>
         <translation>Installer les outils iOS</translation>
     </message>

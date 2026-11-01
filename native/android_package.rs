@@ -13,6 +13,7 @@ struct Entry {
     name: String,
     method: u16,
     compressed: u64,
+    uncompressed: u64,
     local: u64,
 }
 
@@ -64,6 +65,7 @@ fn central_directory(path: &Path) -> Result<(File, Vec<Entry>)> {
             name: String::from_utf8_lossy(bytes).into_owned(),
             method: u16_at(&directory, i + 10) as u16,
             compressed: u32_at(&directory, i + 20).into(),
+            uncompressed: u32_at(&directory, i + 24).into(),
             local: u32_at(&directory, i + 42).into(),
         });
         i = start + name + extra + comment;
@@ -77,6 +79,15 @@ pub fn zip_entries(path: &Path) -> Result<Vec<String>> {
         .1
         .into_iter()
         .map(|e| e.name)
+        .collect())
+}
+
+/// Each entry of a ZIP file with its compressed and uncompressed size.
+pub fn zip_sizes(path: &Path) -> Result<Vec<(String, u64, u64)>> {
+    Ok(central_directory(path)?
+        .1
+        .into_iter()
+        .map(|e| (e.name, e.compressed, e.uncompressed))
         .collect())
 }
 

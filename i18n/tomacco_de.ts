@@ -3687,6 +3687,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>APK oder AAB untersuchen</translation>
     </message>
     <message>
+        <source>Report APK or AAB size</source>
+        <translation>APK- oder AAB-Größe auswerten</translation>
+    </message>
+    <message>
         <source>Install iOS toolkit</source>
         <translation>iOS-Werkzeuge installieren</translation>
     </message>

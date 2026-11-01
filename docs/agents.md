@@ -278,6 +278,7 @@ with each device's result in the job's `report.json`.
 
 `android.package_inspect` reads what a built APK or AAB declares, without a device: package,
 version, SDK levels, permissions, ABIs and signing certificate digests.
+`android.size_report` breaks one down by size per category, ABI and density, estimates the download, and compares with a `baseline` build.
 `device.install` also takes one `.aab` and installs it through bundletool.
 
 For the emulator's settings, `android.avd_configure` changes a stopped emulator:

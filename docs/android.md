@@ -163,6 +163,25 @@ tomaccoctl call android.package_inspect '{"path":"/absolute/NewApp/app/build/out
 - Checked on APKs with the API 36 build-tools. AAB reading is covered by unit tests on
   generated bundles; no Gradle-built AAB has been read yet.
 
+## Size of an APK or AAB
+
+`android.size_report` breaks a package down by size without a device: the total, each category
+(`dex`, `native`, `resources`, `assets`, `manifest`, `signature`), each ABI, screen density and bundle
+module, and the `largest` files. `summary.estimate.by_abi_density` adds up what one device would get
+without other ABIs' libraries and other densities' resources; it uses the compressed sizes in the file,
+and Play recompresses, so treat it as an estimate. `baseline` compares with an earlier build: `delta`
+has the change of every total and the files that grew, shrank, appeared or went away the most.
+
+```sh
+tomaccoctl call android.size_report '{"path":"/absolute/app-release.aab","baseline":"/absolute/previous/app-release.aab"}'
+```
+
+- For an AAB with bundletool configured, `download` holds `bundletool get-size total`'s download
+  sizes per ABI and density, from APKs it builds in a temporary directory, and `delta.download` their
+  change. Without bundletool, `download` says why; `bundletool:false` skips it.
+- Run on two real debug APKs of about 22 MB. The bundletool path is covered by a test with a stand-in
+  bundletool; it has not run against the real tool yet.
+
 ## Install an AAB
 
 `device.install` with one `.aab` runs Google's

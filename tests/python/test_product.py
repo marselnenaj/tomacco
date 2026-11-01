@@ -1433,6 +1433,41 @@ class AndroidPackageTests(Isolated):
                 dispatch("android.package_inspect", {"path": str(self.root / name)})
             self.assertEqual(refused.exception.code, "invalid_artifact")
 
+    def test_size_report_breaks_a_package_down_and_compares_two_builds(self):
+        import zipfile
+        def apk(name, files):
+            path = self.root / name
+            with zipfile.ZipFile(path, "w", zipfile.ZIP_STORED) as archive:
+                for entry, size in files.items():
+                    archive.writestr(entry, b"x" * size)
+            return path
+        old = apk("old.apk", {"classes.dex": 4000, "lib/arm64-v8a/libcore.so": 2000, "assets/intro.mp4": 900})
+        new = apk("new.apk", {"classes.dex": 4500, "lib/arm64-v8a/libcore.so": 2000, "lib/x86_64/libcore.so": 2100,
+                              "res/drawable-xxhdpi/hero.png": 300, "res/drawable-mdpi/hero.png": 100})
+        value = dispatch("android.size_report", {"path": str(new), "top": 3})
+        summary = value["summary"]
+        self.assertEqual((value["format"], summary["compressed"], summary["abis"]), ("apk", 9000, {"arm64-v8a": 2000, "x86_64": 2100}))
+        self.assertEqual(summary["estimate"]["by_abi_density"]["arm64-v8a/xxhdpi"], 4500 + 2000 + 300)
+        self.assertEqual([f["name"] for f in value["largest"]], ["classes.dex", "lib/x86_64/libcore.so", "lib/arm64-v8a/libcore.so"])
+        diff = dispatch("android.size_report", {"path": str(new), "baseline": str(old)})["delta"]
+        self.assertEqual(diff["summary"]["compressed"], 9000 - 6900)
+        self.assertEqual(diff["summary"]["categories"]["assets"]["compressed"], -900)
+        self.assertEqual([(f["name"], f["change"], f["delta"]) for f in diff["files"][:2]],
+                         [("lib/x86_64/libcore.so", "added", 2100), ("assets/intro.mp4", "removed", -900)])
+        # A bundle goes through bundletool's get-size when it is configured.
+        aab = self.root / "app.aab"
+        with zipfile.ZipFile(aab, "w") as archive:
+            archive.writestr("BundleConfig.pb", b"")
+            archive.writestr("base/dex/classes.dex", b"x" * 100)
+        self.tool("bundletool", "import sys\nfrom pathlib import Path\nif sys.argv[1]=='build-apks': Path(sys.argv[3].split('=',1)[1]).write_bytes(b'PK')\n"
+                                "else: print('SDK,ABI,SCREEN_DENSITY,MIN,MAX\\n21-,arm64-v8a,XXHDPI,90,95')\n")
+        download = dispatch("android.size_report", {"path": str(aab)})["download"]
+        self.assertEqual((download["method"], download["rows"][0]["max"]), ("bundletool get-size total", 95))
+        self.assertNotIn("download", dispatch("android.size_report", {"path": str(aab), "bundletool": False}))
+        with self.assertRaises(StudioError) as refused:
+            dispatch("android.size_report", {"path": str(self.root / "notes.txt") if (self.root / "notes.txt").write_text("x") else ""})
+        self.assertEqual(refused.exception.code, "unsupported_artifact")
+
 
 class ProtocolTests(Isolated):
     def test_cli_schema_errors_and_file_arguments(self):

@@ -73,6 +73,7 @@ var titles = {
     "android.avd_start": QT_TRANSLATE_NOOP("Operations", "Start emulator"),
     "android.emulator": QT_TRANSLATE_NOOP("Operations", "Control emulator"),
     "android.package_inspect": QT_TRANSLATE_NOOP("Operations", "Inspect APK or AAB"),
+    "android.size_report": QT_TRANSLATE_NOOP("Operations", "Report APK or AAB size"),
     "ios.sdk_install": QT_TRANSLATE_NOOP("Operations", "Import Apple SDK"),
     "ios.toolkit_install": QT_TRANSLATE_NOOP("Operations", "Install iOS toolkit"),
     "ios.flutter_setup": QT_TRANSLATE_NOOP("Operations", "Prepare Flutter for iOS"),

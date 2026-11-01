@@ -2912,6 +2912,48 @@
     }
   },
   {
+    "name": "android.size_report",
+    "title": "Report APK or AAB size",
+    "description": "Break an APK or AAB down by size without a device: totals, each category (dex, native, resources, assets, manifest, signature), each ABI, screen density and bundle module, and the largest files. estimate.by_abi_density adds up the compressed sizes one device would get without other ABIs' libraries and other densities' resources. For an AAB with bundletool configured, download has bundletool get-size total's download size per ABI and density, from APKs it builds in a temporary directory. baseline compares with an earlier build: the change of every total and the files that grew, shrank, appeared or went away the most.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute path of an .apk or .aab file",
+          "minLength": 1
+        },
+        "baseline": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of an earlier .apk or .aab to compare with"
+        },
+        "top": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 15,
+          "description": "How many of the largest and most changed files to list"
+        },
+        "bundletool": {
+          "type": "boolean",
+          "default": true,
+          "description": "For an AAB, also ask bundletool for the download size; false reads the file only"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "ios.sdk_install",
     "title": "Import Apple SDK",
     "description": "Import the SDK from an Apple Xcode archive you downloaded yourself, with xtool. Tomacco downloads nothing from Apple. Read Xcode's license first.",
