@@ -987,6 +987,52 @@
     }
   },
   {
+    "name": "project.analyze",
+    "title": "Analyze project code",
+    "description": "Run the static analysers a project already has and list their findings as issues with tool, file, line, column, severity (error, warning or info), code and message, as a job whose report.json also has totals per severity and passed (no errors and every analyser ran). A Dart or Flutter project runs dart analyze --format=json (Flutter's own bin/dart when no dart is configured); a JavaScript or TypeScript project runs eslint --format json and, with a tsconfig.json, tsc --noEmit from its node_modules/.bin. Installs and downloads nothing; changes no project file. The job fails only when no analyser produced a result.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local filesystem path",
+          "minLength": 1
+        },
+        "tools": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "enum": [
+              "dart",
+              "eslint",
+              "tsc"
+            ]
+          },
+          "description": "Only these analysers; each must apply. Default: every analyser the project has"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 3600,
+          "default": 900,
+          "description": "Seconds after which the job ends"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "project.import_xcode",
     "title": "Import Xcode project",
     "description": "Write an xtool adapter package for an .xcodeproj with the pinned omarchy-apple-dev xcodeproj2xtool.py, by default in omarchy-xtool beside the project. Returns what the generator could not map as warnings. Build the adapter with project.execute. Needs only ios.toolkit_install's checkout.",

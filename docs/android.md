@@ -143,6 +143,29 @@ Without a network it answers `offline` at once. `repositories` replaces the defa
 with your own `https://` or `file:///` repositories. It ran against the Compose starter
 online.
 
+## Static analysis
+
+`project.analyze` runs the analysers a project already has and returns a job whose
+`report.json` lists every finding as an issue with `tool`, `file` (relative to the
+project), `line`, `column`, `severity` (`error`, `warning` or `info`), `code` and
+`message`, with `totals` per severity and `passed` (no errors, and every analyser ran).
+
+- A Dart or Flutter project runs `dart analyze --format=json`. Without a configured
+  `dart`, it uses the `dart` in Flutter's `bin` directory.
+- A JavaScript or TypeScript project runs `eslint --format json .` and, when it has a
+  `tsconfig.json`, `tsc --noEmit`, both from its own `node_modules/.bin`. Nothing is
+  installed or downloaded.
+
+`tools` limits the run to `dart`, `eslint` or `tsc`. Findings do not fail the job; it
+fails only when no analyser produced a result.
+
+```sh
+tomaccoctl call project.analyze '{"path":"/absolute/MyApp"}' --wait
+```
+
+Tested with stand-in analysers that print the formats above; no real Flutter or
+JavaScript project was analysed here.
+
 ## Inspect an APK or AAB
 
 `android.package_inspect` reads a package file without a device: package name, version

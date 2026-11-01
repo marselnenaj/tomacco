@@ -1,4 +1,5 @@
 mod accessibility;
+mod analyze;
 mod android_debug;
 mod android_device;
 mod android_package;
@@ -34,8 +35,8 @@ mod preview;
 mod product;
 mod profiling;
 mod projects;
-mod recorder;
 mod qr;
+mod recorder;
 mod redact;
 mod releases;
 mod remote;
@@ -358,6 +359,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             ios_emulator::pmp::worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing PMP request"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_project_analyze") => {
+            analyze::worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing analysis request"))?,
             )?;
             return Ok(0);
         }

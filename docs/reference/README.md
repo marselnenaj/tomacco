@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 199 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 200 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -233,6 +233,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`project.run`](project.md#projectrun) | Build & run on device | writes |
 | [`project.watch`](project.md#projectwatch) | Watch and rerun app | writes |
 | [`project.dependency_updates`](project.md#projectdependency_updates) | Check dependency updates | read-only |
+| [`project.analyze`](project.md#projectanalyze) | Analyze project code | read-only |
 | [`project.import_xcode`](project.md#projectimport_xcode) | Import Xcode project | writes |
 | [`project.app`](project.md#projectapp) | Find built iOS app | read-only |
 

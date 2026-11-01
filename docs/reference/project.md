@@ -2,7 +2,7 @@
 
 # `project` operations
 
-10 operations. Generated from `assets/operations.json`; [all areas](README.md).
+11 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### project.inspect
 
@@ -163,6 +163,24 @@ Annotations: read-only, idempotent, open world.
 
 ```sh
 tomaccoctl call project.dependency_updates '{"path":"<path>"}'
+```
+
+### project.analyze
+
+**Analyze project code**
+
+Run the static analysers a project already has and list their findings as issues with tool, file, line, column, severity (error, warning or info), code and message, as a job whose report.json also has totals per severity and passed (no errors and every analyser ran). A Dart or Flutter project runs dart analyze --format=json (Flutter's own bin/dart when no dart is configured); a JavaScript or TypeScript project runs eslint --format json and, with a tsconfig.json, tsc --noEmit from its node_modules/.bin. Installs and downloads nothing; changes no project file. The job fails only when no analyser produced a result.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute local filesystem path |
+| `tools` | array of string |  |  | items one of `dart`, `eslint`, `tsc`; up to 3 items; Only these analysers; each must apply. Default: every analyser the project has |
+| `timeout` | integer |  | `900` | 10 to 3600; Seconds after which the job ends |
+
+```sh
+tomaccoctl call project.analyze '{"path":"<path>"}'
 ```
 
 ### project.import_xcode

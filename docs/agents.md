@@ -234,7 +234,9 @@ tomaccoctl call project.run '{"path":"/absolute/NewApp","platform":"android","de
 `"kind":"compose"` creates a Kotlin and Jetpack Compose app with one Compose UI test instead; run it
 with `"action":"instrumented-test"`. `project.inspect` reports a Gradle app's application ID, variants
 and SDK levels under `android`, read from its files. `project.dependency_updates` reports which of a
-Gradle build's dependencies and plugins have newer versions, as a read-only job.
+Gradle build's dependencies and plugins have newer versions, as a read-only job. `project.analyze` runs `dart analyze`, ESLint and `tsc`
+as the project has them and lists their findings with file, line, severity and code; see
+[Android](android.md#static-analysis).
 
 `project.watch` takes the arguments of `project.run` and keeps the app current while you edit: a job that runs the app once,
 then polls the project's files and, after they have stayed unchanged for `debounce_ms` (800 by default), calls `project.run`

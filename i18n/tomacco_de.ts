@@ -4163,6 +4163,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Abhängigkeits-Updates prüfen</translation>
     </message>
     <message>
+        <source>Analyze project code</source>
+        <translation>Projektcode analysieren</translation>
+    </message>
+    <message>
         <source>Virtual iOS device: status</source>
         <translation>Virtuelles iOS-Gerät: Zustand</translation>
     </message>

@@ -1,5 +1,5 @@
 """project.inspect and project.run for React Native, Expo, Capacitor and Kotlin Multiplatform
-projects, and project.dependency_updates, with stand-in tools and fixture projects."""
+projects, project.dependency_updates and project.analyze, with stand-in tools and fixture projects."""
 import json
 import os
 import sys
@@ -219,6 +219,73 @@ class DependencyUpdateTests(Isolated):
         with self.assertRaises(StudioError) as refused:
             dispatch("project.dependency_updates", {"path": str(web)})
         self.assertEqual(refused.exception.code, "action_unsupported")
+
+
+class AnalyzeTests(Isolated):
+    def report(self, job):
+        done = jobs.wait(job["id"], 60)
+        path = next(a["path"] for a in done["result"]["artifacts"] if a["path"].endswith("report.json"))
+        return done, json.loads(Path(path).read_text())
+
+    def test_a_flutter_project_is_analyzed_with_flutters_dart(self):
+        root = self.root / "FlutterApp"
+        (root / "lib").mkdir(parents=True)
+        (root / "pubspec.yaml").write_text("flutter:\n")
+        sdk = self.root / "flutter/bin"
+        sdk.mkdir(parents=True)
+        for name in ("flutter", "dart"):
+            (sdk / name).write_text("#!" + sys.executable + "\n" + (
+                "import json,os,sys\nassert sys.argv[1:] == ['analyze','--format=json','.'], sys.argv\n"
+                "print('Analyzing FlutterApp...')\n"
+                "f=os.path.join(os.getcwd(),'lib/main.dart')\n"
+                "print(json.dumps({'version':1,'diagnostics':[{'code':'undefined_identifier','severity':'ERROR','type':'COMPILE_TIME_ERROR',"
+                "'location':{'file':f,'range':{'start':{'offset':1,'line':4,'column':3},'end':{'offset':2,'line':4,'column':7}}},'problemMessage':\"Undefined name 'nope'.\"}]}))\n"
+                "sys.exit(3)\n" if name == "dart" else ""))
+            (sdk / name).chmod(0o755)
+        dispatch("settings.configure", {"executables": {"flutter": str(sdk / "flutter")}})
+        with patch.dict(os.environ, {"PATH": "/nonexistent"}):
+            job = dispatch("project.analyze", {"path": str(root)})
+            done, report = self.report(job)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        self.assertEqual(report["passed"], False)
+        self.assertEqual(report["totals"], {"issues": 1, "error": 1, "warning": 0, "info": 0})
+        issue = report["issues"][0]
+        self.assertEqual((issue["tool"], issue["file"], issue["line"], issue["column"], issue["severity"], issue["code"]),
+                         ("dart", "lib/main.dart", 4, 3, "error", "undefined_identifier"))
+        self.assertEqual(report["tools"][0]["exit_code"], 3)
+        self.assertIn("1 errors, 0 warnings", jobs.logs(job["id"])["text"])
+
+    def test_a_typescript_project_runs_its_own_eslint_and_tsc(self):
+        root = self.root / "Web"
+        bin_dir = root / "node_modules/.bin"
+        bin_dir.mkdir(parents=True)
+        (root / "package.json").write_text("{}")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("project.analyze", {"path": str(root)})
+        self.assertEqual(refused.exception.code, "nothing_to_analyze")
+        (root / "tsconfig.json").write_text("{}")
+        scripts = {
+            "eslint": "import json,os,sys\nassert sys.argv[1:] == ['--format','json','.']\n"
+                      "print(json.dumps([{'filePath':os.path.join(os.getcwd(),'src/a.ts'),'messages':[{'ruleId':'semi','severity':1,'message':'Missing semicolon.','line':2,'column':9}]}]))\nsys.exit(0)\n",
+            "tsc": "import sys\nassert sys.argv[1:] == ['--noEmit','--pretty','false']\n"
+                   "print(\"src/a.ts(3,7): error TS2322: Type 'string' is not assignable to type 'number'.\")\nsys.exit(2)\n",
+        }
+        for name, source in scripts.items():
+            (bin_dir / name).write_text("#!" + sys.executable + "\n" + source)
+            (bin_dir / name).chmod(0o755)
+        with self.assertRaises(StudioError) as refused:
+            dispatch("project.analyze", {"path": str(root), "tools": ["dart"]})
+        self.assertEqual(refused.exception.code, "tool_missing")
+        before = sorted(p.relative_to(root) for p in root.rglob("*"))
+        done, report = self.report(dispatch("project.analyze", {"path": str(root)}))
+        self.assertEqual(done["state"], "succeeded")
+        self.assertEqual([t["tool"] for t in report["tools"]], ["eslint", "tsc"])
+        self.assertEqual([(i["tool"], i["file"], i["line"], i["severity"], i["code"]) for i in report["issues"]],
+                         [("eslint", "src/a.ts", 2, "warning", "semi"), ("tsc", "src/a.ts", 3, "error", "TS2322")])
+        self.assertEqual(sorted(p.relative_to(root) for p in root.rglob("*")), before)
+        done, report = self.report(dispatch("project.analyze", {"path": str(root), "tools": ["eslint"]}))
+        self.assertEqual(report["passed"], True)
+        self.assertEqual(report["totals"]["warning"], 1)
 
 
 class WatchTests(Isolated):
