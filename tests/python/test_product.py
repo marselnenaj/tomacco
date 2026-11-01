@@ -1686,6 +1686,28 @@ class ReleaseContractTests(Isolated):
         with self.assertRaises(StudioError): dispatch("release.version", {"path":str(self.root), "version":"2.0.0", "build_number":2})
         self.assertIn('providers.gradleProperty', gradle.read_text())
 
+    def test_version_bump_dry_run_lists_every_file_and_writes_nothing(self):
+        (self.root / "app").mkdir()
+        gradle = self.root / "app/build.gradle.kts"
+        gradle.write_text('android {\n  defaultConfig {\n    versionCode = libs.versions.appCode.get().toInt()\n    versionName = "1.4.2"\n  }\n}\n')
+        (self.root / "gradle").mkdir()
+        catalog = self.root / "gradle/libs.versions.toml"
+        catalog.write_text('[versions]\nappCode = "17"\n')
+        before = (gradle.read_text(), catalog.read_text())
+        plan = dispatch("release.version", {"path": str(self.root), "bump": "minor", "dry_run": True})
+        self.assertEqual((plan["version"], plan["build_number"], plan["dry_run"]), ("1.5.0", 18, True))
+        self.assertEqual(sorted((Path(c["file"]).name, c["from"], c["to"]) for c in plan["changes"]),
+                         [("build.gradle.kts", "1.4.2", "1.5.0"), ("libs.versions.toml", "17", "18")])
+        self.assertEqual((gradle.read_text(), catalog.read_text()), before)
+        result = dispatch("release.version", {"path": str(self.root), "bump": "build"})
+        self.assertEqual((result["version"], result["build_number"]), ("1.4.2", 18))
+        self.assertEqual(catalog.read_text(), '[versions]\nappCode = "18"\n')
+        self.assertEqual(sorted(Path(f["backup"]).read_text() for f in result["files"]), [before[1]])
+        for arguments in ({"bump": "patch", "version": "1.0.0"}, {}, {"version": "1.0.0"}):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("release.version", {"path": str(self.root), **arguments})
+            self.assertEqual(refused.exception.code, "invalid_argument")
+
     def test_a_secret_given_instead_of_its_file_is_not_echoed(self):
         secret = "hunter2-correct-horse"
         output = str(self.root / "release.p12")

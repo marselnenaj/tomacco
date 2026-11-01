@@ -65,16 +65,18 @@ tomaccoctl call release.verify '{"path":"<path>"}'
 
 **Set app version**
 
-Update a literal Flutter/Android version and build number with a recoverable backup.
+Set one version name and build number in every version file of a project at once: pubspec.yaml, Expo's app.json (expo.version, android.versionCode, ios.buildNumber), the package.json of a React Native or Expo app, the Android app's Gradle file with the versions catalog entry or gradle.properties key it reads, and the Info.plist an xtool.yml names. bump computes the next version from the current one and the build number as the highest current one plus 1. dry_run lists the changes without writing. Each changed file gets a recoverable backup; a version only the build computes is refused.
 
 Annotations: **destructive**, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `path` | string | yes |  |  |
-| `version` | string | yes |  |  |
-| `build_number` | integer | yes |  | 1 to 2100000000 |
+| `path` | string | yes |  | Absolute path of the project root |
+| `version` | string |  |  | New version name, major.minor.patch with an optional -suffix; requires build_number |
+| `build_number` | integer |  |  | 1 to 2100000000; New versionCode and build number; with bump, defaults to the highest current one plus 1 |
+| `bump` | string |  |  | one of `major`, `minor`, `patch`, `build`; Raise this part of the current version instead of passing version; build keeps the version and raises only the build number |
+| `dry_run` | boolean |  | `false` | Report the changes without writing |
 
 ```sh
-tomaccoctl call release.version '{"path":"<path>","version":"<version>","build_number":1}'
+tomaccoctl call release.version '{"path":"<path>"}'
 ```

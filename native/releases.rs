@@ -44,7 +44,7 @@ fn no_existing(value: &str) -> Result<PathBuf> {
 pub fn handle(op: &str, a: &Value) -> Result {
     match op {
         "release.verify" => verify(&path(s(a, "path"), false, true)?),
-        "release.version" => version(a),
+        "release.version" => crate::release_version::version(a),
         "release.keystore" | "release.sign" => {
             secret(s(a, "password_file"))?;
             identifier(s(a, "alias"), "key alias", Some("[A-Za-z0-9_.-]{1,100}"))?;
@@ -284,80 +284,4 @@ fn verify(file: &Path) -> Result {
         return Err(Error::new("unsupported_artifact", "Select an APK or AAB"));
     };
     Ok(json!({"verified":true,"artifact":artifact(file,0.0)?,"details":output}))
-}
-fn version(a: &Value) -> Result {
-    let root = path(s(a, "path"), true, true)?;
-    let name = s(a, "version");
-    identifier(
-        name,
-        "version",
-        Some(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?"),
-    )?;
-    let code = n(a, "build_number");
-    let lock = Lock::open(&home()?.join("locks").join(format!(
-        "files-{}.lock",
-        digest(root.to_string_lossy().as_bytes())
-    )))?;
-    lock.acquire(false)?;
-    let (file, text) = if root.join("pubspec.yaml").is_file() {
-        let file = root.join("pubspec.yaml");
-        let text = fs::read_to_string(&file)?;
-        let re = regex::Regex::new(r"(?m)^version:[ \t]*[^\r\n#]*?([ \t]*(?:#[^\r\n]*)?)(\r?)$")
-            .unwrap();
-        if re.find_iter(&text).count() != 1 {
-            return Err(Error::new(
-                "version_ambiguous",
-                "Expected exactly one pubspec version",
-            ));
-        }
-        (
-            file,
-            re.replace(&text, |c: &regex::Captures| {
-                format!("version: {name}+{code}{}{}", &c[1], &c[2])
-            })
-            .into_owned(),
-        )
-    } else {
-        let file = [
-            root.join("app/build.gradle.kts"),
-            root.join("app/build.gradle"),
-            root.join("android/app/build.gradle.kts"),
-            root.join("android/app/build.gradle"),
-        ]
-        .into_iter()
-        .find(|p| p.is_file())
-        .ok_or_else(|| {
-            Error::new(
-                "version_unsupported",
-                "No Flutter or Android application version file found",
-            )
-        })?;
-        let text = fs::read_to_string(&file)?;
-        let version = regex::Regex::new(r#"(versionName\s*(?:=\s*)?)["'][^"']+["']"#).unwrap();
-        let build = regex::Regex::new(r"(versionCode\s*(?:=\s*)?)\d+").unwrap();
-        if version.find_iter(&text).count() != 1 || build.find_iter(&text).count() != 1 {
-            return Err(Error::new(
-                "version_ambiguous",
-                "Version is computed by the build; update its source property instead",
-            ));
-        }
-        let text = version.replace(&text, |c: &regex::Captures| format!("{}\"{name}\"", &c[1]));
-        (
-            file,
-            build
-                .replace(&text, |c: &regex::Captures| format!("{}{code}", &c[1]))
-                .into_owned(),
-        )
-    };
-    let mode = fs::metadata(&file)?.permissions();
-    let original = fs::read(&file)?;
-    let backup = home()?
-        .join("version-backups")
-        .join(format!("{}.txt", uuid::Uuid::new_v4().simple()));
-    atomic_write(&backup, &original)?;
-    atomic_write(&file, text.as_bytes())?;
-    fs::set_permissions(&file, mode)?;
-    Ok(
-        json!({"file":file,"version":name,"build_number":code,"backup":backup,"sha256":digest(text.as_bytes())}),
-    )
 }

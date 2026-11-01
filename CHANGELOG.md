@@ -10,6 +10,11 @@ operations and their JSON results.
 
 ### Added
 
+- **Release.**
+  - `release.version` changes every version file of a project in one call: `pubspec.yaml`, Expo's `app.json`, a React
+    Native or Expo `package.json`, the Android Gradle file and the versions catalog entry or `gradle.properties` key it
+    reads, and an xtool project's `Info.plist`. `bump` raises the major, minor or patch part or only the build number,
+    and `dry_run` lists the changes without writing.
 - **Testing.**
   - `testing.record` records a UI test on an Android device: taps, swipes, text and keys sent through
     `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`

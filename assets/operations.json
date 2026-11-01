@@ -5701,26 +5701,42 @@
   {
     "name": "release.version",
     "title": "Set app version",
-    "description": "Update a literal Flutter/Android version and build number with a recoverable backup.",
+    "description": "Set one version name and build number in every version file of a project at once: pubspec.yaml, Expo's app.json (expo.version, android.versionCode, ios.buildNumber), the package.json of a React Native or Expo app, the Android app's Gradle file with the versions catalog entry or gradle.properties key it reads, and the Info.plist an xtool.yml names. bump computes the next version from the current one and the build number as the highest current one plus 1. dry_run lists the changes without writing. Each changed file gets a recoverable backup; a version only the build computes is refused.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "path": {
-          "type": "string"
+          "type": "string",
+          "description": "Absolute path of the project root"
         },
         "version": {
-          "type": "string"
+          "type": "string",
+          "description": "New version name, major.minor.patch with an optional -suffix; requires build_number"
         },
         "build_number": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 2100000000
+          "maximum": 2100000000,
+          "description": "New versionCode and build number; with bump, defaults to the highest current one plus 1"
+        },
+        "bump": {
+          "type": "string",
+          "enum": [
+            "major",
+            "minor",
+            "patch",
+            "build"
+          ],
+          "description": "Raise this part of the current version instead of passing version; build keeps the version and raises only the build number"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report the changes without writing"
         }
       },
       "required": [
-        "path",
-        "version",
-        "build_number"
+        "path"
       ],
       "additionalProperties": false
     },

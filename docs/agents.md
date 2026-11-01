@@ -668,6 +668,21 @@ not available are null, not zero. A count of frames with jank tags is not the sa
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.
 
+`release.version` sets one version name and build number in every version file it finds in the project: `pubspec.yaml`,
+Expo's `app.json` (`expo.version`, `expo.android.versionCode`, `expo.ios.buildNumber`), the `package.json` of a React
+Native or Expo app, `app/build.gradle(.kts)` or `android/app/build.gradle(.kts)`, and the `Info.plist` that `infoPath` in
+`xtool.yml` names. A Gradle `versionCode = libs.versions.appCode.get().toInt()` changes that entry of
+`gradle/libs.versions.toml`, and `providers.gradleProperty("appVersion")` that key of `gradle.properties`; a Flutter
+module's `flutter.versionCode` follows `pubspec.yaml` and is listed under `skipped`. Any other computed value is refused
+with `version_ambiguous` before a file changes. Instead of `version` and `build_number`, `bump` (`major`, `minor`, `patch`
+or `build`) raises the current version and sets the build number to the highest current one plus 1. `dry_run:true` returns
+the same `changes` (file, field, from, to) without writing; otherwise each changed file gets a backup, listed in `files`.
+JSON files are written back with two-space indentation.
+
+```sh
+tomaccoctl call release.version '{"path":"/absolute/app","bump":"patch","dry_run":true}'
+```
+
 `play.prepare` creates an edit, uploads the AAB, sets the track and validates, without committing. Inspect that before an explicitly authorized `play.commit`;
 `play.abort` discards it. Live store submission has not been qualified, on Play or on the App Store.
 
