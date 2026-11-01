@@ -4,6 +4,19 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Changed
+
+- The Arch package builds 1.2.1: `packaging/arch/PKGBUILD` and `.SRCINFO` name its source tarball, whose SHA-256 matched
+  the release's `.sha256`, and the `v1.2.1` commit. `makepkg -d` built it in 2 min 55 s on the development host.
+- The README's social card and how-it-works diagrams said 170 operations; they now say 224, and the diagram fits the count
+  in its column. A test checks the drawn count against `assets/operations.json`.
+- README, getting started and the FAQ said `tomaccoctl setup` connects Claude Code and Codex; it also connects Gemini
+  CLI, Cursor, VS Code, Zed and OpenCode, as [Agents](docs/agents.md#connect-a-client) says.
+- CONTRIBUTING has one first-build sequence: clone, build, run the tests offscreen and call `tomaccoctl` from the
+  checkout, with the times it took in a fresh clone.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
