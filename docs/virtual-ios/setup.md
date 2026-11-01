@@ -8,8 +8,9 @@ first.
 available, budget about 100 GiB of disk and half an hour for the restore itself.
 
 **Can this machine run it?** This checks the processor, `/dev/kvm`, memory, free disk, the
-Vulkan driver and graphics memory, the helper kernel and `passt`, each as pass, warn or fail with
-what to do. Pass the directory your chain's outputs will go to; it reads and writes nothing else.
+Vulkan driver and graphics memory, the helper kernel and `passt`, and with a configured profile
+whether its overlay starts find `qemu-img` (beside the helper engine or on `PATH`), each as pass,
+warn or fail with what to do. Pass the directory your chain's outputs will go to; it reads and writes nothing else.
 
 ```sh
 tomaccoctl call ios.virtual.host_check '{"directory":"/phone"}'

@@ -54,6 +54,18 @@ pub(crate) struct Facts {
     /// package and core ID), and the configured profile's boot settings.
     pub physical_cores: Option<usize>,
     pub profile_boot: Option<Value>,
+    /// The configured profile's start_disks, where its qemu-img would be
+    /// beside the helper engine, and the qemu-img a start would use. None
+    /// without a configured profile.
+    pub start_disks: Option<StartDisks>,
+}
+
+#[derive(Debug, Default, Clone)]
+pub(crate) struct StartDisks {
+    /// profile.json's start_disks, empty when it names none.
+    pub mode: String,
+    pub beside_helper: Option<PathBuf>,
+    pub qemu_img: Option<PathBuf>,
 }
 
 /// The application processors a profile boots: `cpus=` in its boot
@@ -243,7 +255,58 @@ pub(crate) fn evaluate(facts: &Facts) -> Vec<Value> {
         },
         "Install passt from your distribution (the package is called passt) if apps in the guest need a network.",
     ));
+    if let Some(disks) = &facts.start_disks {
+        items.push(qemu_img_item(disks));
+    }
     items
+}
+
+/// Whether the profile's overlay starts have the qemu-img they need.
+fn qemu_img_item(disks: &StartDisks) -> Value {
+    let found = json!({"start_disks":if disks.mode.is_empty() { Value::Null } else { json!(disks.mode) },
+        "qemu_img":disks.qemu_img,"expected_beside_helper":disks.beside_helper});
+    let place = disks.beside_helper.as_ref().map_or_else(
+        || "beside the profile's helper engine (prepare.helper_engine) or on PATH".to_string(),
+        |path| {
+            format!(
+                "at {} (beside the profile's helper engine) or on PATH",
+                path.display()
+            )
+        },
+    );
+    let remedy = format!(
+        "Put a qemu-img {place}: the one built with the helper engine, or your distribution's (in the qemu-img or qemu-utils package)."
+    );
+    match (&disks.qemu_img, disks.mode == "overlay") {
+        (None, true) => item(
+            "qemu_img",
+            "warn",
+            found,
+            format!(
+                "start_disks is overlay, but no qemu-img was found {place}; every start copies the whole 32 GiB root disk instead (or flattens an overlay base)."
+            ),
+            &remedy,
+        ),
+        (Some(path), _) => item(
+            "qemu_img",
+            "pass",
+            found,
+            format!(
+                "qemu-img is at {}; starts can lay an overlay on the base's root disk.",
+                path.display()
+            ),
+            "",
+        ),
+        (None, false) => item(
+            "qemu_img",
+            "pass",
+            found,
+            format!(
+                "No qemu-img was found {place}; this profile's starts copy the root disk, which needs none."
+            ),
+            "",
+        ),
+    }
 }
 
 fn graphics(facts: &Facts) -> Value {
@@ -491,6 +554,14 @@ pub(crate) fn gather(a: &Value) -> Result<Facts> {
         .and_then(|directory| virtual_phone::records(&directory).ok())
         .map(|(profile, _)| profile);
     let profile_boot = profile.as_ref().map(|profile| profile["boot"].clone());
+    let start_disks = profile.as_ref().map(|profile| StartDisks {
+        mode: profile["start_disks"].as_str().unwrap_or("").to_string(),
+        beside_helper: profile["prepare"]["helper_engine"]
+            .as_str()
+            .filter(|helper| !helper.is_empty())
+            .map(|helper| Path::new(helper).with_file_name("qemu-img")),
+        qemu_img: disk_overlay::qemu_img(profile),
+    });
     let (directory, needed, needed_for) = if !s(a, "directory").is_empty() {
         (
             path(s(a, "directory"), true, true)?,
@@ -546,6 +617,7 @@ pub(crate) fn gather(a: &Value) -> Result<Facts> {
         passt: toolchain::which("passt"),
         physical_cores: physical_cores(Path::new("/sys"), &allowed_cpus()),
         profile_boot,
+        start_disks,
     })
 }
 
@@ -604,6 +676,7 @@ mod tests {
             profile_boot: Some(
                 json!({"host_cpu_policy":"performance","translation_cache_mib":2048}),
             ),
+            start_disks: None,
         }
     }
 
@@ -772,6 +845,53 @@ mod tests {
                 .unwrap()
                 .iter()
                 .all(|item| item["remedy"].is_null())
+        );
+    }
+
+    #[test]
+    fn overlay_starts_without_qemu_img_are_warned_about_with_where_it_must_be() {
+        let mut facts = ready();
+        facts.start_disks = Some(StartDisks {
+            mode: "overlay".into(),
+            beside_helper: Some("/phone/helper/qemu-img".into()),
+            qemu_img: None,
+        });
+        let (state, found) = status(&facts, "qemu_img");
+        assert_eq!(state, "warn");
+        let message = found["message"].as_str().unwrap();
+        assert!(message.starts_with(
+            "start_disks is overlay, but no qemu-img was found at /phone/helper/qemu-img"
+        ));
+        assert!(message.contains("copies the whole 32 GiB root disk"));
+        assert!(
+            found["remedy"].as_str().unwrap().contains(
+                "at /phone/helper/qemu-img (beside the profile's helper engine) or on PATH"
+            )
+        );
+        assert_eq!(
+            found["found"]["expected_beside_helper"],
+            "/phone/helper/qemu-img"
+        );
+        assert_eq!(summary(evaluate(&facts))["status"], "warn");
+        // Found, it passes and names the one a start uses.
+        facts.start_disks.as_mut().unwrap().qemu_img = Some("/usr/bin/qemu-img".into());
+        let (state, found) = status(&facts, "qemu_img");
+        assert_eq!(state, "pass");
+        assert_eq!(found["found"]["qemu_img"], "/usr/bin/qemu-img");
+        assert!(found["remedy"].is_null());
+        // A profile that copies needs none.
+        facts.start_disks = Some(StartDisks {
+            mode: "copy".into(),
+            beside_helper: None,
+            qemu_img: None,
+        });
+        assert_eq!(status(&facts, "qemu_img").0, "pass");
+        // Without a profile there is no item.
+        facts.start_disks = None;
+        assert!(
+            evaluate(&facts)
+                .iter()
+                .all(|item| item["check"] != "qemu_img")
         );
     }
 
