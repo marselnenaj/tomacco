@@ -1789,6 +1789,31 @@ class ProtocolTests(Isolated):
         tool = next(t for t in replies[2]["result"]["tools"] if t["name"] == "capabilities")
         self.assertEqual(tool["outputSchema"]["required"], ["android", "ios", "desktop"])
 
+    def test_mcp_resource_templates_read_a_job_its_log_and_the_reference(self):
+        job = self.submit([{"argv": [sys.executable, "-c", "print('first line');print('last line')"]}])
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        requests = [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}},
+            {"jsonrpc": "2.0", "id": 2, "method": "resources/templates/list"},
+            {"jsonrpc": "2.0", "id": 3, "method": "resources/read", "params": {"uri": f"tomacco://jobs/{job['id']}"}},
+            {"jsonrpc": "2.0", "id": 4, "method": "resources/read", "params": {"uri": f"tomacco://jobs/{job['id']}/log"}},
+            {"jsonrpc": "2.0", "id": 5, "method": "resources/read", "params": {"uri": "tomacco://reference/project.run"}},
+            {"jsonrpc": "2.0", "id": 6, "method": "resources/read", "params": {"uri": "tomacco://jobs/" + "0" * 32}},
+            {"jsonrpc": "2.0", "id": 7, "method": "completion/complete",
+             "params": {"ref": {"type": "ref/resource", "uri": "tomacco://jobs/{id}"}, "argument": {"name": "id", "value": job["id"][:6]}}},
+        ]
+        output = subprocess.check_output([binary(), "mcp"], input="\n".join(map(json.dumps, requests)) + "\n", text=True, timeout=30)
+        replies = {r["id"]: r for r in map(json.loads, output.splitlines())}
+        self.assertEqual(replies[1]["result"]["capabilities"]["completions"], {})
+        self.assertEqual(len(replies[2]["result"]["resourceTemplates"]), 3)
+        self.assertEqual(json.loads(replies[3]["result"]["contents"][0]["text"])["state"], "succeeded")
+        self.assertIn("first line\nlast line\n", replies[4]["result"]["contents"][0]["text"])
+        reference = replies[5]["result"]["contents"]
+        self.assertTrue(reference[0]["text"].startswith("project.run - "))
+        self.assertEqual(json.loads(reference[1]["text"])["name"], "project.run")
+        self.assertEqual(replies[6]["error"]["code"], -32602)
+        self.assertEqual(replies[7]["result"]["completion"]["values"], [job["id"]])
+
     def test_mcp_wait_does_not_block_other_requests_and_cancellation_preserves_job(self):
         import queue
         job=self.submit([{"argv":[sys.executable,"-c","import time;print('ready',flush=True);time.sleep(30)"]}],timeout=40)

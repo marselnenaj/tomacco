@@ -4,6 +4,14 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Added
+
+- MCP resource templates, listed by `resources/templates/list`: `tomacco://jobs/{id}` (the job), `tomacco://jobs/{id}/log`
+  (the end of its log) and `tomacco://reference/{operation}` (the operation's help and schema), and the resource
+  `tomacco://devices`. `completion/complete` completes operation names and recent job IDs for them.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.

@@ -37,7 +37,19 @@ stdio server: no network port and no token. The installer never changes client s
 
 Any MCP stdio client gets the same tools. The resources `tomacco://catalog`, `tomacco://jobs`,
 `tomacco://workspaces`, `tomacco://debug` and `tomacco://runtimes` expose profiles and recent work.
-`tomacco://capabilities` is the result of the `capabilities` operation.
+`tomacco://capabilities` is the result of the `capabilities` operation and `tomacco://devices` that of
+`device.list`.
+
+`resources/templates/list` names three resource templates that mirror read-only operations:
+
+| Template | What it reads |
+| --- | --- |
+| `tomacco://jobs/{id}` | The job as `job.get` answers it, as JSON. |
+| `tomacco://jobs/{id}/log` | The last 64 KiB of the job's log as text, secrets masked. `job.logs` reads the rest. |
+| `tomacco://reference/{operation}` | The operation as `tomaccoctl help` describes it, then its JSON Schema with its annotations. |
+
+`completion/complete` completes `{operation}` with operation names and `{id}` with the IDs of the 100
+most recent jobs.
 
 The guides are resources too, as Markdown of the installed version: `tomacco://docs/agents` (this guide),
 `tomacco://docs/recipes`, `tomacco://docs/getting-started`, `tomacco://docs/android`, `tomacco://docs/iphone`,

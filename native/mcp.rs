@@ -91,7 +91,7 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
                 let protocol = s(&params, "protocolVersion");
                 respond(
                     &sink,
-                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{},"logging":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To see what this computer can do right now (Android emulator and devices, iOS builds, iPhones, the virtual iPhone), call capabilities. To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
+                    &json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":if PROTOCOLS.contains(&protocol){protocol}else{PROTOCOLS[0]},"capabilities":{"tools":{},"resources":{},"prompts":{},"logging":{},"completions":{}},"serverInfo":{"name":"tomacco","version":VERSION},"instructions":"To see what this computer can do right now (Android emulator and devices, iOS builds, iPhones, the virtual iPhone), call capabilities. To set Tomacco up for a person, call doctor and work through next_steps in order, asking first where ask_first is true. Start with workspace.list/context for saved project/device recipes. Use files.read/write with SHA-256 revisions to avoid overwriting concurrent edits. Use project.plan before builds, poll job.get/logs until terminal status. Native UI tests use testing.run, source debugging uses debug.*, profiling uses profile.*, releases use release.*. A queued job is not a successful build. Requests may run concurrently. Cancelling a wait does not cancel the durable job; use job.cancel explicitly. Inspect doctor and device.list before native operations. Preview is Chromium, not an iOS runtime. The guides are resources: read tomacco://docs/agents and tomacco://docs/recipes."}}),
                 )?;
                 continue;
             }
@@ -367,6 +367,7 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
                 json!({"uri":"tomacco://workspaces","name":"Saved development workspaces","mimeType":"application/json"}),
                 json!({"uri":"tomacco://debug","name":"Native debug sessions","mimeType":"application/json"}),
                 json!({"uri":"tomacco://runtimes","name":"Native display sessions","mimeType":"application/json"}),
+                json!({"uri":"tomacco://devices","name":"Connected devices","description":"The device.list operation's result: Android and iOS devices, and why none are listed.","mimeType":"application/json"}),
             ];
             resources.extend(GUIDES.iter().map(|guide| {
                 json!({"uri":format!("tomacco://docs/{}",guide.name),"name":guide.title,"description":guide.description,"mimeType":"text/markdown","size":guide.text.len()})
@@ -383,8 +384,12 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
                     json!({"contents":[{"uri":uri,"mimeType":"text/markdown","text":guide.text}]}),
                 ));
             }
+            if let Some(contents) = template(uri, api::dispatch)? {
+                return Ok(Some(json!({ "contents": contents })));
+            }
             let op = match uri {
                 "tomacco://capabilities" => "capabilities",
+                "tomacco://devices" => "device.list",
                 "tomacco://catalog" => "catalog.list",
                 "tomacco://jobs" => "job.list",
                 "tomacco://workspaces" => "workspace.list",
@@ -395,6 +400,12 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
             let value = api::dispatch(op, &json!({}))?;
             json!({"contents":[{"uri":uri,"mimeType":"application/json","text":value.to_string()}]})
         }
+        "resources/templates/list" => {
+            json!({"resourceTemplates":TEMPLATES.iter().map(|(uri, name, description, mime)| {
+            json!({"uriTemplate":uri,"name":name,"description":description,"mimeType":mime})
+        }).collect::<Vec<_>>()})
+        }
+        "completion/complete" => json!({ "completion": complete(params, api::dispatch) }),
         "prompts/list" => json!({"prompts":PROMPTS.iter().map(|p| {
             let arguments: Vec<Value> = p.arguments.iter().map(|(name, description)| {
                 json!({"name":name,"description":description,"required":true})
@@ -433,6 +444,104 @@ fn structured(value: Value) -> Value {
     } else {
         json!({ "result": value })
     }
+}
+
+/// Resources made from read-only operations, one per value of their
+/// argument: (URI template, name, description, MIME type).
+const TEMPLATES: &[(&str, &str, &str, &str)] = &[
+    (
+        "tomacco://jobs/{id}",
+        "Job",
+        "One job as job.get answers it: plan, state, phase, exit code and artifacts.",
+        "application/json",
+    ),
+    (
+        "tomacco://jobs/{id}/log",
+        "Job log",
+        "The last 64 KiB of a job's log, secrets masked; job.logs reads the rest.",
+        "text/plain",
+    ),
+    (
+        "tomacco://reference/{operation}",
+        "Operation reference",
+        "One operation as tomaccoctl help describes it, then its JSON Schema with annotations.",
+        "text/plain",
+    ),
+];
+/// How much of a job's log `tomacco://jobs/{id}/log` returns: its end.
+const LOG_TAIL: u64 = 64 * 1024;
+
+/// The contents of a resource that one of TEMPLATES matches, or None when
+/// none does.
+fn template(uri: &str, dispatch: impl Fn(&str, &Value) -> Result) -> Result<Option<Value>> {
+    if let Some(name) = uri.strip_prefix("tomacco://reference/") {
+        let schema = api::operation(name).map_err(|error| {
+            Error::new("resource_not_found", error.message).remedy(error.remedy)
+        })?;
+        return Ok(Some(json!([
+            {"uri":uri,"mimeType":"text/plain","text":crate::describe::operation(name)?},
+            {"uri":uri,"mimeType":"application/json","text":schema.to_string()},
+        ])));
+    }
+    let Some(rest) = uri.strip_prefix("tomacco://jobs/") else {
+        return Ok(None);
+    };
+    let (id, log) = match rest.strip_suffix("/log") {
+        Some(id) => (id, true),
+        None => (rest, false),
+    };
+    if id.len() != 32
+        || !id
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+    {
+        return Err(
+            Error::new("resource_not_found", format!("Not a job ID: {id}")).remedy(
+                "Job IDs are 32 lowercase hexadecimal characters; tomacco://jobs lists recent jobs",
+            ),
+        );
+    }
+    let job = dispatch("job.get", &json!({ "job_id": id }))?;
+    if !log {
+        return Ok(Some(
+            json!([{"uri":uri,"mimeType":"application/json","text":job.to_string()}]),
+        ));
+    }
+    let size = fs::metadata(s(&job, "log_path")).map_or(0, |m| m.len());
+    let logs = dispatch(
+        "job.logs",
+        &json!({"job_id":id,"offset":size.saturating_sub(LOG_TAIL),"limit":LOG_TAIL}),
+    )?;
+    Ok(Some(
+        json!([{"uri":uri,"mimeType":"text/plain","text":s(&logs, "text")}]),
+    ))
+}
+
+/// Values for an argument of a resource template that start with what the
+/// client has typed: operation names, or the IDs of recent jobs.
+fn complete(params: &Value, dispatch: impl Fn(&str, &Value) -> Result) -> Value {
+    let typed = s(&params["argument"], "value");
+    let template = s(&params["ref"], "uri");
+    let mut values: Vec<String> = match (s(&params["argument"], "name"), template) {
+        ("operation", "tomacco://reference/{operation}") => api::names()
+            .filter(|name| name.starts_with(typed))
+            .map(str::to_string)
+            .collect(),
+        ("id", "tomacco://jobs/{id}" | "tomacco://jobs/{id}/log") => {
+            dispatch("job.list", &json!({"limit":100}))
+                .ok()
+                .and_then(|jobs| jobs.as_array().cloned())
+                .unwrap_or_default()
+                .iter()
+                .map(|job| s(job, "id").to_string())
+                .filter(|id| id.starts_with(typed))
+                .collect()
+        }
+        _ => Vec::new(),
+    };
+    let total = values.len();
+    values.truncate(100);
+    json!({"values":values,"total":total,"hasMore":total > 100})
 }
 
 /// A guide from docs/, compiled in so that it matches this version and an
@@ -734,6 +843,115 @@ mod tests {
                 guide.name
             );
         }
+    }
+    #[test]
+    fn templates_mirror_read_only_operations() {
+        let list = handle("resources/templates/list", &json!({}))
+            .unwrap()
+            .unwrap();
+        let uris: Vec<&str> = list["resourceTemplates"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| s(r, "uriTemplate"))
+            .collect();
+        assert_eq!(
+            uris,
+            [
+                "tomacco://jobs/{id}",
+                "tomacco://jobs/{id}/log",
+                "tomacco://reference/{operation}"
+            ]
+        );
+        let list = handle("resources/list", &json!({})).unwrap().unwrap();
+        assert!(
+            list["resources"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|r| r["uri"] == "tomacco://devices")
+        );
+
+        let reference = template("tomacco://reference/job.wait", |_, _| unreachable!())
+            .unwrap()
+            .unwrap();
+        assert!(s(&reference[0], "text").starts_with("job.wait - Wait for job"));
+        let schema: Value = serde_json::from_str(s(&reference[1], "text")).unwrap();
+        assert_eq!(schema["annotations"]["readOnlyHint"], true);
+        let unknown = template("tomacco://reference/job.wiat", |_, _| unreachable!()).unwrap_err();
+        assert_eq!(unknown.code, "resource_not_found");
+        assert!(unknown.remedy.starts_with("Did you mean job.wait?"));
+        assert!(
+            template("tomacco://jobs", |_, _| unreachable!())
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            template("tomacco://catalog", |_, _| unreachable!())
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            template("tomacco://jobs/../x", |_, _| unreachable!())
+                .unwrap_err()
+                .code,
+            "resource_not_found"
+        );
+
+        let id = "0123456789abcdef0123456789abcdef";
+        let directory = tempfile::tempdir().unwrap();
+        let log = directory.path().join("job.log");
+        fs::write(&log, vec![b'x'; 70 * 1024]).unwrap();
+        let path = log.to_string_lossy().into_owned();
+        let dispatch = |operation: &str, arguments: &Value| -> Result {
+            assert_eq!(arguments["job_id"], id);
+            match operation {
+                "job.get" => Ok(json!({"id":id,"state":"running","log_path":path})),
+                "job.logs" => {
+                    assert_eq!(arguments["offset"], 6 * 1024);
+                    assert_eq!(arguments["limit"], 64 * 1024);
+                    Ok(json!({"text":"the end\n"}))
+                }
+                _ => panic!("unexpected {operation}"),
+            }
+        };
+        let job = template(&format!("tomacco://jobs/{id}"), dispatch)
+            .unwrap()
+            .unwrap();
+        assert_eq!(job[0]["mimeType"], "application/json");
+        assert!(s(&job[0], "text").contains("\"running\""));
+        let tail = template(&format!("tomacco://jobs/{id}/log"), dispatch)
+            .unwrap()
+            .unwrap();
+        assert_eq!(tail[0]["mimeType"], "text/plain");
+        assert_eq!(tail[0]["text"], "the end\n");
+    }
+    #[test]
+    fn template_arguments_are_completed() {
+        let jobs = |operation: &str, _: &Value| -> Result {
+            assert_eq!(operation, "job.list");
+            Ok(json!([{"id":"aa11"},{"id":"ab22"},{"id":"bb33"}]))
+        };
+        let ask = |uri: &str, name: &str, value: &str| {
+            complete(
+                &json!({"ref":{"type":"ref/resource","uri":uri},"argument":{"name":name,"value":value}}),
+                jobs,
+            )
+        };
+        let done = ask("tomacco://reference/{operation}", "operation", "job.wa");
+        assert_eq!(done["values"], json!(["job.wait"]));
+        assert_eq!(done["hasMore"], false);
+        let done = ask("tomacco://jobs/{id}/log", "id", "a");
+        assert_eq!(done["values"], json!(["aa11", "ab22"]));
+        assert_eq!(
+            ask("tomacco://reference/{operation}", "operation", "")["total"],
+            api::names().count()
+        );
+        assert_eq!(
+            ask("tomacco://reference/{operation}", "operation", "")["hasMore"],
+            true
+        );
+        assert_eq!(ask("tomacco://nothing/{x}", "x", "")["values"], json!([]));
     }
     #[test]
     fn prompts_are_listed_and_filled_in() {
