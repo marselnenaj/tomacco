@@ -238,6 +238,47 @@ start show 198 s to hash the 32 GiB disk before the boot and 198 s after it, whi
 base. Not run live yet: the flattening that 8 layers trigger by themselves, and a start without `qemu-img`. A profile
 whose helper was assembled by hand may lack `qemu-img` beside it; the start then copies and says so in its log.
 
+### GPU access to guest RAM (experimental)
+
+Without a host window, each frame's render Store copies the frame into the guest's pages on the CPU, because the
+graphics driver of the development host (RADV) does not import guest RAM as it is laid out by default
+([why](how-it-works.md#the-renderer)). The `guest_memory_import` boot setting lays guest RAM out so the GPU can write
+those pages itself. It is off unless a profile asks for it, in `profile.json`:
+
+```json
+"boot": { "guest_memory_import": "dma-buf" }
+```
+
+It needs `/dev/udmabuf` readable and writable by your user and a renderer built with `reims-guest-ram-dma-buf.patch`.
+Without them the start runs as before; the request receipt's `guest_memory_import` says which `backing` ran and why
+it fell back. `renderer/fail.log` has `guest_dma_buf=armed` on its `vk_caps` line and one `host_ram_import ...
+route=dma_buf ... ok=true` line per imported 64 MiB window.
+
+**What ran on a live phone.** Two starts each way of the iPhone 18 Pro profile on the development host (RX 6900 XT,
+Mesa 26.2.5), with the same engine, and three runs of the same script each way (one start of each ran it twice): 20
+Home-screen swipes, then 10 scrolls in Settings, then a deploy that opened an app. Other builds were running on the host, at a load average of 15 to 31, so the frame rates
+vary more between runs than between the two ways:
+
+| Per present, swiping (scrolling) | Shared RAM, 3 runs | `dma-buf`, 3 runs |
+| --- | --- | --- |
+| Render Store work on the drain | 12.6-22.7 ms (6.6-25.2) | 2.7-4.9 ms (2.1-2.9) |
+| Present work on the drain | 3.7-4.3 ms (2.1-3.7) | 7.4-9.4 ms (6.8-9.9) |
+| Both | 16.3-27.0 ms (8.7-28.9) | 10.1-14.2 ms (8.9-12.9) |
+| Presents a second | 5.6-8.3 (7.5-17.1) | 5.3-10.1 (6.3-11.7) |
+| Changed frames a second in the recording | 0.8-2.0 | 1.2-2.8 |
+
+Every Store went to the GPU (2 847 in one boot, none declined, and no window refused), so the CPU copy into the
+guest's pages is gone. The present now reads back and converts its frame itself, which a Store's copy used to do on the
+side, and that gives 3.6-6.3 ms of the saving back. The frame rate did not rise clearly: the swipes' was higher
+in two runs out of three and the scrolls' in one. Screenshots of Settings, of Settings scrolled and of the opened app
+matched the shared-RAM runs pixel for pixel below the status bar's clock, and no frame was black. Starts (the guest's
+boot step took 38 and 70 s against 40 and 63 s), deploys over the guest channel and verified stops worked the same. Each imported window stays pinned until the session ends: 124 windows, 7.75 of the
+8 GiB of guest RAM, by the end of the script, which the host can then not swap out. The guest's memory was all
+allocated from the start either way, so the process did not grow.
+
+That is why it stays off by default: the drain did up to half less work a frame in five of the six paired runs, but the
+phone did not get measurably faster, and the setting holds nearly all guest RAM in memory.
+
 ## The graphics memory guard
 
 A session stops the careful way when under an eighth of the graphics card stays free, so it cannot take
