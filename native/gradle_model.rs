@@ -561,7 +561,7 @@ pub fn modules_of(dir: &Path) -> Vec<(String, PathBuf)> {
 
 /// The script without plugin declarations marked `apply false`, with which a
 /// root build declares plugins for its modules.
-fn without_apply_false(text: &str) -> String {
+pub(crate) fn without_apply_false(text: &str) -> String {
     Regex::new(r"(?m)^[^\n]*\bapply\s*\(?\s*false[^\n]*$")
         .unwrap()
         .replace_all(text, "")
@@ -940,7 +940,7 @@ pub fn read(dir: &Path) -> Value {
 
 /// Whether a build script applies a plugin, by id or through a catalog alias,
 /// or an alias whose name, without separators, is one of `names`.
-fn applies(text: &str, catalog: &Catalog, ids: &[&str], names: &[&str]) -> bool {
+pub(crate) fn applies(text: &str, catalog: &Catalog, ids: &[&str], names: &[&str]) -> bool {
     let quoted = Regex::new(r#"["']([\w.-]+)["']"#).unwrap();
     if quoted.captures_iter(text).any(|c| ids.contains(&&c[1])) {
         return true;

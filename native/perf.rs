@@ -5,7 +5,7 @@ use crate::{core::*, devices, toolchain as tc};
 use serde_json::{Map, Value, json};
 use std::time::{Duration, Instant};
 
-fn bundle(id: &str) -> Result<&str> {
+pub(crate) fn bundle(id: &str) -> Result<&str> {
     identifier(
         id,
         "application ID",
@@ -14,7 +14,7 @@ fn bundle(id: &str) -> Result<&str> {
 }
 
 /// The standard output of a shell command on the device.
-fn shell_out(device: &str, args: &[&str], timeout: u64) -> Result<String> {
+pub(crate) fn shell_out(device: &str, args: &[&str], timeout: u64) -> Result<String> {
     let result = tc::run(&devices::shell(device, &argv(args))?, timeout, None, true)?;
     Ok(s(&result, "stdout").to_string())
 }
@@ -65,7 +65,7 @@ pub(crate) fn finish(a: &Value, report: Value) -> Result {
     Ok(report)
 }
 
-fn report(kind: &str, device: &str, id: &str, metrics: Map<String, Value>) -> Value {
+pub(crate) fn report(kind: &str, device: &str, id: &str, metrics: Map<String, Value>) -> Value {
     json!({"version":1,"kind":kind,"bundle_id":id,"device":device,"created":now(),"metrics":metrics})
 }
 

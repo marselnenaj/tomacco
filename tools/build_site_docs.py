@@ -30,7 +30,7 @@ URL_BASE = "/docs"
 
 # Navigation: group title and the pages in it, as paths below docs/ (without .md).
 GROUPS = [
-    ("Start", ["getting-started", "tutorial-android", "tutorial-virtual-iphone", "agent-setup", "recipes"]),
+    ("Getting started", ["getting-started", "tutorial-android", "tutorial-virtual-iphone", "agent-setup", "recipes"]),
     ("Agents", ["agents", "agent-patterns", "container"]),
     ("Use Tomacco", ["desktop", "android", "iphone", "linux-hosts"]),
     ("Virtual iOS device", ["virtual-ios/README", "virtual-ios/setup", "virtual-ios/usage",
@@ -41,6 +41,10 @@ GROUPS = [
 ]
 SHORT_TITLES = {
     "README": "Overview",
+    "agent-setup": "Set up with an agent",
+    "agent-patterns": "Agent patterns",
+    "linux-hosts": "Linux & hardware",
+    "faq": "FAQ",
     "virtual-ios/README": "About",
     "virtual-ios/setup": "Set up",
     "virtual-ios/usage": "Use",
@@ -49,7 +53,6 @@ SHORT_TITLES = {
     "reference/README": "Operations",
     "tutorial-android": "First Android app",
     "tutorial-virtual-iphone": "First SwiftUI app",
-    "agent-patterns": "Patterns for agent authors",
     "RELEASE_NOTES": "Release notes",
 }
 
@@ -463,7 +466,8 @@ HEAD = """<!DOCTYPE html>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/site.css">
 </head>
-<body>
+<body class="docs-page">
+<a class="skip" href="#main">Skip to content</a>
 <header class="bar">
   <div class="bar-in">
     <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Tomacco</span></a>
@@ -498,19 +502,28 @@ def navigation(pages, current):
     rest = [p for k, p in sorted(pages.items()) if k not in seen and not k.startswith(("reference/", "virtual-ios/")) and k != "README"]
     if rest:
         groups.append(("More", rest))
+    home_current = ' aria-current="page"' if current.key == "README" else ""
     out = ['<nav class="docs-nav" aria-label="Documentation">',
-           f'<a class="docs-home{" on" if current.key == "README" else ""}" href="{URL_BASE}/">All documentation</a>']
+           f'<a class="docs-home" href="{URL_BASE}/"{home_current}>Overview</a>']
     for title, entries in groups:
-        out.append(f"<h2>{html.escape(title)}</h2>\n<ul>")
+        if not entries:
+            continue
+        active = any(p.key == current.key for p in entries)
+        if title == "Reference" and current.key.startswith("reference/"):
+            active = True
+        opened = " open" if active or (current.key == "README" and title == "Getting started") else ""
+        out.append(f'<details class="docs-group"{opened}>\n<summary>{html.escape(title)}</summary>\n<ul>')
         for p in entries:
             label = SHORT_TITLES.get(p.key, p.title)
             on = ' aria-current="page"' if p.key == current.key else ""
             out.append(f'<li><a href="{p.url}"{on}>{html.escape(label)}</a></li>')
             if p.key == "reference/README" and current.key.startswith("reference/"):
                 subs = [q for k, q in sorted(pages.items()) if k.startswith("reference/") and k not in ("reference/README", "reference/errors")]
-                out.append("<li><ul>" + "".join(
-                    f'<li><a href="{q.url}"{" aria-current=page" if q.key == current.key else ""}>{html.escape(q.title)}</a></li>' for q in subs) + "</ul></li>")
-        out.append("</ul>")
+                sub_open = ' open' if current.key not in ("reference/README", "reference/errors") else ''
+                out.append(f'<li><details class="docs-subgroup"{sub_open}><summary>Operation groups</summary><ul>' + "".join(
+                    f'<li><a href="{q.url}"' + (' aria-current="page"' if q.key == current.key else '')
+                    + f'>{html.escape(q.title)}</a></li>' for q in subs) + "</ul></details></li>")
+        out.append("</ul>\n</details>")
     out.append("</nav>")
     return "\n".join(out)
 
@@ -526,14 +539,32 @@ def contents(page):
 
 def crumbs(page, pages):
     if page.key == "README":
-        return ""
+        return '<p class="crumbs">Documentation / Overview</p>'
     parts = [f'<a href="{URL_BASE}/">Docs</a>']
     directory = posixpath.dirname(page.key)
     if directory and page.key != f"{directory}/README":
         index = pages.get(f"{directory}/README")
         if index:
             parts.append(f'<a href="{index.url}">{html.escape(index.title)}</a>')
-    return '<p class="crumbs">' + " / ".join(parts) + "</p>"
+    parts.append(f'<span>{html.escape(SHORT_TITLES.get(page.key, page.title))}</span>')
+    return '<p class="crumbs">' + ' <span aria-hidden="true">/</span> '.join(parts) + "</p>"
+
+
+def page_neighbors(page, pages):
+    """Continue through the guides without reopening the navigation."""
+    order = ["README"] + [key for _, keys in GROUPS for key in keys if key in pages]
+    if page.key not in order:
+        return ""
+    position = order.index(page.key)
+    links = []
+    for offset, label, cls in ((-1, "Previous", "prev"), (1, "Next", "next")):
+        neighbor = position + offset
+        if 0 <= neighbor < len(order):
+            target = pages[order[neighbor]]
+            title = SHORT_TITLES.get(target.key, target.title)
+            links.append(f'<a class="docs-{cls}" href="{target.url}"><span>{label}</span>'
+                         f'<strong>{html.escape(title)}</strong></a>')
+    return '<nav class="docs-pagination" aria-label="Adjacent guides">' + "".join(links) + '</nav>'
 
 
 def page_html(page, pages, ref):
@@ -541,8 +572,15 @@ def page_html(page, pages, ref):
     head = HEAD.format(title=html.escape(title, quote=False), description=html.escape(page.description),
                        canonical=SITE + page.url, repo=REPO)
     edit = f"{REPO}/blob/{ref}/{page.source}"
-    return (head + '<div class="docs">\n' + navigation(pages, page) + '\n<main class="docs-body" id="main">\n'
+    nav = navigation(pages, page)
+    label = html.escape(SHORT_TITLES.get(page.key, page.title))
+    mobile = ('<details class="docs-mobile-menu"><summary><span class="docs-menu-label">'
+              'Browse docs</span><span class="docs-menu-current">' + label + '</span></summary>'
+              + nav + '</details>\n')
+    sidebar = '<aside class="docs-sidebar"><p class="docs-nav-title">Documentation</p>' + nav + '</aside>'
+    return (head + mobile + '<div class="docs">\n' + sidebar + '\n<main class="docs-body" id="main" tabindex="-1">\n'
             + crumbs(page, pages) + "\n" + contents_after_title(page) + "\n"
+            + page_neighbors(page, pages) + "\n"
             + f'<p class="source"><a href="{html.escape(edit)}">View this page as Markdown on GitHub</a></p>\n'
             + "</main>\n</div>\n" + FOOT)
 

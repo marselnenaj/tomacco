@@ -61,7 +61,7 @@
     </message>
     <message>
         <source>Agent activity</source>
-        <translation>Attività dell&apos;agente</translation>
+        <translation>Attività dell'agente</translation>
     </message>
     <message>
         <source>All</source>
@@ -73,7 +73,7 @@
     </message>
     <message>
         <source>Find an operation</source>
-        <translation>Cerca un&apos;operazione</translation>
+        <translation>Cerca un'operazione</translation>
     </message>
     <message>
         <source>No call failed.</source>
@@ -96,7 +96,7 @@
         <translation>completata</translation>
     </message>
     <message>
-        <source>An agent&apos;s call failed: %1</source>
+        <source>An agent's call failed: %1</source>
         <translation>Una chiamata di un agente non è riuscita: %1</translation>
     </message>
     <message>
@@ -536,8 +536,8 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Il log di sessione deve essere un percorso assoluto.</translation>
     </message>
     <message>
-        <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
-        <translation>Ancora nessun log di sessione in %1. Compare alla prima chiamata dell&apos;agente.</translation>
+        <source>No session log at %1 yet. It appears with the agent's first call.</source>
+        <translation>Ancora nessun log di sessione in %1. Compare alla prima chiamata dell'agente.</translation>
     </message>
 </context>
 <context>
@@ -1374,7 +1374,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Incolla</translation>
     </message>
     <message>
-        <source>Type the clipboard&apos;s text into the field that has the focus</source>
+        <source>Type the clipboard's text into the field that has the focus</source>
         <translation>Digita il testo degli appunti nel campo che ha il focus</translation>
     </message>
     <message>
@@ -1399,7 +1399,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation>Mostra i fotogrammi al secondo e il tempo da un input all&apos;immagine</translation>
+        <translation>Mostra i fotogrammi al secondo e il tempo da un input all'immagine</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
@@ -1415,11 +1415,11 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation>Dall&apos;input all&apos;immagine: %1 ms</translation>
+        <translation>Dall'input all'immagine: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation>Dall&apos;input all&apos;immagine: non ancora misurato</translation>
+        <translation>Dall'input all'immagine: non ancora misurato</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
@@ -3587,7 +3587,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Tomacco %1 è disponibile</translation>
     </message>
     <message>
-        <source>Open Tomacco to see what&apos;s new and install it.</source>
+        <source>Open Tomacco to see what's new and install it.</source>
         <translation>Apri Tomacco per vedere le novità e installarla.</translation>
     </message>
     <message>
@@ -3595,7 +3595,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Non è stato possibile riavviare Tomacco. Chiudilo e aprilo dal menu delle applicazioni.</translation>
     </message>
     <message>
-        <source>What&apos;s new in %1</source>
+        <source>What's new in %1</source>
         <translation>Novità della versione %1</translation>
     </message>
     <message>
@@ -3651,19 +3651,19 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Log accanto al dispositivo</translation>
     </message>
     <message>
-        <source>Show the device&apos;s or a job&apos;s log beside the device</source>
+        <source>Show the device's or a job's log beside the device</source>
         <translation>Mostra il log del dispositivo o di un job accanto al dispositivo</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation>Attività dell&apos;agente</translation>
+        <translation>Attività dell'agente</translation>
     </message>
     <message>
         <source>Session log, e.g. %1</source>
         <translation>Log di sessione, ad es. %1</translation>
     </message>
     <message>
-        <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
+        <source>Set TOMACCO_SESSION_LOG to this file in your agent's MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
         <translation>Imposta TOMACCO_SESSION_LOG su questo file nelle impostazioni MCP del tuo agente e il pannello attività elenca ogni operazione che chiama, con durata e risultato.</translation>
     </message>
     <message>
@@ -3723,8 +3723,8 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Nessuna impostazione corrisponde a «%1».</translation>
     </message>
     <message>
-        <source>Use the Omarchy theme&apos;s accent</source>
-        <translation>Usa il colore d&apos;accento del tema Omarchy</translation>
+        <source>Use the Omarchy theme's accent</source>
+        <translation>Usa il colore d'accento del tema Omarchy</translation>
     </message>
     <message>
         <source>Theme</source>
@@ -3732,14 +3732,14 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
-        <translation>Il colore d&apos;accento di %1 non si legge bene su questo sfondo, quindi Tomacco mantiene il proprio.</translation>
+        <translation>Il colore d'accento di %1 non si legge bene su questo sfondo, quindi Tomacco mantiene il proprio.</translation>
     </message>
     <message>
         <source>Accent from the Omarchy theme %1.</source>
-        <translation>Colore d&apos;accento dal tema Omarchy %1.</translation>
+        <translation>Colore d'accento dal tema Omarchy %1.</translation>
     </message>
     <message>
-        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
+        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window's size.</source>
         <translation>Una disposizione ricorda la vista aperta, il pannello attività, il log accanto al dispositivo con la sua larghezza, le finestre dei dispositivi e la dimensione della finestra.</translation>
     </message>
     <message>
@@ -3864,6 +3864,30 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     <message>
         <source>Check performance budget</source>
         <translation>Verifica budget di prestazioni</translation>
+    </message>
+    <message>
+        <source>Run Macrobenchmark</source>
+        <translation>Esegui Macrobenchmark</translation>
+    </message>
+    <message>
+        <source>Read Macrobenchmark results</source>
+        <translation>Leggi i risultati di Macrobenchmark</translation>
+    </message>
+    <message>
+        <source>Generate Baseline Profile</source>
+        <translation>Genera Baseline Profile</translation>
+    </message>
+    <message>
+        <source>Read Baseline Profile rules</source>
+        <translation>Leggi le regole del Baseline Profile</translation>
+    </message>
+    <message>
+        <source>Install Baseline Profile</source>
+        <translation>Installa Baseline Profile</translation>
+    </message>
+    <message>
+        <source>Compare startup with and without Baseline Profile</source>
+        <translation>Confronta l'avvio con e senza Baseline Profile</translation>
     </message>
     <message>
         <source>Compare performance reports</source>
@@ -4892,7 +4916,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>App launch</source>
-        <translation>Avvio dell&apos;app</translation>
+        <translation>Avvio dell'app</translation>
     </message>
 </context>
 <context>
@@ -5784,7 +5808,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
-        <translation>Automatici: gli aggiornamenti si installano anche da soli quando non c&apos;è nulla in esecuzione, poi viene proposto un riavvio.</translation>
+        <translation>Automatici: gli aggiornamenti si installano anche da soli quando non c'è nulla in esecuzione, poi viene proposto un riavvio.</translation>
     </message>
 </context>
 <context>
@@ -5816,7 +5840,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Tomacco %1 è disponibile</translation>
     </message>
     <message>
-        <source>What&apos;s new ↗</source>
+        <source>What's new ↗</source>
         <translation>Novità ↗</translation>
     </message>
     <message>
@@ -5848,7 +5872,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
-        <translation>Installa l&apos;SDK Android e un emulatore. Vengono scaricati circa 5 GB.</translation>
+        <translation>Installa l'SDK Android e un emulatore. Vengono scaricati circa 5 GB.</translation>
     </message>
     <message>
         <source>Set up iOS builds. This needs an Apple account.</source>
@@ -5856,7 +5880,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
-        <translation>Facoltativo: l&apos;iPhone virtuale. Servono la tua immagine di ripristino dell&apos;iPhone, circa 100 GiB di spazio su disco e una scheda grafica da 16 GiB.</translation>
+        <translation>Facoltativo: l'iPhone virtuale. Servono la tua immagine di ripristino dell'iPhone, circa 100 GiB di spazio su disco e una scheda grafica da 16 GiB.</translation>
     </message>
     <message>
         <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
@@ -5891,7 +5915,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Salta</translation>
     </message>
     <message>
-        <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
+        <source>The MCP configuration is on the clipboard. Paste it into your agent's MCP settings.</source>
         <translation>La configurazione MCP è negli appunti. Incollala nelle impostazioni MCP del tuo agente.</translation>
     </message>
 </context>

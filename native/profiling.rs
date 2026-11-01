@@ -10,6 +10,12 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "profile.capture" => capture(a),
         "profile.analyze" => analyze(a),
         "profile.compare" => compare(a),
+        "profile.macrobenchmark"
+        | "profile.benchmark_results"
+        | "profile.baseline_profile"
+        | "profile.baseline_rules"
+        | "profile.baseline_install"
+        | "profile.baseline_compare" => crate::macrobench::handle(op, a),
         _ => crate::perf::handle(op, a),
     }
 }
@@ -101,7 +107,7 @@ fn csv(text: &str) -> Result<Vec<Vec<String>>> {
     }
     Ok(rows)
 }
-fn analyze(a: &Value) -> Result {
+pub(crate) fn analyze(a: &Value) -> Result {
     let trace = path(s(a, "path"), false, true)?;
     let app = s(a, "bundle_id");
     identifier(
@@ -178,7 +184,7 @@ fn compare(a: &Value) -> Result {
 }
 /// The change of every metric from a baseline report to a current one, and
 /// the verdict of the budgets on it. Without budgets nothing can fail.
-fn compare_reports(baseline: &Value, current: &Value, budgets: &Value) -> Result {
+pub(crate) fn compare_reports(baseline: &Value, current: &Value, budgets: &Value) -> Result {
     if baseline["bundle_id"] != current["bundle_id"] {
         return Err(Error::new(
             "profile_mismatch",
