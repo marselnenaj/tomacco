@@ -29,7 +29,8 @@ class GuestSyslog(Isolated):
             self.assertEqual((reply["job_id"], reply["running"], reply["reset"]), (guest, True, False))
             self.assertEqual([(line["process"], line["pid"], line["level"]) for line in reply["lines"]],
                              [("dev.tomacco.SampleApp", 412, "error"), ("SampleApp", 412, "warning"),
-                              ("SampleApp", 412, "notice")])
+                              ("SampleApp", 412, "notice"), ("SampleApp", 413, "notice"),
+                              ("SampleApp", None, "notice")])
             faults = dispatch("ios.virtual.syslog", {"levels": ["fault"]})["lines"]
             self.assertEqual([(line["time"], line["process"], line["message"]) for line in faults],
                              [("Oct 28 07:19:55", "backboardd", "display pipeline stalled")])
