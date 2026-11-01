@@ -33,6 +33,8 @@ const IGNORED: &[&str] = &[
     ".vscode",
     ".fvm",
 ];
+/// Directories an xtool build writes into, ignored in an xtool project.
+const XTOOL_OUTPUT: &[&str] = &["xtool", ".xtool"];
 /// More files than this are not watched; the scan says so once.
 const FILE_LIMIT: usize = 100_000;
 
@@ -40,16 +42,7 @@ pub fn watch(a: &Value) -> Result {
     let project = projects::inspect(s(a, "path"))?;
     identifier(s(a, "device"), "device identifier", None)?;
     let root = PathBuf::from(s(&project, "path"));
-    let mut ignore: Vec<String> = IGNORED.iter().map(|name| name.to_string()).collect();
-    for name in strings(&a["ignore"]) {
-        if name.is_empty() || name.contains('/') || name == "." || name == ".." {
-            return Err(Error::new(
-                "invalid_argument",
-                "ignore takes directory names, such as generated",
-            ));
-        }
-        ignore.push(name);
-    }
+    let ignore = ignored(&project, &strings(&a["ignore"]))?;
     let mut run = json!({"path":root,"platform":a["platform"],"device":a["device"]});
     for key in [
         "bundle_id",
@@ -63,7 +56,10 @@ pub fn watch(a: &Value) -> Result {
     }
     // The run is checked now, so that a project it cannot run is refused
     // before the job starts rather than in its first cycle.
-    crate::api::arguments("project.run", &run)?;
+    let run = crate::api::arguments("project.run", &run)?;
+    if s(&run, "device") == crate::virtual_run::DEVICE {
+        crate::virtual_run::check(&project, &run)?;
+    }
     let flutter = project["kinds"]
         .as_array()
         .is_some_and(|kinds| kinds.iter().any(|k| k == "flutter"));
@@ -78,6 +74,28 @@ pub fn watch(a: &Value) -> Result {
         json!({"steps":[{"argv":[own_executable()?,"_watch",file]}],"cwd":root,
                "timeout":a["timeout"].as_u64().unwrap_or(86400)}),
     )
+}
+
+/// The directory names a watch leaves out: build, tool and dependency
+/// directories, xtool's output in an xtool project, and the caller's own.
+fn ignored(project: &Value, extra: &[String]) -> Result<Vec<String>> {
+    let mut ignore: Vec<String> = IGNORED.iter().map(|name| name.to_string()).collect();
+    if project["kinds"]
+        .as_array()
+        .is_some_and(|kinds| kinds.iter().any(|k| k == "xtool"))
+    {
+        ignore.extend(XTOOL_OUTPUT.iter().map(|name| name.to_string()));
+    }
+    for name in extra {
+        if name.is_empty() || name.contains('/') || name == "." || name == ".." {
+            return Err(Error::new(
+                "invalid_argument",
+                "ignore takes directory names, such as generated",
+            ));
+        }
+        ignore.push(name.clone());
+    }
+    Ok(ignore)
 }
 
 /// Each file under root with its modification time and size, leaving out
@@ -187,6 +205,7 @@ impl Runner for Live {
                 Err(error) => format!("failed to start: {} ({})", error.message, error.code),
             };
         }
+        let begun = std::time::SystemTime::now();
         let job = match crate::api::dispatch("project.run", &self.run) {
             Ok(job) => job,
             Err(error) => return format!("failed to start: {} ({})", error.message, error.code),
@@ -196,6 +215,17 @@ impl Runner for Live {
             match jobs::wait(&id, 60) {
                 Ok(done) if jobs::TERMINAL.contains(&s(&done, "state")) => {
                     let seconds = started.elapsed().as_secs_f64();
+                    if s(&self.run, "device") == crate::virtual_run::DEVICE {
+                        return virtual_line(
+                            fresh_report(
+                                &Path::new(s(&self.run, "path")).join(crate::virtual_run::REPORT),
+                                begun,
+                            ),
+                            s(&done, "state"),
+                            seconds,
+                            &id,
+                        );
+                    }
                     return if s(&done, "state") == "succeeded" {
                         format!("built, installed and launched in {seconds:.1} s (job {id})")
                     } else {
@@ -209,6 +239,28 @@ impl Runner for Live {
                 Err(error) => return format!("lost job {id}: {}", error.message),
             }
         }
+    }
+}
+
+/// The run's report when this cycle's run wrote it (not before `since`).
+fn fresh_report(file: &Path, since: std::time::SystemTime) -> Option<Value> {
+    let modified = std::fs::metadata(file).and_then(|m| m.modified()).ok()?;
+    if modified < since {
+        return None;
+    }
+    read_json(file, None).ok()
+}
+
+/// The line of a virtual iPhone cycle: the run report's summary (build and
+/// deploy seconds, unchanged, pid, crash check), the whole cycle's seconds
+/// and the job.
+fn virtual_line(report: Option<Value>, state: &str, seconds: f64, id: &str) -> String {
+    match report {
+        Some(report) => format!(
+            "{}; {state} after {seconds:.1} s (job {id})",
+            crate::virtual_run::summary(&report)
+        ),
+        None => format!("{state} after {seconds:.1} s; read job.logs of {id}"),
     }
 }
 
@@ -298,6 +350,42 @@ mod tests {
             self.0.push("deploy".into());
             format!("deployed {}", self.0.len())
         }
+    }
+    #[test]
+    fn an_xtool_project_leaves_out_what_xtool_builds() {
+        let xtool = json!({"kinds":["xtool"]});
+        let names = ignored(&xtool, &["generated".to_string()]).unwrap();
+        assert!(names.iter().any(|n| n == "xtool") && names.iter().any(|n| n == ".xtool"));
+        assert_eq!(names.last().unwrap(), "generated");
+        let flutter = ignored(&json!({"kinds":["flutter"]}), &[]).unwrap();
+        assert!(!flutter.iter().any(|n| n == "xtool"));
+        assert_eq!(
+            ignored(&xtool, &["a/b".to_string()]).unwrap_err().code,
+            "invalid_argument"
+        );
+    }
+    #[test]
+    fn a_virtual_iphone_cycle_names_its_timings_from_the_run_report() {
+        let report = json!({"state":"launched","build_seconds":12.04,
+            "deploy":{"seconds":3.2,"unchanged":true},"pid":600,
+            "crash_check":{"seconds":10,"checked":true}});
+        assert_eq!(
+            virtual_line(Some(report), "succeeded", 26.71, "j1"),
+            "built in 12.0 s, unchanged, opened in 3.2 s, pid 600, no new crash report in 10 s; succeeded after 26.7 s (job j1)"
+        );
+        assert_eq!(
+            virtual_line(None, "failed", 1.0, "j2"),
+            "failed after 1.0 s; read job.logs of j2"
+        );
+        let directory = tempfile::tempdir().unwrap();
+        let file = directory.path().join("run.json");
+        std::fs::write(&file, r#"{"state":"building"}"#).unwrap();
+        let later = std::time::SystemTime::now() + Duration::from_secs(60);
+        assert!(fresh_report(&file, later).is_none());
+        assert_eq!(
+            fresh_report(&file, std::time::UNIX_EPOCH).unwrap()["state"],
+            "building"
+        );
     }
     #[test]
     fn changes_outside_build_directories_are_found_and_named() {

@@ -18,6 +18,9 @@ operations and their JSON results.
     it in one job, then looks for a new crash report of the app for `crash_check_seconds` and fails the job as `crashed`
     when one appears. The run's `build/tomacco/virtual_iphone_run.json` has the build and deploy seconds, `unchanged`, the
     pid and the crash check. Refused at once when the phone is off. Unit-tested; not run on a live phone.
+  - `project.watch` with `device` `virtual-iphone` rebuilds and redeploys an xtool project on each save, leaves xtool's
+    `xtool` and `.xtool` output out, and logs one line per cycle with the build and deploy seconds, `unchanged`, the pid and
+    the crash check. Unit-tested; not run on a live phone.
 - `tomaccoctl setup` also connects OpenCode (`~/.config/opencode/opencode.json`, `mcp`). Apps that run these
   agents, such as T3 Code, then reach Tomacco through them; docs/agents.md says so.
 - **Release.**

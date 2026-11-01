@@ -23,6 +23,24 @@ const EVENT: &str = "TOMACCO_VIRTUAL_IPHONE ";
 /// project.run with device `virtual-iphone`: refused at once unless the
 /// project is an xtool project and the phone runs.
 pub fn submit(project: &Value, a: &Value, env: Value) -> Result {
+    let seconds = check(project, a)?;
+    let root = s(project, "path");
+    let request = json!({"path":root,"bundle_id":s(a,"bundle_id"),"crash_check_seconds":seconds});
+    let own = own_executable()?;
+    jobs::submit(
+        &format!("Run {} on the virtual iPhone", s(project, "name")),
+        json!({"steps":[
+                {"argv":[own,"_virtual_run","begin",request.to_string()]},
+                {"argv":[tc::find("xtool")?,"dev","build","--configuration",s(a,"configuration")]},
+                {"argv":[own,"_virtual_run","deploy",request.to_string()]}],
+            "cwd":root,"env":env,"exclusive":root,"single_active":true,"resource":"build",
+            "always_artifacts":[REPORT],"timeout":3600}),
+    )
+}
+
+/// The refusals of a virtual iPhone run, before any job: not iOS, not an
+/// xtool project, the phone off. The crash check's seconds otherwise.
+pub fn check(project: &Value, a: &Value) -> Result<u64> {
     if s(a, "platform") != "ios" {
         return Err(Error::new(
             "platform_unsupported",
@@ -39,6 +57,13 @@ pub fn submit(project: &Value, a: &Value, env: Value) -> Result {
         )
         .remedy("Build an arm64 .app yourself, then install it with ios.virtual.deploy"));
     }
+    let seconds = a["crash_check_seconds"].as_u64().unwrap_or(10);
+    if seconds > CRASH_CHECK_LIMIT {
+        return Err(Error::new(
+            "invalid_argument",
+            format!("crash_check_seconds is 0 to {CRASH_CHECK_LIMIT}"),
+        ));
+    }
     ios_emulator::virtual_phone::running_guest().map_err(|error| {
         if error.code == "ios_virtual_not_running" {
             error.remedy(
@@ -48,25 +73,7 @@ pub fn submit(project: &Value, a: &Value, env: Value) -> Result {
             error
         }
     })?;
-    let seconds = a["crash_check_seconds"].as_u64().unwrap_or(10);
-    if seconds > CRASH_CHECK_LIMIT {
-        return Err(Error::new(
-            "invalid_argument",
-            format!("crash_check_seconds is 0 to {CRASH_CHECK_LIMIT}"),
-        ));
-    }
-    let root = s(project, "path");
-    let request = json!({"path":root,"bundle_id":s(a,"bundle_id"),"crash_check_seconds":seconds});
-    let own = own_executable()?;
-    jobs::submit(
-        &format!("Run {} on the virtual iPhone", s(project, "name")),
-        json!({"steps":[
-                {"argv":[own,"_virtual_run","begin",request.to_string()]},
-                {"argv":[tc::find("xtool")?,"dev","build","--configuration",s(a,"configuration")]},
-                {"argv":[own,"_virtual_run","deploy",request.to_string()]}],
-            "cwd":root,"env":env,"exclusive":root,"single_active":true,"resource":"build",
-            "always_artifacts":[REPORT],"timeout":3600}),
-    )
+    Ok(seconds)
 }
 
 /// The `_virtual_run` steps of the job.
@@ -504,6 +511,24 @@ mod tests {
             "installd did not install dev.example.Demo"
         );
         assert!(!phone.calls.iter().any(|c| c.starts_with("sleep")));
+    }
+
+    #[test]
+    fn only_an_ios_run_of_an_xtool_project_goes_to_the_phone() {
+        let xtool = json!({"kinds":["xtool","swift"]});
+        let refused = |project: &Value, a: Value| check(project, &a).unwrap_err().code;
+        assert_eq!(
+            refused(&xtool, json!({"platform":"android"})),
+            "platform_unsupported"
+        );
+        assert_eq!(
+            refused(&json!({"kinds":["flutter"]}), json!({"platform":"ios"})),
+            "action_unsupported"
+        );
+        assert_eq!(
+            refused(&xtool, json!({"platform":"ios","crash_check_seconds":121})),
+            "invalid_argument"
+        );
     }
 
     #[test]

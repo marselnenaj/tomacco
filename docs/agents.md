@@ -257,6 +257,12 @@ tomaccoctl call project.watch '{"path":"/absolute/NewApp","platform":"android","
 tomaccoctl call job.logs '{"job_id":"WATCH_JOB_ID"}'
 ```
 
+With `device:"virtual-iphone"` an xtool project is rebuilt and deployed on the running virtual iPhone on each save (see
+[deploying an app](#deploying-an-app-to-the-virtual-ios-device)); `xtool` and `.xtool` are not watched, and a phone that is off is refused
+before the job. Its line reads like `cycle 2: 1 file changed (Sources/MyApp/ContentView.swift): built in 38.0 s, deployed in 24.1 s,
+pid 612, no new crash report in 10 s; succeeded after 74.9 s (job ID)`, or `unchanged, opened in 3.2 s` when the signed app did not change.
+Unit-tested; not run on a live phone.
+
 A Flutter session from `project.run` takes `job.send` with `reload` (Hot Reload), `restart` (Hot Restart) or `quit`, and while it
 runs `job.get` shows its Dart VM service and, when Flutter serves them, DevTools URIs under `result.flutter`. A React Native or Expo
 debug run takes `reload` through Metro's `/reload` endpoint. See [Android](android.md#flutter).

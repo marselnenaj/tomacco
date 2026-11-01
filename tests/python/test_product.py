@@ -2247,6 +2247,9 @@ class IphoneLinuxTests(Isolated):
             dispatch('project.run',{**args,'path':str(other)})
         self.assertEqual(caught.exception.code,'action_unsupported')
         with self.assertRaises(StudioError) as caught:
+            dispatch('project.watch',args)
+        self.assertEqual(caught.exception.code,'ios_virtual_unconfigured')
+        with self.assertRaises(StudioError) as caught:
             dispatch('project.watch',{**args,'crash_check_seconds':121})
         self.assertEqual(caught.exception.code,'invalid_argument')
         self.assertEqual(jobs.listing(10),[])
