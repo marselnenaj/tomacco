@@ -24,6 +24,8 @@ after you have read it; see [bug reports](agents.md#bug-reports).
 | `preview_unavailable`: "Cannot reach preview session" | No desktop session has that name. | Start `tomacco --preview-session NAME`. |
 | The device window has a border or blur on Omarchy | The Hyprland rule is missing. | Install with `--omarchy`. It is `~/.config/hypr/tomacco.lua`. |
 | A changed installed file is left after an uninstall | Files you changed are kept and listed, on purpose. | Delete them if you do not need them. |
+| The installer asks to `sudo pacman -S` Qt packages on SteamOS, or stops there | SteamOS has pacman, but its system is read-only. | `curl -fsSL https://tomacco.dev/install.sh \| bash -s -- --portable`. See [SteamOS](linux-hosts.md#steamos-and-the-steam-deck). |
+| `tomaccoctl`: "cannot execute: required file not found" on NixOS | There is no `/lib64/ld-linux-x86-64.so.2`. | See [NixOS](linux-hosts.md#nixos); nothing has been verified there. |
 
 ## Tools and SDKs
 
@@ -58,6 +60,10 @@ after you have read it; see [bug reports](agents.md#bug-reports).
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | `avd_not_found`: "Unknown AVD" | No emulator has that name. | `android.avds` or `android.avd_create`. |
+| `doctor` `kvm.status` is not `ready` | `/dev/kvm` is missing or not yours: no module, virtualization off, nested virtualization off, a container without the device, or not in the kvm group. | Run `kvm.commands`; [KVM](linux-hosts.md#kvm) explains each status. |
+| `emulator_no_display` | A start with a window found no `DISPLAY`: no graphical session, or Wayland without XWayland. The emulator's window needs X11. | `headless` `true`, or turn on XWayland. |
+| The emulator stops at once with "Could not find the Qt platform plugin wayland" | Its Qt has only the X11 plugin, and `QT_QPA_PLATFORM` said wayland. Tomacco's starts now give it `xcb`; this remains for emulators started by hand. | Start it with `QT_QPA_PLATFORM=xcb`. |
+| The emulator's screen stays black | The renderer does not work with this graphics driver. | `android.avd_start` `gpu` `swiftshader`; keep it with `android.avd_configure`. See [renderer](linux-hosts.md#the-emulators-window-and-renderer). |
 | "Only Tomacco managed AVDs can be calibrated" | `android.calibrate` works on Tomacco's own emulators. | Create one with `android.avd_create`. |
 | `android.avd_profile` or `android.avd_configure` refuses | That emulator is running. | Stop it first with `android.emulator` `action:"stop"`. |
 | `scrcpy_server_missing` | The live view needs the scrcpy 4.1 server. | Install scrcpy 4.1, or pass the server JAR to `runtime.start`. |

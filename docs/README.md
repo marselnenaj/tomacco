@@ -14,6 +14,7 @@ can do the same things. These guides describe version 1.2.1; the
 | Have my coding agent set everything up | [Agent setup](agent-setup.md) |
 | Connect a coding agent over MCP or the JSON CLI | [Agents](agents.md) |
 | Run tomaccoctl headless in Docker, for an agent, a server or CI | [Container image](container.md) |
+| Know what ran on which Linux distribution, and use Tomacco on SteamOS, NixOS, Silverblue or a small computer | [Linux distributions and hardware](linux-hosts.md) |
 | Copy a short sequence: build and run, screenshot and UI test, iOS build, virtual iPhone deploy | [Recipes](recipes.md) |
 | Write an agent or a script: planning, waiting on jobs, errors, destructive calls, recovery | [Agent patterns](agent-patterns.md) |
 | Look up one operation: its arguments, defaults, annotations and an example call | [Operation reference](reference/README.md) |

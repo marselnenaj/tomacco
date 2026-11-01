@@ -8,7 +8,7 @@
 
 **Check toolchain**
 
-Report tool versions, paths, SDK and KVM readiness, and next_steps: what is left to set up, in order. Without a virtual iOS device profile, its step names the next stage of the setup chain (next_stage) and carries the whole chain in order (stage, what, done true, false or null when only the person's files or a later check can tell, how, ask_first). With a profile, steps name only what stops the next start: a profile ios.virtual.status refuses, too little disk space, a failed last start, or apps the last start did not install.
+Report tool versions, paths, SDK and KVM readiness, and next_steps: what is left to set up, in order. Without a virtual iOS device profile, its step names the next stage of the setup chain (next_stage) and carries the whole chain in order (stage, what, done true, false or null when only the person's files or a later check can tell, how, ask_first). With a profile, steps name only what stops the next start: a profile ios.virtual.status refuses, too little disk space, a failed last start, or apps the last start did not install. host describes this computer: the distribution and whether it is immutable or a container, why KVM is not usable with the commands that fix it here (also in kvm), the graphics and display the Android emulator would use with the renderer that suits them, memory, processors and disk against what the emulator and the virtual iPhone need, and how to install a JDK and Gradle here.
 
 Annotations: read-only, idempotent, open world.
 

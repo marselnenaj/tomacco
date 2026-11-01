@@ -222,7 +222,10 @@ Every guest processor is emulated, so performance is far below a physical phone.
 Tomacco 1.2.1 was developed and tested on one workstation: x86_64 Arch Linux with Omarchy,
 Qt 6.12 and Rust 1.99. The portable package passed its checks in clean Debian 12, Ubuntu 22.04,
 Ubuntu 24.04 and Fedora 44 containers but has not been run on a real desktop of those
-distributions. Other machines have not been qualified.
+distributions. The 1.2.1 installer, `doctor` and an Android starter build ran in clean Debian 12
+and 13, Ubuntu 24.04, Fedora 44 and openSUSE Tumbleweed containers. Other machines have not been
+qualified; [Linux distributions and hardware](docs/linux-hosts.md) says what ran where, and what is
+known about NixOS, SteamOS and Fedora's atomic desktops.
 
 **Physical iPhone execution is not qualified.** Build, signing, pairing and runner
 paths have contract tests, but execution on a real iPhone has not been verified.

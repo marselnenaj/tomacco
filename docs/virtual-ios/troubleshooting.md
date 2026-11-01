@@ -65,6 +65,7 @@ the code and that none is missing.
 | `ios_virtual_deploy_failed` | In a `project.run` report: the deploy job it started failed. | Read the message, then `job.logs` of `deploy.job_id`. |
 | `ios_virtual_disk_space` | The start's disk copy does not fit on the filesystem of the profile's `installs`. | Free the space the remedy names. See [starting](#starting). |
 | `ios_virtual_guest_state_unknown` | The guest job could not be observed. | Read `job.get` for the job in the details. |
+| `ios_virtual_host_too_small` | The computer is not x86_64, or has less than 12 GiB of memory, too little for the guest and its translated code. | Use a bigger x86_64 computer; `ios.virtual.host_check` lists what it needs. |
 | `ios_virtual_locked` | `testing.run` found the phone's lock screen and could not leave it: it has a passcode, or it stayed locked. | Unlock it in the phone window, then run again. See [the lock screen](usage.md#the-lock-screen). |
 | `ios_virtual_log_unavailable` | The guest job has no console log yet. | Start the phone, or wait until its boot has begun, then read `ios.virtual.syslog` again. |
 | `ios_virtual_no_verified_run` | There is no verified run to save as a state. | Stop a run with `ios.virtual.stop` so it ends verified, then save it. |

@@ -2,7 +2,7 @@
   {
     "name": "doctor",
     "title": "Check toolchain",
-    "description": "Report tool versions, paths, SDK and KVM readiness, and next_steps: what is left to set up, in order. Without a virtual iOS device profile, its step names the next stage of the setup chain (next_stage) and carries the whole chain in order (stage, what, done true, false or null when only the person's files or a later check can tell, how, ask_first). With a profile, steps name only what stops the next start: a profile ios.virtual.status refuses, too little disk space, a failed last start, or apps the last start did not install.",
+    "description": "Report tool versions, paths, SDK and KVM readiness, and next_steps: what is left to set up, in order. Without a virtual iOS device profile, its step names the next stage of the setup chain (next_stage) and carries the whole chain in order (stage, what, done true, false or null when only the person's files or a later check can tell, how, ask_first). With a profile, steps name only what stops the next start: a profile ios.virtual.status refuses, too little disk space, a failed last start, or apps the last start did not install. host describes this computer: the distribution and whether it is immutable or a container, why KVM is not usable with the commands that fix it here (also in kvm), the graphics and display the Android emulator would use with the renderer that suits them, memory, processors and disk against what the emulator and the virtual iPhone need, and how to install a JDK and Gradle here.",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -2896,7 +2896,7 @@
   {
     "name": "android.avd_profile",
     "title": "Set emulator display",
-    "description": "Apply a profile's resolution/density to a stopped Tomacco AVD.",
+    "description": "Apply a profile's resolution/density to a stopped Tomacco AVD. On a host with less than 10 GiB of memory or at most 4 processors it also lowers the emulator's memory and processors (adapted_to_host), unless android.avd_configure set them.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2977,7 +2977,7 @@
   {
     "name": "android.avd_start",
     "title": "Start emulator",
-    "description": "Start or reuse an Android virtual device. CPU acceleration remains enabled independently of the selected GPU renderer.",
+    "description": "Start or reuse an Android virtual device. CPU acceleration remains enabled independently of the selected GPU renderer. A start with a window needs X11 (DISPLAY, XWayland on Wayland) and is refused with emulator_no_display without it; the emulator gets QT_QPA_PLATFORM=xcb when the session names only wayland. With gpu configured and the AVD's default auto renderer, a host without a hardware GPU driver starts with swiftshader (gpu in the result says so).",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -10003,7 +10003,7 @@
   {
     "name": "ios.virtual.start",
     "title": "Start virtual iOS device",
-    "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB. A start that boots a guest returns warnings, a list of {check, message}: check gpu when under a quarter of the graphics card is free (the graphics memory guard stops a session under an eighth), check pressure when the host's I/O or memory pressure is over the admission limits the start waits for; neither refuses the start.",
+    "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB. A start that boots a guest returns warnings, a list of {check, message}: check gpu when under a quarter of the graphics card is free (the graphics memory guard stops a session under an eighth), check pressure when the host's I/O or memory pressure is over the admission limits the start waits for; neither refuses the start. Refused with ios_virtual_host_too_small on a host that is not x86_64 or has less than 12 GiB of memory.",
     "inputSchema": {
       "type": "object",
       "properties": {

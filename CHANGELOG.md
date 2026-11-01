@@ -4,6 +4,41 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Added
+
+- `doctor` has a `host` entry describing the computer: the distribution and whether it is immutable (SteamOS,
+  Fedora's ostree systems, NixOS, a read-only `/usr`) or a container; why `/dev/kvm` is not usable (module not
+  loaded, virtualization off, nested virtualization off, a container without the device, not in the group, a login
+  still to come, root-only) with the commands that fix it on that system, also in doctor's `kvm`; the graphics,
+  session and renderer for the Android emulator; memory, processors and free space against what the emulator and
+  the virtual iPhone need; and how to install a JDK and Gradle 9 there. Tested with made-up machines.
+- [Linux distributions and hardware](docs/linux-hosts.md): what ran in which clean container, each `kvm.status`, the
+  emulator's window and renderer, small computers, Fedora's atomic desktops, NixOS and SteamOS.
+
+### Changed
+
+- `next_steps` and `tomaccoctl setup` name the JDK package of the distribution they run on (`openjdk-17-jdk-headless`
+  on Debian 12, `openjdk-21-jdk-headless` on Debian 13 and Ubuntu 24.04, `java-25-openjdk-devel` on Fedora 44,
+  `java-21-openjdk-devel` on openSUSE) instead of Arch's, say that Gradle 9 comes from gradle.org outside Arch, and
+  add a KVM step with this system's commands while `/dev/kvm` is not usable.
+- `android.avd_start`: an AVD with the default `auto` renderer that nobody chose starts with `swiftshader` on a host
+  without a hardware graphics driver; the result's `gpu` says so. A `gpu` passed to the start or saved with
+  `android.avd_configure` wins.
+- `android.avd_profile`, and so `android.avd_create`, gives new emulators less memory (1536 MB under 6 GiB, 2048 MB
+  under 10 GiB) and half the processors on a host with at most four, unless `android.avd_configure` set them; the
+  result's `adapted_to_host` lists the change.
+- `ios.virtual.start` refuses to boot on a host that is not x86_64 or has less than 12 GiB of memory, as
+  `ios_virtual_host_too_small`.
+
+### Fixed
+
+- A windowed `android.avd_start` from a session whose `QT_QPA_PLATFORM` named only `wayland` started an emulator
+  that aborted at once: its Qt has only the X11 plugin. The emulator now gets `QT_QPA_PLATFORM=xcb`; on the
+  development host such a start then booted. Without `DISPLAY` (no graphical session, or Wayland without XWayland)
+  the emulator also aborted; the start is now refused with `emulator_no_display` and the remedy `headless`.
+
 ## 1.2.1
 
 The first published 1.2 release; `v1.2.0` was tagged but not released.
