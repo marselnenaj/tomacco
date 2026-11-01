@@ -82,6 +82,35 @@ that clones files (btrfs, or XFS with reflink) the copy shares blocks with its b
 full copy `enough` stays null until a start tries a clone. The refusal and `start_disk` have unit tests and a
 control-plane test; neither has been met on a real full disk.
 
+### Copy-free starts (experimental)
+
+Every start copies the base run's 32 GiB root disk, which takes about 9 minutes on a filesystem that cannot clone files
+(ext4). A profile can ask for an overlay instead:
+
+```sh
+tomaccoctl call ios.virtual.configure '{"start_disks":"overlay"}'
+```
+
+The next start then makes the run's root disk `system.qcow2`, an empty qcow2 file whose backing file is the base's root
+disk, with `qemu-img create`. The guest writes into the overlay; the base is only read. The auxiliary and SEP disks are
+small and still copied. `qemu-img` is taken from beside the profile's helper engine (setup builds it there) or from
+`PATH`. The engine and the Linux helper that installs the guest tools open the overlay as qcow2, and the host reads APFS
+through the chain to check the Preboot volume as before.
+
+- Each verified run adds one layer. After 8 overlays on one base the next start flattens the chain into a new raw disk
+  (`qemu-img convert`), which writes the whole disk once, as a copy does. `"start_disks":"copy"` also flattens an
+  overlay base.
+- A copy an overlay reads is never deleted while the run on top of it is kept: the start's own pruning and
+  `ios.virtual.cleanup` list it under `kept` with the reason `overlay-backing`.
+- Backing files are named by absolute path, so moving the profile's `installs` breaks the runs made this way.
+- Without `qemu-img` the start copies, and its log says why. `start_disk` in `ios.virtual.status` has the `method`
+  (`copy`, `overlay` or `flatten`), and `start_disks` the choice.
+
+The plan, the qcow2 reading, the pruning and the launcher's block device have unit tests. None of it has run on a live
+phone yet. What a first live run has to show: that the patched engine boots iOS from `system.qcow2` (`-blockdev`
+driver `qcow2`, backing opened read-only by QEMU), that the helper installs the guest tools through it, that a stop
+still ends with exit code 0 and complete hashes, that the next start layers on that run, and how long a start takes then.
+
 ## The graphics memory guard
 
 A session stops the careful way when under an eighth of the graphics card stays free, so it cannot take

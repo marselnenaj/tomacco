@@ -67,6 +67,14 @@ operations and their JSON results.
   and `desktop.portable` says which package it is. Run in debian:12, ubuntu:22.04, ubuntu:24.04 and fedora:44 containers,
   the one command made the 1.1.0 portable desktop loadable.
 
+- **Virtual iPhone.**
+  - Copy-free starts, experimental: with `ios.virtual.configure {"start_disks":"overlay"}` a start makes the run's root
+    disk an empty qcow2 overlay on the base's with `qemu-img` instead of copying 32 GiB, and copies only the small
+    auxiliary and SEP disks. The engine and the guest-tools helper attach it as qcow2, the host reads APFS through the
+    chain, pruning and `ios.virtual.cleanup` keep the copies an overlay reads, and after 8 layers a start flattens the
+    chain. `ios.emulator.prepare_guest_tools` takes `root_overlay` and `qemu_img`, and `start_disk` in
+    `ios.virtual.status` names the `method`. Unit-tested only, not run on a live phone.
+
 ### Changed
 
 - The README and the documentation index describe 1.1.0: the portable package, the five desktop languages, what

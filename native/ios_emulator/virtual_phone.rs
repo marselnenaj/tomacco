@@ -203,6 +203,7 @@ pub fn configure(a: &Value) -> Result {
         "remove_application",
         "application",
         "clang",
+        "start_disks",
     ]
     .iter()
     .any(|key| a.get(key).is_some())
@@ -302,6 +303,18 @@ pub fn configure(a: &Value) -> Result {
                 }
                 profile["toolchain"]["clang"] = json!(file);
             }
+        }
+        if let Some(mode) = a.get("start_disks") {
+            // How the next start makes its root disk: a copy of the base's,
+            // or a qcow2 overlay on it (disk_overlay).
+            let mode = mode.as_str().unwrap_or_default();
+            if !["copy", "overlay"].contains(&mode) {
+                return Err(Error::new(
+                    "invalid_argument",
+                    "start_disks must be copy or overlay",
+                ));
+            }
+            profile["start_disks"] = json!(mode);
         }
         profile["applications"] = json!(listed);
         atomic_json(&directory.join("profile.json"), &profile)?;
@@ -473,7 +486,11 @@ pub fn apps(_a: &Value) -> Result {
 
 /// The disks a start copies from its base, in the order it copies them
 /// (`prepare` in tools/prepare_ios_guest_tools.py).
-const DISKS: [&str; 3] = ["system.raw", "auxiliary.raw", "sep.raw"];
+use super::disk_overlay;
+
+/// The disks a start copies besides the root disk, which is a copy, an
+/// overlay or a flattened overlay (`disk_overlay`).
+const COPIED_DISKS: [&str; 2] = ["auxiliary.raw", "sep.raw"];
 
 /// How far the `preparing` phase's disk copy has come: the bytes of the new
 /// copy's disk files against those of the base it is copied from, and the
@@ -497,13 +514,26 @@ fn copy_progress(state: &Value) -> Value {
             .filter(|meta| meta.is_file())
             .map(|meta| meta.len())
     };
-    let (mut done, mut total) = (0u64, 0u64);
-    for name in DISKS {
-        let Some(source) = size(Path::new(base).join(name)) else {
+    let (base, output) = (Path::new(base), Path::new(output));
+    // An overlay is complete once it exists; a copy or a flattened disk
+    // grows to the base's bytes as a raw disk.
+    let Some(root) = disk_overlay::root_bytes(base) else {
+        return Value::Null;
+    };
+    let (mut done, mut total) = (0u64, root);
+    done += if size(output.join(disk_overlay::ROOT_OVERLAY)).is_some() {
+        root
+    } else {
+        size(output.join(disk_overlay::ROOT_RAW))
+            .unwrap_or(0)
+            .min(root)
+    };
+    for name in COPIED_DISKS {
+        let Some(source) = size(base.join(name)) else {
             return Value::Null;
         };
         total += source;
-        done += size(Path::new(output).join(name)).unwrap_or(0).min(source);
+        done += size(output.join(name)).unwrap_or(0).min(source);
     }
     let record = Path::new(output).join("guest-tools-install.json");
     let record = if fs::symlink_metadata(&record).is_ok_and(|meta| meta.is_file()) {
@@ -550,10 +580,14 @@ fn copies_a_start_removes(profile: &Value, state: &Value) -> Vec<PathBuf> {
         .filter_map(|path| path.as_str().map(PathBuf::from))
         .collect();
     let verified = PathBuf::from(s(&state["verified"], "install"));
+    // What the start keeps (prune(keep=1)) and what those read as overlays.
+    let mut keeps = vec![verified.clone()];
+    keeps.extend(created.last().cloned());
+    let kept = disk_overlay::with_backing(&keeps);
     let mut removed: Vec<PathBuf> = created
         .iter()
         .take(created.len().saturating_sub(1))
-        .filter(|path| **path != verified)
+        .filter(|path| **path != verified && !disk_overlay::among(&kept, path))
         .cloned()
         .collect();
     if let Some(attempt) = state["attempt"]["install"].as_str().map(PathBuf::from) {
@@ -654,8 +688,14 @@ fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
         None => return Value::Null,
     };
     let installs = PathBuf::from(s(profile, "installs"));
-    let mut disks = 0;
-    for name in DISKS {
+    // An overlay needs only the small disks' copies; a copy or a flattened
+    // overlay the whole root disk as well.
+    let (method, _) = disk_overlay::start_method(profile, &base);
+    let Some(root) = disk_overlay::root_bytes(&base) else {
+        return Value::Null;
+    };
+    let mut disks = if method == "overlay" { 0 } else { root };
+    for name in COPIED_DISKS {
         match fs::metadata(base.join(name)) {
             Ok(meta) if meta.is_file() => disks += meta.len(),
             _ => return Value::Null,
@@ -669,7 +709,10 @@ fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
         .map(|copy| allocated_bytes(copy))
         .sum::<u64>();
     let (needed, reflink, enough) = disk_verdict(disks, free, reclaimable, || {
-        if probe {
+        if method == "flatten" {
+            // qemu-img convert writes a new file; it never clones.
+            Some(false)
+        } else if probe {
             Some(clones_into(&base.join("sep.raw"), &installs))
         } else if may_clone(&installs) {
             None
@@ -678,7 +721,7 @@ fn start_disk(profile: &Value, state: &Value, probe: bool) -> Value {
         }
     });
     json!({"installs":installs,"needed_bytes":needed,"free_bytes":free,
-        "reclaimable_bytes":reclaimable,"reflink":reflink,"enough":enough})
+        "reclaimable_bytes":reclaimable,"reflink":reflink,"enough":enough,"method":method})
 }
 
 /// What a cleanup of the profile's `installs` would do: the disk copies the
@@ -704,6 +747,16 @@ fn cleanup_plan(profile: &Value, state: &Value) -> (Vec<PathBuf>, Vec<Value>, Ve
         .flatten()
         .filter_map(|path| path.as_str().map(PathBuf::from))
         .collect();
+    // A copy an overlay among them reads is kept for as long as they are.
+    let roots: Vec<PathBuf> = protected.iter().map(|(path, _)| path.clone()).collect();
+    for (path, _) in protected.clone() {
+        for backing in disk_overlay::backing_installs(&path) {
+            if !roots.contains(&backing) {
+                protected.push((backing, "overlay-backing"));
+            }
+        }
+    }
+    let shielded = disk_overlay::with_backing(&roots);
     let mut removable = Vec::new();
     let mut kept: Vec<Value> = Vec::new();
     for (path, reason) in &protected {
@@ -713,7 +766,10 @@ fn cleanup_plan(profile: &Value, state: &Value) -> (Vec<PathBuf>, Vec<Value>, Ve
         }
     }
     for path in &created {
-        if !protected.iter().any(|(kept, _)| kept == path) && owned_copy(&installs, path) {
+        if !protected.iter().any(|(kept, _)| kept == path)
+            && !disk_overlay::among(&shielded, path)
+            && owned_copy(&installs, path)
+        {
             removable.push(path.clone());
         }
     }
@@ -726,6 +782,7 @@ fn cleanup_plan(profile: &Value, state: &Value) -> (Vec<PathBuf>, Vec<Value>, Ve
             owned_copy(&installs, path)
                 && !created.contains(path)
                 && !protected.iter().any(|(kept, _)| kept == path)
+                && !disk_overlay::among(&shielded, path)
         })
         .collect();
     removable.sort();
@@ -1013,8 +1070,10 @@ pub fn status(_a: &Value) -> Result {
         // or stop with its seconds, and the disk copy's progress while preparing.
         "phase_started":times["phase_started"],"phase_elapsed_seconds":times["phase_elapsed_seconds"],
         "phases":times["phases"],"copy_progress":copy_progress(&state),
-        // Whether the next start's disk copy fits in the profile's installs.
+        // Whether the next start's disk copy fits in the profile's installs,
+        // and whether it copies the root disk or lays an overlay on it.
         "start_disk":start_disk(&profile,&state,false),
+        "start_disks":profile["start_disks"].as_str().unwrap_or("copy"),
         "error":state["error"],"updated":state["updated"],
         "guest_job":state["guest_job"],"guest_state":guest_state,"guest_state_known":guest_known,
         "guest_report_readable":report_readable,
@@ -1804,7 +1863,7 @@ mod start_disk_tests {
         let (base, installs) = (root.path().join("base"), root.path().join("installs"));
         fs::create_dir_all(&base).unwrap();
         fs::create_dir_all(&installs).unwrap();
-        for name in DISKS {
+        for name in ["system.raw", "auxiliary.raw", "sep.raw"] {
             fs::write(base.join(name), vec![0u8; 4096]).unwrap();
         }
         let profile = json!({"installs":installs});
@@ -1823,5 +1882,77 @@ mod start_disk_tests {
         assert!(start_disk(&profile, &json!({"closed":false,"install":base}), false).is_null());
         fs::remove_file(base.join("sep.raw")).unwrap();
         assert!(start_disk(&profile, &state, true).is_null());
+    }
+
+    #[test]
+    fn an_overlay_start_needs_room_for_the_small_disks_only() {
+        let root = tempfile::tempdir().unwrap();
+        let (base, installs, helper) = (
+            root.path().join("installs/guest-install1"),
+            root.path().join("installs"),
+            root.path().join("helper"),
+        );
+        fs::create_dir_all(&base).unwrap();
+        fs::create_dir_all(&helper).unwrap();
+        fs::write(base.join("system.raw"), vec![0u8; 64 * 4096]).unwrap();
+        for name in COPIED_DISKS {
+            fs::write(base.join(name), vec![0u8; 4096]).unwrap();
+        }
+        fs::write(helper.join("qemu-img"), "#!/bin/sh\n").unwrap();
+        fs::set_permissions(helper.join("qemu-img"), fs::Permissions::from_mode(0o755)).unwrap();
+        let profile = json!({"installs":installs,"start_disks":"overlay",
+            "prepare":{"helper_engine":helper.join("qemu-system-x86_64")}});
+        let state = json!({"closed":true,"install":base});
+        let disk = start_disk(&profile, &state, false);
+        assert_eq!(disk["method"], "overlay");
+        assert_eq!(disk["needed_bytes"], 2 * 4096 + COPY_HEADROOM);
+        // A copy of an overlay base is a flattened raw disk of its virtual size.
+        let next = installs.join("guest-install2");
+        fs::create_dir_all(&next).unwrap();
+        super::disk_overlay::tests::overlay(
+            &next.join("system.qcow2"),
+            64 * 4096,
+            &base.join("system.raw"),
+        );
+        for name in COPIED_DISKS {
+            fs::write(next.join(name), vec![0u8; 4096]).unwrap();
+        }
+        let copies = json!({"installs":installs,"prepare":{"helper_engine":helper.join("qemu-system-x86_64")}});
+        let disk = start_disk(&copies, &json!({"closed":true,"install":next}), true);
+        assert_eq!(disk["method"], "flatten");
+        assert_eq!(disk["needed_bytes"], 66 * 4096 + COPY_HEADROOM);
+    }
+
+    #[test]
+    fn copies_an_overlay_reads_are_never_removed() {
+        let root = tempfile::tempdir().unwrap();
+        let installs = root.path().join("installs");
+        let names = ["guest-install5", "guest-install6", "guest-install7"];
+        for name in names {
+            fs::create_dir_all(installs.join(name)).unwrap();
+        }
+        fs::write(installs.join("guest-install5/system.raw"), vec![0u8; 4096]).unwrap();
+        super::disk_overlay::tests::overlay(
+            &installs.join("guest-install6/system.qcow2"),
+            4096,
+            &installs.join("guest-install5/system.raw"),
+        );
+        fs::write(installs.join("guest-install7/system.raw"), vec![0u8; 4096]).unwrap();
+        let profile = json!({"installs":installs});
+        let created: Vec<PathBuf> = names.iter().map(|name| installs.join(name)).collect();
+        // The verified run is an overlay on 5: the start keeps 5 as well.
+        let state =
+            json!({"verified":{"install":created[1]},"install":created[2],"created":created});
+        assert!(copies_a_start_removes(&profile, &state).is_empty());
+        let (removable, kept, _) = cleanup_plan(&profile, &state);
+        assert!(removable.is_empty());
+        assert!(kept.contains(&json!({"path":created[0],"reason":"overlay-backing"})));
+        // Once nothing kept reads it, it goes like any older copy.
+        let state =
+            json!({"verified":{"install":created[2]},"install":created[2],"created":created});
+        assert_eq!(
+            copies_a_start_removes(&profile, &state),
+            created[..2].to_vec()
+        );
     }
 }

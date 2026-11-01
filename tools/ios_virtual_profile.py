@@ -168,7 +168,8 @@ def install_problem(install, tools, trustcache):
     """A guest-tools install of these tools, which a later start replaces as its previous payload."""
     if not install.is_dir():
         return "not a directory"
-    absent = [name for name in ("system.raw", "auxiliary.raw", "sep.raw", "guest-tools-install.json")
+    root = "system.qcow2" if (install / "system.qcow2").is_file() else "system.raw"
+    absent = [name for name in (root, "auxiliary.raw", "sep.raw", "guest-tools-install.json")
               if not (install / name).is_file()]
     if absent:
         return "lacks " + ", ".join(absent)

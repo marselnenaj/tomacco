@@ -28,9 +28,18 @@ def checked_block(data):
     return data
 
 
+def _pread(source, length, offset):
+    """A descriptor, or a reader with pread(length, offset) such as an overlay chain."""
+    return source.pread(length, offset) if hasattr(source, "pread") else os.pread(source, length, offset)
+
+
+def _size(source):
+    return source.size() if hasattr(source, "size") else os.fstat(source).st_size
+
+
 def container_extent(fd):
-    size = os.fstat(fd).st_size
-    prefix = os.pread(fd, 1024, 0)
+    size = _size(fd)
+    prefix = _pread(fd, 1024, 0)
     if prefix[32:36] == b"NXSB":
         return {"offset": 0, "bytes": size, "partition": None}
     header = bytearray(prefix[512:1024])
@@ -49,7 +58,7 @@ def container_extent(fd):
             or not 1 <= count <= 4096 or not 128 <= entry_size <= 4096 or entry_size % 8
             or not 2 <= table < first_usable or table * 512 + count * entry_size > first_usable * 512):
         raise ValueError("GPT extents are out of bounds")
-    entries = os.pread(fd, count * entry_size, table * 512)
+    entries = _pread(fd, count * entry_size, table * 512)
     if len(entries) != count * entry_size or zlib.crc32(entries) != table_crc:
         raise ValueError("GPT partition table checksum mismatch")
     candidates = []
@@ -69,7 +78,7 @@ def container_extent(fd):
 
 def inspect(fd):
     extent = container_extent(fd)
-    prefix = os.pread(fd, 48, extent["offset"])
+    prefix = _pread(fd, 48, extent["offset"])
     if prefix[32:36] != b"NXSB":
         raise ValueError("APFS container superblock is missing")
     block_size, blocks = struct.unpack_from("<IQ", prefix, 36)
@@ -81,7 +90,7 @@ def inspect(fd):
         if type(address) is not int or not 0 <= address < blocks or len(cache) >= 32768:
             raise ValueError("APFS metadata address or read count exceeds bounds")
         if address not in cache:
-            data = os.pread(fd, block_size, extent["offset"] + address * block_size)
+            data = _pread(fd, block_size, extent["offset"] + address * block_size)
             if len(data) != block_size:
                 raise ValueError("Truncated APFS metadata")
             cache[address] = checked_block(data)
@@ -94,7 +103,7 @@ def inspect(fd):
         raise ValueError("Unsupported APFS checkpoint descriptor area")
     checkpoints = [(struct.unpack_from("<Q", nx, 16)[0], 0, nx)]
     for address in range(start, start + count):
-        raw = os.pread(fd, block_size, extent["offset"] + address * block_size)
+        raw = _pread(fd, block_size, extent["offset"] + address * block_size)
         if raw[32:36] != b"NXSB":
             continue
         try:
