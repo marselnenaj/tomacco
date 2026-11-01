@@ -94,6 +94,26 @@ operations and their JSON results.
     screenshots as baselines, refusing two devices' different images for one baseline.
   - `project.execute` takes `managed_device` (a Gradle Managed Device, group or `all` from the build files) and
     `shards` for instrumented tests. Unit-tested only; no managed device run has been made.
+- **Desktop.**
+  - **Use the Omarchy theme's accent** under Appearance in Settings takes the active Omarchy theme's accent colour,
+    read from its `colors.toml` and never written, where it reads clearly: at least 3:1 against Tomacco's background
+    and the theme's own. Otherwise Tomacco keeps its red and the setting says why. A theme set while Tomacco runs is
+    picked up. Off by default. Tested offscreen with fixture theme files.
+  - Settings opens with the keyboard in a search field that keeps the sections whose title, options or explanations
+    contain every word typed. Esc empties it, then closes Settings.
+  - Named window layouts, such as `testing` or `debugging`: the open view, the activity panel, the log beside the
+    device with its mode and width, the device windows and the window's size. Saved and deleted under Window layouts
+    in Settings and used from there or the command palette; at most 12.
+  - **Notifications** in the activity panel: jobs that ended, new versions and restarts, the live device's session
+    ending or failing, and agent calls that failed or started a job, newest first, each leading back to its job, device or
+    the update settings. The last 50 are kept across starts.
+  - `TOMACCO_STARTUP_TIMING=1` prints the time to the window's first frame and to ready on standard error.
+- **Omarchy panel.** A running job shows its phase and why a queued job waits; the live device shows above the
+  device list with a small picture of its screen, refreshed every 4 seconds while the panel is open; a line says when
+  a new version is available or installed and waiting for the workspace to restart, and U opens the workspace.
+  `omarchy-shell io.github.marselnenaj.tomacco update` answers the same. `desktop.status` gives each job's `phase`
+  and `queued_reason` and each desktop session's `version` for it. The panel passes qmllint and its source tests; it
+  has not been run in a live Omarchy shell.
 
 ### Changed
 
@@ -113,6 +133,15 @@ operations and their JSON results.
   profiles describe phones, foldables and tablets.
 - The desktop runs `tomaccoctl` with `TOMACCO_CALLER=desktop`, so the person's own calls pass no agent guard and are not
   audited.
+- The desktop starts with less work: the debugger, UI tests, performance, release and the iOS test system are built
+  when first shown, the web preview's tool checks (`xtool --version`, `swift --version`, `xtool sdk status`) run when
+  the preview is first shown, the operation list is asked for before the window is built, and the operation list is
+  converted once instead of on every read.
+  Measured offscreen on the development host with `TOMACCO_STARTUP_TIMING`, 15 alternating runs each with the QML
+  cache filled: the first frame after 291 instead of 320 ms (median) and ready after 346 instead of 404 ms; the main
+  thread's CPU time until ready 269 instead of 319 ms. With an empty cache, 8 runs each: ready after 971 instead of
+  1024 ms. Other work kept the host busy during the runs. The saved tool checks did not count there, as the test
+  home had no xtool or swift.
 
 ### Tests
 

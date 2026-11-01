@@ -37,7 +37,36 @@ function luminance(hex) {
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
 }
 // Near-black on the accent wherever that reads, as in the brand; white otherwise.
-var onBrand = (luminance(brand) + 0.05) / 0.0545 >= 4.5 ? ink : "#ffffff"
+function onAccent(hex) { return (luminance(hex) + 0.05) / 0.0545 >= 4.5 ? ink : "#ffffff" }
+var onBrand = onAccent(brand)
+// The WCAG contrast ratio of two colours, 1 to 21.
+function contrast(a, b) {
+    var x = luminance(a), y = luminance(b)
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+}
+function isColour(text) { return /^#[0-9a-fA-F]{6}$/.test(String(text)) }
+// Another accent, such as the Omarchy theme's, where it reads clearly: at
+// least 3:1 against this theme's background and against the background of
+// the theme it comes from (WCAG's measure for large text and controls).
+// Otherwise an empty string, and the brand stays.
+function readableAccent(accent, ground, theirGround) {
+    if (!isColour(accent) || !isColour(ground)) return ""
+    if (contrast(accent, ground) < 3) return ""
+    if (isColour(theirGround) && contrast(accent, theirGround) < 3) return ""
+    return accent.toLowerCase()
+}
+// A theme's colours with another accent; its hover, the text on it and the
+// thin-line variant follow it as they follow the brand.
+function withAccent(colours, accent, isDark) {
+    if (!accent) return colours
+    var next = {}
+    for (var key in colours) next[key] = colours[key]
+    next.accent = accent
+    next.accentHover = isDark ? mix(accent, "#ffffff", 0.14) : mix(accent, "#000000", 0.1)
+    next.accentText = onAccent(accent)
+    next.accentInk = isDark ? mix(accent, "#ffffff", 0.2) : mix(accent, "#000000", 0.26)
+    return next
+}
 
 var dark = {
     background: ink,   // The window's ground, the stage around a device.

@@ -95,6 +95,34 @@
         <source>done</source>
         <translation>erledigt</translation>
     </message>
+    <message>
+        <source>An agent&apos;s call failed: %1</source>
+        <translation>Ein Aufruf eines Agenten ist fehlgeschlagen: %1</translation>
+    </message>
+    <message>
+        <source>An agent started a job: %1</source>
+        <translation>Ein Agent hat einen Auftrag gestartet: %1</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Benachrichtigungen</translation>
+    </message>
+    <message>
+        <source>Fewer</source>
+        <translation>Weniger</translation>
+    </message>
+    <message>
+        <source>All %1</source>
+        <translation>Alle %1</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Leeren</translation>
+    </message>
+    <message>
+        <source>Clear the notifications</source>
+        <translation>Benachrichtigungen leeren</translation>
+    </message>
 </context>
 <context>
     <name>AndroidDevices</name>
@@ -3645,6 +3673,90 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>What to do: %1</source>
         <translation>Was zu tun ist: %1</translation>
+    </message>
+    <message>
+        <source>Open the update settings to install it.</source>
+        <translation>Öffne die Update-Einstellungen, um sie zu installieren.</translation>
+    </message>
+    <message>
+        <source>Version %1 is installed. Restart to use it.</source>
+        <translation>Version %1 ist installiert. Starte neu, um sie zu nutzen.</translation>
+    </message>
+    <message>
+        <source>Updates</source>
+        <translation>Updates</translation>
+    </message>
+    <message>
+        <source>Cancelled after %1</source>
+        <translation>Abgebrochen nach %1</translation>
+    </message>
+    <message>
+        <source>Save the current layout</source>
+        <translation>Aktuelle Anordnung speichern</translation>
+    </message>
+    <message>
+        <source>Window layouts</source>
+        <translation>Fensteranordnungen</translation>
+    </message>
+    <message>
+        <source>Use window layout %1</source>
+        <translation>Fensteranordnung %1 verwenden</translation>
+    </message>
+    <message>
+        <source>At most %1 window layouts are kept. Delete one first.</source>
+        <translation>Es werden höchstens %1 Fensteranordnungen behalten. Lösche zuerst eine.</translation>
+    </message>
+    <message>
+        <source>Window layout “%1” saved</source>
+        <translation>Fensteranordnung „%1“ gespeichert</translation>
+    </message>
+    <message>
+        <source>Window layout “%1”</source>
+        <translation>Fensteranordnung „%1“</translation>
+    </message>
+    <message>
+        <source>Search settings</source>
+        <translation>Einstellungen durchsuchen</translation>
+    </message>
+    <message>
+        <source>No setting matches “%1”.</source>
+        <translation>Keine Einstellung passt zu „%1“.</translation>
+    </message>
+    <message>
+        <source>Use the Omarchy theme&apos;s accent</source>
+        <translation>Akzentfarbe des Omarchy-Themes verwenden</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>Theme</translation>
+    </message>
+    <message>
+        <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
+        <translation>Die Akzentfarbe von %1 ist auf diesem Hintergrund schlecht lesbar, daher behält Tomacco seine eigene.</translation>
+    </message>
+    <message>
+        <source>Accent from the Omarchy theme %1.</source>
+        <translation>Akzentfarbe aus dem Omarchy-Theme %1.</translation>
+    </message>
+    <message>
+        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
+        <translation>Eine Anordnung merkt sich die offene Ansicht, das Aktivitätspanel, das Log neben dem Gerät mit seiner Breite, die Gerätefenster und die Fenstergröße.</translation>
+    </message>
+    <message>
+        <source>Use</source>
+        <translation>Verwenden</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <source>Delete window layout %1</source>
+        <translation>Fensteranordnung %1 löschen</translation>
+    </message>
+    <message>
+        <source>Name, e.g. testing or debugging</source>
+        <translation>Name, z. B. Testen oder Debuggen</translation>
     </message>
 </context>
 <context>

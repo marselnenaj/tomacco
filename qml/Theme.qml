@@ -6,7 +6,15 @@ import "Theme.js" as Tokens
 // appearance (Studio.dark) and the reduced-motion preference without a restart.
 QtObject {
     readonly property bool isDark: Studio.dark
-    readonly property var colors: isDark ? Tokens.dark : Tokens.light
+    readonly property var baseColors: isDark ? Tokens.dark : Tokens.light
+    // The active Omarchy theme's accent, when that is chosen in the settings
+    // and it reads clearly here; otherwise empty and the brand's red stays.
+    readonly property var omarchy: Studio.omarchyTheme
+    readonly property string omarchyAccent: Studio.followOmarchyAccent && omarchy.available===true
+        ? Tokens.readableAccent(omarchy.accent,baseColors.background,omarchy.background) : ""
+    // Chosen, but this theme's accent does not read clearly on this background.
+    readonly property bool omarchyAccentRefused: Studio.followOmarchyAccent && omarchy.available===true && !omarchyAccent
+    readonly property var colors: Tokens.withAccent(baseColors,omarchyAccent,isDark)
 
     readonly property color background: colors.background
     readonly property color surface: colors.surface

@@ -16,6 +16,19 @@ Rectangle {
     property string stateTone: "idle"
     property string deviceName: ""
     property string deviceMetrics: ""
+    // The recent notifications (NotificationCentre) and where a click on one leads.
+    property var notifications: null
+    signal notificationChosen(var entry)
+    readonly property var notificationEntries: notifications ? notifications.entries : []
+    property bool allNotifications: false
+    readonly property var shownNotifications: allNotifications ? notificationEntries : notificationEntries.slice(0,6)
+    function linked(entry) { return !!entry.job || !!entry.device || entry.update===true }
+    // What agents did, for the notifications: a call that failed, and a job one started.
+    function noteAgent(operation,ok,error,job) {
+        if(!notifications)return
+        if(!ok)notifications.add("agent","failed",qsTr("An agent's call failed: %1").arg(operation),error,{job:job})
+        else if(job)notifications.add("agent","ok",qsTr("An agent started a job: %1").arg(operation),"",{job:job})
+    }
     color: Theme.surface
     implicitWidth: Theme.panelWidth
 
@@ -25,7 +38,7 @@ Rectangle {
     property var calls: []
     property bool copied: false
     Timer {id:copiedTimer;interval:2000;onTriggered:panel.copied=false}
-    readonly property bool firstRun: stateTone==="idle" && !workspace.jobs.length && !calls.length && !sessionEntries.length
+    readonly property bool firstRun: stateTone==="idle" && !workspace.jobs.length && !calls.length && !sessionEntries.length && !notificationEntries.length
     property real now: Date.now()/1000
 
     // Older calls drop off; repeats of the same call fold into one line, which
@@ -43,6 +56,7 @@ Rectangle {
         const started=callStarts[id]
         if(started===undefined)return
         delete callStarts[id]
+        if(error){const row=calls.find(row=>row.ids.indexOf(id)>=0);if(row)noteAgent("preview."+row.method,false,error,"")}
         calls=calls.map(row=>row.ids.indexOf(id)<0?row:Object.assign({},row,{pending:false,ms:Date.now()-started,error:error || ""}))
     }
     // An agent's session log: a file it appends each operation it calls to.
@@ -50,7 +64,9 @@ Rectangle {
     property var sessionEntries: []
     property real sessionOffset: 0
     property string sessionError: ""
-    onSessionLogChanged: {sessionEntries=[];sessionOffset=0;sessionError="";readSession()}
+    // What a session log already held when it was named is not news.
+    property bool sessionPrimed: false
+    onSessionLogChanged: {sessionEntries=[];sessionOffset=0;sessionError="";sessionPrimed=false;readSession()}
     function readSession() {
         if(!sessionLog){sessionError="";return}
         const read=Studio.readSessionLog(sessionLog,sessionOffset)
@@ -58,6 +74,8 @@ Rectangle {
         if(read.reset)sessionEntries=[]
         sessionOffset=read.next_offset
         if(read.entries.length)sessionEntries=sessionEntries.concat(read.entries).slice(-200)
+        if(sessionPrimed && !read.reset)for(const x of read.entries)noteAgent(String(x.operation || ""),!!x.ok,x.ok?"":(x.error && x.error.message) || "",(x.result || {}).job_id || "")
+        if(!read.error)sessionPrimed=true
     }
     Timer {interval:2000;repeat:true;running:panel.visible && !!panel.sessionLog;onTriggered:panel.readSession()}
     // Both, newest first: what was called, when, how long it took and how it ended.
@@ -280,6 +298,51 @@ Rectangle {
                 maximumLineCount: 8
                 elide: Text.ElideLeft
             }
+
+            // Recent notifications: jobs that ended, updates, devices and agents, each leading back to its job, device or settings.
+            Rectangle {visible:panel.notificationEntries.length>0;Layout.fillWidth:true;Layout.preferredHeight:1;color:Theme.subtle}
+            RowLayout {
+                visible: panel.notificationEntries.length>0
+                Layout.fillWidth: true; Layout.leftMargin: Theme.gapLg; Layout.rightMargin: Theme.gapSm; Layout.topMargin: Theme.gapSm
+                spacing: Theme.gapXs
+                StudioSection {Layout.fillWidth:true;text:qsTr("Notifications")+" · "+panel.notificationEntries.length}
+                StudioButton {
+                    objectName:"notificationsMore";quiet:true;size:Theme.fontSmall;visible:panel.notificationEntries.length>6
+                    text:panel.allNotifications?qsTr("Fewer"):qsTr("All %1").arg(panel.notificationEntries.length)
+                    onClicked:panel.allNotifications=!panel.allNotifications
+                }
+                StudioButton {objectName:"notificationsClear";quiet:true;size:Theme.fontSmall;text:qsTr("Clear");tip:qsTr("Clear the notifications");onClicked:{panel.allNotifications=false;panel.notifications.clear()}}
+            }
+            Repeater {
+                model: panel.shownNotifications
+                ItemDelegate {
+                    id: noteRow
+                    required property var modelData
+                    objectName: "notification-"+modelData.kind
+                    Layout.fillWidth: true
+                    focusPolicy: panel.linked(modelData) ? Qt.StrongFocus : Qt.NoFocus
+                    Accessible.name: modelData.title+(modelData.body?", "+modelData.body:"")
+                    padding: 0; leftPadding: Theme.gapLg; rightPadding: Theme.gapLg; topPadding: Theme.gapXs; bottomPadding: Theme.gapXs
+                    background: Rectangle {color:noteRow.hovered && panel.linked(noteRow.modelData)?Theme.hover:"transparent";border.width:noteRow.visualFocus?2:0;border.color:Theme.accentInk}
+                    contentItem: ColumnLayout {
+                        spacing: 0
+                        RowLayout {
+                            Layout.fillWidth: true; spacing: Theme.gapSm
+                            StudioStatus {tone:noteRow.modelData.tone}
+                            Text {objectName:"notificationTitle";Layout.fillWidth:true;text:noteRow.modelData.title;color:Theme.text;font.pixelSize:Theme.fontSmall;elide:Text.ElideRight}
+                            Text {text:panel.elapsed(panel.now-noteRow.modelData.at/1000);color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}
+                        }
+                        Text {
+                            Layout.fillWidth: true; Layout.leftMargin: Theme.gapMd+Theme.gapXs
+                            visible: !!noteRow.modelData.body
+                            text: noteRow.modelData.body; color: Theme.muted; font.pixelSize: Theme.fontMicro
+                            wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
+                        }
+                    }
+                    onClicked: if(panel.linked(modelData))panel.notificationChosen(modelData)
+                }
+            }
+            Item {visible:panel.notificationEntries.length>0;Layout.preferredHeight:Theme.gapSm}
 
             // What agents called: this window, and the operations of a session log.
             Rectangle {visible:panel.timeline.length>0 || !!panel.sessionError;Layout.fillWidth:true;Layout.preferredHeight:1;color:Theme.subtle}

@@ -71,7 +71,10 @@ Control::Control(const QString &session, QObject *parent, const QString &cli): Q
             connect(&m_server,&QLocalServer::newConnection,this,&Control::accept);
         }
     }
-    QTimer::singleShot(0,this,[this]{ request("schema"); });
+    // At once, so tomaccoctl answers while the window is still being built.
+    // A program that is missing answers on the next turn of the event loop, as before.
+    if(m_cliError.isEmpty()) request("schema");
+    else QTimer::singleShot(0,this,[this]{ request("schema"); });
 }
 Control::~Control() {
     if(m_server.isListening()) m_server.close();

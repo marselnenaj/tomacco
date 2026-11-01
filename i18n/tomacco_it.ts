@@ -95,6 +95,34 @@
         <source>done</source>
         <translation>completata</translation>
     </message>
+    <message>
+        <source>An agent&apos;s call failed: %1</source>
+        <translation>Una chiamata di un agente non è riuscita: %1</translation>
+    </message>
+    <message>
+        <source>An agent started a job: %1</source>
+        <translation>Un agente ha avviato un job: %1</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Notifiche</translation>
+    </message>
+    <message>
+        <source>Fewer</source>
+        <translation>Meno</translation>
+    </message>
+    <message>
+        <source>All %1</source>
+        <translation>Tutte (%1)</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Svuota</translation>
+    </message>
+    <message>
+        <source>Clear the notifications</source>
+        <translation>Svuota le notifiche</translation>
+    </message>
 </context>
 <context>
     <name>AndroidDevices</name>
@@ -3645,6 +3673,90 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     <message>
         <source>What to do: %1</source>
         <translation>Cosa fare: %1</translation>
+    </message>
+    <message>
+        <source>Open the update settings to install it.</source>
+        <translation>Apri le impostazioni degli aggiornamenti per installarla.</translation>
+    </message>
+    <message>
+        <source>Version %1 is installed. Restart to use it.</source>
+        <translation>La versione %1 è installata. Riavvia per usarla.</translation>
+    </message>
+    <message>
+        <source>Updates</source>
+        <translation>Aggiornamenti</translation>
+    </message>
+    <message>
+        <source>Cancelled after %1</source>
+        <translation>Annullato dopo %1</translation>
+    </message>
+    <message>
+        <source>Save the current layout</source>
+        <translation>Salva la disposizione attuale</translation>
+    </message>
+    <message>
+        <source>Window layouts</source>
+        <translation>Disposizioni delle finestre</translation>
+    </message>
+    <message>
+        <source>Use window layout %1</source>
+        <translation>Usa la disposizione %1</translation>
+    </message>
+    <message>
+        <source>At most %1 window layouts are kept. Delete one first.</source>
+        <translation>Si conservano al massimo %1 disposizioni. Eliminane prima una.</translation>
+    </message>
+    <message>
+        <source>Window layout “%1” saved</source>
+        <translation>Disposizione «%1» salvata</translation>
+    </message>
+    <message>
+        <source>Window layout “%1”</source>
+        <translation>Disposizione «%1»</translation>
+    </message>
+    <message>
+        <source>Search settings</source>
+        <translation>Cerca nelle impostazioni</translation>
+    </message>
+    <message>
+        <source>No setting matches “%1”.</source>
+        <translation>Nessuna impostazione corrisponde a «%1».</translation>
+    </message>
+    <message>
+        <source>Use the Omarchy theme&apos;s accent</source>
+        <translation>Usa il colore d&apos;accento del tema Omarchy</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>Tema</translation>
+    </message>
+    <message>
+        <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
+        <translation>Il colore d&apos;accento di %1 non si legge bene su questo sfondo, quindi Tomacco mantiene il proprio.</translation>
+    </message>
+    <message>
+        <source>Accent from the Omarchy theme %1.</source>
+        <translation>Colore d&apos;accento dal tema Omarchy %1.</translation>
+    </message>
+    <message>
+        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
+        <translation>Una disposizione ricorda la vista aperta, il pannello attività, il log accanto al dispositivo con la sua larghezza, le finestre dei dispositivi e la dimensione della finestra.</translation>
+    </message>
+    <message>
+        <source>Use</source>
+        <translation>Usa</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Elimina</translation>
+    </message>
+    <message>
+        <source>Delete window layout %1</source>
+        <translation>Elimina la disposizione %1</translation>
+    </message>
+    <message>
+        <source>Name, e.g. testing or debugging</source>
+        <translation>Nome, ad es. test o debug</translation>
     </message>
 </context>
 <context>

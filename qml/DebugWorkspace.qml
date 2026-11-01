@@ -64,6 +64,8 @@ StudioScrollView {
     }
     function useProject() { if(workspace.project.configuration && workspace.project.configuration.applicationId) application.text=workspace.project.configuration.applicationId }
     onVisibleChanged: if(visible) { call("debug.list",{});if(!application.text)useProject() }
+    // Built when it is first shown, already visible.
+    Component.onCompleted: if(visible) { call("debug.list",{});if(!application.text)useProject() }
     Connections { target: view.workspace; function onProjectChanged() { if(!view.active)view.useProject() } }
     Connections {
         target: Agent

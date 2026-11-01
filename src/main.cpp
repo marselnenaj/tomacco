@@ -7,8 +7,12 @@
 #include <QQmlContext>
 #include <QQuickWindow>
 #include <QTimer>
+#include <QElapsedTimer>
+#include <QHash>
+#include <memory>
 #include <QtWebEngineQuick/qtwebenginequickglobal.h>
 #include <cstdio>
+#include <ctime>
 #include <cstring>
 #include <QFile>
 #include <cerrno>
@@ -19,6 +23,14 @@
 #ifndef TOMACCO_VERSION
 #error "TOMACCO_VERSION must be defined by the build"
 #endif
+
+// The CPU time this thread has used, in milliseconds: less disturbed by a busy
+// host than the time on the clock.
+static long mainThreadMs() {
+    timespec spent{};
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&spent);
+    return long(spent.tv_sec*1000+spent.tv_nsec/1000000);
+}
 
 // Whether a process still runs; a zombie that waits for its parent does not count.
 static bool processRuns(qint64 pid) {
@@ -31,6 +43,11 @@ static bool processRuns(qint64 pid) {
 }
 
 int main(int argc,char **argv) {
+    // TOMACCO_STARTUP_TIMING=1 prints how long the start took on standard
+    // error: until the window's first frame, and until it is ready, which is
+    // when the control program has also answered the operation list and the
+    // first job list. Counted from the start of main().
+    QElapsedTimer startup; startup.start();
     // A restart for an update (Backend::relaunch): the previous desktop ends
     // first, so this one gets its agent session. At most 10 seconds.
     if(const auto previous=qEnvironmentVariableIntValue("TOMACCO_RESTART_AFTER");previous>1) {
@@ -81,7 +98,8 @@ int main(int argc,char **argv) {
     if(!QStringList{"runtime","preview","project","devices","ios-research","jobs","tools","debug","testing","profiling","files","release"}.contains(parser.value("workspace"))) {
         fputs(qPrintable(QCoreApplication::translate("main","Unknown workspace. See --help for the available workspaces.\n")),stderr); return 2;
     }
-    Backend backend(parser.value("url"));
+    // The tool checks (xtool, swift) are for the web preview; it starts them when it is first shown.
+    Backend backend(parser.value("url"),nullptr,false);
     if(parser.isSet("device")) {
         bool found=false;
         for(const auto &value:backend.models()) if(value.toMap().value("id").toString()==parser.value("device"))found=true;
@@ -110,6 +128,30 @@ int main(int argc,char **argv) {
     engine.rootContext()->setContextProperty("initialLandscape",parser.value("orientation")=="landscape");
     engine.rootContext()->setContextProperty("initialUnfolded",parser.value("fold")=="open");
     QObject::connect(&engine,&QQmlApplicationEngine::objectCreationFailed,&app,[]{QCoreApplication::exit(1);},Qt::QueuedConnection);
+    if(qEnvironmentVariableIsSet("TOMACCO_STARTUP_TIMING")) {
+        auto marks=std::make_shared<QHash<QString,qint64>>();
+        const auto mark=[marks,&startup](const QString &name) {
+            if(marks->contains(name)) return;
+            marks->insert(name,startup.elapsed());
+            fprintf(stderr,"TOMACCO_STARTUP %s %lld ms cpu %ld ms\n",qPrintable(name),static_cast<long long>(marks->value(name)),mainThreadMs());
+            if(name!=QLatin1String("ready") && marks->contains("first-frame") && marks->contains("schema") && marks->contains("jobs")) {
+                marks->insert("ready",startup.elapsed());
+                fprintf(stderr,"TOMACCO_STARTUP ready %lld ms cpu %ld ms\n",static_cast<long long>(marks->value("ready")),mainThreadMs());
+                if(qEnvironmentVariableIntValue("TOMACCO_STARTUP_TIMING")==2) QCoreApplication::exit(0);
+            }
+        };
+        QObject::connect(&control,&Control::apiFinished,&app,[mark](int,const QString &operation,const QVariantMap &response) {
+            if(operation==QLatin1String("schema")) mark("schema");
+            else if(operation==QLatin1String("job.list") && response.value("ok").toBool()) mark("jobs");
+        });
+        QObject::connect(&engine,&QQmlApplicationEngine::objectCreated,&app,[mark](QObject *object,const QUrl &) {
+            mark("qml-loaded");
+            auto *window=qobject_cast<QQuickWindow*>(object);
+            if(!window) return;
+            QObject::connect(window,&QQuickWindow::frameSwapped,window,[mark]{ mark("first-frame"); });
+        });
+        mark("engine-ready");
+    }
     engine.load(QUrl("qrc:/qml/Main.qml"));
     if(parser.isSet("capture")) QTimer::singleShot(4500,&app,[&]{
         for(auto *root:engine.rootObjects()) if(auto *window=qobject_cast<QQuickWindow*>(root)) {

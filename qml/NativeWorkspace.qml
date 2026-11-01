@@ -113,6 +113,13 @@ Rectangle {
     // A new version found while no Tomacco window is active is also reported on
     // the desktop, once per version.
     function noteUpdate() {
+        // The activity panel's notifications list each new version and each restart it asks for, once.
+        const centreKey=updates.bannerKind==="available"?"available:"+updates.latest:updates.bannerKind==="restart"?"restart:"+updates.status.current:""
+        if(centreKey && String(Studio.setting("updates/centreNoted",""))!==centreKey) {
+            Studio.saveSetting("updates/centreNoted",centreKey)
+            if(updates.bannerKind==="available")notifications.add("update","idle",qsTr("Tomacco %1 is available").arg(updates.latest),qsTr("Open the update settings to install it."),{update:true})
+            else notifications.add("update","warn",qsTr("Version %1 is installed. Restart to use it.").arg(updates.status.current),"",{update:true})
+        }
         if(updates.bannerKind!=="available" || appActive)return
         if(String(Studio.setting("updates/notifiedVersion",""))===updates.latest)return
         Studio.saveSetting("updates/notifiedVersion",updates.latest)
@@ -281,12 +288,30 @@ Rectangle {
     property bool appActive: Qt.application.state===Qt.ApplicationActive
     readonly property int notifyAfterSeconds: 10
     property var seenJobStates: ({})
+    // The activity panel's list of recent notifications.
+    NotificationCentre {id:notifications}
+    readonly property alias notificationCentre: notifications
+    // A notification's link: its job under Builds & jobs, its device as the live device, or the update settings.
+    function openNotification(entry) {
+        if(entry.job) {
+            const job=workspace.jobs.find(x=>x.id===entry.job) || {id:entry.job}
+            workspace.selectJob(job);workspace.showTab("jobs")
+        } else if(entry.device) {
+            navigate("runtime")
+            if(entry.platform==="android" || entry.platform==="ios")choosePlatform(entry.platform)
+            target=entry.device
+        } else if(entry.update) openSettings(qsTr("Updates"))
+    }
     function noteJobs(rows) {
         let states={}
         for(const job of rows) {
             states[job.id]=job.state
             const before=seenJobStates[job.id]
-            if(!before || ["queued","running"].indexOf(before)<0 || ["succeeded","failed","timed_out"].indexOf(job.state)<0) continue
+            if(!before || ["queued","running"].indexOf(before)<0 || ["succeeded","failed","timed_out","cancelled"].indexOf(job.state)<0) continue
+            // Every end this window sees goes to the list, also while it is active.
+            const ended=job.state==="succeeded"?qsTr("Completed after %1"):job.state==="failed"?qsTr("Failed after %1"):job.state==="timed_out"?qsTr("Timed out after %1"):qsTr("Cancelled after %1")
+            notifications.add("job",job.state==="succeeded"?"ok":job.state==="cancelled"?"idle":"failed",job.label,ended.arg(workspace.jobDuration(job)),{job:job.id})
+            if(job.state==="cancelled") continue
             if(!notifyJobs || appActive || (job.updated || 0)-(job.created || 0)<notifyAfterSeconds) continue
             const outcome=job.state==="succeeded"?qsTr("Completed after %1"):job.state==="failed"?qsTr("Failed after %1"):qsTr("Timed out after %1")
             Studio.notify(job.label,outcome.arg(workspace.jobDuration(job)),job.id)
@@ -521,7 +546,7 @@ Rectangle {
             if(op==="runtime.list") {
                 view.sessions=r;view.sessionsSerial+=1
                 let active=r.find(x=>x.session===view.live.session)
-                if(active && ["failed","disconnected"].indexOf(active.status)>=0 && view.live.status!==active.status){view.live=active;view.notice=active.error || qsTr("Session ended");view.failed=active.status==="failed";view.pendingLaunch=null}
+                if(active && ["failed","disconnected"].indexOf(active.status)>=0 && view.live.status!==active.status){notifications.add("device",active.status==="failed"?"failed":"warn",(view.targets.find(d=>d.id===active.device) || {}).name || active.device,active.error || qsTr("Session ended"),{platform:active.platform,device:active.device});view.live=active;view.notice=active.error || qsTr("Session ended");view.failed=active.status==="failed";view.pendingLaunch=null}
                 else if(active && !view.audioPending)view.live=Object.assign({},view.live,{audio:active.audio})
                 if(view.autoAttach && (!view.live.session || !view.live.video_socket || display.state!=="live")) {
                     let next=r.find(x=>x.status==="connected" && x.platform===view.platform && (!view.target || x.device===view.target) && (view.platform!=="ios" || (!!x.remote===(view.appleTarget==="simulator"))) && (!view.live.session || view.live.session===x.session || ["failed","disconnected"].indexOf(view.live.status)>=0))
@@ -596,13 +621,15 @@ Rectangle {
         {id:"copy-context",title:qsTr("Copy context"),detail:qsTr("Command"),icon:"copy",key:"",run:()=>view.copyContext()},
         {id:"appearance",title:Theme.isDark?qsTr("Switch to light appearance"):qsTr("Switch to dark appearance"),detail:qsTr("Command"),icon:Theme.isDark?"sun":"moon",key:"",run:()=>Studio.setAppearance(Theme.isDark?"light":"dark")},
         {id:"settings",title:qsTr("Settings"),detail:qsTr("Command"),icon:"settings",key:qsTr("Ctrl")+"+,",run:()=>settingsDialog.open()},
+        {id:"save-layout",title:qsTr("Save the current layout"),detail:qsTr("Window layouts"),icon:"window",key:"",run:()=>view.openSettings(qsTr("Window layouts"))},
         {id:"stage-log",title:view.showStageLog?qsTr("Hide the log beside the device"):qsTr("Show the log beside the device"),detail:qsTr("Command"),search:qsTr("Split view"),icon:"jobs",key:"",run:()=>{view.showStageLog=!view.showStageLog}},
         {id:"touches",title:view.showTouches?qsTr("Hide touches and pointer coordinates"):qsTr("Show touches and pointer coordinates"),detail:qsTr("Command"),icon:"testing",key:"",run:()=>{view.showTouches=!view.showTouches}},
         {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
         {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()},
         {id:"onboarding",title:qsTr("Get started"),detail:qsTr("Command"),search:qsTr("Connect your coding agent"),icon:"agent",key:"",run:()=>onboarding.open()}
-    ].concat(recentProjects.map(p=>({id:"recent:"+p.path,title:qsTr("Open recent project %1").arg(p.name),detail:p.path,search:p.name,icon:"files",key:"",run:()=>workspace.openProject(p.path)})))
+    ].concat(layoutNames.map(name=>({id:"layout:"+name,title:qsTr("Use window layout %1").arg(name),detail:qsTr("Window layouts"),search:name,icon:"window",key:"",run:()=>view.applyLayout(name)})))
+     .concat(recentProjects.map(p=>({id:"recent:"+p.path,title:qsTr("Open recent project %1").arg(p.name),detail:p.path,search:p.name,icon:"files",key:"",run:()=>workspace.openProject(p.path)})))
     function navigate(section) { if(section==="runtime")workspace.close();else workspace.showTab(section) }
     function copyContext() {Studio.copy(JSON.stringify({project:projectPath,runtime:live,cli:Agent.cliPath,mcp:{command:Agent.cliPath,args:["mcp"]}},null,2));notice=qsTr("Project and runtime context copied");failed=false}
     // The panel is open by default where there is room; in a narrow window it
@@ -617,6 +644,57 @@ Rectangle {
     property string stageLogMode: "device"
     property int stageLogWidth: 420
     Settings {category:"StageLog";property alias shown:view.showStageLog;property alias mode:view.stageLogMode;property alias width:view.stageLogWidth}
+    // Named window layouts, such as "testing" or "debugging": the open view,
+    // the activity panel, the log beside the device with its mode and width,
+    // the device windows and the window's size. Kept as JSON in the settings.
+    property var windowLayouts: {try {const value=JSON.parse(String(Studio.setting("layouts/saved","{}")));return value && typeof value==="object" && !Array.isArray(value)?value:{}} catch(e) {return {}}}
+    readonly property var layoutNames: Object.keys(windowLayouts).sort((a,b)=>a.localeCompare(b))
+    readonly property int maxLayouts: 12
+    function currentLayout() {
+        const w=view.Window.window
+        const maximized=!!w && (w.visibility===Window.Maximized || w.visibility===Window.FullScreen)
+        return {view:currentSection,activity:showActivity,stageLog:showStageLog,stageLogMode:stageLogMode,stageLogWidth:stageLogWidth,
+                deviceWindow:detached,iosWindow:workspace.guestWindowVisible,maximized:maximized,width:w?w.width:0,height:w?w.height:0}
+    }
+    function saveLayout(name) {
+        name=String(name).trim().slice(0,40)
+        if(!name)return false
+        if(!windowLayouts[name] && layoutNames.length>=maxLayouts){notice=qsTr("At most %1 window layouts are kept. Delete one first.").arg(maxLayouts);failed=true;return false}
+        windowLayouts=Object.assign({},windowLayouts,{[name]:currentLayout()})
+        Studio.saveSetting("layouts/saved",JSON.stringify(windowLayouts))
+        notice=qsTr("Window layout “%1” saved").arg(name);failed=false
+        return true
+    }
+    function deleteLayout(name) {
+        if(!windowLayouts[name])return
+        let next=Object.assign({},windowLayouts);delete next[name]
+        windowLayouts=next
+        Studio.saveSetting("layouts/saved",JSON.stringify(windowLayouts))
+    }
+    function applyLayout(name) {
+        const layout=windowLayouts[name]
+        if(!layout)return false
+        const sections=["runtime"].concat(navigation.map(x=>x.id))
+        navigate(sections.indexOf(layout.view)>=0?layout.view:"runtime")
+        showActivity=layout.activity!==false;activityForced=showActivity && width<1120
+        showStageLog=layout.stageLog===true
+        if(layout.stageLogMode==="device" || layout.stageLogMode==="job")stageLogMode=layout.stageLogMode
+        if(Number(layout.stageLogWidth)>=Theme.panelWidth*.75)stageLogWidth=Math.round(Number(layout.stageLogWidth))
+        // The device window shows as soon as a device is live.
+        detached=layout.deviceWindow===true
+        if((layout.iosWindow===true)!==workspace.guestWindowVisible)workspace.configureIosGuest({detached:layout.iosWindow===true})
+        const w=view.Window.window
+        if(w && !solo) {
+            if(layout.maximized)w.showMaximized()
+            else {
+                if(w.visibility===Window.Maximized || w.visibility===Window.FullScreen)w.showNormal()
+                if(Number(layout.width)>=w.minimumWidth)w.width=Math.min(Number(layout.width),Math.max(w.minimumWidth,Screen.desktopAvailableWidth))
+                if(Number(layout.height)>=w.minimumHeight)w.height=Math.min(Number(layout.height),Math.max(w.minimumHeight,Screen.desktopAvailableHeight))
+            }
+        }
+        notice=qsTr("Window layout “%1”").arg(name);failed=false
+        return true
+    }
     // One word for what the device is doing, used wherever its state shows.
     readonly property string deviceState: pending ? ((pendingAvd && !pendingTarget) ? "booting" : "connecting")
         : display.state==="live" ? "live"
@@ -718,7 +796,7 @@ Rectangle {
                         // The details on hover: the reason, or how many tools agents can call through the CLI and MCP.
                         HoverHandler {id:agentHover}
                         ToolTip.visible:agentHover.hovered;ToolTip.delay:550
-                        ToolTip.text:Agent.cliError || Agent.socketError || qsTr("%n tool(s) available to agents through the CLI and MCP","",Agent.operations.length)
+                        ToolTip.text:Agent.cliError || Agent.socketError || qsTr("%n tool(s) available to agents through the CLI and MCP","",workspace.operations.length)
                     }
                 }
                 Rectangle {anchors.right:parent.right;width:1;height:parent.height;color:Theme.subtle}
@@ -954,6 +1032,8 @@ Rectangle {
                         objectName:"activityPanel";visible:view.activityVisible
                         Layout.preferredWidth:Theme.panelWidth;Layout.fillWidth:view.activityOnly;Layout.fillHeight:true
                         workspace:view.workspace
+                        notifications:notifications
+                        onNotificationChosen:entry=>view.openNotification(entry)
                         sessionLog:view.sessionLogPath
                         stateLabel:view.deviceStateLabel;stateTone:view.deviceTone
                         deviceName:view.deviceName;deviceMetrics:view.deviceMetrics
@@ -992,11 +1072,35 @@ Rectangle {
     }
     CommandPalette {id:commandPalette;workspace:view.workspace;navigation:view.navigation;commands:view.commands;onNavigate:section=>view.navigate(section)}
     FolderDialog {id:projectFolder;title:qsTr("Open project");onAccepted:workspace.openProject(decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,"")))}
+    // The settings' search: a section shows when every word typed appears in
+    // its title, its options or its explanations.
+    property string settingsQuery: ""
+    // What the search holds when the dialog opens, for commands that open one section.
+    property string settingsOpenQuery: ""
+    function openSettings(query) {settingsOpenQuery=query || "";settingsDialog.open()}
+    function settingShown(words) {
+        const query=settingsQuery.trim().toLowerCase()
+        if(!query)return true
+        const text=words.join(" ").toLowerCase()
+        return query.split(/\s+/).every(word=>text.indexOf(word)>=0)
+    }
     StudioDialog {
         id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,460);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
-        onOpened:view.settingsTransfer=""
-        contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapLg
-            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+        onOpened:{view.settingsTransfer="";settingsSearch.text=view.settingsOpenQuery;view.settingsOpenQuery="";Studio.reloadOmarchyTheme();settingsSearch.forceActiveFocus()}
+        readonly property bool nothingShown:!appearanceSection.visible && !languageSection.visible && !notificationsSection.visible && !agentSection.visible && !updatesSection.visible && !layoutsSection.visible && !transferSection.visible
+        contentItem:ColumnLayout {spacing:Theme.gapMd
+            StudioTextField {
+                id:settingsSearch;objectName:"settingsSearch";Layout.fillWidth:true;Layout.rightMargin:Theme.gapMd
+                placeholderText:qsTr("Search settings");Accessible.name:qsTr("Search settings")
+                onTextChanged:view.settingsQuery=text
+                // Esc empties the search first, then closes the dialog.
+                Keys.onEscapePressed:event=>{if(text){text="";event.accepted=true}else{event.accepted=false;settingsDialog.close()}}
+                Keys.onDownPressed:nextItemInFocusChain().forceActiveFocus()
+            }
+            StudioScrollView {Layout.fillWidth:true;Layout.fillHeight:true;Layout.preferredHeight:settingsColumn.implicitHeight;clip:true;contentWidth:availableWidth;ColumnLayout {id:settingsColumn;width:parent.width-Theme.gapMd;spacing:Theme.gapLg
+            Text {objectName:"settingsNoMatch";Layout.fillWidth:true;visible:settingsDialog.nothingShown;text:qsTr("No setting matches “%1”.").arg(view.settingsQuery.trim());color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            ColumnLayout {id:appearanceSection;objectName:"settingsAppearance";Layout.fillWidth:true;spacing:Theme.gapSm
+                visible:view.settingShown([qsTr("Appearance"),qsTr("System"),qsTr("Dark"),qsTr("Light"),qsTr("Use the Omarchy theme's accent"),"Omarchy",qsTr("Theme")])
                 Text {text:qsTr("Appearance");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 // System follows the desktop's dark or light preference at once.
                 StudioSegmented {
@@ -1004,9 +1108,20 @@ Rectangle {
                     model:[{id:"system",label:qsTr("System")},{id:"dark",label:qsTr("Dark")},{id:"light",label:qsTr("Light")}]
                     onChosen:id=>Studio.setAppearance(id)
                 }
+                // The active Omarchy theme's accent instead of the brand's red, where it reads clearly.
+                StudioCheckBox {objectName:"omarchyAccentToggle";Layout.fillWidth:true;visible:Theme.omarchy.available===true;text:qsTr("Use the Omarchy theme's accent");checked:Studio.followOmarchyAccent;onToggled:Studio.setFollowOmarchyAccent(checked)}
+                RowLayout {
+                    Layout.fillWidth:true;visible:Theme.omarchy.available===true && Studio.followOmarchyAccent;spacing:Theme.gapSm
+                    Rectangle {Layout.preferredWidth:Theme.iconSize;Layout.preferredHeight:Theme.iconSize;radius:Theme.radiusSmall;color:Theme.omarchy.accent || "transparent";border.color:Theme.border}
+                    Text {
+                        objectName:"omarchyAccentState";Layout.fillWidth:true;color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap
+                        text:Theme.omarchyAccentRefused?qsTr("The accent of %1 does not read clearly on this background, so Tomacco keeps its own.").arg(Theme.omarchy.name || ""):qsTr("Accent from the Omarchy theme %1.").arg(Theme.omarchy.name || "")
+                    }
+                }
             }
             // Interface language: the desktop's language, or one chosen here (stored, applied at once).
-            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+            ColumnLayout {id:languageSection;objectName:"settingsLanguage";Layout.fillWidth:true;spacing:Theme.gapSm
+                visible:view.settingShown([qsTr("Language"),qsTr("System"),"English Deutsch Français Español Italiano",qsTr("Interface language; System follows the desktop language")])
                 Text {text:qsTr("Language");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 StudioComboBox {
                     id:languagePicker;objectName:"languagePicker";Layout.fillWidth:true
@@ -1023,12 +1138,14 @@ Rectangle {
                     Accessible.name:qsTr("Language")
                 }
             }
-            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+            ColumnLayout {id:notificationsSection;objectName:"settingsNotifications";Layout.fillWidth:true;spacing:Theme.gapSm
+                visible:view.settingShown([qsTr("Notifications"),qsTr("When a job ends in the background")])
                 Text {text:qsTr("Notifications");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 StudioCheckBox {objectName:"jobNotificationsToggle";Layout.fillWidth:true;text:qsTr("When a job ends in the background");checked:view.notifyJobs;onToggled:view.notifyJobs=checked}
             }
             // An agent's session log, read into the activity panel.
-            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+            ColumnLayout {id:agentSection;objectName:"settingsAgent";Layout.fillWidth:true;spacing:Theme.gapSm
+                visible:view.settingShown([qsTr("Agent activity"),qsTr("Session log, e.g. %1").arg(""),"TOMACCO_SESSION_LOG MCP",qsTr("Set TOMACCO_SESSION_LOG to this file in your agent's MCP settings, and the activity panel lists every operation it calls, with its duration and result.")])
                 Text {text:qsTr("Agent activity");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 StudioTextField {
                     objectName:"sessionLogField";Layout.fillWidth:true;font.family:Theme.mono;font.pixelSize:Theme.fontSmall
@@ -1037,9 +1154,30 @@ Rectangle {
                 }
                 Text {Layout.fillWidth:true;text:qsTr("Set TOMACCO_SESSION_LOG to this file in your agent's MCP settings, and the activity panel lists every operation it calls, with its duration and result.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             }
-            UpdateSection {Layout.fillWidth:true;model:updates}
+            UpdateSection {id:updatesSection;objectName:"settingsUpdates";Layout.fillWidth:true;model:updates;visible:view.settingShown(keywords)}
+            // Named window layouts: which views and panes are open, how wide, and the device windows.
+            ColumnLayout {id:layoutsSection;objectName:"settingsLayouts";Layout.fillWidth:true;spacing:Theme.gapSm
+                visible:view.settingShown([qsTr("Window layouts"),qsTr("Save the current layout"),qsTr("A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window's size."),qsTr("Use"),qsTr("Delete")].concat(view.layoutNames))
+                Text {text:qsTr("Window layouts");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                Text {Layout.fillWidth:true;text:qsTr("A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window's size.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+                Repeater {
+                    model:view.layoutNames
+                    RowLayout {
+                        required property string modelData
+                        Layout.fillWidth:true;spacing:Theme.gapXs
+                        Text {Layout.fillWidth:true;text:modelData;color:Theme.text;font.pixelSize:Theme.fontBody;elide:Text.ElideRight}
+                        StudioButton {objectName:"useLayout-"+modelData;text:qsTr("Use");quiet:true;Accessible.name:qsTr("Use window layout %1").arg(modelData);onClicked:{view.applyLayout(modelData);settingsDialog.close()}}
+                        StudioButton {objectName:"deleteLayout-"+modelData;iconName:"close";quiet:true;tip:qsTr("Delete");Accessible.name:qsTr("Delete window layout %1").arg(modelData);onClicked:view.deleteLayout(modelData)}
+                    }
+                }
+                RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
+                    StudioTextField {id:layoutName;objectName:"settingsLayoutName";Layout.fillWidth:true;placeholderText:qsTr("Name, e.g. testing or debugging");onAccepted:if(text.trim()){view.saveLayout(text);text=""}}
+                    StudioButton {objectName:"settingsSaveLayout";text:qsTr("Save the current layout");quiet:true;enabled:!!layoutName.text.trim();onClicked:{view.saveLayout(layoutName.text);layoutName.text=""}}
+                }
+            }
             // Moving to another computer: the preferences as a JSON file.
-            ColumnLayout {Layout.fillWidth:true;spacing:Theme.gapSm
+            ColumnLayout {id:transferSection;objectName:"settingsTransfer";Layout.fillWidth:true;spacing:Theme.gapSm
+                visible:view.settingShown([qsTr("Another computer"),qsTr("Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer."),qsTr("Export settings…"),qsTr("Import settings…")])
                 Text {text:qsTr("Another computer");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 Text {Layout.fillWidth:true;text:qsTr("Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
                 Flow {Layout.fillWidth:true;spacing:Theme.gapSm
@@ -1048,7 +1186,7 @@ Rectangle {
                 }
                 Text {objectName:"settingsTransferResult";Layout.fillWidth:true;visible:!!text;text:view.settingsTransfer;color:view.settingsTransferFailed?Theme.danger:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             }
-        }}
+        }}}
     }
     FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
