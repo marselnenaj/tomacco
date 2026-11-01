@@ -1119,6 +1119,8 @@ pub fn test_setup(dir: &Path) -> Value {
         .and_then(|p| read_text(&p))
         .map(|t| parse_catalog(&t))
         .unwrap_or_default();
+    let jacoco_plugin = Regex::new(r#"(?m)(?:\bid\s*\(?\s*["']jacoco["']|apply\s+plugin\s*:\s*["']jacoco["']|(?:^|[{;])\s*jacoco\s*(?:$|[};]))"#)
+            .unwrap();
     let mut modules = Vec::new();
     for (gradle_path, module_dir) in modules_of(dir) {
         let Some(script) = build_file(&module_dir).and_then(|p| read_text(&p)) else {
@@ -1154,9 +1156,7 @@ pub fn test_setup(dir: &Path) -> Value {
             &["org.jetbrains.kotlinx.kover"],
             &["kover", "kotlinxkover"],
         );
-        let jacoco = Regex::new(r#"(?m)(?:\bid\s*\(?\s*["']jacoco["']|apply\s+plugin\s*:\s*["']jacoco["']|(?:^|[{;])\s*jacoco\s*(?:$|[};]))"#)
-            .unwrap()
-            .is_match(&script);
+        let jacoco = jacoco_plugin.is_match(&script);
         let android = script.contains("com.android.")
             || applies(
                 &script,
