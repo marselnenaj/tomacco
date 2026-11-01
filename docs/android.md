@@ -863,7 +863,10 @@ while you use the app or a UI test scenario runs. `profile.memory` reads PSS, RS
 sizes and can pull a heap dump. `profile.usage` measures CPU time and estimated battery use
 over an interval. `profile.budget` checks the results against limits, and UI test
 scenarios can measure and check them too. `profile.compare` shows how each result changed from a saved
-baseline. See [app performance](agents.md#app-performance) in the agent guide.
+baseline. Macrobenchmark modules and Baseline Profiles have their own operations: `profile.macrobenchmark`,
+`profile.benchmark_results`, `profile.baseline_profile`, `profile.baseline_rules`, `profile.baseline_install` and
+`profile.baseline_compare`, and `project.create` can add the module to a Compose starter. See
+[app performance](agents.md#app-performance) in the agent guide.
 
 ## Debugging, tests, profiling and release
 

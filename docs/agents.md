@@ -1233,6 +1233,76 @@ tomaccoctl call profile.compare '{"baseline":"/absolute/startup-baseline.json","
 On the same emulator, two cold startup reports of three runs each differed by 226 ms in their median (303 and 529 ms), which failed an
 `increase_percent` of 25: an emulator's launch times vary that much between runs, so compare medians of more runs on a quiet host.
 
+**Macrobenchmark and Baseline Profiles (Android).** `project.inspect` reads the build files for these and lists them under
+`performance`, without running Gradle: `benchmark_modules` (a `com.android.test` module that depends on
+`androidx.benchmark:benchmark-macro`, or applies the `androidx.baselineprofile` plugin, with its target app, the Gradle task
+Tomacco would run, and its benchmark and generator classes), `baseline_profile_modules` (app modules that apply the plugin, with
+the generate task) and `profiles` (the profile files found, with rule counts). A build with none of them has no `performance`.
+
+`profile.macrobenchmark` runs the benchmark module on a device as a job: `connected<Variant>AndroidTest` of that module
+(`connectedBenchmarkReleaseAndroidTest` when the plugin is applied, `connectedBenchmarkAndroidTest` for a `benchmark` build type,
+`connectedCheck` otherwise; `variant` overrides), with `ANDROID_SERIAL` set to `device`. `class` limits the run to a test class
+or `Class#method`. On an emulator it adds `androidx.benchmark.suppressErrors=EMULATOR`, which Macrobenchmark needs there
+(`allow_emulator`), and an emulator's numbers are not a phone's. The job's last step is `profile.benchmark_results`, so the job ends
+with a performance report. The benchmark JSON, the Perfetto trace of every iteration and the JUnit XML are the job's artifacts;
+`testing.results` reads the XML.
+
+`profile.benchmark_results` reads `*benchmarkData.json` from `build/outputs/connected_android_test_additional_output` into a report
+of kind `macrobenchmark` that `profile.compare` and `profile.budget` read like the others. Metrics are
+`<test>_<metric>_<statistic>`: `minimum`, `median` and `maximum` for `timeToInitialDisplayMs`
+(`startupCompilationNone_time_to_initial_display_ms_median`), `p50`, `p90`, `p95` and `p99` for sampled metrics such as
+`frameDurationCpuMs`, and a test name two classes share is prefixed with its class. `benchmarks` keeps each run's values and its
+traces. With `analyze`, the first trace of each benchmark is summarised by `profile.analyze` (CPU time, frames, jank of the app's
+processes) under `trace_analysis`. `job_id` or `since` leaves out older files.
+
+`profile.baseline_profile` runs `generate<Variant>BaselineProfile` of the app module that applies the plugin, on a device, and ends
+with `profile.baseline_rules`. The plugin writes `src/<variant>/generated/baselineProfiles/baseline-prof.txt` and `startup-prof.txt`,
+which AGP packages into the release build. `profile.baseline_rules` lists those files and `src/*/baseline-prof.txt` with their
+rules counted: classes, methods, and the `H` hot, `S` startup and `P` post-startup flags. A generated file whose content did not
+change can keep its old modification time, so `fresh` is false for it. `profile.baseline_install` copies the newest generated profile
+to `src/main/baseline-prof.txt` (or a `destination` inside the module), where AGP packages it without the plugin; a different file
+there is kept as `.bak` and only replaced with `overwrite`.
+
+`profile.baseline_compare` times an installed release build with and without its profile in one call: cold starts (`runs`, 5 by
+default) after `cmd package compile -f -m verify`, which ignores the profile, then, after the app's `androidx.profileinstaller`
+installed its profile (the `INSTALL_PROFILE` broadcast) and `cmd package compile -f -m speed-profile`, cold starts again. The
+report has both `profile.startup` reports, the compiler filter Android reported for each, `comparison`, and the metrics
+`startup_cold_<statistic>_ms_without_profile` and `_with_profile`, `improvement_ms` and `improvement_percent`. An app that does not
+install a profile answers `profile_install_failed`. The app is left compiled with `speed-profile`.
+
+```sh
+tomaccoctl call project.create '{"path":"/absolute/PerfApp","kind":"compose","name":"PerfApp","organization":"dev.example","performance":true}'
+tomaccoctl call profile.baseline_profile '{"path":"/absolute/PerfApp","device":"emulator-5554"}'
+tomaccoctl call profile.macrobenchmark '{"path":"/absolute/PerfApp","device":"emulator-5554"}'
+tomaccoctl call profile.benchmark_results '{"path":"/absolute/PerfApp","analyze":true,"report":"/absolute/macro.json"}'
+tomaccoctl call profile.baseline_compare '{"device":"emulator-5554","bundle_id":"dev.example.perfapp","runs":5}'
+```
+
+`project.create` with `kind` `compose` and `performance:true` adds a `:baselineprofile` module, the structure Android Studio's
+template uses: a `com.android.test` module with a `StartupBenchmarks` class (cold start without and with the profile, 5
+iterations) and a `BaselineProfileGenerator` that starts the app, and the plugin and `androidx.profileinstaller` in the app. It
+uses AGP 9.1.1, `androidx.benchmark` 1.5.0, the `androidx.baselineprofile` plugin 1.5.0, profileinstaller 1.4.1 and UiAutomator
+2.4.0.
+
+What ran, on an API 36 x86_64 `google_apis` emulator started headless with SwiftShader, from a Compose app created with
+`performance:true` (and a hand-built twin of it before the starter existed):
+
+- `profile.baseline_profile` generated a profile of 10,212 rules in `app/src/release/generated/baselineProfiles/` (7,848
+  methods, 2,365 classes), about 70 s with a warm Gradle cache.
+- `profile.macrobenchmark` ran the three tests (the generator is skipped in the benchmark variant) and wrote the report; the job
+  listed 10 Perfetto traces, the JSON and the XML as artifacts. Medians of `timeToInitialDisplayMs` over 5 iterations: 374.3 ms
+  with the profile and 412.7 ms without in the starter, 380.6 and 389.0 ms in the twin. The two differ little because the
+  emulator's variation is as large.
+- `profile.benchmark_results` with `analyze` summarised the first trace of each benchmark through `trace_processor`.
+  `profile.budget` failed a median of 380.6 ms against a maximum of 300, and `profile.compare` read two such reports.
+- `profile.baseline_compare` on the twin's `benchmarkRelease` build, 5 cold starts each: median 582 ms (compiler filter
+  `verify`) and 469 ms (`speed-profile`), an improvement of 113 ms (19.4 %); the fastest runs were 346 and 405 ms, so on an
+  emulator the median of more runs is the number to trust. The profile install answered result 1. The whole call took 13 s.
+- `profile.baseline_install` copied the generated file to `src/main/baseline-prof.txt` and a second call changed nothing.
+
+The metric parsing is also tested against that run's recorded `benchmarkData.json`. The `p50` to `p99` names come from the
+AndroidX format and are tested with a written example; no frame benchmark was run. A physical phone was not used.
+
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.

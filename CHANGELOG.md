@@ -6,10 +6,21 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 236 operations.
+`tomaccoctl` now has one typed API of 242 operations.
 
 ### Added
 
+- Android Macrobenchmark and Baseline Profiles. `project.inspect` lists a build's benchmark modules, plugin modules and profile
+  files under `performance`. `profile.macrobenchmark` runs the benchmark module on a device as a job and ends with a report
+  whose flat metrics (`startupCompilationNone_time_to_initial_display_ms_median` and so on) `profile.compare` and
+  `profile.budget` read; its artifacts include the Perfetto traces, which `profile.benchmark_results` can summarise with
+  `profile.analyze`. `profile.baseline_profile` generates a profile with the `androidx.baselineprofile` plugin,
+  `profile.baseline_rules` counts its rules, `profile.baseline_install` copies it to `src/main/baseline-prof.txt`, and
+  `profile.baseline_compare` times cold starts with and without the profile in one call. `project.create` with kind `compose`
+  and `performance:true` adds a `:baselineprofile` module. On an API 36 emulator the generated profile had 10,212 rules and
+  `profile.baseline_compare` measured median cold starts of 582 ms and 469 ms. New error codes: `baseline_plugin_missing`,
+  `baseline_profile_exists`, `baseline_profile_missing`, `benchmark_module_ambiguous`, `benchmark_module_missing`,
+  `benchmark_results_missing`, `profile_install_failed`, `compile_failed`.
 - An agent skill, `integrations/agent-skill/tomacco`, tells coding agents when to use Tomacco and how: MCP or
   `tomaccoctl`, `capabilities` first, waiting for jobs, reading `remedy`, asking before destructive calls, and where the
   installed guides are. `install.py` installs it in `~/.local/lib/tomacco/skills/tomacco` and links it into
