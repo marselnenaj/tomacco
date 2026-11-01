@@ -126,6 +126,7 @@ install(PROGRAMS install.py DESTINATION .)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/VERSION" "${PROJECT_VERSION}\n")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/VERSION" DESTINATION share/tomacco)
 install(DIRECTORY integrations/omarchy DESTINATION share/tomacco)
+install(DIRECTORY integrations/agent-skill DESTINATION share/tomacco)
 # The recipes' sources and patches with their README and licenses; the
 # research notes beside them stay in the source tree.
 install(DIRECTORY integrations/ios-emulator DESTINATION share/tomacco/integrations

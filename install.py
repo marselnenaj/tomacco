@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the desktop, control plane and optional Omarchy panel for one user."""
+"""Install the desktop, control plane, agent skill and optional Omarchy panel for one user."""
 import argparse
 import contextlib
 import datetime
@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shlex
 import shutil
 import subprocess
@@ -40,6 +41,10 @@ OWNED = (Path(".local/bin/tomacco"), Path(".local/bin/tomaccoctl"), Path(".local
 # Directories the installation creates for itself, removed once empty.
 OWNED_DIRECTORIES = (Path(".local/lib/tomacco"), Path(".local/share/doc/tomacco"),
                      Path(".config/omarchy/plugins") / APP_ID)
+# The agent skill: installed with the program, and linked into the skills
+# directory of each coding agent whose configuration directory exists.
+SKILL = Path(".local/lib/tomacco/skills/tomacco")
+AGENT_SKILL_LINKS = tuple(Path(agent) / "skills/tomacco" for agent in (".claude", ".codex", ".agents"))
 HYPR_REQUIRE = 'require("hypr.tomacco")'
 HYPR_COMMENT = "-- Tomacco mobile workspace."
 
@@ -62,6 +67,7 @@ PACKAGE_PATHS = {
     "examples/ios-restore-native": "share/tomacco/examples/ios-restore-native",
     "integrations/ios-emulator": "share/tomacco/integrations/ios-emulator",
     "integrations/omarchy": "share/tomacco/omarchy",
+    "integrations/agent-skill": "share/tomacco/agent-skill",
     "assets": "lib/tomacco/assets",
     "assets/icon.svg": f"share/icons/hicolor/scalable/apps/{APP_ID}.svg",
     f"assets/{APP_ID}.desktop": f"share/applications/{APP_ID}.desktop",
@@ -347,12 +353,13 @@ class Installer:
             os.chmod(directory, 0o700)
         self.private = True
 
-    def destination(self, relative):
+    def destination(self, relative, link=False):
+        """The path in the home; with `link`, the path may be a symbolic link itself."""
         relative = Path(relative)
         if relative.is_absolute() or '..' in relative.parts or not relative.parts:
             raise SystemExit("Installation paths must stay inside the selected home")
         path = self.user / relative
-        if not path.parent.resolve().is_relative_to(self.user) or path.is_symlink():
+        if not path.parent.resolve().is_relative_to(self.user) or (path.is_symlink() and not link):
             raise SystemExit(f"Refusing to follow an installation symlink: {path}")
         return path
 
@@ -363,7 +370,7 @@ class Installer:
             return
         self.swept.add(directory)
         for path in directory.glob(STAGED + "*"):
-            if path.is_file() and not path.is_symlink():
+            if path.is_symlink() or path.is_file():
                 path.unlink()
 
     def save(self, relative, path):
@@ -379,8 +386,8 @@ class Installer:
             shutil.copy2(path, saved)
         return saved
 
-    def stage(self, relative, path, temp, saved, after, before):
-        self.records.append({"path": str(relative), "before": before, "after": after})
+    def stage(self, relative, path, temp, saved, after, before, extra=None):
+        self.records.append({"path": str(relative), "before": before, "after": after, **(extra or {})})
         self.pending.append((temp, path, saved))
         self.pending_paths.add(path)
         if len(self.pending) >= (BATCH if self.batched else 1):
@@ -422,6 +429,57 @@ class Installer:
         saved = self.save(relative, target)
         self.stage(relative, target, None, saved, None, previous)
 
+    def link(self, relative, target):
+        """Stages a symbolic link at `relative` to the absolute `target`. The
+        journal entry's state is {"symlink": target}; directories the link
+        needed are made now and listed under "created", so removing the link
+        can remove them again."""
+        path = self.destination(relative, link=True)
+        if path in self.pending_paths:
+            self.flush()
+        if path.is_symlink() and os.readlink(path) == str(target):
+            return
+        if path.is_symlink() or path.exists():
+            raise SystemExit(f"Refusing to replace {path}")
+        missing = []
+        parent = path.parent
+        while not parent.is_dir():
+            missing.append(parent)
+            parent = parent.parent
+        created = []
+        for directory in reversed(missing):
+            directory.mkdir()
+            created.append(str(directory.relative_to(self.user)))
+        self.sweep(path.parent)
+        temp = path.parent / (STAGED + secrets.token_hex(8))
+        os.symlink(target, temp)
+        self.stage(relative, path, str(temp), None, {"symlink": str(target)}, None, {"created": created} if created else None)
+
+    def unlink(self, relative):
+        """Stages the removal of the symbolic link at `relative`."""
+        path = self.destination(relative, link=True)
+        if path in self.pending_paths:
+            self.flush()
+        self.stage(relative, path, None, None, None, {"symlink": os.readlink(path)})
+
+    @staticmethod
+    def state(target):
+        """What a journal entry records for `target`: a symlink's target, a
+        file's digest and mode, None when nothing is there, False for anything else."""
+        if target.is_symlink():
+            return {"symlink": os.readlink(target)}
+        if target.is_file():
+            return {"sha256": file_digest(target), "mode": target.stat().st_mode & 0o777}
+        return False if target.exists() else None
+
+    def remove_created(self, directories):
+        """Removes the directories a link needed, deepest first, while they are empty."""
+        self.flush()
+        for relative in sorted(set(directories), key=lambda name: len(Path(name).parts), reverse=True):
+            path = self.user / relative
+            if path.is_dir() and not path.is_symlink() and not any(path.iterdir()):
+                path.rmdir()
+
     def journal(self):
         """Writes manifest.json with every change recorded so far; the caller makes it durable."""
         self.private_backup()
@@ -461,7 +519,7 @@ class Installer:
             make_durable(list(directories))
         finally:
             for temp, _, _ in pending:
-                if temp and os.path.exists(temp):
+                if temp and os.path.lexists(temp):
                     os.unlink(temp)
 
     @contextlib.contextmanager
@@ -495,10 +553,12 @@ class Installer:
         changes = []
         # Validate the complete restore before changing any current file.
         for entry in manifest['files']:
-            relative = Path(entry['path']); target = self.destination(relative)
-            if target.exists() and not target.is_file():
+            relative = Path(entry['path'])
+            symlink = any(isinstance(state, dict) and "symlink" in state for state in (entry['before'], entry['after']))
+            target = self.destination(relative, link=symlink)
+            current = self.state(target)
+            if current is False:
                 raise SystemExit(f"Preserved a file changed since installation: {target}")
-            current = {"sha256": hashlib.sha256(target.read_bytes()).hexdigest(), "mode": target.stat().st_mode & 0o777} if target.is_file() else None
             if current == entry['before']:
                 # A journalled write may not have been published before interruption.
                 continue
@@ -506,6 +566,9 @@ class Installer:
                 raise SystemExit(f"Preserved a file changed since installation: {target}")
             previous = entry['before']
             content = None
+            if symlink:
+                changes.append((relative, target, previous, entry))
+                continue
             if previous:
                 saved = source / relative
                 if saved.is_symlink() or not saved.resolve().is_relative_to(source.resolve()) or not saved.is_file():
@@ -515,9 +578,17 @@ class Installer:
                     raise SystemExit(f"Backup checksum mismatch: {relative}")
             changes.append((relative, target, previous, content))
         # The backups are read again one at a time, not held in memory together.
+        created = []
         with self.batch():
             for relative, target, previous, saved in changes:
-                if previous:
+                if isinstance(saved, dict):
+                    # A symbolic link: saved is its journal entry.
+                    if previous:
+                        self.link(relative, previous["symlink"])
+                    else:
+                        self.unlink(relative)
+                        created += saved.get("created", [])
+                elif previous:
                     content = saved.read_bytes()
                     if hashlib.sha256(content).hexdigest() != previous['sha256']:
                         raise SystemExit(f"Backup checksum mismatch: {relative}")
@@ -525,6 +596,7 @@ class Installer:
                 else:
                     # Only a file recorded as newly created by this installation is removed.
                     self.remove(relative)
+        self.remove_created(created)
         self.finish()
         return {"restored": identifier, "changed": len(self.changed), "backups": str(self.backup)}
 
@@ -574,6 +646,82 @@ class Installer:
                     staged.unlink()
             if not any(path.iterdir()):
                 path.rmdir()
+
+    def agent_skill(self, link=True, update=False):
+        """Installs the agent skill beside the program and, with `link`, links
+        it into ~/.claude/skills, ~/.codex/skills and ~/.agents/skills where
+        that agent's configuration directory exists. An entry already there
+        that is not Tomacco's own link is left alone. An update adds no link
+        the person removed after an earlier installation made it. Without
+        `link`, links to the installed skill are removed."""
+        source = source_path("integrations/agent-skill") / "tomacco"
+        keep = set()
+        for path in sorted(p for p in source.rglob("*") if p.is_file()):
+            relative = SKILL / path.relative_to(source)
+            self.write(relative, path.read_bytes())
+            keep.add(relative)
+        self.flush()
+        history = self.history()
+        for recorded, entries in sorted(history.items()):
+            relative = Path(recorded)
+            if relative.is_relative_to(SKILL) and relative not in keep and self.as_installed(entries, self.user / relative):
+                self.remove(relative)
+        self.prune(SKILL)
+        if not link:
+            self.remove_skill_links(history)
+            return {"linked": [], "skipped": []}
+        target = str(self.user / SKILL)
+        linked, skipped = [], []
+        for relative in AGENT_SKILL_LINKS:
+            path = self.user / relative
+            if not path.parent.parent.is_dir():
+                continue
+            try:
+                self.destination(relative, link=True)
+            except SystemExit:
+                skipped.append(str(path))
+                continue
+            entries = history.get(str(relative), [])
+            if path.is_symlink():
+                current = os.readlink(path)
+                if self.ours(path):
+                    linked.append(str(path))
+                    continue
+                if not entries or entries[-1].get("after") != {"symlink": current}:
+                    skipped.append(str(path))
+                    continue
+                # Tomacco's own link from an installation in another place.
+                self.unlink(relative)
+            elif path.exists():
+                skipped.append(str(path))
+                continue
+            elif update and entries:
+                continue
+            self.link(relative, target)
+            linked.append(str(path))
+        return {"linked": linked, "skipped": skipped}
+
+    def ours(self, path):
+        """Whether the symbolic link at `path` points at the installed skill."""
+        target = self.user / SKILL
+        return path.is_symlink() and (os.readlink(path) == str(target)
+                                      or (target.is_dir() and os.path.realpath(path) == os.path.realpath(target)))
+
+    def remove_skill_links(self, history=None):
+        """Removes the agent links to the installed skill, whoever made them,
+        and the skills directories an installation created for them once empty."""
+        history = self.history() if history is None else history
+        created = []
+        for relative in AGENT_SKILL_LINKS:
+            path = self.user / relative
+            try:
+                self.destination(relative, link=True)
+            except SystemExit:
+                continue
+            if self.ours(path):
+                self.unlink(relative)
+                created += [name for entry in history.get(str(relative), []) for name in entry.get("created", [])]
+        self.remove_created(created)
 
     def widget_placed(self):
         """Whether the bar names the widget."""
@@ -694,6 +842,7 @@ class Installer:
         # The user's own configuration first, so it never names a removed file.
         self.unedit_window_rule()
         self.unedit_omarchy()
+        self.remove_skill_links(history)
         with self.batch():
             for relative, entries in sorted(history.items()):
                 relative = Path(relative)
@@ -769,6 +918,8 @@ def main():
     parser.add_argument("--user-home", type=Path, default=Path.home(), help="Alternate home for packaging/installation tests")
     parser.add_argument("--omarchy", action="store_true", help="Install and enable the Omarchy bar/popup plugin")
     parser.add_argument("--no-window-rule", action="store_true")
+    parser.add_argument("--no-agent-skill", action="store_true",
+                        help="Do not link the agent skill into ~/.claude/skills, ~/.codex/skills and ~/.agents/skills, and remove such links an earlier installation made")
     parser.add_argument("--update", action="store_true", help="Keep the integrations as they are: refresh the Omarchy panel and window rules only where they are already in use")
     parser.add_argument("--list-backups", action="store_true", help="List installations with a verified rollback manifest")
     parser.add_argument("--rollback", metavar="BACKUP_ID", help="Restore an installation, preserving files subsequently edited by the user")
@@ -834,6 +985,7 @@ def main():
         installer.write(Path(".local/share/applications") / (APP_ID + ".desktop"), desktop_entry(str(launcher)))
         # The software-center listing; it names the menu entry above.
         installer.write(Path(".local/share/metainfo") / (APP_ID + ".metainfo.xml"), source_path(f"assets/{APP_ID}.metainfo.xml").read_bytes())
+    skill = installer.agent_skill(link=not args.no_agent_skill, update=args.update)
     if args.omarchy:
         installer.omarchy()
     elif args.update and installer.widget_placed():
@@ -845,7 +997,7 @@ def main():
         subprocess.run(["update-desktop-database", str(installer.user / ".local/share/applications")], check=True)
     print(json.dumps({"installed": str(launcher), "cli": str(installer.user / ".local/bin/tomaccoctl"),
                       "changed": len(installer.changed), "backups": str(installer.backup) if installer.backup.exists() else None,
-                      "omarchy": args.omarchy}, indent=2))
+                      "omarchy": args.omarchy, "agent_skill": skill}, indent=2))
 
 
 if __name__ == "__main__":
