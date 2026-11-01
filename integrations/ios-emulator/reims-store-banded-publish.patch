@@ -1,0 +1,1261 @@
+reims-vgpu: the render Store copies and converts in claimed row bands.
+
+A native-float render Store of the presented RGBA16F front surface (25 MB)
+copied its readback into the guest's pages on the drain thread with ordinary
+stores while a second thread, itself starting four, converted the whole
+readback for the present's stash. A recorded live second on the development
+host (1.2.1 engine, swiping) shows 4.5-4.8 ms a Store for that publish with
+the conversion beside it (native_float_publish_us), and 2.3-2.9 ms for the
+conversion (store_capture_convert_us): the two passes read the staging
+buffer twice and the guest pages once more for ownership, and contend for
+memory.
+
+Now PreparedNativeImageWrite::write_from_banded cuts the rows into parts
+(eight per thread) that up to four threads, the drain's own included, claim
+in turn, so a slower core takes fewer. Each part copies its rows with
+streaming stores (no read of the guest's lines first), and after each block
+of 16 rows hands those rows to its sink while they are in the core's cache:
+the Stasher converts them into its part of the stash with
+convert_band_streamed. The stash buffer is taken before the readback and the
+frame is stashed after the staging lease has ended (Stasher::commit, which
+stashes nothing when any part refused or did not run).
+
+The guest's bytes are those the one-thread copy leaves, every row at its
+offset and the padding untouched; parts run one after another on the drain
+when the pieces are not provably disjoint (two guest pages naming one host
+page) or no thread starts. REIMS_VGPU_STORE_PUBLISH_BANDS=off restores the
+copy with the conversion beside it. Census: native_image_band_parts_n,
+native_image_band_threads_n, store_capture_banded_n;
+store_capture_convert_us is now the parts' summed conversion time.
+
+Offline (store_banded_timing: the vphone frame into 16 KiB pages scattered
+through guest RAM, with its stash, caches evicted before each run, medians of
+31 alternating, three runs on a shared host): beside 3.5-3.9 ms, banded on
+four threads 2.5-2.8 ms, on one 3.7-4.1 ms; the banded copy alone 2.0-2.2 ms
+on four threads. Not measured on a live phone.
+
+diff --git a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+index 0b7e140..cc5bed6 100644
+--- a/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
++++ b/reims-vgpu/crates/reims-vgpu-config/src/lib.rs
+@@ -399,6 +399,18 @@ pub const BATCH_MRT: &str = "REIMS_VGPU_BATCH_MRT";
+ /// never a permission (`present_capture_fresh_disabled`).
+ pub const STORE_CAPTURE_REUSE: &str = "REIMS_VGPU_STORE_CAPTURE_REUSE";
+ 
++/// `off` makes a native-float render Store copy its readback into the guest's
++/// pages on one thread with ordinary stores, with the present conversion as a
++/// second whole-frame pass beside it, as before the Store was banded.
++///
++/// By default a Store of at least a mebibyte is split into up to four bands of
++/// whole rows, written at once with streaming stores that do not read the
++/// guest's lines first; each band converts every block of rows for the present
++/// right after copying it, while the block is still in its core's cache. The
++/// guest's bytes and the stashed frame are the same either way. Off is a
++/// refusal and never a permission.
++pub const STORE_PUBLISH_BANDS: &str = "REIMS_VGPU_STORE_PUBLISH_BANDS";
++
+ /// `off` stages the guest bytes of a `[[buffer(n)]]` bind even when the stage's
+ /// own reflection says the shader never dereferences it.
+ ///
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs
+index 2292f48..a9c0450 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/store_capture.rs
+@@ -373,6 +373,168 @@ pub fn stash(witness: ReadWitness, texel: super::ReadbackTexel, bytes: &[u8]) ->
+     }
+ }
+ 
++/// One band's share of a [`Stasher`]: what it converted and the figures.
++#[derive(Clone, Copy, Debug, Default)]
++struct BandTally {
++    nz: usize,
++    max: u8,
++    bytes: usize,
++    us: u64,
++    refused: bool,
++}
++
++/// A stash being converted band by band inside a banded render Store
++/// (`PreparedNativeImageWrite::write_from_banded`): each band converts each
++/// block of rows right after copying it into the guest's pages, into its own
++/// part of one BGRA8 buffer. [`Stasher::commit`] then stashes the frame —
++/// exactly [`stash`]'s frame and figures, the conversion being the same
++/// function per pixel and the figures a sum and a maximum — or, when any band
++/// refused or did not run, gives the buffer back and stashes nothing.
++pub struct Stasher {
++    bgra: Vec<u8>,
++    tallies: Vec<BandTally>,
++    committed: bool,
++}
++
++/// One band's sink: its rows' part of the [`Stasher`]'s buffer.
++pub struct StashBand<'a> {
++    dst: &'a mut [u8],
++    /// Where this band's rows start in the packed source.
++    base: usize,
++    tally: &'a mut BandTally,
++}
++
++impl Stasher {
++    /// Take a buffer for a `width` x `height` frame, as [`stash`] does: the
++    /// waiting stash's (which a newer frame replaces) or the spare. Sized, not
++    /// cleared: the bands overwrite every byte before it can be stashed.
++    pub fn begin(width: u32, height: u32) -> Stasher {
++        let need = (width as usize)
++            .saturating_mul(height as usize)
++            .saturating_mul(crate::protocol::pixel_format::RGBA8_BPP as usize);
++        let mut shelf = SHELF.lock();
++        let mut bgra = match shelf.stash.take() {
++            Some(old) => old.bgra,
++            None => std::mem::take(&mut shelf.spare),
++        };
++        drop(shelf);
++        if bgra.len() != need {
++            bgra.clear();
++            bgra.resize(need, 0);
++        }
++        Stasher {
++            bgra,
++            tallies: Vec::new(),
++            committed: false,
++        }
++    }
++
++    /// One sink per part for a source of `row_count` RGBA16F rows of
++    /// `row_bytes` each cut into `parts` parts, as the banded write cuts it
++    /// (`band_rows`). Empty — and nothing will be stashed — when the rows do
++    /// not describe this buffer's frame.
++    pub fn sinks(
++        &mut self,
++        row_count: usize,
++        row_bytes: usize,
++        parts: usize,
++    ) -> Vec<StashBand<'_>> {
++        use crate::runtime::mapper::band_rows;
++        let dst_row = row_bytes / 8 * 4;
++        if parts == 0
++            || parts > row_count
++            || !row_bytes.is_multiple_of(8)
++            || row_count.checked_mul(dst_row) != Some(self.bgra.len())
++        {
++            return Vec::new();
++        }
++        self.tallies.clear();
++        self.tallies.resize(parts, BandTally::default());
++        let mut sinks = Vec::with_capacity(parts);
++        let mut rest: &mut [u8] = &mut self.bgra;
++        for (index, tally) in self.tallies.iter_mut().enumerate() {
++            let rows = band_rows(row_count, parts, index);
++            let (dst, tail) = std::mem::take(&mut rest).split_at_mut(rows.len() * dst_row);
++            rest = tail;
++            sinks.push(StashBand {
++                dst,
++                base: rows.start * row_bytes,
++                tally,
++            });
++        }
++        sinks
++    }
++
++    /// Stash the converted frame as read by `witness`, when every band
++    /// converted all of its rows. `false`, with the buffer kept as the spare,
++    /// otherwise.
++    pub fn commit(mut self, witness: ReadWitness) -> bool {
++        self.committed = true;
++        let converted: usize = self.tallies.iter().map(|t| t.bytes).sum();
++        let refused = self.tallies.iter().any(|t| t.refused);
++        let us: u64 = self.tallies.iter().map(|t| t.us).sum();
++        let bgra = std::mem::take(&mut self.bgra);
++        let mut shelf = SHELF.lock();
++        if refused || bgra.is_empty() || converted != bgra.len() {
++            crate::runtime::drain::note_store_route("store_capture_convert_refused_n");
++            shelf.spare = bgra;
++            return false;
++        }
++        let nz = self.tallies.iter().map(|t| t.nz).sum();
++        let max = self.tallies.iter().map(|t| t.max).max().unwrap_or(0);
++        let px0 = [bgra[0], bgra[1], bgra[2], bgra[3]];
++        crate::runtime::drain::note_store_route_us("store_capture_convert_us", us);
++        crate::runtime::drain::note_store_route("store_capture_stashed_n");
++        crate::runtime::drain::note_store_route("store_capture_banded_n");
++        shelf.stash = Some(Stash {
++            witness,
++            sealed: None,
++            bgra,
++            stats: (nz, max, px0),
++        });
++        true
++    }
++}
++
++impl Drop for Stasher {
++    /// A Store that failed before [`Stasher::commit`] gives the buffer back.
++    fn drop(&mut self) {
++        if !self.committed && !self.bgra.is_empty() {
++            SHELF.lock().spare = std::mem::take(&mut self.bgra);
++        }
++    }
++}
++
++impl crate::runtime::mapper::BandSink for StashBand<'_> {
++    fn rows(&mut self, packed: std::ops::Range<usize>, src: &[u8]) {
++        if self.tally.refused {
++            return;
++        }
++        let started = std::time::Instant::now();
++        let at = packed.start.checked_sub(self.base).map(|off| off / 8 * 4);
++        let dst = at.and_then(|at| self.dst.get_mut(at..at + src.len() / 8 * 4));
++        let figures = match dst {
++            Some(dst) if src.len().is_multiple_of(8) && packed.start.is_multiple_of(8) => {
++                super::present_capture::convert_band_streamed(
++                    crate::protocol::pixel_format::Rgba8Narrowing::Rgba16Float,
++                    src,
++                    dst,
++                )
++            }
++            _ => None,
++        };
++        match figures {
++            Some((nz, max)) => {
++                self.tally.nz += nz;
++                self.tally.max = self.tally.max.max(max);
++                self.tally.bytes += src.len() / 8 * 4;
++            }
++            None => self.tally.refused = true,
++        }
++        self.tally.us += started.elapsed().as_micros() as u64;
++    }
++}
++
+ /// The Store landed and stamped `identity` with `epoch`: the stash may serve.
+ ///
+ /// Seals only a stash for this identity, and only while the resident really
+@@ -637,6 +799,109 @@ mod tests {
+         );
+     }
+ 
++    /// The shelf is one process-wide slot; the tests that fill it take turns.
++    static SHELF_TESTS: Mutex<()> = Mutex::new(());
++
++    /// A frame of RGBA16F rows with black, alpha-only, out-of-range, NaN and
++    /// in-range words, and the tight row length.
++    fn half_rows(width: usize, height: usize) -> (Vec<u8>, usize) {
++        let words = [0u16, 0x3c00, 0x2e66, 0xfc00, 0x7e00, 0x4400, 0x8001, 0x3555];
++        let src = (0..width * height * 4)
++            .flat_map(|i| words[(i * 7 + i / 5) % words.len()].to_le_bytes())
++            .collect();
++        (src, width * 8)
++    }
++
++    fn witness_of(width: usize, height: usize) -> ReadWitness {
++        ReadWitness::taken(
++            &surface(7, 3),
++            vk::Image::from_raw(0x1000),
++            vk::Format::R16G16B16A16_SFLOAT,
++            width as u32,
++            height as u32,
++            41,
++        )
++    }
++
++    fn take_stash() -> Option<(Vec<u8>, (usize, u8, [u8; 4]))> {
++        SHELF.lock().stash.take().map(|s| (s.bgra, s.stats))
++    }
++
++    /// Converted band by band, block by block, the stash is the frame and the
++    /// figures [`stash`] makes of the same source, for one to four bands.
++    #[test]
++    fn a_banded_stash_is_the_whole_frame_stash() {
++        use crate::runtime::mapper::{band_rows, BandSink};
++        let _turn = SHELF_TESTS.lock();
++        let (width, height) = (37usize, 23usize);
++        let (src, row) = half_rows(width, height);
++        let texel = super::super::ReadbackTexel::Native(
++            crate::protocol::pixel_format::TexelLayout::Rgba16Float,
++        );
++        take_stash();
++        assert!(stash(witness_of(width, height), texel, &src[..]));
++        let whole = take_stash().expect("the whole-frame stash");
++        for bands in [1usize, 2, 3, 4, 8, 23] {
++            let mut stasher = Stasher::begin(width as u32, height as u32);
++            {
++                let mut sinks = stasher.sinks(height, row, bands);
++                assert_eq!(sinks.len(), bands);
++                for (index, sink) in sinks.iter_mut().enumerate() {
++                    let rows = band_rows(height, bands, index);
++                    let mut at = rows.start;
++                    while at < rows.end {
++                        let end = (at + 3).min(rows.end);
++                        sink.rows(at * row..end * row, &src[at * row..end * row]);
++                        at = end;
++                    }
++                }
++            }
++            assert!(stasher.commit(witness_of(width, height)), "bands={bands}");
++            assert!(take_stash() == Some(whole.clone()), "bands={bands}");
++        }
++    }
++
++    /// A band that did not run, a band handed rows outside its own, and a
++    /// Store that failed before committing all stash nothing and keep the
++    /// buffer for the next Store.
++    #[test]
++    fn an_incomplete_banded_stash_stashes_nothing_and_keeps_the_buffer() {
++        use crate::runtime::mapper::{band_rows, BandSink};
++        let _turn = SHELF_TESTS.lock();
++        let (width, height) = (16usize, 12usize);
++        let (src, row) = half_rows(width, height);
++        take_stash();
++        // The second of two bands never ran.
++        let mut stasher = Stasher::begin(width as u32, height as u32);
++        {
++            let mut sinks = stasher.sinks(height, row, 2);
++            let rows = band_rows(height, 2, 0);
++            sinks[0].rows(0..rows.end * row, &src[..rows.end * row]);
++        }
++        assert!(!stasher.commit(witness_of(width, height)));
++        assert!(take_stash().is_none());
++        assert_eq!(SHELF.lock().spare.len(), width * height * 4);
++        // A band handed rows before its own refuses them.
++        let mut stasher = Stasher::begin(width as u32, height as u32);
++        {
++            let mut sinks = stasher.sinks(height, row, 2);
++            sinks[1].rows(0..row, &src[..row]);
++            sinks[0].rows(0..height / 2 * row, &src[..height / 2 * row]);
++            sinks[1].rows(height / 2 * row..height * row, &src[height / 2 * row..]);
++        }
++        assert!(!stasher.commit(witness_of(width, height)));
++        assert!(take_stash().is_none());
++        // Dropped without a commit.
++        SHELF.lock().spare = Vec::new();
++        drop(Stasher::begin(width as u32, height as u32));
++        assert_eq!(SHELF.lock().spare.len(), width * height * 4);
++        // Rows that are not this frame's give no sinks.
++        let mut stasher = Stasher::begin(width as u32, height as u32);
++        assert!(stasher.sinks(height + 1, row, 2).is_empty());
++        assert!(stasher.sinks(height, row + 4, 2).is_empty());
++        assert!(!stasher.commit(witness_of(width, height)));
++    }
++
+     #[test]
+     fn each_fresh_reason_has_its_own_census_name() {
+         let names: std::collections::HashSet<_> = Fresh::ALL.iter().map(|f| f.census()).collect();
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+index 90cbdd8..6720d4d 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/mod.rs
+@@ -22,8 +22,9 @@ use crate::runtime::host_writes::WriteRail;
+ mod rect_batch;
+ pub use rect_batch::RectBatchRefusal;
+ pub(crate) use rect_batch::{
+-    copy_mapping_rects, prepare_mapping_rects, MappingRectCopy, MappingRectPreparation,
+-    MappingRectWindow, MappingStorageIdentity, PreparedMappingRectTransfer, RectViewSource,
++    band_rows, banded_parts, copy_mapping_rects, prepare_mapping_rects, BandSink, BandedWrite, MappingRectCopy,
++    MappingRectPreparation, MappingRectWindow, MappingStorageIdentity,
++    PreparedMappingRectTransfer, RectViewSource, BANDED_MAX_BANDS,
+ };
+ 
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+@@ -2358,6 +2359,16 @@ impl RectStride {
+         (self.row_count - 1) * self.row_stride + self.row_bytes
+     }
+ 
++    /// Rows in the rectangle.
++    pub(crate) fn row_count(&self) -> usize {
++        self.row_count
++    }
++
++    /// Useful bytes per row: one row of the caller's packed side.
++    pub(crate) fn row_bytes(&self) -> usize {
++        self.row_bytes
++    }
++
+     /// Bytes of the caller's side, which holds rows back to back and no padding.
+     pub(crate) fn packed(&self) -> usize {
+         self.row_count * self.row_bytes
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+index d18bef6..fbe85fc 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapper/rect_batch.rs
+@@ -229,6 +229,107 @@ pub(crate) struct PreparedMappingRectTransfer<'a, H: HostOps> {
+     windows: Vec<MappingRectWindow>,
+     mapping_id: u32,
+     writing: bool,
++    /// One window whose pieces ascend through it and whose host bytes no two
++    /// pieces share: disjoint row bands of it may be written at once.
++    bands_disjoint: bool,
++}
++
++/// The most threads [`PreparedMappingRectTransfer::write_rect_banded`] writes
++/// on, the calling thread's own included.
++pub(crate) const BANDED_MAX_BANDS: usize = 4;
++
++/// Parts per thread a banded write cuts its rows into, so that a thread on a
++/// slower core, or one that started late, ends up writing fewer of them.
++const BANDED_PARTS_PER_THREAD: usize = 8;
++
++/// The number of parts a banded write of `row_count` rows on `threads`
++/// threads cuts its rows into: what a caller sizes its sinks by.
++pub(crate) fn banded_parts(row_count: usize, threads: usize) -> usize {
++    (threads.clamp(1, BANDED_MAX_BANDS) * BANDED_PARTS_PER_THREAD)
++        .min(row_count)
++        .max(1)
++}
++
++/// Rows a band writes before it hands them to its [`BandSink`]: about 150 KB
++/// of the vphone's RGBA16F rows, so the sink reads them from the core's own
++/// cache rather than from memory.
++const BANDED_BLOCK_ROWS: usize = 16;
++
++/// Below this many bytes a transfer is not checked for banding at all.
++const BANDED_MIN_BYTES: usize = 1 << 20;
++
++/// The rows of part `index` when `row_count` rows are cut `bands` ways:
++/// whole rows, contiguous, ascending, the last part taking the remainder.
++pub(crate) fn band_rows(row_count: usize, bands: usize, index: usize) -> std::ops::Range<usize> {
++    let per = row_count.div_ceil(bands.max(1));
++    let start = (index * per).min(row_count);
++    start..((index + 1) * per).min(row_count)
++}
++
++/// A reader of the packed source that runs inside a banded write, on the
++/// band's own thread, right after each block of rows has landed.
++pub(crate) trait BandSink: Send {
++    /// `packed` is where `src` sits in the whole packed source.
++    fn rows(&mut self, packed: std::ops::Range<usize>, src: &[u8]);
++}
++
++/// What a banded write did, for the census.
++#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
++pub(crate) struct BandedWrite {
++    /// Threads it was allowed, the calling thread's own included.
++    pub threads: usize,
++    /// Parts the rows were cut into.
++    pub parts: usize,
++    /// Threads started beside the calling one.
++    pub spawned: usize,
++}
++
++/// Write rows `rows` of `rect` from the packed `src` into the pieces, block
++/// by block, calling `sink` after each block, and fence the streaming stores.
++///
++/// # Safety
++///
++/// Every piece's host run is live and writable, the pieces ascend through the
++/// span without overlapping, and no other thread writes the host bytes of
++/// these rows meanwhile. `src` holds `rect.packed()` bytes.
++unsafe fn write_band(
++    pieces: &[Piece],
++    src: &[u8],
++    rect: super::RectStride,
++    rows: std::ops::Range<usize>,
++    mut sink: Option<&mut dyn BandSink>,
++) {
++    let mut first = 0usize;
++    let mut row = rows.start;
++    while row < rows.end {
++        let end = (row + BANDED_BLOCK_ROWS).min(rows.end);
++        let lo = row * rect.row_stride;
++        let hi = (end - 1) * rect.row_stride + rect.row_bytes;
++        first +=
++            pieces[first..].partition_point(|p| p.buffer_offset + p.bytes.len() as usize <= lo);
++        for piece in pieces[first..].iter().take_while(|p| p.buffer_offset < hi) {
++            let piece_end = piece.buffer_offset + piece.bytes.len() as usize;
++            let (a, b) = (lo.max(piece.buffer_offset), hi.min(piece_end));
++            let host = piece.bytes.host_ptr() as *mut u8;
++            rect.for_each_piece(a, a - piece.buffer_offset, b - a, |packed, at, len| {
++                // SAFETY: the caller's contract; `for_each_piece` keeps both
++                // offsets inside the row bytes of `[a, b)`.
++                unsafe {
++                    crate::runtime::stream_copy::stream_copy(
++                        src.as_ptr().add(packed),
++                        host.add(at),
++                        len,
++                    )
++                };
++            });
++        }
++        if let Some(sink) = sink.as_deref_mut() {
++            let packed = row * rect.row_bytes..end * rect.row_bytes;
++            sink.rows(packed.clone(), &src[packed]);
++        }
++        row = end;
++    }
++    crate::runtime::stream_copy::stream_fence();
+ }
+ 
+ impl<H: HostMemory + HostOps> PreparedMappingRectTransfer<'_, H> {
+@@ -294,6 +395,110 @@ impl<H: HostMemory + HostOps> PreparedMappingRectTransfer<'_, H> {
+         Ok(())
+     }
+ 
++    /// Write the packed `src` into this transfer's one window as `rect` on up
++    /// to `threads` threads at once, the calling thread one of them. The rows
++    /// are cut into `parts` contiguous parts (see [`banded_parts`]) that the
++    /// threads claim in order as each finishes its last, so a slower core
++    /// takes fewer of them. Each part is copied with streaming stores (see
++    /// `stream_copy`) and, when `sinks` holds one per part, every block of rows
++    /// is handed to that part's sink right after it has landed.
++    ///
++    /// The guest's bytes are those [`Self::copy`] leaves: every row at its own
++    /// offset and the padding between rows untouched. The parts run one after
++    /// another on this thread when the pieces are not provably disjoint, when
++    /// the write is small, or when no thread can be started. Every part has
++    /// returned, and fenced its stores, before this does.
++    pub(crate) fn write_rect_banded<S: BandSink>(
++        &mut self,
++        src: &[u8],
++        rect: super::RectStride,
++        threads: usize,
++        parts: usize,
++        sinks: &mut [S],
++    ) -> Result<BandedWrite, RectBatchRefusal> {
++        use RectBatchRefusal as R;
++        if !self.writing {
++            return Err(R::MixedDirections);
++        }
++        if self.windows.len() != 1 || self.windows[0].len != rect.span() {
++            return Err(R::Window { index: 0 });
++        }
++        if src.len() < rect.packed()
++            || parts == 0
++            || parts > rect.row_count
++            || !(sinks.is_empty() || sinks.len() == parts)
++        {
++            return Err(R::Window { index: 0 });
++        }
++        let threads = threads.clamp(1, BANDED_MAX_BANDS).min(parts);
++        let pieces = &self.pieces[..];
++        // The next part and its sink, claimed under one lock; a thread that
++        // fails to start only leaves more parts to the others.
++        let claims = std::sync::Mutex::new((0usize, sinks.iter_mut()));
++        let worker = || loop {
++            let (index, sink) = {
++                let Ok(mut claim) = claims.lock() else {
++                    return;
++                };
++                let index = claim.0;
++                if index >= parts {
++                    return;
++                }
++                claim.0 += 1;
++                (index, claim.1.next())
++            };
++            let rows = band_rows(rect.row_count, parts, index);
++            // SAFETY: preparation checked every piece's run and, before any
++            // thread is spawned, that the pieces ascend and share no host
++            // byte; parts are disjoint rows of the one window, each claimed
++            // once.
++            unsafe {
++                write_band(
++                    pieces,
++                    src,
++                    rect,
++                    rows,
++                    sink.map(|s| s as &mut dyn BandSink),
++                )
++            };
++        };
++        let parallel = self.bands_disjoint && threads > 1;
++        let mut spawned = 0usize;
++        std::thread::scope(|scope| {
++            let mut handles: [Option<std::thread::ScopedJoinHandle<'_, ()>>; BANDED_MAX_BANDS] =
++                Default::default();
++            if parallel {
++                for handle in handles.iter_mut().take(threads - 1) {
++                    match std::thread::Builder::new().spawn_scoped(scope, &worker) {
++                        Ok(started) => {
++                            *handle = Some(started);
++                            spawned += 1;
++                        }
++                        Err(_) => {
++                            crate::runtime::drain::note_store_route("native_image_band_serial_n");
++                            break;
++                        }
++                    }
++                }
++            }
++            worker();
++            for handle in handles.into_iter().flatten() {
++                if let Err(panic) = handle.join() {
++                    std::panic::resume_unwind(panic);
++                }
++            }
++        });
++        if claims.lock().map(|claim| claim.0).unwrap_or(0) < parts {
++            // Only a poisoned claim lock leaves parts unwritten.
++            return Err(R::Window { index: 0 });
++        }
++        Ok(BandedWrite {
++            threads,
++            parts,
++            spawned,
++        })
++    }
++
+     /// End views before storage/cache publication. The caller must end any
+     /// staging lease before this method, including on a failed source check.
+     pub(crate) fn complete<T>(
+@@ -509,12 +714,47 @@ pub(crate) fn prepare_mapping_rects<'a, H: HostMemory + HostOps>(
+         .try_reserve_exact(windows.len())
+         .map_err(|_| R::Allocation)?;
+     retained_windows.extend_from_slice(windows);
++    let bands_disjoint = writing
++        && windows.len() == 1
++        && windows[0].len >= BANDED_MIN_BYTES
++        && pieces_band_disjoint(&pieces);
+     Ok(PreparedMappingRectTransfer {
+         views,
+         pieces,
+         windows: retained_windows,
+         mapping_id,
+         writing,
++        bands_disjoint,
++    })
++}
++
++/// Whether one window's pieces ascend through it without overlapping and no
++/// two of them write the same host byte — what lets disjoint row bands of the
++/// window be written by several threads at once. Two guest pages naming one
++/// host page would make two bands race for it, so that refuses, as does a
++/// list too long to sort here.
++fn pieces_band_disjoint(pieces: &[Piece]) -> bool {
++    let ascending = pieces
++        .windows(2)
++        .all(|pair| pair[0].buffer_offset + pair[0].bytes.len() as usize <= pair[1].buffer_offset);
++    if !ascending {
++        return false;
++    }
++    let mut host: Vec<(usize, usize)> = Vec::new();
++    if host.try_reserve_exact(pieces.len()).is_err() {
++        return false;
++    }
++    host.extend(
++        pieces
++            .iter()
++            .map(|p| (p.bytes.host_ptr(), p.bytes.len() as usize)),
++    );
++    host.sort_unstable();
++    host.windows(2).all(|pair| {
++        pair[0]
++            .0
++            .checked_add(pair[0].1)
++            .is_some_and(|end| end <= pair[1].0)
+     })
+ }
+ 
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+index 73b9039..f34a420 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/mod.rs
+@@ -21,7 +21,9 @@ use crate::runtime::mapper;
+ mod planar_xr;
+ pub use planar_xr::*;
+ mod native_image;
+-pub(crate) use native_image::{prepare_native_image_write, NativeImageSource};
++pub(crate) use native_image::{
++    prepare_native_image_write, NativeImageSource, PreparedNativeImageWrite,
++};
+ pub use native_image::{
+     write_captured_native_image, NativeImageWriteRefusal, NativeImageWriteTarget,
+ };
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+index 407edae..6b647c5 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/native_image.rs
+@@ -9,8 +9,9 @@ use crate::protocol::pixel_format;
+ use crate::runtime::host::{GuestRamRegionsError, HostMemory, HostOps};
+ use crate::runtime::host_writes::WriteRail;
+ use crate::runtime::mapper::{
+-    self, MappingRectCopy, MappingRectPreparation, MappingRectWindow, MappingStorageIdentity,
+-    PreparedMappingRectTransfer, RectBatchRefusal, RectStride, RectViewSource, RunCopy,
++    self, BandSink, BandedWrite, MappingRectCopy, MappingRectPreparation, MappingRectWindow,
++    MappingStorageIdentity, PreparedMappingRectTransfer, RectBatchRefusal, RectStride,
++    RectViewSource, RunCopy,
+ };
+ 
+ #[derive(Debug)]
+@@ -112,6 +113,66 @@ impl<M: HostMemory + HostOps> PreparedNativeImageWrite<'_, M> {
+         self.finish(source, result)
+     }
+ 
++    /// [`Self::write_from`] on up to `threads` threads at once with streaming
++    /// stores, the rows cut into `parts` parts the threads claim in turn, each
++    /// part handing every block of rows it has just written to its entry of
++    /// `sinks` (one per part, or none). See
++    /// `PreparedMappingRectTransfer::write_rect_banded`.
++    ///
++    /// For the render Store's present conversion: it reads each block while
++    /// the block is still in the core's cache, instead of a second whole-frame
++    /// pass over the staging bytes beside the copy. The guest's bytes are
++    /// those [`Self::write_from`] leaves. The sinks get only source bytes, and
++    /// every band has returned before the source is dropped.
++    pub(crate) fn write_from_banded<S: NativeImageSource, K: BandSink>(
++        mut self,
++        source: S,
++        threads: usize,
++        parts: usize,
++        sinks: &mut [K],
++    ) -> Result<(usize, BandedWrite), NativeImageWriteRefusal> {
++        let mut banded = BandedWrite::default();
++        let result = {
++            let src = source.native_bytes();
++            self.copy_source_banded(src, threads, parts, sinks)
++                .map(|(bytes, done)| {
++                    banded = done;
++                    bytes
++                })
++        };
++        self.finish(source, result).map(|bytes| (bytes, banded))
++    }
++
++    fn copy_source_banded<K: BandSink>(
++        &mut self,
++        src: &[u8],
++        threads: usize,
++        parts: usize,
++        sinks: &mut [K],
++    ) -> Result<(usize, BandedWrite), NativeImageWriteRefusal> {
++        use NativeImageWriteRefusal as R;
++        let bytes = self.rect.packed();
++        if src.len() != bytes {
++            return Err(R::SourceLength {
++                need: bytes,
++                have: src.len(),
++            });
++        }
++        self.transfer
++            .check_backing(self.state)
++            .map_err(R::Transfer)?;
++        let banded = self
++            .transfer
++            .write_rect_banded(src, self.rect, threads, parts, sinks)
++            .map_err(R::Transfer)?;
++        Ok((bytes, banded))
++    }
++
++    /// The packed rows of this write: what a band sink is split by.
++    pub(crate) fn rows(&self) -> (usize, usize) {
++        (self.rect.row_count(), self.rect.row_bytes())
++    }
++
+     /// This block copies or reads guest memory only. Neither source failure
+     /// nor success may release host views while a lease is held.
+     fn copy_source(&mut self, src: &[u8]) -> Result<usize, NativeImageWriteRefusal> {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
+index d433c1f..dcff005 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mapping_write/tests.rs
+@@ -2854,3 +2854,297 @@ fn store_overlap_timing() {
+         );
+     }
+ }
++
++/// A scattered RGBA16F surface for the banded Store tests: `pages` guest pages
++/// of RAM at `base`, the mapping's page list naming them in `order`.
++#[cfg(test)]
++fn banded_store_surface(
++    page_shift: u32,
++    mid: u32,
++    (w, h): (u32, u32),
++    base: u64,
++    order: &[u64],
++) -> (DeviceState, FakeHost, u64, usize) {
++    use crate::protocol::pixel_format::MTL_FORMAT_RGBA16_FLOAT;
++    let mut state = DeviceState::new(DeviceId(1), page_shift);
++    let mut host = FakeHost::new();
++    let page = 1u64 << page_shift;
++    let ram_pages = order.iter().copied().max().unwrap_or(0) as usize + 1;
++    host.map_range(base, ram_pages * page as usize, 0xee);
++    state.map_surface(mid);
++    {
++        let m = state.mappings.get_mut(&mid).unwrap();
++        m.mapped = true;
++        m.mapping_internal = 0;
++        m.page_entries = order
++            .iter()
++            .map(|n| {
++                ((((base + n * page) >> page_shift) as u32) << PAGE_ENTRY_PFN_SHIFT)
++                    | PAGE_ENTRY_VALID
++            })
++            .collect();
++    }
++    assert!(state.set_mapping_geom(mid, w, h, MTL_FORMAT_RGBA16_FLOAT));
++    let (offset, stride, _) = {
++        let m = state.mappings.get(&mid).unwrap();
++        mapper_ref_texture_sample_window(m, w, h, MTL_FORMAT_RGBA16_FLOAT).unwrap()
++    };
++    (state, host, offset, stride as usize)
++}
++
++/// The span of a mapping read back through its page list.
++#[cfg(test)]
++fn banded_store_span(
++    host: &mut FakeHost,
++    page_shift: u32,
++    base: u64,
++    order: &[u64],
++    offset: u64,
++    span: usize,
++) -> Vec<u8> {
++    let page = 1usize << page_shift;
++    let mut guest = vec![0u8; span];
++    let mut at = 0usize;
++    while at < span {
++        let logical = offset as usize + at;
++        let (index, within) = (logical / page, logical % page);
++        let len = (page - within).min(span - at);
++        let gpa = base + order[index] * page as u64 + within as u64;
++        host.read_gpa(gpa, &mut guest[at..at + len]).unwrap();
++        at += len;
++    }
++    guest
++}
++
++/// Records every block of rows a band hands over.
++#[cfg(test)]
++struct RecordingSink {
++    blocks: Vec<(std::ops::Range<usize>, u64)>,
++}
++
++#[cfg(test)]
++impl crate::runtime::mapper::BandSink for RecordingSink {
++    fn rows(&mut self, packed: std::ops::Range<usize>, src: &[u8]) {
++        assert_eq!(packed.len(), src.len());
++        self.blocks
++            .push((packed, src.iter().map(|&b| u64::from(b)).sum()));
++    }
++}
++
++/// A large native Store written on one to four threads in one to 1100 parts,
++/// over a page list scattered through guest RAM: the guest's span ends up
++/// exactly as the one-thread copy leaves it — every row at its own offset,
++/// the padding between rows the guest's — and the parts' sinks between them
++/// see every packed byte once, in whole rows, each part its own rows in order.
++#[test]
++fn a_banded_native_store_lands_every_row_and_hands_each_block_to_its_band() {
++    use crate::model::PAGE_SHIFT_X86;
++    use crate::protocol::pixel_format::MTL_FORMAT_RGBA16_FLOAT;
++    let (w, h) = (1000u32, 1100u32);
++    let tight = w as usize * 8;
++    let base = 0x4000_0000u64;
++    let pages = (tight * h as usize * 2) >> PAGE_SHIFT_X86;
++    let mut order: Vec<u64> = (0..pages as u64).collect();
++    for i in 0..pages {
++        order.swap(i, (i * 7 + 3) % pages);
++    }
++    let src: Vec<u8> = (0..tight * h as usize)
++        .map(|i| (i as u32).wrapping_mul(2_654_435_761).rotate_right(13) as u8)
++        .collect();
++    for (threads, parts) in [(1usize, 1usize), (1, 5), (2, 2), (3, 24), (4, 32), (4, 1100)] {
++        let (mut state, mut host, offset, stride) =
++            banded_store_surface(PAGE_SHIFT_X86, 21, (w, h), base, &order);
++        let target = {
++            let m = state.mappings.get(&21).unwrap();
++            NativeImageWriteTarget::capture(21, m, w, h, MTL_FORMAT_RGBA16_FLOAT).unwrap()
++        };
++        let plan = target.prepared_source_plan(&state, &mut host).unwrap();
++        let writer = prepare_native_image_write(&mut state, &mut host, target, plan).unwrap();
++        assert_eq!(writer.rows(), (h as usize, tight));
++        let mut sinks: Vec<RecordingSink> = (0..parts)
++            .map(|_| RecordingSink { blocks: Vec::new() })
++            .collect();
++        let (bytes, banded) = writer
++            .write_from_banded(src.clone(), threads, parts, &mut sinks)
++            .unwrap();
++        assert_eq!(bytes, src.len());
++        assert_eq!((banded.threads, banded.parts), (threads, parts));
++        assert_eq!(banded.spawned, threads - 1, "the pages are disjoint");
++        let mut covered = 0usize;
++        for (index, sink) in sinks.iter().enumerate() {
++            let rows = crate::runtime::mapper::band_rows(h as usize, parts, index);
++            let mut at = rows.start * tight;
++            for (packed, sum) in &sink.blocks {
++                assert_eq!(packed.start, at, "part {index} hands its rows in order");
++                assert!(packed.len().is_multiple_of(tight), "whole rows");
++                let want: u64 = src[packed.clone()].iter().map(|&b| u64::from(b)).sum();
++                assert_eq!(*sum, want);
++                at = packed.end;
++            }
++            assert_eq!(at, rows.end * tight, "part {index} saw all its rows");
++            covered += at - rows.start * tight;
++        }
++        assert_eq!(covered, src.len());
++        let span = stride * (h as usize - 1) + tight;
++        let guest = banded_store_span(&mut host, PAGE_SHIFT_X86, base, &order, offset, span);
++        for row in 0..h as usize {
++            assert!(
++                guest[row * stride..row * stride + tight] == src[row * tight..(row + 1) * tight],
++                "parts={parts} row {row} differs"
++            );
++            if row + 1 < h as usize {
++                assert!(
++                    guest[row * stride + tight..(row + 1) * stride]
++                        .iter()
++                        .all(|&b| b == 0xee),
++                    "parts={parts} padding after row {row} was written"
++                );
++            }
++        }
++    }
++}
++
++/// Two guest pages of the list naming one host page would make two bands
++/// write the same bytes at once. The write then runs its bands one after
++/// another on the calling thread, and lands what the one-thread copy lands:
++/// the later page's bytes win, as they do there.
++#[test]
++fn a_page_list_that_names_one_page_twice_is_written_on_one_thread() {
++    use crate::model::PAGE_SHIFT_X86;
++    use crate::protocol::pixel_format::MTL_FORMAT_RGBA16_FLOAT;
++    let (w, h) = (512u32, 600u32);
++    let tight = w as usize * 8;
++    let base = 0x4000_0000u64;
++    let pages = (tight * h as usize + (64 << PAGE_SHIFT_X86)) >> PAGE_SHIFT_X86;
++    let mut order: Vec<u64> = (0..pages as u64).map(|n| n * 2).collect();
++    // The last page of the surface is the first one again.
++    let last = (tight * h as usize - 1) >> PAGE_SHIFT_X86;
++    order[last] = order[0];
++    let src: Vec<u8> = (0..tight * h as usize)
++        .map(|i| (i as u32).wrapping_mul(2_246_822_519).rotate_right(7) as u8)
++        .collect();
++    let land = |banded: bool| {
++        let (mut state, mut host, _, _) =
++            banded_store_surface(PAGE_SHIFT_X86, 23, (w, h), base, &order);
++        let target = {
++            let m = state.mappings.get(&23).unwrap();
++            NativeImageWriteTarget::capture(23, m, w, h, MTL_FORMAT_RGBA16_FLOAT).unwrap()
++        };
++        let plan = target.prepared_source_plan(&state, &mut host).unwrap();
++        let writer = prepare_native_image_write(&mut state, &mut host, target, plan).unwrap();
++        if banded {
++            let (_, done) = writer
++                .write_from_banded(src.clone(), 4, 32, &mut [] as &mut [RecordingSink])
++                .unwrap();
++            assert_eq!((done.threads, done.spawned), (4, 0));
++        } else {
++            writer.write_from(src.clone()).unwrap();
++        }
++        let mut ram = vec![0u8; ((order.iter().max().unwrap() + 1) as usize) << PAGE_SHIFT_X86];
++        host.read_gpa(base, &mut ram).unwrap();
++        ram
++    };
++    assert!(land(true) == land(false));
++}
++
++/// Timing, not a check: `cargo test --release -- --ignored --nocapture
++/// store_banded_timing`. The render Store of the vphone's front surface
++/// (1206x2622 RGBA16F, 16 KiB pages scattered through guest RAM) with its
++/// present conversion: the copy with the conversion beside it on another
++/// thread (the Store before banding) against the banded copy with the
++/// conversion in each band, for one to four bands, and the banded copy alone.
++/// Median of 31 runs each, alternating, caches evicted before each; wall
++/// clock on a shared host.
++#[cfg(feature = "backend-vulkan")]
++#[test]
++#[ignore]
++fn store_banded_timing() {
++    use crate::backend::vulkan::engine::store_capture::Stasher;
++    use crate::backend::vulkan::engine::{readback_bytes_into_bgra, ReadbackTexel};
++    use crate::protocol::pixel_format::{TexelLayout, MTL_FORMAT_RGBA16_FLOAT};
++    struct Borrowed<'a>(&'a [u8]);
++    impl NativeImageSource for Borrowed<'_> {
++        fn native_bytes(&self) -> &[u8] {
++            self.0
++        }
++    }
++    let (w, h) = (1206u32, 2622u32);
++    let tight = w as usize * 8;
++    let base = 0x8000_0000u64;
++    let pages = (tight * h as usize * 3 / 2) >> PAGE_SHIFT_ARM64E;
++    let mut order: Vec<u64> = (0..pages as u64).collect();
++    for i in 0..pages {
++        order.swap(i, (i * 7 + 3) % pages);
++    }
++    let (mut state, mut host, _, _) =
++        banded_store_surface(PAGE_SHIFT_ARM64E, 22, (w, h), base, &order);
++    let src: Vec<u8> = (0..tight * h as usize / 2)
++        .flat_map(|i| (0x2000u16 + (i as u16 % 0x1c00)).to_le_bytes())
++        .collect();
++    let mut bgra = vec![0u8; w as usize * h as usize * 4];
++    let texel = ReadbackTexel::Native(TexelLayout::Rgba16Float);
++    let mut run = |bands: usize, bgra: &mut Vec<u8>| -> u128 {
++        let target = {
++            let m = state.mappings.get(&22).unwrap();
++            NativeImageWriteTarget::capture(22, m, w, h, MTL_FORMAT_RGBA16_FLOAT).unwrap()
++        };
++        let plan = target.prepared_source_plan(&state, &mut host).unwrap();
++        let writer = prepare_native_image_write(&mut state, &mut host, target, plan).unwrap();
++        if bands == 0 {
++            let started = std::time::Instant::now();
++            let convert = |bytes: &[u8]| {
++                assert!(readback_bytes_into_bgra(texel, bytes, bgra, &|_| {}).is_some());
++            };
++            writer
++                .write_from_alongside(Borrowed(&src), Some(convert))
++                .unwrap();
++            started.elapsed().as_micros()
++        } else if bands >= 10 {
++            // The banded copy alone, with no conversion.
++            let started = std::time::Instant::now();
++            let threads = bands - 10;
++            let parts = crate::runtime::mapper::banded_parts(h as usize, threads);
++            writer
++                .write_from_banded(Borrowed(&src), threads, parts, &mut [] as &mut [RecordingSink])
++                .unwrap();
++            started.elapsed().as_micros()
++        } else {
++            let mut stasher = Stasher::begin(w, h);
++            let started = std::time::Instant::now();
++            let parts = crate::runtime::mapper::banded_parts(h as usize, bands);
++            let mut sinks = stasher.sinks(h as usize, tight, parts);
++            writer
++                .write_from_banded(Borrowed(&src), bands, parts, &mut sinks)
++                .unwrap();
++            started.elapsed().as_micros()
++        }
++    };
++    // A live Store's staging bytes come from the GPU and its guest pages were
++    // last touched a frame ago, so 96 MB of other writes before each run keep
++    // both out of the cache, as they are there.
++    let mut evict = vec![0u8; 96 << 20];
++    let mut runs: std::collections::BTreeMap<usize, Vec<u128>> = Default::default();
++    for _ in 0..31 {
++        for bands in [0usize, 1, 2, 3, 4, 11, 14] {
++            for (i, page) in evict.chunks_mut(4096).enumerate() {
++                page.fill(i as u8);
++            }
++            let us = run(bands, &mut bgra);
++            runs.entry(bands).or_default().push(us);
++        }
++    }
++    for (bands, mut us) in runs {
++        us.sort_unstable();
++        println!(
++            "store_banded_timing {} median_us={} p25_us={} p75_us={}",
++            match bands {
++                0 => "beside".to_string(),
++                10.. => format!("copy_only_bands={}", bands - 10),
++                _ => format!("bands={bands}"),
++            },
++            us[us.len() / 2],
++            us[us.len() / 4],
++            us[us.len() * 3 / 4]
++        );
++    }
++}
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+index 1335806..258b2ab 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/render_writeback/vulkan.rs
+@@ -208,44 +208,11 @@ fn store_native_float_surface<M: HostMemory + HostOps>(
+                 state, host, target, plan,
+             )
+             .map_err(R::Mapping)?;
+-            let read_started = std::time::Instant::now();
+-            let (readback, witness) =
+-                crate::backend::vulkan::engine::read_target_texels_consumable_witnessed(identity)
+-                    .map_err(R::Read)?;
+-            crate::runtime::drain::note_store_route_us(
+-                "native_float_readback_us",
+-                read_started.elapsed().as_micros() as u64,
+-            );
+-            if readback.texel.native_layout() != Some(TexelLayout::Rgba16Float)
+-                || readback.bytes().len() != expected_bytes
+-            {
+-                // The source was declared after the writer: Drop ends its
+-                // staging lease before failed preparation releases guest views.
+-                return Err(R::SourceShape);
+-            }
+-            // The present capture that follows would read this same resident
+-            // back again. Convert these bytes for it now, while they are in
+-            // hand, when the display needs CPU frames and has been presenting
+-            // this surface; `seal` at the call site licenses them once the
+-            // Store has landed and stamped the resident. The conversion runs
+-            // beside the guest publish below rather than before it: both only
+-            // read the staging bytes, and the writer joins it before it drops
+-            // the readback.
+-            let texel = readback.texel;
+-            let convert = stash.then_some(move |bytes: &[u8]| {
+-                crate::backend::vulkan::engine::store_capture::stash(witness, texel, bytes);
+-            });
+-            let leased = readback.is_leased();
+-            let publish_started = std::time::Instant::now();
+-            // Ownership, never readback.bytes(), crosses this boundary. The
+-            // writer drops the source before view release/currency publication.
+-            let bytes = writer
+-                .write_from_alongside(readback, convert)
+-                .map_err(R::Mapping)?;
+-            crate::runtime::drain::note_store_route_us(
+-                "native_float_publish_us",
+-                publish_started.elapsed().as_micros() as u64,
+-            );
++            let (bytes, leased) = if banded_publish_disabled() {
++                publish_beside_conversion(writer, identity, expected_bytes, stash)?
++            } else {
++                publish_banded(writer, identity, expected_bytes, width, height, stash)?
++            };
+             if leased {
+                 crate::runtime::drain::note_store_route("native_float_store_leased_n");
+                 crate::runtime::drain::note_store_route_n(
+@@ -297,6 +264,160 @@ fn store_native_float_surface<M: HostMemory + HostOps>(
+     Ok(bytes)
+ }
+ 
++/// Whether [`crate::config::STORE_PUBLISH_BANDS`] is switched off, read once.
++fn banded_publish_disabled() -> bool {
++    use std::sync::OnceLock;
++    static OFF: OnceLock<bool> = OnceLock::new();
++    *OFF.get_or_init(|| {
++        let (state, value) = crate::config::read(crate::config::STORE_PUBLISH_BANDS);
++        match state {
++            crate::config::Switch::Off => {
++                crate::observe::off("store_publish reason=store_publish_bands_disabled_by_env");
++                true
++            }
++            crate::config::Switch::Unrecognized => {
++                crate::observe::fail(format!(
++                    "store_publish reason=store_publish_bands_env_unrecognized value={}",
++                    value.unwrap_or_default()
++                ));
++                false
++            }
++            crate::config::Switch::On | crate::config::Switch::Unset => false,
++        }
++    })
++}
++
++/// Threads for a Store of `bytes`: up to `BANDED_MAX_BANDS`, as many as the
++/// host has, and one below a mebibyte, where starting threads would cost more
++/// than the copy.
++fn publish_bands(bytes: usize) -> usize {
++    use std::sync::OnceLock;
++    static THREADS: OnceLock<usize> = OnceLock::new();
++    if bytes < 1 << 20 {
++        return 1;
++    }
++    *THREADS.get_or_init(|| {
++        std::thread::available_parallelism()
++            .map(usize::from)
++            .unwrap_or(1)
++            .clamp(1, crate::runtime::mapper::BANDED_MAX_BANDS)
++    })
++}
++
++/// The banded Store: read the resident back, then copy it into the guest's
++/// pages in row bands written at once, each band converting its rows for the
++/// present's stash right after copying them. The stash buffer is taken before
++/// the readback, so nothing is allocated while the staging lease is held, and
++/// the frame is stashed after the lease has ended.
++fn publish_banded<M: HostMemory + HostOps>(
++    writer: crate::runtime::mapping_write::PreparedNativeImageWrite<'_, M>,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++    expected_bytes: usize,
++    width: u32,
++    height: u32,
++    stash: bool,
++) -> Result<(usize, bool), NativeFloatStoreRefusal> {
++    use crate::backend::vulkan::engine::store_capture;
++    use crate::protocol::pixel_format::TexelLayout;
++    use NativeFloatStoreRefusal as R;
++    let threads = publish_bands(expected_bytes);
++    let (row_count, row_bytes) = writer.rows();
++    let parts = crate::runtime::mapper::banded_parts(row_count, threads);
++    let mut stasher = stash.then(|| store_capture::Stasher::begin(width, height));
++    let mut sinks = match stasher.as_mut() {
++        Some(stasher) => stasher.sinks(row_count, row_bytes, parts),
++        None => Vec::new(),
++    };
++    if stash && sinks.is_empty() {
++        crate::runtime::drain::note_store_route("store_capture_band_shape_n");
++    }
++    let read_started = std::time::Instant::now();
++    let (readback, witness) =
++        crate::backend::vulkan::engine::read_target_texels_consumable_witnessed(identity)
++            .map_err(R::Read)?;
++    crate::runtime::drain::note_store_route_us(
++        "native_float_readback_us",
++        read_started.elapsed().as_micros() as u64,
++    );
++    if readback.texel.native_layout() != Some(TexelLayout::Rgba16Float)
++        || readback.bytes().len() != expected_bytes
++    {
++        // The source was declared after the writer: Drop ends its staging
++        // lease before failed preparation releases guest views.
++        return Err(R::SourceShape);
++    }
++    let leased = readback.is_leased();
++    let publish_started = std::time::Instant::now();
++    // Ownership, never readback.bytes(), crosses this boundary. The writer
++    // drops the source before view release/currency publication.
++    let (bytes, banded) = writer
++        .write_from_banded(readback, threads, parts, &mut sinks)
++        .map_err(R::Mapping)?;
++    crate::runtime::drain::note_store_route_us(
++        "native_float_publish_us",
++        publish_started.elapsed().as_micros() as u64,
++    );
++    crate::runtime::drain::note_store_route_n("native_image_band_parts_n", banded.parts as u64);
++    crate::runtime::drain::note_store_route_n("native_image_band_threads_n", banded.spawned as u64);
++    drop(sinks);
++    if let Some(stasher) = stasher {
++        stasher.commit(witness);
++    }
++    Ok((bytes, leased))
++}
++
++/// The Store before banding (`REIMS_VGPU_STORE_PUBLISH_BANDS=off`): one
++/// thread copies the readback into the guest's pages while another converts
++/// the whole readback for the present's stash.
++fn publish_beside_conversion<M: HostMemory + HostOps>(
++    writer: crate::runtime::mapping_write::PreparedNativeImageWrite<'_, M>,
++    identity: &crate::backend::vulkan::engine::TargetIdentity,
++    expected_bytes: usize,
++    stash: bool,
++) -> Result<(usize, bool), NativeFloatStoreRefusal> {
++    use crate::protocol::pixel_format::TexelLayout;
++    use NativeFloatStoreRefusal as R;
++    let read_started = std::time::Instant::now();
++    let (readback, witness) =
++        crate::backend::vulkan::engine::read_target_texels_consumable_witnessed(identity)
++            .map_err(R::Read)?;
++    crate::runtime::drain::note_store_route_us(
++        "native_float_readback_us",
++        read_started.elapsed().as_micros() as u64,
++    );
++    if readback.texel.native_layout() != Some(TexelLayout::Rgba16Float)
++        || readback.bytes().len() != expected_bytes
++    {
++        // The source was declared after the writer: Drop ends its
++        // staging lease before failed preparation releases guest views.
++        return Err(R::SourceShape);
++    }
++    // The present capture that follows would read this same resident
++    // back again. Convert these bytes for it now, while they are in
++    // hand, when the display needs CPU frames and has been presenting
++    // this surface; `seal` at the call site licenses them once the
++    // Store has landed and stamped the resident. The conversion runs
++    // beside the guest publish below rather than before it: both only
++    // read the staging bytes, and the writer joins it before it drops
++    // the readback.
++    let texel = readback.texel;
++    let convert = stash.then_some(move |bytes: &[u8]| {
++        crate::backend::vulkan::engine::store_capture::stash(witness, texel, bytes);
++    });
++    let leased = readback.is_leased();
++    let publish_started = std::time::Instant::now();
++    // Ownership, never readback.bytes(), crosses this boundary. The
++    // writer drops the source before view release/currency publication.
++    let bytes = writer
++        .write_from_alongside(readback, convert)
++        .map_err(R::Mapping)?;
++    crate::runtime::drain::note_store_route_us(
++        "native_float_publish_us",
++        publish_started.elapsed().as_micros() as u64,
++    );
++    Ok((bytes, leased))
++}
++
+ /// Convert a native-float Store's readback into the present's stash when a
+ /// present capture is likely to want it: reuse is on, the display needs CPU
+ /// frames, and this mapping was presented recently at this geometry.
