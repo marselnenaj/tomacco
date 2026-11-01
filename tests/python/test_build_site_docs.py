@@ -94,7 +94,8 @@ class RendersEveryDocument(unittest.TestCase):
             body = re.sub(r"<pre>.*?</pre>", "", page.body, flags=re.S)
             body = re.sub(r"<code>.*?</code>", "", body, flags=re.S)
             with self.subTest(page=page.key):
-                self.assertNotRegex(body, r"\*\*\S|\]\([^)]*\.md")
+                # **/ is a path glob in operation descriptions, not bold text.
+                self.assertNotRegex(body, r"\*\*(?!/)\S|\]\([^)]*\.md")
 
     def test_images_are_copied(self):
         self.assertTrue((self.out / "images" / "tutorial-android-counter.png").is_file())
