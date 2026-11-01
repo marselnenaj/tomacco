@@ -1660,6 +1660,11 @@ class VirtualPhoneOperations(Isolated):
         self.assertFalse(status["guest_state_known"])
         self.assertFalse(status["guest_running"])
         self.assertIsNone(status["busy"])
+        # Nothing is left halfway, nothing has finished yet, and the host's
+        # load is reported on every call (this host's card may report nothing).
+        self.assertEqual((status["next"], status["last_run"]), (None, None))
+        self.assertEqual(status["host"]["pressure"]["measure"], "psi")
+        self.assertTrue(status["host"]["gpu"] is None or status["host"]["gpu"]["source"] == "sysfs")
 
     def test_a_start_whose_disk_copy_cannot_fit_is_refused_before_any_job(self):
         base = self.root / "base"
@@ -1737,6 +1742,8 @@ class VirtualPhoneOperations(Isolated):
         self.assertEqual(dispatch("ios.virtual.status")["directory"], str(directory))
         self.assertEqual(dispatch("ios.virtual.configure", {"directory": str(directory)})["model"], "16")
         job = dispatch("ios.virtual.start", {"open_app": False})
+        # A start that boots says first what it should know about the host.
+        self.assertIsInstance(job["warnings"], list)
         argv = job["plan"]["steps"][0]["argv"]
         self.assertEqual(argv[argv.index("--model"):], ["--model", "16", "--unlock", "swipe"])
         jobs.wait(job["id"], 60)

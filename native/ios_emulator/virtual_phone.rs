@@ -576,6 +576,7 @@ pub fn apps(_a: &Value) -> Result {
 /// The disks a start copies from its base, in the order it copies them
 /// (`prepare` in tools/prepare_ios_guest_tools.py).
 use super::disk_overlay;
+mod host_load;
 pub mod states;
 
 /// The disks a start copies besides the root disk, which is a copy, an
@@ -1303,6 +1304,9 @@ pub fn status(_a: &Value) -> Result {
         // What to call next when a start or stop ended halfway: resume the
         // running guest instead of a new start, or record how a guest ended.
         "next":next_step(&state,running,ended,busy.as_ref()),
+        // The graphics card's memory against the guard's limit, and the
+        // host's I/O and memory pressure, on every call.
+        "host":host_load::host(guest.as_ref()),
     }))
 }
 
@@ -1368,7 +1372,8 @@ pub fn start(a: &Value) -> Result {
     // no copy; any other start is refused here when its copy cannot fit.
     let directory = directory()?;
     let (profile, state) = records(&directory)?;
-    if jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state) {
+    let boots = jobs::active_exclusive(EXCLUSIVE)?.is_none() && !guest_is_running(&state);
+    if boots {
         refuse_short_disk(&start_disk(
             &profile,
             &state,
@@ -1378,13 +1383,20 @@ pub fn start(a: &Value) -> Result {
     }
     // Preparation, a boot of many minutes and the unlock each have their own
     // bound inside the script; this is the outer limit of the whole job.
-    submit(
+    let mut job = submit(
         "ios.virtual.start",
         "start",
         "Start virtual iOS device",
         4800,
         a,
-    )
+    )?;
+    // A start that boots a guest says first when the card is already short
+    // of memory or the host under pressure; it is not refused for either.
+    if boots {
+        let host = host_load::host(None);
+        job["warnings"] = json!(host_load::warnings(&host["gpu"], &host["pressure"]));
+    }
+    Ok(job)
 }
 
 /// One step from a built bundle to the app on the running phone: inspected

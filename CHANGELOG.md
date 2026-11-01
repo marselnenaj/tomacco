@@ -157,6 +157,10 @@ operations and their JSON results.
     resume with `ios.virtual.start`, which adopts the still-running guest without a new disk copy, with
     `{"open_app":false}` when an app launch's outcome is unknown, after unlocking a passcode, or stop again. Unit-tested
     over the start's phases, not tried on a live phone.
+  - `host` in `ios.virtual.status` shows the graphics card's memory against the graphics memory guard's limit on every
+    call, from the running guest's own guard checks (which the launcher now publishes as `gpu-memory.json`) or from
+    /sys, and the host's I/O and memory pressure. A start that boots returns `warnings` when the card is already low or
+    the host under pressure. Unit-tested with recorded values, not watched beside a live guest.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
 

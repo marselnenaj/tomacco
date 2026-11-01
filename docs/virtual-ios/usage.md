@@ -184,6 +184,17 @@ most 1.7 GiB over 36 app launches on a 16 GiB card. A longer or heavier session 
 
 The guard's trip has unit tests only. It has not been seen to trip on a live guest.
 
+**Watch it before it trips.** `host.gpu` in `ios.virtual.status` has the card's `used_bytes`, `total_bytes` and
+`free_bytes` on every call, with `guard_limit_free_bytes` (the eighth the guard keeps) and a `level`: `ok`, `low` under a
+quarter free, `short` under the guard's limit. While a phone runs, `source` is `guard` and the numbers are the guard's own
+last check on the card that guest renders on, with `short_checks` (two in a row stop the session) and `guard_stopping`;
+otherwise `source` is `sysfs`, the card with the most memory, as `ios.virtual.host_check` reads it. `host.pressure` has the
+host's I/O and memory pressure (Linux PSI) against the limits a start waits for, and `blocked` names those over them.
+
+A start that boots a guest returns `warnings` when the card is already `low` or `short`, or the host is under pressure.
+They do not refuse the start. The numbers and warnings are unit-tested with recorded values; the status has not been
+watched beside a live guest yet.
+
 ## Choose a model
 
 ```sh

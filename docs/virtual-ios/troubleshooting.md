@@ -161,7 +161,8 @@ has not been surveyed yet.
 | `ios_control_ended` | The emulator has exited while its job finishes hashing the disks. | Wait for the job. Do not cancel it. |
 | `ios_guest_starting` | The guest service is not up yet. | Wait, and watch `ios.virtual.status`. |
 | `ios_frame_file_unavailable` | No private runtime directory exists, or an uncompressed frame would exceed 64 MiB. | Use `frame` with `transport:"inline"`. |
-| The phone ended by itself, `guest_gpu_memory_stop: true` | Under an eighth of the graphics card stayed free, so the [guard](usage.md#the-graphics-memory-guard) stopped the session. | Close other graphics work and start again. |
+| The phone ended by itself, `guest_gpu_memory_stop: true` | Under an eighth of the graphics card stayed free, so the [guard](usage.md#the-graphics-memory-guard) stopped the session. | Close other graphics work and start again. Watch `host.gpu` in `ios.virtual.status`: `level` turns `low` before the guard acts. |
+| A start answers with `warnings` | The graphics card is already short of memory, or the host is under I/O or memory pressure. | Close other graphics or disk-heavy work. The start goes on anyway; under pressure it waits up to five minutes and then refuses. |
 | The phone ended by itself, `guest_gpu_memory_stop: false` | The most likely reason is the [24-hour limit](usage.md#time-and-disk-limits). `guest_saved` says whether it closed cleanly. | Start again. An unsaved run is not used as a base. |
 
 ## Stopping
