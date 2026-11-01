@@ -95,6 +95,14 @@ What to know before changing it:
   the session [stops the careful way](usage.md#the-graphics-memory-guard) instead (`tools/ios_host_pressure.py`,
   `tools/run_ios_paravirt.py`).
 - **Frames.** `ios.emulator.control` `frame` with `transport:"file"` writes an uncompressed PPM into a private, memory-backed directory, and reports whether the picture changed. A viewer can skip the reload then.
+- **A frame's cost on the drain.** With no host window carrying the frame, each frame's render Store reads the RGBA16F front
+  surface back, converts it into the BGRA8 frame the present and the frame mailbox use, and copies it into the guest's
+  pages; the conversion runs beside the copy. The renderer's census in `renderer/fail.log` times each part (`store_routes`:
+  `native_float_readback_us`, `store_capture_convert_us`, `native_float_publish_us`; `frame_mailbox`: `offer_us`).
+- **No GPU access to guest RAM on the development host.** Every session there logs `host_ram_import ... ok=false`
+  (`ERROR_INVALID_EXTERNAL_HANDLE`) for each 2 GiB block of guest RAM, so the renderer's GPU-direct writeback and gather
+  rails are never used and Stores copy on the CPU. Guest RAM is shared memory there, for the guest channel's
+  vhost-user device; that the driver refuses to import shared memory is a likely cause, not a measured one.
 
 Device contracts: [reims-device-capabilities.md](../../integrations/ios-emulator/reims-device-capabilities.md),
 [reims-display-panel.md](../../integrations/ios-emulator/reims-display-panel.md),

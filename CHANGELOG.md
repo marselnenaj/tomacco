@@ -248,6 +248,13 @@ operations and their JSON results.
   0.5 GiB of data, the copy took 3.9 s instead of 13.6 s and the launcher's hash 5.4 s instead of 32.4 s, with the same
   SHA-256. The start's space check and `start_disk.needed_bytes` count the data the base's disks hold instead of their
   full size, so a start fits on a fuller disk. Not run on a live phone.
+- Virtual iPhone renderer: less work per frame on the drain, under the lock the guest's processors also wait for. The
+  render Store converts the frame for the present beside its copy into the guest's pages instead of before it; the frame
+  mailbox's hand-off copy runs in up to four bands; and the sampled-texture cache's content digest, which only picks the
+  candidate a byte compare then decides, is a four-lane multiply hash instead of two SipHash passes. A recorded live run
+  had spent about 1.9 ms a frame on that conversion, 2.3 ms on that copy, 1.5 ms on the hand-off and up to 305 ms a
+  second on digests. Offline on the development host: conversion plus copy 6.0-7.0 ms against 3.8-4.4 ms side by side,
+  the hand-off 1.1-1.4 ms against 0.3-0.5 ms, a 2 MB digest 0.55 ms against 0.09 ms. Not measured on a live phone.
 - The virtual iOS device's troubleshooting guide opens with a table of every error code it returns, with what each
   means and what to do. A test fails when a code there or in a symptom does not exist in the code, or when a code the
   code returns is missing from the table.
