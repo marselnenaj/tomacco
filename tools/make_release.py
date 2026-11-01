@@ -276,7 +276,10 @@ def build_on_arm_host(commands, root, host, prefix, version, path=None, director
     # The build directory stays inside the tree, where Cargo finds the vendored crates' .cargo/config.toml.
     on_host(f"cd -- {quote(tree)}", "cmake -S . -B build-product -G Ninja -DCMAKE_BUILD_TYPE=Release",
             "cmake --build build-product")
-    on_host(f"cd -- {quote(tree)}", f"ctest --test-dir build-product --output-on-failure --no-tests=error -R {quote(tests)}")
+    # One retry: three of the desktop's input tests failed once in a full run on a slow ARM laptop and
+    # passed alone and in the next full run. A real failure fails twice.
+    on_host(f"cd -- {quote(tree)}", "ctest --test-dir build-product --output-on-failure --no-tests=error "
+            f"--repeat until-pass:2 -R {quote(tests)}")
     on_host(f"cd -- {quote(tree)}", "cmake --build build-product --target package")
     fetched = root / ARM_BUILD
     if not commands.dry_run:

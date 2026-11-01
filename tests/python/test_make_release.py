@@ -211,7 +211,7 @@ class MakeRelease(unittest.TestCase):
                  "scp -o BatchMode=yes -q " + str(self.root / "dist/tomacco-1.2.3-source.tar.gz") + " builder@arm:tomacco-build-release-1.2.3/",
                  f"printf '%s  %s\\n' {source} tomacco-1.2.3-source.tar.gz | sha256sum -c -",
                  "cmake -S . -B build-product -G Ninja -DCMAKE_BUILD_TYPE=Release", "cmake --build build-product",
-                 "ctest --test-dir build-product --output-on-failure --no-tests=error -R '^(backend|desktop-ui|native-display)$'",
+                 "ctest --test-dir build-product --output-on-failure --no-tests=error --repeat until-pass:2 -R '^(backend|desktop-ui|native-display)$'",
                  "cmake --build build-product --target package",
                  "builder@arm:tomacco-build-release-1.2.3/tomacco-1.2.3-source/build-product/tomacco-1.2.3-Linux-aarch64.tar.gz.sha256",
                  "pkeyutl -sign", "gh release create"]
@@ -416,7 +416,7 @@ esac
         self.assertTrue(fetched.with_name(package + ".sha256").is_file())
         lines = log.read_text().splitlines()
         self.assertEqual(lines[0], "cmake -S . -B build-product -G Ninja -DCMAKE_BUILD_TYPE=Release SOURCE_DATE_EPOCH=1700000000")
-        self.assertIn("ctest --test-dir build-product --output-on-failure --no-tests=error -R ^(backend|desktop-ui|native-display)$", lines)
+        self.assertIn("ctest --test-dir build-product --output-on-failure --no-tests=error --repeat until-pass:2 -R ^(backend|desktop-ui|native-display)$", lines)
         self.assertEqual(lines[-1], "cmake --build build-product --target package SOURCE_DATE_EPOCH=1700000000")
         # A tarball that does not match on the host stops there.
         (dist / "tomacco-1.2.3-source.tar.gz.sha256").write_text("0" * 64 + "  tomacco-1.2.3-source.tar.gz\n")
