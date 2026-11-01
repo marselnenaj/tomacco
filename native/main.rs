@@ -45,6 +45,7 @@ mod mcp;
 mod mcp_consent;
 mod mcp_tools;
 mod network_capture;
+mod omarchy;
 mod package_updates;
 mod perf;
 mod play_store;
@@ -105,7 +106,7 @@ struct Options {
 impl Options {
     const FLAGS: &[&str] = &["--names", "--pretty", "--compact", "--wait", "--dry-run"];
     /// Commands that parse their own arguments.
-    const OWN: &[&str] = &["setup", "update", "uninstall", "verify", "mcp"];
+    const OWN: &[&str] = &["setup", "update", "uninstall", "verify", "omarchy", "mcp"];
     /// What every command that prints an envelope takes.
     const OUTPUT: &[&str] = &["--pretty", "--compact"];
     fn parse(args: Vec<String>) -> (Vec<String>, Options) {
@@ -321,6 +322,14 @@ Usage:
   tomaccoctl uninstall
                     Remove this installation; keeps your data and the files
                     you changed, and prints how to undo it.
+  tomaccoctl omarchy [status|repair|screenshot [--quiet]|notify [on|off]] [--json]
+                    On an Omarchy desktop: status lists the panel, window
+                    rules, keys, menu entries and agent skill and what is
+                    outdated or missing (exit 1 then); repair installs those
+                    again; screenshot saves the connected device where Omarchy
+                    keeps screenshots and copies it; notify on sends a
+                    notice when a job of 15 s or more ends with no desktop
+                    open.
   tomaccoctl verify FILE [--sig FILE.sig] [--sha256 FILE.sha256] [--json]
                     Check a downloaded release file against its checksum and
                     its Ed25519 signature with the release keys built into
@@ -391,6 +400,7 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         Some("update") => return update::update_command(&args[1..]),
         Some("uninstall") => return update::uninstall_command(&args[1..]),
         Some("verify") => return verify::command(&args[1..]),
+        Some("omarchy") => return omarchy::command(&args[1..]),
         Some("mcp") => {
             guard::enter(guard::Channel::Mcp, mcp_policy(&args[1..])?);
             mcp::serve(std::io::stdin().lock(), std::io::stdout())?;

@@ -280,7 +280,9 @@ in the background** (*Wenn ein Auftrag im Hintergrund endet*). The desktop sends
 the notification to the desktop's notification service over D-Bus
 (`org.freedesktop.Notifications`); a build without Qt D-Bus sends none. On
 Omarchy the panel can notify about builds too; turn one of them off if you get
-both.
+both. For jobs started from a terminal or by an agent with no desktop open,
+`tomaccoctl omarchy notify on` sends the notice (see
+[Omarchy keys, menu and commands](#omarchy-keys-menu-and-commands)).
 
 ## Agents and tools
 
@@ -434,6 +436,9 @@ booting, with a startup screen, and attaches the real stream as soon as Android
 is up. The Omarchy panel uses this: its start button boots the emulator without
 the emulator's own window and shows only the phone.
 
+Screenshots go to `OMARCHY_SCREENSHOT_DIR` on Omarchy when it is set, else to the Pictures folder, as
+Omarchy's own screenshots do; elsewhere they go to `Pictures/Tomacco`.
+
 On Omarchy the installer adds a Hyprland rule that keeps the device window
 floating without border, shadow or blur. With GPU rendering the picture is cut
 to the frame's corner radius; the software renderer keeps the square picture.
@@ -474,6 +479,55 @@ The shell compiles a plugin file once per URL and keeps it until it restarts,
 so the installer writes the panel into a directory named after its content and
 points the manifest there. The running shell then loads an upgrade within about
 a second; no restart is needed. Earlier copies of the panel are removed.
+
+The panel takes the shell theme's accent colour for its live and busy marks where that colour stands out from the
+bar's text (at least 1.6:1) and reads on the bar's background (at least 3:1), and keeps Tomacco's red otherwise.
+`"themeAccent": false` in the panel's bar entry, or its widget setting, keeps the red. Its other colours already
+come from the shell. The detached device window keeps the device's own frame: the app draws it, and the Hyprland
+rule above adds nothing around it.
+
+## Omarchy keys, menu and commands
+
+`install.py --omarchy` and `tomaccoctl _install --omarchy` also add Tomacco to Omarchy's menu, under
+Trigger, Tomacco: open the workspace, devices and emulators, builds and jobs, start the virtual iPhone, the
+device window and a device screenshot. The entries sit between two comment lines in
+`~/.config/omarchy/extensions/omarchy-menu.jsonc`, the file Omarchy reads beside its own menu, and the rest of
+the file is left as it is. A file that is not a JSON object, or that wraps its entries in `"items"`, is not
+touched. `--no-omarchy-menu` leaves the menu alone. The installer journals the change; `--uninstall` and
+`--rollback` take the entries out again, and a file that held only them goes too. The virtual iPhone and device
+window entries show only while the panel is installed, because they use its IPC.
+
+`--omarchy-bindings` adds three keys as `~/.config/hypr/tomacco-bindings.lua`, required from `hyprland.lua`
+(like the window rules):
+
+| Keys | Does |
+| --- | --- |
+| Super+Ctrl+Shift+T | Opens the workspace (`desktop.open`) |
+| Super+Ctrl+Shift+P | Opens the live device as a window (the panel's `window` command) |
+| Super+Ctrl+Shift+S | Saves and copies a device screenshot (`tomaccoctl omarchy screenshot`) |
+
+Omarchy's own bindings use no key with Super, Ctrl and Shift together and a letter, which is why these sit there;
+a test reads the bindings Omarchy ships and fails if one of these appears in them. Change the keys in that file.
+`--update` writes the file again only where it exists, so keep your own keys in `bindings.lua`.
+
+`tomaccoctl omarchy` is for this desktop:
+
+- `tomaccoctl omarchy status` (the default) lists the panel, window rules, keys, menu entries and agent skill as
+  `ok`, `outdated`, `missing`, `disabled`, `unlinked` or `not_installed`, and the notification setting. It exits 1
+  when something installed is outdated, missing or disabled, and `--json` prints the same as JSON.
+- `tomaccoctl omarchy repair` installs those again from the copies the installation keeps in
+  `~/.local/lib/tomacco`, in one journalled run that `_install --rollback` undoes. It needs no package.
+- `tomaccoctl omarchy screenshot` saves the connected device in `OMARCHY_SCREENSHOT_DIR` when Omarchy has that set,
+  else in the Pictures folder of `~/.config/user-dirs.dirs`, as `<device>-<date>-<time>.png`, copies it with
+  `wl-copy` and sends a notification with `notify-send`. The desktop's own screenshots go to the same folder on
+  Omarchy, instead of `Pictures/Tomacco`.
+- `tomaccoctl omarchy notify on` sends a notification through `notify-send` (Omarchy's notification service) when a
+  job of 15 seconds or more succeeds, fails or times out while no Tomacco desktop is open: a build an agent or a
+  terminal started, say. It is off by default and stored in `settings.json` as `notifications.jobs`. With the
+  desktop open, the desktop notifies, and the panel's build notices are separate, so use one of them.
+
+All of this ran in a scratch home directory and in unit tests, and the key, menu and panel files were read against
+Omarchy's shipped sources. It has not been tried in a live Omarchy session.
 
 ## Toolchains and platform setup
 

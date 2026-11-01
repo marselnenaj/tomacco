@@ -15,6 +15,10 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("replay", "Replay a session log"),
     ("update", "Check for and install a new release"),
     ("uninstall", "Remove this installation"),
+    (
+        "omarchy",
+        "Omarchy integration: status, repair, screenshot, notifications",
+    ),
     ("verify", "Check a release file's checksum and signature"),
     ("completions", "Print a shell completion script"),
 ];

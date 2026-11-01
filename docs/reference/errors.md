@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 462 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -273,6 +273,7 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `ndk_missing` | Something the request names does not exist or is not set up. | Install an NDK with android.sdk_install and set settings.configure android_ndk. |
 | `no_coverage_reports` | No JaCoCo or Kover XML report was found where Gradle writes them. | Run the tests with coverage first (project.execute coverage true), or pass the report path. |
 | `no_devices` | No Android device is connected. | Start an emulator with android.avd_start or connect a phone, then check device.list. |
+| `no_live_device` | tomaccoctl omarchy screenshot found no connected device to capture. | Connect a device or start an emulator with runtime.start or the panel, then try again. |
 | `no_test_results` | The request was refused; the message says why. | Run the tests first: project.execute with action test or instrumented-test, or testing.run. |
 | `not_a_run_directory` | The directory is not a testing.run output directory. | Pass the directory a testing.run job wrote (its report.json is there). |
 | `not_android_project` | No Android Gradle build in this project. | Pass the project root that holds settings.gradle(.kts), or its android/ directory. |
@@ -289,6 +290,7 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `notification_not_snoozed` | Android did not snooze … | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `off_screen` | (…, …) lies outside the …x… screen. | Use coordinates inside the screen size the message gives. |
 | `offline` | The Maven repositories cannot be reached: … did not resolve. | Connect to the network, or try again later. |
+| `omarchy_repair_unavailable` | tomaccoctl omarchy repair needs the panel's sources, which the installation keeps beside the program, and found none: this installation is from before they were kept. | Run the installer of a release package with --omarchy once; later repairs need no package. |
 | `operation_not_found` | Unknown operation: … | Use the operation the remedy suggests; tomaccoctl schema --names lists every operation. |
 | `opt_in_required` | A network capture records traffic, so it starts only when asked for explicitly. | Pass opt_in true to android.network_capture start. |
 | `output_exists` | The request was refused; the message says why. | Choose a new output path, or move the old one aside. |

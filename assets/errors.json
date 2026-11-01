@@ -1067,6 +1067,10 @@
     "cause": "No Android device is connected.",
     "remedy": "Start an emulator with android.avd_start or connect a phone, then check device.list."
   },
+  "no_live_device": {
+    "cause": "tomaccoctl omarchy screenshot found no connected device to capture.",
+    "remedy": "Connect a device or start an emulator with runtime.start or the panel, then try again."
+  },
   "no_test_results": {
     "cause": "The request was refused; the message says why.",
     "remedy": "Run the tests first: project.execute with action test or instrumented-test, or testing.run."
@@ -1130,6 +1134,10 @@
   "offline": {
     "cause": "The Maven repositories cannot be reached: … did not resolve.",
     "remedy": "Connect to the network, or try again later."
+  },
+  "omarchy_repair_unavailable": {
+    "cause": "tomaccoctl omarchy repair needs the panel's sources, which the installation keeps beside the program, and found none: this installation is from before they were kept.",
+    "remedy": "Run the installer of a release package with --omarchy once; later repairs need no package."
   },
   "operation_not_found": {
     "cause": "Unknown operation: …",

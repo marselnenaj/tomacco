@@ -48,6 +48,13 @@ const DOCUMENTS: &str = ".local/share/doc/tomacco";
 const SHELL_CONFIG: &str = ".config/omarchy/shell.json";
 const HYPR_CONFIG: &str = ".config/hypr/hyprland.lua";
 const HYPR_RULES_FILE: &str = ".config/hypr/tomacco.lua";
+const HYPR_BINDINGS_FILE: &str = ".config/hypr/tomacco-bindings.lua";
+/// Omarchy's menu reads the user's own entries from this file, beside its
+/// defaults. Tomacco's entries sit between two comment lines.
+const MENU_FILE: &str = ".config/omarchy/extensions/omarchy-menu.jsonc";
+/// Where an installation keeps the panel's sources, so `tomaccoctl omarchy
+/// repair` can install the panel again without the package.
+const PANEL_SOURCE: &str = ".local/lib/tomacco/integrations/omarchy";
 /// What an installation owns outright. `--uninstall` removes these files when
 /// they are still exactly as installed; everything else it leaves alone.
 pub(crate) const OWNED: &[&str] = &[
@@ -61,6 +68,7 @@ pub(crate) const OWNED: &[&str] = &[
     METAINFO,
     PLUGIN,
     HYPR_RULES_FILE,
+    HYPR_BINDINGS_FILE,
 ];
 /// Directories the installation creates for itself, removed once empty.
 const OWNED_DIRECTORIES: &[&str] = &[INSTALLED_LIBRARY, DOCUMENTS, PLUGIN];
@@ -74,6 +82,11 @@ const AGENT_SKILL_LINKS: &[&str] = &[
 ];
 const HYPR_REQUIRE: &str = "require(\"hypr.tomacco\")";
 const HYPR_COMMENT: &str = "-- Tomacco mobile workspace.";
+const HYPR_BINDINGS_REQUIRE: &str = "require(\"hypr.tomacco-bindings\")";
+const HYPR_BINDINGS_COMMENT: &str = "-- Tomacco keys.";
+pub(crate) const MENU_BEGIN: &str =
+    "  // >>> tomacco (managed by Tomacco; tomaccoctl uninstall removes it)";
+pub(crate) const MENU_END: &str = "  // <<< tomacco";
 /// A portable package carries Qt, Qt WebEngine and FFmpeg here; the
 /// installation keeps them in ~/.local/lib/tomacco/runtime, and qt.conf beside
 /// the program points Qt at them.
@@ -106,6 +119,27 @@ o.window({ class = "^io[.]github[.]marselnenaj[.]tomacco$", title = "^Tomacco â€
   no_blur = true,
   opacity = "1.0 override 1.0 override",
 })
+"#;
+
+/// The keys `--omarchy-bindings` adds. Omarchy's own bindings leave
+/// SUPER + CTRL + SHIFT + a letter free, which is where these sit; the
+/// bindings file is the user's own, so the keys can be changed there.
+pub const HYPR_BINDINGS: &str = r#"-- Tomacco: keys for the mobile workspace. Omarchy's own bindings leave
+-- SUPER + CTRL + SHIFT + a letter free. Change them here; an update keeps this file's name, not its edits.
+o.bind("SUPER + CTRL + SHIFT + T", "Tomacco", [[$HOME/.local/bin/tomaccoctl call desktop.open '{"tab":"runtime"}']])
+o.bind("SUPER + CTRL + SHIFT + P", "Tomacco device window", "omarchy-shell io.github.marselnenaj.tomacco window")
+o.bind("SUPER + CTRL + SHIFT + S", "Tomacco device screenshot", "$HOME/.local/bin/tomaccoctl omarchy screenshot")
+"#;
+
+/// Tomacco's entries in Omarchy's menu (Trigger > Tomacco), without the
+/// marker lines. Each line ends in a comma, which the menu's reader allows.
+pub const MENU_ENTRIES: &str = r#"  "trigger.tomacco": {"icon":"\uf10b","label":"Tomacco","aliases":["tomacco"]},
+  "trigger.tomacco.open": {"icon":"\uf10b","label":"Open","action":"$HOME/.local/bin/tomaccoctl call desktop.open '{\"tab\":\"runtime\"}'"},
+  "trigger.tomacco.devices": {"icon":"\uf10b","label":"Devices and emulators","action":"$HOME/.local/bin/tomaccoctl call desktop.open '{\"tab\":\"devices\"}'"},
+  "trigger.tomacco.jobs": {"icon":"\uf10b","label":"Builds and jobs","action":"$HOME/.local/bin/tomaccoctl call desktop.open '{\"tab\":\"jobs\"}'"},
+  "trigger.tomacco.iphone": {"icon":"\uf10b","label":"Start the virtual iPhone","when":"test -d \"$HOME/.config/omarchy/plugins/io.github.marselnenaj.tomacco\"","action":"omarchy-shell io.github.marselnenaj.tomacco iphone start"},
+  "trigger.tomacco.window": {"icon":"\uf10b","label":"Device window","when":"test -d \"$HOME/.config/omarchy/plugins/io.github.marselnenaj.tomacco\"","action":"omarchy-shell io.github.marselnenaj.tomacco window"},
+  "trigger.tomacco.screenshot": {"icon":"\uf10b","label":"Device screenshot","action":"$HOME/.local/bin/tomaccoctl omarchy screenshot"},
 "#;
 
 fn refuse(message: impl Into<String>) -> Error {
@@ -1154,6 +1188,12 @@ impl Installer {
         self.remove_created(&created)
     }
 
+    /// Whether the menu extensions hold Tomacco's entries.
+    pub fn menu_in_use(&self) -> bool {
+        fs::read_to_string(self.user.join(MENU_FILE))
+            .is_ok_and(|text| menu_without_block(&text).is_some())
+    }
+
     /// Whether the bar names the widget.
     pub fn widget_placed(&self) -> bool {
         fs::read(self.user.join(SHELL_CONFIG))
@@ -1335,6 +1375,7 @@ impl Installer {
         // The user's own configuration first, so it never names a removed file.
         self.unedit_window_rule()?;
         self.unedit_omarchy()?;
+        self.unedit_menu()?;
         self.remove_skill_links(&history)?;
         self.batch(|this| {
             for (recorded, entries) in &history {
@@ -1379,14 +1420,20 @@ impl Installer {
             return Ok(());
         }
         let text = fs::read_to_string(&config).map_err(io_context(&config))?;
-        if !text.contains(HYPR_REQUIRE) {
+        if !text.contains(HYPR_REQUIRE) && !text.contains(HYPR_BINDINGS_REQUIRE) {
             return Ok(());
         }
         let lines: Vec<&str> = split_lines(&text)
             .into_iter()
             .filter(|line| {
                 let line = line.trim();
-                line != HYPR_REQUIRE && line != HYPR_COMMENT
+                ![
+                    HYPR_REQUIRE,
+                    HYPR_COMMENT,
+                    HYPR_BINDINGS_REQUIRE,
+                    HYPR_BINDINGS_COMMENT,
+                ]
+                .contains(&line)
             })
             .collect();
         let edited = lines.join("\n").trim_end().to_string() + "\n";
@@ -1424,22 +1471,207 @@ impl Installer {
         self.write(SHELL_CONFIG, config_json(&value).as_bytes(), mode)
     }
 
-    /// Installs the rules and requires them, once: a rollback checks each
-    /// journal entry against the file, so hyprland.lua gets one write a run.
-    pub fn window_rule(&mut self) -> Result<()> {
+    /// Installs the rules, and with `bindings` the keys, and requires them,
+    /// once: a rollback checks each journal entry against the file, so
+    /// hyprland.lua gets one write a run.
+    pub fn window_rule(&mut self, bindings: bool) -> Result<()> {
         let config = self.user.join(HYPR_CONFIG);
         if !is_file(&config) {
             return Ok(());
         }
         self.write_text(HYPR_RULES_FILE, HYPR_RULES)?;
+        if bindings {
+            self.write_text(HYPR_BINDINGS_FILE, HYPR_BINDINGS)?;
+        }
         let text = fs::read_to_string(&config).map_err(io_context(&config))?;
+        let mut edited = text.clone();
         if !text.contains(HYPR_REQUIRE) {
-            let edited = format!("{}\n\n{HYPR_COMMENT}\n{HYPR_REQUIRE}\n", text.trim_end());
+            edited = format!("{}\n\n{HYPR_COMMENT}\n{HYPR_REQUIRE}\n", edited.trim_end());
+        }
+        if bindings && !text.contains(HYPR_BINDINGS_REQUIRE) {
+            edited = format!(
+                "{}\n\n{HYPR_BINDINGS_COMMENT}\n{HYPR_BINDINGS_REQUIRE}\n",
+                edited.trim_end()
+            );
+        }
+        if edited != text {
             let mode = mode_of(&config).map_err(io_context(&config))?;
             self.write(HYPR_CONFIG, edited.as_bytes(), mode)?;
         }
         Ok(())
     }
+
+    /// Adds Tomacco's entries to Omarchy's menu extensions, between marker
+    /// lines, or replaces them there. A file that is not a JSON object, or
+    /// that wraps its entries in "items", is left alone; the entry says so.
+    pub fn menu(&mut self) -> Result<MenuState> {
+        let path = self.user.join(MENU_FILE);
+        if is_symlink(&path) {
+            return Ok(MenuState::Foreign);
+        }
+        let block = format!("{MENU_BEGIN}\n{MENU_ENTRIES}{MENU_END}\n");
+        let text = if is_file(&path) {
+            fs::read_to_string(&path).map_err(io_context(&path))?
+        } else {
+            String::new()
+        };
+        let edited = match menu_with_block(&text, &block) {
+            Some(edited) => edited,
+            None => return Ok(MenuState::Foreign),
+        };
+        if edited != text {
+            let mode = if is_file(&path) {
+                mode_of(&path).map_err(io_context(&path))?
+            } else {
+                0o644
+            };
+            self.write(MENU_FILE, edited.as_bytes(), mode)?;
+        }
+        Ok(MenuState::Installed)
+    }
+
+    /// Takes Tomacco's menu entries out again; a file left without any entry
+    /// goes with them.
+    fn unedit_menu(&mut self) -> Result<()> {
+        let path = self.user.join(MENU_FILE);
+        if !is_file(&path) || is_symlink(&path) {
+            return Ok(());
+        }
+        let text = fs::read_to_string(&path).map_err(io_context(&path))?;
+        let Some(edited) = menu_without_block(&text) else {
+            return Ok(());
+        };
+        if menu_is_empty(&edited) {
+            self.remove(MENU_FILE)
+        } else {
+            let mode = mode_of(&path).map_err(io_context(&path))?;
+            self.write(MENU_FILE, edited.as_bytes(), mode)
+        }
+    }
+
+    /// Keeps the panel's sources beside the program, for `omarchy repair`.
+    pub fn panel_source(&mut self, source: &Path) -> Result<()> {
+        if !is_dir(source) {
+            return Ok(());
+        }
+        for (name, path) in sorted_files(source)? {
+            let data = fs::read(&path).map_err(io_context(&path))?;
+            self.write(Path::new(PANEL_SOURCE).join(name), &data, 0o644)?;
+        }
+        Ok(())
+    }
+}
+
+/// What `menu` found.
+#[derive(Debug, PartialEq)]
+pub enum MenuState {
+    Installed,
+    /// The file is not one the entries can be added to.
+    Foreign,
+}
+
+/// The menu file's text with `block` in it: replacing Tomacco's earlier block,
+/// else right after the opening brace. None when the file is not an object of
+/// entries.
+pub(crate) fn menu_with_block(text: &str, block: &str) -> Option<String> {
+    if text.trim().is_empty() {
+        return Some(format!("{{\n{block}}}\n"));
+    }
+    if let Some(without) = menu_without_block(text) {
+        return menu_with_block(&without, block);
+    }
+    // Omarchy strips whole-line comments and trailing commas before it parses.
+    let stripped = strip_jsonc(text);
+    let value: Value = serde_json::from_str(&stripped).ok()?;
+    let object = value.as_object()?;
+    if object.get("items").is_some_and(Value::is_object) {
+        return None;
+    }
+    let mut offset = 0;
+    for line in text.split_inclusive('\n') {
+        if !line.trim_start().starts_with("//") {
+            if let Some(brace) = line.find('{') {
+                let at = offset + brace + 1;
+                // The block goes on lines of its own.
+                let rest = &text[at..];
+                let rest = rest.strip_prefix('\n').unwrap_or(rest);
+                return Some(format!("{}\n{block}{rest}", &text[..at]));
+            }
+        }
+        offset += line.len();
+    }
+    None
+}
+
+/// The text without Tomacco's block, or None where it has none.
+pub(crate) fn menu_without_block(text: &str) -> Option<String> {
+    let lines = split_lines(text);
+    let begin = lines
+        .iter()
+        .position(|line| line.trim() == MENU_BEGIN.trim())?;
+    let end = begin
+        + lines[begin..]
+            .iter()
+            .position(|line| line.trim() == MENU_END.trim())?;
+    let kept: Vec<&str> = lines[..begin]
+        .iter()
+        .chain(&lines[end + 1..])
+        .copied()
+        .collect();
+    let mut out = kept.join("\n");
+    if text.ends_with('\n') {
+        out.push('\n');
+    }
+    Some(out)
+}
+
+/// Whether the menu file holds nothing but braces and comments.
+pub(crate) fn menu_is_empty(text: &str) -> bool {
+    strip_jsonc(text)
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>()
+        == "{}"
+}
+
+/// Omarchy's reading of its menu files: whole-line comments and trailing
+/// commas go before the JSON is parsed.
+pub(crate) fn strip_jsonc(text: &str) -> String {
+    let lines: Vec<&str> = text
+        .lines()
+        .filter(|line| !line.trim_start().starts_with("//"))
+        .collect();
+    let joined = lines.join("\n");
+    let mut out = String::with_capacity(joined.len());
+    let chars: Vec<char> = joined.chars().collect();
+    let mut index = 0;
+    let mut quoted = false;
+    while index < chars.len() {
+        let c = chars[index];
+        if quoted {
+            out.push(c);
+            if c == '\\' {
+                index += 1;
+                if let Some(next) = chars.get(index) {
+                    out.push(*next);
+                }
+            } else if c == '"' {
+                quoted = false;
+            }
+        } else if c == '"' {
+            quoted = true;
+            out.push(c);
+        } else if c == ',' {
+            let next = chars[index + 1..].iter().find(|c| !c.is_whitespace());
+            if !matches!(next, Some('}') | Some(']')) {
+                out.push(c);
+            }
+        } else {
+            out.push(c);
+        }
+        index += 1;
+    }
+    out
 }
 
 /// What a rollback does to one journalled path.
@@ -1705,6 +1937,8 @@ pub struct Options {
     pub binary: PathBuf,
     pub cli: Option<PathBuf>,
     pub omarchy: bool,
+    pub omarchy_bindings: bool,
+    pub no_omarchy_menu: bool,
     pub no_window_rule: bool,
     pub no_agent_skill: bool,
     pub update: bool,
@@ -1830,9 +2064,19 @@ pub fn install_package(installer: &mut Installer, package: &Package, options: &O
     } else if options.update && installer.widget_placed() {
         installer.omarchy(&omarchy, false)?;
     }
-    if !options.no_window_rule && (!options.update || installer.user.join(HYPR_RULES_FILE).exists())
+    if options.omarchy || (options.update && installer.widget_placed()) {
+        installer.panel_source(&omarchy)?;
+    }
+    let menu_in_use = installer.menu_in_use();
+    if (options.omarchy && !options.no_omarchy_menu) || (options.update && menu_in_use) {
+        installer.menu()?;
+    }
+    let bindings = options.omarchy_bindings
+        || (options.update && installer.user.join(HYPR_BINDINGS_FILE).exists());
+    if !options.no_window_rule
+        && (!options.update || bindings || installer.user.join(HYPR_RULES_FILE).exists())
     {
-        installer.window_rule()?;
+        installer.window_rule(bindings)?;
     }
     installer.finish()?;
     refresh_menu(&installer.user, true)?;
@@ -1900,6 +2144,227 @@ pub fn list_backups(user: &Path) -> Value {
 }
 
 // ---------------------------------------------------------------------------
+// tomaccoctl omarchy
+// ---------------------------------------------------------------------------
+
+fn component(name: &str, state: &str, detail: impl Into<String>) -> Value {
+    json!({"name": name, "state": state, "detail": detail.into()})
+}
+
+/// Whether `user`'s home looks like an Omarchy desktop.
+fn omarchy_present(user: &Path) -> bool {
+    user.join(".config/omarchy").is_dir()
+        || Path::new("/usr/share/omarchy").is_dir()
+        || std::env::var_os("OMARCHY_PATH").is_some_and(|path| Path::new(&path).is_dir())
+}
+
+/// The block of Tomacco's entries in the menu file's text, without markers.
+fn menu_block(text: &str) -> Option<String> {
+    let lines = split_lines(text);
+    let begin = lines
+        .iter()
+        .position(|line| line.trim() == MENU_BEGIN.trim())?;
+    let end = begin
+        + lines[begin..]
+            .iter()
+            .position(|line| line.trim() == MENU_END.trim())?;
+    Some(
+        lines[begin + 1..end]
+            .iter()
+            .map(|line| format!("{line}\n"))
+            .collect(),
+    )
+}
+
+/// How each Omarchy integration of `user`'s home stands: `ok`, `outdated`
+/// (there, but not what this Tomacco installs), `missing` (part of it is
+/// there), `disabled`, `unlinked` or `not_installed`. `healthy` is false when
+/// something installed is outdated, missing or disabled, and `repairable`
+/// says `tomaccoctl omarchy repair` can put that right.
+pub fn omarchy_status(user: &Path) -> Value {
+    let read = |relative: &str| fs::read_to_string(user.join(relative)).ok();
+    let mut components = Vec::new();
+
+    // The panel.
+    let plugin = Path::new(PLUGIN);
+    let shell: Option<Value> = read(SHELL_CONFIG).and_then(|text| serde_json::from_str(&text).ok());
+    let placed = shell
+        .as_ref()
+        .and_then(|value| value["bar"]["layout"].as_object().map(places_widget))
+        .unwrap_or(false);
+    let disabled = shell.as_ref().is_some_and(|value| {
+        value["disabledPlugins"]
+            .as_array()
+            .is_some_and(|list| list.iter().any(|item| item.as_str() == Some(APP_ID)))
+    });
+    let manifest: Option<Value> = read(&plugin.join("manifest.json").to_string_lossy())
+        .and_then(|text| serde_json::from_str(&text).ok());
+    let source = fs::read(user.join(PANEL_SOURCE).join("MobilePanel.qml")).ok();
+    components.push(match (&manifest, placed) {
+        (None, false) => component("panel", "not_installed", "Not on the Omarchy bar"),
+        (None, true) => component(
+            "panel",
+            "missing",
+            "The bar names the widget, but its files are not installed",
+        ),
+        (Some(_), false) => component("panel", "missing", "Installed, but not on the bar"),
+        (Some(_), true) if disabled => component("panel", "disabled", "Disabled in shell.json"),
+        (Some(manifest), true) => {
+            let entry = manifest["entryPoints"]["barWidget"].as_str().unwrap_or("");
+            let present = is_file(&user.join(plugin).join(entry));
+            match &source {
+                _ if !present => component("panel", "missing", "The panel file is gone"),
+                Some(bytes) if entry != format!("{}/MobilePanel.qml", &hex_digest(bytes)[..12]) => {
+                    component(
+                        "panel",
+                        "outdated",
+                        "Not the panel of the installed Tomacco",
+                    )
+                }
+                _ => component("panel", "ok", entry.to_string()),
+            }
+        }
+    });
+
+    // The window rules and the keys, both required from hyprland.lua.
+    let hypr = read(HYPR_CONFIG);
+    for (name, file, text, require) in [
+        ("rules", HYPR_RULES_FILE, HYPR_RULES, HYPR_REQUIRE),
+        (
+            "bindings",
+            HYPR_BINDINGS_FILE,
+            HYPR_BINDINGS,
+            HYPR_BINDINGS_REQUIRE,
+        ),
+    ] {
+        let installed = read(file);
+        let required = hypr.as_ref().is_some_and(|hypr| hypr.contains(require));
+        components.push(match (&installed, required) {
+            (None, false) => component(name, "not_installed", "Not installed"),
+            (None, true) => component(
+                name,
+                "missing",
+                format!("hyprland.lua requires {file}, which is gone"),
+            ),
+            (Some(_), false) if hypr.is_none() => {
+                component(name, "missing", "No hyprland.lua to require it from")
+            }
+            (Some(_), false) => component(
+                name,
+                "missing",
+                "Installed, but hyprland.lua does not require it",
+            ),
+            (Some(installed), true) if installed != text => component(
+                name,
+                "outdated",
+                format!("{file} differs from this Tomacco's"),
+            ),
+            (Some(_), true) => component(name, "ok", file.to_string()),
+        });
+    }
+
+    // The menu entries.
+    let menu = read(MENU_FILE);
+    components.push(match menu.as_deref().and_then(menu_block) {
+        None => component(
+            "menu",
+            "not_installed",
+            "No Tomacco entries in Omarchy's menu",
+        ),
+        Some(block) if block != MENU_ENTRIES => {
+            component("menu", "outdated", "The entries differ from this Tomacco's")
+        }
+        Some(_) => component("menu", "ok", "Trigger > Tomacco"),
+    });
+
+    // The agent skill and where it is linked.
+    let skill = is_file(&user.join(SKILL).join("SKILL.md"));
+    let mut unlinked = Vec::new();
+    for relative in AGENT_SKILL_LINKS {
+        let path = user.join(relative);
+        let agent = path.parent().and_then(Path::parent).unwrap_or(user);
+        if is_dir(agent) && !is_symlink(&path) && !path.exists() {
+            unlinked.push(format!("~/{relative}"));
+        }
+    }
+    components.push(if !skill {
+        component("skill", "not_installed", "The agent skill is not installed")
+    } else if unlinked.is_empty() {
+        component("skill", "ok", "Linked where an agent is configured")
+    } else {
+        component(
+            "skill",
+            "unlinked",
+            format!("Not linked: {}", unlinked.join(", ")),
+        )
+    });
+
+    let bad = |c: &Value| {
+        ["outdated", "missing", "disabled"].contains(&c["state"].as_str().unwrap_or(""))
+    };
+    let healthy = !components.iter().any(bad);
+    let kept = is_file(&user.join(PANEL_SOURCE).join("MobilePanel.qml"));
+    let panel_fixable = components
+        .iter()
+        .filter(|c| c["name"] == "panel")
+        .all(|c| !bad(c) || kept);
+    json!({
+        "omarchy": omarchy_present(user),
+        "components": components,
+        "healthy": healthy,
+        "repairable": !healthy && panel_fixable,
+    })
+}
+
+/// Installs again what `omarchy_status` finds outdated or missing, from the
+/// copies the installation kept, in one journalled run that `_install
+/// --rollback` undoes. Returns what it did.
+pub fn omarchy_repair(user: &Path, version: &str) -> Result {
+    let status = omarchy_status(user);
+    let state = |name: &str| {
+        status["components"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .find(|c| c["name"] == name)
+            .and_then(|c| c["state"].as_str())
+            .unwrap_or("")
+            .to_string()
+    };
+    let broken = |name: &str| ["outdated", "missing", "disabled"].contains(&state(name).as_str());
+    let mut installer = Installer::new(user, version);
+    let mut done = Vec::new();
+    if broken("panel") {
+        let source = user.join(PANEL_SOURCE);
+        if !is_file(&source.join("MobilePanel.qml")) {
+            return Err(Error::new(
+                "omarchy_repair_unavailable",
+                "The installation kept no copy of the panel to install again",
+            )
+            .remedy("Run the installer of a release package with --omarchy"));
+        }
+        installer.omarchy(&source, true)?;
+        done.push("panel");
+    }
+    if broken("rules") || broken("bindings") {
+        let bindings = state("bindings") != "not_installed";
+        installer.window_rule(bindings)?;
+        done.push("rules");
+        if bindings {
+            done.push("bindings");
+        }
+    }
+    if broken("menu") {
+        installer.menu()?;
+        done.push("menu");
+    }
+    installer.finish()?;
+    Ok(
+        json!({"repaired": done, "backups": (!installer.records.is_empty()).then(|| installer.backup.to_string_lossy().into_owned())}),
+    )
+}
+
+// ---------------------------------------------------------------------------
 // tomaccoctl _install
 // ---------------------------------------------------------------------------
 
@@ -1908,7 +2373,7 @@ fn usage(message: impl Into<String>) -> Error {
     Error::new("invalid_request", message)
 }
 
-const USAGE: &str = "usage: tomaccoctl _install [-h] [--binary BINARY] [--cli CLI] [--user-home USER_HOME] [--omarchy]\n                \
+const USAGE: &str = "usage: tomaccoctl _install [-h] [--binary BINARY] [--cli CLI] [--user-home USER_HOME] [--omarchy] [--omarchy-bindings] [--no-omarchy-menu]\n                \
      [--no-window-rule] [--no-agent-skill] [--update] [--list-backups] [--rollback BACKUP_ID] [--uninstall] [--version]\n                \
      [--package DIRECTORY]";
 
@@ -1921,7 +2386,9 @@ options:
   --cli CLI             Native tomaccoctl binary; defaults to the desktop binary's directory
   --user-home USER_HOME
                         Alternate home for packaging/installation tests
-  --omarchy             Install and enable the Omarchy bar/popup plugin
+  --omarchy             Install and enable the Omarchy bar/popup plugin, and add Tomacco to Omarchy's menu
+  --omarchy-bindings    Add Tomacco's keys (SUPER + CTRL + SHIFT + T, P, S) as a Hyprland bindings file
+  --no-omarchy-menu     With --omarchy, leave Omarchy's menu as it is
   --no-window-rule
   --no-agent-skill      Do not link the agent skill into ~/.claude/skills, ~/.codex/skills and ~/.agents/skills,
                         and remove such links an earlier installation made
@@ -1940,6 +2407,8 @@ struct Arguments {
     cli: Option<PathBuf>,
     user_home: Option<PathBuf>,
     omarchy: bool,
+    omarchy_bindings: bool,
+    no_omarchy_menu: bool,
     no_window_rule: bool,
     no_agent_skill: bool,
     update: bool,
@@ -1957,6 +2426,8 @@ const LONG: &[(&str, bool)] = &[
     ("--cli", true),
     ("--user-home", true),
     ("--omarchy", false),
+    ("--omarchy-bindings", false),
+    ("--no-omarchy-menu", false),
     ("--no-window-rule", false),
     ("--no-agent-skill", false),
     ("--update", false),
@@ -2031,6 +2502,8 @@ fn parse(args: &[String]) -> Result<Arguments> {
             "--cli" => parsed.cli = Some(path()),
             "--user-home" => parsed.user_home = Some(path()),
             "--omarchy" => parsed.omarchy = true,
+            "--omarchy-bindings" => parsed.omarchy_bindings = true,
+            "--no-omarchy-menu" => parsed.no_omarchy_menu = true,
             "--no-window-rule" => parsed.no_window_rule = true,
             "--no-agent-skill" => parsed.no_agent_skill = true,
             "--update" => parsed.update = true,
@@ -2160,6 +2633,8 @@ fn run(parsed: Arguments) -> Result<()> {
             .unwrap_or_else(|| package.root.join("bin").join(DESKTOP_NAME)),
         cli: parsed.cli,
         omarchy: parsed.omarchy,
+        omarchy_bindings: parsed.omarchy_bindings,
+        no_omarchy_menu: parsed.no_omarchy_menu,
         no_window_rule: parsed.no_window_rule,
         no_agent_skill: parsed.no_agent_skill,
         update: parsed.update,

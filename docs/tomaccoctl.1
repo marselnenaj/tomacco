@@ -38,6 +38,10 @@ tomaccoctl \- the Tomacco control plane for building, running and testing mobile
 .br
 .B tomaccoctl uninstall
 .br
+.B tomaccoctl omarchy
+.RB [ status | repair | screenshot " [" \-\-quiet "] | notify [" on | off ]]
+.RB [ \-\-json ]
+.br
 .B tomaccoctl verify
 .I FILE
 .RB [ \-\-sig
@@ -155,6 +159,22 @@ only checks.
 .B uninstall
 Remove this installation. It keeps your data and the files you changed,
 and prints how to undo it.
+.TP
+.B omarchy
+On an Omarchy desktop,
+.B status
+lists the panel, the Hyprland window rules and keys, the menu entries and the agent skill
+and what is outdated or missing (exit status 1 then);
+.B repair
+installs those again from the copies the installation kept;
+.B screenshot
+saves the connected device where Omarchy keeps screenshots
+.RB ( OMARCHY_SCREENSHOT_DIR ,
+else the Pictures folder), copies it to the clipboard and says so in a notification
+.RB ( \-\-quiet
+leaves the notification out); and
+.B notify on
+sends a notification when a job of 15 seconds or more ends while no desktop is open.
 .TP
 .BI "verify " FILE
 Check a downloaded release file, such as a package, against its SHA-256

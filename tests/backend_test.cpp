@@ -250,6 +250,17 @@ private slots:
         QVERIFY(!backend.exportSettings(root.filePath("no/such/dir/settings.json")).isEmpty());
         QSettings().clear();
     }
+    void screenshotsGoWhereOmarchyKeepsThem() {
+        const auto home=QDir::homePath();
+        // OMARCHY_SCREENSHOT_DIR wins, with ~ and $HOME read as the shell reads them.
+        QCOMPARE(Backend::screenshotDirectoryFor("/mnt/shots","/p",true),QString("/mnt/shots"));
+        QCOMPARE(Backend::screenshotDirectoryFor("$HOME/Pictures/Screenshots/","/p",false),home+"/Pictures/Screenshots");
+        QCOMPARE(Backend::screenshotDirectoryFor("~/Shots","/p",true),home+"/Shots");
+        QCOMPARE(Backend::screenshotDirectoryFor("  ","/p",true),QString("/p"));
+        // Without it, Omarchy's own screenshots sit in Pictures; elsewhere Tomacco keeps a folder.
+        QCOMPARE(Backend::screenshotDirectoryFor({},"/p",true),QString("/p"));
+        QCOMPARE(Backend::screenshotDirectoryFor({},"/p",false),QString("/p/Tomacco"));
+    }
     void theActiveOmarchyThemeIsReadNotWritten() {
         // Omarchy's colors.toml: quoted colours, comments, a mode; anything else is left out.
         const auto colours=Backend::parseOmarchyColors(
