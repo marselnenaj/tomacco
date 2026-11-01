@@ -172,6 +172,13 @@ class Artwork(unittest.TestCase):
         self.assertEqual(struct.unpack(">II", data[16:24]), (1280, 640))
         self.assertLess(len(data), 1024 * 1024)
 
+    def test_the_readme_graphics_state_the_current_operation_count(self):
+        # They are drawn by assets/readme/generate.py; rerun it after the count changes.
+        count = len(json.loads((ROOT / "assets/operations.json").read_text()))
+        for stem in ("social", "how-it-works-dark", "how-it-works-light"):
+            svg = (ROOT / f"assets/readme/{stem}.svg").read_text()
+            self.assertRegex(svg, rf">(iOS · Android · )?{count}( typed operations · \w+)?</text>", stem)
+
 
 class Newcomer(unittest.TestCase):
     """Two things a stranger runs in a first minute, on the build under test."""

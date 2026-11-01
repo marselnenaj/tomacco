@@ -243,7 +243,10 @@ def how_it_works(t):
     c.rect(slab_x, top, slab_w, height, ACCENT)
     pad = 44
     c.sans(slab_x + pad, top + 84, NAME, 52, t.on_accent, 700, tracking=-0.015)
-    c.sans(slab_x + pad - 10, top + 372, str(len(OPERATIONS)), 276, t.on_accent, 800, tracking=-0.03)
+    # The count fills the slab's width at most: three wide digits do not fit at full size.
+    count = str(len(OPERATIONS))
+    size = min(276, int((slab_w - 2 * pad + 10) * 276 / sans_width(count, 276, 800, tracking=-0.03)))
+    c.sans(slab_x + pad - 10, top + 372, count, size, t.on_accent, 800, tracking=-0.03)
     c.sans(slab_x + pad, top + 468, "typed", 84, t.on_accent, 700, tracking=-0.025)
     c.sans(slab_x + pad, top + 562, "operations", 84, t.on_accent, 700, tracking=-0.025)
     c.sans(slab_x + pad, bottom - 138, "One schema.", 50, t.on_accent, 500)

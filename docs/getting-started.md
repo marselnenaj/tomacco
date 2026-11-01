@@ -31,8 +31,9 @@ prints the result as JSON.
 tomaccoctl verify tomacco-1.2.1-Linux-x86_64.tar.gz
 ```
 
-Tomacco runs on x86_64 Linux. Arch Linux and Omarchy are the tested platform. Other
-distributions should work, but they have not been qualified. On Linux for Apple Silicon (M1,
+Tomacco runs on x86_64 Linux. Arch Linux and Omarchy are the tested platform. For other
+distributions there is a portable package, checked in clean containers only; see
+[Debian, Ubuntu and Fedora](#debian-ubuntu-and-fedora). On Linux for Apple Silicon (M1,
 M2, Asahi), the tools and agent API are experimental and the virtual iOS device is not
 available.
 
@@ -85,13 +86,11 @@ where the distribution's Qt or FFmpeg is older; use the portable package there, 
 libraries and symbol versions, and `next_steps` then starts with what to do.
 
 **The portable package** installs like the other one: check it, unpack it, run its `install.py`.
-It was about 176 MB when measured on the 1.0.0 sources. It still uses the system's graphics, X11 or Wayland, font, D-Bus, NSS and ALSA
-libraries, which desktop installations have; `share/doc/tomacco/PORTABLE.md` in the package lists
-them. For the 1.0.0 sources, `tools/build_portable.py verify` ran it in clean containers of Debian 12,
-Ubuntu 22.04, Ubuntu 24.04 and Fedora 44: `tomaccoctl --version`, `tomaccoctl doctor`, the desktop's
-`--smoke-test` offscreen and on Xvfb, and an installation into a scratch home with `install.py`, all
-passed. It has not been run on a real desktop of those distributions. [Building](building.md#packaging)
-describes how it is made.
+It still uses the system's graphics, X11 or Wayland, font, D-Bus, NSS and ALSA libraries, which
+desktop installations have; `share/doc/tomacco/PORTABLE.md` in the package lists them. It passed its
+checks in clean Debian 12, Ubuntu 22.04, Ubuntu 24.04 and Fedora 44 containers but has not been run
+on a real desktop of those distributions. [Building](building.md#packaging) describes how it is made
+and what those checks run.
 
 On a bare container image the checks first installed the libraries listed as `APT_PACKAGES` and
 `DNF_PACKAGES` in `tools/build_portable.py`; a desktop installation normally has them already.
@@ -133,7 +132,7 @@ tomaccoctl setup
 ```
 
 It lists what this computer can do and what is missing, in plain text. Then it offers to connect
-Claude Code and Codex, and to install the Android SDK with an emulator called `Tomacco`. That
+the coding agents it finds (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed and OpenCode), and to install the Android SDK with an emulator called `Tomacco`. That
 download is about 5 GB and accepts Google's Android SDK license, so it asks first. A missing tool
 is fine until you need it. For the same check as JSON, use `tomaccoctl doctor`.
 
@@ -245,7 +244,7 @@ The [Android guide](android.md) goes on from here. If a step fails, read the err
 ## 4. Make your first agent call
 
 `tomaccoctl` is also a local MCP server. It speaks over standard input and output, with
-no network port and no token. `tomaccoctl setup` registers it for you; by hand:
+no network port and no token. `tomaccoctl setup` registers it for you (see step 2); for Claude Code or Codex by hand:
 
 ```sh
 claude mcp add --transport stdio --scope user tomacco -- "$(command -v tomaccoctl)" mcp

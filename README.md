@@ -54,9 +54,9 @@ starts without a 32 GiB disk copy, an update banner, a Docker image you build yo
 `tomaccoctl verify`. Several of these were tested with stand-ins only; the
 [release notes](docs/RELEASE_NOTES.md) say which.
 
-<img src="assets/readme/desktop.png" alt="Tomacco's native desktop showing the project workspace." width="100%">
+<img src="assets/readme/desktop.png" alt="Tomacco's desktop on its Project page for an example xtool project called Tomatoes: the build set to iOS, Debug and IPA, Run on device with no device chosen, and No device in the status bar." width="100%">
 
-<p align="center"><sub>The desktop workspace. A real capture, with no device connected.</sub></p>
+<p align="center"><sub>The Project page of the 1.2.1 desktop. A real capture, taken offscreen with no device connected.</sub></p>
 
 ## Quick start
 
@@ -94,7 +94,9 @@ rollback and uninstall, see [installing](docs/building.md#installing).
 
 ## For agents
 
-`tomaccoctl setup` connects Claude Code and Codex for you. To do it by hand:
+`tomaccoctl setup` connects Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed and OpenCode, asking
+first for each; [connect a client](docs/agents.md#connect-a-client) says which file it changes for each.
+To connect Claude Code or Codex by hand:
 
 ```sh
 codex mcp add tomacco -- "$(command -v tomaccoctl)" mcp
