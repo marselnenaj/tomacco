@@ -1,0 +1,502 @@
+reims-vgpu: half-float frames convert with the CPU's half-float instructions.
+
+The present capture and the render Store's stash convert the compositor's
+RGBA16F front surface (1206x2622 on the vphone) into BGRA8 through a
+65 536-entry table, one lookup per channel, and then walk the result again for
+present_content's rgb_nz and max_rgb. Where the CPU has F16C and AVX2, the
+whole pixels now go through vcvtph2ps four at a time, with the table's own
+rule (NaN or f <= 0 gives 0, f >= 1 gives 255, else (f * 255 + 0.5) as u8, in
+f32 with a separate multiply and add), and the figures are taken in the same
+pass; the table converts the tail and every other plan. A test holds the
+vector arm to the table, bytes and figures, for every half-float word in
+every channel slot, and the figures to bgra_rgb_stats on black, alpha-only and
+mixed frames.
+
+convert_band_streamed writes the vector arm's pixels with non-temporal stores
+(runtime::stream_copy, also added here: an SSE2 streaming copy and its
+fence), for a writer whose output the CPU does not read back at once.
+
+Offline on the development host (i9-13900K, shared with other builds;
+conversion_timing, medians of 31, two runs): one thread converting the frame
+with its figures, table 4.1 ms against vector 1.9 ms, the figures walk alone
+0.7 ms; the present capture's four-band conversion with caches evicted first,
+1.9-2.0 ms against 1.7-1.8 ms. Not measured on a live phone.
+
+diff --git a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/present_capture.rs b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/present_capture.rs
+index 57048be..110a801 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/present_capture.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/backend/vulkan/engine/present_capture.rs
+@@ -73,12 +73,81 @@ fn stats_of(bgra: &[u8]) -> (usize, u8) {
+ }
+ 
+ /// Convert one band, block by block, taking each block's figures right after
+-/// writing it. `false` only on a length the caller has already ruled out.
+-fn convert_band(plan: Rgba8Narrowing, src: &[u8], dst: &mut [u8]) -> Option<(usize, u8)> {
++/// writing it. `None` only on a length the caller has already ruled out.
++///
++/// Also the render Store's per-block conversion: a banded Store hands each
++/// block of rows it has just copied into the guest's pages to this.
++pub(crate) fn convert_band(
++    plan: Rgba8Narrowing,
++    src: &[u8],
++    dst: &mut [u8],
++) -> Option<(usize, u8)> {
++    convert_band_with(plan, src, dst, false)
++}
++
++/// [`convert_band`], writing the vector arm's pixels with streaming stores
++/// (see `runtime::stream_copy`): the frame goes to memory without its old
++/// contents being read first or the cache being filled with it. Fenced
++/// before it returns. Same bytes and figures.
++pub(crate) fn convert_band_streamed(
++    plan: Rgba8Narrowing,
++    src: &[u8],
++    dst: &mut [u8],
++) -> Option<(usize, u8)> {
++    convert_band_with(plan, src, dst, true)
++}
++
++fn convert_band_with(
++    plan: Rgba8Narrowing,
++    src: &[u8],
++    dst: &mut [u8],
++    stream: bool,
++) -> Option<(usize, u8)> {
+     let bpt = plan.source_layout().bytes_per_texel() as usize;
+     let px = RGBA8_BPP as usize;
+     let mut nz = 0usize;
+     let mut max = 0u8;
++    // The vector arm takes the figures in the same pass; the table, below,
++    // walks each block it has just written.
++    #[cfg(target_arch = "x86_64")]
++    let (src, dst) = if plan == Rgba8Narrowing::Rgba16Float && f16c::available() {
++        let pixels = dst.len() / px;
++        let (mut src, mut dst) = (src.get(..pixels * bpt)?, &mut dst[..pixels * px]);
++        // A streaming store needs a 16-byte aligned destination: the table
++        // takes the up to three pixels before it.
++        let addr = dst.as_ptr() as usize;
++        let stream = stream && addr.is_multiple_of(px);
++        if stream {
++            let head = (((16 - (addr & 15)) & 15) / px).min(pixels);
++            if head > 0 {
++                let (d, rest) = std::mem::take(&mut dst).split_at_mut(head * px);
++                if !plan.convert_to_bgra8(&src[..head * bpt], head as u32, d) {
++                    return None;
++                }
++                (nz, max) = stats_of(d);
++                src = &src[head * bpt..];
++                dst = rest;
++            }
++        }
++        // SAFETY: `available` checked the CPU features the functions need,
++        // and a streamed `dst` starts 16-byte aligned.
++        let (done, block_nz, block_max) = unsafe {
++            if stream {
++                let figures = f16c::rgba16f_to_bgra8::<true>(src, dst);
++                crate::runtime::stream_copy::stream_fence();
++                figures
++            } else {
++                f16c::rgba16f_to_bgra8::<false>(src, dst)
++            }
++        };
++        nz += block_nz;
++        max = max.max(block_max);
++        (&src[done * bpt..], &mut dst[done * px..])
++    } else {
++        (src, dst)
++    };
++    #[cfg(not(target_arch = "x86_64"))]
++    let _ = stream;
+     for (s, d) in src
+         .chunks(BLOCK_PIXELS * bpt)
+         .zip(dst.chunks_mut(BLOCK_PIXELS * px))
+@@ -94,6 +163,99 @@ fn convert_band(plan: Rgba8Narrowing, src: &[u8], dst: &mut [u8]) -> Option<(usi
+     Some((nz, max))
+ }
+ 
++/// The half-float arm's whole pixels are taken eight lanes at a time by the
++/// CPU's own half-float conversion where it has one (F16C and AVX2), with the
++/// frame's figures in the same pass, and the table converts the rest. Same
++/// bytes and figures: the vector arm computes the table's own rule (see
++/// [`f16c::rgba16f_to_bgra8`]) and `bgra_rgb_stats`'s, and tests hold it to
++/// both for every half-float word in every slot.
++#[cfg(target_arch = "x86_64")]
++mod f16c {
++    /// Whether this CPU has the instructions [`rgba16f_to_bgra8`] uses.
++    pub(super) fn available() -> bool {
++        std::is_x86_feature_detected!("avx2") && std::is_x86_feature_detected!("f16c")
++    }
++
++    /// RGBA16F pixels of `src` into BGRA8 `dst`, four at a time; returns how
++    /// many pixels it wrote (a multiple of four), leaving the rest to the
++    /// table, and those pixels' figures: how many have a non-zero B, G or R,
++    /// and the largest B, G or R byte (`bgra_rgb_stats`'s `rgb_nz` and
++    /// `max_rgb`).
++    ///
++    /// The table's rule for a half `h` is: NaN or `f <= 0` gives 0, `f >= 1`
++    /// gives 255, otherwise `(f * 255.0 + 0.5) as u8`, all in `f32`. Here
++    /// `vcvtph2ps` widens exactly; `max(f, 0)` returns its second operand for
++    /// a NaN, so NaN and every `f <= 0` become 0, and `min(.., 1)` caps the
++    /// rest; the multiply and the add are separate `f32` operations, rounded
++    /// as the scalar ones are; and `vcvttps2dq` truncates as `as u8` does,
++    /// with the result already in 0..=255.
++    ///
++    /// # Safety
++    ///
++    /// The CPU has AVX2 and F16C ([`available`]). With `STREAM`, `dst` is
++    /// 16-byte aligned and the caller fences the streaming stores.
++    #[target_feature(enable = "avx2,f16c")]
++    pub(super) unsafe fn rgba16f_to_bgra8<const STREAM: bool>(
++        src: &[u8],
++        dst: &mut [u8],
++    ) -> (usize, usize, u8) {
++        use std::arch::x86_64::*;
++        let pixels = (src.len() / 8).min(dst.len() / 4) / 4 * 4;
++        let zero = _mm256_setzero_ps();
++        let one = _mm256_set1_ps(1.0);
++        let scale = _mm256_set1_ps(255.0);
++        let half = _mm256_set1_ps(0.5);
++        // RGBA bytes of four pixels into BGRA.
++        let order = _mm_setr_epi8(2, 1, 0, 3, 6, 5, 4, 7, 10, 9, 8, 11, 14, 13, 12, 15);
++        let colour = _mm_set1_epi32(0x00ff_ffff);
++        let mut most = _mm_setzero_si128();
++        let mut black = 0usize;
++        let mut at = 0usize;
++        while at < pixels {
++            // SAFETY: `at + 4 <= pixels`, so 32 source and 16 destination
++            // bytes are in bounds; both accesses are unaligned.
++            unsafe {
++                let lo = _mm_loadu_si128(src.as_ptr().add(at * 8) as *const __m128i);
++                let hi = _mm_loadu_si128(src.as_ptr().add(at * 8 + 16) as *const __m128i);
++                let unorm = |h: __m128i| {
++                    let f = _mm256_cvtph_ps(h);
++                    let f = _mm256_min_ps(_mm256_max_ps(f, zero), one);
++                    _mm256_cvttps_epi32(_mm256_add_ps(_mm256_mul_ps(f, scale), half))
++                };
++                // Pack to 16 bits (lane-wise), put the pixels back in order,
++                // then to 8 bits and swap R and B.
++                let words = _mm256_packus_epi32(unorm(lo), unorm(hi));
++                let words = _mm256_permute4x64_epi64(words, 0b11_01_10_00);
++                let bytes = _mm_packus_epi16(
++                    _mm256_castsi256_si128(words),
++                    _mm256_extracti128_si256(words, 1),
++                );
++                let bgra = _mm_shuffle_epi8(bytes, order);
++                let out = dst.as_mut_ptr().add(at * 4) as *mut __m128i;
++                if STREAM {
++                    _mm_stream_si128(out, bgra);
++                } else {
++                    _mm_storeu_si128(out, bgra);
++                }
++                // The figures: B, G and R only.
++                let rgb = _mm_and_si128(bgra, colour);
++                most = _mm_max_epu8(most, rgb);
++                let zero = _mm_cmpeq_epi32(rgb, _mm_setzero_si128());
++                black += (_mm_movemask_ps(_mm_castsi128_ps(zero)) as u32).count_ones() as usize;
++            }
++            at += 4;
++        }
++        let mut lanes = [0u8; 16];
++        // SAFETY: 16 bytes into a 16-byte array.
++        unsafe { _mm_storeu_si128(lanes.as_mut_ptr() as *mut __m128i, most) };
++        (
++            pixels,
++            pixels - black,
++            lanes.iter().copied().max().unwrap_or(0),
++        )
++    }
++}
++
+ /// Write `dst.len() / 4` pixels of `src` (in `plan`'s source layout) into `dst`
+ /// as tight BGRA8 and return the frame's figures.
+ ///
+@@ -151,6 +313,161 @@ mod tests {
+     use super::*;
+     use crate::protocol::pixel_format::TexelLayout;
+ 
++    /// Every half-float word in every channel slot, at lengths that leave a
++    /// tail for the table: the block conversion, vector arm included, writes
++    /// the table's bytes.
++    #[test]
++    fn the_block_conversion_is_the_table_for_every_half_word_in_every_slot() {
++        let plan = Rgba8Narrowing::Rgba16Float;
++        for pixels in [65536usize, 65533] {
++            for rotate in 0..4usize {
++                let mut src = Vec::with_capacity(pixels * 8);
++                for word in 0..pixels {
++                    for channel in 0..4usize {
++                        let value = (word + (channel + rotate) * 16411) as u16;
++                        src.extend_from_slice(&value.to_le_bytes());
++                    }
++                }
++                let mut fast = vec![0xa5u8; pixels * 4];
++                let mut table = vec![0x5au8; pixels * 4];
++                let figures = convert_band(plan, &src, &mut fast).unwrap();
++                assert!(plan.convert_to_bgra8(&src, pixels as u32, &mut table));
++                assert!(fast == table, "pixels={pixels} rotate={rotate}");
++                assert_eq!(figures, stats_of(&table), "pixels={pixels} rotate={rotate}");
++                // Streamed, at each pixel offset of the destination's alignment.
++                let mut wide = vec![0xa5u8; pixels * 4 + 16];
++                for skew in 0..4 {
++                    let dst = &mut wide[skew * 4..skew * 4 + pixels * 4];
++                    let figures = convert_band_streamed(plan, &src, dst).unwrap();
++                    assert!(*dst == table[..], "streamed skew={skew} rotate={rotate}");
++                    assert_eq!(figures, stats_of(&table), "streamed skew={skew}");
++                }
++            }
++        }
++    }
++
++    /// Timing, not a check: `cargo test --release -- --ignored --nocapture
++    /// conversion_timing`. One thread converting the vphone's 1206x2622
++    /// RGBA16F frame with its figures, through the table alone and with the
++    /// vector arm, and the figures walk alone. Median of 31 runs, alternating.
++    #[test]
++    #[ignore]
++    fn conversion_timing() {
++        let plan = Rgba8Narrowing::Rgba16Float;
++        let pixels = 1206 * 2622;
++        let src: Vec<u8> = (0..pixels * 4)
++            .flat_map(|i| (0x2000u16 + (i as u16 % 0x1c00)).to_le_bytes())
++            .collect();
++        let mut dst = vec![0u8; pixels * 4];
++        let mut runs: [Vec<u128>; 5] = Default::default();
++        let mut evict = vec![0u8; 96 << 20];
++        for _ in 0..31 {
++            // The present capture's whole frame, caches evicted first as
++            // between live presents: four bands through the table, as before
++            // the vector arm, against `convert_with_stats` now.
++            for (i, page) in evict.chunks_mut(4096).enumerate() {
++                page.fill(i as u8);
++            }
++            let started = std::time::Instant::now();
++            let band = pixels.div_ceil(4).div_ceil(BLOCK_PIXELS) * BLOCK_PIXELS;
++            std::thread::scope(|scope| {
++                for (s, d) in src.chunks(band * 8).zip(dst.chunks_mut(band * 4)) {
++                    scope.spawn(move || {
++                        for (s, d) in s
++                            .chunks(BLOCK_PIXELS * 8)
++                            .zip(d.chunks_mut(BLOCK_PIXELS * 4))
++                        {
++                            assert!(plan.convert_to_bgra8(s, (d.len() / 4) as u32, d));
++                            std::hint::black_box(stats_of(d));
++                        }
++                    });
++                }
++            });
++            runs[3].push(started.elapsed().as_micros());
++            for (i, page) in evict.chunks_mut(4096).enumerate() {
++                page.fill(i as u8);
++            }
++            let started = std::time::Instant::now();
++            assert!(convert_with_stats(plan, &src, &mut dst).is_some());
++            runs[4].push(started.elapsed().as_micros());
++            let started = std::time::Instant::now();
++            for (s, d) in src
++                .chunks(BLOCK_PIXELS * 8)
++                .zip(dst.chunks_mut(BLOCK_PIXELS * 4))
++            {
++                assert!(plan.convert_to_bgra8(s, (d.len() / 4) as u32, d));
++                std::hint::black_box(stats_of(d));
++            }
++            runs[0].push(started.elapsed().as_micros());
++            let started = std::time::Instant::now();
++            assert!(convert_band(plan, &src, &mut dst).is_some());
++            runs[1].push(started.elapsed().as_micros());
++            let started = std::time::Instant::now();
++            std::hint::black_box(stats_of(&dst));
++            runs[2].push(started.elapsed().as_micros());
++        }
++        let names = [
++            "table",
++            "vector",
++            "figures_only",
++            "capture_table_4_cold",
++            "capture_now_cold",
++        ];
++        for (name, mut us) in names.into_iter().zip(runs) {
++            us.sort_unstable();
++            println!("conversion_timing {name} median_us={}", us[us.len() / 2]);
++        }
++    }
++
++    /// The vector arm itself, where the CPU has it: it converts whole groups
++    /// of four and leaves the rest of `dst` alone.
++    #[cfg(target_arch = "x86_64")]
++    #[test]
++    fn the_vector_arm_writes_whole_groups_of_four_only() {
++        if !f16c::available() {
++            return;
++        }
++        let src: Vec<u8> = (0..7 * 4u16)
++            .flat_map(|i| (0x3800 + i * 3).to_le_bytes())
++            .collect();
++        let mut dst = vec![0xeeu8; 7 * 4];
++        // SAFETY: `available` said yes.
++        let (done, nz, max) = unsafe { f16c::rgba16f_to_bgra8::<false>(&src, &mut dst) };
++        assert_eq!(done, 4);
++        assert!(dst[16..].iter().all(|&b| b == 0xee));
++        let mut table = vec![0u8; 16];
++        assert!(Rgba8Narrowing::Rgba16Float.convert_to_bgra8(&src, 4, &mut table));
++        assert_eq!(&dst[..16], &table[..]);
++        assert_eq!((nz, max), stats_of(&table));
++    }
++
++    /// The figures the vector arm takes in its pass are `bgra_rgb_stats`'s
++    /// over frames of black, alpha-only, single-channel and mixed pixels, so a
++    /// mask that counted alpha or dropped a colour channel would show.
++    #[test]
++    fn the_vector_figures_are_the_walks_figures() {
++        let plan = Rgba8Narrowing::Rgba16Float;
++        let one = 0x3c00u16;
++        let cases: [[u16; 4]; 6] = [
++            [0, 0, 0, 0],
++            [0, 0, 0, one],
++            [one, 0, 0, one],
++            [0, one, 0, 0],
++            [0, 0, 0x2000, one],
++            [0xfc00, 0x7e00, 0x8001, one],
++        ];
++        for pattern in 0..64usize {
++            let pixels = 37 + pattern;
++            let src: Vec<u8> = (0..pixels)
++                .flat_map(|i| cases[(i * 5 + pattern) % cases.len()])
++                .flat_map(u16::to_le_bytes)
++                .collect();
++            let mut dst = vec![0u8; pixels * 4];
++            let figures = convert_band(plan, &src, &mut dst).unwrap();
++            assert_eq!(figures, stats_of(&dst), "pattern {pattern}");
++        }
++    }
++
+     /// The rail this replaced, step for step: narrow to RGBA8 (or keep a
+     /// four-byte colour readback), exchange R and B, then walk the result.
+     fn old_rail(plan: Rgba8Narrowing, src: &[u8], pixels: usize) -> (Vec<u8>, FrameStats) {
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+index 8505802..9f620dd 100644
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/mod.rs
+@@ -102,6 +102,7 @@ pub mod m2v_cache;
+ /// IOSurface mapper capture + page-table resolve.
+ pub mod map_audit;
+ pub mod mapper;
++pub(crate) mod stream_copy;
+ /// Write host BGRA into guest mapping pages (render writeback).
+ pub mod mapping_write;
+ /// generateMipmaps for multi-mip normal-texture linear textures.
+diff --git a/reims-vgpu/crates/reims-vgpu/src/runtime/stream_copy.rs b/reims-vgpu/crates/reims-vgpu/src/runtime/stream_copy.rs
+new file mode 100644
+index 0000000..e1fc10a
+--- /dev/null
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/stream_copy.rs
+@@ -0,0 +1,110 @@
++//! A copy into guest pages that does not read them first.
++//!
++//! An ordinary store to a cache line the CPU does not hold reads that line from
++//! memory before it overwrites it (a read for ownership). A whole-frame write
++//! into the guest's pages — 25 MB for the vphone's RGBA16F front surface —
++//! thus moves every destination byte twice, and the frame then sits in the
++//! last-level cache the guest's processors share, though nothing on the host
++//! reads it again. Each row of that write is a few kilobytes, far below the
++//! size at which the C library's `memcpy` switches to streaming stores itself.
++//!
++//! [`stream_copy`] writes with non-temporal stores instead: no read for
++//! ownership, and the lines go to memory rather than into the cache. Such
++//! stores are weakly ordered, so a writer ends its run with [`stream_fence`]
++//! before anything else may look at the bytes; a thread join alone does not
++//! order them.
++
++/// Below this many bytes a copy is a plain `copy_nonoverlapping`: the head and
++/// tail around the aligned body would be most of it.
++const STREAM_MIN_BYTES: usize = 256;
++
++/// Copy `n` bytes from `src` to `dst` with non-temporal stores where the
++/// target has them, and as `copy_nonoverlapping` elsewhere.
++///
++/// # Safety
++///
++/// As for [`std::ptr::copy_nonoverlapping`]: `src` readable and `dst` writable
++/// for `n` bytes, the two not overlapping. The caller runs [`stream_fence`] on
++/// the same thread before another thread or device may rely on the bytes.
++pub(crate) unsafe fn stream_copy(src: *const u8, dst: *mut u8, n: usize) {
++    #[cfg(target_arch = "x86_64")]
++    {
++        if n >= STREAM_MIN_BYTES {
++            // SAFETY: the caller's contract; SSE2 is part of x86_64.
++            unsafe { stream_copy_sse2(src, dst, n) };
++            return;
++        }
++    }
++    // SAFETY: the caller's contract.
++    unsafe { std::ptr::copy_nonoverlapping(src, dst, n) };
++}
++
++/// Order this thread's earlier [`stream_copy`] stores before its later stores.
++pub(crate) fn stream_fence() {
++    #[cfg(target_arch = "x86_64")]
++    // SAFETY: `sfence` has no operands and SSE is part of x86_64.
++    unsafe {
++        std::arch::x86_64::_mm_sfence()
++    };
++}
++
++#[cfg(target_arch = "x86_64")]
++unsafe fn stream_copy_sse2(src: *const u8, dst: *mut u8, n: usize) {
++    use std::arch::x86_64::{__m128i, _mm_loadu_si128, _mm_stream_si128};
++    // A plain head brings `dst` to 16-byte alignment, which a streaming store
++    // needs; `src` is read unaligned.
++    let head = (16 - (dst as usize & 15)) & 15;
++    // SAFETY (whole body): every offset below stays under `n`, which the
++    // caller vouched for on both pointers, and `dst + head` is 16-aligned.
++    unsafe {
++        std::ptr::copy_nonoverlapping(src, dst, head);
++        let mut at = head;
++        while at + 64 <= n {
++            let a = _mm_loadu_si128(src.add(at) as *const __m128i);
++            let b = _mm_loadu_si128(src.add(at + 16) as *const __m128i);
++            let c = _mm_loadu_si128(src.add(at + 32) as *const __m128i);
++            let d = _mm_loadu_si128(src.add(at + 48) as *const __m128i);
++            _mm_stream_si128(dst.add(at) as *mut __m128i, a);
++            _mm_stream_si128(dst.add(at + 16) as *mut __m128i, b);
++            _mm_stream_si128(dst.add(at + 32) as *mut __m128i, c);
++            _mm_stream_si128(dst.add(at + 48) as *mut __m128i, d);
++            at += 64;
++        }
++        while at + 16 <= n {
++            let a = _mm_loadu_si128(src.add(at) as *const __m128i);
++            _mm_stream_si128(dst.add(at) as *mut __m128i, a);
++            at += 16;
++        }
++        std::ptr::copy_nonoverlapping(src.add(at), dst.add(at), n - at);
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    /// Every length around the thresholds, at every alignment of both ends:
++    /// the copy writes exactly `src` into `[off, off + n)` and nothing beside.
++    #[test]
++    fn a_streamed_copy_is_the_plain_copy_at_every_length_and_alignment() {
++        let src: Vec<u8> = (0..1200u32).map(|i| (i * 31 + 7) as u8).collect();
++        for n in (0..300).chain([511, 512, 513, 1000, 1100]) {
++            for src_off in 0..17 {
++                for dst_off in 0..17 {
++                    if src_off + n > src.len() {
++                        continue;
++                    }
++                    let mut dst = vec![0xa5u8; n + 40];
++                    // SAFETY: both ranges are inside their vectors.
++                    unsafe {
++                        stream_copy(src.as_ptr().add(src_off), dst.as_mut_ptr().add(dst_off), n)
++                    };
++                    stream_fence();
++                    assert_eq!(&dst[dst_off..dst_off + n], &src[src_off..src_off + n]);
++                    assert!(dst[..dst_off].iter().all(|&b| b == 0xa5), "n={n}");
++                    assert!(dst[dst_off + n..].iter().all(|&b| b == 0xa5), "n={n}");
++                }
++            }
++        }
++    }
++}
