@@ -10,6 +10,8 @@ operations and their JSON results.
 
 ### Added
 
+- `tomaccoctl setup` also connects OpenCode (`~/.config/opencode/opencode.json`, `mcp`). Apps that run these
+  agents, such as T3 Code, then reach Tomacco through them; docs/agents.md says so.
 - **Release.**
   - `release.version` changes every version file of a project in one call: `pubspec.yaml`, Expo's `app.json`, a React
     Native or Expo `package.json`, the Android Gradle file and the versions catalog entry or `gradle.properties` key it

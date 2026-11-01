@@ -97,6 +97,14 @@ fn file_agents(home: &Path, config: &Path) -> Vec<FileAgent> {
             "context_servers",
             |program| json!({"source":"custom","command":program,"args":["mcp"],"env":{}}),
         ),
+        agent(
+            "OpenCode",
+            &["opencode"],
+            config.join("opencode"),
+            "opencode.json",
+            "mcp",
+            |program| json!({"type":"local","command":[program,"mcp"],"enabled":true}),
+        ),
     ]
 }
 
@@ -997,7 +1005,10 @@ mod tests {
         let config = home.path().join(".config");
         let agents = file_agents(home.path(), &config);
         let names: Vec<_> = agents.iter().map(|agent| agent.name).collect();
-        assert_eq!(names, ["Gemini CLI", "Cursor", "VS Code", "Zed"]);
+        assert_eq!(
+            names,
+            ["Gemini CLI", "Cursor", "VS Code", "Zed", "OpenCode"]
+        );
         let agent = |name: &str| agents.iter().find(|agent| agent.name == name).unwrap();
         let no = Answers {
             yes: false,
