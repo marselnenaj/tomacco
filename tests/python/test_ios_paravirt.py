@@ -1711,6 +1711,14 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(media["sha256_after"], media["sha256_before"])
         self.assertTrue(receipt["storage_hashes_complete"])
         self.assertEqual(receipt["read_only_disks"], {})
+        # The launch's timing: hashing before the engine (every input and the
+        # disk), when the engine started and exited, and the disk's hash after.
+        timing = receipt["timing"]
+        hashed = receipt["storage_hash_observations"]
+        self.assertEqual(timing["output_hashing_bytes"], 512)
+        self.assertEqual(timing["input_hashing_bytes"] + 512, sum(row["bytes"] for row in hashed))
+        self.assertGreaterEqual(timing["input_hashing_seconds"], 0)
+        self.assertLessEqual(timing["emulator_started"], timing["engine_exited"])
         command = receipt["command"]
         self.assertNotIn("enable=virtio_blk_*", command)
         self.assertFalse(receipt["trace_storage"])

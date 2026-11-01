@@ -37,6 +37,61 @@ EXPORT_LIMIT = 64 << 20
 MANIFEST_LIMIT = 16 << 20
 # Space a streamed copy must leave free on its disk.
 COPY_HEADROOM = 1 << 30
+COPY_CHUNK = 4 << 20
+_ZERO_CHUNK = bytes(COPY_CHUNK)
+
+
+def data_extent(fd, position, size, state):
+    """The next data range at or after `position` as (start, end): from the
+    OS's SEEK_DATA/SEEK_HOLE, or all of the rest where the filesystem cannot
+    tell (state["sparse"] False afterwards). A hole reads as zeros, so a copy
+    that skips it is the same file."""
+    if not state["sparse"]:
+        return position, size
+    try:
+        start = os.lseek(fd, position, os.SEEK_DATA)
+        end = os.lseek(fd, start, os.SEEK_HOLE)
+    except OSError as error:
+        if error.errno == errno.ENXIO:
+            return size, size
+        if error.errno not in (errno.EINVAL, errno.ENOTSUP, errno.EOPNOTSUPP, errno.ENOSYS):
+            raise
+        state["sparse"] = False
+        return position, size
+    if not position <= start < end:
+        raise ValueError("The filesystem reported an invalid data range")
+    return min(start, size), min(end, size)
+
+
+def sparse_copy(source_fd, target_fd, size, deadline):
+    """Copy `size` bytes so that the copy has holes where the source has
+    holes or whole zero chunks. A disk copied this way takes the space of its
+    data only, and the launcher's hash reads only that data (it hashes holes as
+    zeros without reading them). The copy reads every data byte of the source;
+    what it leaves out reads back as zeros."""
+    state = {"sparse": getattr(os, "SEEK_DATA", None) is not None and getattr(os, "SEEK_HOLE", None) is not None}
+    position = written = 0
+    while position < size:
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Userland import deadline exceeded")
+        start, end = data_extent(source_fd, position, size, state)
+        position = start
+        while position < end:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Userland import deadline exceeded")
+            data = os.pread(source_fd, min(COPY_CHUNK, end - position), position)
+            if not data:
+                raise ValueError("Userland input was truncated")
+            if data != (_ZERO_CHUNK if len(data) == COPY_CHUNK else bytes(len(data))):
+                view = memoryview(data)
+                while view:
+                    count = os.pwrite(target_fd, view, position + len(data) - len(view))
+                    view = view[count:]
+                written += len(data)
+            position += len(data)
+    os.ftruncate(target_fd, size)
+    return {"data_bytes_written": written, "zero_bytes_skipped": size - written,
+            "extent_queries": "used" if state["sparse"] else "unavailable"}
 
 
 def save(output, record):
@@ -113,7 +168,9 @@ def open_source(root, relative):
 
 
 def snapshot(root, relative, destination, deadline, *, source_fd=None):
-    """Reflink or stream a source, optionally from an already locked descriptor."""
+    """Reflink or stream a source, optionally from an already locked descriptor.
+    A streamed copy keeps the source's holes and leaves whole zero chunks out
+    (sparse_copy)."""
     if time.monotonic() >= deadline:
         raise TimeoutError("Userland import deadline exceeded")
     destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -127,7 +184,7 @@ def snapshot(root, relative, destination, deadline, *, source_fd=None):
         before = os.fstat(source_fd)
         if not stat.S_ISREG(before.st_mode) or not 0 < before.st_size <= 64 << 30:
             raise ValueError("Userland input must be a bounded nonempty regular file")
-        cloned = False
+        cloned, sparse = False, None
         try:
             fcntl.ioctl(target_fd, 0x40049409, source_fd)  # FICLONE
             cloned = True
@@ -137,27 +194,22 @@ def snapshot(root, relative, destination, deadline, *, source_fd=None):
             target.truncate(0)
             # A full copy that runs out of space part way leaves nothing usable
             # and a nearly full disk behind; refuse it before writing.
+            # The copy writes no more than the source's data (sparse_copy).
             space = os.statvfs(target_fd)
             available = space.f_bavail * space.f_frsize
-            if available < before.st_size + COPY_HEADROOM:
+            needed = min(before.st_size, before.st_blocks * 512) + COPY_HEADROOM
+            if available < needed:
                 raise OSError(errno.ENOSPC, f"Copying {Path(root) / relative} needs "
-                              f"{(before.st_size + COPY_HEADROOM) / 2**30:.1f} GiB in {destination.parent}; "
+                              f"{needed / 2**30:.1f} GiB in {destination.parent}; "
                               f"{available / 2**30:.1f} GiB are free")
-            total = 0
-            while total < before.st_size:
-                if time.monotonic() >= deadline:
-                    raise TimeoutError("Userland import deadline exceeded")
-                data = os.pread(source_fd, min(4 << 20, before.st_size - total), total)
-                if not data:
-                    raise ValueError("Userland input was truncated")
-                target.write(data)
-                total += len(data)
+            sparse = sparse_copy(source_fd, target_fd, before.st_size, deadline)
         target.flush()
         os.fsync(target_fd)
         if VerifiedImage._identity(before) != VerifiedImage._identity(os.fstat(source_fd)):
             raise ValueError("Userland input changed while copying")
         copied = os.fstat(target_fd)
     return {"source": str(Path(root) / relative), "copy_method": "reflink" if cloned else "stream",
+            **({"sparse_copy": sparse} if sparse is not None else {}),
             "copy_identity": {"device": copied.st_dev, "inode": copied.st_ino, "bytes": copied.st_size,
                               "mtime_ns": copied.st_mtime_ns, "ctime_ns": copied.st_ctime_ns}}
 

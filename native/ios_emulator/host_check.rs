@@ -50,6 +50,73 @@ pub(crate) struct Facts {
     pub apfs_release: Option<String>,
     pub apfs_vmlinuz: bool,
     pub passt: Option<PathBuf>,
+    /// Physical cores among the CPUs this process may use (one per
+    /// package and core ID), and the configured profile's boot settings.
+    pub physical_cores: Option<usize>,
+    pub profile_boot: Option<Value>,
+}
+
+/// The application processors a profile boots: `cpus=` in its boot
+/// arguments, else the six a generated profile prepares.
+const DEFAULT_AP_CPUS: u64 = 6;
+/// The largest translation cache the launcher allows without a verified
+/// wide-chaining engine, and the one suggested on a host short of memory.
+const LARGE_TRANSLATION_CACHE_MIB: u64 = 2048;
+const SMALL_TRANSLATION_CACHE_MIB: u64 = 1024;
+
+fn ap_cpus(boot: &Value) -> u64 {
+    boot["boot_args"]
+        .as_str()
+        .and_then(|args| {
+            args.split_whitespace()
+                .find_map(|word| word.strip_prefix("cpus=")?.parse::<u64>().ok())
+        })
+        .unwrap_or(DEFAULT_AP_CPUS)
+}
+
+/// What to change in the profile's boot settings for this host: the host CPU
+/// placement and the translation cache, each with the setting, its current
+/// and suggested value and why. Nothing is changed; an empty list means the
+/// settings suit the host. Without a configured profile there is nothing to
+/// compare.
+pub(crate) fn recommend(facts: &Facts) -> Vec<Value> {
+    let Some(boot) = facts.profile_boot.as_ref().filter(|boot| boot.is_object()) else {
+        return Vec::new();
+    };
+    let mut found = Vec::new();
+    let aps = ap_cpus(boot);
+    let policy = boot["host_cpu_policy"].as_str().unwrap_or("scheduler");
+    if let Some(cores) = facts.physical_cores {
+        let cores = cores as u64;
+        if policy != "performance" && cores >= aps + 2 {
+            found.push(json!({"setting":"boot.host_cpu_policy","current":policy,"suggested":"performance",
+                "reason":format!("This host has {cores} physical cores for {aps} application processors: \
+                    performance gives each processor's thread a physical core of its own, the fastest first, \
+                    and leaves the rest to the engine's other threads and the desktop.")}));
+        } else if policy == "performance" && cores < aps {
+            found.push(json!({"setting":"boot.host_cpu_policy","current":policy,"suggested":"scheduler",
+                "reason":format!("This host has {cores} physical cores for {aps} application processors, \
+                    too few to give each its own; the launcher then leaves placement to the scheduler anyway \
+                    (insufficient-physical-cores in its receipt).")}));
+        }
+    }
+    if let Some(total) = facts.memory_total {
+        let cache = boot["translation_cache_mib"].as_u64();
+        if total < COMFORTABLE_MEMORY && cache.is_none_or(|mib| mib > SMALL_TRANSLATION_CACHE_MIB) {
+            found.push(json!({"setting":"boot.translation_cache_mib","current":cache,
+                "suggested":SMALL_TRANSLATION_CACHE_MIB,
+                "reason":format!("{} of memory leaves little beside the guest's 8 GiB; a smaller translation \
+                    cache gives the desktop room, at the cost of translating code again more often.", gib(total))}));
+        } else if total >= 2 * COMFORTABLE_MEMORY
+            && cache.is_some_and(|mib| mib < LARGE_TRANSLATION_CACHE_MIB)
+        {
+            found.push(json!({"setting":"boot.translation_cache_mib","current":cache,
+                "suggested":LARGE_TRANSLATION_CACHE_MIB,
+                "reason":format!("{} of memory has room for the largest translation cache this host's engine \
+                    allows; a smaller one translates code again more often.", gib(total))}));
+        }
+    }
+    found
 }
 
 fn item(name: &str, status: &str, found: Value, message: String, remedy: &str) -> Value {
@@ -357,6 +424,31 @@ pub(crate) fn cards(sys: &Path) -> Vec<Card> {
     found
 }
 
+/// The physical cores among `allowed` CPUs, from `sys`/devices/system/cpu:
+/// one per (package, core) pair. None when the topology cannot be read.
+pub(crate) fn physical_cores(sys: &Path, allowed: &[usize]) -> Option<usize> {
+    let mut cores = std::collections::BTreeSet::new();
+    for cpu in allowed {
+        let topology = sys.join(format!("devices/system/cpu/cpu{cpu}/topology"));
+        let number = |file: &str| read_text(&topology.join(file)).trim().parse::<i64>().ok();
+        cores.insert((number("physical_package_id")?, number("core_id")?));
+    }
+    (!cores.is_empty()).then_some(cores.len())
+}
+
+/// The CPUs this process may run on.
+fn allowed_cpus() -> Vec<usize> {
+    // SAFETY: a zeroed cpu_set_t is a valid empty set for sched_getaffinity.
+    let mut set: libc::cpu_set_t = unsafe { std::mem::zeroed() };
+    if unsafe { libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &mut set) } != 0
+    {
+        return Vec::new();
+    }
+    (0..libc::CPU_SETSIZE as usize)
+        .filter(|cpu| unsafe { libc::CPU_ISSET(*cpu, &set) })
+        .collect()
+}
+
 /// The Vulkan drivers (ICD manifests) installed under `root`.
 pub(crate) fn vulkan_drivers(root: &Path) -> Vec<String> {
     let mut drivers: Vec<String> = ["usr/share/vulkan/icd.d", "etc/vulkan/icd.d"]
@@ -388,6 +480,7 @@ pub(crate) fn gather(a: &Value) -> Result<Facts> {
         .ok()
         .and_then(|directory| virtual_phone::records(&directory).ok())
         .map(|(profile, _)| profile);
+    let profile_boot = profile.as_ref().map(|profile| profile["boot"].clone());
     let (directory, needed, needed_for) = if !s(a, "directory").is_empty() {
         (
             path(s(a, "directory"), true, true)?,
@@ -444,6 +537,8 @@ pub(crate) fn gather(a: &Value) -> Result<Facts> {
             .is_some_and(|apfs| apfs.join("vmlinuz").is_file()),
         support,
         passt: toolchain::which("passt"),
+        physical_cores: physical_cores(Path::new("/sys"), &allowed_cpus()),
+        profile_boot,
     })
 }
 
@@ -462,7 +557,12 @@ pub(crate) fn summary(items: Vec<Value>) -> Value {
 }
 
 pub fn check(a: &Value) -> Result {
-    Ok(summary(evaluate(&gather(a)?)))
+    let facts = gather(a)?;
+    let mut answer = summary(evaluate(&facts));
+    answer["recommend"] = json!(recommend(&facts));
+    answer["host"] = json!({"logical_cpus":facts.cpus,"physical_cores":facts.physical_cores,
+        "memory_total_bytes":facts.memory_total});
+    Ok(answer)
 }
 
 #[cfg(test)]
@@ -493,7 +593,140 @@ mod tests {
             apfs_release: Some("6.17.1-arch1-1".into()),
             apfs_vmlinuz: false,
             passt: Some("/usr/bin/passt".into()),
+            physical_cores: Some(16),
+            profile_boot: Some(
+                json!({"host_cpu_policy":"performance","translation_cache_mib":2048}),
+            ),
         }
+    }
+
+    #[test]
+    fn a_profile_that_suits_the_host_gets_no_recommendation() {
+        assert_eq!(recommend(&ready()), Vec::<Value>::new());
+        let unconfigured = Facts {
+            profile_boot: None,
+            ..ready()
+        };
+        assert!(recommend(&unconfigured).is_empty());
+    }
+
+    #[test]
+    fn cpu_placement_is_recommended_from_the_physical_cores() {
+        let settings = |facts: &Facts| -> Vec<(String, Value)> {
+            recommend(facts)
+                .iter()
+                .map(|row| {
+                    (
+                        row["setting"].as_str().unwrap().to_string(),
+                        row["suggested"].clone(),
+                    )
+                })
+                .collect()
+        };
+        let scheduler = Facts {
+            profile_boot: Some(json!({"translation_cache_mib":2048})),
+            ..ready()
+        };
+        let found = recommend(&scheduler);
+        assert_eq!(
+            settings(&scheduler),
+            [("boot.host_cpu_policy".to_string(), json!("performance"))]
+        );
+        assert_eq!(found[0]["current"], "scheduler");
+        assert!(
+            found[0]["reason"]
+                .as_str()
+                .unwrap()
+                .contains("16 physical cores for 6")
+        );
+        // Six processors need eight cores before performance is suggested.
+        let tight = Facts {
+            physical_cores: Some(7),
+            ..scheduler.clone()
+        };
+        assert!(recommend(&tight).is_empty());
+        // cpus= in the boot arguments is the processor count.
+        let small = Facts {
+            physical_cores: Some(4),
+            profile_boot: Some(
+                json!({"host_cpu_policy":"performance","translation_cache_mib":2048,
+                "boot_args":"serial=3 cpus=6 -v"}),
+            ),
+            ..ready()
+        };
+        assert_eq!(
+            settings(&small),
+            [("boot.host_cpu_policy".to_string(), json!("scheduler"))]
+        );
+        let two = Facts {
+            profile_boot: Some(
+                json!({"host_cpu_policy":"performance","translation_cache_mib":2048,
+                "boot_args":"cpus=2"}),
+            ),
+            ..small.clone()
+        };
+        assert!(recommend(&two).is_empty());
+        let unknown = Facts {
+            physical_cores: None,
+            ..scheduler
+        };
+        assert!(recommend(&unknown).is_empty());
+    }
+
+    #[test]
+    fn the_translation_cache_follows_the_memory() {
+        let small = Facts {
+            memory_total: Some(14 * GIB),
+            ..ready()
+        };
+        let found = recommend(&small);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0]["setting"], "boot.translation_cache_mib");
+        assert_eq!(
+            (found[0]["current"].clone(), found[0]["suggested"].clone()),
+            (json!(2048), json!(1024))
+        );
+        let unset = Facts {
+            profile_boot: Some(json!({"host_cpu_policy":"performance"})),
+            ..small.clone()
+        };
+        assert_eq!(recommend(&unset)[0]["current"], Value::Null);
+        let already = Facts {
+            profile_boot: Some(
+                json!({"host_cpu_policy":"performance","translation_cache_mib":1024}),
+            ),
+            ..small
+        };
+        assert!(recommend(&already).is_empty());
+        let roomy = Facts {
+            profile_boot: Some(
+                json!({"host_cpu_policy":"performance","translation_cache_mib":512}),
+            ),
+            ..ready()
+        };
+        assert_eq!(recommend(&roomy)[0]["suggested"], 2048);
+        let middle = Facts {
+            memory_total: Some(24 * GIB),
+            ..roomy
+        };
+        assert!(recommend(&middle).is_empty());
+    }
+
+    #[test]
+    fn physical_cores_count_one_per_package_and_core() {
+        let root = tempfile::tempdir().unwrap();
+        for (cpu, package, core) in [(0, 0, 0), (1, 0, 0), (2, 0, 1), (3, 1, 0)] {
+            let topology = root
+                .path()
+                .join(format!("devices/system/cpu/cpu{cpu}/topology"));
+            fs::create_dir_all(&topology).unwrap();
+            fs::write(topology.join("physical_package_id"), format!("{package}\n")).unwrap();
+            fs::write(topology.join("core_id"), format!("{core}\n")).unwrap();
+        }
+        assert_eq!(physical_cores(root.path(), &[0, 1, 2, 3]), Some(3));
+        assert_eq!(physical_cores(root.path(), &[0, 1]), Some(1));
+        assert_eq!(physical_cores(root.path(), &[0, 9]), None);
+        assert_eq!(physical_cores(root.path(), &[]), None);
     }
 
     fn status(facts: &Facts, name: &str) -> (String, Value) {

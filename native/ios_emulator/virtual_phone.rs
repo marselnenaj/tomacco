@@ -756,6 +756,17 @@ fn allocated_bytes(directory: &Path) -> u64 {
         .sum()
 }
 
+/// What a streamed copy of a disk writes: its bytes on disk, at most its
+/// size. The copy keeps holes and leaves zero chunks out, so it never writes
+/// more than the source's allocated data (on a filesystem that compresses,
+/// the copy is compressed as well). None when it is not a readable file.
+fn copied_bytes(path: &Path) -> Option<u64> {
+    fs::metadata(path)
+        .ok()
+        .filter(|meta| meta.is_file())
+        .map(|meta| meta.len().min(meta.blocks() * 512))
+}
+
 /// Whether the filesystem of `installs` can clone `source` instead of
 /// copying it (FICLONE), as the copy tries first. The probe clones the
 /// base's smallest disk into a temporary file there and removes it again.
@@ -839,11 +850,17 @@ fn start_disk(profile: &Value, state: &Value, pins: &[(PathBuf, String)], probe:
     let Some(root) = disk_overlay::root_bytes(&base) else {
         return Value::Null;
     };
-    let mut disks = if method == "overlay" { 0 } else { root };
+    let mut disks = match method {
+        "overlay" => 0,
+        // A streamed copy writes the base's data only (sparse_copy in
+        // tools/prepare_ios_userland.py); a flattened chain its virtual size.
+        "copy" => copied_bytes(&base.join(disk_overlay::ROOT_RAW)).unwrap_or(root),
+        _ => root,
+    };
     for name in COPIED_DISKS {
-        match fs::metadata(base.join(name)) {
-            Ok(meta) if meta.is_file() => disks += meta.len(),
-            _ => return Value::Null,
+        match copied_bytes(&base.join(name)) {
+            Some(bytes) => disks += bytes,
+            None => return Value::Null,
         }
     }
     let Some(free) = free_bytes(&installs) else {
@@ -1197,6 +1214,17 @@ fn next_step(state: &Value, running: bool, ended: bool, busy: Option<&Value>) ->
     Value::Null
 }
 
+/// A start's or stop's step times as the script recorded them: an object
+/// with a list of steps, else null.
+fn timing(state: &Value, key: &str) -> Value {
+    match &state[key] {
+        value @ Value::Object(map) if map.get("steps").is_some_and(Value::is_array) => {
+            value.clone()
+        }
+        _ => Value::Null,
+    }
+}
+
 fn application_process_observation(profile: &Value, state: &Value, running: bool) -> Value {
     let launch = &state["launch_receipt"];
     if running
@@ -1314,6 +1342,9 @@ pub fn status(a: &Value) -> Result {
         // or stop with its seconds, and the disk copy's progress while preparing.
         "phase_started":times["phase_started"],"phase_elapsed_seconds":times["phase_elapsed_seconds"],
         "phases":times["phases"],"copy_progress":copy_progress(&state),
+        // Where the last start and stop spent their time, step by step
+        // (tools/ios_start_timing.py); kept in the run's timing.json too.
+        "start_timing":timing(&state,"start_timing"),"stop_timing":timing(&state,"stop_timing"),
         // Whether the next start's disk copy fits in the profile's installs,
         // and whether it copies the root disk or lays an overlay on it.
         "start_disk":start_disk(&profile,&state,&states::pinned(&directory),false),
@@ -2282,6 +2313,17 @@ mod start_progress_tests {
     }
 
     #[test]
+    fn timing_is_the_recorded_steps_or_null() {
+        let steps = json!({"steps":[{"step":"disk_copy","seconds":300.0}],"total_seconds":300.0,
+            "slowest":"disk_copy","run":3});
+        let state = json!({"start_timing":steps,"stop_timing":{"steps":"x"}});
+        assert_eq!(timing(&state, "start_timing"), steps);
+        assert!(timing(&state, "stop_timing").is_null());
+        assert!(timing(&json!({}), "start_timing").is_null());
+        assert!(timing(&json!({"start_timing":[1]}), "start_timing").is_null());
+    }
+
+    #[test]
     fn a_state_without_a_usable_log_reports_no_phase_time() {
         let none = json!({"phase_started":null,"phase_elapsed_seconds":null,"phases":[]});
         assert_eq!(phase_times(&json!({"phase":"stopped"}), 9.0), none);
@@ -2456,6 +2498,13 @@ mod start_disk_tests {
             // Neither reading leaves anything in installs.
             assert_eq!(fs::read_dir(&installs).unwrap().count(), 0);
         }
+        // A sparse base needs room for its data only, as its copy keeps the holes.
+        let sparse = File::create(base.join("system.raw")).unwrap();
+        sparse.set_len(1 << 30).unwrap();
+        let disk = start_disk(&profile, &state, &[], false);
+        assert_eq!(disk["needed_bytes"], 2 * 4096 + COPY_HEADROOM);
+        assert_eq!(copied_bytes(&base.join("system.raw")), Some(0));
+        assert_eq!(copied_bytes(&base), None);
         // An open run without a verified base, or a base without its disks,
         // says nothing.
         assert!(

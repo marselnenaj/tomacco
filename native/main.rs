@@ -1,3 +1,5 @@
+// The status of the virtual iPhone is one large json! literal.
+#![recursion_limit = "256"]
 mod accessibility;
 mod analyze;
 mod android_debug;

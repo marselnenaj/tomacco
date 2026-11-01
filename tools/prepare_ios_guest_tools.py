@@ -366,6 +366,11 @@ def prepare(args):
                 record[name] = prior[name]
 
     def save():
+        # When each step began (copy-storage, install-preboot, ...), for the
+        # start's timing (ios_start_timing).
+        steps = record.setdefault("step_times", [])
+        if not steps or steps[-1]["step"] != record["phase"]:
+            steps.append({"step": record["phase"], "started": time.time()})
         temporary = output / ".guest-tools-install.json.tmp"
         with temporary.open("w", encoding="utf-8") as stream:
             os.fchmod(stream.fileno(), 0o600)

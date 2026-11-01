@@ -45,6 +45,16 @@ over the start's phases, not tried on a live phone.
          "why": "The last start ended while its guest kept running. Start again: ..."}
 ```
 
+When a start or stop ends, `start_timing` and `stop_timing` in the status break it down into steps with their
+seconds, name the `slowest` and give `total_seconds`; the run's own `timing.json`, beside its disks, keeps both. A
+start's steps are `checks` (apps, a guest-tools rebuild, the kernel), `preparation`, `disk_copy` (with its `method`),
+`guest_tools` (the helper that installs them), `boot_request`, `input_hashing` (with its `bytes`), `launcher`, `boot`
+(until the guest service answers), `app_install`, `guest_settings`, `unlock_and_launch` and `display_check`; a failed
+start has the steps it reached. A stop's are `guest_exit` (the flush and the emulator's exit), `output_hashing` and
+`finalize`. A step whose times are unknown, for example from a launcher of an older version, is counted in the next
+one, which lists it under `includes`. The breakdown has unit tests with synthetic step logs; it has not been read from
+a live start yet.
+
 Accepted is not the same as visible. After an accepted launch the start looks at the panel for up
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
 display defect, not a working phone.
@@ -114,7 +124,10 @@ way by itself, and repeats that every twenty seconds while the guest is busy. On
 refused at the limit is the guest frozen. `ios.virtual.status` reports a guest that ended by itself as
 `guest_ended`, with `guest_saved` saying whether it closed cleanly.
 
-Disk copies are 32 GiB each, and at most two are kept. Only copies Tomacco made in the profile's `installs`
+Disk copies are 32 GiB disks, and at most two are kept. On a filesystem that cannot clone files the copy is streamed: it
+keeps the base's holes and leaves out every 4 MiB chunk of zeros, so it takes the space of the disk's data, and the
+hashes taken before and after a session read only that data. On a synthetic 4 GiB disk with 0.5 GiB of data this took
+the copy from 13.6 s to 3.9 s and the launcher's hash from 32.4 s to 5.4 s; it has not been run on a live phone. Only copies Tomacco made in the profile's `installs`
 directory are ever deleted.
 
 To free that space yourself, `ios.virtual.cleanup` deletes the older copies. Without arguments it is a dry run:
@@ -131,8 +144,8 @@ refused, not deleted. A `guest-install*` directory the state does not know is li
 delete it yourself if it is yours. A real cleanup waits until no start or stop runs. The cleanup has unit tests and a
 control-plane test; it has not been run on a real profile yet.
 
-A start checks the space first. When the filesystem of `installs` lacks room for the copy (the base's disks
-plus 1 GiB, counting the older copies the start would delete first), `ios.virtual.start` refuses at once with
+A start checks the space first. When the filesystem of `installs` lacks room for the copy (the data the base's
+disks hold, which is what a streamed copy writes, plus 1 GiB, counting the older copies the start would delete first), `ios.virtual.start` refuses at once with
 `ios_virtual_disk_space`, before anything is deleted or copied. The refusal says how much to free. On a filesystem
 that clones files (btrfs, or XFS with reflink) the copy shares blocks with its base and needs only the 1 GiB.
 `start_disk` in `ios.virtual.status` gives the same reckoning before you start: `needed_bytes`, `free_bytes`,
@@ -166,7 +179,7 @@ start's attempt, another name or a copy an overlay reads. `kept_because` says wh
 In the desktop, the iOS test system dialog has the same under **Saved states** (*Gesicherte Zustände*): a list, **Save
 state**, **Start from it** while the phone is off, and **Delete**, which asks a second time.
 
-Each named run keeps its own 32 GiB copy on a filesystem that cannot share blocks. The operations have unit tests and
+Each named run keeps its own copy, up to 32 GiB, on a filesystem that cannot share blocks. The operations have unit tests and
 control-plane tests; they have not been used with a live phone yet.
 
 ### Copy-free starts (experimental)

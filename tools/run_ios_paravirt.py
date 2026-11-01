@@ -224,7 +224,10 @@ def admit_translation_cache(qmp, requested_mib, receipt):
 LARGE_HASH_BYTES = 256 << 20
 HASH_READ_BYTES = 4 << 20
 HASH_BYTES_PER_SECOND = 128 << 20
-SPARSE_HASH_QUERY_LIMIT = 4096
+# Two queries per data extent. A disk copied sparsely (prepare_ios_userland's
+# sparse_copy) can have thousands of extents; past the limit the rest is read
+# as data, holes too. A query costs microseconds, so the bound stays small.
+SPARSE_HASH_QUERY_LIMIT = 1 << 18
 
 
 def hash_region(stream, position, size, sparse):
@@ -344,6 +347,12 @@ def file_digest(path, *, observation=None):
                            read_bytes_per_second_limit=HASH_BYTES_PER_SECOND if paced else None,
                            cache_noreuse_hint=advice)
     return digest.hexdigest()
+
+
+def timing_of(observations, kind):
+    """The seconds and bytes of these hash observations, as KIND_hashing_*."""
+    return {f"{kind}_hashing_seconds": round(sum(row.get("elapsed_seconds") or 0 for row in observations), 3),
+            f"{kind}_hashing_bytes": sum(row.get("bytes") or 0 for row in observations)}
 
 
 def save_result(output, record):
@@ -1878,6 +1887,12 @@ def main():
                            "format": "qcow2" if name in overlays else "raw",
                            **({"backing_chain": overlays[name]} if name in overlays else {})}
                     for name, path in writable.items()}
+            # Where the launch spends its time (ios_start_timing): the hashing
+            # of every input and disk before the engine starts, and below when
+            # the engine started and exited and how long the disks' hashing
+            # after it took.
+            inputs_hashed = len(hash_observations)
+            record["timing"] = timing_of(hash_observations, "input")
             if nvram is not None:
                 record["nvram_handoff"] = {**nvram, "prepared_tree": original_tree}
             if pcc_config is not None:
@@ -1972,6 +1987,7 @@ def main():
             qmp = None
             record["host_pressure_before_launch"] = pressure_preflight("before-emulator-launch", record)
             started = time.monotonic()
+            record["timing"]["emulator_started"] = time.time()
             parent_pid = os.getpid()
             def interrupt(signum, frame):
                 raise KeyboardInterrupt
@@ -2066,6 +2082,7 @@ def main():
                         qmp.close()
                     record["exit_code"] = child.returncode
                     record["elapsed_seconds"] = round(time.monotonic() - started, 3)
+                    record["timing"]["engine_exited"] = time.time()
                     for sig, handler in previous_handlers.items():
                         signal.signal(sig, handler)
             record["guest_evidence"] = guest_evidence(output)
@@ -2093,6 +2110,7 @@ def main():
                         record["persistent_disks"][name]["sha256_after"] = observed_digest(
                             Path(f"/proc/self/fd/{stream.fileno()}"))
                     record["storage_hashes_complete"] = True
+                    record["timing"].update(timing_of(hash_observations[inputs_hashed:], "output"))
                 except (OSError, ValueError) as error:
                     record["storage_hash_error"] = str(error)
                     record["outcome"] = "observation-error"

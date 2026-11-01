@@ -38,6 +38,7 @@ from build_ios_guest_tools import policy_entries, stage_application
 from ios_application_bundle import inspect_bundle
 import ios_disk_overlay
 import ios_run_verdict
+import ios_start_timing
 from ios_hot_install import (BUNDLE_PORT, connect_port, guest_socket, reserve, send_bundle, spare_entries,
                              with_hashes, write_private)
 from ios_graphics_location import BUNDLE_PATH, COMPILER_LIBRARY_NAME, PLUGIN_PERSONALITY
@@ -577,6 +578,9 @@ class Phone:
             raise ValueError("Unsupported virtual iPhone profile")
         self.state_path = directory / "state.json"
         self.state = json.loads(self.state_path.read_text())
+        # Wall times of this start's steps, and the preparation record and
+        # launcher report they are read with (record_start_timing).
+        self.marks, self.preparation, self.report = {}, None, None
         if "verified" not in self.state and self.state.get("closed") is True:
             self.state["verified"] = self.base()
 
@@ -692,6 +696,7 @@ class Phone:
         result = self.observe("ios.emulator.report", {"job_id": self.state["guest_job"]}, missing=True)
         if result is None:
             result = {"report": {"outcome": "job-unknown"}}
+        self.report = result.get("report") if isinstance(result.get("report"), dict) else None
         # Evidence of the wrong shape counts as absent, never as proof.
         summary = dict(result["report"]) if isinstance(result.get("report"), dict) else {}
         stop = dict(result["stop"]) if isinstance(result.get("stop"), dict) else {}
@@ -913,10 +918,12 @@ class Phone:
         # Recorded before the copy exists: a start that fails or is cancelled
         # must not leave a copy behind that blocks or outlives later starts.
         self.save(phase="preparing", error=None, attempted=run, attempt={"run": run, "install": str(output)})
+        self.marks["preparing"] = time.time()
         try:
             job = self.wait(self.call("ios.emulator.prepare_guest_tools", prepare))
             record_path = output / "guest-tools-install.json"
             record = json.loads(record_path.read_text()) if record_path.is_file() else {}
+            self.preparation = record
             if job["state"] != "succeeded" or record.get("state") != "installed":
                 raise RuntimeError("Preparation failed: " + str(record.get("error") or job["state"]))
             # iOS's update cleanup once removed the Metal driver from Preboot
@@ -946,6 +953,7 @@ class Phone:
                   created=self.state.get("created", []) + [str(output)], application_launch_accepted=None,
                   attempt=None, model=self.model or "", applications=dict(base.get("applications") or {}),
                   guest_network=network, trust_cache_module=module)
+        self.marks["booting"] = time.time()
 
     def tools_for_start(self, tools):
         """The guest-tools build the next start installs: the one asked for,
@@ -1370,6 +1378,16 @@ class Phone:
         return response["path"]
 
     def start(self, tools, open_app):
+        self.marks = {"begin": time.time()}
+        try:
+            self.start_steps(tools, open_app)
+        except Exception:
+            # A start that failed: its steps so far show where.
+            self.record_start_timing()
+            raise
+        self.record_start_timing()
+
+    def start_steps(self, tools, open_app):
         host = host_software()
         staged = None
         if not self.guest_running():
@@ -1410,6 +1428,7 @@ class Phone:
             if time.monotonic() > deadline:
                 raise RuntimeError("The guest service did not answer within an hour")
             time.sleep(15)
+        self.marks["guest_ready"] = time.time()
         self.apply_watchdog_scale(job, status["result"]["response"])
         # The staged apps go in before the launch (the app to open may be one of
         # them) and before the time-zone step: installd admits an ad-hoc app only
@@ -1430,23 +1449,70 @@ class Phone:
         except RuntimeError as error:
             self.save(applications_error=str(error))
             emit("installing", outcome="failed", error=str(error))
+        self.marks["applications_installed"] = time.time()
         # After the install for the reason above, before the launch so that
         # the app opened next comes from a SpringBoard with the right scale.
         self.apply_display_scale(job, status["result"]["response"])
         self.apply_time_zone(job, status["result"]["response"])
         self.apply_auto_lock(job, status["result"]["response"])
         self.apply_effects(job, status["result"]["response"])
+        self.marks["settings_applied"] = time.time()
         self.save(phase="unlocking")
         if open_app:
             self.launch(job, deadline)
         self.save(phase="launch-accepted" if open_app else "service-ready",
                   application_launch_accepted=bool(open_app), application_scene_verified=False,
                   display_visible=None)
+        self.marks["launched"] = time.time()
         if open_app:
             self.observe_display(job)
         # Only a start that ends with a picture vouches for the host it ran on.
         if self.state.get("display_visible") is True or not open_app:
             self.save(host_software=host, host_software_run=self.state.get("run"))
+
+    def launcher_request(self):
+        """The guest job's request.json, which holds the launcher's timing;
+        None when it cannot be read. Reading it is never worth a failed start."""
+        job = self.state.get("guest_job")
+        if not job:
+            return None
+        try:
+            reply = self.invoke("ios.emulator.report", {"job_id": job})
+            path = Path(reply["result"]["report_directory"]) / "paravirtual" / "request.json"
+            if path.is_symlink() or path.stat().st_size > 8 << 20:
+                return None
+            return json.loads(path.read_text())
+        except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError):
+            return None
+
+    def record_timing(self, kind, breakdown):
+        """Keep a start's or stop's steps in the state (ios.virtual.status
+        shows them) and in the run's own directory, timing.json, beside its
+        disks. Neither may fail the start or stop it describes."""
+        breakdown = {**breakdown, "run": self.state.get("run")}
+        emit("timing", kind=kind, **{key: breakdown[key] for key in ("total_seconds", "slowest", "steps")})
+        try:
+            self.save(**{kind + "_timing": breakdown})
+        except OSError as error:
+            emit("timing", kind=kind, state="not-saved", reason=str(error))
+        install = Path(self.state.get("install") or "")
+        if not self.state.get("install") or not self.owned(install):
+            return
+        path = install / "timing.json"
+        try:
+            kept = json.loads(path.read_text()) if path.is_file() and not path.is_symlink() else {}
+            kept = kept if isinstance(kept, dict) else {}
+            kept[kind] = breakdown
+            write_private(path, (json.dumps(kept, indent=2) + "\n").encode())
+        except (OSError, ValueError) as error:
+            emit("timing", kind=kind, state="not-written", reason=str(error))
+
+    def record_start_timing(self):
+        if self.marks.get("begin") is None:
+            return
+        self.marks.setdefault("finished", time.time())
+        request = self.launcher_request() if "booting" in self.marks else None
+        self.record_timing("start", ios_start_timing.start_breakdown(self.marks, self.preparation, request))
 
     def observe_display(self, job):
         """Look at the panel once the app is in front. iOS can accept launches
@@ -2257,6 +2323,20 @@ class Phone:
         if self.state.get("closed") is True or not self.state.get("guest_job"):
             emit("stopped", run=self.state.get("run"))
             return
+        begin = time.time()
+        try:
+            self.stop_guest()
+        except Exception:
+            self.record_stop_timing(begin)
+            raise
+        self.record_stop_timing(begin)
+
+    def record_stop_timing(self, begin):
+        # Only a stop that read the launcher's report (finalize) has its steps.
+        if self.report is not None:
+            self.record_timing("stop", ios_start_timing.stop_breakdown(begin, self.report, time.time()))
+
+    def stop_guest(self):
         job, forced = self.state["guest_job"], False
         # Until the guest service has answered once, iOS has not come up and
         # nobody could have changed anything in it.
