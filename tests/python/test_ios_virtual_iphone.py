@@ -1147,6 +1147,47 @@ class VirtualPhoneLogic(unittest.TestCase):
         self.assertTrue(base.is_dir() and unclosed.is_dir() and new.is_dir())
         self.assertEqual(self.state()["created"], [str(base), str(unclosed), str(new)])
 
+    def test_an_overlay_start_asks_for_an_overlay_and_keeps_the_copies_it_reads(self):
+        from test_ios_disk_overlay import write_qcow2
+        profile = json.loads((self.profile / "profile.json").read_text())
+        helper = self.root / "helper/qemu-system-x86_64"
+        helper.parent.mkdir()
+        (helper.parent / "qemu-img").write_text("#!/bin/sh\n")
+        (helper.parent / "qemu-img").chmod(0o755)
+        profile["prepare"]["helper_engine"] = str(helper)
+        profile["start_disks"] = "overlay"
+        (self.profile / "profile.json").write_text(json.dumps(profile))
+        installs = self.profile / "installs"
+        older, base = installs / "guest-install8", installs / "guest-install9"
+        for copy in (older, base):
+            copy.mkdir()
+        (older / "system.raw").write_bytes(bytes(8192))
+        write_qcow2(base / "system.qcow2", 8192, backing=str(older / "system.raw"))
+        verified = {"run": 9, "install": str(base), "tools": str(self.tools)}
+        self.write_state(run=9, install=str(base), tools=str(self.tools), closed=True, guest_job=None,
+                         created=[str(older), str(base)], verified=verified)
+        self.scenario(ios__emulator__prepare_guest_tools=ok({"id": "prepare", "state": "failed"}))
+        with self.assertRaises(RuntimeError):
+            self.phone().start(None, False)
+        prepare = self.calls("ios.emulator.prepare_guest_tools")[0]["arguments"]
+        self.assertEqual(prepare["disk"], str(base / "system.qcow2"))
+        self.assertEqual((prepare["root_overlay"], prepare["qemu_img"]), (True, str(helper.parent / "qemu-img")))
+        # The older copy is the verified base's backing file: the start's prune keeps it.
+        self.assertTrue(older.is_dir())
+        self.assertEqual(self.state()["created"], [str(older), str(base)])
+        # Without qemu-img the start copies and says so; an overlay is never asked for.
+        (helper.parent / "qemu-img").unlink()
+        events = []
+        with patch.object(ios_virtual_iphone, "emit", lambda phase, **details: events.append((phase, details))), \
+                patch.object(ios_virtual_iphone.ios_disk_overlay.shutil, "which", lambda _name: None):
+            with self.assertRaises(RuntimeError):
+                self.phone().start(None, False)
+        prepare = self.calls("ios.emulator.prepare_guest_tools")[-1]["arguments"]
+        self.assertFalse(prepare["root_overlay"])
+        self.assertNotIn("qemu_img", prepare)
+        self.assertIn(("start-disks", {"method": "copy", "reason": "no qemu-img beside the helper engine or on PATH"}),
+                      events)
+
     def test_a_stop_without_confirmed_flush_never_becomes_the_base(self):
         current = self.profile / "installs/guest-install8"
         current.mkdir()

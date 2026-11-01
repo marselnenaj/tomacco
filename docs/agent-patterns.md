@@ -117,7 +117,7 @@ status is not 0. Branch on `code`; show the user `message`; follow `remedy`. Rea
 ## Safe and destructive operations
 
 Every operation carries the four MCP annotations, and `tomaccoctl schema` shows them under
-`annotations`. Of the 216 operations, 73 are read-only and 22 are destructive.
+`annotations`. Of the 222 operations, 76 are read-only and 23 are destructive.
 
 | Annotation | What it means for an agent |
 | --- | --- |
@@ -131,7 +131,7 @@ The destructive ones are `catalog.remove`, `project.configure`, `job.cancel`, `s
 `device.install`, `device.app`, `android.each`, `android.avd_profile`, `android.emulator`,
 `remote.run`, `workspace.remove`, `files.write`, `release.version`, `release.notes`, `apple.simulator`,
 `apple.device`, `play.commit`, `play.abort`, `ios.emulator.restore`, `ios.virtual.cleanup`,
-`update.apply` and `update.rollback`. The [reference](reference/README.md) marks each.
+`ios.virtual.state_delete`, `update.apply` and `update.rollback`. The [reference](reference/README.md) marks each.
 
 Two of them are dry runs unless told otherwise. Show the user what the dry run lists, and only
 then repeat it:

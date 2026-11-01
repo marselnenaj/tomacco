@@ -10,6 +10,13 @@
             <numerusform>%n new frames/s</numerusform>
         </translation>
     </message>
+    <message numerus="yes">
+        <source>Typing %n character(s) from the clipboard</source>
+        <translation>
+            <numerusform>Typing %n character from the clipboard</numerusform>
+            <numerusform>Typing %n characters from the clipboard</numerusform>
+        </translation>
+    </message>
 </context>
 <context>
     <name>IosResearch</name>

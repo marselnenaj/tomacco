@@ -1,6 +1,7 @@
 //! Direct Linux iOS restore-shell execution and separate kernel research probes.
 pub mod control;
 pub mod crash_reports;
+mod disk_overlay;
 pub mod guest_control;
 pub mod guest_tools;
 pub mod host_check;
@@ -11,6 +12,7 @@ mod pmp_debug;
 pub mod research;
 pub mod restore;
 pub mod setup_chain;
+pub mod syslog;
 pub mod ui_testing;
 pub mod usb_bridge;
 pub mod userland;

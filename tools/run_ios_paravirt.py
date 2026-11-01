@@ -29,6 +29,7 @@ import time
 from prepare_ios_paravirt import (ap_cpu_count, decode, display_handoff, identity_handoff,
                                   FIRMWARE, MAX_TREE_BYTES)
 from ios_paravirt_storage import nvram_handoff
+import ios_disk_overlay
 from ios_paravirt_pcc import hostname_config, pcc_config_handoff, pcc_guest_evidence
 from ios_paravirt_firmware import der_fields, retag_im4p, validate_im4m
 from ios_host_pressure import gpu_memory_short, pressure_error, process_gpu_memory, wait_for_host_pressure
@@ -594,6 +595,26 @@ def engine_file_limit(writable_sizes, display_profile, budget=32 << 20, mailbox=
         frame = max(frame, frame_mailbox_bytes(display_profile))
     frame = -(-(frame + (1 << 20)) // (1 << 20)) << 20
     return max(budget, frame, *writable_sizes)
+
+
+def writable_disk_bytes(stream):
+    """The most a writable disk's file may grow to: a raw disk's length, or a
+    qcow2 overlay's virtual size plus its metadata (one L2 entry per cluster,
+    refcounts and a margin)."""
+    header = ios_disk_overlay.qcow2_header(stream.fileno())
+    length = os.fstat(stream.fileno()).st_size
+    if header is None:
+        return length
+    clusters = -(-header["size"] // (1 << header["cluster_bits"]))
+    return max(length, header["size"] + clusters * 16 + (64 << 20))
+
+
+def disk_node(name, filename, read_only, qcow2):
+    """The -blockdev node of a guest disk. An overlay's backing chain is
+    opened by QEMU from its header (absolute names), read-only."""
+    node = {"driver": "qcow2" if qcow2 else "raw", "node-name": name, "read-only": read_only,
+            "file": {"driver": "file", "filename": filename, "locking": "on"}}
+    return json.dumps(node, separators=(",", ":"))
 
 
 def child_limits(parent_pid, max_file_bytes=32 << 20):
@@ -1595,6 +1616,22 @@ def main():
             media[name] = session.enter_context(open_writable_storage(path, protected))
             protected.append(path)
         storage = session.enter_context(open_sep_storage(storage_path, protected)) if storage_path else None
+        # An overlay's backing files are read only; none may be a disk or
+        # input of this session, which QEMU would then write through.
+        overlays = {}
+        for name, stream in media.items():
+            header = ios_disk_overlay.qcow2_header(stream.fileno())
+            if header is None:
+                continue
+            try:
+                chain = ios_disk_overlay.backing_chain(writable[name])[1:]
+            except ValueError as error:
+                parser.error(str(error))
+            own = {(item.stat().st_dev, item.stat().st_ino)
+                   for item in (*protected, *([storage_path] if storage_path else []))}
+            if any((layer.stat().st_dev, layer.stat().st_ino) in own for layer in chain):
+                parser.error("An overlay's backing file must not be a disk or input of this session")
+            overlays[name] = [str(layer) for layer in chain]
         nvram = None
         if "tomacco-aux" in media or "tomacco-aux" in disks:
             auxiliary = media.get("tomacco-aux")
@@ -1603,7 +1640,7 @@ def main():
                 fcntl.flock(auxiliary, fcntl.LOCK_SH | fcntl.LOCK_NB)
             nvram = nvram_handoff(tree, auxiliary)
         pcc_config = pcc_config_handoff(tree, args.pcc_hostname) if args.pcc_hostname is not None else None
-        writable_sizes = [os.fstat(stream.fileno()).st_size for stream in media.values()]
+        writable_sizes = [writable_disk_bytes(stream) for stream in media.values()]
         if storage is not None:
             writable_sizes.append(os.fstat(storage.fileno()).st_size)
         file_limit = engine_file_limit(writable_sizes, args.display_profile, log_budget(args.seconds),
@@ -1771,9 +1808,7 @@ def main():
                 # device. The inherited descriptor pins exactly the locked
                 # inode, even if its pathname is replaced during a session.
                 filename = f"/proc/self/fd/{media[name].fileno()}" if name in media else str(path)
-                node = {"driver": "raw", "node-name": name, "read-only": name in disks,
-                        "file": {"driver": "file", "filename": filename, "locking": "on"}}
-                command += ["-blockdev", json.dumps(node, separators=(",", ":")),
+                command += ["-blockdev", disk_node(name, filename, name in disks, name in overlays),
                             "-device", "vmapple-virtio-blk-pci,variant="
                             + ("aux" if name == "tomacco-aux" else "root") + ",drive=" + name]
             if storage_path is not None:
@@ -1811,7 +1846,9 @@ def main():
             if writable:
                 record["persistent_disks"] = {
                     name: {"path": str(path), "bytes": os.fstat(media[name].fileno()).st_size,
-                           "sha256_before": observed_digest(Path(f"/proc/self/fd/{media[name].fileno()}"))}
+                           "sha256_before": observed_digest(Path(f"/proc/self/fd/{media[name].fileno()}")),
+                           "format": "qcow2" if name in overlays else "raw",
+                           **({"backing_chain": overlays[name]} if name in overlays else {})}
                     for name, path in writable.items()}
             if nvram is not None:
                 record["nvram_handoff"] = {**nvram, "prepared_tree": original_tree}

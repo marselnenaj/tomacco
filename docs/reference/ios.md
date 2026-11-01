@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-51 operations. Generated from `assets/operations.json`; [all areas](README.md).
+57 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -623,6 +623,8 @@ Annotations: writes, not idempotent, closed world.
 | `previous_trustcache` | string |  |  | non-empty; Original source cache bound to previous_tools when the new graphics cache differs. Requires previous_tools. Each old/new payload is independently revalidated against its own source cache; file inventory/signature checks remain required. |
 | `previous_graphics` | string |  |  | Exact previous owned graphics bundle to verify before replacing it in the new private copy; requires graphics. |
 | `resume` | boolean |  | `false` | Continue a complete private copy refused by host resource pressure before the installation helper started. Requires the original inputs and existing output. Revalidates the payload, boot inputs, locks and all source/copy bytes; preserves the previous failure receipt. |
+| `root_overlay` | boolean |  | `false` | Make the new root disk an empty qcow2 overlay (system.qcow2) whose backing file is disk, by its absolute path, instead of copying disk; needs qemu_img. The auxiliary and SEP disks are still copied. A disk that is already an overlay gets another layer, up to 8; beyond that, and without root_overlay, an overlay disk is flattened into a new raw disk with qemu_img. The record's root_disk names the method and why. |
+| `qemu_img` | string |  | `""` | qemu-img executable for root_overlay or to flatten an overlay disk. Empty: none. |
 
 ```sh
 tomaccoctl call ios.emulator.prepare_guest_tools '{"disk":"<disk>","auxiliary_disk":"<auxiliary_disk>","sep_storage":"<sep_storage>","tools":"<tools>","trustcache":"<trustcache>","device_tree":"<device_tree>","support":"<support>","helper_engine":"<helper_engine>","helper_kernel":"<helper_kernel>","bios":"<bios>","output":"<output>"}'
@@ -841,7 +843,7 @@ tomaccoctl call ios.emulator.memory '{"job_id":"<job_id>","address":"<address>"}
 
 **Virtual iOS device: status**
 
-Read whether a virtual iOS device profile is configured, its current run, phase, guest job and any start or stop that is in progress. A guest job started from another data directory has no guest_state here; that is unknown, not stopped. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. Also reports model (for the next start), running_model (of the current run), running_panel (the current run's panel as WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM, as its guest job's request gave it to the engine, so a later edit of the profile does not change it; null when that boot named no panel. Without a guest job: the model's own panel, or the profile's display profile for the Home-button phone; null for an unknown recorded model), models (the choice: id, name, panel, and source apple or derived) and guest_ended when the guest has ended on its own since the last start, with guest_saved telling whether it flushed its storage and closed cleanly first (as a session does at its time limit). application_process reports only the matching active job and application; it proves no process lifetime or visible scene. applications lists the developer apps the profile names (bundle path, bundle_id); the start installs them from the guest-tools build that carries them. phase_started and phase_elapsed_seconds tell when the current phase began and how long it has run, and phases lists each phase of the current start or stop with its started time and seconds (empty for a state written before phases were logged). copy_progress, only in the preparing phase, compares the bytes of the new disk copy with those of its base (bytes_done, bytes_total, percent) and names the preparation's step and disk; a reflinked copy is complete at once. start_disk says whether the next start's disk copy fits in the profile's installs: needed_bytes, free_bytes, reclaimable_bytes (older copies the start deletes first), reflink and enough, the check ios.virtual.start refuses with; the status writes nothing to find out, so on a filesystem that might clone files and lacks room for a full copy enough and reflink are null until a start probes it. Null when the base's disks or the filesystem cannot be read.
+Read whether a virtual iOS device profile is configured, its current run, phase, guest job and any start or stop that is in progress. A guest job started from another data directory has no guest_state here; that is unknown, not stopped. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. Also reports model (for the next start), running_model (of the current run), running_panel (the current run's panel as WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM, as its guest job's request gave it to the engine, so a later edit of the profile does not change it; null when that boot named no panel. Without a guest job: the model's own panel, or the profile's display profile for the Home-button phone; null for an unknown recorded model), models (the choice: id, name, panel, and source apple or derived) and guest_ended when the guest has ended on its own since the last start, with guest_saved telling whether it flushed its storage and closed cleanly first (as a session does at its time limit). application_process reports only the matching active job and application; it proves no process lifetime or visible scene. applications lists the developer apps the profile names (bundle path, bundle_id); the start installs them from the guest-tools build that carries them. phase_started and phase_elapsed_seconds tell when the current phase began and how long it has run, and phases lists each phase of the current start or stop with its started time and seconds (empty for a state written before phases were logged). copy_progress, only in the preparing phase, compares the bytes of the new disk copy with those of its base (bytes_done, bytes_total, percent) and names the preparation's step and disk; a reflinked copy is complete at once. start_disk says whether the next start's disk copy fits in the profile's installs: needed_bytes, free_bytes, reclaimable_bytes (older copies the start deletes first), reflink and enough, the check ios.virtual.start refuses with; the status writes nothing to find out, so on a filesystem that might clone files and lacks room for a full copy enough and reflink are null until a start probes it. start_disk.method is how that start makes its root disk (copy, overlay or flatten), and start_disks the profile's choice (copy or overlay). Null when the base's disks or the filesystem cannot be read.
 
 Annotations: read-only, idempotent, closed world.
 
@@ -905,13 +907,13 @@ tomaccoctl call ios.virtual.setup '{"work":"<work>"}'
 
 **Set up virtual iOS device**
 
-Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job).
+Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job). Choosing another directory is refused with ios_virtual_busy while a start or stop runs and with ios_virtual_running while the current profile's phone runs; each directory configured is remembered for ios.virtual.profiles.
 
 Annotations: writes, idempotent, closed world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `directory` | string |  |  | non-empty; Existing profile directory. |
+| `directory` | string |  |  | non-empty; Existing profile directory. Becomes the profile of the next start; refused while the current profile's phone runs or a start or stop is in progress. |
 | `model` | string |  |  | matching `^[a-z0-9-]{0,32}$`; Device model the next start describes the phone as (an id from ios.virtual.status models). Empty: the profile's own description, a phone with a Home button. Takes effect at the next start; the disks stay the same. |
 | `add_application` | string |  |  | non-empty; Host path of an .app directory built for arm64 iOS to add to the profile's applications. It is inspected first (Info.plist, arm64 executable, only allowlisted entitlements) and refused with the reason otherwise. The next start installs it; when the profile's guest tools do not carry it as it is now, the start rebuilds them with the profile's apps and pins the new signing adapter in a derived kernel itself (clang 22 needed: clang, or a clang-22 on PATH). |
 | `add_entitlements` | string |  |  | Entitlements plist to request for add_application; empty: the executable's embedded entitlements, or only application-identifier. |
@@ -920,9 +922,24 @@ Annotations: writes, idempotent, closed world.
 | `clang` | string |  |  | Host path of the clang 22 executable the start rebuilds guest tools with (profile.json toolchain.clang); empty removes it, so a clang-22 on PATH or the build's recorded toolchain is used. |
 | `deploy` | boolean |  | `false` | With add_application: install it on the running phone now, without a reboot. Refused with ios_virtual_not_running when the phone is off. |
 | `deploy_open_app` | boolean |  | `true` | With deploy: open the app afterwards. |
+| `start_disks` | string |  |  | one of `copy`, `overlay`; How the next start makes its root disk (profile.json start_disks): copy (the default) copies the base run's 32 GiB root disk; overlay makes an empty qcow2 overlay on it with qemu-img (beside the profile's helper engine or on PATH) and copies only the small auxiliary and SEP disks. Without qemu-img, or after 8 overlays on one base, the start copies or flattens instead and says why. Experimental: unit-tested only. |
 
 ```sh
 tomaccoctl call ios.virtual.configure
+```
+
+### ios.virtual.profiles
+
+**Profiles of virtual iOS device**
+
+List the virtual iOS device profile directories configured so far (up to 32, the newest first), each with current, valid (with error code and message when its profile.json or state.json cannot be used), run, phase, closed, running (its guest job is alive), application, installs, start_disks and saved_states (the number of saved states). current is the directory the next start uses; switch with ios.virtual.configure directory. can_switch is false while a start or stop runs (busy) or the current profile's phone runs. Reads files only.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call ios.virtual.profiles
 ```
 
 ### ios.virtual.apps
@@ -985,6 +1002,70 @@ Annotations: **destructive**, not idempotent, closed world.
 tomaccoctl call ios.virtual.cleanup
 ```
 
+### ios.virtual.states
+
+**Saved states of virtual iOS device**
+
+List the saved phone states of the configured virtual iOS device (saved-states.json in the profile directory): each with name, run, install, saved (time), model (the model its run was last started as), exists (whether its root disk is still there), bytes (allocated in its install directory, blocks shared with other copies counted in full) and base (whether the next start begins from it). base is the next start's base run, and base_saved_as the names that keep it. Reads files only.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call ios.virtual.states
+```
+
+### ios.virtual.state_save
+
+**Save state of virtual iOS device**
+
+Keep the last verified run of the configured virtual iOS device under a name, so a later start can begin from it with ios.virtual.state_use. Nothing is copied: a verified run's disks never change after its stop, and the start's pruning and ios.virtual.cleanup keep every saved run's disk copy and the copies its overlay reads. Refused with ios_virtual_no_verified_run when no run has been stopped cleanly, ios_virtual_state_exists for a name in use unless replace, and ios_virtual_busy while a start or stop runs. A running phone is fine: the saved run is the last verified one, not the running one.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`; Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit. |
+| `replace` | boolean |  | `false` | Point an existing name at the current verified run. |
+
+```sh
+tomaccoctl call ios.virtual.state_save '{"name":"<name>"}'
+```
+
+### ios.virtual.state_delete
+
+**Delete saved state of virtual iOS device**
+
+Remove a saved state's name and delete the disk copy it kept, when that copy is one the start made in the profile's installs and nothing else keeps it: not the verified base, the current run, a start's attempt, another saved state or a copy an overlay among those reads. kept_because says why a copy stayed; removed and freed_bytes what went. A copy a running guest holds is refused, not deleted. Refused with ios_virtual_state_unknown for an unknown name and ios_virtual_busy while a start or stop runs.
+
+Annotations: **destructive**, not idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`; Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit. |
+
+```sh
+tomaccoctl call ios.virtual.state_delete '{"name":"<name>"}'
+```
+
+### ios.virtual.state_use
+
+**Start virtual iOS device from saved state**
+
+Make a saved state the base of the next ios.virtual.start of the configured virtual iOS device: state.json then names its run as the verified run, and the start copies from it (or lays an overlay on it). The phone must be stopped (ios_virtual_running otherwise). When the current verified run has no saved name, a later start's pruning may delete its disks, so this is refused with ios_virtual_state_unsaved unless discard_current. Refused with ios_virtual_state_missing when the state's disks are gone and ios_virtual_busy while a start or stop runs. previous is the base it replaced.
+
+Annotations: writes, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`; Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit. |
+| `discard_current` | boolean |  | `false` | Give up the current verified run even though no saved state keeps it. |
+
+```sh
+tomaccoctl call ios.virtual.state_use '{"name":"<name>"}'
+```
+
 ### ios.virtual.deploy
 
 **Install app on running virtual iOS device**
@@ -1036,6 +1117,26 @@ Annotations: writes, not idempotent, closed world.
 
 ```sh
 tomaccoctl call ios.virtual.crash_reports '{"process":"<process>"}'
+```
+
+### ios.virtual.syslog
+
+**Log of virtual iOS device**
+
+Read the configured virtual iPhone's log as structured lines: the guest's serial console (uart.log of its guest job, running or last), where the kernel prints and launchd forwards log records. Each line has offset (its byte offset), time (as the line gives it, or null), process (for a launchd record the service's last label part, for a UIKit application its executable-like last identifier part; kernel for a line of no known form), pid, service, sender (the forwarding subsystem or the library in name(library)\[pid\]), level (emergency, alert, critical, error, fault, warning, notice, info, debug, default, or null) and message (cut at 2000 characters). Without offset the last 256 KiB are read; pass next_offset back to follow the log. Only complete lines are returned; an unfinished one comes in a later read. more says a read stopped at max_lines or 1 MiB before the end; reset says an offset past the end (another run's log) started over at 0. job_id names the guest job read and running whether it still runs. Reads a host file; the guest is not asked. Refused with ios_virtual_not_running when no run has a guest job and ios_virtual_log_unavailable before the console log exists.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `process` | string |  | `""` | up to 128 characters; Only lines whose process or service contains this, ignoring case. Empty: all. |
+| `levels` | array of string |  |  | items one of `emergency`, `alert`, `critical`, `error`, `fault`, `warning`, `notice`, `info`, `debug`, `default`, `none`; up to 11 items; Only lines with one of these levels; none matches lines without a level, such as the kernel's. Empty or absent: all. |
+| `contains` | string |  | `""` | up to 256 characters; Only lines whose message contains this text. |
+| `offset` | integer |  |  | at least 0; Byte offset to read on from: a previous reply's next_offset. Absent: the last 256 KiB. |
+| `max_lines` | integer |  | `500` | 1 to 5000; The most lines returned in one reply. |
+
+```sh
+tomaccoctl call ios.virtual.syslog
 ```
 
 ### ios.virtual.screenshot

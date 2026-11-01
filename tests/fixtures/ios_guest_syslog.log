@@ -1,0 +1,13 @@
+SEP/OS is alive in 2 state
+com.apple.xpc.launchd|2026-10-28 07:19:51.835753 <Notice>: hello, launchd UUID: 00000000-0000-0000-0000-000000000000
+com.apple.xpc.launchd|2026-10-28 07:19:52.001200 (system/com.apple.example.daemond [88]) <Notice>: Service only ran for 0 seconds. Pushing respawn out by 10 seconds.
+com.apple.xpc.launchd|2026-10-28 07:19:53.500000 (user/501/dev.tomacco.SampleApp [412]) <Error>: exited due to SIGABRT
+com.apple.xpc.launchd|2026-10-28 07:19:54.000001 (UIKitApplication:dev.tomacco.SampleApp[3f2a][rb-legacy] [412]) <Warning>: Caller wanted 1 of 2 rows
+SampleApp[412] <Notice>: Loaded 3 items
+example-agent(libExample.dylib)[77] <Debug>: tick
+Oct 28 07:19:55 iPhone backboardd[64] <Fault>: display pipeline stalled
+quietd[90]: unloaded 4 services
+AMFI: Booted in a VM
+
+com.apple.xpc.launchd|not a date <Notice>: a line with an odd time
+partial line without its end

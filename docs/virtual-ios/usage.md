@@ -33,6 +33,21 @@ Accepted is not the same as visible. After an accepted launch the start looks at
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
 display defect, not a working phone.
 
+### Several profiles
+
+Each profile directory is its own phone with its own runs. `ios.virtual.profiles` lists every directory configured so far,
+the newest first, with its `run`, `phase`, whether it is `running`, `start_disks` and the number of `saved_states`; a
+profile that can no longer be used is listed with its `error`.
+
+```sh
+tomaccoctl call ios.virtual.profiles '{}'
+tomaccoctl call ios.virtual.configure '{"directory":"/absolute/other-profile"}'
+```
+
+Choosing another directory is refused with `ios_virtual_running` while the current profile's phone runs, and with
+`ios_virtual_busy` while a start or stop is in progress; `can_switch` in the list says whether it would work now. Stop the
+phone first. The list and the refusal have control-plane tests; switching has not been tried with a live phone.
+
 ### What a stop saves
 
 `ios.virtual.stop` flushes the guest's storage and records whether this run may be the base of the
@@ -81,6 +96,64 @@ that clones files (btrfs, or XFS with reflink) the copy shares blocks with its b
 `reclaimable_bytes` and `enough`. The status writes nothing to find out, so on btrfs or XFS short of room for a
 full copy `enough` stays null until a start tries a clone. The refusal and `start_disk` have unit tests and a
 control-plane test; neither has been met on a real full disk.
+
+### Saved phone states
+
+A verified run can be kept under a name and started from again later, for example a phone set up just before a test:
+
+```sh
+tomaccoctl call ios.virtual.state_save '{"name":"Clean phone"}'
+tomaccoctl call ios.virtual.states '{}'
+tomaccoctl call ios.virtual.state_use '{"name":"Clean phone"}'
+tomaccoctl call ios.virtual.state_delete '{"name":"Clean phone"}'
+```
+
+`ios.virtual.state_save` names the last verified run, the base of the next start. It copies nothing: a start never changes
+its base, and a verified run's disks do not change after its stop. The names are kept in `saved-states.json` in the profile
+directory, and the start's own pruning and `ios.virtual.cleanup` keep every named run's copy (`kept` with the reason
+`saved-state:NAME`). A running phone does not stop a save; it saves the last verified run, not the running one.
+
+`ios.virtual.state_use` makes a saved run the base of the next start, which copies from it as from any verified run. The
+phone must be stopped. When the current base has no name, a later start may delete its copy, so the call is refused with
+`ios_virtual_state_unsaved` unless you save the current base first or pass `"discard_current":true`.
+
+`ios.virtual.state_delete` removes the name, and the copy too when nothing else keeps it: not the base, the current run, a
+start's attempt, another name or a copy an overlay reads. `kept_because` says why a copy stayed.
+
+In the desktop, the iOS test system dialog has the same under **Saved states** (*Gesicherte Zustände*): a list, **Save
+state**, **Start from it** while the phone is off, and **Delete**, which asks a second time.
+
+Each named run keeps its own 32 GiB copy on a filesystem that cannot share blocks. The operations have unit tests and
+control-plane tests; they have not been used with a live phone yet.
+
+### Copy-free starts (experimental)
+
+Every start copies the base run's 32 GiB root disk, which takes about 9 minutes on a filesystem that cannot clone files
+(ext4). A profile can ask for an overlay instead:
+
+```sh
+tomaccoctl call ios.virtual.configure '{"start_disks":"overlay"}'
+```
+
+The next start then makes the run's root disk `system.qcow2`, an empty qcow2 file whose backing file is the base's root
+disk, with `qemu-img create`. The guest writes into the overlay; the base is only read. The auxiliary and SEP disks are
+small and still copied. `qemu-img` is taken from beside the profile's helper engine (setup builds it there) or from
+`PATH`. The engine and the Linux helper that installs the guest tools open the overlay as qcow2, and the host reads APFS
+through the chain to check the Preboot volume as before.
+
+- Each verified run adds one layer. After 8 overlays on one base the next start flattens the chain into a new raw disk
+  (`qemu-img convert`), which writes the whole disk once, as a copy does. `"start_disks":"copy"` also flattens an
+  overlay base.
+- A copy an overlay reads is never deleted while the run on top of it is kept: the start's own pruning and
+  `ios.virtual.cleanup` list it under `kept` with the reason `overlay-backing`.
+- Backing files are named by absolute path, so moving the profile's `installs` breaks the runs made this way.
+- Without `qemu-img` the start copies, and its log says why. `start_disk` in `ios.virtual.status` has the `method`
+  (`copy`, `overlay` or `flatten`), and `start_disks` the choice.
+
+The plan, the qcow2 reading, the pruning and the launcher's block device have unit tests. None of it has run on a live
+phone yet. What a first live run has to show: that the patched engine boots iOS from `system.qcow2` (`-blockdev`
+driver `qcow2`, backing opened read-only by QEMU), that the helper installs the guest tools through it, that a stop
+still ends with exit code 0 and complete hashes, that the next start layers on that run, and how long a start takes then.
 
 ## The graphics memory guard
 
@@ -133,6 +206,11 @@ at the edge, which opens iOS's edge gestures by mouse. The wheel scrolls. Button
 | Ctrl+Shift+N | Notification Center |
 | Ctrl+Shift+C | Control Center |
 | Ctrl+Shift+B | Back (swipe right from the left edge) |
+| Ctrl+V | Type the host clipboard's text into the focused field (**Paste**) |
+
+Ctrl+V and **Paste** type the host clipboard's text with the `text` action described below, in pieces of up to 1024
+characters; a clipboard of more than 4096 characters is refused with a notice. Characters the guest's keyboard layout
+cannot type make the guest refuse the piece. Tested in the desktop's offscreen tests; not tried on a live phone yet.
 
 The phone's window is described in the [desktop guide](../desktop.md#device-window).
 

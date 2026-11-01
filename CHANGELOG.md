@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 216 operations.
+`tomaccoctl` now has one typed API of 222 operations.
 
 ### Added
 
@@ -128,6 +128,27 @@ operations and their JSON results.
 - **Release key rotation.** `tomaccoctl` trusts the release key in `native/product.rs` and, during a rotation, the next key
   beside it, `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`; a package signed by either installs, one signed by another key is refused.
   `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.
+
+- **Virtual iPhone.**
+  - Copy-free starts, experimental: with `ios.virtual.configure {"start_disks":"overlay"}` a start makes the run's root
+    disk an empty qcow2 overlay on the base's with `qemu-img` instead of copying 32 GiB, and copies only the small
+    auxiliary and SEP disks. The engine and the guest-tools helper attach it as qcow2, the host reads APFS through the
+    chain, pruning and `ios.virtual.cleanup` keep the copies an overlay reads, and after 8 layers a start flattens the
+    chain. `ios.emulator.prepare_guest_tools` takes `root_overlay` and `qemu_img`, and `start_disk` in
+    `ios.virtual.status` names the `method`. Unit-tested only, not run on a live phone.
+  - Saved phone states: `ios.virtual.state_save` keeps the last verified run under a name without copying it,
+    `ios.virtual.states` lists the names, `ios.virtual.state_use` makes one the base of the next start and
+    `ios.virtual.state_delete` removes a name and the copy only it kept. Pruning and `ios.virtual.cleanup` keep named runs.
+    Unit-tested only, not run on a live phone. The iOS test system dialog lists them under **Saved states** with
+    **Save state**, **Start from it** and a **Delete** that asks twice.
+  - `ios.virtual.profiles` lists every profile directory configured so far with its run, phase and whether its phone runs.
+    `ios.virtual.configure` refuses another directory while the current phone runs (`ios_virtual_running`) or a start or
+    stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile.
+  - `ios.virtual.syslog` reads the phone's console log (the guest job's `uart.log`) as structured lines with time, process,
+    PID, level and message, filtered by process, level or text, and followed with `next_offset`. Tested against synthetic
+    console lines, not yet against a live phone's log.
+  - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
+    `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
 
 ### Changed
 

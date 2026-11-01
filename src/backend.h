@@ -99,6 +99,8 @@ public:
     Q_INVOKABLE QUrl serveFolder(const QUrl &folder);
     Q_INVOKABLE void probeToolchain();
     Q_INVOKABLE void copy(const QString &text);
+    // The text on the clipboard, empty when it holds none.
+    Q_INVOKABLE QString clipboardText() const;
     Q_INVOKABLE QString screenshotPath(const QString &model);
     // Puts the image saved at this path on the clipboard; false when it cannot be read.
     Q_INVOKABLE bool copyImage(const QString &path);

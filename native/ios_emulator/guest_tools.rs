@@ -66,6 +66,13 @@ pub fn run(a: &Value, install: bool) -> Result {
         arguments["previous_graphics"] = json!(path(s(a, "previous_graphics"), true, true)?);
         fields.push("previous_graphics");
     }
+    if install
+        && a["qemu_img"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty())
+    {
+        arguments["qemu_img"] = json!(path(s(a, "qemu_img"), false, true)?);
+    }
     let mut application_argv = Vec::new();
     if !install {
         for name in ["clang", "linker", "ldid"] {
@@ -155,6 +162,18 @@ pub fn run(a: &Value, install: bool) -> Result {
         if b(&arguments, "development_device") {
             argv.push("--development-device".into());
         }
+        if b(&arguments, "root_overlay") {
+            if !text_set(&arguments, "qemu_img") {
+                return Err(Error::new(
+                    "invalid_argument",
+                    "root_overlay needs qemu_img, the qemu-img that makes the overlay",
+                ));
+            }
+            argv.push("--root-overlay".into());
+        }
+        if text_set(&arguments, "qemu_img") {
+            argv.extend(["--qemu-img".into(), s(&arguments, "qemu_img").into()]);
+        }
         argv.extend(["--seconds".into(), n(&arguments, "seconds").to_string()]);
         n(&arguments, "seconds") + 15
     } else {
@@ -201,4 +220,8 @@ pub fn run(a: &Value, install: bool) -> Result {
                 else { vec![output.join(report)] }}),
     )?;
     Ok(describe(job))
+}
+
+fn text_set(value: &Value, key: &str) -> bool {
+    value[key].as_str().is_some_and(|text| !text.is_empty())
 }

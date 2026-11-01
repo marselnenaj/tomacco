@@ -1262,6 +1262,29 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Record the screen to a video, at most 10 minutes</source>
         <translation>Bildschirm als Video aufnehmen, höchstens 10 Minuten</translation>
     </message>
+    <message numerus="yes">
+        <source>Typing %n character(s) from the clipboard</source>
+        <translation>
+            <numerusform>%n Zeichen aus der Zwischenablage werden getippt</numerusform>
+            <numerusform>%n Zeichen aus der Zwischenablage werden getippt</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>The clipboard holds no text</source>
+        <translation>Die Zwischenablage enthält keinen Text</translation>
+    </message>
+    <message>
+        <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
+        <translation>Die Zwischenablage enthält %1 Zeichen; höchstens %2 werden ins Telefon getippt</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Einfügen</translation>
+    </message>
+    <message>
+        <source>Type the clipboard&apos;s text into the field that has the focus</source>
+        <translation>Den Text der Zwischenablage in das Feld mit dem Fokus tippen</translation>
+    </message>
 </context>
 <context>
     <name>IosResearch</name>
@@ -1965,6 +1988,82 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
     <message>
         <source>Emulator</source>
         <translation>Emulator</translation>
+    </message>
+    <message>
+        <source>Saved states</source>
+        <translation>Gesicherte Zustände</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
+        <translation>Den zuletzt beendeten Lauf unter einem Namen behalten und später wieder von ihm starten. Sichern kopiert nichts.</translation>
+    </message>
+    <message>
+        <source>No saved states yet.</source>
+        <translation>Noch keine gesicherten Zustände.</translation>
+    </message>
+    <message>
+        <source>Saved state</source>
+        <translation>Gesicherter Zustand</translation>
+    </message>
+    <message>
+        <source>Start from it</source>
+        <translation>Davon starten</translation>
+    </message>
+    <message>
+        <source>The next start begins from this state · the phone must be off</source>
+        <translation>Der nächste Start beginnt mit diesem Zustand · das Telefon muss aus sein</translation>
+    </message>
+    <message>
+        <source>Delete for good</source>
+        <translation>Endgültig löschen</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <source>Remove the name, and its disk copy when nothing else keeps it</source>
+        <translation>Den Namen entfernen, und seine Plattenkopie, wenn sonst nichts sie behält</translation>
+    </message>
+    <message>
+        <source>Name for the last stopped run</source>
+        <translation>Name für den zuletzt beendeten Lauf</translation>
+    </message>
+    <message>
+        <source>Save state</source>
+        <translation>Zustand sichern</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under this name</source>
+        <translation>Den zuletzt beendeten Lauf unter diesem Namen behalten</translation>
+    </message>
+    <message>
+        <source>run %1</source>
+        <translation>Lauf %1</translation>
+    </message>
+    <message>
+        <source>next start</source>
+        <translation>nächster Start</translation>
+    </message>
+    <message>
+        <source>disks gone</source>
+        <translation>Platten fehlen</translation>
+    </message>
+    <message>
+        <source>Saved as %1</source>
+        <translation>Gesichert als %1</translation>
+    </message>
+    <message>
+        <source>The next start begins from %1</source>
+        <translation>Der nächste Start beginnt mit %1</translation>
+    </message>
+    <message>
+        <source>%1 deleted with its disk copy</source>
+        <translation>%1 samt Plattenkopie gelöscht</translation>
+    </message>
+    <message>
+        <source>%1 deleted · its disk copy stays (%2)</source>
+        <translation>%1 gelöscht · die Plattenkopie bleibt (%2)</translation>
     </message>
 </context>
 <context>
@@ -4257,6 +4356,30 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Capture store screenshots</source>
         <translation>Store-Screenshots aufnehmen</translation>
+    </message>
+    <message>
+        <source>Saved states of virtual iOS device</source>
+        <translation>Gesicherte Zustände des virtuellen iOS-Geräts</translation>
+    </message>
+    <message>
+        <source>Save state of virtual iOS device</source>
+        <translation>Zustand des virtuellen iOS-Geräts sichern</translation>
+    </message>
+    <message>
+        <source>Delete saved state of virtual iOS device</source>
+        <translation>Gesicherten Zustand des virtuellen iOS-Geräts löschen</translation>
+    </message>
+    <message>
+        <source>Start virtual iOS device from saved state</source>
+        <translation>Virtuelles iOS-Gerät aus gesichertem Zustand starten</translation>
+    </message>
+    <message>
+        <source>Profiles of virtual iOS device</source>
+        <translation>Profile des virtuellen iOS-Geräts</translation>
+    </message>
+    <message>
+        <source>Log of virtual iOS device</source>
+        <translation>Protokoll des virtuellen iOS-Geräts</translation>
     </message>
 </context>
 <context>

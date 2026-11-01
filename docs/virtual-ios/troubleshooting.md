@@ -57,8 +57,15 @@ the code and that none is missing.
 | `ios_virtual_busy` | A start or stop is in progress. | Wait for it. The details name its job. |
 | `ios_virtual_disk_space` | The start's disk copy does not fit on the filesystem of the profile's `installs`. | Free the space the remedy names. See [starting](#starting). |
 | `ios_virtual_guest_state_unknown` | The guest job could not be observed. | Read `job.get` for the job in the details. |
+| `ios_virtual_log_unavailable` | The guest job has no console log yet. | Start the phone, or wait until its boot has begun, then read `ios.virtual.syslog` again. |
+| `ios_virtual_no_verified_run` | There is no verified run to save as a state. | Stop a run with `ios.virtual.stop` so it ends verified, then save it. |
 | `ios_virtual_not_running` | The phone is off. | `ios.virtual.start`. |
 | `ios_virtual_profile_invalid` | `profile.json` or `state.json` is missing or wrong. | `python3 tools/ios_virtual_profile.py --check`. See [setup](#setup). |
+| `ios_virtual_running` | The phone is running, or its last run was not stopped. | Stop it with `ios.virtual.stop` first. |
+| `ios_virtual_state_exists` | A saved state already has this name. | Choose another name, or delete the old state with `ios.virtual.state_delete`. |
+| `ios_virtual_state_missing` | The disks of the saved state are gone. | Delete the state with `ios.virtual.state_delete`. |
+| `ios_virtual_state_unknown` | No saved state has this name. | List the states with `ios.virtual.states`. |
+| `ios_virtual_state_unsaved` | The current verified run is not saved, so a later start may delete its disks. | Save it with `ios.virtual.state_save`, or pass `discard_current:true`. |
 | `ios_virtual_unconfigured` | No profile is selected. | Write one and call `ios.virtual.configure`. See [setup](setup.md). |
 
 ## Setup
@@ -120,6 +127,21 @@ prove that nothing crashed. The saving has unit tests; it has not been run again
 
 `logs development` shows the adapter's `active` line with `entries`, and an `entry` line per further identifier.
 That tells an inactive signing library from a refused bundle.
+
+The phone's console log, where the kernel prints and launchd forwards log records, comes as structured lines with
+`ios.virtual.syslog`, filtered by process, level or text:
+
+```sh
+tomaccoctl call ios.virtual.syslog '{"process":"MyApp"}'
+tomaccoctl call ios.virtual.syslog '{"levels":["error","fault"],"max_lines":100}'
+tomaccoctl call ios.virtual.syslog '{"process":"MyApp","offset":123456}'
+```
+
+Each line has `time`, `process`, `pid`, `service`, `sender`, `level` and `message`; a line of no known form is the kernel's.
+Without `offset` it reads the last 256 KiB; pass the reply's `next_offset` back to follow the log. It reads the guest job's
+`uart.log` on the host and asks the guest nothing, so it also works after the phone stopped, for the last run. The parsing
+is tested against synthetic console lines; which forms a live phone prints, and how many of its records reach the console,
+has not been surveyed yet.
 
 ## While it runs
 

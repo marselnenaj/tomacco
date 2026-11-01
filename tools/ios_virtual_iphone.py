@@ -36,6 +36,7 @@ import zlib
 
 from build_ios_guest_tools import policy_entries, stage_application
 from ios_application_bundle import inspect_bundle
+import ios_disk_overlay
 from ios_hot_install import (BUNDLE_PORT, connect_port, guest_socket, reserve, send_bundle, spare_entries,
                              with_hashes, write_private)
 from ios_graphics_location import BUNDLE_PATH, COMPILER_LIBRARY_NAME, PLUGIN_PERSONALITY
@@ -671,11 +672,15 @@ class Phone:
         """Keep the verified run and the last `keep` copies (after a verified
         stop: the run and its predecessor); drop older disk copies."""
         created = [Path(path) for path in self.state.get("created", [])]
-        protected = {Path(self.state["verified"]["install"])} | set(created[-keep:])
+        saved = self.saved_installs()
+        if saved is None:
+            return
+        protected = self.with_backing({Path(self.state["verified"]["install"])} | set(created[-keep:]) | saved)
         remaining = []
         for path in created:
-            if path in protected or not self.owned(path):
-                if path in protected or path.exists():
+            kept = path in protected or path.resolve() in protected
+            if kept or not self.owned(path):
+                if kept or path.exists():
                     remaining.append(str(path))
                 continue
             try:
@@ -684,6 +689,30 @@ class Phone:
                 remaining.append(str(path))
                 emit("cleanup-refused", install=str(path), reason=str(error))
         self.save(created=remaining)
+
+    def saved_installs(self):
+        """The installs saved phone states keep (saved-states.json, written by
+        ios.virtual.state_save). None when the file cannot be read: nothing
+        is pruned on a misread list."""
+        path = self.directory / "saved-states.json"
+        if not path.exists():
+            return set()
+        try:
+            states = json.loads(path.read_text())["states"]
+            return {Path(row["install"]) for row in states.values()}
+        except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+            emit("cleanup-refused", reason=f"{path} cannot be read ({error}); no copy is pruned")
+            return None
+
+    @staticmethod
+    def with_backing(installs):
+        """These installs and every install an overlay among them reads
+        (ios_disk_overlay): a copy another one's root disk is backed by is
+        never deleted while that one is kept."""
+        kept = set(installs)
+        for install in list(kept):
+            kept.update(ios_disk_overlay.installs_backing(install))
+        return kept | {path.resolve() for path in kept if path.exists()}
 
     def remove_install(self, path):
         """Hold all root-file leases until an owned copy has been removed.
@@ -808,7 +837,16 @@ class Phone:
             # updates; the running kernel only works while the module matches it.
             pinned = Path(prepare.get("support", "")) / "apfs/vmlinuz"
             prepare["helper_kernel"] = str(pinned) if pinned.is_file() else f"/usr/lib/modules/{os.uname().release}/vmlinuz"
-        prepare.update(disk=str(install / "system.raw"), auxiliary_disk=str(install / "auxiliary.raw"),
+        # A copy-free start (profile start_disks "overlay") makes the root disk
+        # an overlay on the base's; qemu-img also flattens an overlay base.
+        qemu_img = ios_disk_overlay.find_qemu_img(prepare.get("helper_engine"))
+        if qemu_img:
+            prepare["qemu_img"] = qemu_img
+        if self.profile.get("start_disks") == "overlay":
+            prepare["root_overlay"] = bool(qemu_img)
+            if not qemu_img:
+                emit("start-disks", method="copy", reason="no qemu-img beside the helper engine or on PATH")
+        prepare.update(disk=str(ios_disk_overlay.root_disk(install)), auxiliary_disk=str(install / "auxiliary.raw"),
                        sep_storage=str(install / "sep.raw"), tools=str(tools), previous_tools=str(previous),
                        output=str(output), graphics=self.profile["graphics"])
         for key, previous_key in (("trustcache", "previous_trustcache"), ("graphics", "previous_graphics")):

@@ -19,6 +19,7 @@ import subprocess
 import time
 
 from ios_apfs_layout import inspect as inspect_apfs
+import ios_disk_overlay
 from build_ios_guest_tools import guest_directory_modes
 from ios_guest_tools import payload, virtual_research_mode
 from ios_host_pressure import pressure_error, wait_for_host_pressure
@@ -216,7 +217,7 @@ def check_helper_kernel(kernel, support):
 
 
 def helper(args, output, files, inventory, layout, volume, deadline, previous=None, graphics=None, previous_graphics=None,
-           storage_fd=None):
+           storage_fd=None, storage_name="system.raw", storage_format="raw"):
     check_helper_kernel(args.helper_kernel, args.support)
     root = output / "helper/root"
     for name in ("bin", "dev", "proc", "sys", "mnt/preboot"):
@@ -257,8 +258,8 @@ def helper(args, output, files, inventory, layout, volume, deadline, previous=No
                            "-kernel", args.helper_kernel, "-initrd", archive,
                            "-append", "console=ttyS0 rdinit=/init panic=-1 mitigations=off",
                            "-drive", "file=" + ("/proc/self/fd/" + str(storage_fd) if storage_fd is not None
-                                                else str(output / "system.raw").replace(",", ",,")) +
-                           ",format=raw,if=virtio,readonly=off",
+                                                else str(output / storage_name).replace(",", ",,")) +
+                           f",format={storage_format},if=virtio,readonly=off",
                            "-display", "none", "-serial", "stdio", "-monitor", "none", "-nic", "none", "-no-reboot"]))
     (output / "helper/command.json").write_text(json.dumps(command, indent=2) + "\n")
     log_path = output / "helper/helper.log"
@@ -294,6 +295,30 @@ def closed_copy_digest(stream, deadline):
     return digest.hexdigest()
 
 
+def make_root(root, deadline):
+    """Make the root disk the plan names with qemu-img: an empty overlay on the
+    base (seconds) or a flattened raw disk (a full write, as a copy). The
+    target must not exist; qemu-img would replace it."""
+    target = Path(root["target"])
+    if target.exists() or target.is_symlink():
+        raise ValueError(f"{target} already exists")
+    try:
+        subprocess.run(root["command"], check=True, capture_output=True, text=True,
+                       timeout=max(1.0, deadline - time.monotonic()))
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(f"qemu-img could not make {target}: {(error.stderr or error.stdout).strip()[:400]}") from None
+    if root["method"] == "overlay":
+        header = ios_disk_overlay.qcow2_header(target)
+        if header is None or header["backing"] != root["base"]:
+            raise ValueError(f"qemu-img made {target} without the backing file {root['base']}")
+    os.chmod(target, 0o600)
+    info = os.stat(target)
+    return {"source": root["base"], "copy_method": root["method"], "backing_chain": root["base_chain"]
+            if root["method"] == "overlay" else [], "copy_identity": {
+                "device": info.st_dev, "inode": info.st_ino, "bytes": info.st_size,
+                "mtime_ns": info.st_mtime_ns, "ctime_ns": info.st_ctime_ns}}
+
+
 def prepare(args):
     output = args.output
     # The disks read and the copy written; host I/O admission is judged by their devices.
@@ -310,6 +335,8 @@ def prepare(args):
                 or prior.get("disk_copies_complete") is not True or prior.get("helper_started")
                 or (output / "helper").exists() or (output / "helper").is_symlink()):
             raise ValueError("Resume requires a complete closed copy refused before its helper started")
+        if prior.get("root_disk", {}).get("method", "copy") != "copy" or getattr(args, "root_overlay", False):
+            raise ValueError("Resume applies to copied disks; an overlay or flattened root disk is made again")
         previous_receipt = "guest-tools-install.attempt-" + hashlib.sha256(captured).hexdigest()[:16] + ".json"
         archive = output / previous_receipt
         if archive.exists() or archive.is_symlink():
@@ -401,7 +428,14 @@ def prepare(args):
                                           "files": graphics[1], "previous_files": previous_graphics,
                                           "rendering_verified": False}
         save()
-        sources = [(args.disk, "system.raw"), (args.auxiliary_disk, "auxiliary.raw"), (args.sep_storage, "sep.raw")]
+        # The root disk: a copy, an overlay on the base (root_overlay) or a
+        # flattened overlay base (ios_disk_overlay.plan). The small disks are copied.
+        root = ios_disk_overlay.plan(args.disk, output, "overlay" if getattr(args, "root_overlay", False) else "copy",
+                                     getattr(args, "qemu_img", None))
+        root_name = Path(root["target"]).name
+        record["root_disk"] = {key: root[key] for key in ("method", "reason", "base", "base_chain", "target")}
+        save()
+        sources = [(args.disk, root_name), (args.auxiliary_disk, "auxiliary.raw"), (args.sep_storage, "sep.raw")]
         # Hold shared locks on the whole storage set while taking its snapshots.
         # A running Tomacco guest holds exclusive locks on these inputs.
         with ExitStack() as locks:
@@ -421,7 +455,9 @@ def prepare(args):
                 raise ValueError("Root, auxiliary and SEP disks must be distinct files")
             # Inspect only metadata on the pinned, closed root before copying.
             # Reject missing/invalid Preboot now, not after a fallback disk copy.
-            source_layout = inspect_apfs(streams[0].fileno())
+            # An overlay base is read through its chain, each layer held shared.
+            base_reader = locks.enter_context(ios_disk_overlay.Qcow2Chain(args.disk, lock=True))
+            source_layout = inspect_apfs(base_reader)
             preboot_volume(source_layout)
             record["host_pressure_before_copy"] = wait_for_host_pressure(120, storage=storage_paths)
             if not record["host_pressure_before_copy"]["admitted"]:
@@ -435,13 +471,18 @@ def prepare(args):
                 if not resume:
                     record.update(disk_copies_started=True, copying_disk=name)
                     save()
-                    record["disk_copies"][name] = snapshot(
-                        source.parent, source.name, output / name, deadline, source_fd=stream.fileno())
+                    if name == root_name and root["method"] != "copy":
+                        record["disk_copies"][name] = make_root(root, deadline)
+                    else:
+                        record["disk_copies"][name] = snapshot(
+                            source.parent, source.name, output / name, deadline, source_fd=stream.fileno())
                 copy = copy_locks.enter_context(os.fdopen(
                     os.open(output / name, os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK), "r+b"))
                 fcntl.flock(copy.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 info = os.fstat(copy.fileno())
-                if not stat.S_ISREG(info.st_mode) or info.st_size != os.fstat(stream.fileno()).st_size:
+                expected = (base_reader.size() if name == root_name and root["method"] == "flatten"
+                            else os.fstat(stream.fileno()).st_size)
+                if not stat.S_ISREG(info.st_mode) or (root["method"] != "overlay" or name != root_name) and info.st_size != expected:
                     raise ValueError("Private copy has an invalid type or size")
                 copy_id = storage_identity(info)
                 expected_id = record["disk_copies"][name].get("copy_identity")
@@ -467,7 +508,8 @@ def prepare(args):
             record.pop("verifying_disk", None)
             record["disk_copies_complete"] = True
             save()
-        before = inspect_apfs(copies["system.raw"].fileno())
+        with ios_disk_overlay.Qcow2Chain(output / root_name) as root_view:
+            before = inspect_apfs(root_view)
         if resume and source_layout != prior["source_layout"]:
             raise ValueError("Source APFS layout changed since the closed copy was created")
         if before != source_layout:
@@ -483,20 +525,22 @@ def prepare(args):
         save()
         graphics_state = helper(args, output, files, build["files"], before, volume, deadline,
                                 previous["files"] if previous is not None else None, graphics, previous_graphics,
-                                storage_fd=copies["system.raw"].fileno())
+                                storage_fd=copies[root_name].fileno(), storage_name=root_name,
+                                storage_format="qcow2" if root["method"] == "overlay" else "raw")
         if graphics is not None:
             # Presence and bytes only; rendering still needs live qualification.
             record["graphics_payload"] = {"path": BUNDLE_PATH, "state": graphics_state,
                                           "files": graphics[1], "rendering_verified": False}
             record["graphics_payload"]["previous_files"] = previous_graphics
-        after = inspect_apfs(copies["system.raw"].fileno())
+        with ios_disk_overlay.Qcow2Chain(output / root_name) as root_view:
+            after = inspect_apfs(root_view)
         if [v for v in before["volumes"] if v["role"] != 16] != [v for v in after["volumes"] if v["role"] != 16]:
             raise ValueError("A volume other than Preboot changed during guest tools installation")
         record.update(state="installed", phase="complete", layout_after=after,
                       sealed_system_modified=False, original_service_cache_modified=False,
                       previous_payload_verified=previous is not None,
                       all_payload_files_verified=True, boot_inputs={
-                          "writable_root_disk": str(output / "system.raw"),
+                          "writable_root_disk": str(output / root_name),
                           "writable_auxiliary_disk": str(output / "auxiliary.raw"),
                           "sep_storage": str(output / "sep.raw"),
                           "device_tree": str(output / "device-tree"), "trustcache": str(output / "system.tc")})
@@ -527,6 +571,9 @@ def main():
                         help="Configure the original local development-device activation path for a non-production vphone600 VM")
     parser.add_argument("--resume", action="store_true",
                         help="Verify and continue a complete closed copy refused by host pressure before its helper started")
+    parser.add_argument("--root-overlay", action="store_true",
+                        help="Make the root disk a qcow2 overlay on --disk instead of a copy (needs --qemu-img)")
+    parser.add_argument("--qemu-img", help="qemu-img for an overlay root disk or to flatten an overlay base")
     parser.add_argument("--accel", choices=("kvm", "tcg"), default="kvm")
     parser.add_argument("--seconds", type=int, default=300)
     args = parser.parse_args()

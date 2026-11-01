@@ -63,7 +63,9 @@ is its mailbox, `vphone-asmf.c` its shared measurement registers, and `vphone-vs
 synthetic replies, so SEP services work only as far as the firmware's own code works.
 
 **Storage.** Apple VirtIO devices for the root and auxiliary disks. Writable disks must be asked for by name, and the launcher
-locks the real files. A flush is a real flush with error reporting.
+locks the real files. A flush is a real flush with error reporting. The root disk is raw, or with `start_disks: "overlay"` a qcow2 overlay on the previous
+run's root disk (`tools/ios_disk_overlay.py`); the launcher then attaches it with the `qcow2` block driver and lets the file grow to
+the disk's virtual size. This path is unit-tested only.
 
 **Input.** A USB touchscreen and keyboard (`vphone-usb` and `vphone-hid`), with Home and the side button as GPIO or HID. iOS
 ignores the virtio keyboard, which is why `key` has no effect. Touch has one contact.
@@ -132,7 +134,7 @@ booted with, and installd admits an ad-hoc signed app only through the developme
 operations. They only call public operations.
 
 1. **Checks.** Inspect each app, and refuse a kernel or payload that does not fit the tools, before any disk copy.
-2. **`preparing`.** Make a private copy from the last verified run, and reinstall the guest tools.
+2. **`preparing`.** Make a private copy from the last verified run (or an overlay on it), and reinstall the guest tools.
 3. **`booting`.** Run the engine as an independent job, and wait for the guest service.
 4. **Watchdog and time zone**, then Auto-Lock.
 5. **`installing`.** Install each app whose hash the base does not record.

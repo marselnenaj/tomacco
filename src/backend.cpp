@@ -289,6 +289,7 @@ void Backend::probeToolchain() {
     emit toolchainChanged();
 }
 void Backend::copy(const QString &text) { QGuiApplication::clipboard()->setText(text); emit message(tr("Copied")); }
+QString Backend::clipboardText() const { return QGuiApplication::clipboard()->text(); }
 bool Backend::copyImage(const QString &path) {
     const QImage image(path);
     if(image.isNull()) return false;
