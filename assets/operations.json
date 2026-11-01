@@ -19,7 +19,7 @@
   {
     "name": "capabilities",
     "title": "What this computer can do",
-    "description": "Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds.",
+    "description": "Summarise in one call what this computer can do right now, to plan before building or starting anything: Android builds, the Android emulator (with its AVDs), connected Android devices, iOS builds with xtool, connected iPhones and the virtual iPhone (configured, running, phase). Each has ready and missing, the names of what it lacks; doctor's next_steps say how to set them up. Runs doctor's tool checks, so it takes a few seconds. testing lists each UI testing feature (id, feature) and whether it works on android, virtual_iphone and iphone (supported, note).",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -232,6 +232,72 @@
         },
         "next": {
           "type": "string"
+        },
+        "testing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "feature": {
+                "type": "string"
+              },
+              "android": {
+                "type": "object",
+                "properties": {
+                  "supported": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "supported",
+                  "note"
+                ]
+              },
+              "virtual_iphone": {
+                "type": "object",
+                "properties": {
+                  "supported": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "supported",
+                  "note"
+                ]
+              },
+              "iphone": {
+                "type": "object",
+                "properties": {
+                  "supported": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "supported",
+                  "note"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "feature",
+              "android",
+              "virtual_iphone",
+              "iphone"
+            ]
+          }
         }
       },
       "required": [

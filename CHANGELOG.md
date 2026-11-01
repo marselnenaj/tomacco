@@ -31,6 +31,9 @@ operations and their JSON results.
     `ui_hierarchy_unavailable` there. Unit-tested with recorded guest replies; not run on a live phone.
   - Scenarios gain `pause`, `assert_screen` (compare the screen with a baseline PNG) and `wait_screen` (wait until it
     matches), on Android and the virtual iPhone. Unit-tested with recorded screenshots; not run on a device.
+  - `capabilities` lists, under `testing`, which testing feature works on Android, the virtual iPhone and a
+    USB-connected iPhone; the table in the [agent guide](docs/agents.md#ui-tests-on-the-virtual-iphone) is checked
+    against it by a test.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

@@ -693,6 +693,27 @@ tomaccoctl call testing.crashes '{"device":"virtual-iphone","process":"MyApp","j
 All of this, the screen steps on Android included, is unit-tested with recorded guest replies, screenshots and synthetic crash
 reports; none of it has been run on a live phone or an emulator yet.
 
+What works where, kept equal to the code by a unit test (`capabilities` returns the same as `testing`). A Yes for the virtual
+iPhone means implemented and unit-tested, not yet run on a live phone.
+
+<!-- testing-matrix:begin -->
+| Feature | Android | Virtual iPhone | iPhone (USB) |
+| --- | --- | --- | --- |
+| `testing.find`, `testing.action` (selectors) | Yes: UI hierarchy | No: the guest reports no UI hierarchy | No |
+| `testing.run`: `tap`, `swipe`, `text`, `key` | Yes | Yes: through `ios.emulator.control` | No |
+| `testing.run`: `wait`, `assert`, `click`, `long_click`, `fill` | Yes | No: no UI hierarchy | No |
+| `testing.run`: `screenshot`, `assert_screen`, `wait_screen`, `pause` | Yes | Yes: from `ios.virtual.screenshot` | No |
+| `testing.run`: `launch` | Yes | Yes: the guest's `open` | No |
+| `testing.run`: `stop`, `clear` | Yes | No | No |
+| Crash check after a `testing.run` scenario | Yes | No: call `testing.crashes` | No |
+| `testing.visual_diff` | Yes | Yes: PNG from `ios.virtual.screenshot` | Yes: PNG from `device.capture` |
+| `testing.crashes` | Yes: logcat | Yes: crash reports, by `process` | No: use `ios.crash_reports` |
+| `testing.record` | Yes: taps named by element | Yes: taps at coordinates | No |
+| `testing.lint` | Yes | No: no UI hierarchy | No |
+| `testing.accessibility` | Yes | No: no UI hierarchy | No |
+| `testing.setup` (Unicode text) | Yes | No: `text` types US or German keys | No |
+<!-- testing-matrix:end -->
+
 What has been run: `testing.visual_diff`, `testing.accessibility` (on the Settings app), `testing.crashes` (with a crash from
 `am crash`) and the crash list of `testing.run` on an API 36 x86_64 emulator, and `testing.results` on a `testing.run` report. ANRs,
 native crashes and Gradle's own result files have been read only from sample text in the unit tests.

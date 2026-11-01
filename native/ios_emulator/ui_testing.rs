@@ -28,9 +28,162 @@ pub fn no_hierarchy(operation: &str) -> Error {
     .details(json!({"device":DEVICE,"testing":capabilities()}))
 }
 
-/// What the virtual iPhone supports for UI tests.
+/// One testing feature and whether it works on Android, on the virtual
+/// iPhone and on a USB-connected iPhone, with a short note for each.
+pub struct Feature {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub android: (bool, &'static str),
+    pub virtual_iphone: (bool, &'static str),
+    pub iphone: (bool, &'static str),
+}
+
+/// The testing capability matrix. docs/agents.md carries it as a table,
+/// which a test keeps equal to `matrix_table()`.
+pub const MATRIX: &[Feature] = &[
+    Feature {
+        id: "selectors",
+        label: "`testing.find`, `testing.action` (selectors)",
+        android: (true, "UI hierarchy"),
+        virtual_iphone: (false, "the guest reports no UI hierarchy"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "run_coordinates",
+        label: "`testing.run`: `tap`, `swipe`, `text`, `key`",
+        android: (true, ""),
+        virtual_iphone: (true, "through `ios.emulator.control`"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "run_selectors",
+        label: "`testing.run`: `wait`, `assert`, `click`, `long_click`, `fill`",
+        android: (true, ""),
+        virtual_iphone: (false, "no UI hierarchy"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "run_screens",
+        label: "`testing.run`: `screenshot`, `assert_screen`, `wait_screen`, `pause`",
+        android: (true, ""),
+        virtual_iphone: (true, "from `ios.virtual.screenshot`"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "run_launch",
+        label: "`testing.run`: `launch`",
+        android: (true, ""),
+        virtual_iphone: (true, "the guest's `open`"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "run_stop_clear",
+        label: "`testing.run`: `stop`, `clear`",
+        android: (true, ""),
+        virtual_iphone: (false, ""),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "run_crash_check",
+        label: "Crash check after a `testing.run` scenario",
+        android: (true, ""),
+        virtual_iphone: (false, "call `testing.crashes`"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "visual_diff",
+        label: "`testing.visual_diff`",
+        android: (true, ""),
+        virtual_iphone: (true, "PNG from `ios.virtual.screenshot`"),
+        iphone: (true, "PNG from `device.capture`"),
+    },
+    Feature {
+        id: "crashes",
+        label: "`testing.crashes`",
+        android: (true, "logcat"),
+        virtual_iphone: (true, "crash reports, by `process`"),
+        iphone: (false, "use `ios.crash_reports`"),
+    },
+    Feature {
+        id: "record",
+        label: "`testing.record`",
+        android: (true, "taps named by element"),
+        virtual_iphone: (true, "taps at coordinates"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "lint",
+        label: "`testing.lint`",
+        android: (true, ""),
+        virtual_iphone: (false, "no UI hierarchy"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "accessibility",
+        label: "`testing.accessibility`",
+        android: (true, ""),
+        virtual_iphone: (false, "no UI hierarchy"),
+        iphone: (false, ""),
+    },
+    Feature {
+        id: "unicode_text",
+        label: "`testing.setup` (Unicode text)",
+        android: (true, ""),
+        virtual_iphone: (false, "`text` types US or German keys"),
+        iphone: (false, ""),
+    },
+];
+
+#[cfg(test)]
+fn cell((works, note): (bool, &str)) -> String {
+    let word = if works { "Yes" } else { "No" };
+    if note.is_empty() {
+        word.to_string()
+    } else {
+        format!("{word}: {note}")
+    }
+}
+
+/// The matrix as the Markdown table in docs/agents.md.
+#[cfg(test)]
+fn matrix_table() -> String {
+    let mut table = String::from(
+        "| Feature | Android | Virtual iPhone | iPhone (USB) |\n| --- | --- | --- | --- |\n",
+    );
+    for feature in MATRIX {
+        table.push_str(&format!(
+            "| {} | {} | {} | {} |\n",
+            feature.label,
+            cell(feature.android),
+            cell(feature.virtual_iphone),
+            cell(feature.iphone)
+        ));
+    }
+    table
+}
+
+/// The matrix as data, for `capabilities`.
+pub fn matrix() -> Value {
+    json!(
+        MATRIX
+            .iter()
+            .map(|feature| {
+                let entry = |(works, note): (bool, &str)| json!({"supported":works,"note":note});
+                json!({"id":feature.id,"feature":feature.label.replace('`', ""),"android":entry(feature.android),
+                "virtual_iphone":entry(feature.virtual_iphone),"iphone":entry(feature.iphone)})
+            })
+            .collect::<Vec<_>>()
+    )
+}
+
+/// What the virtual iPhone supports, feature by feature.
 pub fn capabilities() -> Value {
-    json!({"ui_hierarchy":false,"selectors":false,"run_coordinates":true,"run_selectors":false,"run_screens":true,"run_launch":true,"run_stop_clear":false,"visual_diff":true,"lint":false,"accessibility":false,"unicode_text":false,"crashes":true,"run_crash_check":false,"record":true})
+    let mut map = serde_json::Map::new();
+    for feature in MATRIX {
+        map.insert(feature.id.into(), json!(feature.virtual_iphone.0));
+    }
+    map.insert("ui_hierarchy".into(), json!(false));
+    Value::Object(map)
 }
 
 /// The running phone as the scenario runner, testing.crashes and
@@ -1240,6 +1393,31 @@ mod tests {
             json!({"action":"click","x":0.505,"y":0.5025})
         );
         assert_eq!(phone.calls[1], json!({"action":"text","text":"Wi"}));
+    }
+
+    #[test]
+    fn the_capability_matrix_in_the_docs_is_the_one_in_the_code() {
+        let docs = fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/agents.md"))
+            .unwrap();
+        let begin = "<!-- testing-matrix:begin -->\n";
+        let end = "<!-- testing-matrix:end -->";
+        let start = docs
+            .find(begin)
+            .expect("docs/agents.md has the testing matrix")
+            + begin.len();
+        let stop = docs[start..].find(end).unwrap() + start;
+        assert_eq!(
+            &docs[start..stop],
+            matrix_table(),
+            "Replace the table in docs/agents.md with matrix_table()"
+        );
+        // Every feature has its three cells, and the flags follow them.
+        assert_eq!(matrix().as_array().unwrap().len(), MATRIX.len());
+        let flags = capabilities();
+        assert_eq!(flags["ui_hierarchy"], false);
+        assert_eq!(flags["selectors"], false);
+        assert_eq!(flags["run_coordinates"], true);
+        assert_eq!(flags["crashes"], true);
     }
 
     #[test]
