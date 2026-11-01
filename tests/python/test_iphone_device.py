@@ -91,5 +91,43 @@ class IphoneLogTests(IphoneTools):
         self.assertEqual(jobs.listing(), [])
 
 
+class IphoneSigningTests(IphoneTools):
+    def test_profiles_on_the_phone_and_in_the_project_are_summarised_and_the_copies_removed(self):
+        import datetime
+        import test_ios_ipa_inspect as fixtures
+        today = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None, microsecond=0)
+        plist = {"Name": "Free", "UUID": "FREE", "TeamIdentifier": ["TEAM123456"],
+                 "CreationDate": today - datetime.timedelta(days=4), "ExpirationDate": today + datetime.timedelta(days=3),
+                 "ProvisionedDevices": [UDID], "DeveloperCertificates": [fixtures.SIGNER],
+                 "Entitlements": {"application-identifier": "TEAM123456.dev.example.counter"}}
+        import plistlib
+        profile = self.root / "free.mobileprovision"
+        profile.write_bytes(fixtures.cms([], plistlib.dumps(plist)))
+        self.tool("ideviceprovision", f"""import shutil,sys
+from pathlib import Path
+Path({str(self.root / 'provision-args.json')!r}).write_text(' '.join(sys.argv[1:]))
+shutil.copy({str(profile)!r}, Path(sys.argv[4]) / 'FREE.mobileprovision')
+""")
+        project = self.root / "App"
+        (project / "xtool/Counter.app").mkdir(parents=True)
+        (project / "xtool/Counter.app/embedded.mobileprovision").write_bytes(profile.read_bytes())
+        result = dispatch("ios.signing", {"device": UDID, "path": str(project)})
+        args = (self.root / "provision-args.json").read_text().split()
+        self.assertEqual(args[:3], ["-u", UDID, "copy"])
+        self.assertFalse(Path(args[3]).exists())
+        sources = [row["source"] for row in result["profiles"]]
+        self.assertEqual(sources, ["project", "device"])
+        device_row = result["profiles"][1]
+        self.assertIsNone(device_row["path"])
+        self.assertTrue(device_row["free_account"])
+        self.assertTrue(device_row["covers_device"])
+        self.assertTrue(any("free Apple account" in text for text in result["warnings"]))
+        self.assertEqual(result["identities"][0]["team_id"], "TEAM123456")
+        self.assertEqual(result["apps"][0]["ok"], False)
+        with self.assertRaises(StudioError) as nothing:
+            dispatch("ios.signing", {})
+        self.assertEqual(nothing.exception.code, "invalid_argument")
+
+
 if __name__ == "__main__":
     unittest.main()

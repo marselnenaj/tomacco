@@ -102,6 +102,11 @@ pub const TOOLS: &[(&str, &[&str], &str)] = &[
     ("ideviceinfo", &["--version"], "Install libimobiledevice"),
     ("idevicesyslog", &["--version"], "Install libimobiledevice"),
     (
+        "ideviceprovision",
+        &["--version"],
+        "Install libimobiledevice to list an iPhone's provisioning profiles",
+    ),
+    (
         "idevicescreenshot",
         &["--version"],
         "Install libimobiledevice and mount the developer disk image",

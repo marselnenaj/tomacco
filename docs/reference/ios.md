@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-45 operations. Generated from `assets/operations.json`; [all areas](README.md).
+46 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -212,6 +212,24 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call ios.crash_reports '{"device":"<device>"}'
+```
+
+### ios.signing
+
+**iPhone signing overview**
+
+List the provisioning profiles installed on a USB-connected iPhone (copied off it with libimobiledevice's ideviceprovision and removed again), those embedded in an xtool project's built apps under path/xtool and any named profiles, each with name, uuid, team, kind, created, expires, days_left, the device ids it covers, covers_device for the given device, free_account (a profile lasting 7 days or less, as a free Apple account's do) and its own warnings. identities lists the signing certificates those profiles name and the project's apps are signed with, once each by SHA-1, with team, expiry and where each was seen. warnings sums up what would stop an app from installing or opening: expired or expiring within 7 days, a free account's 7-day profile, a device a profile does not list. It reads what the files claim, verifies no signature, contacts no Apple service and does not read xtool's login.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string |  | `""` | UDID of the USB-connected iPhone whose installed profiles to list and check coverage for; empty: no phone |
+| `path` | string |  | `""` | Absolute path of an xtool project; its built apps under xtool/ are read |
+| `profiles` | array of string |  | `[]` | up to 100 items; Absolute paths of .mobileprovision files to read as well |
+
+```sh
+tomaccoctl call ios.signing
 ```
 
 ### ios.emulator.inspect

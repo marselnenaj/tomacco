@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 199 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 200 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -138,6 +138,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`ios.wda_prepare`](ios.md#ioswda_prepare) | Prepare iPhone control | writes |
 | [`ios.apps`](ios.md#iosapps) | Show iPhone apps | read-only |
 | [`ios.crash_reports`](ios.md#ioscrash_reports) | iPhone crash reports | writes |
+| [`ios.signing`](ios.md#iossigning) | iPhone signing overview | read-only |
 | [`ios.emulator.inspect`](ios.md#iosemulatorinspect) | Check iOS emulator | read-only |
 | [`ios.emulator.probe`](ios.md#iosemulatorprobe) | Examine iOS kernel boot | writes |
 | [`ios.emulator.exec`](ios.md#iosemulatorexec) | Run iOS guest command | writes |

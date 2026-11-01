@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 199 operations.
+`tomaccoctl` now has one typed API of 200 operations.
 
 ### Added
 
@@ -28,6 +28,10 @@ operations and their JSON results.
   - `device.logs` with `bundle_id` follows one app's process on an iPhone, named by its executable from
     `go-ios apps`. Without `idevicesyslog` it runs `go-ios syslog` through Tomacco's own filter. Before,
     `bundle_id` was ignored on iOS.
+  - `ios.signing` lists the provisioning profiles on the phone (through `ideviceprovision`), in an xtool
+    project's built apps and in named files, with team, expiry, covered devices and the signing certificates
+    they name, and warns about expired profiles, ones running out within 7 days, free accounts' 7-day profiles
+    and a phone a profile does not list.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

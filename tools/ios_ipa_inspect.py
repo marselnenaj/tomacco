@@ -12,6 +12,11 @@ say, so a tampered bundle reads as whatever it claims to be.
 
 `info PATH...` reads only the Info.plist of each `.app` directory.
 
+`profiles [--device UDID] [--app APP]... PROFILE...` summarises provisioning
+profiles and the signing certificates they and the apps name, with warnings:
+expired or expiring within seven days, a free account's seven-day profile, a
+device the profile does not cover.
+
 Only Python's standard library is used. Nothing is written, run or fetched.
 """
 import argparse
@@ -501,6 +506,108 @@ def inspect(path, now=None):
     return result
 
 
+# How long a profile from a free Apple account lasts; a day more absorbs time zones.
+FREE_PROFILE_DAYS = 7
+SOON_DAYS = 7
+
+
+def profile_rows(paths, device=None, now=None):
+    """Each profile's summary with its own warnings, or why it could not be read."""
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    rows = []
+    for path in paths:
+        try:
+            data = Path(path).read_bytes()
+            if len(data) > MAX_PROFILE_BYTES:
+                raise ValueError(f"{path} is larger than {MAX_PROFILE_BYTES} bytes")
+            plist = profile_plist(data)
+            summary = profile_summary(plist, now)
+        except (OSError, ValueError, IndexError, struct.error) as error:
+            rows.append({"path": str(path), "ok": False, "error": str(error), "warnings": []})
+            continue
+        created, expires = plist.get("CreationDate"), plist.get("ExpirationDate")
+        lifetime = (expires - created).days if isinstance(created, datetime.datetime) and isinstance(
+            expires, datetime.datetime) else None
+        devices = [item for item in plist.get("ProvisionedDevices") or [] if isinstance(item, str)]
+        summary.update(path=str(path), ok=True, device_ids=devices,
+                       free_account=lifetime is not None and lifetime <= FREE_PROFILE_DAYS)
+        summary["covers_device"] = None if not device else (
+            summary["provisions_all_devices"] or device.lower() in (item.lower() for item in devices))
+        warnings = []
+        if summary["expired"]:
+            warnings.append(f"Expired on {summary['expires']}")
+        elif summary["days_left"] is not None and summary["days_left"] < SOON_DAYS:
+            warnings.append(f"Expires in {summary['days_left']} day(s), on {summary['expires']}")
+        if summary["free_account"]:
+            warnings.append("Made with a free Apple account: it lasts 7 days, and apps signed with it stop "
+                            "opening then. Build and install again with xtool to renew it")
+        if summary["covers_device"] is False:
+            warnings.append(f"Does not list the device {device}")
+        summary["warnings"] = warnings
+        rows.append(summary)
+    return rows
+
+
+def identity_rows(profiles, apps, now=None):
+    """The signing certificates the profiles list and the apps are signed with,
+    once each by SHA-1, with where they were seen and how long they last."""
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    found = {}
+
+    def add(certificate_row, team, source):
+        if not certificate_row or certificate_row.get("unreadable") or not certificate_row.get("sha1"):
+            return
+        row = found.setdefault(certificate_row["sha1"], {
+            "name": certificate_row.get("common_name"), "sha1": certificate_row["sha1"],
+            "team_id": certificate_row.get("organizational_unit") or team,
+            "issuer": certificate_row.get("issuer_common_name"), "expires": certificate_row.get("not_after"),
+            "expired": None, "days_left": None, "seen_in": [], "warnings": []})
+        if source not in row["seen_in"]:
+            row["seen_in"].append(source)
+
+    for profile in profiles:
+        if profile.get("ok"):
+            for row in profile["certificates"]:
+                add(row, profile["team_id"], profile["path"])
+    app_rows = []
+    for path in apps:
+        try:
+            record = inspect(path, now)
+        except (OSError, ValueError, zipfile.BadZipFile, struct.error) as error:
+            app_rows.append({"path": str(path), "ok": False, "error": str(error)})
+            continue
+        signature = record["signature"]
+        add(signature["certificate"], signature["team_id"], str(path))
+        app_rows.append({"path": str(path), "ok": True, "bundle_id": record["bundle_id"],
+                         "signed": signature["signed"], "ad_hoc": signature["ad_hoc"],
+                         "team_id": signature["team_id"],
+                         "certificate_sha1": (signature["certificate"] or {}).get("sha1"),
+                         "warnings": record["warnings"]})
+    for row in found.values():
+        try:
+            moment = datetime.datetime.fromisoformat(row["expires"].replace("Z", "+00:00")) if row["expires"] else None
+        except ValueError:
+            moment = None
+        if moment is not None:
+            if moment.tzinfo is None:
+                moment = moment.replace(tzinfo=datetime.timezone.utc)
+            row["expired"] = moment <= now
+            row["days_left"] = (moment - now).days
+            if row["expired"]:
+                row["warnings"].append(f"The certificate expired on {row['expires']}")
+            elif row["days_left"] < SOON_DAYS:
+                row["warnings"].append(f"The certificate expires in {row['days_left']} day(s)")
+    return sorted(found.values(), key=lambda row: (row["name"] or "", row["sha1"])), app_rows
+
+
+def overview(paths, apps=(), device=None, now=None):
+    profiles = profile_rows(paths, device, now)
+    identities, app_rows = identity_rows(profiles, apps, now)
+    warnings = [f"{Path(row['path']).name}: {text}" for row in profiles for text in row["warnings"]]
+    warnings += [f"{row['name'] or row['sha1']}: {text}" for row in identities for text in row["warnings"]]
+    return {"profiles": profiles, "identities": identities, "apps": app_rows, "warnings": warnings}
+
+
 def info_rows(paths):
     """Info.plist of each .app directory, or the reason it cannot be read."""
     rows = []
@@ -521,7 +628,14 @@ def main():
     commands = parser.add_subparsers(dest="action", required=True)
     commands.add_parser("inspect").add_argument("path", type=Path, help="An .ipa archive or an .app directory")
     commands.add_parser("info").add_argument("paths", type=Path, nargs="+", help=".app directories")
+    listing = commands.add_parser("profiles")
+    listing.add_argument("--device", help="UDID the profiles should list")
+    listing.add_argument("--app", type=Path, action="append", default=[], help=".app or .ipa whose signer to add")
+    listing.add_argument("paths", type=Path, nargs="*", help=".mobileprovision files")
     args = parser.parse_args()
+    if args.action == "profiles":
+        print(json.dumps({"ok": True, **overview(args.paths, args.app, args.device)}))
+        return 0
     if args.action == "info":
         print(json.dumps({"ok": True, "applications": info_rows(args.paths)}))
         return 0

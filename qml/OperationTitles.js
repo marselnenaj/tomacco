@@ -172,6 +172,7 @@ var titles = {
     "ios.prepare": QT_TRANSLATE_NOOP("Operations", "Set up iPhone connection"),
     "ios.wda_prepare": QT_TRANSLATE_NOOP("Operations", "Prepare iPhone control"),
     "ios.crash_reports": QT_TRANSLATE_NOOP("Operations", "iPhone crash reports"),
+    "ios.signing": QT_TRANSLATE_NOOP("Operations", "iPhone signing overview"),
     "ios.apps": QT_TRANSLATE_NOOP("Operations", "Show iPhone apps"),
     "ios.emulator.inspect": QT_TRANSLATE_NOOP("Operations", "Check iOS emulator"),
     "ios.emulator.probe": QT_TRANSLATE_NOOP("Operations", "Examine iOS kernel boot"),

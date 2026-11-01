@@ -2,7 +2,9 @@
 //! through go-ios and libimobiledevice. Tested with stand-ins for those tools.
 use crate::{core::*, toolchain as tc};
 use serde_json::{Value, json};
+use std::fs;
 use std::io::{BufRead, BufReader, Write};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 pub const UDID: &str = "[A-Fa-f0-9-]{16,64}";
@@ -191,6 +193,126 @@ pub fn syslog_worker(request: &str) -> Result<()> {
         ));
     }
     Ok(())
+}
+
+/// `ios.signing`: the provisioning profiles installed on the phone, in an
+/// xtool project's built apps and in named files, with the signing
+/// certificates they list and warnings. Read by tools/ios_ipa_inspect.py;
+/// nothing is verified cryptographically and xtool's login is not read.
+pub fn signing(a: &Value) -> Result {
+    let device = s(a, "device");
+    if !device.is_empty() {
+        udid(device)?;
+    }
+    let mut sources: Vec<(PathBuf, &str)> = Vec::new();
+    let mut apps = Vec::new();
+    if !s(a, "path").is_empty() {
+        let root = path(s(a, "path"), true, true)?;
+        let pattern = format!(
+            "{}/xtool/*.app",
+            glob::Pattern::escape(&root.to_string_lossy())
+        );
+        for app in glob_paths(&pattern)? {
+            let profile = app.join("embedded.mobileprovision");
+            if profile.is_file() {
+                sources.push((profile, "project"));
+            }
+            apps.push(app);
+        }
+    }
+    for file in strings(&a["profiles"]) {
+        let file = path(&file, false, true)?;
+        if !file.is_file() {
+            return Err(Error::new(
+                "invalid_path",
+                format!("{} is not a file", file.display()),
+            ));
+        }
+        sources.push((file, "file"));
+    }
+    let mut notes = Vec::new();
+    let copied = if device.is_empty() {
+        None
+    } else if let Some(tool) = tc::find_optional("ideviceprovision")? {
+        let directory = home()?
+            .join("iphone-profiles")
+            .join(uuid::Uuid::new_v4().simple().to_string());
+        private_dir(&directory)?;
+        let copy = tc::run(
+            &argv(&[&tool, "-u", device, "copy", &directory.to_string_lossy()]),
+            60,
+            None,
+            true,
+        );
+        if let Err(error) = copy {
+            let _ = fs::remove_dir_all(&directory);
+            return Err(error);
+        }
+        let pattern = format!(
+            "{}/*.mobileprovision",
+            glob::Pattern::escape(&directory.to_string_lossy())
+        );
+        for file in glob_paths(&pattern)? {
+            sources.push((file, "device"));
+        }
+        Some(directory)
+    } else {
+        notes.push("Install libimobiledevice's ideviceprovision to list the profiles installed on the iPhone".to_string());
+        None
+    };
+    let result = (|| -> Result {
+        if sources.is_empty() && apps.is_empty() && copied.is_none() {
+            return Err(Error::new(
+                "invalid_argument",
+                "Give device, path or profiles to read",
+            ));
+        }
+        let mut args = vec![
+            tc::find("python3")?,
+            "-I".into(),
+            crate::ios_emulator::research::script("ios_ipa_inspect.py")?
+                .to_string_lossy()
+                .into_owned(),
+            "profiles".into(),
+        ];
+        if !device.is_empty() {
+            args.extend(argv(&["--device", device]));
+        }
+        for app in &apps {
+            args.extend(["--app".into(), app.to_string_lossy().into_owned()]);
+        }
+        args.extend(
+            sources
+                .iter()
+                .map(|(file, _)| file.to_string_lossy().into_owned()),
+        );
+        let done = tc::run(&args, 120, None, false)?;
+        let mut reply: Value = serde_json::from_str(s(&done, "stdout").trim()).map_err(|_| {
+            Error::new("tool_failed", "The profile reader gave no answer").details(json!({
+                "stderr": s(&done, "stderr").chars().take(400).collect::<String>()
+            }))
+        })?;
+        if let Some(rows) = reply["profiles"].as_array_mut() {
+            for (row, (_, source)) in rows.iter_mut().zip(&sources) {
+                row["source"] = json!(source);
+                if *source == "device" {
+                    // The copy is removed below; the profile is on the phone.
+                    row["path"] = Value::Null;
+                }
+            }
+        }
+        if let Some(warnings) = reply["warnings"].as_array_mut() {
+            warnings.extend(notes.iter().map(|note| json!(note)));
+        }
+        let object = reply.as_object_mut().unwrap();
+        object.remove("ok");
+        object.insert("device".into(), json!(device));
+        Ok(reply)
+    })();
+    if let Some(directory) = copied {
+        let _ = fs::remove_dir_all(directory);
+    }
+    result
 }
 
 #[cfg(test)]

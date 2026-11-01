@@ -6918,6 +6918,44 @@
     }
   },
   {
+    "name": "ios.signing",
+    "title": "iPhone signing overview",
+    "description": "List the provisioning profiles installed on a USB-connected iPhone (copied off it with libimobiledevice's ideviceprovision and removed again), those embedded in an xtool project's built apps under path/xtool and any named profiles, each with name, uuid, team, kind, created, expires, days_left, the device ids it covers, covers_device for the given device, free_account (a profile lasting 7 days or less, as a free Apple account's do) and its own warnings. identities lists the signing certificates those profiles name and the project's apps are signed with, once each by SHA-1, with team, expiry and where each was seen. warnings sums up what would stop an app from installing or opening: expired or expiring within 7 days, a free account's 7-day profile, a device a profile does not list. It reads what the files claim, verifies no signature, contacts no Apple service and does not read xtool's login.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "default": "",
+          "description": "UDID of the USB-connected iPhone whose installed profiles to list and check coverage for; empty: no phone"
+        },
+        "path": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path of an xtool project; its built apps under xtool/ are read"
+        },
+        "profiles": {
+          "type": "array",
+          "maxItems": 100,
+          "default": [],
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Absolute paths of .mobileprovision files to read as well"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "ios.emulator.inspect",
     "description": "Inspect a local Darwin/SPTM restore-shell or Inferno kernel-probe engine and matching firmware. Prepared images are confined and hash-verified. Neither backend runs graphical iOS apps.",
     "inputSchema": {

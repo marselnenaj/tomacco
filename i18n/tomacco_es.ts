@@ -3699,6 +3699,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Informes de fallos del iPhone</translation>
     </message>
     <message>
+        <source>iPhone signing overview</source>
+        <translation>Resumen de la firma del iPhone</translation>
+    </message>
+    <message>
         <source>Read crash report</source>
         <translation>Leer informe de fallos</translation>
     </message>

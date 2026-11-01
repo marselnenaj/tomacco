@@ -156,6 +156,28 @@ tomaccoctl call device.logs '{"platform":"ios","device":"ACTUAL_UDID","bundle_id
 With libimobiledevice's `idevicesyslog` installed, it does the filtering. Without it, Tomacco
 runs `go-ios syslog` and filters the lines itself.
 
+### Profiles and signing certificates
+
+`ios.signing` shows which provisioning profiles there are and how long they last. It reads
+the profiles installed on the phone (copied off it with libimobiledevice's
+`ideviceprovision` and deleted again afterwards), the profile inside each app xtool built in
+the project, and any `.mobileprovision` files you name.
+
+```sh
+tomaccoctl call ios.signing '{"device":"ACTUAL_UDID","path":"/absolute/MyiOSApp"}'
+```
+
+Each profile lists its team, kind, expiry, `days_left`, the device ids it covers and whether
+it covers this phone. `free_account` is true for a profile that lasts 7 days or less, as
+profiles from a free Apple account do. `identities` lists the signing certificates those
+profiles name and the apps are signed with, with team and expiry. `warnings` names what would
+stop an app from installing or opening: an expired profile, one that runs out within 7 days,
+or one that does not list the phone. Apps signed with a free account stop opening when their
+profile runs out; build and install again with xtool to renew it.
+
+It reads what the files claim and checks no signature. It does not contact Apple and does not
+read xtool's login, so it cannot list certificates that are only in your Apple account.
+
 ## Flutter, Xcode projects, crash reports and the App Store
 
 These call a pinned commit of Joshua Warren's MIT-licensed
