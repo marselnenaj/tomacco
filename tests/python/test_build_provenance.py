@@ -65,6 +65,41 @@ class Provenance(unittest.TestCase):
         for part in ("docker://ubuntu:22.04", "cmake-", "rustup-init", "ffmpeg-", "qtwebengine"):
             self.assertIn(part, uris)
 
+    def test_each_portable_architecture_adds_its_own_inputs(self):
+        both = build_provenance.inputs(ROOT, "c0ffee", "v1.2.3", portable=True, architectures=["x86_64", "aarch64"])
+        names = [entry.get("name") for entry in both]
+        self.assertIn("packaging/portable/Dockerfile", names)
+        self.assertIn("packaging/portable/Dockerfile.aarch64", names)
+        uris = [entry.get("uri", "") for entry in both]
+        arm = (ROOT / "packaging/portable/Dockerfile.aarch64").read_text()
+        archives = (ROOT / "packaging/portable/qt-archives-aarch64.txt").read_text()
+        for entry in both:
+            uri = entry.get("uri", "")
+            if "/linux_arm64/" in uri:
+                self.assertIn(entry["digest"]["sha256"], archives)
+            elif "aarch64" in uri:
+                self.assertIn(entry["digest"]["sha256"], arm)
+        for part in ("docker://ubuntu:24.04", "cmake-4.4.5-linux-aarch64.tar.gz", "aarch64-unknown-linux-gnu/rustup-init",
+                     "docker://ubuntu:22.04", "cmake-4.4.5-linux-x86_64.tar.gz"):
+            self.assertTrue(any(part in uri for uri in uris), part)
+        only_arm = build_provenance.inputs(ROOT, "c0ffee", "v1.2.3", portable=True, architectures=["aarch64"])
+        self.assertNotIn("packaging/portable/Dockerfile", [entry.get("name") for entry in only_arm])
+
+    def test_another_build_host_reports_its_tools_through_the_wrapper(self):
+        asked = []
+
+        def read(argv):
+            asked.append(argv)
+            if argv[-1] == "uname -m":
+                return b"aarch64\n"
+            if argv[-1] == "cmake --version":
+                return b"cmake version 4.1.0\n\nCMake suite\n"
+            raise OSError("no such tool")
+        versions = build_provenance.host_builder(read, lambda command: ["ssh", "host", command])
+        self.assertEqual(versions, {"machine": "aarch64", "cmake": "cmake version 4.1.0"})
+        self.assertTrue(all(argv[:2] == ["ssh", "host"] for argv in asked))
+        self.assertIn("rustc --version", [argv[-1] for argv in asked])
+
     def test_the_statement_is_in_toto_with_a_slsa_predicate(self):
         moment = datetime.datetime(2026, 11, 1, 12, 0, tzinfo=datetime.timezone.utc)
         document = build_provenance.statement(self.dist, "t-1.0.0-provenance.intoto.json", "c0ffee", "v1.0.0", 1700000000,

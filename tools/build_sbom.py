@@ -29,8 +29,6 @@ import check_dependencies
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = "1.6"
-QT_ARCHIVES = "packaging/portable/qt-archives.txt"
-QT_BASE = "https://download.qt.io/online/qtsdkrepository/linux_x64/"
 PORTABLE_DOCKERFILE = "packaging/portable/Dockerfile"
 # The ICU that comes with Qt's 6.12.0 binaries; its archive name does not say.
 ICU_VERSION = "73.2"
@@ -121,30 +119,44 @@ def font_components(root):
             for name, path, url in FONTS if (root / path).is_file()]
 
 
-def qt_archives(root):
-    """[(module, version, sha256, url)] from packaging/portable/qt-archives.txt."""
+def archives_file(architecture="x86_64"):
+    """packaging/portable/qt-archives.txt, or the list of another architecture."""
+    return "packaging/portable/" + build_portable.ARCHITECTURES[architecture].archives
+
+
+def dockerfile(architecture="x86_64"):
+    return "packaging/portable/" + build_portable.ARCHITECTURES[architecture].dockerfile
+
+
+def qt_archives(root, architecture="x86_64"):
+    """[(module, version, sha256, url)] from packaging/portable/qt-archives.txt
+    (qt-archives-aarch64.txt for aarch64)."""
+    listed = archives_file(architecture)
+    base = f"https://download.qt.io/online/qtsdkrepository/{build_portable.ARCHITECTURES[architecture].qt_repository}/"
     found = []
-    for line in (root / QT_ARCHIVES).read_text().splitlines():
+    for line in (root / listed).read_text().splitlines():
         if not line.strip() or line.startswith("#"):
             continue
         digest, path = line.split()
         match = re.search(r"/(\d+\.\d+\.\d+)-\d+-\d+([a-z]+)-", path)
         if not match:
-            raise Failed(f"{QT_ARCHIVES}: cannot read module and version from {path}")
-        found.append((match.group(2), match.group(1), digest, QT_BASE + path))
+            raise Failed(f"{listed}: cannot read module and version from {path}")
+        found.append((match.group(2), match.group(1), digest, base + path))
     return found
 
 
-def dockerfile_argument(root, name):
-    found = re.search(rf"^ARG {name}=(\S+)$", (root / PORTABLE_DOCKERFILE).read_text(), re.M)
+def dockerfile_argument(root, name, architecture="x86_64"):
+    path = dockerfile(architecture)
+    found = re.search(rf"^ARG {name}=(\S+)$", (root / path).read_text(), re.M)
     if not found:
-        raise Failed(f"{PORTABLE_DOCKERFILE} has no ARG {name}")
+        raise Failed(f"{path} has no ARG {name}")
     return found.group(1)
 
 
-def portable_components(root):
+def portable_components(root, architecture="x86_64"):
     components = []
-    for module, version, digest, url in qt_archives(root):
+    base = build_portable.ARCHITECTURES[architecture].base
+    for module, version, digest, url in qt_archives(root, architecture):
         if module == "icu":
             component = {"type": "library", "bom-ref": f"icu@{ICU_VERSION}", "name": "ICU", "version": ICU_VERSION,
                          "group": "unicode-org", "licenses": [{"license": {"id": "Unicode-DFS-2016"}}],
@@ -158,7 +170,7 @@ def portable_components(root):
                                             "are in lib/tomacco/runtime/sbom/")
         component["externalReferences"] = [{"type": "distribution", "url": url, "hashes": sha256(digest)}]
         components.append(component)
-    version, digest = dockerfile_argument(root, "FFMPEG_VERSION"), dockerfile_argument(root, "FFMPEG_SHA256")
+    version, digest = dockerfile_argument(root, "FFMPEG_VERSION", architecture), dockerfile_argument(root, "FFMPEG_SHA256", architecture)
     url = f"https://ffmpeg.org/releases/ffmpeg-{version}.tar.xz"
     components.append({"type": "library", "bom-ref": f"pkg:generic/ffmpeg@{version}", "name": "FFmpeg", "version": version,
                        "purl": f"pkg:generic/ffmpeg@{version}", "licenses": [{"license": {"id": "LGPL-2.1-or-later"}}],
@@ -167,8 +179,13 @@ def portable_components(root):
                        "externalReferences": [{"type": "source-distribution", "url": url, "hashes": sha256(digest)}]})
     for library in build_portable.BUNDLED_SYSTEM:
         name = library.split(".so")[0]
-        components.append({"type": "library", "bom-ref": f"ubuntu-22.04:{name}", "name": name,
-                           "description": f"{library} from Ubuntu 22.04's package", "licenses": [{"license": {"id": "MIT"}}]})
+        components.append({"type": "library", "bom-ref": f"{base.lower().replace(' ', '-')}:{name}", "name": name,
+                           "description": f"{library} from {base}'s package", "licenses": [{"license": {"id": "MIT"}}]})
+    for library, debian, license in build_portable.ARCHITECTURES[architecture].libraries:
+        name = library.split(".so")[0]
+        components.append({"type": "library", "bom-ref": f"{base.lower().replace(' ', '-')}:{name}", "name": name,
+                           "description": f"{library} from {base}'s package {debian}, which Qt WebEngine links",
+                           "licenses": [{"license": {"id": license}}]})
     return components
 
 
@@ -178,7 +195,7 @@ def bom(root, package_name, package_digest, version, metadata, linked, portable,
     components += [sqlite] if sqlite else []
     components += font_components(root)
     if portable:
-        components += portable_components(root)
+        components += portable_components(root, build_portable.architecture_of(package_name).name)
     main = {"type": "application", "bom-ref": "tomacco", "name": "Tomacco", "version": version,
             "description": package_name, "licenses": [{"license": {"id": "GPL-2.0-or-later"}}],
             "purl": f"pkg:github/marselnenaj/tomacco@v{version}", "hashes": sha256(package_digest),

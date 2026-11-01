@@ -606,11 +606,52 @@ fn applies(current: &str, latest: &Version) -> bool {
 /// The package this installation updates from: the portable one when it was
 /// installed from a portable package, the regular one otherwise.
 fn package_name(version: &Version) -> String {
-    let portable = std::env::current_exe()
+    package_file(version, portable_installation())
+}
+
+fn portable_installation() -> bool {
+    std::env::current_exe()
         .ok()
         .and_then(|executable| executable.parent().map(is_portable))
-        .unwrap_or(false);
-    package_file(version, portable)
+        .unwrap_or(false)
+}
+
+/// The package of `release` this installation updates from, if it offers one.
+fn package_for(release: &Release) -> Option<String> {
+    choose_package(
+        &release.version,
+        &release.assets,
+        portable_installation(),
+        tc::which("pacman").is_some(),
+        std::env::consts::ARCH,
+    )
+}
+
+/// A portable installation takes the portable package only: the regular one
+/// needs Qt and FFmpeg from the system. A regular one takes the regular package,
+/// or the portable one when the release has no regular package for this
+/// architecture. On aarch64 away from Arch Linux ARM, where the regular
+/// package's Qt cannot come from the system, it prefers the portable package,
+/// as install.sh does.
+fn choose_package(
+    version: &Version,
+    assets: &[Value],
+    portable: bool,
+    arch_linux: bool,
+    architecture: &str,
+) -> Option<String> {
+    let regular = package_file(version, false);
+    let bundled = package_file(version, true);
+    let order = if portable {
+        vec![bundled]
+    } else if architecture == "aarch64" && !arch_linux {
+        vec![bundled, regular]
+    } else {
+        vec![regular, bundled]
+    };
+    order
+        .into_iter()
+        .find(|name| assets.iter().any(|asset| s(asset, "name") == name))
 }
 
 /// A portable package (`tools/build_portable.py`) bundles Qt and FFmpeg;
@@ -1080,10 +1121,7 @@ fn outcome(lookup: Lookup, current: &str, channel: &str) -> Value {
         }
         Lookup::Found(release) => {
             let available = applies(current, &release.version);
-            let package = release
-                .assets
-                .iter()
-                .any(|asset| s(asset, "name") == package_name(&release.version));
+            let package = package_for(&release).is_some();
             let (state, message) = if !available {
                 (
                     "up_to_date",
@@ -1439,6 +1477,8 @@ fn apply(a: &Value) -> Result {
 struct Verified {
     version: Version,
     package: Vec<u8>,
+    /// The package's file name, which names its top directory.
+    name: String,
 }
 
 fn download_small(
@@ -1562,7 +1602,7 @@ fn download_and_verify(
         ));
     }
     *attempted = Some(release.version.clone());
-    let name = package_name(&release.version);
+    let name = package_for(&release).unwrap_or_else(|| package_name(&release.version));
     let asset = |wanted: &str| {
         release
             .assets
@@ -1618,6 +1658,7 @@ fn download_and_verify(
     Ok(Verified {
         version: release.version,
         package,
+        name,
     })
 }
 
@@ -1628,8 +1669,8 @@ fn unpack_package(verified: &Verified, scratch: &Path) -> Result<PathBuf> {
     let unpacked = scratch.join("unpacked");
     fs::create_dir(&unpacked)?;
     unpack(&verified.package, &unpacked)?;
-    let name = package_name(&verified.version);
-    let root = unpacked.join(name.strip_suffix(".tar.gz").unwrap_or(&name));
+    let name = &verified.name;
+    let root = unpacked.join(name.strip_suffix(".tar.gz").unwrap_or(name));
     let refuse = |what: &str| {
         Error::new(
             "update_invalid_package",

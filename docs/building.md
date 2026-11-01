@@ -167,6 +167,32 @@ container without Python installed it in 0.9 to 1.2 s, uninstalled it in 0.7 s a
 `install.py` took 1.0 to 1.7 s, 0.9 to 1.1 s and 1.5 to 2.0 s in the same container with Python 3.11 added. On the development host
 the install took 1.1 s against 1.7 s (medians of three); on a busy disk `syncfs` takes most of either.
 
+**The aarch64 portable package.** `build --arch aarch64` builds `tomacco-VERSION-Linux-aarch64-portable.tar.gz` the same way
+for `linux/arm64`, into `build-portable-aarch64/`:
+
+```sh
+tools/build_portable.py build --arch aarch64
+tools/build_portable.py verify build-portable-aarch64/tomacco-1.2.1-Linux-aarch64-portable.tar.gz
+```
+
+Its image, `tomacco-portable-builder-aarch64:<digest>`, comes from `packaging/portable/Dockerfile.aarch64` and
+`packaging/portable/qt-archives-aarch64.txt`: Qt's official aarch64 binaries of the same 6.12.0 builds as the x86_64 ones, Qt
+WebEngine included, so `qt-sources.txt` is their source too, and the same FFmpeg, CMake and Rust. Qt builds those binaries on
+Ubuntu 24.04 and they need glibc 2.38 and `GLIBCXX_3.4.32`, so this builder is Ubuntu 24.04 and the package needs glibc 2.39: it runs on
+Ubuntu 24.04, Debian 13, Fedora 40 and newer, not on Debian 12 or Ubuntu 22.04. `verify` checks it in `linux/arm64` containers of
+Debian 13, Ubuntu 24.04 and Fedora 44. On an x86_64 host Docker runs those containers under QEMU emulation, which needs
+`binfmt_misc` with `qemu-aarch64` registered (`docker buildx ls` then lists `linux/arm64`). Unlike
+the x86_64 build, Qt WebEngine's aarch64 build links Opus, Snappy, WebP, Minizip and Little CMS from Ubuntu 24.04 instead of
+carrying Chromium's own copies, so the package bundles those from the builder, each with its Debian copyright file, and its xcb
+plugin also expects libSM and libICE from the host.
+
+For the 1.2.1 sources on a 32-thread x86_64 workstation, all under emulation: the builder image took about 12 minutes (2.9 GB),
+compiling about half an hour, and `verify` 22 minutes for the three containers, all of whose checks passed. The package was
+175 MB (449 MB unpacked, 2326 files) and needs glibc 2.39 and `GLIBCXX_3.4.32`. In a `debian:12-slim` container (glibc
+2.36) every program check failed on the missing `GLIBC_2.39`, as expected. On the M1 MacBook Air with Arch Linux ARM, in a
+scratch home, `tomaccoctl --version` and `doctor`, the library check, `--smoke-test` offscreen (21 s), `install.py`, the
+installed launchers and the uninstall all passed. With Docker on an aarch64 host the same commands run natively.
+
 **Why there is no Flatpak or AppImage.** Both were considered for the distributions the regular package does not fit; the
 portable package serves them instead. Tomacco's work happens in programs on the host: `tomaccoctl` runs `adb`, the Android emulator
 (which needs `/dev/kvm`), Gradle and a JDK, `xtool` and Swift, `usbmuxd` for iPhones, and QEMU-based engines it builds into the
@@ -254,12 +280,17 @@ installation back. An uninstall also leaves your preferences (`~/.config/marseln
 
 ## Releases and updates
 
-A release holds the package and the portable package, each with its `.sha256`, its `.sig`, and a software bill of materials
+A release holds the package and the portable package for x86_64, and when it is made with the [aarch64 builds](#making-a-release)
+the same two for aarch64, each with its `.sha256`, its `.sig`, and a software bill of materials
 (`.cdx.json`) with its own `.sig`, and a signed [provenance](#making-a-release) of the whole release. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
 never offered as updates.
 
 Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against a public key compiled into `tomaccoctl`: the current
 release key and, while the key is being [rotated](#rotating-the-release-key), the next one. A build without a key refuses to install updates and says so.
+
+The updater takes the package of its own architecture. An installation from a portable package takes only the next portable
+package. One from a regular package takes the next regular package, or the portable one when the release has no regular package
+for its architecture; on aarch64 away from Arch Linux ARM (no `pacman`) it prefers the portable package, as the installer does.
 
 `native/product.rs` holds the product name, the repository and the installed paths the updater uses, so a rename changes them in one place. An update runs the package's own
 `bin/tomaccoctl _install --update`, which keeps the integrations as they are, so the journal, the backups and rollback work as for any
@@ -286,6 +317,37 @@ Releases are made locally, not by a workflow. From a clean checkout of the tag, 
 [portable package](#packaging) (built and verified with `tools/build_portable.py`; `--no-portable` leaves it out) and the source tarball with their
 checksums, signs both packages and creates a draft release whose body comes from `docs/RELEASE_NOTES.md`, with relative links pointing into the tag. It refuses a dirty tree, a checkout that is not
 the tag, and versions that disagree. With `--dry-run` it only prints what it would do.
+
+**ARM64 packages.** With `--arm-host` the release also gets the regular `tomacco-VERSION-Linux-aarch64.tar.gz`, built on an ARM build host over
+SSH; with `--arm-portable`, the [aarch64 portable package](#packaging) as well:
+
+```sh
+tools/make_release.py --key KEY --arm-host builder@arm-laptop --arm-path '~/.cache/tomacco-buildtools/bin' --arm-portable
+```
+
+The host is a `user@host` or an `ssh_config` name (or `TOMACCO_ARM_BUILD_HOST`), reached with `ssh -o BatchMode=yes`, so its key
+must already be loaded in your SSH agent. It needs what [a build from a checkout](getting-started.md) needs: Qt 6.9 or newer,
+FFmpeg, Rust, CMake, Ninja and a C++ compiler; no root. `--arm-path` (or `TOMACCO_ARM_BUILD_PATH`) puts directories in front of
+its `PATH`, `~/` meaning its home, for a CMake and Ninja installed with `pip` into a virtual environment. After the source
+tarball is made, `make_release.py`:
+
+1. checks that the host is aarch64 and empties `~/tomacco-build-release-VERSION` there (`--arm-directory` picks another
+   directory below the home);
+2. copies the release's own source tarball there and checks its SHA-256 on the host before unpacking it;
+3. configures and builds with `cmake -G Ninja -DCMAKE_BUILD_TYPE=Release` and `SOURCE_DATE_EPOCH` set to the release commit's
+   time, inside the unpacked tree, where Cargo finds the vendored crates;
+4. runs `ctest -R '^(backend|desktop-ui|native-display)$'` there (`--arm-tests` takes another expression), repeating a failed
+   test once, then `--target package`;
+5. fetches the package and its `.sha256` into `build-aarch64/`, and from there treats it like the x86_64 package: moves it into
+   `dist/`, checks the checksum, signs it, writes and signs its SBOM, and lists it in the provenance and the draft.
+
+The provenance records that the aarch64 package came from a build host and that host's system, kernel, rustc, Cargo, CMake,
+Ninja and compiler versions, but not its name. `--dry-run` prints each `ssh` and `scp` command without connecting.
+On the 1.2.1 source tarball and an M1 MacBook Air with Arch Linux ARM (8 cores, 8 GB, no root, CMake and Ninja from a virtual
+environment), the steps from copying the tarball to fetching the package took 301 s, including 81 s of tests, and the
+package was 8.2 MB. In the run before, three desktop input tests failed in the full suite; they passed alone and in the next
+full run, which is why a failed test gets one retry. The package's digest differed from a build of the same tarball in
+another directory, as the binaries hold the paths they were built in.
 
 **Software bills of materials.** After signing, `make_release.py` writes `PACKAGE.cdx.json` beside each package with
 `tools/build_sbom.py` and signs it the same way. It is CycloneDX 1.6 JSON: the package with its SHA-256; the crates linked into

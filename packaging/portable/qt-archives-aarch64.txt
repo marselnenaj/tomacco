@@ -1,0 +1,15 @@
+# Qt 6.12.0 for Linux aarch64 from the official Qt online repository (built on
+# Ubuntu 24.04: the libraries need glibc 2.38 and GLIBCXX_3.4.32), and Qt
+# WebEngine 6.12.0 from its extension repository, the same builds as the x86_64
+# archives in qt-archives.txt, so qt-sources.txt is their source too.
+# Each line: SHA-256, then the path below https://download.qt.io/online/qtsdkrepository/linux_arm64/.
+# The SHA-1 files the repository publishes beside each archive matched when these were pinned.
+d73c10b46bfb81b7bd15e143c7d5b87d5f21ab6180b305709d67b2b356b4d38a  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_arm64/6.12.0-0-202609280346qtbase-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+a5ca21e64e43ba72ee2586323c4720afa278e127f07a3d1c89006c66bf8e0009  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_arm64/6.12.0-0-202609280346qtdeclarative-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+6e6df8cd2a5600f3518658f10f786fde69c715f649073493bfd1bfb3d1efa589  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_arm64/6.12.0-0-202609280346qtsvg-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+0ad298a6a1391a8c6a81ef8957a7810750d1dc27f9cbb12056576267600131e0  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_arm64/6.12.0-0-202609280346qtwayland-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+8b2a47b32057ef661e0f4bd419ad62fd58d69d51d2d56589e9020c646aa34969  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_arm64/6.12.0-0-202609280346qttranslations-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+7f0650e312f06949999e60fa20609650f39f120412c61d930ec88002991fdb4e  desktop/qt6_6120/qt6_6120/qt.qt6.6120.linux_gcc_arm64/6.12.0-0-202609280346icu-linux-Debian11.6-arm64.7z
+0cc95ec62c9e57353ea96addb08cb6720977ac3baec49faa77936d3f83258a9b  desktop/qt6_6120/qt6_6120/qt.qt6.6120.addons.qtpositioning.linux_gcc_arm64/6.12.0-0-202609280346qtpositioning-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+ab6aa660bd376ceb00bbda1ab76fa153f05d339c81e3a70ff69ddd78b645d27b  desktop/qt6_6120/qt6_6120/qt.qt6.6120.addons.qtwebchannel.linux_gcc_arm64/6.12.0-0-202609280346qtwebchannel-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z
+25056c8f08a7b60ac41f4d56a5ff9245703830c860ba73f257e08c0ad362776e  extensions/qtwebengine/6120/arm64/extensions.qtwebengine.6120.linux_gcc_arm64/6.12.0-0-202607081027qtwebengine-Linux-Ubuntu_24_04-GCC-Linux-Ubuntu_24_04-AARCH64.7z

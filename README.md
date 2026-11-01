@@ -77,7 +77,9 @@ can do and offers to install the Android SDK and connect your coding agents.
 
 Arch Linux and Omarchy are the tested platforms. For Debian, Ubuntu and Fedora, a release has a
 portable package that bundles Qt and FFmpeg and needs glibc 2.35 or newer; the installer picks it
-where the regular package cannot start. See [which package to use](docs/getting-started.md#debian-ubuntu-and-fedora).
+where the regular package cannot start. On ARM64 (aarch64) Linux it takes the release's aarch64 package; the aarch64 portable
+package needs glibc 2.39, such as Ubuntu 24.04 or Debian 13. See [which package to use](docs/getting-started.md#debian-ubuntu-and-fedora)
+and [ARM64](docs/getting-started.md#arm64).
 To read the script before running it, or to build from source, see
 [installation options](docs/getting-started.md#1-install).
 
@@ -235,9 +237,12 @@ known about NixOS, SteamOS and Fedora's atomic desktops.
 paths have contract tests, but execution on a real iPhone has not been verified.
 Physical ARM64 Android phones and live Play/App Store submission are also unqualified.
 
-**Linux on Apple Silicon is experimental.** On an M1 MacBook Air, `tomaccoctl`
-builds, Rust tests pass and the desktop smoke test passes offscreen. The virtual
-iOS device requires an x86_64 host.
+**ARM64 Linux is experimental.** On an M1 MacBook Air with Arch Linux ARM, `tomaccoctl`
+builds, Rust tests pass and the desktop smoke test passes offscreen; the regular aarch64 package
+is built there over SSH and its C++ tests pass. The aarch64 portable package passed its checks in clean
+Debian 13, Ubuntu 24.04 and Fedora 44 `linux/arm64` containers under emulation and ran offscreen on that
+MacBook; it needs glibc 2.39, so not Debian 12 or Ubuntu 22.04. The virtual iOS device
+requires an x86_64 host.
 
 | Virtual iOS area | Current state |
 | --- | --- |

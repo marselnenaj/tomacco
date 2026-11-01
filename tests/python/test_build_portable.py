@@ -1,8 +1,11 @@
 """tools/build_portable.py without Docker: names, pins and the rules the build applies."""
 
+import contextlib
+import io
 import re
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import build_portable
@@ -60,6 +63,194 @@ class Pins(unittest.TestCase):
         declared = re.search(r'rust-version = "([0-9.]+)"', (ROOT / "Cargo.toml").read_text()).group(1)
         pinned = re.search(r"ARG RUST_VERSION=([0-9.]+)", (ROOT / "packaging/portable/Dockerfile").read_text()).group(1)
         self.assertGreaterEqual(tuple(map(int, pinned.split("."))), tuple(map(int, declared.split("."))))
+
+
+class Aarch64(unittest.TestCase):
+    """The aarch64 portable package: its own builder, pins and limits, the same rules otherwise."""
+
+    def test_names_say_the_architecture(self):
+        self.assertEqual(build_portable.package_name("1.2.3", "tomacco", "aarch64"), "tomacco-1.2.3-Linux-aarch64-portable")
+        for name, expected in (("tomacco-1.2.3-Linux-aarch64-portable.tar.gz", "aarch64"),
+                               ("dist/tomacco-1.2.3-Linux-aarch64.tar.gz", "aarch64"),
+                               ("tomacco-1.2.3-Linux-x86_64-portable.tar.gz", "x86_64"), ("other.tar.gz", "x86_64")):
+            self.assertEqual(build_portable.architecture_of(name).name, expected, name)
+        self.assertEqual(build_portable.ARCHITECTURES["aarch64"].output, "build-portable-aarch64")
+        self.assertEqual(build_portable.ARCHITECTURES["x86_64"].output, "build-portable")
+
+    def test_each_architecture_has_its_own_builder_image(self):
+        x86 = build_portable.image_tag()
+        arm = build_portable.image_tag(architecture="aarch64")
+        self.assertRegex(arm, r"^tomacco-portable-builder-aarch64:[0-9a-f]{12}$")
+        self.assertRegex(x86, r"^tomacco-portable-builder:[0-9a-f]{12}$")
+        self.assertNotEqual(x86.split(":")[1], arm.split(":")[1])
+
+    def test_every_download_of_the_aarch64_builder_is_pinned(self):
+        dockerfile = (ROOT / "packaging/portable/Dockerfile.aarch64").read_text()
+        self.assertRegex(dockerfile, r"(?m)^FROM ubuntu:24\.04@sha256:[0-9a-f]{64}$")
+        downloads = re.findall(r"curl -fsSL[^\n]*-o (\S+)", dockerfile)
+        self.assertGreaterEqual(len(downloads), 5)
+        for target in downloads:
+            if target == '"$file"':
+                self.assertIn('echo "$sum  $file" | sha256sum -c -', dockerfile)
+            else:
+                self.assertIn(f"  {target}\" | sha256sum -c -", dockerfile, target)
+        for name in ("RUSTUP_SHA256", "CMAKE_SHA256", "FFMPEG_SHA256", "ICU_LICENSE_SHA256"):
+            self.assertRegex(dockerfile, rf"ARG {name}=[0-9a-f]{{64}}\n")
+        self.assertIn("linux-aarch64.tar.gz", dockerfile)
+        self.assertIn("aarch64-unknown-linux-gnu/rustup-init", dockerfile)
+        self.assertIn("qtsdkrepository/linux_arm64/", dockerfile)
+        instructions = "\n".join(line for line in dockerfile.splitlines() if not line.startswith("#"))
+        self.assertNotIn("x86_64", instructions)
+
+    def test_the_aarch64_builder_matches_the_x86_64_one_where_it_can(self):
+        x86 = (ROOT / "packaging/portable/Dockerfile").read_text()
+        arm = (ROOT / "packaging/portable/Dockerfile.aarch64").read_text()
+        for name in ("RUST_VERSION", "RUSTUP_VERSION", "CMAKE_VERSION", "FFMPEG_VERSION", "FFMPEG_SHA256", "ICU_LICENSE_SHA256"):
+            self.assertEqual(re.search(rf"ARG {name}=(\S+)", x86).group(1), re.search(rf"ARG {name}=(\S+)", arm).group(1), name)
+        # build.rs compiles the iOS runtime protocol with protoc.
+        for text in (x86, arm):
+            self.assertIn("protobuf-compiler", text)
+        configure = lambda text: text[text.index("./configure"):text.index("&& make", text.index("./configure"))]
+        self.assertEqual(configure(x86), configure(arm), "the same LGPL-only FFmpeg")
+
+    def test_the_aarch64_qt_archives_are_the_same_builds_as_the_x86_64_ones(self):
+        def modules(name):
+            text = (ROOT / "packaging/portable" / name).read_text()
+            lines = [line for line in text.splitlines() if line and not line.startswith("#")]
+            for line in lines:
+                self.assertRegex(line, r"^[0-9a-f]{64}  (desktop|extensions)/\S+\.7z$")
+            return {re.search(r"/(6\.12\.0-0-\d{12})(icu|qt[a-z]+)-", line).group(2):
+                    re.search(r"/(6\.12\.0-0-\d{12})", line).group(1) for line in lines}
+        x86, arm = modules("qt-archives.txt"), modules("qt-archives-aarch64.txt")
+        self.assertEqual(x86, arm, "qt-sources.txt is the source of both")
+        self.assertTrue(all("AARCH64" in line or "arm64" in line
+                            for line in (ROOT / "packaging/portable/qt-archives-aarch64.txt").read_text().splitlines()
+                            if line and not line.startswith("#")))
+
+    def test_the_aarch64_package_is_checked_where_its_glibc_is(self):
+        arm = build_portable.ARCHITECTURES["aarch64"]
+        self.assertEqual(arm.glibc, (2, 39))
+        self.assertEqual(arm.platform, "linux/arm64")
+        self.assertEqual(arm.system_library_directory, Path("/usr/lib/aarch64-linux-gnu"))
+        # Qt's aarch64 binaries need glibc 2.38: Debian 12 (2.36) and Ubuntu 22.04 (2.35) cannot run them.
+        self.assertFalse({"debian:12-slim", "ubuntu:22.04"} & set(arm.images))
+        self.assertIn("ubuntu:24.04", arm.images)
+        self.assertTrue(build_portable.SYSTEM.match("ld-linux-aarch64.so.1"))
+
+    def test_the_libraries_webengine_links_on_aarch64_are_bundled_with_their_licenses(self):
+        arm = build_portable.ARCHITECTURES["aarch64"]
+        dockerfile = (ROOT / "packaging/portable/Dockerfile.aarch64").read_text()
+        names = [name for name, _, _ in arm.libraries]
+        for library in ("libopus.so.0", "libsnappy.so.1", "libwebp.so.7", "libminizip.so.1", "liblcms2.so.2"):
+            self.assertIn(library, names)
+        for name, debian, license in arm.libraries:
+            self.assertRegex(dockerfile, rf"\b{re.escape(debian)}\b", debian)
+            self.assertFalse(build_portable.SYSTEM.match(name), f"{name} is bundled, not left to the host")
+            self.assertIn(license, ("BSD-3-Clause", "Zlib", "MIT"))
+        self.assertEqual(arm.bundled[:len(build_portable.BUNDLED_SYSTEM)], build_portable.BUNDLED_SYSTEM)
+        self.assertEqual(build_portable.ARCHITECTURES["x86_64"].bundled, build_portable.BUNDLED_SYSTEM)
+        # Its xcb plugin's session management libraries come from the host, which the checks install.
+        for name in ("libSM.so.6", "libICE.so.6"):
+            self.assertTrue(build_portable.SYSTEM.match(name), name)
+        self.assertLessEqual({"libsm6", "libice6"}, set(build_portable.APT_PACKAGES))
+        self.assertLessEqual({"libSM", "libICE"}, set(build_portable.DNF_PACKAGES))
+
+    def test_assemble_copies_the_bundled_libraries_and_leaves_the_rest_to_the_host(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            qt, ffmpeg, system, top = base / "qt", base / "ffmpeg", base / "system", base / "top"
+            for path in (qt / "lib", qt / "qml", qt / "resources", qt / "translations/qtwebengine_locales", qt / "libexec",
+                         ffmpeg / "lib", system, top / "bin"):
+                path.mkdir(parents=True)
+            for path in (top / "bin/tomacco", qt / "libexec/QtWebEngineProcess", qt / "lib/libQt6WebEngineCore.so.6",
+                         system / "libwebp.so.7", system / "libsharpyuv.so.0"):
+                path.write_bytes(b"\x7fELF")
+            graph = {"tomacco": ["libQt6WebEngineCore.so.6", "libc.so.6"], "QtWebEngineProcess": ["libc.so.6"],
+                     "libQt6WebEngineCore.so.6": ["libwebp.so.7", "libnss3.so"], "libwebp.so.7": ["libsharpyuv.so.0"],
+                     "libsharpyuv.so.0": ["libm.so.6"]}
+            patched = []
+            with unittest.mock.patch.object(build_portable, "needed", lambda path: graph.get(Path(path).name, [])), \
+                    unittest.mock.patch.object(build_portable, "run", lambda argv: patched.append(Path(argv[-1]).name)):
+                host = build_portable.assemble(top, qt, ffmpeg, system, build_portable.ARCHITECTURES["aarch64"].bundled)
+            library = top / build_portable.RUNTIME / "lib"
+            self.assertEqual(sorted(path.name for path in library.iterdir()),
+                             ["libQt6WebEngineCore.so.6", "libsharpyuv.so.0", "libwebp.so.7"])
+            self.assertEqual(host, ["libc.so.6", "libm.so.6", "libnss3.so"])
+            self.assertIn("libwebp.so.7", patched)
+
+    def test_the_symbol_limits_are_the_architectures(self):
+        with tempfile.TemporaryDirectory() as directory:
+            top = Path(directory)
+            (top / "lib").mkdir()
+            (top / "lib/libQt6Qml.so.6").write_bytes(b"\x7fELF")
+            found = {"GLIBC": {(2, 38)}, "GLIBCXX": {(3, 4, 32)}}
+            with unittest.mock.patch.object(build_portable, "symbol_versions", lambda path, family: found[family]):
+                with self.assertRaisesRegex(build_portable.Failed, "glibc 2.35:\n  lib/libQt6Qml.so.6 needs GLIBC_2.38"):
+                    build_portable.check(top, [])
+                self.assertEqual(build_portable.check(top, [], build_portable.ARCHITECTURES["aarch64"]),
+                                 {"GLIBC": "2.38", "GLIBCXX": "3.4.32"})
+
+    def test_the_notice_names_the_aarch64_builder_and_repository(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ffmpeg = Path(directory)
+            (ffmpeg / "lib/pkgconfig").mkdir(parents=True)
+            (ffmpeg / "share/licenses").mkdir(parents=True)
+            (ffmpeg / "lib/pkgconfig/libavcodec.pc").write_text("Version: 62.1.100\n")
+            (ffmpeg / "share/licenses/config.mak").write_text("FFMPEG_CONFIGURATION=--disable-everything\n")
+            text = build_portable.notice("1.2.3", ["libc.so.6"], {"GLIBC": "2.38"}, ffmpeg=ffmpeg,
+                                         architecture=build_portable.ARCHITECTURES["aarch64"])
+        self.assertIn("for aarch64", text.splitlines()[0])
+        self.assertIn("built on Ubuntu 24.04", text)
+        self.assertIn("packaging/portable/Dockerfile.aarch64", text)
+        self.assertIn("qtsdkrepository/linux_arm64/", text)
+        self.assertIn("glibc 2.38 or newer", text)
+        self.assertNotIn("Ubuntu 22.04", text)
+
+    def test_build_and_verify_ask_docker_for_linux_arm64(self):
+        calls = []
+
+        def fake_run(argv, **options):
+            calls.append([str(a) for a in argv])
+            if "inside" in [str(a) for a in argv]:
+                output = Path(next(a.split(":")[0] for a in map(str, argv) if a.endswith(":/out")))
+                (output / "tomacco-1.2.3-Linux-aarch64-portable.tar.gz").write_bytes(b"x")
+
+        class Done:
+            returncode, stdout = 1, ""
+
+        with tempfile.TemporaryDirectory() as directory, \
+                unittest.mock.patch.object(build_portable, "run", fake_run), \
+                unittest.mock.patch.object(build_portable, "export_source"), \
+                unittest.mock.patch.object(build_portable, "source_commit", return_value="c"), \
+                unittest.mock.patch.object(build_portable, "project_version", return_value="1.2.3"), \
+                unittest.mock.patch.object(build_portable, "host_architecture", return_value="x86_64"), \
+                unittest.mock.patch.object(build_portable.subprocess, "run", return_value=Done()), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            build_portable.main(["build", "--arch", "aarch64", "--output", directory])
+        image = calls[0]
+        self.assertEqual(image[:6], ["docker", "buildx", "build", "--platform", "linux/arm64", "--load"])
+        self.assertEqual(Path(image[image.index("--file") + 1]).name, "Dockerfile.aarch64")
+        self.assertRegex(image[image.index("--tag") + 1], r"^tomacco-portable-builder-aarch64:")
+        container = calls[1]
+        self.assertEqual(container[3:5], ["--platform", "linux/arm64"])
+        self.assertEqual(container[-2:], ["--arch", "aarch64"])
+        self.assertIn("under emulation", output.getvalue())
+
+        seen = []
+
+        def fake_subprocess(argv, stdout=None, **options):
+            seen.append(argv)
+            stdout.write("== Ubuntu 24.04\nRESULT packages ok\n")
+            return type("Done", (), {"returncode": 0})()
+
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory, "tomacco-1.2.3-Linux-aarch64-portable.tar.gz")
+            package.write_bytes(b"x")
+            with unittest.mock.patch.object(build_portable.subprocess, "run", fake_subprocess), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(build_portable.main(["verify", str(package)]), 0)
+        self.assertEqual([argv[argv.index("--platform") + 1] for argv in seen], ["linux/arm64"] * 3)
+        self.assertEqual([argv[argv.index("--platform") + 4] for argv in seen], list(build_portable.ARCHITECTURES["aarch64"].images))
 
 
 class Rules(unittest.TestCase):

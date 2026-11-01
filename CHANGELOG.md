@@ -136,6 +136,16 @@ operations and their JSON results.
   matched pixel for pixel below the status bar clock, no frame was black, deploys and verified stops worked, and 124
   windows, 7.75 of the 8 GiB of guest RAM, stayed pinned for the session.
   [Usage](docs/virtual-ios/usage.md#gpu-access-to-guest-ram-experimental) has the table.
+- ARM64 Linux in the releases. `tools/make_release.py --arm-host HOST` builds the regular
+  `tomacco-VERSION-Linux-aarch64.tar.gz` on an ARM build host over SSH from the release's own source tarball, which it
+  checks by SHA-256 on that host. It builds with `SOURCE_DATE_EPOCH`, runs the C++ tests there, then fetches the package,
+  checks, signs and describes it (SBOM), and lists it in the provenance and the draft like the x86_64 package.
+  `--arm-portable` adds the portable `tomacco-VERSION-Linux-aarch64-portable.tar.gz`.
+- `tools/build_portable.py build --arch aarch64` builds the aarch64 portable package for `linux/arm64` from
+  `packaging/portable/Dockerfile.aarch64`, with Qt 6.12.0's official aarch64 binaries, including Qt WebEngine, and the same
+  LGPL-only FFmpeg. Qt's aarch64 binaries are built on Ubuntu 24.04 and need glibc 2.38, so this package runs on Ubuntu
+  24.04, Debian 13, Fedora 40 and newer, but not on Debian 12 or Ubuntu 22.04. `verify` checks it in `linux/arm64`
+  containers.
 
 ### Changed
 
@@ -186,6 +196,9 @@ operations and their JSON results.
   result's `adapted_to_host` lists the change.
 - `ios.virtual.start` refuses to boot on a host that is not x86_64 or has less than 12 GiB of memory, as
   `ios_virtual_host_too_small`.
+- The updater takes the portable package when a release has no regular package for this computer, and on aarch64 away
+  from Arch Linux ARM it prefers the portable package, as the installer does. A portable installation still takes only
+  the portable package.
 
 ### Tests
 

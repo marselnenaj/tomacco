@@ -819,6 +819,7 @@ fn an_older_signed_package_under_a_newer_tag_is_refused() {
     let verified = Verified {
         version: Version::parse("2.0.0").unwrap(),
         package,
+        name: format!("{top}.tar.gz"),
     };
     let error = unpack_package(&verified, scratch.path()).unwrap_err();
     assert_eq!(error.code, "update_invalid_package");
@@ -1071,6 +1072,110 @@ fn a_portable_installation_updates_from_the_portable_package() {
     assert!(!is_portable(library.path()));
     fs::write(library.path().join("qt.conf"), "[Paths]\nPrefix=runtime\n").unwrap();
     assert!(is_portable(library.path()));
+}
+
+#[test]
+fn the_package_follows_the_installation_and_what_the_release_offers() {
+    let version = Version::parse("1.3.0").unwrap();
+    let named = |names: &[&str]| -> Vec<Value> {
+        names
+            .iter()
+            .map(|name| json!({"name":name.replace("ARCH", std::env::consts::ARCH)}))
+            .collect()
+    };
+    let regular = package_file(&version, false);
+    let bundled = package_file(&version, true);
+    let arch = std::env::consts::ARCH;
+    let both = named(&[
+        &format!("{PACKAGE_PREFIX}-1.3.0-Linux-ARCH.tar.gz"),
+        &format!("{PACKAGE_PREFIX}-1.3.0-Linux-ARCH-portable.tar.gz"),
+    ]);
+    let only_regular = named(&[&format!("{PACKAGE_PREFIX}-1.3.0-Linux-ARCH.tar.gz")]);
+    let only_portable = named(&[&format!(
+        "{PACKAGE_PREFIX}-1.3.0-Linux-ARCH-portable.tar.gz"
+    )]);
+    // A portable installation stays portable, and takes nothing else.
+    for arch_linux in [true, false] {
+        assert_eq!(
+            choose_package(&version, &both, true, arch_linux, arch),
+            Some(bundled.clone())
+        );
+        assert_eq!(
+            choose_package(&version, &only_regular, true, arch_linux, arch),
+            None
+        );
+    }
+    // A regular installation on Arch keeps the regular package, and falls back to the portable one.
+    assert_eq!(
+        choose_package(&version, &both, false, true, arch),
+        Some(regular.clone())
+    );
+    assert_eq!(
+        choose_package(&version, &only_portable, false, true, arch),
+        Some(bundled.clone())
+    );
+    // On aarch64 away from Arch the portable package comes first; on x86_64 the regular one stays.
+    assert_eq!(
+        choose_package(&version, &both, false, false, "aarch64"),
+        Some(bundled.clone())
+    );
+    assert_eq!(
+        choose_package(&version, &only_regular, false, false, "aarch64"),
+        Some(regular.clone())
+    );
+    assert_eq!(
+        choose_package(&version, &both, false, false, "x86_64"),
+        Some(regular.clone())
+    );
+    // Another architecture's packages are none of this computer's.
+    let other = if arch == "aarch64" {
+        "x86_64"
+    } else {
+        "aarch64"
+    };
+    let foreign: Vec<Value> = both
+        .iter()
+        .map(|asset| json!({"name":s(asset, "name").replace(arch, other)}))
+        .collect();
+    for (portable, arch_linux) in [(true, true), (false, true), (false, false)] {
+        assert_eq!(
+            choose_package(&version, &foreign, portable, arch_linux, arch),
+            None
+        );
+    }
+}
+
+#[test]
+fn a_release_with_only_the_portable_package_still_updates_a_regular_installation() {
+    let version = Version::parse("2.0.0").unwrap();
+    let bundled = package_file(&version, true);
+    let fake = Fake::default().page(
+        LATEST,
+        200,
+        &release_json("v2.0.0", false, false, &[&bundled]),
+    );
+    let found = run_check(&fake, &notify(), true, &json!({})).unwrap();
+    // The test binary is no portable installation, so it is a regular one that falls back.
+    assert_eq!(found["state"], "update_available");
+}
+
+#[test]
+fn the_package_names_the_directory_it_unpacks_into() {
+    let scratch = tempfile::tempdir().unwrap();
+    let top = format!("tomacco-2.0.0-Linux-{}-portable", std::env::consts::ARCH);
+    let package = tarball(&[
+        (&format!("{top}/share/tomacco/VERSION"), b"2.0.0\n"),
+        (&format!("{top}/install.py"), b"#"),
+        (&format!("{top}/bin/{DESKTOP_NAME}"), b"x"),
+        (&format!("{top}/bin/{CLI_NAME}"), b"x"),
+    ]);
+    let verified = Verified {
+        version: Version::parse("2.0.0").unwrap(),
+        package,
+        name: format!("{top}.tar.gz"),
+    };
+    let root = unpack_package(&verified, scratch.path()).unwrap();
+    assert!(root.ends_with(&top));
 }
 
 #[test]

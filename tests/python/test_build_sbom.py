@@ -64,7 +64,7 @@ def fixture(root):
                               "repository": "https://github.com/serde-rs/serde", "manifest_path": "/nowhere/Cargo.toml"}]}
     (root / "Cargo.lock").write_text('[[package]]\nname = "serde"\nversion = "1.0.0"\nchecksum = "' + "cd" * 32 + '"\n')
     (root / "packaging/portable").mkdir(parents=True)
-    for name in ("qt-archives.txt", "Dockerfile"):
+    for name in ("qt-archives.txt", "Dockerfile", "qt-archives-aarch64.txt", "Dockerfile.aarch64"):
         shutil.copy2(ROOT / "packaging/portable" / name, root / "packaging/portable" / name)
     (root / "assets/fonts").mkdir(parents=True)
     shutil.copy2(ROOT / "assets/fonts/archivo-var.ttf", root / "assets/fonts/archivo-var.ttf")
@@ -119,6 +119,30 @@ class Shape(unittest.TestCase):
         names = {component["name"] for component in document["components"]}
         self.assertIn("serde", names)
         self.assertFalse(names & {"qtbase", "qtwebengine", "ICU", "FFmpeg", "libxcb-cursor"})
+
+    def test_the_aarch64_portable_sbom_lists_the_aarch64_archives(self):
+        package = self.root / "tomacco-1.2.3-Linux-aarch64-portable.tar.gz"
+        package.write_bytes(b"arm package")
+        path = build_sbom.write(self.root, package, "1.2.3", self.metadata, self.linked, True, "1700000000")
+        document = json.loads(path.read_text())
+        validate(self, document)
+        by_name = {component["name"]: component for component in document["components"]}
+        archives = build_sbom.qt_archives(ROOT, "aarch64")
+        self.assertEqual(len(archives), len(build_sbom.qt_archives(ROOT)))
+        for module, version, digest, url in archives:
+            component = by_name["ICU" if module == "icu" else module]
+            self.assertTrue(url.startswith("https://download.qt.io/online/qtsdkrepository/linux_arm64/"), url)
+            self.assertEqual(component["externalReferences"][0]["url"], url)
+            self.assertEqual(component["externalReferences"][0]["hashes"][0]["content"], digest)
+        self.assertEqual(by_name["FFmpeg"]["version"], build_sbom.dockerfile_argument(ROOT, "FFMPEG_VERSION", "aarch64"))
+        self.assertEqual(by_name["libxcb-cursor"]["bom-ref"], "ubuntu-24.04:libxcb-cursor")
+        self.assertEqual(by_name["libopus"]["licenses"], [{"license": {"id": "BSD-3-Clause"}}])
+        self.assertEqual(by_name["libminizip"]["licenses"], [{"license": {"id": "Zlib"}}])
+        self.assertIn("libopus0", by_name["libopus"]["description"])
+        # The x86_64 one keeps its own.
+        x86, _ = self.write(True)
+        self.assertNotIn("libopus", {c["name"] for c in x86["components"]})
+        self.assertEqual({c["name"]: c for c in x86["components"]}["libxcb-cursor"]["bom-ref"], "ubuntu-22.04:libxcb-cursor")
 
     def test_the_same_inputs_give_the_same_bytes(self):
         _, first = self.write(True, self.root / "a.json")
