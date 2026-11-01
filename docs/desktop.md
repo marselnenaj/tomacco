@@ -201,6 +201,19 @@ the notification to the desktop's notification service over D-Bus
 Omarchy the panel can notify about builds too; turn one of them off if you get
 both.
 
+## Agents and tools
+
+**Agents & tools** (Ctrl+0, *Agenten & Werkzeuge*) lists every operation as a form, and the command palette
+(Ctrl+K) opens any of them by name. The form is built from the operation's schema: a check box for a
+yes/no value, a choice for a fixed list, a text field otherwise, with defaults filled in and required
+fields marked `*`. Each field shows its description and, for a number, its limits, such as `1 – 3600`;
+a value that is no number or lies outside the limits is refused before anything runs. **Run**
+(*Ausführen*) shows the JSON result, or follows the job it starts under **Builds & jobs**. An operation
+whose schema marks it as destructive, such as `job.cancel`, `files.write` or `storage.prune`, asks once
+more before it runs (**Run anyway**, *Trotzdem ausführen*). **Copy as command** (*Als Befehl kopieren*)
+copies the same call for a terminal or a script, for example
+`tomaccoctl call device.logs '{"platform":"android","device":"emulator-5554","duration":60}'`.
+
 ## Installing an app by dropping it
 
 Drag an app from the file manager onto the device view to install it on the

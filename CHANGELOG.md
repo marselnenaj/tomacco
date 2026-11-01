@@ -66,6 +66,9 @@ operations and their JSON results.
   `tomaccoctl setup` show it. For the portable package it also checks the X11 and Wayland plugins and WebEngine's helper,
   and `desktop.portable` says which package it is. Run in debian:12, ubuntu:22.04, ubuntu:24.04 and fedora:44 containers,
   the one command made the 1.1.0 portable desktop loadable.
+- **Tool forms.** Each field of a tool form in **Agents & tools** shows its description and a number's limits, and a
+  value outside them is refused before the call. Operations marked destructive ask once more before they run, and
+  **Copy as command** copies the call as a `tomaccoctl call` line.
 
 ### Changed
 

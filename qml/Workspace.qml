@@ -164,18 +164,49 @@ Rectangle {
         panel.currentIndex=3
         for(let operation of Agent.operations) if(operation.name===name) { chooseOperation(operation); break }
     }
-    function submitForm() {
-        try {
-            let args={}
-            for(let key in selectedOperation.inputSchema.properties) {
-                let value=formValues[key], spec=selectedOperation.inputSchema.properties[key]
-                if(value===undefined || value==="") { if(selectedOperation.inputSchema.required.indexOf(key)>=0) throw new Error(qsTr("%1 is missing").arg(key)); continue }
-                if(spec.type==="integer" || spec.type==="number") value=Number(value)
-                if((spec.type==="object" || spec.type==="array") && typeof value==="string") value=JSON.parse(value)
-                args[key]=value
+    // The form's values as the operation's arguments; throws with what is wrong.
+    function formArguments() {
+        let args={}
+        for(let key in selectedOperation.inputSchema.properties) {
+            let value=formValues[key], spec=selectedOperation.inputSchema.properties[key]
+            if(value===undefined || value==="") { if(selectedOperation.inputSchema.required.indexOf(key)>=0) throw new Error(qsTr("%1 is missing").arg(key)); continue }
+            if(spec.type==="integer" || spec.type==="number") {
+                value=Number(value)
+                if(isNaN(value) || (spec.type==="integer" && !Number.isInteger(value))) throw new Error(qsTr("%1 must be a number").arg(key))
+                if((spec.minimum!==undefined && value<spec.minimum) || (spec.maximum!==undefined && value>spec.maximum)) throw new Error(qsTr("%1 is out of range: %2").arg(key).arg(fieldLimits(spec)))
             }
+            if((spec.type==="object" || spec.type==="array") && typeof value==="string") value=JSON.parse(value)
+            args[key]=value
+        }
+        return args
+    }
+    // An operation that changes or removes something for good asks once before it runs.
+    readonly property bool destructiveOperation: !!selectedOperation && !!selectedOperation.annotations && selectedOperation.annotations.destructiveHint===true
+    property bool confirmingRun: false
+    onSelectedOperationChanged: confirmingRun=false
+    function submitForm(confirmed) {
+        try {
+            let args=formArguments()
+            if(destructiveOperation && !confirmed) { confirmingRun=true; return }
+            confirmingRun=false
             request(selectedOperation.name,args)
-        } catch(error) { status=error.message; failed=true }
+        } catch(error) { status=error.message; failed=true; confirmingRun=false }
+    }
+    // The limits of a number field, such as "1 – 3600" or "≥ 0".
+    function fieldLimits(spec) {
+        if(spec.minimum!==undefined && spec.maximum!==undefined) return spec.minimum+" – "+spec.maximum
+        if(spec.minimum!==undefined) return "≥ "+spec.minimum
+        if(spec.maximum!==undefined) return "≤ "+spec.maximum
+        return ""
+    }
+    // The same call for a terminal or a script: tomaccoctl call NAME 'JSON'.
+    function commandLine() {
+        const json=JSON.stringify(formArguments())
+        return "tomaccoctl call "+selectedOperation.name+" '"+json.replace(/'/g,"'\\''")+"'"
+    }
+    function copyCommand() {
+        try { Studio.copy(commandLine()); status=qsTr("Command copied"); failed=false }
+        catch(error) { status=error.message; failed=true }
     }
     onOpenedChanged: {
         if(!opened)return
@@ -541,7 +572,8 @@ Rectangle {
                                     required property string modelData
                                     property var spec: panel.selectedOperation.inputSchema.properties[modelData]
                                     Layout.fillWidth: true; spacing: Theme.gapXs
-                                    Text { text: field.modelData+(panel.selectedOperation.inputSchema.required.indexOf(field.modelData)>=0?" *":""); color: Theme.muted; font.family: Theme.mono; font.pixelSize: Theme.fontSmall }
+                                    Text { text: field.modelData+(panel.selectedOperation.inputSchema.required.indexOf(field.modelData)>=0?" *":"")+(panel.fieldLimits(field.spec)?"  ·  "+panel.fieldLimits(field.spec):""); color: Theme.muted; font.family: Theme.mono; font.pixelSize: Theme.fontSmall }
+                                    Text { objectName: "toolFieldHelp-"+field.modelData; Layout.fillWidth: true; visible: !!field.spec.description; text: field.spec.description || ""; color: Theme.faint; font.pixelSize: Theme.fontSmall; wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight }
                                     Loader {
                                         Layout.fillWidth: true
                                         sourceComponent: field.spec.type==="boolean"?booleanField:field.spec.enum?enumField:textField
@@ -553,7 +585,20 @@ Rectangle {
                             }
                         }
                     }
-                    StudioButton { text: qsTr("Run"); iconName: "play"; accent: true; visible: panel.selectedOperation!==null; onClicked: panel.submitForm() }
+                    Rectangle {
+                        objectName: "toolConfirm"; Layout.fillWidth: true; visible: panel.confirmingRun
+                        implicitHeight: confirmRow.implicitHeight+Theme.gapSm*2; color: Theme.dangerSurface
+                        Rectangle { width: Theme.gapXs; height: parent.height; color: Theme.danger }
+                        RowLayout { id: confirmRow; anchors.fill: parent; anchors.margins: Theme.gapSm; anchors.leftMargin: Theme.gapLg; spacing: Theme.gapSm
+                            Text { Layout.fillWidth: true; text: qsTr("This tool changes or removes something and cannot be undone. Run it?"); color: Theme.danger; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall }
+                            StudioButton { objectName: "toolConfirmRun"; text: qsTr("Run anyway"); danger: true; onClicked: panel.submitForm(true) }
+                            StudioButton { text: qsTr("Cancel"); quiet: true; onClicked: panel.confirmingRun=false }
+                        }
+                    }
+                    RowLayout { visible: panel.selectedOperation!==null; spacing: Theme.gapSm
+                        StudioButton { objectName: "toolRun"; text: qsTr("Run"); iconName: "play"; accent: true; tip: panel.destructiveOperation?qsTr("Asks before it runs: this tool changes or removes something"):""; onClicked: panel.submitForm() }
+                        StudioButton { objectName: "toolCopyCommand"; text: qsTr("Copy as command"); iconName: "copy"; quiet: true; tip: qsTr("Copy this call as a tomaccoctl command for a terminal or a script"); onClicked: panel.copyCommand() }
+                    }
                     StudioCodeView { Layout.fillWidth: true; Layout.fillHeight: true; Layout.minimumHeight: 80; clip: true; placeholderText: qsTr("The result shows up here."); accessibleName: qsTr("Result"); text: panel.resultText }
                 }
             }

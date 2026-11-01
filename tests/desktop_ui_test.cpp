@@ -244,6 +244,46 @@ private slots:
         QVERIFY(palette->property("visible").toBool());
         QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!palette->property("visible").toBool());
     }
+    void tool_forms_explain_fields_check_numbers_ask_before_destructive_calls_and_copy_the_command() {
+        open("tools");window->resize(1380,970);QTest::qWait(50);
+        workspace->setProperty("pending",QVariantMap{});
+        // Each field says what it takes and its limits; a number outside them is refused before anything runs.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showAction",Q_ARG(QVariant,"device.logs")));
+        QTRY_VERIFY(item("toolFieldHelp-device") && item("toolFieldHelp-device")->isVisible());
+        QCOMPARE(item("toolFieldHelp-device")->property("text").toString(),QString("Device serial / UDID from device.list"));
+        QVERIFY(!item("toolFieldHelp-filter")->isVisible());
+        const QVariantMap range{{"minimum",1},{"maximum",3600}};
+        QVariant limits;QVERIFY(QMetaObject::invokeMethod(workspace,"fieldLimits",Q_RETURN_ARG(QVariant,limits),Q_ARG(QVariant,range)));
+        QCOMPARE(limits.toString(),QString("1 – 3600"));
+        workspace->setProperty("formValues",QVariantMap{{"platform","android"},{"device","emulator-5554"},{"duration","soon"}});
+        QVERIFY(QMetaObject::invokeMethod(workspace,"submitForm",Q_ARG(QVariant,false)));
+        QVERIFY(workspace->property("failed").toBool());QCOMPARE(workspace->property("status").toString(),QString("duration must be a number"));
+        workspace->setProperty("formValues",QVariantMap{{"platform","android"},{"device","emulator-5554"},{"duration","7200"}});
+        QVERIFY(QMetaObject::invokeMethod(workspace,"submitForm",Q_ARG(QVariant,false)));
+        QCOMPARE(workspace->property("status").toString(),QString("duration is out of range: 1 – 3600"));
+        QVERIFY(mapOf(workspace->property("pending")).isEmpty());
+        // A destructive tool asks first; the call can be copied for a terminal, quotes escaped.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showAction",Q_ARG(QVariant,"job.cancel")));
+        workspace->setProperty("formValues",QVariantMap{{"job_id","it's-00000000000000000000000000000000"}});
+        QVariant line;QVERIFY(QMetaObject::invokeMethod(workspace,"commandLine",Q_RETURN_ARG(QVariant,line)));
+        QCOMPARE(line.toString(),QString(R"(tomaccoctl call job.cancel '{"job_id":"it'\''s-00000000000000000000000000000000"}')"));
+        QVERIFY(QMetaObject::invokeMethod(item("toolCopyCommand"),"clicked"));
+        QCOMPARE(QGuiApplication::clipboard()->text(),line.toString());
+        QVERIFY(QMetaObject::invokeMethod(item("toolRun"),"clicked"));
+        QTRY_VERIFY(item("toolConfirm")->isVisible());
+        QVERIFY(mapOf(workspace->property("pending")).isEmpty());
+        capture("tool-confirm");
+        QVERIFY(QMetaObject::invokeMethod(item("toolConfirmRun"),"clicked"));
+        QVERIFY(!item("toolConfirm")->isVisible());
+        const auto pending=mapOf(workspace->property("pending"));
+        QCOMPARE(pending.size(),1);QCOMPARE(pending.first().toMap().value("operation").toString(),QString("job.cancel"));
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty(),patient(10000));
+        // A tool that changes nothing runs at once.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showAction",Q_ARG(QVariant,"doctor")));
+        QVERIFY(!workspace->property("destructiveOperation").toBool());
+        workspace->setProperty("status",QString());workspace->setProperty("failed",false);workspace->setProperty("resultText",QString("{}"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void file_edits_survive_navigation_and_save() {
         open("files","pubspec.yaml");
         auto *editor=item("sourceEditor");QVERIFY(editor);

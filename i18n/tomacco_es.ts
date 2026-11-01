@@ -4926,6 +4926,38 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Live log</source>
         <translation>Registro en directo</translation>
     </message>
+    <message>
+        <source>%1 must be a number</source>
+        <translation>%1 debe ser un número</translation>
+    </message>
+    <message>
+        <source>%1 is out of range: %2</source>
+        <translation>%1 está fuera de rango: %2</translation>
+    </message>
+    <message>
+        <source>Command copied</source>
+        <translation>Comando copiado</translation>
+    </message>
+    <message>
+        <source>This tool changes or removes something and cannot be undone. Run it?</source>
+        <translation>Esta herramienta cambia o elimina algo y no se puede deshacer. ¿Ejecutarla?</translation>
+    </message>
+    <message>
+        <source>Run anyway</source>
+        <translation>Ejecutar de todos modos</translation>
+    </message>
+    <message>
+        <source>Asks before it runs: this tool changes or removes something</source>
+        <translation>Pregunta antes de ejecutarse: esta herramienta cambia o elimina algo</translation>
+    </message>
+    <message>
+        <source>Copy as command</source>
+        <translation>Copiar como comando</translation>
+    </message>
+    <message>
+        <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
+        <translation>Copiar esta llamada como comando tomaccoctl para una terminal o un script</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
