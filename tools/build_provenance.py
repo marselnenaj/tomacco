@@ -11,6 +11,7 @@ import datetime
 import hashlib
 import platform
 import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -74,35 +75,55 @@ def builder(read, portable):
     return versions
 
 
-def dockerfile_inputs(root):
-    """The downloads packaging/portable/Dockerfile pins: base image, CMake,
-    rustup and FFmpeg, each with its digest."""
-    text = (root / PORTABLE_DOCKERFILE).read_text()
-    argument = lambda key: build_sbom.dockerfile_argument(root, key)
+def host_builder(read, wrap):
+    """The same for another build host, reached through `wrap(command line) ->
+    argv`, such as over ssh: its system and its compilers and build tools."""
+    commands = {"os": '. /etc/os-release && printf "%s\\n" "$PRETTY_NAME"', "kernel": "uname -r", "machine": "uname -m",
+                **{tool: shlex.join(TOOLS[tool]) for tool in ("rustc", "cargo", "cmake", "ninja", "c++")}}
+    versions = {}
+    for tool, command in commands.items():
+        try:
+            output = read(wrap(command)).decode(errors="replace").strip()
+        except Exception:  # As above: the provenance says less, the release goes on.
+            continue
+        if output:
+            versions[tool] = output.splitlines()[0]
+    return versions
+
+
+def dockerfile_inputs(root, architecture="x86_64"):
+    """The downloads packaging/portable/Dockerfile (Dockerfile.aarch64) pins:
+    base image, CMake, rustup and FFmpeg, each with its digest."""
+    text = (root / build_sbom.dockerfile(architecture)).read_text()
+    argument = lambda key: build_sbom.dockerfile_argument(root, key, architecture)
     found = []
     image = re.search(r"^FROM (\S+)@sha256:([0-9a-f]{64})$", text, re.M)
     if image:
         found.append({"uri": f"docker://{image.group(1)}", "digest": {"sha256": image.group(2)}})
     cmake = argument("CMAKE_VERSION")
-    found.append({"uri": f"https://github.com/Kitware/CMake/releases/download/v{cmake}/cmake-{cmake}-linux-x86_64.tar.gz",
+    found.append({"uri": f"https://github.com/Kitware/CMake/releases/download/v{cmake}/cmake-{cmake}-linux-{architecture}.tar.gz",
                   "digest": {"sha256": argument("CMAKE_SHA256")}})
     rustup = argument("RUSTUP_VERSION")
-    found.append({"uri": f"https://static.rust-lang.org/rustup/archive/{rustup}/x86_64-unknown-linux-gnu/rustup-init",
+    found.append({"uri": f"https://static.rust-lang.org/rustup/archive/{rustup}/{architecture}-unknown-linux-gnu/rustup-init",
                   "digest": {"sha256": argument("RUSTUP_SHA256")}, "annotations": {"rust": argument("RUST_VERSION")}})
     ffmpeg = argument("FFMPEG_VERSION")
     found.append({"uri": f"https://ffmpeg.org/releases/ffmpeg-{ffmpeg}.tar.xz", "digest": {"sha256": argument("FFMPEG_SHA256")}})
     return found
 
 
-def inputs(root, commit, tag, portable):
-    """The resolved dependencies: the commit, the lock file, and for the
-    portable package its Dockerfile, the Qt archives and its other downloads."""
+def inputs(root, commit, tag, portable, architectures=None):
+    """The resolved dependencies: the commit, the lock file, and for each
+    portable package (`architectures`, default x86_64 when `portable`) its
+    Dockerfile, the Qt archives and its other downloads."""
     found = [{"uri": f"git+{REPOSITORY}@refs/tags/{tag}", "digest": {"gitCommit": commit}},
              {"name": "Cargo.lock", "digest": {"sha256": file_digest(root / "Cargo.lock")}}]
-    if portable:
-        found.append({"name": PORTABLE_DOCKERFILE, "digest": {"sha256": file_digest(root / PORTABLE_DOCKERFILE)}})
-        found += [{"uri": url, "digest": {"sha256": digest}} for _, _, digest, url in build_sbom.qt_archives(root)]
-        found += dockerfile_inputs(root)
+    if architectures is None:
+        architectures = ["x86_64"] if portable else []
+    for architecture in architectures:
+        path = build_sbom.dockerfile(architecture)
+        found.append({"name": path, "digest": {"sha256": file_digest(root / path)}})
+        found += [{"uri": url, "digest": {"sha256": digest}} for _, _, digest, url in build_sbom.qt_archives(root, architecture)]
+        found += dockerfile_inputs(root, architecture)
     return found
 
 
