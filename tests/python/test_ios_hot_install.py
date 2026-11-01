@@ -349,16 +349,16 @@ class DeployTests(unittest.TestCase):
     def test_the_same_signed_app_is_not_sent_again_but_opened(self):
         self.installed_before()
         self.deploy(self.phone())
-        self.assertEqual(self.steps, ["ios.virtual.configure", "open"])
+        self.assertEqual(self.steps, ["ios.virtual.configure", "unlock", "open"])
         self.assertEqual(hot.spare_entries(self.module.read_bytes()), 3)
-        self.assertEqual([event["step"] for event in self.events], ["signed", "unchanged", "opened", "done"])
+        self.assertEqual([event["step"] for event in self.events], ["signed", "unchanged", "screen", "opened", "done"])
         self.assertIs(self.events[-1]["unchanged"], True)
 
     def test_force_installs_the_same_signed_app_again(self):
         self.installed_before()
         self.deploy(self.phone(), force=True)
         self.assertEqual(self.steps, ["trust_cache_update", "send", "policy_add", "install",
-                                      "ios.virtual.configure", "open"])
+                                      "ios.virtual.configure", "unlock", "open"])
         self.assertIs(self.events[-1]["unchanged"], False)
 
     def test_trust_comes_first_and_the_app_is_listed_after_it_installed(self):
@@ -393,6 +393,67 @@ class DeployTests(unittest.TestCase):
         device.call = lambda *_a, **_k: answers.pop(0)
         with unittest.mock.patch.object(phone, "time", unittest.mock.Mock(monotonic=lambda: 0, sleep=lambda _: None)):
             self.assertEqual(device.deploy_request("guest", "policy_add", "x")["entries"], 1)
+
+    def refused(self, description="InvalidRequest"):
+        return {"response": {"ok": False, "error": "request_rejected_by_ios",
+                             "native_error": {"code": 4, "code_description": description,
+                                              "message": "The request to open failed.",
+                                              "underlying": {"code": 1}}}}
+
+    def open_with(self, answers, wait_seconds=120):
+        device = self.phone()
+        asked = []
+        device.call = lambda _op, arguments, *_a, **_k: asked.append(arguments["operation"]) or answers.pop(0)
+        events = []
+        clock = [0.0]
+        sleeps = []
+        fake_time = unittest.mock.Mock(monotonic=lambda: clock[0],
+                                       sleep=lambda s: sleeps.append(s) or clock.__setitem__(0, clock[0] + s))
+        with unittest.mock.patch.object(phone, "time", fake_time):
+            stage = lambda name, **details: events.append(dict(step=name, **details))
+            try:
+                return device.open_installed("guest", "dev.app", stage, wait_seconds), events, asked, sleeps
+            except RuntimeError as error:
+                return error, events, asked, sleeps
+
+    def test_an_open_ios_refuses_as_invalid_right_after_the_install_is_asked_again(self):
+        answers = [self.refused(), self.refused(), {"response": {"ok": True, "pid": 7}}]
+        response, events, asked, sleeps = self.open_with(answers)
+        self.assertEqual(response["pid"], 7)
+        self.assertEqual(asked, ["open", "open", "open"])
+        self.assertEqual(sleeps, [phone.OPEN_RETRY_INTERVAL] * 2)
+        self.assertEqual([e["step"] for e in events], ["open-refused", "open-refused", "open-accepted"])
+        # Each refusal is logged with iOS's own reason.
+        self.assertEqual(events[0]["reason"]["code_description"], "InvalidRequest")
+        self.assertEqual(events[0]["reason"]["underlying"], {"code": 1})
+        self.assertEqual(events[-1]["attempts"], 3)
+
+    def test_the_open_is_asked_again_only_for_a_bounded_time(self):
+        answers = [self.refused() for _ in range(10)]
+        error, events, asked, _ = self.open_with(answers, wait_seconds=12)
+        self.assertIsInstance(error, RuntimeError)
+        self.assertIn("did not open (iOS refused it 3 times over 10 s)", str(error))
+        self.assertEqual(len(asked), 3)
+
+    def test_another_refusal_ends_the_deploy_at_once(self):
+        error, events, asked, _ = self.open_with([self.refused("Denied")])
+        self.assertIsInstance(error, RuntimeError)
+        self.assertEqual(asked, ["open"])
+        self.assertEqual(events, [])
+        error, _, asked, _ = self.open_with([{"response": {"ok": False, "error": "unknown_application"}}])
+        self.assertIn("did not open: ", str(error))
+        self.assertEqual(asked, ["open"])
+
+    def test_a_deploy_whose_open_ios_refused_once_still_opens(self):
+        device = self.phone()
+        answers = iter([self.refused()["response"], {"ok": True, "pid": 9}])
+        device.deploy_request = lambda job, operation, argument: (
+            next(answers) if operation == "open" else {"ok": True})
+        with unittest.mock.patch.object(phone.time, "sleep", lambda _s: None):
+            self.deploy(device)
+        steps = [event["step"] for event in self.events]
+        self.assertEqual(steps[-4:], ["open-refused", "open-accepted", "opened", "done"])
+        self.assertEqual(self.events[-2]["pid"], 9)
 
 
 class EngineTests(unittest.TestCase):

@@ -192,6 +192,29 @@ def host_software():
 PHASE_LOG_LIMIT = 32
 
 
+# How long a deploy keeps asking iOS to open a just-installed app it refuses
+# as an InvalidRequest, and how often. On a live phone the first open, sent
+# right after the install, was refused; one 40 s later was accepted.
+OPEN_AFTER_INSTALL_SECONDS = 120
+OPEN_RETRY_INTERVAL = 5
+
+
+def open_refusal(response):
+    """The reason to log when iOS refused an open in a way that passes once it
+    has registered a new app (FBSOpenApplicationErrorCode InvalidRequest), or
+    None for any other outcome."""
+    if response.get("error") != "request_rejected_by_ios":
+        return None
+    native = response.get("native_error") or {}
+    if native.get("code_description") != "InvalidRequest":
+        return None
+    reason = {"code": native.get("code"), "code_description": native.get("code_description"),
+              "message": native.get("message")}
+    if native.get("underlying") is not None:
+        reason["underlying"] = native["underlying"]
+    return reason
+
+
 def emit(phase, **details):
     print("TOMACCO_VIRTUAL_IPHONE " + json.dumps({"phase": phase, **details}), flush=True)
 
@@ -1302,11 +1325,32 @@ class Phone:
             # iOS refuses to open an app over its lock screen; the phone may
             # have locked itself since the start.
             stage("screen", outcome=self.ensure_unlocked(job, time.monotonic() + 600))
-            response = self.deploy_request(job, "open", bundle_id)
-            if response.get("ok") is not True:
-                raise RuntimeError(f"{bundle_id} installed, but it did not open: " + json.dumps(response)[:600])
+            response = self.open_installed(job, bundle_id, stage)
             stage("opened", pid=response.get("pid"))
         stage("done", bundle_id=bundle_id, unchanged=unchanged)
+
+    def open_installed(self, job, bundle_id, stage, wait_seconds=OPEN_AFTER_INSTALL_SECONDS):
+        """Open an app that was just installed. Right after installd finishes,
+        FrontBoard may not know the new bundle yet and refuses the open as an
+        InvalidRequest; that refusal is asked again, every few seconds and for
+        at most wait_seconds, with each refusal's reason logged. Any other
+        refusal ends the deploy at once."""
+        started = time.monotonic()
+        attempt = 0
+        while True:
+            attempt += 1
+            response = self.deploy_request(job, "open", bundle_id)
+            if response.get("ok") is True:
+                if attempt > 1:
+                    stage("open-accepted", attempts=attempt)
+                return response
+            reason = open_refusal(response)
+            waited = time.monotonic() - started
+            if reason is None or waited + OPEN_RETRY_INTERVAL > wait_seconds:
+                tail = (f" (iOS refused it {attempt} times over {waited:.0f} s)" if reason is not None else "")
+                raise RuntimeError(f"{bundle_id} installed, but it did not open{tail}: " + json.dumps(response)[:600])
+            stage("open-refused", attempt=attempt, reason=reason)
+            time.sleep(OPEN_RETRY_INTERVAL)
 
     def deploy_signed(self, job, module_path, rows, signed, bundle_id, stage):
         """Trust a signed bundle's hashes, send it, name it to the adapter and

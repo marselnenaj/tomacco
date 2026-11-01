@@ -253,6 +253,7 @@ pub fn run(
     value["deploy"] = json!({"job_id":id,"state":done["state"],
         "seconds":events.last().map(|e| e["seconds"].clone()),
         "unchanged":step("unchanged").is_some(),
+        "open_refusals":events.iter().filter(|e| e["step"] == "open-refused").count(),
         "steps":events.iter().map(|e| e["step"].clone()).collect::<Vec<_>>()});
     value["pid"] = json!(pid);
     if done["state"] != "succeeded" {
@@ -446,6 +447,24 @@ mod tests {
             summary(&report),
             "built in 41.2 s, deployed in 23.6 s, pid 551, no new crash report in 10 s"
         );
+    }
+
+    #[test]
+    fn opens_ios_refused_before_accepting_are_counted() {
+        let log = vec![
+            event("installed", 20.0, json!({})),
+            event("open-refused", 20.5, json!({"attempt":1})),
+            event("open-refused", 25.5, json!({"attempt":2})),
+            event("open-accepted", 30.6, json!({"attempts":3})),
+            event("opened", 30.6, json!({"pid":551})),
+            event("done", 30.7, json!({"unchanged":false})),
+            r#"{"state": "ok", "phase": "launch-accepted"}"#.into(),
+        ];
+        let mut phone = fake(log, vec![]);
+        let report = run(&mut phone, &target(), 0, None);
+        assert_eq!(report["state"], "launched");
+        assert_eq!(report["deploy"]["open_refusals"], 2);
+        assert_eq!(report["pid"], 551);
     }
 
     #[test]
