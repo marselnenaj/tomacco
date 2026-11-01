@@ -510,6 +510,12 @@ pub fn crash_event(
         return Err("unsupported-report-format");
     }
     let exception = body["exception"].as_object().ok_or("no-exception")?;
+    // KIND_PROCESS-DATE.ips (ExcUserFault_, ExcResource_) reports a fault or
+    // a resource limit the process lived through, not a crash.
+    let process = body["procName"].as_str().unwrap_or_default();
+    if crash_reports::report_stem(name, process).is_some_and(|stem| stem != process) {
+        return Err("not-a-crash");
+    }
     let text = |value: &Value| value.as_str().unwrap_or_default().to_string();
     let threads = body["threads"].as_array().cloned().unwrap_or_default();
     let faulting = body["faultingThread"]
@@ -539,7 +545,9 @@ pub fn crash_event(
                     let image = frame["imageIndex"]
                         .as_u64()
                         .and_then(|i| images.get(i as usize))
-                        .and_then(|image| image["name"].as_str())
+                        // A live phone's reports name no system image; its
+                        // UUID still says which one for a symbolicator.
+                        .and_then(|image| image["name"].as_str().or(image["uuid"].as_str()))
                         .unwrap_or("???");
                     match frame["symbol"].as_str() {
                         Some(symbol) => json!(format!(
@@ -1129,6 +1137,37 @@ mod tests {
             .collect();
         json!({"response":{"ok":true,"operation":"crash_reports","process":"MyApp",
             "collection_complete":true,"reports":reports}})
+    }
+
+    #[test]
+    fn a_fault_report_is_no_crash_and_unnamed_images_show_their_uuid() {
+        // The shape of a live phone's reports: the images carry no names.
+        let mut text = ips("exampled", "2026-10-09 02:41:05.5380 -0700");
+        text = text.replace(
+            r#"[{"name":"libsystem_kernel.dylib"},{"name":"exampled"}]"#,
+            r#"[{"uuid":"00000000-0000-4000-8000-0000000000aa"},{"uuid":"00000000-0000-4000-8000-0000000000bb"}]"#,
+        );
+        let event =
+            crash_event(text.as_bytes(), "exampled-2026-10-09-024105.ips", "mobile").unwrap();
+        assert_eq!(
+            event["stack"][1],
+            "1 00000000-0000-4000-8000-0000000000bb +0x1234"
+        );
+        assert_eq!(event["stack"][2], "2 ??? +0x1");
+        // A fault the process lived through, named KIND_PROCESS-DATE.
+        assert_eq!(
+            crash_event(
+                text.as_bytes(),
+                "ExcUserFault_exampled-2026-10-09-024105.ips",
+                "mobile"
+            ),
+            Err("not-a-crash")
+        );
+        let (events, unparsed) = crash_events(
+            &reply(&[("ExcUserFault_exampled-2026-10-09-024105.ips", text)])["response"],
+        );
+        assert!(events.is_empty());
+        assert_eq!(unparsed[0]["reason"], "not-a-crash");
     }
 
     #[test]
