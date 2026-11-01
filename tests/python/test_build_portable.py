@@ -107,6 +107,9 @@ class Aarch64(unittest.TestCase):
         arm = (ROOT / "packaging/portable/Dockerfile.aarch64").read_text()
         for name in ("RUST_VERSION", "RUSTUP_VERSION", "CMAKE_VERSION", "FFMPEG_VERSION", "FFMPEG_SHA256", "ICU_LICENSE_SHA256"):
             self.assertEqual(re.search(rf"ARG {name}=(\S+)", x86).group(1), re.search(rf"ARG {name}=(\S+)", arm).group(1), name)
+        # build.rs compiles the iOS runtime protocol with protoc.
+        for text in (x86, arm):
+            self.assertIn("protobuf-compiler", text)
         configure = lambda text: text[text.index("./configure"):text.index("&& make", text.index("./configure"))]
         self.assertEqual(configure(x86), configure(arm), "the same LGPL-only FFmpeg")
 

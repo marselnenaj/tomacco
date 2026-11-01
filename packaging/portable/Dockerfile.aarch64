@@ -14,7 +14,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 # for (OpenGL, xkbcommon), and the xcb helper libraries the package bundles.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl xz-utils p7zip-full patchelf binutils file \
-        g++-13 gcc-13 make pkg-config ninja-build python3 \
+        g++-13 gcc-13 make pkg-config ninja-build python3 protobuf-compiler \
         libgl-dev libegl-dev libopengl-dev libxkbcommon-dev libfontconfig1-dev libfreetype-dev \
         libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-util1 \
     && rm -rf /var/lib/apt/lists/* \
