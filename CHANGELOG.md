@@ -149,6 +149,10 @@ operations and their JSON results.
     `timing.json`. The disk preparation now logs when each of its steps began (`step_times`), and the launcher's
     `request.json` and `result.json` have `timing`: hashing seconds and bytes before and after the session and when
     the engine started and exited. Unit-tested with synthetic step logs, not run on a live phone.
+  - `ios.virtual.host_check` adds `host` (logical processors, physical cores, memory) and `recommend`: what to change in
+    the configured profile's `host_cpu_policy` and `translation_cache_mib` for this host, with the current and suggested
+    value and why. It changes nothing. Unit-tested; the effect of a suggested setting has not been measured on a live
+    phone.
   - `ios.virtual.profiles` lists every profile directory configured so far with its run, phase and whether its phone runs.
     `ios.virtual.configure` refuses another directory while the current phone runs (`ios_virtual_running`) or a start or
     stop is in progress (`ios_virtual_busy`); before, it switched and left the running phone without its profile.
