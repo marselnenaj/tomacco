@@ -675,7 +675,7 @@
   {
     "name": "project.create",
     "title": "Create project",
-    "description": "Create a native Android app, a Jetpack Compose app in Kotlin with one UI test (kind compose), an Android app with Swift core, SwiftUI iOS app (xtool), or Flutter app in a new directory. With build:true, an xtool project is also built in the same job; project.app then names the .app.",
+    "description": "Create a native Android app, a Jetpack Compose app in Kotlin with one UI test (kind compose), an Android app with Swift core, SwiftUI iOS app (xtool), or Flutter app in a new directory. With build:true, an xtool project is also built in the same job; project.app then names the .app. With performance:true a Compose app also gets the :baselineprofile module (Macrobenchmark startup benchmarks and a Baseline Profile generator) that profile.macrobenchmark and profile.baseline_profile run.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -708,6 +708,11 @@
         "build": {
           "type": "boolean",
           "default": false
+        },
+        "performance": {
+          "type": "boolean",
+          "default": false,
+          "description": "kind compose: also add a :baselineprofile module with a Macrobenchmark startup test and a Baseline Profile generator, and apply the androidx.baselineprofile plugin to the app"
         }
       },
       "required": [
@@ -6607,6 +6612,298 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
+    }
+  },
+  {
+    "name": "profile.macrobenchmark",
+    "title": "Run Macrobenchmark",
+    "description": "Run a Gradle build's Macrobenchmark module on a device as a job: connected<Variant>AndroidTest of the com.android.test module that depends on androidx.benchmark:benchmark-macro (project.inspect lists it under performance.benchmark_modules, with the task it would run), with ANDROID_SERIAL set to device. class limits the run to one test class or Class#method. The job's last step is profile.benchmark_results, so the job ends with a performance report (kind macrobenchmark, saved to report or build/tomacco/macrobenchmark.json) whose flat metrics profile.compare and profile.budget read. The benchmark JSON, the Perfetto traces and the JUnit XML are the job's artifacts; testing.results reads the XML. A build without such a module answers benchmark_module_missing.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local filesystem path",
+          "minLength": 1
+        },
+        "device": {
+          "type": "string",
+          "description": "Device serial from device.list",
+          "minLength": 1
+        },
+        "module": {
+          "type": "string",
+          "description": "Gradle path of the benchmark module, such as :baselineprofile; needed when the build has several"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Variant to run, such as benchmarkRelease, instead of the one the build files imply"
+        },
+        "class": {
+          "type": "string",
+          "description": "Only this test class (package.Class) or method (package.Class#method)"
+        },
+        "allow_emulator": {
+          "type": "boolean",
+          "description": "Let the benchmarks run on an emulator (androidx.benchmark.suppressErrors=EMULATOR); true by default for an emulator-NNNN serial. An emulator's numbers are not a phone's"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the performance report as JSON"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Seconds the Gradle job may run",
+          "minimum": 1,
+          "maximum": 86400,
+          "default": 3600
+        }
+      },
+      "required": [
+        "path",
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "profile.benchmark_results",
+    "title": "Read Macrobenchmark results",
+    "description": "Read the JSON a Macrobenchmark run wrote (build/outputs/connected_android_test_additional_output/**/*benchmarkData.json) into a performance report of kind macrobenchmark. Every benchmark's metrics become flat entries named <test>_<metric>_<statistic>: minimum, median and maximum for a metric such as timeToInitialDisplayMs (time_to_initial_display_ms), and p50, p90, p95 and p99 for a sampled one such as frameDurationCpuMs; the same names profile.compare and profile.budget read. benchmarks keeps every run's value and the Perfetto traces each benchmark wrote. With analyze, the first trace of each benchmark is summarised by profile.analyze for bundle_id. The newest file wins; others are listed in other_files. job_id or since leaves out older files; file reads one file.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute path of the Gradle project; give it or file"
+        },
+        "file": {
+          "type": "string",
+          "description": "Absolute path of one benchmarkData.json"
+        },
+        "module": {
+          "type": "string",
+          "description": "Gradle path of the benchmark module, to look only there"
+        },
+        "job_id": {
+          "type": "string",
+          "description": "Leave out files older than this job, such as the profile.macrobenchmark job"
+        },
+        "since": {
+          "type": "number",
+          "description": "Leave out files modified before this time, in seconds since 1970",
+          "minimum": 0
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID the benchmarks measure, for compare and analyze; read from the build files when it has one app"
+        },
+        "device": {
+          "type": "string",
+          "description": "Name for the device in the report; the model in the file by default"
+        },
+        "analyze": {
+          "type": "boolean",
+          "description": "Also summarise each benchmark's first trace with profile.analyze",
+          "default": false
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the report as JSON"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "profile.baseline_profile",
+    "title": "Generate Baseline Profile",
+    "description": "Generate a Baseline Profile on a device as a job: the generate<Variant>BaselineProfile task of the app module that applies the androidx.baselineprofile Gradle plugin (project.inspect lists it under performance.baseline_profile_modules), with ANDROID_SERIAL set to device. The plugin writes the profile to src/<variant>/generated/baselineProfiles/ of the app module and AGP packages it into the release build. The job's last step is profile.baseline_rules, so its report (saved to report or build/tomacco/baseline-profile.json) lists the profile files with their rule counts. A build without the plugin answers baseline_plugin_missing.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local filesystem path",
+          "minLength": 1
+        },
+        "device": {
+          "type": "string",
+          "description": "Device serial from device.list",
+          "minLength": 1
+        },
+        "module": {
+          "type": "string",
+          "description": "Gradle path of the app module, such as :app; needed when several apply the plugin"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Variant, such as release, for generate<Variant>BaselineProfile; all variants by default"
+        },
+        "allow_emulator": {
+          "type": "boolean",
+          "description": "Let the benchmarks run on an emulator (androidx.benchmark.suppressErrors=EMULATOR); true by default for an emulator-NNNN serial. An emulator's numbers are not a phone's"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the rule report as JSON"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Seconds the Gradle job may run",
+          "minimum": 1,
+          "maximum": 86400,
+          "default": 3600
+        }
+      },
+      "required": [
+        "path",
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "profile.baseline_rules",
+    "title": "Read Baseline Profile rules",
+    "description": "List a project's Baseline Profile files (src/*/baseline-prof.txt and src/*/generated/baselineProfiles/*-prof.txt, or one file) with their rules counted: classes, methods, hot (H), startup (S) and post-startup (P) flags, wildcard rules, size and modification time. fresh marks files modified since since. Nothing is changed. A project without a profile file answers baseline_profile_missing.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute path of the Gradle project; give it or file"
+        },
+        "file": {
+          "type": "string",
+          "description": "Absolute path of one profile file"
+        },
+        "module": {
+          "type": "string",
+          "description": "Gradle path of one module, such as :app"
+        },
+        "since": {
+          "type": "number",
+          "description": "Mark files modified since this time, in seconds since 1970 as fresh",
+          "minimum": 0
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the list as JSON"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "profile.baseline_install",
+    "title": "Install Baseline Profile",
+    "description": "Copy an app module's newest generated Baseline Profile (or the file source names) to src/main/baseline-prof.txt of the module, or to destination inside it, where AGP packages it without the plugin. Copying a file that is already there changes nothing. A different file there answers baseline_profile_exists unless overwrite is true, which keeps the old one beside it as .bak.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local filesystem path",
+          "minLength": 1
+        },
+        "module": {
+          "type": "string",
+          "description": "Gradle path of the app module; the only app module by default"
+        },
+        "source": {
+          "type": "string",
+          "description": "Absolute path of the profile file; the module's newest generated baseline-prof.txt by default"
+        },
+        "destination": {
+          "type": "string",
+          "description": "Relative .txt path inside the module",
+          "default": "src/main/baseline-prof.txt"
+        },
+        "overwrite": {
+          "type": "boolean",
+          "description": "Replace a different file, keeping it as .bak",
+          "default": false
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "profile.baseline_compare",
+    "title": "Compare startup with and without Baseline Profile",
+    "description": "Time cold starts of an installed release build twice and compare them. First the app is compiled with the verify filter (cmd package compile -f -m verify), which ignores the profile, and started runs times; then the app's androidx.profileinstaller installs its profile (the INSTALL_PROFILE broadcast to its ProfileInstallReceiver), the app is compiled with speed-profile and started runs times again. The report has both profile.startup reports, their compiler filters, the comparison, and the flat metrics startup_cold_<statistic>_ms_without_profile and _with_profile, improvement_ms and improvement_percent. An app that does not install a profile answers profile_install_failed. The device's compilation state of the app is left at speed-profile.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial from device.list",
+          "minLength": 1
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID of the installed release build",
+          "minLength": 1
+        },
+        "runs": {
+          "type": "integer",
+          "description": "Cold starts per state",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 5
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the result as JSON"
+        }
+      },
+      "required": [
+        "device",
+        "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
     }
   },
   {

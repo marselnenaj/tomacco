@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 236 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 242 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 460 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 468 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -258,6 +258,12 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`profile.memory`](profile.md#profilememory) | Measure app memory | writes |
 | [`profile.usage`](profile.md#profileusage) | Measure CPU and battery use | writes |
 | [`profile.budget`](profile.md#profilebudget) | Check performance budget | writes |
+| [`profile.macrobenchmark`](profile.md#profilemacrobenchmark) | Run Macrobenchmark | writes |
+| [`profile.benchmark_results`](profile.md#profilebenchmark_results) | Read Macrobenchmark results | read-only |
+| [`profile.baseline_profile`](profile.md#profilebaseline_profile) | Generate Baseline Profile | writes |
+| [`profile.baseline_rules`](profile.md#profilebaseline_rules) | Read Baseline Profile rules | read-only |
+| [`profile.baseline_install`](profile.md#profilebaseline_install) | Install Baseline Profile | **destructive** |
+| [`profile.baseline_compare`](profile.md#profilebaseline_compare) | Compare startup with and without Baseline Profile | writes |
 
 ## [project](project.md)
 

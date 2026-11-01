@@ -3866,6 +3866,30 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Vérifier le budget de performances</translation>
     </message>
     <message>
+        <source>Run Macrobenchmark</source>
+        <translation>Lancer le Macrobenchmark</translation>
+    </message>
+    <message>
+        <source>Read Macrobenchmark results</source>
+        <translation>Lire les résultats du Macrobenchmark</translation>
+    </message>
+    <message>
+        <source>Generate Baseline Profile</source>
+        <translation>Générer le Baseline Profile</translation>
+    </message>
+    <message>
+        <source>Read Baseline Profile rules</source>
+        <translation>Lire les règles du Baseline Profile</translation>
+    </message>
+    <message>
+        <source>Install Baseline Profile</source>
+        <translation>Installer le Baseline Profile</translation>
+    </message>
+    <message>
+        <source>Compare startup with and without Baseline Profile</source>
+        <translation>Comparer le démarrage avec et sans Baseline Profile</translation>
+    </message>
+    <message>
         <source>Compare performance reports</source>
         <translation>Comparer des rapports de performances</translation>
     </message>

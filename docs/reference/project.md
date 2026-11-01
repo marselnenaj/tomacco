@@ -42,7 +42,7 @@ tomaccoctl call project.configure '{"path":"<path>"}'
 
 **Create project**
 
-Create a native Android app, a Jetpack Compose app in Kotlin with one UI test (kind compose), an Android app with Swift core, SwiftUI iOS app (xtool), or Flutter app in a new directory. With build:true, an xtool project is also built in the same job; project.app then names the .app.
+Create a native Android app, a Jetpack Compose app in Kotlin with one UI test (kind compose), an Android app with Swift core, SwiftUI iOS app (xtool), or Flutter app in a new directory. With build:true, an xtool project is also built in the same job; project.app then names the .app. With performance:true a Compose app also gets the :baselineprofile module (Macrobenchmark startup benchmarks and a Baseline Profile generator) that profile.macrobenchmark and profile.baseline_profile run.
 
 Annotations: writes, not idempotent, open world.
 
@@ -53,6 +53,7 @@ Annotations: writes, not idempotent, open world.
 | `name` | string |  | `"TomaccoApp"` |  |
 | `organization` | string |  | `"com.example"` |  |
 | `build` | boolean |  | `false` |  |
+| `performance` | boolean |  | `false` | kind compose: also add a :baselineprofile module with a Macrobenchmark startup test and a Baseline Profile generator, and apply the androidx.baselineprofile plugin to the app |
 
 ```sh
 tomaccoctl call project.create '{"path":"<path>","kind":"swift-android"}'

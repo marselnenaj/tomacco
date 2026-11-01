@@ -115,9 +115,33 @@
     "cause": "No baseline at …",
     "remedy": "Create the baseline with update_baseline:true after checking the image is right."
   },
+  "baseline_plugin_missing": {
+    "cause": "No module of the build applies the androidx.baselineprofile Gradle plugin.",
+    "remedy": "Apply the plugin to the app module and add the producer module it names, or create the app with project.create kind compose and performance:true."
+  },
+  "baseline_profile_exists": {
+    "cause": "src/main/baseline-prof.txt (or the destination) already holds a different profile.",
+    "remedy": "Pass overwrite:true to replace it; the old file is kept beside it as .bak."
+  },
+  "baseline_profile_missing": {
+    "cause": "The project or module has no baseline profile file, or the file holds no rules.",
+    "remedy": "Generate one with profile.baseline_profile, or write src/main/baseline-prof.txt."
+  },
   "baselines_missing": {
     "cause": "record_baselines ran screen steps whose baselines did not exist yet; it saved the screens instead of comparing them.",
     "remedy": "Review them with testing.baselines review and approve them, then run the scenario again."
+  },
+  "benchmark_module_ambiguous": {
+    "cause": "The build has several Macrobenchmark or app modules, and none was named.",
+    "remedy": "Pass module, a Gradle path from project.inspect performance."
+  },
+  "benchmark_module_missing": {
+    "cause": "The build has no Macrobenchmark module, or no module with the name given.",
+    "remedy": "Add a com.android.test module that depends on androidx.benchmark:benchmark-macro-junit4, or create the app with project.create kind compose and performance:true."
+  },
+  "benchmark_results_missing": {
+    "cause": "No benchmarkData.json from a Macrobenchmark run was found under the project.",
+    "remedy": "Run profile.macrobenchmark first, then read its results with job_id."
   },
   "binary_file": {
     "cause": "This file is not UTF-8 text.",
@@ -166,6 +190,10 @@
   "checksum_mismatch": {
     "cause": "The download from … does not match its published checksum and was deleted.",
     "remedy": "Try again; if it repeats, the download source changed and the pinned checksum needs an update in a new Tomacco version."
+  },
+  "compile_failed": {
+    "cause": "cmd package compile did not answer Success for the app.",
+    "remedy": "Read the message; the app must be installed and its package manager must accept the compiler filter."
   },
   "config_unsupported": {
     "cause": "The request was refused; the message says why.",
@@ -1282,6 +1310,10 @@
   "process_missing": {
     "cause": "No Android process to attach; launch a debuggable build.",
     "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
+  },
+  "profile_install_failed": {
+    "cause": "The app's ProfileInstallReceiver did not install a baseline profile.",
+    "remedy": "Install a release build that packages a baseline profile and depends on androidx.profileinstaller:profileinstaller."
   },
   "profile_mismatch": {
     "cause": "The request was refused; the message says why.",

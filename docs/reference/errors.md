@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 468 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -35,7 +35,13 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `avd_not_found` | Unknown AVD: … | Use android.avds or android.avd_create. |
 | `baseline_conflict` | Two devices would write different screenshots to the same baseline file. | Approve the screens one device at a time, or give each device its own baselines folder. |
 | `baseline_missing` | No baseline at … | Create the baseline with update_baseline:true after checking the image is right. |
+| `baseline_plugin_missing` | No module of the build applies the androidx.baselineprofile Gradle plugin. | Apply the plugin to the app module and add the producer module it names, or create the app with project.create kind compose and performance:true. |
+| `baseline_profile_exists` | src/main/baseline-prof.txt (or the destination) already holds a different profile. | Pass overwrite:true to replace it; the old file is kept beside it as .bak. |
+| `baseline_profile_missing` | The project or module has no baseline profile file, or the file holds no rules. | Generate one with profile.baseline_profile, or write src/main/baseline-prof.txt. |
 | `baselines_missing` | record_baselines ran screen steps whose baselines did not exist yet; it saved the screens instead of comparing them. | Review them with testing.baselines review and approve them, then run the scenario again. |
+| `benchmark_module_ambiguous` | The build has several Macrobenchmark or app modules, and none was named. | Pass module, a Gradle path from project.inspect performance. |
+| `benchmark_module_missing` | The build has no Macrobenchmark module, or no module with the name given. | Add a com.android.test module that depends on androidx.benchmark:benchmark-macro-junit4, or create the app with project.create kind compose and performance:true. |
+| `benchmark_results_missing` | No benchmarkData.json from a Macrobenchmark run was found under the project. | Run profile.macrobenchmark first, then read its results with job_id. |
 | `binary_file` | This file is not UTF-8 text. | files.read and files.write handle UTF-8 text only. |
 | `budget_exceeded` | Outside the performance budget: … | Compare the report with its baseline (profile.compare) to find the regression, or raise the budget if it was intended. |
 | `builtin_profile` | The request was refused; the message says why. | Choose a new ID; built-in profiles cannot be replaced. |
@@ -48,6 +54,7 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `capture_timeout` | ADB screenshot timed out. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `catalogue_full` | At most 1000 custom profiles are supported. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `checksum_mismatch` | The download from … does not match its published checksum and was deleted. | Try again; if it repeats, the download source changed and the pinned checksum needs an update in a new Tomacco version. |
+| `compile_failed` | cmd package compile did not answer Success for the app. | Read the message; the app must be installed and its package manager must accept the compiler filter. |
 | `config_unsupported` | The request was refused; the message says why. | Update the bundle identifier in this project's xtool configuration manually. |
 | `conflicting_display_profile` | This device model has its own display; omit display_profile. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `conflicting_storage` | The virtual iOS device or its research engine refused the request or stopped answering. | Select one access mode per virtual disk. |
@@ -327,6 +334,7 @@ Every error code `tomaccoctl` returns, 460 codes, generated from `assets/errors.
 | `preview_disconnected` | Preview closed before replying. | Check that the dev server answers at the URL, then preview.reload or start the preview again. |
 | `preview_unavailable` | Cannot reach preview session …: … | Start tomacco --preview-session … |
 | `process_missing` | No Android process to attach; launch a debuggable build. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
+| `profile_install_failed` | The app's ProfileInstallReceiver did not install a baseline profile. | Install a release build that packages a baseline profile and depends on androidx.profileinstaller:profileinstaller. |
 | `profile_mismatch` | The request was refused; the message says why. | Check reports of the same application. |
 | `profile_not_found` | Unknown device profile: … | catalog.list names the device profiles. |
 | `project_unrecognized` | No supported project in … | Open a Flutter, Gradle, Swift, xtool, web or Xcode project, or add tomacco.json tasks. |

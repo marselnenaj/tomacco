@@ -120,6 +120,10 @@ pub fn inspect(value: &str) -> Result {
     let mut value = json!({"path":root,"name":root.file_name().unwrap_or_default().to_string_lossy(),"kinds":kinds,"platforms":platforms,"gradle_directory":gradle,"android":gradle.as_deref().map(gradle_model::read),"tasks":names,"configuration":config});
     if let Some(dir) = &gradle {
         value["test_setup"] = gradle_model::test_setup(dir);
+        let performance = crate::macrobench::setup(dir);
+        if !performance.is_null() {
+            value["performance"] = performance;
+        }
     }
     if let Some(mp) = multiplatform {
         value["multiplatform"] = mp;
@@ -846,6 +850,12 @@ pub fn create(a: &Value) -> Result {
             "build:true is for kind xtool; other kinds build with project.execute",
         ));
     }
+    if b(a, "performance") && kind != "compose" {
+        return Err(Error::new(
+            "invalid_argument",
+            "performance:true is for kind compose",
+        ));
+    }
     if target.exists() {
         return Err(Error::new(
             "path_exists",
@@ -935,21 +945,78 @@ pub fn create(a: &Value) -> Result {
                 .replace("__NAME__", name)
                 .replace("__API__", &api.to_string())
         };
-        write(
-            root,
-            "build.gradle.kts",
-            "plugins {\n    alias(libs.plugins.android.application) apply false\n    alias(libs.plugins.kotlin.compose) apply false\n}\n",
-        )?;
-        write(
-            root,
-            "gradle/libs.versions.toml",
-            include_str!("../assets/templates/compose/libs.versions.toml"),
-        )?;
-        write(
-            root,
-            "app/build.gradle.kts",
-            &fill(include_str!("../assets/templates/compose/build.gradle.kts")),
-        )?;
+        let performance = b(a, "performance");
+        let mut root_plugins = String::from(
+            "plugins {\n    alias(libs.plugins.android.application) apply false\n    alias(libs.plugins.kotlin.compose) apply false\n",
+        );
+        let mut catalog =
+            include_str!("../assets/templates/compose/libs.versions.toml").to_string();
+        let mut app = fill(include_str!("../assets/templates/compose/build.gradle.kts"));
+        if performance {
+            root_plugins.push_str("    alias(libs.plugins.android.test) apply false\n    alias(libs.plugins.androidx.baselineprofile) apply false\n");
+            catalog = catalog
+                .replace(
+                    "\n[libraries]",
+                    "benchmark = \"1.5.0\"\nbaselineprofile = \"1.5.0\"\nprofileinstaller = \"1.4.1\"\nuiautomator = \"2.4.0\"\n\n[libraries]",
+                )
+                .replace(
+                    "\n[plugins]",
+                    "androidx-benchmark-macro-junit4 = { group = \"androidx.benchmark\", name = \"benchmark-macro-junit4\", version.ref = \"benchmark\" }\nandroidx-profileinstaller = { group = \"androidx.profileinstaller\", name = \"profileinstaller\", version.ref = \"profileinstaller\" }\nandroidx-uiautomator = { group = \"androidx.test.uiautomator\", name = \"uiautomator\", version.ref = \"uiautomator\" }\n\n[plugins]",
+                );
+            catalog.push_str("android-test = { id = \"com.android.test\", version.ref = \"agp\" }\nandroidx-baselineprofile = { id = \"androidx.baselineprofile\", version.ref = \"baselineprofile\" }\n");
+            app = app
+                .replace(
+                    "    alias(libs.plugins.kotlin.compose)\n",
+                    "    alias(libs.plugins.kotlin.compose)\n    alias(libs.plugins.androidx.baselineprofile)\n",
+                )
+                .replace(
+                    "dependencies {\n",
+                    "dependencies {\n    implementation(libs.androidx.profileinstaller)\n    \"baselineProfile\"(project(\":baselineprofile\"))\n",
+                );
+            let settings = fs::read_to_string(root.join("settings.gradle.kts"))?;
+            write(
+                root,
+                "settings.gradle.kts",
+                &settings.replace(
+                    "include(\":app\")",
+                    "include(\":app\")\ninclude(\":baselineprofile\")",
+                ),
+            )?;
+            write(
+                root,
+                "baselineprofile/build.gradle.kts",
+                &fill(include_str!(
+                    "../assets/templates/compose-performance/build.gradle.kts"
+                )),
+            )?;
+            write(
+                root,
+                "baselineprofile/src/main/AndroidManifest.xml",
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" />\n",
+            )?;
+            write(
+                root,
+                &format!(
+                    "baselineprofile/src/main/java/{package}/baselineprofile/BaselineProfileGenerator.kt"
+                ),
+                &fill(include_str!(
+                    "../assets/templates/compose-performance/BaselineProfileGenerator.kt"
+                )),
+            )?;
+            write(
+                root,
+                &format!(
+                    "baselineprofile/src/main/java/{package}/baselineprofile/StartupBenchmarks.kt"
+                ),
+                &fill(include_str!(
+                    "../assets/templates/compose-performance/StartupBenchmarks.kt"
+                )),
+            )?;
+        }
+        root_plugins.push_str("}\n");
+        write(root, "build.gradle.kts", &root_plugins)?;
+        write(root, "gradle/libs.versions.toml", &catalog)?;
+        write(root, "app/build.gradle.kts", &app)?;
         write(
             root,
             "gradle.properties",

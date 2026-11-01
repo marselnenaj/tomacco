@@ -2,7 +2,7 @@
 
 # `profile` operations
 
-8 operations. Generated from `assets/operations.json`; [all areas](README.md).
+14 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### profile.capture
 
@@ -159,4 +159,132 @@ Annotations: writes, idempotent, closed world.
 
 ```sh
 tomaccoctl call profile.budget '{"reports":["<report>"]}'
+```
+
+### profile.macrobenchmark
+
+**Run Macrobenchmark**
+
+Run a Gradle build's Macrobenchmark module on a device as a job: connected&lt;Variant&gt;AndroidTest of the com.android.test module that depends on androidx.benchmark:benchmark-macro (project.inspect lists it under performance.benchmark_modules, with the task it would run), with ANDROID_SERIAL set to device. class limits the run to one test class or Class#method. The job's last step is profile.benchmark_results, so the job ends with a performance report (kind macrobenchmark, saved to report or build/tomacco/macrobenchmark.json) whose flat metrics profile.compare and profile.budget read. The benchmark JSON, the Perfetto traces and the JUnit XML are the job's artifacts; testing.results reads the XML. A build without such a module answers benchmark_module_missing.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute local filesystem path |
+| `device` | string | yes |  | non-empty; Device serial from device.list |
+| `module` | string |  |  | Gradle path of the benchmark module, such as :baselineprofile; needed when the build has several |
+| `variant` | string |  |  | Variant to run, such as benchmarkRelease, instead of the one the build files imply |
+| `class` | string |  |  | Only this test class (package.Class) or method (package.Class#method) |
+| `allow_emulator` | boolean |  |  | Let the benchmarks run on an emulator (androidx.benchmark.suppressErrors=EMULATOR); true by default for an emulator-NNNN serial. An emulator's numbers are not a phone's |
+| `report` | string |  |  | Absolute path to save the performance report as JSON |
+| `timeout` | integer |  | `3600` | 1 to 86400; Seconds the Gradle job may run |
+
+```sh
+tomaccoctl call profile.macrobenchmark '{"path":"<path>","device":"<device>"}'
+```
+
+### profile.benchmark_results
+
+**Read Macrobenchmark results**
+
+Read the JSON a Macrobenchmark run wrote (build/outputs/connected_android_test_additional_output/\*\*/\*benchmarkData.json) into a performance report of kind macrobenchmark. Every benchmark's metrics become flat entries named &lt;test&gt;_&lt;metric&gt;_&lt;statistic&gt;: minimum, median and maximum for a metric such as timeToInitialDisplayMs (time_to_initial_display_ms), and p50, p90, p95 and p99 for a sampled one such as frameDurationCpuMs; the same names profile.compare and profile.budget read. benchmarks keeps every run's value and the Perfetto traces each benchmark wrote. With analyze, the first trace of each benchmark is summarised by profile.analyze for bundle_id. The newest file wins; others are listed in other_files. job_id or since leaves out older files; file reads one file.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string |  |  | Absolute path of the Gradle project; give it or file |
+| `file` | string |  |  | Absolute path of one benchmarkData.json |
+| `module` | string |  |  | Gradle path of the benchmark module, to look only there |
+| `job_id` | string |  |  | Leave out files older than this job, such as the profile.macrobenchmark job |
+| `since` | number |  |  | at least 0; Leave out files modified before this time, in seconds since 1970 |
+| `bundle_id` | string |  |  | Application ID the benchmarks measure, for compare and analyze; read from the build files when it has one app |
+| `device` | string |  |  | Name for the device in the report; the model in the file by default |
+| `analyze` | boolean |  | `false` | Also summarise each benchmark's first trace with profile.analyze |
+| `report` | string |  |  | Absolute path to save the report as JSON |
+
+```sh
+tomaccoctl call profile.benchmark_results
+```
+
+### profile.baseline_profile
+
+**Generate Baseline Profile**
+
+Generate a Baseline Profile on a device as a job: the generate&lt;Variant&gt;BaselineProfile task of the app module that applies the androidx.baselineprofile Gradle plugin (project.inspect lists it under performance.baseline_profile_modules), with ANDROID_SERIAL set to device. The plugin writes the profile to src/&lt;variant&gt;/generated/baselineProfiles/ of the app module and AGP packages it into the release build. The job's last step is profile.baseline_rules, so its report (saved to report or build/tomacco/baseline-profile.json) lists the profile files with their rule counts. A build without the plugin answers baseline_plugin_missing.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute local filesystem path |
+| `device` | string | yes |  | non-empty; Device serial from device.list |
+| `module` | string |  |  | Gradle path of the app module, such as :app; needed when several apply the plugin |
+| `variant` | string |  |  | Variant, such as release, for generate&lt;Variant&gt;BaselineProfile; all variants by default |
+| `allow_emulator` | boolean |  |  | Let the benchmarks run on an emulator (androidx.benchmark.suppressErrors=EMULATOR); true by default for an emulator-NNNN serial. An emulator's numbers are not a phone's |
+| `report` | string |  |  | Absolute path to save the rule report as JSON |
+| `timeout` | integer |  | `3600` | 1 to 86400; Seconds the Gradle job may run |
+
+```sh
+tomaccoctl call profile.baseline_profile '{"path":"<path>","device":"<device>"}'
+```
+
+### profile.baseline_rules
+
+**Read Baseline Profile rules**
+
+List a project's Baseline Profile files (src/\*/baseline-prof.txt and src/\*/generated/baselineProfiles/\*-prof.txt, or one file) with their rules counted: classes, methods, hot (H), startup (S) and post-startup (P) flags, wildcard rules, size and modification time. fresh marks files modified since since. Nothing is changed. A project without a profile file answers baseline_profile_missing.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string |  |  | Absolute path of the Gradle project; give it or file |
+| `file` | string |  |  | Absolute path of one profile file |
+| `module` | string |  |  | Gradle path of one module, such as :app |
+| `since` | number |  |  | at least 0; Mark files modified since this time, in seconds since 1970 as fresh |
+| `report` | string |  |  | Absolute path to save the list as JSON |
+
+```sh
+tomaccoctl call profile.baseline_rules
+```
+
+### profile.baseline_install
+
+**Install Baseline Profile**
+
+Copy an app module's newest generated Baseline Profile (or the file source names) to src/main/baseline-prof.txt of the module, or to destination inside it, where AGP packages it without the plugin. Copying a file that is already there changes nothing. A different file there answers baseline_profile_exists unless overwrite is true, which keeps the old one beside it as .bak.
+
+Annotations: **destructive**, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `path` | string | yes |  | non-empty; Absolute local filesystem path |
+| `module` | string |  |  | Gradle path of the app module; the only app module by default |
+| `source` | string |  |  | Absolute path of the profile file; the module's newest generated baseline-prof.txt by default |
+| `destination` | string |  | `"src/main/baseline-prof.txt"` | Relative .txt path inside the module |
+| `overwrite` | boolean |  | `false` | Replace a different file, keeping it as .bak |
+
+```sh
+tomaccoctl call profile.baseline_install '{"path":"<path>"}'
+```
+
+### profile.baseline_compare
+
+**Compare startup with and without Baseline Profile**
+
+Time cold starts of an installed release build twice and compare them. First the app is compiled with the verify filter (cmd package compile -f -m verify), which ignores the profile, and started runs times; then the app's androidx.profileinstaller installs its profile (the INSTALL_PROFILE broadcast to its ProfileInstallReceiver), the app is compiled with speed-profile and started runs times again. The report has both profile.startup reports, their compiler filters, the comparison, and the flat metrics startup_cold_&lt;statistic&gt;_ms_without_profile and _with_profile, improvement_ms and improvement_percent. An app that does not install a profile answers profile_install_failed. The device's compilation state of the app is left at speed-profile.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the installed release build |
+| `runs` | integer |  | `5` | 1 to 30; Cold starts per state |
+| `report` | string |  |  | Absolute path to save the result as JSON |
+
+```sh
+tomaccoctl call profile.baseline_compare '{"device":"<device>","bundle_id":"<bundle_id>"}'
 ```

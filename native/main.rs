@@ -41,6 +41,7 @@ mod iphone_setup;
 mod javascript;
 mod jdwp;
 mod jobs;
+mod macrobench;
 mod mcp;
 mod mcp_consent;
 mod mcp_tools;
