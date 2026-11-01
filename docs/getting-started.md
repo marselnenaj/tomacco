@@ -18,7 +18,9 @@ This finds the latest release, checks its checksum and signature, and installs i
 user into `~/.local`, adding the bar widget on Omarchy. Use `bash -s -- --no-omarchy` at the
 end to leave the widget out. On Arch it asks before installing the system packages with
 `sudo pacman`. Elsewhere, install the system packages first; see
-[Debian, Ubuntu and Fedora](#debian-ubuntu-and-fedora).
+[Debian, Ubuntu and Fedora](#debian-ubuntu-and-fedora). On an ARM64 (aarch64) computer it takes the
+release's aarch64 package: the regular one on Arch Linux ARM, the portable one elsewhere; see
+[ARM64](#arm64).
 
 To read it first: `curl -fsSL https://tomacco.dev/install.sh -o install.sh`.
 
@@ -31,10 +33,10 @@ prints the result as JSON.
 tomaccoctl verify tomacco-1.2.1-Linux-x86_64.tar.gz
 ```
 
-Tomacco runs on x86_64 Linux. Arch Linux and Omarchy are the tested platform. Other
-distributions should work, but they have not been qualified. On Linux for Apple Silicon (M1,
-M2, Asahi), the tools and agent API are experimental and the virtual iOS device is not
-available.
+Tomacco runs on x86_64 and aarch64 (ARM64) Linux. x86_64 Arch Linux and Omarchy are the tested
+platform. Other distributions should work, but they have not been qualified. On ARM64 Linux, such
+as Arch Linux ARM on Apple Silicon (M1, M2, Asahi), the tools and agent API are experimental and the
+virtual iOS device is not available.
 
 <details>
 <summary>By hand, or from source</summary>
@@ -95,6 +97,27 @@ describes how it is made.
 
 On a bare container image the checks first installed the libraries listed as `APT_PACKAGES` and
 `DNF_PACKAGES` in `tools/build_portable.py`; a desktop installation normally has them already.
+
+### ARM64
+
+A release made with the aarch64 builds has two more packages:
+
+| Package | Built on | Needs | For |
+| --- | --- | --- | --- |
+| `tomacco-VERSION-Linux-aarch64.tar.gz` | Arch Linux ARM | The system's Qt 6.12 or newer, FFmpeg 9 (`libavcodec.so.63`), glibc 2.39 | Arch Linux ARM |
+| `tomacco-VERSION-Linux-aarch64-portable.tar.gz` | Ubuntu 24.04 | glibc 2.39 or newer; Qt 6.12 and FFmpeg are bundled | Other distributions, such as Ubuntu 24.04, Debian 13, Fedora 40 and newer |
+
+The aarch64 portable package needs a newer distribution than the x86_64 one: Qt's own aarch64
+binaries, which it bundles, are built on Ubuntu 24.04. It does not run on Debian 12 or Ubuntu 22.04;
+there the installer stops before installing anything and says which C library version is missing,
+and a [build from a checkout](#debian-ubuntu-and-fedora) is the way. Releases up to 1.2.1 have no
+aarch64 portable package, and only 1.2.1 has the regular one.
+
+The installer picks the package as on x86_64: on Arch Linux ARM the regular package, falling back to
+the portable one when the release has no regular aarch64 package or its desktop's libraries do not
+load; elsewhere the portable package. `tomaccoctl update` keeps the kind of package you installed,
+and an installation from the regular package on an aarch64 distribution other than Arch Linux ARM
+moves to the portable package.
 
 **To build from a checkout** you need Qt 6.9 or newer with Quick, Quick Controls 2, WebEngine Quick,
 Network and SVG, the FFmpeg development libraries, OpenSSL, Python 3.11 or newer, CMake, Ninja, a
