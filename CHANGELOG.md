@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 222 operations.
+`tomaccoctl` now has one typed API of 224 operations.
 
 ### Added
 
@@ -165,6 +165,32 @@ operations and their JSON results.
   - `ios.virtual.syslog` reads the phone's console log (the guest job's `uart.log`) as structured lines with time, process,
     PID, level and message, filtered by process, level or text, and followed with `next_offset`. Tested against synthetic
     console lines, not yet against a live phone's log.
+  - `last_run` in `ios.virtual.status` says in plain words how the last finished run ended: whether it was verified,
+    the launcher's outcome with a summary, each reason it was not verified (no exit code 0, incomplete storage hashes,
+    no confirmed flush, the graphics memory guard) and a remedy. A failed stop's error and a boot that ended early say
+    the same. Unit-tested against recorded launcher records, not read off a live phone.
+  - A start that fails after the boot ends with what to call next, and `next` in `ios.virtual.status` says the same:
+    resume with `ios.virtual.start`, which adopts the still-running guest without a new disk copy, with
+    `{"open_app":false}` when an app launch's outcome is unknown, after unlocking a passcode, or stop again. Unit-tested
+    over the start's phases, not tried on a live phone.
+  - `host` in `ios.virtual.status` shows the graphics card's memory against the graphics memory guard's limit on every
+    call, from the running guest's own guard checks (which the launcher now publishes as `gpu-memory.json`) or from
+    /sys, and the host's I/O and memory pressure. A start that boots returns `warnings` when the card is already low or
+    the host under pressure. Unit-tested with recorded values, not watched beside a live guest.
+  - `liveness` in `ios.virtual.status` says whether a running phone still shows signs of life (new frames, console
+    output, and with `{"probe":true}` an answer from the guest service): `live`, `quiet`, `stalled` or `booting`, with
+    what it last showed and when. A stalled phone gets `recovery`, the typed calls to make in order (`restart_ui`, then
+    `ios.virtual.stop`); the status itself never acts on the phone. `ios.virtual.configure {"stall_seconds"}` sets the
+    limit. Unit-tested only, not tried on a hung live phone.
+  - `ios.virtual.unlock` leaves the running phone's lock screen the way the start does, as a short job, and never
+    enters a passcode. `ios.virtual.deploy` unlocks first before it opens the app, and `testing.run` on
+    `virtual-iphone` before its first step, failing with the new `ios_virtual_locked` when it cannot. Tested with
+    scripted guest replies, not yet on a live phone.
+  - `ios.virtual.doctor` checks the configured phone in one pass, warn or fail report with a remedy per item: every
+    input `profile.json` names (with `tools/ios_virtual_profile.py`'s checks, run by the new
+    `tools/ios_virtual_doctor.py`), guest tools and engine against this checkout's sources, the saved states' disks,
+    the last run's verdict, the next start's disk copy, every `ios.virtual.host_check` item, and the graphics card and
+    host pressure right now. Unit-tested with profiles made in the tests, not run against a full live profile.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
   - The desktop's phone view sends typed characters to the phone as text, so `@`, `ä` and the like arrive as the host's

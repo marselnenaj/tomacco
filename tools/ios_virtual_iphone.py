@@ -37,6 +37,7 @@ import zlib
 from build_ios_guest_tools import policy_entries, stage_application
 from ios_application_bundle import inspect_bundle
 import ios_disk_overlay
+import ios_run_verdict
 from ios_hot_install import (BUNDLE_PORT, connect_port, guest_socket, reserve, send_bundle, spare_entries,
                              with_hashes, write_private)
 from ios_graphics_location import BUNDLE_PATH, COMPILER_LIBRARY_NAME, PLUGIN_PERSONALITY
@@ -510,6 +511,60 @@ def reserved_trust_cache(boot, output):
     return str(module)
 
 
+class UnlockPacing:
+    """When to press what against a passcode-free lock screen, between fresh
+    native screen observations; shared by the start's launch and by
+    Phone.ensure_unlocked. An attempt never establishes unlock: the caller
+    observes screen_state again after each one."""
+
+    def __init__(self):
+        self.next_at = 0
+        self.followup = False
+        self.short_poll = False
+        # Home cycles (a press and its follow-up) that left an awake lock
+        # screen locked; see Phone.rearm_lock_screen.
+        self.stale_home_cycles = 0
+
+    def pause(self):
+        """Home wakes the display first, with the backlight reaching state 2
+        only afterwards. A 15-second poll lets the lock screen sleep again;
+        after a wake or a first Home press the next look comes sooner, and
+        still requires a fresh locked/no-passcode reply before more input."""
+        time.sleep(max(0, self.next_at - time.monotonic()) if self.short_poll else 15)
+        self.short_poll = False
+
+    def attempt(self, phone, job, native):
+        """At most one input against the locked, passcode-free screen `native`."""
+        if time.monotonic() < self.next_at:
+            return
+        if phone.wake_for_unlock(job, native):
+            # Side can wake or lock. Its acknowledgement does not license Home
+            # against this earlier screen snapshot, even on an unknown reply.
+            # Recheck promptly so a woken display does not sleep again during
+            # the ordinary 15 s poll.
+            self.next_at = time.monotonic() + 2.5
+            self.short_poll = True
+            return
+        if (self.stale_home_cycles >= 2 and native.get("screen_awake_known") is True and
+                native.get("screen_awake") is True and phone.rearm_lock_screen(job)):
+            # The display is going to sleep; the next poll takes the ordinary wake path.
+            self.stale_home_cycles = 0
+            self.next_at = time.monotonic() + 2.5
+            self.short_poll = True
+            return
+        accepted = phone.unlock(job)
+        if self.followup:
+            self.followup = False
+            self.stale_home_cycles += 1
+            self.next_at = time.monotonic() + 60
+        elif accepted:
+            self.followup = True
+            self.short_poll = True
+            self.next_at = time.monotonic() + 2.5
+        else:
+            self.next_at = time.monotonic() + 60
+
+
 class Phone:
     def __init__(self, cli, directory, model=None, unlock="home"):
         self.cli, self.directory = cli, directory
@@ -652,7 +707,9 @@ class Phone:
                   and flushed)
         changes = {"closed": closed, "phase": "stopped" if closed else "unverified",
                    "outcome": {**{key: summary.get(key) for key in ("outcome", "exit_code", "storage_hashes_complete")},
-                               "guest_storage_flushed": flushed}}
+                               "guest_storage_flushed": flushed},
+                   # The same evidence in plain words, for ios.virtual.status and the job's error.
+                   "verdict": ios_run_verdict.explain(summary, stop)}
         if closed:
             changes["verified"] = self.base()
         self.save(**changes)
@@ -776,6 +833,7 @@ class Phone:
         self.save(run=verified["run"], install=verified["install"], tools=verified["tools"], closed=True,
                   guest_job=None, phase="stopped", error=None, application_launch_accepted=None,
                   outcome={"outcome": "cancelled-before-boot"},
+                  verdict=ios_run_verdict.explain({"outcome": "cancelled-before-boot"}, {}),
                   created=[item for item in self.state.get("created", []) if item != str(path)])
 
     def prepare_and_boot(self, tools):
@@ -1233,6 +1291,9 @@ class Phone:
         self.call("ios.virtual.configure", configured)
         self.profile = json.loads((self.directory / "profile.json").read_text())
         if open_app:
+            # iOS refuses to open an app over its lock screen; the phone may
+            # have locked itself since the start.
+            stage("screen", outcome=self.ensure_unlocked(job, time.monotonic() + 600))
             response = self.deploy_request(job, "open", bundle_id)
             if response.get("ok") is not True:
                 raise RuntimeError(f"{bundle_id} installed, but it did not open: " + json.dumps(response)[:600])
@@ -1342,8 +1403,10 @@ class Phone:
                     # The guest never ran; nothing about the phone failed.
                     raise RuntimeError("The host was too busy (I/O or memory pressure) to boot the guest; "
                                        "start again once it is quieter")
+                summary = (self.state.get("verdict") or {}).get("summary")
                 raise RuntimeError("The guest stopped during boot"
-                                   + (f" ({outcome})" if outcome else "") + "; see ios.emulator.report")
+                                   + (f" ({outcome})" if outcome else "")
+                                   + (f": {summary}" if summary else "") + "; see ios.emulator.report")
             if time.monotonic() > deadline:
                 raise RuntimeError("The guest service did not answer within an hour")
             time.sleep(15)
@@ -1737,6 +1800,56 @@ class Phone:
                                                  "to_x": 0.5, "to_y": 0.25, "duration_ms": 1500})
         return accepted
 
+    def ensure_unlocked(self, job, deadline):
+        """Leave a passcode-free lock screen before an operation that needs the
+        screen, the way the start's launch does (UnlockPacing). Returns
+        "unlocked" once a fresh native screen_state reply says so, or
+        "not-checked" when these guest tools cannot report the screen; raises
+        when the screen has a passcode or stays locked until the deadline."""
+        pacing = UnlockPacing()
+        first = True
+        while True:
+            if not first:
+                pacing.pause()
+            first = False
+            if time.monotonic() >= deadline:
+                raise RuntimeError("The virtual iPhone stayed on its lock screen; unlock it in the phone window "
+                                   "and try again")
+            status = self.invoke("ios.emulator.guest", {"job_id": job, "operation": "status",
+                                                        "timeout_seconds": 30}, 90)
+            if status.get("error", {}).get("code") == "ios_guest_stopped":
+                raise RuntimeError("The guest stopped before its screen could be unlocked")
+            worker = status.get("result", {}).get("response") or {}
+            if not status.get("ok") or worker.get("ok") is not True or worker.get("worker_running") is not False:
+                continue
+            if worker.get("screen_state_supported") is not True:
+                emit("unlock", screen_checked=False, reason="screen_state_unsupported")
+                return "not-checked"
+            screen = self.screen_reply(job, deadline)
+            native = screen.get("result", {}).get("response") or {}
+            if native.get("error") in ("virtual_screen_query_required", "screen_query_version_unavailable",
+                                       "screen_query_contract_unqualified", "screen_query_framework_unavailable",
+                                       "screen_query_api_unavailable", "screen_query_invalid_reply"):
+                emit("unlock", screen_checked=False, reason=native["error"])
+                return "not-checked"
+            if (not screen.get("ok") or native.get("ok") is not True or
+                    native.get("screen_state_known") is not True or
+                    type(native.get("screen_locked")) is not bool or
+                    type(native.get("passcode_enabled")) is not bool):
+                continue
+            if not native["screen_locked"]:
+                emit("unlock", screen_locked=False)
+                return "unlocked"
+            if native["passcode_enabled"]:
+                raise RuntimeError("Unlock the virtual iPhone with its passcode first; Tomacco does not enter it")
+            pacing.attempt(self, job, native)
+
+    def unlock_screen(self):
+        """The unlock action: the running phone's screen, unlocked or refused."""
+        if not self.guest_running():
+            raise RuntimeError("The phone is not running; start it with ios.virtual.start")
+        return self.ensure_unlocked(self.state["guest_job"], time.monotonic() + 600)
+
     def wake_for_unlock(self, job, native_screen):
         """A native side pulse for each independently observed wake cycle.
 
@@ -1994,12 +2107,7 @@ class Phone:
         receipt_pause = 0 if direct is not None else 15
         worker_idle_verified = False
         unlock_needed, retry_wait = True, False
-        next_unlock_at = 0
-        unlock_followup = False
-        short_unlock_poll = False
-        # Home cycles (a press and its follow-up) that left an awake lock
-        # screen locked; see rearm_lock_screen.
-        stale_home_cycles = 0
+        pacing = UnlockPacing()
         while True:
             if time.monotonic() >= deadline:
                 # Keep a pending identity for a later start to recover. No
@@ -2041,13 +2149,7 @@ class Phone:
                 worker_idle_verified = True
             else:
                 if retry_wait:
-                    # Home wakes the display first, with the backlight
-                    # reaching state 2 only afterwards.
-                    # A 15-second poll lets the lock screen sleep again.
-                    # One short follow-up still requires a fresh successful
-                    # native locked/no-passcode reply before ordinary input.
-                    time.sleep(max(0, next_unlock_at - time.monotonic()) if short_unlock_poll else 15)
-                    short_unlock_poll = False
+                    pacing.pause()
                 status = self.invoke("ios.emulator.guest", {"job_id": job, "operation": "status",
                                                             "timeout_seconds": 30}, 90)
                 if status.get("error", {}).get("code") == "ios_guest_stopped":
@@ -2077,37 +2179,7 @@ class Phone:
                             raise RuntimeError("Unlock the virtual iPhone with its passcode before opening the app")
                         # Home may only wake the display. Observe the native
                         # lock status again before submitting an app launch.
-                        if time.monotonic() >= next_unlock_at:
-                            if self.wake_for_unlock(job, native):
-                                # Side can wake or lock. Its acknowledgement
-                                # does not license Home against this earlier
-                                # screen snapshot, even on an unknown reply.
-                                # Recheck promptly so a woken display does not
-                                # sleep again during the ordinary 15 s poll.
-                                next_unlock_at = time.monotonic() + 2.5
-                                short_unlock_poll = True
-                                retry_wait = True
-                                continue
-                            if (stale_home_cycles >= 2 and native.get("screen_awake_known") is True and
-                                    native.get("screen_awake") is True and self.rearm_lock_screen(job)):
-                                # The display is going to sleep; the next poll
-                                # takes the ordinary wake path.
-                                stale_home_cycles = 0
-                                next_unlock_at = time.monotonic() + 2.5
-                                short_unlock_poll = True
-                                retry_wait = True
-                                continue
-                            accepted = self.unlock(job)
-                            if unlock_followup:
-                                unlock_followup = False
-                                stale_home_cycles += 1
-                                next_unlock_at = time.monotonic() + 60
-                            elif accepted:
-                                unlock_followup = True
-                                short_unlock_poll = True
-                                next_unlock_at = time.monotonic() + 2.5
-                            else:
-                                next_unlock_at = time.monotonic() + 60
+                        pacing.attempt(self, job, native)
                         retry_wait = True
                         continue
                 elif unlock_needed:
@@ -2228,14 +2300,35 @@ class Phone:
             self.abandon()
             return
         if not self.finalize():
+            verdict = self.state.get("verdict") or {}
+            why = (": " + ios_run_verdict.sentence(verdict)) if verdict.get("summary") else ""
             raise RuntimeError(("The guest did not answer and was ended without saving" if forced else
-                                "The guest stopped without verified storage")
+                                "The guest stopped without verified storage") + why
                                + "; the next start uses the last verified run")
+
+
+def resume_hint(phone):
+    """What a failed start's error adds when its guest still runs: a start
+    adopts that guest without a new disk copy (ios.virtual.status `next`
+    says the same). Empty when the guest cannot be observed or does not run."""
+    try:
+        running = phone.guest_running()
+    except (GuestObservationError, OSError, ValueError, RuntimeError, subprocess.SubprocessError):
+        return ""
+    if not running:
+        return ""
+    phase = phone.state.get("phase")
+    if phase == "launch-uncertain":
+        return ("; the guest is still running: call ios.virtual.start with open_app false to finish without "
+                "sending the launch again")
+    if phase == "awaiting-unlock":
+        return "; the guest is still running: unlock it in the phone window, then call ios.virtual.start again"
+    return "; the guest is still running: call ios.virtual.start again to continue with it, without a new disk copy"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("action", choices=("start", "stop", "deploy"))
+    parser.add_argument("action", choices=("start", "stop", "deploy", "unlock"))
     parser.add_argument("--bundle", type=lambda value: Path(value).absolute(), help="deploy: the .app directory")
     parser.add_argument("--entitlements", type=lambda value: Path(value).absolute(),
                         help="deploy: the entitlements to request for it")
@@ -2258,15 +2351,19 @@ def main():
             return 1
         try:
             phone = Phone(args.cli, args.profile, args.model, args.unlock)
+            screen = None
             if args.action == "start":
                 phone.start(args.tools, not args.no_app)
             elif args.action == "deploy":
                 phone.deploy(args.bundle, args.entitlements, not args.no_app, args.force)
+            elif args.action == "unlock":
+                screen = phone.unlock_screen()
             else:
                 phone.stop()
             print(json.dumps({"state": "ok", "phase": phone.state.get("phase"), "run": phone.state.get("run"),
                               "guest_job": phone.state.get("guest_job"),
-                              "display_visible": phone.state.get("display_visible")}))
+                              "display_visible": phone.state.get("display_visible"),
+                              **({"screen": screen} if screen else {})}))
             return 0
         except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
             try:
@@ -2280,9 +2377,10 @@ def main():
                 changes = {"phase": "failed"} if not isinstance(error, GuestObservationError) and args.action == "start" and phone.state.get("phase") not in (
                     "booting", "launch-uncertain", "awaiting-unlock") else {}
                 phone.save(error=str(error), **changes)
+                hint = resume_hint(phone) if args.action == "start" else ""
             except (OSError, ValueError, KeyError):
-                pass
-            print(json.dumps({"state": "failed", "error": str(error)}))
+                hint = ""
+            print(json.dumps({"state": "failed", "error": str(error) + hint}))
             return 1
 
 

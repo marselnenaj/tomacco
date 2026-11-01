@@ -9689,10 +9689,15 @@
   {
     "name": "ios.virtual.status",
     "title": "Virtual iOS device: status",
-    "description": "Read whether a virtual iOS device profile is configured, its current run, phase, guest job and any start or stop that is in progress. A guest job started from another data directory has no guest_state here; that is unknown, not stopped. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. Also reports model (for the next start), running_model (of the current run), running_panel (the current run's panel as WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM, as its guest job's request gave it to the engine, so a later edit of the profile does not change it; null when that boot named no panel. Without a guest job: the model's own panel, or the profile's display profile for the Home-button phone; null for an unknown recorded model), models (the choice: id, name, panel, and source apple or derived) and guest_ended when the guest has ended on its own since the last start, with guest_saved telling whether it flushed its storage and closed cleanly first (as a session does at its time limit). application_process reports only the matching active job and application; it proves no process lifetime or visible scene. applications lists the developer apps the profile names (bundle path, bundle_id); the start installs them from the guest-tools build that carries them. phase_started and phase_elapsed_seconds tell when the current phase began and how long it has run, and phases lists each phase of the current start or stop with its started time and seconds (empty for a state written before phases were logged). copy_progress, only in the preparing phase, compares the bytes of the new disk copy with those of its base (bytes_done, bytes_total, percent) and names the preparation's step and disk; a reflinked copy is complete at once. start_disk says whether the next start's disk copy fits in the profile's installs: needed_bytes, free_bytes, reclaimable_bytes (older copies the start deletes first), reflink and enough, the check ios.virtual.start refuses with; the status writes nothing to find out, so on a filesystem that might clone files and lacks room for a full copy enough and reflink are null until a start probes it. start_disk.method is how that start makes its root disk (copy, overlay or flatten), and start_disks the profile's choice (copy or overlay). Null when the base's disks or the filesystem cannot be read.",
+    "description": "Read whether a virtual iOS device profile is configured, its current run, phase, guest job and any start or stop that is in progress. A guest job started from another data directory has no guest_state here; that is unknown, not stopped. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. Also reports model (for the next start), running_model (of the current run), running_panel (the current run's panel as WIDTHxHEIGHT@HZ:WIDTH_MMxHEIGHT_MM, as its guest job's request gave it to the engine, so a later edit of the profile does not change it; null when that boot named no panel. Without a guest job: the model's own panel, or the profile's display profile for the Home-button phone; null for an unknown recorded model), models (the choice: id, name, panel, and source apple or derived) and guest_ended when the guest has ended on its own since the last start, with guest_saved telling whether it flushed its storage and closed cleanly first (as a session does at its time limit). application_process reports only the matching active job and application; it proves no process lifetime or visible scene. applications lists the developer apps the profile names (bundle path, bundle_id); the start installs them from the guest-tools build that carries them. phase_started and phase_elapsed_seconds tell when the current phase began and how long it has run, and phases lists each phase of the current start or stop with its started time and seconds (empty for a state written before phases were logged). copy_progress, only in the preparing phase, compares the bytes of the new disk copy with those of its base (bytes_done, bytes_total, percent) and names the preparation's step and disk; a reflinked copy is complete at once. start_disk says whether the next start's disk copy fits in the profile's installs: needed_bytes, free_bytes, reclaimable_bytes (older copies the start deletes first), reflink and enough, the check ios.virtual.start refuses with; the status writes nothing to find out, so on a filesystem that might clone files and lacks room for a full copy enough and reflink are null until a start probes it. start_disk.method is how that start makes its root disk (copy, overlay or flatten), and start_disks the profile's choice (copy or overlay). Null when the base's disks or the filesystem cannot be read. last_run says in plain words how the last finished run ended: verified, the launcher's outcome, a summary, each reason it was not verified (no exit code 0, incomplete storage hashes, no confirmed flush, the graphics memory guard) and a remedy; null before the first run that recorded it. next names what to call when a start or stop ended halfway, with action (resume, unlock_then_resume, stop, record_end, start_again or wait), call, arguments, resumes (true when the call goes on with the running guest without a new disk copy) and why; null when nothing is left halfway. host reports on every call the graphics card's memory (gpu: source guard, the running guest's last guard check, or sysfs, the card with the most memory; used_bytes, total_bytes, free_bytes, guard_limit_free_bytes, the eighth the graphics memory guard keeps, level ok, low under a quarter free or short under the guard's limit, and short_checks and guard_stopping from the guard; null when no card reports memory) and the host's pressure (pressure: Linux PSI full avg10 and avg60 for io and memory against the start's admission limits, blocked naming those over them, observed false without PSI). liveness, while the guest runs, says whether it still shows signs of life: state live, quiet (no new frame, console output or guest answer for stall_seconds; normal for a still screen), stalled (the guest service did not answer a probe and neither it nor the screen showed life for stall_seconds) or booting (not judged); last_seen with the newest frame's number, the console log's size and the guest's last answer, each with when it last changed; and for a stalled phone recovery, the typed calls to make in order: ios.emulator.guest restart_ui, then ios.virtual.stop. The status never acts on the phone itself; it remembers the signs in liveness.json in the guest job's run directory.",
     "inputSchema": {
       "type": "object",
-      "properties": {},
+      "properties": {
+        "probe": {
+          "type": "boolean",
+          "description": "Also ask the running guest service for its status, bounded to 10 seconds, so that liveness can tell a still screen from a guest that no longer answers. Changes nothing in the guest."
+        }
+      },
       "required": [],
       "additionalProperties": false
     },
@@ -9721,6 +9726,23 @@
           "description": "Absolute helper support directory (prepare_ios_emulator.py output); by default the profile's, else the checkout's .tooling/ios-sptm/support"
         }
       },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "ios.virtual.doctor",
+    "title": "Check the virtual iOS device",
+    "description": "One pass, warn or fail report on whether the configured virtual iOS device can start and how its last run ended, each item with a remedy: profile (profile.json and state.json readable), profile_inputs (every input profile.json names, checked as tools/ios_virtual_profile.py checks a new profile: engine, guest-control backend, helper, boot files, trust cache, device tree, boot manifest, graphics payload, guest tools, kernel and the verified base), guest_tools_sources (the guest tools built from the guest sources this checkout has), engine_patches (the engine built from this checkout's engine patches, from its build-manifest.json), saved_states (each saved state and the verified base still have their disks), last_run (the verdict ios.virtual.status shows as last_run), start_disk (whether the next start's disk copy fits, as the start refuses it), every ios.virtual.host_check item, gpu_now (the graphics card's free memory against the graphics memory guard's limit) and pressure_now (host I/O and memory pressure against the start's admission limits). ready is false when any item fails; status is the worst. Without a profile, profile fails and the machine's items still run. Reads files only, which takes some seconds for the kernel and payloads; starts and writes nothing.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
       "required": [],
       "additionalProperties": false
     },
@@ -9926,6 +9948,12 @@
             "overlay"
           ],
           "description": "How the next start makes its root disk (profile.json start_disks): copy (the default) copies the base run's 32 GiB root disk; overlay makes an empty qcow2 overlay on it with qemu-img (beside the profile's helper engine or on PATH) and copies only the small auxiliary and SEP disks. Without qemu-img, or after 8 overlays on one base, the start copies or flattens instead and says why. Experimental: unit-tested only."
+        },
+        "stall_seconds": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 86400,
+          "description": "How long a running phone may show no new frame, console output or guest answer before ios.virtual.status calls it quiet, and, after a probe the guest service did not answer, stalled (profile.json stall_seconds; default 300)."
         }
       },
       "required": [],
@@ -9975,7 +10003,7 @@
   {
     "name": "ios.virtual.start",
     "title": "Start virtual iOS device",
-    "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB.",
+    "description": "Start the configured virtual iOS device as one durable job: prepare a new private disk copy from the last cleanly closed run (reinstalling guest tools and restoring the Preboot Metal driver the guest removes), boot it, attempt passcode-free unlock with Home presses and request the configured app once the native screen-state query confirms unlock. Launch acceptance does not establish a visible application scene. A guest that is already running is adopted. Disks of a run that did not close with verified storage are never reused. Follow progress with ios.virtual.status and job.logs. Experimental research runtime: the boot takes many minutes and the guest runs several times slower than real time. A late screen-query receipt is followed by its original request ID. application_process reports only the matching active job and application; it proves no process lifetime or visible scene. A start that would make a disk copy is refused with ios_virtual_disk_space, before anything is deleted or copied, when the filesystem of the profile's installs lacks the base's disks plus 1 GiB, counting the older copies the start deletes first; a filesystem that clones files (reflink) needs only the 1 GiB. A start that boots a guest returns warnings, a list of {check, message}: check gpu when under a quarter of the graphics card is free (the graphics memory guard stops a session under an eighth), check pressure when the host's I/O or memory pressure is over the admission limits the start waits for; neither refuses the start.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -9999,6 +10027,23 @@
     "name": "ios.virtual.stop",
     "title": "Stop virtual iOS device",
     "description": "Flush guest storage, stop the running virtual iOS device, wait for its final report and record whether its disks closed with exit 0 and complete storage hashes. Only such a run is used as the base of the next start.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "ios.virtual.unlock",
+    "title": "Unlock virtual iOS device",
+    "description": "Leave the running virtual iOS device's lock screen the way a start does, as one short job: observe the native screen state, then wake the display and press Home (or swipe up on a model without a Home button) with the start's pacing until a fresh observation says it is unlocked. The job's screen is unlocked, or not-checked when the guest tools cannot report the screen (nothing is pressed then). A passcode is never entered: a lock screen with one, or one that stays locked for 10 minutes, fails the job. ios.virtual.deploy (before it opens the app) and testing.run on the virtual-iphone device unlock the same way first; testing.run fails with ios_virtual_locked when it cannot. Refused with ios_virtual_not_running when the phone is off and ios_virtual_busy during a start or stop.",
     "inputSchema": {
       "type": "object",
       "properties": {},

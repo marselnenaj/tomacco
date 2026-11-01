@@ -12,6 +12,9 @@ tomaccoctl call ios.virtual.status '{}'
 tomaccoctl call ios.virtual.stop '{}'
 ```
 
+Before a start, `tomaccoctl call ios.virtual.doctor '{}'` checks the profile, the machine, the disk space and the last
+run in one report; [troubleshooting](troubleshooting.md) says what each item means.
+
 You only configure the directory once. In the desktop, the devices tab (Apple) and the Omarchy
 panel offer the same start, stop and a phone window.
 
@@ -28,6 +31,19 @@ current start or stop with its seconds. While `preparing`, `copy_progress` has t
 `bytes_done`, `bytes_total` and `percent`, with the preparation's `step` and `disk`. It compares the
 size of the new copy's files with the base's, so a reflinked copy shows as complete at once. These
 fields have unit tests; they have not been watched during a live start yet.
+
+**A start that failed halfway.** A start adopts a guest that is still running instead of booting another, so it
+makes no new disk copy and goes on from the guest-service check. When a start fails after the boot, its error ends
+with what to call, and `next` in the status says the same: `action` (`resume`, `unlock_then_resume`, `stop`,
+`record_end`, `start_again` or `wait`), the `call` and its `arguments`, whether it `resumes` the running guest, and
+`why`. An app launch whose outcome is unknown is never sent twice, so that case resumes with `{"open_app":false}`.
+A start that failed before its guest ran has removed its copy and begins again from the last verified run. Unit-tested
+over the start's phases, not tried on a live phone.
+
+```json
+"next": {"action": "resume", "call": "ios.virtual.start", "arguments": {}, "resumes": true,
+         "why": "The last start ended while its guest kept running. Start again: ..."}
+```
 
 Accepted is not the same as visible. After an accepted launch the start looks at the panel for up
 to a minute, and `display_visible:false` in the status means every frame stayed black. That is a
@@ -63,6 +79,33 @@ last verified run and says so in its log. Whatever happened in between is lost.
   verified run.
 - In the desktop's dialog, **Stop** (*Beenden*) asks the guest to save first. When that is refused, it
   offers **Stop without saving** (*Ohne Sichern beenden*).
+
+`last_run` in `ios.virtual.status` says how the last finished run ended, in words: `verified`, the launcher's
+`outcome`, a `summary`, each of the `reasons` it was not verified and a `remedy`. A failed stop's message carries the
+same reasons. [Troubleshooting](troubleshooting.md#stopping) has an example. Unit-tested only, not read off a live phone.
+
+### When the phone stops responding
+
+`liveness` in `ios.virtual.status` says whether a running phone still shows signs of life. Every status call looks at
+the newest frame in the guest's frame mailbox and the size of its console log, and with `{"probe":true}` it also asks
+the guest service for its status, for at most 10 seconds. `last_seen` has each sign with when it last changed.
+
+```sh
+tomaccoctl call ios.virtual.status '{"probe":true}'
+tomaccoctl call ios.virtual.configure '{"stall_seconds":600}'
+```
+
+- `live`: a new frame, console output or a guest answer within `stall_seconds` (300 unless configured, 30 to 86400).
+- `quiet`: none of these for `stall_seconds`. A still screen is normal, since only changed frames are published; probe
+  to find out more.
+- `stalled`: the guest service did not answer the last probe, and neither it nor the screen has shown life for
+  `stall_seconds`.
+- `booting`: during `preparing` and `booting` nothing is judged.
+
+The status never acts on the phone. A stalled phone gets `recovery`, the calls to make in order: first
+`ios.emulator.guest` with `restart_ui`, which restarts iOS's user interface without ending the guest, and then
+`ios.virtual.stop`, which asks the guest to save four times before it ends it without saving. The signs are kept in
+`liveness.json` in the guest job's run directory. Unit-tested only; no hung live phone has been judged with it yet.
 
 ### Time and disk limits
 
@@ -167,6 +210,17 @@ most 1.7 GiB over 36 app launches on a 16 GiB card. A longer or heavier session 
 
 The guard's trip has unit tests only. It has not been seen to trip on a live guest.
 
+**Watch it before it trips.** `host.gpu` in `ios.virtual.status` has the card's `used_bytes`, `total_bytes` and
+`free_bytes` on every call, with `guard_limit_free_bytes` (the eighth the guard keeps) and a `level`: `ok`, `low` under a
+quarter free, `short` under the guard's limit. While a phone runs, `source` is `guard` and the numbers are the guard's own
+last check on the card that guest renders on, with `short_checks` (two in a row stop the session) and `guard_stopping`;
+otherwise `source` is `sysfs`, the card with the most memory, as `ios.virtual.host_check` reads it. `host.pressure` has the
+host's I/O and memory pressure (Linux PSI) against the limits a start waits for, and `blocked` names those over them.
+
+A start that boots a guest returns `warnings` when the card is already `low` or `short`, or the host is under pressure.
+They do not refuse the start. The numbers and warnings are unit-tested with recorded values; the status has not been
+watched beside a live guest yet.
+
 ## Choose a model
 
 ```sh
@@ -261,6 +315,23 @@ tomaccoctl call ios.emulator.control '{"job_id":"GUEST_JOB","action":"frame","tr
 
 A phone without a Home button is unlocked with a slow drag up from the bottom edge, as in the second example. The start
 does that by itself.
+
+## The lock screen
+
+The phone can lock itself again after the start, for example with guest tools that cannot turn Auto-Lock off.
+`ios.virtual.unlock` leaves the lock screen the way the start does, as a short job: it observes the native screen
+state, then wakes the display and presses Home (or swipes up on a model without a Home button) with the start's pacing,
+until a fresh observation says the screen is unlocked. The job's `screen` is `unlocked`, or `not-checked` when the
+guest tools cannot report the screen; then nothing is pressed.
+
+```sh
+tomaccoctl call ios.virtual.unlock '{}'
+```
+
+`ios.virtual.deploy` does the same before it opens the app, and `testing.run` on `virtual-iphone` before its first
+step; its result has the `screen` it found. A passcode is never entered. A lock screen with one, or one that stays
+locked for ten minutes, fails the job, and `testing.run` fails with `ios_virtual_locked` before it taps anything.
+Tested with scripted guest replies, not yet on a live phone.
 
 ## Screenshots and recordings
 

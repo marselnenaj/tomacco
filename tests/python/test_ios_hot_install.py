@@ -324,6 +324,7 @@ class DeployTests(unittest.TestCase):
         device.call = call
         device.send_bundle = lambda job, bundle: self.steps.append("send") or "/guest/App.app"
         device.install = lambda job, path, identity: self.steps.append("install")
+        device.ensure_unlocked = lambda job, deadline: self.steps.append("unlock") or "unlocked"
         return device
 
     def staged(self, bundle, entitlements, payload, signer, taken):
@@ -363,8 +364,9 @@ class DeployTests(unittest.TestCase):
     def test_trust_comes_first_and_the_app_is_listed_after_it_installed(self):
         device = self.phone()
         self.deploy(device)
+        # The lock screen is left before the app is opened over it.
         self.assertEqual(self.steps, ["trust_cache_update", "send", "policy_add", "install",
-                                      "ios.virtual.configure", "open"])
+                                      "ios.virtual.configure", "unlock", "open"])
         self.assertEqual(hot.spare_entries(self.module.read_bytes()), 2)
         self.assertEqual(json.loads((self.directory / "state.json").read_text())["applications"],
                          {"old.app": "11", "dev.app": self.hash})
@@ -372,6 +374,7 @@ class DeployTests(unittest.TestCase):
     def test_install_only_does_not_open(self):
         self.deploy(self.phone(), open_app=False)
         self.assertNotIn("open", self.steps)
+        self.assertNotIn("unlock", self.steps)
 
     def test_a_stopped_phone_is_told_to_start(self):
         with self.assertRaisesRegex(RuntimeError, "not running"):

@@ -1109,6 +1109,7 @@ class VirtualPhoneLogic(unittest.TestCase):
         # A recorded path outside the profile's installs directory is never removed.
         self.assertTrue(outside.is_dir() and self.base.is_dir())
         self.assertEqual(state["created"], [str(outside), str(copies[1]), str(copies[2])])
+        self.assertTrue(state["verdict"]["verified"])
         # Unverified storage is reported as a failure and keeps the earlier base.
         self.write_state(run=11, install="/x", tools="/t", closed=False, guest_job="guest11",
                          verified={"run": 10, "install": str(copies[2]), "tools": str(self.tools)})
@@ -1204,6 +1205,12 @@ class VirtualPhoneLogic(unittest.TestCase):
             state = self.state()
             self.assertEqual((state["closed"], state["phase"], state["verified"]), (False, "unverified", verified))
             self.assertEqual(state["outcome"], {"outcome": None, **clean, "guest_storage_flushed": False})
+            # The same evidence in plain words, in the state and in the stop's error.
+            self.assertFalse(state["verdict"]["verified"])
+            self.assertIn("ios.virtual.stop", state["verdict"]["remedy"])
+            self.assertIn("flush", str(error.exception))
+            if stop is None:
+                self.assertIn("No stop asked the guest to flush its storage first", str(error.exception))
         self.assertTrue(current.is_dir())
 
     def test_a_failed_or_interrupted_start_does_not_block_or_outlive_the_next_one(self):
@@ -1416,7 +1423,11 @@ class VirtualPhoneLogic(unittest.TestCase):
         with patch("sys.argv", arguments), patch("builtins.print") as printed, \
                 patch.object(ios_virtual_iphone.time, "monotonic", side_effect=lambda: next(clock)):
             self.assertEqual(ios_virtual_iphone.main(), 1)
-        self.assertEqual(json.loads(printed.call_args_list[-1].args[0])["state"], "failed")
+        failed = json.loads(printed.call_args_list[-1].args[0])
+        self.assertEqual(failed["state"], "failed")
+        # The guest still boots: the error says how to go on with it.
+        self.assertTrue(failed["error"].endswith(
+            "; the guest is still running: call ios.virtual.start again to continue with it, without a new disk copy"))
         state = self.state()
         self.assertIn("did not answer", state["error"])
         # Not "failed": the guest is still booting and a stop must know that.
@@ -1450,12 +1461,26 @@ class VirtualPhoneLogic(unittest.TestCase):
             self.assertEqual(len(self.calls("ios.emulator.control")), 4)
             self.assertEqual((self.state()["phase"], self.state()["closed"]), ("unverified", False))
 
+    def test_a_failed_starts_hint_follows_the_phase_and_needs_a_running_guest(self):
+        for phase, expected in (("launch-uncertain", "with open_app false"),
+                                ("awaiting-unlock", "unlock it in the phone window"),
+                                ("failed", "without a new disk copy")):
+            self.guest_up(phase)
+            self.assertIn(expected, ios_virtual_iphone.resume_hint(self.phone()))
+        # A guest that has ended, or one that cannot be observed, gets no hint.
+        self.guest_up("failed")
+        self.scenario(job__get=ok({"id": "guest8", "state": "failed"}))
+        self.assertEqual(ios_virtual_iphone.resume_hint(self.phone()), "")
+        self.scenario(job__get={"ok": False, "error": {"code": "database_error", "message": "locked"}})
+        self.assertEqual(ios_virtual_iphone.resume_hint(self.phone()), "")
+
     def test_a_native_refusal_other_than_locked_ends_the_start_and_is_recorded(self):
         self.scenario(ios__emulator__guest=[ready(), ready(), refused("Disabled")])
         with patch("sys.argv", ["tool", "start", "--cli", str(self.cli), "--profile", str(self.profile)]), \
                 patch("builtins.print") as printed:
             self.assertEqual(ios_virtual_iphone.main(), 1)
         self.assertEqual(json.loads(printed.call_args_list[-1].args[0])["state"], "failed")
+        self.assertIn("call ios.virtual.start again", json.loads(printed.call_args_list[-1].args[0])["error"])
         state = self.state()
         self.assertEqual(state["phase"], "failed")
         self.assertIn("Disabled", state["error"])
@@ -1635,6 +1660,20 @@ class VirtualPhoneOperations(Isolated):
         self.assertFalse(status["guest_state_known"])
         self.assertFalse(status["guest_running"])
         self.assertIsNone(status["busy"])
+        # Nothing is left halfway, nothing has finished yet, and the host's
+        # load is reported on every call (this host's card may report nothing).
+        self.assertEqual((status["next"], status["last_run"]), (None, None))
+        self.assertEqual(status["host"]["pressure"]["measure"], "psi")
+        self.assertTrue(status["host"]["gpu"] is None or status["host"]["gpu"]["source"] == "sysfs")
+        # A phone that does not run has no liveness to judge, probed or not.
+        self.assertIsNone(status["liveness"])
+        self.assertIsNone(dispatch("ios.virtual.status", {"probe": True})["liveness"])
+        # The silence limit is a profile setting with bounds.
+        dispatch("ios.virtual.configure", {"stall_seconds": 120})
+        self.assertEqual(json.loads((directory / "profile.json").read_text())["stall_seconds"], 120)
+        for wrong in (5, 100000):
+            with self.assertRaises(StudioError):
+                dispatch("ios.virtual.configure", {"stall_seconds": wrong})
 
     def test_a_start_whose_disk_copy_cannot_fit_is_refused_before_any_job(self):
         base = self.root / "base"
@@ -1712,6 +1751,8 @@ class VirtualPhoneOperations(Isolated):
         self.assertEqual(dispatch("ios.virtual.status")["directory"], str(directory))
         self.assertEqual(dispatch("ios.virtual.configure", {"directory": str(directory)})["model"], "16")
         job = dispatch("ios.virtual.start", {"open_app": False})
+        # A start that boots says first what it should know about the host.
+        self.assertIsInstance(job["warnings"], list)
         argv = job["plan"]["steps"][0]["argv"]
         self.assertEqual(argv[argv.index("--model"):], ["--model", "16", "--unlock", "swipe"])
         jobs.wait(job["id"], 60)

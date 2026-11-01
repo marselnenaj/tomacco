@@ -4414,6 +4414,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Detener dispositivo iOS virtual</translation>
     </message>
     <message>
+        <source>Unlock virtual iOS device</source>
+        <translation>Desbloquear dispositivo iOS virtual</translation>
+    </message>
+    <message>
         <source>Install app on running virtual iOS device</source>
         <translation>Instalar app en el dispositivo iOS virtual en ejecución</translation>
     </message>
@@ -4484,6 +4488,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     <message>
         <source>Check this machine for the virtual iOS device</source>
         <translation>Comprobar este equipo para el dispositivo iOS virtual</translation>
+    </message>
+    <message>
+        <source>Check the virtual iOS device</source>
+        <translation>Comprobar el dispositivo iOS virtual</translation>
     </message>
     <message>
         <source>Wait for job</source>

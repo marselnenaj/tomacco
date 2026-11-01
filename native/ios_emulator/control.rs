@@ -464,6 +464,25 @@ fn mailbox_file(runtime: &Path, request: &Value) -> Option<File> {
     (metadata.is_file() && metadata.uid() == owner && metadata.mode() & 0o077 == 0).then_some(file)
 }
 
+/// The number of the newest frame the guest's mailbox holds: 0 before its
+/// first present, `None` without a mailbox (an older engine, no private
+/// runtime directory) or while a slot is being rewritten. The renderer
+/// publishes only changed frames, so a number that stays the same means a
+/// still picture, not by itself a stalled guest. One header read; no file is
+/// written.
+pub(super) fn mailbox_frame_number(request: &Value) -> Option<u64> {
+    mailbox_frame_number_in(&private_runtime()?, request)
+}
+
+fn mailbox_frame_number_in(runtime: &Path, request: &Value) -> Option<u64> {
+    let file = mailbox_file(runtime, request)?;
+    match mailbox_state(&file).ok()? {
+        MailboxState::Empty => Some(0),
+        MailboxState::Ready(slot) => Some(slot.number),
+        MailboxState::Torn => None,
+    }
+}
+
 /// A live frame from the engine's frame mailbox, without the emulator's
 /// monitor: the renderer publishes every changed present frame from a thread
 /// of its own, and the picture is converted to PPM here, in this process.
@@ -1737,6 +1756,12 @@ mod tests {
         mailbox(&path, &[(1, 1, 1, &[1, 2, 3, 4])]);
         let request = |path: &Path| json!({"frame_mailbox":{"path":path}});
         assert!(mailbox_file(runtime.path(), &request(&path)).is_some());
+        // The newest frame's number is one header read away.
+        assert_eq!(
+            mailbox_frame_number_in(runtime.path(), &request(&path)),
+            Some(1)
+        );
+        assert_eq!(mailbox_frame_number_in(runtime.path(), &json!({})), None);
         // No mailbox named, another file name, a directory that is not a
         // launcher token or lies elsewhere.
         assert!(mailbox_file(runtime.path(), &json!({})).is_none());

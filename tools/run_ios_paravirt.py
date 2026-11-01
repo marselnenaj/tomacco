@@ -1344,6 +1344,34 @@ def saving_margin(seconds, cli, interactive, guest_control, job):
 GPU_MEMORY_CHECK_SECONDS = 5
 
 
+GPU_MEMORY_RECORD = "gpu-memory.json"
+
+
+def gpu_memory_record(memory, short_checks, stopping, now):
+    """What the graphics memory guard saw at its last check, for
+    ios.virtual.status: the card's used and total bytes (None when it reports
+    none), the free bytes below which a check counts as short, how many short
+    checks in a row there were (two stop the session) and whether it did."""
+    used, total = memory if memory is not None else (None, None)
+    return {"format": 1, "checked": round(now, 3), "used_bytes": used, "total_bytes": total,
+            "free_bytes": None if memory is None else max(0, total - used),
+            "limit_free_bytes": None if not total else total // 8,
+            "short_checks": short_checks, "stopping": stopping}
+
+
+def save_gpu_memory(output, record):
+    """Publish the guard's last check beside the result; a record that cannot
+    be written costs the session nothing."""
+    temporary = output / f".{GPU_MEMORY_RECORD}.tmp"
+    try:
+        with temporary.open("w") as stream:
+            os.fchmod(stream.fileno(), 0o600)
+            json.dump(record, stream)
+        os.replace(temporary, output / GPU_MEMORY_RECORD)
+    except OSError:
+        pass
+
+
 def saved_stop(cli, job):
     """Ask the control plane to stop this very guest the careful way: flush its
     storage, record that, then let the emulator exit. Used before the session
@@ -2002,6 +2030,8 @@ def main():
                                                                  "elapsed_seconds": round(time.monotonic() - started)}
                                     if save_at is not None:
                                         save_at = 0
+                                save_gpu_memory(output, gpu_memory_record(
+                                    memory, gpu_short, "vram_guard_stop" in record, time.time()))
                             if save_at is not None and time.monotonic() - started >= save_at:
                                 attempt = saved_stop(args.cli, own_job)
                                 record.setdefault("session_limit_stop", []).append(attempt)

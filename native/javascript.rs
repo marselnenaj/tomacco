@@ -400,8 +400,12 @@ mod tests {
                 .unwrap()
                 .starts_with("POST /reload HTTP/1.1\r\n")
         );
-        let closed = free_port();
-        assert_eq!(metro_reload(closed).unwrap_err().code, "metro_unreachable");
+        // A port nothing listens on: a parallel test may take a freed port
+        // for a moment, so try a few.
+        let refused = (0..5).map(|_| free_port()).any(|closed| {
+            metro_reload(closed).is_err_and(|error| error.code == "metro_unreachable")
+        });
+        assert!(refused);
     }
 
     fn free_port() -> u16 {
