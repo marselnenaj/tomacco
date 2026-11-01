@@ -87,6 +87,25 @@ Jobs persist in a database and survive the client disconnecting. Keep the id: af
 start the same build twice to find out what happened to the first; an identical request to a busy
 project reuses the running job anyway.
 
+## Look before you tap
+
+Guessing coordinates from a screenshot is the commonest way for a UI agent to go wrong. Ask for numbers instead:
+
+```sh
+tomaccoctl call screen.marks '{"device":"emulator-5554","path":"/absolute/marked.png"}'
+tomaccoctl call screen.tap '{"device":"emulator-5554","mark":7}'
+tomaccoctl call screen.wait '{"device":"emulator-5554","until":"stable"}'
+```
+
+- `screen.marks` returns the picture with numbered boxes and the list that says what each number is; the numbers
+  belong to that look. `screen.tap` refuses a mark whose element has changed (`mark_stale`) instead of tapping
+  something else: call `screen.marks` again.
+- Use `screen.tree` when you need text rather than a picture, and `screen.diff` after an action to read what changed.
+- A screen without a UI hierarchy (the virtual iPhone, a game, a canvas) is read with OCR (`source:"ocr"`). Treat it as
+  evidence with a confidence, not as a fact: check the picture when a tap matters.
+- After an action, `screen.wait` for the text you expect, or for the screen to settle, rather than a fixed pause.
+  [Seeing the screen](agents.md#seeing-the-screen) has every argument.
+
 ## Read the error and its remedy
 
 Every failure is one JSON object with a `code`, a `message` and usually a `remedy`, and the exit

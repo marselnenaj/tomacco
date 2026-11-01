@@ -75,6 +75,7 @@ If `tomaccoctl` is not on PATH, Tomacco is not installed for this user. Say so a
 | Devices and emulators | `device.list`, `android.avds`, `android.avd_start`, `android.emulator` |
 | Look at the app | `device.capture`, `device.screenshot`, `android.hierarchy`, `device.logs` |
 | Drive the UI | `testing.find`, `testing.action`, `android.input` |
+| Understand the screen | `screen.marks` then `screen.tap`, `screen.tree`, `screen.ocr`, `screen.diff`, `screen.wait` |
 | UI tests | `testing.run`, `testing.results`, `testing.record`, `testing.accessibility` |
 | Store screenshots | `android.settings`, `android.store_screenshots` |
 | Performance | `profile.startup`, `profile.frames`, `profile.memory`, `android.performance` |

@@ -6,10 +6,20 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 236 operations.
+`tomaccoctl` now has one typed API of 242 operations.
 
 ### Added
 
+- **Seeing the screen.** Six operations for coding agents: `screen.marks` takes a screenshot with numbered boxes over
+  what can be tapped and lists number, label, id, class and bounds, `screen.tap` taps a mark after checking the screen
+  still matches it (`mark_stale` otherwise), `screen.tree` renders the Android UI hierarchy as short text within
+  `max_chars`, `screen.ocr` finds text on a screenshot with tesseract (word boxes and confidence), `screen.diff` says
+  what changed between two hierarchies or two screenshots, and `screen.wait` waits for text or a steady screen. The
+  virtual iPhone has no UI hierarchy, so there `testing.find`, `testing.action` and the `wait`, `assert`, `click` and
+  `long_click` steps take a `text` or `text_contains` selector and read the screenshot with OCR, flagged
+  `pixel_based`; `capabilities` returns `ocr` and the testing matrix lists these. Scenarios gain `wait_text` and
+  `wait_stable` steps on Android and the virtual iPhone. OCR can misread or miss text; results carry its confidence.
+  The OCR was run on an Android emulator and in unit tests, not on the virtual iPhone.
 - An agent skill, `integrations/agent-skill/tomacco`, tells coding agents when to use Tomacco and how: MCP or
   `tomaccoctl`, `capabilities` first, waiting for jobs, reading `remedy`, asking before destructive calls, and where the
   installed guides are. `install.py` installs it in `~/.local/lib/tomacco/skills/tomacco` and links it into
@@ -28,8 +38,8 @@ operations and their JSON results.
   an `ios.virtual.setup` stage marked `ask_first`, instead of the call failing or the agent having to ask. A no answers
   `consent_declined`. Other clients see no change.
 - `TOMACCO_MCP_TOOLS` picks a shorter MCP tool list for agents with a small context: `compact` (first sentences, no
-  argument descriptions; 145,533 bytes instead of 290,460) or `grouped` (one tool per area that takes an operation and
-  its arguments; 31,557 bytes). Both add a `schema` tool for one operation's whole schema.
+  argument descriptions; 152,117 bytes instead of 306,035) or `grouped` (one tool per area that takes an operation and
+  its arguments; 32,446 bytes). Both add a `schema` tool for one operation's whole schema.
 - **Quick Boot.** `android.emulator` `stop` saves a Tomacco-managed emulator's Quick Boot snapshot first
   (`save_quick_boot`, on by default), and `android.avd_start` resumes from it; its result's `boot` says `quick` or
   `cold` and why. After `android.avd_configure` or `android.avd_profile` the old snapshot is removed once. On the
