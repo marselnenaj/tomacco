@@ -3022,9 +3022,9 @@ for line in sys.stdin:
         // An agent's session log: every operation it called, with time, duration and result.
         const auto log=directory.filePath("agent-session.jsonl");
         {QFile file(log);QVERIFY(file.open(QIODevice::WriteOnly));
-         file.write(QString(R"({"time":%1,"operation":"device.list","ok":true,"duration_seconds":0.25,"result":{"keys":["devices"]}})" "\n").arg(now-60).toUtf8());
-         file.write(QString(R"({"time":%1,"operation":"project.run","ok":true,"duration_seconds":1.5,"result":{"job_id":"activity-ui-job","state":"running"}})" "\n").arg(now-50).toUtf8());
-         file.write(QString(R"({"time":%1,"operation":"device.install","ok":false,"duration_seconds":0.1,"error":{"code":"no_device","message":"No device emulator-5554"}})" "\n").arg(now-40).toUtf8());}
+         file.write(QString(R"({"time":%1,"operation":"device.list","ok":true,"duration_seconds":0.25,"result":{"keys":["devices"]}})" "\n").arg(qint64(now)-60).toUtf8());
+         file.write(QString(R"({"time":%1,"operation":"project.run","ok":true,"duration_seconds":1.5,"result":{"job_id":"activity-ui-job","state":"running"}})" "\n").arg(qint64(now)-50).toUtf8());
+         file.write(QString(R"({"time":%1,"operation":"device.install","ok":false,"duration_seconds":0.1,"error":{"code":"no_device","message":"No device emulator-5554"}})" "\n").arg(qint64(now)-40).toUtf8());}
         view->setProperty("sessionLogPath",log);
         QTRY_COMPARE(timeline().size(),4);
         QCOMPARE(panel->property("sessionError").toString(),QString());
