@@ -79,6 +79,23 @@ The server also offers three prompts, short recipes a client can show as command
   as `{"result": ...}`, and an error as `{"error": {...}}`. The text content is unchanged.
 - Native screenshots up to 4 MiB are embedded as MCP images. Larger ones keep a path and digest.
 
+### A shorter tool list
+
+The full tool list is every operation with its whole schema, 263,295 bytes of `tools/list` result in this
+version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env` of the client's server entry:
+
+| Value | Tools | `tools/list` result |
+| --- | --- | --- |
+| `full` (the default) | One per operation, with every description. | 263,295 bytes |
+| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 135,589 bytes |
+| `grouped` | One per area, such as `android` or `job`: 24 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 28,661 bytes |
+
+The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
+answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
+annotations are its area's strictest: `destructiveHint` when any of its operations is destructive, so a client that
+asks before destructive tools asks for the whole area. Calling an operation by its own name works in every mode.
+An unknown value is the full list, with a warning on standard error.
+
 ## The contract
 
 **Do not guess operation names or arguments.** `tomaccoctl schema` prints every operation with its

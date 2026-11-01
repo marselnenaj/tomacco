@@ -11,6 +11,9 @@ operations and their JSON results.
 - MCP resource templates, listed by `resources/templates/list`: `tomacco://jobs/{id}` (the job), `tomacco://jobs/{id}/log`
   (the end of its log) and `tomacco://reference/{operation}` (the operation's help and schema), and the resource
   `tomacco://devices`. `completion/complete` completes operation names and recent job IDs for them.
+- `TOMACCO_MCP_TOOLS` picks a shorter MCP tool list for agents with a small context: `compact` (first sentences, no
+  argument descriptions; 135,589 bytes instead of 263,295) or `grouped` (one tool per area that takes an operation and
+  its arguments; 28,661 bytes). Both add a `schema` tool for one operation's whole schema.
 
 ## 1.2.1
 

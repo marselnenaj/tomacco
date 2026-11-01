@@ -1,4 +1,4 @@
-use crate::{api, core::*};
+use crate::{api, core::*, mcp_tools};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
 use std::{
@@ -25,6 +25,13 @@ pub fn serve(mut source: impl BufRead, sink: impl Write + Send) -> Result<()> {
     };
     // A contact a client holds down is lifted however this server ends.
     let _touches = crate::ios_emulator::control::TouchClient::open();
+    let tools = std::env::var(mcp_tools::VARIABLE).unwrap_or_default();
+    if mcp_tools::Mode::parse(&tools).is_none() {
+        eprintln!(
+            "tomaccoctl: {}={tools:?} is not full, compact or grouped; offering the full tool list",
+            mcp_tools::VARIABLE
+        );
+    }
     let sink = Mutex::new(sink);
     let active = Mutex::new(std::collections::HashMap::<String, Cancellation>::new());
     // Log messages are sent once the client asks for them with logging/setLevel.
@@ -222,8 +229,12 @@ impl Follower {
         }
         let token = Some(params["_meta"]["progressToken"].clone())
             .filter(|token| token.is_string() || token.is_i64() || token.is_u64());
-        let tool = s(params, "name").to_string();
-        let arguments = &params["arguments"];
+        let (tool, arguments) = mcp_tools::resolve(
+            s(params, "name"),
+            params.get("arguments").unwrap_or(&json!({})),
+        )
+        .unwrap_or_default();
+        let arguments = &arguments;
         let job = (tool == "job.wait")
             .then(|| s(arguments, "job_id").to_string())
             .filter(|id| !id.is_empty());
@@ -322,11 +333,24 @@ fn response(id: Value, method: &str, params: &Value) -> Value {
 fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
     Ok(Some(match method {
         "ping" => json!({}),
-        "tools/list" => json!({"tools":api::manifest()}),
+        "tools/list" => json!({"tools":mcp_tools::list(mcp_tools::Mode::from_env())}),
         "tools/call" => {
-            let name = s(params, "name");
-            let result =
-                crate::session_log::call(name, params.get("arguments").unwrap_or(&json!({})));
+            let resolved = mcp_tools::resolve(
+                s(params, "name"),
+                params.get("arguments").unwrap_or(&json!({})),
+            );
+            let (name, result) = match resolved {
+                Err(error) => (String::new(), Err(error)),
+                Ok((name, arguments)) if name == mcp_tools::SCHEMA_TOOL => {
+                    let result = mcp_tools::schema(&arguments);
+                    (name, result)
+                }
+                Ok((name, arguments)) => {
+                    let result = crate::session_log::call(&name, &arguments);
+                    (name, result)
+                }
+            };
+            let name = name.as_str();
             match result {
                 Ok(value) => {
                     let mut content = vec![json!({"type":"text","text":value.to_string()})];
@@ -352,7 +376,7 @@ fn handle(method: &str, params: &Value) -> Result<Option<Value>> {
                     let error = json!({"error":error.value()});
                     let mut reply = json!({"content":[{"type":"text","text":error.to_string()}],"isError":true});
                     // A declared outputSchema describes results, not errors.
-                    if api::operation(name).is_ok_and(|op| op.get("outputSchema").is_none()) {
+                    if !api::operation(name).is_ok_and(|op| op.get("outputSchema").is_some()) {
                         reply["structuredContent"] = error;
                     }
                     reply

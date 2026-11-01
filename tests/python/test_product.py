@@ -1814,6 +1814,32 @@ class ProtocolTests(Isolated):
         self.assertEqual(replies[6]["error"]["code"], -32602)
         self.assertEqual(replies[7]["result"]["completion"]["values"], [job["id"]])
 
+    def test_mcp_shorter_tool_lists_call_the_same_operations(self):
+        requests = [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-11-25"}},
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/list"},
+            {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "catalog", "arguments": {"operation": "catalog.list", "arguments": {"platform": "ios"}}}},
+            {"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "schema", "arguments": {"operation": "job.wait"}}},
+            {"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "catalog", "arguments": {"operation": "job.list"}}},
+            {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "catalog.list", "arguments": {}}},
+        ]
+        sizes = {}
+        for mode in ("full", "compact", "grouped"):
+            output = subprocess.check_output([binary(), "mcp"], input="\n".join(map(json.dumps, requests)) + "\n", text=True,
+                                             env={**os.environ, "TOMACCO_MCP_TOOLS": mode}, timeout=30)
+            replies = {r["id"]: r for r in map(json.loads, output.splitlines())}
+            sizes[mode] = len(json.dumps(replies[2]["result"]["tools"], separators=(",", ":")))
+            names = {tool["name"] for tool in replies[2]["result"]["tools"]}
+            self.assertEqual("catalog.list" in names, mode != "grouped")
+            self.assertEqual("schema" in names, mode != "full")
+            self.assertFalse(replies[3]["result"]["isError"], replies[3])
+            self.assertTrue(all(p["platform"] == "ios" for p in replies[3]["result"]["structuredContent"]["result"]))
+            self.assertEqual(replies[4]["result"]["structuredContent"]["name"], "job.wait")
+            self.assertEqual(replies[5]["result"]["structuredContent"]["error"]["code"], "invalid_argument")
+            self.assertFalse(replies[6]["result"]["isError"])
+        self.assertLess(sizes["compact"], sizes["full"] * 0.6)
+        self.assertLess(sizes["grouped"], sizes["full"] * 0.2)
+
     def test_mcp_wait_does_not_block_other_requests_and_cancellation_preserves_job(self):
         import queue
         job=self.submit([{"argv":[sys.executable,"-c","import time;print('ready',flush=True);time.sleep(30)"]}],timeout=40)

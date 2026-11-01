@@ -35,6 +35,7 @@ mod javascript;
 mod jdwp;
 mod jobs;
 mod mcp;
+mod mcp_tools;
 mod package_updates;
 mod perf;
 mod play_store;
