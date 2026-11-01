@@ -847,6 +847,145 @@ def stage_hardware(source, orchard, *, dry_run=False, gpu_link_args=()):
     return record
 
 
+REUSE_TOOLS = ("rustc", "cargo", "cc", "c++")
+
+
+def quiet_run(argv, *, cwd=None, env=None, capture=False):
+    """base.run without echoing the command, so a plan's JSON stays alone on stdout."""
+    return subprocess.run(list(map(str, argv)), cwd=cwd, env=env, check=True,
+                          stdout=subprocess.PIPE if capture else subprocess.DEVNULL, text=capture)
+
+
+def toolchain_versions(run=quiet_run):
+    """The first --version lines of the compilers that shape the engine's bytes, as the manifest records them."""
+    versions = {}
+    for name in REUSE_TOOLS:
+        resolved = shutil.which(name)
+        versions[name] = (run([Path(resolved).resolve(), "--version"], capture=True).stdout.splitlines()[:3]
+                          if resolved else None)
+    return versions
+
+
+def changed_names(recorded, wanted):
+    """What differs between two {name: digest} maps, in words."""
+    recorded, wanted = recorded or {}, wanted or {}
+    words = [f"{name} changed" for name in sorted(set(recorded) & set(wanted)) if recorded[name] != wanted[name]]
+    words += [f"{name} is new" for name in sorted(set(wanted) - set(recorded))]
+    words += [f"{name} is no longer used" for name in sorted(set(recorded) - set(wanted))]
+    return words
+
+
+def reuse_reasons(record, wanted, engine):
+    """Why an earlier build's manifest `record` does not stand for the build `wanted` describes: [] when the
+    engine at `engine` can be reused as it is. `wanted` holds what this run would put into the manifest; a key
+    it lacks (no checkout to fingerprint, say) is not compared."""
+    if record is None:
+        return ["there is no complete earlier build (build-manifest.json) in this output directory"]
+    reasons = []
+    if not engine.is_file():
+        reasons.append(f"the engine {engine} is missing")
+    elif hashlib.sha256(engine.read_bytes()).hexdigest() != record.get("engine_sha256"):
+        reasons.append(f"the engine {engine} is not the one its manifest records")
+    recorded_commits, wanted_commits = record.get("source_commits") or {}, wanted["source_commits"]
+    for role in sorted(wanted_commits):
+        if recorded_commits.get(role) != wanted_commits[role]:
+            reasons.append(f"the pinned {role} revision changed from {recorded_commits.get(role)} "
+                           f"to {wanted_commits[role]}")
+    recorded_contract = record.get("ordered_patch_contract") or {}
+    for family, entries in wanted["ordered_patch_contract"].items():
+        before = [(entry["name"], entry["sha256"]) for entry in recorded_contract.get(family, [])]
+        after = [(entry["name"], entry["sha256"]) for entry in entries]
+        if before != after:
+            words = changed_names(dict(before), dict(after))
+            reasons.append(f"the {family} patch series changed: "
+                           + ("; ".join(words) if words else "same patches, another order"))
+    if wanted.get("hardware_error"):
+        reasons.append(f"the engine checkout's hardware sources differ: {wanted['hardware_error']}")
+    elif "hardware_sources" in wanted and record.get("hardware_sources") != wanted["hardware_sources"]:
+        reasons.append("hardware sources changed: " + "; ".join(
+            changed_names(record.get("hardware_sources"), wanted["hardware_sources"])))
+    for option in ("cpu_optimization", "hardening", "file_prefix_map"):
+        if record.get(option) != wanted[option]:
+            reasons.append(f"{option} was {record.get(option)!r}, now {wanted[option]!r}")
+    if bool(record.get("translator_link")) != wanted["link_translator"]:
+        reasons.append("--link-translator differs from the earlier build")
+    if record.get("pgo"):
+        reasons.append(f"the earlier build was a profile-guided {record['pgo'].get('mode')} stage")
+    if record.get("configure_pins"):
+        reasons.append("the earlier build pinned its configure features")
+    if wanted["cpu_optimization"] == "native" and "host_cpu" in wanted:
+        if (record.get("host_compatibility") or {}).get("cpu") != wanted["host_cpu"]:
+            reasons.append("the native build was made for another CPU")
+    for name, version in (wanted.get("toolchain") or {}).items():
+        recorded = ((record.get("toolchain") or {}).get(name) or {}).get("version")
+        if recorded != version:
+            reasons.append(f"{name} changed from {' '.join(recorded or ['none'])} to {' '.join(version or ['none'])}")
+    for role, tree in (wanted.get("source_trees") or {}).items():
+        if ((record.get("source_trees") or {}).get(role) or {}).get("sha256") != tree["sha256"]:
+            reasons.append(f"the {role} checkout differs from the one the engine was built from")
+    return reasons
+
+
+def forced_rebuild(args):
+    """Options that always build: --rebuild, a reproducibility check, a profile stage, configure pins."""
+    if args.rebuild:
+        return "--rebuild"
+    if args.expect_engine_sha256:
+        return "--expect-engine-sha256 checks a fresh build"
+    if args.pgo != "off":
+        return f"--pgo {args.pgo} builds a profile stage"
+    if args.configure_pins:
+        return "--configure-pins builds against a reference"
+    return None
+
+
+# What the base tooling must hold for the build to be skipped: the build makes them first when absent.
+BASE_TOOLING = ("python/bin/python", "dependencies/lib/liblzfse.a", "build/qemu-system-x86_64")
+
+
+def reuse_plan(args, root, sources, tooling):
+    """Whether this run would rebuild the engine, and why, without building, fetching or writing anything."""
+    engine = root / "sptm-build/qemu-system-aarch64"
+    forced = forced_rebuild(args)
+    if forced:
+        return {"rebuild": True, "reasons": [forced], "engine": str(engine), "unchecked_checkouts": [],
+                "engine_sha256": None, "manifest": None}
+    manifest = root / "build-manifest.json"
+    try:
+        record = json.loads(manifest.read_text()) if manifest.is_file() else None
+    except (OSError, ValueError):
+        record = None
+    engine_patches = selected_engine_patches(args.experimental_patch)
+    graphics_patches = GRAPHICS_PATCHES + tuple(path for name, path in EXPERIMENTAL_GRAPHICS_PATCHES.items()
+                                                if name in args.experimental_patch)
+    wanted = {
+        "source_commits": {"sptm": base.ENGINES["sptm"][1], "orchard": ORCHARD[1], "metal2vulkan": METAL2VULKAN[1]},
+        "ordered_patch_contract": audit.patch_descriptors(
+            {"engine": engine_patches, "graphics": graphics_patches, "translator": TRANSLATOR_PATCHES}),
+        "cpu_optimization": args.cpu_optimization, "hardening": args.hardening,
+        "file_prefix_map": list(args.file_prefix_map), "link_translator": bool(args.link_translator),
+    }
+    if record is not None:
+        if args.cpu_optimization == "native":
+            wanted["host_cpu"] = audit.host_receipt(True)["cpu"]
+        wanted["toolchain"] = toolchain_versions()
+        # Without the checkouts there is nothing local to compare; the pinned revisions and patches still are.
+        if all(path.is_dir() for path in sources.values()):
+            try:
+                wanted["hardware_sources"] = stage_hardware(sources["sptm"], sources["orchard"], dry_run=True)
+            except (OSError, RuntimeError) as error:
+                wanted["hardware_error"] = str(error)
+            wanted["source_trees"] = {role: audit.source_fingerprint(path, quiet_run)
+                                      for role, path in sources.items()}
+    reasons = reuse_reasons(record, wanted, engine)
+    reasons += [f"the base tooling lacks {tooling / name}" for name in BASE_TOOLING if not (tooling / name).exists()]
+    unchecked = [role for role, path in sources.items() if not path.is_dir()]
+    return {"rebuild": bool(reasons), "reasons": reasons, "engine": str(engine),
+            "unchecked_checkouts": unchecked if record is not None else [],
+            "engine_sha256": record["engine_sha256"] if record is not None and not reasons else None,
+            "manifest": str(manifest) if record is not None else None}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=base.REPO / ".tooling/ios-paravirt")
@@ -889,6 +1028,11 @@ def main():
                         help="reach the translator through orchard/reims-vgpu/target/metal2vulkan, so "
                              "Cargo hashes that workspace-relative path instead of this checkout's "
                              "location into every crate's metadata and symbol names")
+    parser.add_argument("--plan", action="store_true",
+                        help="only say whether the engine would be rebuilt and why, as JSON; build, fetch and "
+                             "write nothing")
+    parser.add_argument("--rebuild", action="store_true",
+                        help="build even when --output holds an engine built from the same pinned inputs")
     args = parser.parse_args()
     if platform.system() != "Linux":
         parser.error("The vphone Vulkan recipe targets Linux")
@@ -904,15 +1048,25 @@ def main():
         parser.error("--pgo-data needs --pgo generate or use")
     if args.pgo_data is not None and not args.pgo_data.is_absolute():
         parser.error("--pgo-data must be an absolute path (a stage-1 engine writes there)")
-    for command in ("git", "cargo", "ninja", "pkg-config", "cc", "c++"):
-        if not shutil.which(command):
-            parser.error(f"Missing build dependency: {command}")
     root, tooling = args.output.resolve(), args.base_tooling.resolve()
     orchard = args.orchard_source.resolve() if args.orchard_source else (root / "orchard").resolve()
     translator = (args.metal2vulkan_source.resolve() if args.metal2vulkan_source
                   else (root / "metal2vulkan").resolve())
     source = (root / "sptm-source").resolve()
     sources = {"sptm": source, "orchard": orchard, "metal2vulkan": translator}
+    plan = reuse_plan(args, root, sources, tooling)
+    if args.plan:
+        print(json.dumps(plan, indent=2))
+        return
+    if not plan["rebuild"]:
+        print(json.dumps({**plan, "reused": True,
+                          "note": "The engine in --output was built from the same pinned inputs; "
+                                  "pass --rebuild to build it again."}, indent=2))
+        return
+    print("Building the engine: " + "; ".join(plan["reasons"]), flush=True)
+    for command in ("git", "cargo", "ninja", "pkg-config", "cc", "c++"):
+        if not shutil.which(command):
+            parser.error(f"Missing build dependency: {command}")
     audit.validate_roles(root, tooling, sources)
     with audit.BuildSession(root, [tooling, *sources.values()], base.run) as session:
         build_candidate(args, root, tooling, orchard, translator, sources, session)

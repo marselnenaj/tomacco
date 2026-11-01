@@ -66,6 +66,12 @@ operations and their JSON results.
   `tomaccoctl setup` show it. For the portable package it also checks the X11 and Wayland plugins and WebEngine's helper,
   and `desktop.portable` says which package it is. Run in debian:12, ubuntu:22.04, ubuntu:24.04 and fedora:44 containers,
   the one command made the 1.1.0 portable desktop loadable.
+- **Virtual iOS device setup.**
+  - `tools/build_ios_paravirt.py` reuses an engine already built from the same pinned inputs instead of building it
+    again: it compares the revisions, the ordered patch series, the hardware sources, the options, the compiler
+    versions, the CPU of a `native` build and the checkouts with the earlier `build-manifest.json`, and checks the
+    engine's digest. `--plan` prints whether it would build and every reason, without building or writing anything;
+    `--rebuild` builds anyway. A reproducibility check, a profile-guided stage and configure pins always build.
 
 ### Changed
 

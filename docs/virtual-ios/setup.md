@@ -230,6 +230,13 @@ directory of yours, and `/absolute` for your checkout.
    `native` is what the numbers were measured on, and it fits only the CPU that built it. Leave
    it out for a portable binary, whose speed has not been measured.
 
+   Run again, the engine build compares its inputs with the `build-manifest.json` of the engine
+   already in `.tooling/ios-paravirt`: the pinned revisions, the ordered patch series, the hardware
+   sources, the options, the compiler versions, the CPU for `native`, and the checkouts' contents.
+   When they all match and the engine's digest is the recorded one, it builds nothing and says so.
+   Otherwise it names each difference before it builds. `--plan` only prints that decision as JSON
+   and writes nothing; `--rebuild` builds anyway. This comparison has unit tests only.
+
 2. **Helper support and toolchain.** The first command makes `.tooling/ios-sptm/support`
    (`busybox/busybox`, `apfs/apfs.ko`, `ldid/ldid`, `ipsw/ipsw`) before it reads the firmware;
    `--firmware` is your unpacked iPhone image. The APFS module is built for the running kernel,
