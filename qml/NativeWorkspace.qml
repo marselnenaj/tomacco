@@ -113,6 +113,13 @@ Rectangle {
     // A new version found while no Tomacco window is active is also reported on
     // the desktop, once per version.
     function noteUpdate() {
+        // The activity panel's notifications list each new version and each restart it asks for, once.
+        const centreKey=updates.bannerKind==="available"?"available:"+updates.latest:updates.bannerKind==="restart"?"restart:"+updates.status.current:""
+        if(centreKey && String(Studio.setting("updates/centreNoted",""))!==centreKey) {
+            Studio.saveSetting("updates/centreNoted",centreKey)
+            if(updates.bannerKind==="available")notifications.add("update","idle",qsTr("Tomacco %1 is available").arg(updates.latest),qsTr("Open the update settings to install it."),{update:true})
+            else notifications.add("update","warn",qsTr("Version %1 is installed. Restart to use it.").arg(updates.status.current),"",{update:true})
+        }
         if(updates.bannerKind!=="available" || appActive)return
         if(String(Studio.setting("updates/notifiedVersion",""))===updates.latest)return
         Studio.saveSetting("updates/notifiedVersion",updates.latest)
@@ -281,12 +288,30 @@ Rectangle {
     property bool appActive: Qt.application.state===Qt.ApplicationActive
     readonly property int notifyAfterSeconds: 10
     property var seenJobStates: ({})
+    // The activity panel's list of recent notifications.
+    NotificationCentre {id:notifications}
+    readonly property alias notificationCentre: notifications
+    // A notification's link: its job under Builds & jobs, its device as the live device, or the update settings.
+    function openNotification(entry) {
+        if(entry.job) {
+            const job=workspace.jobs.find(x=>x.id===entry.job) || {id:entry.job}
+            workspace.selectJob(job);workspace.showTab("jobs")
+        } else if(entry.device) {
+            navigate("runtime")
+            if(entry.platform==="android" || entry.platform==="ios")choosePlatform(entry.platform)
+            target=entry.device
+        } else if(entry.update) openSettings(qsTr("Updates"))
+    }
     function noteJobs(rows) {
         let states={}
         for(const job of rows) {
             states[job.id]=job.state
             const before=seenJobStates[job.id]
-            if(!before || ["queued","running"].indexOf(before)<0 || ["succeeded","failed","timed_out"].indexOf(job.state)<0) continue
+            if(!before || ["queued","running"].indexOf(before)<0 || ["succeeded","failed","timed_out","cancelled"].indexOf(job.state)<0) continue
+            // Every end this window sees goes to the list, also while it is active.
+            const ended=job.state==="succeeded"?qsTr("Completed after %1"):job.state==="failed"?qsTr("Failed after %1"):job.state==="timed_out"?qsTr("Timed out after %1"):qsTr("Cancelled after %1")
+            notifications.add("job",job.state==="succeeded"?"ok":job.state==="cancelled"?"idle":"failed",job.label,ended.arg(workspace.jobDuration(job)),{job:job.id})
+            if(job.state==="cancelled") continue
             if(!notifyJobs || appActive || (job.updated || 0)-(job.created || 0)<notifyAfterSeconds) continue
             const outcome=job.state==="succeeded"?qsTr("Completed after %1"):job.state==="failed"?qsTr("Failed after %1"):qsTr("Timed out after %1")
             Studio.notify(job.label,outcome.arg(workspace.jobDuration(job)),job.id)
@@ -521,7 +546,7 @@ Rectangle {
             if(op==="runtime.list") {
                 view.sessions=r;view.sessionsSerial+=1
                 let active=r.find(x=>x.session===view.live.session)
-                if(active && ["failed","disconnected"].indexOf(active.status)>=0 && view.live.status!==active.status){view.live=active;view.notice=active.error || qsTr("Session ended");view.failed=active.status==="failed";view.pendingLaunch=null}
+                if(active && ["failed","disconnected"].indexOf(active.status)>=0 && view.live.status!==active.status){notifications.add("device",active.status==="failed"?"failed":"warn",(view.targets.find(d=>d.id===active.device) || {}).name || active.device,active.error || qsTr("Session ended"),{platform:active.platform,device:active.device});view.live=active;view.notice=active.error || qsTr("Session ended");view.failed=active.status==="failed";view.pendingLaunch=null}
                 else if(active && !view.audioPending)view.live=Object.assign({},view.live,{audio:active.audio})
                 if(view.autoAttach && (!view.live.session || !view.live.video_socket || display.state!=="live")) {
                     let next=r.find(x=>x.status==="connected" && x.platform===view.platform && (!view.target || x.device===view.target) && (view.platform!=="ios" || (!!x.remote===(view.appleTarget==="simulator"))) && (!view.live.session || view.live.session===x.session || ["failed","disconnected"].indexOf(view.live.status)>=0))
@@ -1007,6 +1032,8 @@ Rectangle {
                         objectName:"activityPanel";visible:view.activityVisible
                         Layout.preferredWidth:Theme.panelWidth;Layout.fillWidth:view.activityOnly;Layout.fillHeight:true
                         workspace:view.workspace
+                        notifications:notifications
+                        onNotificationChosen:entry=>view.openNotification(entry)
                         sessionLog:view.sessionLogPath
                         stateLabel:view.deviceStateLabel;stateTone:view.deviceTone
                         deviceName:view.deviceName;deviceMetrics:view.deviceMetrics

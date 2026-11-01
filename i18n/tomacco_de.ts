@@ -95,6 +95,34 @@
         <source>done</source>
         <translation>erledigt</translation>
     </message>
+    <message>
+        <source>An agent&apos;s call failed: %1</source>
+        <translation>Ein Aufruf eines Agenten ist fehlgeschlagen: %1</translation>
+    </message>
+    <message>
+        <source>An agent started a job: %1</source>
+        <translation>Ein Agent hat einen Auftrag gestartet: %1</translation>
+    </message>
+    <message>
+        <source>Notifications</source>
+        <translation>Benachrichtigungen</translation>
+    </message>
+    <message>
+        <source>Fewer</source>
+        <translation>Weniger</translation>
+    </message>
+    <message>
+        <source>All %1</source>
+        <translation>Alle %1</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Leeren</translation>
+    </message>
+    <message>
+        <source>Clear the notifications</source>
+        <translation>Benachrichtigungen leeren</translation>
+    </message>
 </context>
 <context>
     <name>AndroidDevices</name>
@@ -3645,6 +3673,22 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>What to do: %1</source>
         <translation>Was zu tun ist: %1</translation>
+    </message>
+    <message>
+        <source>Open the update settings to install it.</source>
+        <translation>Öffne die Update-Einstellungen, um sie zu installieren.</translation>
+    </message>
+    <message>
+        <source>Version %1 is installed. Restart to use it.</source>
+        <translation>Version %1 ist installiert. Starte neu, um sie zu nutzen.</translation>
+    </message>
+    <message>
+        <source>Updates</source>
+        <translation>Updates</translation>
+    </message>
+    <message>
+        <source>Cancelled after %1</source>
+        <translation>Abgebrochen nach %1</translation>
     </message>
     <message>
         <source>Save the current layout</source>

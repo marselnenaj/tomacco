@@ -4255,6 +4255,70 @@ for line in sys.stdin:
         QVERIFY(call("saveLayout","testing"));
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void notifications_list_what_happened_and_lead_back_to_it() {
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *centre=view->property("notificationCentre").value<QObject *>();QVERIFY(centre);
+        QVERIFY(QMetaObject::invokeMethod(centre,"clear"));
+        const auto entries=[&]{return centre->property("entries").toList();};
+        const auto first=[&]{return mapOf(entries().value(0));};
+        // A job this window sees end, also while the window is active.
+        const double now=QDateTime::currentSecsSinceEpoch();
+        QVariantMap job{{"id","note-ui-job"},{"label","Build Android · release"},{"state","running"},{"created",now-30},{"updated",now}};
+        workspace->setProperty("jobs",QVariantList{job});
+        job["state"]="failed";job["updated"]=now+12;
+        workspace->setProperty("jobs",QVariantList{job});
+        QTRY_COMPARE(entries().size(),1);
+        QCOMPARE(first().value("kind").toString(),QString("job"));QCOMPARE(first().value("tone").toString(),QString("failed"));
+        QCOMPARE(first().value("title").toString(),QString("Build Android · release"));
+        QVERIFY(first().value("body").toString().startsWith("Failed after"));
+        QCOMPARE(first().value("job").toString(),QString("note-ui-job"));
+        // An update.
+        auto *updates=object("updateModel");QVERIFY(updates);
+        updates->setProperty("background",false);
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(updates->property("requests")).isEmpty(),patient(15000));
+        QSettings().remove("updates");updates->setProperty("dismissed",QString());
+        updates->setProperty("status",updateStatus("9.3.0"));
+        QTRY_COMPARE(entries().size(),2);
+        QCOMPARE(first().value("kind").toString(),QString("update"));QVERIFY(first().value("title").toString().contains("9.3.0"));
+        // The same version is listed once.
+        updates->setProperty("status",QVariantMap{});updates->setProperty("status",updateStatus("9.3.0"));
+        QTest::qWait(100);QCOMPARE(entries().size(),2);
+        updates->setProperty("status",QVariantMap{});updates->setProperty("background",true);
+        // An agent's call to this window that failed.
+        emit control->previewRequest(-300,"navigate",{});emit control->previewFinished(-300,"Invalid URL");
+        QTRY_COMPARE(entries().size(),3);
+        QCOMPARE(first().value("kind").toString(),QString("agent"));QVERIFY(first().value("title").toString().contains("preview.navigate"));
+        QCOMPARE(first().value("body").toString(),QString("Invalid URL"));
+        // The panel lists them; a click on the job leads to its log under Builds & jobs.
+        QTRY_VERIFY(item("notification-job"));QVERIFY(item("notification-update"));QVERIFY(item("notification-agent"));
+        capture("activity-notifications");
+        QVERIFY(QMetaObject::invokeMethod(item("notification-job"),"clicked"));
+        QTRY_VERIFY(workspace->property("opened").toBool());
+        QCOMPARE(workspace->property("section").toString(),QString("jobs"));
+        // A device's entry chooses that device as the live one.
+        open("runtime");
+        QVariant entry;
+        const QVariantMap deviceLink{{"platform","android"},{"device","emulator-5570"}};
+        QVERIFY(QMetaObject::invokeMethod(centre,"add",Q_RETURN_ARG(QVariant,entry),Q_ARG(QVariant,"device"),Q_ARG(QVariant,"warn"),Q_ARG(QVariant,"Pixel 9"),Q_ARG(QVariant,"Session ended"),
+            Q_ARG(QVariant,deviceLink)));
+        QVERIFY(QMetaObject::invokeMethod(view,"openNotification",Q_ARG(QVariant,entry)));
+        QCOMPARE(view->property("platform").toString(),QString("android"));QCOMPARE(view->property("target").toString(),QString("emulator-5570"));
+        QVERIFY(!workspace->property("opened").toBool());
+        // The update's entry opens the update settings.
+        QVERIFY(QMetaObject::invokeMethod(item("notification-update"),"clicked"));
+        auto *dialog=object("settingsDialog");QTRY_VERIFY(dialog->property("visible").toBool());
+        QTRY_VERIFY(item("settingsUpdates")->isVisible());QVERIFY(!item("settingsAppearance")->isVisible());
+        dialog->setProperty("visible",false);
+        // Kept across starts, and cleared on request.
+        QVERIFY(QSettings().value("Notifications/recent").toString().contains("emulator-5570"));
+        clickItem("notificationsClear");
+        QTRY_VERIFY(entries().isEmpty());
+        QCOMPARE(QSettings().value("Notifications/recent").toString(),QString("[]"));
+        workspace->setProperty("jobs",QVariantList{});
+        view->setProperty("notice",QString());view->setProperty("failed",false);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void cleanupTestCase() {
         engine.reset();control.reset();backend.reset();
     }
