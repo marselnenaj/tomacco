@@ -120,6 +120,10 @@ public:
     // The text on the clipboard, empty when it holds none.
     Q_INVOKABLE QString clipboardText() const;
     Q_INVOKABLE QString screenshotPath(const QString &model);
+    // Where screenshots go: OMARCHY_SCREENSHOT_DIR when it is set, else on Omarchy the Pictures
+    // folder itself (as Omarchy's own screenshots), else a Tomacco folder in Pictures.
+    static QString screenshotDirectory();
+    static QString screenshotDirectoryFor(const QString &configured,const QString &pictures,bool omarchy);
     // Puts the image saved at this path on the clipboard; false when it cannot be read.
     Q_INVOKABLE bool copyImage(const QString &path);
     Q_INVOKABLE void openExternal(const QUrl &url);

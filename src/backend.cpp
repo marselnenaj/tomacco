@@ -359,8 +359,21 @@ bool Backend::copyImage(const QString &path) {
     QGuiApplication::clipboard()->setImage(image);
     return true;
 }
+QString Backend::screenshotDirectoryFor(const QString &configured,const QString &pictures,bool omarchy) {
+    auto directory=configured.trimmed();
+    if(!directory.isEmpty()) {
+        if(directory==QLatin1String("~") || directory.startsWith(QLatin1String("~/"))) directory=QDir::homePath()+directory.mid(1);
+        directory.replace(QLatin1String("$HOME"),QDir::homePath());
+        return QDir::cleanPath(directory);
+    }
+    // Omarchy keeps its screenshots in the Pictures folder itself.
+    return omarchy?pictures:pictures+QStringLiteral("/Tomacco");
+}
+QString Backend::screenshotDirectory() {
+    return screenshotDirectoryFor(qEnvironmentVariable("OMARCHY_SCREENSHOT_DIR"),QStandardPaths::writableLocation(QStandardPaths::PicturesLocation),!omarchyThemeDirectory().isEmpty());
+}
 QString Backend::screenshotPath(const QString &model) {
-    auto directory=QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)+"/Tomacco";
+    auto directory=screenshotDirectory();
     if(!QDir().mkpath(directory)) { emit message(tr("The screenshot folder could not be created.")); return {}; }
     auto safe=model; safe.replace(QRegularExpression("[^A-Za-z0-9_-]"),"-");
     return directory+"/"+safe+"-"+QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz")+".png";
@@ -548,7 +561,7 @@ void Backend::notificationAction(uint id,const QString &action) {
     if(!tag.isEmpty() && action==QLatin1String("default")) emit notificationActivated(tag);
 }
 void Backend::openExternal(const QUrl &url) { if(url.scheme()=="http" || url.scheme()=="https") QDesktopServices::openUrl(url); }
-void Backend::openScreenshots() { QDesktopServices::openUrl(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)+"/Tomacco")); }
+void Backend::openScreenshots() { QDesktopServices::openUrl(QUrl::fromLocalFile(screenshotDirectory())); }
 QString Backend::recordingPath(const QString &model) {
     auto directory=QStandardPaths::writableLocation(QStandardPaths::MoviesLocation)+"/Tomacco";
     if(!QDir().mkpath(directory)) { emit message(tr("The recordings folder could not be created.")); return {}; }
