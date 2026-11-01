@@ -613,6 +613,26 @@ class UnlockPacing:
             self.next_at = time.monotonic() + 60
 
 
+
+def listing_calls(profile, bundle, bundle_id, entitlements=None):
+    """The ios.virtual.configure calls that list a deployed bundle in the
+    profile. The phone now has this bundle installed under its identifier, so
+    a listing of the same identifier at another path (an earlier copy of the
+    project, seen live with a second copy of the example) is replaced instead
+    of refused as a conflict after the install; the app the start opens stays
+    the same."""
+    def same(path):
+        return os.path.realpath(str(path)) == os.path.realpath(str(bundle))
+    calls = [{"remove_application": row["bundle"]} for row in profile.get("applications") or []
+             if row.get("bundle_id") == bundle_id and row.get("bundle") and not same(row["bundle"])]
+    configured = {"add_application": str(bundle)}
+    if entitlements:
+        configured["add_entitlements"] = str(entitlements)
+    calls.append(configured)
+    if calls[:-1] and profile.get("application") == bundle_id:
+        calls.append({"application": bundle_id})
+    return calls
+
 class Phone:
     def __init__(self, cli, directory, model=None, unlock="home"):
         self.cli, self.directory = cli, directory
@@ -1341,10 +1361,10 @@ class Phone:
         installed[bundle_id] = application["cdhash"]
         self.save(applications=installed)
         # The next start stages it like any listed app.
-        configured = {"add_application": str(bundle)}
-        if entitlements:
-            configured["add_entitlements"] = str(entitlements)
-        self.call("ios.virtual.configure", configured)
+        for configured in listing_calls(self.profile, bundle, bundle_id, entitlements):
+            if "remove_application" in configured:
+                stage("relisted", bundle_id=bundle_id, previous=configured["remove_application"])
+            self.call("ios.virtual.configure", configured)
         self.profile = json.loads((self.directory / "profile.json").read_text())
         if open_app:
             # iOS refuses to open an app over its lock screen; the phone may
