@@ -4258,6 +4258,26 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Leggi risultati dei test</translation>
     </message>
     <message>
+        <source>Read code coverage</source>
+        <translation>Leggi copertura del codice</translation>
+    </message>
+    <message>
+        <source>Write HTML test report</source>
+        <translation>Scrivi report dei test HTML</translation>
+    </message>
+    <message>
+        <source>Test pass-rate history</source>
+        <translation>Cronologia del tasso di successo dei test</translation>
+    </message>
+    <message>
+        <source>Select affected tests</source>
+        <translation>Scegli i test interessati</translation>
+    </message>
+    <message>
+        <source>Review screenshot baselines</source>
+        <translation>Rivedi screenshot di riferimento</translation>
+    </message>
+    <message>
         <source>Write a bug report bundle</source>
         <translation>Crea un pacchetto per la segnalazione di bug</translation>
     </message>

@@ -8,7 +8,7 @@
 
 **Open project**
 
-Detect frameworks and available platforms without executing project code. For a Gradle build, android lists each app module's application ID, namespace, min, target and compile SDK, build types, flavors and variants as read from the build files and versions catalog; values only Gradle can compute are listed under unresolved.
+Detect frameworks and available platforms without executing project code. For a Gradle build, android lists each app module's application ID, namespace, min, target and compile SDK, build types, flavors and variants as read from the build files and versions catalog; values only Gradle can compute are listed under unresolved. test_setup lists per Gradle module the coverage the build files enable (unit_test_coverage, android_test_coverage, kover, jacoco_plugin) and its Gradle Managed Devices and groups.
 
 Annotations: read-only, idempotent, open world.
 
@@ -76,6 +76,9 @@ Annotations: read-only, idempotent, open world.
 | `sign` | boolean |  | `false` |  |
 | `task` | string |  | `""` | Name of an explicitly configured project task |
 | `device` | string |  | `""` | Device serial from device.list for instrumented-test: required for a Flutter project's integration_test run, and for Gradle the device ANDROID_SERIAL selects |
+| `coverage` | boolean |  | `false` | Gradle test or instrumented-test: also run the coverage report tasks the build files enable (AGP's enableUnitTestCoverage or enableAndroidTestCoverage, the jacoco plugin, Kover); testing.coverage reads the reports |
+| `managed_device` | string |  | `""` | up to 100 characters; Gradle instrumented-test: run on this Gradle Managed Device or device group from the build files (project.inspect test_setup), or all, instead of a connected device |
+| `shards` | integer |  |  | 1 to 32; With managed_device: split the instrumented tests across this many managed devices (AGP's numManagedDeviceShards) |
 
 ```sh
 tomaccoctl call project.plan '{"path":"<path>"}'
@@ -85,7 +88,7 @@ tomaccoctl call project.plan '{"path":"<path>"}'
 
 **Start build / test**
 
-Execute a build, tests, lint or named project task as a durable cancellable job. For a Flutter project, test and instrumented-test (flutter test integration_test -d device) also write the JSON reporter's output to build/tomacco, which testing.results reads. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.
+Execute a build, tests, lint or named project task as a durable cancellable job. For a Flutter project, test and instrumented-test (flutter test integration_test -d device) also write the JSON reporter's output to build/tomacco, which testing.results reads. A test or instrumented-test job ends by writing build/tomacco/test-report.html (testing.report) and adding its results to the test history (testing.history), also when tests fail. For Gradle, coverage adds the coverage report tasks and managed_device runs the instrumented tests on a Gradle Managed Device, with shards to split them. An identical active request reuses its job; different work for the occupied project returns workspace_busy with the active job. Use job.send for Flutter Hot Reload.
 
 Annotations: writes, not idempotent, open world.
 
@@ -99,6 +102,9 @@ Annotations: writes, not idempotent, open world.
 | `sign` | boolean |  | `false` |  |
 | `task` | string |  | `""` | Name of an explicitly configured project task |
 | `device` | string |  | `""` | Device serial from device.list for instrumented-test: required for a Flutter project's integration_test run, and for Gradle the device ANDROID_SERIAL selects |
+| `coverage` | boolean |  | `false` | Gradle test or instrumented-test: also run the coverage report tasks the build files enable (AGP's enableUnitTestCoverage or enableAndroidTestCoverage, the jacoco plugin, Kover); testing.coverage reads the reports |
+| `managed_device` | string |  | `""` | up to 100 characters; Gradle instrumented-test: run on this Gradle Managed Device or device group from the build files (project.inspect test_setup), or all, instead of a connected device |
+| `shards` | integer |  |  | 1 to 32; With managed_device: split the instrumented tests across this many managed devices (AGP's numManagedDeviceShards) |
 | `timeout` | integer |  | `1800` | 1 to 86400 |
 
 ```sh

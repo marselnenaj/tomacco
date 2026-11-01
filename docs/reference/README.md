@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 224 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 229 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -330,6 +330,11 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`testing.accessibility`](testing.md#testingaccessibility) | Check Android accessibility | read-only |
 | [`testing.crashes`](testing.md#testingcrashes) | Find app crashes | read-only |
 | [`testing.results`](testing.md#testingresults) | Read test results | read-only |
+| [`testing.coverage`](testing.md#testingcoverage) | Read code coverage | read-only |
+| [`testing.report`](testing.md#testingreport) | Write HTML test report | writes |
+| [`testing.history`](testing.md#testinghistory) | Test pass-rate history | writes |
+| [`testing.impact`](testing.md#testingimpact) | Select affected tests | writes |
+| [`testing.baselines`](testing.md#testingbaselines) | Review screenshot baselines | **destructive** |
 | [`testing.setup`](testing.md#testingsetup) | Set up Android text input | writes |
 | [`testing.instrumentation`](testing.md#testinginstrumentation) | Check Android text input | read-only |
 
