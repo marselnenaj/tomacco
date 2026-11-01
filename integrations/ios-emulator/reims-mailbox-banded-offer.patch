@@ -1,0 +1,175 @@
+reims-vgpu: the frame mailbox hand-off copies in bands.
+
+frame_mailbox::offer copies the BGRA8 retain (12.6 MB for the vphone's
+1206x2622 frame) into the writer's hand-off buffer on the present drain,
+under the device lock. One thread did it: a recorded live run on the
+development host (i9-13900K) reports offer_us=1473503 over offered=1011,
+about 1.5 ms a present, inside drain_ops op0x08_us (~2.1 ms a present in the
+same run).
+
+When the hand-off already has the frame's length (the steady state: the
+writer rotates same-sized buffers), the copy now runs in up to four
+contiguous bands on scoped threads (copy_in_bands, at 1 MiB and above); a
+frame of another length still grows the buffer through the single copy. The
+bytes are the same in any split.
+
+Offline (banded_copy_timing, the vphone frame into a reused buffer, the host
+shared with a running phone): one copy 1.1-1.4 ms, banded 0.3-0.5 ms (medians
+of 31). Not measured on a live phone.
+
+--- a/reims-vgpu/crates/reims-vgpu/src/runtime/frame_mailbox.rs
++++ b/reims-vgpu/crates/reims-vgpu/src/runtime/frame_mailbox.rs
+@@ -387,9 +387,50 @@ struct Shared {
+     idle: Condvar,
+ }
+ 
++/// A frame at least this large is copied into the hand-off in bands.
++const BANDED_COPY_MIN_BYTES: usize = 1 << 20;
++
++/// The most threads one hand-off copy uses, the drain's own included.
++const BANDED_COPY_MAX_THREADS: usize = 4;
++
++/// Copy `src` into `dst` (the same length), in up to
++/// [`BANDED_COPY_MAX_THREADS`] contiguous bands on scoped threads.
++///
++/// The hand-off is the one whole-frame pass the present drain still makes for
++/// the viewer: 12.6 MB for the vphone's 1206x2622 BGRA8 retain, which one
++/// thread copied in ~1.5 ms a frame on the development host (`frame_mailbox
++/// offer_us / offered`), under the device lock. The bytes are the same in any
++/// split; only how many cores move them changes.
++fn copy_in_bands(dst: &mut [u8], src: &[u8]) {
++    debug_assert_eq!(dst.len(), src.len());
++    let threads = if src.len() >= BANDED_COPY_MIN_BYTES {
++        std::thread::available_parallelism()
++            .map(usize::from)
++            .unwrap_or(1)
++            .clamp(1, BANDED_COPY_MAX_THREADS)
++    } else {
++        1
++    };
++    if threads <= 1 {
++        dst.copy_from_slice(src);
++        return;
++    }
++    let band = src.len().div_ceil(threads);
++    std::thread::scope(|scope| {
++        let mut bands = dst.chunks_mut(band).zip(src.chunks(band));
++        let own = bands.next();
++        for (d, s) in bands {
++            scope.spawn(move || d.copy_from_slice(s));
++        }
++        if let Some((d, s)) = own {
++            d.copy_from_slice(s);
++        }
++    });
++}
++
+ /// The present drain's hand-off to one writer thread.
+ ///
+-/// The drain copies the retain into `pending` (one `memcpy`, the allocation
++/// The drain copies the retain into `pending` (one banded copy, the allocation
+ /// reused) and returns; the writer swaps that buffer out under the lock — an
+ /// O(1) exchange — and does its comparison and file writes without it. A frame
+ /// the writer has not taken yet is replaced by a newer one: the viewer wants
+@@ -433,8 +474,12 @@ impl Publisher {
+         if pending.fresh {
+             pending.counts.coalesced += 1;
+         }
+-        pending.pixels.clear();
+-        pending.pixels.extend_from_slice(pixels);
++        if pending.pixels.len() == pixels.len() {
++            copy_in_bands(&mut pending.pixels, pixels);
++        } else {
++            pending.pixels.clear();
++            pending.pixels.extend_from_slice(pixels);
++        }
+         pending.width = width;
+         pending.height = height;
+         pending.generation = generation;
+@@ -653,6 +698,86 @@ mod tests {
+         File::open(path).unwrap()
+     }
+ 
++    /// The banded hand-off copy is the plain copy at every size: below the
++    /// threshold, at it, and at lengths no band count divides.
++    #[test]
++    fn the_banded_copy_is_the_plain_copy() {
++        for len in [
++            0,
++            1,
++            BANDED_COPY_MIN_BYTES - 1,
++            BANDED_COPY_MIN_BYTES,
++            BANDED_COPY_MIN_BYTES + 3,
++            1206 * 2622 * 4,
++        ] {
++            let src: Vec<u8> = (0..len)
++                .map(|i| (i as u32).wrapping_mul(2_654_435_761).rotate_right(7) as u8)
++                .collect();
++            let mut dst = vec![0xa5u8; len];
++            copy_in_bands(&mut dst, &src);
++            assert!(dst == src, "length {len}");
++        }
++    }
++
++    /// Timing, not a check: `cargo test --release -- --ignored --nocapture
++    /// banded_copy_timing`. The vphone's 1206x2622 BGRA8 retain into a reused
++    /// hand-off buffer, one `copy_from_slice` against the banded copy. Median
++    /// of 31 runs each; wall clock on a shared host.
++    #[test]
++    #[ignore]
++    fn banded_copy_timing() {
++        let len = 1206 * 2622 * 4;
++        let src: Vec<u8> = (0..len)
++            .map(|i| (i as u32).wrapping_mul(31) as u8)
++            .collect();
++        let mut dst = vec![0u8; len];
++        let median = |mut runs: Vec<u128>| {
++            runs.sort_unstable();
++            runs[runs.len() / 2]
++        };
++        for _ in 0..2 {
++            let plain: Vec<u128> = (0..31)
++                .map(|_| {
++                    let started = Instant::now();
++                    dst.copy_from_slice(&src);
++                    started.elapsed().as_micros()
++                })
++                .collect();
++            let banded: Vec<u128> = (0..31)
++                .map(|_| {
++                    let started = Instant::now();
++                    copy_in_bands(&mut dst, &src);
++                    started.elapsed().as_micros()
++                })
++                .collect();
++            println!(
++                "banded_copy_timing plain_median_us={} banded_median_us={}",
++                median(plain),
++                median(banded)
++            );
++        }
++    }
++
++    /// An offer of the frame's own geometry reuses the hand-off and still
++    /// carries the newest bytes, also after the writer swapped buffers.
++    #[test]
++    fn a_repeated_offer_carries_the_newest_bytes() {
++        let dir = scratch("banded-offer");
++        let path = dir.0.join("frames");
++        let publisher = Publisher::start(Writer::create(&path, None).unwrap()).unwrap();
++        // 1.2 MB a frame, past the banded threshold.
++        let (w, h) = (640u32, 480u32);
++        for seed in 0..4u8 {
++            publisher.offer(&picture(w, h, seed), w, h, u64::from(seed) + 1);
++            assert!(publisher.settle(Duration::from_secs(5)));
++        }
++        let Read::Frame(frame) = read(&open(&path)).unwrap() else {
++            panic!("no frame after four offers");
++        };
++        assert_eq!((frame.number, frame.generation), (4, 4));
++        assert!(frame.pixels == picture(w, h, 3));
++    }
++
+     #[test]
+     fn the_file_size_limit_is_read_from_the_soft_column() {
+         let limits = "Limit                     Soft Limit           Hard Limit           Units     \n\
