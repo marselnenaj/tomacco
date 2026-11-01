@@ -74,14 +74,15 @@ class PatchSeriesTests(unittest.TestCase):
     def test_the_default_series_names_every_patch_and_the_rest_is_opt_in(self):
         # The asynchronous readback adds its patch only when asked.
         names = [path.name for path in build.GRAPHICS_PATCHES]
-        self.assertEqual(names[-8:], ["reims-rung-blank-verdict.patch",
+        self.assertEqual(names[-9:], ["reims-rung-blank-verdict.patch",
                                       "reims-gva-resident-lifetime.patch",
                                       "reims-resident-lifetime-rest.patch",
                                       "reims-store-convert-beside-publish.patch",
                                       "reims-mailbox-banded-offer.patch",
                                       "reims-sampled-digest-lanes.patch",
                                       "reims-half-float-vector-convert.patch",
-                                      "reims-store-banded-publish.patch"])
+                                      "reims-store-banded-publish.patch",
+                                      "reims-mailbox-streamed-offer.patch"])
         self.assertEqual(list(build.EXPERIMENTAL_GRAPHICS_PATCHES), ["reims-async-readback"])
         for path in build.EXPERIMENTAL_GRAPHICS_PATCHES.values():
             self.assertNotIn(path, build.GRAPHICS_PATCHES)

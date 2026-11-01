@@ -168,7 +168,8 @@ GRAPHICS_PATCHES = (INTEGRATION / "reims-iosurface-mapper.patch",
                     INTEGRATION / "reims-mailbox-banded-offer.patch",
                     INTEGRATION / "reims-sampled-digest-lanes.patch",
                     INTEGRATION / "reims-half-float-vector-convert.patch",
-                    INTEGRATION / "reims-store-banded-publish.patch")
+                    INTEGRATION / "reims-store-banded-publish.patch",
+                    INTEGRATION / "reims-mailbox-streamed-offer.patch")
 # Optional graphics patches outside the default series, applied in this
 # order after the series above only when named with --experimental-patch.
 EXPERIMENTAL_GRAPHICS_PATCHES = {path.stem: path for path in (
