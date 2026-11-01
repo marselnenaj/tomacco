@@ -114,7 +114,8 @@ cmake --build build --target package
 ```
 
 This makes a TGZ and its SHA-256. A distribution package configures with `-DTOMACCO_DISABLE_UPDATES=ON`, which builds an `tomaccoctl` that never asks for or
-installs an update. It holds `bin/`, `lib/`, `share/` and `install.py`, which installs for one user what it finds beside it, with the options below.
+installs an update. It holds `bin/`, `lib/`, `share/` and `install.py`. `bin/tomaccoctl _install` installs for one user what it finds beside
+it, with the [options below](#installing); `install.py` takes the same options and hands over to it.
 `tools/build_source_release.py` builds the corresponding-source tarball a release offers; see [SOURCE.md.in](SOURCE.md.in).
 
 **Arch package.** `packaging/arch/PKGBUILD` builds a system package from the release's source tarball, with `-DTOMACCO_DISABLE_UPDATES=ON`
@@ -153,7 +154,7 @@ needs a newer glibc than 2.35 or a host library outside its list; that list is i
 `verify` unpacks the package in clean containers of Debian 12, Ubuntu 22.04, Ubuntu 24.04 and Fedora 44 (`--image` picks others).
 In each it installs the host libraries, runs `tomaccoctl --version` and `tomaccoctl doctor`, checks that every bundled library
 resolves, runs `tomacco --smoke-test` offscreen and on Xvfb, then installs with `install.py` into a scratch home, runs the
-installed launchers and uninstalls. `install.py` copies `lib/tomacco/runtime` to `~/.local/lib/tomacco/runtime` and writes
+installed launchers and uninstalls. The installer copies `lib/tomacco/runtime` to `~/.local/lib/tomacco/runtime` and writes
 `qt.conf` beside the program; installing a regular package later removes them. An installation from a portable package updates to
 the next release's portable package.
 
@@ -161,7 +162,10 @@ For the 1.0.0 sources the package was about 176 MB (436 MB unpacked, 2182 files)
 `install.py` took 26 to 100 seconds there, most of it journalling each file. Since then `install.py` journals and flushes once per
 batch of files: installing the 1.1.0 portable package (2184 files) into a scratch home took 0.7 s instead of 15 s on the development
 host (ext4 on NVMe), and 4.2 to 13 s instead of 27 to 84 s in a `debian:12` container on the same host, with the host busy. Nobody has
-run it on a desktop of those distributions yet.
+run it on a desktop of those distributions yet. With `tomaccoctl _install` and the 1.2.1 portable package (2201 files), a `debian:12`
+container without Python installed it in 0.9 to 1.2 s, uninstalled it in 0.7 s and rolled the uninstall back in 1.2 to 1.8 s; the 1.2.1
+`install.py` took 1.0 to 1.7 s, 0.9 to 1.1 s and 1.5 to 2.0 s in the same container with Python 3.11 added. On the development host
+the install took 1.1 s against 1.7 s (medians of three); on a busy disk `syncfs` takes most of either.
 
 **Why there is no Flatpak or AppImage.** Both were considered for the distributions the regular package does not fit; the
 portable package serves them instead. Tomacco's work happens in programs on the host: `tomaccoctl` runs `adb`, the Android emulator
@@ -179,12 +183,25 @@ settings files in the home directory.
 
 So there is no prototype of either. These reasons come from what Tomacco runs; neither format was built or tried.
 
-`install.py` and `cmake --install` install the same files, and the same documents into `share/doc/tomacco`: the guides and legal texts, in one flat directory, with
+The installer and `cmake --install` install the same files, and the same documents into `share/doc/tomacco`: the guides and legal texts, in one flat directory, with
 links adjusted and `SOURCE.md` naming the version and commit. The list is `DOCUMENTS` in `install.py`. Links to anything else point at the release's copy on GitHub.
 
 ## Installing
 
-`install.py` installs for the current user. Once installed, two commands cover the rest:
+The package's own `tomaccoctl` installs it for the current user, without Python:
+
+```sh
+cd tomacco-VERSION-Linux-x86_64
+bin/tomaccoctl _install --omarchy
+```
+
+`python3 install.py` from the package does the same: it hands over to `bin/tomaccoctl _install`, so older copies of the one-line installer
+and updaters of 1.2.1 and earlier, which run `install.py`, install a new package with it. From a checkout, `install.py` installs with
+its own Python code, because it generates the documents it installs from their sources (`--binary` and `--cli` point it at the build).
+It also stands in where it finds no `tomaccoctl` that installs; `TOMACCO_INSTALL_PYTHON=1` makes it install with Python anyway. Both
+installers write the same files, journal and backups, so either rolls back or uninstalls what the other installed.
+
+Once installed, two commands cover the rest:
 
 ```sh
 tomaccoctl update
@@ -192,15 +209,15 @@ tomaccoctl uninstall
 ```
 
 `tomaccoctl update` checks GitHub for a newer release as your own request (`update.check` with `manual`) and, if there is one, installs it
-with `update.apply` and waits for the job; `--check` only checks. `tomaccoctl uninstall` runs `install.py --uninstall` from the copy every
-installation keeps in `~/.local/lib/tomacco/install.py`, and prints the command that undoes it. Installations made by 1.0.0 have no such copy:
-run `python3 install.py --uninstall` from the release package instead. Both commands refuse a source checkout and a system package; pacman
-updates and removes the Arch package.
+with `update.apply` and waits for the job; `--check` only checks. `tomaccoctl uninstall` uninstalls in its own process, also an
+installation made by 1.0.0 or by `install.py`, and prints the command that undoes it: the removed `tomaccoctl`, kept in the
+uninstallation's backup, run as `_install --rollback ID`. Both commands refuse a source checkout and a system package; pacman updates and
+removes the Arch package.
 
 | What | Where |
 | --- | --- |
 | Program | `~/.local/lib/tomacco/tomacco` |
-| A copy of the installer, for `tomaccoctl uninstall` | `~/.local/lib/tomacco/install.py` |
+| A copy of `install.py`, for older updaters and scripts; it hands over to the `tomaccoctl` beside it | `~/.local/lib/tomacco/install.py` |
 | Launchers | `~/.local/bin/tomacco`, `~/.local/bin/tomaccoctl` |
 | Menu entry and icon | `~/.local/share/applications/`, `~/.local/share/icons/` |
 | Documents | `~/.local/share/doc/tomacco/` |
@@ -222,12 +239,15 @@ updates and removes the Arch package.
 | `--rollback ID` | Restores one, after verifying all current files; refuses to overwrite your later edits, and makes its own backup |
 | `--uninstall` | Removes what the installs wrote, while each file is still as installed; files you changed are kept and listed |
 | `--version` | Prints the version it installs |
+| `--package DIR` | `tomaccoctl _install` only: installs the unpacked package in `DIR` instead of the one this `tomaccoctl` is in |
 
 Every replaced file is backed up under `~/.local/share/tomacco/install-backups/<timestamp>/`, and every change is journalled before it is made.
-`install.py` stages up to 512 files beside their destinations, writes the journal, gets the staged files, the backups and the journal onto
+The installer stages up to 512 files beside their destinations, writes the journal, gets the staged files, the backups and the journal onto
 the disk with one `syncfs` (one `fsync` per file where that is missing), and only then renames them into place. After a crash or a kill,
 each file is either as before or as installed: `--rollback ID` accepts both, `--uninstall` finishes an interrupted uninstall, and the next
-run deletes the `.tomacco-staged-*` files a killed run left. An uninstall
+run deletes the `.tomacco-staged-*` files a killed run left. `native/install.rs` has unit tests for each of these, and in a debug build
+`TOMACCO_INSTALL_TEST_BATCH` and `TOMACCO_INSTALL_TEST_KILL_AT=N` (exit at the Nth rename or unlink) let `tests/python/test_install.py`
+kill a real run. An uninstall
 undoes its edits to `hyprland.lua` and `shell.json`, removes the agent skill links, never touches `~/.local/share/tomacco`, and is itself journalled, so `--rollback ID` brings the
 installation back. An uninstall also leaves your preferences (`~/.config/marselnenaj/Tomacco.conf`) and caches (`~/.cache/marselnenaj/Tomacco`); delete those and
 `~/.local/share/tomacco` by hand to remove every trace.
@@ -241,9 +261,11 @@ never offered as updates.
 Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against a public key compiled into `tomaccoctl`: the current
 release key and, while the key is being [rotated](#rotating-the-release-key), the next one. A build without a key refuses to install updates and says so.
 
-`native/product.rs` holds the product name, the repository and the installed paths the updater uses, so a rename changes them in one place. An update runs the package's own `install.py` with
-`--update`, which keeps the integrations as they are, so the journal, the backups and `--rollback` work as for any installation. `tests/update_e2e.rs` runs the whole path against a local
-fixture with a test key; the hooks it uses exist only in debug builds.
+`native/product.rs` holds the product name, the repository and the installed paths the updater uses, so a rename changes them in one place. An update runs the package's own
+`bin/tomaccoctl _install --update`, which keeps the integrations as they are, so the journal, the backups and rollback work as for any
+installation; `update.rollback` and the repair of an interrupted update read the journal in the running `tomaccoctl`. None of this
+needs Python. `tests/update_e2e.rs` runs the whole path, and `tomaccoctl uninstall` with its undo command, against a local fixture with
+a test key; the hooks it uses exist only in debug builds.
 
 ## Checks before a pull request
 

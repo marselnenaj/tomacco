@@ -5,8 +5,8 @@ call the same typed operations, so an agent can do everything the desktop can.
 [Agent patterns](agent-patterns.md) shows how to plan, wait and recover with this contract.
 
 `tomaccoctl` is a compiled Rust program. Run it directly, not through `python3`. Neither the CLI,
-MCP nor the build workers need Python; repository tests, the installer and the optional iOS
-preparation recipes do.
+MCP, the build workers nor the installer (`tomaccoctl _install`) need Python; repository tests,
+installing from a source checkout and the optional iOS preparation recipes do.
 
 ## Connect a client
 
@@ -113,7 +113,7 @@ with `capabilities` or `doctor`, wait for jobs, follow `remedy`, ask before dest
 several steps) and where the installed guides are. `examples.md` beside it has a call for each common task. The
 source is [`integrations/agent-skill/tomacco`](../integrations/agent-skill/tomacco/SKILL.md).
 
-`install.py` installs the skill in `~/.local/lib/tomacco/skills/tomacco` and links it as `tomacco` into
+The installer (`tomaccoctl _install`, or `install.py`) installs the skill in `~/.local/lib/tomacco/skills/tomacco` and links it as `tomacco` into
 `~/.claude/skills` (Claude Code), `~/.codex/skills` (Codex) and `~/.agents/skills` (read by other agents), for each of
 `~/.claude`, `~/.codex` and `~/.agents` that exists. It makes the `skills` directory when it is missing. An entry
 named `tomacco` that is not a link to the installed skill is left alone and reported under `agent_skill.skipped` in

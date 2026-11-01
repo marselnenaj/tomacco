@@ -22,6 +22,9 @@ end to leave the widget out. On Arch it asks before installing the system packag
 
 To read it first: `curl -fsSL https://tomacco.dev/install.sh -o install.sh`.
 
+Installing needs no Python from the release after 1.2.1 on: the package's own `tomaccoctl`
+installs it. Releases up to 1.2.1 install with their `install.py`, which needs `python3`.
+
 Once Tomacco is installed, `tomaccoctl verify` makes the same check for a package you download
 yourself: its SHA-256 against the `.sha256` beside it, and its Ed25519 signature in the `.sig`
 against the release keys built into `tomaccoctl`. It exits 0 only when both match; `--json`
@@ -50,6 +53,10 @@ sha256sum -c tomacco-1.2.1-Linux-x86_64.tar.gz.sha256
 tar -xzf tomacco-1.2.1-Linux-x86_64.tar.gz
 python3 tomacco-1.2.1-Linux-x86_64/install.py --omarchy
 ```
+
+From the release after 1.2.1 on, the package installs itself without Python:
+`tomacco-VERSION-Linux-x86_64/bin/tomaccoctl _install --omarchy` (its `install.py` still
+works and does the same).
 
 Outside Arch, take the release's `-portable` package instead; see
 [which package](#debian-ubuntu-and-fedora).
@@ -85,7 +92,8 @@ Releases from 1.1.0 have both; 1.0.0 had only the first. The regular package's d
 where the distribution's Qt or FFmpeg is older; use the portable package there, or build from a checkout. `tomaccoctl doctor` checks whether the installed desktop loads here: its `desktop` entry lists missing
 libraries and symbol versions, and `next_steps` then starts with what to do.
 
-**The portable package** installs like the other one: check it, unpack it, run its `install.py`.
+**The portable package** installs like the other one: check it, unpack it, run its `bin/tomaccoctl _install`
+(up to 1.2.1, its `install.py`).
 It still uses the system's graphics, X11 or Wayland, font, D-Bus, NSS and ALSA libraries, which
 desktop installations have; `share/doc/tomacco/PORTABLE.md` in the package lists them. It passed its
 checks in clean Debian 12, Ubuntu 22.04, Ubuntu 24.04 and Fedora 44 containers but has not been run

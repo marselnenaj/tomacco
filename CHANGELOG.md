@@ -53,6 +53,16 @@ operations and their JSON results.
 
 ### Changed
 
+- Installing and updating no longer need Python. The installer is now part of `tomaccoctl`: a package installs with its
+  own `bin/tomaccoctl _install`, which takes `install.py`'s options (and `--package DIR`), writes the same files,
+  journal and backups, and rolls back or uninstalls an installation `install.py` made, and the other way round.
+  `install.py` hands over to it, so older one-line installers and the updaters of 1.2.1 and earlier still work; from a
+  checkout it still installs with Python. `update.apply` runs the new package's `tomaccoctl _install --update`, and
+  `update.rollback` and `tomaccoctl uninstall` run in `tomaccoctl` itself, also for installations made by 1.0.0. The
+  error codes `update_python_missing`, `uninstall_python_missing` and `uninstall_installer_missing` are gone;
+  `install_refused` is new. In a `debian:12` container without Python, the 1.2.1 portable package (2201 files)
+  installed in 0.9 to 1.2 s, uninstalled in 0.7 s and rolled back in 1.2 to 1.8 s; `install.py` took 1.0 to 1.7 s,
+  0.9 to 1.1 s and 1.5 to 2.0 s there with Python installed.
 - Every error has a `remedy`: where the place that failed gave none, the error carries its code's general one. The
   new [error reference](docs/reference/errors.md), generated from `assets/errors.json`, lists all 435 codes with what
   each means and what to do, and a unit test fails when code returns an error code the catalogue lacks.
@@ -69,6 +79,11 @@ operations and their JSON results.
   profiles describe phones, foldables and tablets.
 
 ### Tests
+
+- The installer's specifications in `tests/python/test_install.py`, `test_release_files.py` and `test_update.py` also
+  run against `tomaccoctl _install` (`TOMACCOCTL`), including runs killed at a chosen rename by a debug build's
+  `TOMACCO_INSTALL_TEST_KILL_AT`; `CrossInstallerTests` has each installer update, roll back and uninstall what the
+  other installed. `tests/update_e2e.rs` installs, updates, rolls back and uninstalls without Python.
 
 - An end-to-end MCP session test (`AgentConversationTests` in `tests/python/test_product.py`) plans, builds an
   Android project on a fake Gradle wrapper, follows the job with progress and log messages, reads the job and its log
