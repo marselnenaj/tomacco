@@ -4410,6 +4410,14 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Esperar texto o una pantalla estable</translation>
     </message>
     <message>
+        <source>Export a screen</source>
+        <translation>Exportar una pantalla</translation>
+    </message>
+    <message>
+        <source>Export screens of several devices</source>
+        <translation>Exportar las pantallas de varios dispositivos</translation>
+    </message>
+    <message>
         <source>Check UI test scenario</source>
         <translation>Comprobar escenario de prueba de interfaz</translation>
     </message>

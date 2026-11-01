@@ -121,6 +121,8 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "project.analyze" => crate::analyze::analyze(&a),
         "screen.marks" | "screen.tap" | "screen.tree" | "screen.ocr" | "screen.diff"
         | "screen.wait" => crate::screen::handle(name, &a),
+        "screen.export" => crate::screen_export::export(&a),
+        "screen.export_batch" => crate::screen_export::export_batch(&a),
         "testing.find" => automation::find(&a),
         "testing.action" => crate::recorder::testing_action(
             &crate::recorder::Store::home()?,

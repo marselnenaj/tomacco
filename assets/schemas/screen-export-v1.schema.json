@@ -1,0 +1,697 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/marselnenaj/tomacco/blob/main/assets/schemas/screen-export-v1.schema.json",
+  "title": "tomacco.screen version 1",
+  "description": "screen.json of a screen.export bundle. Version 1 only grows by adding optional fields: a reader ignores fields it does not know.",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "tomacco.screen"
+    },
+    "version": {
+      "const": 1
+    },
+    "tomacco_version": {
+      "type": "string",
+      "description": "The tomaccoctl that wrote the file."
+    },
+    "captured_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+      "description": "UTC, RFC 3339."
+    },
+    "device": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "description": "The name Tomacco's operations take: an Android serial, a UDID or virtual-iphone."
+        },
+        "serial": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "udid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "virtual": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "manufacturer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "os_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "os_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sdk": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Android API level."
+        },
+        "form_factor": {
+          "enum": [
+            "phone",
+            "tablet",
+            "tv",
+            "watch",
+            null
+          ]
+        }
+      },
+      "required": [
+        "platform",
+        "id",
+        "serial",
+        "udid",
+        "virtual",
+        "model",
+        "manufacturer",
+        "os_name",
+        "os_version",
+        "sdk",
+        "form_factor"
+      ]
+    },
+    "display": {
+      "type": "object",
+      "properties": {
+        "width_px": {
+          "type": "integer"
+        },
+        "height_px": {
+          "type": "integer"
+        },
+        "density_dpi": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "scale": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Pixels per dp or pt."
+        },
+        "width_dp": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "height_dp": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "dp",
+            "pt"
+          ]
+        },
+        "orientation": {
+          "enum": [
+            "portrait",
+            "landscape"
+          ]
+        },
+        "rotation": {
+          "enum": [
+            0,
+            90,
+            180,
+            270,
+            null
+          ],
+          "description": "Degrees from the natural orientation, null if not reported."
+        }
+      },
+      "required": [
+        "width_px",
+        "height_px",
+        "density_dpi",
+        "scale",
+        "width_dp",
+        "height_dp",
+        "unit",
+        "orientation",
+        "rotation"
+      ]
+    },
+    "insets": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "estimated": {
+          "type": "boolean",
+          "description": "True where the values come from a device catalogue, not from the device."
+        },
+        "status_bar": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/edges"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Frame of the bar in pixels."
+        },
+        "navigation_bar": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/edges"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cutout": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/edges"
+          }
+        },
+        "safe_area_px": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/edges"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "safe_area_dp": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/edges"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "source",
+        "estimated",
+        "status_bar",
+        "navigation_bar",
+        "cutout",
+        "safe_area_px",
+        "safe_area_dp"
+      ]
+    },
+    "theme": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "dark",
+            "light",
+            null
+          ]
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "source"
+      ]
+    },
+    "locale": {
+      "type": "object",
+      "properties": {
+        "tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "tag",
+        "source"
+      ]
+    },
+    "app": {
+      "type": "object",
+      "properties": {
+        "package": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "activity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "package",
+        "activity",
+        "source"
+      ]
+    },
+    "screenshot": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "const": "screen.png"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        },
+        "bytes": {
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "marked_file": {
+          "enum": [
+            "marked.png",
+            null
+          ]
+        }
+      },
+      "required": [
+        "file",
+        "width",
+        "height",
+        "bytes",
+        "sha256",
+        "marked_file"
+      ]
+    },
+    "hierarchy": {
+      "enum": [
+        "available",
+        "unavailable",
+        "skipped"
+      ],
+      "description": "Whether the platform reports a UI hierarchy (unavailable), and whether it was used (skipped: source ocr was asked for)."
+    },
+    "elements_source": {
+      "enum": [
+        "hierarchy",
+        "ocr",
+        "none"
+      ]
+    },
+    "marks": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "truncated": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "count",
+        "limit",
+        "truncated"
+      ]
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/element"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "captured_at",
+    "device",
+    "display",
+    "insets",
+    "theme",
+    "locale",
+    "app",
+    "screenshot",
+    "hierarchy",
+    "elements_source",
+    "marks",
+    "elements",
+    "warnings"
+  ],
+  "$defs": {
+    "edges": {
+      "type": "object",
+      "properties": {
+        "left": {
+          "type": "number"
+        },
+        "top": {
+          "type": "number"
+        },
+        "right": {
+          "type": "number"
+        },
+        "bottom": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "left",
+        "top",
+        "right",
+        "bottom"
+      ],
+      "description": "Distances from the four edges of the screen, or the edges of a rectangle."
+    },
+    "pixel_box": {
+      "type": "object",
+      "properties": {
+        "left": {
+          "type": "integer"
+        },
+        "top": {
+          "type": "integer"
+        },
+        "right": {
+          "type": "integer"
+        },
+        "bottom": {
+          "type": "integer"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "left",
+        "top",
+        "right",
+        "bottom",
+        "width",
+        "height"
+      ],
+      "description": "A rectangle in pixels of screen.png, origin at its top left."
+    },
+    "unit_box": {
+      "type": "object",
+      "properties": {
+        "left": {
+          "type": "number"
+        },
+        "top": {
+          "type": "number"
+        },
+        "right": {
+          "type": "number"
+        },
+        "bottom": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "left",
+        "top",
+        "right",
+        "bottom",
+        "width",
+        "height"
+      ],
+      "description": "The same rectangle in dp (Android) or points (iOS), rounded to 0.01."
+    },
+    "flag": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "null where the platform does not report the state (elements read by OCR)."
+    },
+    "element": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique in the file: e<N> for the Nth node of the hierarchy in document order, o<N> for the Nth OCR line."
+        },
+        "parent": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The id of the parent element, null for a root. A parent is listed before its children."
+        },
+        "depth": {
+          "type": "integer",
+          "description": "Nesting depth, 0 for a root."
+        },
+        "source": {
+          "enum": [
+            "hierarchy",
+            "ocr"
+          ]
+        },
+        "role": {
+          "enum": [
+            "text_field",
+            "checkbox",
+            "radio",
+            "switch",
+            "button",
+            "image",
+            "progress",
+            "dropdown",
+            "web_view",
+            "list",
+            "scroll",
+            "text",
+            "control",
+            "container",
+            "view"
+          ],
+          "description": "What a person would call the element."
+        },
+        "class": {
+          "type": "string",
+          "description": "Android class name; empty for OCR."
+        },
+        "package": {
+          "type": "string"
+        },
+        "resource_id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content description (Android)."
+        },
+        "label": {
+          "type": "string",
+          "description": "The text a person reads on or inside the element."
+        },
+        "bounds": {
+          "type": "object",
+          "properties": {
+            "px": {
+              "$ref": "#/$defs/pixel_box"
+            },
+            "dp": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/unit_box"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "px",
+            "dp"
+          ],
+          "description": "Bounds in pixels, and in dp or pt where the scale is known (else null)."
+        },
+        "center": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "integer"
+            },
+            "y": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "description": "The tap point in pixels, inside the visible part."
+        },
+        "enabled": {
+          "$ref": "#/$defs/flag"
+        },
+        "clickable": {
+          "$ref": "#/$defs/flag"
+        },
+        "long_clickable": {
+          "$ref": "#/$defs/flag"
+        },
+        "focusable": {
+          "$ref": "#/$defs/flag"
+        },
+        "focused": {
+          "$ref": "#/$defs/flag"
+        },
+        "checkable": {
+          "$ref": "#/$defs/flag"
+        },
+        "checked": {
+          "$ref": "#/$defs/flag"
+        },
+        "selected": {
+          "$ref": "#/$defs/flag"
+        },
+        "scrollable": {
+          "$ref": "#/$defs/flag"
+        },
+        "editable": {
+          "$ref": "#/$defs/flag"
+        },
+        "password": {
+          "$ref": "#/$defs/flag"
+        },
+        "confidence": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Tesseract's confidence 0 to 100 for OCR elements, else null."
+        },
+        "mark": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The number screen.marks gives the element, null if it is not tappable or beyond marks.limit."
+        }
+      },
+      "required": [
+        "id",
+        "parent",
+        "depth",
+        "source",
+        "role",
+        "class",
+        "package",
+        "resource_id",
+        "text",
+        "description",
+        "label",
+        "bounds",
+        "center",
+        "enabled",
+        "clickable",
+        "long_clickable",
+        "focusable",
+        "focused",
+        "checkable",
+        "checked",
+        "selected",
+        "scrollable",
+        "editable",
+        "password",
+        "confidence",
+        "mark"
+      ]
+    }
+  }
+}

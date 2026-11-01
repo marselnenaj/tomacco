@@ -27,6 +27,11 @@ pub trait Screen {
     /// The UI hierarchy as UIAutomator XML, or `None` where the platform
     /// reports none.
     fn hierarchy(&mut self) -> Result<Option<String>>;
+    /// What the platform reports about the device and its screen, for
+    /// `screen.export`. A screen that reports nothing answers the default.
+    fn facts(&mut self, _size: (u32, u32)) -> crate::screen_export::Facts {
+        crate::screen_export::Facts::default()
+    }
     /// A tap at pixels of the screenshot, or a press held for `hold_ms`.
     fn tap(&mut self, x: i64, y: i64, hold_ms: Option<u64>) -> Result;
 }
@@ -55,6 +60,9 @@ impl Screen for Android {
     fn hierarchy(&mut self) -> Result<Option<String>> {
         let reply = crate::devices::handle("android.hierarchy", &json!({"device":self.0}))?;
         Ok(Some(s(&reply, "xml").to_string()))
+    }
+    fn facts(&mut self, size: (u32, u32)) -> crate::screen_export::Facts {
+        crate::screen_export::android_facts(&self.0, size)
     }
     fn tap(&mut self, x: i64, y: i64, hold_ms: Option<u64>) -> Result {
         let mut input = json!({"device":self.0,"action":"tap","x":x,"y":y});
@@ -245,7 +253,13 @@ impl Store {
     }
 }
 
-fn limit_argument(a: &Value, key: &str, default: u64, minimum: u64, maximum: u64) -> Result<usize> {
+pub(crate) fn limit_argument(
+    a: &Value,
+    key: &str,
+    default: u64,
+    minimum: u64,
+    maximum: u64,
+) -> Result<usize> {
     let value = a.get(key).and_then(Value::as_u64).unwrap_or(default);
     if !(minimum..=maximum).contains(&value) {
         return Err(Error::new(
@@ -283,7 +297,7 @@ fn line_mark(line: &Line, number: usize) -> Value {
         "bounds":value["rect"],"confidence":value["confidence"],"source":"ocr"})
 }
 
-fn ocr_marks(lines: &[Line], limit: usize) -> (Vec<Value>, bool) {
+pub(crate) fn ocr_marks(lines: &[Line], limit: usize) -> (Vec<Value>, bool) {
     let readable: Vec<&Line> = lines
         .iter()
         .filter(|l| l.text().chars().any(char::is_alphanumeric))
@@ -300,7 +314,7 @@ fn ocr_marks(lines: &[Line], limit: usize) -> (Vec<Value>, bool) {
     )
 }
 
-fn language(a: &Value) -> Result<&str> {
+pub(crate) fn language(a: &Value) -> Result<&str> {
     let language = a["language"].as_str().unwrap_or("eng");
     if language.is_empty()
         || !language
@@ -315,7 +329,7 @@ fn language(a: &Value) -> Result<&str> {
     Ok(language)
 }
 
-fn region(a: &Value) -> Result<Option<(u32, u32, u32, u32)>> {
+pub(crate) fn region(a: &Value) -> Result<Option<(u32, u32, u32, u32)>> {
     let Some(r) = a.get("region").filter(|r| r.is_object()) else {
         return Ok(None);
     };
@@ -336,7 +350,7 @@ fn region(a: &Value) -> Result<Option<(u32, u32, u32, u32)>> {
 
 /// What `source` the marks and waits use: the hierarchy where the platform has
 /// one (unless OCR is asked for), else pixels.
-fn hierarchy_for(
+pub(crate) fn hierarchy_for(
     screen: &mut dyn Screen,
     source: &str,
     operation: &str,
@@ -352,7 +366,7 @@ fn hierarchy_for(
     }
 }
 
-fn scratch() -> Result<tempfile::TempDir> {
+pub(crate) fn scratch() -> Result<tempfile::TempDir> {
     Ok(tempfile::tempdir()?)
 }
 
@@ -1236,6 +1250,9 @@ pub fn handle(name: &str, a: &Value) -> Result {
             }
         }
         "screen.diff" => {
+            if crate::screen_export::is_bundle(s(a, "before")) {
+                return crate::screen_export::diff_bundles(a);
+            }
             if a.get("after").is_none() && a.get("device").is_none() {
                 return Err(Error::new(
                     "invalid_argument",

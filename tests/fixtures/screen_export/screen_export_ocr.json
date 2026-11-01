@@ -1,0 +1,176 @@
+{
+  "format": "tomacco.screen",
+  "version": 1,
+  "tomacco_version": "0.0.0",
+  "captured_at": "2026-11-01T12:00:00Z",
+  "device": {
+    "platform": "ios",
+    "id": "virtual-iphone",
+    "serial": null,
+    "udid": null,
+    "virtual": true,
+    "model": "iPhone 18 Pro",
+    "manufacturer": "Apple",
+    "os_name": "iOS",
+    "os_version": null,
+    "sdk": null,
+    "form_factor": "phone"
+  },
+  "display": {
+    "width_px": 1206,
+    "height_px": 2622,
+    "density_dpi": null,
+    "scale": 3.0,
+    "width_dp": 402.0,
+    "height_dp": 874.0,
+    "unit": "pt",
+    "orientation": "portrait",
+    "rotation": 0
+  },
+  "insets": {
+    "source": "device catalogue (estimated)",
+    "estimated": true,
+    "status_bar": null,
+    "navigation_bar": null,
+    "cutout": [],
+    "safe_area_px": {
+      "left": 0.0,
+      "top": 186.0,
+      "right": 0.0,
+      "bottom": 102.0
+    },
+    "safe_area_dp": {
+      "left": 0.0,
+      "top": 62.0,
+      "right": 0.0,
+      "bottom": 34.0
+    }
+  },
+  "theme": {
+    "mode": null,
+    "source": null
+  },
+  "locale": {
+    "tag": null,
+    "source": null
+  },
+  "app": {
+    "package": null,
+    "activity": null,
+    "source": null
+  },
+  "screenshot": {
+    "file": "screen.png",
+    "width": 1206,
+    "height": 2622,
+    "bytes": 18143,
+    "sha256": "fe4aa1766d56aec161445e464dcdfbcd1547ed15946f8750920153a4b1c4ccda",
+    "marked_file": null
+  },
+  "hierarchy": "unavailable",
+  "elements_source": "ocr",
+  "marks": {
+    "count": 2,
+    "limit": 200,
+    "truncated": false
+  },
+  "elements": [
+    {
+      "id": "o0",
+      "parent": null,
+      "depth": 0,
+      "source": "ocr",
+      "role": "text",
+      "class": "",
+      "package": "",
+      "resource_id": "",
+      "text": "Settings",
+      "description": "",
+      "label": "Settings",
+      "bounds": {
+        "px": {
+          "left": 100,
+          "top": 200,
+          "right": 400,
+          "bottom": 260,
+          "width": 300,
+          "height": 60
+        },
+        "dp": {
+          "left": 33.33,
+          "top": 66.67,
+          "right": 133.33,
+          "bottom": 86.67,
+          "width": 100.0,
+          "height": 20.0
+        }
+      },
+      "center": {
+        "x": 250,
+        "y": 230
+      },
+      "enabled": null,
+      "clickable": null,
+      "long_clickable": null,
+      "focusable": null,
+      "focused": null,
+      "checkable": null,
+      "checked": null,
+      "selected": null,
+      "scrollable": null,
+      "editable": null,
+      "password": null,
+      "confidence": 95.0,
+      "mark": 1
+    },
+    {
+      "id": "o1",
+      "parent": null,
+      "depth": 0,
+      "source": "ocr",
+      "role": "text",
+      "class": "",
+      "package": "",
+      "resource_id": "",
+      "text": "Wi-Fi",
+      "description": "",
+      "label": "Wi-Fi",
+      "bounds": {
+        "px": {
+          "left": 100,
+          "top": 400,
+          "right": 300,
+          "bottom": 460,
+          "width": 200,
+          "height": 60
+        },
+        "dp": {
+          "left": 33.33,
+          "top": 133.33,
+          "right": 100.0,
+          "bottom": 153.33,
+          "width": 66.67,
+          "height": 20.0
+        }
+      },
+      "center": {
+        "x": 200,
+        "y": 430
+      },
+      "enabled": null,
+      "clickable": null,
+      "long_clickable": null,
+      "focusable": null,
+      "focused": null,
+      "checkable": null,
+      "checked": null,
+      "selected": null,
+      "scrollable": null,
+      "editable": null,
+      "password": null,
+      "confidence": 90.0,
+      "mark": 2
+    }
+  ],
+  "warnings": []
+}

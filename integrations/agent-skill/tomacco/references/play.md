@@ -14,7 +14,7 @@ Verify and upload an AAB, stage a track update and validate the edit. Returns a 
 - `package` string, required
 - `path` string, required
 - `release_name` string, required (non-empty, up to 100 characters)
-- `track` string (matching [A-Za-z0-9_:-]{1,100}; default "internal")
+- `track` string (matching `[A-Za-z0-9_:-]{1,100}`; default "internal")
 - `status` string (one of draft, completed, inProgress; default "draft")
 - `user_fraction` number (1e-06 to 0.999999)
 - `release_notes` array of object {language, text} (up to 100 items)

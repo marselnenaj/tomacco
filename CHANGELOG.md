@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 248 operations.
+`tomaccoctl` now has one typed API of 250 operations.
 
 ### Added
 
@@ -41,8 +41,8 @@ operations and their JSON results.
   an `ios.virtual.setup` stage marked `ask_first`, instead of the call failing or the agent having to ask. A no answers
   `consent_declined`. Other clients see no change.
 - `TOMACCO_MCP_TOOLS` picks a shorter MCP tool list for agents with a small context: `compact` (first sentences, no
-  argument descriptions; 156,075 bytes instead of 316,174) or `grouped` (one tool per area that takes an operation and
-  its arguments; 33,004 bytes). Both add a `schema` tool for one operation's whole schema.
+  argument descriptions; 157,922 bytes instead of 321,785) or `grouped` (one tool per area that takes an operation and
+  its arguments; 33,148 bytes). Both add a `schema` tool for one operation's whole schema.
 - **Quick Boot.** `android.emulator` `stop` saves a Tomacco-managed emulator's Quick Boot snapshot first
   (`save_quick_boot`, on by default), and `android.avd_start` resumes from it; its result's `boot` says `quick` or
   `cold` and why. After `android.avd_configure` or `android.avd_profile` the old snapshot is removed once. On the

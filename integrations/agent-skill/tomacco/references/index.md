@@ -2,7 +2,7 @@
 
 # Tomacco references
 
-248 operations in all, in 31 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
+250 operations in all, in 31 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
 
 | File | Operations | Areas and names |
 | --- | --- | --- |
@@ -29,7 +29,7 @@
 | [remote](remote.md) | 6 | Remote build hosts. `remote.list`, `remote.configure`, `remote.check`, … |
 | [result](result.md) | 1 | Read a large result a call stored. `result.read` |
 | [runtime](runtime.md) | 8 | Runtime sessions for emulated devices. `runtime.start`, `runtime.list`, `runtime.audio`, … |
-| [screen](screen.md) | 6 | Understand a screen: marks, text recognition, tree, diff, waiting. `screen.marks`, `screen.tap`, `screen.tree`, … |
+| [screen](screen.md) | 8 | Understand a screen: marks, text recognition, tree, diff, waiting. `screen.marks`, `screen.tap`, `screen.tree`, … |
 | [settings](settings.md) | 2 | Tomacco settings and agent policy. `settings.get`, `settings.configure` |
 | [storage](storage.md) | 1 | Free disk space by pruning Tomacco's caches. `storage.prune` |
 | [swift](swift.md) | 5 | Swift on Android. `swift.status`, `swift.android_configure`, `swift.sdk_install`, … |

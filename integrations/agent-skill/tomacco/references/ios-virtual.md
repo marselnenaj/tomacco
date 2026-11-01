@@ -77,11 +77,11 @@ Set up virtual iOS device. writes, idempotent.
 Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job). Choosing another directory is refused with ios_virtual_busy while a start or stop runs and with ios_virtual_running while the current profile's phone runs; each directory configured is remembered for ios.virtual.profiles.
 
 - `directory` string (non-empty): Existing profile directory. Becomes the profile of the next start; refused while the current profile's phone runs or a start or stop is in progress.
-- `model` string (matching ^[a-z0-9-]{0,32}$): Device model the next start describes the phone as (an id from ios.virtual.status models). Empty: the profile's own description, a phone with a Home button.…
+- `model` string (matching `^[a-z0-9-]{0,32}$`): Device model the next start describes the phone as (an id from ios.virtual.status models). Empty: the profile's own description, a phone with a Home button.…
 - `add_application` string (non-empty): Host path of an .app directory built for arm64 iOS to add to the profile's applications. It is inspected first (Info.plist, arm64 executable, only allowlisted…
 - `add_entitlements` string: Entitlements plist to request for add_application; empty: the executable's embedded entitlements, or only application-identifier.
 - `remove_application` string (non-empty): Host path or bundle identifier of a listed app to remove from the profile. If it was the app the start opens, the owned diagnostic is opened again.
-- `application` string (matching ^[A-Za-z0-9][A-Za-z0-9.-]{0,254}$): Bundle identifier of the app the start opens after boot: the owned diagnostic (io.github.marselnenaj.tomacco.research-app) or one of the listed applications.
+- `application` string (matching `^[A-Za-z0-9][A-Za-z0-9.-]{0,254}$`): Bundle identifier of the app the start opens after boot: the owned diagnostic (io.github.marselnenaj.tomacco.research-app) or one of the listed applications.
 - `clang` string: Host path of the clang 22 executable the start rebuilds guest tools with (profile.json toolchain.clang); empty removes it, so a clang-22 on PATH or the build's…
 - `deploy` boolean (default false): With add_application: install it on the running phone now, without a reboot. Refused with ios_virtual_not_running when the phone is off.
 - `deploy_open_app` boolean (default true): With deploy: open the app afterwards.
@@ -182,7 +182,7 @@ Save state of virtual iOS device. writes, idempotent.
 
 Keep the last verified run of the configured virtual iOS device under a name, so a later start can begin from it with ios.virtual.state_use. Nothing is copied: a verified run's disks never change after its stop, and the start's pruning and ios.virtual.cleanup keep every saved run's disk copy and the copies its overlay reads. Refused with ios_virtual_no_verified_run when no run has been stopped cleanly, ios_virtual_state_exists for a name in use unless replace, and ios_virtual_busy while a start or stop runs. A running phone is fine: the saved run is the last verified one, not the running one.
 
-- `name` string, required (matching ^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$): Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit.
+- `name` string, required (matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`): Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit.
 - `replace` boolean (default false): Point an existing name at the current verified run.
 
 ```sh
@@ -195,7 +195,7 @@ Delete saved state of virtual iOS device. **destructive, ask first**.
 
 Remove a saved state's name and delete the disk copy it kept, when that copy is one the start made in the profile's installs and nothing else keeps it: not the verified base, the current run, a start's attempt, another saved state or a copy an overlay among those reads. kept_because says why a copy stayed; removed and freed_bytes what went. A copy a running guest holds is refused, not deleted. Refused with ios_virtual_state_unknown for an unknown name and ios_virtual_busy while a start or stop runs.
 
-- `name` string, required (matching ^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$): Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit.
+- `name` string, required (matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`): Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit.
 
 ```sh
 tomaccoctl call ios.virtual.state_delete '{"name":"<name>"}'
@@ -207,7 +207,7 @@ Start virtual iOS device from saved state. writes, idempotent.
 
 Make a saved state the base of the next ios.virtual.start of the configured virtual iOS device: state.json then names its run as the verified run, and the start copies from it (or lays an overlay on it). The phone must be stopped (ios_virtual_running otherwise). When the current verified run has no saved name, a later start's pruning may delete its disks, so this is refused with ios_virtual_state_unsaved unless discard_current. Refused with ios_virtual_state_missing when the state's disks are gone and ios_virtual_busy while a start or stop runs. previous is the base it replaced.
 
-- `name` string, required (matching ^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$): Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit.
+- `name` string, required (matching `^[A-Za-z0-9][A-Za-z0-9 ._-]{0,63}$`): Name of the saved state: 1 to 64 letters, digits, spaces, '.', '_' or '-', starting with a letter or digit.
 - `discard_current` boolean (default false): Give up the current verified run even though no saved state keeps it.
 
 ```sh
@@ -235,7 +235,7 @@ Debug process on virtual iOS device. writes.
 
 Join lldb to one process of the running phone: a durable job holds a TCP port on the host's loopback and, once lldb connects, copies its bytes to /usr/libexec/debugserver in the guest, attached to the target. The first line of job.logs is an event with the port and the lldb command, process connect connect://127.0.0.1:<port>. The app needs get-task-allow (ios.virtual.deploy with such entitlements). One session per job; it ends when lldb disconnects. Anything that reaches this port controls that process, so it listens on loopback only.
 
-- `target` string, required (matching ^[A-Za-z0-9_][A-Za-z0-9._-]{0,63}$): The process's decimal PID or its name.
+- `target` string, required (matching `^[A-Za-z0-9_][A-Za-z0-9._-]{0,63}$`): The process's decimal PID or its name.
 - `port` integer (0 to 65535; default 0): TCP port on 127.0.0.1; 0 picks a free one.
 - `seconds` integer (10 to 86400; default 3600): Longest the session lasts.
 

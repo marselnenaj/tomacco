@@ -29,7 +29,8 @@ def guides():
         listed = [str(path.relative_to(ROOT)) for path in ROOT.glob("**/*.md") if "target" not in path.parts]
     return sorted(path for path in listed
                   if (path in ("README.md", "CONTRIBUTING.md") or path.startswith(("docs/", "examples/", "integrations/agent-skill/")))
-                  and not path.startswith("docs/reference/") and (ROOT / path).is_file())
+                  and not path.startswith(("docs/reference/", "integrations/agent-skill/tomacco/references/"))
+                  and (ROOT / path).is_file())
 
 
 def version():

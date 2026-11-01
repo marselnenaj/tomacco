@@ -31,7 +31,7 @@ URL_BASE = "/docs"
 # Navigation: group title and the pages in it, as paths below docs/ (without .md).
 GROUPS = [
     ("Getting started", ["getting-started", "tutorial-android", "tutorial-virtual-iphone", "agent-setup", "recipes"]),
-    ("Agents", ["agents", "agent-patterns", "container"]),
+    ("Agents", ["agents", "agent-patterns", "screen-export", "container"]),
     ("Use Tomacco", ["desktop", "android", "iphone", "linux-hosts"]),
     ("Virtual iOS device", ["virtual-ios/README", "virtual-ios/setup", "virtual-ios/usage",
                             "virtual-ios/troubleshooting", "virtual-ios/how-it-works"]),
