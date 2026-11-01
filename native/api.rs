@@ -342,6 +342,15 @@ mod tests {
         assert_eq!(error.remedy, "arguments must be an empty object");
     }
     #[test]
+    fn a_huge_mistyped_name_is_refused_at_once() {
+        let started = std::time::Instant::now();
+        let error = arguments(&"x".repeat(200_000), &json!({})).unwrap_err();
+        assert_eq!(error.code, "operation_not_found");
+        assert!(started.elapsed() < std::time::Duration::from_secs(2));
+        let error = arguments("job.wiat", &json!({})).unwrap_err();
+        assert!(error.remedy.starts_with("Did you mean job.wait?"));
+    }
+    #[test]
     fn defaults_match_existing_contract() {
         let a = arguments("project.plan", &json!({"path":"/tmp"})).unwrap();
         assert_eq!(a["configuration"], "debug");
