@@ -1601,6 +1601,41 @@ class VirtualPhoneLogic(unittest.TestCase):
         self.assertIn("did not activate", self.state()["applications_error"])
         self.assertEqual(self.state()["phase"], "launch-accepted")
 
+    def black_display(self, log_text):
+        report = self.root / "report"
+        (report / "paravirtual/renderer").mkdir(parents=True)
+        (report / "paravirtual/renderer/fail.log").write_text(log_text)
+        black = self.root / "black.png"
+        black.write_bytes(b"")
+        self.write_state(run=7, install=str(self.base), closed=False, guest_job="guest8")
+        phone = self.phone()
+        def invoke(operation, arguments, timeout=180, independent=False):
+            if operation == "ios.emulator.report":
+                return {"ok": True, "result": {"report_directory": str(report)}}
+            return {"ok": True, "result": {"result": {"path": str(black)}}}
+        phone.invoke = invoke
+        events = []
+        with patch.object(ios_virtual_iphone, "frame_lit", lambda path: False), \
+                patch.object(ios_virtual_iphone.time, "sleep", lambda _s: None), \
+                patch.object(ios_virtual_iphone, "emit", lambda phase, **k: events.append((phase, k))):
+            phone.observe_display("guest8")
+        self.assertIs(self.state()["display_visible"], False)
+        return events[-1][1]
+
+    def test_a_black_display_names_shader_scratch_files_that_could_not_be_written(self):
+        event = self.black_display("linux_m2v_draw reason=draw_prepare_vertex_translate "
+                                   "detail=llvm-dis_failed:_LLVM_ERROR:_IO_failure_on_output_stream:"
+                                   "_Disk_quota_exceeded_ pipe=100\n")
+        self.assertEqual(event["cause"], "disk quota exceeded")
+        self.assertIn("could not write its shader scratch files (disk quota exceeded)", event["warning"])
+
+    def test_a_black_display_without_a_scratch_failure_says_only_that(self):
+        event = self.black_display("OFF present_black mid=1 1206x2622\n")
+        self.assertNotIn("cause", event)
+        self.assertEqual(event["warning"],
+                         "iOS accepted the launch but the display shows only black; see ios.emulator.report")
+        self.assertIsNone(ios_virtual_iphone.renderer_scratch_failure(self.root / "missing.log"))
+
     def test_the_staged_install_runs_after_activation_and_before_the_time_zone(self):
         self.write_state(run=7, install=str(self.base), tools=str(self.tools), closed=False, guest_job="guest8",
                          verified={"run": 7, "install": str(self.base), "tools": str(self.tools)})

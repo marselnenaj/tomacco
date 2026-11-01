@@ -215,6 +215,30 @@ def open_refusal(response):
     return reason
 
 
+# What a renderer log line says when a shader's scratch files could not be
+# written: the translation is then refused for the rest of the session.
+SCRATCH_FAILURES = (("Disk_quota_exceeded", "disk quota exceeded"),
+                    ("Disk quota exceeded", "disk quota exceeded"),
+                    ("No_space_left_on_device", "no space left on the device"),
+                    ("No space left on device", "no space left on the device"),
+                    ("_scratch_write", "a scratch write failed"))
+
+
+def renderer_scratch_failure(log, window=8 << 20):
+    """Why the renderer's shader translations failed for want of scratch
+    space, read from the last window bytes of its fail.log, or None."""
+    try:
+        with open(log, "rb") as stream:
+            stream.seek(max(0, os.fstat(stream.fileno()).st_size - window))
+            text = stream.read().decode("utf-8", "replace")
+    except OSError:
+        return None
+    for needle, reason in SCRATCH_FAILURES:
+        if needle in text:
+            return reason
+    return None
+
+
 def emit(phase, **details):
     print("TOMACCO_VIRTUAL_IPHONE " + json.dumps({"phase": phase, **details}), flush=True)
 
@@ -1574,8 +1598,18 @@ class Phone:
                 break
         self.save(display_visible=visible)
         if visible is False:
-            emit("display", visible=False,
-                 warning="iOS accepted the launch but the display shows only black; see ios.emulator.report")
+            warning = "iOS accepted the launch but the display shows only black; see ios.emulator.report"
+            cause = None
+            try:
+                reply = self.invoke("ios.emulator.report", {"job_id": job})
+                cause = renderer_scratch_failure(Path(reply["result"]["report_directory"])
+                                                 / "paravirtual" / "renderer" / "fail.log")
+            except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError):
+                pass
+            if cause:
+                warning += f". The renderer could not write its shader scratch files ({cause}): free space " \
+                           "or quota there and start again"
+            emit("display", visible=False, warning=warning, **({"cause": cause} if cause else {}))
 
     def apply_watchdog_scale(self, job, status):
         """Give iOS's launch watchdogs the time this emulated guest needs.
