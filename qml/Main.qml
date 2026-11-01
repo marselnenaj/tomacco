@@ -492,6 +492,7 @@ ApplicationWindow {
     NativeWorkspace {id:nativeWorkspace;anchors.fill:parent;visible:root.nativeMode;workspace:workspace;externalDeviceWindow:workspace.guestWindowVisible;onWebRequested:{workspace.close();root.nativeMode=false}}
     Connections { target: workspace; function onOpenedChanged() { if(workspace.opened)root.nativeMode=true } }
     PreviewAutomation { objectName: "previewAutomation"; app: root; device: phone; protocol: pageProtocol }
+    ApprovalDialog {}
     Workspace { id: workspace; parent: nativeWorkspace.workspaceHost; anchors.fill: parent; visible: opened && root.nativeMode;
         guestSolo: nativeWorkspace.solo
         onGuestCloseRequested: nativeWorkspace.quitApp()

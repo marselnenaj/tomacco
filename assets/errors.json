@@ -75,6 +75,10 @@
     "cause": "The build files do not state this app's application ID.",
     "remedy": "Pass bundle_id with the app's application ID."
   },
+  "approval_denied": {
+    "cause": "The desktop asked the person about a destructive agent call and they denied it, pressed Escape, or the request timed out.",
+    "remedy": "Ask the person, or have them approve it in the Tomacco window; desktop approval is set with settings.configure approval."
+  },
   "artifact_missing": {
     "cause": "Screenshot command produced no artifact.",
     "remedy": "Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up."
@@ -1139,6 +1143,10 @@
     "cause": "A path does not exist.",
     "remedy": "Check the path; it must be absolute and exist on this computer, or on the device for device paths."
   },
+  "path_outside_roots": {
+    "cause": "Under an agent policy other than full, the call would write outside the allowed roots (the data directory, the temp directory, the server's working directory, the policy's write_roots or TOMACCO_WRITE_ROOTS).",
+    "remedy": "Write inside the project, or have the person add the folder to write_roots or TOMACCO_WRITE_ROOTS."
+  },
   "platform_unsupported": {
     "cause": "The virtual iPhone runs iOS apps; pass platform ios.",
     "remedy": "Pass a platform the project and the device support; project.inspect lists the project's platforms."
@@ -1206,6 +1214,14 @@
   "pmp_trace_required": {
     "cause": "PMP research requires architectural bus-fault tracing.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
+  },
+  "policy_denied": {
+    "cause": "The agent policy in force does not allow this operation for this caller.",
+    "remedy": "Call agent.policy to see the policy; only the person can change it, from a terminal with settings.configure agent_policy."
+  },
+  "policy_invalid": {
+    "cause": "settings.json has an agent_policy that cannot be read, so agent calls are blocked until it is fixed.",
+    "remedy": "From a terminal, set a valid agent_policy with settings.configure."
   },
   "port_busy": {
     "cause": "Port … is already in use, perhaps by another Metro bundler.",
@@ -1315,6 +1331,14 @@
     "cause": "Debugger response exceeds 2 MiB.",
     "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
   },
+  "result_not_found": {
+    "cause": "No saved result has this result_id, or it has been removed.",
+    "remedy": "Run the operation again; large results are saved under the result_id its answer names."
+  },
+  "result_too_large": {
+    "cause": "The result is larger than inline_result_kib, so it was saved instead of returned inline.",
+    "remedy": "Read it in pages with result.read and the result_id from the error."
+  },
   "root_unavailable": {
     "cause": "The device has no root shell (Google Play images and phones), which the capture needs for tcpdump.",
     "remedy": "Use an emulator with a Google APIs or AOSP image."
@@ -1402,6 +1426,10 @@
   "server_timeout": {
     "cause": "Nothing listened on port … within … s.",
     "remedy": "Check that it is still running and reachable, then try once more."
+  },
+  "session_job_limit": {
+    "cause": "This MCP session already runs as many jobs as jobs_per_session allows.",
+    "remedy": "Wait for a job to end with job.wait, or cancel one with job.cancel."
   },
   "setting_not_applied": {
     "cause": "Android did not apply: …",

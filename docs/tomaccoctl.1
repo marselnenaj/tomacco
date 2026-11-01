@@ -23,6 +23,8 @@ tomaccoctl \- the Tomacco control plane for building, running and testing mobile
 .B tomaccoctl doctor
 .br
 .B tomaccoctl mcp
+.RB [ \-\-policy
+.IR NAME ]
 .br
 .B tomaccoctl replay
 .I FILE
@@ -113,9 +115,18 @@ answers every question with yes.
 Check the toolchains and devices this machine can use, and list what is
 left to set up, in order.
 .TP
-.B mcp
+.BR mcp " [" \-\-policy " \fINAME\fR]"
 Serve the same operations to a coding agent over standard input and output
 (Model Context Protocol). It opens no network port.
+.B \-\-policy
+picks the agent policy for this server:
+.BR full ,
+.BR no_destructive ,
+.B read_only
+or a policy that
+.B agent_policy
+in settings.json defines (see
+.BR TOMACCO_POLICY ).
 .TP
 .BR replay " \fIFILE\fR [" \-\-dry\-run ]
 Call again, in order, the operations of a session log (see
@@ -212,6 +223,27 @@ in the JSON envelope on standard output.
 The data directory: projects, device profiles, job records and logs.
 The default is
 .IR ~/.local/share/tomacco .
+.TP
+.B TOMACCO_POLICY
+The agent policy for
+.B call
+and
+.BR mcp ,
+as
+.B \-\-policy
+names it. Without it, the policy comes from
+.B agent_policy
+in settings.json, and is
+.B full
+when that names none. The audit log of calls that change something is in
+.IR audit/audit.jsonl
+in the data directory; the
+.B audit.list
+operation reads it.
+.TP
+.B TOMACCO_WRITE_ROOTS
+Directories, separated by colons, where the operations an agent calls may
+write under a policy that keeps writes in the roots.
 .TP
 .B TOMACCO_SESSION_LOG
 An absolute file path. Every operation called through

@@ -28,6 +28,15 @@ static bool ownerOnlyDirectory(const QString &path) {
     return info.isDir() && !info.isSymLink() && info.ownerId()==getuid() && !(info.permissions()&others);
 }
 
+// What tomaccoctl runs with for this window: it acts for the person in front
+// of it, so the agent policy, desktop approval and the audit log, which are
+// for agents, leave it alone.
+QProcessEnvironment Control::personEnvironment() {
+    auto environment=QProcessEnvironment::systemEnvironment();
+    environment.insert(QStringLiteral("TOMACCO_CALLER"),QStringLiteral("desktop"));
+    return environment;
+}
+
 Control::Control(const QString &session, QObject *parent, const QString &cli): QObject(parent), m_session(session), m_cli(cli) {
     // tomaccoctl is installed and built next to the desktop (bin/, build-product/).
     if(m_cli.isEmpty()) m_cli=QCoreApplication::applicationDirPath()+"/tomaccoctl";
@@ -76,6 +85,7 @@ Control::~Control() {
         // A contact it may have held is lifted before the app is gone.
         QProcess release;
         release.setWorkingDirectory(QFileInfo(m_cli).absolutePath());
+        release.setProcessEnvironment(personEnvironment());
         release.start(m_cli,{"call","ios.emulator.control","@-"});
         release.write(QJsonDocument(QJsonObject{{"job_id",m_touch.value("job_id").toString()},{"action","touch_up"}}).toJson(QJsonDocument::Compact));
         release.closeWriteChannel();
@@ -163,6 +173,7 @@ void Control::spawn(int id,const QString &operation,const QVariantMap &arguments
     });
     QTimer::singleShot(90000,process,[process]{ process->kill(); });
     process->setWorkingDirectory(QFileInfo(m_cli).absolutePath());
+    process->setProcessEnvironment(personEnvironment());
     // Arguments travel on standard input, never in argv: argv is readable by
     // every local user through /proc and limited to 128 KiB per argument,
     // while a saved source file alone may be up to 1 MiB.
@@ -215,6 +226,7 @@ void Control::startPreviewTransport() {
         if(m_previewProcess==process && error==QProcess::FailedToStart)
             failPreviewTransport(process->errorString());
     });
+    process->setProcessEnvironment(personEnvironment());
     process->start(m_cli,{"mcp"});
 }
 

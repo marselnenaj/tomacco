@@ -566,10 +566,13 @@ pub fn submit(label: &str, mut spec: Value) -> Result {
     } else {
         None
     };
+    // An MCP session at its limit of running jobs starts no more.
+    let slot = crate::guard::admit_job()?;
     db.execute(
         "INSERT INTO jobs(id,label,state,created,updated,spec) VALUES(?,?,'queued',?,?,?)",
         params![id, label, now(), now(), spec.to_string()],
     )?;
+    slot.started(&id);
     let mut command = Command::new(crate::core::own_executable()?);
     command
         .args(["_worker", &id])

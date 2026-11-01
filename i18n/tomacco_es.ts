@@ -4561,6 +4561,18 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Log of virtual iOS device</source>
         <translation>Registro del dispositivo iOS virtual</translation>
     </message>
+    <message>
+        <source>Agent policy</source>
+        <translation>Política de agentes</translation>
+    </message>
+    <message>
+        <source>Audit log</source>
+        <translation>Registro de auditoría</translation>
+    </message>
+    <message>
+        <source>Read a saved result</source>
+        <translation>Leer un resultado guardado</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5846,6 +5858,41 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
     <message>
         <source>Try again</source>
         <translation>Reintentar</translation>
+    </message>
+</context>
+<context>
+    <name>ApprovalDialog</name>
+    <message>
+        <source>Allow this agent action?</source>
+        <translation>¿Permitir esta acción del agente?</translation>
+    </message>
+    <message>
+        <source>An agent</source>
+        <translation>Un agente</translation>
+    </message>
+    <message>
+        <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
+        <translation>%1 pide ejecutar %2 (%3). Tomacco la marca como destructiva: puede borrar o sobrescribir datos.</translation>
+    </message>
+    <message>
+        <source>Its arguments, with secrets masked:</source>
+        <translation>Sus argumentos, con los secretos ocultos:</translation>
+    </message>
+    <message>
+        <source>Arguments</source>
+        <translation>Argumentos</translation>
+    </message>
+    <message>
+        <source>Seconds left before it is denied: %1</source>
+        <translation>Segundos hasta el rechazo automático: %1</translation>
+    </message>
+    <message>
+        <source>Deny</source>
+        <translation>Rechazar</translation>
+    </message>
+    <message>
+        <source>Approve</source>
+        <translation>Permitir</translation>
     </message>
 </context>
 </TS>

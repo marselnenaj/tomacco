@@ -28,6 +28,7 @@ mod diagnostics;
 mod download;
 mod files;
 mod gradle_model;
+mod guard;
 mod instrumentation;
 mod ios_emulator;
 mod iphone_automation;
@@ -96,7 +97,7 @@ struct Options {
 impl Options {
     const FLAGS: &[&str] = &["--names", "--pretty", "--compact", "--wait", "--dry-run"];
     /// Commands that parse their own arguments.
-    const OWN: &[&str] = &["setup", "update", "uninstall", "verify"];
+    const OWN: &[&str] = &["setup", "update", "uninstall", "verify", "mcp"];
     /// What every command that prints an envelope takes.
     const OUTPUT: &[&str] = &["--pretty", "--compact"];
     fn parse(args: Vec<String>) -> (Vec<String>, Options) {
@@ -292,8 +293,11 @@ Usage:
                     Write a bug-report bundle (version, host, doctor,
                     settings, recent failed jobs and their log ends) with
                     secrets masked. Nothing is sent; read it before sharing.
-  tomaccoctl mcp     Serve the same operations to a coding agent over stdio
-                    (Model Context Protocol; no network port).
+  tomaccoctl mcp [--policy NAME]
+                    Serve the same operations to a coding agent over stdio
+                    (Model Context Protocol; no network port). --policy
+                    picks the agent policy for this server: full,
+                    no_destructive, read_only or one agent_policy defines.
   tomaccoctl replay FILE [--dry-run]
                     Call again, in order, the operations of a session log
                     that changed something, waiting for each job; stops at
@@ -346,6 +350,20 @@ fn help_command(args: &[String], options: &Options) -> Result<String> {
     }
 }
 
+/// The policy `tomaccoctl mcp --policy NAME` names, if any.
+fn mcp_policy(args: &[String]) -> Result<Option<String>> {
+    match args {
+        [] => Ok(None),
+        [flag, name] if flag == "--policy" && !name.starts_with('-') => Ok(Some(name.clone())),
+        [flag] if flag.starts_with("--policy=") => Ok(Some(flag["--policy=".len()..].to_string())),
+        _ => Err(Error::new(
+            "invalid_request",
+            format!("tomaccoctl mcp takes only --policy NAME, not {}", args.join(" ")),
+        )
+        .remedy("Name a built-in policy (full, no_destructive, read_only) or one agent_policy.policies defines")),
+    }
+}
+
 fn run(args: &[String], options: &Options) -> Result<i32> {
     match args.first().map(String::as_str) {
         Some("--version") | Some("-V") => {
@@ -366,6 +384,7 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         Some("uninstall") => return update::uninstall_command(&args[1..]),
         Some("verify") => return verify::command(&args[1..]),
         Some("mcp") => {
+            guard::enter(guard::Channel::Mcp, mcp_policy(&args[1..])?);
             mcp::serve(std::io::stdin().lock(), std::io::stdout())?;
             return Ok(0);
         }
@@ -576,6 +595,7 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
                 args.get(2).map(String::as_str).unwrap_or("{}"),
                 std::io::stdin().lock(),
             )?;
+            guard::enter(guard::Channel::Cli, None);
             match session_log::call(op, &arguments) {
                 Ok(result) if options.given("--wait") => match job_id(&result) {
                     Some(id) => follow(id, api::dispatch, &mut std::io::stderr()),
@@ -587,11 +607,15 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         "replay" => options
             .check(&["--dry-run"])
             .and_then(|()| match &args[1..] {
-                [file] => session_log::replay(
-                    &std::fs::read_to_string(path(file, false, true)?)?,
-                    options.given("--dry-run"),
-                    api::dispatch,
-                ),
+                [file] => {
+                    // Replayed calls pass the same guards as tomaccoctl call.
+                    guard::enter(guard::Channel::Cli, None);
+                    session_log::replay(
+                        &std::fs::read_to_string(path(file, false, true)?)?,
+                        options.given("--dry-run"),
+                        guard::dispatch,
+                    )
+                }
                 _ => Err(Error::new("invalid_request", "Name one session log file")),
             }),
         _ => Err(

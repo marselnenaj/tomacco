@@ -96,7 +96,7 @@ version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env`
 | --- | --- | --- |
 | `full` (the default) | One per operation, with every description. | 265,234 bytes |
 | `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 136,247 bytes |
-| `grouped` | One per area, such as `android` or `job`: 25 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 29,261 bytes |
+| `grouped` | One per area, such as `android` or `job`: 28 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 29,261 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
@@ -308,6 +308,49 @@ TOMACCO_SESSION_LOG=/absolute/session.jsonl tomaccoctl call project.run '{"path"
 tomaccoctl replay /absolute/session.jsonl --dry-run
 tomaccoctl replay /absolute/session.jsonl
 ```
+
+## Guardrails
+
+Every operation called through `tomaccoctl call` or `tomaccoctl mcp` passes a guard first. Nothing is configured
+by default, so an agent can do what the operations allow, as before. The person sets `agent_policy` from a terminal,
+with `settings.configure`; over MCP that call is refused, so an agent cannot loosen its own policy.
+
+```sh
+tomaccoctl call settings.configure '{"agent_policy":{"mcp":"no_destructive","clients":{"codex":"read_only"},"policies":{"builds":{"mode":"no_destructive","allow":["project.","job.","device.list","capabilities"],"deny":["project.watch"],"write_roots":["/home/me/src"]}},"approval":{"destructive":true,"timeout_seconds":30},"limits":{"jobs_per_session":4,"inline_result_kib":1024}}}'
+tomaccoctl call agent.policy '{"channel":"mcp","client":"codex"}'
+tomaccoctl call audit.list '{"channel":"mcp","limit":20}'
+```
+
+- **Policy.** `full` allows everything, `no_destructive` refuses operations marked `destructiveHint`, and `read_only`
+  allows only those marked `readOnlyHint`. `policies` defines named ones: a `mode` (one of the three), `allow` and `deny`
+  lists of operation names, prefixes ending in a dot (`play.`) or `*`. A deny entry always wins; with an allow list,
+  no other operation runs (the MCP resources, which only read, stay readable). The steps of `android.each` are checked like calls. An MCP server's policy is, in this order, the
+  one `tomaccoctl mcp --policy NAME` or `TOMACCO_POLICY` names, the client's entry in `clients` (by the `clientInfo` name
+  it sends in `initialize`), `mcp`, then `full`; `tomaccoctl call` uses `TOMACCO_POLICY`, then `cli`. An unknown name
+  allows nothing. A refused call is `policy_denied`, before anything runs; `agent.policy` says what a caller gets.
+- **Write roots.** Under any policy but `full`, and a named one unless its `writes` is `anywhere`, a destination an
+  operation takes (a screenshot, report, export, keystore, `files.write`'s project, `project.create`'s folder) must be
+  inside Tomacco's data directory, the temporary directory, the directory the server was started in (unless that is
+  `/` or the home directory or above it), the policy's `write_roots` or `TOMACCO_WRITE_ROOTS` (directories separated by
+  colons). Links are followed before the check. settings.json, the audit log and saved results stay closed. Otherwise
+  the call is `path_outside_roots`. What a build's own scripts write is not checked.
+- **Approval at the desktop.** With `approval.destructive`, a destructive call from an MCP agent waits until the person
+  at the Tomacco desktop approves it in a dialog that shows the agent's name, the operation and its arguments with
+  secrets masked. Deny, Escape and the end of `timeout_seconds` (5 to 30, 30 by default) are a no:
+  `approval_denied`. Without a desktop open the call runs, unless `without_desktop` is `deny`. `tomaccoctl call`
+  is not asked, nor is the desktop itself.
+- **Limits.** An MCP session runs at most `jobs_per_session` jobs at once (8 by default, 0 for no limit); one more is
+  `session_job_limit`. A result larger than `inline_result_kib` (2048 by default) is not sent: it is saved, and the
+  `result_too_large` error names a `result_id` that `result.read` reads back in pieces. The call itself ran.
+- **Audit log.** Each call that may change something, and each refused call, is appended to `audit/audit.jsonl` in the
+  data directory (owner-only): the time, `channel` (`cli` or `mcp`), `client` (the MCP client's name, or
+  `TOMACCO_CLIENT` for `tomaccoctl call`), the operation, its arguments with secrets masked and any `text` replaced by
+  its length and SHA-256, `ok`, the error `code`, the job ID, the policy and the approval. Past 4 MiB the file moves to
+  `audit.1.jsonl`; four older files are kept. `audit.list` reads it, newest first. `"audit":false` turns it off.
+
+These guard what an agent does through Tomacco's operations. An agent that can also run shell commands as you can edit
+settings.json or run the same tools without Tomacco; [the security policy](../SECURITY.md#an-agent-with-tomaccos-tools)
+says what is and is not covered.
 
 ## Android
 

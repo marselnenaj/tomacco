@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 448 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -25,6 +25,7 @@ Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.
 | `application_id_ambiguous` | Several installed apps match … | Pass the exact bundle_id from ios.apps. |
 | `application_id_required` | The request was refused; the message says why. | Pass bundle_id with the app's bundle identifier. |
 | `application_id_unknown` | The build files do not state this app's application ID. | Pass bundle_id with the app's application ID. |
+| `approval_denied` | The desktop asked the person about a destructive agent call and they denied it, pressed Escape, or the request timed out. | Ask the person, or have them approve it in the Tomacco window; desktop approval is set with settings.configure approval. |
 | `artifact_missing` | Screenshot command produced no artifact. | Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up. |
 | `audio_stopping` | The previous audio stream is still stopping; retry shortly. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `audio_unsupported` | Output forwarding is currently available for Android 11 and newer. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
@@ -291,6 +292,7 @@ Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.
 | `paste_unconfirmed` | Android did not confirm the clipboard text. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `path_exists` | Choose an empty report directory. | Choose another path, or pass overwrite:true. |
 | `path_not_found` | A path does not exist. | Check the path; it must be absolute and exist on this computer, or on the device for device paths. |
+| `path_outside_roots` | Under an agent policy other than full, the call would write outside the allowed roots (the data directory, the temp directory, the server's working directory, the policy's write_roots or TOMACCO_WRITE_ROOTS). | Write inside the project, or have the person add the folder to write_roots or TOMACCO_WRITE_ROOTS. |
 | `platform_unsupported` | The virtual iPhone runs iOS apps; pass platform ios. | Pass a platform the project and the device support; project.inspect lists the project's platforms. |
 | `pmp_breakpoint_unsupported` | Engine rejected the hardware instruction breakpoint. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `pmp_bus_fault` | PMP accessed unsupported hardware or an unsupported register transaction. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
@@ -308,6 +310,8 @@ Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.
 | `pmp_observation_timeout` | PMP observation expired; firmware boot is unverified. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `pmp_sysreg_fault` | PMP accessed an unimplemented CPU system register. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `pmp_trace_required` | PMP research requires architectural bus-fault tracing. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
+| `policy_denied` | The agent policy in force does not allow this operation for this caller. | Call agent.policy to see the policy; only the person can change it, from a terminal with settings.configure agent_policy. |
+| `policy_invalid` | settings.json has an agent_policy that cannot be read, so agent calls are blocked until it is fixed. | From a terminal, set a valid agent_policy with settings.configure. |
 | `port_busy` | Port … is already in use, perhaps by another Metro bundler. | Stop the other bundler, or its project.run job, then run again. |
 | `preview_disconnected` | Preview closed before replying. | Check that the dev server answers at the URL, then preview.reload or start the preview again. |
 | `preview_unavailable` | Cannot reach preview session …: … | Start tomacco --preview-session … |
@@ -335,6 +339,8 @@ Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.
 | `research_tools_missing` | The virtual iOS device or its research engine refused the request or stopped answering. | Install the iOS research preparation tools. |
 | `resource_not_found` | No MCP resource has that URI. | resources/list and resources/templates/list name the resources this server has. |
 | `response_too_large` | Debugger response exceeds 2 MiB. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
+| `result_not_found` | No saved result has this result_id, or it has been removed. | Run the operation again; large results are saved under the result_id its answer names. |
+| `result_too_large` | The result is larger than inline_result_kib, so it was saved instead of returned inline. | Read it in pages with result.read and the result_id from the error. |
 | `root_unavailable` | The device has no root shell (Google Play images and phones), which the capture needs for tcpdump. | Use an emulator with a Google APIs or AOSP image. |
 | `runtime_busy` | Runtime input queue is full. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `runtime_configuration_conflict` | This device already has a native session with different stream settings. | Reuse the existing session, or stop it before changing stream settings. |
@@ -357,6 +363,7 @@ Every error code `tomaccoctl` returns, 441 codes, generated from `assets/errors.
 | `secret_permissions` | The App Store Connect .p8 key must be readable only by its owner. | chmod 600 the file. |
 | `server_failed` | … exited (…) before it listened on port … | Read the message and the job's log (job.logs); fix the cause and try again. |
 | `server_timeout` | Nothing listened on port … within … s. | Check that it is still running and reachable, then try once more. |
+| `session_job_limit` | This MCP session already runs as many jobs as jobs_per_session allows. | Wait for a job to end with job.wait, or cancel one with job.cancel. |
 | `setting_not_applied` | Android did not apply: … | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `setting_unsupported` | Switching airplane mode from adb needs Android 11 (API 30) or newer. | Older Android changes the language only for the whole device, in its Settings app. |
 | `setup_failed` | HOME is not set. | Run tomaccoctl setup from a normal login shell with HOME set. |

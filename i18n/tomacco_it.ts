@@ -4561,6 +4561,18 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Log of virtual iOS device</source>
         <translation>Registro del dispositivo iOS virtuale</translation>
     </message>
+    <message>
+        <source>Agent policy</source>
+        <translation>Criteri degli agenti</translation>
+    </message>
+    <message>
+        <source>Audit log</source>
+        <translation>Registro di audit</translation>
+    </message>
+    <message>
+        <source>Read a saved result</source>
+        <translation>Leggi un risultato salvato</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5846,6 +5858,41 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Try again</source>
         <translation>Riprova</translation>
+    </message>
+</context>
+<context>
+    <name>ApprovalDialog</name>
+    <message>
+        <source>Allow this agent action?</source>
+        <translation>Consentire questa azione dell'agente?</translation>
+    </message>
+    <message>
+        <source>An agent</source>
+        <translation>Un agente</translation>
+    </message>
+    <message>
+        <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
+        <translation>%1 chiede di eseguire %2 (%3). Tomacco la segna come distruttiva: può eliminare o sovrascrivere dati.</translation>
+    </message>
+    <message>
+        <source>Its arguments, with secrets masked:</source>
+        <translation>I suoi argomenti, con i segreti mascherati:</translation>
+    </message>
+    <message>
+        <source>Arguments</source>
+        <translation>Argomenti</translation>
+    </message>
+    <message>
+        <source>Seconds left before it is denied: %1</source>
+        <translation>Secondi prima del rifiuto automatico: %1</translation>
+    </message>
+    <message>
+        <source>Deny</source>
+        <translation>Rifiuta</translation>
+    </message>
+    <message>
+        <source>Approve</source>
+        <translation>Consenti</translation>
     </message>
 </context>
 </TS>
