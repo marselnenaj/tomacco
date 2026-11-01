@@ -281,6 +281,32 @@ int main(void) {
 }
 ''')
 
+    def test_a_deploys_hot_entry_decides_before_the_compiled_one(self):
+        self.run_harness(r'''
+static unsigned char compiled[TOMACCO_POLICY_TABLE_BYTES], hot[TOMACCO_POLICY_TABLE_BYTES];
+int main(void) {
+    unsigned char built[20] = {1}, redeployed[20] = {2}, other[20] = {3};
+    unsigned long size = tomacco_policy_insert(compiled, 0, built, "dev.app");
+    unsigned compiled_count = tomacco_policy_count(compiled, size);
+    size = tomacco_policy_insert(compiled, compiled_count, other, "dev.other");
+    compiled_count = tomacco_policy_count(compiled, size);
+    const unsigned char *table = 0;
+    /* Without a hot table the compiled entry decides. */
+    int entry = tomacco_policy_lookup(compiled, compiled_count, hot, 0, "dev.app", &table);
+    if (entry < 0 || table != compiled || tomacco_policy_cdhash(table, (unsigned)entry)[0] != 1) return 1;
+    /* A redeployed app's hot entry, with its new hash, decides instead. */
+    size = tomacco_policy_insert(hot, 0, redeployed, "dev.app");
+    unsigned hot_count = tomacco_policy_count(hot, size);
+    entry = tomacco_policy_lookup(compiled, compiled_count, hot, hot_count, "dev.app", &table);
+    if (entry < 0 || table != hot || tomacco_policy_cdhash(table, (unsigned)entry)[0] != 2) return 2;
+    /* An app only compiled in is still found there, and an unknown one nowhere. */
+    entry = tomacco_policy_lookup(compiled, compiled_count, hot, hot_count, "dev.other", &table);
+    if (entry < 0 || table != compiled || tomacco_policy_cdhash(table, (unsigned)entry)[0] != 3) return 3;
+    if (tomacco_policy_lookup(compiled, compiled_count, hot, hot_count, "dev.none", &table) != -1) return 4;
+    return 0;
+}
+''')
+
 
 class DeployTests(unittest.TestCase):
     """Phone.deploy's order of steps, with every guest and signing step faked."""

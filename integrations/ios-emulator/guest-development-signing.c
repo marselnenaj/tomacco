@@ -103,14 +103,12 @@ static unsigned char owned_adhoc(object verifier, object selector) {
     object bundle_id = get(bundle, "identifier");
     if (!is_kind(bundle_id, "NSString")) return 0;
     const char *bundle_name = get(bundle_id, "UTF8String");
-    /* Other applications keep the original policy: no table entry, no change. */
+    /* Other applications keep the original policy: no table entry, no change.
+     * A deploy's hot entry comes first: a redeployed app has a new hash. */
+    if (!bundle_name) return 0;
     const unsigned char *table = tomacco_policy_table;
-    int entry = bundle_name ? tomacco_policy_find(table, policy_entries, bundle_name) : -1;
-    if (entry < 0 && bundle_name) {
-        unsigned hot = read_hot_table();
-        table = hot_table;
-        entry = hot ? tomacco_policy_find(table, hot, bundle_name) : -1;
-    }
+    int entry = tomacco_policy_lookup(tomacco_policy_table, policy_entries, hot_table, read_hot_table(),
+                                      bundle_name, &table);
     if (entry < 0) return 0;
     const unsigned char *expected_cdhash = tomacco_policy_cdhash(table, (unsigned)entry);
     const char *expected_identifier = tomacco_policy_identifier(table, (unsigned)entry);

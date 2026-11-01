@@ -109,6 +109,23 @@ static inline int tomacco_policy_find(const unsigned char *table, unsigned count
     return -1;
 }
 
+/* The entry that decides about an identifier: the hot table's, which a deploy
+ * wrote during this boot, before the table compiled into the adapter. A
+ * redeployed app is in both with different hashes, and only the hot one
+ * names the bundle installd is verifying now. Sets *table to the table the
+ * index belongs to; -1 when neither lists the identifier. */
+static inline int tomacco_policy_lookup(const unsigned char *compiled, unsigned compiled_count,
+                                        const unsigned char *hot, unsigned hot_count,
+                                        const char *identifier, const unsigned char **table) {
+    int entry = hot_count ? tomacco_policy_find(hot, hot_count, identifier) : -1;
+    if (entry >= 0) {
+        *table = hot;
+        return entry;
+    }
+    *table = compiled;
+    return tomacco_policy_find(compiled, compiled_count, identifier);
+}
+
 /* Set an identifier's cdhash in a table of `count` accepted entries, in a buffer
  * of TOMACCO_POLICY_TABLE_BYTES, keeping the one canonical encoding. The size of
  * the new table, or 0 when it is full. An identifier listed already gets the new
