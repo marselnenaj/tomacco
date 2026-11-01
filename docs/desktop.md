@@ -308,6 +308,7 @@ Command:
 | Ctrl+Shift+N | Notification Center |
 | Ctrl+Shift+C | Control Center |
 | Ctrl+Shift+B | Back (swipe right from the left edge) |
+| Ctrl+V | Type the host clipboard's text into the focused field (**Paste**) |
 
 The frames are drawn to scale per model from Apple's dimensional drawings and
 the iOS 27 simulator: body, screen offset, island, notch or punch, continuous

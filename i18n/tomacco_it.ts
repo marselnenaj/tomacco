@@ -1262,6 +1262,29 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <source>Record the screen to a video, at most 10 minutes</source>
         <translation>Registra lo schermo in un video, al massimo 10 minuti</translation>
     </message>
+    <message numerus="yes">
+        <source>Typing %n character(s) from the clipboard</source>
+        <translation>
+            <numerusform>Digitazione di %n carattere dagli appunti</numerusform>
+            <numerusform>Digitazione di %n caratteri dagli appunti</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>The clipboard holds no text</source>
+        <translation>Gli appunti non contengono testo</translation>
+    </message>
+    <message>
+        <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
+        <translation>Gli appunti contengono %1 caratteri; al massimo %2 vengono digitati nel telefono</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Incolla</translation>
+    </message>
+    <message>
+        <source>Type the clipboard&apos;s text into the field that has the focus</source>
+        <translation>Digita il testo degli appunti nel campo che ha il focus</translation>
+    </message>
 </context>
 <context>
     <name>IosResearch</name>

@@ -1948,6 +1948,35 @@ private slots:
         QTest::keyClick(window,Qt::Key_L,Qt::ControlModifier|Qt::ShiftModifier);
         inputs=take();
         QCOMPARE(inputs.size(),1);QCOMPARE(inputs[0].toMap().value("action").toString(),QString("power_button"));
+        // Ctrl+V types the host clipboard's text through the text action, in pieces it takes.
+        QGuiApplication::clipboard()->setText(QString("Hello\r\nworld"));
+        QTest::keyClick(window,Qt::Key_V,Qt::ControlModifier);
+        inputs=take();
+        QCOMPARE(inputs.size(),1);
+        QCOMPARE(inputs[0].toMap().value("action").toString(),QString("text"));
+        QCOMPARE(inputs[0].toMap().value("args").toMap().value("text").toString(),QString("Hello\nworld"));
+        QVERIFY(guestView->property("notice").toString().contains("11"));
+        QGuiApplication::clipboard()->setText(QString(1500,QChar('a')));
+        QTest::keyClick(window,Qt::Key_V,Qt::ControlModifier);
+        inputs=take();
+        QCOMPARE(inputs.size(),2);
+        QCOMPARE(inputs[0].toMap().value("args").toMap().value("text").toString().size(),1024);
+        QCOMPARE(inputs[1].toMap().value("args").toMap().value("text").toString().size(),476);
+        // Too much, or no text: nothing is typed and the notice says why.
+        QGuiApplication::clipboard()->setText(QString(5000,QChar('a')));
+        QTest::keyClick(window,Qt::Key_V,Qt::ControlModifier);
+        QVERIFY(take().isEmpty());
+        QVERIFY(guestView->property("notice").toString().contains("5000"));
+        QGuiApplication::clipboard()->clear();
+        QTest::keyClick(window,Qt::Key_V,Qt::ControlModifier);
+        QVERIFY(take().isEmpty());
+        QCOMPARE(guestView->property("notice").toString(),QString("The clipboard holds no text"));
+        // The button does the same and names its shortcut.
+        QGuiApplication::clipboard()->setText(QString("ok"));
+        QVERIFY(object("iosGuestPaste")->property("tip").toString().endsWith("Ctrl+V"));
+        QVERIFY(QMetaObject::invokeMethod(object("iosGuestPaste"),"clicked"));
+        inputs=take();
+        QCOMPARE(inputs.size(),1);QCOMPARE(inputs[0].toMap().value("args").toMap().value("text").toString(),QString("ok"));
         // The buttons play the same drags and name their shortcuts.
         auto *controlCenter=item("iosGuestGesture_controlCenter");QVERIFY(controlCenter);
         QTRY_VERIFY_WITH_TIMEOUT(controlCenter->isVisible() && controlCenter->width()>0,patient(3000));

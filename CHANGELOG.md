@@ -84,6 +84,8 @@ operations and their JSON results.
   - `ios.virtual.syslog` reads the phone's console log (the guest job's `uart.log`) as structured lines with time, process,
     PID, level and message, filtered by process, level or text, and followed with `next_offset`. Tested against synthetic
     console lines, not yet against a live phone's log.
+  - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
+    `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
 
 ### Changed
 

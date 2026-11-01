@@ -203,6 +203,11 @@ at the edge, which opens iOS's edge gestures by mouse. The wheel scrolls. Button
 | Ctrl+Shift+N | Notification Center |
 | Ctrl+Shift+C | Control Center |
 | Ctrl+Shift+B | Back (swipe right from the left edge) |
+| Ctrl+V | Type the host clipboard's text into the focused field (**Paste**) |
+
+Ctrl+V and **Paste** type the host clipboard's text with the `text` action described below, in pieces of up to 1024
+characters; a clipboard of more than 4096 characters is refused with a notice. Characters the guest's keyboard layout
+cannot type make the guest refuse the piece. Tested in the desktop's offscreen tests; not tried on a live phone yet.
 
 The phone's window is described in the [desktop guide](../desktop.md#device-window).
 

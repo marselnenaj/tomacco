@@ -1262,6 +1262,29 @@ Le modèle détermine l'écran et le cadre. Android provient de l'image système
         <source>Record the screen to a video, at most 10 minutes</source>
         <translation>Enregistrer l'écran en vidéo, 10 minutes au plus</translation>
     </message>
+    <message numerus="yes">
+        <source>Typing %n character(s) from the clipboard</source>
+        <translation>
+            <numerusform>Saisie de %n caractère du presse-papiers</numerusform>
+            <numerusform>Saisie de %n caractères du presse-papiers</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>The clipboard holds no text</source>
+        <translation>Le presse-papiers ne contient aucun texte</translation>
+    </message>
+    <message>
+        <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
+        <translation>Le presse-papiers contient %1 caractères ; au plus %2 sont saisis dans le téléphone</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Coller</translation>
+    </message>
+    <message>
+        <source>Type the clipboard&apos;s text into the field that has the focus</source>
+        <translation>Saisir le texte du presse-papiers dans le champ qui a le focus</translation>
+    </message>
 </context>
 <context>
     <name>IosResearch</name>

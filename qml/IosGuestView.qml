@@ -208,6 +208,24 @@ ColumnLayout {
     Shortcut {sequence:"Ctrl+Shift+N";context:Qt.ApplicationShortcut;enabled:view.shortcutsActive && view.modern;onActivated:view.systemGesture("notificationCenter")}
     Shortcut {sequence:"Ctrl+Shift+C";context:Qt.ApplicationShortcut;enabled:view.shortcutsActive && view.modern;onActivated:view.systemGesture("controlCenter")}
     Shortcut {sequence:"Ctrl+Shift+B";context:Qt.ApplicationShortcut;enabled:view.shortcutsActive && view.modern;onActivated:view.systemGesture("back")}
+    // The host clipboard's text, typed on the guest's USB keyboard through
+    // the text action into the field that has the focus. The action takes at
+    // most 1024 characters, so a longer text goes in pieces, one queued
+    // action each; more than pasteLimit characters are not typed at all.
+    readonly property int pasteChunk: 1024
+    readonly property int pasteLimit: 4096
+    function pasteText(text) {
+        const characters=Array.from(String(text || "").replace(/\r\n?/g,"\n"))
+        if(!canInput)return 0
+        if(!characters.length){notice=qsTr("The clipboard holds no text");return 0}
+        if(characters.length>pasteLimit){notice=qsTr("The clipboard holds %1 characters; at most %2 are typed into the phone").arg(characters.length).arg(pasteLimit);return 0}
+        let pieces=0
+        for(let start=0;start<characters.length;start+=pasteChunk){send("text",{text:characters.slice(start,start+pasteChunk).join("")});pieces++}
+        notice=qsTr("Typing %n character(s) from the clipboard","",characters.length)
+        return pieces
+    }
+    function pasteClipboard() {return pasteText(Studio.clipboardText())}
+    Shortcut {sequence:"Ctrl+V";context:Qt.ApplicationShortcut;enabled:view.shortcutsActive;onActivated:view.pasteClipboard()}
     onJobIdChanged: {
         // A contact on the guest before keeps its job and is lifted there.
         touchUp();liveTouch=true
@@ -705,6 +723,7 @@ ColumnLayout {
         }
         StudioButton {objectName:"iosGuestPower";text:qsTr("Side button");visible:view.guest.power_button_supported===true;enabled:view.canInput;tip:qsTr("Wake or lock the display")+" · Ctrl+Shift+L";onClicked:view.send("power_button")}
         StudioButton {objectName:"iosGuestHome";text:"Home";enabled:view.canHome;tip:(view.modern?qsTr("Home button and swipe up from the bottom edge"):qsTr("Home button"))+" · Ctrl+Shift+H";onClicked:view.home()}
+        StudioButton {objectName:"iosGuestPaste";text:qsTr("Paste");enabled:view.canInput;tip:qsTr("Type the clipboard's text into the field that has the focus")+" · Ctrl+V";onClicked:view.pasteClipboard()}
         StudioButton {text:"Screenshot";enabled:view.running;onClicked:view.send("screenshot")}
         StudioButton {objectName:"iosGuestRecord";text:guestRecorder.recording?qsTr("Stop recording · %1 s").arg(guestRecorder.elapsed):qsTr("Record");iconName:guestRecorder.recording?"stop":"record";danger:guestRecorder.recording;enabled:(view.running || guestRecorder.recording) && !guestRecorder.pending && !guestRecorder.stopping;tip:guestRecorder.recording?qsTr("Stop and save the recording"):qsTr("Record the screen to a video, at most 10 minutes");onClicked:if(guestRecorder.recording)guestRecorder.stop();else guestRecorder.start("ios.virtual.record",{path:Studio.recordingPath("virtual-iphone"),seconds:600,fps:10})}
         StudioButton {objectName:"iosGuestDetach";text:view.detached?qsTr("Dock"):qsTr("Own window");iconName:"phone";selected:view.detached;enabled:view.running;tip:qsTr("Detach the virtual iOS device into its own window");onClicked:view.detached=!view.detached}

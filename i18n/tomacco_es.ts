@@ -1262,6 +1262,29 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <source>Record the screen to a video, at most 10 minutes</source>
         <translation>Grabar la pantalla en un vídeo, 10 minutos como máximo</translation>
     </message>
+    <message numerus="yes">
+        <source>Typing %n character(s) from the clipboard</source>
+        <translation>
+            <numerusform>Escribiendo %n carácter del portapapeles</numerusform>
+            <numerusform>Escribiendo %n caracteres del portapapeles</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>The clipboard holds no text</source>
+        <translation>El portapapeles no contiene texto</translation>
+    </message>
+    <message>
+        <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
+        <translation>El portapapeles contiene %1 caracteres; como máximo se escriben %2 en el teléfono</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Pegar</translation>
+    </message>
+    <message>
+        <source>Type the clipboard&apos;s text into the field that has the focus</source>
+        <translation>Escribir el texto del portapapeles en el campo que tiene el foco</translation>
+    </message>
 </context>
 <context>
     <name>IosResearch</name>

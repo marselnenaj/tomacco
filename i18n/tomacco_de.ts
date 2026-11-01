@@ -1262,6 +1262,29 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Record the screen to a video, at most 10 minutes</source>
         <translation>Bildschirm als Video aufnehmen, höchstens 10 Minuten</translation>
     </message>
+    <message numerus="yes">
+        <source>Typing %n character(s) from the clipboard</source>
+        <translation>
+            <numerusform>%n Zeichen aus der Zwischenablage werden getippt</numerusform>
+            <numerusform>%n Zeichen aus der Zwischenablage werden getippt</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>The clipboard holds no text</source>
+        <translation>Die Zwischenablage enthält keinen Text</translation>
+    </message>
+    <message>
+        <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
+        <translation>Die Zwischenablage enthält %1 Zeichen; höchstens %2 werden ins Telefon getippt</translation>
+    </message>
+    <message>
+        <source>Paste</source>
+        <translation>Einfügen</translation>
+    </message>
+    <message>
+        <source>Type the clipboard&apos;s text into the field that has the focus</source>
+        <translation>Den Text der Zwischenablage in das Feld mit dem Fokus tippen</translation>
+    </message>
 </context>
 <context>
     <name>IosResearch</name>
