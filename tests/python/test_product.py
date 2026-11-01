@@ -1612,6 +1612,103 @@ temp=file.with_suffix('.tmp');temp.write_text(json.dumps(mine));temp.replace(fil
         self.assertEqual(refused.exception.code, "emulator_refused")
         self.assertIn("-read-only", str(refused.exception))
 
+    def managed_avd(self, name, config="hw.gpu.mode=auto\n"):
+        path = self.root / f"state/avds/{name}.avd"
+        path.mkdir(parents=True)
+        (path / "config.ini").write_text(config)
+        (path.parent / f"{name}.ini").write_text(f"path={path}\n")
+        return path
+
+    def test_a_stop_saves_quick_boot_for_a_managed_emulator_and_the_next_start_resumes(self):
+        path = self.managed_avd("Quick")
+        self.replies(**{"avd name": "Quick\nOK\n", "emu": "OK\n"})
+        stop = lambda **a: dispatch("android.emulator", {"device": "emulator-5554", "action": "stop", **a})
+        self.assertTrue(stop()["quick_boot"]["saved"])
+        consoles = lambda: [call[1:] for call in self.calls() if call[:1] == ["emu"]]
+        self.assertEqual(consoles(), [["avd", "name"], ["avd", "snapshot", "save", "default_boot"], ["kill"]])
+        # Another tool's emulator keeps its own settings.
+        (self.root / "adb-calls.jsonl").unlink()
+        self.replies(**{"avd name": "Elsewhere\nOK\n", "emu": "OK\n"})
+        self.assertFalse(stop()["quick_boot"]["saved"])
+        self.assertEqual(consoles(), [["avd", "name"], ["kill"]])
+        (self.root / "adb-calls.jsonl").unlink()
+        self.assertFalse(stop(save_quick_boot=False)["quick_boot"]["saved"])
+        self.assertEqual(consoles(), [["kill"]])
+        # A refused save still stops the emulator.
+        self.replies(**{"avd name": "Quick\nOK\n", "snapshot save": "KO: snapshot saving is disabled\n", "emu": "OK\n"})
+        refused = stop()["quick_boot"]
+        self.assertFalse(refused["saved"])
+        self.assertIn("disabled", refused["reason"])
+        self.assertEqual(consoles()[-1], ["kill"])
+
+        self.tool("emulator")
+        def start(**a):
+            job = dispatch("android.avd_start", {"name": "Quick", "headless": True, **a})
+            self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+            return job["boot"], job["plan"]["steps"][0]["argv"]
+        boot, argv = start()
+        self.assertEqual(boot["mode"], "cold")
+        self.assertIn("no Quick Boot snapshot", boot["reason"])
+        (path / "snapshots/default_boot").mkdir(parents=True)
+        boot, argv = start()
+        self.assertEqual(boot, {"mode": "quick", "snapshot": "default_boot"})
+        self.assertNotIn("-no-snapshot-load", argv)
+        self.assertIn("-no-snapshot-save", argv)
+        boot, argv = start(cold_boot=True)
+        self.assertEqual(boot["mode"], "cold")
+        self.assertIn("-no-snapshot-load", argv)
+        # After a hardware change the old snapshot is removed once.
+        (path / "config.ini").write_text("hw.gpu.mode=host\ntomacco.coldBoot=yes\n")
+        boot, argv = start()
+        self.assertIn("settings changed", boot["reason"])
+        self.assertIn("-no-snapshot-load", argv)
+        self.assertFalse((path / "snapshots/default_boot").exists())
+        self.assertEqual((path / "config.ini").read_text(), "hw.gpu.mode=host\n")
+
+    def test_a_start_can_show_an_image_as_the_camera(self):
+        self.managed_avd("Camera")
+        (self.root / "state/avds/Camera.avd/snapshots/default_boot").mkdir(parents=True)
+        self.tool("emulator")
+        image = self.root / "code.png"
+        image.write_bytes(b"png")
+        job = dispatch("android.avd_start", {"name": "Camera", "headless": True, "camera_image": str(image)})
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        argv = job["plan"]["steps"][0]["argv"]
+        self.assertEqual(argv[argv.index("-camera-back") + 1], f"imagefile:{image}")
+        self.assertIn("-no-snapshot-load", argv)
+        self.assertIn("camera image", job["boot"]["reason"])
+        job = dispatch("android.avd_start", {"name": "Camera", "camera_image": str(image), "camera_facing": "front"})
+        self.assertEqual(jobs.wait(job["id"], 5)["state"], "succeeded")
+        self.assertIn("-camera-front", job["plan"]["steps"][0]["argv"])
+        (self.root / "notes.txt").write_text("x")
+        for path, code in ((self.root / "missing.png", "invalid_path"), (self.root / "notes.txt", "invalid_argument")):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.avd_start", {"name": "Camera", "camera_image": str(path)})
+            self.assertEqual(refused.exception.code, code)
+
+    def test_a_foldable_profile_gets_a_hinge_and_tv_or_wear_images_are_refused(self):
+        path = self.managed_avd("Fold", "image.sysdir.1=system-images/android-36/google_apis/x86_64/\n")
+        result = dispatch("android.avd_profile", {"name": "Fold", "profile_id": "pixel-11-pro-fold"})
+        self.assertEqual(result["foldable"], {"open_resolution": [2076, 2152], "folded_resolution": [1080, 2342]})
+        config = (path / "config.ini").read_text().splitlines()
+        for line in ("hw.lcd.width=2076", "hw.lcd.height=2152", "hw.sensor.hinge=yes", "hw.sensor.hinge.areas=1038-0-0-2152",
+                     "hw.sensor.posture_list=1, 2, 3", "hw.displayRegion.0.1.width=1080", "hw.displayRegion.0.1.height=2342",
+                     "tomacco.coldBoot=yes"):
+            self.assertIn(line, config)
+        dispatch("android.avd_profile", {"name": "Fold", "profile_id": "pixel-11"})
+        config = (path / "config.ini").read_text().splitlines()
+        self.assertIn("hw.sensor.hinge=no", config)
+        self.assertIn("hw.lcd.width=1080", config)
+        self.assertEqual(sum(l.startswith("hw.sensor.hinge=") for l in config), 1)
+        for image, kind in (("system-images;android-36;google-tv;x86_64", "tv"),
+                            ("system-images;android-36;android-wear-signed;x86_64", "wear"),
+                            ("system-images;android-35-ext15;android-automotive;x86_64", "automotive")):
+            with self.assertRaises(StudioError) as refused:
+                dispatch("android.avd_create", {"name": "Other", "system_image": image, "profile_id": "pixel-11"})
+            self.assertEqual(refused.exception.code, "form_factor_unsupported")
+            self.assertTrue(refused.exception.details["device_definition"])
+            self.assertEqual(refused.exception.details["form_factor"], kind)
+
 class AndroidPackageTests(Isolated):
     """android.package_inspect reads a package with stand-ins for the SDK tools."""
     @staticmethod

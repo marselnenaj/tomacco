@@ -2977,7 +2977,7 @@
   {
     "name": "android.avd_start",
     "title": "Start emulator",
-    "description": "Start or reuse an Android virtual device. CPU acceleration remains enabled independently of the selected GPU renderer.",
+    "description": "Start or reuse an Android virtual device. A Tomacco-managed AVD resumes from its Quick Boot snapshot when android.emulator saved one at its last stop; the result's boot says quick or cold and why. CPU acceleration remains enabled independently of the selected GPU renderer.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3009,7 +3009,7 @@
         "cold_boot": {
           "type": "boolean",
           "default": false,
-          "description": "Skip saved VM snapshots, for example after changing the GPU renderer. App data is retained."
+          "description": "Boot fully instead of loading the Quick Boot snapshot, for example after changing the GPU renderer. App data is retained."
         },
         "audio": {
           "type": "boolean",
@@ -3026,6 +3026,20 @@
           ],
           "description": "Vulkan compatibility override; off keeps OpenGL ES and avoids the Vulkan interoperability path. Requires a cold restart.",
           "default": "configured"
+        },
+        "camera_image": {
+          "type": "string",
+          "description": "Absolute path of a PNG or JPEG the emulated camera shows instead of its scene, for QR code and document scanning. Applied only to a new emulator process, which then boots cold.",
+          "minLength": 1
+        },
+        "camera_facing": {
+          "type": "string",
+          "enum": [
+            "back",
+            "front"
+          ],
+          "default": "back",
+          "description": "Which camera shows camera_image"
         }
       },
       "required": [
@@ -3043,7 +3057,7 @@
   {
     "name": "android.emulator",
     "title": "Control emulator",
-    "description": "Stop an emulator; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.",
+    "description": "Stop an emulator, saving the Quick Boot snapshot of a Tomacco-managed one so its next start resumes in seconds; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3122,6 +3136,11 @@
             "none"
           ],
           "default": "none"
+        },
+        "save_quick_boot": {
+          "type": "boolean",
+          "description": "For stop: save the Quick Boot snapshot of a Tomacco-managed emulator first, which its next android.avd_start loads. Other emulators are never saved.",
+          "default": true
         }
       },
       "required": [
