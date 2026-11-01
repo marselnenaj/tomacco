@@ -231,7 +231,7 @@ installation back. An uninstall also leaves your preferences (`~/.config/marseln
 ## Releases and updates
 
 A release holds the package and the portable package, each with its `.sha256`, its `.sig`, and a software bill of materials
-(`.cdx.json`) with its own `.sig`. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
+(`.cdx.json`) with its own `.sig`, and a signed [provenance](#making-a-release) of the whole release. It starts as a draft ([making a release](#making-a-release)), and publishing it is a person's decision; drafts and pre-releases are
 never offered as updates.
 
 Releases are signed, and `update.apply` installs a package only when its detached Ed25519 signature verifies against a public key compiled into `tomaccoctl`: the current
@@ -269,6 +269,19 @@ embed; the bundled fonts; and for the portable package each Qt module and ICU wi
 listed, since neither package contains it. Qt's own SBOMs for its modules stay in the portable package's `lib/tomacco/runtime/sbom/`.
 The time stamp is `SOURCE_DATE_EPOCH`, so the same package gives the same file. `tests/python/test_build_sbom.py` checks the shape
 against the parts of the CycloneDX schema it uses; no CycloneDX validator was run on it.
+
+**Provenance.** Last, `make_release.py` writes `tomacco-VERSION-provenance.intoto.json` and signs it like a package: an
+[in-toto](https://in-toto.io) statement with a [SLSA](https://slsa.dev) provenance v1 predicate (`tools/build_provenance.py`). Its subjects are
+every file of the release except checksums and signatures, with their SHA-256. It records the tag and commit, `SOURCE_DATE_EPOCH`,
+the digest of `Cargo.lock`, for the portable package the digests of its Dockerfile, base image, Qt archives, CMake, rustup and FFmpeg
+tarballs, the builder's operating system, kernel and the versions of Python, rustc, Cargo, CMake, Ninja, the C++ compiler, OpenSSL,
+Git and Docker, and when the run started and ended. It is a JSON file with a detached signature, not a signed DSSE envelope, and it
+states what the maintainer's computer reported; nobody else attests it. `tomaccoctl verify` checks its signature and then each listed
+file in the same directory:
+
+```sh
+tomaccoctl verify tomacco-1.2.0-provenance.intoto.json
+```
 
 The builds run with `SOURCE_DATE_EPOCH` set to the release commit's time, which CPack and Qt's `rcc` use for their time stamps.
 Two builds of the same commit from fresh clones in the same directory, by the same user, gave the same package digest; without it,

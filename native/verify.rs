@@ -1,6 +1,8 @@
 //! `tomaccoctl verify FILE`: checks a downloaded release file against its
 //! `.sha256` and its detached Ed25519 `.sig` with the release keys compiled
 //! into this program, the same check `update.apply` makes before it installs.
+//! A release's provenance (an in-toto statement) is checked the same way, and
+//! then each file it lists that lies beside it is checked against its digest.
 use crate::{core::*, product::*, update};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
@@ -12,6 +14,7 @@ use std::{
 /// Larger than any release file; the portable package is about 180 MB.
 const FILE_LIMIT: u64 = 1024 * 1024 * 1024;
 const SMALL_LIMIT: u64 = 4096;
+const STATEMENT: &str = "https://in-toto.io/Statement/v1";
 const USAGE: &str =
     "Usage: tomaccoctl verify FILE [--sig FILE.sig] [--sha256 FILE.sha256] [--json]";
 
@@ -117,14 +120,70 @@ fn check(request: &Request, keys: &[[u8; 32]]) -> Result<Value> {
             },
         }
     };
-    let verified = matches!(s(&checksum, "state"), "ok" | "absent") && signature["state"] == "ok";
-    Ok(json!({
+    let mut verified =
+        matches!(s(&checksum, "state"), "ok" | "absent") && signature["state"] == "ok";
+    let mut report = json!({
         "file":request.file,
         "size":data.len(),
         "sha256":actual,
         "checksum":checksum,
         "signature":signature,
-        "verified":verified,
+    });
+    if let Some(provenance) = provenance(&request.file, &data) {
+        verified &= provenance["subjects"].as_array().is_some_and(|subjects| {
+            subjects
+                .iter()
+                .all(|subject| subject["state"] != "mismatch")
+        });
+        report["provenance"] = provenance;
+    }
+    report["verified"] = json!(verified);
+    Ok(report)
+}
+
+/// For a release's provenance, what it says and how the files it lists that
+/// lie beside it compare with their digests. None for any other file.
+fn provenance(file: &Path, data: &[u8]) -> Option<Value> {
+    let statement: Value = serde_json::from_slice(data).ok()?;
+    if statement["_type"] != STATEMENT {
+        return None;
+    }
+    let directory = file.parent().unwrap_or(Path::new("."));
+    let subjects: Vec<Value> = statement["subject"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|subject| {
+            let name = s(subject, "name");
+            let expected = s(&subject["digest"], "sha256").to_lowercase();
+            // Only a plain file name beside the statement is looked at.
+            let plain = !name.is_empty()
+                && Path::new(name).file_name().is_some_and(|base| base == name)
+                && name != ".."
+                && name != ".";
+            let state = match plain.then(|| read_limited(&directory.join(name), FILE_LIMIT)) {
+                None => "invalid",
+                Some(Err(_)) => "absent",
+                Some(Ok(bytes)) if digest(&bytes) == expected => "ok",
+                Some(Ok(_)) => "mismatch",
+            };
+            json!({"name":name,"sha256":expected,"state":state})
+        })
+        .collect();
+    let definition = &statement["predicate"]["buildDefinition"];
+    let commit = definition["resolvedDependencies"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find_map(|entry| entry["digest"]["gitCommit"].as_str())
+        .unwrap_or("");
+    Some(json!({
+        "predicate_type":statement["predicateType"],
+        "ref":definition["externalParameters"]["ref"],
+        "commit":commit,
+        "source_date_epoch":definition["internalParameters"]["SOURCE_DATE_EPOCH"],
+        "started_on":statement["predicate"]["runDetails"]["metadata"]["startedOn"],
+        "subjects":subjects,
     }))
 }
 
@@ -134,10 +193,25 @@ fn envelope(report: &Value) -> Result {
     if report["verified"] == true {
         return Ok(report.clone());
     }
+    let mismatched: Vec<&str> = report["provenance"]["subjects"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|subject| subject["state"] == "mismatch")
+        .map(|subject| s(subject, "name"))
+        .collect();
     let (code, message) = if report["checksum"]["state"] == "mismatch" {
         (
             "verify_checksum_mismatch",
             "The file does not match its checksum".to_string(),
+        )
+    } else if report["signature"]["state"] == "ok" && !mismatched.is_empty() {
+        (
+            "verify_subject_mismatch",
+            format!(
+                "Files do not match the provenance: {}",
+                mismatched.join(", ")
+            ),
         )
     } else if report["checksum"]["state"] == "unreadable" {
         (
@@ -189,6 +263,27 @@ fn text(report: &Value) -> String {
         ),
         _ => format!("  Signature  FAILED    {}\n", s(signature, "reason")),
     };
+    let provenance = &report["provenance"];
+    if provenance.is_object() {
+        out += &format!(
+            "  Provenance {} at commit {}, SOURCE_DATE_EPOCH {}, started {}\n",
+            s(provenance, "ref"),
+            s(provenance, "commit"),
+            s(provenance, "source_date_epoch"),
+            s(provenance, "started_on")
+        );
+        for subject in provenance["subjects"].as_array().into_iter().flatten() {
+            out += &match s(subject, "state") {
+                "ok" => format!("  File       ok        {}\n", s(subject, "name")),
+                "absent" => format!("  File       -         {} (not here)\n", s(subject, "name")),
+                "mismatch" => format!("  File       MISMATCH  {}\n", s(subject, "name")),
+                _ => format!(
+                    "  File       skipped   {:?} is not a file name\n",
+                    s(subject, "name")
+                ),
+            };
+        }
+    }
     out += if report["verified"] == true {
         "Verified.\n"
     } else {
@@ -401,6 +496,71 @@ mod tests {
         .unwrap();
         assert_eq!(report["verified"], false);
         assert_eq!(envelope(&report).unwrap_err().code, "verify_no_key");
+    }
+
+    /// A provenance lists the release's files: those beside it are checked,
+    /// a missing one is only reported, a changed one fails.
+    #[test]
+    fn a_provenance_checks_the_files_it_lists() {
+        let files = Files::new();
+        let package = files.release("p.tar.gz", b"package", &files.current);
+        let statement = |names: &[(&str, &[u8])]| {
+            json!({
+                "_type":STATEMENT,
+                "subject":names.iter().map(|(name, data)| json!({"name":name,"digest":{"sha256":digest(data)}})).collect::<Vec<_>>(),
+                "predicateType":"https://slsa.dev/provenance/v1",
+                "predicate":{
+                    "buildDefinition":{
+                        "externalParameters":{"ref":"refs/tags/v1.2.3"},
+                        "internalParameters":{"SOURCE_DATE_EPOCH":"1700000000"},
+                        "resolvedDependencies":[{"uri":"git+https://x","digest":{"gitCommit":"c0ffee"}}],
+                    },
+                    "runDetails":{"metadata":{"startedOn":"2026-11-01T12:00:00Z"}},
+                },
+            })
+            .to_string()
+        };
+        let text_of = |name: &str, names: &[(&str, &[u8])]| {
+            files.release(name, statement(names).as_bytes(), &files.current)
+        };
+        let good = text_of(
+            "t-provenance.intoto.json",
+            &[("p.tar.gz", b"package"), ("q.tar.gz", b"absent")],
+        );
+        let report = files.check(&good);
+        assert_eq!(report["verified"], true, "{report}");
+        let provenance = &report["provenance"];
+        assert_eq!(provenance["commit"], "c0ffee");
+        assert_eq!(provenance["ref"], "refs/tags/v1.2.3");
+        assert_eq!(provenance["subjects"][0]["state"], "ok");
+        assert_eq!(provenance["subjects"][1]["state"], "absent");
+        let shown = text(&report);
+        assert!(
+            shown.contains("refs/tags/v1.2.3 at commit c0ffee"),
+            "{shown}"
+        );
+        assert!(shown.contains("File       ok        p.tar.gz"), "{shown}");
+        assert!(shown.contains("q.tar.gz (not here)"), "{shown}");
+        // A changed package fails the provenance, though its signature file was not consulted.
+        std::fs::write(&package, b"packagf").unwrap();
+        let report = files.check(&good);
+        assert_eq!(report["verified"], false);
+        assert_eq!(report["provenance"]["subjects"][0]["state"], "mismatch");
+        assert_eq!(
+            envelope(&report).unwrap_err().code,
+            "verify_subject_mismatch"
+        );
+        // Names that leave the directory are not followed.
+        let sneaky = text_of(
+            "u-provenance.intoto.json",
+            &[("../p.tar.gz", b"package"), ("/etc/passwd", b"")],
+        );
+        let report = files.check(&sneaky);
+        assert_eq!(report["provenance"]["subjects"][0]["state"], "invalid");
+        assert_eq!(report["provenance"]["subjects"][1]["state"], "invalid");
+        // A plain package has no provenance part.
+        std::fs::write(&package, b"package").unwrap();
+        assert!(files.check(&package).get("provenance").is_none());
     }
 
     /// The signature format of the release tooling: pure Ed25519 from OpenSSL,

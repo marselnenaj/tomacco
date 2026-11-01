@@ -293,8 +293,9 @@ Usage:
                     Check a downloaded release file against its checksum and
                     its Ed25519 signature with the release keys built into
                     this program (FILE.sha256 and FILE.sig unless named).
-                    Plain text, or one JSON envelope with --json; exits 0
-                    only when the file is verified.
+                    For a release's provenance, also checks the files it
+                    lists that lie beside it. Plain text, or one JSON
+                    envelope with --json; exits 0 only when verified.
   tomaccoctl --version, -V
   tomaccoctl --help, -h
 

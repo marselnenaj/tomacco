@@ -160,7 +160,10 @@ unless
 or
 .B \-\-sig
 names another file. A missing checksum file is reported; a missing
-signature fails. Prints a short report, or with
+signature fails. For a release's provenance
+.RI ( PREFIX \- VERSION \-provenance.intoto.json ),
+each file it lists that lies in the same directory is also checked against
+its SHA-256; a listed file that is not there is reported. Prints a short report, or with
 .B \-\-json
 one JSON envelope, and exits 0 only when the file is verified.
 .TP

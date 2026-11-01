@@ -148,10 +148,32 @@ class MakeRelease(unittest.TestCase):
         self.assertEqual(sorted(names), sorted([
             regular, f"{regular}.sha256", f"{regular}.sig", f"{regular}.cdx.json", f"{regular}.cdx.json.sig",
             portable, f"{portable}.sha256", f"{portable}.sig", f"{portable}.cdx.json", f"{portable}.cdx.json.sig",
-            "tomacco-1.2.3-source.tar.gz", "tomacco-1.2.3-source.tar.gz.sha256"]))
+            "tomacco-1.2.3-source.tar.gz", "tomacco-1.2.3-source.tar.gz.sha256",
+            "tomacco-1.2.3-provenance.intoto.json", "tomacco-1.2.3-provenance.intoto.json.sig"]))
         signed = [argv[argv.index("-in") + 1] for argv in commands.runs if argv[:3] == ["openssl", "pkeyutl", "-sign"]]
         self.assertEqual([Path(path).name for path in signed],
-                         [regular, portable, f"{regular}.cdx.json", f"{portable}.cdx.json"])
+                         [regular, portable, f"{regular}.cdx.json", f"{portable}.cdx.json", "tomacco-1.2.3-provenance.intoto.json"])
+        # The provenance lists every file the release offers but checksums and signatures, with its digest.
+        statement = json.loads((self.root / "dist/tomacco-1.2.3-provenance.intoto.json").read_text())
+        self.assertEqual(statement["_type"], "https://in-toto.io/Statement/v1")
+        self.assertEqual(statement["predicateType"], "https://slsa.dev/provenance/v1")
+        listed = {subject["name"]: subject["digest"]["sha256"] for subject in statement["subject"]}
+        self.assertEqual(sorted(listed), sorted([regular, portable, f"{regular}.cdx.json", f"{portable}.cdx.json",
+                                                 "tomacco-1.2.3-source.tar.gz"]))
+        for name, digest in listed.items():
+            self.assertEqual(digest, hashlib.sha256((self.root / "dist" / name).read_bytes()).hexdigest())
+        definition = statement["predicate"]["buildDefinition"]
+        self.assertEqual(definition["externalParameters"]["ref"], "refs/tags/v1.2.3")
+        self.assertEqual(definition["externalParameters"]["portable"], True)
+        self.assertEqual(definition["internalParameters"], {"SOURCE_DATE_EPOCH": "1700000000"})
+        resolved = definition["resolvedDependencies"]
+        self.assertEqual(resolved[0]["digest"], {"gitCommit": "abc"})
+        self.assertEqual(resolved[1], {"name": "Cargo.lock", "digest": {"sha256": hashlib.sha256((self.root / "Cargo.lock").read_bytes()).hexdigest()}})
+        uris = [entry.get("uri", "") for entry in resolved]
+        self.assertTrue(any(uri.endswith("qtbase-Linux-RHEL_9_6-GCC-Linux-RHEL_9_6-X86_64.7z") for uri in uris), uris)
+        self.assertTrue(any(uri.startswith("https://ffmpeg.org/releases/ffmpeg-") for uri in uris), uris)
+        builder = statement["predicate"]["runDetails"]["builder"]["version"]
+        self.assertIn("python", builder)
         # Each SBOM describes its own package; only the portable one lists Qt and FFmpeg.
         for name, bundles in ((regular, False), (portable, True)):
             sbom = json.loads((self.root / "dist" / f"{name}.cdx.json").read_text())

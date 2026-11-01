@@ -78,6 +78,10 @@ operations and their JSON results.
 - **SBOM.** `make_release.py` writes a CycloneDX 1.6 SBOM beside each package, `PACKAGE.cdx.json`, with `tools/build_sbom.py`,
   and signs it: the Rust crates linked into `tomaccoctl` with versions, licenses and checksums, the embedded SQLite, the fonts, and
   for the portable package Qt, ICU, FFmpeg and the xcb-util libraries with the digests of their pinned archives.
+- **Provenance.** `make_release.py` writes and signs `tomacco-VERSION-provenance.intoto.json`, an in-toto statement with a SLSA
+  provenance v1 predicate: the tag and commit, `SOURCE_DATE_EPOCH`, the digests of `Cargo.lock` and of the portable package's
+  pinned downloads, the builder's OS and tool versions, and the SHA-256 of every release file. `tomaccoctl verify` checks its
+  signature and the listed files beside it.
 - **Release key rotation.** `tomaccoctl` trusts the release key in `native/product.rs` and, during a rotation, the next key
   beside it, `NEXT_RELEASE_SIGNING_PUBLIC_KEY_BASE64`; a package signed by either installs, one signed by another key is refused.
   `make_release.py` and the container build accept both. [Building](docs/building.md#rotating-the-release-key) has the steps.

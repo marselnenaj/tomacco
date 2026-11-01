@@ -53,7 +53,9 @@ as JSON. How the release key is replaced is in [building](docs/building.md#rotat
 
 Each package also has a CycloneDX software bill of materials, `PACKAGE.cdx.json`, signed the same way, which lists the
 third-party components the package contains with their versions, licenses and digests. `tomaccoctl verify PACKAGE.cdx.json`
-checks its signature.
+checks its signature. The release's provenance, `tomacco-VERSION-provenance.intoto.json`, records the commit, the build
+inputs and the builder, with the SHA-256 of every release file; `tomaccoctl verify` on it checks its signature and every listed
+file in the same directory.
 
 ## What is not
 

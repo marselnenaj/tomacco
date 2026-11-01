@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Make a draft release from a clean checkout of its tag: checks, package,
 portable package and source tarball with checksums, signatures, a signed
-CycloneDX SBOM per package, then `gh release create --draft`. Publishing the
-draft stays a person's decision.
+CycloneDX SBOM per package, a signed provenance of the whole release, then
+`gh release create --draft`. Publishing the draft stays a person's decision.
 
 With --container it also builds the headless image from the signed package
 (tools/build_container.py), checks it, and prints the `docker push` commands
 that would publish it. It never pushes."""
 import argparse
 import base64
+import datetime
 import hashlib
+import json
 import os
 import re
 import shlex
@@ -20,6 +22,7 @@ import tempfile
 from pathlib import Path
 
 import build_container
+import build_provenance
 import build_sbom
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -252,6 +255,21 @@ def bills_of_materials(commands, root, version, packages, portable, key):
         sign(commands, key, sbom)
 
 
+def provenance(commands, root, tag, prefix, version, portable, options, started, key):
+    """Writes the release's provenance over everything in dist/ and signs it."""
+    commit = commands.read(["git", "rev-parse", "HEAD"]).decode().strip()
+    own = build_provenance.name(prefix, version)
+    document = build_provenance.statement(
+        root / DIST, own, commit, tag, commands.environment["SOURCE_DATE_EPOCH"],
+        build_provenance.inputs(root, commit, tag, bool(portable)), build_provenance.builder(commands.read, bool(portable)),
+        {"portable": bool(portable), "with_qt_sources": bool(options.with_qt_sources), "container": bool(options.container)},
+        started, datetime.datetime.now(datetime.timezone.utc))
+    path = root / DIST / own
+    path.write_text(json.dumps(document, indent=2) + "\n")
+    sign(commands, key, path)
+    return path
+
+
 def container(commands, version):
     """Builds and checks the image from the signed package in dist/, then
     prints how a person would publish it. Runs no push."""
@@ -286,6 +304,7 @@ def make(options, commands, root, environment):
         raise Refused(f"{DIST}/ is not empty: everything in it would be published")
     prefix = constant(root, "PACKAGE_PREFIX")
     portable = None if options.no_portable else portable_name(prefix, version)
+    started = datetime.datetime.now(datetime.timezone.utc)
     # Reproducible packages: CPack and Qt's rcc take their time stamps from
     # the release commit instead of the moment of the build.
     commands.environment.setdefault(
@@ -303,6 +322,7 @@ def make(options, commands, root, environment):
         if portable:
             print(f"Would move {PORTABLE}/{portable} and its checksum to {DIST}/, and sign it into {DIST}/{portable}.sig the same way")
         print(f"Would write a CycloneDX SBOM beside each package ({build_sbom.SUFFIX}) and sign it the same way")
+        print(f"Would write {DIST}/{build_provenance.name(prefix, version)} over every file in {DIST}/ and sign it")
     else:
         packages = [collect_package(root, prefix, version)]
         if portable:
@@ -311,6 +331,7 @@ def make(options, commands, root, environment):
         for package in packages:
             sign(commands, key, package)
         bills_of_materials(commands, root, version, packages, portable, key)
+        provenance(commands, root, tag, prefix, version, portable, options, started, key)
     if options.container:
         container(commands, version)
     draft(commands, root, tag, version)
