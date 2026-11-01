@@ -1703,6 +1703,116 @@
     }
   },
   {
+    "name": "android.store_screenshots",
+    "title": "Capture store screenshots",
+    "description": "Capture store screenshots of an installed Android app as a job: on each device, for each app language (set with android.settings app_locale, Android 13 and newer) and each of light and dark mode, every screen in order: stop and launch the app, run the screen's testing.run steps, wait settle_ms and save the screen. Files go to DIRECTORY/THEME/LOCALE/images/KIND/NN_SCREEN.png, where KIND is phoneScreenshots, sevenInchScreenshots or tenInchScreenshots by the device's smallest width, so each THEME folder is a fastlane supply metadata directory. Animations are off while capturing; each device's dark mode, animations and app language are put back afterwards. report.json lists every file with its size and play_problems (a side under 320 or over 3840 pixels, or longer than 2:1).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID of the installed app",
+          "minLength": 1
+        },
+        "devices": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "description": "Serials from device.list, at most one per screen size group",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "locales": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 30,
+          "description": "App languages as Google Play's language codes, such as en-US or de-DE",
+          "items": {
+            "type": "string",
+            "pattern": "[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}"
+          }
+        },
+        "themes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "description": "Defaults to light only",
+          "items": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ]
+          }
+        },
+        "screens": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "description": "Screens in store order",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "[A-Za-z0-9_-]{1,40}",
+                "description": "File name part of this screen"
+              },
+              "steps": {
+                "type": "array",
+                "maxItems": 100,
+                "default": [],
+                "description": "testing.run scenario steps that lead from the launched app to this screen",
+                "items": {
+                  "type": "object"
+                }
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "directory": {
+          "type": "string",
+          "description": "Absolute path of an empty or new directory for the screenshots",
+          "minLength": 1
+        },
+        "settle_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30000,
+          "default": 1000,
+          "description": "Wait after the last step before capturing"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 86400,
+          "default": 3600,
+          "description": "Seconds for the whole job"
+        }
+      },
+      "required": [
+        "bundle_id",
+        "devices",
+        "locales",
+        "screens",
+        "directory"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "device.logs",
     "title": "Device logs",
     "description": "Capture bounded logcat/syslog output as a job; optionally filter by app or tag. On Android 12 and newer, bundle_id selects the app by its user ID, also across restarts and before launch; older Android needs the app running.",

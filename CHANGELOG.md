@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 203 operations.
+`tomaccoctl` now has one typed API of 204 operations.
 
 ### Added
 
@@ -29,6 +29,10 @@ operations and their JSON results.
   - `release.checklist` checks an Android release build before an upload, from the build files and manifest: targetSdk
     against Play's required level, versionCode above the last release, not debuggable, minify on, a release signing
     config other than the debug key, and no cleartext HTTP unless allowed, each as a structured check with evidence.
+  - `android.store_screenshots` captures an app's store screenshots as one job on each device, for each app
+    language and for light and dark mode, each screen reached by its own `testing.run` steps, into fastlane supply's
+    `phoneScreenshots`, `sevenInchScreenshots` and `tenInchScreenshots` folders, checks the sizes against Google Play's
+    rules and puts the device settings back afterwards.
 - **Testing.**
   - `testing.record` records a UI test on an Android device: taps, swipes, text and keys sent through
     `android.input`, `runtime.input` (the desktop's live display included) and `testing.action` become `testing.run`

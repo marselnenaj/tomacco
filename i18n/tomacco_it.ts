@@ -4206,6 +4206,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Android screen preview</source>
         <translation>Anteprima dello schermo Android</translation>
     </message>
+    <message>
+        <source>Capture store screenshots</source>
+        <translation>Acquisisci screenshot per lo store</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

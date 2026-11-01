@@ -4206,6 +4206,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>Android screen preview</source>
         <translation>Aperçu de l'écran Android</translation>
     </message>
+    <message>
+        <source>Capture store screenshots</source>
+        <translation>Capturer les captures d'écran pour le store</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

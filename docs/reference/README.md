@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 203 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 204 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -20,6 +20,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | Operation | Title | Annotation |
 | --- | --- | --- |
 | [`android.screen`](android.md#androidscreen) | Android screen preview | writes |
+| [`android.store_screenshots`](android.md#androidstore_screenshots) | Capture store screenshots | writes |
 | [`android.input`](android.md#androidinput) | Tap / swipe / input | writes |
 | [`android.hierarchy`](android.md#androidhierarchy) | Read UI tree | read-only |
 | [`android.launch`](android.md#androidlaunch) | Start Android activity | writes |

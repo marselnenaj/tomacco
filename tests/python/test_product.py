@@ -1213,6 +1213,71 @@ class AndroidControlTests(Isolated):
         with self.assertRaises(StudioError):
             dispatch("android.settings", {"device": "emulator-5554", "font_scale": 3})
 
+    # A device that remembers what adb set on it: settings, dark mode and app
+    # languages per serial; screencap answers a PNG header of its screen size.
+    STATEFUL_ADB = """import json,os,shlex,struct,sys
+from pathlib import Path
+root=Path(os.environ['TOMACCO_TEST_ROOT']);a=sys.argv[1:]
+with (root/'adb-calls.jsonl').open('a') as f: f.write(json.dumps(a)+'\\n')
+serial,rest=(a[1],a[2:]) if a[:1]==['-s'] else ('',a)
+file=root/f'adb-state-{serial}.json';mine=json.loads(file.read_text()) if file.exists() else {}
+w,h,d={'tablet-1':(1600,2560,320)}.get(serial,(1080,2160,420))
+if rest[:1]==['exec-out']:
+    sys.stdout.buffer.write(b'\\x89PNG\\r\\n\\x1a\\n'+struct.pack('>I',13)+b'IHDR'+struct.pack('>II',w,h));sys.exit(0)
+c=shlex.split(rest[1]) if rest[:1]==['shell'] and len(rest)>1 else rest
+out=''
+defaults={'global/airplane_mode_on':'0','system/font_scale':'1.0','system/accelerometer_rotation':'1','system/user_rotation':'0'}
+if c[:2]==['getprop','ro.build.version.sdk']: out='34'
+elif c[:2]==['wm','size']: out=f'Physical size: {w}x{h}'
+elif c[:2]==['wm','density']: out=f'Physical density: {d}'
+elif c[:2]==['settings','get']: out=mine.get(c[2]+'/'+c[3],defaults.get(c[2]+'/'+c[3],'1'))
+elif c[:2]==['settings','put']: mine[c[2]+'/'+c[3]]=c[4]
+elif c[:3]==['cmd','uimode','night']:
+    if len(c)>3: mine['night']=c[3]
+    out='Night mode: '+mine.get('night','no')
+elif c[:3]==['cmd','locale','set-app-locales']: mine['locale']=c[5] if len(c)>5 else ''
+elif c[:3]==['cmd','locale','get-app-locales']: out='Locales for %s for user 0 are [%s]'%(c[3],mine.get('locale',''))
+elif 'resolve-activity' in ' '.join(c): out='dev.test.app/.Main'
+temp=file.with_suffix('.tmp');temp.write_text(json.dumps(mine));temp.replace(file);print(out)
+"""
+
+    def test_store_screenshots_cover_devices_languages_and_themes_and_put_settings_back(self):
+        self.tool("adb", self.STATEFUL_ADB)
+        out = self.root / "shots"
+        screens = [{"name": "home"}, {"name": "detail", "steps": [{"action": "key", "key": "KEYCODE_DPAD_DOWN"}]}]
+        base = {"bundle_id": "dev.test.app", "devices": ["emulator-5554", "tablet-1"], "locales": ["en-US", "de-DE"],
+                "themes": ["light", "dark"], "screens": screens, "directory": str(out), "settle_ms": 0}
+        job = dispatch("android.store_screenshots", base)
+        self.assertEqual(job["label"], "Store screenshots · 16")
+        done = jobs.wait(job["id"], 120)
+        report = json.loads((out / "report.json").read_text())
+        self.assertEqual(done["state"], "succeeded", report)
+        self.assertEqual((report["ok"], report["play_problems"]), (True, 0))
+        for theme in ("light", "dark"):
+            for locale in ("en-US", "de-DE"):
+                for kind in ("phoneScreenshots", "tenInchScreenshots"):
+                    for name in ("01_home.png", "02_detail.png"):
+                        self.assertTrue((out / theme / locale / "images" / kind / name).is_file(), (theme, locale, kind, name))
+        phone = next(d for d in report["devices"] if d["device"] == "emulator-5554")
+        self.assertEqual((phone["kind"], phone["captured"], phone["settings_restored"]), ("phoneScreenshots", 8, True))
+        self.assertEqual((phone["screenshots"][0]["width"], phone["screenshots"][0]["height"]), (1080, 2160))
+        shell = [shlex.split(c[3]) for c in self.calls_with_serial() if c[:2] == ["-s", "emulator-5554"] and c[2] == "shell"]
+        self.assertIn(["cmd", "locale", "set-app-locales", "dev.test.app", "--locales", "de-DE"], shell)
+        self.assertIn(["cmd", "uimode", "night", "yes"], shell)
+        self.assertIn(["input", "keyevent", "KEYCODE_DPAD_DOWN"], shell)
+        state = json.loads((self.root / "adb-state-emulator-5554.json").read_text())
+        self.assertEqual((state["night"], state["locale"], state["global/window_animation_scale"]), ("no", "", "1"))
+        # Refused before anything runs: a non-empty folder, two phones.
+        with self.assertRaises(StudioError) as refused:
+            dispatch("android.store_screenshots", base)
+        self.assertEqual(refused.exception.code, "path_exists")
+        with self.assertRaises(StudioError) as refused:
+            dispatch("android.store_screenshots", {**base, "devices": ["emulator-5554", "emulator-5556"], "directory": str(self.root / "two")})
+        self.assertEqual(refused.exception.code, "invalid_argument")
+
+    def calls_with_serial(self):
+        return [json.loads(line) for line in (self.root / "adb-calls.jsonl").read_text().splitlines()]
+
     def test_display_orientation_size_and_density_are_set_and_read_back(self):
         state = {"wm size": "Physical size: 1080x2400\nOverride size: 720x1600\n", "wm density": "Physical density: 420\nOverride density: 320\n",
                  "accelerometer_rotation": "0\n", "user_rotation": "1\n"}

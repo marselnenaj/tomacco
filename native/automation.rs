@@ -694,7 +694,7 @@ fn app_crash(events: &[Value], apps: &[String]) -> Option<Error> {
         .details(event.clone()),
     )
 }
-fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Value {
+pub(crate) fn run_device(device: &str, scenario: &Value, directory: &Path, tag: &str) -> Value {
     let started = Instant::now();
     // The emulator shares this computer's clock; a second of margin.
     let since = now() - 1.0;

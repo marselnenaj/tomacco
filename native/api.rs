@@ -185,6 +185,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "android.display" => crate::android_device::display(&a),
         "android.pair" => crate::android_device::pair(&a),
         "android.screen" => crate::android_device::screen(&a),
+        "android.store_screenshots" => crate::store_screenshots::start(&a),
         "android.package_inspect" => crate::android_package::inspect(&a),
         "android.size_report" => crate::android_size::size_report(&a),
         name if name.starts_with("play.") => play_store::handle(name, &a),

@@ -260,6 +260,11 @@ mode and an app's language, and reads them back:
 tomaccoctl call android.settings '{"device":"emulator-5554","dark_mode":"off","font_scale":1,"animations":false}'
 ```
 
+`android.store_screenshots` captures store screenshots as a job across devices, app languages and light and dark
+mode, each screen reached by its own `testing.run` steps, into fastlane supply's folders
+(`THEME/LOCALE/images/phoneScreenshots/01_home.png`), and puts each device's settings back afterwards.
+`report.json` flags sizes Google Play refuses under `play_problems`.
+
 `android.display` locks the orientation or overrides display size and density, and `reset` undoes
 both.
 

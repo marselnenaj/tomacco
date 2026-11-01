@@ -48,6 +48,7 @@ mod session_log;
 mod setup;
 mod signing_health;
 mod storage;
+mod store_screenshots;
 mod swift;
 mod test_results;
 mod toolchain;
@@ -384,6 +385,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             android_device::each_worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing device request"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_store_screenshots") => {
+            store_screenshots::worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing screenshot request"))?,
             )?;
             return Ok(0);
         }

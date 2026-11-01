@@ -2,7 +2,7 @@
 
 # `android` operations
 
-28 operations. Generated from `assets/operations.json`; [all areas](README.md).
+29 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### android.screen
 
@@ -19,6 +19,31 @@ Annotations: writes, idempotent, open world.
 
 ```sh
 tomaccoctl call android.screen '{"device":"<device>","path":"<path>"}'
+```
+
+### android.store_screenshots
+
+**Capture store screenshots**
+
+Capture store screenshots of an installed Android app as a job: on each device, for each app language (set with android.settings app_locale, Android 13 and newer) and each of light and dark mode, every screen in order: stop and launch the app, run the screen's testing.run steps, wait settle_ms and save the screen. Files go to DIRECTORY/THEME/LOCALE/images/KIND/NN_SCREEN.png, where KIND is phoneScreenshots, sevenInchScreenshots or tenInchScreenshots by the device's smallest width, so each THEME folder is a fastlane supply metadata directory. Animations are off while capturing; each device's dark mode, animations and app language are put back afterwards. report.json lists every file with its size and play_problems (a side under 320 or over 3840 pixels, or longer than 2:1).
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the installed app |
+| `devices` | array of string | yes |  | 1 to 8 items; Serials from device.list, at most one per screen size group |
+| `locales` | array of string | yes |  | 1 to 30 items; App languages as Google Play's language codes, such as en-US or de-DE |
+| `themes` | array of string |  |  | items one of `light`, `dark`; 1 to 2 items; Defaults to light only |
+| `screens` | array of object | yes |  | 1 to 10 items; Screens in store order |
+| `screens[].name` | string | yes |  | matching `[A-Za-z0-9_-]{1,40}`; File name part of this screen |
+| `screens[].steps` | array of object |  | `[]` | up to 100 items; testing.run scenario steps that lead from the launched app to this screen |
+| `directory` | string | yes |  | non-empty; Absolute path of an empty or new directory for the screenshots |
+| `settle_ms` | integer |  | `1000` | 0 to 30000; Wait after the last step before capturing |
+| `timeout` | integer |  | `3600` | 10 to 86400; Seconds for the whole job |
+
+```sh
+tomaccoctl call android.store_screenshots '{"bundle_id":"<bundle_id>","devices":["<device>"],"locales":["<locale>"],"screens":[{"name":"<name>"}],"directory":"<directory>"}'
 ```
 
 ### android.input
