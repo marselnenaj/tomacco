@@ -1989,6 +1989,82 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <source>Emulator</source>
         <translation>Emulatore</translation>
     </message>
+    <message>
+        <source>Saved states</source>
+        <translation>Stati salvati</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
+        <translation>Conserva l'ultima esecuzione arrestata con un nome e riavvia da essa in seguito. Il salvataggio non copia nulla.</translation>
+    </message>
+    <message>
+        <source>No saved states yet.</source>
+        <translation>Nessuno stato salvato finora.</translation>
+    </message>
+    <message>
+        <source>Saved state</source>
+        <translation>Stato salvato</translation>
+    </message>
+    <message>
+        <source>Start from it</source>
+        <translation>Avvia da qui</translation>
+    </message>
+    <message>
+        <source>The next start begins from this state · the phone must be off</source>
+        <translation>Il prossimo avvio parte da questo stato · il telefono deve essere spento</translation>
+    </message>
+    <message>
+        <source>Delete for good</source>
+        <translation>Elimina definitivamente</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Elimina</translation>
+    </message>
+    <message>
+        <source>Remove the name, and its disk copy when nothing else keeps it</source>
+        <translation>Rimuovi il nome, e la sua copia del disco se nient'altro la conserva</translation>
+    </message>
+    <message>
+        <source>Name for the last stopped run</source>
+        <translation>Nome per l'ultima esecuzione arrestata</translation>
+    </message>
+    <message>
+        <source>Save state</source>
+        <translation>Salva stato</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under this name</source>
+        <translation>Conserva l'ultima esecuzione arrestata con questo nome</translation>
+    </message>
+    <message>
+        <source>run %1</source>
+        <translation>esecuzione %1</translation>
+    </message>
+    <message>
+        <source>next start</source>
+        <translation>prossimo avvio</translation>
+    </message>
+    <message>
+        <source>disks gone</source>
+        <translation>dischi mancanti</translation>
+    </message>
+    <message>
+        <source>Saved as %1</source>
+        <translation>Salvato come %1</translation>
+    </message>
+    <message>
+        <source>The next start begins from %1</source>
+        <translation>Il prossimo avvio parte da %1</translation>
+    </message>
+    <message>
+        <source>%1 deleted with its disk copy</source>
+        <translation>%1 eliminato con la sua copia del disco</translation>
+    </message>
+    <message>
+        <source>%1 deleted · its disk copy stays (%2)</source>
+        <translation>%1 eliminato · la copia del disco resta (%2)</translation>
+    </message>
 </context>
 <context>
     <name>Main</name>

@@ -2188,6 +2188,78 @@ for line in sys.stdin:
         view->setProperty("mode","ios");view->setProperty("interactiveGuest",false);view->setProperty("failed",false);view->setProperty("notice","");
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void ios_dialog_saves_starts_from_and_deletes_phone_states() {
+        // Saved phone states in the iOS dialog: the list from ios.virtual.states, a save under a typed
+        // name, a start from a chosen state while the phone is off, and a delete that asks twice.
+        open("ios-research");
+        auto *view=object("iosResearch");QVERIFY(view);
+        auto *dialog=object("iosResearchDialog");QVERIFY(dialog);
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *empty=item("virtualPhoneStatesEmpty");QVERIFY(empty);
+        auto *choice=item("virtualPhoneStateChoice");QVERIFY(choice);
+        auto *use=item("virtualPhoneStateUse");QVERIFY(use);
+        auto *remove=item("virtualPhoneStateDelete");QVERIFY(remove);
+        auto *name=item("virtualPhoneStateName");QVERIFY(name);
+        auto *save=item("virtualPhoneStateSave");QVERIFY(save);
+        auto *notice=item("virtualPhoneStateNotice");QVERIFY(notice);
+        const auto sent=[&](const QString &operation){
+            QList<QPair<int,QVariantMap>> found;const auto all=mapOf(view->property("requests"));
+            for(auto it=all.begin();it!=all.end();++it) {
+                const auto context=it.value().toMap();
+                if(context.value("operation").toString()==operation)found.append({it.key().toInt(),context.value("arguments").toMap()});
+            }
+            std::sort(found.begin(),found.end(),[](const auto &a,const auto &b){return a.first<b.first;});
+            return found;
+        };
+        const auto phone=[&](bool running){
+            view->setProperty("virtualPhone",QVariantMap{{"configured",true},{"run",7},{"phase",running?"ready":"stopped"},{"guest_running",running}});
+        };
+        phone(false);
+        view->setProperty("virtualStates",QVariantList{});
+        QVERIFY(empty->isVisible());QVERIFY(!save->isEnabled());
+        // A save sends the typed name; the answer is shown and the field cleared.
+        view->setProperty("virtualStateName","Clean phone");
+        QVERIFY(save->isEnabled());
+        QVERIFY(QMetaObject::invokeMethod(save,"clicked"));
+        auto saves=sent("ios.virtual.state_save");
+        QCOMPARE(saves.size(),1);QCOMPARE(saves[0].second.value("name").toString(),QString("Clean phone"));
+        QVERIFY(!save->isEnabled());
+        control->apiFinished(saves[0].first,"ios.virtual.state_save",QVariantMap{{"ok",true},{"result",QVariantMap{{"saved",QVariantMap{{"name","Clean phone"}}}}}});
+        QCOMPARE(notice->property("text").toString(),QString("Saved as Clean phone"));
+        QVERIFY(view->property("virtualStateName").toString().isEmpty());
+        // The list: the next start's base cannot be chosen again, another state can while the phone is off.
+        const QVariantList states{QVariantMap{{"name","Clean phone"},{"run",7},{"exists",true},{"base",true}},
+                                  QVariantMap{{"name","Logged in"},{"run",4},{"exists",true},{"base",false}}};
+        view->setProperty("virtualStates",states);
+        QVERIFY(!empty->isVisible());
+        QCOMPARE(choice->property("count").toInt(),2);
+        QCOMPARE(choice->property("currentText").toString(),QString("Clean phone · run 7 · next start"));
+        QVERIFY(!use->isEnabled());
+        view->setProperty("virtualStateIndex",1);
+        QVERIFY(use->isEnabled());
+        phone(true);QVERIFY(!use->isEnabled());
+        phone(false);
+        QVERIFY(QMetaObject::invokeMethod(use,"clicked"));
+        auto uses=sent("ios.virtual.state_use");
+        QCOMPARE(uses.size(),1);QCOMPARE(uses[0].second.value("name").toString(),QString("Logged in"));
+        // A refusal keeps its reason and remedy readable.
+        control->apiFinished(uses[0].first,"ios.virtual.state_use",QVariantMap{{"ok",false},{"error",QVariantMap{{"code","ios_virtual_state_unsaved"},
+            {"message","The current verified run is not saved"},{"remedy","Save it first"}}}});
+        QCOMPARE(notice->property("text").toString(),QString("The current verified run is not saved · Save it first"));
+        // Delete asks a second time before it sends anything.
+        QVERIFY(QMetaObject::invokeMethod(remove,"clicked"));
+        QVERIFY(sent("ios.virtual.state_delete").isEmpty());
+        QCOMPARE(remove->property("text").toString(),QString("Delete for good"));
+        QVERIFY(QMetaObject::invokeMethod(remove,"clicked"));
+        auto deletes=sent("ios.virtual.state_delete");
+        QCOMPARE(deletes.size(),1);QCOMPARE(deletes[0].second.value("name").toString(),QString("Logged in"));
+        control->apiFinished(deletes[0].first,"ios.virtual.state_delete",QVariantMap{{"ok",true},{"result",QVariantMap{{"deleted","Logged in"},{"removed",false},{"kept_because","overlay-backing"}}}});
+        QVERIFY(notice->property("text").toString().contains("overlay-backing"));
+        QCOMPARE(remove->property("text").toString(),QString("Delete"));
+        view->setProperty("virtualStates",QVariantList{});view->setProperty("virtualStateIndex",0);view->setProperty("virtualStateNotice","");
+        view->setProperty("virtualPhone",QVariantMap{{"configured",false}});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void ios_dialog_lists_and_changes_the_phones_apps() {
         // The profile's own apps are deployed through ios.virtual.configure. The dialog lists them from the
         // status with what the control plane knows (inspected when added, installed on this run's volume,

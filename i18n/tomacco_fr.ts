@@ -1989,6 +1989,82 @@ Le modèle détermine l'écran et le cadre. Android provient de l'image système
         <source>Emulator</source>
         <translation>Émulateur</translation>
     </message>
+    <message>
+        <source>Saved states</source>
+        <translation>États enregistrés</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
+        <translation>Garder la dernière exécution arrêtée sous un nom et redémarrer depuis elle plus tard. L'enregistrement ne copie rien.</translation>
+    </message>
+    <message>
+        <source>No saved states yet.</source>
+        <translation>Aucun état enregistré pour l'instant.</translation>
+    </message>
+    <message>
+        <source>Saved state</source>
+        <translation>État enregistré</translation>
+    </message>
+    <message>
+        <source>Start from it</source>
+        <translation>Démarrer depuis cet état</translation>
+    </message>
+    <message>
+        <source>The next start begins from this state · the phone must be off</source>
+        <translation>Le prochain démarrage part de cet état · le téléphone doit être éteint</translation>
+    </message>
+    <message>
+        <source>Delete for good</source>
+        <translation>Supprimer définitivement</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Supprimer</translation>
+    </message>
+    <message>
+        <source>Remove the name, and its disk copy when nothing else keeps it</source>
+        <translation>Retirer le nom, et sa copie de disque si rien d'autre ne la garde</translation>
+    </message>
+    <message>
+        <source>Name for the last stopped run</source>
+        <translation>Nom de la dernière exécution arrêtée</translation>
+    </message>
+    <message>
+        <source>Save state</source>
+        <translation>Enregistrer l'état</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under this name</source>
+        <translation>Garder la dernière exécution arrêtée sous ce nom</translation>
+    </message>
+    <message>
+        <source>run %1</source>
+        <translation>exécution %1</translation>
+    </message>
+    <message>
+        <source>next start</source>
+        <translation>prochain démarrage</translation>
+    </message>
+    <message>
+        <source>disks gone</source>
+        <translation>disques disparus</translation>
+    </message>
+    <message>
+        <source>Saved as %1</source>
+        <translation>Enregistré sous %1</translation>
+    </message>
+    <message>
+        <source>The next start begins from %1</source>
+        <translation>Le prochain démarrage part de %1</translation>
+    </message>
+    <message>
+        <source>%1 deleted with its disk copy</source>
+        <translation>%1 supprimé avec sa copie de disque</translation>
+    </message>
+    <message>
+        <source>%1 deleted · its disk copy stays (%2)</source>
+        <translation>%1 supprimé · sa copie de disque reste (%2)</translation>
+    </message>
 </context>
 <context>
     <name>Main</name>

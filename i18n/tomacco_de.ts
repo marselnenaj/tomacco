@@ -1989,6 +1989,82 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <source>Emulator</source>
         <translation>Emulator</translation>
     </message>
+    <message>
+        <source>Saved states</source>
+        <translation>Gesicherte Zustände</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
+        <translation>Den zuletzt beendeten Lauf unter einem Namen behalten und später wieder von ihm starten. Sichern kopiert nichts.</translation>
+    </message>
+    <message>
+        <source>No saved states yet.</source>
+        <translation>Noch keine gesicherten Zustände.</translation>
+    </message>
+    <message>
+        <source>Saved state</source>
+        <translation>Gesicherter Zustand</translation>
+    </message>
+    <message>
+        <source>Start from it</source>
+        <translation>Davon starten</translation>
+    </message>
+    <message>
+        <source>The next start begins from this state · the phone must be off</source>
+        <translation>Der nächste Start beginnt mit diesem Zustand · das Telefon muss aus sein</translation>
+    </message>
+    <message>
+        <source>Delete for good</source>
+        <translation>Endgültig löschen</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <source>Remove the name, and its disk copy when nothing else keeps it</source>
+        <translation>Den Namen entfernen, und seine Plattenkopie, wenn sonst nichts sie behält</translation>
+    </message>
+    <message>
+        <source>Name for the last stopped run</source>
+        <translation>Name für den zuletzt beendeten Lauf</translation>
+    </message>
+    <message>
+        <source>Save state</source>
+        <translation>Zustand sichern</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under this name</source>
+        <translation>Den zuletzt beendeten Lauf unter diesem Namen behalten</translation>
+    </message>
+    <message>
+        <source>run %1</source>
+        <translation>Lauf %1</translation>
+    </message>
+    <message>
+        <source>next start</source>
+        <translation>nächster Start</translation>
+    </message>
+    <message>
+        <source>disks gone</source>
+        <translation>Platten fehlen</translation>
+    </message>
+    <message>
+        <source>Saved as %1</source>
+        <translation>Gesichert als %1</translation>
+    </message>
+    <message>
+        <source>The next start begins from %1</source>
+        <translation>Der nächste Start beginnt mit %1</translation>
+    </message>
+    <message>
+        <source>%1 deleted with its disk copy</source>
+        <translation>%1 samt Plattenkopie gelöscht</translation>
+    </message>
+    <message>
+        <source>%1 deleted · its disk copy stays (%2)</source>
+        <translation>%1 gelöscht · die Plattenkopie bleibt (%2)</translation>
+    </message>
 </context>
 <context>
     <name>Main</name>

@@ -89,6 +89,35 @@ Rectangle {
     property bool virtualAppBusy: false
     property string virtualAppNotice: ""
     readonly property var virtualApplications: virtualPhone.applications || []
+    // Saved phone states: the list from ios.virtual.states, the one chosen, the
+    // name typed for the next save, whether a change is in flight, its outcome,
+    // and whether Delete has been pressed once (it asks a second time).
+    property var virtualStates: []
+    property int virtualStateIndex: 0
+    property string virtualStateName: ""
+    property bool virtualStatePending: false
+    property bool virtualStatesLoading: false
+    property string virtualStateNotice: ""
+    property bool virtualStateFailed: false
+    property bool virtualStateDeleteArmed: false
+    readonly property bool virtualStateIdle: !virtualStatePending && !virtualBusy
+    readonly property var selectedState: virtualStates.length?virtualStates[Math.min(virtualStateIndex,virtualStates.length-1)]:null
+    function stateText(state) {
+        let parts=[state.name,qsTr("run %1").arg(state.run)]
+        if(state.base)parts.push(qsTr("next start"))
+        if(!state.exists)parts.push(qsTr("disks gone"))
+        return parts.join(" · ")
+    }
+    function stateCall(operation, args) {
+        if(virtualStatePending)return null
+        virtualStatePending=true;virtualStateNotice="";virtualStateFailed=false
+        return call(operation,args)
+    }
+    function saveState() {
+        let name=virtualStateName.trim()
+        if(!name || !virtualStateIdle)return null
+        return stateCall("ios.virtual.state_save",{name:name})
+    }
     // The app the start opens: the owned diagnostic, or one of the listed bundles.
     readonly property string researchApplication: "io.github.marselnenaj.tomacco.research-app"
     readonly property var virtualOpenChoices: [{id:researchApplication,name:qsTr("Built-in test app (diagnostics)")}].concat(virtualApplications.filter(app=>!!app.bundle_id).map(app=>({id:app.bundle_id,name:view.applicationName(app)})))
@@ -313,6 +342,8 @@ Rectangle {
                 }
                 view.virtualStatusError=""
                 view.virtualPhone=response.result
+                // The saved states follow the status, one request at a time.
+                if(response.result.configured===true && dialog.visible && !view.virtualStatesLoading){view.virtualStatesLoading=true;view.call("ios.virtual.states",{})}
                 // The device list may be closed: follow the virtual iPhone's guest job directly.
                 let guest=response.result.guest_job
                 if(response.result.guest_running && guest && guest!==view.jobId && !view.starting)view.call("job.get",{job_id:guest})
@@ -322,6 +353,21 @@ Rectangle {
                 if(response.ok && context.jobId===view.virtualPhone.guest_job && response.result.id!==view.jobId && view.adoptJob(response.result)) {
                     view.cancelling=false;view.notice="";view.failed=false;view.refresh()
                 }
+                return
+            }
+            if(operation==="ios.virtual.states") {
+                view.virtualStatesLoading=false
+                if(response.ok)view.virtualStates=response.result.states || []
+                return
+            }
+            if(["ios.virtual.state_save","ios.virtual.state_use","ios.virtual.state_delete"].indexOf(operation)>=0) {
+                view.virtualStatePending=false
+                view.virtualStateFailed=!response.ok
+                if(!response.ok)view.virtualStateNotice=response.error.message+(response.error.remedy?" · "+response.error.remedy:"")
+                else if(operation==="ios.virtual.state_save"){view.virtualStateNotice=qsTr("Saved as %1").arg(response.result.saved.name);view.virtualStateName=""}
+                else if(operation==="ios.virtual.state_use")view.virtualStateNotice=qsTr("The next start begins from %1").arg(response.result.used)
+                else view.virtualStateNotice=response.result.removed?qsTr("%1 deleted with its disk copy").arg(response.result.deleted):qsTr("%1 deleted · its disk copy stays (%2)").arg(response.result.deleted).arg(response.result.kept_because)
+                view.call("ios.virtual.states",{});view.call("ios.virtual.status",{})
                 return
             }
             if(operation==="ios.virtual.start" || operation==="ios.virtual.stop") {
@@ -558,6 +604,28 @@ Rectangle {
                             StudioButton {objectName:"virtualPhoneAppAdd";text:view.virtualAppBusy?qsTr("Checking…"):qsTr("Add app…");accent:true;enabled:!view.virtualAppBusy && !view.virtualBusy && view.virtualAppPath.trim().length>0;tip:qsTr("Check the bundle and add it to the profile · the next start installs it");onClicked:view.addApplication(view.virtualAppPath)}
                         }
                         Label {objectName:"virtualPhoneAppError";visible:!!view.virtualAppNotice;Layout.fillWidth:true;wrapMode:Text.Wrap;font.pixelSize:Theme.fontSmall;color:Theme.danger;text:view.virtualAppNotice}
+                        // Saved phone states (ios.virtual.states and its siblings): a name kept on
+                        // the last verified run, and a later start from it.
+                        Label {text:qsTr("Saved states");color:Theme.text;font.weight:Font.DemiBold}
+                        Label {Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.faint;font.pixelSize:Theme.fontSmall;text:qsTr("Keep the last stopped run under a name and start from it again later. Saving copies nothing.")}
+                        Label {objectName:"virtualPhoneStatesEmpty";visible:view.virtualStates.length===0;Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:Theme.fontSmall;text:qsTr("No saved states yet.")}
+                        RowLayout {Layout.fillWidth:true;spacing:8;visible:view.virtualStates.length>0
+                            StudioComboBox {
+                                objectName:"virtualPhoneStateChoice"
+                                Layout.fillWidth:true
+                                model:view.virtualStates.map(state=>view.stateText(state))
+                                currentIndex:Math.min(view.virtualStateIndex,view.virtualStates.length-1)
+                                onActivated:index=>{view.virtualStateIndex=index;view.virtualStateDeleteArmed=false}
+                                Accessible.name:qsTr("Saved state")
+                            }
+                            StudioButton {objectName:"virtualPhoneStateUse";text:qsTr("Start from it");enabled:view.virtualStateIdle && !view.virtualRunning && !!view.selectedState && view.selectedState.exists===true && view.selectedState.base!==true;tip:qsTr("The next start begins from this state · the phone must be off");onClicked:view.stateCall("ios.virtual.state_use",{name:view.selectedState.name})}
+                            StudioButton {objectName:"virtualPhoneStateDelete";text:view.virtualStateDeleteArmed?qsTr("Delete for good"):qsTr("Delete");danger:view.virtualStateDeleteArmed;quiet:!view.virtualStateDeleteArmed;enabled:view.virtualStateIdle && !!view.selectedState;tip:qsTr("Remove the name, and its disk copy when nothing else keeps it");onClicked:{if(!view.virtualStateDeleteArmed){view.virtualStateDeleteArmed=true;return}view.virtualStateDeleteArmed=false;view.stateCall("ios.virtual.state_delete",{name:view.selectedState.name})}}
+                        }
+                        RowLayout {Layout.fillWidth:true;spacing:8
+                            StudioTextField {objectName:"virtualPhoneStateName";Layout.fillWidth:true;text:view.virtualStateName;onTextEdited:view.virtualStateName=text;onAccepted:view.saveState();enabled:view.virtualStateIdle;placeholderText:qsTr("Name for the last stopped run")}
+                            StudioButton {objectName:"virtualPhoneStateSave";text:qsTr("Save state");enabled:view.virtualStateIdle && view.virtualStateName.trim().length>0;tip:qsTr("Keep the last stopped run under this name");onClicked:view.saveState()}
+                        }
+                        Label {objectName:"virtualPhoneStateNotice";visible:!!view.virtualStateNotice;Layout.fillWidth:true;wrapMode:Text.Wrap;font.pixelSize:Theme.fontSmall;color:view.virtualStateFailed?Theme.danger:Theme.muted;text:view.virtualStateNotice}
                     }
                 }
                 Label {objectName:"iosResearchCpuIdentity";visible:view.pmpMode && !!view.report.cpu_policy;Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:Theme.fontSmall;text:view.report.cpu_policy?qsTr("Processor: MIDR %1 · core ID %2 · %3").arg(view.report.cpu_policy.midr).arg(view.report.cpu_policy.affinity || qsTr("not recorded")).arg(view.report.cpu_identity_verified?qsTr("configuration verified"):qsTr("not verified")):""}

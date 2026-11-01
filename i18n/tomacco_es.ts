@@ -1989,6 +1989,82 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <source>Emulator</source>
         <translation>Emulador</translation>
     </message>
+    <message>
+        <source>Saved states</source>
+        <translation>Estados guardados</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
+        <translation>Guardar la última ejecución detenida con un nombre y volver a iniciar desde ella más tarde. Guardar no copia nada.</translation>
+    </message>
+    <message>
+        <source>No saved states yet.</source>
+        <translation>Todavía no hay estados guardados.</translation>
+    </message>
+    <message>
+        <source>Saved state</source>
+        <translation>Estado guardado</translation>
+    </message>
+    <message>
+        <source>Start from it</source>
+        <translation>Iniciar desde él</translation>
+    </message>
+    <message>
+        <source>The next start begins from this state · the phone must be off</source>
+        <translation>El próximo inicio parte de este estado · el teléfono debe estar apagado</translation>
+    </message>
+    <message>
+        <source>Delete for good</source>
+        <translation>Eliminar definitivamente</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Eliminar</translation>
+    </message>
+    <message>
+        <source>Remove the name, and its disk copy when nothing else keeps it</source>
+        <translation>Quitar el nombre, y su copia de disco si nada más la conserva</translation>
+    </message>
+    <message>
+        <source>Name for the last stopped run</source>
+        <translation>Nombre para la última ejecución detenida</translation>
+    </message>
+    <message>
+        <source>Save state</source>
+        <translation>Guardar estado</translation>
+    </message>
+    <message>
+        <source>Keep the last stopped run under this name</source>
+        <translation>Guardar la última ejecución detenida con este nombre</translation>
+    </message>
+    <message>
+        <source>run %1</source>
+        <translation>ejecución %1</translation>
+    </message>
+    <message>
+        <source>next start</source>
+        <translation>próximo inicio</translation>
+    </message>
+    <message>
+        <source>disks gone</source>
+        <translation>discos ausentes</translation>
+    </message>
+    <message>
+        <source>Saved as %1</source>
+        <translation>Guardado como %1</translation>
+    </message>
+    <message>
+        <source>The next start begins from %1</source>
+        <translation>El próximo inicio parte de %1</translation>
+    </message>
+    <message>
+        <source>%1 deleted with its disk copy</source>
+        <translation>%1 eliminado con su copia de disco</translation>
+    </message>
+    <message>
+        <source>%1 deleted · its disk copy stays (%2)</source>
+        <translation>%1 eliminado · su copia de disco se queda (%2)</translation>
+    </message>
 </context>
 <context>
     <name>Main</name>

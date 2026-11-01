@@ -120,6 +120,9 @@ phone must be stopped. When the current base has no name, a later start may dele
 `ios.virtual.state_delete` removes the name, and the copy too when nothing else keeps it: not the base, the current run, a
 start's attempt, another name or a copy an overlay reads. `kept_because` says why a copy stayed.
 
+In the desktop, the iOS test system dialog has the same under **Saved states** (*Gesicherte Zustände*): a list, **Save
+state**, **Start from it** while the phone is off, and **Delete**, which asks a second time.
+
 Each named run keeps its own 32 GiB copy on a filesystem that cannot share blocks. The operations have unit tests and
 control-plane tests; they have not been used with a live phone yet.
 
