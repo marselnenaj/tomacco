@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 199 operations.
+`tomaccoctl` now has one typed API of 200 operations.
 
 ### Added
 
@@ -23,6 +23,9 @@ operations and their JSON results.
   - `testing.run` takes a directory of scenarios as `path`, and with `shard:true` splits them across the devices,
     each scenario once on the next free device, into one report and one `junit.xml`. Without it every device runs
     every scenario.
+- **App performance.**
+  - `profile.startup` launches an Android app several times cold, warm or hot with `am start -W` and reports each launch's
+    TotalTime and WaitTime with their median and p90, the launch state Android reported, and metrics for `profile.compare`.
 - **Projects.** `project.watch` runs the app again with `project.run` whenever its sources change and have stayed
   unchanged for `debounce_ms`, as a job with one log line per cycle; build, dependency and tool directories are
   ignored. A Flutter project keeps one session and gets Hot Reload on each change.

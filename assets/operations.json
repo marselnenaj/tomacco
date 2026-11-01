@@ -5250,6 +5250,61 @@
     }
   },
   {
+    "name": "profile.startup",
+    "title": "Measure app startup",
+    "description": "Launch an Android app several times cold, warm or hot with am start -W and report each launch's TotalTime and WaitTime in milliseconds with count, min, max, mean, median and p90. cold stops the app before each launch; warm keeps the process and recreates the activity; hot returns to the running activity from the home screen. Each run lists the launch state Android reported, and mismatched_runs counts launches whose state differs from mode. metrics (startup_<mode>_median_ms and others) feed profile.compare and profile.budget; report saves the result as JSON.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Device serial / UDID from device.list",
+          "minLength": 1
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "Application ID of the installed app",
+          "minLength": 1
+        },
+        "activity": {
+          "type": "string",
+          "description": "Activity to start, as package/class, .Class or a class name; the launcher activity by default"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "cold",
+            "warm",
+            "hot"
+          ],
+          "default": "cold"
+        },
+        "runs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "default": 5,
+          "description": "Measured launches; warm and hot add one unmeasured launch first"
+        },
+        "report": {
+          "type": "string",
+          "description": "Absolute path to save the result as JSON, for profile.compare"
+        }
+      },
+      "required": [
+        "device",
+        "bundle_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "workspace.list",
     "title": "Read workspaces",
     "description": "List saved project and device contexts.",

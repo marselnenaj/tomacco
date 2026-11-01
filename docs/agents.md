@@ -664,6 +664,24 @@ failure (`flaky`) has been seen only with a stand-in adb in the tests.
 `profile.capture` records Android Perfetto traces. Configure the official `trace_processor`, then use `profile.analyze` and `profile.compare`. Metrics that are
 not available are null, not zero. A count of frames with jank tags is not the same as visible drops.
 
+### App performance
+
+These operations read Android's own counters, without Perfetto. Each returns a report with flat `metrics`; give `report` an
+absolute path to save it as JSON.
+
+`profile.startup` launches an app `runs` times (5 by default) with `am start -W` and reports TotalTime and WaitTime in
+milliseconds: every run, and their count, min, max, mean, median and p90 (nearest rank). `mode` `cold` stops the app before each
+launch, `warm` keeps the process and recreates the activity (`--activity-clear-task`), and `hot` brings the running activity back
+from the home screen; warm and hot start the app once first, unmeasured. Each run names the launch state Android reported, and
+`mismatched_runs` counts the runs whose state differs from `mode`. The metrics are `startup_<mode>_median_ms`, `_p90_ms`, `_min_ms`,
+`_max_ms` and `_mean_ms`. `activity` picks another activity than the launcher's.
+
+```sh
+tomaccoctl call profile.startup '{"device":"emulator-5554","bundle_id":"com.android.settings","mode":"cold","runs":5}'
+```
+
+On an API 36 x86_64 emulator, five runs each of the Settings app reported COLD, WARM and HOT for every run of the matching mode.
+
 ## Release
 
 `release.keystore`, `release.sign`, `release.verify` and `release.version` handle Android artifacts. Passwords come from owner-only files, never a string in a call.

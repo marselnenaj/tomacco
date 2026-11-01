@@ -10,7 +10,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "profile.capture" => capture(a),
         "profile.analyze" => analyze(a),
         "profile.compare" => compare(a),
-        _ => Err(Error::new("operation_not_found", op)),
+        _ => crate::perf::handle(op, a),
     }
 }
 fn capture(a: &Value) -> Result {

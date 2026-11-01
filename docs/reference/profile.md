@@ -2,7 +2,7 @@
 
 # `profile` operations
 
-3 operations. Generated from `assets/operations.json`; [all areas](README.md).
+4 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### profile.capture
 
@@ -59,4 +59,25 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call profile.compare '{"baseline":"<baseline>","current":"<current>","budgets":{"<name>":{"maximum":0}}}'
+```
+
+### profile.startup
+
+**Measure app startup**
+
+Launch an Android app several times cold, warm or hot with am start -W and report each launch's TotalTime and WaitTime in milliseconds with count, min, max, mean, median and p90. cold stops the app before each launch; warm keeps the process and recreates the activity; hot returns to the running activity from the home screen. Each run lists the launch state Android reported, and mismatched_runs counts launches whose state differs from mode. metrics (startup_&lt;mode&gt;_median_ms and others) feed profile.compare and profile.budget; report saves the result as JSON.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Device serial / UDID from device.list |
+| `bundle_id` | string | yes |  | non-empty; Application ID of the installed app |
+| `activity` | string |  |  | Activity to start, as package/class, .Class or a class name; the launcher activity by default |
+| `mode` | string |  | `"cold"` | one of `cold`, `warm`, `hot` |
+| `runs` | integer |  | `5` | 1 to 30; Measured launches; warm and hot add one unmeasured launch first |
+| `report` | string |  |  | Absolute path to save the result as JSON, for profile.compare |
+
+```sh
+tomaccoctl call profile.startup '{"device":"<device>","bundle_id":"<bundle_id>"}'
 ```

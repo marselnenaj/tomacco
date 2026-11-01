@@ -3499,6 +3499,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Comprobar presupuesto de rendimiento</translation>
     </message>
     <message>
+        <source>Measure app startup</source>
+        <translation>Medir el inicio de la app</translation>
+    </message>
+    <message>
         <source>Check toolchain</source>
         <translation>Comprobar la cadena de herramientas</translation>
     </message>

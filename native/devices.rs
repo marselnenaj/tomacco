@@ -275,6 +275,11 @@ fn info(platform: &str, device: &str) -> Result {
     Ok(json!({"id":device,"properties":props,"display":display,"density":density,"health":health}))
 }
 fn launch_command(device: &str, id: &str) -> Result<Vec<String>> {
+    let component = launcher_component(device, id)?;
+    sh(device, &["am", "start", "-W", "-n", &component])
+}
+/// The app's launcher activity as `package/class`, from the package manager.
+pub fn launcher_component(device: &str, id: &str) -> Result<String> {
     bundle(id)?;
     let value = run(sh(
         device,
@@ -303,14 +308,14 @@ fn launch_command(device: &str, id: &str) -> Result<Vec<String>> {
             )
             .remedy("Install the app or pass an explicit activity to device.app")
         })?;
-    sh(device, &["am", "start", "-W", "-n", component])
+    Ok(component.to_string())
 }
 fn sdk_level(device: &str) -> Result<u64> {
     let result = run(sh(device, &["getprop", "ro.build.version.sdk"])?)?;
     Ok(s(&result, "stdout").trim().parse().unwrap_or(0))
 }
 /// The app's user ID from `cmd package list packages -U`, matched exactly.
-fn package_uid(listing: &str, id: &str) -> Option<String> {
+pub fn package_uid(listing: &str, id: &str) -> Option<String> {
     listing.lines().find_map(|line| {
         let mut parts = line.split_whitespace();
         let package = parts.next()?.strip_prefix("package:")?;

@@ -992,6 +992,33 @@ class AndroidControlTests(Isolated):
         self.assertFalse(any(call[:1] == ["push"] for call in self.calls()))
 
 
+    COLD_START = ("Starting: Intent { cmp=dev.test.app/.Main }\nStatus: ok\nLaunchState: COLD\n"
+                  "Activity: dev.test.app/.Main\nTotalTime: 412\nWaitTime: 420\nComplete\n")
+
+    def test_startup_is_measured_over_cold_launches_and_saved_as_a_report(self):
+        self.replies(**{"resolve-activity": "priority=0 preferredOrder=0\ndev.test.app/.Main\n", "am start -W": self.COLD_START})
+        target = self.root / "startup.json"
+        value = dispatch("profile.startup", {"device": "emulator-5554", "bundle_id": "dev.test.app", "runs": 3, "report": str(target)})
+        self.assertEqual((value["mode"], value["component"], value["mismatched_runs"]), ("cold", "dev.test.app/.Main", 0))
+        self.assertEqual(value["metrics"]["startup_cold_median_ms"], 412)
+        self.assertEqual(value["total_ms"]["count"], 3)
+        self.assertEqual(json.loads(target.read_text())["metrics"], value["metrics"])
+        shell = self.shell_calls()
+        self.assertEqual(sum(args[:2] == ["am", "force-stop"] for args in shell), 3)
+        self.assertEqual(sum(args[:3] == ["am", "start", "-W"] for args in shell), 3)
+        # Warm keeps the process: one unmeasured launch, then the activity is recreated.
+        (self.root / "adb-calls.jsonl").unlink()
+        value = dispatch("profile.startup", {"device": "emulator-5554", "bundle_id": "dev.test.app", "mode": "warm", "runs": 1,
+                                             "activity": ".Main"})
+        self.assertEqual(value["mismatched_runs"], 1)
+        shell = self.shell_calls()
+        self.assertFalse(any("force-stop" in args for args in shell))
+        self.assertIn(["am", "start", "-W", "--activity-clear-task", "-n", "dev.test.app/.Main"], shell)
+        self.replies(**{"resolve-activity": "dev.test.app/.Main\n", "am start -W": "Error: Activity class {dev.test.app/.Main} does not exist.\n"})
+        with self.assertRaises(StudioError) as failed:
+            dispatch("profile.startup", {"device": "emulator-5554", "bundle_id": "dev.test.app", "runs": 1})
+        self.assertEqual(failed.exception.code, "launch_failed")
+
     def test_app_logs_follow_the_user_id_from_android_12_and_the_pid_before(self):
         self.replies(**{"ro.build.version.sdk": "36\n", "list packages -U": "package:dev.test.app.extra uid:10201\npackage:dev.test.app uid:10200\n"})
         job = dispatch("device.logs", {"platform": "android", "device": "emulator-5554", "bundle_id": "dev.test.app", "duration": 1})

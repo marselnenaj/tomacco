@@ -518,6 +518,11 @@ the NDK; repeat it after moving either one.
 - For Java objects, callbacks and async interop, use upstream
   [swift-java](https://github.com/swiftlang/swift-java).
 
+## App performance
+
+`profile.startup` measures cold, warm or hot launch times over several runs with their median
+and p90. See [app performance](agents.md#app-performance) in the agent guide.
+
 ## Debugging, tests, profiling and release
 
 These are the same for agents and the desktop. See the sections in the agent guide:
