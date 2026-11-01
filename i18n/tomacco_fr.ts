@@ -4430,6 +4430,10 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <translation>Vérifier cet ordinateur pour l'appareil iOS virtuel</translation>
     </message>
     <message>
+        <source>Check the virtual iOS device</source>
+        <translation>Vérifier l'appareil iOS virtuel</translation>
+    </message>
+    <message>
         <source>Wait for job</source>
         <translation>Attendre une tâche</translation>
     </message>

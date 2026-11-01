@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 223 operations.
+`tomaccoctl` now has one typed API of 224 operations.
 
 ### Added
 
@@ -170,6 +170,11 @@ operations and their JSON results.
     enters a passcode. `ios.virtual.deploy` unlocks first before it opens the app, and `testing.run` on
     `virtual-iphone` before its first step, failing with the new `ios_virtual_locked` when it cannot. Tested with
     scripted guest replies, not yet on a live phone.
+  - `ios.virtual.doctor` checks the configured phone in one pass, warn or fail report with a remedy per item: every
+    input `profile.json` names (with `tools/ios_virtual_profile.py`'s checks, run by the new
+    `tools/ios_virtual_doctor.py`), guest tools and engine against this checkout's sources, the saved states' disks,
+    the last run's verdict, the next start's disk copy, every `ios.virtual.host_check` item, and the graphics card and
+    host pressure right now. Unit-tested with profiles made in the tests, not run against a full live profile.
   - The desktop's phone view types the host clipboard's text into the focused field with Ctrl+V or **Paste**, through the
     `text` action in pieces of up to 1024 characters. Not tried on a live phone yet.
 

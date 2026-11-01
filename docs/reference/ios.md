@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-58 operations. Generated from `assets/operations.json`; [all areas](README.md).
+59 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -870,6 +870,20 @@ Annotations: read-only, idempotent, closed world.
 
 ```sh
 tomaccoctl call ios.virtual.host_check
+```
+
+### ios.virtual.doctor
+
+**Check the virtual iOS device**
+
+One pass, warn or fail report on whether the configured virtual iOS device can start and how its last run ended, each item with a remedy: profile (profile.json and state.json readable), profile_inputs (every input profile.json names, checked as tools/ios_virtual_profile.py checks a new profile: engine, guest-control backend, helper, boot files, trust cache, device tree, boot manifest, graphics payload, guest tools, kernel and the verified base), guest_tools_sources (the guest tools built from the guest sources this checkout has), engine_patches (the engine built from this checkout's engine patches, from its build-manifest.json), saved_states (each saved state and the verified base still have their disks), last_run (the verdict ios.virtual.status shows as last_run), start_disk (whether the next start's disk copy fits, as the start refuses it), every ios.virtual.host_check item, gpu_now (the graphics card's free memory against the graphics memory guard's limit) and pressure_now (host I/O and memory pressure against the start's admission limits). ready is false when any item fails; status is the worst. Without a profile, profile fails and the machine's items still run. Reads files only, which takes some seconds for the kernel and payloads; starts and writes nothing.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call ios.virtual.doctor
 ```
 
 ### ios.virtual.setup

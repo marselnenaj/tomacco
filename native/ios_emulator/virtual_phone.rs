@@ -592,6 +592,7 @@ pub fn apps(_a: &Value) -> Result {
 /// The disks a start copies from its base, in the order it copies them
 /// (`prepare` in tools/prepare_ios_guest_tools.py).
 use super::disk_overlay;
+pub mod doctor;
 mod host_load;
 mod liveness;
 pub mod states;

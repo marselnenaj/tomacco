@@ -3,12 +3,19 @@
 Symptom, cause, fix. Error codes and messages are the ones Tomacco really prints. For the rest of
 the product, see the [general troubleshooting guide](../troubleshooting.md).
 
-**Start here.** These two say what state you are in:
+**Start here.** These say what state you are in:
 
 ```sh
+tomaccoctl call ios.virtual.doctor '{}'
 python3 tools/ios_virtual_profile.py --check
 tomaccoctl call ios.virtual.status '{}'
 ```
+
+`ios.virtual.doctor` is one pass, warn or fail report with a remedy per item: the profile's inputs (as
+`ios_virtual_profile.py --check` checks a new profile's), whether the guest tools and the engine were built from this
+checkout's sources, the saved states' disks, the last run's verdict, whether the next start's disk copy fits, every
+`ios.virtual.host_check` item, and the graphics card and host pressure right now. It reads files only. Its checks are
+unit-tested with profiles made in the tests; it has not been run against a full live profile yet.
 
 To read why a start failed, use the job from `busy` or from the start's own answer:
 

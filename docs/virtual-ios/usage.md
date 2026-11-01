@@ -12,6 +12,9 @@ tomaccoctl call ios.virtual.status '{}'
 tomaccoctl call ios.virtual.stop '{}'
 ```
 
+Before a start, `tomaccoctl call ios.virtual.doctor '{}'` checks the profile, the machine, the disk space and the last
+run in one report; [troubleshooting](troubleshooting.md) says what each item means.
+
 You only configure the directory once. In the desktop, the devices tab (Apple) and the Omarchy
 panel offer the same start, stop and a phone window.
 

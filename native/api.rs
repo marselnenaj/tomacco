@@ -168,6 +168,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "ios.emulator.memory" => crate::ios_emulator::pmp::memory(&a),
         "ios.virtual.status" => crate::ios_emulator::virtual_phone::status(&a),
         "ios.virtual.host_check" => crate::ios_emulator::host_check::check(&a),
+        "ios.virtual.doctor" => crate::ios_emulator::virtual_phone::doctor::doctor(&a),
         "ios.virtual.setup" => crate::ios_emulator::setup_chain::setup(&a),
         "ios.virtual.apps" => crate::ios_emulator::virtual_phone::apps(&a),
         "ios.virtual.cleanup" => crate::ios_emulator::virtual_phone::cleanup(&a),

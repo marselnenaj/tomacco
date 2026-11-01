@@ -9723,6 +9723,23 @@
     }
   },
   {
+    "name": "ios.virtual.doctor",
+    "title": "Check the virtual iOS device",
+    "description": "One pass, warn or fail report on whether the configured virtual iOS device can start and how its last run ended, each item with a remedy: profile (profile.json and state.json readable), profile_inputs (every input profile.json names, checked as tools/ios_virtual_profile.py checks a new profile: engine, guest-control backend, helper, boot files, trust cache, device tree, boot manifest, graphics payload, guest tools, kernel and the verified base), guest_tools_sources (the guest tools built from the guest sources this checkout has), engine_patches (the engine built from this checkout's engine patches, from its build-manifest.json), saved_states (each saved state and the verified base still have their disks), last_run (the verdict ios.virtual.status shows as last_run), start_disk (whether the next start's disk copy fits, as the start refuses it), every ios.virtual.host_check item, gpu_now (the graphics card's free memory against the graphics memory guard's limit) and pressure_now (host I/O and memory pressure against the start's admission limits). ready is false when any item fails; status is the worst. Without a profile, profile fails and the machine's items still run. Reads files only, which takes some seconds for the kernel and payloads; starts and writes nothing.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.virtual.setup",
     "title": "Set up the virtual iOS device",
     "description": "Walk the virtual iOS device's setup chain (docs/virtual-ios/setup.md) as one guided sequence. step plan (the default) reads which of the 17 stages are done from their outputs under work and the checkout's .tooling and writes nothing but work/inputs.json: stages lists each with stage, what, state (done, pending, partial when an earlier run stopped halfway, unknown when only the person can tell), detail, needs (arguments it still lacks), ask_first, why_ask, manual and the commands it would run; next is the first stage not done; inputs is tools/check_ios_inputs.py's check of the person's own files and host is ios.virtual.host_check. step run starts the next stage, or the one named by stage, as a durable job (or the operation it is, such as ios.emulator.prepare_userland) and returns it; a done stage is skipped without running anything. run refuses with ios_setup_out_of_order before an earlier stage is done, ios_setup_needs_input when the person's files are not given, ios_setup_inputs_invalid when they are the wrong ones, ios_setup_partial for a half-finished output (move it aside; nothing is deleted), ios_setup_confirm for stages that build for long or need the person's template until confirm is true, ios_setup_manual for the restore, which boots a guest and is run by hand from its commands, and ios_setup_needs_checkout for the engine without a source checkout. Nothing of Apple's is fetched: the restore images, decrypted, the public template and the IM4M stay the person's to supply.",
