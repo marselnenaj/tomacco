@@ -1314,6 +1314,19 @@ pub fn deploy(a: &Value) -> Result {
             "The phone is not running; add the app with ios.virtual.configure and start the phone",
         ));
     }
+    submit_with(
+        "ios.virtual.deploy",
+        "deploy",
+        "Install app on virtual iOS device",
+        1800,
+        a,
+        deploy_arguments(&bundle, entitlements.as_deref(), a["force"] == true),
+    )
+}
+
+/// The deploy script's own arguments: the bundle, the entitlements to
+/// request, and `--force` to install an unchanged app again.
+fn deploy_arguments(bundle: &Path, entitlements: Option<&Path>, force: bool) -> Vec<String> {
     let mut arguments = vec![
         "--bundle".to_string(),
         bundle.to_string_lossy().into_owned(),
@@ -1324,14 +1337,10 @@ pub fn deploy(a: &Value) -> Result {
             file.to_string_lossy().into_owned(),
         ]);
     }
-    submit_with(
-        "ios.virtual.deploy",
-        "deploy",
-        "Install app on virtual iOS device",
-        1800,
-        a,
-        arguments,
-    )
+    if force {
+        arguments.push("--force".to_string());
+    }
+    arguments
 }
 
 /// A debugger's way to a process of the running phone: a job holding a port on
@@ -1484,6 +1493,25 @@ pub fn stop(a: &Value) -> Result {
 #[cfg(test)]
 mod debug_target_tests {
     use super::*;
+
+    #[test]
+    fn force_reaches_the_deploy_script_only_when_asked() {
+        let bundle = Path::new("/apps/Demo.app");
+        assert_eq!(
+            deploy_arguments(bundle, None, false),
+            ["--bundle", "/apps/Demo.app"]
+        );
+        assert_eq!(
+            deploy_arguments(bundle, Some(Path::new("/apps/e.plist")), true),
+            [
+                "--bundle",
+                "/apps/Demo.app",
+                "--entitlements",
+                "/apps/e.plist",
+                "--force"
+            ]
+        );
+    }
 
     #[test]
     fn a_debug_target_never_reads_as_an_option() {

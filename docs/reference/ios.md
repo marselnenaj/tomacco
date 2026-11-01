@@ -1070,7 +1070,7 @@ tomaccoctl call ios.virtual.state_use '{"name":"<name>"}'
 
 **Install app on running virtual iOS device**
 
-One step from a built .app directory to the app on the running phone, without a reboot: inspect the bundle, sign a copy ad hoc, exchange spare entries of this boot's trust cache for its hashes while the guest is stopped for a moment, send it over the guest channel, name it to the signing adapter, install it through installd and open it. A durable job: follow job.logs, whose deploy events carry each step's seconds. The profile lists the app afterwards, so the next start stages it. Refused with ios_virtual_not_running when the phone is off: use ios.virtual.configure add_application and start it. A boot has 512 spare entries and the adapter's table of the boot takes 32 apps, frameworks and extensions.
+One step from a built .app directory to the app on the running phone, without a reboot: inspect the bundle, sign a copy ad hoc, exchange spare entries of this boot's trust cache for its hashes while the guest is stopped for a moment, send it over the guest channel, name it to the signing adapter, install it through installd and open it. A durable job: follow job.logs, whose deploy events carry each step's seconds. When this run installed the same signed app before (the cdhash of the ad hoc signed copy, which seals every file of the bundle), nothing is trusted, sent or installed: the deploy event unchanged follows signed and the app is only opened; force installs it again. The profile lists the app afterwards, so the next start stages it. Refused with ios_virtual_not_running when the phone is off: use ios.virtual.configure add_application and start it. A boot has 512 spare entries and the adapter's table of the boot takes 32 apps, frameworks and extensions.
 
 Annotations: writes, not idempotent, closed world.
 
@@ -1079,6 +1079,7 @@ Annotations: writes, not idempotent, closed world.
 | `bundle` | string | yes |  | non-empty; Host path of an .app directory built for arm64 iOS. |
 | `entitlements` | string |  |  | Entitlements plist to request; empty: the executable's embedded entitlements, or only application-identifier. |
 | `open_app` | boolean |  | `true` | False installs without opening. |
+| `force` | boolean |  | `false` | Install even when this run has the same signed app installed already. |
 
 ```sh
 tomaccoctl call ios.virtual.deploy '{"bundle":"<bundle>"}'

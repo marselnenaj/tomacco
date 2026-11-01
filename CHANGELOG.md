@@ -10,6 +10,10 @@ operations and their JSON results.
 
 ### Added
 
+- **Virtual iPhone app loop.**
+  - `ios.virtual.deploy` skips the trust-cache exchange, the transfer and the install when this run already installed the
+    same signed app, and only opens it: the deploy log says `unchanged`. `force` installs it again. Unit-tested; not run
+    on a live phone.
 - `tomaccoctl setup` also connects OpenCode (`~/.config/opencode/opencode.json`, `mcp`). Apps that run these
   agents, such as T3 Code, then reach Tomacco through them; docs/agents.md says so.
 - **Release.**

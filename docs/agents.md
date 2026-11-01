@@ -505,7 +505,9 @@ tomaccoctl call job.logs '{"job_id":"DEPLOY_JOB","offset":0}'
 
 It signs a copy, exchanges spare trust-cache entries of the boot for its hashes while the guest is briefly stopped, sends the bundle over
 the guest channel, names it to the signing adapter, installs it through installd and opens it (about 25 s). The profile lists the app
-afterwards, so the next start carries it too. `ios.virtual.configure` with `add_application` and `deploy` does the add and the deploy in one
+afterwards, so the next start carries it too. When this run already installed the same signed app (the same cdhash after signing, which
+covers every file of the bundle), the deploy log has `unchanged` after `signed`, nothing is sent and the app is only opened; `force:true`
+installs it again. This skip has unit tests only; it was not run on a live phone. `ios.virtual.configure` with `add_application` and `deploy` does the add and the deploy in one
 call. A boot has 512 spare entries and the adapter's per-boot table holds 32 apps, frameworks and extensions. To debug the app, build it
 with `get-task-allow` and run `ios.virtual.debug {target}` — but iOS refuses it with Developer Mode off and arming it did not hold across a boot, so
 lldb cannot attach yet.
