@@ -1719,6 +1719,21 @@ pub(crate) enum LockScreen {
     Unknown(String),
 }
 
+/// `ask` until it knows the lock screen or `deadline` passes, `pause` apart.
+pub(crate) fn settled_lock_screen(
+    deadline: Instant,
+    pause: Duration,
+    mut ask: impl FnMut() -> LockScreen,
+) -> LockScreen {
+    loop {
+        let state = ask();
+        if !matches!(state, LockScreen::Unknown(_)) || Instant::now() >= deadline {
+            return state;
+        }
+        std::thread::sleep(pause);
+    }
+}
+
 pub(crate) fn lock_screen(reply: &Result) -> LockScreen {
     let response = match reply {
         Ok(reply) => &reply["response"],
@@ -1755,10 +1770,21 @@ fn locked(message: &str, details: Value) -> Error {
 /// is not held up (`not-checked`); a passcode or a screen that stays locked is
 /// `ios_virtual_locked`.
 pub(crate) fn ensure_unlocked() -> Result {
+    ensure_unlocked_within(Duration::ZERO)
+}
+
+/// The guest cannot answer `screen_state` while iOS's interface restarts, and
+/// the interface then comes back on the lock screen. Asks again for up to
+/// `patience` while the answer is unknown, so that the lock screen is seen.
+pub(crate) fn ensure_unlocked_within(patience: Duration) -> Result {
     let (job, _) = running_guest()?;
-    let reply =
-        guest_control::call(&json!({"job_id":job,"operation":"screen_state","timeout_seconds":30}));
-    match lock_screen(&reply) {
+    let deadline = Instant::now() + patience;
+    let state = settled_lock_screen(deadline, Duration::from_secs(2), || {
+        lock_screen(&guest_control::call(
+            &json!({"job_id":job,"operation":"screen_state","timeout_seconds":30}),
+        ))
+    });
+    match state {
         LockScreen::Unlocked => Ok(json!({"screen":"unlocked","unlock_job":null})),
         LockScreen::Unknown(reason) => Ok(json!({"screen":"not-checked","reason":reason})),
         LockScreen::Passcode => Err(locked(
@@ -2251,6 +2277,34 @@ mod lock_screen_tests {
         let error = locked("stayed locked", json!({}));
         assert_eq!(error.code, "ios_virtual_locked");
         assert!(error.remedy.contains("Unlock the phone in its window"));
+    }
+
+    #[test]
+    fn a_restarting_interface_is_asked_again_until_it_says_where_the_lock_screen_is() {
+        use std::time::{Duration, Instant};
+        let mut answers = vec![
+            LockScreen::Unknown("screen_state_unknown".into()),
+            LockScreen::Unknown("screen_state_unknown".into()),
+            LockScreen::Locked,
+        ]
+        .into_iter();
+        let mut asked = 0;
+        let state = settled_lock_screen(
+            Instant::now() + Duration::from_secs(5),
+            Duration::from_millis(1),
+            || {
+                asked += 1;
+                answers.next().unwrap()
+            },
+        );
+        assert_eq!((state, asked), (LockScreen::Locked, 3));
+        // With no patience it asks once and reports what it got.
+        let mut asked = 0;
+        let state = settled_lock_screen(Instant::now(), Duration::from_millis(1), || {
+            asked += 1;
+            LockScreen::Unknown("x".into())
+        });
+        assert_eq!((state, asked), (LockScreen::Unknown("x".into()), 1));
     }
 }
 

@@ -159,8 +159,9 @@ impl Launcher for VirtualIphone {
 
     fn prepare(&mut self) -> Result<()> {
         // An open request is refused on the lock screen, which the phone
-        // returns to after a few idle minutes.
-        virtual_phone::ensure_unlocked()?;
+        // returns to after a few idle minutes. The guest answers "unknown"
+        // now and then for a few seconds, also after the interface restarts.
+        virtual_phone::ensure_unlocked_within(Duration::from_secs(30))?;
         Ok(())
     }
 
@@ -174,8 +175,9 @@ impl Launcher for VirtualIphone {
             )
             .details(response.clone()));
         }
-        // After the interface restarts the phone may show its lock screen.
-        virtual_phone::ensure_unlocked()?;
+        // The interface comes back on the lock screen, and cannot say so for
+        // a while: wait for its answer instead of opening into a locked phone.
+        virtual_phone::ensure_unlocked_within(Duration::from_secs(90))?;
         self.control("home")?;
         Ok(
             json!({"action":"restart_ui","previous_ui_pid":response["previous_pid"],"ui_pid":response["ui_pid"]}),
