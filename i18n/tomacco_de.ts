@@ -4167,6 +4167,10 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Virtuelles iOS-Gerät: Zustand</translation>
     </message>
     <message>
+        <source>Check this machine for the virtual iOS device</source>
+        <translation>Diesen Rechner für das virtuelle iOS-Gerät prüfen</translation>
+    </message>
+    <message>
         <source>Wait for job</source>
         <translation>Auftrag abwarten</translation>
     </message>

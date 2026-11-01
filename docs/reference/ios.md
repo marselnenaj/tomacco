@@ -2,7 +2,7 @@
 
 # `ios` operations
 
-45 operations. Generated from `assets/operations.json`; [all areas](README.md).
+46 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### ios.sdk_install
 
@@ -775,6 +775,23 @@ Takes no arguments.
 
 ```sh
 tomaccoctl call ios.virtual.status
+```
+
+### ios.virtual.host_check
+
+**Check this machine for the virtual iOS device**
+
+Check whether this machine can run the virtual iOS device, before any setup step or start: architecture (x86_64), CPU (logical processors, VT-x or AMD-V, AVX2), /dev/kvm for the disk-preparing helper, memory (fail under 12 GiB, warn under 16 GiB), free disk on the filesystem of directory (by default the configured profile's installs, needing 32 GiB for one start's disk copy, else the data directory, needing 100 GiB for the setup chain), Vulkan drivers and the card with the most graphics memory (fail under 8 GiB, warn under 16 GiB or when under an eighth is free), the helper support's APFS module against the running kernel, and passt for the guest network. Each entry in checks has check, status (pass, warn or fail), found, message and a remedy unless it passed; ready is false when any check fails. Reads /proc, /sys, PATH and the filesystem only; starts and writes nothing. A pass means the machine meets what the device was measured with, not that it was qualified on it.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `directory` | string |  |  | non-empty; Absolute existing directory whose filesystem will hold the setup chain's outputs; checked against the 100 GiB the chain needs |
+| `support` | string |  |  | non-empty; Absolute helper support directory (prepare_ios_emulator.py output); by default the profile's, else the checkout's .tooling/ios-sptm/support |
+
+```sh
+tomaccoctl call ios.virtual.host_check
 ```
 
 ### ios.virtual.configure

@@ -8738,6 +8738,34 @@
     }
   },
   {
+    "name": "ios.virtual.host_check",
+    "title": "Check this machine for the virtual iOS device",
+    "description": "Check whether this machine can run the virtual iOS device, before any setup step or start: architecture (x86_64), CPU (logical processors, VT-x or AMD-V, AVX2), /dev/kvm for the disk-preparing helper, memory (fail under 12 GiB, warn under 16 GiB), free disk on the filesystem of directory (by default the configured profile's installs, needing 32 GiB for one start's disk copy, else the data directory, needing 100 GiB for the setup chain), Vulkan drivers and the card with the most graphics memory (fail under 8 GiB, warn under 16 GiB or when under an eighth is free), the helper support's APFS module against the running kernel, and passt for the guest network. Each entry in checks has check, status (pass, warn or fail), found, message and a remedy unless it passed; ready is false when any check fails. Reads /proc, /sys, PATH and the filesystem only; starts and writes nothing. A pass means the machine meets what the device was measured with, not that it was qualified on it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "directory": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute existing directory whose filesystem will hold the setup chain's outputs; checked against the 100 GiB the chain needs"
+        },
+        "support": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute helper support directory (prepare_ios_emulator.py output); by default the profile's, else the checkout's .tooling/ios-sptm/support"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.virtual.configure",
     "title": "Set up virtual iOS device",
     "description": "Select the prepared profile directory used by ios.virtual.start and ios.virtual.stop. The directory must contain a format 1 profile.json (prepare and boot inputs, graphics bundle, engine, application, installs) and a state.json naming the last closed run. Both are validated; nothing is created or repaired. With model alone, the configured profile is kept and only the device model for the next start changes. add_application, remove_application and application change the profile's own app list and the app the start opens, in profile.json; clang names the clang 22 the start rebuilds guest tools with. With add_application and deploy, the app also goes onto the running phone at once (ios.virtual.deploy, in deploy_job).",

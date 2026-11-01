@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 199 operations.
+`tomaccoctl` now has one typed API of 200 operations.
 
 ### Added
 
@@ -76,6 +76,10 @@ operations and their JSON results.
     plain words: another build than the pinned one (with the build it found), the iPhone and PCC directories swapped,
     components the unpacking left out, an image still AEA-encrypted or not APFS, a template other than the documented
     one, an IM4M for another iPhone image or another device's ECID. It reads manifests and headers only.
+  - `ios.virtual.host_check` says whether this machine can run the virtual iOS device, before anything is built:
+    architecture, processors and VT-x/AMD-V, `/dev/kvm`, memory, free disk where the chain or the profile's installs
+    go, Vulkan drivers and graphics memory, the helper's APFS module against the running kernel, and `passt`, each as
+    pass, warn or fail with a remedy. It is read-only.
 
 ### Changed
 

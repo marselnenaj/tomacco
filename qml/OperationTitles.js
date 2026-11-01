@@ -196,6 +196,7 @@ var titles = {
     "ios.emulator.report": QT_TRANSLATE_NOOP("Operations", "Read iOS test run"),
     "ios.emulator.memory": QT_TRANSLATE_NOOP("Operations", "Read PMP memory"),
     "ios.virtual.status": QT_TRANSLATE_NOOP("Operations", "Virtual iOS device: status"),
+    "ios.virtual.host_check": QT_TRANSLATE_NOOP("Operations", "Check this machine for the virtual iOS device"),
     "ios.virtual.configure": QT_TRANSLATE_NOOP("Operations", "Set up virtual iOS device"),
     "ios.virtual.apps": QT_TRANSLATE_NOOP("Operations", "Apps of virtual iOS device"),
     "ios.virtual.start": QT_TRANSLATE_NOOP("Operations", "Start virtual iOS device"),

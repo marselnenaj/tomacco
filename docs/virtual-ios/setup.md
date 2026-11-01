@@ -7,6 +7,17 @@ first.
 [What has been checked](#what-has-been-checked) is at the end. With all inputs already
 available, budget about 100 GiB of disk and half an hour for the restore itself.
 
+**Can this machine run it?** This checks the processor, `/dev/kvm`, memory, free disk, the
+Vulkan driver and graphics memory, the helper kernel and `passt`, each as pass, warn or fail with
+what to do. Pass the directory your chain's outputs will go to; it reads and writes nothing else.
+
+```sh
+tomaccoctl call ios.virtual.host_check '{"directory":"/phone"}'
+```
+
+On the development host it passed everything but `passt`, which was not installed. Its
+thresholds come from [what it needs](README.md#what-it-needs); a pass is not a qualification.
+
 **See where you stand at any time.** This lists inputs that are missing or wrong, in
 chain order. The JSON has the missing inputs under `missing`. Prepare the local
 IM4M with the command in step 4 before proceeding to the restore runtime.

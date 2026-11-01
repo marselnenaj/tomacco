@@ -3,6 +3,7 @@ pub mod control;
 pub mod crash_reports;
 pub mod guest_control;
 pub mod guest_tools;
+pub mod host_check;
 mod metrics;
 pub mod paravirtual;
 pub mod pmp;
