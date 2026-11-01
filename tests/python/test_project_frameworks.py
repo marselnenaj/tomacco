@@ -220,6 +220,53 @@ class DependencyUpdateTests(Isolated):
             dispatch("project.dependency_updates", {"path": str(web)})
         self.assertEqual(refused.exception.code, "action_unsupported")
 
+    def test_pub_npm_and_swiftpm_dependencies_are_checked_in_one_report(self):
+        root = self.root / "Mixed"
+        root.mkdir()
+        (root / "pubspec.yaml").write_text("name: mixed\nflutter:\n")
+        (root / "package.json").write_text(json.dumps({"dependencies": {"react": "^18.2.0", "left-pad": "1.0.0"}}))
+        (root / "Package.resolved").write_text(json.dumps({"version": 2, "pins": [
+            {"identity": "swift-log", "kind": "remoteSourceControl", "location": "https://example.invalid/swift-log.git",
+             "state": {"revision": "abc", "version": "1.5.0"}},
+            {"identity": "fork", "kind": "remoteSourceControl", "location": "https://example.invalid/fork.git",
+             "state": {"branch": "main", "revision": "def"}}]}))
+        calls = self.root / "calls.log"
+        record = f"open({str(calls)!r},'a').write(' '.join(sys.argv[1:])+'\\n')\n"
+        self.tool("flutter", "import json,sys\n" + record + "assert sys.argv[1:]==['pub','outdated','--json']\n"
+                  "print(json.dumps({'packages':[{'package':'http','kind':'direct','current':{'version':'1.1.0'},'upgradable':{'version':'1.2.2'},"
+                  "'resolvable':{'version':'1.2.2'},'latest':{'version':'1.2.2'}}]}))\n")
+        self.tool("npm", "import json,sys\n" + record + "assert sys.argv[1:]==['outdated','--json']\n"
+                  "print(json.dumps({'react':{'current':'18.2.0','wanted':'18.3.1','latest':'19.1.0','type':'dependencies'}}))\nsys.exit(1)\n")
+        self.tool("git", "import sys\n" + record + "assert sys.argv[1:4]==['ls-remote','--tags','--refs']\n"
+                  "print('a\\trefs/tags/1.5.0\\nb\\trefs/tags/1.6.0')\n")
+        before = sorted(p.relative_to(root) for p in root.rglob("*"))
+        job = dispatch("project.dependency_updates", {"path": str(root)})
+        done = jobs.wait(job["id"], 60)
+        self.assertEqual(done["state"], "succeeded", jobs.logs(job["id"])["text"])
+        report_path = next(a["path"] for a in done["result"]["artifacts"] if a["path"].endswith("report.json"))
+        report = json.loads(Path(report_path).read_text())
+        self.assertEqual([e["name"] for e in report["ecosystems"]], ["pub", "npm", "swiftpm"])
+        entries = {(d["ecosystem"], d["name"]): d for d in report["dependencies"]}
+        self.assertEqual(entries[("pub", "http")]["status"], "update_available")
+        self.assertEqual(entries[("pub", "http")]["latest"], "1.2.2")
+        self.assertEqual(entries[("npm", "react")]["status"], "update_available")
+        self.assertEqual(entries[("npm", "react")]["latest"], "19.1.0")
+        self.assertEqual(entries[("npm", "left-pad")]["status"], "up_to_date")
+        self.assertEqual(entries[("swiftpm", "swift-log")]["latest_stable"], "1.6.0")
+        self.assertEqual(entries[("swiftpm", "fork")]["status"], "unversioned")
+        self.assertEqual(report["summary"], {"unversioned": 1, "up_to_date": 1, "update_available": 3})
+        self.assertEqual(calls.read_text().count("ls-remote"), 1)
+        self.assertEqual(sorted(p.relative_to(root) for p in root.rglob("*")), before)
+        # A missing tool leaves the others checked, and is named.
+        (self.root / "npm").unlink()
+        with patch.dict(os.environ, {"PATH": "/nonexistent"}):
+            job = dispatch("project.dependency_updates", {"path": str(root)})
+            done = jobs.wait(job["id"], 60)
+        report = json.loads(Path(next(a["path"] for a in done["result"]["artifacts"] if a["path"].endswith("report.json"))).read_text())
+        npm = next(e for e in report["ecosystems"] if e["name"] == "npm")
+        self.assertIn("npm", npm["error"])
+        self.assertEqual(sum(1 for d in report["dependencies"] if d["ecosystem"] == "pub"), 1)
+
 
 class AnalyzeTests(Isolated):
     def report(self, job):

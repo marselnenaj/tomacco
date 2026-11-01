@@ -1,6 +1,7 @@
 //! `project.dependency_updates`: the versions a Gradle build declares, in its
 //! versions catalog and build files, against the newest versions in Maven
-//! repository metadata. Reads the project and the repositories; changes nothing.
+//! repository metadata; pub, npm and SwiftPM dependencies are in
+//! `package_updates`. Reads the project and the repositories; changes nothing.
 use crate::{
     core::*,
     gradle_model::{self, Catalog},
@@ -340,35 +341,68 @@ fn check_online(repositories: &[String]) -> Result<()> {
 
 pub fn updates(a: &Value) -> Result {
     let project = crate::projects::inspect(s(a, "path"))?;
-    let Some(dir) = project["gradle_directory"].as_str().map(PathBuf::from) else {
-        return Err(Error::new(
-            "action_unsupported",
-            "project.dependency_updates reads Gradle builds; this project has none",
-        ));
-    };
+    let root = PathBuf::from(s(&project, "path"));
+    let kinds: Vec<&str> = project["kinds"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .collect();
     let repositories = repositories(a)?;
-    let curl = tc::find("curl")?;
-    let found = declared(&dir);
-    if found.is_empty() {
-        return Err(Error::new(
-            "nothing_to_check",
-            "No versioned dependency or plugin in the versions catalog or build files",
-        ));
+    let mut ecosystems = Vec::new();
+    let gradle = project["gradle_directory"].as_str().map(PathBuf::from);
+    if let Some(dir) = &gradle {
+        let found = declared(dir);
+        if !found.is_empty() {
+            let declared: Vec<Value> = found
+                .iter()
+                .map(|d| json!({"kind":d.kind,"name":d.name,"group":d.group,"artifact":d.artifact,"version":d.version,"source":d.source}))
+                .collect();
+            ecosystems.push(
+                json!({"name":"gradle","tool":"curl","gradle_directory":dir,"declared":declared}),
+            );
+        }
     }
-    check_online(&repositories)?;
+    ecosystems.extend(crate::package_updates::plan(&root, &kinds)?);
+    if ecosystems.is_empty() {
+        return Err(if gradle.is_some() {
+            Error::new(
+                "nothing_to_check",
+                "No versioned dependency or plugin in the versions catalog or build files",
+            )
+        } else {
+            Error::new(
+                "action_unsupported",
+                "project.dependency_updates reads Gradle builds, pubspec.yaml, package.json dependencies and Package.resolved; this project has none",
+            )
+        });
+    }
+    // A single ecosystem that cannot run is refused at once.
+    if let [only] = ecosystems.as_slice() {
+        if let Some(error) = only["error"].as_str() {
+            return Err(Error::new("tool_missing", error));
+        }
+    }
+    let alone = ecosystems.len() == 1;
+    if let Some(gradle) = ecosystems.iter_mut().find(|e| e["name"] == "gradle") {
+        match tc::find("curl").and_then(|curl| {
+            check_online(&repositories)?;
+            Ok(curl)
+        }) {
+            Ok(curl) => gradle["curl"] = json!(curl),
+            Err(error) if alone => return Err(error),
+            Err(error) => gradle["error"] = json!(error.message),
+        }
+    }
     let directory = home()?
         .join("dependencies")
         .join(uuid::Uuid::new_v4().simple().to_string());
     private_dir(&directory)?;
     let report = directory.join("report.json");
-    let declared: Vec<Value> = found
-        .iter()
-        .map(|d| json!({"kind":d.kind,"name":d.name,"group":d.group,"artifact":d.artifact,"version":d.version,"source":d.source}))
-        .collect();
     let request = directory.join("request.json");
     atomic_json(
         &request,
-        &json!({"project":project["path"],"gradle_directory":dir,"repositories":repositories,"curl":curl,"declared":declared,"report":report}),
+        &json!({"project":project["path"],"gradle_directory":gradle,"repositories":repositories,"ecosystems":ecosystems,"report":report}),
     )?;
     crate::jobs::submit(
         &format!("Dependency updates · {}", s(&project, "name")),
@@ -376,13 +410,17 @@ pub fn updates(a: &Value) -> Result {
     )
 }
 
-/// The `_dependency_updates` worker: fetches each artifact's metadata once,
-/// from the first repository that has it, and writes report.json.
-pub fn worker(request: &str) -> Result<()> {
-    let spec = read_json(Path::new(request), None)?;
-    let repositories = strings(&spec["repositories"]);
-    let curl = s(&spec, "curl").to_string();
-    let declared = spec["declared"].as_array().cloned().unwrap_or_default();
+/// The Gradle entries: fetches each artifact's metadata once, from the first
+/// repository that has it.
+fn gradle_entries(ecosystem: &Value, repositories: &[String]) -> Result<Vec<Value>> {
+    if let Some(error) = ecosystem["error"].as_str() {
+        return Err(Error::new("offline", error));
+    }
+    let curl = s(ecosystem, "curl").to_string();
+    let declared = ecosystem["declared"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
     let mut artifacts: Vec<(String, String)> = declared
         .iter()
         .filter(|d| !s(d, "version").is_empty())
@@ -394,7 +432,7 @@ pub fn worker(request: &str) -> Result<()> {
         artifacts
             .chunks(artifacts.len().div_ceil(8).max(1))
             .map(|chunk| {
-                let (curl, repositories) = (&curl, &repositories);
+                let curl = &curl;
                 scope.spawn(move || {
                     chunk
                         .iter()
@@ -426,8 +464,7 @@ pub fn worker(request: &str) -> Result<()> {
         l.get("repository").is_some() || l["unreachable"].as_array().is_some_and(|u| u.is_empty())
     });
     if !lookups.is_empty() && !reached {
-        let hosts: Vec<String> = repositories.clone();
-        let mut error = offline(&hosts);
+        let mut error = offline(repositories);
         error.message = format!(
             "None of the Maven repositories answered: {}",
             lookups[0].2["unreachable"][0].as_str().unwrap_or("")
@@ -437,10 +474,12 @@ pub fn worker(request: &str) -> Result<()> {
     let found: BTreeMap<(String, String), Value> =
         lookups.into_iter().map(|(g, a, v)| ((g, a), v)).collect();
     let mut entries = Vec::new();
-    let mut summary: BTreeMap<String, u64> = BTreeMap::new();
     for d in &declared {
         let version = s(d, "version");
-        let mut entry = d.clone();
+        let mut entry = json!({"ecosystem":"gradle"});
+        for (key, value) in d.as_object().into_iter().flatten() {
+            entry[key] = value.clone();
+        }
         let lookup = found.get(&(s(d, "group").to_string(), s(d, "artifact").to_string()));
         match lookup {
             _ if version.is_empty() => {
@@ -466,13 +505,58 @@ pub fn worker(request: &str) -> Result<()> {
                 entry["status"] = json!("not_found");
             }
         }
-        *summary.entry(s(&entry, "status").to_string()).or_default() += 1;
         entries.push(entry);
+    }
+    Ok(entries)
+}
+
+/// The `_dependency_updates` worker: checks each ecosystem and writes
+/// report.json. An ecosystem that cannot be checked is listed with its
+/// error; the job fails only when none could be.
+pub fn worker(request: &str) -> Result<()> {
+    let spec = read_json(Path::new(request), None)?;
+    let repositories = strings(&spec["repositories"]);
+    let ecosystems = spec["ecosystems"].as_array().cloned().unwrap_or_default();
+    let mut entries = Vec::new();
+    let mut checked = Vec::new();
+    let mut last_error = None;
+    for ecosystem in &ecosystems {
+        let name = s(ecosystem, "name");
+        eprintln!("Checking {name} dependencies");
+        let found = if name == "gradle" {
+            gradle_entries(ecosystem, &repositories)
+        } else {
+            crate::package_updates::run(ecosystem)
+        };
+        let mut summary = json!({"name":name,"tool":s(ecosystem, "tool")});
+        if !s(ecosystem, "source").is_empty() {
+            summary["source"] = ecosystem["source"].clone();
+        }
+        match found {
+            Ok(found) => {
+                summary["total"] = json!(found.len());
+                entries.extend(found);
+            }
+            Err(error) => {
+                eprintln!("{name}: {}", error.message);
+                summary["error"] = json!(error.message);
+                last_error = Some(error);
+            }
+        }
+        checked.push(summary);
+    }
+    if let (Some(error), true) = (last_error, checked.iter().all(|c| c.get("error").is_some())) {
+        return Err(error);
+    }
+    let mut summary: BTreeMap<String, u64> = BTreeMap::new();
+    for entry in &entries {
+        *summary.entry(s(entry, "status").to_string()).or_default() += 1;
     }
     let report = json!({
         "project": spec["project"],
         "gradle_directory": spec["gradle_directory"],
         "repositories": repositories,
+        "ecosystems": checked,
         "total": entries.len(),
         "summary": summary,
         "dependencies": entries,

@@ -74,6 +74,11 @@ pub const TOOLS: &[(&str, &[&str], &str)] = &[
         "Install Flutter and set its executable path",
     ),
     (
+        "dart",
+        &["--version"],
+        "Install the Dart SDK, or Flutter, which ships one in its bin directory",
+    ),
+    (
         "xtool",
         &["--version"],
         "Install xtool from https://github.com/xtool-org/xtool",
@@ -118,6 +123,9 @@ pub const TOOLS: &[(&str, &[&str], &str)] = &[
         &["--version"],
         "Install Node.js with npm, which provides npx",
     ),
+    ("pnpm", &["--version"], "Install pnpm"),
+    ("yarn", &["--version"], "Install Yarn"),
+    ("git", &["--version"], "Install Git"),
     ("ssh", &["-V"], "Install OpenSSH"),
 ];
 pub fn settings() -> Result {

@@ -33,6 +33,10 @@ operations and their JSON results.
   - Flutter tests: `project.execute` with `action` `test` also writes the JSON reporter's output to
     `build/tomacco/flutter_test.json`, and `testing.results` reads it, or any `flutter test --machine` output, into its
     summary. Failed golden-file comparisons are listed under `golden_failures` with flutter_test's diff images.
+  - `project.dependency_updates` also checks pub (`pub outdated --json`), npm, pnpm and Yarn 1 (their `outdated`
+    JSON) and SwiftPM (`Package.resolved` pins against the repository's tags from `git ls-remote`), in the same
+    report, each entry marked with its `ecosystem`. `dart`, `git`, `pnpm` and `yarn` can be set with
+    `settings.configure`.
 - **Session log and replay.** With `TOMACCO_SESSION_LOG` set to a file, every operation called through `tomaccoctl call`
   or `tomaccoctl mcp` is appended to it as a JSON line: arguments with recognised secrets masked, outcome, a short
   result summary and the duration. `tomaccoctl replay FILE [--dry-run]` calls the logged operations that change

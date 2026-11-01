@@ -162,6 +162,25 @@ Without a network it answers `offline` at once. `repositories` replaces the defa
 with your own `https://` or `file:///` repositories. It ran against the Compose starter
 online.
 
+The same job checks the other package managers a project has, each entry marked with
+its `ecosystem`:
+
+- **pub.** `flutter pub outdated --json` (`dart pub` for a plain Dart package), for direct
+  and dev dependencies, with pub's `upgradable` and `resolvable` versions besides the
+  latest. A package pub marks discontinued has `discontinued: true`.
+- **npm.** Every dependency and dev dependency in `package.json`, through `npm outdated
+  --json`, or `pnpm outdated --format json` or Yarn 1's `yarn outdated --json` when
+  their lockfile is there. A package that is not installed is `not_installed`.
+- **SwiftPM.** Each pin of `Package.resolved`, at the root or inside an `.xcodeproj` or
+  `.xcworkspace`, against the version tags `git ls-remote --tags` lists for its
+  repository. A pin to a branch or revision is `unversioned`. Nothing is resolved or
+  fetched into the project.
+
+`ecosystems` in the report names each one checked, with its `error` when its tool is
+missing or failed; the job fails only when none could be checked. Online, `npm outdated`
+(npm 11.19) and `git ls-remote` against GitHub gave the expected entries for a small
+`package.json` and `Package.resolved`; the pub path ran only with a stand-in `flutter`.
+
 ## Static analysis
 
 `project.analyze` runs the analysers a project already has and returns a job whose

@@ -152,14 +152,14 @@ tomaccoctl call project.watch '{"path":"<path>","platform":"android","device":"<
 
 **Check dependency updates**
 
-Compare the versions a Gradle build declares, in gradle/libs.versions.toml and its build files, with the newest versions in Maven metadata from Google Maven, Maven Central and the Gradle Plugin Portal. Read-only, as a job whose report.json lists each dependency and plugin with its source line, latest stable and latest version and a status. Answers offline at once when no repository host resolves.
+Compare the versions a project declares with the newest published ones. Gradle: gradle/libs.versions.toml and the build files against Maven metadata from Google Maven, Maven Central and the Gradle Plugin Portal. pub: flutter pub outdated --json (dart pub for a Dart package), direct and dev dependencies. npm: the dependencies in package.json with npm outdated --json, or pnpm or Yarn 1 when their lockfile is there. SwiftPM: each pin of Package.resolved (also inside an .xcodeproj or .xcworkspace) against its repository's tags from git ls-remote. Read-only, as a job whose report.json lists each dependency with its ecosystem, version, latest stable and latest version and a status, and each ecosystem checked with its error if it could not be. Answers offline at once when Gradle is all there is and no repository host resolves.
 
 Annotations: read-only, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `path` | string | yes |  | non-empty; Absolute local filesystem path |
-| `repositories` | array of string |  |  | up to 10 items; Maven repository base URLs (https:// or file:///) to ask in order instead of the defaults |
+| `repositories` | array of string |  |  | up to 10 items; Maven repository base URLs (https:// or file:///) to ask in order instead of the defaults, for Gradle dependencies |
 
 ```sh
 tomaccoctl call project.dependency_updates '{"path":"<path>"}'
