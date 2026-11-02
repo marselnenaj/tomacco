@@ -16,6 +16,7 @@ Anything else is escaped, so no raw HTML reaches the output.
 """
 import argparse
 import datetime
+import hashlib
 import html
 import json
 import posixpath
@@ -737,10 +738,16 @@ def build(out, ref="main", sitemap=None, lastmod=None):
     if out.exists():
         for old in list(out.rglob("*.html")):
             old.unlink()
+    # the site's stylesheet, when it is beside OUT, gets its hash in the link so browsers load a new one
+    stylesheet = out.parent / "assets" / "site.css"
+    version = hashlib.sha256(stylesheet.read_bytes()).hexdigest()[:10] if stylesheet.is_file() else None
     for page in pages.values():
         target = out / page.out
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(page_html(page, pages, ref), encoding="utf-8")
+        text = page_html(page, pages, ref)
+        if version:
+            text = text.replace('href="/assets/site.css"', f'href="/assets/site.css?v={version}"')
+        target.write_text(text, encoding="utf-8")
     for image in images:
         target = out / image.relative_to(ROOT / "docs")
         target.parent.mkdir(parents=True, exist_ok=True)
