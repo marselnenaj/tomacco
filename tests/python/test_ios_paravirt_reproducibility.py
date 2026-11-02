@@ -103,9 +103,11 @@ class PatchSeriesTests(unittest.TestCase):
     def test_the_default_engine_series_ends_with_the_throughput_patches_and_the_16k_pages(self):
         # The load-acquire barrier, the helper-free pointer-authentication
         # bypass, the four throughput patches and the two for 16 KiB pages; no
-        # engine patch is opt-in now. The hot trust-cache update follows them.
-        self.assertEqual(build.PATCHES[-1].name, "vphone-trust-cache-update.patch")
-        self.assertEqual([path.name for path in build.PATCHES[-9:-1]],
+        # engine patch is opt-in now. The hot trust-cache update follows them,
+        # and the jump cache that keeps what a TLB change does not touch.
+        self.assertEqual([path.name for path in build.PATCHES[-2:]],
+                         ["vphone-trust-cache-update.patch", "qemu-tcg-jump-cache-asid.patch"])
+        self.assertEqual([path.name for path in build.PATCHES[-10:-2]],
                          ["qemu-arm-rcsc-load-acquire.patch", "qemu-arm-pauth-bypass-inline.patch",
                           "qemu-tcg-jump-cache.patch", "qemu-arm-jump-probe.patch", "qemu-arm-bti-property.patch",
                           "qemu-arm-wfe-monitor.patch", "qemu-arm-target-page-16k.patch",

@@ -55,6 +55,13 @@ both:
 With both on the development host, a Home-screen swipe went from 2-6 to 10-15 changed frames per second, with the
 processors at 30-40 % instead of 60-73 %.
 
+**The jump cache survives most TLB changes.** It maps a guest address to its translated code, and a flush used to
+throw away far more of it than the change required. A page flush now clears only the entries of that page (and of
+translated code that runs into it from the page before), and an ASID change, which iOS makes on every context switch,
+keeps the entries of code mapped global, which is the kernel's. During Home-screen swipes the lookups that missed fell
+from 6.9 to 3.8 million a second and the engine's CPU time on `tools/ios_measure.py`'s workload by 17 %; the frame rate
+did not change, so it is set elsewhere.
+
 **Pointer authentication is bypassed.** The engine does not enforce ARM pointer authentication, and
 `qemu-arm-pauth-bypass-inline.patch` keeps that and makes it faster. Invalid pointers are not caught, so the guest is not a
 security boundary.

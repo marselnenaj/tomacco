@@ -48,7 +48,8 @@ PATCHES = (base.PATCHES["sptm"], INTEGRATION / "vphone-loader.patch",
            INTEGRATION / "qemu-arm-wfe-monitor.patch",
            INTEGRATION / "qemu-arm-target-page-16k.patch",
            INTEGRATION / "qemu-tcg-jump-cache-page-scale.patch",
-           INTEGRATION / "vphone-trust-cache-update.patch")
+           INTEGRATION / "vphone-trust-cache-update.patch",
+           INTEGRATION / "qemu-tcg-jump-cache-asid.patch")
 # TCG throughput at the end of that series (tests/engine/branch-bench.S and
 # wfe-monitor.S): a larger jump cache with cheap flushes, jump-cache probes
 # at TB exits whose next state is known, the opt-in CPU without FEAT_BTI, WFE
@@ -56,7 +57,8 @@ PATCHES = (base.PATCHES["sptm"], INTEGRATION / "vphone-loader.patch",
 # the machine option tomacco-page-bits (tomacco-vphone otherwise runs with Arm's
 # legacy 1 KiB target pages) and a 16 KiB-granule-only CPU;
 # qemu-tcg-jump-cache-page-scale keeps one jump-cache entry per two
-# instructions of a larger target page. BTI off and 16 KiB pages stay boot
+# instructions of a larger target page; qemu-tcg-jump-cache-asid keeps the
+# jump-cache entries a page flush or an ASID change does not touch. BTI off and 16 KiB pages stay boot
 # options (`bti`, `target_page`); without them the engine behaves as before.
 #
 # Optional engine (QEMU) patches outside the default series, applied in this

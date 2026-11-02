@@ -12,7 +12,8 @@
  *   page     BLR to 0x80000000 -> code page A (x0 = 1), then the PTE points
  *            at page B (x0 = 2), TLBI VAE1 of that page only
  *   full     back to A, TLBI VMALLE1
- *   asid     to B again with no TLBI: a fresh ASID in TTBR0_EL1
+ *   asid     to B again with no TLBI: a fresh ASID in TTBR0_EL1 (the
+ *            window's pages are non-global, so the old entry must go)
  *   direct   BLR to 0x80002000, whose code is a direct B to 0x80003000
  *            (another page: the exit is a lookup with a known target);
  *            0x80003000 maps C (x0 = 3), then D (x0 = 4), TLBI VAE1 of
@@ -200,7 +201,7 @@ calls:
 
 /* x0 = a normal, inner-shareable, accessed page descriptor for page x0. */
 pte:
-	mov	x2, #0x707			/* page, AttrIdx 1, SH inner, AF */
+	mov	x2, #0xf07			/* page, AttrIdx 1, SH inner, AF, nG */
 	orr	x0, x0, x2
 	ret
 

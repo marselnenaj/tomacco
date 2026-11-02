@@ -1,0 +1,552 @@
+accel/tcg: keep jump-cache entries that a TLB change does not touch.
+
+Measured on the vphone during Home-screen swipes (six vCPUs, 16 KiB target
+pages): 6.9 million jump-cache misses a second went to the TB hash table,
+about a fifth of TCG time with the lookup helpers. Two kinds of flush
+caused nearly all of them.
+
+A page flush (TLBI by address or range, ~50,000 a second) cleared its page's
+whole jump-cache partition and the one of the page before: 2 x 2048 entries,
+with every other page that hashed there. It now clears only entries of TBs
+that start on the page, or start on the page before and run into it, and
+visits only occupied entries (a bitmap the owner keeps); the page before is
+looked at only when its partition ever held a TB that crosses a page.
+
+An ASID change (TTBR0/1_EL1 with a new ASID, ~5,000 a second; iOS changes it
+on every context switch) flushed the whole jump cache with the TLB. A stage 1
+descriptor with nG clear in a regime with two VA ranges is the same for every
+ASID, so the walk now records that in CPUTLBEntryFull.asid_global (false
+everywhere else; a two-stage translation keeps stage 1's answer). A fill marks
+its entry global when the TLB holds the TB's code pages that way, and the new
+tlb_flush_asid_change clears the TLB as before but of the jump cache only the
+entries filled from non-global code, from their own log, or through the
+bitmap once that overflows. A full flush that overflowed its fill log walks
+the bitmap too instead of storing to all 65536 entries. The entries stay 16
+bytes for the translated-code probes.
+
+On the vphone the misses fell to 3.8 million a second, the engine's CPU time
+over tools/ios_measure.py's workload from 575 to 477 s, and the owned app's
+launch until its screen is still from 8.3 to 7.5 s (medians of five); swipe
+frame rates stayed within their spread.
+
+tests/engine/jump-cache-probe.S now maps its alias window non-global: its
+asid phase changed a global mapping without a TLBI, which the architecture
+does not require to take effect.
+
+diff --git a/accel/tcg/cpu-exec.c b/accel/tcg/cpu-exec.c
+--- a/accel/tcg/cpu-exec.c
++++ b/accel/tcg/cpu-exec.c
+@@ -42,6 +42,7 @@
+ #include "exec/helper-proto-common.h"
+ #include "tcg-accel-ops.h"
+ #include "tb-jmp-cache.h"
++#include "exec/cputlb.h"
+ #include "tb-hash.h"
+ #include "tb-context.h"
+ #include "tb-internal.h"
+@@ -227,6 +228,39 @@ static TranslationBlock *tb_htable_lookup(CPUState *cpu, TCGTBCPUState s)
+  *
+  * Returns: an existing translation block or NULL.
+  */
++/*
++ * Fill jump-cache entry @h with @tb for @pc, noting whether its code pages
++ * are asid_global (both of them, for a block that crosses into a second).
++ */
++static inline void tb_jmp_cache_fill(CPUState *cpu, CPUJumpCache *jc,
++                                     uint32_t h, vaddr pc,
++                                     TranslationBlock *tb)
++{
++    bool global = false;
++
++#ifndef CONFIG_USER_ONLY
++    global = tlb_code_asid_global(cpu, pc) &&
++             (tb_page_addr1(tb) == -1 ||
++              tlb_code_asid_global(cpu, pc + tb->size - 1));
++#endif
++    tb_jmp_cache_note_fill(jc, h);
++    tb_jmp_cache_set_asid_global(jc, h, global);
++    if (!global) {
++        if (jc->local_n < TB_JMP_CACHE_LOG) {
++            jc->local[jc->local_n] = h;
++        }
++        if (jc->local_n <= TB_JMP_CACHE_LOG) {
++            jc->local_n++;
++        }
++    }
++    jc->occupied[h / 64] |= 1ull << (h % 64);
++    if (tb_page_addr1(tb) != -1) {
++        jc->crossing[h >> TB_JMP_PAGE_BITS]++;
++    }
++    jc->array[h].pc = pc;
++    qatomic_set(&jc->array[h].tb, tb);
++}
++
+ static inline TranslationBlock *tb_lookup(CPUState *cpu, TCGTBCPUState s)
+ {
+     TranslationBlock *tb;
+@@ -255,9 +289,7 @@ static inline TranslationBlock *tb_lookup(CPUState *cpu, TCGTBCPUState s)
+     }
+     jc->stat_miss++;
+ 
+-    tb_jmp_cache_note_fill(jc, hash);
+-    jc->array[hash].pc = s.pc;
+-    qatomic_set(&jc->array[hash].tb, tb);
++    tb_jmp_cache_fill(cpu, jc, hash, s.pc, tb);
+ 
+ hit:
+     /*
+@@ -983,9 +1015,7 @@ cpu_exec_loop(CPUState *cpu, SyncClocks *sc)
+                  */
+                 h = tb_jmp_cache_hash_func(s.pc);
+                 jc = cpu->tb_jmp_cache;
+-                tb_jmp_cache_note_fill(jc, h);
+-                jc->array[h].pc = s.pc;
+-                qatomic_set(&jc->array[h].tb, tb);
++                tb_jmp_cache_fill(cpu, jc, h, s.pc, tb);
+             }
+ 
+ #ifndef CONFIG_USER_ONLY
+diff --git a/accel/tcg/cputlb.c b/accel/tcg/cputlb.c
+--- a/accel/tcg/cputlb.c
++++ b/accel/tcg/cputlb.c
+@@ -147,18 +147,65 @@ static void tlb_window_reset(CPUTLBDesc *desc, int64_t ns,
+     desc->window_max_entries = max_entries;
+ }
+ 
++/*
++ * In the partition that starts at entry @i0, clear the entries of TBs that
++ * start on @start_page and, if @end_page is not -1, end on it; visit only
++ * occupied entries. Returns whether the partition still holds any.
++ */
++static bool tb_jmp_cache_clear_partition(CPUJumpCache *jc, uint32_t i0,
++                                         vaddr start_page, vaddr end_page)
++{
++    bool left = false;
++
++    for (uint32_t w = i0 / 64; w < (i0 + TB_JMP_PAGE_SIZE) / 64; w++) {
++        uint64_t bits = jc->occupied[w];
++
++        while (bits) {
++            uint32_t h = w * 64 + ctz64(bits);
++            TranslationBlock *tb = qatomic_read(&jc->array[h].tb);
++            vaddr pc = jc->array[h].pc;
++
++            bits &= bits - 1;
++            if (tb && (pc & TARGET_PAGE_MASK) == start_page &&
++                (end_page == -1 ||
++                 ((pc + tb->size - 1) & TARGET_PAGE_MASK) == end_page)) {
++                qatomic_set(&jc->array[h].tb, NULL);
++                tb = NULL;
++            }
++            if (tb) {
++                left = true;
++            } else {
++                jc->occupied[w] &= ~(1ull << (h % 64));
++            }
++        }
++    }
++    return left;
++}
++
++/*
++ * Discard the jump-cache entries of TBs that may use the code at page_addr:
++ * those that start on it and those that start on the page before and run
++ * into it. Entries are partitioned by page hash, so a partition also holds
++ * other pages' TBs; those stay, as their mappings did not change.
++ */
+ static void tb_jmp_cache_clear_page(CPUState *cpu, vaddr page_addr)
+ {
+     CPUJumpCache *jc = cpu->tb_jmp_cache;
+-    int i, i0;
++    vaddr before = page_addr - TARGET_PAGE_SIZE;
++    uint32_t i0;
+ 
+     if (unlikely(!jc)) {
+         return;
+     }
+ 
+     i0 = tb_jmp_cache_hash_page(page_addr);
+-    for (i = 0; i < TB_JMP_PAGE_SIZE; i++) {
+-        qatomic_set(&jc->array[i0 + i].tb, NULL);
++    if (!tb_jmp_cache_clear_partition(jc, i0, page_addr, -1)) {
++        jc->crossing[i0 >> TB_JMP_PAGE_BITS] = 0;
++    }
++    i0 = tb_jmp_cache_hash_page(before);
++    if (jc->crossing[i0 >> TB_JMP_PAGE_BITS] &&
++        !tb_jmp_cache_clear_partition(jc, i0, before, page_addr)) {
++        jc->crossing[i0 >> TB_JMP_PAGE_BITS] = 0;
+     }
+ }
+ 
+@@ -441,6 +488,31 @@ void tlb_flush(CPUState *cpu)
+     tlb_flush_by_mmuidx(cpu, ALL_MMUIDX_BITS);
+ }
+ 
++void tlb_flush_asid_change(CPUState *cpu)
++{
++    int64_t now = get_clock_realtime();
++    uint16_t work;
++
++    assert_cpu_is_self(cpu);
++
++    /*
++     * The TLB itself is cleared as by tlb_flush: a memset of each table is
++     * cheaper than sorting out its global entries (measured on the vphone,
++     * the sorting walk cost more than the page-table walks it saved). What
++     * survives is the jump cache's global part.
++     */
++    qemu_spin_lock(&cpu->neg.tlb.c.lock);
++    for (work = cpu->neg.tlb.c.dirty; work != 0; work &= work - 1) {
++        tlb_flush_one_mmuidx_locked(cpu, ctz32(work), now);
++    }
++    cpu->neg.tlb.c.dirty = 0;
++    qemu_spin_unlock(&cpu->neg.tlb.c.lock);
++
++    tcg_flush_jmp_cache_asid_change(cpu);
++    qatomic_set(&cpu->neg.tlb.c.full_flush_count,
++                cpu->neg.tlb.c.full_flush_count + 1);
++}
++
+ void tlb_flush_by_mmuidx_all_cpus_synced(CPUState *src_cpu, MMUIdxMap idxmap)
+ {
+     const run_on_cpu_func fn = tlb_flush_by_mmuidx_async_work;
+@@ -570,11 +642,7 @@ static void tlb_flush_page_by_mmuidx_async_0(CPUState *cpu,
+     }
+     qemu_spin_unlock(&cpu->neg.tlb.c.lock);
+ 
+-    /*
+-     * Discard jump cache entries for any tb which might potentially
+-     * overlap the flushed page, which includes the previous.
+-     */
+-    tb_jmp_cache_clear_page(cpu, addr - TARGET_PAGE_SIZE);
++    /* Discard jump cache entries for any tb which might use the page. */
+     tb_jmp_cache_clear_page(cpu, addr);
+ }
+ 
+@@ -776,14 +844,10 @@ static void tlb_flush_range_by_mmuidx_async_0(CPUState *cpu,
+         return;
+     }
+ 
+-    /*
+-     * Discard jump cache entries for any tb which might potentially
+-     * overlap the flushed pages, which includes the previous.
+-     */
+-    d.addr -= TARGET_PAGE_SIZE;
+-    for (vaddr i = 0, n = d.len / TARGET_PAGE_SIZE + 1; i < n; i++) {
+-        tb_jmp_cache_clear_page(cpu, d.addr);
+-        d.addr += TARGET_PAGE_SIZE;
++    /* Discard jump cache entries for any tb which might use the pages. */
++    for (vaddr page = d.addr & TARGET_PAGE_MASK; page - (d.addr & TARGET_PAGE_MASK) < d.len;
++         page += TARGET_PAGE_SIZE) {
++        tb_jmp_cache_clear_page(cpu, page);
+     }
+ }
+ 
+@@ -1267,6 +1331,17 @@ static inline bool tlb_hit(uint64_t tlb_addr, vaddr addr)
+     return tlb_hit_page(tlb_addr, addr & TARGET_PAGE_MASK);
+ }
+ 
++bool tlb_code_asid_global(CPUState *cpu, vaddr pc)
++{
++    int mmu_idx = cpu_mmu_index(cpu, true);
++    uintptr_t index = tlb_index(cpu, mmu_idx, pc);
++    CPUTLBEntry *entry = tlb_entry(cpu, mmu_idx, pc);
++
++    /* Not in the main table (evicted, or in the victim TLB): say no. */
++    return tlb_hit(entry->addr_code, pc) &&
++           cpu->neg.tlb.d[mmu_idx].fulltlb[index].asid_global;
++}
++
+ /*
+  * Note: tlb_fill_align() can trigger a resize of the TLB.
+  * This means that all of the caller's prior references to the TLB table
+diff --git a/accel/tcg/tb-jmp-cache.h b/accel/tcg/tb-jmp-cache.h
+--- a/accel/tcg/tb-jmp-cache.h
++++ b/accel/tcg/tb-jmp-cache.h
+@@ -24,6 +24,8 @@
+ #define TB_JMP_CACHE_BITS 16
+ #endif
+ #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
++/* Page partitions at most: tb-hash.h never makes one smaller than 2^(BITS-7). */
++#define TB_JMP_CACHE_PARTITIONS_MAX (1 << 7)
+ /* Fills remembered for a cheap full flush; more fills mean a memset. */
+ #define TB_JMP_CACHE_LOG 4096
+ 
+@@ -47,6 +49,30 @@ typedef struct CPUJumpCache {
+     uint64_t stat_miss;
+     uint64_t stat_absent;
+     uint64_t stat_flush;
++    /*
++     * Owner-written: bit h set when entry h was filled from code whose
++     * pages are asid_global, so an ASID change may keep it. Meaningful
++     * only while array[h].tb is set; every fill writes it.
++     */
++    uint64_t asid_global[TB_JMP_CACHE_SIZE / 64];
++    /*
++     * Owner-written: bit h set whenever array[h].tb may be set (a fill sets
++     * it, a clear may leave it), so a page clear visits only these entries.
++     */
++    uint64_t occupied[TB_JMP_CACHE_SIZE / 64];
++    /*
++     * Owner-written, per page partition: fills of TBs that run into the next
++     * page since the partition was last emptied; zero means a page clear of
++     * the next page has nothing to look for here.
++     */
++    uint32_t crossing[TB_JMP_CACHE_PARTITIONS_MAX];
++    /*
++     * Owner-written: entries filled from non-global code since the last ASID
++     * change, for a cheap one; past TB_JMP_CACHE_LOG the occupied bitmap is
++     * walked instead.
++     */
++    uint32_t local_n;
++    uint32_t local[TB_JMP_CACHE_LOG];
+     struct {
+         TranslationBlock *tb;
+         vaddr pc;
+@@ -66,4 +92,18 @@ static inline void tb_jmp_cache_note_fill(CPUJumpCache *jc, uint32_t h)
+     }
+ }
+ 
++static inline void tb_jmp_cache_set_asid_global(CPUJumpCache *jc, uint32_t h,
++                                                bool global)
++{
++    uint64_t bit = 1ull << (h % 64);
++
++    jc->asid_global[h / 64] = global ? jc->asid_global[h / 64] | bit
++                                     : jc->asid_global[h / 64] & ~bit;
++}
++
++static inline bool tb_jmp_cache_asid_global(const CPUJumpCache *jc, uint32_t h)
++{
++    return jc->asid_global[h / 64] & (1ull << (h % 64));
++}
++
+ #endif /* ACCEL_TCG_TB_JMP_CACHE_H */
+diff --git a/accel/tcg/translate-all.c b/accel/tcg/translate-all.c
+--- a/accel/tcg/translate-all.c
++++ b/accel/tcg/translate-all.c
+@@ -623,6 +623,26 @@ void cpu_io_recompile(CPUState *cpu, uintptr_t retaddr)
+  * Called by generic code at e.g. cpu reset after cpu creation,
+  * therefore we must be prepared to allocate the jump cache.
+  */
++/* Clear every entry the occupied bitmap names. Owner only. */
++static void tcg_flush_jmp_cache_occupied(CPUJumpCache *jc, bool keep_global)
++{
++    for (uint32_t w = 0; w < TB_JMP_CACHE_SIZE / 64; w++) {
++        uint64_t bits = jc->occupied[w];
++
++        while (bits) {
++            uint32_t h = w * 64 + ctz64(bits);
++
++            bits &= bits - 1;
++            if (keep_global && qatomic_read(&jc->array[h].tb) &&
++                tb_jmp_cache_asid_global(jc, h)) {
++                continue;
++            }
++            qatomic_set(&jc->array[h].tb, NULL);
++            jc->occupied[w] &= ~(1ull << (h % 64));
++        }
++    }
++}
++
+ void tcg_flush_jmp_cache(CPUState *cpu)
+ {
+     CPUJumpCache *jc = cpu->tb_jmp_cache;
+@@ -634,23 +654,61 @@ void tcg_flush_jmp_cache(CPUState *cpu)
+     }
+ 
+     /*
+-     * Only the owning vCPU fills entries and the fill log, so only it may
+-     * trust and reset the log (TLB flushes run on the owner). Any other
+-     * caller (reset, tb_flush in an exclusive section) clears everything
+-     * and leaves the log alone: extra entries in it are merely cleared twice.
++     * Only the owning vCPU fills entries, the fill logs and the occupied
++     * bitmap, so only it may trust them (TLB flushes run on the owner): the
++     * log while it did not overflow, the bitmap otherwise. Any other caller
++     * (reset, tb_flush in an exclusive section) clears everything.
+      */
+     n = jc->filled_n;
+     if (qemu_cpu_is_self(cpu) && n <= TB_JMP_CACHE_LOG) {
+         for (uint32_t i = 0; i < n; i++) {
+             qatomic_set(&jc->array[jc->filled[i]].tb, NULL);
+         }
++        memset(jc->occupied, 0, sizeof(jc->occupied));
++    } else if (qemu_cpu_is_self(cpu)) {
++        tcg_flush_jmp_cache_occupied(jc, false);
+     } else {
++        /* Logs, bitmap and counts stay: extra names in them cost a visit. */
+         for (int i = 0; i < TB_JMP_CACHE_SIZE; i++) {
+             qatomic_set(&jc->array[i].tb, NULL);
+         }
+     }
+     if (qemu_cpu_is_self(cpu)) {
+         jc->filled_n = 0;
++        jc->local_n = 0;
++        memset(jc->crossing, 0, sizeof(jc->crossing));
+     }
+     jc->stat_flush++;
+ }
++
++void tcg_flush_jmp_cache_asid_change(CPUState *cpu)
++{
++    CPUJumpCache *jc = cpu->tb_jmp_cache;
++    uint32_t n;
++
++    if (unlikely(jc == NULL)) {
++        return;
++    }
++    assert(qemu_cpu_is_self(cpu));
++
++    /*
++     * Only entries filled from non-global code go; they are in the local log
++     * unless it overflowed. An entry refilled from global code since stays.
++     * The fill log keeps naming the cleared ones, which only costs a store
++     * at the next full flush.
++     */
++    n = jc->local_n;
++    if (n <= TB_JMP_CACHE_LOG) {
++        for (uint32_t i = 0; i < n; i++) {
++            uint32_t h = jc->local[i];
++
++            if (!tb_jmp_cache_asid_global(jc, h)) {
++                qatomic_set(&jc->array[h].tb, NULL);
++            }
++        }
++    } else {
++        tcg_flush_jmp_cache_occupied(jc, true);
++    }
++    jc->local_n = 0;
++    jc->stat_flush++;
++}
+diff --git a/include/exec/cputlb.h b/include/exec/cputlb.h
+--- a/include/exec/cputlb.h
++++ b/include/exec/cputlb.h
+@@ -126,6 +126,27 @@ void tlb_flush_page_all_cpus_synced(CPUState *src, vaddr addr);
+  */
+ void tlb_flush(CPUState *cpu);
+ 
++/**
++ * tlb_flush_asid_change:
++ * @cpu: CPU whose TLB should be flushed; must be the calling vCPU
++ *
++ * What a change of the current ASID needs: drop every entry whose
++ * translation may differ under another ASID and keep the entries the
++ * target marked asid_global, with the jump-cache entries of code on them.
++ * Without marked entries this is tlb_flush.
++ */
++void tlb_flush_asid_change(CPUState *cpu);
++
++/**
++ * tlb_code_asid_global:
++ * @cpu: the calling vCPU
++ * @pc: a code address of the current regime
++ *
++ * True if the TLB holds @pc's code page as asid_global, so that a
++ * translation block found by @pc stays valid across ASID changes.
++ */
++bool tlb_code_asid_global(CPUState *cpu, vaddr pc);
++
+ /**
+  * tlb_flush_all_cpus_synced:
+  * @cpu: src CPU of the flush
+@@ -236,6 +257,9 @@ static inline void tlb_flush_page_all_cpus_synced(CPUState *src, vaddr addr)
+ static inline void tlb_flush(CPUState *cpu)
+ {
+ }
++static inline void tlb_flush_asid_change(CPUState *cpu)
++{
++}
+ static inline void tlb_flush_all_cpus_synced(CPUState *src_cpu)
+ {
+ }
+diff --git a/include/exec/tb-flush.h b/include/exec/tb-flush.h
+--- a/include/exec/tb-flush.h
++++ b/include/exec/tb-flush.h
+@@ -35,4 +35,10 @@ void queue_tb_flush(CPUState *cs);
+ 
+ void tcg_flush_jmp_cache(CPUState *cs);
+ 
++/*
++ * Clear the jump-cache entries of @cs that an ASID change may make wrong:
++ * all but those filled from an asid_global code page. Owner only.
++ */
++void tcg_flush_jmp_cache_asid_change(CPUState *cs);
++
+ #endif /* _TB_FLUSH_H_ */
+diff --git a/include/hw/core/cpu.h b/include/hw/core/cpu.h
+--- a/include/hw/core/cpu.h
++++ b/include/hw/core/cpu.h
+@@ -242,6 +242,13 @@ struct CPUTLBEntryFull {
+     /* Additional tlb flags requested by tlb_fill. */
+     uint8_t tlb_fill_flags;
+ 
++    /*
++     * @asid_global: the translation does not depend on the ASID (an Arm
++     * stage 1 descriptor with nG clear), so a flush for an ASID change
++     * may keep it. Only a target that knows it sets this; false is safe.
++     */
++    bool asid_global;
++
+     /*
+      * Additional tlb flags for use by the slow path. If non-zero,
+      * the corresponding CPUTLBEntry comparator must have TLB_FORCE_SLOW.
+diff --git a/target/arm/helper.c b/target/arm/helper.c
+--- a/target/arm/helper.c
++++ b/target/arm/helper.c
+@@ -2866,11 +2866,14 @@ static void vmsa_tcr_el12_write(CPUARMState *env, const ARMCPRegInfo *ri,
+ static void vmsa_ttbr_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                             uint64_t value)
+ {
+-    /* If the ASID changes (with a 64-bit write), we must flush the TLB.  */
++    /*
++     * If the ASID changes (with a 64-bit write), we must flush the TLB:
++     * what another ASID may translate differently, the non-global entries.
++     */
+     if (cpreg_field_type(ri) == MO_64 &&
+         extract64(raw_read(env, ri) ^ value, 48, 16) != 0) {
+         ARMCPU *cpu = env_archcpu(env);
+-        tlb_flush(CPU(cpu));
++        tlb_flush_asid_change(CPU(cpu));
+     }
+     raw_write(env, ri, value);
+ }
+diff --git a/target/arm/ptw.c b/target/arm/ptw.c
+--- a/target/arm/ptw.c
++++ b/target/arm/ptw.c
+@@ -2498,6 +2498,10 @@ static bool get_phys_addr_lpae(CPUARMState *env, S1Translate *ptw,
+         result->cacheattrs.is_s2_format = false;
+         result->cacheattrs.attrs = extract64(mair, attrindx * 8, 8);
+ 
++        /* nG (bit 11) clear in a regime with ASIDs: one entry for every ASID. */
++        result->f.asid_global = regime_has_2_ranges(mmu_idx) &&
++                                !extract64(attrs, 11, 1);
++
+         /* When in aarch64 mode, and BTI is enabled, remember GP in the TLB. */
+         if (aarch64 && cpu_isar_feature(aa64_bti, cpu)) {
+             result->f.extra.arm.guarded = extract64(attrs, 50, 1); /* GP */
+@@ -3771,7 +3775,7 @@ static bool get_phys_addr_twostage(CPUARMState *env, S1Translate *ptw,
+     hwaddr ipa;
+     int s1_prot, s1_lgpgsz;
+     ARMSecuritySpace in_space = ptw->in_space;
+-    bool ret, ipa_secure, s1_guarded;
++    bool ret, ipa_secure, s1_guarded, s1_asid_global;
+     ARMCacheAttrs cacheattrs1;
+     ARMSecuritySpace ipa_space;
+     uint64_t hcr;
+@@ -3800,6 +3804,7 @@ static bool get_phys_addr_twostage(CPUARMState *env, S1Translate *ptw,
+     s1_prot = result->f.prot;
+     s1_lgpgsz = result->f.lg_page_size;
+     s1_guarded = result->f.extra.arm.guarded;
++    s1_asid_global = result->f.asid_global;
+     cacheattrs1 = result->cacheattrs;
+     memset(result, 0, sizeof(*result));
+ 
+@@ -3853,6 +3858,8 @@ static bool get_phys_addr_twostage(CPUARMState *env, S1Translate *ptw,
+ 
+     /* No BTI GP information in stage 2, we just use the S1 value */
+     result->f.extra.arm.guarded = s1_guarded;
++    /* Whether the ASID matters is stage 1's to say. */
++    result->f.asid_global = s1_asid_global;
+ 
+     /*
+      * Check if IPA translates to secure or non-secure PA space.

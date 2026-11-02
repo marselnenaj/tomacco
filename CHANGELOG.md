@@ -4,6 +4,16 @@ Notable changes per release. The [release notes](docs/RELEASE_NOTES.md) summaris
 release. Versions follow [semantic versioning](https://semver.org) for the `tomaccoctl`
 operations and their JSON results.
 
+## Unreleased
+
+### Changed
+- **Virtual iPhone: less CPU.** The engine keeps the translated-code lookups that a TLB change
+  does not touch: a page flush clears only that page's entries, and an ASID change, which iOS
+  makes on every context switch, keeps those of global (kernel) code. Lookups that miss fell from
+  6.9 to 3.8 million a second during Home-screen swipes, the engine's CPU time over
+  `tools/ios_measure.py`'s workload from 575 to 477 s, and the owned app's launch until its screen
+  is still from 8.3 to 7.5 s (medians of five). Swipe frame rates did not change.
+
 ## 1.3.0
 
 `tomaccoctl` now has one typed API of 250 operations.
