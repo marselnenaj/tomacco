@@ -373,6 +373,9 @@ class Renderer:
 
         def cell(tag, text, k):
             style = f' style="text-align:{align[k]}"' if k < len(align) and align[k] else ""
+            if tag == "td":
+                # phones show each row as a block, with the column name before its value
+                style += f' data-label="{html.escape(plain(head[k]), quote=True)}"'
             return f"<{tag}{style}>{self.inline(text)}</{tag}>"
         html_rows = ["<tr>" + "".join(cell("th", c, k) for k, c in enumerate(head)) + "</tr>"]
         for row in rows:

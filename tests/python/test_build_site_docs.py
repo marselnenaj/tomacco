@@ -138,7 +138,8 @@ class MarkdownReader(unittest.TestCase):
         body, _ = render("| A | B |\n| --- | :---: |\n| `x\\|y` | 2 |\n")
         self.assertIn("<th>A</th>", body)
         self.assertIn('<th style="text-align:center">B</th>', body)
-        self.assertIn("<td><code>x|y</code></td>", body)
+        self.assertIn('<td data-label="A"><code>x|y</code></td>', body)
+        self.assertIn('<td style="text-align:center" data-label="B">2</td>', body)
 
     def test_nested_and_ordered_lists(self):
         body, _ = render("1. one\n2. two\n   - inner\n   - inner two\n3. three\n")
