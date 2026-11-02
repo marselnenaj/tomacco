@@ -24,10 +24,10 @@ bitmap once that overflows. A full flush that overflowed its fill log walks
 the bitmap too instead of storing to all 65536 entries. The entries stay 16
 bytes for the translated-code probes.
 
-On the vphone the misses fell to 3.8 million a second, the engine's CPU time
-over tools/ios_measure.py's workload from 575 to 477 s, and the owned app's
-launch until its screen is still from 8.3 to 7.5 s (medians of five); swipe
-frame rates stayed within their spread.
+On the vphone the misses fell to 3.8 million a second. Against the same series
+without this patch, the engine's CPU time over tools/ios_measure.py's workload
+went from 475 to 433 s; launch, tap and swipe medians (of five) moved less
+than their spread (swipe 10.0 -> 11.5 changed frames per second).
 
 tests/engine/jump-cache-probe.S now maps its alias window non-global: its
 asid phase changed a global mapping without a TLBI, which the architecture

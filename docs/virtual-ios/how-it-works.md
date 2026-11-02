@@ -59,8 +59,8 @@ processors at 30-40 % instead of 60-73 %.
 throw away far more of it than the change required. A page flush now clears only the entries of that page (and of
 translated code that runs into it from the page before), and an ASID change, which iOS makes on every context switch,
 keeps the entries of code mapped global, which is the kernel's. During Home-screen swipes the lookups that missed fell
-from 6.9 to 3.8 million a second and the engine's CPU time on `tools/ios_measure.py`'s workload by 17 %; the frame rate
-did not change, so it is set elsewhere.
+from 6.9 to 3.8 million a second and the engine's CPU time on `tools/ios_measure.py`'s workload by 9 %; the frame rate
+moved less than its spread.
 
 **Pointer authentication is bypassed.** The engine does not enforce ARM pointer authentication, and
 `qemu-arm-pauth-bypass-inline.patch` keeps that and makes it faster. Invalid pointers are not caught, so the guest is not a
