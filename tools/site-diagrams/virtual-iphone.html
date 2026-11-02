@@ -1,0 +1,16 @@
+<figure class="dg" aria-label="From a restore image to a running virtual iPhone">
+<ol class="dg-steps">
+<li class="dg-box"><b>Restore image</b><span>you supply it</span></li>
+<li class="dg-to" aria-hidden="true"></li>
+<li class="dg-box"><b>Prepared disks and kernel</b></li>
+<li class="dg-to" aria-hidden="true"></li>
+<li class="dg-box"><b>One-step start</b><span>tools/ios_virtual_iphone.py</span></li>
+</ol>
+<div class="dg-down" aria-hidden="true"></div>
+<div class="dg-box dg-core"><b>Engine</b><span>patched QEMU, software translation on x86_64</span>
+<ul class="dg-parts">
+<li><b>tomacco-vphone</b><span>the machine: six application processors and a SEP</span></li>
+<li><b>reims-vgpu</b><span>Apple's paravirtual GPU in Rust on Vulkan; Metal shaders go through the metal2vulkan translator</span></li>
+<li><b>guest tools</b><span>control service, setup helpers and diagnostics, reached over virtio-vsock</span></li>
+</ul></div>
+</figure>

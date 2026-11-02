@@ -7,6 +7,7 @@ private copies. [Legal notes](../legal.md) lists each protection this changes an
 
 ## The whole picture
 
+<!-- site-diagram: virtual-iphone -->
 ```text
 restore images -> prepared disks and kernel -> one-step start
                                                   |

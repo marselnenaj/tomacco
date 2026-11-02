@@ -17,6 +17,7 @@ Anything else is escaped, so no raw HTML reaches the output.
 import argparse
 import datetime
 import html
+import json
 import posixpath
 import re
 import shutil
@@ -26,6 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SITE = "https://tomacco.dev"
 REPO = "https://github.com/marselnenaj/tomacco"
+DIAGRAMS = ROOT / "tools" / "site-diagrams"
 URL_BASE = "/docs"
 
 # Navigation: group title and the pages in it, as paths below docs/ (without .md).
@@ -277,10 +279,18 @@ class Renderer:
                     body.append(re.sub(rf"^ {{0,{indent}}}", "", lines[i]))
                     i += 1
                 i += 1
+                diagram, self.diagram = getattr(self, "diagram", None), None
+                if diagram:
+                    # the site shows a drawn diagram that also fits a phone; GitHub keeps the text one
+                    out.append((DIAGRAMS / f"{diagram}.html").read_text(encoding="utf-8").strip())
+                    continue
                 cls = f' class="language-{html.escape(language)}"' if language else ""
                 label = f' data-lang="{html.escape(language)}"' if language else ""
                 out.append(f"<pre{label}><code{cls}>{html.escape(chr(10).join(body), quote=False)}\n</code></pre>")
                 continue
+            marker = re.fullmatch(r"\s*<!-- site-diagram: ([a-z0-9-]+) -->\s*", line)
+            if marker:
+                self.diagram = marker.group(1)
             if line.lstrip().startswith("<!--"):
                 while i < n and "-->" not in lines[i]:
                     i += 1
@@ -669,8 +679,14 @@ def document_body(page, pages, ref):
     return ('<section class="docs-hero"><div><h1 id="tomacco-documentation">Tomacco<br>Docs.</h1>'
             + intro.group(1) + '</div><img class="docs-hero-logo" src="/assets/logo/tomacco-color.svg" '
             'alt="Tomacco logo: a tomato with a terminal prompt" width="256" height="256"></section>'
-            '<nav class="docs-intro-links" aria-label="Start here"><a href="/docs/getting-started">Get started ↗︎</a>'
-            '<a href="/skill">Get the agent skill ↗︎</a><a href="/docs/reference/">Operation reference ↗︎</a></nav>'
+            '<nav class="docs-cards" aria-label="Start here">'
+            '<a class="docs-card docs-card-red" href="/docs/getting-started"><strong>Get started</strong>'
+            '<span>Install Tomacco and run your first app.</span><code>/docs/getting-started</code></a>'
+            '<a class="docs-card docs-card-ink" href="/skill"><strong>Agent skill</strong>'
+            '<span>Teach your coding agent how to use Tomacco.</span><code>/skill</code></a>'
+            '<a class="docs-card" href="/docs/reference/"><strong>Reference</strong>'
+            f'<span>All {len(json.loads((ROOT / "assets" / "operations.json").read_text()))} operations, '
+            'their arguments and every error code.</span><code>/docs/reference</code></a></nav>'
             + remainder)
 
 

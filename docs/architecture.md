@@ -8,6 +8,7 @@ Every capability is a **typed operation**. A person at the desktop, an agent ove
 MCP and a script using the CLI all call the same operations, so nothing can do
 more than the others, and long work runs as a durable job that survives its client.
 
+<!-- site-diagram: architecture -->
 ```text
 Qt desktop (qml/, src/)     tomaccoctl CLI     stdio MCP (native/mcp.rs)
           \                       |                  /
@@ -52,6 +53,7 @@ fetches pinned upstream revisions and applies the series from
 The longest path in the project. Nothing from Apple is in this repository; the
 user supplies their own restore image.
 
+<!-- site-diagram: virtual-iphone -->
 ```text
 restore image -> prepared disks and kernel -> one-step start
                                                  |
