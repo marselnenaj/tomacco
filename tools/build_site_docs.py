@@ -520,7 +520,7 @@ FOOT = """<footer class="site-foot">
     </div>
     <div class="sf-legal">
       <p>Tomacco is an independent project, not affiliated with, endorsed by or sponsored by The Simpsons or Disney, Apple, Google, Samsung or the Omarchy project. Other names belong to their owners and only say what Tomacco works with.</p>
-      <p class="sf-copy"><span>© 2026 Marsel Nenaj and contributors</span> · <span>GPL-2.0-or-later</span></p>
+      <p class="sf-copy"><span>©︎ 2026 Marsel Nenaj and contributors</span> · <span>GPL-2.0-or-later</span></p>
     </div>
     <p class="sf-word" aria-hidden="true">tomacco</p>
   </div>
@@ -571,7 +571,7 @@ def navigation(pages, current):
                     f'<li><a href="{q.url}"' + (' aria-current="page"' if q.key == current.key else '')
                     + f'>{html.escape(q.title)}</a></li>' for q in subs) + "</ul></details></li>")
         out.append("</ul>\n</section>")
-    out.append('<p class="docs-directory-skill"><a href="/skill">Get the Tomacco agent skill ↗</a></p>')
+    out.append('<p class="docs-directory-skill"><a href="/skill">Get the Tomacco agent skill ↗︎</a></p>')
     out.append("</div></details></nav>")
     return "\n".join(out)
 
@@ -649,7 +649,7 @@ def topic_index(pages, ref):
                    '<ul class="docs-topic-links">')
         for href, label in links:
             out.append(f'<li><a class="docs-topic-link" href="{html.escape(href)}">'
-                       f'<span>{html.escape(label)}</span><span class="docs-topic-arrow" aria-hidden="true">↗</span></a></li>')
+                       f'<span>{html.escape(label)}</span><span class="docs-topic-arrow" aria-hidden="true">↗︎</span></a></li>')
         out.append('</ul></section>')
     out.append('</section>')
     return "\n".join(out)
@@ -669,8 +669,8 @@ def document_body(page, pages, ref):
     return ('<section class="docs-hero"><div><h1 id="tomacco-documentation">Tomacco<br>Docs.</h1>'
             + intro.group(1) + '</div><img class="docs-hero-logo" src="/assets/logo/tomacco-color.svg" '
             'alt="Tomacco logo: a tomato with a terminal prompt" width="256" height="256"></section>'
-            '<nav class="docs-intro-links" aria-label="Start here"><a href="/docs/getting-started">Get started ↗</a>'
-            '<a href="/skill">Get the agent skill ↗</a><a href="/docs/reference/">Operation reference ↗</a></nav>'
+            '<nav class="docs-intro-links" aria-label="Start here"><a href="/docs/getting-started">Get started ↗︎</a>'
+            '<a href="/skill">Get the agent skill ↗︎</a><a href="/docs/reference/">Operation reference ↗︎</a></nav>'
             + remainder)
 
 
