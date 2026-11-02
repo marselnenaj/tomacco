@@ -6,6 +6,13 @@ operations and their JSON results.
 
 ## Unreleased
 
+### Added
+- **Virtual iPhone over USB for standard tools.** On a start with `usb` on, `ios.emulator.usb_bridge`
+  now finds a normal boot's USB device by its controller's power-on, so libimobiledevice and xtool
+  see the virtual iPhone through the bridge's private socket (`USBMUXD_SOCKET_ADDRESS`), and the
+  bridge keeps its own pair records: `idevicepair pair` pairs after a tap on Trust. Installing an
+  app that way was not tried (xtool asks for an Apple ID first).
+
 ### Changed
 - **Virtual iPhone: less CPU.** The engine keeps the translated-code lookups that a TLB change
   does not touch: a page flush clears only that page's entries, and an ASID change, which iOS

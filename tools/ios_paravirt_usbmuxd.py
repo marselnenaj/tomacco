@@ -20,6 +20,7 @@ import struct
 import tempfile
 import threading
 import time
+import uuid
 
 from ios_guest_control import socket_root
 from ios_paravirt_duplex import DuplexUSBConnection
@@ -208,9 +209,91 @@ def device_entry(device):
         "ConnectionType": "USB", "LocationID": 0}}
 
 
+def default_pair_records():
+    base = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local/share")
+    return Path(base) / "tomacco/ios-pairing"
+
+
+class PairRecords:
+    """Pair records and the host BUID for the virtual device only.
+
+    libimobiledevice keeps a pairing with the device's usbmuxd. The system
+    usbmuxd's records (/var/lib/lockdown) are never read or written: these
+    live in their own owner-only directory, and only for the UDID this
+    bridge serves, so no client can store or read a physical phone's record
+    through it.
+    """
+
+    def __init__(self, directory, udid):
+        self.directory, self.udid = Path(directory), udid
+        self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+        info = self.directory.lstat()
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
+            raise ValueError("The pair-record directory must be an owner-only directory")
+
+    def _path(self, identifier):
+        # libusbmuxd reports a 24-character serial as its UDID with a dash after
+        # the eighth character; either spelling names this device.
+        if (not isinstance(identifier, str) or not 1 <= len(identifier) <= 64
+                or not all(c.isalnum() or c == "-" for c in identifier)
+                or identifier.replace("-", "") != self.udid.replace("-", "")):
+            return None
+        return self.directory / (self.udid_with_dash() + ".plist")
+
+    def udid_with_dash(self):
+        bare = self.udid.replace("-", "")
+        return bare[:8] + "-" + bare[8:] if len(bare) == 24 else self.udid
+
+    def _write(self, path, data):
+        temporary = path.with_name(path.name + ".tmp")
+        with open(os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "wb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+
+    def buid(self):
+        path = self.directory / "SystemConfiguration.plist"
+        try:
+            value = plistlib.loads(path.read_bytes()).get("SystemBUID")
+            if isinstance(value, str) and value:
+                return value
+        except (FileNotFoundError, plistlib.InvalidFileException, AttributeError):
+            pass
+        value = str(uuid.uuid4()).upper()
+        self._write(path, plistlib.dumps({"SystemBUID": value}))
+        return value
+
+    def read(self, identifier):
+        path = self._path(identifier)
+        try:
+            return None if path is None else path.read_bytes()
+        except FileNotFoundError:
+            return None
+
+    def save(self, identifier, data):
+        path = self._path(identifier)
+        if path is None or not isinstance(data, bytes) or not data or len(data) > PLIST_LIMIT:
+            return False
+        plistlib.loads(data)  # a pair record is a property list
+        self._write(path, data)
+        return True
+
+    def delete(self, identifier):
+        path = self._path(identifier)
+        if path is None:
+            return False
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        return True
+
+
 class Bridge:
-    def __init__(self, hub, device):
+    def __init__(self, hub, device, pairs=None):
         self.hub, self.entry = hub, device_entry(device)
+        self.pairs = pairs
         self.lock = threading.Lock()
         self.clients, self.threads = set(), set()
         self.slots = threading.BoundedSemaphore(CLIENT_LIMIT)
@@ -291,10 +374,22 @@ class Bridge:
                             self.connections += 1
                         self._relay(stream, channel)
                         return
+                elif self.pairs is None and name in ("ReadPairRecord", "SavePairRecord",
+                                                     "DeletePairRecord", "ReadBUID"):
+                    result(stream, tag, errno.ENOENT if name == "ReadPairRecord" else errno.ENOTSUP)
+                elif name == "ReadBUID":
+                    reply(stream, tag, {"BUID": self.pairs.buid()})
                 elif name == "ReadPairRecord":
-                    result(stream, tag, errno.ENOENT)
-                elif name in ("SavePairRecord", "DeletePairRecord", "ReadBUID"):
-                    result(stream, tag, errno.ENOTSUP)
+                    data = self.pairs.read(command.get("PairRecordID"))
+                    if data is None:
+                        result(stream, tag, errno.ENOENT)
+                    else:
+                        reply(stream, tag, {"PairRecordData": data})
+                elif name == "SavePairRecord":
+                    saved = self.pairs.save(command.get("PairRecordID"), command.get("PairRecordData"))
+                    result(stream, tag, 0 if saved else errno.EPERM)
+                elif name == "DeletePairRecord":
+                    result(stream, tag, 0 if self.pairs.delete(command.get("PairRecordID")) else errno.EPERM)
                 else:
                     result(stream, tag, 1)
             raise ValueError("Local usbmuxd command limit exceeded")
@@ -426,6 +521,11 @@ def main():
     parser.add_argument("--request", type=Path, required=True, help="Live run_ios_paravirt.py --usb request.json")
     parser.add_argument("--output", type=Path, required=True, help="New private directory for bridge.json")
     parser.add_argument("--seconds", type=int, default=180, help="Total lifetime, including USB enumeration")
+    parser.add_argument("--pair-records", type=Path, default=None,
+                        help="Owner-only directory for this device's pair records (default: "
+                             "$XDG_DATA_HOME/tomacco/ios-pairing)")
+    parser.add_argument("--no-pairing", action="store_true",
+                        help="Refuse pair-record commands, as before pairing was supported")
     parser.add_argument("--wait-for-request", action="store_true",
                         help="Wait within the same deadline for an owned platform job to publish its request")
     args = parser.parse_args()
@@ -436,7 +536,7 @@ def main():
     record = {"format": 1, "request": str(args.request.resolve()),
               "state": "connecting",
               "local_only": True, "physical_devices_exposed": False,
-              "pairing_supported": False, "qualified_for_app_development": False}
+              "pairing_supported": not args.no_pairing, "qualified_for_app_development": False}
     write_record(args.output, record)
     usb = hub = bridge = None
     failed = False
@@ -456,7 +556,12 @@ def main():
         enumerated, device = connect_guest(request, deadline, progress)
         usb = DuplexUSBConnection(enumerated)
         hub = MuxHub(usb, device)
-        bridge = Bridge(hub, device)
+        pairs = None
+        if not args.no_pairing:
+            pairs = PairRecords(args.pair_records or default_pair_records(),
+                                device_entry(device)["Properties"]["SerialNumber"])
+            record["pair_records"] = str(pairs.directory)
+        bridge = Bridge(hub, device, pairs)
         # Short path avoids sockaddr_un truncation for deeply nested workspaces.
         with tempfile.TemporaryDirectory(prefix="tomacco-usbmuxd-", dir=socket_root(48)) as private:
             address = str(Path(private) / "usbmuxd.sock")

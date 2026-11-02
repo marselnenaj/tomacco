@@ -95,15 +95,30 @@ does not disconnect other clients. Session termination wakes all waiters and
 reaps the reader/client threads. No guest responses are synthesized.
 
 The socket's directory is mode 0700 and the socket is mode 0600. It never
-replaces `/var/run/usbmuxd`, exposes physical phones or accesses host pairing
-records. ReadPairRecord reports ENOENT; pairing mutations and ReadBUID explicitly
-report ENOTSUP. This transport bridge does not provide normal-mode pairing or
-claim that the guest has completed restore. It forwards client commands,
-including destructive restore commands when a client explicitly sends them.
+replaces `/var/run/usbmuxd`, exposes physical phones or touches the system
+usbmuxd's pairing records (`/var/lib/lockdown`).
+
+**Pairing.** The bridge keeps its own pair records: ReadBUID answers a host BUID
+generated once, and ReadPairRecord, SavePairRecord and DeletePairRecord read and
+write one owner-only file per device in `$XDG_DATA_HOME/tomacco/ios-pairing`
+(mode 0700, files 0600; `--pair-records` names another owner-only directory,
+`--no-pairing` restores the earlier refusals). Only the served device's UDID is
+accepted, as its USB serial or with the dash libusbmuxd puts after its eighth
+character; any other identifier, a path or data that is not a property list is
+refused with EPERM and stored nowhere. On a normal boot of the iPhone 18 Pro
+profile, `idevicepair pair` brought up iOS's "Trust This Computer?" alert, a tap on
+Trust paired, `idevicepair validate` succeeded and `ideviceinfo` read a paired-only
+domain (`com.apple.disk_usage`). The guest forgets the pairing at the next start,
+which begins from the last verified disk copy, so pairing is repeated per start.
+This does not claim that the guest has completed restore. The bridge forwards
+client commands, including destructive restore commands when a client explicitly
+sends them.
 
 Both command-line hosts wait for the original restore process's UART
-`enabling USB finished: success (0)` or the normal ConfigureUSB service's
-`USB configuration complete!` checkpoint before enumerating. The PCI queue becomes
+`enabling USB finished: success (0)`, the normal ConfigureUSB service's
+`USB configuration complete!` or, on a normal boot that prints neither, the device
+controller's power-on (`IOUSBDeviceController::setPowerStateGated: kPowerStateOff
+-> kPowerStateOn`) before enumerating. The PCI queue becomes
 usable earlier than controller power-on, and an enumeration attempted in that gap stalls.
 These checkpoints prove USB configuration only, not installed
 application-service readiness. The reader scans incrementally,

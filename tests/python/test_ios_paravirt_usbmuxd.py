@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import plistlib
 import socket
+import stat
 import struct
 import sys
 import tempfile
@@ -20,9 +21,10 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
-from ios_paravirt_usb import USBConnection, USB_READY_MARKER, SYSTEM_USB_READY_MARKER, wait_for_usb_ready
+from ios_paravirt_usb import (USBConnection, USB_READY_MARKER, SYSTEM_USB_READY_MARKER,
+                              CONTROLLER_POWER_ON_MARKER, wait_for_usb_ready)
 from ios_paravirt_duplex import DuplexUSBConnection
-from ios_paravirt_usbmuxd import Bridge, MuxHub, connect_guest, load_request, read_exact, reply
+from ios_paravirt_usbmuxd import Bridge, MuxHub, PairRecords, connect_guest, load_request, read_exact, reply
 from test_ios_paravirt_mux import DEVICE, VERSION, mux_packet
 from test_ios_paravirt_usb import FragmentedStream, response
 
@@ -215,6 +217,53 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(self.command(client, "Connect", DeviceID=1, PortNumber=True)["Number"], 1)
         self.assertEqual(self.command(client, "Connect", DeviceID=True, PortNumber=1)["Number"], 2)
 
+    def test_pair_records_serve_only_this_device_from_an_owner_only_directory(self):
+        with tempfile.TemporaryDirectory() as home:
+            directory = Path(home) / "pairing"
+            self.bridge.pairs = PairRecords(directory, "VM-USB-SERIAL")
+            self.assertEqual(stat.S_IMODE(directory.stat().st_mode), 0o700)
+            client = self.client()
+            buid = self.command(client, "ReadBUID")["BUID"]
+            self.assertEqual(self.command(client, "ReadBUID")["BUID"], buid, "the BUID is stable")
+            self.assertEqual(self.command(client, "ReadPairRecord", PairRecordID="VM-USB-SERIAL")["Number"],
+                             errno.ENOENT)
+            record = plistlib.dumps({"HostID": "HOST", "SystemBUID": buid})
+            self.assertEqual(self.command(client, "SavePairRecord", PairRecordID="VM-USB-SERIAL",
+                                          PairRecordData=record, DeviceID=1)["Number"], 0)
+            self.assertEqual(self.command(client, "ReadPairRecord", PairRecordID="VM-USB-SERIAL")["PairRecordData"],
+                             record)
+            self.assertEqual(stat.S_IMODE((directory / "VM-USB-SERIAL.plist").stat().st_mode), 0o600)
+            # Another device's record, a path and a non-plist are refused and stored nowhere.
+            for identifier, data in (("00008110-PHYSICAL", record), ("../host", record),
+                                     ("VM-USB-SERIAL", b"not a plist")):
+                if identifier == "VM-USB-SERIAL":
+                    with self.assertRaises(Exception):
+                        self.bridge.pairs.save(identifier, data)
+                    continue
+                self.assertEqual(self.command(client, "SavePairRecord", PairRecordID=identifier,
+                                              PairRecordData=data, DeviceID=1)["Number"], errno.EPERM)
+                self.assertEqual(self.command(client, "ReadPairRecord", PairRecordID=identifier)["Number"],
+                                 errno.ENOENT)
+            self.assertEqual(sorted(p.name for p in directory.iterdir()),
+                             ["SystemConfiguration.plist", "VM-USB-SERIAL.plist"])
+            # A 24-character serial is also named with libusbmuxd's dash.
+            dashed = PairRecords(Path(home) / "dashed", "0000FE0108544E1637C569AA")
+            self.assertTrue(dashed.save("0000FE01-08544E1637C569AA", record))
+            self.assertEqual(dashed.read("0000FE0108544E1637C569AA"), record)
+            self.assertEqual([p.name for p in (Path(home) / "dashed").glob("0000*")],
+                             ["0000FE01-08544E1637C569AA.plist"])
+            self.assertEqual(self.command(client, "DeletePairRecord", PairRecordID="VM-USB-SERIAL")["Number"], 0)
+            self.assertEqual(self.command(client, "ReadPairRecord", PairRecordID="VM-USB-SERIAL")["Number"],
+                             errno.ENOENT)
+
+    def test_a_shared_pair_record_directory_is_refused(self):
+        with tempfile.TemporaryDirectory() as home:
+            directory = Path(home) / "pairing"
+            directory.mkdir(mode=0o755)
+            directory.chmod(0o755)
+            with self.assertRaises(ValueError):
+                PairRecords(directory, "VM-USB-SERIAL")
+
     def test_bad_frames_only_disconnect_offending_client(self):
         for header in ((65537, 1, 8, 0), (16, 0, 8, 0), (16, 1, 2, 0)):
             client = self.client()
@@ -315,7 +364,8 @@ class ReadinessTests(unittest.TestCase):
     def test_marker_split_across_log_reads_is_observed(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
-            for marker, mode in ((USB_READY_MARKER, "restore"), (SYSTEM_USB_READY_MARKER, "system")):
+            for marker, mode in ((USB_READY_MARKER, "restore"), (SYSTEM_USB_READY_MARKER, "system"),
+                                 (CONTROLLER_POWER_ON_MARKER, "system")):
                 with self.subTest(mode=mode):
                     (path / "uart.log").write_bytes(b"x" * 65530 + marker + b"\n")
                     self.assertEqual(wait_for_usb_ready(path, time.monotonic() + 1), mode)

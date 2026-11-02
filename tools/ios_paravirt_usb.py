@@ -16,6 +16,9 @@ import time
 MAX_FRAME = 128 * 1024
 USB_READY_MARKER = b"enabling USB finished: success (0)"
 SYSTEM_USB_READY_MARKER = b"USB configuration complete!"
+# A normal boot whose ConfigureUSB prints nothing: the device controller's own
+# power-on, the point after which enumeration no longer stalls.
+CONTROLLER_POWER_ON_MARKER = b"IOUSBDeviceController::setPowerStateGated: kPowerStateOff -> kPowerStateOn"
 USB_ATTACH_TIMEOUT = 5.0
 USB_ATTACH_RECOVERY = 1.0
 USB_RESET_RECOVERY = 0.050
@@ -33,7 +36,8 @@ def wait_for_usb_ready(session, deadline):
     """
     session = Path(session)
     offset, tail = 0, b""
-    markers = {USB_READY_MARKER: "restore", SYSTEM_USB_READY_MARKER: "system"}
+    markers = {USB_READY_MARKER: "restore", SYSTEM_USB_READY_MARKER: "system",
+               CONTROLLER_POWER_ON_MARKER: "system"}
     keep = max(map(len, markers))
     while time.monotonic() < deadline:
         try:
