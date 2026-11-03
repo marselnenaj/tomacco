@@ -216,6 +216,12 @@ an engine built from them, see the next section.
 
 ## Consulted, no code taken
 
+[Jalrux's iphone-control](https://github.com/Jalrux/iphone-control) (MIT) measured how iOS
+treats a Bluetooth LE absolute pointer: that it places the pointer exactly, takes the buttons
+from that report, presses where the pointer was before the report and ignores a repeated one.
+`native/runtime/bluetooth.rs` and `native/runtime/airplay.rs` follow those findings, its
+timings and the layout of its absolute pointer report, and cite them; the code is Tomacco's own.
+
 The register definitions of [Asahi Linux's m1n1](https://github.com/AsahiLinux/m1n1)
 (MIT) are the published reference for the DART and ASC models in
 `integrations/ios-emulator`; those files cite them where they are used.

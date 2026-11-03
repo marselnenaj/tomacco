@@ -20,6 +20,7 @@ and please report what you find.
 | An Xcode or Flutter iOS project, and no Mac | [Flutter, Xcode projects, crash reports and the App Store](#flutter-xcode-projects-crash-reports-and-the-app-store) |
 | An Xcode or Flutter iOS project and a Mac | The [Mac route](#the-mac-route) |
 | No iPhone and your own iOS restore image | The experimental [virtual iOS device](virtual-ios/README.md) |
+| An iPhone to see and control on the desktop, by cable or over Wi-Fi | [See and control the iPhone live](#see-and-control-the-iphone-live) |
 
 The Linux route compiles [xtool](https://github.com/xtool-org/xtool)'s SwiftPM project
 format. `project.import_xcode` writes that format for an `.xcodeproj`, and
@@ -141,10 +142,11 @@ with it yet.
 
 ## Working with the connected iPhone
 
-These operations look at and act on an iPhone connected by USB. They were tested with
+These operations look at and act on an iPhone connected by USB. Most were tested with
 stand-ins only; no iPhone was connected. So they check what Tomacco asks of go-ios,
 libimobiledevice and WebDriverAgent and how it reads the answers, not that a real phone
-answers that way.
+answers that way. The setup, the runner and [the live view](#see-and-control-the-iphone-live)
+were checked with an iPhone Air on iOS 27.2.
 
 ### Is the phone ready?
 
@@ -249,7 +251,7 @@ The recording is a job. `job.send` with `stop` ends it early and keeps what was 
 A picture that has not changed or came late is repeated, so the video lasts as long as the
 recording; the result says how many distinct pictures arrived. How many the phone delivers
 a second was not measured, since no phone was connected. For a smooth live picture, use
-`runtime.start`, whose WebDriverAgent stream runs at up to 30 frames per second.
+[the live view](#see-and-control-the-iphone-live).
 
 ### App startup
 
@@ -292,6 +294,74 @@ profile runs out; build and install again with xtool to renew it.
 
 It reads what the files claim and checks no signature. It does not contact Apple and does not
 read xtool's login, so it cannot list certificates that are only in your Apple account.
+
+## See and control the iPhone live
+
+The live view shows the phone in the desktop, in its model's frame, and passes your mouse and
+keyboard to it. It has two routes: over USB with WebDriverAgent, or over Wi-Fi with AirPlay
+screen mirroring and a Bluetooth pointer. Both were checked with an iPhone Air on iOS 27.2.
+
+| | USB | Wi-Fi |
+| --- | --- | --- |
+| Picture | WebDriverAgent's screenshots, about 18 to 20 a second at full resolution | AirPlay screen mirroring (H.264) |
+| Input | WebDriverAgent: taps, and drags that play when you let go | A Bluetooth pointer and keyboard: the phone's pointer follows the mouse |
+| Needs | Developer Mode, the developer image, a tunnel and the signed runner (see [Is the phone ready?](#is-the-phone-ready)) | UxPlay 1.73 or newer, open firewall ports, BlueZ and AssistiveTouch |
+
+The model is read from the phone's hardware identifier (`ProductType`, such as `iPhone18,4`),
+so the frame is the phone's own. A model without a known identifier shows the bare picture.
+
+### Over USB
+
+Start the session with the runner identifier that `ios.apps` lists for WebDriverAgent:
+
+```sh
+tomaccoctl call runtime.start '{"platform":"ios","device":"ACTUAL_UDID","runner_bundle_id":"INSTALLED_RUNNER_ID"}'
+```
+
+The picture is WebDriverAgent's MJPEG stream, so it cannot go much above 20 frames a second. A tap
+reaches the phone at once; a drag is recorded and played when the mouse button goes up, because
+WebDriverAgent runs a gesture only as a whole.
+
+### Over Wi-Fi
+
+1. Install [UxPlay](https://github.com/FDH2/UxPlay) 1.73 or newer.
+2. Let the phone reach the receiver. The Omarchy firewall blocks incoming connections, and Tomacco
+   starts UxPlay on fixed ports; allow them from your local network, for example:
+
+   ```sh
+   sudo ufw allow from 192.168.178.0/24 to any port 7000,7001,7100 proto tcp
+   sudo ufw allow from 192.168.178.0/24 to any port 6000,6001,7011 proto udp
+   ```
+
+3. Start the receiver. It waits for a phone and keeps running when the phone stops mirroring:
+
+   ```sh
+   tomaccoctl call runtime.start '{"platform":"ios","device":"airplay"}'
+   ```
+
+4. On the iPhone, open Control Center, then **Screen Mirroring**, then **Tomacco**. The device
+   window opens by itself and closes when the phone stops mirroring.
+
+AirPlay carries no input. For that, the session serves a Bluetooth LE mouse and keyboard named
+**Tomacco** through BlueZ:
+
+1. Turn on Bluetooth on the computer.
+2. On the iPhone, turn on **Settings > Accessibility > Touch > AssistiveTouch**.
+3. While the phone mirrors, pair **Tomacco** in **Settings > Bluetooth**.
+
+The phone's pointer then sits where the mouse is over the picture: a click is a tap, and a drag
+with the button held is a swipe. Typed text goes through a US keyboard layout, Home sends
+Command-H, and the side buttons work. A mouse has one pointer, so there is no pinch or other
+gesture with several fingers.
+
+A phone paired with Tomacco 1.3 or earlier knows the old device description and does not get the
+absolute pointer. Forget **Tomacco** in its Bluetooth settings, and on the computer remove the
+phone with `bluetoothctl remove ADDRESS`, then pair again.
+
+### The device window
+
+The device window floats beside your work. The pin on its rail keeps it above the other
+windows. Under Hyprland it is pinned through `hyprctl`, so it also shows on every workspace.
 
 ## Flutter, Xcode projects, crash reports and the App Store
 

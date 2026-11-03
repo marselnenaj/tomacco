@@ -15,7 +15,9 @@ license=('GPL-2.0-or-later')
 depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-webengine' 'ffmpeg' 'openssl' 'python')
 makedepends=('cmake' 'ninja' 'rust' 'protobuf' 'qt6-tools')
 optdepends=('scrcpy: live view and control of Android devices'
-            'unzip: the iPhone runner download')
+            'unzip: the iPhone runner download'
+            'uxplay: iPhone screen mirroring over Wi-Fi (AirPlay, 1.73 or newer)'
+            'bluez: control a mirrored iPhone over Bluetooth')
 # With makepkg's LTO flags, tomaccoctl fails to link the SQLite that rusqlite bundles.
 options=('!lto')
 # The release commit, from SOURCE_RELEASE.md in the tarball. The installed

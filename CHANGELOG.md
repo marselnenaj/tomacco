@@ -7,13 +7,35 @@ operations and their JSON results.
 ## Unreleased
 
 ### Added
+- **iPhone over Wi-Fi.** `runtime.start` with `device` `airplay` runs a UxPlay receiver named
+  Tomacco, and a phone's AirPlay screen mirroring becomes a live session: the device window opens
+  when the phone starts mirroring and closes when it stops, and the Omarchy panel lists the
+  receiver as live only while a phone mirrors. Needs UxPlay 1.73+ and the firewall ports in
+  [docs/iphone.md](docs/iphone.md#over-wi-fi).
+- **Control over Bluetooth.** The AirPlay session serves a Bluetooth LE mouse and keyboard,
+  Tomacco, through BlueZ. With AssistiveTouch on, the phone's pointer sits where the mouse is
+  (an absolute pointer, no acceleration): clicks tap, drags swipe, text and the side buttons
+  work, and Home sends Command-H. Checked with an iPhone Air on iOS 27.2.
+- **The real model's frame.** A physical iPhone's session reads its hardware identifier
+  (`ProductType`) and shows that model's frame; profiles name their identifiers in
+  `productTypes`. The iPhone Air's is `iPhone18,4`.
+- **A pin for the device window.** The live device's floating window can stay above the others;
+  under Hyprland it is pinned through `hyprctl`, since Wayland has no request for this.
 - **Virtual iPhone over USB for standard tools.** On a start with `usb` on, `ios.emulator.usb_bridge`
   now finds a normal boot's USB device by its controller's power-on, so libimobiledevice and xtool
   see the virtual iPhone through the bridge's private socket (`USBMUXD_SOCKET_ADDRESS`), and the
   bridge keeps its own pair records: `idevicepair pair` pairs after a tap on Trust. Installing an
   app that way was not tried (xtool asks for an Apple ID first).
 
+### Fixed
+- **Physical iPhone live view.** It stopped about a second after it connected with "Missing or
+  oversized MJPEG frame": WebDriverAgent ends each part with an empty line and calls its
+  pictures `image/jpg`. It now streams at about 18 to 20 pictures a second at full resolution
+  (iPhone Air, iOS 27.2).
+
 ### Changed
+- **Physical iPhone: quicker input.** WebDriverAgent no longer waits for animations and idle
+  before an action, taps go through `/actions`, and the stream asks for up to 60 frames a second.
 - **Virtual iPhone: less CPU.** The engine keeps the translated-code lookups that a TLB change
   does not touch: a page flush clears only that page's entries, and an ASID change, which iOS
   makes on every context switch, keeps those of global (kernel) code. Lookups that miss fell from

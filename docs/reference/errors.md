@@ -45,7 +45,7 @@ Every error code `tomaccoctl` returns, 486 codes, generated from `assets/errors.
 | `benchmark_results_missing` | No benchmarkData.json from a Macrobenchmark run was found under the project. | Run profile.macrobenchmark first, then read its results with job_id. |
 | `binary_file` | This file is not UTF-8 text. | files.read and files.write handle UTF-8 text only. |
 | `bluetooth_input` | Tomacco could not serve its Bluetooth pointer and keyboard through BlueZ: no adapter, Bluetooth off, or BlueZ refused the device. | Turn Bluetooth on (bluetoothctl power on), check that bluetooth.service runs, then start the session again. |
-| `bluetooth_not_paired` | The iPhone is not paired with Tomacco's Bluetooth pointer, or is not listening to it. | On the iPhone, pair with Tomacco under Settings &gt; Bluetooth within two minutes of the session start, and turn on Settings &gt; Accessibility &gt; Touch &gt; AssistiveTouch. |
+| `bluetooth_not_paired` | The iPhone is not paired with Tomacco's Bluetooth pointer, or is not listening to it. | While the iPhone mirrors to Tomacco, pair it under Settings &gt; Bluetooth (it may show the computer's Bluetooth name), and turn on Settings &gt; Accessibility &gt; Touch &gt; AssistiveTouch. |
 | `budget_exceeded` | Outside the performance budget: … | Compare the report with its baseline (profile.compare) to find the regression, or raise the budget if it was intended. |
 | `builtin_profile` | The request was refused; the message says why. | Choose a new ID; built-in profiles cannot be replaced. |
 | `bundle_id_mismatch` | The built app is …, not … | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
