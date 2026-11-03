@@ -30,6 +30,8 @@ operations and their JSON results.
   app that way was not tried (xtool asks for an Apple ID first).
 
 ### Fixed
+- **Hyprland pin.** The device window uses the current Lua dispatchers, with a fallback for
+  older Hyprland versions. Pinning and unpinning are checked against the compositor state.
 - **AirPlay in the desktop.** An already mirroring iPhone is adopted when an idle desktop opens,
   even if Android was selected before. Mirror stop/start changes now reach the view, so the device
   window closes and reopens with the phone instead of showing a stale picture.

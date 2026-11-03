@@ -192,6 +192,45 @@ class DesktopUiTest : public QObject {
         });
     }
 private slots:
+    void device_window_pin_reaches_the_compositor_data() {
+        QTest::addColumn<bool>("lua");
+        QTest::newRow("current-lua")<<true;
+        QTest::newRow("legacy-dispatchers")<<false;
+    }
+    void device_window_pin_reaches_the_compositor() {
+        QFETCH(bool,lua);
+        QTemporaryDir commands;QVERIFY(commands.isValid());
+        const auto path=qgetenv("PATH"),signature=qgetenv("HYPRLAND_INSTANCE_SIGNATURE"),state=qgetenv("TOMACCO_PIN_TEST");
+        const auto restore=qScopeGuard([&]{qputenv("PATH",path);qputenv("HYPRLAND_INSTANCE_SIGNATURE",signature);if(state.isNull())qunsetenv("TOMACCO_PIN_TEST");else qputenv("TOMACCO_PIN_TEST",state);});
+        qputenv("PATH",commands.path().toUtf8()+":"+path);
+        qputenv("HYPRLAND_INSTANCE_SIGNATURE","test");
+        qputenv("TOMACCO_PIN_TEST",commands.filePath("state.json").toUtf8());
+        QFile fixture(commands.filePath("state.json"));QVERIFY(fixture.open(QIODevice::WriteOnly));
+        fixture.write(QJsonDocument(QJsonObject{{"lua",lua},{"floating",false},{"pinned",false}}).toJson());fixture.close();
+        QFile command(commands.filePath("hyprctl"));QVERIFY(command.open(QIODevice::WriteOnly));
+        command.write(R"PY(#!/usr/bin/env python3
+import json, os, sys
+from pathlib import Path
+p=Path(os.environ['TOMACCO_PIN_TEST']);s=json.loads(p.read_text());a=sys.argv[1:]
+if a==['-j','clients']:
+ print(json.dumps([dict(address='0x123',pid=os.getppid(),title='Pin test',floating=s['floating'],pinned=s['pinned'])]));sys.exit(0)
+if s['lua']:
+ actions={('dispatch','hl.dsp.window.float({ window = "address:0x123", action = "set" })'):('floating',True),
+          ('dispatch','hl.dsp.window.pin({ window = "address:0x123", action = "set" })'):('pinned',True),
+          ('dispatch','hl.dsp.window.pin({ window = "address:0x123", action = "unset" })'):('pinned',False)}
+else:
+ actions={('dispatch','setfloating','address:0x123'):('floating',True),('dispatch','pin','address:0x123'):('pinned',not s['pinned'])}
+if tuple(a) not in actions:sys.exit(7)
+k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
+)PY");command.close();QVERIFY(command.setPermissions(QFile::ReadOwner|QFile::WriteOwner|QFile::ExeOwner));
+        QWindow device;device.setTitle("Pin test");
+        const auto current=[&]{QFile file(fixture.fileName());if(!file.open(QIODevice::ReadOnly))return QJsonObject{};return QJsonDocument::fromJson(file.readAll()).object();};
+        QVERIFY(backend->keepOnTop(&device,true));
+        QVERIFY(current().value("floating").toBool());QVERIFY(current().value("pinned").toBool());
+        QVERIFY(backend->keepOnTop(&device,true));QVERIFY(current().value("pinned").toBool());
+        QVERIFY(backend->keepOnTop(&device,false));QVERIFY(!current().value("pinned").toBool());
+        QVERIFY(backend->keepOnTop(&device,false));QVERIFY(!current().value("pinned").toBool());
+    }
     void initTestCase() {
         QVERIFY(directory.isValid());
         qputenv("TOMACCO_HOME",directory.filePath("state").toUtf8());

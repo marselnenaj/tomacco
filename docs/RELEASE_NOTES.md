@@ -21,7 +21,8 @@ reduces the virtual iPhone engine's CPU use. The [changelog](../CHANGELOG.md) li
   removes WebDriverAgent's animation and idle waits before input.
 - **The right frame and a pin.** Physical iPhones use their hardware identifier to choose the
   matching device frame. The floating device window has a pin button to keep it above other
-  windows, including under Hyprland.
+  windows, including under Hyprland with its current Lua dispatchers and older versions.
+  Keeping the iPhone window above the Tomacco workspace was confirmed on the live setup.
 - **Desktop shutdown.** A window can close with preview requests still pending without a
   socket teardown crash. Its control-program children are cleaned up before the window exits.
 - **Less CPU for the virtual iPhone.** Translated-code lookups survive TLB changes that do not
@@ -45,8 +46,6 @@ reduces the virtual iPhone engine's CPU use. The [changelog](../CHANGELOG.md) li
   remains 1.89.
 - **60 fps over USB is a request, not a measured result.** The observed USB stream was 18–20 fps.
   The effect of the input changes on USB tap latency has not been measured on the phone.
-- The pin button has automated coverage; keeping the window above others has not yet been
-  confirmed interactively on the physical iPhone setup.
 - Installing an app through the virtual iPhone's USB bridge was not tried: xtool asks for an
   Apple ID first. Use the bridge's private `USBMUXD_SOCKET_ADDRESS`, not the host's USB socket.
 - The [previous release's limits](https://github.com/marselnenaj/tomacco/blob/v1.3.0/docs/RELEASE_NOTES.md#limits)

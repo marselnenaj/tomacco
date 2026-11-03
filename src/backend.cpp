@@ -400,20 +400,30 @@ bool Backend::keepOnTop(QObject *object, bool on) {
     if(!window || qEnvironmentVariableIsEmpty("HYPRLAND_INSTANCE_SIGNATURE")) return false;
     const auto hyprctl=QStandardPaths::findExecutable(QStringLiteral("hyprctl"));
     if(hyprctl.isEmpty()) return false;
-    const auto run=[&](const QStringList &arguments) {
+    const auto run=[&](const QStringList &arguments, bool *succeeded=nullptr) {
+        if(succeeded) *succeeded=false;
         QProcess process;
         process.setStandardInputFile(QProcess::nullDevice());
         process.start(hyprctl,arguments);
         if(!process.waitForFinished(1500)) { process.kill(); process.waitForFinished(500); return QByteArray(); }
-        return process.exitStatus()==QProcess::NormalExit && process.exitCode()==0 ? process.readAllStandardOutput() : QByteArray();
+        const bool ok=process.exitStatus()==QProcess::NormalExit && process.exitCode()==0;
+        if(succeeded) *succeeded=ok;
+        return ok ? process.readAllStandardOutput() : QByteArray();
     };
     const auto client=hyprlandClient(run({QStringLiteral("-j"),QStringLiteral("clients")}),QCoreApplication::applicationPid(),window->title());
     const auto address=client.value(QStringLiteral("address")).toString();
-    if(!address.startsWith(QLatin1String("0x"))) return false;
+    if(!QRegularExpression(QStringLiteral("^0x[0-9a-fA-F]+$")).match(address).hasMatch()) return false;
     const auto target=QStringLiteral("address:")+address;
+    const auto dispatch=[&](const QString &method,const QString &action,const QString &legacy) {
+        bool succeeded=false;
+        // Current Hyprland dispatch takes Lua; older versions take a name
+        // and arguments. Use explicit set/unset so repeated requests are safe.
+        run({QStringLiteral("dispatch"),QStringLiteral("hl.dsp.window.%1({ window = \"%2\", action = \"%3\" })").arg(method,target,action)},&succeeded);
+        if(!succeeded) run({QStringLiteral("dispatch"),legacy,target});
+    };
     // Hyprland pins floating windows only.
-    if(on && !client.value(QStringLiteral("floating")).toBool()) run({QStringLiteral("dispatch"),QStringLiteral("setfloating"),target});
-    if(client.value(QStringLiteral("pinned")).toBool()!=on) run({QStringLiteral("dispatch"),QStringLiteral("pin"),target});
+    if(on && !client.value(QStringLiteral("floating")).toBool()) dispatch(QStringLiteral("float"),QStringLiteral("set"),QStringLiteral("setfloating"));
+    if(client.value(QStringLiteral("pinned")).toBool()!=on) dispatch(QStringLiteral("pin"),on?QStringLiteral("set"):QStringLiteral("unset"),QStringLiteral("pin"));
     return hyprlandClient(run({QStringLiteral("-j"),QStringLiteral("clients")}),QCoreApplication::applicationPid(),window->title()).value(QStringLiteral("pinned")).toBool()==on;
 }
 void Backend::rememberProject(const QString &path) {
