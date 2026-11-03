@@ -177,13 +177,14 @@ void NativeView::setSession(const QVariantMap &session) {
     bool sameStream=!session.value("session").toString().isEmpty();
     for(const auto *key:{"session","platform","status","video_socket","control_socket","codec","packetization","transport"})
         sameStream=sameStream && m_session.value(key)==session.value(key);
-    if(sameStream){m_session=session;emit sessionChanged();return;}
+    if(sameStream){m_session=session;updatePointerCursor();emit sessionChanged();return;}
     m_wheelFrame.stop();m_wheelEnd.stop();m_wheelActive=false;m_wheelDelta={};
     m_session=session;m_inputs.clear();m_inputTimeout.stop();{QSignalBlocker block(m_control);m_control.abort();}m_pressed=false;m_hasTouch=false;
     m_image={};m_frames=0;m_previousFrames=0;m_fps=0;m_dirty=true;m_error.clear();
     auto socket=session.value("video_socket").toString();m_state=socket.isEmpty()?"disconnected":"connecting";
     // A Bluetooth pointer follows the mouse without a button pressed too.
     setAcceptHoverEvents(pointerFollowsHover());
+    updatePointerCursor();
     const auto generation=++m_generation;
     auto format=session.value("codec").toString();
     bool framed=session.value("packetization")=="access-unit" || session.value("transport").toString().startsWith("adb/scrcpy");
@@ -237,6 +238,14 @@ void NativeView::mouseMoveEvent(QMouseEvent *e) {if(m_pressed)touch(e->position(
 void NativeView::mouseReleaseEvent(QMouseEvent *e) {if(m_pressed)touch(e->position(),"up");m_pressed=false;e->accept();}
 void NativeView::mouseUngrabEvent() {if(m_pressed)touch(m_lastPoint,"cancel");m_pressed=false;}
 bool NativeView::pointerFollowsHover() const {return m_session.value("transport")=="wifi/airplay";}
+// The phone moves its own pointer by relative steps with its own acceleration,
+// so a second, desktop cursor over the picture would only drift from it. While
+// the phone listens, the picture's pointer is the only one.
+void NativeView::updatePointerCursor() {
+    const bool phonePointer=pointerFollowsHover() && m_session.value("bluetooth").toMap().value("listening").toBool();
+    if(phonePointer)setCursor(Qt::BlankCursor);else unsetCursor();
+}
+bool NativeView::saveFrame(const QString &path) const {return !m_image.isNull() && m_image.save(path,"PNG");}
 void NativeView::hoverMoveEvent(QHoverEvent *e) {
     if(pointerFollowsHover() && !m_pressed && contentRect().contains(e->position()))touch(e->position(),"hover");
     e->accept();

@@ -30,6 +30,8 @@ public:
     double framesPerSecond() const {return m_fps;}
     Q_INVOKABLE void sendInput(QVariantMap arguments);
     Q_INVOKABLE void insertText(const QString &text);
+    // The last decoded picture at full size, for streams the session cannot capture itself.
+    Q_INVOKABLE bool saveFrame(const QString &path) const;
 signals:
     void sessionChanged();
     void stateChanged();
@@ -48,6 +50,7 @@ protected:
     void hoverMoveEvent(QHoverEvent *) override;
     void hoverLeaveEvent(QHoverEvent *) override;
     bool pointerFollowsHover() const;
+    void updatePointerCursor();
     void keyPressEvent(QKeyEvent *) override;
     void wheelEvent(QWheelEvent *) override;
 private:

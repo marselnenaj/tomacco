@@ -179,42 +179,61 @@ impl Advertisement {
     }
 }
 
-/// Just Works pairing, refused once the pairing window has closed.
+/// Just Works pairing while pairing is open: in the window after the start,
+/// or while a phone mirrors to this receiver, which a stranger cannot do
+/// unseen. Every request and answer goes to the session's Bluetooth log.
 struct Agent {
     until: Instant,
+    open: Arc<AtomicBool>,
+    log: PathBuf,
 }
 impl Agent {
-    fn allow(&self) -> fdo::Result<()> {
-        if Instant::now() < self.until {
+    fn note(&self, line: &str) {
+        use std::io::Write;
+        if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(&self.log) {
+            let _ = writeln!(file, "{:.3} {line}", now());
+        }
+    }
+    fn allow(&self, request: &str, device: &OwnedObjectPath) -> fdo::Result<()> {
+        if Instant::now() < self.until || self.open.load(Ordering::Relaxed) {
+            self.note(&format!("{request} {}: accepted", device.as_str()));
             Ok(())
         } else {
+            self.note(&format!("{request} {}: refused, pairing is closed", device.as_str()));
             Err(fdo::Error::AccessDenied(
-                "Tomacco's pairing window has closed; start the session again to pair".into(),
+                "Pair while the iPhone mirrors to Tomacco".into(),
             ))
         }
     }
 }
 #[interface(name = "org.bluez.Agent1")]
 impl Agent {
-    fn release(&self) {}
-    fn request_pin_code(&self, _device: OwnedObjectPath) -> fdo::Result<String> {
+    fn release(&self) {
+        self.note("agent released");
+    }
+    fn request_pin_code(&self, device: OwnedObjectPath) -> fdo::Result<String> {
+        self.note(&format!("PIN requested by {}: refused", device.as_str()));
         Err(fdo::Error::NotSupported("no PIN".into()))
     }
     fn display_pin_code(&self, _device: OwnedObjectPath, _code: String) {}
-    fn request_passkey(&self, _device: OwnedObjectPath) -> fdo::Result<u32> {
+    fn request_passkey(&self, device: OwnedObjectPath) -> fdo::Result<u32> {
+        self.note(&format!("passkey requested by {}: refused", device.as_str()));
         Err(fdo::Error::NotSupported("no passkey".into()))
     }
     fn display_passkey(&self, _device: OwnedObjectPath, _passkey: u32, _entered: u16) {}
-    fn request_confirmation(&self, _device: OwnedObjectPath, _passkey: u32) -> fdo::Result<()> {
-        self.allow()
+    fn request_confirmation(&self, device: OwnedObjectPath, _passkey: u32) -> fdo::Result<()> {
+        self.allow("confirmation", &device)
     }
-    fn request_authorization(&self, _device: OwnedObjectPath) -> fdo::Result<()> {
-        self.allow()
+    fn request_authorization(&self, device: OwnedObjectPath) -> fdo::Result<()> {
+        self.allow("authorization", &device)
     }
-    fn authorize_service(&self, _device: OwnedObjectPath, _uuid: String) -> fdo::Result<()> {
+    fn authorize_service(&self, device: OwnedObjectPath, uuid: String) -> fdo::Result<()> {
+        self.note(&format!("service {uuid} for {}: accepted", device.as_str()));
         Ok(())
     }
-    fn cancel(&self) {}
+    fn cancel(&self) {
+        self.note("pairing cancelled");
+    }
 }
 
 /// The served pointer and keyboard. Reports go out only while the phone
@@ -227,12 +246,14 @@ pub struct Hid {
 }
 
 impl Hid {
-    pub fn start() -> Result<Hid> {
+    /// Serves the device; `pairing` opens pairing beyond the first window,
+    /// and `log` receives the pairing requests.
+    pub fn start(pairing: Arc<AtomicBool>, log: PathBuf) -> Result<Hid> {
         let rt = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(1)
             .enable_all()
             .build()?;
-        let (connection, reports) = rt.block_on(serve())?;
+        let (connection, reports) = rt.block_on(serve(pairing, log))?;
         Ok(Hid {
             rt,
             connection,
@@ -361,7 +382,17 @@ async fn adapter(connection: &Connection) -> Result<OwnedObjectPath> {
     }
 }
 
-async fn serve() -> Result<(Connection, HashMap<u8, (OwnedObjectPath, Arc<AtomicBool>)>)> {
+fn log_line(log: &Path, line: &str) {
+    use std::io::Write;
+    if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(log) {
+        let _ = writeln!(file, "{:.3} {line}", now());
+    }
+}
+async fn serve(
+    pairing: Arc<AtomicBool>,
+    log: PathBuf,
+) -> Result<(Connection, HashMap<u8, (OwnedObjectPath, Arc<AtomicBool>)>)> {
+    let log_path = log.clone();
     let connection = Connection::system().await.map_err(bus)?;
     let adapter = adapter(&connection).await?;
     let server = connection.object_server();
@@ -424,7 +455,7 @@ async fn serve() -> Result<(Connection, HashMap<u8, (OwnedObjectPath, Arc<Atomic
     }
     server.at(ADVERTISEMENT, Advertisement).await.map_err(bus)?;
     server
-        .at(AGENT, Agent { until: Instant::now() + PAIRING_WINDOW })
+        .at(AGENT, Agent { until: Instant::now() + PAIRING_WINDOW, open: pairing.clone(), log: log.clone() })
         .await
         .map_err(bus)?;
     let no_options: HashMap<&str, Variant> = HashMap::new();
@@ -440,7 +471,7 @@ async fn serve() -> Result<(Connection, HashMap<u8, (OwnedObjectPath, Arc<Atomic
         .map_err(bus)?;
     // The default agent answers the phone's pairing; another one may be default
     // again later, which keeps pairing in its hands.
-    let _ = connection
+    let default = connection
         .call_method(
             Some("org.bluez"),
             "/org/bluez",
@@ -449,6 +480,28 @@ async fn serve() -> Result<(Connection, HashMap<u8, (OwnedObjectPath, Arc<Atomic
             &(ObjectPath::try_from(AGENT).unwrap(),),
         )
         .await;
+    log_line(
+        &log_path,
+        &format!("default agent: {}", default.map(|_| "Tomacco".to_string()).unwrap_or_else(|e| format!("refused ({})", bus(e).message))),
+    );
+    // What decides whether the phone may pair at all.
+    if let Ok(properties) = fdo::PropertiesProxy::builder(&connection)
+        .destination("org.bluez")
+        .and_then(|b| b.path(adapter.as_str()))
+    {
+        if let Ok(proxy) = properties.build().await {
+            if let Ok(name) = zbus::names::InterfaceName::try_from("org.bluez.Adapter1") {
+                if let Ok(all) = proxy.get_all(name).await {
+                    let mut shown: Vec<String> = ["Address", "Alias", "Powered", "Pairable", "PairableTimeout", "Discoverable", "Roles"]
+                        .iter()
+                        .filter_map(|key| all.get(*key).map(|v| format!("{key}={v:?}")))
+                        .collect();
+                    shown.sort();
+                    log_line(&log_path, &format!("adapter {}: {}", adapter.as_str(), shown.join(" ")));
+                }
+            }
+        }
+    }
     connection
         .call_method(
             Some("org.bluez"),
@@ -469,6 +522,34 @@ async fn serve() -> Result<(Connection, HashMap<u8, (OwnedObjectPath, Arc<Atomic
         )
         .await
         .map_err(bus)?;
+    // BlueZ ends pairability after PairableTimeout, and then the kernel refuses
+    // a phone before any agent hears of it. A mirror that starts makes the
+    // adapter pairable again, for that timeout.
+    let watch = connection.clone();
+    let at = adapter.clone();
+    tokio::spawn(async move {
+        let mut was = false;
+        loop {
+            let now = pairing.load(Ordering::Relaxed);
+            if now && !was {
+                let set = watch
+                    .call_method(
+                        Some("org.bluez"),
+                        at.as_str(),
+                        Some("org.freedesktop.DBus.Properties"),
+                        "Set",
+                        &("org.bluez.Adapter1", "Pairable", Variant::from(true)),
+                    )
+                    .await;
+                log_line(
+                    &log_path,
+                    &format!("mirror started: pairable {}", set.map(|_| "on".to_string()).unwrap_or_else(|e| format!("not set ({})", bus(e).message))),
+                );
+            }
+            was = now;
+            tokio::time::sleep(Duration::from_millis(500)).await;
+        }
+    });
     Ok((connection, reports))
 }
 

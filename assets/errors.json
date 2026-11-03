@@ -157,7 +157,7 @@
   },
   "bluetooth_not_paired": {
     "cause": "The iPhone is not paired with Tomacco's Bluetooth pointer, or is not listening to it.",
-    "remedy": "On the iPhone, pair with Tomacco under Settings > Bluetooth within two minutes of the session start, and turn on Settings > Accessibility > Touch > AssistiveTouch."
+    "remedy": "While the iPhone mirrors to Tomacco, pair it under Settings > Bluetooth (it may show the computer's Bluetooth name), and turn on Settings > Accessibility > Touch > AssistiveTouch."
   },
   "budget_exceeded": {
     "cause": "Outside the performance budget: …",

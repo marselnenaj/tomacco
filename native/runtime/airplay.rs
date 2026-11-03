@@ -77,6 +77,9 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
     // another receiver holds.
     let pid = process.0.id();
     let watched = shared.clone();
+    // Bluetooth pairing stays open while a phone mirrors here.
+    let pairing = Arc::new(AtomicBool::new(false));
+    let mirror_pairing = pairing.clone();
     let reason_log = log.clone();
     thread::spawn(move || {
         // UxPlay's video pipeline connects when it starts, before any phone
@@ -109,6 +112,7 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
                 mirrored = now;
                 let mut hub = watched.lock().unwrap();
                 let _ = hub.update(json!({"mirroring":now}));
+                mirror_pairing.store(now, Ordering::Relaxed);
                 // A mirror that starts with no window showing this session opens
                 // the floating device window, as on a Mac.
                 if now && hub.viewers() == 0 {
@@ -146,7 +150,7 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
         }
     });
     // Input goes over Bluetooth; without it the mirror still shows.
-    let hid = match bluetooth::Hid::start() {
+    let hid = match bluetooth::Hid::start(pairing, dir.join("bluetooth.log")) {
         Ok(hid) => {
             shared.lock().unwrap().update(json!({"bluetooth":{"status":"advertising","name":bluetooth::NAME}}))?;
             Some(hid)
@@ -319,7 +323,7 @@ fn flags(unit: &[u8]) -> (bool, bool) {
     }
 }
 
-const NOT_PAIRED: &str = "Pair the iPhone with Tomacco under Settings > Bluetooth and turn on Settings > Accessibility > Touch > AssistiveTouch";
+const NOT_PAIRED: &str = "While the iPhone mirrors to Tomacco, pair it under Settings > Bluetooth and turn on Settings > Accessibility > Touch > AssistiveTouch";
 
 impl Airplay {
     /// The phone's screen in points, the scale of pointer moves.
@@ -419,7 +423,9 @@ impl Device for Airplay {
             "key" => {
                 let hid = self.hid.as_mut().unwrap();
                 match s(a, "key") {
-                    "home" => hid.consumer(0x0223)?,
+                    // iOS goes home on Command-H from a hardware keyboard; it
+                    // ignores the consumer Home key.
+                    "home" => hid.keys(0x08, 0x0B)?,
                     "volume_up" => hid.consumer(0x00E9)?,
                     "volume_down" => hid.consumer(0x00EA)?,
                     "enter" => hid.keys(0, 0x28)?,
@@ -434,7 +440,9 @@ impl Device for Airplay {
                     other => return Err(err(format!("The Bluetooth keyboard has no {other} key"))),
                 }
             }
-            "text" => {
+            // fill taps the field first elsewhere; here the field the pointer
+            // last pressed has the focus, so it types like text.
+            "text" | "fill" => {
                 let hid = self.hid.as_mut().unwrap();
                 let mut skipped = 0;
                 let mut ok = true;
