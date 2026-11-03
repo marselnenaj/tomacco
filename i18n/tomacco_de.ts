@@ -2888,6 +2888,14 @@ xtool setup</translation>
         <translation>Bild wird verbunden …</translation>
     </message>
     <message>
+        <source>Not mirroring</source>
+        <translation>Keine Synchronisierung</translation>
+    </message>
+    <message>
+        <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
+        <translation>Öffne auf dem iPhone das Kontrollzentrum, tippe auf ‚Bildschirmsynchronisierung‘ und wähle %1.</translation>
+    </message>
+    <message>
         <source>Connecting…</source>
         <translation>Verbindet …</translation>
     </message>

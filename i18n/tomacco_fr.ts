@@ -2888,6 +2888,14 @@ xtool setup</translation>
         <translation>Connexion de l'image…</translation>
     </message>
     <message>
+        <source>Not mirroring</source>
+        <translation>Pas de recopie</translation>
+    </message>
+    <message>
+        <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
+        <translation>Sur l'iPhone, ouvrez le centre de contrôle, touchez « Recopie de l'écran » et choisissez %1.</translation>
+    </message>
+    <message>
         <source>Connecting…</source>
         <translation>Connexion…</translation>
     </message>

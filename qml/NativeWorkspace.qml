@@ -893,6 +893,20 @@ Rectangle {
                                         }
                                     }
                                     NativeView {id:display;parent:nativeFrame.screen;objectName:"nativeDisplay";anchors.fill:parent;session:view.live;onInputError:message=>{view.notice=message;view.failed=true}}
+                                    // An AirPlay receiver keeps the last picture when the phone stops
+                                    // mirroring; the screen says so instead of showing a frozen one.
+                                    Rectangle {
+                                        objectName:"airplayPaused"
+                                        parent:nativeFrame.screen;anchors.fill:parent;z:2;color:Theme.deviceScreen
+                                        visible:!view.pending && view.live.transport==="wifi/airplay" && view.live.mirroring===false
+                                        MouseArea {anchors.fill:parent;onPressed:if(view.detached)deviceWindow.move()}
+                                        Column {
+                                            anchors.centerIn:parent;width:parent.width-Theme.gapXxxl;spacing:Theme.gapMd
+                                            BrandMark {anchors.horizontalCenter:parent.horizontalCenter;size:Theme.gapXxxl*3}
+                                            StudioHeading {width:parent.width;horizontalAlignment:Text.AlignHCenter;text:qsTr("Not mirroring");color:Theme.deviceScreenText;size:Theme.fontDisplay;wrapMode:Text.NoWrap;elide:Text.ElideRight}
+                                            Text {width:parent.width;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap;text:qsTr("On the iPhone, open Control Center, tap Screen Mirroring and choose %1.").arg(view.live.receiver || "Tomacco");color:Theme.deviceScreenMuted;font.pixelSize:Theme.fontBody}
+                                        }
+                                    }
                                     // Touches and coordinates, for writing UI tests. Only passive
                                     // handlers: every press still reaches the display below.
                                     Item {

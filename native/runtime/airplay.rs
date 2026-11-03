@@ -56,6 +56,8 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
             // An iPhone Air's own panel; the phone fits its picture into this size.
             "-s",
             "1260x2736@60",
+            // The phone's own reports of the frame rate it sends, in the log.
+            "-FPSdata",
             "-vrtp",
             &pipeline,
         ]),
@@ -71,6 +73,7 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
         // UxPlay's video pipeline connects when it starts, before any phone
         // does: who mirrors is known only once its log names the phone.
         let mut seen = String::new();
+        let mut mirrored = false;
         while Path::new(&format!("/proc/{pid}")).exists()
             && !fs::read_to_string(format!("/proc/{pid}/stat"))
                 .unwrap_or_default()
@@ -79,8 +82,8 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
             if watched.lock().unwrap().stopped.load(Ordering::Relaxed) {
                 return;
             }
-            let latest = fs::read_to_string(&reason_log)
-                .unwrap_or_default()
+            let text = fs::read_to_string(&reason_log).unwrap_or_default();
+            let latest = text
                 .lines()
                 .rev()
                 .find(|l| l.contains("connection request from "))
@@ -90,6 +93,13 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
                 seen = latest;
                 let _ = watched.lock().unwrap().update(identify(&reason_log));
             }
+            // UxPlay keeps its video pipeline, and so this socket, open when the
+            // phone stops mirroring: only its log tells.
+            let now = mirroring(&text);
+            if now != mirrored {
+                mirrored = now;
+                let _ = watched.lock().unwrap().update(json!({"mirroring":now}));
+            }
             thread::sleep(Duration::from_millis(500));
         }
         let mut hub = watched.lock().unwrap();
@@ -98,14 +108,13 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
     });
     let hub = shared.clone();
     thread::spawn(move || {
-        // Each mirroring run from the phone is one connection; stopping and
-        // starting Screen Mirroring again connects anew.
+        // UxPlay's pipeline connects once and stays through mirroring runs;
+        // should it reconnect, the stream starts again with parameter sets.
         for stream in listener.incoming() {
             if hub.lock().unwrap().stopped.load(Ordering::Relaxed) {
                 break;
             }
             let Ok(mut stream) = stream else { continue };
-            let _ = hub.lock().unwrap().update(identify(&log));
             let mut units = Units::default();
             let mut buffer = vec![0; 256 * 1024];
             loop {
@@ -119,7 +128,6 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
                     }
                 }
             }
-            let _ = hub.lock().unwrap().update(json!({"mirroring":false}));
         }
     });
     Ok(Airplay { _process: process })
@@ -130,7 +138,7 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
 fn identify(log: &Path) -> Value {
     let text = fs::read_to_string(log).unwrap_or_default();
     // Another phone after this one must not keep this one's frame.
-    let mut found = json!({"mirroring":true,"name":"iPhone (AirPlay)","client":null,"product_type":null,"profile_id":null,"profile_source":null});
+    let mut found = json!({"name":"iPhone (AirPlay)","client":null,"product_type":null,"profile_id":null,"profile_source":null});
     let line = text
         .lines()
         .rev()
@@ -157,6 +165,23 @@ fn identify(log: &Path) -> Value {
     found
 }
 
+/// Whether a phone mirrors now: the last start or stop UxPlay logged.
+fn mirroring(log: &str) -> bool {
+    log.lines()
+        .rev()
+        .find_map(|line| {
+            if line.contains("raop_rtp_mirror starting mirroring") {
+                Some(true)
+            } else if line.contains("raop_rtp_mirror->running is no longer true")
+                || line.starts_with("Connection closed on socket")
+            {
+                Some(false)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(false)
+}
 /// Why UxPlay ended, from its last error line.
 fn exit_reason(log: &Path) -> String {
     let text = fs::read_to_string(log).unwrap_or_default();
@@ -276,6 +301,11 @@ mod tests {
         assert_eq!(other["name"], "iPhone (AirPlay)");
         fs::write(&log, "using network ports UDP 7011\n*** ERROR: Error initialising socket 98\n").unwrap();
         assert!(exit_reason(&log).contains("ports are in use"));
+        assert!(!mirroring(""));
+        assert!(mirroring("raop_rtp_mirror starting mirroring\nBegin streaming to GStreamer video pipeline\n"));
+        assert!(!mirroring("raop_rtp_mirror starting mirroring\nraop_rtp_mirror->running is no longer true\n"));
+        assert!(!mirroring("raop_rtp_mirror starting mirroring\nConnection closed on socket 25\n"));
+        assert!(mirroring("Connection closed on socket 25\nAccepted IPv4 client on socket 31, port 7000\nraop_rtp_mirror starting mirroring\n"));
         fs::write(&log, "*** ERROR: something else\n").unwrap();
         assert_eq!(exit_reason(&log), "UxPlay stopped: ERROR: something else");
     }
