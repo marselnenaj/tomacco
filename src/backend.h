@@ -73,6 +73,14 @@ public:
     QStringList recentProjects() const;
     // Puts a project folder at the front of the recent ones (at most eight are kept).
     Q_INVOKABLE void rememberProject(const QString &path);
+    // Keeps a window above the others or lets it go. Wayland has no request
+    // for this, so under Hyprland the window is floated and pinned through
+    // hyprctl; elsewhere Qt's WindowStaysOnTopHint applies and this does
+    // nothing. Returns whether Hyprland's pin now matches `on`.
+    Q_INVOKABLE bool keepOnTop(QObject *window, bool on);
+    // The hyprctl client (address, floating, pinned) of this process with
+    // `title`, from `hyprctl -j clients` output; empty address when none.
+    static QVariantMap hyprlandClient(const QByteArray &clients, qint64 pid, const QString &title);
     Q_INVOKABLE void forgetProject(const QString &path);
     // The folder a dropped path names, to open as a project: its canonical
     // path when it is a directory and no app bundle, otherwise an empty string.

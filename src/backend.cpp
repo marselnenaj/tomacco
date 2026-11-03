@@ -28,6 +28,7 @@
 #include <QTcpSocket>
 #include <QTimer>
 #include <QTranslator>
+#include <QWindow>
 #include <algorithm>
 #include <cstdio>
 #include <memory>
@@ -383,6 +384,37 @@ QStringList Backend::recentProjects() const {
     for(const auto &path: m_settings.value("recentProjects").toStringList())
         if(QFileInfo(path).isDir()) existing.append(path);
     return existing;
+}
+QVariantMap Backend::hyprlandClient(const QByteArray &clients, qint64 pid, const QString &title) {
+    for(const auto &value:QJsonDocument::fromJson(clients).array()) {
+        const auto client=value.toObject();
+        if(client.value(QStringLiteral("pid")).toInteger()!=pid || client.value(QStringLiteral("title")).toString()!=title) continue;
+        return {{QStringLiteral("address"),client.value(QStringLiteral("address")).toString()},
+                {QStringLiteral("floating"),client.value(QStringLiteral("floating")).toBool()},
+                {QStringLiteral("pinned"),client.value(QStringLiteral("pinned")).toBool()}};
+    }
+    return {{QStringLiteral("address"),QString()}};
+}
+bool Backend::keepOnTop(QObject *object, bool on) {
+    auto *window=qobject_cast<QWindow *>(object);
+    if(!window || qEnvironmentVariableIsEmpty("HYPRLAND_INSTANCE_SIGNATURE")) return false;
+    const auto hyprctl=QStandardPaths::findExecutable(QStringLiteral("hyprctl"));
+    if(hyprctl.isEmpty()) return false;
+    const auto run=[&](const QStringList &arguments) {
+        QProcess process;
+        process.setStandardInputFile(QProcess::nullDevice());
+        process.start(hyprctl,arguments);
+        if(!process.waitForFinished(1500)) { process.kill(); process.waitForFinished(500); return QByteArray(); }
+        return process.exitStatus()==QProcess::NormalExit && process.exitCode()==0 ? process.readAllStandardOutput() : QByteArray();
+    };
+    const auto client=hyprlandClient(run({QStringLiteral("-j"),QStringLiteral("clients")}),QCoreApplication::applicationPid(),window->title());
+    const auto address=client.value(QStringLiteral("address")).toString();
+    if(!address.startsWith(QLatin1String("0x"))) return false;
+    const auto target=QStringLiteral("address:")+address;
+    // Hyprland pins floating windows only.
+    if(on && !client.value(QStringLiteral("floating")).toBool()) run({QStringLiteral("dispatch"),QStringLiteral("setfloating"),target});
+    if(client.value(QStringLiteral("pinned")).toBool()!=on) run({QStringLiteral("dispatch"),QStringLiteral("pin"),target});
+    return hyprlandClient(run({QStringLiteral("-j"),QStringLiteral("clients")}),QCoreApplication::applicationPid(),window->title()).value(QStringLiteral("pinned")).toBool()==on;
 }
 void Backend::rememberProject(const QString &path) {
     const QFileInfo folder(path);

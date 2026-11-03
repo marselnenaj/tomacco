@@ -257,7 +257,9 @@ Rectangle {
     Timer {interval:300000;running:view.pendingWanted;onTriggered:view.givePendingUp(qsTr("The device did not become ready in time."))}
     property real detachedZoom: 0
     onDetachedChanged: if(detached && detachedZoom<=0)deviceWindow.setZoom(Math.min(1,deviceWindow.fitZoom))
-    Settings {category:"NativeDisplay";property alias showDeviceFrame:view.showDeviceFrame;property alias detachedZoom:view.detachedZoom;property alias showTouches:view.showTouches}
+    Settings {category:"NativeDisplay";property alias showDeviceFrame:view.showDeviceFrame;property alias detachedZoom:view.detachedZoom;property alias showTouches:view.showTouches;property alias windowOnTop:view.windowOnTop}
+    // The detached device stays above other windows, the pin on its rail.
+    property bool windowOnTop: false
     // A mark where the pointer touches the device and the pointer's position in
     // the device's pixels and as fractions (what tomaccoctl's touch input takes).
     property bool showTouches: false
@@ -392,6 +394,9 @@ Rectangle {
         zoom:view.detachedZoom>0?view.detachedZoom:1
         onZoomChanged:view.detachedZoom=zoom
         caption:view.pending?view.pendingLabel:(view.liveDevice.name || view.live.device || "")
+        showPin:true
+        stayOnTop:view.windowOnTop
+        onStayOnTopChanged:view.windowOnTop=stayOnTop
         showBack:view.live.platform!=="ios";showRotate:true
         showFlip:nativeFrame.framed && !!nativeFrame.rear && nativeFrame.measured
         onDockRequested:{view.showMainWindow();view.detached=false}

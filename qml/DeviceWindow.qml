@@ -25,8 +25,13 @@ Window {
     property bool controlsEnabled: true
     property bool forwardHardwareKeys: false
     // Kept above other windows; offered on the rail where showPin is set.
+    // Qt's hint covers X11; Wayland has no such request, so under Hyprland the
+    // backend floats and pins the window once the compositor has mapped it.
     property bool stayOnTop: false
     property bool showPin: false
+    onStayOnTopChanged: pinTimer.restart()
+    onVisibleChanged: if(visible && stayOnTop)pinTimer.restart()
+    Timer {id:pinTimer;interval:250;onTriggered:if(win.visible)Studio.keepOnTop(win,win.stayOnTop)}
     // More rail buttons the device's owner offers, between its own buttons
     // and the zoom: {name, icon, tip}, each answered by extraRequested(name).
     // The names in extraSelected show as switched on.

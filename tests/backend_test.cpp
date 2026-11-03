@@ -68,6 +68,18 @@ private slots:
         // Nor the real settings.
         qputenv("XDG_CONFIG_HOME",(isolatedData.path()+"/config").toUtf8());
     }
+    void theHyprlandClientIsThisProcesssWindowWithThatTitle() {
+        const QByteArray clients=R"([
+            {"address":"0x1","pid":42,"title":"Tomacco","floating":false,"pinned":false},
+            {"address":"0x2","pid":7,"title":"Tomacco – iPhone Air","floating":true,"pinned":true},
+            {"address":"0x3","pid":42,"title":"Tomacco – iPhone Air","floating":true,"pinned":false}])";
+        const auto mine=Backend::hyprlandClient(clients,42,QStringLiteral("Tomacco – iPhone Air"));
+        QCOMPARE(mine.value("address").toString(),QStringLiteral("0x3"));
+        QCOMPARE(mine.value("floating").toBool(),true);
+        QCOMPARE(mine.value("pinned").toBool(),false);
+        QVERIFY(Backend::hyprlandClient(clients,42,QStringLiteral("Other")).value("address").toString().isEmpty());
+        QVERIFY(Backend::hyprlandClient("not json",42,QStringLiteral("Tomacco")).value("address").toString().isEmpty());
+    }
     void droppedFoldersOpenAsProjectsButFilesAndAppsDoNot() {
         QTemporaryDir root; QVERIFY(root.isValid());
         QVERIFY(QDir(root.path()).mkpath("app"));
