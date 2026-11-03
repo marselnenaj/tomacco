@@ -98,7 +98,13 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
             let now = mirroring(&text);
             if now != mirrored {
                 mirrored = now;
-                let _ = watched.lock().unwrap().update(json!({"mirroring":now}));
+                let mut hub = watched.lock().unwrap();
+                let _ = hub.update(json!({"mirroring":now}));
+                // A mirror that starts with no window showing this session opens
+                // the floating device window, as on a Mac.
+                if now && hub.viewers() == 0 {
+                    open_window(s(&hub.state, "session"));
+                }
             }
             thread::sleep(Duration::from_millis(500));
         }
@@ -165,6 +171,38 @@ fn identify(log: &Path) -> Value {
     found
 }
 
+/// Opens the desktop's floating device window on this session, apart from
+/// the session: closing the window leaves the receiver running.
+fn open_window(session: &str) {
+    use std::os::unix::process::CommandExt;
+    if session.len() != 32 || !session.bytes().all(|c| c.is_ascii_hexdigit()) {
+        return;
+    }
+    let Ok(own) = crate::core::own_executable() else {
+        return;
+    };
+    let desktop = PathBuf::from(own).with_file_name("tomacco");
+    if !desktop.is_file() {
+        return;
+    }
+    let mut command = std::process::Command::new(desktop);
+    command
+        .args(["--workspace", "runtime", "--device-only", "--session", session])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+    unsafe {
+        command.pre_exec(|| {
+            libc::setsid();
+            Ok(())
+        });
+    }
+    if let Ok(mut child) = command.spawn() {
+        thread::spawn(move || {
+            let _ = child.wait();
+        });
+    }
+}
 /// Whether a phone mirrors now: the last start or stop UxPlay logged.
 fn mirroring(log: &str) -> bool {
     log.lines()

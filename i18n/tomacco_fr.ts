@@ -5680,6 +5680,16 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
 </translation>
     </message>
     <message>
+        <source>Show the live session with this ID, from tomaccoctl call runtime.list</source>
+        <translation>Afficher la session en direct portant cet identifiant, d'après tomaccoctl call runtime.list</translation>
+    </message>
+    <message>
+        <source>Invalid session ID.
+</source>
+        <translation>Identifiant de session non valide.
+</translation>
+    </message>
+    <message>
         <source>Unknown workspace. See --help for the available workspaces.
 </source>
         <translation>Espace de travail inconnu. Voir --help pour les espaces de travail disponibles.

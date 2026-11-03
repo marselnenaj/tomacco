@@ -37,8 +37,28 @@ pub struct Hub {
     cached_bytes: usize,
     receiving_config: bool,
     cached_key: bool,
+    /// Desktop windows reading the video now.
+    viewers: Arc<AtomicUsize>,
+}
+/// Whether the other end of a viewer's socket has closed it. Viewers never
+/// write, so a readable socket with nothing to read is a closed one.
+fn peer_closed(socket: &std::os::unix::net::UnixStream) -> bool {
+    use std::os::fd::AsRawFd;
+    let mut byte = 0u8;
+    let read = unsafe {
+        libc::recv(
+            socket.as_raw_fd(),
+            (&mut byte as *mut u8).cast(),
+            1,
+            libc::MSG_PEEK | libc::MSG_DONTWAIT,
+        )
+    };
+    read == 0
 }
 impl Hub {
+    pub fn viewers(&self) -> usize {
+        self.viewers.load(Ordering::Relaxed)
+    }
     pub fn update(&mut self, patch: Value) -> Result<()> {
         for (key, value) in patch.as_object().unwrap() {
             self.state[key] = value.clone();
@@ -440,6 +460,7 @@ pub fn worker(id: &str) -> Result<()> {
         cached_bytes: 0,
         receiving_config: false,
         cached_key: false,
+        viewers: Arc::new(AtomicUsize::new(0)),
     }));
     let listeners = (|| -> Result<_> {
         let video = UnixListener::bind(s(&state, "video_socket"))?;
@@ -482,8 +503,10 @@ pub fn worker(id: &str) -> Result<()> {
                         let _ = tx.try_send(packet.clone());
                     }
                     h.clients.push(tx);
+                    h.viewers.fetch_add(1, Ordering::Relaxed);
                 }
                 let stopped = stopping.clone();
+                let viewers = hub.lock().unwrap().viewers.clone();
                 thread::spawn(move || {
                     let _ = socket.set_write_timeout(Some(Duration::from_secs(2)));
                     while !stopped.load(Ordering::Relaxed) {
@@ -498,9 +521,12 @@ pub fn worker(id: &str) -> Result<()> {
                                 }
                             }
                             Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                            // A viewer that left while no picture came is gone too.
+                            Err(mpsc::RecvTimeoutError::Timeout) if peer_closed(&socket) => break,
                             Err(mpsc::RecvTimeoutError::Timeout) => (),
                         }
                     }
+                    viewers.fetch_sub(1, Ordering::Relaxed);
                 });
             }
         }

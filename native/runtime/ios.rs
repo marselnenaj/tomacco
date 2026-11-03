@@ -662,6 +662,7 @@ mod tests {
             cached_bytes: 0,
             receiving_config: false,
             cached_key: false,
+            viewers: Default::default(),
         }));
         let a =
             json!({"device":"11111111-2222-3333-4444-555555555555","fps":60,"bit_rate":12000000});

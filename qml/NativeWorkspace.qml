@@ -79,6 +79,8 @@ Rectangle {
     property bool failed: false
     property bool connecting: false
     property bool autoAttach: true
+    // A session the command line asked for (--session), shown once runtime.list names it.
+    property string wantedSession: typeof initialSession==="string" ? initialSession : ""
     property bool showDeviceFrame: true
     property bool forwardAudio: true
     property string audioPendingSession: ""
@@ -111,6 +113,9 @@ Rectangle {
     // grace period, so a reconnecting stream does not close it.
     Timer {id:soloGrace;interval:4000;onTriggered:if(view.solo && !view.deviceWindowVisible)view.quitApp()}
     onDeviceWindowVisibleChanged: if(!deviceWindowVisible && solo)soloGrace.restart()
+    // A floating AirPlay window goes when the phone stops mirroring; the next
+    // mirror opens it again. A short pause rides out a quick restart.
+    Timer {interval:3000;running:view.solo && view.live.transport==="wifi/airplay" && view.live.mirroring===false;onTriggered:view.closeSolo()}
     property bool quitting: false
     // Bounds the wait for the session to stop before the app ends.
     Timer {id:quitTimer;interval:2500;onTriggered:view.quitApp()}
@@ -178,7 +183,9 @@ Rectangle {
     function closeSolo() {
         if(workspace.hasUnsaved()){showMainWindow();detached=false;return}
         clearPending()
-        if(live.session){request("runtime.stop",{session:live.session},{quit:true,quiet:true});quitTimer.start()}else quitApp()
+        // An AirPlay receiver outlives its window: it waits for the next mirror,
+        // which opens the window again.
+        if(live.session && live.transport!=="wifi/airplay"){request("runtime.stop",{session:live.session},{quit:true,quiet:true});quitTimer.start()}else quitApp()
     }
     // A device that is not live yet: an emulator that is still booting (by
     // AVD name) or a known device that is being connected (by id). Its window
@@ -550,6 +557,18 @@ Rectangle {
             if(op==="runtime.start")view.attach(r)
             if(op==="runtime.list") {
                 view.sessions=r;view.sessionsSerial+=1
+                // --session: show that session at once, whichever platform and target it has.
+                if(view.wantedSession) {
+                    let wanted=r.find(x=>x.session===view.wantedSession && x.status==="connected")
+                    if(wanted) {
+                        view.wantedSession=""
+                        if(view.platform!==wanted.platform)view.choosePlatform(wanted.platform)
+                        if(wanted.platform==="ios")view.chooseAppleTarget(wanted.remote?"simulator":"device")
+                        if(!view.targets.some(d=>d.id===wanted.device && d.platform===wanted.platform))view.targets=view.targets.concat([{id:wanted.device,name:wanted.name || wanted.device,platform:wanted.platform,kind:"device"}])
+                        view.target=wanted.device;view.autoAttach=true;view.attach(wanted)
+                        if(view.solo)view.detached=true
+                    }
+                }
                 let active=r.find(x=>x.session===view.live.session)
                 if(active && ["failed","disconnected"].indexOf(active.status)>=0 && view.live.status!==active.status){notifications.add("device",active.status==="failed"?"failed":"warn",(view.targets.find(d=>d.id===active.device) || {}).name || active.device,active.error || qsTr("Session ended"),{platform:active.platform,device:active.device});view.live=active;view.notice=active.error || qsTr("Session ended");view.failed=active.status==="failed";view.pendingLaunch=null}
                 else if(active && !view.audioPending)view.live=Object.assign({},view.live,{audio:active.audio})

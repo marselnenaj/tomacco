@@ -2,6 +2,7 @@
 #include "control.h"
 #include "nativeview.h"
 #include <QCommandLineParser>
+#include <QRegularExpression>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -89,6 +90,7 @@ int main(int argc,char **argv) {
     parser.addOption({"orientation",QCoreApplication::translate("main","Orientation: portrait or landscape"),"orientation","portrait"});
     parser.addOption({"fold",QCoreApplication::translate("main","Duo display: closed or open"),"state","closed"});
     parser.addOption({"device-only",QCoreApplication::translate("main","Show only the detached device window; the main window stays hidden")});
+    parser.addOption({"session",QCoreApplication::translate("main","Show the live session with this ID, from tomaccoctl call runtime.list"),"id"});
     parser.addOption({"capture",QCoreApplication::translate("main","Save the window as a PNG for visual review and quit"),"path"});
     parser.addOption({"smoke-test",QCoreApplication::translate("main","Run the preview's interactive checks")});
     parser.process(app);
@@ -125,6 +127,11 @@ int main(int argc,char **argv) {
     engine.rootContext()->setContextProperty("captureMode",parser.isSet("capture"));
     engine.rootContext()->setContextProperty("initialDevice",parser.value("device"));
     engine.rootContext()->setContextProperty("initialDeviceOnly",parser.isSet("device-only"));
+    static const QRegularExpression sessionId(QStringLiteral("^[a-f0-9]{32}$"));
+    if(parser.isSet("session") && !sessionId.match(parser.value("session")).hasMatch()) {
+        fputs(qPrintable(QCoreApplication::translate("main","Invalid session ID.\n")),stderr); return 2;
+    }
+    engine.rootContext()->setContextProperty("initialSession",parser.value("session"));
     engine.rootContext()->setContextProperty("initialLandscape",parser.value("orientation")=="landscape");
     engine.rootContext()->setContextProperty("initialUnfolded",parser.value("fold")=="open");
     QObject::connect(&engine,&QQmlApplicationEngine::objectCreationFailed,&app,[]{QCoreApplication::exit(1);},Qt::QueuedConnection);
