@@ -182,6 +182,8 @@ void NativeView::setSession(const QVariantMap &session) {
     m_session=session;m_inputs.clear();m_inputTimeout.stop();{QSignalBlocker block(m_control);m_control.abort();}m_pressed=false;m_hasTouch=false;
     m_image={};m_frames=0;m_previousFrames=0;m_fps=0;m_dirty=true;m_error.clear();
     auto socket=session.value("video_socket").toString();m_state=socket.isEmpty()?"disconnected":"connecting";
+    // A Bluetooth pointer follows the mouse without a button pressed too.
+    setAcceptHoverEvents(pointerFollowsHover());
     const auto generation=++m_generation;
     auto format=session.value("codec").toString();
     bool framed=session.value("packetization")=="access-unit" || session.value("transport").toString().startsWith("adb/scrcpy");
@@ -207,7 +209,8 @@ void NativeView::sendInput(QVariantMap arguments) {
     arguments["session"]=m_session.value("session");
     if(!m_image.isNull()){arguments["width"]=m_image.width();arguments["height"]=m_image.height();}
     auto request=QJsonObject::fromVariantMap(arguments);
-    if(arguments.value("phase")=="move" && m_inputs.size()>1 && m_inputs.last().value("phase")=="move")m_inputs.last()=request;
+    const auto phase=arguments.value("phase").toString();
+    if((phase=="move" || phase=="hover") && m_inputs.size()>1 && m_inputs.last().value("phase")==phase)m_inputs.last()=request;
     else if(m_inputs.size()<256)m_inputs.enqueue(request);
     else {emit inputError(QCoreApplication::translate("NativeView","Too many pending inputs"));return;}
     if(m_inputs.size()==1 && !m_inputTimeout.isActive())nextInput();
@@ -233,6 +236,17 @@ void NativeView::mousePressEvent(QMouseEvent *e) {if(!contentRect().contains(e->
 void NativeView::mouseMoveEvent(QMouseEvent *e) {if(m_pressed)touch(e->position(),"move");e->accept();}
 void NativeView::mouseReleaseEvent(QMouseEvent *e) {if(m_pressed)touch(e->position(),"up");m_pressed=false;e->accept();}
 void NativeView::mouseUngrabEvent() {if(m_pressed)touch(m_lastPoint,"cancel");m_pressed=false;}
+bool NativeView::pointerFollowsHover() const {return m_session.value("transport")=="wifi/airplay";}
+void NativeView::hoverMoveEvent(QHoverEvent *e) {
+    if(pointerFollowsHover() && !m_pressed && contentRect().contains(e->position()))touch(e->position(),"hover");
+    e->accept();
+}
+// Leaving the picture without a button: the phone's pointer stays where it is
+// and the next entry moves it from there, not by the jump across the window.
+void NativeView::hoverLeaveEvent(QHoverEvent *e) {
+    if(pointerFollowsHover() && !m_pressed && m_hasTouch)touch(m_lastPoint,"cancel");
+    e->accept();
+}
 void NativeView::keyPressEvent(QKeyEvent *e) {
     static const QHash<int,QString> keys={{Qt::Key_Return,"enter"},{Qt::Key_Enter,"enter"},{Qt::Key_Backspace,"backspace"},{Qt::Key_Delete,"delete"},{Qt::Key_Escape,"escape"},{Qt::Key_Tab,"tab"},{Qt::Key_Left,"left"},{Qt::Key_Right,"right"},{Qt::Key_Up,"up"},{Qt::Key_Down,"down"},{Qt::Key_Home,"home"}};
     if(keys.contains(e->key()))sendInput({{"action","key"},{"key",keys[e->key()]}});

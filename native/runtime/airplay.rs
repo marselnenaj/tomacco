@@ -23,7 +23,16 @@ pub fn validate(_a: &Value) -> Result<()> {
 
 pub struct Airplay {
     _process: ManagedProcess,
+    shared: Shared,
+    /// The Bluetooth pointer and keyboard that carry input, when BlueZ serves them.
+    hid: Option<bluetooth::Hid>,
+    /// The last pointer position from the desktop, 0..1 of the picture.
+    last: Option<(f64, f64)>,
+    held: u8,
 }
+/// Moves on the desktop scale to the phone's pointer: one picture width is
+/// about the phone's width in points, before iOS's own acceleration.
+const POINTER_SPEED: f64 = 1.0;
 
 pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
     validate(a)?;
@@ -136,7 +145,24 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
             }
         }
     });
-    Ok(Airplay { _process: process })
+    // Input goes over Bluetooth; without it the mirror still shows.
+    let hid = match bluetooth::Hid::start() {
+        Ok(hid) => {
+            shared.lock().unwrap().update(json!({"bluetooth":{"status":"advertising","name":bluetooth::NAME}}))?;
+            Some(hid)
+        }
+        Err(e) => {
+            shared.lock().unwrap().update(json!({"bluetooth":{"status":"unavailable","error":e.message}}))?;
+            None
+        }
+    };
+    Ok(Airplay {
+        _process: process,
+        shared,
+        hid,
+        last: None,
+        held: 0,
+    })
 }
 
 /// What UxPlay's log says about the phone that connected: its name and its
@@ -176,6 +202,18 @@ fn identify(log: &Path) -> Value {
 fn open_window(session: &str) {
     use std::os::unix::process::CommandExt;
     if session.len() != 32 || !session.bytes().all(|c| c.is_ascii_hexdigit()) {
+        return;
+    }
+    // A desktop that already runs takes the request: it shows the session in
+    // its floating window. A second desktop would only find it and quit.
+    if crate::preview::call(
+        "configure",
+        json!({"native":{"session":session,"mirror":true}}),
+        "main",
+        3,
+    )
+    .is_ok()
+    {
         return;
     }
     let Ok(own) = crate::core::own_executable() else {
@@ -281,11 +319,141 @@ fn flags(unit: &[u8]) -> (bool, bool) {
     }
 }
 
+const NOT_PAIRED: &str = "Pair the iPhone with Tomacco under Settings > Bluetooth and turn on Settings > Accessibility > Touch > AssistiveTouch";
+
+impl Airplay {
+    /// The phone's screen in points, the scale of pointer moves.
+    fn points(&self) -> (f64, f64) {
+        let hub = self.shared.lock().unwrap();
+        let profile = crate::catalog::builtin()
+            .as_array()
+            .and_then(|all| all.iter().find(|p| p["id"] == hub.state["profile_id"]).cloned());
+        match profile {
+            Some(p) => (n(&p, "width") as f64, n(&p, "height") as f64),
+            None => (420.0, 912.0),
+        }
+    }
+    /// The pointer move from the last desktop position to (x, y), in HID units.
+    fn step_to(&mut self, x: f64, y: f64) -> (i32, i32) {
+        let (w, h) = self.points();
+        let step = match self.last {
+            Some((lx, ly)) => (
+                ((x - lx) * w * POINTER_SPEED).round() as i32,
+                ((y - ly) * h * POINTER_SPEED).round() as i32,
+            ),
+            None => (0, 0),
+        };
+        self.last = Some((x.clamp(0.0, 1.0), y.clamp(0.0, 1.0)));
+        step
+    }
+    fn note(&self, hid_listening: bool) {
+        let mut hub = self.shared.lock().unwrap();
+        if hub.state["bluetooth"]["listening"].as_bool() != Some(hid_listening) {
+            let _ = hub.update(json!({"bluetooth":{"status":if hid_listening{"connected"}else{"advertising"},"name":bluetooth::NAME,"listening":hid_listening}}));
+        }
+    }
+}
+
 impl Device for Airplay {
-    fn input(&mut self, _a: &Value) -> Result {
-        Err(err(
-            "AirPlay mirroring carries no input; connect the iPhone by USB to control it",
-        ))
+    fn input(&mut self, a: &Value) -> Result {
+        let action = s(a, "action");
+        let listening = self.hid.as_ref().is_some_and(|hid| hid.listening());
+        if self.hid.is_some() {
+            self.note(listening);
+        }
+        // Pointer moves without a button reach nobody before pairing; that is
+        // no error, or every mouse move over the window would report it.
+        if !listening {
+            if action == "touch" && ["hover", "move", "cancel"].contains(&s(a, "phase")) {
+                self.step_to(number(a, "x"), number(a, "y"));
+                return Ok(json!({"delivered":false}));
+            }
+            if self.hid.is_none() {
+                let reason = s(&self.shared.lock().unwrap().state["bluetooth"], "error").to_owned();
+                return Err(err(format!("Control needs Bluetooth: {reason}")));
+            }
+            return Err(Error::new("bluetooth_not_paired", NOT_PAIRED));
+        }
+        let delivered = match action {
+            "touch" => {
+                let phase = s(a, "phase");
+                if phase == "cancel" && self.held == 0 {
+                    // The pointer left the window: the next entry starts afresh.
+                    self.last = None;
+                    return Ok(json!({"delivered":true}));
+                }
+                let (dx, dy) = self.step_to(number(a, "x"), number(a, "y"));
+                let buttons = match phase {
+                    "down" => 1,
+                    "up" | "cancel" => 0,
+                    _ => self.held,
+                };
+                let hid = self.hid.as_mut().unwrap();
+                let mut ok = hid.pointer(dx, dy, self.held)?;
+                if buttons != self.held {
+                    ok &= hid.pointer(0, 0, buttons)?;
+                    self.held = buttons;
+                }
+                ok
+            }
+            "tap" => {
+                let (dx, dy) = self.step_to(number(a, "x"), number(a, "y"));
+                let hid = self.hid.as_mut().unwrap();
+                hid.pointer(dx, dy, 0)? && hid.pointer(0, 0, 1)? && hid.pointer(0, 0, 0)?
+            }
+            "swipe" => {
+                let (dx, dy) = self.step_to(number(a, "x"), number(a, "y"));
+                let (ex, ey) = self.step_to(number(a, "x2"), number(a, "y2"));
+                let hid = self.hid.as_mut().unwrap();
+                let mut ok = hid.pointer(dx, dy, 0)? && hid.pointer(0, 0, 1)?;
+                let steps = 12;
+                for i in 0..steps {
+                    let (sx, sy) = (ex * (i + 1) / steps - ex * i / steps, ey * (i + 1) / steps - ey * i / steps);
+                    ok &= hid.pointer(sx, sy, 1)?;
+                    thread::sleep(Duration::from_millis(
+                        ((number(a, "duration").max(0.05) * 1000.0) as u64 / steps as u64).min(100),
+                    ));
+                }
+                ok && hid.pointer(0, 0, 0)?
+            }
+            "key" => {
+                let hid = self.hid.as_mut().unwrap();
+                match s(a, "key") {
+                    "home" => hid.consumer(0x0223)?,
+                    "volume_up" => hid.consumer(0x00E9)?,
+                    "volume_down" => hid.consumer(0x00EA)?,
+                    "enter" => hid.keys(0, 0x28)?,
+                    "escape" => hid.keys(0, 0x29)?,
+                    "backspace" => hid.keys(0, 0x2A)?,
+                    "tab" => hid.keys(0, 0x2B)?,
+                    "delete" => hid.keys(0, 0x4C)?,
+                    "right" => hid.keys(0, 0x4F)?,
+                    "left" => hid.keys(0, 0x50)?,
+                    "down" => hid.keys(0, 0x51)?,
+                    "up" => hid.keys(0, 0x52)?,
+                    other => return Err(err(format!("The Bluetooth keyboard has no {other} key"))),
+                }
+            }
+            "text" => {
+                let hid = self.hid.as_mut().unwrap();
+                let mut skipped = 0;
+                let mut ok = true;
+                for c in s(a, "text").chars() {
+                    match bluetooth::usage(c) {
+                        Some((key, shift)) => ok &= hid.keys(if shift { 0x02 } else { 0 }, key)?,
+                        None => skipped += 1,
+                    }
+                }
+                if skipped > 0 {
+                    return Ok(json!({"delivered":ok,"skipped_characters":skipped}));
+                }
+                ok
+            }
+            other => {
+                return Err(err(format!("AirPlay control has no {other} input")));
+            }
+        };
+        Ok(json!({"delivered":delivered}))
     }
     fn capture(&mut self, _path: &Path) -> Result {
         Err(err("Capture the AirPlay mirror from the desktop window"))

@@ -7,6 +7,10 @@
     "cause": "ADB did not allocate a forwarding port.",
     "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
   },
+  "airplay_runtime": {
+    "cause": "The AirPlay receiver for iPhone mirroring did not start or stopped, for example because another AirPlay receiver holds its ports.",
+    "remedy": "Read the session's error and uxplay.log, stop the other receiver (such as a UxPlay started by hand), open TCP 7000, 7001, 7100 and UDP 6000, 6001, 7011 to the local network, then start the session again."
+  },
   "ambiguous_selector": {
     "cause": "Selector matched … elements; refine it or specify index.",
     "remedy": "Add properties to the selector, or pass index."
@@ -146,6 +150,14 @@
   "binary_file": {
     "cause": "This file is not UTF-8 text.",
     "remedy": "files.read and files.write handle UTF-8 text only."
+  },
+  "bluetooth_input": {
+    "cause": "Tomacco could not serve its Bluetooth pointer and keyboard through BlueZ: no adapter, Bluetooth off, or BlueZ refused the device.",
+    "remedy": "Turn Bluetooth on (bluetoothctl power on), check that bluetooth.service runs, then start the session again."
+  },
+  "bluetooth_not_paired": {
+    "cause": "The iPhone is not paired with Tomacco's Bluetooth pointer, or is not listening to it.",
+    "remedy": "On the iPhone, pair with Tomacco under Settings > Bluetooth within two minutes of the session start, and turn on Settings > Accessibility > Touch > AssistiveTouch."
   },
   "budget_exceeded": {
     "cause": "Outside the performance budget: …",

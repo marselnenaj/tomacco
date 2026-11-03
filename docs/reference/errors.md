@@ -2,12 +2,13 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 483 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 486 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
 | `action_unsupported` | project.dependency_updates reads Gradle builds, pubspec.yaml, package.json dependencies and Package.resolved; this project has none. | Use an explicitly configured project task for framework-specific commands. |
 | `adb_forward` | ADB did not allocate a forwarding port. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
+| `airplay_runtime` | The AirPlay receiver for iPhone mirroring did not start or stopped, for example because another AirPlay receiver holds its ports. | Read the session's error and uxplay.log, stop the other receiver (such as a UxPlay started by hand), open TCP 7000, 7001, 7100 and UDP 6000, 6001, 7011 to the local network, then start the session again. |
 | `ambiguous_selector` | Selector matched … elements; refine it or specify index. | Add properties to the selector, or pass index. |
 | `analyzer_failed` | No analyser produced a result; see report.json. | Read the message and the job's log (job.logs); fix the cause and try again. |
 | `analyzer_output` | dart analyze printed no JSON. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
@@ -43,6 +44,8 @@ Every error code `tomaccoctl` returns, 483 codes, generated from `assets/errors.
 | `benchmark_module_missing` | The build has no Macrobenchmark module, or no module with the name given. | Add a com.android.test module that depends on androidx.benchmark:benchmark-macro-junit4, or create the app with project.create kind compose and performance:true. |
 | `benchmark_results_missing` | No benchmarkData.json from a Macrobenchmark run was found under the project. | Run profile.macrobenchmark first, then read its results with job_id. |
 | `binary_file` | This file is not UTF-8 text. | files.read and files.write handle UTF-8 text only. |
+| `bluetooth_input` | Tomacco could not serve its Bluetooth pointer and keyboard through BlueZ: no adapter, Bluetooth off, or BlueZ refused the device. | Turn Bluetooth on (bluetoothctl power on), check that bluetooth.service runs, then start the session again. |
+| `bluetooth_not_paired` | The iPhone is not paired with Tomacco's Bluetooth pointer, or is not listening to it. | On the iPhone, pair with Tomacco under Settings &gt; Bluetooth within two minutes of the session start, and turn on Settings &gt; Accessibility &gt; Touch &gt; AssistiveTouch. |
 | `budget_exceeded` | Outside the performance budget: … | Compare the report with its baseline (profile.compare) to find the regression, or raise the budget if it was intended. |
 | `builtin_profile` | The request was refused; the message says why. | Choose a new ID; built-in profiles cannot be replaced. |
 | `bundle_id_mismatch` | The built app is …, not … | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |

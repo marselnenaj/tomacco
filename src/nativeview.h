@@ -45,6 +45,9 @@ protected:
     void mouseMoveEvent(QMouseEvent *) override;
     void mouseReleaseEvent(QMouseEvent *) override;
     void mouseUngrabEvent() override;
+    void hoverMoveEvent(QHoverEvent *) override;
+    void hoverLeaveEvent(QHoverEvent *) override;
+    bool pointerFollowsHover() const;
     void keyPressEvent(QKeyEvent *) override;
     void wheelEvent(QWheelEvent *) override;
 private:

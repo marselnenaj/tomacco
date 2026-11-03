@@ -95,7 +95,7 @@ tomaccoctl call runtime.stop '{"session":"<session>"}'
 
 **Native input**
 
-Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate and gestures committed on touch-up; pinch/shake/hinge are unsupported there. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation.
+Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate and gestures committed on touch-up; pinch/shake/hinge are unsupported there. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work.
 
 Annotations: writes, not idempotent, open world.
 
@@ -103,7 +103,7 @@ Annotations: writes, not idempotent, open world.
 | --- | --- | --- | --- | --- |
 | `session` | string | yes |  | matching `^[a-f0-9]{32}$`; ID returned by runtime.start; separate from desktop preview sessions. |
 | `action` | string | yes |  | one of `touch`, `tap`, `swipe`, `key`, `text`, `fill`, `rotate`, `shake`, `pinch`, `hinge` |
-| `phase` | string |  |  | one of `down`, `move`, `up`, `cancel` |
+| `phase` | string |  |  | one of `down`, `move`, `up`, `cancel`, `hover` |
 | `x` | number |  |  | 0 to 1 |
 | `y` | number |  |  | 0 to 1 |
 | `x2` | number |  |  | 0 to 1 |

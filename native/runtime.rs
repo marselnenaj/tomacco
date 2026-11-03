@@ -23,6 +23,7 @@ use std::{
 pub mod airplay;
 pub mod android;
 pub mod audio;
+pub mod bluetooth;
 pub mod ios;
 pub mod iphone;
 pub type Shared = Arc<Mutex<Hub>>;
