@@ -1,6 +1,6 @@
 # Third-party notices
 
-Tomacco 1.0.0 is free software under the GNU General Public License,
+Tomacco is free software under the GNU General Public License,
 version 2 or (at your option) any later version (`GPL-2.0-or-later`, see
 [LICENSE](LICENSE)). This file lists the third-party components that are part
 of its source tree, compiled into its binaries, linked by them at run time, or
@@ -302,6 +302,16 @@ Apple IPSW URL to `prepare_ios_emulator.py --ipsw-url`, the recipe fetches
 components from that URL for you. Apple's license terms for that software
 apply to you. See [docs/legal.md](docs/legal.md).
 
+## Portable verification's seccomp profile
+
+`packaging/portable/verify-seccomp.json` is Moby's default seccomp profile from
+[moby/profiles, commit 4b8214f](https://github.com/moby/profiles/blob/4b8214fc4971e06172938a1f1554ccff6647ee80/seccomp/default.json),
+under Apache-2.0. Tomacco adds a rule allowing
+`clone`, `setns` and `unshare` so an unprivileged Qt WebEngine process can create its own
+sandbox namespaces inside the test container. The remaining Docker syscall restrictions
+are retained. The Apache-2.0 license text is reproduced below. This profile is used to test
+packages; it is not installed as a host security policy.
+
 ## Rust crates
 
 Licenses are SPDX expressions. Where a crate offers a choice ("MIT OR
@@ -337,6 +347,7 @@ follow the table.
 | ed25519 | 3.0.0 | Apache-2.0 OR MIT | Copyright (c) 2018-2023 RustCrypto Developers | https://github.com/RustCrypto/signatures |
 | ed25519-dalek | 3.0.0 | BSD-3-Clause | Copyright (c) 2017-2019 isis agora lovecruft | https://github.com/dalek-cryptography/curve25519-dalek/tree/main/ed25519-dalek |
 | either | 1.19.0 | MIT OR Apache-2.0 | Copyright (c) 2015 | https://github.com/rayon-rs/either |
+| endi | 1.1.1 | MIT | Authors: Zeeshan Ali Khan | https://github.com/zeenix/endi |
 | equivalent | 1.0.3 | Apache-2.0 OR MIT | Copyright (c) 2016--2023 | https://github.com/indexmap-rs/equivalent |
 | fallible-iterator | 0.3.0 | MIT/Apache-2.0 | Copyright (c) 2015 The rust-openssl-verify Developers | https://github.com/sfackler/rust-fallible-iterator |
 | fallible-streaming-iterator | 0.1.9 | MIT/Apache-2.0 | Copyright (c) 2016 The fallible-streaming-iterator Developers | https://github.com/sfackler/fallible-streaming-iterator |
@@ -347,6 +358,7 @@ follow the table.
 | foldhash | 0.2.0 | Zlib | Copyright (c) 2024 Orson Peters | https://github.com/orlp/foldhash |
 | futures-channel | 0.3.34 | MIT OR Apache-2.0 | Copyright (c) 2016 Alex Crichton; Copyright (c) 2017 The Tokio Authors | https://github.com/rust-lang/futures-rs |
 | futures-core | 0.3.34 | MIT OR Apache-2.0 | Copyright (c) 2016 Alex Crichton; Copyright (c) 2017 The Tokio Authors | https://github.com/rust-lang/futures-rs |
+| futures-io | 0.3.34 | MIT OR Apache-2.0 | Copyright (c) 2016 Alex Crichton; Copyright (c) 2017 The Tokio Authors | https://github.com/rust-lang/futures-rs |
 | futures-sink | 0.3.34 | MIT OR Apache-2.0 | Copyright (c) 2016 Alex Crichton; Copyright (c) 2017 The Tokio Authors | https://github.com/rust-lang/futures-rs |
 | futures-task | 0.3.34 | MIT OR Apache-2.0 | Copyright (c) 2016 Alex Crichton; Copyright (c) 2017 The Tokio Authors | https://github.com/rust-lang/futures-rs |
 | futures-util | 0.3.34 | MIT OR Apache-2.0 | Copyright (c) 2016 Alex Crichton; Copyright (c) 2017 The Tokio Authors | https://github.com/rust-lang/futures-rs |
@@ -355,6 +367,7 @@ follow the table.
 | h2 | 0.4.20 | MIT | Copyright (c) 2017 h2 authors | https://github.com/hyperium/h2 |
 | hashbrown | 0.17.1 | MIT OR Apache-2.0 | Copyright (c) 2016 Amanieu d'Antras | https://github.com/rust-lang/hashbrown |
 | hashlink | 0.12.2 | MIT OR Apache-2.0 | Authors: kyren | https://github.com/djc/hashlink |
+| hex | 0.4.3 | MIT OR Apache-2.0 | Copyright (c) 2013-2014 The Rust Project Developers.; Copyright (c) 2015-2020 The rust-hex Developers | https://github.com/KokaKiwi/rust-hex |
 | http | 1.5.0 | MIT OR Apache-2.0 | Copyright 2017 http-rs authors; Copyright (c) 2017 http-rs authors | https://github.com/hyperium/http |
 | http-body | 1.1.0 | MIT | Copyright (c) 2019-2026 Sean McArthur & Hyper Contributors | https://github.com/hyperium/http-body |
 | http-body-util | 0.1.5 | MIT | Copyright (c) 2019-2026 Sean McArthur & Hyper Contributors | https://github.com/hyperium/http-body |
@@ -376,6 +389,7 @@ follow the table.
 | miniz_oxide | 0.9.1 | MIT OR Zlib OR Apache-2.0 | Copyright 2013-2014 RAD Game Tools and Valve Software; Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC | https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide |
 | mio | 1.2.4 | MIT | Copyright (c) 2014 Carl Lerche and other MIO contributors | https://github.com/tokio-rs/mio |
 | once_cell | 1.21.4 | MIT OR Apache-2.0 | Authors: Aleksey Kladov | https://github.com/matklad/once_cell |
+| ordered-stream | 0.2.0 | MIT OR Apache-2.0 | Authors: Daniel De Graaf, Zeeshan Ali Khan | https://github.com/danieldg/ordered-stream |
 | percent-encoding | 2.3.2 | MIT OR Apache-2.0 | Copyright (c) 2013-2025 The rust-url developers | https://github.com/servo/rust-url/ |
 | pin-project | 1.1.13 | Apache-2.0 OR MIT | The crate authors (no notice line in the license file) | https://github.com/taiki-e/pin-project |
 | pin-project-internal | 1.1.13 | Apache-2.0 OR MIT | The crate authors (no notice line in the license file) | https://github.com/taiki-e/pin-project |
@@ -395,6 +409,7 @@ follow the table.
 | serde_core | 1.0.229 | MIT OR Apache-2.0 | Authors: Erick Tryzelaar, David Tolnay | https://github.com/serde-rs/serde |
 | serde_derive | 1.0.229 | MIT OR Apache-2.0 | Authors: Erick Tryzelaar, David Tolnay | https://github.com/serde-rs/serde |
 | serde_json | 1.0.154 | MIT OR Apache-2.0 | Authors: Erick Tryzelaar, David Tolnay | https://github.com/serde-rs/json |
+| serde_repr | 0.1.21 | MIT OR Apache-2.0 | Authors: David Tolnay | https://github.com/dtolnay/serde-repr |
 | sha2 | 0.11.1 | MIT OR Apache-2.0 | Copyright (c) 2006-2009 Graydon Hoare; Copyright (c) 2009-2013 Mozilla Foundation; Copyright (c) 2016 Artyom Pavlov | https://github.com/RustCrypto/hashes |
 | signature | 3.0.0 | Apache-2.0 OR MIT | Copyright (c) 2018-2023 RustCrypto Developers | https://github.com/RustCrypto/traits |
 | simd-adler32 | 0.3.10 | MIT | Copyright (c) 2021 Marvin Countryman | https://github.com/mcountryman/simd-adler32 |
@@ -424,8 +439,14 @@ follow the table.
 | unicode-ident | 1.0.27 | (MIT OR Apache-2.0) AND Unicode-3.0 | COPYRIGHT AND PERMISSION NOTICE; Copyright © 1991-2023 Unicode, Inc. | https://github.com/dtolnay/unicode-ident |
 | uuid | 1.29.0 | Apache-2.0 OR MIT | Copyright (c) 2014 The Rust Project Developers; Copyright (c) 2018 Ashley Mannix, Christopher Armstrong, Dylan DPC, Hunar Roop Kahlon | https://github.com/uuid-rs/uuid |
 | want | 0.3.2 | MIT | Copyright (c) 2018-2019 Sean McArthur | https://github.com/seanmonstar/want |
+| winnow | 1.0.4 | MIT | The crate authors (no notice line in the license file) | https://github.com/winnow-rs/winnow |
 | xattr | 1.7.0 | MIT OR Apache-2.0 | Copyright (c) 2015 Steven Allen | https://github.com/Stebalien/xattr |
+| zbus | 6.2.1 | MIT | Copyright (c) 2024 Zeeshan Ali Khan & zbus contributors | https://github.com/z-galaxy/zbus/ |
+| zbus_macros | 6.2.1 | MIT | Copyright (c) 2024 Zeeshan Ali Khan & zbus contributors | https://github.com/z-galaxy/zbus/ |
+| zbus_utils | 6.1.0 | MIT | Copyright (c) 2024 Zeeshan Ali Khan & zbus contributors | https://github.com/z-galaxy/zbus/ |
+| zcheapstr | 1.2.0 | MIT | Copyright (c) 2026 Zeeshan Ali Khan & zcheapstr contributors | https://github.com/z-galaxy/zcheapstr/ |
 | zmij | 1.0.23 | MIT | Authors: David Tolnay | https://github.com/dtolnay/zmij |
+| zruntime | 0.2.2 | MIT | Copyright (c) 2026 Zeeshan Ali Khan & zruntime contributors; Copyright (c) 2020 Yoshua Wuyts, Stjepan Glavina & Zeeshan Ali Khan | https://github.com/z-galaxy/zruntime |
 
 ### Build-time only (code generators, procedural macros, build scripts; not in the binary)
 

@@ -52,12 +52,16 @@ pub(crate) fn profile_for(catalogue: &Value, product_type: &str) -> Option<Value
     if product_type.is_empty() {
         return None;
     }
-    catalogue.as_array()?.iter().find(|p| {
-        p["platform"] == "ios"
-            && p["productTypes"]
-                .as_array()
-                .is_some_and(|t| t.iter().any(|v| v == product_type))
-    }).cloned()
+    catalogue
+        .as_array()?
+        .iter()
+        .find(|p| {
+            p["platform"] == "ios"
+                && p["productTypes"]
+                    .as_array()
+                    .is_some_and(|t| t.iter().any(|v| v == product_type))
+        })
+        .cloned()
 }
 pub fn validate(a: &Value) -> Result<()> {
     identifier(s(a, "device"), "iPhone UDID", Some("[A-Fa-f0-9-]{16,64}"))?;
@@ -699,7 +703,12 @@ mod tests {
         stopped.store(true, Ordering::Relaxed);
         server.join().unwrap();
         let calls = calls.lock().unwrap();
-        let pointer = |v: &Value| v["body"]["actions"][0]["actions"].as_array().cloned().unwrap_or_default();
+        let pointer = |v: &Value| {
+            v["body"]["actions"][0]["actions"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+        };
         let actions = calls
             .iter()
             .filter(|v| s(v, "route").ends_with("/actions"))
@@ -769,7 +778,16 @@ mod tests {
         for good in ["iPhone18,4", "iPad16,6"] {
             assert!(valid_product_type(good), "{good}");
         }
-        for bad in ["", "iPhone", "iPhone18", "iPhone18,", "iPhone,4", "iPhone18,4,1", "Watch7,1", "iPhone1234,1"] {
+        for bad in [
+            "",
+            "iPhone",
+            "iPhone18",
+            "iPhone18,",
+            "iPhone,4",
+            "iPhone18,4,1",
+            "Watch7,1",
+            "iPhone1234,1",
+        ] {
             assert!(!valid_product_type(bad), "{bad}");
         }
     }

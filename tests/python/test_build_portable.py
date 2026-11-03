@@ -2,6 +2,7 @@
 
 import contextlib
 import io
+import json
 import re
 import tempfile
 import unittest
@@ -282,6 +283,17 @@ class Rules(unittest.TestCase):
                       "--uninstall"):
             self.assertIn(check, script)
         self.assertEqual(build_portable.VERIFY_IMAGES, ("debian:12-slim", "ubuntu:22.04", "ubuntu:24.04", "fedora:44"))
+
+    def test_browser_checks_keep_the_sandbox_and_run_without_root(self):
+        script = build_portable.VERIFY_SCRIPT
+        self.assertIn("exec runuser -u nobody --", script)
+        self.assertNotIn("QTWEBENGINE_DISABLE_SANDBOX", script)
+        self.assertNotIn("--no-sandbox", script)
+        profile = json.loads((ROOT / "packaging/portable/verify-seccomp.json").read_text())
+        self.assertEqual(profile["defaultAction"], "SCMP_ACT_ERRNO")
+        rule = profile["syscalls"][-1]
+        self.assertEqual(rule["names"], ["clone", "setns", "unshare"])
+        self.assertEqual(rule["action"], "SCMP_ACT_ALLOW")
 
 
 if __name__ == "__main__":

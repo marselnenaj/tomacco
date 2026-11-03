@@ -1,7 +1,7 @@
 # Tomacco documentation
 
 Build, run and test Android and iOS apps on Linux, yourself or through a coding agent.
-These guides describe version 1.3.0; see [what's new](RELEASE_NOTES.md).
+These guides describe version 1.4.0; see [what's new](RELEASE_NOTES.md).
 
 ## What do you want to do?
 

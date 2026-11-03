@@ -174,7 +174,7 @@ Installing it with pacman was not part of these checks.
 
 ```sh
 tools/build_portable.py build
-tools/build_portable.py verify build-portable/tomacco-1.3.0-Linux-x86_64-portable.tar.gz
+tools/build_portable.py verify build-portable/tomacco-1.4.0-Linux-x86_64-portable.tar.gz
 ```
 
 `build` needs Docker and network access. It builds the image `tomacco-portable-builder:<digest>` from
@@ -187,6 +187,9 @@ the xcb helper libraries Qt's xcb plugin needs. The desktop finds them through i
 needs a newer glibc than 2.35 or a host library outside its list; that list is in the package's `share/doc/tomacco/PORTABLE.md`.
 
 `verify` unpacks the package in clean containers of Debian 12, Ubuntu 22.04, Ubuntu 24.04 and Fedora 44 (`--image` picks others).
+After installing dependencies as root, it runs the checks as `nobody`, with Qt WebEngine's
+sandbox enabled. Its seccomp profile is Moby's default plus the namespace calls the
+WebEngine sandbox needs; it grants no additional Linux capabilities.
 In each it installs the host libraries, runs `tomaccoctl --version` and `tomaccoctl doctor`, checks that every bundled library
 resolves, runs `tomacco --smoke-test` offscreen and on Xvfb, then installs with `install.py` into a scratch home, runs the
 installed launchers and uninstalls. The installer copies `lib/tomacco/runtime` to `~/.local/lib/tomacco/runtime` and writes
@@ -207,7 +210,7 @@ for `linux/arm64`, into `build-portable-aarch64/`:
 
 ```sh
 tools/build_portable.py build --arch aarch64
-tools/build_portable.py verify build-portable-aarch64/tomacco-1.3.0-Linux-aarch64-portable.tar.gz
+tools/build_portable.py verify build-portable-aarch64/tomacco-1.4.0-Linux-aarch64-portable.tar.gz
 ```
 
 Its image, `tomacco-portable-builder-aarch64:<digest>`, comes from `packaging/portable/Dockerfile.aarch64` and
@@ -337,8 +340,9 @@ a test key; the hooks it uses exist only in debug builds.
 
 ## Checks before a pull request
 
-There is no hosted CI. Run the [test commands](#test) locally. In a disposable container that runs as root and has no GPU, set `QTWEBENGINE_DISABLE_SANDBOX=1` and
-`QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu` for the tests only.
+There is no hosted CI. Run the [test commands](#test) locally. Run desktop checks as an
+unprivileged user with Qt WebEngine's sandbox enabled. On hosts without a GPU,
+`QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu` selects software rendering.
 
 The iOS engine and guest tools are separate local builds: a guest-tools build needs a local linker and clang 22, and `--cpu-optimization native` fits only the CPU that built it. Tests that need an engine, the iOS
 linker with `ldid`, `llvm-mc` or `llvm-objcopy`, or an ARM64 execution engine skip and say so.

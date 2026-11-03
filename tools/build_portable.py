@@ -135,13 +135,13 @@ SYSTEM = re.compile(r"""(
 )$""", re.X)
 # Packages a clean container of each distribution needs for the checks: the
 # libraries above, python3 for install.py, a font, and Xvfb for the X11 check.
-APT_PACKAGES = ("python3 ca-certificates fonts-dejavu-core xvfb xauth libgl1 libegl1 libopengl0 libfontconfig1 libfreetype6 "
+APT_PACKAGES = ("python3 ca-certificates util-linux fonts-dejavu-core xvfb xauth libgl1 libegl1 libopengl0 libfontconfig1 libfreetype6 "
                 "libglib2.0-0 libdbus-1-3 libnss3 libxkbcommon0 libxkbcommon-x11-0 libxkbfile1 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 "
                 "libxdamage1 libxext6 libxfixes3 libxrandr2 libxtst6 libasound2 libgbm1 libudev1 libexpat1 libzstd1 "
                 "libwayland-client0 libwayland-cursor0 libwayland-egl1 libxcb-glx0 libxcb-randr0 libxcb-render0 libxcb-shape0 "
                 "libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb-xkb1 libxcb-dri3-0 libxcb-xinput0 libxcb-xinerama0 libbrotli1 "
                 "libgssapi-krb5-2 libsm6 libice6").split()
-DNF_PACKAGES = ("python3 ca-certificates dejavu-sans-fonts xorg-x11-server-Xvfb xorg-x11-xauth libglvnd-glx libglvnd-egl "
+DNF_PACKAGES = ("python3 ca-certificates util-linux dejavu-sans-fonts xorg-x11-server-Xvfb xorg-x11-xauth libglvnd-glx libglvnd-egl "
                 "libglvnd-opengl fontconfig freetype glib2 dbus-libs nss nspr libxkbcommon libxkbcommon-x11 libxkbfile libX11 libX11-xcb libxcb "
                 "libXcomposite libXdamage libXext libXfixes libXrandr libXtst alsa-lib mesa-libgbm systemd-libs expat libzstd "
                 "libwayland-client libwayland-cursor libwayland-egl brotli krb5-libs libSM libICE tar gzip findutils procps-ng").split()
@@ -269,6 +269,7 @@ name="$1"; family="$2"; shift 2
 log() { printf '== %s\n' "$*"; }
 result() { printf 'RESULT %s %s\n' "$1" "$2"; }
 log "$(. /etc/os-release; echo "$PRETTY_NAME"), glibc $(ldd --version | head -n 1 | sed 's/.* //')"
+if [ "$(id -u)" = 0 ]; then
 if [ "$family" = apt ]; then
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -qq >/dev/null || { result packages fail; exit 1; }
@@ -282,6 +283,11 @@ else
     dnf install -y -q --setopt=install_weak_deps=False "$@" >/dev/null || { result packages fail; exit 1; }
 fi
 result packages ok
+mkdir -p /tmp/tomacco-test-home /tmp/tomacco-test-runtime
+chown nobody /tmp/tomacco-test-home /tmp/tomacco-test-runtime
+chmod 700 /tmp/tomacco-test-runtime
+exec runuser -u nobody -- env HOME=/tmp/tomacco-test-home XDG_RUNTIME_DIR=/tmp/tomacco-test-runtime sh "$0" "$name" "$family"
+fi
 mkdir -p /tmp/x && tar -xzf "/pkg/$name.tar.gz" -C /tmp/x || { result unpack fail; exit 1; }
 top="/tmp/x/$name"
 status=0
@@ -294,7 +300,7 @@ missing() {
         "$top/lib/tomacco/runtime/libexec" -type f \( -name '*.so*' -o -perm -u+x \) -exec sh -c 'file="$1"; head -c 4 "$file" | grep -q ELF || exit 0; ldd "$file" 2>/dev/null | grep "not found" | sed "s|^|$file: |"' _ {} \; )
     [ -z "$found" ] || { printf '%s\n' "$found" | sort -u | head -n 20; return 1; }
 }
-export QT_QPA_PLATFORMTHEME=generic QT_QUICK_CONTROLS_STYLE=Basic QTWEBENGINE_DISABLE_SANDBOX=1 QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu TOMACCO_UPDATES=off
+export QT_QPA_PLATFORMTHEME=generic QT_QUICK_CONTROLS_STYLE=Basic QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu TOMACCO_UPDATES=off
 check tomaccoctl-version "$top/bin/tomaccoctl" --version
 "$top/bin/tomaccoctl" doctor > /tmp/doctor.json; code=$?
 python3 -c 'import json,sys; v=json.load(open("/tmp/doctor.json")); print("doctor ok=%s, %d keys" % (v.get("ok"), len(v.get("result", v))))' 2>&1
@@ -328,7 +334,8 @@ def verify(options):
         family = "dnf" if "fedora" in image else "apt"
         packages = DNF_PACKAGES if family == "dnf" else APT_PACKAGES
         log = package.parent / f"verify-{image.replace(':', '-').replace('/', '-')}.log"
-        argv = ["docker", "run", "--rm", "--platform", architecture.platform, "-v", f"{package.parent}:/pkg:ro", image,
+        argv = ["docker", "run", "--rm", "--security-opt", f"seccomp={CONTEXT / 'verify-seccomp.json'}",
+                "--platform", architecture.platform, "-v", f"{package.parent}:/pkg:ro", image,
                 "sh", "/pkg/verify-portable.sh", name, family, *packages]
         print("+", shlex.join(argv[:10]), "...", flush=True)
         with log.open("w") as out:

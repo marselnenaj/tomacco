@@ -6,6 +6,8 @@ operations and their JSON results.
 
 ## Unreleased
 
+## 1.4.0
+
 ### Added
 - **iPhone over Wi-Fi.** `runtime.start` with `device` `airplay` runs a UxPlay receiver named
   Tomacco, and a phone's AirPlay screen mirroring becomes a live session: the device window opens
@@ -34,6 +36,8 @@ operations and their JSON results.
   (iPhone Air, iOS 27.2).
 
 ### Changed
+- **Bluetooth dependencies.** Use the maintained `zbus` 6 stack in place of the retired standalone
+  `zvariant` and `zbus_names` crates.
 - **Physical iPhone: quicker input.** WebDriverAgent no longer waits for animations and idle
   before an action, taps go through `/actions`, and the stream asks for up to 60 frames a second.
 - **Virtual iPhone: less CPU.** The engine keeps the translated-code lookups that a TLB change

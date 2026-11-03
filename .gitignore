@@ -1,6 +1,8 @@
 build/
 build-product/
 build-portable/
+build-portable-aarch64/
+build-aarch64/
 build-asan/
 config-temp/
 .tooling/

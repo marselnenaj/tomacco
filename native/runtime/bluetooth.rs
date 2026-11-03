@@ -8,8 +8,7 @@
 use super::*;
 use std::collections::HashMap;
 use zbus::{
-    Connection, fdo, interface,
-    zvariant::{ObjectPath, OwnedObjectPath, OwnedValue, Value as Variant},
+    Connection, ObjectPath, OwnedObjectPath, OwnedVariant as OwnedValue, Variant, fdo, interface,
 };
 
 const APP: &str = "/org/tomacco/hid";
@@ -30,8 +29,8 @@ const REPORT_MAP: &[u8] = &[
     0x05, 0x09, 0x19, 0x01, 0x29, 0x03, 0x15, 0x00, 0x25, 0x01, 0x95, 0x03, 0x75, 0x01, 0x81,
     0x02, // 3 buttons
     0x95, 0x01, 0x75, 0x05, 0x81, 0x03, // padding
-    0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x16, 0x01, 0x80, 0x26, 0xFF, 0x7F, 0x75, 0x10, 0x95,
-    0x02, 0x81, 0x06, // X, Y
+    0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x16, 0x01, 0x80, 0x26, 0xFF, 0x7F, 0x75, 0x10, 0x95, 0x02,
+    0x81, 0x06, // X, Y
     0x09, 0x38, 0x15, 0x81, 0x25, 0x7F, 0x75, 0x08, 0x95, 0x01, 0x81, 0x06, // wheel
     0xC0, 0xC0, //
     0x05, 0x01, 0x09, 0x06, 0xA1, 0x01, 0x85, 0x02, // keyboard
@@ -45,12 +44,13 @@ const REPORT_MAP: &[u8] = &[
     0x15, 0x00, 0x26, 0xFF, 0x03, 0x19, 0x00, 0x2A, 0xFF, 0x03, 0x75, 0x10, 0x95, 0x01, 0x81,
     0x00, //
     0xC0, //
-    0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x85, 0x04, 0x09, 0x01, 0xA1, 0x00, // absolute pointer
+    0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x85, 0x04, 0x09, 0x01, 0xA1,
+    0x00, // absolute pointer
     0x05, 0x09, 0x19, 0x01, 0x29, 0x03, 0x15, 0x00, 0x25, 0x01, 0x95, 0x03, 0x75, 0x01, 0x81,
     0x02, // 3 buttons
     0x95, 0x01, 0x75, 0x05, 0x81, 0x01, // padding
-    0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x16, 0x00, 0x00, 0x26, 0xFF, 0x7F, 0x75, 0x10, 0x95,
-    0x02, 0x81, 0x02, // X, Y 0..32767 across the screen
+    0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x16, 0x00, 0x00, 0x26, 0xFF, 0x7F, 0x75, 0x10, 0x95, 0x02,
+    0x81, 0x02, // X, Y 0..32767 across the screen
     0xC0, 0xC0,
 ];
 const MOUSE: u8 = 1;
@@ -205,7 +205,11 @@ struct Agent {
 impl Agent {
     fn note(&self, line: &str) {
         use std::io::Write;
-        if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(&self.log) {
+        if let Ok(mut file) = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.log)
+        {
             let _ = writeln!(file, "{:.3} {line}", now());
         }
     }
@@ -214,7 +218,10 @@ impl Agent {
             self.note(&format!("{request} {}: accepted", device.as_str()));
             Ok(())
         } else {
-            self.note(&format!("{request} {}: refused, pairing is closed", device.as_str()));
+            self.note(&format!(
+                "{request} {}: refused, pairing is closed",
+                device.as_str()
+            ));
             Err(fdo::Error::AccessDenied(
                 "Pair while the iPhone mirrors to Tomacco".into(),
             ))
@@ -232,7 +239,10 @@ impl Agent {
     }
     fn display_pin_code(&self, _device: OwnedObjectPath, _code: String) {}
     fn request_passkey(&self, device: OwnedObjectPath) -> fdo::Result<u32> {
-        self.note(&format!("passkey requested by {}: refused", device.as_str()));
+        self.note(&format!(
+            "passkey requested by {}: refused",
+            device.as_str()
+        ));
         Err(fdo::Error::NotSupported("no passkey".into()))
     }
     fn display_passkey(&self, _device: OwnedObjectPath, _passkey: u32, _entered: u16) {}
@@ -335,12 +345,22 @@ impl Drop for Hid {
         let _ = self.rt.block_on(async move {
             tokio::time::timeout(Duration::from_secs(2), async {
                 for (iface, method, at) in [
-                    ("org.bluez.LEAdvertisingManager1", "UnregisterAdvertisement", ADVERTISEMENT),
+                    (
+                        "org.bluez.LEAdvertisingManager1",
+                        "UnregisterAdvertisement",
+                        ADVERTISEMENT,
+                    ),
                     ("org.bluez.GattManager1", "UnregisterApplication", APP),
                 ] {
                     if let Ok(adapter) = adapter(&connection).await {
                         let _ = connection
-                            .call_method(Some("org.bluez"), adapter.as_str(), Some(iface), method, &(path(at),))
+                            .call_method(
+                                Some("org.bluez"),
+                                adapter.as_str(),
+                                Some(iface),
+                                method,
+                                &(path(at),),
+                            )
                             .await;
                     }
                 }
@@ -390,24 +410,31 @@ fn mouse(buttons: u8, dx: i32, dy: i32, wheel: i8) -> Vec<u8> {
 async fn adapter(connection: &Connection) -> Result<OwnedObjectPath> {
     let manager = fdo::ObjectManagerProxy::builder(connection)
         .destination("org.bluez")
-        .map_err(bus)?
         .path("/")
-        .map_err(bus)?
         .build()
         .await
         .map_err(bus)?;
-    let objects = manager.get_managed_objects().await.map_err(|e| bus(e.into()))?;
+    let objects = manager
+        .get_managed_objects()
+        .await
+        .map_err(|e| bus(e.into()))?;
     let mut adapters: Vec<_> = objects
         .iter()
         .filter_map(|(at, ifaces)| {
-            ifaces
-                .get("org.bluez.Adapter1")
-                .map(|props| (at.clone(), props.get("Powered").and_then(|v| bool::try_from(v).ok()).unwrap_or(false)))
+            ifaces.get("org.bluez.Adapter1").map(|props| {
+                (
+                    at.clone(),
+                    props
+                        .get("Powered")
+                        .and_then(|v| bool::try_from(v).ok())
+                        .unwrap_or(false),
+                )
+            })
         })
         .collect();
     adapters.sort_by(|a, b| a.0.as_str().cmp(b.0.as_str()));
     match adapters.iter().find(|(_, powered)| *powered) {
-        Some((at, _)) => Ok(OwnedObjectPath::from(at.clone())),
+        Some((at, _)) => Ok(at.clone()),
         None if adapters.is_empty() => Err(err("No Bluetooth adapter found")),
         None => Err(err("Bluetooth is off: turn it on to control the phone")),
     }
@@ -430,8 +457,17 @@ async fn serve(
     server.at(APP, fdo::ObjectManager).await.map_err(bus)?;
     let mut reports = HashMap::new();
     // (service UUID, [(characteristic UUID, flags, value, report reference)])
-    let services: [(u16, Vec<(u16, &[&str], Vec<u8>, Option<[u8; 2]>)>); 3] = [
-        (0x180A, vec![(0x2A50, &["read"], vec![0x02, 0x6B, 0x1D, 0x46, 0x02, 0x01, 0x00], None)]),
+    type CharacteristicSpec<'a> = (u16, &'a [&'a str], Vec<u8>, Option<[u8; 2]>);
+    let services: [(u16, Vec<CharacteristicSpec<'_>>); 3] = [
+        (
+            0x180A,
+            vec![(
+                0x2A50,
+                &["read"],
+                vec![0x02, 0x6B, 0x1D, 0x46, 0x02, 0x01, 0x00],
+                None,
+            )],
+        ),
         (0x180F, vec![(0x2A19, &["read", "notify"], vec![100], None)]),
         (
             0x1812,
@@ -440,17 +476,42 @@ async fn serve(
                 (0x2A4B, &["encrypt-read"], REPORT_MAP.to_vec(), None),
                 (0x2A4C, &["write-without-response"], vec![0], None),
                 (0x2A4E, &["read", "write-without-response"], vec![1], None),
-                (0x2A4D, &["encrypt-read", "notify"], mouse(0, 0, 0, 0), Some([MOUSE, 1])),
-                (0x2A4D, &["encrypt-read", "notify"], vec![0; 8], Some([KEYBOARD, 1])),
-                (0x2A4D, &["encrypt-read", "notify"], vec![0, 0], Some([CONSUMER, 1])),
-                (0x2A4D, &["encrypt-read", "notify"], vec![0; 5], Some([POINTER, 1])),
+                (
+                    0x2A4D,
+                    &["encrypt-read", "notify"],
+                    mouse(0, 0, 0, 0),
+                    Some([MOUSE, 1]),
+                ),
+                (
+                    0x2A4D,
+                    &["encrypt-read", "notify"],
+                    vec![0; 8],
+                    Some([KEYBOARD, 1]),
+                ),
+                (
+                    0x2A4D,
+                    &["encrypt-read", "notify"],
+                    vec![0, 0],
+                    Some([CONSUMER, 1]),
+                ),
+                (
+                    0x2A4D,
+                    &["encrypt-read", "notify"],
+                    vec![0; 5],
+                    Some([POINTER, 1]),
+                ),
             ],
         ),
     ];
     for (s, (service_uuid, characteristics)) in services.into_iter().enumerate() {
         let service_path = path(&format!("{APP}/service{s}"));
         server
-            .at(&service_path, Service { uuid: uuid(service_uuid) })
+            .at(
+                &service_path,
+                Service {
+                    uuid: uuid(service_uuid),
+                },
+            )
             .await
             .map_err(bus)?;
         for (c, (char_uuid, flags, value, reference)) in characteristics.into_iter().enumerate() {
@@ -487,7 +548,14 @@ async fn serve(
     }
     server.at(ADVERTISEMENT, Advertisement).await.map_err(bus)?;
     server
-        .at(AGENT, Agent { until: Instant::now() + PAIRING_WINDOW, open: pairing.clone(), log: log.clone() })
+        .at(
+            AGENT,
+            Agent {
+                until: Instant::now() + PAIRING_WINDOW,
+                open: pairing.clone(),
+                log: log.clone(),
+            },
+        )
         .await
         .map_err(bus)?;
     let no_options: HashMap<&str, Variant> = HashMap::new();
@@ -514,22 +582,38 @@ async fn serve(
         .await;
     log_line(
         &log_path,
-        &format!("default agent: {}", default.map(|_| "Tomacco".to_string()).unwrap_or_else(|e| format!("refused ({})", bus(e).message))),
+        &format!(
+            "default agent: {}",
+            default
+                .map(|_| "Tomacco".to_string())
+                .unwrap_or_else(|e| format!("refused ({})", bus(e).message))
+        ),
     );
     // What decides whether the phone may pair at all.
-    if let Ok(properties) = fdo::PropertiesProxy::builder(&connection)
-        .destination("org.bluez")
-        .and_then(|b| b.path(adapter.as_str()))
     {
+        let properties = fdo::PropertiesProxy::builder(&connection)
+            .destination("org.bluez")
+            .path(adapter.as_str());
         if let Ok(proxy) = properties.build().await {
             if let Ok(name) = zbus::names::InterfaceName::try_from("org.bluez.Adapter1") {
                 if let Ok(all) = proxy.get_all(name).await {
-                    let mut shown: Vec<String> = ["Address", "Alias", "Powered", "Pairable", "PairableTimeout", "Discoverable", "Roles"]
-                        .iter()
-                        .filter_map(|key| all.get(*key).map(|v| format!("{key}={v:?}")))
-                        .collect();
+                    let mut shown: Vec<String> = [
+                        "Address",
+                        "Alias",
+                        "Powered",
+                        "Pairable",
+                        "PairableTimeout",
+                        "Discoverable",
+                        "Roles",
+                    ]
+                    .iter()
+                    .filter_map(|key| all.get(*key).map(|v| format!("{key}={v:?}")))
+                    .collect();
                     shown.sort();
-                    log_line(&log_path, &format!("adapter {}: {}", adapter.as_str(), shown.join(" ")));
+                    log_line(
+                        &log_path,
+                        &format!("adapter {}: {}", adapter.as_str(), shown.join(" ")),
+                    );
                 }
             }
         }
@@ -575,7 +659,11 @@ async fn serve(
                     .await;
                 log_line(
                     &log_path,
-                    &format!("mirror started: pairable {}", set.map(|_| "on".to_string()).unwrap_or_else(|e| format!("not set ({})", bus(e).message))),
+                    &format!(
+                        "mirror started: pairable {}",
+                        set.map(|_| "on".to_string())
+                            .unwrap_or_else(|e| format!("not set ({})", bus(e).message))
+                    ),
                 );
             }
             was = now;
@@ -643,7 +731,10 @@ mod tests {
         assert_eq!(usage('?'), Some((0x38, true)));
         assert_eq!(usage('ü'), None);
         // The descriptor's collections close.
-        let opens = REPORT_MAP.windows(2).filter(|w| w == &[0xA1, 0x01] || w == &[0xA1, 0x00]).count();
+        let opens = REPORT_MAP
+            .windows(2)
+            .filter(|w| w == &[0xA1, 0x01] || w == &[0xA1, 0x00])
+            .count();
         let closes = REPORT_MAP.iter().filter(|b| **b == 0xC0).count();
         assert_eq!(opens, closes);
     }
@@ -656,7 +747,10 @@ mod tests {
         assert_eq!(absolute(7.0), 32767);
         assert_eq!(absolute(f64::NAN), 0);
         // Report 4: buttons, then X and Y as little-endian 16-bit.
-        assert_eq!(point_report((1, 0x1234, 32767)), vec![1, 0x34, 0x12, 0xFF, 0x7F]);
+        assert_eq!(
+            point_report((1, 0x1234, 32767)),
+            vec![1, 0x34, 0x12, 0xFF, 0x7F]
+        );
         assert_eq!(point_report((0xFF, 0, 0))[0], 7);
         assert_eq!(nudged(None, (0, 10, 10)), (0, 10, 10));
         assert_eq!(nudged(Some((0, 10, 10)), (1, 10, 10)), (1, 10, 10));

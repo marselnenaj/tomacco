@@ -302,10 +302,12 @@ class IphoneScenarioTests(IphoneTools):
         ])
         self.assertEqual(done["state"], "succeeded", report)
         self.assertTrue(report["passed"])
-        taps = [call["body"] for call in self.wda("/wda/tap")]
-        self.assertEqual(taps[0], {"x": 70, "y": 222})
-        self.assertEqual(taps[1], {"x": 170, "y": 420})
-        self.assertEqual(taps[2], {"x": 195, "y": 422})
+        taps = [call["body"]["actions"][0]["actions"] for call in self.wda("/actions")]
+        self.assertEqual([[step["type"] for step in tap] for tap in taps],
+                         [["pointerMove", "pointerDown", "pause", "pointerUp"]] * 2)
+        self.assertEqual([{key: tap[0][key] for key in ("x", "y")} for tap in taps],
+                         [{"x": 70, "y": 222}, {"x": 195, "y": 422}])
+        self.assertEqual([call["body"] for call in self.wda("/wda/tap")], [{"x": 170, "y": 420}])
         self.assertEqual(self.wda("/element/fixture-element/value")[0]["body"], {"value": ["Zoë"]})
         self.assertEqual(len(self.wda("/wda/homescreen")), 1)
         self.assertTrue(list(directory.glob("*-006.png")))

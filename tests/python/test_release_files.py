@@ -242,7 +242,7 @@ class Newcomer(unittest.TestCase):
             done = subprocess.run([binary], env=env, capture_output=True, text=True, timeout=60)
             self.assertEqual(done.returncode, 1, done.stderr)
             self.assertIn("graphical session", done.stderr)
-            done = subprocess.run([binary, "--version"], env={**env, "QTWEBENGINE_DISABLE_SANDBOX": "1"}, capture_output=True, text=True, timeout=60)
+            done = subprocess.run([binary, "--version"], env=env, capture_output=True, text=True, timeout=60)
             self.assertEqual(done.returncode, 0, done.stderr)
             self.assertIn("Tomacco ", done.stdout)
 

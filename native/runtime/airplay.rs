@@ -48,7 +48,7 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
     validate(a)?;
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
     let port = listener.local_addr()?.port();
-    let fps = (n(a, "fps") as u64).clamp(1, 60);
+    let fps = n(a, "fps").clamp(1, 60);
     // -vrtp replaces UxPlay's own decoder and window: the mirror's H.264 goes
     // to this session as an Annex-B byte stream, with SPS/PPS before each IDR.
     let pipeline = format!(
@@ -162,11 +162,17 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
     // Input goes over Bluetooth; without it the mirror still shows.
     let hid = match bluetooth::Hid::start(pairing, dir.join("bluetooth.log")) {
         Ok(hid) => {
-            shared.lock().unwrap().update(json!({"bluetooth":{"status":"advertising","name":bluetooth::NAME}}))?;
+            shared
+                .lock()
+                .unwrap()
+                .update(json!({"bluetooth":{"status":"advertising","name":bluetooth::NAME}}))?;
             Some(hid)
         }
         Err(e) => {
-            shared.lock().unwrap().update(json!({"bluetooth":{"status":"unavailable","error":e.message}}))?;
+            shared
+                .lock()
+                .unwrap()
+                .update(json!({"bluetooth":{"status":"unavailable","error":e.message}}))?;
             None
         }
     };
@@ -198,8 +204,7 @@ fn identify(log: &Path) -> Value {
                 found["client"] = json!(rest[..open].trim());
                 if iphone::valid_product_type(product) {
                     found["product_type"] = json!(product);
-                    if let Some(profile) =
-                        iphone::profile_for(&crate::catalog::builtin(), product)
+                    if let Some(profile) = iphone::profile_for(&crate::catalog::builtin(), product)
                     {
                         found["name"] = json!(format!("{} (AirPlay)", s(&profile, "name")));
                         found["profile_id"] = profile["id"].clone();
@@ -234,13 +239,19 @@ fn open_window(session: &str) {
     let Ok(own) = crate::core::own_executable() else {
         return;
     };
-    let desktop = PathBuf::from(own).with_file_name("tomacco");
+    let desktop = own.with_file_name("tomacco");
     if !desktop.is_file() {
         return;
     }
     let mut command = std::process::Command::new(desktop);
     command
-        .args(["--workspace", "runtime", "--device-only", "--session", session])
+        .args([
+            "--workspace",
+            "runtime",
+            "--device-only",
+            "--session",
+            session,
+        ])
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
@@ -278,9 +289,13 @@ fn exit_reason(log: &Path) -> String {
     let text = fs::read_to_string(log).unwrap_or_default();
     match text.lines().rev().find(|l| l.contains("ERROR")) {
         Some(line) if line.contains("socket 98") => {
-            "The AirPlay ports are in use: another AirPlay receiver, such as UxPlay, is running".into()
+            "The AirPlay ports are in use: another AirPlay receiver, such as UxPlay, is running"
+                .into()
         }
-        Some(line) => format!("UxPlay stopped: {}", line.trim_start_matches(['*', ' ']).trim()),
+        Some(line) => format!(
+            "UxPlay stopped: {}",
+            line.trim_start_matches(['*', ' ']).trim()
+        ),
         None => "UxPlay stopped".into(),
     }
 }
@@ -301,7 +316,11 @@ impl Units {
         let mut i = 0;
         while i + 3 <= self.buffer.len() {
             if self.buffer[i..i + 3] == [0, 0, 1] {
-                starts.push(if i > 0 && self.buffer[i - 1] == 0 { i - 1 } else { i });
+                starts.push(if i > 0 && self.buffer[i - 1] == 0 {
+                    i - 1
+                } else {
+                    i
+                });
                 i += 3;
             } else {
                 i += 1;
@@ -326,7 +345,11 @@ impl Units {
 }
 /// Whether a unit is a parameter set (SPS or PPS) and whether it is an IDR picture.
 fn flags(unit: &[u8]) -> (bool, bool) {
-    let header = if unit.starts_with(&[0, 0, 0, 1]) { 4 } else { 3 };
+    let header = if unit.starts_with(&[0, 0, 0, 1]) {
+        4
+    } else {
+        3
+    };
     match unit.get(header).map(|b| b & 31) {
         Some(7 | 8) => (true, false),
         Some(5) => (false, true),
@@ -354,10 +377,15 @@ impl Airplay {
     /// Presses at (x, y): moves there, lets the pointer rest, then presses.
     fn press(&mut self, x: f64, y: f64) -> Result<bool> {
         let mut ok = true;
-        if !matches!(self.last, Some((lx, ly, _)) if lx == x.clamp(0.0, 1.0) && ly == y.clamp(0.0, 1.0)) {
+        if !matches!(self.last, Some((lx, ly, _)) if lx == x.clamp(0.0, 1.0) && ly == y.clamp(0.0, 1.0))
+        {
             ok &= self.report(x, y, 0)?;
         }
-        if let Some(rest) = self.last.map(|(_, _, t)| t.elapsed()).filter(|e| *e < SETTLE) {
+        if let Some(rest) = self
+            .last
+            .map(|(_, _, t)| t.elapsed())
+            .filter(|e| *e < SETTLE)
+        {
             thread::sleep(SETTLE - rest);
         }
         ok &= self.report(x, y, 1)?;
@@ -497,7 +525,11 @@ mod tests {
                 out.extend(units.push(chunk));
             }
             // The last unit waits for the next start code.
-            assert_eq!(out, vec![sps.to_vec(), pps.to_vec(), idr.to_vec()], "chunk size {size}");
+            assert_eq!(
+                out,
+                vec![sps.to_vec(), pps.to_vec(), idr.to_vec()],
+                "chunk size {size}"
+            );
         }
         assert_eq!(flags(&sps), (true, false));
         assert_eq!(flags(&pps), (true, false));
@@ -518,17 +550,33 @@ mod tests {
         assert_eq!(found["product_type"], "iPhone18,4");
         assert_eq!(found["profile_id"], "air");
         assert_eq!(found["name"], "iPhone Air (AirPlay)");
-        fs::write(&log, "connection request from Mac (Mac14,2) with deviceID = 1\n").unwrap();
+        fs::write(
+            &log,
+            "connection request from Mac (Mac14,2) with deviceID = 1\n",
+        )
+        .unwrap();
         let other = identify(&log);
         assert!(other["profile_id"].is_null());
         assert_eq!(other["name"], "iPhone (AirPlay)");
-        fs::write(&log, "using network ports UDP 7011\n*** ERROR: Error initialising socket 98\n").unwrap();
+        fs::write(
+            &log,
+            "using network ports UDP 7011\n*** ERROR: Error initialising socket 98\n",
+        )
+        .unwrap();
         assert!(exit_reason(&log).contains("ports are in use"));
         assert!(!mirroring(""));
-        assert!(mirroring("raop_rtp_mirror starting mirroring\nBegin streaming to GStreamer video pipeline\n"));
-        assert!(!mirroring("raop_rtp_mirror starting mirroring\nraop_rtp_mirror->running is no longer true\n"));
-        assert!(!mirroring("raop_rtp_mirror starting mirroring\nConnection closed on socket 25\n"));
-        assert!(mirroring("Connection closed on socket 25\nAccepted IPv4 client on socket 31, port 7000\nraop_rtp_mirror starting mirroring\n"));
+        assert!(mirroring(
+            "raop_rtp_mirror starting mirroring\nBegin streaming to GStreamer video pipeline\n"
+        ));
+        assert!(!mirroring(
+            "raop_rtp_mirror starting mirroring\nraop_rtp_mirror->running is no longer true\n"
+        ));
+        assert!(!mirroring(
+            "raop_rtp_mirror starting mirroring\nConnection closed on socket 25\n"
+        ));
+        assert!(mirroring(
+            "Connection closed on socket 25\nAccepted IPv4 client on socket 31, port 7000\nraop_rtp_mirror starting mirroring\n"
+        ));
         fs::write(&log, "*** ERROR: something else\n").unwrap();
         assert_eq!(exit_reason(&log), "UxPlay stopped: ERROR: something else");
     }
