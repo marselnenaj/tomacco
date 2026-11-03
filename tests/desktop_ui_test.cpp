@@ -542,6 +542,17 @@ private slots:
         QVERIFY(deviceWindow->flags().testFlag(Qt::FramelessWindowHint));
         QCOMPARE(deviceWindow->color(),QColor(Qt::transparent));
         QVERIFY(deviceWindow->width()<window->width());
+        auto *pin=deviceWindow->findChild<QQuickItem *>("deviceWindowPin");QVERIFY(pin);
+        QVERIFY(pin->isVisible());QVERIFY(pin->isEnabled());
+        view->setProperty("windowOnTop",false);
+        QTest::mouseClick(deviceWindow,Qt::LeftButton,Qt::NoModifier,pin->mapToScene(QPointF(pin->width()/2,pin->height()/2)).toPoint());
+        QTRY_VERIFY(deviceWindow->property("stayOnTop").toBool());
+        QVERIFY(view->property("windowOnTop").toBool());
+        QVERIFY(deviceWindow->flags().testFlag(Qt::WindowStaysOnTopHint));
+        QTest::mouseClick(deviceWindow,Qt::LeftButton,Qt::NoModifier,pin->mapToScene(QPointF(pin->width()/2,pin->height()/2)).toPoint());
+        QTRY_VERIFY(!deviceWindow->property("stayOnTop").toBool());
+        QVERIFY(!view->property("windowOnTop").toBool());
+        QVERIFY(!deviceWindow->flags().testFlag(Qt::WindowStaysOnTopHint));
         QTRY_VERIFY_WITH_TIMEOUT(display->contentRect().width()>0,patient(3000));
         QVERIFY(qAbs(display->contentRect().width()/display->contentRect().height()-1080.0/2424)<.0001);
         QCOMPARE(display->sourceSize(),QSize(1080,2424));QVERIFY(display->frameCount()>=frameCount);
