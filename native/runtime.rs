@@ -20,6 +20,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+pub mod airplay;
 pub mod android;
 pub mod audio;
 pub mod ios;
@@ -340,6 +341,8 @@ fn start(a: &Value) -> Result {
         android::server_path(a)?;
     } else if !s(a, "remote").is_empty() {
         crate::remote::workspace(s(a, "remote"))?;
+    } else if airplay::requested(a) {
+        airplay::validate(a)?;
     } else {
         iphone::validate(a)?;
     }
@@ -563,6 +566,8 @@ pub fn worker(id: &str) -> Result<()> {
             Box::new(android::connect(&spec, shared.clone(), &dir)?)
         } else if !s(&spec, "remote").is_empty() {
             Box::new(ios::connect(&spec, shared.clone(), &dir)?)
+        } else if airplay::requested(&spec) {
+            Box::new(airplay::connect(&spec, shared.clone(), &dir)?)
         } else {
             Box::new(iphone::connect(&spec, shared.clone(), &dir)?)
         };
