@@ -113,6 +113,15 @@ impl Multipart {
         let mut frames = Vec::new();
         loop {
             if self.length.is_none() {
+                // WebDriverAgent ends each part with "\r\n\r\n" before the next
+                // boundary; skip the line breaks so they are not read as an
+                // empty part header.
+                let gap = self
+                    .buffer
+                    .iter()
+                    .take_while(|b| matches!(b, b'\r' | b'\n'))
+                    .count();
+                self.buffer.drain(..gap);
                 let Some(end) = self.buffer.windows(4).position(|v| v == b"\r\n\r\n") else {
                     if self.buffer.len() > 8192 {
                         return Err(err("Invalid MJPEG part headers"));
@@ -137,7 +146,10 @@ impl Multipart {
                             );
                         }
                         if key.eq_ignore_ascii_case("content-type") {
-                            jpeg = value.trim().eq_ignore_ascii_case("image/jpeg");
+                            // WebDriverAgent sends the non-standard "image/jpg".
+                            let kind = value.trim();
+                            jpeg = kind.eq_ignore_ascii_case("image/jpeg")
+                                || kind.eq_ignore_ascii_case("image/jpg");
                         }
                     }
                 }
@@ -686,5 +698,31 @@ mod tests {
                 .is_err()
         );
         assert!(Multipart::default().push(&vec![b'x'; 8193]).is_err());
+    }
+    #[test]
+    fn webdriveragent_mjpeg_parts_are_read() {
+        // The exact part framing of WebDriverAgent's MJPEG server: the
+        // non-standard "image/jpg" type and "\r\n\r\n" after each picture.
+        let jpeg = b"\xff\xd8test\xff\xd9";
+        let mut wire = format!(
+            "--BoundaryString\r\nContent-type: image/jpg\r\nContent-Length: {}\r\n\r\n",
+            jpeg.len()
+        )
+        .into_bytes();
+        wire.extend(jpeg);
+        wire.extend(b"\r\n\r\n");
+        for size in [1, 3, 7, wire.len() * 3] {
+            let mut parser = Multipart::default();
+            let mut frames = Vec::new();
+            for chunk in wire.repeat(3).chunks(size) {
+                frames.extend(parser.push(chunk).unwrap());
+            }
+            assert_eq!(frames, vec![jpeg.to_vec(); 3], "chunk size {size}");
+        }
+        assert!(
+            Multipart::default()
+                .push(b"--b\r\nContent-Type: image/png\r\nContent-Length: 8\r\n\r\n")
+                .is_err()
+        );
     }
 }
