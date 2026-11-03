@@ -30,7 +30,6 @@ Window {
     property bool stayOnTop: false
     property bool showPin: false
     onStayOnTopChanged: pinTimer.restart()
-    onVisibleChanged: if(visible && stayOnTop)pinTimer.restart()
     Timer {id:pinTimer;interval:250;onTriggered:if(win.visible)Studio.keepOnTop(win,win.stayOnTop)}
     // More rail buttons the device's owner offers, between its own buttons
     // and the zoom: {name, icon, tip}, each answered by extraRequested(name).
@@ -88,7 +87,11 @@ Window {
     minimumHeight: wantedHeight; maximumHeight: wantedHeight
     onWantedWidthChanged: width=wantedWidth
     onWantedHeightChanged: height=wantedHeight
-    onVisibleChanged: if(visible && zoom>fitZoom)setZoom(fitZoom)
+    onVisibleChanged: {
+        if(!visible)return
+        if(zoom>fitZoom)setZoom(fitZoom)
+        if(stayOnTop)pinTimer.restart()
+    }
     // Qt also asks this window while it is hidden, as part of ending the app
     // after the last visible window closed. Only a window on screen answers.
     onClosing: close=>{if(win.allowClose || !win.visible)return;close.accepted=false;if(win.solo)win.closeRequested();else win.dockRequested()}
