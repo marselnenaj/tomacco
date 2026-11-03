@@ -33,7 +33,7 @@ fn product_type(device: &str) -> String {
         .filter(|v| valid_product_type(v))
         .unwrap_or_default()
 }
-fn valid_product_type(value: &str) -> bool {
+pub(crate) fn valid_product_type(value: &str) -> bool {
     let Some(numbers) = value
         .strip_prefix("iPhone")
         .or_else(|| value.strip_prefix("iPad"))
@@ -48,7 +48,7 @@ fn valid_product_type(value: &str) -> bool {
 }
 /// The catalogue profile whose `productTypes` names this hardware identifier:
 /// that proves the physical model, unlike the display size alone.
-fn profile_for(catalogue: &Value, product_type: &str) -> Option<Value> {
+pub(crate) fn profile_for(catalogue: &Value, product_type: &str) -> Option<Value> {
     if product_type.is_empty() {
         return None;
     }
@@ -391,7 +391,11 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Iphone> {
         _processes: processes,
         _lock: Some(lock),
     };
-    device.call("POST","/appium/settings",Some(&json!({"settings":{"screenshotQuality":0,"mjpegServerScreenshotQuality":75,"mjpegServerFramerate":n(a,"fps").min(30),"mjpegScalingFactor":100}})))?;
+    device.call("POST","/appium/settings",Some(&json!({"settings":{"screenshotQuality":0,"mjpegServerScreenshotQuality":75,"mjpegServerFramerate":n(a,"fps").min(60),"mjpegScalingFactor":100,
+        // WDA otherwise waits up to 2 s after each gesture for animations to
+        // settle and up to 10 s for the app to go idle before a tap: a remote
+        // finger must land at once, as on the phone.
+        "animationCoolOffTimeout":0,"waitForIdleTimeout":0}})))?;
     device.dimensions()?;
     let png = device.screenshot()?;
     let width = u32::from_be_bytes(png[16..20].try_into().unwrap());
@@ -445,7 +449,9 @@ impl Device for Iphone {
         match s(a, "action") {
             "tap" => {
                 self.dimensions()?;
-                self.call("POST", "/wda/tap", Some(&self.point(a, "x", "y")))
+                // A pointer action skips the idle wait of XCTest's coordinate tap.
+                let at = self.point(a, "x", "y");
+                self.actions(json!([{"type":"pointerMove","duration":0,"x":at["x"],"y":at["y"],"origin":"viewport"},{"type":"pointerDown","button":0},{"type":"pause","duration":50},{"type":"pointerUp","button":0}]))
             }
             "touch" => {
                 let phase = s(a, "phase");
@@ -693,12 +699,20 @@ mod tests {
         stopped.store(true, Ordering::Relaxed);
         server.join().unwrap();
         let calls = calls.lock().unwrap();
-        let taps = calls
+        let pointer = |v: &Value| v["body"]["actions"][0]["actions"].as_array().cloned().unwrap_or_default();
+        let actions = calls
             .iter()
-            .filter(|v| s(v, "route").ends_with("/wda/tap"))
+            .filter(|v| s(v, "route").ends_with("/actions"))
             .collect::<Vec<_>>();
-        assert_eq!(taps[0]["body"], json!({"x":97.0,"y":422.0}));
-        assert_eq!(taps.last().unwrap()["body"], json!({"x":422.0,"y":97.0}));
+        // A tap is a pointer action, so XCTest's idle wait does not delay it.
+        let taps = actions
+            .iter()
+            .filter(|v| pointer(v).iter().any(|a| a["type"] == "pause"))
+            .collect::<Vec<_>>();
+        assert_eq!(taps.len(), 2);
+        let at = |v: &Value| json!({"x":pointer(v)[0]["x"],"y":pointer(v)[0]["y"]});
+        assert_eq!(at(taps[0]), json!({"x":97.0,"y":422.0}));
+        assert_eq!(at(taps[1]), json!({"x":422.0,"y":97.0}));
         assert!(
             calls
                 .iter()
@@ -711,17 +725,11 @@ mod tests {
                 .count(),
             2
         );
-        let gesture = calls
+        let gesture = actions
             .iter()
-            .find(|v| s(v, "route").ends_with("/actions"))
+            .find(|v| !pointer(v).iter().any(|a| a["type"] == "pause"))
             .unwrap();
-        assert_eq!(
-            gesture["body"]["actions"][0]["actions"]
-                .as_array()
-                .unwrap()
-                .len(),
-            4
-        );
+        assert_eq!(pointer(gesture).len(), 4);
         assert_eq!(calls.last().unwrap()["method"], "DELETE");
     }
     #[test]
