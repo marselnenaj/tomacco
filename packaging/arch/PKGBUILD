@@ -23,9 +23,9 @@ options=('!lto')
 # The release commit, from SOURCE_RELEASE.md in the tarball. The installed
 # SOURCE.md names it; without it the build would ask Git, which in an AUR
 # checkout answers with the PKGBUILD's own commit.
-_commit=79a57b3703e886de028c57309f9ed673a0706da3
+_commit=a122b22d1285a0ccd80661f89f32149341cf469f
 source=("https://github.com/marselnenaj/tomacco/releases/download/v$pkgver/tomacco-$pkgver-source.tar.gz")
-sha256sums=('28145e490898179eec580cc1e8ca10f6201270fa03dc5e4d61b415fd10307222')
+sha256sums=('7b23679642ae8efe2143098d0009ac61782d5b1a170a985ef4598ad8fabb7739')
 
 build() {
   # TOMACCO_DISABLE_UPDATES: pacman updates this package, so tomaccoctl never

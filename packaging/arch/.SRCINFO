@@ -23,6 +23,6 @@ pkgbase = tomacco
 	optdepends = bluez: control a mirrored iPhone over Bluetooth
 	options = !lto
 	source = https://github.com/marselnenaj/tomacco/releases/download/v1.4.0/tomacco-1.4.0-source.tar.gz
-	sha256sums = 28145e490898179eec580cc1e8ca10f6201270fa03dc5e4d61b415fd10307222
+	sha256sums = 7b23679642ae8efe2143098d0009ac61782d5b1a170a985ef4598ad8fabb7739
 
 pkgname = tomacco
