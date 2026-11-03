@@ -26,13 +26,23 @@ pub struct Airplay {
     shared: Shared,
     /// The Bluetooth pointer and keyboard that carry input, when BlueZ serves them.
     hid: Option<bluetooth::Hid>,
-    /// The last pointer position from the desktop, 0..1 of the picture.
-    last: Option<(f64, f64)>,
+    /// Where the phone's pointer is, 0..1 of the picture, and since when.
+    last: Option<(f64, f64, Instant)>,
+    /// When the last pointer report went out, to pace them.
+    sent: Option<Instant>,
     held: u8,
 }
-/// Moves on the desktop scale to the phone's pointer: one picture width is
-/// about the phone's width in points, before iOS's own acceleration.
-const POINTER_SPEED: f64 = 1.0;
+// The pointer is absolute (bluetooth::POINTER): it sits where the desktop's
+// is. Timings measured by Jalrux's iphone-control on iOS 26.5.2 (MIT):
+/// A press lands where the pointer was before the report, so it rests at the
+/// point this long first (20 ms missed one press in two).
+const SETTLE: Duration = Duration::from_millis(60);
+/// A tap's press to release.
+const HOLD: Duration = Duration::from_millis(50);
+/// About one report per BLE connection event; faster ones queue up as lag.
+const PACE: Duration = Duration::from_millis(8);
+/// A swipe moves the pointer this often.
+const DRAG_STEP: Duration = Duration::from_millis(12);
 
 pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
     validate(a)?;
@@ -165,6 +175,7 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
         shared,
         hid,
         last: None,
+        sent: None,
         held: 0,
     })
 }
@@ -326,29 +337,36 @@ fn flags(unit: &[u8]) -> (bool, bool) {
 const NOT_PAIRED: &str = "While the iPhone mirrors to Tomacco, pair it under Settings > Bluetooth and turn on Settings > Accessibility > Touch > AssistiveTouch";
 
 impl Airplay {
-    /// The phone's screen in points, the scale of pointer moves.
-    fn points(&self) -> (f64, f64) {
-        let hub = self.shared.lock().unwrap();
-        let profile = crate::catalog::builtin()
-            .as_array()
-            .and_then(|all| all.iter().find(|p| p["id"] == hub.state["profile_id"]).cloned());
-        match profile {
-            Some(p) => (n(&p, "width") as f64, n(&p, "height") as f64),
-            None => (420.0, 912.0),
+    /// Sends the pointer to (x, y) with `buttons` held, paced to the link.
+    fn report(&mut self, x: f64, y: f64, buttons: u8) -> Result<bool> {
+        if let Some(gap) = self.sent.map(|t| t.elapsed()).filter(|e| *e < PACE) {
+            thread::sleep(PACE - gap);
         }
+        let (x, y) = (x.clamp(0.0, 1.0), y.clamp(0.0, 1.0));
+        let ok = self.hid.as_mut().unwrap().point(x, y, buttons)?;
+        let now = Instant::now();
+        self.sent = Some(now);
+        if !matches!(self.last, Some((lx, ly, _)) if lx == x && ly == y) {
+            self.last = Some((x, y, now));
+        }
+        Ok(ok)
     }
-    /// The pointer move from the last desktop position to (x, y), in HID units.
-    fn step_to(&mut self, x: f64, y: f64) -> (i32, i32) {
-        let (w, h) = self.points();
-        let step = match self.last {
-            Some((lx, ly)) => (
-                ((x - lx) * w * POINTER_SPEED).round() as i32,
-                ((y - ly) * h * POINTER_SPEED).round() as i32,
-            ),
-            None => (0, 0),
-        };
-        self.last = Some((x.clamp(0.0, 1.0), y.clamp(0.0, 1.0)));
-        step
+    /// Presses at (x, y): moves there, lets the pointer rest, then presses.
+    fn press(&mut self, x: f64, y: f64) -> Result<bool> {
+        let mut ok = true;
+        if !matches!(self.last, Some((lx, ly, _)) if lx == x.clamp(0.0, 1.0) && ly == y.clamp(0.0, 1.0)) {
+            ok &= self.report(x, y, 0)?;
+        }
+        if let Some(rest) = self.last.map(|(_, _, t)| t.elapsed()).filter(|e| *e < SETTLE) {
+            thread::sleep(SETTLE - rest);
+        }
+        ok &= self.report(x, y, 1)?;
+        self.held = 1;
+        Ok(ok)
+    }
+    fn release(&mut self, x: f64, y: f64) -> Result<bool> {
+        self.held = 0;
+        self.report(x, y, 0)
     }
     fn note(&self, hid_listening: bool) {
         let mut hub = self.shared.lock().unwrap();
@@ -369,7 +387,6 @@ impl Device for Airplay {
         // no error, or every mouse move over the window would report it.
         if !listening {
             if action == "touch" && ["hover", "move", "cancel"].contains(&s(a, "phase")) {
-                self.step_to(number(a, "x"), number(a, "y"));
                 return Ok(json!({"delivered":false}));
             }
             if self.hid.is_none() {
@@ -380,45 +397,37 @@ impl Device for Airplay {
         }
         let delivered = match action {
             "touch" => {
-                let phase = s(a, "phase");
-                if phase == "cancel" && self.held == 0 {
-                    // The pointer left the window: the next entry starts afresh.
-                    self.last = None;
-                    return Ok(json!({"delivered":true}));
+                let (x, y) = (number(a, "x"), number(a, "y"));
+                match s(a, "phase") {
+                    "down" => self.press(x, y)?,
+                    "up" => self.release(x, y)?,
+                    // The pointer left the window: a held button lets go there.
+                    "cancel" if self.held != 0 => self.release(x, y)?,
+                    "cancel" => true,
+                    // Plain moves come with every mouse move over the picture;
+                    // one faster than the link would only queue up as lag.
+                    "hover" if self.sent.is_some_and(|t| t.elapsed() < PACE) => true,
+                    _ => self.report(x, y, self.held)?,
                 }
-                let (dx, dy) = self.step_to(number(a, "x"), number(a, "y"));
-                let buttons = match phase {
-                    "down" => 1,
-                    "up" | "cancel" => 0,
-                    _ => self.held,
-                };
-                let hid = self.hid.as_mut().unwrap();
-                let mut ok = hid.pointer(dx, dy, self.held)?;
-                if buttons != self.held {
-                    ok &= hid.pointer(0, 0, buttons)?;
-                    self.held = buttons;
-                }
-                ok
             }
             "tap" => {
-                let (dx, dy) = self.step_to(number(a, "x"), number(a, "y"));
-                let hid = self.hid.as_mut().unwrap();
-                hid.pointer(dx, dy, 0)? && hid.pointer(0, 0, 1)? && hid.pointer(0, 0, 0)?
+                let (x, y) = (number(a, "x"), number(a, "y"));
+                let ok = self.press(x, y)?;
+                thread::sleep(HOLD);
+                ok && self.release(x, y)?
             }
             "swipe" => {
-                let (dx, dy) = self.step_to(number(a, "x"), number(a, "y"));
-                let (ex, ey) = self.step_to(number(a, "x2"), number(a, "y2"));
-                let hid = self.hid.as_mut().unwrap();
-                let mut ok = hid.pointer(dx, dy, 0)? && hid.pointer(0, 0, 1)?;
-                let steps = 12;
-                for i in 0..steps {
-                    let (sx, sy) = (ex * (i + 1) / steps - ex * i / steps, ey * (i + 1) / steps - ey * i / steps);
-                    ok &= hid.pointer(sx, sy, 1)?;
-                    thread::sleep(Duration::from_millis(
-                        ((number(a, "duration").max(0.05) * 1000.0) as u64 / steps as u64).min(100),
-                    ));
+                let (x, y) = (number(a, "x"), number(a, "y"));
+                let (ex, ey) = (number(a, "x2"), number(a, "y2"));
+                let mut ok = self.press(x, y)?;
+                let duration = Duration::from_secs_f64(number(a, "duration").clamp(0.05, 5.0));
+                let steps = (duration.as_millis() / DRAG_STEP.as_millis()).max(1) as u32;
+                for i in 1..=steps {
+                    let f = i as f64 / steps as f64;
+                    thread::sleep(DRAG_STEP);
+                    ok &= self.report(x + (ex - x) * f, y + (ey - y) * f, 1)?;
                 }
-                ok && hid.pointer(0, 0, 0)?
+                ok && self.release(ex, ey)?
             }
             "key" => {
                 let hid = self.hid.as_mut().unwrap();

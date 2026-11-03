@@ -22,7 +22,9 @@ const PAIRING_WINDOW: Duration = Duration::from_secs(120);
 
 /// HID report descriptor: report 1 a three-button mouse with 16-bit relative
 /// X and Y and a wheel, report 2 a boot-style keyboard, report 3 consumer
-/// keys (Home, volume).
+/// keys (Home, volume), report 4 an absolute three-button pointer. A phone
+/// paired before report 4 existed keeps the old map: forget "Tomacco" in its
+/// Bluetooth settings and pair again.
 const REPORT_MAP: &[u8] = &[
     0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x85, 0x01, 0x09, 0x01, 0xA1, 0x00, // mouse, pointer
     0x05, 0x09, 0x19, 0x01, 0x29, 0x03, 0x15, 0x00, 0x25, 0x01, 0x95, 0x03, 0x75, 0x01, 0x81,
@@ -42,11 +44,24 @@ const REPORT_MAP: &[u8] = &[
     0x05, 0x0C, 0x09, 0x01, 0xA1, 0x01, 0x85, 0x03, // consumer control
     0x15, 0x00, 0x26, 0xFF, 0x03, 0x19, 0x00, 0x2A, 0xFF, 0x03, 0x75, 0x10, 0x95, 0x01, 0x81,
     0x00, //
-    0xC0,
+    0xC0, //
+    0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x85, 0x04, 0x09, 0x01, 0xA1, 0x00, // absolute pointer
+    0x05, 0x09, 0x19, 0x01, 0x29, 0x03, 0x15, 0x00, 0x25, 0x01, 0x95, 0x03, 0x75, 0x01, 0x81,
+    0x02, // 3 buttons
+    0x95, 0x01, 0x75, 0x05, 0x81, 0x01, // padding
+    0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x16, 0x00, 0x00, 0x26, 0xFF, 0x7F, 0x75, 0x10, 0x95,
+    0x02, 0x81, 0x02, // X, Y 0..32767 across the screen
+    0xC0, 0xC0,
 ];
 const MOUSE: u8 = 1;
 const KEYBOARD: u8 = 2;
 const CONSUMER: u8 = 3;
+/// The absolute pointer. With AssistiveTouch on, iOS puts its pointer exactly
+/// at the reported point, with no acceleration (measured by Jalrux's
+/// iphone-control on iOS 26.5.2, MIT). With two mouse collections iOS takes
+/// the buttons from this report, not from the relative one.
+const POINTER: u8 = 4;
+const ABS_MAX: f64 = 32767.0;
 
 fn err(message: impl Into<String>) -> Error {
     Error::new("bluetooth_input", message)
@@ -243,6 +258,8 @@ pub struct Hid {
     connection: Connection,
     reports: HashMap<u8, (OwnedObjectPath, Arc<AtomicBool>)>,
     buttons: u8,
+    /// The last absolute report: iOS ignores one equal to the one before.
+    last_point: Option<(u8, u16, u16)>,
 }
 
 impl Hid {
@@ -259,13 +276,24 @@ impl Hid {
             connection,
             reports,
             buttons: 0,
+            last_point: None,
         })
     }
     /// Whether the phone listens to the pointer, so input reaches it.
     pub fn listening(&self) -> bool {
         self.reports
-            .get(&MOUSE)
+            .get(&POINTER)
             .is_some_and(|(_, on)| on.load(Ordering::Relaxed))
+    }
+    /// Puts the phone's pointer at (x, y), 0..1 of the screen as the phone
+    /// shows it, with `buttons` held. A press lands where the pointer was
+    /// before the report, so a caller moves first and presses after a pause.
+    pub fn point(&mut self, x: f64, y: f64, buttons: u8) -> Result<bool> {
+        let (x, y) = (absolute(x), absolute(y));
+        let report = nudged(self.last_point, (buttons & 7, x, y));
+        self.last_point = Some(report);
+        self.buttons = report.0;
+        self.send(POINTER, point_report(report))
     }
     fn send(&self, id: u8, report: Vec<u8>) -> Result<bool> {
         let Some((at, on)) = self.reports.get(&id) else {
@@ -291,24 +319,6 @@ impl Hid {
                 .map_err(bus)
         })?;
         Ok(true)
-    }
-    /// Moves the pointer by dx, dy in HID units, split into reports of at
-    /// most 127 a step so the phone's acceleration treats them alike.
-    pub fn pointer(&mut self, dx: i32, dy: i32, buttons: u8) -> Result<bool> {
-        let mut delivered = true;
-        let (mut x, mut y) = (dx, dy);
-        loop {
-            let sx = x.clamp(-127, 127);
-            let sy = y.clamp(-127, 127);
-            self.buttons = buttons;
-            delivered &= self.send(MOUSE, mouse(buttons, sx, sy, 0))?;
-            x -= sx;
-            y -= sy;
-            if x == 0 && y == 0 {
-                break;
-            }
-        }
-        Ok(delivered)
     }
     pub fn keys(&mut self, modifiers: u8, key: u8) -> Result<bool> {
         let delivered = self.send(KEYBOARD, vec![modifiers, 0, key, 0, 0, 0, 0, 0])?;
@@ -349,6 +359,27 @@ impl Drop for Hid {
     }
 }
 
+/// 0..1 of the screen to the absolute pointer's 0..32767.
+fn absolute(v: f64) -> u16 {
+    if v.is_finite() {
+        (v.clamp(0.0, 1.0) * ABS_MAX).round() as u16
+    } else {
+        0
+    }
+}
+/// The report to send for `next`: one unit aside when it equals the last,
+/// since iOS drops a repeated absolute report.
+fn nudged(last: Option<(u8, u16, u16)>, next: (u8, u16, u16)) -> (u8, u16, u16) {
+    if last != Some(next) {
+        return next;
+    }
+    let (b, x, y) = next;
+    (b, if x < ABS_MAX as u16 { x + 1 } else { x - 1 }, y)
+}
+fn point_report((buttons, x, y): (u8, u16, u16)) -> Vec<u8> {
+    let (x, y) = (x.to_le_bytes(), y.to_le_bytes());
+    vec![buttons & 7, x[0], x[1], y[0], y[1]]
+}
 fn mouse(buttons: u8, dx: i32, dy: i32, wheel: i8) -> Vec<u8> {
     let x = (dx as i16).to_le_bytes();
     let y = (dy as i16).to_le_bytes();
@@ -412,6 +443,7 @@ async fn serve(
                 (0x2A4D, &["encrypt-read", "notify"], mouse(0, 0, 0, 0), Some([MOUSE, 1])),
                 (0x2A4D, &["encrypt-read", "notify"], vec![0; 8], Some([KEYBOARD, 1])),
                 (0x2A4D, &["encrypt-read", "notify"], vec![0, 0], Some([CONSUMER, 1])),
+                (0x2A4D, &["encrypt-read", "notify"], vec![0; 5], Some([POINTER, 1])),
             ],
         ),
     ];
@@ -614,5 +646,23 @@ mod tests {
         let opens = REPORT_MAP.windows(2).filter(|w| w == &[0xA1, 0x01] || w == &[0xA1, 0x00]).count();
         let closes = REPORT_MAP.iter().filter(|b| **b == 0xC0).count();
         assert_eq!(opens, closes);
+    }
+    #[test]
+    fn the_absolute_pointer_spans_the_screen_and_is_never_repeated() {
+        assert_eq!(absolute(0.0), 0);
+        assert_eq!(absolute(1.0), 32767);
+        assert_eq!(absolute(0.5), 16384);
+        assert_eq!(absolute(-3.0), 0);
+        assert_eq!(absolute(7.0), 32767);
+        assert_eq!(absolute(f64::NAN), 0);
+        // Report 4: buttons, then X and Y as little-endian 16-bit.
+        assert_eq!(point_report((1, 0x1234, 32767)), vec![1, 0x34, 0x12, 0xFF, 0x7F]);
+        assert_eq!(point_report((0xFF, 0, 0))[0], 7);
+        assert_eq!(nudged(None, (0, 10, 10)), (0, 10, 10));
+        assert_eq!(nudged(Some((0, 10, 10)), (1, 10, 10)), (1, 10, 10));
+        assert_eq!(nudged(Some((1, 10, 10)), (1, 10, 10)), (1, 11, 10));
+        assert_eq!(nudged(Some((1, 32767, 0)), (1, 32767, 0)), (1, 32766, 0));
+        // The descriptor names report 4.
+        assert!(REPORT_MAP.windows(2).any(|w| w == [0x85, POINTER]));
     }
 }
