@@ -597,6 +597,9 @@
     "source": "https://www.apple.com/iphone-air/specs/",
     "platform": "ios",
     "dpr": 3,
+    "productTypes": [
+      "iPhone18,4"
+    ],
     "bezel": 16,
     "verifiedAt": "2026-10-30",
     "confidence": "official-body-buttons-cameras; measured-island-radius-insets",

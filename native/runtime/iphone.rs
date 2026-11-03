@@ -16,6 +16,49 @@ const DEFAULT_RUNNER: &str = "com.facebook.WebDriverAgentRunner.xctrunner";
 fn err(message: impl Into<String>) -> Error {
     Error::new("iphone_runtime", message)
 }
+/// The hardware identifier the iPhone reports, such as `iPhone18,4`, or ""
+/// when ideviceinfo is missing or the answer is not one.
+fn product_type(device: &str) -> String {
+    let Ok(tool) = tc::find("ideviceinfo") else {
+        return String::new();
+    };
+    std::process::Command::new(tool)
+        .args(["-u", device, "-k", "ProductType"])
+        .stdin(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+        .filter(|v| valid_product_type(v))
+        .unwrap_or_default()
+}
+fn valid_product_type(value: &str) -> bool {
+    let Some(numbers) = value
+        .strip_prefix("iPhone")
+        .or_else(|| value.strip_prefix("iPad"))
+    else {
+        return false;
+    };
+    let mut parts = numbers.split(',');
+    let ok = |p: Option<&str>| {
+        p.is_some_and(|p| !p.is_empty() && p.len() <= 3 && p.bytes().all(|c| c.is_ascii_digit()))
+    };
+    ok(parts.next()) && ok(parts.next()) && parts.next().is_none()
+}
+/// The catalogue profile whose `productTypes` names this hardware identifier:
+/// that proves the physical model, unlike the display size alone.
+fn profile_for(catalogue: &Value, product_type: &str) -> Option<Value> {
+    if product_type.is_empty() {
+        return None;
+    }
+    catalogue.as_array()?.iter().find(|p| {
+        p["platform"] == "ios"
+            && p["productTypes"]
+                .as_array()
+                .is_some_and(|t| t.iter().any(|v| v == product_type))
+    }).cloned()
+}
 pub fn validate(a: &Value) -> Result<()> {
     identifier(s(a, "device"), "iPhone UDID", Some("[A-Fa-f0-9-]{16,64}"))?;
     tc::find("iproxy")?;
@@ -353,7 +396,17 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Iphone> {
     let png = device.screenshot()?;
     let width = u32::from_be_bytes(png[16..20].try_into().unwrap());
     let height = u32::from_be_bytes(png[20..24].try_into().unwrap());
-    shared.lock().unwrap().update(json!({"name":"iPhone / iPad","transport":"usb/wda","codec":"mjpeg","width":width,"height":height,"point_width":device.width,"point_height":device.height,"runner_bundle_id":bundle,"mac_required":false}))?;
+    let product = product_type(s(a, "device"));
+    let profile = profile_for(&crate::catalog::builtin(), &product);
+    let mut details = json!({"name":profile.as_ref().map_or("iPhone / iPad",|p|s(p,"name")),"transport":"usb/wda","codec":"mjpeg","width":width,"height":height,"point_width":device.width,"point_height":device.height,"runner_bundle_id":bundle,"mac_required":false});
+    if !product.is_empty() {
+        details["product_type"] = json!(product);
+    }
+    if let Some(profile) = &profile {
+        details["profile_id"] = profile["id"].clone();
+        details["profile_source"] = json!("product-type");
+    }
+    shared.lock().unwrap().update(details)?;
     let stream = device
         .rt
         .block_on(Http { port: video_port }.request("GET", "/", None))?;
@@ -698,6 +751,19 @@ mod tests {
                 .is_err()
         );
         assert!(Multipart::default().push(&vec![b'x'; 8193]).is_err());
+    }
+    #[test]
+    fn the_hardware_identifier_picks_the_frame() {
+        let catalogue = crate::catalog::builtin();
+        assert_eq!(profile_for(&catalogue, "iPhone18,4").unwrap()["id"], "air");
+        assert!(profile_for(&catalogue, "iPhone1,1").is_none());
+        assert!(profile_for(&catalogue, "").is_none());
+        for good in ["iPhone18,4", "iPad16,6"] {
+            assert!(valid_product_type(good), "{good}");
+        }
+        for bad in ["", "iPhone", "iPhone18", "iPhone18,", "iPhone,4", "iPhone18,4,1", "Watch7,1", "iPhone1234,1"] {
+            assert!(!valid_product_type(bad), "{bad}");
+        }
     }
     #[test]
     fn webdriveragent_mjpeg_parts_are_read() {

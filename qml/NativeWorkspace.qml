@@ -85,7 +85,12 @@ Rectangle {
     readonly property var liveAudio: live.audio || ({enabled:false,status:"off"})
     readonly property bool audioPending: !!live.session && audioPendingSession===live.session
     property int frameFinish: 0
-    readonly property var liveDevice: targets.find(d=>d.id===live.device && d.platform===live.platform) || {id:live.device || "",kind:live.kind || "",profile_id:live.profile_id || ""}
+    // A session that proved its model (a physical iPhone's hardware identifier)
+    // names the profile itself, ahead of what the device list knows.
+    readonly property var liveDevice: {
+        const row=targets.find(d=>d.id===live.device && d.platform===live.platform) || {id:live.device || "",kind:live.kind || "",profile_id:live.profile_id || ""}
+        return live.profile_id?Object.assign({},row,{profile_id:live.profile_id,profile_source:live.profile_source || "assigned"}):row
+    }
     readonly property var frameMatch: NativeProfiles.match(Studio.models,live.platform || platform,liveDevice,display.sourceSize.width,display.sourceSize.height)
     readonly property var frameProfile: frameMatch.profile
     readonly property bool hasFrame: !!frameProfile.id && frameMatch.compatible
