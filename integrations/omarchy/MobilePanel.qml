@@ -67,7 +67,8 @@ Panel {
     readonly property var recentJobs: jobs.filter(j=>j.state!=="running" && j.state!=="queued").slice(0,5)
     // Jobs come newest first.
     readonly property var latestJob: jobs.length ? jobs[0] : null
-    readonly property var liveRuntimes: (snapshot.runtimes || []).filter(x=>x.status==="connected")
+    // An AirPlay receiver is connected while it waits; only a mirroring phone is live.
+    readonly property var liveRuntimes: (snapshot.runtimes || []).filter(x=>x.status==="connected" && (x.transport!=="wifi/airplay" || x.mirroring===true))
     readonly property var liveRuntime: liveRuntimes.length ? liveRuntimes[0] : null
     readonly property bool desktopOpen: (snapshot.sessions || []).some(x=>x.session==="main")
     readonly property bool anyLive: liveRuntimes.length>0 || phoneRunning

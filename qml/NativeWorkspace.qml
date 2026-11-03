@@ -113,9 +113,14 @@ Rectangle {
     // grace period, so a reconnecting stream does not close it.
     Timer {id:soloGrace;interval:4000;onTriggered:if(view.solo && !view.deviceWindowVisible)view.quitApp()}
     onDeviceWindowVisibleChanged: if(!deviceWindowVisible && solo)soloGrace.restart()
-    // A floating AirPlay window goes when the phone stops mirroring; the next
-    // mirror opens it again. A short pause rides out a quick restart.
-    Timer {interval:3000;running:view.solo && view.live.transport==="wifi/airplay" && view.live.mirroring===false;onTriggered:view.closeSolo()}
+    // A floating AirPlay window that a mirror opened goes when the phone stops
+    // mirroring; the next mirror opens it again. A short pause rides out a
+    // quick restart. In the main window the device docks back instead.
+    property bool mirrorOpened: false
+    Timer {
+        interval:3000;running:(view.solo || view.mirrorOpened) && view.live.transport==="wifi/airplay" && view.live.mirroring===false
+        onTriggered:{if(view.solo)view.closeSolo();else{view.detached=false;view.mirrorOpened=false}}
+    }
     property bool quitting: false
     // Bounds the wait for the session to stop before the app ends.
     Timer {id:quitTimer;interval:2500;onTriggered:view.quitApp()}
@@ -413,6 +418,9 @@ Rectangle {
         pendingLaunch=null;autoAttach=false;live=({});display.session=({});appleTarget=value
     }
     function configure(args) {
+        // A session by ID, such as the AirPlay receiver's when a mirror starts:
+        // shown as soon as runtime.list names it.
+        if(args.session){wantedSession=args.session;mirrorOpened=args.mirror===true;refresh()}
         if(args.platform)choosePlatform(args.platform)
         if(args.apple_target)chooseAppleTarget(args.apple_target)
         if(args.frame!==undefined)showDeviceFrame=args.frame
@@ -566,7 +574,7 @@ Rectangle {
                         if(wanted.platform==="ios")view.chooseAppleTarget(wanted.remote?"simulator":"device")
                         if(!view.targets.some(d=>d.id===wanted.device && d.platform===wanted.platform))view.targets=view.targets.concat([{id:wanted.device,name:wanted.name || wanted.device,platform:wanted.platform,kind:"device"}])
                         view.target=wanted.device;view.autoAttach=true;view.attach(wanted)
-                        if(view.solo)view.detached=true
+                        if(view.solo || view.mirrorOpened)view.detached=true
                     }
                 }
                 let active=r.find(x=>x.session===view.live.session)
