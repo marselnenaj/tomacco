@@ -577,6 +577,13 @@ Rectangle {
             if(op==="runtime.start")view.attach(r)
             if(op==="runtime.list") {
                 view.sessions=r;view.sessionsSerial+=1
+                // The phone may already be mirroring when this desktop opens.
+                // Adopt it on an idle automatic view, even if Android was saved;
+                // keep explicit target choices and awaited devices untouched.
+                if(!view.wantedSession && view.autoAttach && !view.live.session && !view.pendingWanted) {
+                    let mirror=r.find(x=>x.status==="connected" && x.transport==="wifi/airplay" && x.mirroring===true)
+                    if(mirror){view.wantedSession=mirror.session;view.mirrorOpened=true}
+                }
                 // --session: show that session at once, whichever platform and target it has.
                 if(view.wantedSession) {
                     let wanted=r.find(x=>x.session===view.wantedSession && x.status==="connected")
@@ -591,7 +598,14 @@ Rectangle {
                 }
                 let active=r.find(x=>x.session===view.live.session)
                 if(active && ["failed","disconnected"].indexOf(active.status)>=0 && view.live.status!==active.status){notifications.add("device",active.status==="failed"?"failed":"warn",(view.targets.find(d=>d.id===active.device) || {}).name || active.device,active.error || qsTr("Session ended"),{platform:active.platform,device:active.device});view.live=active;view.notice=active.error || qsTr("Session ended");view.failed=active.status==="failed";view.pendingLaunch=null}
-                else if(active && !view.audioPending)view.live=Object.assign({},view.live,{audio:active.audio})
+                else if(active) {
+                    if(active.transport==="wifi/airplay" && active.mirroring===true && view.live.mirroring===false) {
+                        view.mirrorOpened=true;view.detached=true
+                    }
+                    let latest=Object.assign({},view.live,active)
+                    if(view.audioPending)latest.audio=view.live.audio
+                    view.live=latest
+                }
                 if(view.autoAttach && (!view.live.session || !view.live.video_socket || display.state!=="live")) {
                     let next=r.find(x=>x.status==="connected" && x.platform===view.platform && (!view.target || x.device===view.target) && (view.platform!=="ios" || (!!x.remote===(view.appleTarget==="simulator"))) && (!view.live.session || view.live.session===x.session || ["failed","disconnected"].indexOf(view.live.status)>=0))
                     if(next && display.session.session!==next.session)view.attach(next)

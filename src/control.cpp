@@ -77,12 +77,28 @@ Control::Control(const QString &session, QObject *parent, const QString &cli): Q
     else QTimer::singleShot(0,this,[this]{ request("schema"); });
 }
 Control::~Control() {
+    m_server.disconnect(this);
     if(m_server.isListening()) m_server.close();
-    if(m_previewProcess) {
-        // This child serves guest frames and live touches, never app jobs.
-        m_previewProcess->disconnect(this);
-        m_previewProcess->kill();
-        m_previewProcess->waitForFinished(1000);
+    // QLocalServer owns the accepted sockets. Its member destructor otherwise
+    // deletes them after m_clients and m_ids have already been destroyed, while
+    // their disconnected handlers can still call into those maps.
+    const auto sockets=m_server.findChildren<QLocalSocket *>();
+    for(auto *socket:sockets) {
+        socket->disconnect(this);
+        delete socket;
+    }
+    m_clients.clear();m_ids.clear();
+    // QObject deletes these children only after Control's members are gone.
+    // Stop the window's CLI requests now, with their callbacks disconnected;
+    // durable app jobs run separately and remain running.
+    const auto processes=findChildren<QProcess *>(QString(),Qt::FindDirectChildrenOnly);
+    for(auto *process:processes)process->disconnect(this);
+    for(auto *process:processes) {
+        if(process->state()!=QProcess::NotRunning) {
+            process->kill();
+            process->waitForFinished(1000);
+        }
+        delete process;
     }
     if(!m_touch.isEmpty()) {
         // A contact it may have held is lifted before the app is gone.

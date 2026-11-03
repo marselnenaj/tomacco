@@ -30,6 +30,11 @@ operations and their JSON results.
   app that way was not tried (xtool asks for an Apple ID first).
 
 ### Fixed
+- **AirPlay in the desktop.** An already mirroring iPhone is adopted when an idle desktop opens,
+  even if Android was selected before. Mirror stop/start changes now reach the view, so the device
+  window closes and reopens with the phone instead of showing a stale picture.
+- **Desktop shutdown.** Closing a window with unanswered preview requests no longer accesses
+  destroyed socket maps. The window also cleans up its control-program children before teardown.
 - **Physical iPhone live view.** It stopped about a second after it connected with "Missing or
   oversized MJPEG frame": WebDriverAgent ends each part with an empty line and calls its
   pictures `image/jpg`. It now streams at about 18 to 20 pictures a second at full resolution

@@ -9,7 +9,8 @@ reduces the virtual iPhone engine's CPU use. The [changelog](../CHANGELOG.md) li
 - **An iPhone over Wi-Fi.** `runtime.start` with `device` set to `airplay` starts a UxPlay
   receiver named Tomacco. Start Screen Mirroring on the phone and its floating device window
   opens automatically; it closes when mirroring stops. The Omarchy panel shows the receiver
-  as live while a phone is mirroring.
+  as live while a phone is mirroring. An idle desktop also picks up a phone that was already
+  mirroring when the app opened; stop/start changes update the device window.
 - **Control over Bluetooth.** Pair the phone with Tomacco and turn on AssistiveTouch to use
   the desktop's mouse and keyboard. An absolute pointer follows the mouse; clicks tap, drags
   swipe, and text, Home and the side buttons work. The pointer was checked on an iPhone Air
@@ -21,6 +22,8 @@ reduces the virtual iPhone engine's CPU use. The [changelog](../CHANGELOG.md) li
 - **The right frame and a pin.** Physical iPhones use their hardware identifier to choose the
   matching device frame. The floating device window has a pin button to keep it above other
   windows, including under Hyprland.
+- **Desktop shutdown.** A window can close with preview requests still pending without a
+  socket teardown crash. Its control-program children are cleaned up before the window exits.
 - **Less CPU for the virtual iPhone.** Translated-code lookups survive TLB changes that do not
   affect them. During Home-screen swipes, misses fell from 6.9 to 3.8 million a second; engine
   CPU time over the measurement workload fell from 475 to 433 seconds. Launch, tap and swipe

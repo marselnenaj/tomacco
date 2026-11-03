@@ -107,11 +107,11 @@ class DesktopUiTest : public QObject {
         return face?face->text(QAccessible::Name):QString();
     }
     // A request sent on the preview socket, as tomaccoctl sends it, without waiting for its answer.
-    std::unique_ptr<QLocalSocket> previewSend(const QString &method,const QVariantMap &params={}) {
+    std::unique_ptr<QLocalSocket> previewSend(const QString &method,const QVariantMap &params={},const QString &session="ui-acceptance") {
         const auto data=QDir::cleanPath(QFileInfo(Backend::dataDirectory()).absoluteFilePath());
         auto runtime=data+"/runtime";
         if(runtime.toUtf8().size()+54>=104)runtime=QStringLiteral("/tmp/tomacco-%1-%2").arg(getuid()).arg(QString::fromLatin1(QCryptographicHash::hash(data.toUtf8(),QCryptographicHash::Sha256).toHex().left(16)));
-        auto socket=std::make_unique<QLocalSocket>();socket->connectToServer(runtime+"/preview-ui-acceptance.sock");
+        auto socket=std::make_unique<QLocalSocket>();socket->connectToServer(runtime+"/preview-"+session+".sock");
         if(!socket->waitForConnected(2000))return nullptr;
         socket->write(QJsonDocument(QJsonObject{{"id",1},{"method",method},{"params",QJsonObject::fromVariantMap(params)}}).toJson(QJsonDocument::Compact)+"\n");socket->flush();
         return socket;
@@ -481,6 +481,41 @@ private slots:
         QVERIFY(!toggle->isVisible());QVERIFY(!log->isVisible());
         view->setProperty("live",QVariantMap{});view->setProperty("audioPendingSession",QString());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void an_existing_airplay_mirror_opens_in_the_app_and_tracks_reconnections() {
+        open("runtime");
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        auto *display=qobject_cast<NativeView *>(object("nativeDisplay"));QVERIFY(display);
+        QLocalServer video,input;
+        QVERIFY(video.listen(directory.filePath("airplay-adopt-video")));
+        QVERIFY(input.listen(directory.filePath("airplay-adopt-input")));
+        QImage image(126,274,QImage::Format_RGB32);image.fill(QColor("#295c83"));
+        QByteArray jpeg;QBuffer buffer(&jpeg);buffer.open(QIODevice::WriteOnly);image.save(&buffer,"JPEG");
+        QByteArray packet(4,0);qToBigEndian(quint32(jpeg.size()),packet.data());packet+=jpeg;
+        connect(&video,&QLocalServer::newConnection,this,[&]{auto *socket=video.nextPendingConnection();socket->write(packet);connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        connect(&input,&QLocalServer::newConnection,this,[&]{auto *socket=input.nextPendingConnection();connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        QVariantMap mirror{{"session","b0000000000000000000000000000001"},{"status","connected"},{"platform","ios"},{"device","airplay"},{"transport","wifi/airplay"},{"mirroring",true},{"name","iPhone Air (AirPlay)"},{"codec","mjpeg"},{"video_socket",video.fullServerName()},{"control_socket",input.fullServerName()}};
+        const auto poll=[&]{
+            view->setProperty("requests",QVariantMap{{"-500",QVariantMap{{"op","runtime.list"},{"quiet",true}}}});
+            control->apiFinished(-500,"runtime.list",QVariantMap{{"ok",true},{"result",QVariantList{mirror}}});
+        };
+        view->setProperty("live",QVariantMap{});view->setProperty("wantedSession",QString());
+        view->setProperty("platform","android");view->setProperty("autoAttach",false);
+        poll();QCOMPARE(view->property("platform").toString(),QString("android"));
+        // A manual target choice is kept. A fresh app may adopt a mirror that
+        // was already active before this desktop started, even with Android saved.
+        view->setProperty("autoAttach",true);poll();
+        QCOMPARE(view->property("platform").toString(),QString("ios"));
+        QCOMPARE(mapOf(view->property("live")).value("session"),mirror["session"]);
+        QTRY_VERIFY_WITH_TIMEOUT(display->window()!=window && display->window()->isVisible(),patient(3000));
+        mirror["mirroring"]=false;poll();
+        QVERIFY(!mapOf(view->property("live")).value("mirroring").toBool());
+        QTRY_VERIFY_WITH_TIMEOUT(!view->property("detached").toBool(),patient(5000));
+        mirror["mirroring"]=true;poll();
+        QTRY_VERIFY_WITH_TIMEOUT(view->property("detached").toBool() && display->window()->isVisible(),patient(3000));
+        view->setProperty("detached",false);view->setProperty("mirrorOpened",false);
+        view->setProperty("live",QVariantMap{});view->setProperty("sessions",QVariantList{});
+        display->setSession({});
     }
     void native_frames_preserve_real_pixels_and_pointer_coordinates() {
         open("runtime");window->resize(1380,970);
@@ -3535,6 +3570,21 @@ for line in sys.stdin:
         QVERIFY(std::any_of(requests.begin(),requests.end(),[](const QVariant &r){return r.toMap().value("op").toString()=="device.list" && r.toMap().value("signature").toString()==R"({"platform":"all"})";}));
         view->setProperty("notice",QString());view->setProperty("failed",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void control_shutdown_closes_clients_with_unanswered_preview_requests() {
+        auto receiver=std::make_unique<Control>("ui-shutdown");
+        QVERIFY(receiver->socketError().isEmpty());
+        QTRY_VERIFY_WITH_TIMEOUT(!receiver->operations().isEmpty(),patient(10000));
+        QSignalSpy requests(receiver.get(),&Control::previewRequest);
+        auto pending=previewSend("state",{},"ui-shutdown");QVERIFY(pending);
+        QTRY_COMPARE(requests.size(),1);
+        QLocalSocket idle;idle.connectToServer(pending->serverName());
+        QVERIFY(idle.waitForConnected(2000));QTest::qWait(20);
+        // Neither client closes first. The receiver must tear down its sockets
+        // while the request maps used by their disconnect handlers still exist.
+        receiver.reset();
+        QTRY_COMPARE(pending->state(),QLocalSocket::UnconnectedState);
+        QTRY_COMPARE(idle.state(),QLocalSocket::UnconnectedState);
     }
     void a_missing_or_broken_control_program_is_explained() {
         // Missing: known before any request, and every request answers with a sentence instead of a raw error.
