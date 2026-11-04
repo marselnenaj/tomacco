@@ -134,11 +134,11 @@ ColumnLayout {
     }
     RowLayout {Layout.fillWidth:true;spacing:Theme.gapMd
         Text {Layout.fillWidth:true;text:qsTr("Each emulator keeps its own model and app data.");color:Theme.muted;font.pixelSize:Theme.fontBody;wrapMode:Text.WordWrap}
-        StudioButton {objectName:"deviceGridToggle";text:library.gridMode?qsTr("List"):qsTr("All screens");displayText:library.width<760?"":text;iconName:library.gridMode?"devices":"grid";quiet:true;selected:library.gridMode;tip:library.gridMode?qsTr("Show the device list"):qsTr("Show every running device's screen side by side");onClicked:library.gridMode=!library.gridMode}
+        StudioButton {objectName:"deviceGridToggle";text:library.gridMode?qsTr("List"):qsTr("All screens");displayText:library.width<Theme.px(760)?"":text;iconName:library.gridMode?"devices":"grid";quiet:true;selected:library.gridMode;tip:library.gridMode?qsTr("Show the device list"):qsTr("Show every running device's screen side by side");onClicked:library.gridMode=!library.gridMode}
         StudioButton {objectName:"createAndroidEmulator";text:library.createJob?qsTr("Creating…"):qsTr("Add device");iconName:"plus";accent:true;enabled:!library.createJob && !library.submitting;onClicked:library.newEmulator()}
     }
     DeviceGrid {
-        objectName:"androidDeviceGrid";Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:320;visible:library.gridMode
+        objectName:"androidDeviceGrid";Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:Theme.px(320);visible:library.gridMode
         devices:library.runningPhones;selected:workspace.selectedDevice
         onChosen:device=>{workspace.selectedDevice=device.id;library.openDevice(device)}
     }
@@ -183,7 +183,7 @@ ColumnLayout {
                     onClicked:workspace.selectedDevice=modelData.id
                 }
             }
-            StudioEmptyState {visible:!library.avds.length && !library.phones.length;width:Math.min(parent.width,520);topPadding:Theme.gapXxl;title:qsTr("No phone yet.");body:qsTr("Add an emulator, or plug in a phone with USB debugging on.")}
+            StudioEmptyState {visible:!library.avds.length && !library.phones.length;width:Math.min(parent.width,Theme.px(520));topPadding:Theme.gapXxl;title:qsTr("No phone yet.");body:qsTr("Add an emulator, or plug in a phone with USB debugging on.")}
         }
     }
     RowLayout {Layout.fillWidth:true;visible:!!library.notice
@@ -191,12 +191,12 @@ ColumnLayout {
         StudioButton {visible:library.failed && !!workspace.selectedJob;text:qsTr("Open job");quiet:true;onClicked:workspace.showTab("jobs")}
     }
     StudioDialog {
-        id:createDialog;objectName:"createAndroidDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,620);height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Add Android device")
+        id:createDialog;objectName:"createAndroidDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,Theme.px(620));height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Add Android device")
         contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapMd
             Text {text:qsTr("Model");color:Theme.muted;font.pixelSize:Theme.fontSmall}
             StudioComboBox {id:modelPicker;objectName:"androidModelPicker";Layout.fillWidth:true;model:library.profiles;textRole:"name";onActivated:nameField.text="Tomacco-"+library.selectedProfile.id}
             RowLayout {Layout.fillWidth:true;spacing:Theme.gapLg
-                Item {Layout.preferredWidth:72;Layout.preferredHeight:120
+                Item {Layout.preferredWidth:Theme.px(72);Layout.preferredHeight:Theme.px(120)
                     NativeDeviceFrame {id:modelPreview;profile:library.selectedProfile;backgroundColor:Theme.surface;scale:Math.min(72/width,120/height);anchors.centerIn:parent
                         Rectangle {parent:modelPreview.screen;anchors.fill:parent;color:Theme.inset}
                     }
@@ -217,7 +217,7 @@ ColumnLayout {
         }}
     }
     StudioDialog {
-        id:performanceDialog;objectName:"androidPerformanceDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,520);height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Emulator performance")
+        id:performanceDialog;objectName:"androidPerformanceDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,Theme.px(520));height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Emulator performance")
         contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapSm
             Text {Layout.fillWidth:true;text:library.performanceAvd.name || "";color:Theme.text;font.family:Theme.mono;font.pixelSize:Theme.fontBody}
             Text {Layout.fillWidth:true;text:qsTr("The computer GPU can speed up animations considerably. If graphics glitch, choose a software renderer. Changes require the emulator to be off; app data is kept.");wrapMode:Text.WordWrap;color:Theme.muted;font.pixelSize:Theme.fontSmall}
@@ -245,7 +245,7 @@ ColumnLayout {
         }}
     }
     StudioDialog {
-        id:renameDialog;objectName:"renameDeviceDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,440);modal:true;title:qsTr("Device nickname")
+        id:renameDialog;objectName:"renameDeviceDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,Theme.px(440));modal:true;title:qsTr("Device nickname")
         contentItem:ColumnLayout {spacing:Theme.gapSm
             Text {Layout.fillWidth:true;text:qsTr("Shown instead of %1 here, in device lists and in the Omarchy panel.").arg(library.renaming.title || "");color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             StudioTextField {id:nicknameField;objectName:"deviceNicknameField";Layout.fillWidth:true;maximumLength:40;placeholderText:qsTr("Nickname");onAccepted:if(renameSave.enabled)renameSave.clicked()}
@@ -258,7 +258,7 @@ ColumnLayout {
         }
     }
     StudioDialog {
-        id:pairDialog;objectName:"pairWifiDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,480);height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Pair over Wi-Fi")
+        id:pairDialog;objectName:"pairWifiDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,Theme.px(480));height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Pair over Wi-Fi")
         onClosed:{library.pairing={};library.pairState=""}
         contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapSm
             StudioSegmented {
@@ -269,7 +269,7 @@ ColumnLayout {
             Text {Layout.fillWidth:true;wrapMode:Text.WordWrap;color:Theme.muted;font.pixelSize:Theme.fontSmall
                 text:library.pairMode==="qr"?qsTr("On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer."):qsTr("On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.")}
             Rectangle {
-                objectName:"pairQrCode";visible:library.pairMode==="qr";Layout.alignment:Qt.AlignHCenter;Layout.preferredWidth:232;Layout.preferredHeight:232;color:"white";radius:Theme.radiusSmall
+                objectName:"pairQrCode";visible:library.pairMode==="qr";Layout.alignment:Qt.AlignHCenter;Layout.preferredWidth:Theme.px(232);Layout.preferredHeight:Theme.px(232);color:"white";radius:Theme.radiusSmall
                 Canvas {
                     id:qrCanvas;objectName:"pairQrCanvas";anchors.fill:parent;anchors.margins:12
                     readonly property var rows:library.pairing.qr?library.pairing.qr.rows:[]

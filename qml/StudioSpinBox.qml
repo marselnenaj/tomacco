@@ -5,7 +5,7 @@ import "."
 SpinBox {
     id: control
     implicitHeight: Theme.controlHeight
-    implicitWidth: 112
+    implicitWidth: Theme.px(112)
     font.pixelSize: Theme.fontBody
     leftPadding: Theme.controlHeight
     rightPadding: Theme.controlHeight

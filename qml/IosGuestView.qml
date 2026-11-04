@@ -828,7 +828,7 @@ ColumnLayout {
                     color:"#c0101216"
                     Text {
                         id:speedText;objectName:"iosGuestSpeedText"
-                        anchors.centerIn:parent;color:"#f2f4f8";font.family:Theme.mono;font.pixelSize:11
+                        anchors.centerIn:parent;color:"#f2f4f8";font.family:Theme.mono;font.pixelSize:Theme.fontMicro
                         text:qsTr("%1 new · %2 fetched frames/s").arg(view.framesPerSecond).arg(view.framesAskedPerSecond)+"\n"
                             +(view.latencyMs>=0?qsTr("Input to picture: %1 ms").arg(view.latencyMs):qsTr("Input to picture: not measured yet"))
                     }
@@ -855,7 +855,7 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth:true
         Label {
-            objectName:"iosGuestFrameStatus";Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:12
+            objectName:"iosGuestFrameStatus";Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:Theme.fontSmall
             text:view.capturedAt?(view.running?qsTr("Live frame · %1").arg(view.framesPerSecond>0?qsTr("%n new frame(s)/s","",view.framesPerSecond):qsTr("Still frame")):qsTr("Last frame"))+" · "+view.frameWidth+" × "+view.frameHeight+" · "+view.capturedAt:qsTr("Real output of the virtual display")
         }
         StudioButton {objectName:"iosGuestPower";text:qsTr("Side button");visible:view.guest.power_button_supported===true;enabled:view.canInput;tip:qsTr("Wake or lock the display")+" · Ctrl+Shift+L";onClicked:view.send("power_button")}
@@ -871,7 +871,7 @@ ColumnLayout {
     RowLayout {
         objectName:"iosGuestGestures"
         Layout.fillWidth:true;visible:view.modern
-        Label {Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:12;text:qsTr("Edge swipes start on the frame or at the screen's edge")}
+        Label {Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:Theme.fontSmall;text:qsTr("Edge swipes start on the frame or at the screen's edge")}
         Repeater {
             model:[
                 {name:"appSwitcher",text:qsTr("App switcher"),tip:qsTr("Swipe up from the bottom edge and pause"),keys:"Ctrl+Shift+A"},
@@ -907,5 +907,5 @@ ColumnLayout {
     }
     // A recording of the screen through ios.virtual.record, saved under Videos/Tomacco.
     ScreenRecorder {id:guestRecorder;objectName:"iosGuestRecorder"}
-    Label {objectName:"iosGuestNotice";visible:!!view.inputNotice || !!view.appNotice || !!guestRecorder.notice || !!view.notice;Layout.fillWidth:true;wrapMode:Text.Wrap;color:guestRecorder.failed && !view.inputNotice && !view.appNotice?Theme.danger:Theme.muted;font.pixelSize:12;text:view.inputNotice || view.appNotice || guestRecorder.notice || view.notice}
+    Label {objectName:"iosGuestNotice";visible:!!view.inputNotice || !!view.appNotice || !!guestRecorder.notice || !!view.notice;Layout.fillWidth:true;wrapMode:Text.Wrap;color:guestRecorder.failed && !view.inputNotice && !view.appNotice?Theme.danger:Theme.muted;font.pixelSize:Theme.fontSmall;text:view.inputNotice || view.appNotice || guestRecorder.notice || view.notice}
 }

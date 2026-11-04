@@ -58,7 +58,7 @@ ApplicationWindow {
     property int testStep: 0
     property bool testFailed: false
     property var testResults: []
-    readonly property bool compact: width < 1190
+    readonly property bool compact: width < Theme.px(1190)
     readonly property string finishName: ColorNames.name(currentModel.colorNames[finishIndex])
     readonly property string stateName: (currentModel.openWidth ? (foldedOpen ? qsTr("Open · %1") : qsTr("Folded · %1")) : "%1").arg(rotated ? qsTr("Landscape") : qsTr("Portrait"))
     readonly property bool isDemo: phone.browser.url.toString().indexOf("qrc:/assets/demo.html")===0
@@ -195,6 +195,11 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+Shift+R"; enabled:!root.nativeMode; onActivated: root.rotated=!root.rotated }
     Shortcut { sequence: "Ctrl+Shift+S"; onActivated: root.snapshot() }
     Shortcut { sequence: "F11"; onActivated: root.toggleFullscreen() }
+    // App-wide chrome size also works from a detached device window. Device
+    // zoom keeps Ctrl+plus/minus/0; these shortcuts include Alt deliberately.
+    Shortcut { sequences: ["Ctrl+Alt++","Ctrl+Alt+="]; context: Qt.ApplicationShortcut; onActivated: Studio.setUiScale(Studio.uiScale+25) }
+    Shortcut { sequence: "Ctrl+Alt+-"; context: Qt.ApplicationShortcut; onActivated: Studio.setUiScale(Studio.uiScale-25) }
+    Shortcut { sequence: "Ctrl+Alt+0"; context: Qt.ApplicationShortcut; onActivated: Studio.setUiScale(100) }
     Shortcut { sequence: "F12"; enabled:!root.nativeMode; onActivated: devTools.visible=!devTools.visible }
     Shortcut { sequence: "Escape"; enabled:root.visibility===Window.FullScreen; onActivated: root.showNormal() }
 
@@ -208,19 +213,19 @@ ApplicationWindow {
                     BrandMark { size: Theme.gapXl; anchors.verticalCenter: parent.verticalCenter }
                     StudioHeading { text: Qt.application.name; size: Theme.fontTitle; wide: true; wrapMode: Text.NoWrap; anchors.verticalCenter: parent.verticalCenter }
                 }
-                StudioSection { text: qsTr("Web preview"); visible: root.width>=1000; Layout.leftMargin: Theme.gapSm; Layout.rightMargin: Theme.gapSm }
+                StudioSection { text: qsTr("Web preview"); visible: root.width>=Theme.px(1000); Layout.leftMargin: Theme.gapSm; Layout.rightMargin: Theme.gapSm }
                 StudioButton { iconName: "back"; quiet: true; tip: qsTr("Back"); enabled: phone.browser.canGoBack; onClicked: phone.browser.goBack() }
                 StudioButton { iconName: "refresh"; quiet: true; tip: qsTr("Reload · Ctrl+R"); onClicked: phone.browser.reload() }
                 StudioTextField {
                     id: address; objectName: "addressField"
-                    Layout.fillWidth: true; implicitWidth: 120
+                    Layout.fillWidth: true; implicitWidth: Theme.px(120)
                     text: "tomacco://demo"; placeholderText: "http://localhost:5173"
                     font.family: Theme.mono; font.pixelSize: Theme.fontSmall
                     onAccepted: root.openUrl(text)
                 }
-                StudioButton { text: qsTr("Open"); visible: root.width>=880; onClicked: root.openUrl(address.text) }
+                StudioButton { text: qsTr("Open"); visible: root.width>=Theme.px(880); onClicked: root.openUrl(address.text) }
                 StudioButton { text: qsTr("Open folder"); displayText: root.compact?"":text; iconName: "files"; quiet: true; tip: qsTr("Load a local web build with index.html"); onClicked: folderDialog.open() }
-                StudioButton { text: "Demo"; quiet: true; selected: root.isDemo; visible: root.width>=880; onClicked: root.openUrl("demo") }
+                StudioButton { text: "Demo"; quiet: true; selected: root.isDemo; visible: root.width>=Theme.px(880); onClicked: root.openUrl("demo") }
                 Rectangle { Layout.preferredWidth: 1; Layout.preferredHeight: Theme.iconSize; color: Theme.border; Layout.leftMargin: Theme.gapXs; Layout.rightMargin: Theme.gapXs }
                 StudioButton { text: qsTr("Live device"); displayText: root.compact?"":text; iconName: "phone"; tip: text; onClicked: {workspace.close();root.nativeMode=true} }
                 StudioButton { text: qsTr("Workspace"); displayText: root.compact?"":text; iconName: "project"; quiet: true; tip: text; onClicked: workspace.open() }
@@ -234,7 +239,7 @@ ApplicationWindow {
         RowLayout {
             Layout.fillHeight: true; Layout.fillWidth: true; spacing: 0
             Rectangle {
-                visible: root.width>=860
+                visible: root.width>=Theme.px(860)
                 Layout.preferredWidth: Theme.railWideWidth+Theme.gapXxl; Layout.fillHeight: true; color: Theme.surface
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: Theme.gapSm; spacing: Theme.gapSm
@@ -303,11 +308,11 @@ ApplicationWindow {
                     Layout.fillWidth: true; Layout.preferredHeight: Theme.barHeight; Layout.leftMargin: Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
                     // Without the device list, the model is chosen here.
                     StudioComboBox {
-                        visible: root.width<860; Layout.preferredWidth: 200; model: root.visibleDevices; textRole: "name"; valueRole: "id"
+                        visible: root.width<Theme.px(860); Layout.preferredWidth: Theme.px(200); model: root.visibleDevices; textRole: "name"; valueRole: "id"
                         currentIndex: root.visibleDevices.findIndex(d=>d.id===root.currentModel.id)
                         onActivated: root.selectDevice(root.devices.findIndex(d=>d.id===currentValue))
                     }
-                    Text { visible: root.width>=860; text: root.currentModel.name; color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                    Text { visible: root.width>=Theme.px(860); text: root.currentModel.name; color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold; elide: Text.ElideRight }
                     Text { Layout.fillWidth: true; text: root.finishName+" · "+root.stateName; color: Theme.faint; font.pixelSize: Theme.fontSmall; elide: Text.ElideRight }
                     StudioButton { iconName: "rotate"; quiet: true; tip: qsTr("Rotate · Ctrl+Shift+R"); selected: root.rotated; onClicked: root.rotated=!root.rotated }
                     StudioButton { text: root.foldedOpen?qsTr("Fold"):qsTr("Unfold"); quiet: true; visible: !!root.currentModel.openWidth; onClicked: root.selectDuoState(!root.foldedOpen,root.rotated) }
@@ -315,7 +320,7 @@ ApplicationWindow {
                 }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
                 RowLayout {
-                    visible: !!root.currentModel.openWidth && root.width>=1000
+                    visible: !!root.currentModel.openWidth && root.width>=Theme.px(1000)
                     Layout.fillWidth: true; Layout.preferredHeight: Theme.barHeight
                     Layout.leftMargin: Theme.gapMd; Layout.rightMargin: Theme.gapMd; spacing: Theme.gapXs
                     Repeater {
@@ -435,8 +440,8 @@ ApplicationWindow {
                     Text { id: previewState; anchors.centerIn: parent; text: phone.loadError.length?qsTr("Unreachable"):phone.browser.loading?qsTr("Loading…"):root.isDemo?qsTr("Interactive demo"):qsTr("Web app connected"); color: Theme.accentText; font.family: Theme.mono; font.pixelSize: Theme.fontMicro; font.weight: Font.Bold }
                 }
                 Text { text: phone.viewportWidth+"×"+phone.viewportHeight+" CSS px"; color: Theme.muted; font.family: Theme.mono; font.pixelSize: Theme.fontMicro }
-                Text { Layout.fillWidth: true; visible: root.width>=1100; text: qsTr("Ctrl+L  Address     Ctrl+Shift+R  Rotate     F11  Full screen"); color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro; elide: Text.ElideRight }
-                Item { Layout.fillWidth: true; visible: root.width<1100 }
+                Text { Layout.fillWidth: true; visible: root.width>=Theme.px(1100); text: qsTr("Ctrl+L  Address     Ctrl+Shift+R  Rotate     F11  Full screen"); color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro; elide: Text.ElideRight }
+                Item { Layout.fillWidth: true; visible: root.width<Theme.px(1100) }
                 Row { spacing: 0
                     StudioButton { iconName: "minus"; quiet: true; implicitWidth: Theme.statusHeight-1; implicitHeight: Theme.statusHeight-1; tip: qsTr("Zoom out"); onClicked: root.requestedZoom=Math.max(0.25,root.actualScale-0.1) }
                     StudioButton { text: Math.round(root.actualScale*100)+" %"; quiet: true; size: Theme.fontMicro; implicitHeight: Theme.statusHeight-1; leftPadding: Theme.gapXs; rightPadding: Theme.gapXs; tip: qsTr("View at 100 %"); onClicked: root.requestedZoom=1 }
@@ -457,7 +462,7 @@ ApplicationWindow {
     FolderDialog { id: folderDialog; title: qsTr("Choose a web build"); onAccepted: { let url=Studio.serveFolder(selectedFolder); if(url.toString().length) phone.browser.url=url } }
 
     StudioDialog {
-        id: help; anchors.centerIn: parent; width: Math.min(root.width-Theme.gapXxxl,520); modal: true
+        id: help; anchors.centerIn: parent; width: Math.min(root.width-Theme.gapXxxl,Theme.px(520)); modal: true
         contentItem: ColumnLayout { spacing: Theme.gapMd
             Text { Layout.fillWidth: true; text: qsTr("Your web app, on every phone."); color: Theme.text; font.pixelSize: Theme.fontTitle; font.weight: Font.DemiBold; font.letterSpacing: Theme.trackingTitle; wrapMode: Text.WordWrap }
             Text { Layout.fillWidth: true; text: qsTr("Open it by URL, or load a finished build as a folder. Switch phone, color and orientation without reloading."); color: Theme.muted; wrapMode: Text.WordWrap; font.pixelSize: Theme.fontBody; lineHeight: 1.3 }
@@ -471,7 +476,7 @@ ApplicationWindow {
         }
     }
     StudioDialog {
-        id: toolchain; anchors.centerIn: parent; width: Math.min(root.width-Theme.gapXxxl,520); modal: true
+        id: toolchain; anchors.centerIn: parent; width: Math.min(root.width-Theme.gapXxxl,Theme.px(520)); modal: true
         contentItem: ColumnLayout { spacing: Theme.gapMd
             Text { text: qsTr("Native build tools"); color: Theme.text; font.pixelSize: Theme.fontTitle; font.weight: Font.DemiBold; font.letterSpacing: Theme.trackingTitle }
             Text { Layout.fillWidth: true; text: Studio.xtool+"\n"+Studio.swift+"\nSDK: "+Studio.sdk; color: Theme.text; font.family: Theme.mono; font.pixelSize: Theme.fontSmall; lineHeight: 1.4; wrapMode: Text.Wrap }

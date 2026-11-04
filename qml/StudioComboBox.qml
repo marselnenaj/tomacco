@@ -5,7 +5,7 @@ import "."
 ComboBox {
     id: control
     implicitHeight: Theme.controlHeight
-    implicitWidth: 180
+    implicitWidth: Theme.px(180)
     font.pixelSize: Theme.fontBody
     leftPadding: Theme.gapMd
     rightPadding: Theme.gapXxl

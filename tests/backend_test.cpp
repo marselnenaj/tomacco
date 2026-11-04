@@ -262,6 +262,38 @@ private slots:
         QVERIFY(!backend.exportSettings(root.filePath("no/such/dir/settings.json")).isEmpty());
         QSettings().clear();
     }
+    void interfaceScaleIsValidatedPersistedAndImportedLive() {
+        QSettings settings;
+        const auto previous=settings.value("appearance/uiScale");
+        const auto restore=qScopeGuard([&]{if(previous.isValid())settings.setValue("appearance/uiScale",previous);else settings.remove("appearance/uiScale");});
+        settings.remove("appearance/uiScale");
+        Backend backend(QString(),nullptr,false);
+        QCOMPARE(backend.uiScale(),100);
+        for(const auto &bad:{"0","300","125.5","banana"}) {
+            settings.setValue("appearance/uiScale",bad);
+            QCOMPARE(backend.uiScale(),100);
+        }
+        QSignalSpy changed(&backend,&Backend::uiScaleChanged);
+        backend.setUiScale(150);
+        QCOMPARE(backend.uiScale(),150);QCOMPARE(changed.size(),1);
+        backend.setUiScale(150);QCOMPARE(changed.size(),1);
+        settings.sync();
+        Backend reopened(QString(),nullptr,false);QCOMPARE(reopened.uiScale(),150);
+        QTemporaryDir root;QVERIFY(root.isValid());
+        const auto path=root.filePath("scale.json");
+        QCOMPARE(reopened.exportSettings(path),QString());
+        QFile file(path);QVERIFY(file.open(QIODevice::ReadOnly));
+        QCOMPARE(QJsonDocument::fromJson(file.readAll()).object().value("settings").toObject().value("appearance/uiScale"),QJsonValue(150));file.close();
+        for(const auto &bad:{QJsonValue("200"),QJsonValue(true),QJsonValue(150.5),QJsonValue(300)}) {
+            write(path,QJsonDocument(QJsonObject{{"format","tomacco-desktop-settings"},{"version",1},{"settings",QJsonObject{{"appearance/uiScale",bad}}}}).toJson());
+            const auto result=backend.importSettings(path);QCOMPARE(result.value("ignored").toInt(),1);QCOMPARE(backend.uiScale(),150);
+        }
+        write(path,R"({"format":"tomacco-desktop-settings","version":1,"settings":{"appearance/uiScale":200}})");
+        QCOMPARE(backend.importSettings(path).value("applied").toInt(),1);
+        QCOMPARE(backend.uiScale(),200);QCOMPARE(changed.size(),2);
+        backend.setUiScale(-100);QCOMPARE(backend.uiScale(),75);
+        backend.setUiScale(100000);QCOMPARE(backend.uiScale(),200);
+    }
     void screenshotsGoWhereOmarchyKeepsThem() {
         const auto home=QDir::homePath();
         // OMARCHY_SCREENSHOT_DIR wins, with ~ and $HOME read as the shell reads them.

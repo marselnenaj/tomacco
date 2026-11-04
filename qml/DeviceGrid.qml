@@ -70,7 +70,7 @@ Item {
         ScrollBar.vertical:StudioScrollBar {}
     }
     StudioEmptyState {
-        anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxl,480);visible:!grid.devices.length
+        anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxl,Theme.px(480));visible:!grid.devices.length
         title:qsTr("No device running.");body:qsTr("Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.")
     }
 }

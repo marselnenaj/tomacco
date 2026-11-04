@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtCore
 import "."
@@ -49,10 +50,10 @@ Window {
     property bool allowClose: false
     property string caption: ""
     readonly property alias host: deviceHost
-    readonly property real pad: 12
+    readonly property real pad: Theme.px(12)
     // Largest zoom at which the whole device still fits on the monitor this
     // window is on (not the whole desktop, which spans every monitor).
-    readonly property real fitZoom: Math.max(.3,Math.min(maxZoom,(Screen.height-120)/Math.max(1,deviceHeight),(Screen.width-160)/Math.max(1,deviceWidth)))
+    readonly property real fitZoom: Math.max(.3,Math.min(maxZoom,(Screen.height-120)/Math.max(1,deviceHeight),(Screen.width-Math.max(160,rail.width+pad*3))/Math.max(1,deviceWidth)))
     onFitZoomChanged: if(visible && zoom>fitZoom)setZoom(fitZoom)
     signal dockRequested()
     signal closeRequested()
@@ -133,12 +134,21 @@ Window {
             id: rail
             objectName: "deviceWindowRail"
             x: deviceHost.x+deviceHost.width+win.pad; y: Math.round((win.wantedHeight-height)/2)
-            width: Theme.controlHeight+Theme.gapSm*2; height: buttons.implicitHeight+Theme.gapMd
+            width: Theme.controlHeight+Theme.gapSm*2
+            height: Math.min(buttons.implicitHeight+Theme.gapMd,Math.max(Theme.controlHeight+Theme.gapMd,Screen.height-win.pad*2-80))
             radius: Theme.radiusLarge; color: Theme.surface; border.color: Theme.border
             MouseArea {anchors.fill:parent;onPressed:win.startSystemMove()}
+            // Enlarged controls stay reachable on a short monitor too. The
+            // picture keeps its own zoom; only this control rail scrolls.
+            Flickable {
+                id:railScroll;objectName:"deviceWindowRailScroll"
+                anchors.fill:parent;anchors.margins:Theme.gapSm;anchors.topMargin:Theme.gapMd/2;anchors.bottomMargin:Theme.gapMd/2
+                contentWidth:width;contentHeight:buttons.implicitHeight
+                clip:true;boundsBehavior:Flickable.StopAtBounds
+                ScrollBar.vertical:StudioScrollBar {policy:ScrollBar.AsNeeded}
             ColumnLayout {
                 id: buttons
-                anchors.centerIn: parent; spacing: 2
+                x:(parent.width-width)/2;spacing:Theme.px(2)
                 StudioButton {objectName:"deviceWindowDock";iconName:"close";quiet:true;tip:win.solo?qsTr("Close device window · the device keeps running"):qsTr("Bring back into the workspace");onClicked:{if(win.solo)win.closeRequested();else win.dockRequested()}}
                 StudioButton {objectName:"deviceWindowWorkspace";iconName:"project";quiet:true;tip:qsTr("Open in the workspace");visible:win.solo;onClicked:win.dockRequested()}
                 Rectangle {Layout.alignment:Qt.AlignHCenter;width:Theme.gapXl;height:1;color:Theme.subtle}
@@ -164,6 +174,7 @@ Window {
                 StudioButton {objectName:"deviceWindowZoomIn";iconName:"plus";quiet:true;tip:qsTr("Larger · Ctrl+mouse wheel");enabled:win.zoom<Math.min(win.maxZoom,win.fitZoom);onClicked:win.chooseZoom(win.zoom+.1)}
                 Text {Layout.alignment:Qt.AlignHCenter;text:Math.round(win.zoom*100)+"%";color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}
                 StudioButton {objectName:"deviceWindowZoomOut";displayText:"";text:"−";iconName:"minus";quiet:true;tip:qsTr("Smaller · Ctrl+mouse wheel");enabled:win.zoom>.3;onClicked:win.chooseZoom(win.zoom-.1)}
+            }
             }
         }
     }

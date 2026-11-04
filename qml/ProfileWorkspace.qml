@@ -14,7 +14,7 @@ StudioScrollView {
     function call(op,args) { let id=workspace.request(op,args);requests[id]=true }
     Connections { target: Agent; function onApiFinished(id,op,response) { if(!view.requests[id]) return;delete view.requests[id];if(!response.ok) return;if(op==="profile.analyze") view.report=response.result;if(op==="profile.compare") view.comparison=JSON.stringify(response.result,null,2) } }
     ColumnLayout {
-    width: Math.min(parent.width-Theme.gapLg,1240); spacing: Theme.gapXs
+    width: Math.min(parent.width-Theme.gapLg,Theme.px(1240)); spacing: Theme.gapXs
     StudioPanel {
         Layout.fillWidth: true
         title: qsTr("Record a trace")
@@ -59,7 +59,7 @@ StudioScrollView {
             StudioButton { text: qsTr("Compare"); enabled: baseline.text.length>0 && reportFile.text.length>0 && (cpu.checked||memory.checked||frames.checked); onClicked: { let b={};if(cpu.checked)b.cpu_ms={increase_percent:budget.value};if(memory.checked)b.rss_peak_bytes={increase_percent:budget.value};if(frames.checked)b.frame_avg_ms={increase_percent:budget.value};view.call("profile.compare",{baseline:baseline.text,current:reportFile.text,budgets:b}) } }
         }
     }
-    StudioCodeView { Layout.fillWidth: true; Layout.preferredHeight: 180; visible: !!text; text: view.comparison || view.report.threads_csv || "" }
+    StudioCodeView { Layout.fillWidth: true; Layout.preferredHeight: Theme.px(180); visible: !!text; text: view.comparison || view.report.threads_csv || "" }
     }
     FileDialog { id: traceDialog; nameFilters: ["Perfetto (*.pftrace *.perfetto-trace)"]; onAccepted: trace.text=decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")) }
 }

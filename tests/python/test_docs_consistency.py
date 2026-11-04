@@ -73,6 +73,15 @@ class ConsistencyTests(unittest.TestCase):
                     self.assertEqual(int(number), count, f"{path} says {number} operations; the schema has {count}")
         self.assertTrue(found >= 3, "the operation counts this test checks are gone")
 
+    def test_release_notes_supply_the_desktop_whats_new_sheet(self):
+        # Backend::releaseHighlights reads this exact section. Check the source
+        # directly: an older installed document must not mask a broken release.
+        highlights = re.search(r"^## Highlights\s*\n(.*?)(?=^## |\Z)",
+                               read("docs/RELEASE_NOTES.md"), re.M | re.S)
+        self.assertIsNotNone(highlights, "release notes have no desktop highlights section")
+        self.assertTrue(highlights.group(1).strip().startswith("- "),
+                        "the desktop expects nonempty bullet highlights")
+
     def test_the_build_minimums_are_the_ones_the_build_enforces(self):
         rust = re.search(r'^rust-version = "([^"]+)"', read("Cargo.toml"), re.M).group(1)
         qt = re.search(r"find_package\(Qt6 (\S+) REQUIRED", read("CMakeLists.txt")).group(1)

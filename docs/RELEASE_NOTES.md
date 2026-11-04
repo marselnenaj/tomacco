@@ -3,6 +3,24 @@
 This maintenance release fixes blank AirPlay views when joining a running mirror and
 reading large Android Baseline Profiles. It follows [Tomacco 1.4.0](https://github.com/marselnenaj/tomacco/releases/tag/v1.4.0).
 
+## Highlights
+
+- Enlarge or reduce Tomacco's interface from 75% to 200%, with a saved preference and keyboard shortcuts. Device zoom and screenshot dimensions stay independent.
+- Open an additional AirPlay view without losing the cached video start; waiting and receiver controls explain when a fresh keyframe is needed.
+- Read generated Android Baseline Profiles up to 64 MiB and report actual file errors.
+- Use consistent device IDs and private socket addresses across libimobiledevice and go-ios tools.
+
+## Interface size
+
+Settings → Appearance → Interface size changes text, controls and spacing immediately.
+The preference is saved between launches. Choose 150% or 200% when the interface is
+too small on a high-resolution display, or reset it to 100%.
+
+Ctrl+Alt+plus and Ctrl+Alt+minus change the interface in 25-percentage-point steps;
+Ctrl+Alt+0 resets it. These also work from a detached device window. The device's
+own zoom shortcuts, touch coordinates, web viewport and raw screenshot dimensions
+keep their existing meaning. Tomacco does not change the monitor's scale.
+
 ## AirPlay
 
 - Opening another preview preserves an unchanged video configuration and the full cached

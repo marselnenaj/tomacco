@@ -675,13 +675,13 @@ Rectangle {
         }
     }
     readonly property alias workspaceHost: workspaceHost
-    readonly property bool compact: width<1120
-    readonly property bool shortWindow: height<620
-    readonly property bool railWide: width>=1360
+    readonly property bool compact: width<Theme.px(1120)
+    readonly property bool shortWindow: height<Theme.px(620)
+    readonly property bool railWide: width>=Theme.px(1360)
     // Below this the device bar's actions are icons and the bar's name goes.
-    readonly property bool tight: width<760
+    readonly property bool tight: width<Theme.px(760)
     // In a narrow window the activity panel takes the whole stage while it is open.
-    readonly property bool activityOnly: activityVisible && width<860
+    readonly property bool activityOnly: activityVisible && width<Theme.px(860)
     readonly property string currentSection: workspace.opened ? workspace.section : "runtime"
     // The number in each entry is its Ctrl shortcut.
     readonly property var navigation: [
@@ -705,6 +705,9 @@ Rectangle {
         {id:"web-preview",title:qsTr("Web preview"),detail:qsTr("Command"),icon:"web",key:"",run:()=>view.webRequested()},
         {id:"copy-context",title:qsTr("Copy context"),detail:qsTr("Command"),icon:"copy",key:"",run:()=>view.copyContext()},
         {id:"appearance",title:Theme.isDark?qsTr("Switch to light appearance"):qsTr("Switch to dark appearance"),detail:qsTr("Command"),icon:Theme.isDark?"sun":"moon",key:"",run:()=>Studio.setAppearance(Theme.isDark?"light":"dark")},
+        {id:"interface-larger",title:qsTr("Larger interface"),detail:qsTr("Interface size"),icon:"plus",key:"Ctrl+Alt++",run:()=>Studio.setUiScale(Studio.uiScale+25)},
+        {id:"interface-smaller",title:qsTr("Smaller interface"),detail:qsTr("Interface size"),icon:"minus",key:"Ctrl+Alt+−",run:()=>Studio.setUiScale(Studio.uiScale-25)},
+        {id:"interface-reset",title:qsTr("Reset interface size"),detail:qsTr("Interface size"),icon:"refresh",key:"Ctrl+Alt+0",run:()=>Studio.setUiScale(100)},
         {id:"settings",title:qsTr("Settings"),detail:qsTr("Command"),icon:"settings",key:qsTr("Ctrl")+"+,",run:()=>settingsDialog.open()},
         {id:"save-layout",title:qsTr("Save the current layout"),detail:qsTr("Window layouts"),icon:"window",key:"",run:()=>view.openSettings(qsTr("Window layouts"))},
         {id:"stage-log",title:view.showStageLog?qsTr("Hide the log beside the device"):qsTr("Show the log beside the device"),detail:qsTr("Command"),search:qsTr("Split view"),icon:"jobs",key:"",run:()=>{view.showStageLog=!view.showStageLog}},
@@ -721,7 +724,7 @@ Rectangle {
     // opens only on request and gives way again when asked.
     property bool showActivity: true
     property bool activityForced: false
-    readonly property bool activityVisible: showActivity && (width>=1120 || activityForced)
+    readonly property bool activityVisible: showActivity && (width>=Theme.px(1120) || activityForced)
     function toggleActivity() {if(activityVisible){showActivity=false;activityForced=false}else{showActivity=true;activityForced=true}}
     Settings {category:"NativeDisplay";property alias showActivity:view.showActivity}
     // The log beside the device: shown or not, which log and how wide, kept across starts.
@@ -761,7 +764,7 @@ Rectangle {
         if(!layout)return false
         const sections=["runtime"].concat(navigation.map(x=>x.id))
         navigate(sections.indexOf(layout.view)>=0?layout.view:"runtime")
-        showActivity=layout.activity!==false;activityForced=showActivity && width<1120
+        showActivity=layout.activity!==false;activityForced=showActivity && width<Theme.px(1120)
         showStageLog=layout.stageLog===true
         if(layout.stageLogMode==="device" || layout.stageLogMode==="job")stageLogMode=layout.stageLogMode
         if(Number(layout.stageLogWidth)>=Theme.panelWidth*.75)stageLogWidth=Math.round(Number(layout.stageLogWidth))
@@ -819,14 +822,14 @@ Rectangle {
                 }
                 Rectangle {Layout.preferredWidth:1;Layout.preferredHeight:Theme.iconSize;color:Theme.border;Layout.leftMargin:Theme.gapMd;Layout.rightMargin:Theme.gapXs}
                 StudioButton {
-                    objectName:"projectButton";quiet:true;Layout.fillWidth:true;Layout.minimumWidth:Theme.gapXxxl;Layout.maximumWidth:Math.min(implicitWidth,view.compact?200:320)
+                    objectName:"projectButton";quiet:true;Layout.fillWidth:true;Layout.minimumWidth:Theme.gapXxxl;Layout.maximumWidth:Math.min(implicitWidth,Theme.px(view.compact?200:320))
                     text:workspace.project.name || qsTr("No project yet")
                     tip:workspace.project.path || qsTr("Open a project folder · Ctrl+O")
                     onClicked:{if(workspace.project.path)view.navigate("project");else projectFolder.open()}
                 }
-                StudioComboBox {visible:Object.keys(view.saved).length>0 && !view.compact;Layout.preferredWidth:170;model:Object.keys(view.saved);displayText:qsTr("Switch workspace");onActivated:view.request("workspace.context",{name:currentText})}
+                StudioComboBox {visible:Object.keys(view.saved).length>0 && !view.compact;Layout.preferredWidth:Theme.px(170);model:Object.keys(view.saved);displayText:qsTr("Switch workspace");onActivated:view.request("workspace.context",{name:currentText})}
                 Item {Layout.fillWidth:true}
-                StudioButton {objectName:"commandButton";text:qsTr("Search");displayText:view.width<760?"":text;iconName:"search";keyHint:view.width<760?"":qsTr("Ctrl")+" K";tip:qsTr("Search navigation and all tools · Ctrl+K");onClicked:commandPalette.open()}
+                StudioButton {objectName:"commandButton";text:qsTr("Search");displayText:view.width<Theme.px(760)?"":text;iconName:"search";keyHint:view.width<Theme.px(760)?"":qsTr("Ctrl")+" K";tip:qsTr("Search navigation and all tools · Ctrl+K");onClicked:commandPalette.open()}
                 StudioButton {text:qsTr("Web preview");displayText:view.compact?"":text;iconName:"web";quiet:true;tip:qsTr("Web preview");onClicked:view.webRequested()}
                 StudioButton {text:qsTr("Open project");displayText:view.compact?"":text;iconName:"files";quiet:true;tip:qsTr("Open a project folder · Ctrl+O");onClicked:projectFolder.open()}
                 StudioButton {objectName:"activityButton";iconName:"activity";displayText:"";text:qsTr("Activity");quiet:true;selected:view.activityVisible;visible:!workspace.opened;tip:qsTr("Jobs and agent calls · Ctrl+J");onClicked:view.toggleActivity()}
@@ -898,10 +901,10 @@ Rectangle {
                             StudioSegmented {current:view.platform;model:[{id:"android",label:"Android"},{id:"ios",label:"Apple"}];onChosen:id=>{view.choosePlatform(id);view.rememberTarget()}}
                             RowLayout {
                                 visible:view.platform==="ios" && !view.compact;spacing:Theme.gapXs
-                                StudioComboBox {Layout.preferredWidth:180;model:[qsTr("iPhone via USB"),qsTr("Simulator on a Mac")];currentIndex:view.appleTarget==="device"?0:1;onActivated:{view.chooseAppleTarget(currentIndex===0?"device":"simulator");view.rememberTarget()}}
-                                StudioComboBox {visible:view.appleTarget==="simulator";Layout.preferredWidth:150;model:Object.keys(view.remotes);currentIndex:Object.keys(view.remotes).indexOf(view.remote);displayText:currentText || qsTr("Choose a Mac");onActivated:{view.remote=currentText;view.target="";view.loadApple()}}
+                                StudioComboBox {Layout.preferredWidth:Theme.px(180);model:[qsTr("iPhone via USB"),qsTr("Simulator on a Mac")];currentIndex:view.appleTarget==="device"?0:1;onActivated:{view.chooseAppleTarget(currentIndex===0?"device":"simulator");view.rememberTarget()}}
+                                StudioComboBox {visible:view.appleTarget==="simulator";Layout.preferredWidth:Theme.px(150);model:Object.keys(view.remotes);currentIndex:Object.keys(view.remotes).indexOf(view.remote);displayText:currentText || qsTr("Choose a Mac");onActivated:{view.remote=currentText;view.target="";view.loadApple()}}
                             }
-                            StudioComboBox {id:targetPicker;objectName:"targetPicker";Layout.fillWidth:true;Layout.minimumWidth:120;Layout.maximumWidth:360;textRole:"name";valueRole:"id";model:view.visibleTargets;currentIndex:view.visibleTargets.findIndex(x=>x.id===view.target);displayText:currentIndex>=0?currentText:qsTr("Choose a device");onActivated:{view.target=currentValue;view.rememberTarget()}}
+                            StudioComboBox {id:targetPicker;objectName:"targetPicker";Layout.fillWidth:true;Layout.minimumWidth:Theme.px(120);Layout.maximumWidth:Theme.px(360);textRole:"name";valueRole:"id";model:view.visibleTargets;currentIndex:view.visibleTargets.findIndex(x=>x.id===view.target);displayText:currentIndex>=0?currentText:qsTr("Choose a device");onActivated:{view.target=currentValue;view.rememberTarget()}}
                             StudioButton {iconName:"refresh";tip:qsTr("Search for devices again");quiet:true;onClicked:view.refresh()}
                             StudioButton {iconName:"plus";tip:qsTr("Set up another Android model");quiet:true;visible:view.platform==="android";onClicked:workspace.showTab("devices")}
                             StudioButton {visible:view.platform==="ios" && !view.compact;text:view.appleTarget==="device"?qsTr("Set up iPhone"):qsTr("Connect Mac");quiet:true;onClicked:{if(view.appleTarget==="device"){iphoneSetup.open();view.diagnoseIos()}else macSetup.open()}}
@@ -912,7 +915,7 @@ Rectangle {
                         }
                         RowLayout {
                             visible:view.platform==="ios" && view.compact;Layout.fillWidth:true;spacing:Theme.gapXs
-                            StudioComboBox {Layout.preferredWidth:170;model:[qsTr("iPhone via USB"),qsTr("Simulator on a Mac")];currentIndex:view.appleTarget==="device"?0:1;onActivated:{view.chooseAppleTarget(currentIndex===0?"device":"simulator");view.rememberTarget()}}
+                            StudioComboBox {Layout.preferredWidth:Theme.px(170);model:[qsTr("iPhone via USB"),qsTr("Simulator on a Mac")];currentIndex:view.appleTarget==="device"?0:1;onActivated:{view.chooseAppleTarget(currentIndex===0?"device":"simulator");view.rememberTarget()}}
                             StudioComboBox {visible:view.appleTarget==="simulator";Layout.fillWidth:true;model:Object.keys(view.remotes);currentIndex:Object.keys(view.remotes).indexOf(view.remote);displayText:currentText || qsTr("Choose a Mac");onActivated:{view.remote=currentText;view.target="";view.loadApple()}}
                             Item {visible:view.appleTarget!=="simulator";Layout.fillWidth:true}
                             StudioButton {text:view.appleTarget==="device"?qsTr("Set up iPhone"):qsTr("Connect Mac");quiet:true;onClicked:{if(view.appleTarget==="device"){iphoneSetup.open();view.diagnoseIos()}else macSetup.open()}}
@@ -1062,7 +1065,7 @@ Rectangle {
                                 }
                                 StudioEmptyState {
                                     objectName:"nativeDetachedNotice";actionName:"nativeDockButton"
-                                    anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,480);visible:view.detached && view.deviceShown
+                                    anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,Theme.px(480));visible:view.detached && view.deviceShown
                                     title:qsTr("Your device is in its own window.")
                                     body:qsTr("Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.")
                                     actionText:qsTr("Bring it back");actionIcon:"dock"
@@ -1168,7 +1171,7 @@ Rectangle {
                 Text {text:workspace.opened && workspace.status ? workspace.status : workspace.project.path || qsTr("No project open");Layout.fillWidth:true;elide:Text.ElideMiddle;color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}
                 UpdateNotice {model:updates;onOpened:settingsDialog.open()}
                 StudioStatus {objectName:"statusJobs";visible:view.runningJobs.length>0;tone:"busy";mono:true;size:Theme.fontMicro;text:qsTr("%n job(s) running","",view.runningJobs.length)}
-                Text {visible:view.width>=760;text:qsTr("Ctrl+K search · F1 keys");color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}
+                Text {visible:view.width>=Theme.px(760);text:qsTr("Ctrl+K search · F1 keys");color:Theme.faint;font.family:Theme.mono;font.pixelSize:Theme.fontMicro}
             }
         }
     }
@@ -1187,9 +1190,9 @@ Rectangle {
         return query.split(/\s+/).every(word=>text.indexOf(word)>=0)
     }
     StudioDialog {
-        id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,460);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
+        id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(460));height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
         onOpened:{view.settingsTransfer="";settingsSearch.text=view.settingsOpenQuery;view.settingsOpenQuery="";Studio.reloadOmarchyTheme();settingsSearch.forceActiveFocus()}
-        readonly property bool nothingShown:!appearanceSection.visible && !languageSection.visible && !notificationsSection.visible && !agentSection.visible && !updatesSection.visible && !layoutsSection.visible && !transferSection.visible
+        readonly property bool nothingShown:!appearanceSection.visible && !scaleSection.visible && !languageSection.visible && !notificationsSection.visible && !agentSection.visible && !updatesSection.visible && !layoutsSection.visible && !transferSection.visible
         contentItem:ColumnLayout {spacing:Theme.gapMd
             StudioTextField {
                 id:settingsSearch;objectName:"settingsSearch";Layout.fillWidth:true;Layout.rightMargin:Theme.gapMd
@@ -1220,6 +1223,17 @@ Rectangle {
                         text:Theme.omarchyAccentRefused?qsTr("The accent of %1 does not read clearly on this background, so Tomacco keeps its own.").arg(Theme.omarchy.name || ""):qsTr("Accent from the Omarchy theme %1.").arg(Theme.omarchy.name || "")
                     }
                 }
+            }
+            ColumnLayout {id:scaleSection;objectName:"settingsInterfaceSize";Layout.fillWidth:true;spacing:Theme.gapSm
+                visible:view.settingShown([qsTr("Interface size"),qsTr("Larger interface"),qsTr("Smaller interface"),qsTr("Reset interface size"),"4K HiDPI Zoom Ctrl Alt"])
+                Text {text:qsTr("Interface size");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
+                    StudioButton {objectName:"interfaceSmaller";text:qsTr("Smaller interface");displayText:"";iconName:"minus";enabled:Studio.uiScale>75;tip:text+" · Ctrl+Alt+−";onClicked:Studio.setUiScale(Studio.uiScale-25)}
+                    Text {objectName:"interfaceScaleValue";Layout.fillWidth:true;text:Studio.uiScale+" %";color:Theme.text;font.family:Theme.mono;font.pixelSize:Theme.fontBody;horizontalAlignment:Text.AlignHCenter;Accessible.name:qsTr("Interface size")+": "+text}
+                    StudioButton {objectName:"interfaceLarger";text:qsTr("Larger interface");displayText:"";iconName:"plus";enabled:Studio.uiScale<200;tip:text+" · Ctrl+Alt++";onClicked:Studio.setUiScale(Studio.uiScale+25)}
+                    StudioButton {objectName:"interfaceReset";text:qsTr("Reset");enabled:Studio.uiScale!==100;tip:qsTr("Reset interface size")+" · Ctrl+Alt+0";onClicked:Studio.setUiScale(100)}
+                }
+                Text {Layout.fillWidth:true;text:qsTr("Text, controls and spacing in Tomacco. Device zoom and screenshots keep their own size.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             }
             // Interface language: the desktop's language, or one chosen here (stored, applied at once).
             ColumnLayout {id:languageSection;objectName:"settingsLanguage";Layout.fillWidth:true;spacing:Theme.gapSm
@@ -1292,9 +1306,9 @@ Rectangle {
     }
     FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
-    OnboardingSheet {id:onboarding;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,560);height:Math.min(view.height-Theme.gapLg,implicitHeight)}
+    OnboardingSheet {id:onboarding;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(560));height:Math.min(view.height-Theme.gapLg,implicitHeight)}
     StudioDialog {
-        id:whatsNew;objectName:"whatsNewSheet";title:qsTr("What's new in %1").arg(Qt.application.version);anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,620);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
+        id:whatsNew;objectName:"whatsNewSheet";title:qsTr("What's new in %1").arg(Qt.application.version);anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(620));height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
         property string highlights:""
         onAboutToShow:highlights=Studio.releaseHighlights(Qt.application.version)
         contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapMd
@@ -1310,34 +1324,34 @@ Rectangle {
         }}
     }
     StudioDialog {
-        id:shortcutsDialog;objectName:"shortcutsDialog";title:qsTr("Keyboard shortcuts");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,520);height:Math.min(view.height-Theme.gapXxxl,implicitHeight);modal:true;standardButtons:Dialog.Close
+        id:shortcutsDialog;objectName:"shortcutsDialog";title:qsTr("Keyboard shortcuts");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(520));height:Math.min(view.height-Theme.gapXxxl,implicitHeight);modal:true;standardButtons:Dialog.Close
         contentItem:StudioScrollView {
             clip:true;contentWidth:availableWidth
             GridLayout {
                 width:parent.width;columns:2;columnSpacing:Theme.gapXl;rowSpacing:Theme.gapSm
                 Repeater {
-                    model:[["Ctrl+K",qsTr("Search views, commands and tools")],["F1",qsTr("Keyboard shortcuts")],["Ctrl+O",qsTr("Open project")],["Ctrl+J",qsTr("Show or hide activity")],["Ctrl+,",qsTr("Settings")],["Ctrl+S",qsTr("Save the current file")],["Ctrl+Shift+S",qsTr("Save and copy a device screenshot")],["Ctrl+Shift+F",qsTr("Search the project's source code")],["F11",qsTr("Full screen · web preview")]].concat(view.navigation.map(x=>["Ctrl+"+x.key,x.label])).map(x=>[x[0].replace("Ctrl",qsTr("Ctrl")),x[1]])
+                    model:[["Ctrl+Alt++",qsTr("Larger interface")],["Ctrl+Alt+−",qsTr("Smaller interface")],["Ctrl+Alt+0",qsTr("Reset interface size")],["Ctrl+K",qsTr("Search views, commands and tools")],["F1",qsTr("Keyboard shortcuts")],["Ctrl+O",qsTr("Open project")],["Ctrl+J",qsTr("Show or hide activity")],["Ctrl+,",qsTr("Settings")],["Ctrl+S",qsTr("Save the current file")],["Ctrl+Shift+S",qsTr("Save and copy a device screenshot")],["Ctrl+Shift+F",qsTr("Search the project's source code")],["F11",qsTr("Full screen · web preview")]].concat(view.navigation.map(x=>["Ctrl+"+x.key,x.label])).map(x=>[x[0].replace("Ctrl",qsTr("Ctrl")),x[1]])
                     delegate:Item {
                         required property var modelData
                         required property int index
                         Layout.columnSpan:2;Layout.fillWidth:true;implicitHeight:Theme.controlSmall
-                        Text {anchors.verticalCenter:parent.verticalCenter;width:130;text:parent.modelData[0];color:Theme.text;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
-                        Text {x:130;anchors.verticalCenter:parent.verticalCenter;width:parent.width-130;text:parent.modelData[1];color:Theme.muted;font.pixelSize:Theme.fontBody;elide:Text.ElideRight}
+                        Text {anchors.verticalCenter:parent.verticalCenter;width:Theme.px(130);text:parent.modelData[0];color:Theme.text;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
+                        Text {x:Theme.px(130);anchors.verticalCenter:parent.verticalCenter;width:parent.width-Theme.px(130);text:parent.modelData[1];color:Theme.muted;font.pixelSize:Theme.fontBody;elide:Text.ElideRight}
                     }
                 }
             }
         }
     }
     StudioDialog {
-        id:textEntry;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,520);modal:true;title:view.live.platform==="ios"?qsTr("Replace text field"):qsTr("Insert text");standardButtons:Dialog.Ok | Dialog.Cancel
+        id:textEntry;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(520));modal:true;title:view.live.platform==="ios"?qsTr("Replace text field"):qsTr("Insert text");standardButtons:Dialog.Ok | Dialog.Cancel
         contentItem:ColumnLayout {spacing:Theme.gapMd
             Label {Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;text:view.live.platform==="ios"?qsTr("First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included."):qsTr("First click into the app's text field. This text is pasted through the device clipboard.")}
-            StudioScrollView {Layout.fillWidth:true;Layout.preferredHeight:150;TextArea {id:typedText;wrapMode:Text.Wrap;selectByMouse:true;placeholderText:qsTr("Text…");color:Theme.text;placeholderTextColor:Theme.faint;selectionColor:Theme.accent;selectedTextColor:Theme.accentText;background:Rectangle {color:Theme.inset;radius:Theme.radiusSmall;border.color:Theme.border}}}
+            StudioScrollView {Layout.fillWidth:true;Layout.preferredHeight:Theme.px(150);TextArea {id:typedText;wrapMode:Text.Wrap;selectByMouse:true;placeholderText:qsTr("Text…");color:Theme.text;placeholderTextColor:Theme.faint;selectionColor:Theme.accent;selectedTextColor:Theme.accentText;background:Rectangle {color:Theme.inset;radius:Theme.radiusSmall;border.color:Theme.border}}}
         }
         onAccepted:display.insertText(typedText.text)
     }
     StudioDialog {
-        id:iphoneSetup;objectName:"iphoneSetup";title:qsTr("iPhone development without a Mac");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXl,650);height:Math.min(view.height-Theme.gapXl,810);modal:true;standardButtons:Dialog.Close
+        id:iphoneSetup;objectName:"iphoneSetup";title:qsTr("iPhone development without a Mac");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXl,Theme.px(650));height:Math.min(view.height-Theme.gapXl,Theme.px(810));modal:true;standardButtons:Dialog.Close
         contentItem:StudioScrollView {
             clip:true;contentWidth:availableWidth
             ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapMd
@@ -1369,7 +1383,7 @@ Rectangle {
     }
     FileDialog {id:appleSdkFile;title:qsTr("Import the Apple SDK from Xcode");nameFilters:[qsTr("Xcode archive (*.xip)"),qsTr("All files (*)")];onAccepted:{workspace.request("ios.sdk_install",{path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))});workspace.showTab("jobs");iphoneSetup.close()}}
     StudioDialog {
-        id:about;objectName:"aboutDialog";title:qsTr("About Tomacco");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,620);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
+        id:about;objectName:"aboutDialog";title:qsTr("About Tomacco");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(620));height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
         contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapMd
             RowLayout {Layout.fillWidth:true;spacing:Theme.gapLg
                 Image {source:"qrc:/assets/icon.svg";Layout.preferredWidth:Theme.gapXxxl;Layout.preferredHeight:Theme.gapXxxl;sourceSize:Qt.size(96,96)}
@@ -1400,7 +1414,7 @@ Rectangle {
         }}
     }
     StudioDialog {
-        id:macSetup;title:qsTr("Connect the Apple simulator to Linux");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,570);height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Cancel
+        id:macSetup;title:qsTr("Connect the Apple simulator to Linux");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(570));height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Cancel
         contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapMd
             Text {Layout.fillWidth:true;text:qsTr("The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.");wrapMode:Text.WordWrap;color:Theme.muted;font.pixelSize:Theme.fontSmall}
             StudioTextField {id:macName;Layout.fillWidth:true;placeholderText:qsTr("Connection name, e.g. build-mac")}

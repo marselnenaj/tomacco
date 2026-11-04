@@ -25,6 +25,8 @@ class Backend final : public QObject {
     Q_PROPERTY(QString uiLanguage READ uiLanguage NOTIFY languageChanged)
     // The stored appearance choice: "system", "dark" or "light".
     Q_PROPERTY(QString appearance READ appearance NOTIFY appearanceChanged)
+    // App chrome size, independent of the monitor and device preview zoom.
+    Q_PROPERTY(int uiScale READ uiScale NOTIFY uiScaleChanged)
     // Whether the interface is dark now: the choice, or the desktop's scheme
     // ("system"; dark when the desktop states none). TOMACCO_THEME=dark|light
     // overrides it for one run.
@@ -55,6 +57,8 @@ public:
     QString appearance() const;
     bool dark() const;
     Q_INVOKABLE void setAppearance(const QString &choice);
+    int uiScale() const;
+    Q_INVOKABLE void setUiScale(int percent);
     QVariantMap omarchyTheme() const { return m_omarchyTheme; }
     bool followOmarchyAccent() const;
     Q_INVOKABLE void setFollowOmarchyAccent(bool follow);
@@ -184,6 +188,7 @@ signals:
     void message(const QString &text);
     void languageChanged();
     void appearanceChanged();
+    void uiScaleChanged();
     void omarchyThemeChanged();
     void recentProjectsChanged();
     void notificationSent(const QString &title,const QString &body,const QString &tag);

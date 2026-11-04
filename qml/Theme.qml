@@ -5,6 +5,10 @@ import "Theme.js" as Tokens
 // The tokens of Theme.js as live properties. Bindings to them follow the
 // appearance (Studio.dark) and the reduced-motion preference without a restart.
 QtObject {
+    // Only app chrome uses these lengths. Device geometry, preview zoom and
+    // exported pixels keep their own units.
+    readonly property real uiScale: Studio.uiScale/100
+    function px(value) { return Math.round(value*uiScale) }
     readonly property bool isDark: Studio.dark
     readonly property var baseColors: isDark ? Tokens.dark : Tokens.light
     // The active Omarchy theme's accent, when that is chosen in the settings
@@ -46,43 +50,43 @@ QtObject {
     readonly property color deviceScreenText: Tokens.deviceScreen.text
     readonly property color deviceScreenMuted: Tokens.deviceScreen.muted
 
-    readonly property int gapXxs: Tokens.space.xxs
-    readonly property int gapXs: Tokens.space.xs
-    readonly property int gapSm: Tokens.space.sm
-    readonly property int gapMd: Tokens.space.md
-    readonly property int gapLg: Tokens.space.lg
-    readonly property int gapXl: Tokens.space.xl
-    readonly property int gapXxl: Tokens.space.xxl
-    readonly property int gapXxxl: Tokens.space.xxxl
+    readonly property int gapXxs: px(Tokens.space.xxs)
+    readonly property int gapXs: px(Tokens.space.xs)
+    readonly property int gapSm: px(Tokens.space.sm)
+    readonly property int gapMd: px(Tokens.space.md)
+    readonly property int gapLg: px(Tokens.space.lg)
+    readonly property int gapXl: px(Tokens.space.xl)
+    readonly property int gapXxl: px(Tokens.space.xxl)
+    readonly property int gapXxxl: px(Tokens.space.xxxl)
 
-    readonly property int fontMicro: Tokens.type.micro
-    readonly property int fontSmall: Tokens.type.small
-    readonly property int fontBody: Tokens.type.body
-    readonly property int fontLead: Tokens.type.lead
-    readonly property int fontTitle: Tokens.type.title
-    readonly property int fontDisplay: Tokens.type.display
-    readonly property int fontHero: Tokens.type.hero
-    readonly property int fontGiant: Tokens.type.giant
-    readonly property int fontMega: Tokens.type.mega
-    readonly property int fontLarge: Tokens.type.large
-    readonly property real trackingGiant: Tokens.tracking.giant
-    readonly property real trackingHero: Tokens.tracking.hero
-    readonly property real trackingDisplay: Tokens.tracking.display
-    readonly property real trackingTitle: Tokens.tracking.title
+    readonly property int fontMicro: px(Tokens.type.micro)
+    readonly property int fontSmall: px(Tokens.type.small)
+    readonly property int fontBody: px(Tokens.type.body)
+    readonly property int fontLead: px(Tokens.type.lead)
+    readonly property int fontTitle: px(Tokens.type.title)
+    readonly property int fontDisplay: px(Tokens.type.display)
+    readonly property int fontHero: px(Tokens.type.hero)
+    readonly property int fontGiant: px(Tokens.type.giant)
+    readonly property int fontMega: px(Tokens.type.mega)
+    readonly property int fontLarge: px(Tokens.type.large)
+    readonly property real trackingGiant: Tokens.tracking.giant*uiScale
+    readonly property real trackingHero: Tokens.tracking.hero*uiScale
+    readonly property real trackingDisplay: Tokens.tracking.display*uiScale
+    readonly property real trackingTitle: Tokens.tracking.title*uiScale
 
-    readonly property int radiusSmall: Tokens.radii.small
-    readonly property int radius: Tokens.radii.medium
-    readonly property int radiusLarge: Tokens.radii.large
+    readonly property int radiusSmall: px(Tokens.radii.small)
+    readonly property int radius: px(Tokens.radii.medium)
+    readonly property int radiusLarge: px(Tokens.radii.large)
 
-    readonly property int controlHeight: Tokens.sizes.control
-    readonly property int controlSmall: Tokens.sizes.controlSmall
-    readonly property int rowHeight: Tokens.sizes.row
-    readonly property int barHeight: Tokens.sizes.bar
-    readonly property int statusHeight: Tokens.sizes.status
-    readonly property int railWidth: Tokens.sizes.rail
-    readonly property int railWideWidth: Tokens.sizes.railWide
-    readonly property int panelWidth: Tokens.sizes.panel
-    readonly property int iconSize: Tokens.sizes.icon
+    readonly property int controlHeight: px(Tokens.sizes.control)
+    readonly property int controlSmall: px(Tokens.sizes.controlSmall)
+    readonly property int rowHeight: px(Tokens.sizes.row)
+    readonly property int barHeight: px(Tokens.sizes.bar)
+    readonly property int statusHeight: px(Tokens.sizes.status)
+    readonly property int railWidth: px(Tokens.sizes.rail)
+    readonly property int railWideWidth: px(Tokens.sizes.railWide)
+    readonly property int panelWidth: px(Tokens.sizes.panel)
+    readonly property int iconSize: px(Tokens.sizes.icon)
 
     // The hint exists from Qt 6.12; older versions have no preference to follow.
     readonly property bool reducedMotion: {

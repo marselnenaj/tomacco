@@ -15,7 +15,7 @@ StudioDialog {
     objectName: "approvalDialog"
     parent: Overlay.overlay
     anchors.centerIn: parent
-    width: Math.min(parent ? parent.width-Theme.gapXxxl : 560, 560)
+    width: Math.min(parent ? parent.width-Theme.gapXxxl : 560, Theme.px(560))
     modal: true
     closePolicy: Popup.CloseOnEscape
     title: qsTr("Allow this agent action?")
@@ -85,7 +85,7 @@ StudioDialog {
         StudioCodeView {
             objectName: "approvalArguments"
             Layout.fillWidth: true
-            Layout.preferredHeight: 160
+            Layout.preferredHeight: Theme.px(160)
             text: dialog.current ? JSON.stringify(dialog.current.params.arguments || {},null,2) : ""
             accessibleName: qsTr("Arguments")
         }

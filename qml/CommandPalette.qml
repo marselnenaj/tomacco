@@ -14,7 +14,7 @@ StudioDialog {
     signal navigate(string section)
     modal: true
     anchors.centerIn: parent
-    width: Math.min(parent.width-Theme.gapXxxl,640)
+    width: Math.min(parent.width-Theme.gapXxxl,Theme.px(640))
     padding: 0
     topPadding: 0
     title: ""

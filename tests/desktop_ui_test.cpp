@@ -16,6 +16,7 @@
 #include <QScopeGuard>
 #include <QSettings>
 #include <QSignalSpy>
+#include <QScreen>
 #include <QTemporaryDir>
 #include <QFile>
 #include <QBuffer>
@@ -654,6 +655,78 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         QCoreApplication::processEvents();
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void interface_size_updates_controls_dialogs_and_shortcuts() {
+        const int original=backend->uiScale();
+        const auto stored=QSettings().value("appearance/uiScale");
+        const QSize previous=window->size();
+        auto *dialog=object("settingsDialog");QVERIFY(dialog);
+        const auto restore=qScopeGuard([&]{
+            QMetaObject::invokeMethod(dialog,"close");backend->setUiScale(original);
+            if(!stored.isValid())QSettings().remove("appearance/uiScale");
+            window->resize(previous);
+        });
+        open("runtime");window->resize(3840,2160);backend->setUiScale(100);
+        auto *phone=object("phoneDevice");auto *browser=object("previewBrowser");QVERIFY(phone);QVERIFY(browser);
+        const QSizeF panel(phone->property("width").toReal(),phone->property("height").toReal());
+        const QSizeF viewport(browser->property("width").toReal(),browser->property("height").toReal());
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        QVERIFY(QMetaObject::invokeMethod(view,"openSettings",Q_ARG(QVariant,QString("Interface size"))));
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *larger=item("interfaceLarger");auto *smaller=item("interfaceSmaller");auto *reset=item("interfaceReset");QVERIFY(larger);QVERIFY(smaller);QVERIFY(reset);
+        QVERIFY(!accessibleName(larger).isEmpty());QVERIFY(!accessibleName(smaller).isEmpty());
+        // Actual button clicks resize the open dialog while keeping its search.
+        clickItem("interfaceLarger");QCOMPARE(backend->uiScale(),125);
+        clickItem("interfaceLarger");QCOMPARE(backend->uiScale(),150);
+        for(const int percent:{100,150,200}) {
+            backend->setUiScale(percent);
+            QTRY_COMPARE(larger->implicitHeight(),32.0*percent/100);
+            QTRY_COMPARE(dialog->property("width").toReal(),460.0*percent/100);
+            QCOMPARE(QGuiApplication::font().pixelSize(),qRound(13.0*percent/100));
+            QCOMPARE(QSettings().value("appearance/uiScale").toInt(),percent);
+            QCOMPARE(QSizeF(phone->property("width").toReal(),phone->property("height").toReal()),panel);
+            QCOMPARE(QSizeF(browser->property("width").toReal(),browser->property("height").toReal()),viewport);
+            const auto bounds=larger->mapRectToScene(larger->boundingRect());
+            QVERIFY(QRectF(0,0,window->width(),window->height()).contains(bounds));
+            capture("interface-"+QString::number(percent));
+        }
+        // The shortcuts also work while a modal settings popup has focus.
+        QTest::keyClick(window,Qt::Key_Minus,Qt::ControlModifier|Qt::AltModifier);
+        QTRY_COMPARE(backend->uiScale(),175);
+        QTest::keyClick(window,Qt::Key_0,Qt::ControlModifier|Qt::AltModifier);
+        QTRY_COMPARE(backend->uiScale(),100);
+        QTest::keyClick(window,Qt::Key_Equal,Qt::ControlModifier|Qt::AltModifier);
+        QTRY_COMPARE(backend->uiScale(),125);
+        clickItem("interfaceReset");QCOMPARE(backend->uiScale(),100);
+        // On a smaller window, the dialog stays inside it and scrolls.
+        backend->setUiScale(200);window->resize(1280,720);
+        QTRY_VERIFY(dialog->property("height").toReal()<window->height());
+        QTRY_VERIFY(dialog->property("width").toReal()<window->width());
+        QMetaObject::invokeMethod(dialog,"close");
+        // A crowded detached rail scrolls rather than making its window taller
+        // than the screen, and app sizing keeps device zoom shortcuts separate.
+        QQmlComponent component(engine.get(),QUrl("qrc:/qml/DeviceWindow.qml"));
+        QVariantList extras;for(int n=0;n<20;++n)extras.append(QVariantMap{{"name",QString::number(n)},{"icon","phone"},{"tip","Test control"}});
+        std::unique_ptr<QObject> floating(component.createWithInitialProperties({{"deviceWidth",200},{"deviceHeight",400},{"extraButtons",extras}}));
+        QVERIFY2(floating,qPrintable(component.errorString()));
+        auto *detached=qobject_cast<QQuickWindow *>(floating.get());QVERIFY(detached);
+        detached->show();detached->requestActivate();QTRY_VERIFY(detached->isActive());
+        auto *scroll=detached->findChild<QQuickItem *>("deviceWindowRailScroll");QVERIFY(scroll);
+        QTRY_VERIFY(scroll->property("contentHeight").toReal()>scroll->height());
+        QVERIFY(detached->height()<=detached->screen()->availableGeometry().height());
+        scroll->setProperty("contentY",scroll->property("contentHeight").toReal()-scroll->height());
+        auto *last=detached->findChild<QQuickItem *>("deviceWindowZoomOut");QVERIFY(last);
+        QTRY_VERIFY(QRectF(0,0,detached->width(),detached->height()).contains(last->mapRectToScene(last->boundingRect())));
+        const qreal zoom=detached->property("zoom").toReal();
+        QTest::keyClick(detached,Qt::Key_Minus,Qt::ControlModifier|Qt::AltModifier);
+        QTRY_COMPARE(backend->uiScale(),175);QCOMPARE(detached->property("zoom").toReal(),zoom);
+        QTest::keyClick(detached,Qt::Key_0,Qt::ControlModifier|Qt::AltModifier);
+        QTRY_COMPARE(backend->uiScale(),100);QCOMPARE(detached->property("zoom").toReal(),zoom);
+        QTest::keyClick(detached,Qt::Key_Plus,Qt::ControlModifier);
+        QTRY_VERIFY(detached->property("zoom").toReal()>zoom);QCOMPARE(backend->uiScale(),100);
+        floating.reset();QCoreApplication::processEvents();
+        window->requestActivate();QTRY_VERIFY(window->isActive());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void native_frames_preserve_real_pixels_and_pointer_coordinates() {
         open("runtime");window->resize(1380,970);
         auto *view=object("nativeWorkspace");QVERIFY(view);
@@ -728,6 +801,28 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         QTRY_VERIFY_WITH_TIMEOUT(display->contentRect().width()>0,patient(3000));
         QVERIFY(qAbs(display->contentRect().width()/display->contentRect().height()-1080.0/2424)<.0001);
         QCOMPARE(display->sourceSize(),QSize(1080,2424));QVERIFY(display->frameCount()>=frameCount);
+        // UI scale enlarges only the detached controls. The decoded and saved
+        // picture, device geometry and normalized pointer coordinates stay real.
+        const auto scaleSetting=QSettings().value("appearance/uiScale");
+        const auto resetScale=qScopeGuard([&]{backend->setUiScale(100);if(!scaleSetting.isValid())QSettings().remove("appearance/uiScale");});
+        const QSizeF frameSize(frame->width(),frame->height());
+        const auto saved=directory.filePath("scale-original.png");QVERIFY(display->saveFrame(saved));
+        const QImage originalPixels(saved);
+        auto *railScroll=deviceWindow->findChild<QQuickItem *>("deviceWindowRailScroll");QVERIFY(railScroll);
+        for(const int percent:{150,200}) {
+            backend->setUiScale(percent);
+            QTRY_COMPARE(pin->implicitHeight(),32.0*percent/100);
+            QTRY_VERIFY(deviceWindow->height()<=deviceWindow->screen()->availableGeometry().height());
+            QVERIFY(railScroll->height()<=deviceWindow->height());
+            QCOMPARE(display->sourceSize(),QSize(1080,2424));QCOMPARE(QSizeF(frame->width(),frame->height()),frameSize);
+            const auto path=directory.filePath("scale-current.png");QVERIFY(display->saveFrame(path));QCOMPARE(QImage(path),originalPixels);
+            inputs.clear();QTest::mouseClick(deviceWindow,Qt::LeftButton,Qt::NoModifier,display->mapToScene(display->contentRect().center()).toPoint());
+            QTRY_COMPARE_WITH_TIMEOUT(inputs.size(),2,patient(3000));
+            QVERIFY(qAbs(inputs[0]["x"].toDouble()-.5)<.005);QVERIFY(qAbs(inputs[0]["y"].toDouble()-.5)<.005);
+            const auto out=qEnvironmentVariable("TOMACCO_UI_CAPTURES");
+            if(!out.isEmpty()){QVERIFY(QDir().mkpath(out));QVERIFY(deviceWindow->grabWindow().save(out+"/interface-detached-"+QString::number(percent)+".png"));}
+        }
+        backend->setUiScale(100);
         inputs.clear();QTest::mouseClick(deviceWindow,Qt::LeftButton,Qt::NoModifier,display->mapToScene(display->contentRect().center()).toPoint());
         QTRY_COMPARE_WITH_TIMEOUT(inputs.size(),2,patient(3000));
         QVERIFY(qAbs(inputs[0]["x"].toDouble()-.5)<.005);QVERIFY(qAbs(inputs[0]["y"].toDouble()-.5)<.005);

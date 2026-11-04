@@ -431,7 +431,7 @@ Rectangle {
                     color:view.virtualRunning || view.virtualBusy?Theme.accentInk:view.virtualPhone.phase==="failed"?Theme.danger:Theme.muted
                     text:qsTr("Run %1 · %2").arg(view.virtualPhone.run).arg(view.virtualLabel)}
             }
-            BusyIndicator {running:view.virtualBusy;visible:running;Layout.preferredWidth:24;Layout.preferredHeight:24}
+            BusyIndicator {running:view.virtualBusy;visible:running;Layout.preferredWidth:Theme.px(24);Layout.preferredHeight:Theme.px(24)}
             StudioButton {objectName:"virtualPhoneStart";text:qsTr("Start");iconName:"play";accent:true;visible:!view.virtualRunning;enabled:!view.virtualBusy && !view.virtualStatusError;tip:qsTr("Prepare, boot, unlock and open the test app");onClicked:view.call("ios.virtual.start",{})}
             StudioButton {objectName:"virtualPhoneShow";text:qsTr("Show");visible:view.virtualRunning;onClicked:view.open()}
             StudioButton {objectName:"virtualPhoneWindow";text:qsTr("Own window");iconName:"phone";visible:view.virtualRunning;enabled:view.paravirtualMode && view.interactiveGuest;onClicked:nativeGuestView.detached=true}
@@ -445,7 +445,7 @@ Rectangle {
             Label {text:qsTr("Model");color:Theme.muted;font.pixelSize:Theme.fontSmall}
             StudioComboBox {
                 objectName:"virtualPhoneModel"
-                Layout.preferredWidth:260
+                Layout.preferredWidth:Theme.px(260)
                 model:view.virtualModels.map(m=>m.source==="derived"?qsTr("%1 · derived").arg(m.name):m.source==="apple"?qsTr("%1 · Apple variant").arg(m.name):m.name)
                 currentIndex:view.virtualModelIndex
                 enabled:!view.virtualBusy
@@ -460,7 +460,7 @@ Rectangle {
     }
     StudioDialog {
         id:dialog;objectName:"iosResearchDialog";parent:Overlay.overlay;anchors.centerIn:parent
-        width:Math.min(760,parent.width-48);height:Math.min(view.paravirtualMode?900:760,parent.height-48)
+        width:Math.min(Theme.px(760),parent.width-Theme.px(48));height:Math.min(Theme.px(view.paravirtualMode?900:760),parent.height-Theme.px(48))
         title:qsTr("iOS test system");modal:true;standardButtons:Dialog.Close
         contentItem:StudioScrollView {
             id:researchScroll
@@ -530,11 +530,11 @@ Rectangle {
                     ColumnLayout {visible:view.showCpuConfig;Layout.fillWidth:true;spacing:6
                         Label {Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.faint;font.pixelSize:Theme.fontSmall;text:qsTr("The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.")}
                         RowLayout {Layout.fillWidth:true
-                            Label {text:"MIDR";color:Theme.muted;Layout.preferredWidth:70}
+                            Label {text:"MIDR";color:Theme.muted;Layout.preferredWidth:Theme.px(70)}
                             StudioTextField {objectName:"iosResearchCpuMidr";Layout.fillWidth:true;text:view.cpuMidr;onTextEdited:view.cpuMidr=text;placeholderText:"0x610f0000";Accessible.name:"CPU MIDR"}
                         }
                         RowLayout {Layout.fillWidth:true
-                            Label {text:qsTr("Core ID");color:Theme.muted;Layout.preferredWidth:70}
+                            Label {text:qsTr("Core ID");color:Theme.muted;Layout.preferredWidth:Theme.px(70)}
                             StudioTextField {objectName:"iosResearchCpuAffinity";Layout.fillWidth:true;text:view.cpuAffinity;onTextEdited:view.cpuAffinity=text;placeholderText:"0x0";Accessible.name:qsTr("Processor core ID (MPIDR affinity)")}
                         }
                     }
@@ -551,7 +551,7 @@ Rectangle {
                 }
                 Rectangle {Layout.fillWidth:true;implicitHeight:1;color:Theme.border}
                 RowLayout {Layout.fillWidth:true
-                    BusyIndicator {running:view.active;visible:running;Layout.preferredWidth:24;Layout.preferredHeight:24}
+                    BusyIndicator {running:view.active;visible:running;Layout.preferredWidth:Theme.px(24);Layout.preferredHeight:Theme.px(24)}
                     Label {objectName:"iosResearchState";text:view.stateLabel;color:Theme.text;font.pixelSize:Theme.fontLead;Layout.fillWidth:true;wrapMode:Text.Wrap}
                 }
                 Label {objectName:"iosResearchCapability";Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.warning;text:view.pmpMode?qsTr("For controller development: Apple's original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware's services and its connection to iOS are not verified."):view.paravirtualMode?qsTr("Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet."):qsTr("Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.")}
@@ -661,7 +661,7 @@ Rectangle {
                         Label {visible:!!view.memoryError;Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.warning;text:view.memoryError}
                         Label {objectName:"iosResearchMemoryRange";visible:!!view.memoryResult.data;Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:Theme.fontSmall;text:view.memoryResult.data?qsTr("%n byte(s) from %1 · checksum verified","",view.memoryResult.bytes).arg(view.memoryResult.address):""}
                         StudioScrollView {
-                            visible:!!view.memoryResult.data;Layout.fillWidth:true;Layout.preferredHeight:240;clip:true
+                            visible:!!view.memoryResult.data;Layout.fillWidth:true;Layout.preferredHeight:Theme.px(240);clip:true
                             TextArea {objectName:"iosResearchMemoryData";readOnly:true;selectByMouse:true;text:view.memoryText();wrapMode:TextEdit.NoWrap;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;color:Theme.text;background:null;Accessible.name:qsTr("Memory contents in hexadecimal")}
                         }
                     }
@@ -694,7 +694,7 @@ Rectangle {
                     StudioButton {text:view.showFrame?qsTr("Hide boot image"):qsTr("Boot image");enabled:!!view.framePath;onClicked:view.showFrame=!view.showFrame}
                     StudioButton {text:qsTr("Refresh");enabled:!!view.jobId && !view.polling;onClicked:view.refresh()}
                 }
-                Image {visible:view.showFrame && !!view.framePath;Layout.fillWidth:true;Layout.preferredHeight:220;fillMode:Image.PreserveAspectFit;source:view.showFrame && view.framePath?view.fileUrl(view.framePath):"";cache:false;asynchronous:true}
+                Image {visible:view.showFrame && !!view.framePath;Layout.fillWidth:true;Layout.preferredHeight:Theme.px(220);fillMode:Image.PreserveAspectFit;source:view.showFrame && view.framePath?view.fileUrl(view.framePath):"";cache:false;asynchronous:true}
                 Label {visible:view.showFrame && !!view.framePath;Layout.fillWidth:true;wrapMode:Text.Wrap;text:qsTr("Actual image from the start-up screen · not yet the device's main display");color:Theme.faint;font.pixelSize:Theme.fontSmall}
             }
         }

@@ -12,14 +12,14 @@ StudioScrollView {
     function call(op,args) {let id=workspace.request(op,args);requests[id]=true}
     Connections { target: Agent; function onApiFinished(id,op,response) {if(!view.requests[id])return;delete view.requests[id];view.result=JSON.stringify(response.ok?response.result:response.error,null,2)} }
     ColumnLayout {
-    width: Math.min(parent.width-Theme.gapLg,1240); spacing: Theme.gapXs
+    width: Math.min(parent.width-Theme.gapLg,Theme.px(1240)); spacing: Theme.gapXs
     StudioPanel {
         Layout.fillWidth: true
         title: qsTr("Sign your app")
         lead: qsTr("Your keys stay on this computer. Nothing is released until the check passes.")
         RowLayout { Layout.fillWidth: true; spacing: Theme.gapXs
             StudioTextField { id: key; Layout.fillWidth: true; placeholderText: "Keystore (.p12 / .jks)" }
-            StudioTextField { id: alias; Layout.preferredWidth: 160; placeholderText: qsTr("Key alias") }
+            StudioTextField { id: alias; Layout.preferredWidth: Theme.px(160); placeholderText: qsTr("Key alias") }
         }
         StudioTextField { id: password; Layout.fillWidth: true; placeholderText: qsTr("Protected password file · readable by its owner only") }
         StudioTextField { id: input; Layout.fillWidth: true; placeholderText: qsTr("APK / AAB to sign") }
@@ -35,8 +35,8 @@ StudioScrollView {
         Layout.fillWidth: true
         title: qsTr("Version & build number")
         RowLayout { Layout.fillWidth: true; spacing: Theme.gapXs
-            StudioTextField { id: version; placeholderText: "1.0.0"; Layout.preferredWidth: 120 }
-            StudioSpinBox { id: buildNumber; from: 1; to: 2100000000; value: 1; editable: true; Layout.preferredWidth: 140; Accessible.name: qsTr("Build number") }
+            StudioTextField { id: version; placeholderText: "1.0.0"; Layout.preferredWidth: Theme.px(120) }
+            StudioSpinBox { id: buildNumber; from: 1; to: 2100000000; value: 1; editable: true; Layout.preferredWidth: Theme.px(140); Accessible.name: qsTr("Build number") }
             StudioButton { text: qsTr("Set in the open project"); enabled: !!workspace.project.path && version.text.length>0; onClicked: view.call("release.version",{path:workspace.project.path,version:version.text,build_number:buildNumber.value}) }
         }
     }
@@ -52,6 +52,6 @@ StudioScrollView {
             StudioButton { text: "App Store Upload"; onClicked: workspace.showAction("apple.store") }
         }
     }
-    StudioCodeView { Layout.fillWidth: true; Layout.preferredHeight: 180; visible: !!view.result; text: view.result }
+    StudioCodeView { Layout.fillWidth: true; Layout.preferredHeight: Theme.px(180); visible: !!view.result; text: view.result }
     }
 }

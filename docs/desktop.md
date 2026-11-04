@@ -64,6 +64,15 @@ applies at once. `TOMACCO_THEME=dark|light` overrides it for one run. Animations
 stop when the desktop asks for reduced motion (Qt 6.12 or later). The fonts,
 Archivo and JetBrains Mono, ship with the app.
 
+For a larger interface on a 4K screen, open **Settings** (Ctrl+,), search for
+**Interface size** (*Oberflächengröße*) and choose 150% or 200% with the plus button.
+Text, controls and spacing change together, immediately and across starts; the range
+is 75–200%, with 100% as the default. **Reset** returns to 100%.
+Ctrl+Alt+plus and Ctrl+Alt+minus resize the interface; Ctrl+Alt+0 resets it.
+These also work in a detached device window. Its controls grow while the device
+keeps its own zoom, panel resolution and screenshot pixels. Ctrl+plus/minus/0
+continue to control the detached device's zoom.
+
 On Omarchy, **Use the Omarchy theme's accent** (*Akzentfarbe des Omarchy-Themes verwenden*) under
 **Appearance** takes the accent colour of the active Omarchy theme instead of Tomacco's red. Tomacco reads
 the theme's `colors.toml` from `~/.local/state/omarchy/current/theme` (or `$XDG_STATE_HOME`; older

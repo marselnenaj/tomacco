@@ -2693,6 +2693,30 @@ xtool setup</translation>
 <context>
     <name>NativeWorkspace</name>
     <message>
+        <source>Interface size</source>
+        <translation>Dimensioni dell’interfaccia</translation>
+    </message>
+    <message>
+        <source>Larger interface</source>
+        <translation>Ingrandisci l’interfaccia</translation>
+    </message>
+    <message>
+        <source>Smaller interface</source>
+        <translation>Riduci l’interfaccia</translation>
+    </message>
+    <message>
+        <source>Reset interface size</source>
+        <translation>Ripristina le dimensioni dell’interfaccia</translation>
+    </message>
+    <message>
+        <source>Text, controls and spacing in Tomacco. Device zoom and screenshots keep their own size.</source>
+        <translation>Testo, controlli e spaziatura in Tomacco. Lo zoom del dispositivo e gli screenshot mantengono le proprie dimensioni.</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>Ripristina</translation>
+    </message>
+    <message>
         <source>Drop to open %1 as the project</source>
         <translation>Rilascia per aprire %1 come progetto</translation>
     </message>

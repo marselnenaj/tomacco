@@ -180,12 +180,31 @@ void Backend::setAppearance(const QString &choice) {
     m_settings.setValue("appearance",choice==QLatin1String("dark") || choice==QLatin1String("light")?choice:QStringLiteral("system"));
     emit appearanceChanged();
 }
+int Backend::uiScale() const {
+    bool ok=false;
+    const int percent=m_settings.value("appearance/uiScale",100).toInt(&ok);
+    return ok && percent>=75 && percent<=200 && percent%25==0?percent:100;
+}
+void Backend::setUiScale(int percent) {
+    percent=((std::clamp(percent,75,200)+12)/25)*25;
+    if(percent==uiScale())return;
+    m_settings.setValue("appearance/uiScale",percent);
+    // Inherited Qt controls and native file dialogs use the app font too.
+    if(qobject_cast<QGuiApplication *>(QCoreApplication::instance()))applyInterfaceFont();
+    emit uiScaleChanged();
+}
 void Backend::applyInterfaceFont() {
     // Bundled, so the interface looks the same everywhere (THIRD_PARTY_NOTICES.md).
-    QFontDatabase::addApplicationFont(QStringLiteral(":/assets/fonts/archivo-var.ttf"));
-    QFontDatabase::addApplicationFont(QStringLiteral(":/assets/fonts/jetbrains-mono-var.ttf"));
+    static const bool loaded=[] {
+        QFontDatabase::addApplicationFont(QStringLiteral(":/assets/fonts/archivo-var.ttf"));
+        QFontDatabase::addApplicationFont(QStringLiteral(":/assets/fonts/jetbrains-mono-var.ttf"));
+        return true;
+    }();
+    Q_UNUSED(loaded);
     QFont font(QStringList{QStringLiteral("Archivo"),QStringLiteral("Adwaita Sans"),QStringLiteral("Noto Sans"),QStringLiteral("DejaVu Sans")});
-    font.setPixelSize(13);
+    bool ok=false;
+    const int percent=QSettings().value("appearance/uiScale",100).toInt(&ok);
+    font.setPixelSize(qRound(13*(ok && percent>=75 && percent<=200 && percent%25==0?percent:100)/100.0));
     QGuiApplication::setFont(font);
 }
 QString Backend::probeLabel(const QString &value) {
@@ -204,6 +223,11 @@ static bool portableSetting(const QString &key,const QJsonValue &value,QVariant 
         QStringLiteral("NativeDisplay/showTouches"),QStringLiteral("NativeAudio/forwardAudio")};
     static const QRegularExpression identifier(QStringLiteral("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"));
     if(switches.contains(key)) { if(!value.isBool()) return false; *out=value.toBool(); return true; }
+    if(key==QLatin1String("appearance/uiScale")) {
+        const int percent=value.toInt(-1);
+        if(!value.isDouble() || value.toDouble()!=percent || percent<75 || percent>200 || percent%25!=0)return false;
+        *out=percent;return true;
+    }
     const auto text=value.toString();
     if(!value.isString()) return false;
     if(key==QLatin1String("appearance") && QStringList{"system","dark","light"}.contains(text)) { *out=text; return true; }
@@ -216,9 +240,11 @@ static bool portableSetting(const QString &key,const QJsonValue &value,QVariant 
 QString Backend::exportSettings(const QString &path,const QVariantMap &extra) {
     QJsonObject values;
     QVariant checked;
-    for(const auto &key:{"appearance","appearance/omarchyAccent","language","device","Notifications/jobs","NativeDisplay/showDeviceFrame","NativeDisplay/showActivity","NativeDisplay/showTouches","NativeAudio/forwardAudio","NativeIphone/runnerBundle"}) {
+    for(const auto &key:{"appearance","appearance/omarchyAccent","appearance/uiScale","language","device","Notifications/jobs","NativeDisplay/showDeviceFrame","NativeDisplay/showActivity","NativeDisplay/showTouches","NativeAudio/forwardAudio","NativeIphone/runnerBundle"}) {
         if(!m_settings.contains(key)) continue;
         auto value=m_settings.value(key);
+        // QSettings reloads numeric INI values as text; the portable file is typed.
+        if(key==QLatin1String("appearance/uiScale"))value=uiScale();
         // QSettings keeps switches as the text "true" or "false".
         const auto json=value.toString()==QLatin1String("true") || value.toString()==QLatin1String("false") ? QJsonValue(value.toString()==QLatin1String("true")) : QJsonValue::fromVariant(value);
         if(portableSetting(key,json,&checked)) values.insert(key,json);
@@ -252,6 +278,7 @@ QVariantMap Backend::importSettings(const QString &path) {
         else if(it.key()==QLatin1String("language")) setLanguage(value.toString());
         else if(it.key()==QLatin1String("appearance")) setAppearance(value.toString());
         else if(it.key()==QLatin1String("appearance/omarchyAccent")) setFollowOmarchyAccent(value.toBool());
+        else if(it.key()==QLatin1String("appearance/uiScale")) setUiScale(value.toInt());
         else m_settings.setValue(it.key(),value);
     }
     m_settings.sync();

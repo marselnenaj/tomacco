@@ -91,12 +91,12 @@ Item {
     RowLayout {
         anchors.fill: parent; spacing: 0
         Rectangle {
-            Layout.preferredWidth: view.width<760?216:280; Layout.fillHeight: true
+            Layout.preferredWidth: view.width<Theme.px(760)?216:280; Layout.fillHeight: true
             color: Theme.surface
             ColumnLayout {
                 anchors.fill: parent; spacing: 0
                 RowLayout { Layout.fillWidth: true; Layout.margins: Theme.gapSm; spacing: Theme.gapXs
-                    StudioTextField { id: search; Layout.fillWidth: true; implicitWidth: 80; placeholderText: qsTr("Search source code…"); onAccepted: {if(text.trim())view.request("files.search",{path:view.root,query:text},{})} }
+                    StudioTextField { id: search; Layout.fillWidth: true; implicitWidth: Theme.px(80); placeholderText: qsTr("Search source code…"); onAccepted: {if(text.trim())view.request("files.search",{path:view.root,query:text},{})} }
                     StudioButton { iconName: "refresh"; quiet: true; tip: qsTr("Reload files"); onClicked: {view.searching=false;view.refresh()} }
                 }
                 RowLayout { Layout.fillWidth: true; Layout.leftMargin: Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapMd
@@ -198,7 +198,7 @@ Item {
     }
     StudioDialog {
         id: newPath; property bool folder: false; modal: true; anchors.centerIn: parent; standardButtons: Dialog.Ok | Dialog.Cancel
-        StudioTextField { id: filename; width: Math.min(view.width-Theme.gapXxxl*2,400); placeholderText: qsTr("Path relative to the project, e.g. lib/example.dart"); selectByMouse: true }
+        StudioTextField { id: filename; width: Math.min(view.width-Theme.gapXxxl*2,Theme.px(400)); placeholderText: qsTr("Path relative to the project, e.g. lib/example.dart"); selectByMouse: true }
         onOpened: {filename.text="";filename.forceActiveFocus()}
         onAccepted: {if(folder)view.request("files.mkdir",{path:view.root,directory:filename.text},{});else view.newFile(filename.text)}
     }

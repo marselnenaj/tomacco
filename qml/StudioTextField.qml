@@ -5,7 +5,7 @@ import "."
 TextField {
     id: control
     implicitHeight: Theme.controlHeight
-    implicitWidth: 160
+    implicitWidth: Theme.px(160)
     leftPadding: Theme.gapMd
     rightPadding: Theme.gapMd
     topPadding: 0

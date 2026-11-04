@@ -8,6 +8,12 @@ operations and their JSON results.
 
 ## 1.4.1
 
+### Added
+- **Interface size.** A saved 75–200% setting enlarges text, controls and spacing
+  immediately, including dialogs and detached-window tools. Ctrl+Alt+plus/minus
+  adjusts it; Ctrl+Alt+0 resets to 100%. Device zoom, touch coordinates, web
+  viewport and raw screenshot dimensions stay independent.
+
 ### Fixed
 - **Opening another AirPlay view.** Repeated unchanged codec configuration no longer discards
   the cached video start. The replay keeps every slice of a keyframe and is sent separately
