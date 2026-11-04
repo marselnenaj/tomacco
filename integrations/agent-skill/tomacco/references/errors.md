@@ -2,7 +2,7 @@
 
 # Error codes
 
-486 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
+487 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
 
 | Code | Meaning | Remedy |
 | --- | --- | --- |
@@ -207,6 +207,7 @@
 | `invalid_working_image` | Working image must be a separate owner-only regular copy, with one link and the same page-aligned size as the source ramdisk. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_workspaces` | Saved workspaces are malformed; restore workspaces.json from a backup. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_xcode_project` | … is not an .xcodeproj directory. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
+| `io_error` | A file, socket or other input/output operation failed; the message names the underlying error. | Check the named path or connection, its permissions and available storage. Read the operation message and retry after fixing the reported cause. |
 | `ios_boot_failed` | The virtual iOS device or its research engine refused the request or stopped answering. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `ios_control_busy` | Another control action is in progress for this guest. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `ios_control_ended` | The emulator is no longer running; the job is finishing. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |

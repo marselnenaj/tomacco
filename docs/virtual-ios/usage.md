@@ -562,10 +562,10 @@ the current run's `guest_job` from `ios.virtual.status`, then start the bridge f
 tomaccoctl call ios.virtual.start '{"open_app":false}'
 tomaccoctl call ios.virtual.status '{}'
 tomaccoctl call ios.emulator.usb_bridge '{"job_id":"GUEST_JOB","seconds":1800}'
-tomaccoctl call ios.emulator.report '{"job_id":"BRIDGE_JOB"}'
+tomaccoctl call ios.emulator.report '{"job_id":"JOB_ID"}'
 ```
 
-`GUEST_JOB` is the current guest job ID; `BRIDGE_JOB` is the job returned by the bridge call.
+`GUEST_JOB` is the current guest job ID; `JOB_ID` is the job returned by the bridge call.
 The bridge is ready when its report says `state:"ready"`, `guest_usb_mode:"system"` and
 `guest_usb_ready_checkpoint:true`. Read `environment.USBMUXD_SOCKET_ADDRESS` from that report.
 The bridge job stays running while it serves the socket; waiting for terminal success would

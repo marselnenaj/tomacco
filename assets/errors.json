@@ -803,6 +803,10 @@
     "cause": "… is not an .xcodeproj directory.",
     "remedy": "Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments."
   },
+  "io_error": {
+    "cause": "A file, socket or other input/output operation failed; the message names the underlying error.",
+    "remedy": "Check the named path or connection, its permissions and available storage. Read the operation message and retry after fixing the reported cause."
+  },
   "ios_boot_failed": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."

@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 486 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 487 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -207,6 +207,7 @@ Every error code `tomaccoctl` returns, 486 codes, generated from `assets/errors.
 | `invalid_working_image` | Working image must be a separate owner-only regular copy, with one link and the same page-aligned size as the source ramdisk. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_workspaces` | Saved workspaces are malformed; restore workspaces.json from a backup. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
 | `invalid_xcode_project` | … is not an .xcodeproj directory. | Correct the value the message names; tomaccoctl schema OPERATION lists accepted arguments. |
+| `io_error` | A file, socket or other input/output operation failed; the message names the underlying error. | Check the named path or connection, its permissions and available storage. Read the operation message and retry after fixing the reported cause. |
 | `ios_boot_failed` | The virtual iOS device or its research engine refused the request or stopped answering. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `ios_control_busy` | Another control action is in progress for this guest. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `ios_control_ended` | The emulator is no longer running; the job is finishing. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |

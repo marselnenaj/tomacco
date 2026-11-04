@@ -33,7 +33,7 @@ against the release keys built into `tomaccoctl`. It exits 0 only when both matc
 prints the result as JSON.
 
 ```sh
-tomaccoctl verify tomacco-1.4.0-Linux-x86_64.tar.gz
+tomaccoctl verify tomacco-1.4.1-Linux-x86_64.tar.gz
 ```
 
 Tomacco runs on x86_64 and aarch64 (ARM64) Linux. x86_64 Arch Linux and Omarchy are the tested
@@ -53,9 +53,9 @@ checks the checksum only; with an earlier Tomacco installed, `tomaccoctl verify`
 signature as well):
 
 ```sh
-sha256sum -c tomacco-1.4.0-Linux-x86_64.tar.gz.sha256
-tar -xzf tomacco-1.4.0-Linux-x86_64.tar.gz
-python3 tomacco-1.4.0-Linux-x86_64/install.py --omarchy
+sha256sum -c tomacco-1.4.1-Linux-x86_64.tar.gz.sha256
+tar -xzf tomacco-1.4.1-Linux-x86_64.tar.gz
+python3 tomacco-1.4.1-Linux-x86_64/install.py --omarchy
 ```
 
 From 1.3.0 on, the package installs itself without Python:
