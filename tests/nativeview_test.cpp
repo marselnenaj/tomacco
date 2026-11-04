@@ -8,10 +8,56 @@
 #include <QJsonDocument>
 #include <QtEndian>
 #include <QtTest>
+#include <algorithm>
 
 class NativeViewTest : public QObject {
     Q_OBJECT
 private slots:
+    void airplay_hover_does_not_interrupt_a_pressed_or_wheel_drag_data() {
+        QTest::addColumn<bool>("wheel");
+        QTest::newRow("held-mouse-button")<<false;
+        QTest::newRow("wheel-burst")<<true;
+    }
+    void airplay_hover_does_not_interrupt_a_pressed_or_wheel_drag() {
+        QFETCH(bool,wheel);
+        QTemporaryDir directory;QLocalServer video,control;
+        QVERIFY(video.listen(directory.filePath("video")));QVERIFY(control.listen(directory.filePath("control")));
+        QImage picture(200,400,QImage::Format_RGB32);picture.fill(Qt::blue);
+        QByteArray jpeg;QBuffer buffer(&jpeg);QVERIFY(buffer.open(QIODevice::WriteOnly));QVERIFY(picture.save(&buffer,"JPEG"));
+        QByteArray packet(4,0);qToBigEndian(quint32(jpeg.size()),packet.data());packet+=jpeg;
+        QVector<QJsonObject> inputs;
+        connect(&video,&QLocalServer::newConnection,this,[&]{auto *socket=video.nextPendingConnection();socket->write(packet);connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        connect(&control,&QLocalServer::newConnection,this,[&]{
+            auto *socket=control.nextPendingConnection();
+            connect(socket,&QLocalSocket::readyRead,socket,[&,socket]{
+                if(!socket->canReadLine())return;
+                const auto input=QJsonDocument::fromJson(socket->readLine()).object()["arguments"].toObject();inputs.append(input);
+                // An AirPlay press first rests the pointer before pressing it.
+                QTimer::singleShot(input["phase"]=="down"?60:0,socket,[socket]{socket->write("{\"ok\":true}\n");});
+            });
+            connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);
+        });
+        QQuickWindow window;window.resize(200,400);NativeView display(window.contentItem());display.setSize({200,400});
+        display.setSession({{"session",QString(32,'c')},{"transport","wifi/airplay"},{"codec","mjpeg"},{"video_socket",video.fullServerName()},{"control_socket",control.fullServerName()}});
+        window.show();QVERIFY(QTest::qWaitForWindowExposed(&window));QTRY_COMPARE(display.sourceSize(),QSize(200,400));
+        QTest::mouseMove(&window,QPoint(100,300));QTRY_VERIFY(!inputs.isEmpty() && inputs.last()["phase"]=="hover");inputs.clear();
+        if(wheel) {
+            QWheelEvent event(QPointF(100,300),window.mapToGlobal(QPoint(100,300)),QPoint(0,-40),{},Qt::NoButton,Qt::NoModifier,Qt::ScrollUpdate,false);
+            QCoreApplication::sendEvent(&window,&event);
+        } else QTest::mousePress(&window,Qt::LeftButton,Qt::NoModifier,QPoint(100,300));
+        for(const int y:{280,240,200})QTest::mouseMove(&window,QPoint(100,y));
+        if(wheel) {
+            QHoverEvent leave(QEvent::HoverLeave,QPointF(-1,-1),window.mapToGlobal(QPoint(-1,-1)),QPointF(100,200));
+            QCoreApplication::sendEvent(&display,&leave);
+            QWheelEvent end(QPointF(100,200),window.mapToGlobal(QPoint(100,200)),{},{},Qt::NoButton,Qt::NoModifier,Qt::ScrollEnd,false);
+            QCoreApplication::sendEvent(&window,&end);
+        } else QTest::mouseRelease(&window,Qt::LeftButton,Qt::NoModifier,QPoint(100,200));
+        QElapsedTimer elapsed;elapsed.start();
+        while(elapsed.elapsed()<3000 && std::none_of(inputs.begin(),inputs.end(),[](const QJsonObject &input){return input["phase"]=="up";}))QTest::qWait(20);
+        QStringList phases;for(const auto &input:inputs){phases.append(input["phase"].toString());if(input["phase"]=="up")break;}
+        QCOMPARE(phases.join(','),QString("down,move,up"));
+        QVERIFY(inputs[1]["y"].toDouble()<inputs[0]["y"].toDouble());
+    }
     void complete_h264_picture_does_not_wait_for_another_frame() {
         QTemporaryDir directory;QLocalServer video;QVERIFY(video.listen(directory.filePath("video")));
         QFile fixture(QStringLiteral(TOMACCO_SOURCE_DIR "/tests/fixtures/native-video-single.h264"));QVERIFY(fixture.open(QIODevice::ReadOnly));

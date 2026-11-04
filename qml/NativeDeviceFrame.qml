@@ -291,7 +291,7 @@ Item {
         }
         // Only bezel/corner hits are consumed. Real display coordinates pass
         // directly to NativeView, including drags that leave the screen.
-        MouseArea {anchors.fill:parent;containmentMask:frame.rearShown?null:rim
+        MouseArea {objectName:"nativeFrameBezel";anchors.fill:parent;containmentMask:frame.rearShown?null:rim
             // This press is the screen's edge (see screenReach): it and its
             // drag go to the screen's owner, in the screen's coordinates.
             property bool edge:false

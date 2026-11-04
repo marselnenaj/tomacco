@@ -233,10 +233,14 @@ void NativeView::insertText(const QString &text) {
     if(!m_hasTouch){emit inputError(QCoreApplication::translate("NativeView","Click the text field in the app first"));return;}
     sendInput({{"action",m_session.value("platform")=="ios"?"fill":"text"},{"text",text},{"x",m_lastTarget.x()},{"y",m_lastTarget.y()}});
 }
-void NativeView::mousePressEvent(QMouseEvent *e) {if(!contentRect().contains(e->position())){e->ignore();return;}finishWheel();forceActiveFocus();m_pressed=true;touch(e->position(),"down");e->accept();}
-void NativeView::mouseMoveEvent(QMouseEvent *e) {if(m_pressed)touch(e->position(),"move");e->accept();}
-void NativeView::mouseReleaseEvent(QMouseEvent *e) {if(m_pressed)touch(e->position(),"up");m_pressed=false;e->accept();}
-void NativeView::mouseUngrabEvent() {if(m_pressed)touch(m_lastPoint,"cancel");m_pressed=false;}
+void NativeView::beginTouch(const QPointF &point) {if(contentRect().isEmpty())return;finishWheel();forceActiveFocus();m_pressed=true;touch(point,"down");}
+void NativeView::moveTouch(const QPointF &point) {if(m_pressed)touch(point,"move");}
+void NativeView::endTouch(const QPointF &point) {if(m_pressed)touch(point,"up");m_pressed=false;}
+void NativeView::cancelTouch() {if(m_pressed)touch(m_lastPoint,"cancel");m_pressed=false;}
+void NativeView::mousePressEvent(QMouseEvent *e) {if(!contentRect().contains(e->position())){e->ignore();return;}beginTouch(e->position());e->accept();}
+void NativeView::mouseMoveEvent(QMouseEvent *e) {moveTouch(e->position());e->accept();}
+void NativeView::mouseReleaseEvent(QMouseEvent *e) {endTouch(e->position());e->accept();}
+void NativeView::mouseUngrabEvent() {cancelTouch();}
 bool NativeView::pointerFollowsHover() const {return m_session.value("transport")=="wifi/airplay";}
 // The phone moves its own pointer by relative steps with its own acceleration,
 // so a second, desktop cursor over the picture would only drift from it. While
@@ -247,13 +251,15 @@ void NativeView::updatePointerCursor() {
 }
 bool NativeView::saveFrame(const QString &path) const {return !m_image.isNull() && m_image.save(path,"PNG");}
 void NativeView::hoverMoveEvent(QHoverEvent *e) {
-    if(pointerFollowsHover() && !m_pressed && contentRect().contains(e->position()))touch(e->position(),"hover");
+    // Wheel scrolling holds a synthetic finger too. Letting hover through
+    // would drag that finger back to the desktop cursor between wheel moves.
+    if(pointerFollowsHover() && !m_pressed && !m_wheelActive && contentRect().contains(e->position()))touch(e->position(),"hover");
     e->accept();
 }
 // Leaving the picture without a button: the phone's pointer stays where it is
 // and the next entry moves it from there, not by the jump across the window.
 void NativeView::hoverLeaveEvent(QHoverEvent *e) {
-    if(pointerFollowsHover() && !m_pressed && m_hasTouch)touch(m_lastPoint,"cancel");
+    if(pointerFollowsHover() && !m_pressed && !m_wheelActive && m_hasTouch)touch(m_lastPoint,"cancel");
     e->accept();
 }
 void NativeView::keyPressEvent(QKeyEvent *e) {

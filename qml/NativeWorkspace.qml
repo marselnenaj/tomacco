@@ -944,6 +944,14 @@ Rectangle {
                                 NativeDeviceFrame {
                                     id:nativeFrame;objectName:"nativeDeviceFrame";anchors.centerIn:parent
                                     parent:view.detached?deviceWindow.host:frameDock
+                                    // As in the virtual iPhone, the strip just around the
+                                    // picture starts an edge swipe. Keep the outer bezel
+                                    // for moving the window and bound reach in UI pixels.
+                                    screenReach:view.live.transport==="wifi/airplay" && view.live.mirroring!==false && display.state==="live" && framed?Math.min(bezel*.5,Theme.px(12)/Math.max(.01,scale)):0
+                                    onScreenEdgePressed:at=>display.beginTouch(screen.mapToItem(display,at.x,at.y))
+                                    onScreenEdgeMoved:at=>display.moveTouch(screen.mapToItem(display,at.x,at.y))
+                                    onScreenEdgeReleased:at=>display.endTouch(screen.mapToItem(display,at.x,at.y))
+                                    onScreenEdgeCanceled:display.cancelTouch()
                                     onBezelPressed:if(view.detached)deviceWindow.move()
                                     profile:view.pending?(view.pendingProfile.id?view.pendingProfile:view.genericProfile):view.frameProfile
                                     sourceSize:view.pending?Qt.size(0,0):display.sourceSize

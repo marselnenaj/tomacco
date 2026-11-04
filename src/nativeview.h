@@ -30,6 +30,12 @@ public:
     double framesPerSecond() const {return m_fps;}
     Q_INVOKABLE void sendInput(QVariantMap arguments);
     Q_INVOKABLE void insertText(const QString &text);
+    // Frame-edge presses use the same live pointer path as the picture.
+    // Coordinates are local to this item; touch() clamps them to the screen.
+    Q_INVOKABLE void beginTouch(const QPointF &point);
+    Q_INVOKABLE void moveTouch(const QPointF &point);
+    Q_INVOKABLE void endTouch(const QPointF &point);
+    Q_INVOKABLE void cancelTouch();
     // The last decoded picture at full size, for streams the session cannot capture itself.
     Q_INVOKABLE bool saveFrame(const QString &path) const;
 signals:

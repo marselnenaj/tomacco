@@ -596,6 +596,66 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         view->setProperty("live",QVariantMap{});view->setProperty("sessions",QVariantList{});
         display->setSession({});
     }
+    void airplay_edge_swipes_reach_the_phone_in_both_windows_data() {
+        QTest::addColumn<bool>("detached");QTest::addColumn<int>("percent");
+        QTest::newRow("docked-100")<<false<<100;QTest::newRow("floating-100")<<true<<100;
+        QTest::newRow("docked-150")<<false<<150;QTest::newRow("floating-150")<<true<<150;
+    }
+    void airplay_edge_swipes_reach_the_phone_in_both_windows() {
+        QFETCH(bool,detached);QFETCH(int,percent);
+        open("runtime");window->resize(1380,970);
+        auto *view=object("nativeWorkspace");auto *display=qobject_cast<NativeView *>(object("nativeDisplay"));
+        auto *frame=item("nativeDeviceFrame");QVERIFY(view);QVERIFY(display);QVERIFY(frame);
+        const int previous=backend->uiScale();const auto stored=QSettings().value("appearance/uiScale");
+        const auto restore=qScopeGuard([&]{view->setProperty("detached",false);view->setProperty("live",QVariantMap{});display->setSession({});backend->setUiScale(previous);if(!stored.isValid())QSettings().remove("appearance/uiScale");});
+        backend->setUiScale(percent);view->setProperty("autoAttach",false);view->setProperty("showDeviceFrame",true);
+        QLocalServer video,input;QVERIFY(video.listen(directory.filePath("airplay-edge-video")));QVERIFY(input.listen(directory.filePath("airplay-edge-input")));
+        QImage image(126,274,QImage::Format_RGB32);image.fill(QColor("#295c83"));
+        QByteArray jpeg;QBuffer buffer(&jpeg);QVERIFY(buffer.open(QIODevice::WriteOnly));QVERIFY(image.save(&buffer,"JPEG"));
+        QByteArray packet(4,0);qToBigEndian(quint32(jpeg.size()),packet.data());packet+=jpeg;
+        QVector<QJsonObject> touches,events;
+        connect(&video,&QLocalServer::newConnection,this,[&]{auto *socket=video.nextPendingConnection();socket->write(packet);connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        connect(&input,&QLocalServer::newConnection,this,[&]{auto *socket=input.nextPendingConnection();connect(socket,&QLocalSocket::readyRead,socket,[&,socket]{if(!socket->canReadLine())return;const auto event=QJsonDocument::fromJson(socket->readLine()).object()["arguments"].toObject();events.append(event);if(event["phase"]!="hover" && event["phase"]!="cancel")touches.append(event);socket->write("{\"ok\":true}\n");});connect(socket,&QLocalSocket::disconnected,socket,&QObject::deleteLater);});
+        QVariant mirror=QVariantMap{{"session","b0000000000000000000000000000011"},{"status","connected"},{"platform","ios"},{"device","airplay"},{"transport","wifi/airplay"},{"mirroring",true},{"profile_id","air"},{"codec","mjpeg"},{"video_socket",video.fullServerName()},{"control_socket",input.fullServerName()}};
+        QVERIFY(QMetaObject::invokeMethod(view,"attach",Q_ARG(QVariant,mirror)));
+        QTRY_COMPARE(display->sourceSize(),image.size());view->setProperty("detached",detached);
+        QTRY_VERIFY(display->window() && (display->window()!=window)==detached);
+        auto *surface=display->window();QTRY_VERIFY(surface->isVisible());
+        auto *screen=frame->property("screen").value<QQuickItem *>();QVERIFY(screen);
+        const auto px=[&](qreal x,qreal y){return screen->mapToScene(QPointF(x,y)).toPoint();};
+        const qreal bezel=frame->property("bezel").toReal();QVERIFY(bezel>1);
+        const auto drag=[&](QPoint from,QPoint to){QTest::mouseMove(surface,from);QTest::mousePress(surface,Qt::LeftButton,Qt::NoModifier,from);QTest::mouseMove(surface,to);QTest::mouseRelease(surface,Qt::LeftButton,Qt::NoModifier,to);};
+        QSignalSpy bezelMove(frame,SIGNAL(bezelPressed()));
+        drag(px(screen->width()/2,screen->height()+bezel*.25),px(screen->width()/2,screen->height()*.6));
+        QTRY_VERIFY_WITH_TIMEOUT(!touches.isEmpty() && touches.last()["phase"]=="up",patient(1500));
+        QCOMPARE(touches.first()["phase"].toString(),QString("down"));QCOMPARE(touches.first()["y"].toDouble(),1.0);
+        QVERIFY(touches.last()["y"].toDouble()<.61);QCOMPARE(bezelMove.size(),0);
+        const auto before=touches.size();
+        // The outer half of the frame still starts a window move.
+        QTest::mouseClick(surface,Qt::LeftButton,Qt::NoModifier,px(screen->width()/2,screen->height()+bezel*.85));
+        QTRY_COMPARE(bezelMove.size(),1);QCOMPARE(touches.size(),before);
+        // Losing a frame-edge grab lifts this same live pointer, and the
+        // later physical release cannot turn the canceled drag into a click.
+        touches.clear();events.clear();
+        QTest::mousePress(surface,Qt::LeftButton,Qt::NoModifier,px(screen->width()/2,screen->height()+bezel*.25));
+        QTest::mouseMove(surface,px(screen->width()/2,screen->height()*.4));
+        QTRY_VERIFY(!touches.isEmpty() && touches.last()["phase"]=="move");
+        auto *rim=frame->findChild<QQuickItem *>("nativeFrameBezel");QVERIFY(rim);
+        rim->ungrabMouse();
+        QTRY_VERIFY(!events.isEmpty() && events.last()["phase"]=="cancel");
+        QVERIFY(qAbs(events.last()["y"].toDouble()-.4)<.005);
+        QTest::mouseRelease(surface,Qt::LeftButton,Qt::NoModifier,px(screen->width()/2,screen->height()*.4));
+        QTest::mouseMove(surface,px(screen->width()/2,screen->height()*.45));
+        QTRY_VERIFY(!events.isEmpty() && events.last()["phase"]=="hover");
+        QCOMPARE(touches.size(),2);QCOMPARE(touches.first()["phase"].toString(),QString("down"));
+        // The paused mirror keeps its last frame. Its rim must obey the same
+        // pause as the overlay covering that frame, instead of bypassing it.
+        auto paused=mirror.toMap();paused["mirroring"]=false;view->setProperty("live",paused);
+        QTRY_COMPARE(frame->property("screenReach").toReal(),0.0);
+        QCOMPARE(display->state(),QString("live"));
+        QCOMPARE(display->sourceSize(),image.size());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void airplay_has_a_waiting_state_and_restarts_only_after_the_old_receiver_ends() {
         open("runtime");
         // A separate control program that cannot run prevents this UI check
