@@ -199,11 +199,14 @@ def result(stream, tag, number):
 
 
 def device_entry(device):
-    # Preserve the actual USB descriptor's serial, stripping only its trailing
-    # NUL padding. This is a transport identifier, not an authenticated UDID.
+    # The USB descriptor remains untouched. usbmuxd advertises modern iPhone
+    # identifiers with a dash after eight hex digits, matching libusbmuxd's
+    # device identifier so clients such as go-ios see the same spelling.
     serial = device["strings"].get("serial", "").rstrip("\0")
     if not serial or len(serial) > 256 or any(ord(c) < 32 for c in serial):
         raise ValueError("Guest has no valid USB serial descriptor")
+    if len(serial) == 24 and all(c in "0123456789abcdefABCDEF" for c in serial):
+        serial = serial[:8] + "-" + serial[8:]
     return {"MessageType": "Attached", "DeviceID": 1, "Properties": {
         "DeviceID": 1, "SerialNumber": serial, "ProductID": device["product_id"],
         "ConnectionType": "USB", "LocationID": 0}}

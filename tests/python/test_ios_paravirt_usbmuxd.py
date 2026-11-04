@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 from ios_paravirt_usb import (USBConnection, USB_READY_MARKER, SYSTEM_USB_READY_MARKER,
                               CONTROLLER_POWER_ON_MARKER, wait_for_usb_ready)
 from ios_paravirt_duplex import DuplexUSBConnection
-from ios_paravirt_usbmuxd import Bridge, MuxHub, PairRecords, connect_guest, load_request, read_exact, reply
+from ios_paravirt_usbmuxd import Bridge, MuxHub, PairRecords, connect_guest, device_entry, load_request, read_exact, reply
 from test_ios_paravirt_mux import DEVICE, VERSION, mux_packet
 from test_ios_paravirt_usb import FragmentedStream, response
 
@@ -144,6 +144,24 @@ class BridgeTests(unittest.TestCase):
         tag, response = read_reply(stream)
         self.assertEqual(tag, 73)
         return response
+
+    def test_modern_udid_is_shared_by_standard_clients_without_changing_the_usb_serial(self):
+        raw = "0000FE0108544E1637C569AA"
+        canonical = "0000FE01-08544E1637C569AA"
+        device = dict(self.device, strings={"serial": raw + "\0"})
+        self.bridge.entry = device_entry(device)
+        client = self.client()
+        entry = self.command(client, "ListDevices")["DeviceList"][0]
+        self.assertEqual(entry["Properties"]["SerialNumber"], canonical)
+        self.assertEqual(device["strings"]["serial"], raw + "\0")
+        with tempfile.TemporaryDirectory() as home:
+            record = plistlib.dumps({"HostID": "existing-host"})
+            original = PairRecords(Path(home) / "pairing", raw)
+            self.assertTrue(original.save(raw, record))
+            reopened = PairRecords(original.directory, canonical)
+            self.assertEqual(reopened.read(raw), record)
+            self.assertEqual(reopened.read(canonical), record)
+            self.assertEqual([p.name for p in original.directory.glob("0000*")], [canonical + ".plist"])
 
     def test_parallel_channels_and_idle_in_do_not_deadlock_out(self):
         first, second = self.hub.open(62078), self.hub.open(1082)

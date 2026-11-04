@@ -498,6 +498,57 @@ fn capture(
         Ok((output, truncated))
     })
 }
+fn go_ios_usbmux_address(
+    program: &Path,
+    configured: Option<&Path>,
+    address: &str,
+) -> Option<String> {
+    let is_go_ios = program.file_name().is_some_and(|name| name == "go-ios")
+        || configured.is_some_and(|path| program == path);
+    if !is_go_ios || !address.get(..5)?.eq_ignore_ascii_case("UNIX:") {
+        return None;
+    }
+    let path = &address[5..];
+    // libusbmuxd and xtool take UNIX:/path. go-ios separates its scheme
+    // with ://, then passes the rest literally to net.Dial (it does not
+    // URL-decode). Preserve %, #, ?, spaces and Unicode in the socket path.
+    // Adapt only that child's environment; other tools stay as-is.
+    (path.starts_with('/') && !path.starts_with("//")).then(|| format!("unix://{path}"))
+}
+
+pub(crate) fn adapt_go_ios_usbmux(command: &mut Command) -> Result<()> {
+    let address = match command
+        .get_envs()
+        .find(|(key, _)| *key == "USBMUXD_SOCKET_ADDRESS")
+    {
+        Some((_, value)) => value.map(|v| v.to_os_string()),
+        None => std::env::var_os("USBMUXD_SOCKET_ADDRESS"),
+    };
+    let Some(address) = address.and_then(|value| value.into_string().ok()) else {
+        return Ok(());
+    };
+    if !address
+        .get(..5)
+        .is_some_and(|value| value.eq_ignore_ascii_case("UNIX:"))
+    {
+        return Ok(());
+    }
+    let program = Path::new(command.get_program());
+    let configured = if program.file_name().is_some_and(|name| name == "go-ios") {
+        None
+    } else {
+        // This optional identity lookup must not prevent an unrelated child
+        // from running if the go-ios configuration cannot be read.
+        find_optional("go-ios").ok().flatten()
+    };
+    if let Some(value) =
+        go_ios_usbmux_address(program, configured.as_deref().map(Path::new), &address)
+    {
+        command.env("USBMUXD_SOCKET_ADDRESS", value);
+    }
+    Ok(())
+}
+
 pub fn run(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool) -> Result {
     check_cancelled()?;
     if args.is_empty() {
@@ -514,6 +565,7 @@ pub fn run(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool) -> Re
     if let Some(cwd) = cwd {
         command.current_dir(cwd);
     }
+    adapt_go_ios_usbmux(&mut command)?;
     parent_bound(&mut command);
     let mut child = command
         .spawn()
@@ -660,6 +712,60 @@ pub fn doctor() -> Result {
 mod doctor_tests {
     use super::*;
     use std::time::{Duration, Instant};
+
+    #[test]
+    fn private_usbmux_socket_is_adapted_only_for_the_go_ios_child() {
+        let address = "UNIX:/tmp/tomacco-private/usbmuxd.sock";
+        let mut command = Command::new("/tools/go-ios");
+        command.env("USBMUXD_SOCKET_ADDRESS", address);
+        adapt_go_ios_usbmux(&mut command).unwrap();
+        assert_eq!(
+            command
+                .get_envs()
+                .find(|(key, _)| *key == "USBMUXD_SOCKET_ADDRESS")
+                .unwrap()
+                .1
+                .unwrap(),
+            "unix:///tmp/tomacco-private/usbmuxd.sock"
+        );
+        for tool in ["xtool", "idevice_id", "idevicepair"] {
+            assert_eq!(go_ios_usbmux_address(Path::new(tool), None, address), None);
+        }
+        assert_eq!(
+            go_ios_usbmux_address(
+                Path::new("/tools/custom-ios"),
+                Some(Path::new("/tools/custom-ios")),
+                address
+            ),
+            Some("unix:///tmp/tomacco-private/usbmuxd.sock".into())
+        );
+        for existing in [
+            "unix:///tmp/bridge.sock",
+            "127.0.0.1:27015",
+            "tcp://127.0.0.1:27015",
+            "",
+            "UNIX:relative",
+        ] {
+            assert_eq!(
+                go_ios_usbmux_address(Path::new("go-ios"), None, existing),
+                None
+            );
+        }
+        assert_eq!(
+            go_ios_usbmux_address(Path::new("go-ios"), None, "UNIX:/tmp/a#b?c%d space.sock"),
+            Some("unix:///tmp/a#b?c%d space.sock".into())
+        );
+        command.env_remove("USBMUXD_SOCKET_ADDRESS");
+        adapt_go_ios_usbmux(&mut command).unwrap();
+        assert!(
+            command
+                .get_envs()
+                .find(|(key, _)| *key == "USBMUXD_SOCKET_ADDRESS")
+                .unwrap()
+                .1
+                .is_none()
+        );
+    }
 
     #[test]
     fn checks_run_side_by_side_and_keep_their_order() {

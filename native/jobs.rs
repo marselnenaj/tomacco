@@ -1275,6 +1275,7 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
                     Stdio::from(log.try_clone()?)
                 })
                 .stderr(Stdio::from(log.try_clone()?));
+            toolchain::adapt_go_ios_usbmux(&mut command)?;
             toolchain::parent_bound(&mut command);
             let mut proc = ManagedChild(command.spawn()?);
             if let Some(input) = step["input"].as_str() {

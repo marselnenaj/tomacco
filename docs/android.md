@@ -868,6 +868,10 @@ baseline. Macrobenchmark modules and Baseline Profiles have their own operations
 `profile.baseline_compare`, and `project.create` can add the module to a Compose starter. See
 [app performance](agents.md#app-performance) in the agent guide.
 
+Generated Baseline Profile files can be up to 64 MiB for summary, discovery and installation.
+This is separate from the 1 MiB limit on Gradle build files. Invalid text, read failures and
+oversized profiles report the corresponding error instead of being treated as missing.
+
 ## Debugging, tests, profiling and release
 
 These are the same for agents and the desktop. See the sections in the agent guide:

@@ -556,6 +556,62 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         view->setProperty("live",QVariantMap{});view->setProperty("sessions",QVariantList{});
         display->setSession({});
     }
+    void airplay_has_a_waiting_state_and_restarts_only_after_the_old_receiver_ends() {
+        open("runtime");
+        // A separate control program that cannot run prevents this UI check
+        // from starting a real receiver or registering a Bluetooth device.
+        Control fake("airplay-reconnect-ui",nullptr,directory.filePath("no-such-cli"));
+        QQmlContext context(engine->rootContext());context.setContextProperty("Agent",&fake);
+        QQmlComponent component(engine.get(),QUrl("qrc:/qml/NativeWorkspace.qml"));
+        std::unique_ptr<QObject> native(component.beginCreate(&context));QVERIFY2(native,qPrintable(component.errorString()));
+        native->setProperty("workspace",QVariant::fromValue(workspace));component.completeCreate();
+        auto *view=native.get();
+        const auto reply=[&](int id,const QString &op,const QVariant &result) {
+            view->setProperty("requests",QVariantMap{{QString::number(id),QVariantMap{{"op",op},{"quiet",true}}}});
+            fake.apiFinished(id,op,QVariantMap{{"ok",true},{"result",result}});
+        };
+        reply(-701,"device.list",QVariantMap{{"devices",QVariantList{}}});
+        view->setProperty("platform","ios");view->setProperty("appleTarget","device");view->setProperty("target","airplay");
+        QVERIFY(view->property("hasTarget").toBool());
+        QVariantMap mirror{{"session","b0000000000000000000000000000002"},{"status","connected"},{"platform","ios"},{"device","airplay"},{"transport","wifi/airplay"},{"mirroring",true},{"replay_ready",false}};
+        view->setProperty("live",mirror);
+        auto *hero=view->findChild<QObject *>("nativeEmptyState");QVERIFY(hero);
+        QCOMPARE(hero->property("title").toString(),QString("Waiting for a new iPhone picture"));
+        QCOMPARE(hero->property("actionText").toString(),QString("Restart AirPlay"));
+        QVERIFY(QMetaObject::invokeMethod(view,"restartAirplay"));
+        QCOMPARE(view->property("airplayRestartSession").toString(),mirror["session"].toString());
+        auto pending=mapOf(view->property("requests"));
+        QVERIFY(std::any_of(pending.begin(),pending.end(),[](const QVariant &r){return r.toMap().value("op")=="runtime.stop";}));
+        reply(-702,"runtime.list",QVariantList{mirror});
+        QVERIFY(!view->property("airplayRestartSession").toString().isEmpty());
+        QVERIFY(mapOf(view->property("requests")).isEmpty());
+        mirror["status"]="disconnected";reply(-703,"runtime.list",QVariantList{mirror});
+        QVERIFY(view->property("airplayRestartSession").toString().isEmpty());
+        pending=mapOf(view->property("requests"));
+        QVERIFY(std::any_of(pending.begin(),pending.end(),[](const QVariant &r){return r.toMap().value("op")=="runtime.start" && r.toMap().value("signature").toString().contains("airplay");}));
+        view->setProperty("connecting",false);view->setProperty("live",mirror);
+        mirror["status"]="failed";mirror["error"]="The iPhone stopped responding over Wi-Fi.";
+        reply(-704,"runtime.list",QVariantList{mirror});
+        QVERIFY(view->property("failed").toBool());
+        QCOMPARE(mapOf(view->property("noticeRetry")).value("op").toString(),QString("runtime.start"));
+        QCOMPARE(hero->property("actionText").toString(),QString("Start AirPlay"));
+        // Selecting another device while shutdown is pending cancels the
+        // restart; the completed stop must never start that other target.
+        mirror["status"]="connected";view->setProperty("live",mirror);
+        QVERIFY(QMetaObject::invokeMethod(view,"restartAirplay"));
+        QVERIFY(!view->property("airplayRestartSession").toString().isEmpty());
+        view->setProperty("target","some-usb-device");
+        QVERIFY(view->property("airplayRestartSession").toString().isEmpty());
+        QVERIFY(!view->property("connecting").toBool());
+        view->setProperty("requests",QVariantMap{});mirror["status"]="disconnected";
+        reply(-705,"runtime.list",QVariantList{mirror});
+        QVERIFY(mapOf(view->property("requests")).isEmpty());
+        view->setProperty("target","airplay");mirror["status"]="connected";view->setProperty("live",mirror);
+        QVERIFY(QMetaObject::invokeMethod(view,"restartAirplay"));
+        QVERIFY(QMetaObject::invokeMethod(view,"stop"));
+        QVERIFY(view->property("airplayRestartSession").toString().isEmpty());
+        QVERIFY(!view->property("connecting").toBool());
+    }
     void native_frames_preserve_real_pixels_and_pointer_coordinates() {
         open("runtime");window->resize(1380,970);
         auto *view=object("nativeWorkspace");QVERIFY(view);

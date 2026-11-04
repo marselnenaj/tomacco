@@ -3766,6 +3766,42 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Name, e.g. testing or debugging</source>
         <translation>Name, z. B. Testen oder Debuggen</translation>
     </message>
+    <message>
+        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone's Screen Mirroring.</source>
+        <translation>AirPlay wird neu gestartet. Wähle danach Tomacco erneut in der Bildschirmsynchronisierung des iPhone.</translation>
+    </message>
+    <message>
+        <source>iPhone over Wi-Fi</source>
+        <translation>iPhone über WLAN</translation>
+    </message>
+    <message>
+        <source>Waiting for a new iPhone picture</source>
+        <translation>Warten auf ein neues iPhone-Bild</translation>
+    </message>
+    <message>
+        <source>Ready for your iPhone</source>
+        <translation>Bereit für dein iPhone</translation>
+    </message>
+    <message>
+        <source>Connect your iPhone over Wi-Fi</source>
+        <translation>Verbinde dein iPhone über WLAN</translation>
+    </message>
+    <message>
+        <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
+        <translation>Falls kein Bild erscheint, beende die Bildschirmsynchronisierung auf dem iPhone und wähle Tomacco erneut. Wenn der Empfänger nicht mehr reagiert, starte AirPlay unten neu.</translation>
+    </message>
+    <message>
+        <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
+        <translation>Öffne das Kontrollzentrum auf dem iPhone und wähle Bildschirmsynchronisierung, dann Tomacco. Beide Geräte müssen im selben Netzwerk sein.</translation>
+    </message>
+    <message>
+        <source>Restart AirPlay</source>
+        <translation>AirPlay neu starten</translation>
+    </message>
+    <message>
+        <source>Start AirPlay</source>
+        <translation>AirPlay starten</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>

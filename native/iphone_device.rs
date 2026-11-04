@@ -167,14 +167,16 @@ pub(crate) fn keep(line: &str, process: &str, filter: &str) -> Option<String> {
 /// those containing the filter, until go-ios ends or the job stops it.
 pub fn syslog_worker(request: &str) -> Result<()> {
     let request: Value = serde_json::from_str(request)?;
-    let mut child = Command::new(s(&request, "go_ios"))
+    let mut command = Command::new(s(&request, "go_ios"));
+    command
         .args([
             "syslog",
             &format!("--udid={}", udid(s(&request, "device"))?),
         ])
         .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .spawn()?;
+        .stdout(Stdio::piped());
+    tc::adapt_go_ios_usbmux(&mut command)?;
+    let mut child = command.spawn()?;
     let stdout = child.stdout.take().unwrap();
     let mut out = std::io::stdout().lock();
     for line in BufReader::new(stdout).lines() {

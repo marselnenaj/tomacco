@@ -28,12 +28,48 @@ pub mod ios;
 pub mod iphone;
 pub type Shared = Arc<Mutex<Hub>>;
 type Packet = Arc<Vec<u8>>;
+fn write_packet(socket: &mut UnixStream, packet: &[u8]) -> std::io::Result<()> {
+    socket
+        .write_all(&(packet.len() as u32).to_be_bytes())
+        .and_then(|_| socket.write_all(packet))
+}
+fn serve_video(
+    mut socket: UnixStream,
+    replay: Vec<Packet>,
+    rx: mpsc::Receiver<Packet>,
+    stopped: Arc<AtomicBool>,
+    viewers: Arc<AtomicUsize>,
+) {
+    let _ = socket.set_write_timeout(Some(Duration::from_secs(2)));
+    // Replay is separate from the bounded live queue: filling that queue
+    // here silently dropped the tail of a long GOP.
+    for packet in replay {
+        if write_packet(&mut socket, &packet).is_err() {
+            viewers.fetch_sub(1, Ordering::Relaxed);
+            return;
+        }
+    }
+    while !stopped.load(Ordering::Relaxed) {
+        match rx.recv_timeout(Duration::from_millis(500)) {
+            Ok(packet) => {
+                if write_packet(&mut socket, &packet).is_err() {
+                    break;
+                }
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => break,
+            Err(mpsc::RecvTimeoutError::Timeout) if peer_closed(&socket) => break,
+            Err(mpsc::RecvTimeoutError::Timeout) => (),
+        }
+    }
+    viewers.fetch_sub(1, Ordering::Relaxed);
+}
 pub struct Hub {
     pub state: Value,
     pub stopped: Arc<AtomicBool>,
     state_file: PathBuf,
     clients: Vec<mpsc::SyncSender<Packet>>,
     config: Vec<Packet>,
+    pending_config: Vec<Packet>,
     gop: Vec<Packet>,
     cached_bytes: usize,
     receiving_config: bool,
@@ -73,24 +109,33 @@ impl Hub {
         let packet = Arc::new(bytes);
         if config {
             if !self.receiving_config {
-                self.config.clear();
+                self.pending_config.clear();
             }
-            if self.config.len() < 16 {
-                self.config.push(packet.clone());
+            if self.pending_config.len() < 16
+                && self.pending_config.iter().map(|p| p.len()).sum::<usize>() + packet.len()
+                    <= 16 * 1024 * 1024
+            {
+                self.pending_config.push(packet.clone());
             }
-            self.gop.clear();
-            self.cached_bytes = 0;
-            // New idb sends SPS/PPS and the keyframe in one payload.
-            self.cached_key = key;
-            self.receiving_config = !key;
+            self.receiving_config = true;
+            if key {
+                // New idb sends SPS/PPS and the keyframe in one payload.
+                self.finish_config();
+                self.gop.clear();
+                self.cached_bytes = 0;
+                self.cached_key = true;
+            }
         } else {
-            self.receiving_config = false;
+            self.finish_config();
             if key {
                 self.gop.clear();
                 self.cached_bytes = 0;
                 self.cached_key = true;
             }
-            if self.cached_bytes + packet.len() > 16 * 1024 * 1024 || self.gop.len() >= 500 {
+            // AirPlay sends multiple NAL slices per picture. A limit of 500
+            // packets discarded even a short GOP on a high-resolution phone.
+            // Keep the byte bound and a separate bound on allocation overhead.
+            if self.cached_bytes + packet.len() > 16 * 1024 * 1024 || self.gop.len() >= 16384 {
                 self.gop.clear();
                 self.cached_bytes = 0;
                 self.cached_key = false;
@@ -102,8 +147,35 @@ impl Hub {
         }
         self.state["packets"] = json!(n(&self.state, "packets") + 1);
         self.state["video_bytes"] = json!(n(&self.state, "video_bytes") + packet.len() as u64);
+        self.state["replay_ready"] = json!(self.cached_key);
         self.clients
             .retain(|client| client.try_send(packet.clone()).is_ok());
+    }
+    fn finish_config(&mut self) {
+        if !self.receiving_config {
+            return;
+        }
+        self.receiving_config = false;
+        // GStreamer repeats SPS/PPS. They do not invalidate the IDR and all
+        // dependent pictures that a newly opened window needs to decode.
+        if self.pending_config != self.config {
+            self.config = std::mem::take(&mut self.pending_config);
+            self.gop.clear();
+            self.cached_bytes = 0;
+            self.cached_key = false;
+        } else {
+            self.pending_config.clear();
+        }
+    }
+    fn replay(&self) -> Vec<Packet> {
+        // A subscriber may arrive between SPS and PPS. Replay parameter sets
+        // received since the last complete bundle as well, before live data.
+        self.config
+            .iter()
+            .chain(self.gop.iter())
+            .chain(self.pending_config.iter())
+            .cloned()
+            .collect()
     }
 }
 pub trait Device: Send {
@@ -153,6 +225,7 @@ pub fn spawn(args: &[String], log: &Path) -> Result<ManagedProcess> {
         .stderr(output)
         .envs(tc::environment()?)
         .process_group(0);
+    tc::adapt_go_ios_usbmux(&mut command)?;
     tc::parent_bound(&mut command);
     Ok(ManagedProcess(command.spawn()?))
 }
@@ -457,6 +530,7 @@ pub fn worker(id: &str) -> Result<()> {
         state_file: dir.join("state.json"),
         clients: Vec::new(),
         config: Vec::new(),
+        pending_config: Vec::new(),
         gop: Vec::new(),
         cached_bytes: 0,
         receiving_config: false,
@@ -493,42 +567,21 @@ pub fn worker(id: &str) -> Result<()> {
     thread::spawn(move || {
         while !stopping.load(Ordering::Relaxed) {
             wait_listener(&video);
-            if let Ok((mut socket, _)) = video.accept() {
+            if let Ok((socket, _)) = video.accept() {
                 let (tx, rx) = mpsc::sync_channel::<Packet>(512);
-                {
+                let replay = {
                     let mut h = hub.lock().unwrap();
                     if h.clients.len() >= 32 {
                         continue;
                     }
-                    for packet in h.config.iter().chain(h.gop.iter()) {
-                        let _ = tx.try_send(packet.clone());
-                    }
+                    let replay = h.replay();
                     h.clients.push(tx);
                     h.viewers.fetch_add(1, Ordering::Relaxed);
-                }
+                    replay
+                };
                 let stopped = stopping.clone();
                 let viewers = hub.lock().unwrap().viewers.clone();
-                thread::spawn(move || {
-                    let _ = socket.set_write_timeout(Some(Duration::from_secs(2)));
-                    while !stopped.load(Ordering::Relaxed) {
-                        match rx.recv_timeout(Duration::from_millis(500)) {
-                            Ok(packet) => {
-                                if socket
-                                    .write_all(&(packet.len() as u32).to_be_bytes())
-                                    .and_then(|_| socket.write_all(&packet))
-                                    .is_err()
-                                {
-                                    break;
-                                }
-                            }
-                            Err(mpsc::RecvTimeoutError::Disconnected) => break,
-                            // A viewer that left while no picture came is gone too.
-                            Err(mpsc::RecvTimeoutError::Timeout) if peer_closed(&socket) => break,
-                            Err(mpsc::RecvTimeoutError::Timeout) => (),
-                        }
-                    }
-                    viewers.fetch_sub(1, Ordering::Relaxed);
-                });
+                thread::spawn(move || serve_video(socket, replay, rx, stopped, viewers));
             }
         }
     });
@@ -657,4 +710,102 @@ pub fn worker(id: &str) -> Result<()> {
         let _ = fs::remove_file(s(&state, key));
     }
     result
+}
+
+#[cfg(test)]
+mod replay_tests {
+    use super::*;
+    fn hub() -> Hub {
+        Hub {
+            state: json!({}),
+            stopped: Arc::new(AtomicBool::new(false)),
+            state_file: PathBuf::new(),
+            clients: vec![],
+            config: vec![],
+            pending_config: vec![],
+            gop: vec![],
+            cached_bytes: 0,
+            receiving_config: false,
+            cached_key: false,
+            viewers: Arc::new(AtomicUsize::new(0)),
+        }
+    }
+    #[test]
+    fn repeated_parameter_sets_preserve_a_decodable_gop_for_late_viewers() {
+        let mut h = hub();
+        h.video(vec![7, 1], true, false);
+        h.video(vec![8, 1], true, false);
+        h.video(vec![5, 1], false, true);
+        for i in 0..700 {
+            if i % 100 == 0 {
+                h.video(vec![7, 1], true, false);
+                h.video(vec![8, 1], true, false);
+            }
+            h.video(vec![1, (i % 255) as u8], false, false);
+        }
+        assert_eq!(h.config.len(), 2);
+        assert_eq!(h.gop.len(), 701);
+        assert_eq!(h.gop[0].as_ref(), &[5, 1]);
+        assert!(h.cached_key);
+        assert_eq!(h.state["replay_ready"], true);
+        // A changed PPS cannot reuse pictures encoded with the old one.
+        h.video(vec![7, 1], true, false);
+        h.video(vec![8, 2], true, false);
+        h.video(vec![1, 3], false, false);
+        assert!(!h.cached_key);
+        assert!(h.gop.is_empty());
+        h.video(vec![5, 2], false, true);
+        assert_eq!(h.gop.len(), 1);
+        assert!(h.cached_key);
+    }
+    #[test]
+    fn combined_idb_configuration_and_keyframe_remain_replayable() {
+        let mut h = hub();
+        h.video(vec![7, 8, 5], true, true);
+        h.video(vec![1, 1], false, false);
+        assert!(h.cached_key);
+        assert_eq!(h.config.len(), 1);
+        assert_eq!(h.gop.len(), 1);
+        h.video(vec![7, 8, 5], true, true);
+        assert!(h.gop.is_empty());
+        assert!(h.cached_key);
+    }
+    #[test]
+    fn replay_memory_is_bounded_and_a_new_idr_recovers_it() {
+        let mut h = hub();
+        h.video(vec![5], false, true);
+        h.video(vec![1; 16 * 1024 * 1024], false, false);
+        assert!(!h.cached_key);
+        assert!(h.gop.is_empty());
+        assert_eq!(h.cached_bytes, 0);
+        h.video(vec![5, 2], false, true);
+        assert!(h.cached_key);
+        assert_eq!(h.cached_bytes, 2);
+    }
+    #[test]
+    fn a_replay_longer_than_the_live_queue_reaches_the_socket_in_full() {
+        let (server, mut client) = UnixStream::pair().unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let (tx, rx) = mpsc::sync_channel(512);
+        let replay = (0..700u32)
+            .map(|i| Arc::new(i.to_be_bytes().to_vec()))
+            .collect();
+        let viewers = Arc::new(AtomicUsize::new(1));
+        let observed = viewers.clone();
+        let stopped = Arc::new(AtomicBool::new(false));
+        let worker = thread::spawn(move || serve_video(server, replay, rx, stopped, viewers));
+        tx.send(Arc::new(700u32.to_be_bytes().to_vec())).unwrap();
+        for expected in 0..701u32 {
+            let mut header = [0; 4];
+            client.read_exact(&mut header).unwrap();
+            assert_eq!(u32::from_be_bytes(header), 4);
+            client.read_exact(&mut header).unwrap();
+            assert_eq!(u32::from_be_bytes(header), expected);
+        }
+        drop(tx);
+        worker.join().unwrap();
+        assert_eq!(observed.load(Ordering::Relaxed), 0);
+    }
 }

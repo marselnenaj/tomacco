@@ -6,6 +6,26 @@ operations and their JSON results.
 
 ## Unreleased
 
+## 1.4.1
+
+### Fixed
+- **Opening another AirPlay view.** Repeated unchanged codec configuration no longer discards
+  the cached video start. The replay keeps every slice of a keyframe and is sent separately
+  from the live queue, so longer replay sequences are not silently truncated. The cache
+  remains bounded; a view that still needs a fresh keyframe explains how to reconnect.
+- **AirPlay controls and errors.** The desktop offers the Wi-Fi receiver in the device list,
+  with waiting, start and restart states. Restart waits for the previous receiver to stop.
+  Auxiliary connection closes no longer report that mirroring ended, and GStreamer errors
+  retain the actual receiver failure instead of an earlier heartbeat warning.
+- **Large Baseline Profiles.** Generated profiles have a dedicated 64 MiB reader for summary,
+  discovery and installation. Profiles above the Gradle build-file reader's 1 MiB limit
+  no longer disappear from reports; unreadable, invalid or oversized profiles report their
+  real error. The Gradle build-file limit stays unchanged.
+- **Private USB tool compatibility.** The virtual bridge advertises the same dashed device ID
+  to libimobiledevice and go-ios while keeping existing pair-record aliases. Tomacco adapts
+  the private socket spelling only for go-ios children, including job, WDA, syslog and startup
+  paths; other tools and the global environment stay unchanged.
+
 ## 1.4.0
 
 ### Added

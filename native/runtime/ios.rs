@@ -658,6 +658,7 @@ mod tests {
             state_file: temp.path().join("state.json"),
             clients: vec![],
             config: vec![],
+            pending_config: vec![],
             gop: vec![],
             cached_bytes: 0,
             receiving_config: false,

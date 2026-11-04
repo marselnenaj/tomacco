@@ -3766,6 +3766,42 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Name, e.g. testing or debugging</source>
         <translation>Nombre, p. ej. pruebas o depuración</translation>
     </message>
+    <message>
+        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone's Screen Mirroring.</source>
+        <translation>Reiniciando AirPlay. Después, selecciona Tomacco de nuevo en Duplicar pantalla del iPhone.</translation>
+    </message>
+    <message>
+        <source>iPhone over Wi-Fi</source>
+        <translation>iPhone por Wi-Fi</translation>
+    </message>
+    <message>
+        <source>Waiting for a new iPhone picture</source>
+        <translation>Esperando una nueva imagen del iPhone</translation>
+    </message>
+    <message>
+        <source>Ready for your iPhone</source>
+        <translation>Listo para tu iPhone</translation>
+    </message>
+    <message>
+        <source>Connect your iPhone over Wi-Fi</source>
+        <translation>Conecta tu iPhone por Wi-Fi</translation>
+    </message>
+    <message>
+        <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
+        <translation>Si no aparece una imagen, detén Duplicar pantalla en el iPhone y selecciona Tomacco de nuevo. Reinicia AirPlay abajo si el receptor no responde.</translation>
+    </message>
+    <message>
+        <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
+        <translation>Abre el Centro de control del iPhone, elige Duplicar pantalla y luego Tomacco. Ambos dispositivos deben estar en la misma red.</translation>
+    </message>
+    <message>
+        <source>Restart AirPlay</source>
+        <translation>Reiniciar AirPlay</translation>
+    </message>
+    <message>
+        <source>Start AirPlay</source>
+        <translation>Iniciar AirPlay</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>

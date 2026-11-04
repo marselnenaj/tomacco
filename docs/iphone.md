@@ -339,8 +339,18 @@ WebDriverAgent runs a gesture only as a whole.
    tomaccoctl call runtime.start '{"platform":"ios","device":"airplay"}'
    ```
 
+   In the desktop, select the Wi-Fi receiver under Apple devices and choose **Start AirPlay**.
+
 4. On the iPhone, open Control Center, then **Screen Mirroring**, then **Tomacco**. The device
    window opens by itself and closes when the phone stops mirroring.
+
+If the receiver is connected but a newly opened view has no picture, stop Screen Mirroring
+on the phone and choose Tomacco again. A new view needs a complete video start picture;
+Tomacco keeps a bounded replay for it and shows a waiting explanation when one is missing.
+**Restart AirPlay** stops the old receiver before starting another, so they do not compete
+for the ports. Select Tomacco again on the phone after restarting. Receiver failures show
+the UxPlay or GStreamer error so a stopped receiver is distinguishable from a phone that
+has not started mirroring.
 
 AirPlay carries no input. For that, the session serves a Bluetooth LE mouse and keyboard named
 **Tomacco** through BlueZ:

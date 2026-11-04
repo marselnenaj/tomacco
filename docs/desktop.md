@@ -394,7 +394,8 @@ Its rail also has App switcher, Notification Center and Control Center for a
 phone without a Home button, the keyboard switch, the speed overlay and a pin
 that keeps the window above the others. The pin and the window's place are kept
 for the next time; on Wayland the compositor places windows, so only the pin
-applies there. Offscreen tests only; not tried on a live phone.
+applies there. The virtual-window controls have offscreen coverage; the shared
+pin was also checked with a physical iPhone on Hyprland.
 
 In **device-only mode** that window is the whole app: `tomacco --device-only`
 or `desktop.open` with `device_only` starts without showing the main window.

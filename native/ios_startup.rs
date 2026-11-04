@@ -743,11 +743,14 @@ fn follow_log(child: &mut Child, process: String, base: Instant) -> Arc<Mutex<Ve
 }
 
 fn spawn(args: &[String], stdin: bool) -> Result<Child> {
-    Command::new(&args[0])
+    let mut command = Command::new(&args[0]);
+    command
         .args(&args[1..])
         .stdin(if stdin { Stdio::piped() } else { Stdio::null() })
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
+        .stderr(Stdio::null());
+    tc::adapt_go_ios_usbmux(&mut command)?;
+    command
         .spawn()
         .map_err(|error| Error::new("tool_failed", format!("{} did not start: {error}", args[0])))
 }

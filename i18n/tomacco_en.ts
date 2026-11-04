@@ -75,6 +75,42 @@
             <numerusform>%n ignored</numerusform>
         </translation>
     </message>
+    <message>
+        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone's Screen Mirroring.</source>
+        <translation>Restarting AirPlay. Then choose Tomacco again in the iPhone's Screen Mirroring.</translation>
+    </message>
+    <message>
+        <source>iPhone over Wi-Fi</source>
+        <translation>iPhone over Wi-Fi</translation>
+    </message>
+    <message>
+        <source>Waiting for a new iPhone picture</source>
+        <translation>Waiting for a new iPhone picture</translation>
+    </message>
+    <message>
+        <source>Ready for your iPhone</source>
+        <translation>Ready for your iPhone</translation>
+    </message>
+    <message>
+        <source>Connect your iPhone over Wi-Fi</source>
+        <translation>Connect your iPhone over Wi-Fi</translation>
+    </message>
+    <message>
+        <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
+        <translation>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</translation>
+    </message>
+    <message>
+        <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
+        <translation>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</translation>
+    </message>
+    <message>
+        <source>Restart AirPlay</source>
+        <translation>Restart AirPlay</translation>
+    </message>
+    <message>
+        <source>Start AirPlay</source>
+        <translation>Start AirPlay</translation>
+    </message>
 </context>
 <context>
     <name>Workspace</name>

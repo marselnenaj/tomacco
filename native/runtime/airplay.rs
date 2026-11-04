@@ -132,8 +132,12 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
             thread::sleep(Duration::from_millis(500));
         }
         let mut hub = watched.lock().unwrap();
-        let _ = hub.update(json!({"error":exit_reason(&reason_log)}));
-        hub.stopped.store(true, Ordering::Relaxed);
+        // A requested stop kills the owned process too. Do not race that
+        // normal shutdown into a failed session using an older warning line.
+        if !hub.stopped.load(Ordering::Relaxed) {
+            let _ = hub.update(json!({"mirroring":false,"error":exit_reason(&reason_log)}));
+            hub.stopped.store(true, Ordering::Relaxed);
+        }
     });
     let hub = shared.clone();
     thread::spawn(move || {
@@ -275,7 +279,8 @@ fn mirroring(log: &str) -> bool {
             if line.contains("raop_rtp_mirror starting mirroring") {
                 Some(true)
             } else if line.contains("raop_rtp_mirror->running is no longer true")
-                || line.starts_with("Connection closed on socket")
+                || line.contains("lost connection with client")
+                || line.starts_with("Initialized server socket(s)")
             {
                 Some(false)
             } else {
@@ -287,11 +292,13 @@ fn mirroring(log: &str) -> bool {
 /// Why UxPlay ended, from its last error line.
 fn exit_reason(log: &Path) -> String {
     let text = fs::read_to_string(log).unwrap_or_default();
-    match text.lines().rev().find(|l| l.contains("ERROR")) {
+    match text.lines().rev().find(|l| l.contains("ERROR") || l.contains("GStreamer error")) {
         Some(line) if line.contains("socket 98") => {
             "The AirPlay ports are in use: another AirPlay receiver, such as UxPlay, is running"
                 .into()
         }
+        Some(line) if line.contains("feedback request") || line.contains("lost connection with client") =>
+            "The iPhone stopped responding over Wi-Fi. Restart AirPlay, then select Tomacco again in Screen Mirroring.".into(),
         Some(line) => format!(
             "UxPlay stopped: {}",
             line.trim_start_matches(['*', ' ']).trim()
@@ -352,7 +359,11 @@ fn flags(unit: &[u8]) -> (bool, bool) {
     };
     match unit.get(header).map(|b| b & 31) {
         Some(7 | 8) => (true, false),
-        Some(5) => (false, true),
+        // An IDR picture can contain several type-5 slices. Only its first
+        // slice starts a new GOP; clearing on every slice loses most of the
+        // picture for a window that joins later. first_mb_in_slice is ue(v):
+        // its value is zero exactly when its first bit is one.
+        Some(5) => (false, unit.get(header + 1).is_some_and(|b| b & 0x80 != 0)),
         _ => (false, false),
     }
 }
@@ -535,6 +546,10 @@ mod tests {
         assert_eq!(flags(&pps), (true, false));
         assert_eq!(flags(&idr), (false, true));
         assert_eq!(flags(&next), (false, false));
+        // A subsequent IDR slice has first_mb_in_slice > 0 (ue(v) starts
+        // with zero). It belongs to the same cached picture as the first.
+        assert_eq!(flags(&[0, 0, 1, 0x65, 0x40]), (false, false));
+        assert_eq!(flags(&[0, 0, 1, 0x65]), (false, false));
     }
     #[test]
     fn the_phone_that_connects_picks_the_frame() {
@@ -571,13 +586,30 @@ mod tests {
         assert!(!mirroring(
             "raop_rtp_mirror starting mirroring\nraop_rtp_mirror->running is no longer true\n"
         ));
-        assert!(!mirroring(
+        assert!(mirroring(
             "raop_rtp_mirror starting mirroring\nConnection closed on socket 25\n"
+        ));
+        assert!(!mirroring(
+            "raop_rtp_mirror starting mirroring\n***ERROR lost connection with client (network problem?)\n"
+        ));
+        assert!(!mirroring(
+            "raop_rtp_mirror starting mirroring\nInitialized server socket(s)\n"
         ));
         assert!(mirroring(
             "Connection closed on socket 25\nAccepted IPv4 client on socket 31, port 7000\nraop_rtp_mirror starting mirroring\n"
         ));
         fs::write(&log, "*** ERROR: something else\n").unwrap();
         assert_eq!(exit_reason(&log), "UxPlay stopped: ERROR: something else");
+        fs::write(&log,"*** ERROR: 6 seconds since last client feedback request\nGStreamer error (audio): wrong format\n").unwrap();
+        assert_eq!(
+            exit_reason(&log),
+            "UxPlay stopped: GStreamer error (audio): wrong format"
+        );
+        fs::write(
+            &log,
+            "*** ERROR: 6 seconds since last client feedback request\n",
+        )
+        .unwrap();
+        assert!(exit_reason(&log).contains("iPhone stopped responding"));
     }
 }

@@ -78,6 +78,9 @@ Rectangle {
     }
     property bool failed: false
     property bool connecting: false
+    property string airplayRestartSession: ""
+    readonly property bool airplaySelected: platform==="ios" && appleTarget==="device" && target==="airplay"
+    Timer {interval:500;repeat:true;running:!!view.airplayRestartSession;onTriggered:view.request("runtime.list",{},{quiet:true})}
     property bool autoAttach: true
     // A session the command line asked for (--session), shown once runtime.list names it.
     property string wantedSession: typeof initialSession==="string" ? initialSession : ""
@@ -468,12 +471,25 @@ Rectangle {
         request("runtime.start",args)
     }
     function attach(session) {live=session;frameFinish=0;platform=session.platform;if(session.platform==="ios")appleTarget=session.remote?"simulator":"device";target=session.device;if(session.remote)remote=session.remote;display.session=session;notice="";connecting=false;if(session.platform==="android" && session.status==="connected" && forwardAudio && !liveAudio.configured && !liveAudio.error && !audioPending)requestAudio(true);if(pendingLaunch && pendingLaunch.platform===session.platform && pendingLaunch.device===session.device)startPendingLaunch()}
+    function restartAirplay() {
+        if(!airplaySelected || connecting)return
+        if(live.session && ["starting","connected"].indexOf(live.status)>=0) {
+            connecting=true;autoAttach=false;airplayRestartSession=live.session
+            notice=qsTr("Restarting AirPlay. Then choose Tomacco again in the iPhone's Screen Mirroring.");failed=false
+            request("runtime.stop",{session:live.session},{airplayRestart:true})
+            live=({});display.session=({});detached=false
+        } else connectTarget()
+    }
+    function cancelAirplayRestart() {
+        if(!airplayRestartSession)return
+        airplayRestartSession="";connecting=false;notice=""
+    }
     function requestAudio(enabled) {
         if(!live.session || live.platform!=="android" || audioPending)return
         forwardAudio=enabled;audioPendingSession=live.session
         request("runtime.audio",{session:live.session,action:enabled?"start":"stop"},{session:live.session})
     }
-    function stop() {pendingLaunch=null;autoAttach=false;if(live.session)request("runtime.stop",{session:live.session});live=({});display.session=({})}
+    function stop() {cancelAirplayRestart();pendingLaunch=null;autoAttach=false;if(live.session)request("runtime.stop",{session:live.session});live=({});display.session=({})}
     function input(args) {display.sendInput(args)}
     // Apps dropped on the device view install on the device it shows, or on
     // the chosen one, through device.install: APKs on Android, one signed
@@ -538,10 +554,10 @@ Rectangle {
     function diagnoseIos() {let args={};if(projectPath)args.path=projectPath;if(target && appleTarget==="device")args.device=target;request("ios.doctor",args)}
     function setupRemedy(name,fallback) {return ({swift:qsTr("Install the Swift toolchain that matches your Apple SDK."),xtool:qsTr("Install xtool for Linux."),"go-ios":qsTr("Set up go-ios for the iPhone developer services."),iproxy:qsTr("Install libusbmuxd for the USB connection."),idevicepair:qsTr("Install libimobiledevice for device pairing."),apple_sdk:qsTr("Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux."),apple_auth:qsTr("Choose ‘Sign in to Apple’ and finish signing in in the local terminal."),usbmuxd:qsTr("Connect the unlocked iPhone. The usbmuxd service must be available."),iphone:qsTr("Connect an iPhone or iPad via USB and confirm ‘Trust This Computer’."),project:qsTr("This Linux build path needs a SwiftPM/xtool project. Flutter and Xcode projects are not converted automatically yet.")})[name] || fallback}
     function syncWorkspaceTarget() {if(!workspace.opened) {workspace.selectedDevice=target;workspace.selectedPlatform=platform}}
-    onPlatformChanged: {syncWorkspaceTarget();reconcileTarget();if(platform==="ios" && appleTarget==="simulator")loadApple()}
-    onAppleTargetChanged: {reconcileTarget();if(appleTarget==="simulator")loadApple()}
+    onPlatformChanged: {if(platform!=="ios")cancelAirplayRestart();syncWorkspaceTarget();reconcileTarget();if(platform==="ios" && appleTarget==="simulator")loadApple()}
+    onAppleTargetChanged: {if(appleTarget!=="device")cancelAirplayRestart();reconcileTarget();if(appleTarget==="simulator")loadApple()}
     onTargetsChanged: reconcileTarget()
-    onTargetChanged: syncWorkspaceTarget()
+    onTargetChanged: {if(target!=="airplay")cancelAirplayRestart();syncWorkspaceTarget()}
     Component.onCompleted: {refresh();showCliError();Qt.callLater(startupSheets)}
     function showCliError() {if(Agent.cliError){notice=Agent.cliError;failed=true}}
     Connections {target:Agent;function onCliChanged() {view.showCliError()}}
@@ -560,6 +576,7 @@ Rectangle {
                 return
             }
             if(!response.ok){
+                if(c.airplayRestart){view.airplayRestartSession="";view.connecting=false}
                 if(op==="project.run")view.launchPending=false
                 if(op==="runtime.start")view.connecting=false
                 if(!c.quiet){view.notice=response.error.message+(response.error.remedy?"\n"+qsTr("What to do: %1").arg(response.error.remedy):"");view.failed=true;view.noticeRetry={op:op,args:JSON.parse(c.signature)}}
@@ -577,6 +594,13 @@ Rectangle {
             if(op==="runtime.start")view.attach(r)
             if(op==="runtime.list") {
                 view.sessions=r;view.sessionsSerial+=1
+                if(view.airplayRestartSession) {
+                    const old=r.find(x=>x.session===view.airplayRestartSession)
+                    if(!old || ["failed","disconnected"].indexOf(old.status)>=0) {
+                        view.airplayRestartSession="";view.connectTarget()
+                    }
+                    return
+                }
                 // The phone may already be mirroring when this desktop opens.
                 // Adopt it on an idle automatic view, even if Android was saved;
                 // keep explicit target choices and awaited devices untouched.
@@ -597,7 +621,7 @@ Rectangle {
                     }
                 }
                 let active=r.find(x=>x.session===view.live.session)
-                if(active && ["failed","disconnected"].indexOf(active.status)>=0 && view.live.status!==active.status){notifications.add("device",active.status==="failed"?"failed":"warn",(view.targets.find(d=>d.id===active.device) || {}).name || active.device,active.error || qsTr("Session ended"),{platform:active.platform,device:active.device});view.live=active;view.notice=active.error || qsTr("Session ended");view.failed=active.status==="failed";view.pendingLaunch=null}
+                if(active && ["failed","disconnected"].indexOf(active.status)>=0 && view.live.status!==active.status){notifications.add("device",active.status==="failed"?"failed":"warn",(view.targets.find(d=>d.id===active.device) || {}).name || active.device,active.error || qsTr("Session ended"),{platform:active.platform,device:active.device});view.live=active;view.notice=active.error || qsTr("Session ended");view.failed=active.status==="failed";view.pendingLaunch=null;if(active.transport==="wifi/airplay")view.noticeRetry={op:"runtime.start",args:{platform:"ios",device:"airplay"}}}
                 else if(active) {
                     if(active.transport==="wifi/airplay" && active.mirroring===true && view.live.mirroring===false) {
                         view.mirrorOpened=true;view.detached=true
@@ -614,6 +638,9 @@ Rectangle {
             }
             if(op==="device.list") {
                 view.targets=view.targets.filter(x=>x.kind==="simulator").concat(r.devices.map(x=>Object.assign({},x,{kind:x.kind || "device"})))
+                // AirPlay is a receiver, so USB device discovery never lists
+                // it. Keep it selectable before, during and after a mirror.
+                view.targets=view.targets.concat([{id:"airplay",name:qsTr("iPhone over Wi-Fi"),platform:"ios",kind:"device"}])
                 view.adoptAwaited()
             }
             if(op==="remote.list") {view.remotes=r;if(!view.remote && Object.keys(r).length)view.remote=Object.keys(r)[0]}
@@ -1041,10 +1068,10 @@ Rectangle {
                                 DeviceHero {
                                     objectName:"nativeEmptyState"
                                     anchors.fill:parent;visible:!view.deviceShown
-                                    title:view.connecting?qsTr("Connecting"):view.platform==="ios" && !view.hasTarget?(view.appleTarget==="device"?qsTr("Plug in your iPhone."):qsTr("Connect a Mac.")):qsTr("Give your agent a phone.")
-                                    body:view.platform==="ios" && !view.hasTarget?(view.appleTarget==="device"?qsTr("Plug it in and unlock it. Build Swift apps on Linux and control them from here."):qsTr("The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.")):qsTr("It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.")
-                                    actionText:view.hasTarget?qsTr("Connect %1").arg(view.deviceName):view.platform==="ios"?(view.appleTarget==="device"?qsTr("Set up iPhone"):qsTr("Set up Mac")):qsTr("Add a device")
-                                    errorText:display.error
+                                    title:view.connecting?qsTr("Connecting"):view.airplaySelected?(view.live.status==="connected"?(view.live.mirroring===true?qsTr("Waiting for a new iPhone picture"):qsTr("Ready for your iPhone")):qsTr("Connect your iPhone over Wi-Fi")):view.platform==="ios" && !view.hasTarget?(view.appleTarget==="device"?qsTr("Plug in your iPhone."):qsTr("Connect a Mac.")):qsTr("Give your agent a phone.")
+                                    body:view.airplaySelected?(view.live.mirroring===true?qsTr("If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding."):qsTr("Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.")):view.platform==="ios" && !view.hasTarget?(view.appleTarget==="device"?qsTr("Plug it in and unlock it. Build Swift apps on Linux and control them from here."):qsTr("The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.")):qsTr("It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.")
+                                    actionText:view.airplaySelected?(view.live.status==="connected"?qsTr("Restart AirPlay"):qsTr("Start AirPlay")):view.hasTarget?qsTr("Connect %1").arg(view.deviceName):view.platform==="ios"?(view.appleTarget==="device"?qsTr("Set up iPhone"):qsTr("Set up Mac")):qsTr("Add a device")
+                                    errorText:display.error || (view.airplaySelected?view.live.error || "":"")
                                     secondaryText:view.projectPath?"":qsTr("Open a project")
                                     onSecondary:projectFolder.open()
                                     recent:view.recentProjects
@@ -1054,7 +1081,7 @@ Rectangle {
                                         {key:"device",label:qsTr("Device"),detail:view.deviceName || qsTr("Choose a device"),done:view.hasTarget},
                                         {key:"run",label:qsTr("Run"),detail:qsTr("Run app"),done:view.appRunning}
                                     ]
-                                    onAction:{if(view.hasTarget)view.connectTarget();else if(view.platform==="ios"){if(view.appleTarget==="device"){iphoneSetup.open();view.diagnoseIos()}else macSetup.open()}else workspace.showTab("devices")}
+                                    onAction:{if(view.airplaySelected)view.restartAirplay();else if(view.hasTarget)view.connectTarget();else if(view.platform==="ios"){if(view.appleTarget==="device"){iphoneSetup.open();view.diagnoseIos()}else macSetup.open()}else workspace.showTab("devices")}
                                     onStepChosen:key=>{if(key==="project")projectFolder.open();else if(key==="device")workspace.showTab("devices");else if(view.projectPath && view.hasTarget)view.launch();else commandPalette.open()}
                                 }
                             }

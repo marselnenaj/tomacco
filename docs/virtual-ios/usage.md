@@ -552,6 +552,49 @@ has `bundle_readable:false` and the reason. An app the run installed but the pro
 `listed:false`. `installed` does not say whether you rebuilt the bundle since; the next start checks that itself. The
 list has unit tests only. The bundle's own `crash_reports` are described in [troubleshooting](troubleshooting.md#an-app-does-not-open).
 
+## Standard tools over the private USB bridge
+
+A guest started with USB enabled can expose its normal-boot USB device through a private
+usbmuxd socket. It exposes no physical phones. Start the configured virtual device and read
+the current run's `guest_job` from `ios.virtual.status`, then start the bridge for that job:
+
+```sh
+tomaccoctl call ios.virtual.start '{"open_app":false}'
+tomaccoctl call ios.virtual.status '{}'
+tomaccoctl call ios.emulator.usb_bridge '{"job_id":"GUEST_JOB","seconds":1800}'
+tomaccoctl call ios.emulator.report '{"job_id":"BRIDGE_JOB"}'
+```
+
+`GUEST_JOB` is the current guest job ID; `BRIDGE_JOB` is the job returned by the bridge call.
+The bridge is ready when its report says `state:"ready"`, `guest_usb_mode:"system"` and
+`guest_usb_ready_checkpoint:true`. Read `environment.USBMUXD_SOCKET_ADDRESS` from that report.
+The bridge job stays running while it serves the socket; waiting for terminal success would
+wait for the bridge to end.
+
+Pass that address only to the tools using the virtual phone, for example:
+
+```sh
+USBMUXD_SOCKET_ADDRESS='UNIX:/PRIVATE/SOCKET/usbmuxd.sock' idevice_id -l
+USBMUXD_SOCKET_ADDRESS='UNIX:/PRIVATE/SOCKET/usbmuxd.sock' idevicepair -u PRIVATE_UDID validate
+USBMUXD_SOCKET_ADDRESS='UNIX:/PRIVATE/SOCKET/usbmuxd.sock' tomaccoctl call ios.apps '{"device":"PRIVATE_UDID"}'
+```
+
+Use the private device ID returned by the first command. If pairing is not already valid,
+pair the virtual phone and accept Trust in the guest. Pair records stay with this private
+bridge. Tomacco adapts the socket spelling for its go-ios child processes; libimobiledevice
+and xtool keep their standard `UNIX:/path` spelling.
+
+Normal-boot enumeration, existing pairing, a paired disk-information query and installation
+of one owned HelloVirtual test app through `device.install`/xtool were checked over this
+private socket. This was not a guest-channel installation. xtool automatically re-signed
+and provisioned the app using the configured Apple development identity; it was not an
+offline-signing test. Starting it through the standard USB debugserver returned
+`DebugserverClient.Error.unknown`, so that launch route remains unqualified. Guest-channel
+deployment and launching are separate routes.
+
+Stopping the parent guest cancels its bridge. Stop a virtual run with `ios.virtual.stop`
+to flush its storage and retain its changes; do not end its engine process directly.
+
 ## Small things the start does for you
 
 - **Launch allowance.** Under emulation iOS would end apps for being slow, so the start raises FrontBoard's launch watchdog
