@@ -3,6 +3,7 @@
 #include "nativeview.h"
 #include <QGuiApplication>
 #include <QInputMethodEvent>
+#include <QMouseEvent>
 #include <QDateTime>
 #include <QJSValue>
 #include <QPainter>
@@ -171,6 +172,44 @@ class DesktopUiTest : public QObject {
     // A var property holds a JS value or, once set from C++ or from a reply, a plain map.
     static QVariantMap mapOf(const QVariant &value) {
         return value.metaType()==QMetaType::fromType<QJSValue>()?value.value<QJSValue>().toVariant().toMap():value.toMap();
+    }
+    // These fixtures supply their own replies for a synthetic guest. QtTest's
+    // mouse helpers process the event loop after every event, which can let
+    // the real control program answer the fake job before the fixture does.
+    static void sendGuestMouse(QWindow *surface,QEvent::Type type,const QPoint &position) {
+        const auto button=type==QEvent::MouseMove?Qt::NoButton:Qt::LeftButton;
+        const Qt::MouseButtons buttons=type==QEvent::MouseButtonRelease?Qt::NoButton:Qt::LeftButton;
+        QMouseEvent event(type,QPointF(position),QPointF(surface->mapToGlobal(position)),button,buttons,Qt::NoModifier);
+        QCoreApplication::sendEvent(surface,&event);
+    }
+    static void sendGuestClick(QWindow *surface,const QPoint &position) {
+        sendGuestMouse(surface,QEvent::MouseButtonPress,position);
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,position);
+    }
+    auto isolateSyntheticGuest(QObject *research) {
+        auto *guest=object("iosGuestView");
+        const bool polling=research->property("polling").toBool();
+        // A real report for the fake job changes running/visibility underneath
+        // the fixture. Holding the guest's input lane does not stop this poll.
+        research->setProperty("polling",true);
+        return qScopeGuard([this,research,guest,polling]{
+            auto *contact=qobject_cast<QQuickItem *>(object("iosGuestContact"));
+            auto *edge=qobject_cast<QQuickItem *>(object("iosGuestEdgeBand"));
+            if(contact && contact->window() && (contact->property("pressed").toBool() || (edge && edge->property("pressed").toBool())))
+                sendGuestMouse(contact->window(),QEvent::MouseButtonRelease,contact->mapToScene(QPointF(contact->width()/2,contact->height()/2)).toPoint());
+            if(guest) {
+                guest->setProperty("running",false);
+                guest->setProperty("touchQueue",QVariantList{});
+                guest->setProperty("touchRequests",QVariantMap{});
+                guest->setProperty("touchPending",0);
+                guest->setProperty("inputQueue",QVariantList{});
+                guest->setProperty("pending",0);
+            }
+            if(auto *pace=object("iosGuestTouchPace"))QMetaObject::invokeMethod(pace,"stop");
+            research->setProperty("jobId",QString());research->setProperty("mode","ios");
+            if(auto *dialog=object("iosResearchDialog"))dialog->setProperty("visible",false);
+            research->setProperty("polling",polling);
+        });
     }
     // A stand-in adb for this test run's control plane, a shell script with
     // this body; the guard it returns removes it from the settings again.
@@ -1937,6 +1976,7 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         open("ios-research");
         auto *view=object("iosResearch");QVERIFY(view);
         auto *dialog=object("iosResearchDialog");QVERIFY(dialog);
+        const auto scenario=isolateSyntheticGuest(view);
         QTRY_VERIFY(dialog->property("visible").toBool());
         const QString job="0123456789abcdef0123456789abcdef";
         QVariant virtualJob=QVariantMap{{"id",job},{"state","running"},{"created",1241},
@@ -1979,61 +2019,63 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
             return false;
         };
         QTRY_COMPARE_WITH_TIMEOUT(guestView->property("pending").toInt(),0,patient(8000));
+        guestView->setProperty("pending",987654);
         // A swipe: the press goes out at once, before any movement.
-        QTest::mousePress(surface,Qt::LeftButton,{},at(.5,.6));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,at(.5,.6));
         auto event=answer();
         QCOMPARE(event.value("action").toString(),QString("touch_down"));
         QCOMPARE(event.value("job").toString(),job);
         QVERIFY(qAbs(event.value("y").toReal()-.6)<.01);
         // A few pixels are still the press point.
-        QTest::mouseMove(surface,at(.5,.6)+QPoint(2,2));
+        sendGuestMouse(surface,QEvent::MouseMove,at(.5,.6)+QPoint(2,2));
         QTest::qWait(30);
         QVERIFY(queued().isEmpty());QCOMPARE(inFlight().first,0);
-        QTest::mouseMove(surface,at(.5,.5));
-        event=next();
+        sendGuestMouse(surface,QEvent::MouseMove,at(.5,.5));
+        event=inFlight().second;
         QCOMPARE(event.value("action").toString(),QString("touch_move"));
         QVERIFY(qAbs(event.value("y").toReal()-.5)<.01);
+        // Leave this request unanswered while the next moves coalesce.
         // Moves made while one waits are kept as the latest point only.
-        QTest::mouseMove(surface,at(.5,.45));QTest::mouseMove(surface,at(.5,.4));QTest::mouseMove(surface,at(.5,.3));
+        sendGuestMouse(surface,QEvent::MouseMove,at(.5,.45));sendGuestMouse(surface,QEvent::MouseMove,at(.5,.4));sendGuestMouse(surface,QEvent::MouseMove,at(.5,.3));
         QCOMPARE(queued().size(),1);
         QVERIFY(qAbs(queued()[0].toMap().value("y").toReal()-.3)<.01);
         answer();
         event=next();
         QCOMPARE(event.value("action").toString(),QString("touch_move"));
         QVERIFY(qAbs(event.value("y").toReal()-.3)<.01);
-        QTest::mouseRelease(surface,Qt::LeftButton,{},at(.5,.2));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,at(.5,.2));
         QStringList actions;QVariantMap last;
         while(actions.isEmpty() || actions.last()!="touch_up") {last=next();actions.append(last.value("action").toString());}
         QVERIFY(qAbs(last.value("y").toReal()-.2)<.01);
         QCOMPARE(actions.count("touch_up"),1);
         QVERIFY(!played("drag"));QVERIFY(!played("click"));
         // A tap: press and release at the press point, nothing played back afterwards.
-        QTest::mouseClick(surface,Qt::LeftButton,{},at(.3,.3));
+        sendGuestClick(surface,at(.3,.3));
         event=next();QCOMPARE(event.value("action").toString(),QString("touch_down"));
         const auto pressed=event;
         event=next();QCOMPARE(event.value("action").toString(),QString("touch_up"));
         QCOMPARE(event.value("x").toReal(),pressed.value("x").toReal());QCOMPARE(event.value("y").toReal(),pressed.value("y").toReal());
         QVERIFY(!played("click"));
         // A lost grab lifts the finger while the button is still down, and the release plays nothing back.
-        QTest::mousePress(surface,Qt::LeftButton,{},at(.4,.4));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,at(.4,.4));
         next();
         QVERIFY(QMetaObject::invokeMethod(contact,"canceled"));
         event=next();QCOMPARE(event.value("action").toString(),QString("touch_up"));
-        QTest::mouseRelease(surface,Qt::LeftButton,{},at(.4,.4));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,at(.4,.4));
         QTest::qWait(30);
         QCOMPARE(inFlight().first,0);QVERIFY(queued().isEmpty());QVERIFY(!played("click"));
         // A control plane without the lane refuses the press: the release is still sent, the gesture
         // is played back as a click, and later gestures go out after release as before.
-        QTest::mousePress(surface,Qt::LeftButton,{},at(.6,.6));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,at(.6,.6));
         next({{"code","invalid_argument"},{"message","arguments.action must be one of …"}});
         QVERIFY(!guestView->property("liveTouch").toBool());
-        QTest::mouseRelease(surface,Qt::LeftButton,{},at(.6,.6));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,at(.6,.6));
         event=next();QCOMPARE(event.value("action").toString(),QString("touch_up"));
         QVERIFY(played("click"));
         guestView->setProperty("inputQueue",QVariantList{});
-        QTest::mousePress(surface,Qt::LeftButton,{},at(.5,.7));
-        QTest::mouseMove(surface,at(.5,.5));QTest::mouseMove(surface,at(.5,.3));
-        QTest::mouseRelease(surface,Qt::LeftButton,{},at(.5,.3));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,at(.5,.7));
+        sendGuestMouse(surface,QEvent::MouseMove,at(.5,.5));sendGuestMouse(surface,QEvent::MouseMove,at(.5,.3));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,at(.5,.3));
         QTest::qWait(30);
         QCOMPARE(inFlight().first,0);QVERIFY(queued().isEmpty());
         QVERIFY(played("drag"));
@@ -2051,6 +2093,7 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         open("ios-research");
         auto *view=object("iosResearch");QVERIFY(view);
         auto *dialog=object("iosResearchDialog");QVERIFY(dialog);
+        const auto scenario=isolateSyntheticGuest(view);
         QTRY_VERIFY(dialog->property("visible").toBool());
         const QString job="fedcba9876543210fedcba9876543210";
         QVariant virtualJob=QVariantMap{{"id",job},{"state","running"},{"created",1242},
@@ -2106,21 +2149,22 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
             return false;
         };
         QTRY_COMPARE_WITH_TIMEOUT(guestView->property("pending").toInt(),0,patient(8000));
+        guestView->setProperty("pending",987654);
         // Two pixels above the bottom edge: the finger starts on it.
-        QTest::mousePress(surface,Qt::LeftButton,{},px(w/2,h-2));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,px(w/2,h-2));
         auto event=next();
         QCOMPARE(event.value("action").toString(),QString("touch_down"));
         QCOMPARE(event.value("y").toReal(),1.0);
         QVERIFY(qAbs(event.value("x").toReal()-.5)<.01);
         QVERIFY(markAt(w/2,h-2));
         // An edge swipe follows from its first movement; the slop of a tap does not hold it back.
-        QTest::mouseMove(surface,px(w/2,h-4));
+        sendGuestMouse(surface,QEvent::MouseMove,px(w/2,h-4));
         event=next();
         QCOMPARE(event.value("action").toString(),QString("touch_move"));
         QVERIFY(event.value("y").toReal()<1.0);
         // A flick: the release goes out right behind the last move, where the pointer let go.
-        QTest::mouseMove(surface,px(w/2,h*.7));QTest::mouseMove(surface,px(w/2,h*.5));
-        QTest::mouseRelease(surface,Qt::LeftButton,{},px(w/2,h*.4));
+        sendGuestMouse(surface,QEvent::MouseMove,px(w/2,h*.7));sendGuestMouse(surface,QEvent::MouseMove,px(w/2,h*.5));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,px(w/2,h*.4));
         event=finish();
         QVERIFY(qAbs(event.value("y").toReal()-.4)<.01);
         QVERIFY(!playedAnything());
@@ -2128,46 +2172,46 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         // stays under the pointer; dragged in, the finger follows into the screen.
         auto *band=qobject_cast<QQuickItem *>(object("iosGuestEdgeBand"));QVERIFY(band);
         QVERIFY(band->height()>h+8);
-        QTest::mousePress(surface,Qt::LeftButton,{},px(w*.3,h+5));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,px(w*.3,h+5));
         event=next();
         QCOMPARE(event.value("action").toString(),QString("touch_down"));
         QCOMPARE(event.value("y").toReal(),1.0);QVERIFY(qAbs(event.value("x").toReal()-.3)<.01);
         QVERIFY(markAt(w*.3,h+5));
-        QTest::mouseMove(surface,px(w*.3,h*.7));
+        sendGuestMouse(surface,QEvent::MouseMove,px(w*.3,h*.7));
         event=next();
         QCOMPARE(event.value("action").toString(),QString("touch_move"));
         QVERIFY(qAbs(event.value("y").toReal()-.7)<.01);
-        QTest::mouseRelease(surface,Qt::LeftButton,{},px(w*.3,h*.7));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,px(w*.3,h*.7));
         event=finish();QVERIFY(qAbs(event.value("y").toReal()-.7)<.01);
         // Left of the picture: the left edge, for back. Held still, it lifts where it went down.
-        QTest::mousePress(surface,Qt::LeftButton,{},px(-4,h/2));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,px(-4,h/2));
         event=next();
         QCOMPARE(event.value("x").toReal(),0.0);QVERIFY(qAbs(event.value("y").toReal()-.5)<.01);
-        QTest::mouseRelease(surface,Qt::LeftButton,{},px(-4,h/2));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,px(-4,h/2));
         event=finish();QCOMPARE(event.value("x").toReal(),0.0);
         QVERIFY(!playedAnything());
         // Beyond the top-right corner of the picture: both edges, where Control Center opens.
-        QTest::mousePress(surface,Qt::LeftButton,{},px(w+3,-3));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,px(w+3,-3));
         event=next();
         QCOMPARE(event.value("x").toReal(),1.0);QCOMPARE(event.value("y").toReal(),0.0);
-        QTest::mouseRelease(surface,Qt::LeftButton,{},px(w+3,-3));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,px(w+3,-3));
         QCOMPARE(finish().value("action").toString(),QString("touch_up"));
         // Away from the edges a press is where it is, and a tap's few pixels of slop still hold.
-        QTest::mousePress(surface,Qt::LeftButton,{},px(24,h*.4));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,px(24,h*.4));
         event=next();
         QVERIFY(qAbs(event.value("x").toReal()-24/w)<.01);QVERIFY(qAbs(event.value("y").toReal()-.4)<.01);
-        QTest::mouseMove(surface,px(26,h*.4+2));
+        sendGuestMouse(surface,QEvent::MouseMove,px(26,h*.4+2));
         QTest::qWait(30);
         QCOMPARE(inFlight().first,0);QVERIFY(guestView->property("touchQueue").toList().isEmpty());
-        QTest::mouseRelease(surface,Qt::LeftButton,{},px(26,h*.4+2));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,px(26,h*.4+2));
         event=finish();QVERIFY(qAbs(event.value("x").toReal()-24/w)<.01);
         // Played back after release (a control plane without the lane), a press at the edge still
         // starts there.
         guestView->setProperty("liveTouch",false);
         guestView->setProperty("pending",987654);
-        QTest::mousePress(surface,Qt::LeftButton,{},px(w/2,h+4));
-        QTest::mouseMove(surface,px(w/2,h*.6));
-        QTest::mouseRelease(surface,Qt::LeftButton,{},px(w/2,h*.5));
+        sendGuestMouse(surface,QEvent::MouseButtonPress,px(w/2,h+4));
+        sendGuestMouse(surface,QEvent::MouseMove,px(w/2,h*.6));
+        sendGuestMouse(surface,QEvent::MouseButtonRelease,px(w/2,h*.5));
         auto inputs=guestView->property("inputQueue").toList();
         QCOMPARE(inputs.size(),1);
         auto played=inputs[0].toMap();
@@ -2375,6 +2419,7 @@ for line in sys.stdin:
         open("ios-research");
         auto *view=object("iosResearch");QVERIFY(view);
         auto *dialog=object("iosResearchDialog");QVERIFY(dialog);
+        const auto scenario=isolateSyntheticGuest(view);
         QTRY_VERIFY(dialog->property("visible").toBool());
         const QString job="0123456789abcdef0123456789abcdef";
         QVariant virtualJob=QVariantMap{{"id",job},{"state","running"},{"created",1242},
@@ -2550,8 +2595,12 @@ for line in sys.stdin:
         guestView->setProperty("windowX",-90000);
         QVERIFY(QMetaObject::invokeMethod(guestView,"placeWindow"));
         QCOMPARE(guestWindow->x(),30);
-        // Moved, the window's place is kept.
+        // Moved, the visible window's place is kept.
+        QTRY_VERIFY_WITH_TIMEOUT(guestWindow->isVisible(),patient(3000));
+        QSignalSpy positionChanged(guestWindow,&QWindow::xChanged);
         guestWindow->setX(44);
+        QCOMPARE(guestWindow->x(),44);
+        QTRY_VERIFY_WITH_TIMEOUT(std::any_of(positionChanged.begin(),positionChanged.end(),[](const QList<QVariant> &change){return change.value(0).toInt()==44;}),patient(3000));
         QTRY_COMPARE_WITH_TIMEOUT(guestView->property("windowX").toReal(),44.0,patient(3000));
         guestView->setProperty("detached",false);QVERIFY(QQmlProperty::write(guestView,"deviceProfile",QVariantMap{}));
         QTRY_VERIFY_WITH_TIMEOUT(!guestWindow->isVisible(),patient(3000));
