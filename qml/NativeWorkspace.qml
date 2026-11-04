@@ -963,11 +963,14 @@ Rectangle {
                                             // Starting takes a while with no measure of how far along it is, so
                                             // this says only that it is still going.
                                             Item {
+                                                id:bootProgressTrack
                                                 width:parent.width;height:Theme.gapXxs;clip:true
                                                 Rectangle {anchors.fill:parent;color:Theme.deviceScreenMuted;opacity:.25}
                                                 Rectangle {
                                                     width:parent.width/3;height:parent.height;color:Theme.accent
-                                                    XAnimator on x {from:-parent.width/3;to:parent.width;duration:1400;loops:Animation.Infinite;running:view.pending && !Theme.reducedMotion}
+                                                    // An animator's parent can be unset while this
+                                                    // frame moves between the workspace and its window.
+                                                    XAnimator on x {from:bootProgressTrack?-bootProgressTrack.width/3:0;to:bootProgressTrack?bootProgressTrack.width:0;duration:1400;loops:Animation.Infinite;running:view.pending && !Theme.reducedMotion}
                                                 }
                                             }
                                         }

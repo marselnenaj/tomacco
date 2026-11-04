@@ -611,6 +611,9 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         QVERIFY(QMetaObject::invokeMethod(view,"stop"));
         QVERIFY(view->property("airplayRestartSession").toString().isEmpty());
         QVERIFY(!view->property("connecting").toBool());
+        native.reset();
+        QCoreApplication::processEvents();
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void native_frames_preserve_real_pixels_and_pointer_coordinates() {
         open("runtime");window->resize(1380,970);
