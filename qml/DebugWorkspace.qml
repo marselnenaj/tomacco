@@ -121,7 +121,7 @@ StudioScrollView {
             title:qsTr("Attach to your app")
                 Label { objectName:"debugStatus";visible:false;text:view.stateLabel }
                 GridLayout {
-                    Layout.fillWidth:true;columns:view.availableWidth<650?1:2;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs;enabled:!view.starting && !view.active
+                    Layout.fillWidth:true;columns:width<Theme.px(650)?1:2;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs;enabled:!view.starting && !view.active
                     StudioComboBox { id:backend;objectName:"debugBackend";Layout.fillWidth:true;model:["Android · Java / Kotlin","Android · C / C++ (NDK)","Linux · Swift / C / C++"] }
                     StudioComboBox {
                         objectName:"debugDevice";visible:view.android;Layout.fillWidth:true;model:view.androidDevices;textRole:"name"
@@ -130,18 +130,21 @@ StudioScrollView {
                         onActivated:{workspace.selectedDevice=view.androidDevices[currentIndex].id;workspace.selectedPlatform="android"}
                     }
                 }
-                RowLayout {
+                GridLayout {
+                    columns:width<Theme.px(520)?1:2;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
                     Layout.fillWidth:true;visible:view.android;enabled:!view.starting && !view.active
                     StudioTextField { id:application;objectName:"debugApplication";Layout.fillWidth:true;placeholderText:qsTr("Application ID · e.g. dev.example.app") }
                     StudioCheckBox { id:launch;text:qsTr("Launch app");checked:true;ToolTip.visible:hovered;ToolTip.text:view.nativeAndroid?qsTr("Launches the app if it is not running yet."):qsTr("Restarts the app and waits for the Java debugger.") }
                 }
-                RowLayout {
+                GridLayout {
+                    columns:width<Theme.px(520)?1:2;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
                     Layout.fillWidth:true;visible:view.nativeAndroid || !view.android;enabled:!view.starting && !view.active
                     StudioTextField { id:program;objectName:"debugProgram";Layout.fillWidth:true;placeholderText:view.nativeAndroid?qsTr("Library with debug symbols (.so)"):qsTr("Executable with debug symbols") }
                     StudioButton { text:qsTr("Choose file");onClicked:programDialog.open() }
                 }
-                RowLayout {
-                    Layout.fillWidth:true;spacing:12
+                GridLayout {
+                    columns:width<Theme.px(520)?1:2;columnSpacing:Theme.gapSm;rowSpacing:Theme.gapXs
+                    Layout.fillWidth:true
                     Label {
                         Layout.fillWidth:true;wrapMode:Text.Wrap;color:Theme.muted;font.pixelSize:Theme.fontSmall
                         text:view.nativeAndroid?qsTr("Needs a debug build and the NDK. The library must match your app and its processor."):view.android?qsTr("Needs a debug build on a connected phone or emulator."):qsTr("A program on this computer, inspected with LLDB.")
@@ -167,26 +170,29 @@ StudioScrollView {
         }
         Flow {
             Layout.fillWidth:true;spacing:Theme.gapXs;visible:view.active;enabled:view.active && !view.controlling
-            StudioButton { text:qsTr("Continue");iconName:"play";enabled:view.state.stopped===true;onClicked:view.control("continue") }
-            StudioButton { text:"Pause";iconName:"pause";enabled:view.state.stopped===false;onClicked:view.control("pause") }
-            StudioButton { text:qsTr("Step over");iconName:"stepOver";tip:qsTr("Run the next source line");enabled:view.state.stopped===true;onClicked:view.control("next") }
-            StudioButton { text:qsTr("Step in");iconName:"stepIn";enabled:view.state.stopped===true;onClicked:view.control("stepIn") }
-            StudioButton { text:qsTr("Step out");iconName:"stepOut";enabled:view.state.stopped===true;onClicked:view.control("stepOut") }
-            StudioButton { text:qsTr("Disconnect");iconName:"unplug";quiet:true;onClicked:view.control("disconnect") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text:qsTr("Continue");iconName:"play";enabled:view.state.stopped===true;onClicked:view.control("continue") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text:"Pause";iconName:"pause";enabled:view.state.stopped===false;onClicked:view.control("pause") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text:qsTr("Step over");iconName:"stepOver";tip:qsTr("Run the next source line");enabled:view.state.stopped===true;onClicked:view.control("next") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text:qsTr("Step in");iconName:"stepIn";enabled:view.state.stopped===true;onClicked:view.control("stepIn") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text:qsTr("Step out");iconName:"stepOut";enabled:view.state.stopped===true;onClicked:view.control("stepOut") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text:qsTr("Disconnect");iconName:"unplug";quiet:true;onClicked:view.control("disconnect") }
         }
-        RowLayout {
+        GridLayout {
+            columns:width<Theme.px(620)?1:3;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
             Layout.fillWidth:true;visible:view.active
             StudioTextField { id:source;Layout.fillWidth:true;placeholderText:qsTr("Source file or Java class") }
-            StudioTextField { id:lines;Layout.preferredWidth:115;placeholderText:qsTr("Lines: 12, 24") }
+            StudioTextField { id:lines;Layout.fillWidth:true;Layout.preferredWidth:Theme.px(115);placeholderText:qsTr("Lines: 12, 24") }
             StudioButton {
                 text:qsTr("Breakpoints");enabled:view.active && source.text.trim().length>0
                 onClicked:{let values=lines.text.trim()?lines.text.split(",").map(x=>Number(x.trim())):[];if(values.some(x=>!Number.isInteger(x)||x<1)){view.failure=qsTr("Enter valid line numbers");return}view.call("debug.breakpoints",{session:view.session,source:source.text.trim(),lines:values})}
             }
         }
         Rectangle {
-            Layout.fillWidth:true;implicitHeight:Math.max(300,view.availableHeight-Theme.barHeight*3);visible:view.active;color:Theme.surface;radius:Theme.radius;border.color:Theme.subtle
-            RowLayout {
-                anchors.fill:parent;anchors.margins:Theme.gapMd;spacing:Theme.gapMd
+            Layout.fillWidth:true;implicitHeight:Math.max(Theme.px(inspector.columns===1?640:300),view.availableHeight-Theme.barHeight*3);visible:view.active;color:Theme.surface;radius:Theme.radius;border.color:Theme.subtle
+            GridLayout {
+                id:inspector;objectName:"debugInspector"
+                columns:width<Theme.px(720)?1:3
+                anchors.fill:parent;anchors.margins:Theme.gapMd;columnSpacing:Theme.gapMd;rowSpacing:Theme.gapMd
                 ColumnLayout {
                     Layout.fillWidth:true;Layout.fillHeight:true;Layout.preferredWidth:1
                     StudioSection { text:qsTr("CALL STACK") }
@@ -207,7 +213,7 @@ StudioScrollView {
                         onClicked:{workspace.revealFile(view.sourcePath.slice(workspace.project.path.length+1),view.sourceLine);workspace.showTab("files")}
                     }
                 }
-                Rectangle { Layout.fillHeight:true;implicitWidth:1;color:Theme.subtle }
+                Rectangle { visible:inspector.columns===3;Layout.fillHeight:true;implicitWidth:1;color:Theme.subtle }
                 ColumnLayout {
                     Layout.fillWidth:true;Layout.fillHeight:true;Layout.preferredWidth:1
                     RowLayout {
@@ -234,9 +240,9 @@ StudioScrollView {
             }
         }
         Label { Layout.fillWidth:true;visible:!view.frames.length;font.pixelSize:Theme.fontBody;text:view.active?qsTr("Pause your app or set a breakpoint to see the stack and variables."):qsTr("Attach here, or take over a session your agent started.");wrapMode:Text.Wrap;color:Theme.muted }
-        StudioCodeView { Layout.fillWidth:true;Layout.preferredHeight:80;visible:!!view.details;text:view.details;textColor:Theme.text }
+        StudioCodeView { Layout.fillWidth:true;Layout.preferredHeight:Theme.px(80);visible:!!view.details;text:view.details;textColor:Theme.text }
         StudioButton { visible:view.active;text:(view.showEvents?qsTr("Hide events"):qsTr("Show events"))+" · "+view.cursor;quiet:true;onClicked:view.showEvents=!view.showEvents }
-        StudioCodeView { Layout.fillWidth:true;Layout.preferredHeight:140;visible:view.showEvents;text:view.events || qsTr("No debugger events yet.") }
+        StudioCodeView { Layout.fillWidth:true;Layout.preferredHeight:Theme.px(140);visible:view.showEvents;text:view.events || qsTr("No debugger events yet.") }
     }
     FileDialog { id:programDialog;title:view.nativeAndroid?qsTr("Choose library with debug symbols"):qsTr("Choose debug program");nameFilters:view.nativeAndroid?[qsTr("Android libraries (*.so)"),qsTr("All files (*)")]:[qsTr("All files (*)")];onAccepted:program.text=decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")) }
 }

@@ -937,7 +937,7 @@ Rectangle {
                         }
                         // The device with its own controls beside it.
                         RowLayout {
-                            SplitView.fillWidth:true;SplitView.minimumWidth:Theme.gapXxxl*4;spacing:0
+                            SplitView.fillWidth:true;SplitView.minimumWidth:Math.min(stageSplit.width*.4,Theme.gapXxxl*4);spacing:0
                             Item {
                                 id:frameDock
                                 Layout.fillWidth:true;Layout.fillHeight:true;clip:true
@@ -1129,8 +1129,8 @@ Rectangle {
                             id:stageLog
                             visible:view.showStageLog
                             SplitView.preferredWidth:view.stageLogWidth
-                            SplitView.minimumWidth:Theme.panelWidth*.75
-                            SplitView.maximumWidth:Math.max(Theme.panelWidth*.75,stageSplit.width-Theme.gapXxxl*4)
+                            SplitView.minimumWidth:Math.max(0,Math.min(Theme.panelWidth*.75,stageSplit.width*.6-Theme.gapXs))
+                            SplitView.maximumWidth:Math.max(0,stageSplit.width-Math.min(stageSplit.width*.4,Theme.gapXxxl*4)-Theme.gapXs)
                             workspace:view.workspace
                             device:display.state==="live" ? (view.live.device || "") : ""
                             platform:view.live.platform || view.platform

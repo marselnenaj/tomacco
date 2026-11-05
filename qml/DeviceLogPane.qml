@@ -73,17 +73,31 @@ ColumnLayout {
             if(value.eof && ["succeeded","failed","cancelled","timed_out"].indexOf(value.state)>=0){pane.job="";if(pane.following && !pane.paused)pane.restart()}
         }
     }
-    RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
-        StudioTextField {id:appField;objectName:"deviceLogApp";Layout.fillWidth:true;Layout.maximumWidth:280;placeholderText:qsTr("App ID, all apps when empty");font.family:Theme.mono
+    GridLayout {
+        Layout.fillWidth:true
+        columns:width<Theme.px(920)?1:3
+        columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
+        StudioTextField {id:appField;objectName:"deviceLogApp";Layout.fillWidth:true;placeholderText:qsTr("App ID, all apps when empty");font.family:Theme.mono
             onEditingFinished:{const value=text.trim();if(value!==pane.bundleId){pane.bundleId=value;if(pane.following)pane.restart()}}}
-        StudioSegmented {
-            objectName:"deviceLogLevel";current:pane.level
-            model:[{id:"V",label:qsTr("All"),objectName:"deviceLogLevel-V"},{id:"I",label:qsTr("Info"),objectName:"deviceLogLevel-I"},{id:"W",label:qsTr("Warnings"),objectName:"deviceLogLevel-W"},{id:"E",label:qsTr("Errors"),objectName:"deviceLogLevel-E"}]
-            onChosen:id=>pane.level=id
+        Flow {
+            objectName:"deviceLogLevel";Layout.fillWidth:true;spacing:Theme.gapXs
+            Repeater {
+                model:[{id:"V",label:qsTr("All"),objectName:"deviceLogLevel-V"},{id:"I",label:qsTr("Info"),objectName:"deviceLogLevel-I"},{id:"W",label:qsTr("Warnings"),objectName:"deviceLogLevel-W"},{id:"E",label:qsTr("Errors"),objectName:"deviceLogLevel-E"}]
+                StudioButton {
+                    required property var modelData
+                    objectName:modelData.objectName;text:modelData.label
+                    width:Math.min(parent.width,implicitWidth)
+                    selected:pane.level===modelData.id;quiet:true
+                    onClicked:pane.level=modelData.id
+                }
+            }
         }
-        StudioTextField {objectName:"deviceLogSearch";Layout.fillWidth:true;placeholderText:qsTr("Find in the log");onTextChanged:pane.query=text}
-        StudioButton {objectName:"deviceLogPause";text:pane.paused?qsTr("Resume"):qsTr("Pause");displayText:"";iconName:pane.paused?"play":"pause";quiet:true;tip:text;onClicked:pane.paused=!pane.paused}
-        StudioButton {objectName:"deviceLogClear";text:qsTr("Clear");displayText:"";iconName:"close";quiet:true;tip:qsTr("Clear the lines shown");onClicked:pane.text=""}
+        RowLayout {
+            Layout.fillWidth:true;spacing:Theme.gapXs
+            StudioTextField {objectName:"deviceLogSearch";Layout.fillWidth:true;placeholderText:qsTr("Find in the log");onTextChanged:pane.query=text}
+            StudioButton {objectName:"deviceLogPause";text:pane.paused?qsTr("Resume"):qsTr("Pause");displayText:"";iconName:pane.paused?"play":"pause";quiet:true;tip:text;onClicked:pane.paused=!pane.paused}
+            StudioButton {objectName:"deviceLogClear";text:qsTr("Clear");displayText:"";iconName:"close";quiet:true;tip:qsTr("Clear the lines shown");onClicked:pane.text=""}
+        }
     }
     Rectangle {
         Layout.fillWidth:true;Layout.fillHeight:true;radius:Theme.radiusSmall;color:Theme.inset;border.color:Theme.subtle

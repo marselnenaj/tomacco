@@ -21,6 +21,12 @@ Item {
     property bool updating: false
     property int selectedLine: 0
     property string notice: ""
+    // The browser and its controls use the same scale as the source text.
+    // Below their combined readable width, the browser moves above the editor.
+    readonly property bool sideBySide: width>=Theme.px(640)
+    readonly property real browserWidth: Math.max(Theme.px(240),Math.min(Theme.px(280),width*.34))
+    readonly property real browserStackMinimumHeight: browserSearch.implicitHeight+browserOptions.implicitHeight+browserActions.implicitHeight+Theme.gapSm*4+Theme.px(72)
+    readonly property real editorReadableMinimumHeight: (tabs.length?Theme.controlHeight+1:0)+editorToolbar.implicitHeight+Theme.gapSm*2+(fileStatus.visible?fileStatus.implicitHeight+Theme.gapXs*2+1:0)+Theme.px(120)+2
     function dirtyFiles() { return Object.keys(documents).filter(file=>documents[file].dirty) }
     function hasUnsaved() {
         if(dirtyFiles().length)return true
@@ -38,8 +44,13 @@ Item {
     function activate(file) {
         current=file;updating=true;editor.text=documents[file].text;updating=false
         if(selectedLine>0) {let lines=editor.text.split("\n"),pos=0;for(let i=0;i<Math.min(selectedLine-1,lines.length);i++)pos+=lines[i].length+1;editor.select(pos,pos+(lines[selectedLine-1]||"").length);selectedLine=0}
-        editor.forceActiveFocus()
+        editor.forceActiveFocus();Qt.callLater(revealEditor)
     }
+    function revealEditor() {
+        if(sideBySide || !current || !editor.activeFocus || !fileScroll.contentItem)return
+        fileScroll.contentItem.contentY=Math.max(0,Math.min(editorPane.y,fileLayout.height-fileScroll.availableHeight))
+    }
+    onSideBySideChanged:Qt.callLater(revealEditor)
     function save() { if(!current)return;request("files.write",{path:root,file:current,text:editor.text,if_match:documents[current].sha256},{file:current,text:editor.text}) }
     function newFile(file) { if(!file.trim()) return; if(!documents[file]) { let d=Object.assign({},documents);d[file]={text:"",saved:"",sha256:"",dirty:true};documents=d;tabs=tabs.concat([file]) }activate(file) }
     function toggle(entry) {
@@ -88,18 +99,31 @@ Item {
     }
     Shortcut { sequence: "Ctrl+S"; enabled: view.visible && view.current.length>0; onActivated: view.save() }
     Shortcut { sequence: "Ctrl+Shift+F"; enabled: view.visible; onActivated: search.forceActiveFocus() }
-    RowLayout {
-        anchors.fill: parent; spacing: 0
+    StudioScrollView {
+        id:fileScroll;objectName:"fileWorkspaceScroll";anchors.fill:parent
+        contentWidth:availableWidth;contentHeight:fileLayout.height
+    GridLayout {
+        id:fileLayout;width:fileScroll.availableWidth
+        onHeightChanged:Qt.callLater(view.revealEditor)
+        // Only short stacked layouts scroll as a page. The editor still owns
+        // its bounded code viewport, regardless of the document's line count.
+        height:Math.max(fileScroll.availableHeight,view.sideBySide || !view.root?0:browserPane.Layout.preferredHeight+editorPane.Layout.preferredHeight+1)
+        columns:view.sideBySide?3:1;columnSpacing:0;rowSpacing:0
         Rectangle {
-            Layout.preferredWidth: view.width<Theme.px(760)?216:280; Layout.fillHeight: true
+            id: browserPane;objectName:"fileBrowserPane"
+            Layout.preferredWidth:view.sideBySide?view.browserWidth:0;Layout.minimumWidth:0;Layout.fillWidth:!view.sideBySide
+            Layout.fillHeight:view.sideBySide || !editorPane.visible
+            Layout.minimumHeight:view.sideBySide?0:view.browserStackMinimumHeight
+            Layout.preferredHeight:view.sideBySide?-1:Math.max(view.browserStackMinimumHeight,Math.min(view.height*.45,Theme.px(300)))
+            Layout.maximumHeight:view.sideBySide || !editorPane.visible?-1:Layout.preferredHeight
             color: Theme.surface
             ColumnLayout {
                 anchors.fill: parent; spacing: 0
-                RowLayout { Layout.fillWidth: true; Layout.margins: Theme.gapSm; spacing: Theme.gapXs
-                    StudioTextField { id: search; Layout.fillWidth: true; implicitWidth: Theme.px(80); placeholderText: qsTr("Search source code…"); onAccepted: {if(text.trim())view.request("files.search",{path:view.root,query:text},{})} }
+                RowLayout { id:browserSearch;Layout.fillWidth:true;Layout.minimumWidth:0;Layout.margins:Theme.gapSm;spacing:Theme.gapXs
+                    StudioTextField { id: search;objectName:"fileSearchField";Layout.minimumWidth:0; Layout.fillWidth: true; implicitWidth: Theme.px(80); placeholderText: qsTr("Search source code…");onActiveFocusChanged:if(activeFocus && !view.sideBySide && fileScroll.contentItem)fileScroll.contentItem.contentY=0; onAccepted: {if(text.trim())view.request("files.search",{path:view.root,query:text},{})} }
                     StudioButton { iconName: "refresh"; quiet: true; tip: qsTr("Reload files"); onClicked: {view.searching=false;view.refresh()} }
                 }
-                RowLayout { Layout.fillWidth: true; Layout.leftMargin: Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapMd
+                Flow { id:browserOptions;objectName:"fileBrowserOptions";Layout.fillWidth:true;Layout.minimumWidth:0;Layout.leftMargin:Theme.gapMd;Layout.rightMargin:Theme.gapSm;spacing:Theme.gapSm
                     StudioCheckBox { id: hidden; text: qsTr("Hidden"); onToggled: view.refresh(); font.pixelSize: Theme.fontSmall }
                     StudioCheckBox { id: generated; text: "Builds"; onToggled: view.refresh(); font.pixelSize: Theme.fontSmall }
                 }
@@ -118,7 +142,7 @@ Item {
                         required property var modelData
                         width: ListView.view.width; height: view.searching?Theme.barHeight:Theme.controlSmall
                         padding: 0
-                        leftPadding: view.searching?Theme.gapMd:Theme.gapMd+modelData.depth*Theme.gapMd
+                        leftPadding:view.searching?Theme.gapMd:Theme.gapMd+Math.min(modelData.depth*Theme.gapMd,Math.max(0,entryList.width/3))
                         rightPadding: Theme.gapSm
                         highlighted: modelData.file===view.current
                         Accessible.name: view.searching?modelData.file+":"+modelData.line:modelData.name
@@ -144,15 +168,19 @@ Item {
                     ScrollBar.vertical: StudioScrollBar {}
                 }
                 Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
-                RowLayout { Layout.fillWidth: true; Layout.margins: Theme.gapSm; spacing: Theme.gapXs
-                    StudioButton { text: qsTr("New file"); iconName: "plus"; quiet: true; enabled: view.root.length>0; onClicked: {newPath.title=qsTr("New file");newPath.folder=false;newPath.open()} }
-                    StudioButton { text: qsTr("Folder"); iconName: "plus"; quiet: true; enabled: view.root.length>0; onClicked: {newPath.title=qsTr("New folder");newPath.folder=true;newPath.open()} }
+                Flow { id:browserActions;objectName:"fileBrowserActions";Layout.fillWidth:true;Layout.minimumWidth:0;Layout.margins:Theme.gapSm;spacing:Theme.gapXs
+                    StudioButton { width:Math.min(implicitWidth,parent.width);text:qsTr("New file"); iconName: "plus"; quiet: true; enabled: view.root.length>0; onClicked: {newPath.title=qsTr("New file");newPath.folder=false;newPath.open()} }
+                    StudioButton { width:Math.min(implicitWidth,parent.width);text:qsTr("Folder"); iconName: "plus"; quiet: true; enabled: view.root.length>0; onClicked: {newPath.title=qsTr("New folder");newPath.folder=true;newPath.open()} }
                 }
             }
         }
-        Rectangle { Layout.fillHeight: true; Layout.preferredWidth: 1; color: Theme.subtle }
+        Rectangle { Layout.fillHeight:view.sideBySide;Layout.fillWidth:!view.sideBySide;Layout.preferredWidth:view.sideBySide?1:-1;Layout.preferredHeight:view.sideBySide?-1:1;color:Theme.subtle;visible:editorPane.visible }
         ColumnLayout {
-            Layout.fillWidth: true; Layout.fillHeight: true; spacing: 0
+            id:editorPane;objectName:"fileEditorPane";visible:view.sideBySide || !!view.root
+            Layout.minimumWidth:0;Layout.fillWidth:true;Layout.fillHeight:true;spacing:0
+            Layout.minimumHeight:view.sideBySide?0:view.editorReadableMinimumHeight
+            Layout.preferredHeight:view.sideBySide?-1:Math.max(view.editorReadableMinimumHeight,fileScroll.availableHeight-browserPane.Layout.preferredHeight-1)
+            Layout.maximumHeight:view.sideBySide?-1:Layout.preferredHeight
             // Open files, then the current path with its actions, then the text.
             StudioScrollView { Layout.fillWidth: true; Layout.preferredHeight: view.tabs.length?Theme.controlHeight:0; visible: view.tabs.length>0; contentWidth: tabRow.implicitWidth; clip: true
                 Row { id: tabRow
@@ -173,14 +201,20 @@ Item {
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle; visible: view.tabs.length>0 }
-            RowLayout {
-                Layout.fillWidth: true; Layout.preferredHeight: Theme.barHeight; Layout.leftMargin: Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
-                Label { text: view.current || qsTr("Choose a file in the project tree"); Layout.fillWidth: true; elide: view.current ? Text.ElideMiddle : Text.ElideRight; color: Theme.muted; font.family: Theme.mono; font.pixelSize: Theme.fontSmall }
-                StudioButton { text: qsTr("Reload"); quiet: true; enabled: view.current.length>0; onClicked: {if(view.documents[view.current].dirty)reloadDialog.open();else view.request("files.read",{path:view.root,file:view.current},{file:view.current})} }
-                StudioButton { text: qsTr("Save · Ctrl+S"); enabled: view.current.length>0 && !!view.documents[view.current] && view.documents[view.current].dirty; onClicked: view.save() }
+            GridLayout {
+                id:editorToolbar;objectName:"fileEditorToolbar";Layout.fillWidth:true;Layout.minimumWidth:0;Layout.margins:Theme.gapSm;Layout.leftMargin:Theme.gapMd
+                columns:editorPane.width>=Theme.px(560)?2:1;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
+                Label {objectName:"fileCurrentPath";text:view.current || qsTr("Choose a file in the project tree");Layout.fillWidth:true;Layout.minimumWidth:0;Layout.preferredWidth:0;elide:view.current?Text.ElideMiddle:Text.ElideRight;color:Theme.muted;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
+                Flow {
+                    id:editorActions;objectName:"fileEditorActions";Layout.fillWidth:true;Layout.minimumWidth:0
+                    Layout.preferredWidth:reloadFile.implicitWidth+saveFile.implicitWidth+spacing;Layout.maximumWidth:Layout.preferredWidth;Layout.alignment:Qt.AlignRight;spacing:Theme.gapXs
+                    StudioButton {id:reloadFile;objectName:"fileReload";width:Math.min(implicitWidth,parent.width);text:qsTr("Reload");tip:text;quiet:true;enabled:view.current.length>0;onClicked:{if(view.documents[view.current].dirty)reloadDialog.open();else view.request("files.read",{path:view.root,file:view.current},{file:view.current})}}
+                    StudioButton {id:saveFile;objectName:"fileSave";width:Math.min(implicitWidth,parent.width);text:qsTr("Save · Ctrl+S");tip:text;enabled:view.current.length>0 && !!view.documents[view.current] && view.documents[view.current].dirty;onClicked:view.save()}
+                }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
             StudioScrollView {
+                objectName:"fileCodeScroll";Layout.minimumHeight:0
                 Layout.fillWidth: true; Layout.fillHeight: true; clip: true
                 TextArea {
                     id: editor; objectName: "sourceEditor"; leftPadding: Theme.gapLg; topPadding: Theme.gapMd; bottomPadding: Theme.gapMd; font.family: Theme.mono; font.pixelSize: Theme.fontBody; color: Theme.text; selectByMouse: true
@@ -195,6 +229,7 @@ Item {
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle; visible: fileStatus.visible }
             Label { id: fileStatus; visible: !!text; Layout.fillWidth: true; Layout.margins: Theme.gapXs; Layout.leftMargin: Theme.gapMd; text: view.notice || (view.current ? qsTr("Line %1 · UTF-8 · changes are checked on save").arg(editor.text.slice(0,editor.cursorPosition).split("\n").length) : ""); color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro; wrapMode: Text.Wrap }
         }
+    }
     }
     StudioDialog {
         id: newPath; property bool folder: false; modal: true; anchors.centerIn: parent; standardButtons: Dialog.Ok | Dialog.Cancel

@@ -5,7 +5,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 StudioScrollView {
     // The form keeps clear of the overlay scroll bar at the right edge.
-    clip: true; rightPadding: 16; contentWidth: availableWidth
+    clip: true; rightPadding: Theme.gapMd; contentWidth: availableWidth
     id: view
     required property var workspace
     property string result: ""
@@ -15,7 +15,7 @@ StudioScrollView {
     function action(kind) { try { let args={device:workspace.selectedDevice,selector:selector()}; if(kind==="find") call("testing.find",args); else {args.action=kind; if(kind==="fill") args.text=inputText.text;call("testing.action",args)} } catch(e) { workspace.status=e.message;workspace.failed=true } }
     Connections { target: Agent; function onApiFinished(id,op,response) { if(!view.requests[id]) return; delete view.requests[id]; view.result=JSON.stringify(response.ok?response.result:response.error,null,2) } }
     ColumnLayout {
-    width: Math.min(parent.width-Theme.gapLg,Theme.px(1240)); spacing: Theme.gapXs
+    width: Math.max(0,Math.min(view.availableWidth,Theme.px(1240))); spacing: Theme.gapXs
     StudioPanel {
         Layout.fillWidth: true
         title: qsTr("Test your Android app")
@@ -25,19 +25,19 @@ StudioScrollView {
         StudioTextField { id: description; Layout.fillWidth: true; placeholderText: qsTr("Accessibility description · exact") }
         Flow {
             Layout.fillWidth: true; spacing: Theme.gapXs; enabled: workspace.selectedDevice.length>0 && workspace.selectedPlatform==="android"
-            StudioButton { text: qsTr("Find & wait"); accent: true; onClicked: view.action("find") }
-            StudioButton { text: qsTr("Tap"); onClicked: view.action("click") }
-            StudioButton { text: qsTr("Long press"); onClicked: view.action("long_click") }
-            StudioTextField { id: inputText; width: 180; placeholderText: qsTr("Input text") }
-            StudioButton { text: qsTr("Fill in"); onClicked: view.action("fill") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text: qsTr("Find & wait"); accent: true; onClicked: view.action("find") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text: qsTr("Tap"); onClicked: view.action("click") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text: qsTr("Long press"); onClicked: view.action("long_click") }
+            StudioTextField { id: inputText; width: Math.min(parent.width,Theme.px(180)); placeholderText: qsTr("Input text") }
+            StudioButton { width:Math.min(parent.width,implicitWidth); text: qsTr("Fill in"); onClicked: view.action("fill") }
         }
-        StudioButton { text: qsTr("Set up text input on the device"); quiet: true; enabled: workspace.selectedDevice.length>0 && workspace.selectedPlatform==="android"; onClicked: view.call("testing.setup",{device:workspace.selectedDevice}) }
+        StudioButton { Layout.maximumWidth: parent.width; text: qsTr("Set up text input on the device"); quiet: true; enabled: workspace.selectedDevice.length>0 && workspace.selectedPlatform==="android"; onClicked: view.call("testing.setup",{device:workspace.selectedDevice}) }
     }
     StudioPanel {
         Layout.fillWidth: true
         title: qsTr("Run on several devices")
         lead: qsTr("JUnit results and the failure screenshot stay, even when a step fails.")
-        RowLayout { Layout.fillWidth: true; spacing: Theme.gapXs
+        GridLayout { Layout.fillWidth: true; columns:width<Theme.px(520)?1:2; columnSpacing: Theme.gapXs; rowSpacing: Theme.gapXs
             StudioTextField { id: scenario; Layout.fillWidth: true; placeholderText: qsTr("JSON scenario") }
             StudioButton { text: qsTr("Choose"); onClicked: scenarioDialog.open() }
         }

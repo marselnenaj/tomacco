@@ -355,13 +355,13 @@ Rectangle {
                         Layout.fillWidth:true;Layout.columnSpan:parent.columns
                         title:panel.project.name || qsTr("Start with a project")
                         actions:[StudioButton {text:qsTr("New project");quiet:true;iconName:"plus";onClicked:panel.showAction("project.create")}]
-                        RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
-                            StudioTextField {id:projectPath;Layout.fillWidth:true;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;placeholderText:qsTr("Path to your Swift, Kotlin or Flutter project");onAccepted:panel.openProject(text)}
+                        GridLayout {Layout.fillWidth:true;Layout.minimumWidth:0;columns:width<Theme.px(620)?1:3;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
+                            StudioTextField {id:projectPath;Layout.fillWidth:true;Layout.minimumWidth:0;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;placeholderText:qsTr("Path to your Swift, Kotlin or Flutter project");onAccepted:panel.openProject(text)}
                             StudioButton {text:qsTr("Choose folder");accent:!panel.project.path;onClicked:projectFolder.open()}
                             StudioButton {text:qsTr("Open");visible:projectPath.text!==panel.project.path;enabled:!!projectPath.text;onClicked:panel.openProject(projectPath.text)}
                         }
                         RowLayout {visible:!!panel.project.path;Layout.fillWidth:true
-                            Text {text:panel.project.kinds?panel.project.kinds.join("  ·  "):"";color:Theme.muted;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;Layout.fillWidth:true}
+                            Text {text:panel.project.kinds?panel.project.kinds.join("  ·  "):"";color:Theme.muted;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;Layout.fillWidth:true;Layout.minimumWidth:0;elide:Text.ElideRight}
                             StudioButton {text:qsTr("Open files");quiet:true;iconName:"files";onClicked:panel.showTab("files")}
                         }
                     }
@@ -398,8 +398,8 @@ Rectangle {
                         title:qsTr("Run on device")
                         actions:[StudioButton {text:qsTr("Manage devices");quiet:true;onClicked:panel.showTab("devices")}]
                         StudioComboBox {Layout.fillWidth:true;model:panel.devices;textRole:"name";valueRole:"id";currentIndex:panel.devices.findIndex(x=>x.id===panel.selectedDevice);displayText:currentIndex>=0?currentText:qsTr("Choose a smartphone or emulator");onActivated:{panel.selectedDevice=currentValue;panel.selectedPlatform=panel.devices[currentIndex].platform;panel.rememberForProject({device:panel.selectedDevice,platform:panel.selectedPlatform})}}
-                        RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
-                            StudioTextField {id:bundleId;Layout.fillWidth:true;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;placeholderText:qsTr("Application ID, e.g. com.example.app")}
+                        GridLayout {Layout.fillWidth:true;Layout.minimumWidth:0;columns:width<Theme.px(500)?1:2;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
+                            StudioTextField {id:bundleId;Layout.fillWidth:true;Layout.minimumWidth:0;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;placeholderText:qsTr("Application ID, e.g. com.example.app")}
                             StudioButton {text:panel.projectJob.id?qsTr("Job running"):qsTr("Build & run");iconName:"play";accent:true;enabled:!!panel.selectedDevice && !!panel.project.path && !panel.projectRequestPending && !panel.projectJob.id;onClicked:panel.request("project.run",{path:projectPath.text,platform:panel.selectedPlatform,device:panel.selectedDevice,bundle_id:bundleId.text,configuration:configuration.currentText})}
                         }
                         Text {visible:!panel.selectedDevice;Layout.fillWidth:true;text:qsTr("Plug in a phone or start an emulator under Devices.");color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
@@ -408,9 +408,9 @@ Rectangle {
                         Layout.fillWidth:true;Layout.columnSpan:parent.columns
                         title:qsTr("Save workspace")
                         lead:qsTr("Remember this project, platform and device together.")
-                        RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
+                        GridLayout {Layout.fillWidth:true;Layout.minimumWidth:0;columns:width<Theme.px(600)?1:3;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
                             StudioComboBox {Layout.fillWidth:true;implicitWidth:Theme.px(80);model:Object.keys(panel.savedWorkspaces);displayText:currentText || qsTr("Load saved workspace");onActivated:panel.request("workspace.context",{name:currentText})}
-                            StudioTextField {id:workspaceName;placeholderText:qsTr("Workspace name");Layout.preferredWidth:Theme.px(180)}
+                            StudioTextField {id:workspaceName;placeholderText:qsTr("Workspace name");Layout.fillWidth:true;Layout.minimumWidth:0;Layout.preferredWidth:Theme.px(180)}
                             StudioButton {text:qsTr("Save");enabled:!!panel.project.path && !!workspaceName.text;onClicked:panel.request("workspace.save",{name:workspaceName.text,path:projectPath.text,platform:platform.currentText,device:panel.selectedDevice,bundle_id:bundleId.text})}
                         }
                     }
@@ -541,6 +541,7 @@ Rectangle {
                 }
                 Rectangle { Layout.fillHeight: true; Layout.preferredWidth: 1; color: Theme.subtle }
                 ColumnLayout {
+                    id:jobDetails;Layout.minimumWidth:0
                     Layout.fillWidth: true; Layout.fillHeight: true; spacing: 0
                     RowLayout {
                         Layout.fillWidth: true; Layout.preferredHeight: Theme.barHeight; Layout.leftMargin: Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
@@ -552,17 +553,26 @@ Rectangle {
                         StudioButton { objectName: "jobCancel"; text: qsTr("Cancel"); displayText: panel.width<Theme.px(1000)?"":text; tip: text; iconName: "stop"; enabled: panel.activeJob.state==="running" || panel.activeJob.state==="queued"; onClicked: panel.request("job.cancel",{job_id:panel.selectedJob}) }
                     }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
-                    RowLayout {
+                    Flow {
                         objectName: "logFilterBar"
-                        Layout.fillWidth: true; Layout.margins: Theme.gapSm; Layout.leftMargin: Theme.gapMd; spacing: Theme.gapXs
+                        Layout.fillWidth: true; Layout.minimumWidth:0; Layout.margins: Theme.gapSm; Layout.leftMargin: Theme.gapMd; spacing: Theme.gapXs
                         visible: panel.selectedJob.length>0
-                        StudioTextField { id: logSearch; objectName: "logSearch"; Layout.fillWidth: true; implicitWidth: Theme.px(80); placeholderText: qsTr("Filter the log"); text: panel.logQuery; onTextEdited: panel.logQuery=text }
+                        StudioTextField { id: logSearch; objectName: "logSearch"; width:Math.min(parent.width,Theme.px(220)); placeholderText: qsTr("Filter the log"); text: panel.logQuery; onTextEdited: panel.logQuery=text }
                         StudioSegmented {
+                            id:logLevels
                             objectName: "logLevel"; current: panel.logLevel
+                            visible:implicitWidth<=parent.width
                             model: [{id:"all",label:qsTr("All lines")},{id:"warning",label:qsTr("Warnings"),objectName:"logLevel-warning"},{id:"error",label:qsTr("Errors"),objectName:"logLevel-error"}]
                             onChosen: id=>panel.logLevel=id
                         }
-                        Text { objectName: "logMatches"; visible: panel.logFiltered && panel.width>=Theme.px(760); text: qsTr("%n line(s)","",panel.logLines.length); color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro }
+                        StudioComboBox {
+                            objectName:"logLevelPicker";visible:!logLevels.visible;width:Math.min(parent.width,Theme.px(220))
+                            textRole:"label";valueRole:"id"
+                            model:[{id:"all",label:qsTr("All lines")},{id:"warning",label:qsTr("Warnings")},{id:"error",label:qsTr("Errors")}]
+                            currentIndex:["all","warning","error"].indexOf(panel.logLevel)
+                            onActivated:panel.logLevel=currentValue
+                        }
+                        Text { objectName: "logMatches"; visible: panel.logFiltered && panel.width>=Theme.px(760); text: qsTr("%n line(s)","",panel.logLines.length); color: Theme.faint; font.family: Theme.mono; font.pixelSize: Theme.fontMicro;height:Theme.controlHeight;verticalAlignment:Text.AlignVCenter }
                         StudioButton { objectName: "logCopy"; text: panel.logFiltered?qsTr("Copy these lines"):qsTr("Copy log"); displayText: panel.width<Theme.px(1000)?"":text; tip: text; iconName: "copy"; quiet: true; enabled: panel.shownLog.length>0; onClicked: Studio.copy(panel.shownLog) }
                     }
                     StudioCodeView { objectName: "jobLog"; Layout.fillWidth: true; Layout.fillHeight: true; clip: true; text: panel.shownLog; accessibleName: panel.activeJob.label ? qsTr("Log of %1").arg(panel.activeJob.label) : qsTr("Job log"); placeholderText: panel.logFiltered && panel.logText.length ? qsTr("No line of this log matches.") : qsTr("Choose a job to read its log.") }
@@ -680,7 +690,7 @@ Rectangle {
                             StudioButton { text: qsTr("Cancel"); quiet: true; onClicked: panel.confirmingRun=false }
                         }
                     }
-                    RowLayout { visible: panel.selectedOperation!==null; spacing: Theme.gapSm
+                    Flow { Layout.fillWidth:true; Layout.minimumWidth:0; visible: panel.selectedOperation!==null; spacing: Theme.gapSm
                         StudioButton { objectName: "toolRun"; text: qsTr("Run"); iconName: "play"; accent: true; tip: panel.destructiveOperation?qsTr("Asks before it runs: this tool changes or removes something"):""; onClicked: panel.submitForm() }
                         StudioButton { objectName: "toolCopyCommand"; text: qsTr("Copy as command"); iconName: "copy"; quiet: true; tip: qsTr("Copy this call as a tomaccoctl command for a terminal or a script"); onClicked: panel.copyCommand() }
                     }

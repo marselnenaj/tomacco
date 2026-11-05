@@ -29,7 +29,7 @@ ColumnLayout {
         visible: !!emptyState.title
         text: emptyState.title
         color: emptyState.ink
-        size: emptyState.width>=620 ? Theme.fontGiant : emptyState.width>=380 ? Theme.fontHero : Theme.fontDisplay
+        size: emptyState.width>=Theme.px(620) ? Theme.fontGiant : emptyState.width>=Theme.px(380) ? Theme.fontHero : Theme.fontDisplay
     }
     Text {
         Layout.fillWidth: true

@@ -61,26 +61,23 @@ Rectangle {
         anchors.margins: Theme.gapSm
         anchors.leftMargin: Theme.gapSm+1
         spacing: Theme.gapXs
+        Flow {
+            Layout.fillWidth:true;spacing:Theme.gapXs
+            objectName:"stageLogMode"
+            StudioButton {objectName:"stageLogMode-device";text:qsTr("Device log");width:Math.min(parent.width,implicitWidth);selected:pane.mode==="device";quiet:true;onClicked:pane.mode="device"}
+            StudioButton {objectName:"stageLogMode-job";text:qsTr("Job log");width:Math.min(parent.width,implicitWidth);selected:pane.mode==="job";quiet:true;onClicked:pane.mode="job"}
+        }
         RowLayout {
-            Layout.fillWidth: true
-            spacing: Theme.gapXs
-            StudioSegmented {
-                objectName: "stageLogMode"
-                current: pane.mode
-                model: [{id:"device",label:qsTr("Device log"),objectName:"stageLogMode-device"},{id:"job",label:qsTr("Job log"),objectName:"stageLogMode-job"}]
-                onChosen: id=>pane.mode=id
-            }
+            Layout.fillWidth:true;spacing:Theme.gapXs
             Text {
-                Layout.fillWidth: true
-                visible: pane.mode==="job" && !!pane.followedJob
-                text: pane.followedJob ? pane.followedJob.label+" · "+pane.workspace.jobStateLabel(pane.followedJob) : ""
-                color: Theme.muted; font.pixelSize: Theme.fontSmall; elide: Text.ElideRight
+                Layout.fillWidth:true
+                text:pane.mode==="job" && pane.followedJob ? pane.followedJob.label+" · "+pane.workspace.jobStateLabel(pane.followedJob) : ""
+                color:Theme.muted;font.pixelSize:Theme.fontSmall;elide:Text.ElideRight
             }
-            Item {Layout.fillWidth:true;visible:!(pane.mode==="job" && !!pane.followedJob)}
             StudioButton {
-                objectName: "stageLogOpenJob"; iconName: "jobs"; quiet: true; visible: pane.mode==="job" && !!pane.followedJob
-                text: qsTr("Open under Builds & jobs"); displayText: ""; tip: text
-                onClicked: {pane.workspace.selectJob(pane.followedJob);pane.workspace.showTab("jobs")}
+                objectName:"stageLogOpenJob";iconName:"jobs";quiet:true;visible:pane.mode==="job" && !!pane.followedJob
+                text:qsTr("Open under Builds & jobs");displayText:"";tip:text
+                onClicked:{pane.workspace.selectJob(pane.followedJob);pane.workspace.showTab("jobs")}
             }
             StudioButton {objectName:"stageLogClose";iconName:"close";quiet:true;text:qsTr("Hide the log");displayText:"";tip:text;onClicked:pane.closeRequested()}
         }

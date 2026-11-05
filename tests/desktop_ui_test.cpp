@@ -715,6 +715,260 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         QCoreApplication::processEvents();
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void files_remain_usable_when_interface_size_changes_in_place_data() {
+        QTest::addColumn<int>("percent");QTest::addColumn<QString>("state");
+        for(const int percent:{175,200})for(const auto &state:{"empty","document","search"})
+            QTest::newRow(qPrintable(QString::number(percent)+"-"+state))<<percent<<QString::fromLatin1(state);
+    }
+    void files_remain_usable_when_interface_size_changes_in_place() {
+        QFETCH(int,percent);QFETCH(QString,state);
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        const auto project=workspace->property("project");
+        open("files");
+        auto *files=object("fileWorkspace");auto *tree=item("fileList");auto *editor=item("sourceEditor");
+        QVERIFY(files);QVERIFY(tree);QVERIFY(editor);
+        QVariantMap saved;
+        for(const auto *key:{"entries","expanded","documents","tabs","current","loadedRoot","projectDocuments","requests","matches","searching","notice","updating"})saved[key]=files->property(key);
+        const auto previousText=editor->property("text");
+        const auto restore=qScopeGuard([&]{
+            files->setProperty("updating",true);files->setProperty("current",QString());files->setProperty("tabs",QVariantList{});
+            workspace->setProperty("project",project);
+            // A tab reads documents[file]. Restore the cache first, then its
+            // tab model/current selection; no transient dangling document.
+            for(auto i=saved.cbegin();i!=saved.cend();++i)if(i.key()!="updating" && i.key()!="current" && i.key()!="tabs")files->setProperty(i.key().toUtf8(),i.value());
+            files->setProperty("tabs",saved["tabs"]);files->setProperty("current",saved["current"]);
+            editor->setProperty("text",previousText);files->setProperty("updating",saved["updating"]);
+            backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);
+        });
+        const auto captureFailure=qScopeGuard([&]{if(QTest::currentTestFailed())capture("interface-files-"+QString::number(percent)+"-"+state+"-failure");});
+        backend->setUiScale(100);window->resize(1380,970);QTRY_COMPARE(window->size(),QSize(1380,970));
+        if(state=="empty")workspace->setProperty("project",QVariantMap{});
+        else {
+            const QString file="lib/features/settings/presentation/source_document_with_a_long_name.dart";
+            QString text;for(int n=1;n<=120;++n)text+=QString("// Local layout fixture line %1\n").arg(n);
+            files->setProperty("updating",true);
+            // Earlier suite cases may have open tabs. Remove those delegates
+            // before replacing their cache with this render-only document.
+            files->setProperty("current",QString());files->setProperty("tabs",QVariantList{});
+            files->setProperty("documents",QVariantMap{{file,QVariantMap{{"text",text},{"saved",text},{"sha256","fixture"},{"dirty",false}}}});
+            files->setProperty("tabs",QVariantList{file});files->setProperty("current",file);editor->setProperty("text",text);files->setProperty("updating",false);
+            QVariantList rows;for(int n=0;n<80;++n)rows.append(QVariantMap{{"file",QString("lib/source_%1.dart").arg(n)},{"name",QString("source_%1.dart").arg(n)},{"depth",0},{"accessible",true},{"directory",false},{"line",n+1},{"text",QString("Local search result %1").arg(n)}});
+            files->setProperty(state=="search"?"matches":"entries",rows);files->setProperty("searching",state=="search");
+        }
+        // Ignore asynchronous replies for the old local project during this
+        // fixture; the test never dispatches device input or a build.
+        files->setProperty("requests",QVariantMap{});files->setProperty("notice",QString());
+        if(state=="empty")QTRY_VERIFY(files->property("root").toString().isEmpty());
+        else QTRY_COMPARE(tree->property("count").toInt(),80);
+        // Resize the existing scene, not a new window or a larger minimum size.
+        backend->setUiScale(percent);QTRY_COMPARE(backend->uiScale(),percent);
+        QTRY_COMPARE(window->size(),QSize(1380,970));
+        // TextInput::boundingRect is its ink/cursor area (1px for empty text),
+        // not the actual field. Test the entire item's UI rectangle.
+        const auto scene=[](QQuickItem *i){return i->mapRectToScene(QRectF(0,0,i->width(),i->height()));};
+        const auto fullyVisible=[&](QQuickItem *i){
+            if(!i || !i->isVisible() || i->width()<=0 || i->height()<=0)return false;
+            const auto bounds=scene(i);QRectF visible(0,0,window->width(),window->height());
+            for(auto *p=i->parentItem();p;p=p->parentItem())if(p->clip())visible=visible.intersected(scene(p));
+            return visible.adjusted(-1,-1,1,1).contains(bounds);
+        };
+        const auto detail=[&](QQuickItem *i){return QString("%1%% %2: %3 at %4,%5 size %6x%7; implicit %8x%9 in window %10x%11").arg(percent).arg(state).arg(i?i->objectName():"missing").arg(i?scene(i).x():0).arg(i?scene(i).y():0).arg(i?scene(i).width():0).arg(i?scene(i).height():0).arg(i?i->implicitWidth():0).arg(i?i->implicitHeight():0).arg(window->width()).arg(window->height());};
+        const auto controlByText=[&](const QString &text){
+            std::function<QQuickItem *(QQuickItem *)> find=[&](QQuickItem *i)->QQuickItem *{
+                if(i->isVisible() && i->property("text").toString()==text && i->metaObject()->indexOfSignal("clicked()")>=0)return i;
+                for(auto *child:i->childItems())if(auto *found=find(child))return found;return nullptr;
+            };return find(qobject_cast<QQuickItem *>(files));
+        };
+        const auto fitsControl=[&](QQuickItem *i){return fullyVisible(i) && i->width()+1>=i->implicitWidth() && i->height()+1>=i->implicitHeight();};
+        if(state=="empty") {
+            auto *choose=item("filesChooseProject");QVERIFY(choose);
+            QTRY_VERIFY2_WITH_TIMEOUT(fitsControl(choose),qPrintable(detail(choose)),patient(1500));
+            QVERIFY2(scene(tree).adjusted(-1,-1,1,1).contains(scene(choose)),qPrintable(detail(choose)));
+        }
+        QList<QQuickItem *> browserControls;
+        for(const auto &text:{"Hidden","Builds","New file","Folder"}) {
+            auto *c=controlByText(QString::fromLatin1(text));QVERIFY2(c,text);browserControls.append(c);
+            QTRY_VERIFY2_WITH_TIMEOUT(fitsControl(c),qPrintable(detail(c)),patient(1500));
+            // The control must remain in the browser lane, not overlap the editor.
+            QTRY_VERIFY2_WITH_TIMEOUT(scene(c).right()<=scene(tree).right()+1,qPrintable(detail(c)),patient(1500));
+        }
+        for(int a=0;a<browserControls.size();++a)for(int b=a+1;b<browserControls.size();++b)
+            QTRY_VERIFY2_WITH_TIMEOUT(!scene(browserControls[a]).adjusted(1,1,-1,-1).intersects(scene(browserControls[b]).adjusted(1,1,-1,-1)),qPrintable(detail(browserControls[a])+" overlaps "+detail(browserControls[b])),patient(1500));
+        auto *reload=controlByText("Reload");auto *save=controlByText("Save · Ctrl+S");QVERIFY(reload);QVERIFY(save);
+        QTRY_VERIFY2_WITH_TIMEOUT(fitsControl(reload),qPrintable(detail(reload)),patient(1500));QTRY_VERIFY2_WITH_TIMEOUT(fitsControl(save),qPrintable(detail(save)),patient(1500));
+        QTRY_VERIFY_WITH_TIMEOUT(!scene(reload).adjusted(1,1,-1,-1).intersects(scene(save).adjusted(1,1,-1,-1)),patient(1500));
+        QTRY_VERIFY2_WITH_TIMEOUT(scene(editor).left()>=scene(tree).right()-1,qPrintable(detail(editor)),patient(1500));
+        if(state!="empty") {
+            tree->setProperty("currentIndex",79);
+            // Qt ListView.Contain (4) reveals the entire last row. Reposition
+            // after any pending font/row-height layout has been polished.
+            const auto revealLast=[&]{QMetaObject::invokeMethod(tree,"positionViewAtIndex",Q_ARG(int,79),Q_ARG(int,4));return fullyVisible(tree->property("currentItem").value<QQuickItem *>());};
+            QTRY_VERIFY2_WITH_TIMEOUT(revealLast(),qPrintable(detail(tree->property("currentItem").value<QQuickItem *>())),patient(1500));
+            auto *last=tree->property("currentItem").value<QQuickItem *>();QVERIFY(last);
+            QVERIFY2(scene(tree).adjusted(-1,-1,1,1).contains(scene(last)),qPrintable(detail(last)));
+        }
+        capture("interface-files-"+QString::number(percent)+"-"+state);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void short_file_window_keeps_long_unsaved_text_inside_the_editor() {
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");open("files");
+        auto *files=object("fileWorkspace");auto *editor=item("sourceEditor");
+        auto *outer=item("fileWorkspaceScroll");auto *code=item("fileCodeScroll");
+        QVERIFY(files);QVERIFY(editor);QVERIFY(outer);QVERIFY(code);
+        QVariantMap saved;for(const auto *key:{"entries","expanded","documents","tabs","current","loadedRoot","projectDocuments","requests","matches","searching","notice","updating"})saved[key]=files->property(key);
+        const auto previousText=editor->property("text");
+        const auto restore=qScopeGuard([&]{
+            files->setProperty("updating",true);files->setProperty("current",QString());files->setProperty("tabs",QVariantList{});
+            for(auto i=saved.cbegin();i!=saved.cend();++i)if(i.key()!="updating" && i.key()!="current" && i.key()!="tabs")files->setProperty(i.key().toUtf8(),i.value());
+            files->setProperty("tabs",saved["tabs"]);files->setProperty("current",saved["current"]);editor->setProperty("text",previousText);files->setProperty("updating",saved["updating"]);
+            backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);
+        });
+        const auto captureFailure=qScopeGuard([&]{if(QTest::currentTestFailed())capture("interface-files-200-short-failure");});
+        backend->setUiScale(200);window->resize(1380,970);QTRY_COMPARE(window->size(),QSize(1380,970));
+        QTRY_VERIFY(!files->property("root").toString().isEmpty());files->setProperty("requests",QVariantMap{});
+        const QString file="lib/local_short_window_unsaved_fixture.dart";
+        // newFile changes only the local document cache. No Save or file read.
+        QVERIFY(QMetaObject::invokeMethod(files,"newFile",Q_ARG(QVariant,QVariant(file))));
+        editor->setProperty("text","// Unsaved local fixture\n");
+        const auto document=[&]{return mapOf(files->property("documents")).value(file).toMap();};
+        QTRY_VERIFY(document().value("dirty").toBool());
+        window->resize(960,680);QTRY_COMPARE(window->size(),QSize(960,680));
+        auto *page=outer->property("contentItem").value<QQuickItem *>();
+        auto *inner=code->property("contentItem").value<QQuickItem *>();QVERIFY(page);QVERIFY(inner);
+        // At 200%, 120 logical pixels keep the editor readable even when the
+        // browser, tabs and toolbar need more height than the short window.
+        QTRY_VERIFY_WITH_TIMEOUT(code->property("availableHeight").toReal()>=240-1,patient(1500));
+        QTRY_VERIFY_WITH_TIMEOUT(page->property("contentY").toReal()>0,patient(1500));
+        const qreal pageHeight=page->property("contentHeight").toReal();
+        QVERIFY(pageHeight<=outer->height()*3);
+        QString longText;for(int line=0;line<2000;++line)longText+=QString("// Unsaved fixture line %1\n").arg(line);
+        editor->setProperty("text",longText);
+        QTRY_VERIFY_WITH_TIMEOUT(inner->property("contentHeight").toReal()>inner->height()*10,patient(1500));
+        QTRY_VERIFY_WITH_TIMEOUT(qAbs(page->property("contentHeight").toReal()-pageHeight)<1,patient(1500));
+        QVERIFY(code->property("availableHeight").toReal()>=240-1);
+        QCOMPARE(document().value("text").toString(),longText);QVERIFY(document().value("dirty").toBool());
+        inner->setProperty("contentY",inner->property("contentHeight").toReal()-inner->height());
+        QTRY_VERIFY(inner->property("contentY").toReal()>0);capture("interface-files-200-short-long-text");
+        window->resize(1380,970);QTRY_COMPARE(window->size(),QSize(1380,970));
+        QTRY_VERIFY_WITH_TIMEOUT(qAbs(page->property("contentY").toReal())<1,patient(1500));
+        QCOMPARE(editor->property("text").toString(),longText);QCOMPARE(document().value("text").toString(),longText);
+        QVERIFY(document().value("dirty").toBool());capture("interface-files-200-expanded-long-text");
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void scaled_workspace_actions_remain_reachable_data() {
+        QTest::addColumn<int>("percent");QTest::addColumn<QString>("tab");QTest::addColumn<bool>("activeDebugger");
+        for(const int percent:{175,200})for(const auto &tab:{"project","debug","testing","profiling","release","jobs","tools"})
+            QTest::newRow(qPrintable(QString::number(percent)+"-"+tab))<<percent<<QString::fromLatin1(tab)<<false;
+        for(const int percent:{175,200})QTest::newRow(qPrintable(QString::number(percent)+"-debug-inspector"))<<percent<<QString("debug")<<true;
+    }
+    void scaled_workspace_actions_remain_reachable() {
+        QFETCH(int,percent);QFETCH(QString,tab);QFETCH(bool,activeDebugger);
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        const auto restore=qScopeGuard([&]{backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);});
+        backend->setUiScale(100);window->resize(1380,970);QTRY_COMPARE(window->size(),QSize(1380,970));open(tab);
+        QList<std::pair<QObject *,bool>> polling;
+        for(auto *child:workspace->children())if(child->property("interval").toInt()==1800 && child->property("running").isValid()) {
+            polling.append({child,child->property("running").toBool()});QVERIFY(QMetaObject::invokeMethod(child,"stop"));
+        }
+        const auto restorePolling=qScopeGuard([&]{for(const auto &[timer,running]:polling)if(running)QMetaObject::invokeMethod(timer,"start");});
+        // Drain replies already sent before the synthetic job is installed.
+        // A real job.list answer must not hide its controls halfway through.
+        QTRY_VERIFY_WITH_TIMEOUT(mapOf(workspace->property("pending")).isEmpty(),patient(5000));
+        QVariantMap workspaceSaved;
+        for(const auto *key:{"jobs","selectedJob","activeJob","logText","logQuery","logLevel","selectedOperation","formValues","confirmingRun","failed","failure","status","resultText"})workspaceSaved[key]=workspace->property(key);
+        const auto restoreWorkspace=qScopeGuard([&]{
+            // Restore the selected operation before its model values/confirmation.
+            workspace->setProperty("selectedOperation",workspaceSaved["selectedOperation"]);
+            for(auto i=workspaceSaved.cbegin();i!=workspaceSaved.cend();++i)if(i.key()!="selectedOperation")workspace->setProperty(i.key().toUtf8(),i.value());
+        });
+        if(tab=="jobs") {
+            const QVariantMap job{{"id","layout-only-job"},{"label","Local interactive job with a long descriptive label"},{"state","running"},{"interactive",true},{"phase","ready"},{"created",QDateTime::currentSecsSinceEpoch()-40},{"updated",QDateTime::currentSecsSinceEpoch()}};
+            workspace->setProperty("jobs",QVariantList{job});workspace->setProperty("selectedJob",job["id"]);workspace->setProperty("activeJob",job);
+            workspace->setProperty("logText","[info] Local fixture is ready\n[warning] Example diagnostic\n[error] Example failure\n");workspace->setProperty("logQuery",QString());workspace->setProperty("logLevel","all");
+        }
+        if(tab=="tools") {
+            QVariant operation;for(const auto &entry:control->operations())if(entry.toMap()["name"]=="files.write"){operation=entry;break;}
+            QVERIFY(operation.isValid());QVERIFY(QMetaObject::invokeMethod(workspace,"chooseOperation",Q_ARG(QVariant,operation)));
+            workspace->setProperty("confirmingRun",true); // Show, never submit, the destructive confirmation.
+        }
+        QQuickItem *pane=nullptr;
+        if(tab=="project")pane=item("projectOverview");
+        else if(tab=="debug")pane=item("debugWorkspace");
+        else if(tab=="jobs"){QVERIFY(item("jobLog"));pane=item("jobLog")->parentItem();}
+        else if(tab=="tools"){QVERIFY(item("toolRun"));pane=item("toolRun")->parentItem()->parentItem();}
+        else {
+            const auto type=tab=="testing"?"TestWorkspace_QMLTYPE":tab=="profiling"?"ProfileWorkspace_QMLTYPE":"ReleaseWorkspace_QMLTYPE";
+            std::function<QQuickItem *(QQuickItem *)> find=[&](QQuickItem *i)->QQuickItem *{if(i->isVisible() && QByteArray(i->metaObject()->className()).startsWith(type))return i;for(auto *child:i->childItems())if(auto *found=find(child))return found;return nullptr;};
+            pane=find(window->contentItem());
+        }
+        QVERIFY2(pane,qPrintable(tab));
+        QVariantMap debugSaved;
+        if(tab=="debug") {
+            for(const auto *key:{"session","state","sessions","requests","refreshing","frames","threads","variables","details","failure"})debugSaved[key]=pane->property(key);
+            pane->setProperty("requests",QVariantMap{});
+            if(activeDebugger) {
+                // A render-only stopped session. Holding refreshing blocks the
+                // periodic request; no debugger starts or hardware is queried.
+                pane->setProperty("refreshing",true);
+                pane->setProperty("state",QVariantMap{{"state","stopped"},{"stopped",true},{"terminated",false}});
+                pane->setProperty("session","layout-only-debugger");
+                pane->setProperty("frames",QVariantList{QVariantMap{{"id",1},{"name","local_fixture_function"},{"line",24}}});
+                pane->setProperty("threads",QVariantList{QVariantMap{{"id",1},{"name","Local fixture thread"}}});
+                pane->setProperty("variables",QVariantList{QVariantMap{{"name","fixture_value"},{"value","42"}}});
+            }
+        }
+        const auto restoreDebug=qScopeGuard([&]{if(tab=="debug"){pane->setProperty("refreshing",true);pane->setProperty("session",debugSaved["session"]);for(auto i=debugSaved.cbegin();i!=debugSaved.cend();++i)if(i.key()!="session" && i.key()!="refreshing")pane->setProperty(i.key().toUtf8(),i.value());pane->setProperty("refreshing",debugSaved["refreshing"]);}});
+        backend->setUiScale(percent);QTRY_COMPARE(window->size(),QSize(1380,970));
+        QHash<QQuickItem *,qreal> oldScroll;
+        const auto restoreScroll=qScopeGuard([&]{for(auto i=oldScroll.cbegin();i!=oldScroll.cend();++i)i.key()->setProperty("contentY",i.value());});
+        const auto captureFailure=qScopeGuard([&]{if(QTest::currentTestFailed())capture(QString("interface-%1-%2%3-failure").arg(percent).arg(tab,activeDebugger?"-inspector":""));});
+        QList<QQuickItem *> controls;
+        std::function<void(QQuickItem *)> collect=[&](QQuickItem *i){
+            if(!i->isVisible())return;
+            const bool button=i->metaObject()->indexOfSignal("clicked()")>=0 && !i->property("text").toString().isEmpty();
+            const bool field=i->inherits("QQuickTextField") || i->inherits("QQuickComboBox") || i->inherits("QQuickSpinBox");
+            if(button || field){controls.append(i);return;}
+            for(auto *child:i->childItems())collect(child);
+        };collect(pane);
+        QVERIFY2(controls.size()>=3,qPrintable(tab+" did not expose its form controls"));
+        const auto scene=[](QQuickItem *i){return i->mapRectToScene(QRectF(0,0,i->width(),i->height()));};
+        const auto visibleRect=[&](QQuickItem *i){
+            QRectF visible=QRectF(0,0,window->width(),window->height()).intersected(scene(pane));
+            for(auto *p=i->parentItem();p;p=p->parentItem())if(p->clip())visible=visible.intersected(scene(p));
+            return visible.intersected(scene(i));
+        };
+        const auto fullyVisible=[&](QQuickItem *i){return i->width()>0 && i->height()>0 && visibleRect(i).adjusted(-1,-1,1,1).contains(scene(i));};
+        const auto reveal=[&](QQuickItem *c){
+            // Nested scroll areas (the tool form) are independent of the page.
+            // Re-evaluate after each layout polish instead of using a timed sleep.
+            for(auto *p=c->parentItem();p;p=p->parentItem())if(p->inherits("QQuickFlickable")) {
+                if(!oldScroll.contains(p))oldScroll[p]=p->property("contentY").toReal();
+                const auto r=c->mapRectToItem(p,QRectF(0,0,c->width(),c->height()));
+                const qreal y=p->property("contentY").toReal()+r.center().y()-p->height()/2;
+                p->setProperty("contentY",std::clamp(y,0.0,std::max(0.0,p->property("contentHeight").toReal()-p->height())));
+            }
+            return fullyVisible(c);
+        };
+        const auto detail=[&](QQuickItem *i){const auto r=scene(i);return QString("%1%% %2%3: %4 / %5 spans %6,%7 %8x%9, implicit %10x%11").arg(percent).arg(tab,activeDebugger?"-inspector":"",i->objectName(),i->property("text").toString()+i->property("placeholderText").toString()).arg(r.x()).arg(r.y()).arg(r.width()).arg(r.height()).arg(i->implicitWidth()).arg(i->implicitHeight());};
+        for(auto *c:controls) {
+            // Bring each actual form control into the existing scroll viewport;
+            // being below the fold is valid, being unreachable or clipped is not.
+            QTRY_VERIFY2_WITH_TIMEOUT(reveal(c),qPrintable(detail(c)),patient(1500));
+            if(c->inherits("QQuickTextField"))
+                QTRY_VERIFY2_WITH_TIMEOUT(c->width()+1>=80.0*percent/100.0,qPrintable(detail(c)),patient(1500));
+            if(c->metaObject()->indexOfSignal("clicked()")>=0 && !c->property("text").toString().isEmpty())
+                QTRY_VERIFY2_WITH_TIMEOUT(c->width()+1>=c->implicitWidth(),qPrintable(detail(c)),patient(1500));
+        }
+        const auto noOverlap=[&](QQuickItem *a,QQuickItem *b){const auto ra=visibleRect(a),rb=visibleRect(b);return ra.width()<=2 || ra.height()<=2 || rb.width()<=2 || rb.height()<=2 || !ra.adjusted(1,1,-1,-1).intersects(rb.adjusted(1,1,-1,-1));};
+        for(int a=0;a<controls.size();++a)for(int b=a+1;b<controls.size();++b)
+            QTRY_VERIFY2_WITH_TIMEOUT(noOverlap(controls[a],controls[b]),qPrintable(detail(controls[a])+" overlaps "+detail(controls[b])),patient(1500));
+        for(auto i=oldScroll.cbegin();i!=oldScroll.cend();++i)i.key()->setProperty("contentY",0);
+        capture(QString("interface-%1-%2%3").arg(percent).arg(tab,activeDebugger?"-inspector":""));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void interface_size_updates_controls_dialogs_and_shortcuts() {
         const int original=backend->uiScale();
         const auto stored=QSettings().value("appearance/uiScale");
