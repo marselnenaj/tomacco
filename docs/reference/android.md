@@ -2,7 +2,7 @@
 
 # `android` operations
 
-32 operations. Generated from `assets/operations.json`; [all areas](README.md).
+44 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### android.screen
 
@@ -623,4 +623,216 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call android.network_capture '{"action":"start"}'
+```
+
+### android.environment.capabilities
+
+**QA environment settings**
+
+List the settings a QA environment preset can name, the Android version each needs, and which are read back and restorable. Touches no device.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call android.environment.capabilities
+```
+
+### android.environment.preset.list
+
+**List QA environments**
+
+List the saved QA environment presets. A preset file that does not validate is listed under problems, not dropped silently.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call android.environment.preset.list
+```
+
+### android.environment.preset.get
+
+**Read QA environment**
+
+Read one saved QA environment preset with its revision.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `id` | string | yes |  | matching `[a-z0-9][a-z0-9-]{0,62}`; Preset ID: lower-case letters, digits and hyphens |
+
+```sh
+tomaccoctl call android.environment.preset.get '{"id":"<id>"}'
+```
+
+### android.environment.preset.save
+
+**Save QA environment**
+
+Create a named QA environment preset, or replace one when if_revision names its current revision. The preset is a versioned JSON document (format tomacco.environment-preset, version 1).
+
+Annotations: writes, not idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `id` | string | yes |  | matching `[a-z0-9][a-z0-9-]{0,62}`; Preset ID: lower-case letters, digits and hyphens |
+| `name` | string | yes |  | non-empty, up to 80 characters |
+| `description` | string |  |  | up to 500 characters |
+| `settings` | object | yes |  | The settings this environment sets; settings left out stay as they are |
+| `settings.dark_mode` | string |  |  | one of `on`, `off`, `auto`; System dark theme |
+| `settings.font_scale` | number |  |  | 0.5 to 2; System font size; 1 is the default |
+| `settings.animations` | boolean |  |  | false sets the three animation scales to 0 |
+| `settings.airplane_mode` | boolean |  |  | Android 11 and newer |
+| `settings.app_locale` | string |  |  | Language tags of one app, such as de-DE or fr,en; Android 13 and newer |
+| `settings.location` | object |  |  | GPS fix; emulators only, and neither read back nor restorable |
+| `settings.location.latitude` | number | yes |  | -90 to 90 |
+| `settings.location.longitude` | number | yes |  | -180 to 180 |
+| `settings.talkback` | boolean |  |  | TalkBack on or off; needs the installed service and keeps every other accessibility service |
+| `if_revision` | integer |  |  | 1 to 9007199254740991 |
+
+```sh
+tomaccoctl call android.environment.preset.save '{"id":"<id>","name":"<name>","settings":{}}'
+```
+
+### android.environment.preset.delete
+
+**Delete QA environment**
+
+Delete a saved QA environment preset. if_revision must name its current revision. Restore points made with it stay.
+
+Annotations: **destructive**, not idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `id` | string | yes |  | matching `[a-z0-9][a-z0-9-]{0,62}`; Preset ID: lower-case letters, digits and hyphens |
+| `if_revision` | integer | yes |  | 1 to 9007199254740991 |
+
+```sh
+tomaccoctl call android.environment.preset.delete '{"id":"<id>","if_revision":1}'
+```
+
+### android.environment.preset.export
+
+**Export QA environment**
+
+Return a preset as its versioned JSON document and, with path, write it to a new file. An existing file is never replaced.
+
+Annotations: writes, not idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `id` | string | yes |  | matching `[a-z0-9][a-z0-9-]{0,62}`; Preset ID: lower-case letters, digits and hyphens |
+| `path` | string |  |  | New JSON file to write |
+
+```sh
+tomaccoctl call android.environment.preset.export '{"id":"<id>"}'
+```
+
+### android.environment.preset.import
+
+**Import QA environment**
+
+Import a preset document, given inline or as a file. It becomes a new preset, or replaces one when if_revision names its current revision. A newer format version is refused.
+
+Annotations: writes, not idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `document` | object |  |  | A document from android.environment.preset.export |
+| `path` | string |  |  | JSON file with such a document |
+| `id` | string |  |  | matching `[a-z0-9][a-z0-9-]{0,62}`; Preset ID: lower-case letters, digits and hyphens |
+| `if_revision` | integer |  |  | 1 to 9007199254740991 |
+
+```sh
+tomaccoctl call android.environment.preset.import
+```
+
+### android.environment.inspect
+
+**Read QA environment of device**
+
+Read every QA environment setting of one named device as it is now: value, whether it is supported, read back and restorable, and the installed TalkBack service. Changes nothing.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string | yes |  | non-empty; Serial from device.list. Required: a QA environment never applies to whatever device happens to be connected. |
+| `bundle_id` | string |  |  | App whose language app_locale sets; needed when the preset has app_locale |
+
+```sh
+tomaccoctl call android.environment.inspect '{"device":"<device>"}'
+```
+
+### android.environment.plan
+
+**Plan QA environment**
+
+Read a named device for a preset and record what applying it would change, what the device does not support and what cannot be restored. Changes nothing on the device. Returns plan_id for android.environment.apply; a plan holds for 15 minutes and applies once.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `preset` | string | yes |  | matching `[a-z0-9][a-z0-9-]{0,62}`; Preset ID: lower-case letters, digits and hyphens |
+| `device` | string | yes |  | non-empty; Serial from device.list. Required: a QA environment never applies to whatever device happens to be connected. |
+| `bundle_id` | string |  |  | App whose language app_locale sets; needed when the preset has app_locale |
+
+```sh
+tomaccoctl call android.environment.plan '{"preset":"<preset>","device":"<device>"}'
+```
+
+### android.environment.apply
+
+**Apply QA environment**
+
+Apply a plan to the device it was made for. Refuses when the device behind the serial, the preset or the planned settings changed, and when the device lacks a setting unless allow_partial is true. Writes a restore point first, then reads every setting back and reports a value Android did not apply as setting_not_applied.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `plan_id` | string | yes |  | matching `[0-9a-f]{32}` |
+| `device` | string | yes |  | non-empty; Serial from device.list. Required: a QA environment never applies to whatever device happens to be connected. |
+| `allow_partial` | boolean |  | `false` | Set the supported settings and skip the rest |
+
+```sh
+tomaccoctl call android.environment.apply '{"plan_id":"<plan_id>","device":"<device>"}'
+```
+
+### android.environment.restore
+
+**Restore device settings**
+
+Write back what an apply changed, on the same device, from the values read before it, and read them back. A GPS fix has no previous value and is reported as not restorable.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `restore_id` | string | yes |  | matching `[0-9a-f]{32}` |
+| `device` | string | yes |  | non-empty; Serial from device.list. Required: a QA environment never applies to whatever device happens to be connected. |
+
+```sh
+tomaccoctl call android.environment.restore '{"restore_id":"<restore_id>","device":"<device>"}'
+```
+
+### android.environment.restores
+
+**List restore points**
+
+List the restore points of applied QA environments, newest first, optionally for one device.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `device` | string |  |  | Only this serial |
+
+```sh
+tomaccoctl call android.environment.restores
 ```

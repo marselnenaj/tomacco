@@ -1086,7 +1086,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
             }
             Ok(actual)
         }
-        _ => Err(Error::new("unknown_operation", op)),
+        _ => Err(Error::new("operation_not_found", op)),
     }
 }
 

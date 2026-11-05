@@ -28,6 +28,7 @@ mod desktop;
 mod devices;
 mod diagnostics;
 mod download;
+mod environment;
 mod files;
 mod gradle_model;
 mod guard;

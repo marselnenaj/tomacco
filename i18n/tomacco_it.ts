@@ -4865,6 +4865,54 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Validate demo export</source>
         <translation>Verifica esportazione della demo</translation>
     </message>
+    <message>
+        <source>QA environment settings</source>
+        <translation>Impostazioni degli ambienti di QA</translation>
+    </message>
+    <message>
+        <source>List QA environments</source>
+        <translation>Elenca ambienti di QA</translation>
+    </message>
+    <message>
+        <source>Read QA environment</source>
+        <translation>Leggi ambiente di QA</translation>
+    </message>
+    <message>
+        <source>Save QA environment</source>
+        <translation>Salva ambiente di QA</translation>
+    </message>
+    <message>
+        <source>Delete QA environment</source>
+        <translation>Elimina ambiente di QA</translation>
+    </message>
+    <message>
+        <source>Export QA environment</source>
+        <translation>Esporta ambiente di QA</translation>
+    </message>
+    <message>
+        <source>Import QA environment</source>
+        <translation>Importa ambiente di QA</translation>
+    </message>
+    <message>
+        <source>Read QA environment of device</source>
+        <translation>Leggi ambiente di QA del dispositivo</translation>
+    </message>
+    <message>
+        <source>Plan QA environment</source>
+        <translation>Pianifica ambiente di QA</translation>
+    </message>
+    <message>
+        <source>Apply QA environment</source>
+        <translation>Applica ambiente di QA</translation>
+    </message>
+    <message>
+        <source>Restore device settings</source>
+        <translation>Ripristina impostazioni del dispositivo</translation>
+    </message>
+    <message>
+        <source>List restore points</source>
+        <translation>Elenca punti di ripristino</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -6514,6 +6562,248 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Discard and reload</source>
         <translation>Scarta e ricarica</translation>
+    </message>
+</context>
+<context>
+    <name>EnvironmentPanel</name>
+    <message>
+        <source>Dark mode</source>
+        <translation>Modalità scura</translation>
+    </message>
+    <message>
+        <source>Font size</source>
+        <translation>Dimensione testo</translation>
+    </message>
+    <message>
+        <source>Animations</source>
+        <translation>Animazioni</translation>
+    </message>
+    <message>
+        <source>Airplane mode</source>
+        <translation>Modalità aereo</translation>
+    </message>
+    <message>
+        <source>App language</source>
+        <translation>Lingua dell’app</translation>
+    </message>
+    <message>
+        <source>GPS location</source>
+        <translation>Posizione GPS</translation>
+    </message>
+    <message>
+        <source>TalkBack</source>
+        <translation>TalkBack</translation>
+    </message>
+    <message>
+        <source>On</source>
+        <translation>Attivo</translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation>Disattivo</translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <translation>Automatico</translation>
+    </message>
+    <message>
+        <source>Device language</source>
+        <translation>Lingua del dispositivo</translation>
+    </message>
+    <message>
+        <source>Will change</source>
+        <translation>Verrà modificato</translation>
+    </message>
+    <message>
+        <source>Already set</source>
+        <translation>Già impostato</translation>
+    </message>
+    <message>
+        <source>Not supported here</source>
+        <translation>Non supportato qui</translation>
+    </message>
+    <message>
+        <source>Applied and read back</source>
+        <translation>Applicato e riletto</translation>
+    </message>
+    <message>
+        <source>Applied, not read back</source>
+        <translation>Applicato, non riletto</translation>
+    </message>
+    <message>
+        <source>Android did not apply it</source>
+        <translation>Android non l’ha applicato</translation>
+    </message>
+    <message>
+        <source>Restored</source>
+        <translation>Ripristinato</translation>
+    </message>
+    <message>
+        <source>Cannot be restored</source>
+        <translation>Non ripristinabile</translation>
+    </message>
+    <message>
+        <source>Not restored</source>
+        <translation>Non ripristinato</translation>
+    </message>
+    <message>
+        <source>Preset saved.</source>
+        <translation>Preset salvato.</translation>
+    </message>
+    <message>
+        <source>Preset updated to revision %1.</source>
+        <translation>Preset aggiornato alla revisione %1.</translation>
+    </message>
+    <message>
+        <source>Preset deleted.</source>
+        <translation>Preset eliminato.</translation>
+    </message>
+    <message>
+        <source>Preset exported to %1.</source>
+        <translation>Preset esportato in %1.</translation>
+    </message>
+    <message>
+        <source>Plan ready. This device does not support: %1.</source>
+        <translation>Piano pronto. Questo dispositivo non supporta: %1.</translation>
+    </message>
+    <message>
+        <source>Plan ready. Nothing has changed on the device yet.</source>
+        <translation>Piano pronto. Sul dispositivo non è ancora cambiato nulla.</translation>
+    </message>
+    <message>
+        <source>Applied and read back. You can restore the previous settings.</source>
+        <translation>Applicato e riletto. Puoi ripristinare le impostazioni precedenti.</translation>
+    </message>
+    <message>
+        <source>Previous settings restored.</source>
+        <translation>Impostazioni precedenti ripristinate.</translation>
+    </message>
+    <message>
+        <source>QA environments</source>
+        <translation>Ambienti di QA</translation>
+    </message>
+    <message>
+        <source>Save a combination of theme, font size, animations, airplane mode, app language, GPS and TalkBack under a name, then apply it to one device you choose.</source>
+        <translation>Salva con un nome una combinazione di tema, dimensione testo, animazioni, modalità aereo, lingua dell’app, GPS e TalkBack, poi applicala al dispositivo che scegli.</translation>
+    </message>
+    <message>
+        <source>New preset</source>
+        <translation>Nuovo preset</translation>
+    </message>
+    <message>
+        <source>ID · e.g. dark-large-text</source>
+        <translation>ID · ad es. dark-large-text</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nome</translation>
+    </message>
+    <message>
+        <source>Leave as it is</source>
+        <translation>Lascia invariato</translation>
+    </message>
+    <message>
+        <source>Set</source>
+        <translation>Imposta</translation>
+    </message>
+    <message>
+        <source>Latitude, longitude</source>
+        <translation>Latitudine, longitudine</translation>
+    </message>
+    <message>
+        <source>0.5 to 2</source>
+        <translation>da 0,5 a 2</translation>
+    </message>
+    <message>
+        <source>Language tags · e.g. de-DE</source>
+        <translation>Tag di lingua · ad es. de-DE</translation>
+    </message>
+    <message>
+        <source>GPS works on emulators only and cannot be read back or restored. App language needs Android 13; airplane mode needs Android 11.</source>
+        <translation>Il GPS funziona solo sugli emulatori e non può essere riletto né ripristinato. La lingua dell’app richiede Android 13; la modalità aereo Android 11.</translation>
+    </message>
+    <message>
+        <source>Save preset</source>
+        <translation>Salva preset</translation>
+    </message>
+    <message>
+        <source>Import…</source>
+        <translation>Importa…</translation>
+    </message>
+    <message>
+        <source>Export…</source>
+        <translation>Esporta…</translation>
+    </message>
+    <message>
+        <source>Delete preset</source>
+        <translation>Elimina preset</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n preset file(s) could not be read and are not listed.</source>
+        <translation>
+            <numerusform>%n file di preset non è leggibile e non è elencato.</numerusform>
+            <numerusform>%n file di preset non sono leggibili e non sono elencati.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Apply to a device</source>
+        <translation>Applica a un dispositivo</translation>
+    </message>
+    <message>
+        <source>Choose the device here. Tomacco reads it first, shows what would change, and applies only that plan to that device.</source>
+        <translation>Scegli qui il dispositivo. Tomacco lo legge prima, mostra cosa cambierebbe e applica solo quel piano a quel dispositivo.</translation>
+    </message>
+    <message>
+        <source>Choose the target device</source>
+        <translation>Scegli il dispositivo di destinazione</translation>
+    </message>
+    <message>
+        <source>App ID for the app language · optional</source>
+        <translation>ID dell’app per la lingua · facoltativo</translation>
+    </message>
+    <message>
+        <source>Read device</source>
+        <translation>Leggi dispositivo</translation>
+    </message>
+    <message>
+        <source>Plan</source>
+        <translation>Pianifica</translation>
+    </message>
+    <message>
+        <source>Apply plan</source>
+        <translation>Applica piano</translation>
+    </message>
+    <message>
+        <source>Restore previous settings</source>
+        <translation>Ripristina impostazioni precedenti</translation>
+    </message>
+    <message>
+        <source>Skip the settings this device does not support</source>
+        <translation>Salta le impostazioni non supportate da questo dispositivo</translation>
+    </message>
+    <message>
+        <source>Plan for %1 (%2) · preset revision %3</source>
+        <translation>Piano per %1 (%2) · revisione preset %3</translation>
+    </message>
+    <message>
+        <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen's structure.</source>
+        <translation>Qui TalkBack attiva o disattiva lo screen reader del dispositivo e mantiene gli altri servizi di accessibilità. Non dimostra che la tua app funzioni con uno screen reader; la verifica di accessibilità controlla solo la struttura dello schermo.</translation>
+    </message>
+    <message>
+        <source>QA environment (*.json)</source>
+        <translation>Ambiente di QA (*.json)</translation>
+    </message>
+    <message>
+        <source>Delete this preset?</source>
+        <translation>Eliminare questo preset?</translation>
+    </message>
+    <message>
+        <source>The preset is removed from this computer. Devices keep their settings, and restore points stay.</source>
+        <translation>Il preset viene rimosso da questo computer. I dispositivi mantengono le impostazioni e i punti di ripristino restano.</translation>
+    </message>
+    <message>
+        <source>Keep preset</source>
+        <translation>Mantieni preset</translation>
     </message>
 </context>
 </TS>

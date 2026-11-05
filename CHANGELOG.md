@@ -6,6 +6,17 @@ operations and their JSON results.
 
 ## Unreleased
 
+### Added
+- **Named QA environments.** Save theme, font size, animations, airplane mode, app language,
+  emulator GPS and TalkBack as a versioned preset, plan it for one named Android device, apply
+  exactly that plan and restore the previous values from a restore point. Unsupported, unverified
+  and unrestorable settings are reported per setting. TalkBack switching keeps other
+  accessibility services. Desktop and `android.environment.*` operations share one flow.
+
+### Fixed
+- **Demo Studio errors.** An unknown `demo.*` operation answers `operation_not_found` like every
+  other area, and the agent guide lists the `tomacco://docs/demo-studio` resource.
+
 ## 1.4.1
 
 ### Added

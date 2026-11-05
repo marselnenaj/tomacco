@@ -122,4 +122,14 @@
         </translation>
     </message>
 </context>
+<context>
+    <name>EnvironmentPanel</name>
+    <message numerus="yes">
+        <source>%n preset file(s) could not be read and are not listed.</source>
+        <translation>
+            <numerusform>%n preset file could not be read and is not listed.</numerusform>
+            <numerusform>%n preset files could not be read and are not listed.</numerusform>
+        </translation>
+    </message>
+</context>
 </TS>

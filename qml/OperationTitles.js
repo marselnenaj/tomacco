@@ -264,7 +264,19 @@ var titles = {
     "demo.scene.update": QT_TRANSLATE_NOOP("Operations", "Update demo scene"),
     "demo.preview": QT_TRANSLATE_NOOP("Operations", "Render demo preview"),
     "demo.export": QT_TRANSLATE_NOOP("Operations", "Export demo video"),
-    "demo.export.inspect": QT_TRANSLATE_NOOP("Operations", "Validate demo export")
+    "demo.export.inspect": QT_TRANSLATE_NOOP("Operations", "Validate demo export"),
+    "android.environment.capabilities": QT_TRANSLATE_NOOP("Operations", "QA environment settings"),
+    "android.environment.preset.list": QT_TRANSLATE_NOOP("Operations", "List QA environments"),
+    "android.environment.preset.get": QT_TRANSLATE_NOOP("Operations", "Read QA environment"),
+    "android.environment.preset.save": QT_TRANSLATE_NOOP("Operations", "Save QA environment"),
+    "android.environment.preset.delete": QT_TRANSLATE_NOOP("Operations", "Delete QA environment"),
+    "android.environment.preset.export": QT_TRANSLATE_NOOP("Operations", "Export QA environment"),
+    "android.environment.preset.import": QT_TRANSLATE_NOOP("Operations", "Import QA environment"),
+    "android.environment.inspect": QT_TRANSLATE_NOOP("Operations", "Read QA environment of device"),
+    "android.environment.plan": QT_TRANSLATE_NOOP("Operations", "Plan QA environment"),
+    "android.environment.apply": QT_TRANSLATE_NOOP("Operations", "Apply QA environment"),
+    "android.environment.restore": QT_TRANSLATE_NOOP("Operations", "Restore device settings"),
+    "android.environment.restores": QT_TRANSLATE_NOOP("Operations", "List restore points")
 }
 
 function title(operation) {

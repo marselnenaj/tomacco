@@ -63,6 +63,7 @@ const DESTINATIONS: &[(&str, &[&str])] = &[
     ("demo.scene.update", &["path"]),
     ("demo.preview", &["output"]),
     ("demo.export", &["output"]),
+    ("android.environment.preset.export", &["path"]),
     ("ios.virtual.crash_reports", &["directory"]),
     ("ios.virtual.screenshot", &["path"]),
     ("ios.virtual.record", &["path"]),

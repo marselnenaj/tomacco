@@ -33,6 +33,7 @@ StudioScrollView {
         }
         StudioButton { Layout.maximumWidth: parent.width; text: qsTr("Set up text input on the device"); quiet: true; enabled: workspace.selectedDevice.length>0 && workspace.selectedPlatform==="android"; onClicked: view.call("testing.setup",{device:workspace.selectedDevice}) }
     }
+    EnvironmentPanel { Layout.fillWidth: true; workspace: view.workspace }
     StudioPanel {
         Layout.fillWidth: true
         title: qsTr("Run on several devices")

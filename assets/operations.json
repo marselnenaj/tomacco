@@ -4380,6 +4380,415 @@
     }
   },
   {
+    "name": "android.environment.capabilities",
+    "title": "QA environment settings",
+    "description": "List the settings a QA environment preset can name, the Android version each needs, and which are read back and restorable. Touches no device.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.environment.preset.list",
+    "title": "List QA environments",
+    "description": "List the saved QA environment presets. A preset file that does not validate is listed under problems, not dropped silently.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.environment.preset.get",
+    "title": "Read QA environment",
+    "description": "Read one saved QA environment preset with its revision.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "[a-z0-9][a-z0-9-]{0,62}",
+          "description": "Preset ID: lower-case letters, digits and hyphens"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.environment.preset.save",
+    "title": "Save QA environment",
+    "description": "Create a named QA environment preset, or replace one when if_revision names its current revision. The preset is a versioned JSON document (format tomacco.environment-preset, version 1).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "[a-z0-9][a-z0-9-]{0,62}",
+          "description": "Preset ID: lower-case letters, digits and hyphens"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": ""
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": ""
+        },
+        "settings": {
+          "type": "object",
+          "description": "The settings this environment sets; settings left out stay as they are",
+          "properties": {
+            "dark_mode": {
+              "type": "string",
+              "enum": [
+                "on",
+                "off",
+                "auto"
+              ],
+              "description": "System dark theme"
+            },
+            "font_scale": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 2,
+              "description": "System font size; 1 is the default"
+            },
+            "animations": {
+              "type": "boolean",
+              "description": "false sets the three animation scales to 0"
+            },
+            "airplane_mode": {
+              "type": "boolean",
+              "description": "Android 11 and newer"
+            },
+            "app_locale": {
+              "type": "string",
+              "description": "Language tags of one app, such as de-DE or fr,en; Android 13 and newer"
+            },
+            "location": {
+              "type": "object",
+              "description": "GPS fix; emulators only, and neither read back nor restorable",
+              "properties": {
+                "latitude": {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                "longitude": {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180
+                }
+              },
+              "required": [
+                "latitude",
+                "longitude"
+              ],
+              "additionalProperties": false
+            },
+            "talkback": {
+              "type": "boolean",
+              "description": "TalkBack on or off; needs the installed service and keeps every other accessibility service"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "if_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "settings"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.environment.preset.delete",
+    "title": "Delete QA environment",
+    "description": "Delete a saved QA environment preset. if_revision must name its current revision. Restore points made with it stay.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "[a-z0-9][a-z0-9-]{0,62}",
+          "description": "Preset ID: lower-case letters, digits and hyphens"
+        },
+        "if_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "id",
+        "if_revision"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.environment.preset.export",
+    "title": "Export QA environment",
+    "description": "Return a preset as its versioned JSON document and, with path, write it to a new file. An existing file is never replaced.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "[a-z0-9][a-z0-9-]{0,62}",
+          "description": "Preset ID: lower-case letters, digits and hyphens"
+        },
+        "path": {
+          "type": "string",
+          "description": "New JSON file to write"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.environment.preset.import",
+    "title": "Import QA environment",
+    "description": "Import a preset document, given inline or as a file. It becomes a new preset, or replaces one when if_revision names its current revision. A newer format version is refused.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "document": {
+          "type": "object",
+          "description": "A document from android.environment.preset.export"
+        },
+        "path": {
+          "type": "string",
+          "description": "JSON file with such a document"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "[a-z0-9][a-z0-9-]{0,62}",
+          "description": "Preset ID: lower-case letters, digits and hyphens"
+        },
+        "if_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.environment.inspect",
+    "title": "Read QA environment of device",
+    "description": "Read every QA environment setting of one named device as it is now: value, whether it is supported, read back and restorable, and the installed TalkBack service. Changes nothing.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Serial from device.list. Required: a QA environment never applies to whatever device happens to be connected."
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "App whose language app_locale sets; needed when the preset has app_locale"
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.environment.plan",
+    "title": "Plan QA environment",
+    "description": "Read a named device for a preset and record what applying it would change, what the device does not support and what cannot be restored. Changes nothing on the device. Returns plan_id for android.environment.apply; a plan holds for 15 minutes and applies once.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "type": "string",
+          "pattern": "[a-z0-9][a-z0-9-]{0,62}",
+          "description": "Preset ID: lower-case letters, digits and hyphens"
+        },
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Serial from device.list. Required: a QA environment never applies to whatever device happens to be connected."
+        },
+        "bundle_id": {
+          "type": "string",
+          "description": "App whose language app_locale sets; needed when the preset has app_locale"
+        }
+      },
+      "required": [
+        "preset",
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.environment.apply",
+    "title": "Apply QA environment",
+    "description": "Apply a plan to the device it was made for. Refuses when the device behind the serial, the preset or the planned settings changed, and when the device lacks a setting unless allow_partial is true. Writes a restore point first, then reads every setting back and reports a value Android did not apply as setting_not_applied.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "plan_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Serial from device.list. Required: a QA environment never applies to whatever device happens to be connected."
+        },
+        "allow_partial": {
+          "type": "boolean",
+          "default": false,
+          "description": "Set the supported settings and skip the rest"
+        }
+      },
+      "required": [
+        "plan_id",
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.environment.restore",
+    "title": "Restore device settings",
+    "description": "Write back what an apply changed, on the same device, from the values read before it, and read them back. A GPS fix has no previous value and is reported as not restorable.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "restore_id": {
+          "type": "string",
+          "pattern": "[0-9a-f]{32}"
+        },
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Serial from device.list. Required: a QA environment never applies to whatever device happens to be connected."
+        }
+      },
+      "required": [
+        "restore_id",
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "android.environment.restores",
+    "title": "List restore points",
+    "description": "List the restore points of applied QA environments, newest first, optionally for one device.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "description": "Only this serial"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "ios.sdk_install",
     "title": "Import Apple SDK",
     "description": "Import the SDK from an Apple Xcode archive you downloaded yourself, with xtool. Tomacco downloads nothing from Apple. Read Xcode's license first.",

@@ -2,7 +2,7 @@
 
 # Error codes
 
-492 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
+500 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
 
 | Code | Meaning | Remedy |
 | --- | --- | --- |
@@ -106,6 +106,14 @@
 | `engine_shutdown_failed` | Engine exited with … | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `engine_shutdown_timeout` | Engine did not finish flushing its working image. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `engine_timeout` | PMP engine did not open QMP. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
+| `environment_conflict` | A preset revision, a used or expired plan or restore point, or a setting that changed on the device since the plan conflicts with this QA environment request. | Read the preset again or plan again; nothing on the device was changed by the refused call. |
+| `environment_invalid` | A QA environment preset names an unknown setting or a value out of range. | Check android.environment.capabilities for the settings and ranges, then save again. |
+| `environment_not_found` | No QA environment preset, plan or restore point with this ID. | List them with android.environment.preset.list or android.environment.restores. |
+| `environment_not_restorable` | This setting has no previous value Tomacco could read, such as an emulator GPS fix. | Set it again explicitly; the restore puts back every other setting. |
+| `environment_target_changed` | The device behind this serial is not the one the plan or restore point read (serial, model, build or Android version differ). | Plan again for the device you mean; nothing was changed. |
+| `environment_target_unreadable` | The device did not report its Android version, so Tomacco cannot tell which settings it supports. | Check with device.list that the device is online and booted, then plan again. |
+| `environment_unsupported` | The device does not support settings the preset names, such as airplane mode before Android 11 or TalkBack when it is not installed. | Apply with allow_partial to set the rest, or use a device that supports them. |
+| `environment_version_unsupported` | The preset document has a format version this Tomacco does not read. | Update Tomacco, or export the preset again from the version that made it. |
 | `file_conflict` | The file changed after files.read gave its digest. | Read it again with files.read, merge the changes, and write with the new digest as if_match. |
 | `file_exists` | Export destination already exists: … | Choose another destination, or remove the existing file if the person agrees. |
 | `file_too_large` | Text editing is limited to files up to 1 MiB. | Edit the file with another tool; files.read and files.write handle text up to 1 MiB. |

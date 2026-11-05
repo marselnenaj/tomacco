@@ -444,6 +444,49 @@ tomaccoctl call android.settings '{"device":"emulator-5554"}'
   the app to the device language. The language of the whole device is not changed:
   adb cannot do that without root.
 
+### Named QA environments and TalkBack
+
+A QA environment is a saved combination of these settings plus a GPS fix and TalkBack,
+under a name, as a versioned JSON document (`tomacco.environment-preset`, version 1). It
+reaches a device only in two steps: `android.environment.plan` reads one device you name
+and says per setting whether it changes, is already set, is not supported there, and
+whether it can be read back and restored. `android.environment.apply` then applies exactly
+that plan to exactly that device. It refuses when the serial now belongs to another
+device (serial number, model, build fingerprint or Android version differ), when a
+planned setting changed meanwhile, when the preset has a newer revision, or when the plan
+is older than 15 minutes or was used already. Nothing ever applies to whichever device
+happens to be connected.
+
+```sh
+tomaccoctl call android.environment.preset.save '{"id":"night-large","name":"Night, large text","settings":{"dark_mode":"on","font_scale":1.3,"animations":false,"talkback":true}}'
+tomaccoctl call android.environment.plan '{"preset":"night-large","device":"emulator-5554"}'
+# plan_id and restore_id come from the previous answers
+tomaccoctl call android.environment.apply '{"plan_id":"6f1c2b0e9a8d4c3b8e7f6a5d4c3b2a19","device":"emulator-5554"}'
+tomaccoctl call android.environment.restore '{"restore_id":"0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a","device":"emulator-5554"}'
+```
+
+- Before it changes anything, apply writes a restore point with the raw values it read.
+  `android.environment.restore` writes those back on the same device and reads them back;
+  a setting that was unset is deleted again rather than set to a default.
+- A setting the device does not support is listed in the plan. Apply refuses then, unless
+  `allow_partial` is true, in which case it sets the rest and reports the skipped ones.
+- `location` is a GPS fix through the emulator console, so emulators only. The console
+  reports neither the fix nor the previous one, so it is marked `applied_unverified` and
+  cannot be restored.
+- `app_locale` needs Android 13 and the app's `bundle_id` at plan time; `airplane_mode`
+  needs Android 11.
+- `talkback` uses the TalkBack service that is actually installed (any service class named
+  `TalkBackService`, Google's package first). Without one, TalkBack is unsupported. Switching
+  it keeps every other enabled accessibility service and their order.
+- TalkBack here is the device setting and its read-back. It is not a test that the app
+  works with a screen reader; `testing.accessibility` audits a screen hierarchy statically.
+- `android.environment.inspect` reads every setting of a named device without changing
+  anything; `android.environment.preset.export` and `.import` move presets as files; an
+  edit or delete names the revision it replaces.
+
+The desktop has the same flow under UI tests, QA environments: the target device is chosen
+there on purpose, not taken from the device selected elsewhere.
+
 ### Store screenshots
 
 `android.store_screenshots` captures an installed app's store screenshots as one job: on each device, for each

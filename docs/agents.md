@@ -54,7 +54,7 @@ most recent jobs.
 
 The guides are resources too, as Markdown of the installed version: `tomacco://docs/agents` (this guide),
 `tomacco://docs/recipes`, `tomacco://docs/getting-started`, `tomacco://docs/android`, `tomacco://docs/iphone`,
-`tomacco://docs/virtual-ios` (its usage guide), `tomacco://docs/troubleshooting` and `tomacco://docs/faq`. Links
+`tomacco://docs/virtual-ios` (its usage guide), `tomacco://docs/demo-studio`, `tomacco://docs/troubleshooting` and `tomacco://docs/faq`. Links
 inside them are relative to the repository's `docs/` directory.
 
 The server also offers three prompts, short recipes a client can show as commands:
@@ -96,7 +96,7 @@ version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env`
 | --- | --- | --- |
 | `full` (the default) | One per operation, with every description. | 321,785 bytes |
 | `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 157,922 bytes |
-| `grouped` | One per area, such as `android` or `job`: 29 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 33,148 bytes |
+| `grouped` | One per area, such as `android` or `job`: 30 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 33,148 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's

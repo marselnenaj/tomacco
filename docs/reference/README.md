@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 258 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 270 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 492 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 500 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -59,6 +59,18 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`android.sensors`](android.md#androidsensors) | Emulator sensors | writes |
 | [`android.app_links`](android.md#androidapp_links) | App Links | writes |
 | [`android.network_capture`](android.md#androidnetwork_capture) | Network capture | writes |
+| [`android.environment.capabilities`](android.md#androidenvironmentcapabilities) | QA environment settings | read-only |
+| [`android.environment.preset.list`](android.md#androidenvironmentpresetlist) | List QA environments | read-only |
+| [`android.environment.preset.get`](android.md#androidenvironmentpresetget) | Read QA environment | read-only |
+| [`android.environment.preset.save`](android.md#androidenvironmentpresetsave) | Save QA environment | writes |
+| [`android.environment.preset.delete`](android.md#androidenvironmentpresetdelete) | Delete QA environment | **destructive** |
+| [`android.environment.preset.export`](android.md#androidenvironmentpresetexport) | Export QA environment | writes |
+| [`android.environment.preset.import`](android.md#androidenvironmentpresetimport) | Import QA environment | writes |
+| [`android.environment.inspect`](android.md#androidenvironmentinspect) | Read QA environment of device | read-only |
+| [`android.environment.plan`](android.md#androidenvironmentplan) | Plan QA environment | read-only |
+| [`android.environment.apply`](android.md#androidenvironmentapply) | Apply QA environment | writes |
+| [`android.environment.restore`](android.md#androidenvironmentrestore) | Restore device settings | writes |
+| [`android.environment.restores`](android.md#androidenvironmentrestores) | List restore points | read-only |
 
 ## [apple](apple.md)
 

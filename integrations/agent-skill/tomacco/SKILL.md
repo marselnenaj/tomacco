@@ -14,7 +14,7 @@ description: >
 # Tomacco
 
 Tomacco builds, runs, tests and inspects mobile apps on Linux. Its control plane, `tomaccoctl`,
-offers 258 typed operations. The MCP server, the JSON CLI and the desktop app call the same
+offers 270 typed operations. The MCP server, the JSON CLI and the desktop app call the same
 operations. This file is the router: it says how to reach Tomacco, how to stay safe and where each
 task lives. The operation details are in `references/`, one file per area, read only when needed.
 
@@ -108,6 +108,7 @@ The `Start with` operations are the usual entry points.
 | Swift on Android | `swift.status`, `swift.plan` | [swift](references/swift.md) |
 | Debugger | `debug.start`, `debug.breakpoints`, `debug.stack` | [debug](references/debug.md) |
 | Live preview of a screen | `preview.sessions`, `preview.capture` | [preview](references/preview.md) |
+| Named QA environments (theme, font size, animations, airplane mode, app language, GPS, TalkBack): plan, apply to one named device, restore | `android.environment.preset.save`, `android.environment.plan`, `android.environment.apply`, `android.environment.restore` | [android](references/android.md) |
 | Make a 3D device video from a local recording | `demo.capabilities`, `demo.media.inspect`, `demo.scene.create` | [demo](references/demo.md) |
 | Mirror a device as a session | `runtime.start`, `runtime.capture`, `runtime.stop` | [runtime](references/runtime.md) |
 | Remote build hosts | `remote.list`, `remote.run` | [remote](references/remote.md) |
