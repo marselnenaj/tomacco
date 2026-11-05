@@ -99,17 +99,29 @@
     "cause": "Google did not return an access token.",
     "remedy": "Check that the service-account key is valid and has access in Play Console."
   },
+  "avd_confirmation_required": {
+    "cause": "A rename or wipe was asked without the AVD's name repeated in confirm.",
+    "remedy": "Ask the person, then pass confirm with the exact AVD name."
+  },
   "avd_exists": {
     "cause": "An emulator with that name exists.",
     "remedy": "Choose another name, or use the existing one with android.avd_start."
   },
   "avd_in_use": {
-    "cause": "Stop the emulator before changing its hardware settings.",
-    "remedy": "Unrecognized emulator lock files are preserved."
+    "cause": "The emulator is running, or its lock files say it may be running, so its files cannot be changed.",
+    "remedy": "Stop the emulator first with android.emulator stop. Lock files left by a crash disappear after one clean start and stop."
   },
   "avd_not_found": {
     "cause": "Unknown AVD: …",
     "remedy": "Use android.avds or android.avd_create."
+  },
+  "avd_setup_blocked": {
+    "cause": "The emulator setup cannot start: the plan found blockers such as a taken name, a missing tool or an unsupported form factor.",
+    "remedy": "Read blockers in the details, fix them and call android.avd_plan again."
+  },
+  "avd_space": {
+    "cause": "The disk has too little free space for the duplicate or the new emulator.",
+    "remedy": "Free space, wipe an emulator you do not need (android.avd_usage shows what each would free), or choose another disk for TOMACCO_HOME."
   },
   "baseline_conflict": {
     "cause": "Two devices would write different screenshots to the same baseline file.",
@@ -1606,6 +1618,10 @@
   "screenshot_missing": {
     "cause": "The screenshot the review names is gone from the run directory.",
     "remedy": "Run the scenario again with record_baselines."
+  },
+  "sdk_license_required": {
+    "cause": "The system image is not installed and Google's Android SDK licence is not accepted yet; nothing was downloaded or created.",
+    "remedy": "Ask the person, then call android.avd_setup again with accept_licenses true."
   },
   "sdk_missing": {
     "cause": "Configure the Android SDK first.",

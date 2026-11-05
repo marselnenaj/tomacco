@@ -690,6 +690,57 @@ hardware](linux-hosts.md#the-emulators-window-and-renderer) has the details.
 The desktop's Omarchy panel can boot an emulator without its own window and show just
 the phone; see the [desktop guide](desktop.md#device-window).
 
+### From image to running emulator in one job
+
+`android.avd_plan` says what setting up an emulator would take before anything runs: whether
+the system image is installed, the estimated download and disk space against the free space,
+whether Google's SDK licence is already accepted, which tools are missing, whether the name is
+free and whether the image's form factor is one Tomacco creates. `blockers` names what stops a
+setup. `android.avd_setup` then runs the steps the plan lists as one job: install the image when
+it is missing, create the AVD, apply the profile and, with `start`, start it. `job.cancel` stops
+the job at any step; an image download that was cancelled leaves no AVD behind.
+
+```sh
+tomaccoctl call android.avd_plan '{"name":"Fresh","system_image":"system-images;android-36;google_apis;x86_64","profile_id":"pixel-11"}'
+tomaccoctl call android.avd_setup '{"name":"Fresh","system_image":"system-images;android-36;google_apis;x86_64","profile_id":"pixel-11","accept_licenses":true,"start":{"headless":true}}'
+```
+
+- A missing image is downloaded only when the SDK already has Google's licence accepted or
+  `accept_licenses` is true. Otherwise the call answers `sdk_license_required` and nothing is
+  downloaded or created. From an MCP agent, the desktop asks the person first, as for
+  `android.sdk_install`.
+- The download size is an estimate from typical image sizes; the SDK does not report the exact
+  size before the download, and the result says so.
+- Checked against a stand-in `sdkmanager` and `avdmanager` in the tests: the licence refusal,
+  the three steps, the second setup that needs no download, and the plan's blockers. No real
+  image was downloaded for this.
+
+### Duplicate, rename, wipe and disk usage
+
+`android.avd_usage` reads every AVD's size, what a wipe would free, whether Tomacco runs it or
+its lock files say it may be running, and the free space of Tomacco's AVD directory. It reads
+files only. `android.avd_manage` changes a stopped AVD:
+
+```sh
+tomaccoctl call android.avd_usage
+tomaccoctl call android.avd_manage '{"action":"duplicate","name":"First","new_name":"First-copy"}'
+tomaccoctl call android.avd_manage '{"action":"rename","name":"First","new_name":"Daily","confirm":"First"}'
+tomaccoctl call android.avd_manage '{"action":"wipe","name":"Daily","confirm":"Daily"}'
+```
+
+- `duplicate` is a cancellable job that copies the AVD into Tomacco's AVD directory. The copy
+  appears only when complete, without the source's snapshots and lock files and with its own
+  identity. It refuses when the disk lacks the space.
+- `rename` is a real rename through the SDK's `avdmanager move avd`, and the nickname from
+  `device.label` moves along. A nickname alone, without renaming the AVD, is `device.label`.
+- `wipe` removes the user data, cache and snapshots so the next boot is like a new device.
+  `config.ini` and the SD card stay.
+- `rename` and `wipe` need the AVD's name a second time in `confirm`, after the person agreed.
+  An emulator that runs, or whose lock files exist, is refused with `avd_in_use`; nothing is
+  changed then.
+- Checked against a stand-in `avdmanager` and fixture AVDs in the tests; the rename path on a
+  real SDK has not been run yet.
+
 ### Snapshots, location, battery and network
 
 `android.emulator` drives a running emulator through its console with `adb emu`.

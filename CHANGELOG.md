@@ -12,6 +12,12 @@ operations and their JSON results.
   exactly that plan and restore the previous values from a restore point. Unsupported, unverified
   and unrestorable settings are reported per setting. TalkBack switching keeps other
   accessibility services. Desktop and `android.environment.*` operations share one flow.
+- **Emulator setup and management.** `android.avd_plan` and `android.avd_setup` take an
+  emulator from a system image to a running device in one cancellable job, with the download
+  and disk estimate, the licence state and the blockers named first; a missing image is
+  downloaded only with the licence accepted. `android.avd_usage` reads each AVD's disk usage
+  and `android.avd_manage` duplicates, renames (through `avdmanager move`) or wipes a stopped
+  AVD, with the name repeated in `confirm` for the destructive ones.
 
 ### Fixed
 - **Demo Studio errors.** An unknown `demo.*` operation answers `operation_not_found` like every

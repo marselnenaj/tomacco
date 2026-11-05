@@ -169,6 +169,19 @@ fn labels() -> Result {
     let value = read_json(&labels_path()?, Some(json!({})))?;
     Ok(if value.is_object() { value } else { json!({}) })
 }
+/// Moves a device label (nickname and pin) to a new key, as a real AVD
+/// rename needs. Returns whether there was one.
+pub(crate) fn move_label(from: &str, to: &str) -> Result<bool> {
+    let lock = Lock::open(&home()?.join("device-labels.lock"))?;
+    lock.acquire(false)?;
+    let mut all = labels()?;
+    let Some(label) = all.as_object_mut().and_then(|m| m.remove(from)) else {
+        return Ok(false);
+    };
+    all[to] = label;
+    atomic_json(&labels_path()?, &all)?;
+    Ok(true)
+}
 /// Shows a device under its nickname, keeping the name it had, and says
 /// whether it is pinned.
 fn label_entry(entry: &mut Value, labels: &Value) {
@@ -373,7 +386,7 @@ fn screenshot(a: &Value) -> Result {
         )
     }
 }
-fn avd_homes() -> Result<Vec<PathBuf>> {
+pub(crate) fn avd_homes() -> Result<Vec<PathBuf>> {
     let mut values = vec![home()?.join("avds")];
     if let Some(v) = std::env::var_os("ANDROID_AVD_HOME") {
         values.push(v.into());
@@ -395,10 +408,18 @@ fn avd_homes() -> Result<Vec<PathBuf>> {
     values.retain(|p| seen.insert(p.clone()));
     Ok(values)
 }
-fn avd_name(name: &str) -> Result<&str> {
+/// A system image package ID such as `system-images;android-36;google_apis;x86_64`.
+pub(crate) fn system_image(id: &str) -> Result<&str> {
+    identifier(
+        id,
+        "system image",
+        Some(r"system-images;android-[0-9]+(?:\.[0-9]+)?(?:-ext[0-9]+)?;[a-z0-9_-]+;[a-z0-9_-]+"),
+    )
+}
+pub(crate) fn avd_name(name: &str) -> Result<&str> {
     identifier(name, "AVD name", Some("[A-Za-z0-9][A-Za-z0-9_-]{0,63}"))
 }
-fn ini_values(path: &std::path::Path) -> BTreeMap<String, String> {
+pub(crate) fn ini_values(path: &std::path::Path) -> BTreeMap<String, String> {
     fs::read_to_string(path)
         .unwrap_or_default()
         .lines()
@@ -490,7 +511,7 @@ fn avds() -> Result<Vec<Value>> {
     }
     Ok(found.into_values().collect())
 }
-fn installed_system_images() -> Result<Vec<String>> {
+pub(crate) fn installed_system_images() -> Result<Vec<String>> {
     let Some(sdk) = tc::android_sdk()? else {
         return Ok(Vec::new());
     };
@@ -507,7 +528,7 @@ fn installed_system_images() -> Result<Vec<String>> {
     images.dedup();
     Ok(images)
 }
-fn sdk_args() -> Result<Vec<String>> {
+pub(crate) fn sdk_args() -> Result<Vec<String>> {
     Ok(tc::android_sdk()?
         .map(|p| vec![format!("--sdk_root={}", p.display())])
         .unwrap_or_default())
@@ -913,13 +934,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
                     .join(format!("avd-create-{}.lock", digest(name.as_bytes()))),
             )?;
             admission.acquire(false)?;
-            identifier(
-                s(a, "system_image"),
-                "system image",
-                Some(
-                    r"system-images;android-[0-9]+(?:\.[0-9]+)?(?:-ext[0-9]+)?;[a-z0-9_-]+;[a-z0-9_-]+",
-                ),
-            )?;
+            system_image(s(a, "system_image"))?;
             form_factor_supported(s(a, "system_image"))?;
             let profile = catalog::find(s(a, "profile_id"))?;
             if s(&profile, "platform") != "android" {
@@ -1096,7 +1111,7 @@ pub fn form_factor(system_image: &str) -> &'static str {
 }
 /// Tomacco's profiles describe phones, foldables and tablets. A TV or Wear
 /// image needs the SDK's own hardware definition, which avdmanager has.
-fn form_factor_supported(system_image: &str) -> Result<()> {
+pub(crate) fn form_factor_supported(system_image: &str) -> Result<()> {
     let kind = form_factor(system_image);
     let device = match kind {
         "phone" => return Ok(()),

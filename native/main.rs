@@ -12,6 +12,7 @@ mod app_links;
 mod apple;
 mod apple_dev;
 mod automation;
+mod avd_manage;
 mod capabilities;
 mod catalog;
 mod completions;
@@ -411,6 +412,14 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         Some("mcp") => {
             guard::enter(guard::Channel::Mcp, mcp_policy(&args[1..])?);
             mcp::serve(std::io::stdin().lock(), std::io::stdout())?;
+            return Ok(0);
+        }
+        Some("_avd_duplicate") => {
+            avd_manage::duplicate_step(
+                args.get(1).map(String::as_str).unwrap_or(""),
+                args.get(2)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing AVD request"))?,
+            )?;
             return Ok(0);
         }
         Some("_demo_prepare") => {

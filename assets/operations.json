@@ -4000,6 +4000,201 @@
     }
   },
   {
+    "name": "android.avd_usage",
+    "title": "Emulator disk usage",
+    "description": "Space every AVD takes on disk, what a wipe of each would free, whether Tomacco runs it or its lock files say it may be running, and the free space of Tomacco's AVD directory. Reads files only; no device or adb server is reached.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.avd_manage",
+    "title": "Duplicate, rename or wipe emulator",
+    "description": "duplicate copies a stopped AVD under new_name into Tomacco's AVD directory as a cancellable job; the copy appears only when complete, without the source's snapshots and lock files, with its own identity. rename renames a stopped AVD through the SDK's avdmanager move and carries its nickname over; a nickname alone is device.label. wipe removes a stopped AVD's user data, cache and snapshots so its next boot is like a new device; its configuration and SD card stay. rename and wipe need the AVD's name a second time in confirm, after the person agreed. A running emulator, or one whose lock files exist, is refused with avd_in_use.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "duplicate",
+            "rename",
+            "wipe"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_-]{0,63}",
+          "description": "AVD name from android.avds"
+        },
+        "new_name": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_-]{0,63}",
+          "description": "The new AVD name, for duplicate and rename; it must be free"
+        },
+        "confirm": {
+          "type": "string",
+          "description": "The AVD name again, for rename and wipe"
+        }
+      },
+      "required": [
+        "action",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.avd_plan",
+    "title": "Plan emulator setup",
+    "description": "What android.avd_setup would do for a name, system image and profile, without doing it: whether the image is installed, the estimated download and disk space against the free space, whether Google's SDK licence is already accepted, which tools are missing, and whether the name is free. blockers lists what stops a setup; ready says whether one can start. Reads files only.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_-]{0,63}",
+          "description": "AVD name from android.avds"
+        },
+        "system_image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "System image package, such as system-images;android-36;google_apis;x86_64; android.avds lists the installed ones"
+        },
+        "profile_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android device profile from catalog.list"
+        },
+        "start": {
+          "type": "object",
+          "description": "Start the emulator at the end of the job with these android.avd_start arguments; headless defaults to true",
+          "properties": {
+            "headless": {
+              "type": "boolean",
+              "default": true
+            },
+            "gpu": {
+              "type": "string",
+              "enum": [
+                "configured",
+                "auto",
+                "host",
+                "software",
+                "swiftshader",
+                "lavapipe"
+              ],
+              "default": "configured"
+            },
+            "cold_boot": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "system_image",
+        "profile_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "android.avd_setup",
+    "title": "Set up emulator",
+    "description": "One job from image to running emulator: install the system image when it is missing, create the AVD, apply the profile and, with start, start it. The job's steps are the plan's steps and job.cancel stops it at any of them. A missing image is downloaded only when Google's SDK licence is already accepted or accept_licenses is true; otherwise the call answers sdk_license_required and nothing is downloaded or created. Blockers from android.avd_plan answer avd_setup_blocked.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_-]{0,63}",
+          "description": "AVD name from android.avds"
+        },
+        "system_image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "System image package, such as system-images;android-36;google_apis;x86_64; android.avds lists the installed ones"
+        },
+        "profile_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Android device profile from catalog.list"
+        },
+        "accept_licenses": {
+          "type": "boolean",
+          "default": false,
+          "description": "Accept Google's Android SDK licence for the image download, after the person agreed"
+        },
+        "start": {
+          "type": "object",
+          "description": "Start the emulator at the end of the job with these android.avd_start arguments; headless defaults to true",
+          "properties": {
+            "headless": {
+              "type": "boolean",
+              "default": true
+            },
+            "gpu": {
+              "type": "string",
+              "enum": [
+                "configured",
+                "auto",
+                "host",
+                "software",
+                "swiftshader",
+                "lavapipe"
+              ],
+              "default": "configured"
+            },
+            "cold_boot": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "system_image",
+        "profile_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "android.emulator",
     "title": "Control emulator",
     "description": "Stop an emulator, saving the Quick Boot snapshot of a Tomacco-managed one so its next start resumes in seconds; save, load, list or delete its snapshots; set its GPS location, battery or network speed and latency through the emulator console. A command the console refuses answers emulator_refused.",

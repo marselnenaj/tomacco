@@ -2,13 +2,13 @@
 
 # Tomacco references
 
-270 operations in all, in 32 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
+274 operations in all, in 32 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
 
 | File | Operations | Areas and names |
 | --- | --- | --- |
 | [general](general.md) | 2 | Machine readiness, setup and diagnostics. `doctor`, `capabilities` |
 | [agent](agent.md) | 1 | The policy this agent session runs under. `agent.policy` |
-| [android](android.md) | 44 | Emulators and devices: input, files, settings, SDK, AVDs, store screenshots. `android.screen`, `android.store_screenshots`, `android.input`, … |
+| [android](android.md) | 48 | Emulators and devices: input, files, settings, SDK, AVDs, store screenshots. `android.screen`, `android.store_screenshots`, `android.input`, … |
 | [apple](apple.md) | 10 | Xcode tools on macOS hosts: build, test, archive, export, simulator. `apple.devices`, `apple.project`, `apple.build`, … |
 | [audit](audit.md) | 1 | Log of operations that changed something. `audit.list` |
 | [catalog](catalog.md) | 4 | Saved project and device catalogue. `catalog.list`, `catalog.import`, `catalog.export`, … |

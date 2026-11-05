@@ -1067,7 +1067,9 @@ pub fn handle(op: &str, a: &Value) -> Result {
             s(a, "plan_id"),
             b(a, "allow_partial"),
         ),
-        "android.environment.restore" => restore_with(&mut Adb::new(device_arg(a)?)?, s(a, "restore_id")),
+        "android.environment.restore" => {
+            restore_with(&mut Adb::new(device_arg(a)?)?, s(a, "restore_id"))
+        }
         "android.environment.restores" => restores(a),
         _ => Err(Error::new("operation_not_found", op)),
     }

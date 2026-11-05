@@ -2,7 +2,7 @@
 
 # `android` operations
 
-44 operations. Generated from `assets/operations.json`; [all areas](README.md).
+48 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### android.screen
 
@@ -497,6 +497,84 @@ Annotations: writes, idempotent, open world.
 
 ```sh
 tomaccoctl call android.avd_start '{"name":"<name>"}'
+```
+
+### android.avd_usage
+
+**Emulator disk usage**
+
+Space every AVD takes on disk, what a wipe of each would free, whether Tomacco runs it or its lock files say it may be running, and the free space of Tomacco's AVD directory. Reads files only; no device or adb server is reached.
+
+Annotations: read-only, idempotent, closed world.
+
+Takes no arguments.
+
+```sh
+tomaccoctl call android.avd_usage
+```
+
+### android.avd_manage
+
+**Duplicate, rename or wipe emulator**
+
+duplicate copies a stopped AVD under new_name into Tomacco's AVD directory as a cancellable job; the copy appears only when complete, without the source's snapshots and lock files, with its own identity. rename renames a stopped AVD through the SDK's avdmanager move and carries its nickname over; a nickname alone is device.label. wipe removes a stopped AVD's user data, cache and snapshots so its next boot is like a new device; its configuration and SD card stay. rename and wipe need the AVD's name a second time in confirm, after the person agreed. A running emulator, or one whose lock files exist, is refused with avd_in_use.
+
+Annotations: **destructive**, not idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `action` | string | yes |  | one of `duplicate`, `rename`, `wipe` |
+| `name` | string | yes |  | matching `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`; AVD name from android.avds |
+| `new_name` | string |  |  | matching `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`; The new AVD name, for duplicate and rename; it must be free |
+| `confirm` | string |  |  | The AVD name again, for rename and wipe |
+
+```sh
+tomaccoctl call android.avd_manage '{"action":"duplicate","name":"<name>"}'
+```
+
+### android.avd_plan
+
+**Plan emulator setup**
+
+What android.avd_setup would do for a name, system image and profile, without doing it: whether the image is installed, the estimated download and disk space against the free space, whether Google's SDK licence is already accepted, which tools are missing, and whether the name is free. blockers lists what stops a setup; ready says whether one can start. Reads files only.
+
+Annotations: read-only, idempotent, closed world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | matching `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`; AVD name from android.avds |
+| `system_image` | string | yes |  | non-empty; System image package, such as system-images;android-36;google_apis;x86_64; android.avds lists the installed ones |
+| `profile_id` | string | yes |  | non-empty; Android device profile from catalog.list |
+| `start` | object |  |  | Start the emulator at the end of the job with these android.avd_start arguments; headless defaults to true |
+| `start.headless` | boolean |  | `true` |  |
+| `start.gpu` | string |  | `"configured"` | one of `configured`, `auto`, `host`, `software`, `swiftshader`, `lavapipe` |
+| `start.cold_boot` | boolean |  | `false` |  |
+
+```sh
+tomaccoctl call android.avd_plan '{"name":"<name>","system_image":"<system_image>","profile_id":"<profile_id>"}'
+```
+
+### android.avd_setup
+
+**Set up emulator**
+
+One job from image to running emulator: install the system image when it is missing, create the AVD, apply the profile and, with start, start it. The job's steps are the plan's steps and job.cancel stops it at any of them. A missing image is downloaded only when Google's SDK licence is already accepted or accept_licenses is true; otherwise the call answers sdk_license_required and nothing is downloaded or created. Blockers from android.avd_plan answer avd_setup_blocked.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | matching `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`; AVD name from android.avds |
+| `system_image` | string | yes |  | non-empty; System image package, such as system-images;android-36;google_apis;x86_64; android.avds lists the installed ones |
+| `profile_id` | string | yes |  | non-empty; Android device profile from catalog.list |
+| `accept_licenses` | boolean |  | `false` | Accept Google's Android SDK licence for the image download, after the person agreed |
+| `start` | object |  |  | Start the emulator at the end of the job with these android.avd_start arguments; headless defaults to true |
+| `start.headless` | boolean |  | `true` |  |
+| `start.gpu` | string |  | `"configured"` | one of `configured`, `auto`, `host`, `software`, `swiftshader`, `lavapipe` |
+| `start.cold_boot` | boolean |  | `false` |  |
+
+```sh
+tomaccoctl call android.avd_setup '{"name":"<name>","system_image":"<system_image>","profile_id":"<profile_id>"}'
 ```
 
 ### android.emulator

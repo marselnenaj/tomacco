@@ -27,6 +27,15 @@ fn before(name: &str, arguments: &Value) -> Option<Before> {
             yes: Some(("accept_licenses", json!(true))),
             no_stops: false,
         }),
+        "android.avd_setup" if arguments.get("accept_licenses").is_none() => Some(Before {
+            question: format!(
+                "Set up the emulator {}: download the system image {} if it is missing and accept Google's Android SDK licence? Without a yes, a missing image is not downloaded and the setup stops before creating anything.",
+                s(arguments, "name"),
+                s(arguments, "system_image")
+            ),
+            yes: Some(("accept_licenses", json!(true))),
+            no_stops: false,
+        }),
         "play.commit" => Some(Before {
             question: format!(
                 "Commit the prepared Google Play edit {} of {}? This publishes what the edit holds.",

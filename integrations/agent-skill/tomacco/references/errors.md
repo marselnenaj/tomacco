@@ -2,7 +2,7 @@
 
 # Error codes
 
-500 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
+504 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
 
 | Code | Meaning | Remedy |
 | --- | --- | --- |
@@ -31,9 +31,12 @@
 | `audio_stopping` | The previous audio stream is still stopping; retry shortly. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `audio_unsupported` | Output forwarding is currently available for Android 11 and newer. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `authentication_failed` | Google did not return an access token. | Check that the service-account key is valid and has access in Play Console. |
+| `avd_confirmation_required` | A rename or wipe was asked without the AVD's name repeated in confirm. | Ask the person, then pass confirm with the exact AVD name. |
 | `avd_exists` | An emulator with that name exists. | Choose another name, or use the existing one with android.avd_start. |
-| `avd_in_use` | Stop the emulator before changing its hardware settings. | Unrecognized emulator lock files are preserved. |
+| `avd_in_use` | The emulator is running, or its lock files say it may be running, so its files cannot be changed. | Stop the emulator first with android.emulator stop. Lock files left by a crash disappear after one clean start and stop. |
 | `avd_not_found` | Unknown AVD: … | Use android.avds or android.avd_create. |
+| `avd_setup_blocked` | The emulator setup cannot start: the plan found blockers such as a taken name, a missing tool or an unsupported form factor. | Read blockers in the details, fix them and call android.avd_plan again. |
+| `avd_space` | The disk has too little free space for the duplicate or the new emulator. | Free space, wipe an emulator you do not need (android.avd_usage shows what each would free), or choose another disk for TOMACCO_HOME. |
 | `baseline_conflict` | Two devices would write different screenshots to the same baseline file. | Approve the screens one device at a time, or give each device its own baselines folder. |
 | `baseline_missing` | No baseline at … | Create the baseline with update_baseline:true after checking the image is right. |
 | `baseline_plugin_missing` | No module of the build applies the androidx.baselineprofile Gradle plugin. | Apply the plugin to the app module and add the producer module it names, or create the app with project.create kind compose and performance:true. |
@@ -408,6 +411,7 @@
 | `screen_not_found` | No screen with this id is in the run being reviewed. | List the ids with testing.baselines review. |
 | `screen_unstable` | The screen kept changing until the timeout, as a video, an animation or a spinner does. | details.last_changed_fraction says how much; use ignore for the part that moves, raise threshold, or wait for text instead. |
 | `screenshot_missing` | The screenshot the review names is gone from the run directory. | Run the scenario again with record_baselines. |
+| `sdk_license_required` | The system image is not installed and Google's Android SDK licence is not accepted yet; nothing was downloaded or created. | Ask the person, then call android.avd_setup again with accept_licenses true. |
 | `sdk_missing` | Configure the Android SDK first. | Set android_sdk with settings.configure. |
 | `sdk_platform_missing` | Something the request names does not exist or is not set up. | Install an Android platform with android.sdk_install, then build again. |
 | `secret_permissions` | The App Store Connect .p8 key must be readable only by its owner. | chmod 600 the file. |

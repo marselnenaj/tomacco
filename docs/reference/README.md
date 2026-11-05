@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 270 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 274 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 500 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 504 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -53,6 +53,10 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`android.avd_profile`](android.md#androidavd_profile) | Set emulator display | **destructive** |
 | [`android.avd_configure`](android.md#androidavd_configure) | Set emulator performance | writes |
 | [`android.avd_start`](android.md#androidavd_start) | Start emulator | writes |
+| [`android.avd_usage`](android.md#androidavd_usage) | Emulator disk usage | read-only |
+| [`android.avd_manage`](android.md#androidavd_manage) | Duplicate, rename or wipe emulator | **destructive** |
+| [`android.avd_plan`](android.md#androidavd_plan) | Plan emulator setup | read-only |
+| [`android.avd_setup`](android.md#androidavd_setup) | Set up emulator | writes |
 | [`android.emulator`](android.md#androidemulator) | Control emulator | **destructive** |
 | [`android.package_inspect`](android.md#androidpackage_inspect) | Inspect APK or AAB | read-only |
 | [`android.size_report`](android.md#androidsize_report) | Report APK or AAB size | read-only |

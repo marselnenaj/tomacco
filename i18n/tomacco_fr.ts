@@ -4913,6 +4913,22 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>List restore points</source>
         <translation>Lister les points de restauration</translation>
     </message>
+    <message>
+        <source>Emulator disk usage</source>
+        <translation>Espace disque des émulateurs</translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe emulator</source>
+        <translation>Dupliquer, renommer ou effacer l’émulateur</translation>
+    </message>
+    <message>
+        <source>Plan emulator setup</source>
+        <translation>Planifier la configuration de l’émulateur</translation>
+    </message>
+    <message>
+        <source>Set up emulator</source>
+        <translation>Configurer l’émulateur</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
