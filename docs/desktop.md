@@ -322,12 +322,25 @@ are no app are ignored. The detached device window accepts drops too.
 
 ### Nicknames and pins
 
-Each Android device and emulator under **Devices** has a pin button and a rename
-button. A pinned device is listed first; a nickname is shown in place of the model
+Each Android device and emulator under **Devices** has a pin button and a nickname
+button (the pencil). A pinned device is listed first; a nickname is shown in place of the model
 name in the device lists, the device picker and the Omarchy panel, where a star marks
 a pinned device. Both are stored through `device.label`, so agents see them in
 `device.list` too. An emulator keeps its nickname by its AVD name, also while it is
-off and when its serial changes.
+off and when its serial changes. A nickname does not rename the emulator itself.
+
+### Adding and managing emulators
+
+**Add device** plans the setup before anything runs: whether the chosen system image is
+installed or how large its download is (an estimate), the free disk space, whether Google's
+SDK licence is already accepted, and what blocks the setup, such as a taken name or a TV
+image. Any image package can be typed; a download asks for the licence first. Create runs
+the steps as one job that the Jobs tab follows and can cancel, and starts the emulator at
+the end when asked. The emulator's **Manage** button (the copy icon) reads its disk usage
+and offers Duplicate, a real Rename through the Android SDK, and Wipe of the app data.
+Rename and Wipe need the emulator's name typed again, and nothing is offered while the
+emulator runs or its lock files exist. These are `android.avd_plan`, `android.avd_setup`,
+`android.avd_usage` and `android.avd_manage`; see [Android](android.md#emulators).
 
 ### All screens
 
