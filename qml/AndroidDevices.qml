@@ -34,6 +34,44 @@ ColumnLayout {
     // The device being renamed: {device, name, title}.
     property var renaming: ({})
     function rename(device,current,title) {renaming={device:device,title:title};nicknameField.text=current || "";renameDialog.open();nicknameField.forceActiveFocus()}
+    // The AVD being managed (duplicate, real rename, wipe) and android.avd_usage by AVD name.
+    property var managing: ({})
+    property var usage: ({})
+    property string manageAction: ""
+    readonly property var managedUsage: usage[managing.name] || ({})
+    readonly property bool managedRunning: !!deviceFor(managing.name) || !!pendingBoots[managing.name] || !!managedUsage.running || (managedUsage.locks || []).length>0
+    function manage(avd) {managing=avd;manageAction="";manageName.text="";manageConfirm.text="";failed=false;manageDialog.open();request("android.avd_usage",{},true)}
+    function manageRequest(action) {
+        let args={action:action,name:managing.name}
+        if(action!=="wipe")args.new_name=manageName.text.trim()
+        if(action!=="duplicate")args.confirm=manageConfirm.text.trim()
+        manageAction=action;failed=false;request("android.avd_manage",args)
+    }
+    // The plan android.avd_plan made for the create dialog's current name, model and image.
+    property var plan: ({})
+    property bool planning: false
+    readonly property bool planNeedsLicense: !!plan.steps && plan.steps.length>0 && !!plan.steps[0].needs_license
+    function planCreate() {
+        if(!createDialog.visible || !nameField.acceptableInput || !nameField.text || !imageField.text.trim() || !selectedProfile.id){plan={};return}
+        planning=true;request("android.avd_plan",{name:nameField.text,profile_id:selectedProfile.id,system_image:imageField.text.trim()},true)
+    }
+    function formatBytes(n) {
+        if(n===undefined || n===null)return "?"
+        if(n>=1073741824)return (n/1073741824).toFixed(1)+" GB"
+        if(n>=1048576)return Math.round(n/1048576)+" MB"
+        return Math.max(1,Math.round(n/1024))+" kB"
+    }
+    function planSummary() {
+        if(plan.error)return plan.error
+        if(planning && !plan.steps)return qsTr("Checking…")
+        if(!plan.steps)return ""
+        let lines=[]
+        lines.push(plan.image_installed?qsTr("System image installed · no download"):qsTr("Download about %1 (estimate) · needs Google's SDK licence: %2").arg(formatBytes(plan.estimate.download_bytes)).arg(plan.licenses_accepted?qsTr("already accepted"):qsTr("not yet accepted")))
+        lines.push(qsTr("Disk: about %1 for the emulator · %2 free").arg(formatBytes(plan.estimate.avd_bytes)).arg(formatBytes(plan.free_bytes)))
+        if(plan.blockers.length)lines.push(qsTr("Cannot start: %1").arg(plan.blockers.map(b=>b==="avd_exists"?qsTr("the name is taken"):b==="form_factor_unsupported"?qsTr("TV, Wear, Automotive and XR images are not supported yet"):b==="avd_space"?qsTr("not enough free space"):b.replace("_missing"," "+qsTr("is missing")).replace("sdk ",qsTr("the Android SDK")+" ")).join(" · ")))
+        else lines.push(qsTr("Steps: %1").arg(plan.steps.filter(s=>s.needed).map(s=>s.step==="install_image"?qsTr("install image"):s.step==="create"?qsTr("create"):s.step==="profile"?qsTr("apply model"):qsTr("start")).join(" → ")))
+        return lines.join("\n")
+    }
     function pin(device,pinned) {request("device.label",{device:device,pinned:pinned})}
     // Wireless debugging pairing: a QR code from android.pair, or the phone's pairing code.
     property string pairMode: "qr"
@@ -105,7 +143,8 @@ ColumnLayout {
         function onApiFinished(id,op,response) {
             let context=library.requests[id];if(!context)return;delete library.requests[id]
             if(op==="android.pair" || op==="android.connect"){library.pairReply(op,context.args,response);return}
-            if(!response.ok){library.notice=response.error.message;library.failed=true;if(op==="android.avd_configure")library.savingPerformance=false;if(op==="android.avd_create")library.submitting=false;if(op==="android.avd_start"){let next=Object.assign({},library.pendingBoots);delete next[context.args.name];library.pendingBoots=next}return}
+            if(op==="android.avd_plan"){library.planning=false;library.plan=response.ok?response.result:{error:response.error.message};return}
+            if(!response.ok){library.notice=response.error.message;library.failed=true;if(op==="android.avd_configure")library.savingPerformance=false;if(op==="android.avd_create" || op==="android.avd_setup")library.submitting=false;if(op==="android.avd_manage")library.manageAction="";if(op==="android.avd_start"){let next=Object.assign({},library.pendingBoots);delete next[context.args.name];library.pendingBoots=next}return}
             let value=response.result
             if(op==="android.avds"){library.avds=value.avds;library.images=value.system_images || []}
             if(op==="catalog.import"){Studio.reloadModels();library.notice=qsTr("Model imported");library.failed=false;Qt.callLater(()=>{let index=library.profiles.findIndex(p=>value.imported.indexOf(p.id)>=0);if(index>=0){modelPicker.currentIndex=index;nameField.text="Tomacco-"+library.selectedProfile.id}else library.notice=qsTr("Imported · contains no Android model")})}
@@ -115,10 +154,16 @@ ColumnLayout {
                 for(let name in next){let device=value.devices.find(d=>d.avd===name && d.state==="device" && d.booted!==false);if(device){delete next[name];library.openDevice(device);library.notice=qsTr("Emulator ready")}}
                 library.pendingBoots=next
             }
-            if(op==="android.avd_create"){library.submitting=false;library.createJob=value.id;createDialog.close();library.notice=qsTr("Setting up device…")}
+            if(op==="android.avd_create" || op==="android.avd_setup"){library.submitting=false;library.createJob=value.id;createDialog.close();library.notice=qsTr("Setting up device…")}
+            if(op==="android.avd_usage"){let next={};for(let a of value.avds)next[a.name]=a;library.usage=next}
+            if(op==="android.avd_manage"){
+                library.manageAction=""
+                if(context.args.action==="duplicate"){library.createJob=value.id;manageDialog.close();library.notice=qsTr("Copying device…")}
+                else{manageDialog.close();library.notice=context.args.action==="rename"?qsTr("Renamed to %1").arg(value.to):qsTr("App data removed · %1 freed · the next start boots like a new device").arg(library.formatBytes(value.freed_bytes));library.refresh()}
+            }
             if(op==="android.avd_configure"){library.savingPerformance=false;performanceDialog.close();library.notice=qsTr("Performance settings saved · used on the next start");library.refresh()}
             if(op==="android.emulator")library.refresh()
-            if(op==="device.label"){renameDialog.close();library.refresh()}
+            if(op==="device.label"){if(context.args.nickname!==undefined)renameDialog.close();library.refresh()}
             if(op==="android.avd_start"){
                 if(value.reused && value.device)library.refresh()
                 else library.pendingBoots=Object.assign({},library.pendingBoots,{[context.args.name]:value})
@@ -161,7 +206,8 @@ ColumnLayout {
                             }
                         }
                         StudioButton {objectName:"pinAvd-"+modelData.name;iconName:"pin";displayText:"";quiet:!modelData.pinned;selected:!!modelData.pinned;text:modelData.pinned?qsTr("Unpin"):qsTr("Pin");tip:modelData.pinned?qsTr("Unpin this device"):qsTr("Pin this device to the top");onClicked:library.pin("avd:"+modelData.name,!modelData.pinned)}
-                        StudioButton {objectName:"renameAvd-"+modelData.name;iconName:"edit";displayText:"";quiet:true;text:qsTr("Rename");tip:qsTr("Give this device a nickname");onClicked:library.rename("avd:"+modelData.name,modelData.nickname,modelData.profile_name || modelData.name)}
+                        StudioButton {objectName:"renameAvd-"+modelData.name;iconName:"edit";displayText:"";quiet:true;text:qsTr("Nickname");tip:qsTr("Give this device a nickname");onClicked:library.rename("avd:"+modelData.name,modelData.nickname,modelData.profile_name || modelData.name)}
+                        StudioButton {objectName:"manageAvd-"+modelData.name;iconName:"copy";displayText:"";quiet:true;text:qsTr("Manage");tip:qsTr("Duplicate, rename or wipe this emulator");onClicked:library.manage(modelData)}
                         StudioButton {objectName:"performanceAvd-"+modelData.name;iconName:"settings";quiet:true;tip:qsTr("Set graphics, memory and CPU");onClicked:library.performance(modelData)}
                         StudioButton {objectName:"startAvd-"+modelData.name;text:connected && connected.state==="device"?qsTr("Open"):library.pendingBoots[modelData.name]?qsTr("Starting…"):qsTr("Start");iconName:connected && connected.state==="device"?"phone":"play";enabled:!library.pendingBoots[modelData.name];onClicked:library.start(modelData)}
                     }
@@ -192,9 +238,11 @@ ColumnLayout {
     }
     StudioDialog {
         id:createDialog;objectName:"createAndroidDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,Theme.px(620));height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Add Android device")
+        onOpened:{if(!imageField.text && library.images.length)imageField.text=library.images[0];library.plan={};library.planCreate()}
+        Timer {id:planTimer;interval:350;onTriggered:library.planCreate()}
         contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapMd
             Text {text:qsTr("Model");color:Theme.muted;font.pixelSize:Theme.fontSmall}
-            StudioComboBox {id:modelPicker;objectName:"androidModelPicker";Layout.fillWidth:true;model:library.profiles;textRole:"name";onActivated:nameField.text="Tomacco-"+library.selectedProfile.id}
+            StudioComboBox {id:modelPicker;objectName:"androidModelPicker";Layout.fillWidth:true;model:library.profiles;textRole:"name";onActivated:{nameField.text="Tomacco-"+library.selectedProfile.id;planTimer.restart()}}
             RowLayout {Layout.fillWidth:true;spacing:Theme.gapLg
                 Item {Layout.preferredWidth:Theme.px(72);Layout.preferredHeight:Theme.px(120)
                     NativeDeviceFrame {id:modelPreview;profile:library.selectedProfile;backgroundColor:Theme.surface;scale:Math.min(72/width,120/height);anchors.centerIn:parent
@@ -203,16 +251,19 @@ ColumnLayout {
                 }
                 Text {Layout.fillWidth:true;text:qsTr("%1 pixels\n%2 dpi\n\nThe model determines the display and frame. Android comes from the chosen system image; vendor interfaces such as One UI are not included.").arg(library.selectedProfile.pixels || "").arg(Math.round((library.selectedProfile.dpr || 1)*160));color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;lineHeight:1.3}
             }
-            StudioTextField {id:nameField;objectName:"androidAvdName";Layout.fillWidth:true;placeholderText:qsTr("Device name");validator:RegularExpressionValidator {regularExpression:/[A-Za-z0-9][A-Za-z0-9_-]{0,63}/}}
-            Text {text:qsTr("Installed Android system");color:Theme.muted;font.pixelSize:Theme.fontSmall}
-            StudioComboBox {id:imagePicker;Layout.fillWidth:true;font.family:Theme.mono;model:library.images;displayText:currentText || qsTr("No system image installed yet")}
-            StudioButton {text:qsTr("Install Android system");visible:!library.images.length;onClicked:{createDialog.close();workspace.showAction("android.sdk_install")}}
+            StudioTextField {id:nameField;objectName:"androidAvdName";Layout.fillWidth:true;placeholderText:qsTr("Device name");validator:RegularExpressionValidator {regularExpression:/[A-Za-z0-9][A-Za-z0-9_-]{0,63}/} onTextChanged:planTimer.restart()}
+            Text {text:qsTr("Android system image");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+            StudioComboBox {id:imagePicker;objectName:"androidImagePicker";Layout.fillWidth:true;font.family:Theme.mono;model:library.images;displayText:currentText || qsTr("No system image installed yet");onActivated:imageField.text=currentText}
+            StudioTextField {id:imageField;objectName:"androidImageField";Layout.fillWidth:true;font.family:Theme.mono;placeholderText:"system-images;android-36;google_apis;x86_64";onTextChanged:planTimer.restart()}
+            Text {Layout.fillWidth:true;text:qsTr("Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            Text {objectName:"androidPlanText";Layout.fillWidth:true;visible:text.length>0;text:library.planSummary();color:library.plan.error || (library.plan.blockers && library.plan.blockers.length)?Theme.danger:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;lineHeight:1.3}
+            StudioCheckBox {id:acceptLicense;objectName:"androidAcceptLicense";Layout.fillWidth:true;Layout.minimumWidth:0;visible:library.planNeedsLicense;text:qsTr("Accept Google's Android SDK licence for this download")}
+            StudioCheckBox {id:startAfter;objectName:"androidStartAfter";Layout.fillWidth:true;Layout.minimumWidth:0;checked:true;text:qsTr("Start the emulator when it is ready")}
             Text {Layout.fillWidth:true;visible:library.failed;text:library.notice;color:Theme.danger;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
-            RowLayout {Layout.fillWidth:true;Layout.topMargin:Theme.gapSm;spacing:Theme.gapXs
-                StudioButton {text:qsTr("Import custom model");quiet:true;onClicked:modelFile.open()}
-                Item {Layout.fillWidth:true}
+            Flow {Layout.fillWidth:true;Layout.topMargin:Theme.gapSm;spacing:Theme.gapXs;layoutDirection:Qt.RightToLeft
+                StudioButton {objectName:"confirmAndroidCreate";text:library.submitting?qsTr("Creating…"):library.planNeedsLicense?qsTr("Download and create"):qsTr("Create");accent:true;enabled:!library.submitting && !library.planning && !!library.plan.ready && (!library.planNeedsLicense || acceptLicense.checked);onClicked:{library.submitting=true;library.failed=false;let args={name:nameField.text,profile_id:library.selectedProfile.id,system_image:imageField.text.trim()};if(library.planNeedsLicense)args.accept_licenses=true;if(startAfter.checked)args.start={headless:true};library.request("android.avd_setup",args)}}
                 StudioButton {text:qsTr("Cancel");onClicked:createDialog.close()}
-                StudioButton {objectName:"confirmAndroidCreate";text:library.submitting?qsTr("Creating…"):qsTr("Create");accent:true;enabled:!library.submitting && nameField.acceptableInput && !!nameField.text && !!imagePicker.currentText && !!library.selectedProfile.id;onClicked:{library.submitting=true;library.failed=false;library.request("android.avd_create",{name:nameField.text,profile_id:library.selectedProfile.id,system_image:imagePicker.currentText})}}
+                StudioButton {text:qsTr("Import custom model");quiet:true;onClicked:modelFile.open()}
             }
         }}
     }
@@ -241,6 +292,30 @@ ColumnLayout {
                 Item {Layout.fillWidth:true}
                 StudioButton {text:qsTr("Close");enabled:!library.savingPerformance;onClicked:performanceDialog.close()}
                 StudioButton {objectName:"saveAndroidPerformance";text:library.savingPerformance?qsTr("Saving…"):qsTr("Save");accent:true;enabled:!library.savingPerformance && !library.deviceFor(library.performanceAvd.name) && !library.pendingBoots[library.performanceAvd.name] && memoryField.acceptableInput && coresField.acceptableInput;onClicked:{library.savingPerformance=true;library.request("android.avd_configure",{name:library.performanceAvd.name,gpu:library.gpuOptions[rendererPicker.currentIndex].value,vulkan:["auto","on","off"][vulkanPicker.currentIndex],memory_mb:Number(memoryField.text),cores:Number(coresField.text)})}}
+            }
+        }}
+    }
+    StudioDialog {
+        id:manageDialog;objectName:"manageAvdDialog";parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min(parent.width-Theme.gapXxxl,Theme.px(560));height:Math.min(parent.height-Theme.gapLg,implicitHeight);modal:true;title:qsTr("Manage emulator")
+        contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapSm
+            Text {Layout.fillWidth:true;text:library.managing.name || "";color:Theme.text;font.family:Theme.mono;font.pixelSize:Theme.fontBody;elide:Text.ElideMiddle}
+            Text {objectName:"manageAvdUsage";Layout.fillWidth:true;wrapMode:Text.WordWrap;color:Theme.muted;font.pixelSize:Theme.fontSmall
+                text:library.managedUsage.bytes===undefined?qsTr("Reading disk usage…"):qsTr("On disk: %1 · a wipe frees %2").arg(library.formatBytes(library.managedUsage.bytes)).arg(library.formatBytes(library.managedUsage.wipe_bytes))}
+            StudioStatus {objectName:"manageAvdRunning";visible:library.managedRunning;tone:"warn";text:qsTr("The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.")}
+            Text {Layout.fillWidth:true;text:qsTr("New name");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+            StudioTextField {id:manageName;objectName:"manageAvdNewName";Layout.fillWidth:true;font.family:Theme.mono;placeholderText:qsTr("Letters, digits, - and _");validator:RegularExpressionValidator {regularExpression:/[A-Za-z0-9][A-Za-z0-9_-]{0,63}/}}
+            Text {Layout.fillWidth:true;text:qsTr("Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            Flow {Layout.fillWidth:true;spacing:Theme.gapXs
+                StudioButton {objectName:"duplicateAvd";text:library.manageAction==="duplicate"?qsTr("Copying…"):qsTr("Duplicate");iconName:"copy";enabled:!library.manageAction && !library.managedRunning && manageName.acceptableInput && !!manageName.text;onClicked:library.manageRequest("duplicate")}
+                StudioButton {objectName:"renameAvdReal";text:library.manageAction==="rename"?qsTr("Renaming…"):qsTr("Rename");iconName:"edit";enabled:!library.manageAction && !library.managedRunning && manageName.acceptableInput && !!manageName.text && manageConfirm.text.trim()===library.managing.name;onClicked:library.manageRequest("rename")}
+            }
+            Text {Layout.fillWidth:true;Layout.topMargin:Theme.gapSm;text:qsTr("Rename and wipe need the emulator's name typed here");color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            StudioTextField {id:manageConfirm;objectName:"manageAvdConfirm";Layout.fillWidth:true;font.family:Theme.mono;placeholderText:library.managing.name || ""}
+            Text {Layout.fillWidth:true;text:qsTr("Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator's model and settings stay.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            Text {Layout.fillWidth:true;visible:library.failed && manageDialog.visible;text:library.notice;color:Theme.danger;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            Flow {Layout.fillWidth:true;Layout.topMargin:Theme.gapSm;spacing:Theme.gapXs;layoutDirection:Qt.RightToLeft
+                StudioButton {text:qsTr("Close");enabled:!library.manageAction;onClicked:manageDialog.close()}
+                StudioButton {objectName:"wipeAvd";text:library.manageAction==="wipe"?qsTr("Wiping…"):qsTr("Wipe app data");danger:true;enabled:!library.manageAction && !library.managedRunning && manageConfirm.text.trim()===library.managing.name && !!library.managing.name;onClicked:library.manageRequest("wipe")}
             }
         }}
     }

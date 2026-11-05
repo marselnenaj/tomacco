@@ -17,7 +17,10 @@ operations and their JSON results.
   and disk estimate, the licence state and the blockers named first; a missing image is
   downloaded only with the licence accepted. `android.avd_usage` reads each AVD's disk usage
   and `android.avd_manage` duplicates, renames (through `avdmanager move`) or wipes a stopped
-  AVD, with the name repeated in `confirm` for the destructive ones.
+  AVD, with the name repeated in `confirm` for the destructive ones. The desktop's Android
+  device list has the same: Add device plans the setup first (download estimate, free space,
+  licence, blockers) and a Manage dialog duplicates, renames or wipes a stopped emulator; the
+  pencil button is the nickname only.
 
 ### Fixed
 - **Demo Studio errors.** An unknown `demo.*` operation answers `operation_not_found` like every

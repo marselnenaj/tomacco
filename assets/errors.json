@@ -215,6 +215,10 @@
     "cause": "The download from … does not match its published checksum and was deleted.",
     "remedy": "Try again; if it repeats, the download source changed and the pinned checksum needs an update in a new Tomacco version."
   },
+  "command_failed": {
+    "cause": "An SDK tool ran but did not do what Tomacco asked, such as avdmanager not renaming an AVD; its output is in the message.",
+    "remedy": "Read the message, check android.avds for the actual state, and run the step again; nothing else was changed."
+  },
   "compile_failed": {
     "cause": "cmd package compile did not answer Success for the app.",
     "remedy": "Read the message; the app must be installed and its package manager must accept the compiler filter."

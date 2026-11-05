@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 504 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 505 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -60,6 +60,7 @@ Every error code `tomaccoctl` returns, 504 codes, generated from `assets/errors.
 | `capture_timeout` | ADB screenshot timed out. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `catalogue_full` | At most 1000 custom profiles are supported. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `checksum_mismatch` | The download from … does not match its published checksum and was deleted. | Try again; if it repeats, the download source changed and the pinned checksum needs an update in a new Tomacco version. |
+| `command_failed` | An SDK tool ran but did not do what Tomacco asked, such as avdmanager not renaming an AVD; its output is in the message. | Read the message, check android.avds for the actual state, and run the step again; nothing else was changed. |
 | `compile_failed` | cmd package compile did not answer Success for the app. | Read the message; the app must be installed and its package manager must accept the compiler filter. |
 | `config_unsupported` | The request was refused; the message says why. | Update the bundle identifier in this project's xtool configuration manually. |
 | `conflicting_display_profile` | This device model has its own display; omit display_profile. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |

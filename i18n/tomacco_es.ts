@@ -237,14 +237,6 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Importado · no contiene ningún modelo Android</translation>
     </message>
     <message>
-        <source>Install Android system</source>
-        <translation>Instalar sistema Android</translation>
-    </message>
-    <message>
-        <source>Installed Android system</source>
-        <translation>Sistema Android instalado</translation>
-    </message>
-    <message>
         <source>Memory (MB)</source>
         <translation>Memoria RAM (MB)</translation>
     </message>
@@ -455,6 +447,170 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
     <message>
         <source>Show every running device's screen side by side</source>
         <translation>Mostrar una junto a otra las pantallas de todos los dispositivos en marcha</translation>
+    </message>
+    <message>
+        <source>Accept Google's Android SDK licence for this download</source>
+        <translation>Aceptar la licencia del SDK de Android de Google para esta descarga</translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation>Imagen del sistema Android</translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation>Datos de apps eliminados · %1 liberados · el próximo inicio arranca como un dispositivo nuevo</translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation>No se puede iniciar: %1</translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation>Comprobando…</translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation>Copiando dispositivo…</translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation>Copiando…</translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation>Disco: unos %1 para el emulador · %2 libres</translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google's SDK licence: %2</source>
+        <translation>Descarga de unos %1 (estimación) · requiere la licencia del SDK de Google: %2</translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation>Descargar y crear</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>Duplicar</translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation>Duplicar copia el emulador con sus apps y datos con el nuevo nombre, como una tarea que puedes cancelar. Renombrar cambia realmente el nombre del emulador mediante el SDK de Android; el apodo se mantiene. Solo un apodo se asigna con el botón del lápiz.</translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation>Duplicar, renombrar o borrar este emulador</translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation>Letras, dígitos, - y _</translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation>Gestionar</translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation>Gestionar emulador</translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation>Nuevo nombre</translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation>En disco: %1 · un borrado libera %2</translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation>Elige una imagen instalada o escribe otro paquete: se descargará como primer paso. Tomacco crea emuladores de teléfono, plegable y tableta.</translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation>Leyendo el uso de disco…</translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator's name typed here</source>
+        <translation>Renombrar y borrar requieren escribir aquí el nombre del emulador</translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation>Renombrado a %1</translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation>Renombrando…</translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation>Iniciar el emulador cuando esté listo</translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation>Pasos: %1</translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation>Imagen del sistema instalada · sin descarga</translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation>Las imágenes de TV, Wear, Automotive y XR aún no se admiten</translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation>El emulador está encendido o existen sus archivos de bloqueo. Apágalo primero; nada aquí cambia un emulador en marcha.</translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation>Borrar datos de apps</translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator's model and settings stay.</source>
+        <translation>El borrado elimina las apps, sus datos y las instantáneas; el próximo inicio arranca como un dispositivo nuevo. El modelo y los ajustes del emulador se conservan.</translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation>Borrando…</translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation>ya aceptada</translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation>aplicar modelo</translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation>crear</translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation>instalar imagen</translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation>falta</translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation>no hay suficiente espacio libre</translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation>aún no aceptada</translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation>iniciar</translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation>el SDK de Android</translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
+        <translation>el nombre ya está en uso</translation>
     </message>
 </context>
 <context>

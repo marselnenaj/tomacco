@@ -1395,6 +1395,91 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         QTRY_VERIFY_WITH_TIMEOUT(!labels().contains("avd:Label_Test"),patient(10000));
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void emulators_are_managed_from_their_own_dialog_with_typed_confirmation() {
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        auto *library=object("androidDeviceLibrary");QVERIFY(library);
+        // A fixture AVD in Tomacco's own AVD directory: the real android.avd_usage and android.avd_manage read and change it.
+        const QString avd=directory.filePath("state/avds/Manage_Test.avd");QVERIFY(QDir().mkpath(avd+"/snapshots/default_boot"));
+        const auto write=[](const QString &path,const QByteArray &bytes){QFile f(path);if(f.open(QIODevice::WriteOnly|QIODevice::Truncate))f.write(bytes);};
+        write(avd+"/userdata-qemu.img",QByteArray(2048,'\1'));write(avd+"/snapshots/default_boot/ram.bin",QByteArray(1024,'\2'));
+        write(avd+"/config.ini","AvdId=Manage_Test\nhw.lcd.width=1080\n");write(directory.filePath("state/avds/Manage_Test.ini"),("path="+avd+"\n").toUtf8());
+        library->setProperty("avds",QVariantList{QVariantMap{{"name","Manage_Test"},{"profile_name","Pixel 11"},{"display",QVariantMap{{"width",1080},{"height",2400}}}}});
+        // The pencil is a nickname, the new button manages the AVD itself.
+        QCOMPARE(accessibleName(item("renameAvd-Manage_Test")),QString("Nickname"));
+        QVERIFY(QMetaObject::invokeMethod(item("manageAvd-Manage_Test"),"clicked"));
+        auto *dialog=object("manageAvdDialog");QVERIFY(dialog);QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *usage=item("manageAvdUsage");QVERIFY(usage);
+        QTRY_VERIFY_WITH_TIMEOUT(usage->property("text").toString().contains("3 kB"),patient(10000));
+        auto *wipe=item("wipeAvd");auto *rename=item("renameAvdReal");auto *duplicate=item("duplicateAvd");auto *confirm=item("manageAvdConfirm");auto *newName=item("manageAvdNewName");
+        QVERIFY(wipe);QVERIFY(rename);QVERIFY(duplicate);QVERIFY(confirm);QVERIFY(newName);
+        QVERIFY(!wipe->isEnabled());QVERIFY(!rename->isEnabled());QVERIFY(!duplicate->isEnabled());
+        newName->setProperty("text","Manage_Copy");QVERIFY(duplicate->isEnabled());QVERIFY(!rename->isEnabled());QVERIFY(!wipe->isEnabled());
+        confirm->setProperty("text","manage_test");QVERIFY(!wipe->isEnabled());
+        confirm->setProperty("text","Manage_Test");QVERIFY(rename->isEnabled());QVERIFY(wipe->isEnabled());
+        capture("android-manage-avd");
+        // Narrow and wide windows at 100 % and 200 % keep every action inside the dialog.
+        {const auto size=window->size();const auto restore=qScopeGuard([&]{backend->setUiScale(100);window->resize(size);});
+         auto *content=dialog->property("contentItem").value<QQuickItem*>();QVERIFY(content);
+         for(int scale:{100,200})for(const auto &w:{QSize(560,720),QSize(1380,970)}) {
+            backend->setUiScale(scale);window->resize(w);QTRY_COMPARE(window->size(),w);QTest::qWait(80);
+            const auto dialogWidth=dialog->property("width").toReal();
+            QVERIFY2(dialogWidth<=window->width(),qPrintable(QString("dialog %1 wider than window %2 at %3%").arg(dialogWidth).arg(window->width()).arg(scale)));
+            for(auto *control:{wipe,rename,duplicate,confirm,newName}) {
+                const auto right=control->mapToItem(content,QPointF(control->width(),0)).x();
+                QVERIFY2(control->isVisible() && right<=content->width()+0.5,qPrintable(QString("%1 ends at %2 in content of %3 at %4 px, %5%").arg(control->objectName()).arg(right).arg(content->width()).arg(w.width()).arg(scale)));
+            }
+            if(scale==200 && w.width()==560)capture("android-manage-avd-560-200");
+         }}
+        QTRY_VERIFY(dialog->property("visible").toBool());
+        // While the emulator starts or runs, nothing is offered.
+        library->setProperty("pendingBoots",QVariantMap{{"Manage_Test",QVariantMap{}}});
+        QVERIFY(!wipe->isEnabled());QVERIFY(!rename->isEnabled());QVERIFY(!duplicate->isEnabled());QVERIFY(item("manageAvdRunning")->isVisible());
+        library->setProperty("pendingBoots",QVariantMap{});QVERIFY(wipe->isEnabled());
+        // The wipe runs through android.avd_manage: user data and snapshots go, the configuration stays.
+        QVERIFY(QMetaObject::invokeMethod(wipe,"clicked"));
+        QTRY_VERIFY_WITH_TIMEOUT(!dialog->property("visible").toBool(),patient(10000));
+        QVERIFY(!QFile::exists(avd+"/userdata-qemu.img"));QVERIFY(!QDir(avd+"/snapshots").exists());QVERIFY(QFile::exists(avd+"/config.ini"));
+        QVERIFY2(library->property("notice").toString().contains("3 kB"),qPrintable(library->property("notice").toString()));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void emulator_setup_is_planned_before_anything_is_created() {
+        open("devices");workspace->setProperty("selectedPlatform","android");
+        auto *library=object("androidDeviceLibrary");QVERIFY(library);
+        QVERIFY(QDir().mkpath(directory.filePath("state/avds")));
+        {QFile f(directory.filePath("state/avds/Taken_Name.ini"));QVERIFY(f.open(QIODevice::WriteOnly|QIODevice::Truncate));f.write("path=/nowhere/Taken_Name.avd\n");}
+        auto *button=item("createAndroidEmulator");QVERIFY(button);QVERIFY(QMetaObject::invokeMethod(button,"clicked"));
+        auto *dialog=object("createAndroidDialog");QVERIFY(dialog);QTRY_VERIFY(dialog->property("visible").toBool());
+        auto *name=item("androidAvdName");auto *image=item("androidImageField");auto *plan=item("androidPlanText");auto *create=item("confirmAndroidCreate");
+        QVERIFY(name);QVERIFY(image);QVERIFY(plan);QVERIFY(create);
+        image->setProperty("text","system-images;android-36;google_apis;x86_64");
+        name->setProperty("text","Taken_Name");
+        // The plan comes from android.avd_plan and names the blocker; Create stays off.
+        QTRY_VERIFY_WITH_TIMEOUT(plan->property("text").toString().contains("the name is taken"),patient(10000));
+        QVERIFY(plan->property("text").toString().contains("estimate") || plan->property("text").toString().contains("no download"));
+        QVERIFY(!create->isEnabled());
+        QVERIFY(item("androidStartAfter")->property("checked").toBool());
+        capture("android-setup-plan");
+        {const auto size=window->size();const auto restore=qScopeGuard([&]{backend->setUiScale(100);window->resize(size);});
+         auto *content=dialog->property("contentItem").value<QQuickItem*>();QVERIFY(content);
+         for(int scale:{100,200})for(const auto &w:{QSize(560,720),QSize(1380,970)}) {
+            backend->setUiScale(scale);window->resize(w);QTRY_COMPARE(window->size(),w);QTest::qWait(80);
+            const auto dialogWidth=dialog->property("width").toReal();
+            QVERIFY2(dialogWidth<=window->width(),qPrintable(QString("create dialog %1 wider than window %2").arg(dialogWidth).arg(window->width())));
+            for(auto *control:{create,plan,image,name,item("androidStartAfter")}) {
+                const auto right=control->mapToItem(content,QPointF(control->width(),0)).x();
+                QVERIFY2(right<=content->width()+0.5,qPrintable(QString("%1 ends at %2 in content of %3 at %4 px, %5%").arg(control->objectName()).arg(right).arg(content->width()).arg(w.width()).arg(scale)));
+            }
+            if(scale==200 && w.width()==560)capture("android-setup-plan-560-200");
+         }}
+        // A TV image is not created by Tomacco yet; the plan says so instead of failing in a job.
+        image->setProperty("text","system-images;android-36;google-tv;x86_64");name->setProperty("text","Tv_Test");
+        QTRY_VERIFY_WITH_TIMEOUT(plan->property("text").toString().contains("not supported yet"),patient(10000));
+        QVERIFY(!create->isEnabled());
+        // The dialog keeps its fields between openings; leave the defaults for the next test.
+        name->setProperty("text","Tomacco-pixel-11");image->setProperty("text","");
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void wireless_pairing_shows_a_qr_code_and_falls_back_to_the_pairing_code() {
         // A stand-in adb: the phone offers the code's service once the test says it scanned it.
         auto fake=useFakeAdb("case \"$1\" in\n"
