@@ -2490,7 +2490,7 @@ F12                        Inspecteur web</translation>
     </message>
     <message>
         <source>Unsaved files</source>
-        <translation>Fichiers non enregistrés</translation>
+        <translation type="vanished">Fichiers non enregistrés</translation>
     </message>
     <message>
         <source>VIEW</source>
@@ -2633,6 +2633,10 @@ xtool setup</translation>
     <message>
         <source>Slow 3G</source>
         <translation>3G lente</translation>
+    </message>
+    <message>
+        <source>Unsaved changes</source>
+        <translation>Modifications non enregistrées</translation>
     </message>
 </context>
 <context>
@@ -4829,6 +4833,38 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>Read a saved result</source>
         <translation>Lire un résultat enregistré</translation>
     </message>
+    <message>
+        <source>Inspect Demo Studio capabilities</source>
+        <translation>Examiner les capacités de Demo Studio</translation>
+    </message>
+    <message>
+        <source>Inspect local demo recording</source>
+        <translation>Examiner l’enregistrement local de démo</translation>
+    </message>
+    <message>
+        <source>Create demo scene</source>
+        <translation>Créer une scène de démo</translation>
+    </message>
+    <message>
+        <source>Read demo scene</source>
+        <translation>Lire une scène de démo</translation>
+    </message>
+    <message>
+        <source>Update demo scene</source>
+        <translation>Mettre à jour une scène de démo</translation>
+    </message>
+    <message>
+        <source>Render demo preview</source>
+        <translation>Calculer l’aperçu de la démo</translation>
+    </message>
+    <message>
+        <source>Export demo video</source>
+        <translation>Exporter la vidéo de démo</translation>
+    </message>
+    <message>
+        <source>Validate demo export</source>
+        <translation>Valider l’exportation de la démo</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5668,6 +5704,14 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
         <source>No tool matches “%1”.</source>
         <translation>Aucun outil ne correspond à « %1 ».</translation>
     </message>
+    <message>
+        <source>Demo Studio</source>
+        <translation>Demo Studio</translation>
+    </message>
+    <message>
+        <source>Turn a screen recording into a video with a 3D device.</source>
+        <translation>Transformez un enregistrement d’écran en vidéo avec un appareil en 3D.</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5709,7 +5753,7 @@ SSH utilise vos clés existantes et l'identité d'hôte connue.</translation>
     </message>
     <message>
         <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release or preview</source>
-        <translation>Ouvrir un espace de travail : runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release ou preview</translation>
+        <translation type="vanished">Ouvrir un espace de travail : runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release ou preview</translation>
     </message>
     <message>
         <source>Orientation: portrait or landscape</source>
@@ -5754,6 +5798,10 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
 </source>
         <translation>Espace de travail inconnu. Voir --help pour les espaces de travail disponibles.
 </translation>
+    </message>
+    <message>
+        <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo or preview</source>
+        <translation>Ouvrir un espace : runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo ou preview</translation>
     </message>
 </context>
 <context>
@@ -6159,6 +6207,313 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
     <message>
         <source>Approve</source>
         <translation>Autoriser</translation>
+    </message>
+</context>
+<context>
+    <name>DemoWorkspace</name>
+    <message>
+        <source>Save your changes before opening another scene.</source>
+        <translation>Enregistrez vos modifications avant d’ouvrir une autre scène.</translation>
+    </message>
+    <message>
+        <source>App demo</source>
+        <translation>Démo d’application</translation>
+    </message>
+    <message>
+        <source>Enter a valid number.</source>
+        <translation>Saisissez un nombre valide.</translation>
+    </message>
+    <message>
+        <source>Choose a different time for the new pose.</source>
+        <translation>Choisissez un autre instant pour la nouvelle pose.</translation>
+    </message>
+    <message>
+        <source>Save changes before rendering.</source>
+        <translation>Enregistrez les modifications avant le rendu.</translation>
+    </message>
+    <message>
+        <source>Render complete.</source>
+        <translation>Rendu terminé.</translation>
+    </message>
+    <message>
+        <source>Rendering did not complete. Your scene is unchanged.</source>
+        <translation>Le rendu n’a pas abouti. Votre scène est inchangée.</translation>
+    </message>
+    <message>
+        <source>Your draft has changes. Reload explicitly to replace it.</source>
+        <translation>Votre brouillon a été modifié. Rechargez la scène pour le remplacer.</translation>
+    </message>
+    <message>
+        <source>Scene opened.</source>
+        <translation>Scène ouverte.</translation>
+    </message>
+    <message>
+        <source>Changes saved.</source>
+        <translation>Modifications enregistrées.</translation>
+    </message>
+    <message>
+        <source>Saved. Your newer edits are still unsaved.</source>
+        <translation>Enregistré. Vos modifications plus récentes ne sont pas encore enregistrées.</translation>
+    </message>
+    <message>
+        <source>The render job could not be followed.</source>
+        <translation>Impossible de suivre la tâche de rendu.</translation>
+    </message>
+    <message>
+        <source>A recording, made into a demo</source>
+        <translation>Transformez un enregistrement en démo</translation>
+    </message>
+    <message>
+        <source>Choose a local video, place it in a device and set its motion. Your source stays unchanged.</source>
+        <translation>Choisissez une vidéo locale, placez-la dans un appareil et définissez son mouvement. La source reste inchangée.</translation>
+    </message>
+    <message>
+        <source>Source video</source>
+        <translation>Vidéo source</translation>
+    </message>
+    <message>
+        <source>Choose video</source>
+        <translation>Choisir une vidéo</translation>
+    </message>
+    <message>
+        <source>Inspect video</source>
+        <translation>Examiner la vidéo</translation>
+    </message>
+    <message>
+        <source>Scene file (.json)</source>
+        <translation>Fichier de scène (.json)</translation>
+    </message>
+    <message>
+        <source>Choose scene path</source>
+        <translation>Choisir l’emplacement de la scène</translation>
+    </message>
+    <message>
+        <source>Scene title</source>
+        <translation>Titre de la scène</translation>
+    </message>
+    <message>
+        <source>Create scene</source>
+        <translation>Créer une scène</translation>
+    </message>
+    <message>
+        <source>Open scene</source>
+        <translation>Ouvrir une scène</translation>
+    </message>
+    <message>
+        <source>The video renderer is not ready. Check the rendering tools under Agents &amp; tools.</source>
+        <translation>Le moteur de rendu vidéo n’est pas prêt. Vérifiez les outils de rendu dans Agents et outils.</translation>
+    </message>
+    <message>
+        <source>Scene</source>
+        <translation>Scène</translation>
+    </message>
+    <message>
+        <source>Keep the original recording or crop its time. Canvas size changes the exported video.</source>
+        <translation>Gardez tout l’enregistrement ou sélectionnez un extrait. La taille du canevas définit celle de la vidéo exportée.</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>Titre</translation>
+    </message>
+    <message>
+        <source>Duration (seconds)</source>
+        <translation>Durée (secondes)</translation>
+    </message>
+    <message>
+        <source>Canvas width</source>
+        <translation>Largeur du canevas</translation>
+    </message>
+    <message>
+        <source>Canvas height</source>
+        <translation>Hauteur du canevas</translation>
+    </message>
+    <message>
+        <source>Frames per second</source>
+        <translation>Images par seconde</translation>
+    </message>
+    <message>
+        <source>Clip start (seconds)</source>
+        <translation>Début de l’extrait (secondes)</translation>
+    </message>
+    <message>
+        <source>Background color</source>
+        <translation>Couleur de fond</translation>
+    </message>
+    <message>
+        <source>Second background color</source>
+        <translation>Seconde couleur de fond</translation>
+    </message>
+    <message>
+        <source>Background</source>
+        <translation>Fond</translation>
+    </message>
+    <message>
+        <source>Device finish</source>
+        <translation>Couleur du boîtier</translation>
+    </message>
+    <message>
+        <source>Device model</source>
+        <translation>Modèle d’appareil</translation>
+    </message>
+    <message>
+        <source>Shadow opacity</source>
+        <translation>Opacité de l’ombre</translation>
+    </message>
+    <message>
+        <source>Shadow</source>
+        <translation>Ombre</translation>
+    </message>
+    <message>
+        <source>Motion</source>
+        <translation>Mouvement</translation>
+    </message>
+    <message>
+        <source>Each pose sets the device at a moment in the video. The motion runs between them.</source>
+        <translation>Chaque pose définit la position de l’appareil à un instant de la vidéo. Le mouvement relie les poses.</translation>
+    </message>
+    <message>
+        <source>Pose %1 · %2 s</source>
+        <translation>Pose %1 · %2 s</translation>
+    </message>
+    <message>
+        <source>Add pose</source>
+        <translation>Ajouter une pose</translation>
+    </message>
+    <message>
+        <source>Remove pose</source>
+        <translation>Supprimer la pose</translation>
+    </message>
+    <message>
+        <source>Time (seconds)</source>
+        <translation>Instant (secondes)</translation>
+    </message>
+    <message>
+        <source>Turn · yaw (degrees)</source>
+        <translation>Rotation · lacet (degrés)</translation>
+    </message>
+    <message>
+        <source>Tilt · pitch (degrees)</source>
+        <translation>Inclinaison · tangage (degrés)</translation>
+    </message>
+    <message>
+        <source>Spin · roll (degrees)</source>
+        <translation>Pivotement · roulis (degrés)</translation>
+    </message>
+    <message>
+        <source>Scale</source>
+        <translation>Échelle</translation>
+    </message>
+    <message>
+        <source>Horizontal position (0–1)</source>
+        <translation>Position horizontale (0–1)</translation>
+    </message>
+    <message>
+        <source>Vertical position (0–1)</source>
+        <translation>Position verticale (0–1)</translation>
+    </message>
+    <message>
+        <source>Motion curve</source>
+        <translation>Courbe du mouvement</translation>
+    </message>
+    <message>
+        <source>Saving…</source>
+        <translation>Enregistrement…</translation>
+    </message>
+    <message>
+        <source>Save changes</source>
+        <translation>Enregistrer les modifications</translation>
+    </message>
+    <message>
+        <source>Reload saved scene</source>
+        <translation>Recharger la scène enregistrée</translation>
+    </message>
+    <message>
+        <source>Unsaved changes · save before rendering.</source>
+        <translation>Modifications non enregistrées · enregistrez avant le rendu.</translation>
+    </message>
+    <message>
+        <source>Preview &amp; export</source>
+        <translation>Aperçu et exportation</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
+        <translation>Prévisualisez une image, puis exportez un MP4 sans son. Une affiche et un relevé du rendu sont enregistrés à côté.</translation>
+    </message>
+    <message>
+        <source>Your rendered preview appears here.</source>
+        <translation>Votre aperçu rendu apparaît ici.</translation>
+    </message>
+    <message>
+        <source>This image shows the last completed render.</source>
+        <translation>Cette image montre le dernier rendu terminé.</translation>
+    </message>
+    <message>
+        <source>Preview time (seconds)</source>
+        <translation>Instant de l’aperçu (secondes)</translation>
+    </message>
+    <message>
+        <source>Render preview</source>
+        <translation>Calculer l’aperçu</translation>
+    </message>
+    <message>
+        <source>Export MP4</source>
+        <translation>Exporter en MP4</translation>
+    </message>
+    <message>
+        <source>Show exported video</source>
+        <translation>Afficher la vidéo exportée</translation>
+    </message>
+    <message>
+        <source>Waiting to render…</source>
+        <translation>En attente du rendu…</translation>
+    </message>
+    <message>
+        <source>Rendering…</source>
+        <translation>Rendu en cours…</translation>
+    </message>
+    <message>
+        <source>Render failed.</source>
+        <translation>Échec du rendu.</translation>
+    </message>
+    <message>
+        <source>Render cancelled.</source>
+        <translation>Rendu annulé.</translation>
+    </message>
+    <message>
+        <source>Render timed out.</source>
+        <translation>Délai du rendu dépassé.</translation>
+    </message>
+    <message>
+        <source>Videos (*.mp4 *.mov *.mkv *.webm)</source>
+        <translation>Vidéos (*.mp4 *.mov *.mkv *.webm)</translation>
+    </message>
+    <message>
+        <source>Scenes (*.json)</source>
+        <translation>Scènes (*.json)</translation>
+    </message>
+    <message>
+        <source>PNG image (*.png)</source>
+        <translation>Image PNG (*.png)</translation>
+    </message>
+    <message>
+        <source>MP4 video (*.mp4)</source>
+        <translation>Vidéo MP4 (*.mp4)</translation>
+    </message>
+    <message>
+        <source>Discard unsaved changes?</source>
+        <translation>Abandonner les modifications non enregistrées ?</translation>
+    </message>
+    <message>
+        <source>Reload the saved scene and replace your draft. The video source stays unchanged.</source>
+        <translation>Rechargez la scène enregistrée pour remplacer votre brouillon. La vidéo source reste inchangée.</translation>
+    </message>
+    <message>
+        <source>Keep editing</source>
+        <translation>Continuer la modification</translation>
+    </message>
+    <message>
+        <source>Discard and reload</source>
+        <translation>Abandonner et recharger</translation>
     </message>
 </context>
 </TS>

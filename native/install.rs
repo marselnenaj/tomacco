@@ -1983,6 +1983,17 @@ pub fn install_package(installer: &mut Installer, package: &Package, options: &O
         installer.launchers(runtime.is_some())?;
         let read = |path: &Path| fs::read(path).map_err(io_context(path));
         installer.write(app.join(DESKTOP_NAME), &read(binary)?, 0o755)?;
+        let demo_renderer = binary
+            .parent()
+            .unwrap_or(Path::new("."))
+            .join("tomacco-demo-render");
+        if is_file(&demo_renderer) {
+            installer.write(
+                app.join("tomacco-demo-render"),
+                &read(&demo_renderer)?,
+                0o755,
+            )?;
+        }
         #[allow(unused_mut)]
         let mut cli_bytes = read(&cli)?;
         #[cfg(debug_assertions)]

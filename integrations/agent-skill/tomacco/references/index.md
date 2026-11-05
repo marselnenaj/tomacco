@@ -2,7 +2,7 @@
 
 # Tomacco references
 
-250 operations in all, in 31 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
+258 operations in all, in 32 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
 
 | File | Operations | Areas and names |
 | --- | --- | --- |
@@ -13,6 +13,7 @@
 | [audit](audit.md) | 1 | Log of operations that changed something. `audit.list` |
 | [catalog](catalog.md) | 4 | Saved project and device catalogue. `catalog.list`, `catalog.import`, `catalog.export`, … |
 | [debug](debug.md) | 10 | Debugger sessions: breakpoints, threads, stack, variables. `debug.start`, `debug.list`, `debug.state`, … |
+| [demo](demo.md) | 8 | Local recordings into device videos: scenes, preview frames and verified exports. `demo.capabilities`, `demo.media.inspect`, `demo.scene.create`, … |
 | [desktop](desktop.md) | 2 | The desktop app's state and window. `desktop.status`, `desktop.open` |
 | [device](device.md) | 8 | Devices of either platform: list, install, capture, logs. `device.list`, `device.info`, `device.label`, … |
 | [diagnostics](diagnostics.md) | 1 | Bug-report bundle with secrets masked. `diagnostics.bundle` |

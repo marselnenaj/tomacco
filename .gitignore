@@ -1,4 +1,5 @@
 build/
+build-demo/
 build-product/
 build-portable/
 build-portable-aarch64/

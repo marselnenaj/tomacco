@@ -266,9 +266,13 @@ fn recover(db: &Connection, id: &str) -> Result<()> {
     };
     let spec: Value = serde_json::from_str(s(&current.value, "plan"))?;
     cancel_tree(db, id)?;
+    let mut recovered = json!({"error":reason});
+    if let Err(error) = crate::demo::cleanup_failed_artifacts(&spec) {
+        recovered["cleanup_errors"] = json!([error.value()]);
+    }
     db.execute(
         "UPDATE jobs SET state='failed',result=?,updated=? WHERE id=? AND state IN ('queued','running')",
-        params![json!({"error":reason}).to_string(), now(), id],
+        params![recovered.to_string(), now(), id],
     )?;
     transaction.commit()?;
     let cleanup_errors = remove_temporary_directories(&spec);
@@ -1031,7 +1035,13 @@ pub fn worker(id: &str) -> Result<()> {
             json!({"artifacts":[],"error":e.to_string()}),
         ),
     };
-    let mut cleanup_errors = remove_temporary_directories(&spec);
+    let mut cleanup_errors = Vec::new();
+    if state != "succeeded" {
+        if let Err(error) = crate::demo::cleanup_failed_artifacts(&spec) {
+            cleanup_errors.push(error.value());
+        }
+    }
+    cleanup_errors.extend(remove_temporary_directories(&spec));
     if let Some(cleanup) = spec["cleanup"].as_array() {
         for command in cleanup {
             let (args, timeout) = if command.is_array() {

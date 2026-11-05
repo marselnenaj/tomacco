@@ -163,21 +163,23 @@ class Aarch64(unittest.TestCase):
             for path in (qt / "lib", qt / "qml", qt / "resources", qt / "translations/qtwebengine_locales", qt / "libexec",
                          ffmpeg / "lib", system, top / "bin"):
                 path.mkdir(parents=True)
-            for path in (top / "bin/tomacco", qt / "libexec/QtWebEngineProcess", qt / "lib/libQt6WebEngineCore.so.6",
+            for path in (top / "bin/tomacco", top / "bin/tomacco-demo-render", qt / "libexec/QtWebEngineProcess", qt / "lib/libQt6WebEngineCore.so.6",
                          system / "libwebp.so.7", system / "libsharpyuv.so.0"):
                 path.write_bytes(b"\x7fELF")
-            graph = {"tomacco": ["libQt6WebEngineCore.so.6", "libc.so.6"], "QtWebEngineProcess": ["libc.so.6"],
+            graph = {"tomacco": ["libQt6WebEngineCore.so.6", "libc.so.6"], "tomacco-demo-render": ["libQt6Gui.so.6"], "QtWebEngineProcess": ["libc.so.6"],
                      "libQt6WebEngineCore.so.6": ["libwebp.so.7", "libnss3.so"], "libwebp.so.7": ["libsharpyuv.so.0"],
                      "libsharpyuv.so.0": ["libm.so.6"]}
+            (qt / "lib/libQt6Gui.so.6").write_bytes(b"\x7fELF")
             patched = []
             with unittest.mock.patch.object(build_portable, "needed", lambda path: graph.get(Path(path).name, [])), \
                     unittest.mock.patch.object(build_portable, "run", lambda argv: patched.append(Path(argv[-1]).name)):
                 host = build_portable.assemble(top, qt, ffmpeg, system, build_portable.ARCHITECTURES["aarch64"].bundled)
             library = top / build_portable.RUNTIME / "lib"
             self.assertEqual(sorted(path.name for path in library.iterdir()),
-                             ["libQt6WebEngineCore.so.6", "libsharpyuv.so.0", "libwebp.so.7"])
+                             ["libQt6Gui.so.6", "libQt6WebEngineCore.so.6", "libsharpyuv.so.0", "libwebp.so.7"])
             self.assertEqual(host, ["libc.so.6", "libm.so.6", "libnss3.so"])
             self.assertIn("libwebp.so.7", patched)
+            self.assertIn("tomacco-demo-render", patched)
 
     def test_the_symbol_limits_are_the_architectures(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 250 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 258 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 487 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 492 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -104,6 +104,19 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`debug.variables`](debug.md#debugvariables) | Read variables | read-only |
 | [`debug.evaluate`](debug.md#debugevaluate) | Evaluate expression | writes |
 | [`debug.control`](debug.md#debugcontrol) | Control debugger | writes |
+
+## [demo](demo.md)
+
+| Operation | Title | Annotation |
+| --- | --- | --- |
+| [`demo.capabilities`](demo.md#democapabilities) | Inspect Demo Studio capabilities | read-only |
+| [`demo.media.inspect`](demo.md#demomediainspect) | Inspect local demo recording | read-only |
+| [`demo.scene.create`](demo.md#demoscenecreate) | Create demo scene | writes |
+| [`demo.scene.get`](demo.md#demosceneget) | Read demo scene | read-only |
+| [`demo.scene.update`](demo.md#demosceneupdate) | Update demo scene | writes |
+| [`demo.preview`](demo.md#demopreview) | Render demo preview | writes |
+| [`demo.export`](demo.md#demoexport) | Export demo video | writes |
+| [`demo.export.inspect`](demo.md#demoexportinspect) | Validate demo export | read-only |
 
 ## [desktop](desktop.md)
 

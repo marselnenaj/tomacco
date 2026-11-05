@@ -410,7 +410,10 @@ def assemble(top, qt=QT, ffmpeg=FFMPEG, system=SYSTEM_LIBRARY_DIRECTORY, bundled
     (runtime / "libexec/qt.conf").write_text("[Paths]\nPrefix=..\n")
     library = runtime / "lib"
     library.mkdir(parents=True, exist_ok=True)
-    pending = [top / "bin/tomacco"] + [p for p in sorted(runtime.rglob("*")) if p.is_file() and is_elf(p)]
+    executables = [top / "bin/tomacco"]
+    if (top / "bin/tomacco-demo-render").is_file():
+        executables.append(top / "bin/tomacco-demo-render")
+    pending = executables + [p for p in sorted(runtime.rglob("*")) if p.is_file() and is_elf(p)]
     seen, host = set(), set()
     while pending:
         for name in needed(pending.pop()):
@@ -430,7 +433,8 @@ def assemble(top, qt=QT, ffmpeg=FFMPEG, system=SYSTEM_LIBRARY_DIRECTORY, bundled
                     host.add(name)
     # The desktop finds the bundle from the package's bin/ and from the
     # installed ~/.local/lib/tomacco; Qt's own files already say $ORIGIN.
-    run(["patchelf", "--set-rpath", "$ORIGIN/../lib/tomacco/runtime/lib:$ORIGIN/runtime/lib", top / "bin/tomacco"])
+    for executable in executables:
+        run(["patchelf", "--set-rpath", "$ORIGIN/../lib/tomacco/runtime/lib:$ORIGIN/runtime/lib", executable])
     for name in sorted(library.iterdir()):
         if name.name.startswith(("libav", "libsw")) or name.name in bundled:
             run(["patchelf", "--set-rpath", "$ORIGIN", name])

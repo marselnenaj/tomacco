@@ -86,7 +86,7 @@ int main(int argc,char **argv) {
     parser.addOption({"device",QCoreApplication::translate("main","Device profile ID from tomaccoctl call catalog.list"),"id"});
     parser.addOption({"preview-session",QCoreApplication::translate("main","Name of the agent preview session"),"name","main"});
     parser.addOption({"project",QCoreApplication::translate("main","Open a project in the native workspace"),"directory"});
-    parser.addOption({"workspace",QCoreApplication::translate("main","Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release or preview"),"tab","preview"});
+    parser.addOption({"workspace",QCoreApplication::translate("main","Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo or preview"),"tab","preview"});
     parser.addOption({"orientation",QCoreApplication::translate("main","Orientation: portrait or landscape"),"orientation","portrait"});
     parser.addOption({"fold",QCoreApplication::translate("main","Duo display: closed or open"),"state","closed"});
     parser.addOption({"device-only",QCoreApplication::translate("main","Show only the detached device window; the main window stays hidden")});
@@ -97,7 +97,7 @@ int main(int argc,char **argv) {
     if(!QStringList{"portrait","landscape"}.contains(parser.value("orientation")) || !QStringList{"closed","open"}.contains(parser.value("fold"))) {
         fputs(qPrintable(QCoreApplication::translate("main","Invalid orientation or fold position.\n")),stderr); return 2;
     }
-    if(!QStringList{"runtime","preview","project","devices","ios-research","jobs","tools","debug","testing","profiling","files","release"}.contains(parser.value("workspace"))) {
+    if(!QStringList{"runtime","preview","project","devices","ios-research","jobs","tools","debug","testing","profiling","files","release","demo"}.contains(parser.value("workspace"))) {
         fputs(qPrintable(QCoreApplication::translate("main","Unknown workspace. See --help for the available workspaces.\n")),stderr); return 2;
     }
     // The tool checks (xtool, swift) are for the web preview; it starts them when it is first shown.

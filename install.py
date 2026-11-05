@@ -124,7 +124,7 @@ DOCUMENTS = {
     "integrations/ios-emulator/COPYING_GPL-3.0": "COPYING.GPL-3.0",
     "docs/README.md": "guides.md", "docs/RELEASE_NOTES.md": "RELEASE_NOTES.md",
     **{f"docs/{name}.md": f"{name}.md" for name in
-       ("getting-started", "agents", "recipes", "faq", "desktop", "android", "iphone", "troubleshooting", "legal", "privacy",
+       ("getting-started", "agents", "recipes", "faq", "desktop", "demo-studio", "android", "iphone", "troubleshooting", "legal", "privacy",
         "research-engines")},
     "docs/virtual-ios/README.md": "virtual-ios.md",
     **{f"docs/virtual-ios/{name}.md": f"virtual-ios-{name}.md" for name in ("setup", "usage", "troubleshooting")},
@@ -1156,6 +1156,9 @@ def main():
         installer.launchers(portable=runtime is not None)
         app = Path(".local/lib/tomacco")
         installer.write(app / "tomacco", args.binary.read_bytes(), 0o755)
+        demo_renderer = args.binary.resolve().parent / "tomacco-demo-render"
+        if demo_renderer.is_file():
+            installer.write(app / "tomacco-demo-render", demo_renderer.read_bytes(), 0o755)
         installer.write(app / "tomaccoctl", cli.read_bytes(), 0o755)
         installer.runtime(runtime)
         for source in sorted(source_path("tools").glob("*.py")):

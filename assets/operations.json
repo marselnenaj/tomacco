@@ -370,7 +370,8 @@
             "testing",
             "profiling",
             "files",
-            "release"
+            "release",
+            "demo"
           ],
           "default": "runtime"
         },
@@ -12327,6 +12328,491 @@
       "readOnlyHint": false,
       "destructiveHint": true,
       "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "demo.capabilities",
+    "title": "Inspect Demo Studio capabilities",
+    "description": "Discover local renderer, ffmpeg and ffprobe availability, supported presets, device models, output limits and silent export policy. Does not execute or probe a device.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "demo.media.inspect",
+    "title": "Inspect local demo recording",
+    "description": "Inspect a local recording with ffprobe and streaming SHA-256. Returns DISPLAY dimensions after rotation, duration, frame rate, rotation and audio presence. No hardware or network access.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path. No device access or remote media URLs."
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "demo.scene.create",
+    "title": "Create demo scene",
+    "description": "Create a versioned local scene from a verified recording and preset. Refuses existing destinations. Returns path, revision and scene. MVP exports are silent.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path. No device access or remote media URLs."
+        },
+        "source": {
+          "type": "string",
+          "description": "Absolute recording path, inspected and hashed before scene creation."
+        },
+        "preset": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "portrait-orbit",
+            "landscape-orbit",
+            "square-float",
+            "portrait-still"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "description": "",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "path",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "demo.scene.get",
+    "title": "Read demo scene",
+    "description": "Read and validate the scene and current source digest. Returns path, revision and scene without connecting or discovering devices.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path. No device access or remote media URLs."
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "demo.scene.update",
+    "title": "Update demo scene",
+    "description": "Apply a partial scene change using optimistic revision control and atomic persistence. Source and scene identity are immutable. Keyframes are strictly ordered; easing belongs to the segment start. Image backgrounds must be local PNGs. Returns the new revision and complete scene.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path. No device access or remote media URLs."
+        },
+        "if_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "changes": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "description": "",
+              "maxLength": 200
+            },
+            "clip": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 86400
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "output": {
+              "type": "object",
+              "properties": {
+                "width": {
+                  "type": "integer",
+                  "minimum": 320,
+                  "maximum": 3840,
+                  "multipleOf": 2
+                },
+                "height": {
+                  "type": "integer",
+                  "minimum": 320,
+                  "maximum": 3840,
+                  "multipleOf": 2
+                },
+                "fps": {
+                  "type": "integer",
+                  "enum": [
+                    24,
+                    25,
+                    30,
+                    60
+                  ]
+                },
+                "duration": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 60
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "device": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string",
+                  "description": "",
+                  "enum": [
+                    "phone",
+                    "tablet"
+                  ]
+                },
+                "finish": {
+                  "type": "string",
+                  "description": "",
+                  "pattern": "#[0-9A-Fa-f]{6}"
+                },
+                "bezel": {
+                  "type": "number",
+                  "minimum": 0.005,
+                  "maximum": 0.12
+                },
+                "thickness": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 0.2
+                },
+                "corner_radius": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 0.2
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "background": {
+              "type": "object",
+              "properties": {
+                "style": {
+                  "type": "string",
+                  "description": "",
+                  "enum": [
+                    "solid",
+                    "gradient",
+                    "image"
+                  ]
+                },
+                "color": {
+                  "type": "string",
+                  "description": "",
+                  "pattern": "#[0-9A-Fa-f]{6}"
+                },
+                "color2": {
+                  "type": "string",
+                  "description": "",
+                  "pattern": "#[0-9A-Fa-f]{6}"
+                },
+                "image": {
+                  "type": "string",
+                  "description": "Absolute local PNG path; backend stores its verified digest."
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "shadow": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "blur": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "offset_x": {
+                  "type": "number",
+                  "minimum": -500,
+                  "maximum": 500
+                },
+                "offset_y": {
+                  "type": "number",
+                  "minimum": -500,
+                  "maximum": 500
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "camera": {
+              "type": "object",
+              "properties": {
+                "distance": {
+                  "type": "number",
+                  "minimum": 2,
+                  "maximum": 12
+                },
+                "fov": {
+                  "type": "number",
+                  "minimum": 15,
+                  "maximum": 75
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "keyframes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "time": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 60
+                  },
+                  "yaw": {
+                    "type": "number",
+                    "minimum": -75,
+                    "maximum": 75
+                  },
+                  "pitch": {
+                    "type": "number",
+                    "minimum": -75,
+                    "maximum": 75
+                  },
+                  "roll": {
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                  },
+                  "scale": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 1.5
+                  },
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "easing": {
+                    "type": "string",
+                    "description": "",
+                    "enum": [
+                      "linear",
+                      "smooth",
+                      "ease-in",
+                      "ease-out"
+                    ]
+                  }
+                },
+                "required": [
+                  "time",
+                  "yaw",
+                  "pitch",
+                  "roll",
+                  "scale",
+                  "x",
+                  "y",
+                  "easing"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 120
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "path",
+        "if_revision",
+        "changes"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "demo.preview",
+    "title": "Render demo preview",
+    "description": "Submit a durable job for a complete scene PNG at an exact scene time. Copies verified inputs privately, renders an immutable revision, then independently decodes and validates the PNG. Never overwrites existing output. Use job.wait/get/cancel.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path. No device access or remote media URLs."
+        },
+        "if_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "time": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "output": {
+          "type": "string",
+          "description": "New absolute .png path."
+        },
+        "request_id": {
+          "type": "string",
+          "description": "Optional retry identity. Reuse returns the same job; changed request content is rejected.",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}"
+        }
+      },
+      "required": [
+        "path",
+        "if_revision",
+        "time",
+        "output"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "demo.export",
+    "title": "Export demo video",
+    "description": "Submit a durable job for silent H.264/yuv420p MP4, OUTPUT.mp4.poster.png and OUTPUT.mp4.manifest.json. Source inputs are copied and hashed privately. Success requires independent full decode and exact dimensions/FPS/frame-count validation. Output times are i/fps, count ceil(duration*fps). Existing files are never overwritten. Reuse an identical request_id to retrieve its job; use a new output for an explicit retry after failure. Use job.wait/get/cancel.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path. No device access or remote media URLs."
+        },
+        "if_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "output": {
+          "type": "string",
+          "description": "New absolute .mp4 path; sidecars append .poster.png and .manifest.json to this entire path."
+        },
+        "request_id": {
+          "type": "string",
+          "description": "Optional retry identity. Reuse returns the same job; changed request content is rejected.",
+          "pattern": "[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}"
+        }
+      },
+      "required": [
+        "path",
+        "if_revision",
+        "output"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "demo.export.inspect",
+    "title": "Validate demo export",
+    "description": "Fully decode and inspect a completed local export. Return actual dimensions, FPS, duration, audio, frame count, codec and SHA-256. If a sidecar exists, its media digest must match.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Absolute local path. No device access or remote media URLs."
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
       "openWorldHint": false
     }
   }

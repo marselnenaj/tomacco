@@ -222,6 +222,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         name if name.starts_with("play.") => play_store::handle(name, &a),
         name if name.starts_with("runtime.") => crate::runtime::handle(name, &a),
         name if name.starts_with("apple.") => apple::handle(name, &a),
+        name if name.starts_with("demo.") => crate::demo::handle(name, &a).map(redacted),
         name if name.starts_with("release.") => releases::handle(name, &a),
         name if name.starts_with("files.") => files::handle(name, &a),
         name if name.starts_with("profile.") => profiling::handle(name, &a),

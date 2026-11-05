@@ -31,7 +31,7 @@ cargo fmt --check
 cargo clippy --locked --all-targets -- -D warnings
 ```
 
-CTest runs five groups: `desktop-ui`, `backend`, `native-display`, `control-plane` (the Python suite) and `rust-core`.
+CTest covers `desktop-ui`, `backend`, `native-display`, `demo-renderer`, `demo-workspace`, `control-plane` (the Python suite) and `rust-core`. Demo tests use local recordings and mock agents; they do not contact devices.
 
 **Dependency policy.** `python3 tools/check_dependencies.py` checks the Rust dependencies offline, from `Cargo.lock` and the crates in
 Cargo's cache or `vendor/`. It fails on a crate whose license does not allow distribution with Tomacco under GPL-2.0-or-later, on an

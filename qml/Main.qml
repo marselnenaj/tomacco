@@ -507,7 +507,7 @@ ApplicationWindow {
         guestSolo: nativeWorkspace.solo
         onGuestCloseRequested: nativeWorkspace.quitApp()
         onGuestDockRequested: { nativeWorkspace.showMainWindow(); root.nativeMode=true; workspace.showTab("ios-research") } onProfilesChanged: { root.selectDevice(0); Studio.reloadModels() } }
-    StudioDialog { id: unsavedClose; objectName: "unsavedCloseDialog"; anchors.centerIn: parent; modal: true; title: qsTr("Unsaved files"); standardButtons: Dialog.Discard | Dialog.Cancel; Label { text: qsTr("The workspace has unsaved changes."); color: Theme.muted } onDiscarded: {root.discardOnClose=true;root.close()} }
+    StudioDialog { id: unsavedClose; objectName: "unsavedCloseDialog"; anchors.centerIn: parent; modal: true; title: qsTr("Unsaved changes"); standardButtons: Dialog.Discard | Dialog.Cancel; Label { text: qsTr("The workspace has unsaved changes."); color: Theme.muted } onDiscarded: {root.discardOnClose=true;root.close()} }
     FileDialog { id: profileImport; title: qsTr("Import device profiles"); nameFilters: [qsTr("Device profiles (*.json)")]; onAccepted: Agent.request("catalog.import",{path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))}) }
     FileDialog { id: profileExport; title: qsTr("Export device profile"); fileMode: FileDialog.SaveFile; nameFilters: ["JSON (*.json)"]; onAccepted: Agent.request("catalog.export",{profile_id:root.currentModel.id,path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))}) }
     Connections { target: Agent; function onApiFinished(id,operation,response) {

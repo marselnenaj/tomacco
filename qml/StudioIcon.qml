@@ -38,6 +38,7 @@ Canvas {
         case "agent": line([8,6,2,12,8,18]);line([16,6,22,12,16,18]);line([14,4,10,20]);break
         case "debug": box(7,8,10,13);line([12,8,12,21]);line([9,8,9,4]);line([15,8,15,4]);line([2,11,7,11]);line([17,11,22,11]);line([2,18,7,18]);line([17,18,22,18]);break
         case "testing": box(3,3,18,18);line([7,12,11,16,17,8]);break
+        case "demo": box(3,5,18,15);line([3,10,21,10]);line([7,2,10,5]);line([14,2,17,5]);line([10,13,15,16,10,19,10,13]);break
         case "profiling": line([3,3,3,21,21,21]);line([7,16,11,10,15,13,21,5]);break
         case "release": line([12,16,12,3]);line([6,9,12,3,18,9]);line([3,15,3,21,21,21,21,15]);break
         case "search": box(4,4,12,12);line([15,15,21,21]);break

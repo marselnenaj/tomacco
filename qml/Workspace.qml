@@ -21,7 +21,8 @@ Rectangle {
         {id:"testing",tone:"inverse",title:qsTr("UI tests"),description:qsTr("Find anything in your running app and tap it.")},
         {id:"profiling",tone:"green",title:"Performance",description:qsTr("See where the time goes and catch regressions.")},
         {id:"files",title:qsTr("Files"),description:qsTr("Search, edit and save your project's files.")},
-        {id:"release",tone:"red",title:qsTr("Signing & release"),description:qsTr("Sign it, version it and ship it.")}
+        {id:"release",tone:"red",title:qsTr("Signing & release"),description:qsTr("Sign it, version it and ship it.")},
+        {id:"demo",title:qsTr("Demo Studio"),description:qsTr("Turn a screen recording into a video with a 3D device.")}
     ]
     readonly property string section: sections[currentIndex].id
     // Pages that only matter once they are shown are built then, not at the
@@ -153,10 +154,18 @@ Rectangle {
         }
     }
     function viewState() {
-        return {visible:opened,tab:["project","devices","jobs","tools","debug","testing","profiling","files","release"][panel.currentIndex],path:project.path || "",file:fileWorkspace.current,files:fileWorkspace.tabs,dirty:fileWorkspace.dirtyFiles(),entries:fileWorkspace.entries.length,notice:fileWorkspace.notice,
+        return {visible:opened,tab:["project","devices","jobs","tools","debug","testing","profiling","files","release","demo"][panel.currentIndex],path:project.path || "",file:fileWorkspace.current,files:fileWorkspace.tabs,dirty:fileWorkspace.dirtyFiles(),entries:fileWorkspace.entries.length,notice:fileWorkspace.notice,
             ios_research:!iosResearch?idleIosResearch:{guest:iosResearch.guestState(),virtual_phone:iosResearch.virtualPhone,visible:iosResearch.opened,job_id:iosResearch.jobId,job_state:iosResearch.jobState,report_directory:iosResearch.reportDirectory,guest_observations_verified:iosResearch.report.guest_observations_verified===true,graphical_apps_verified:false}}
     }
-    function hasUnsaved() { return fileWorkspace.hasUnsaved() }
+    function hasUnsaved() {
+        if(demoPage.item && demoPage.item.dirty) {
+            // The same close/replacement guard protects a demo draft and
+            // brings it back into view. Never reload or discard it here.
+            showTab("demo")
+            return true
+        }
+        return fileWorkspace.hasUnsaved()
+    }
     function configureIosGuest(args) { visit("ios-research");iosResearchLoader.item.configureGuest(args) }
     // The virtual iPhone's own window takes part in the app's device-only mode.
     property bool guestSolo: false
@@ -166,7 +175,7 @@ Rectangle {
 
     function showTab(name) {
         if(name==="ios-research") {currentIndex=1;chooseDevicePlatform("ios");open();visit("ios-research");Qt.callLater(()=>iosResearch.open());return}
-        let index=["project","devices","jobs","tools","debug","testing","profiling","files","release"].indexOf(name)
+        let index=["project","devices","jobs","tools","debug","testing","profiling","files","release","demo"].indexOf(name)
         if(index<0) throw new Error("Unknown workspace: "+name)
         panel.currentIndex=index
         open()
@@ -702,6 +711,7 @@ Rectangle {
             Loader { active: !!panel.visited.profiling; sourceComponent: Component { ProfileWorkspace { workspace: panel } } }
             FileWorkspace { id: fileWorkspace; workspace: panel }
             Loader { active: !!panel.visited.release; sourceComponent: Component { ReleaseWorkspace { workspace: panel } } }
+            Loader { id:demoPage; active: !!panel.visited.demo; sourceComponent: Component { DemoWorkspace { workspace: panel } } }
         }
     }
     FolderDialog { id: projectFolder; title: qsTr("Choose project"); onAccepted: panel.openProject(decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,""))) }

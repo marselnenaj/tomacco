@@ -22,7 +22,7 @@ Open Tomacco. writes, idempotent.
 
 Show an existing desktop session or start one, opening the requested workspace tab.
 
-- `tab` string (one of runtime, preview, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release; default "runtime")
+- `tab` string (one of runtime, preview, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo; default "runtime")
 - `session` string (matching `[A-Za-z0-9_-]{1,40}`; default "main"): Running preview session name; defaults to main
 - `path` string: Project root to open
 - `file` string: Project-relative source file to reveal in the files tab

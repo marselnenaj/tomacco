@@ -708,6 +708,12 @@ const GUIDES: &[Guide] = &[
         text: include_str!("../docs/getting-started.md"),
     },
     Guide {
+        name: "demo-studio",
+        title: "Demo Studio",
+        description: "Local recordings into 3D device videos: scenes, revisions, previews and verified exports.",
+        text: include_str!("../docs/demo-studio.md"),
+    },
+    Guide {
         name: "android",
         title: "Android",
         description: "Android and Swift on Android: SDK, emulators, builds, tests.",

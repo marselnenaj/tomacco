@@ -28,7 +28,7 @@
 Your coding agent can write an app. Tomacco lets it build that app, run it on a
 device, tap through the interface, inspect the result and try again.
 
-The agent and the **native Qt desktop** use the same **250 typed operations**
+The agent and the **native Qt desktop** use the same **258 typed operations**
 through MCP or the `tomaccoctl` JSON CLI. You can watch the live device, take over
 with touch and gestures, and share the same builds, logs and debugging session.
 The desktop supports English, German, French, Spanish and Italian.
@@ -266,6 +266,7 @@ The [documentation index](docs/README.md) lists every guide. Common starting poi
 | Connect an agent or automate a workflow | [Agents](docs/agents.md) · [Agent patterns](docs/agent-patterns.md) · [Operation reference](docs/reference/README.md) |
 | Run headless in Docker, for agents, servers and CI | [Container image](docs/container.md) |
 | Use the workspace and live device view | [Desktop](docs/desktop.md) |
+| Compose and export a device demo from a local recording | [Demo Studio](docs/demo-studio.md) |
 | Develop for Android or an iPhone | [Android](docs/android.md) · [iPhone](docs/iphone.md) |
 | Set up the experimental iOS runtime | [Virtual iOS](docs/virtual-ios/README.md) |
 | Contribute to the implementation | [Architecture](docs/architecture.md) · [Building and testing](docs/building.md) |

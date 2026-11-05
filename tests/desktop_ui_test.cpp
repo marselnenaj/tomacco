@@ -1198,6 +1198,21 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         view->setProperty("live",QVariantMap{});display->setSession({});
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void demo_draft_blocks_replacement_and_returns_to_the_scene() {
+        // Only local UI fixture state: opening Demo reads local capabilities;
+        // no runtime, device selection, media decode or render is requested.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"showTab",Q_ARG(QVariant,"demo")));
+        QTRY_VERIFY(object("demoWorkspace"));auto *demo=object("demoWorkspace");
+        const QVariantMap scene{{"title","Quit guard fixture"},{"revision",1},{"source",QVariantMap{{"path","/fixture/recording.mp4"}}},{"output",QVariantMap{{"width",1080},{"height",1920},{"fps",30},{"duration",8}}},{"clip",QVariantMap{{"start",0}}},{"device",QVariantMap{{"model","phone"},{"finish","#242421"}}},{"background",QVariantMap{{"color","#f4f2ec"},{"color2","#f4f2ec"},{"style","solid"}}},{"shadow",QVariantMap{{"enabled",true},{"opacity",.22}}},{"keyframes",QVariantList{QVariantMap{{"time",0},{"yaw",0},{"pitch",0},{"roll",0},{"scale",.72},{"x",.5},{"y",.5},{"easing","smooth"}}}}};
+        const QVariantMap saved{{"path","/fixture/quit-scene.json"},{"scene",scene},{"revision",1}};
+        QVERIFY(QMetaObject::invokeMethod(demo,"acceptScene",Q_ARG(QVariant,saved),Q_ARG(QVariant,true)));
+        QVERIFY(QMetaObject::invokeMethod(demo,"setField",Q_ARG(QVariant,""),Q_ARG(QVariant,"title"),Q_ARG(QVariant,"Keep this draft")));
+        QVERIFY(demo->property("dirty").toBool());QVERIFY(QMetaObject::invokeMethod(workspace,"showTab",Q_ARG(QVariant,"project")));
+        QVariant allowed;QVERIFY(QMetaObject::invokeMethod(window,"quitForReplacement",Q_RETURN_ARG(QVariant,allowed)));QVERIFY(!allowed.toBool());QCOMPARE(workspace->property("section").toString(),QString("demo"));QCOMPARE(mapOf(demo->property("draft")).value("title").toString(),QString("Keep this draft"));QVERIFY(demo->property("dirty").toBool());
+        // Clean up the injected fixture without calling the backend or quitting.
+        QVERIFY(QMetaObject::invokeMethod(demo,"acceptScene",Q_ARG(QVariant,saved),Q_ARG(QVariant,true)));QVERIFY(!demo->property("dirty").toBool());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void device_window_lifecycle_keeps_edits_and_never_strands_the_app() {
         QVERIFY(QMetaObject::invokeMethod(workspace,"close"));
         auto *view=object("nativeWorkspace");QVERIFY(view);

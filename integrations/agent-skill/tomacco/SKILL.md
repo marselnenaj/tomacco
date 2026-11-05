@@ -1,23 +1,20 @@
 ---
 name: tomacco
 description: >
-  Tomacco is installed on this computer: use it to build, run, test, inspect and ship Android and iOS
-  apps on Linux. Use when a task involves an Android emulator, AVD or device, adb, Gradle, Flutter,
-  React Native, Compose, Swift on Android, an iPhone over USB, xtool, the virtual iPhone (virtual iOS
-  device), installing an APK or AAB, device screenshots, screen recordings, device logs or crash
-  reports, the UI hierarchy, tapping or typing on a device, reading text off a screen (OCR), numbered
-  marks to tap, comparing two screens, waiting for text on screen, UI tests, accessibility checks,
-  store screenshots, app startup time, frame jank, memory, macrobenchmark, baseline profiles,
-  performance budgets, release signing, keystores, version bumps, release notes, Play Store upload,
-  App Store upload, debugging an app, live previews, remote build hosts, or Omarchy panel, keys and
-  screenshots for devices. Triggers: tomacco, tomaccoctl, emulator, APK, AAB, iOS simulator on Linux,
-  virtual iPhone, screenshot of the app, run the app, UI test, OCR, baseline profile, Play Store.
+  Use installed Tomacco (tomaccoctl/MCP/native desktop) to build, run, test and inspect
+  Android and iOS apps on Linux: Android emulator/AVDs/devices, Gradle, Flutter,
+  React Native, Compose, APK/AAB, Swift on Android, iPhone over USB/xtool, virtual iPhone,
+  remote build hosts and Xcode. Covers device input, screenshots/recordings/logs, OCR,
+  UI tests, accessibility, startup/frame/memory profiling, macrobenchmark, baseline profiles,
+  debugging, live previews, release signing/keystores, Play Store and App Store upload,
+  and Omarchy device controls. Also use for Demo Studio: turn local screen recordings
+  into agent-controlled 3D device videos with editable scenes, preview frames and validated exports.
 ---
 
 # Tomacco
 
 Tomacco builds, runs, tests and inspects mobile apps on Linux. Its control plane, `tomaccoctl`,
-offers 250 typed operations. The MCP server, the JSON CLI and the desktop app call the same
+offers 258 typed operations. The MCP server, the JSON CLI and the desktop app call the same
 operations. This file is the router: it says how to reach Tomacco, how to stay safe and where each
 task lives. The operation details are in `references/`, one file per area, read only when needed.
 
@@ -48,6 +45,12 @@ remedy that names the closest match. Paths are absolute. If `tomaccoctl` is not 
 not installed for this user: say so, and don't install it without asking.
 
 ## Jobs
+
+For Demo Studio, inspect the local recording and create or open a scene. Save
+edits with its `if_revision`, render representative `demo.preview` frames and
+visually inspect them before exporting. Follow `demo.export` to success, then
+call `demo.export.inspect`; a submitted job is not a finished video. The guide
+is available as `tomacco://docs/demo-studio`.
 
 A call that starts long work (build, run, emulator start, tests, benchmarks, store upload) answers at
 once with a job; its id is `result.id`. Queued or running is not success.
@@ -105,6 +108,7 @@ The `Start with` operations are the usual entry points.
 | Swift on Android | `swift.status`, `swift.plan` | [swift](references/swift.md) |
 | Debugger | `debug.start`, `debug.breakpoints`, `debug.stack` | [debug](references/debug.md) |
 | Live preview of a screen | `preview.sessions`, `preview.capture` | [preview](references/preview.md) |
+| Make a 3D device video from a local recording | `demo.capabilities`, `demo.media.inspect`, `demo.scene.create` | [demo](references/demo.md) |
 | Mirror a device as a session | `runtime.start`, `runtime.capture`, `runtime.stop` | [runtime](references/runtime.md) |
 | Remote build hosts | `remote.list`, `remote.run` | [remote](references/remote.md) |
 | Jobs | `job.wait`, `job.logs`, `job.get`, `job.list`, `job.cancel` | [job](references/job.md) |

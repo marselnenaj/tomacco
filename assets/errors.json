@@ -275,6 +275,26 @@
     "cause": "Debug worker exited; inspect …",
     "remedy": "Check the session with debug.list and its log; the app must be a debuggable build that is running."
   },
+  "demo_conflict": {
+    "cause": "A scene revision, request identity, active render or existing destination conflicts with this Demo Studio write.",
+    "remedy": "Reload the scene revision, reuse the existing matching job, or choose a new output path and request ID. Existing artifacts are preserved."
+  },
+  "demo_invalid": {
+    "cause": "A Demo Studio scene, media file or edit is outside the supported typed schema or limits.",
+    "remedy": "Inspect demo.capabilities, use a supported local recording and correct the field named by the error."
+  },
+  "demo_output_invalid": {
+    "cause": "A rendered artifact did not decode or match the requested dimensions, timing, codec or digest.",
+    "remedy": "Read the durable job log and retained private render diagnostics. Correct the scene or renderer, then retry with a new output path."
+  },
+  "demo_source_changed": {
+    "cause": "A recording or background digest no longer matches the immutable Demo Studio scene or render input.",
+    "remedy": "Restore the original media or create a new scene from the intended recording; never reuse an old scene digest for changed media."
+  },
+  "demo_tool_missing": {
+    "cause": "Demo Studio cannot find its sibling renderer, ffmpeg or ffprobe.",
+    "remedy": "Install the complete Tomacco package and local ffmpeg/ffprobe; inspect demo.capabilities for the missing executable."
+  },
   "dependencies_missing": {
     "cause": "… is not installed in …/node_modules.",
     "remedy": "Run `…` in …, then call project.run again."

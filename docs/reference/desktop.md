@@ -28,7 +28,7 @@ Annotations: writes, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `tab` | string |  | `"runtime"` | one of `runtime`, `preview`, `project`, `devices`, `ios-research`, `jobs`, `tools`, `debug`, `testing`, `profiling`, `files`, `release` |
+| `tab` | string |  | `"runtime"` | one of `runtime`, `preview`, `project`, `devices`, `ios-research`, `jobs`, `tools`, `debug`, `testing`, `profiling`, `files`, `release`, `demo` |
 | `session` | string |  | `"main"` | matching `[A-Za-z0-9_-]{1,40}`; Running preview session name; defaults to main |
 | `path` | string |  |  | Project root to open |
 | `file` | string |  |  | Project-relative source file to reveal in the files tab |

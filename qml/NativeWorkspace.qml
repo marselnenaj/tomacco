@@ -151,7 +151,7 @@ Rectangle {
         const w=view.Window.window
         if(w && w.saveGeometry)w.saveGeometry()
         const tab=workspace.opened?workspace.section:"runtime"
-        const tabs=["runtime","project","devices","jobs","tools","debug","testing","profiling","files","release"]
+        const tabs=["runtime","project","devices","jobs","tools","debug","testing","profiling","files","release","demo"]
         if(Studio.relaunch(projectPath,tabs.indexOf(tab)>=0?tab:"runtime"))quitApp()
         else{notice=qsTr("Tomacco could not be started again. Close it and open it from the application menu.");failed=true}
     }
@@ -694,6 +694,7 @@ Rectangle {
         {id:"testing",label:qsTr("UI tests"),icon:"testing",key:"7"},
         {id:"profiling",label:"Performance",icon:"profiling",key:"8"},
         {id:"release",label:"Release",icon:"release",key:"9"},
+        {id:"demo",label:"Demo Studio",icon:"demo",key:""},
         {id:"tools",label:qsTr("Agents"),icon:"agent",key:"0",group:qsTr("AUTOMATION")}
     ]
     // Project folders opened before, but the open one, to reopen from the start screen and the palette.

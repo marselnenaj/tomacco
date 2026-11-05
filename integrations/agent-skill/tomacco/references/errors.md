@@ -2,7 +2,7 @@
 
 # Error codes
 
-487 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
+492 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
 
 | Code | Meaning | Remedy |
 | --- | --- | --- |
@@ -75,6 +75,11 @@
 | `debug_session_unavailable` | The debugger could not start, attach or answer. | Start a new debug session or inspect debug.list. |
 | `debug_timeout` | Adapter did not initialize the target. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
 | `debug_worker_failed` | Debug worker exited; inspect … | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
+| `demo_conflict` | A scene revision, request identity, active render or existing destination conflicts with this Demo Studio write. | Reload the scene revision, reuse the existing matching job, or choose a new output path and request ID. Existing artifacts are preserved. |
+| `demo_invalid` | A Demo Studio scene, media file or edit is outside the supported typed schema or limits. | Inspect demo.capabilities, use a supported local recording and correct the field named by the error. |
+| `demo_output_invalid` | A rendered artifact did not decode or match the requested dimensions, timing, codec or digest. | Read the durable job log and retained private render diagnostics. Correct the scene or renderer, then retry with a new output path. |
+| `demo_source_changed` | A recording or background digest no longer matches the immutable Demo Studio scene or render input. | Restore the original media or create a new scene from the intended recording; never reuse an old scene digest for changed media. |
+| `demo_tool_missing` | Demo Studio cannot find its sibling renderer, ffmpeg or ffprobe. | Install the complete Tomacco package and local ffmpeg/ffprobe; inspect demo.capabilities for the missing executable. |
 | `dependencies_missing` | … is not installed in …/node_modules. | Run `…` in …, then call project.run again. |
 | `desktop_missing` | Tomacco desktop is not installed. | Build with CMake and run python3 install.py. |
 | `desktop_stale` | The running Tomacco desktop (…) is not the installed version … and cannot be asked to quit. | Close that window, then open Tomacco again. |

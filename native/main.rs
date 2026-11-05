@@ -21,6 +21,7 @@ mod coverage;
 mod crashes;
 mod dap;
 mod debugger;
+mod demo;
 mod dependencies;
 mod describe;
 mod desktop;
@@ -409,6 +410,20 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         Some("mcp") => {
             guard::enter(guard::Channel::Mcp, mcp_policy(&args[1..])?);
             mcp::serve(std::io::stdin().lock(), std::io::stdout())?;
+            return Ok(0);
+        }
+        Some("_demo_prepare") => {
+            demo::prepare(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing demo request"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_demo_finalize") => {
+            demo::finalize(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing demo request"))?,
+            )?;
             return Ok(0);
         }
         Some("_worker") => {

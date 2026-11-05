@@ -385,6 +385,7 @@ class UninstallTests(unittest.TestCase):
             build.mkdir()
             (build / "tomacco").write_bytes(b"\x7fELF desktop")
             (build / "tomaccoctl").write_bytes(b"\x7fELF control plane")
+            (build / "tomacco-demo-render").write_bytes(b"\x7fELF scene renderer")
             # The user's own things: data, device profiles, a project, another command and their desktop configuration.
             data = home / ".local/share/tomacco"
             (data / "projects").mkdir(parents=True)
@@ -403,6 +404,9 @@ class UninstallTests(unittest.TestCase):
 
             installed = self.run_installer(home, "--binary", str(build / "tomacco"), "--omarchy")
             self.assertTrue((home / ".local/bin/tomacco").is_file())
+            renderer = home / ".local/lib/tomacco/tomacco-demo-render"
+            self.assertEqual(renderer.read_bytes(), b"\x7fELF scene renderer")
+            self.assertEqual(renderer.stat().st_mode & 0o777, 0o755)
             entry = home / ".local/share/applications" / (APP_ID + ".desktop")
             text = entry.read_text()
             self.assertIn('Exec="' + str(home / ".local/bin/tomacco") + '"', text)
@@ -447,6 +451,7 @@ class UninstallTests(unittest.TestCase):
             # The uninstallation is journalled like an installation: rolling it back reinstalls.
             self.run_installer(home, "--rollback", Path(result["backups"]).name)
             self.assertEqual((home / ".local/lib/tomacco/tomaccoctl").read_bytes(), b"\x7fELF control plane")
+            self.assertEqual(renderer.read_bytes(), b"\x7fELF scene renderer")
             self.assertEqual(entry.read_text(), text)
             self.assertTrue(metainfo.is_file())
             self.assertIn('require("hypr.tomacco")', hypr.read_text())

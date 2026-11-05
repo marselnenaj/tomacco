@@ -17,6 +17,7 @@ These guides describe version 1.4.1; see [what's new](RELEASE_NOTES.md).
 | Copy a short sequence: build and run, screenshot and UI test, iOS build, virtual iPhone deploy | [Recipes](recipes.md) |
 | Write an agent or a script: planning, waiting on jobs, errors, destructive calls, recovery | [Agent patterns](agent-patterns.md) |
 | Look up one operation: its arguments, defaults, annotations and an example call | [Operation reference](reference/README.md) |
+| Make a device demo video from a local recording, with reusable scenes and agent-controlled export | [Demo Studio](demo-studio.md) |
 | Use the desktop app: device window, shortcuts, Omarchy panel, layout lab | [Desktop](desktop.md) |
 | Build and run an Android app, Swift on Android included | [Android](android.md) |
 | Build, run and test a ready-made example app | [Examples](../examples/README.md) |

@@ -2490,7 +2490,7 @@ F12                        Inspector web</translation>
     </message>
     <message>
         <source>Unsaved files</source>
-        <translation>Archivos sin guardar</translation>
+        <translation type="vanished">Archivos sin guardar</translation>
     </message>
     <message>
         <source>VIEW</source>
@@ -2633,6 +2633,10 @@ xtool setup</translation>
     <message>
         <source>Slow 3G</source>
         <translation>3G lento</translation>
+    </message>
+    <message>
+        <source>Unsaved changes</source>
+        <translation>Cambios sin guardar</translation>
     </message>
 </context>
 <context>
@@ -4829,6 +4833,38 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Read a saved result</source>
         <translation>Leer un resultado guardado</translation>
     </message>
+    <message>
+        <source>Inspect Demo Studio capabilities</source>
+        <translation>Examinar funciones de Demo Studio</translation>
+    </message>
+    <message>
+        <source>Inspect local demo recording</source>
+        <translation>Examinar grabación local de demo</translation>
+    </message>
+    <message>
+        <source>Create demo scene</source>
+        <translation>Crear escena de demo</translation>
+    </message>
+    <message>
+        <source>Read demo scene</source>
+        <translation>Leer escena de demo</translation>
+    </message>
+    <message>
+        <source>Update demo scene</source>
+        <translation>Actualizar escena de demo</translation>
+    </message>
+    <message>
+        <source>Render demo preview</source>
+        <translation>Renderizar vista previa de la demo</translation>
+    </message>
+    <message>
+        <source>Export demo video</source>
+        <translation>Exportar vídeo de demo</translation>
+    </message>
+    <message>
+        <source>Validate demo export</source>
+        <translation>Validar exportación de la demo</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5668,6 +5704,14 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>No tool matches “%1”.</source>
         <translation>Ninguna herramienta coincide con «%1».</translation>
     </message>
+    <message>
+        <source>Demo Studio</source>
+        <translation>Demo Studio</translation>
+    </message>
+    <message>
+        <source>Turn a screen recording into a video with a 3D device.</source>
+        <translation>Convierte una grabación de pantalla en un vídeo con un dispositivo 3D.</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5709,7 +5753,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     </message>
     <message>
         <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release or preview</source>
-        <translation>Abrir un área de trabajo: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release o preview</translation>
+        <translation type="vanished">Abrir un área de trabajo: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release o preview</translation>
     </message>
     <message>
         <source>Orientation: portrait or landscape</source>
@@ -5754,6 +5798,10 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
 </source>
         <translation>Área de trabajo desconocida. Consultar --help para ver las áreas de trabajo disponibles.
 </translation>
+    </message>
+    <message>
+        <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo or preview</source>
+        <translation>Abrir un espacio: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo o preview</translation>
     </message>
 </context>
 <context>
@@ -6159,6 +6207,313 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
     <message>
         <source>Approve</source>
         <translation>Permitir</translation>
+    </message>
+</context>
+<context>
+    <name>DemoWorkspace</name>
+    <message>
+        <source>Save your changes before opening another scene.</source>
+        <translation>Guarda los cambios antes de abrir otra escena.</translation>
+    </message>
+    <message>
+        <source>App demo</source>
+        <translation>Demo de la app</translation>
+    </message>
+    <message>
+        <source>Enter a valid number.</source>
+        <translation>Introduce un número válido.</translation>
+    </message>
+    <message>
+        <source>Choose a different time for the new pose.</source>
+        <translation>Elige otro momento para la nueva pose.</translation>
+    </message>
+    <message>
+        <source>Save changes before rendering.</source>
+        <translation>Guarda los cambios antes de renderizar.</translation>
+    </message>
+    <message>
+        <source>Render complete.</source>
+        <translation>Renderizado completado.</translation>
+    </message>
+    <message>
+        <source>Rendering did not complete. Your scene is unchanged.</source>
+        <translation>El renderizado no terminó. La escena no ha cambiado.</translation>
+    </message>
+    <message>
+        <source>Your draft has changes. Reload explicitly to replace it.</source>
+        <translation>El borrador tiene cambios. Recarga la escena expresamente para reemplazarlo.</translation>
+    </message>
+    <message>
+        <source>Scene opened.</source>
+        <translation>Escena abierta.</translation>
+    </message>
+    <message>
+        <source>Changes saved.</source>
+        <translation>Cambios guardados.</translation>
+    </message>
+    <message>
+        <source>Saved. Your newer edits are still unsaved.</source>
+        <translation>Guardado. Los cambios más recientes siguen sin guardar.</translation>
+    </message>
+    <message>
+        <source>The render job could not be followed.</source>
+        <translation>No se pudo seguir la tarea de renderizado.</translation>
+    </message>
+    <message>
+        <source>A recording, made into a demo</source>
+        <translation>Convierte una grabación en una demo</translation>
+    </message>
+    <message>
+        <source>Choose a local video, place it in a device and set its motion. Your source stays unchanged.</source>
+        <translation>Elige un vídeo local, colócalo en un dispositivo y define su movimiento. El archivo original no cambia.</translation>
+    </message>
+    <message>
+        <source>Source video</source>
+        <translation>Vídeo original</translation>
+    </message>
+    <message>
+        <source>Choose video</source>
+        <translation>Elegir vídeo</translation>
+    </message>
+    <message>
+        <source>Inspect video</source>
+        <translation>Examinar vídeo</translation>
+    </message>
+    <message>
+        <source>Scene file (.json)</source>
+        <translation>Archivo de escena (.json)</translation>
+    </message>
+    <message>
+        <source>Choose scene path</source>
+        <translation>Elegir ubicación de la escena</translation>
+    </message>
+    <message>
+        <source>Scene title</source>
+        <translation>Título de la escena</translation>
+    </message>
+    <message>
+        <source>Create scene</source>
+        <translation>Crear escena</translation>
+    </message>
+    <message>
+        <source>Open scene</source>
+        <translation>Abrir escena</translation>
+    </message>
+    <message>
+        <source>The video renderer is not ready. Check the rendering tools under Agents &amp; tools.</source>
+        <translation>El motor de vídeo no está listo. Revisa las herramientas de renderizado en Agentes y herramientas.</translation>
+    </message>
+    <message>
+        <source>Scene</source>
+        <translation>Escena</translation>
+    </message>
+    <message>
+        <source>Keep the original recording or crop its time. Canvas size changes the exported video.</source>
+        <translation>Conserva la grabación completa o selecciona un fragmento. El lienzo define el tamaño del vídeo exportado.</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>Título</translation>
+    </message>
+    <message>
+        <source>Duration (seconds)</source>
+        <translation>Duración (segundos)</translation>
+    </message>
+    <message>
+        <source>Canvas width</source>
+        <translation>Ancho del lienzo</translation>
+    </message>
+    <message>
+        <source>Canvas height</source>
+        <translation>Alto del lienzo</translation>
+    </message>
+    <message>
+        <source>Frames per second</source>
+        <translation>Fotogramas por segundo</translation>
+    </message>
+    <message>
+        <source>Clip start (seconds)</source>
+        <translation>Inicio del fragmento (segundos)</translation>
+    </message>
+    <message>
+        <source>Background color</source>
+        <translation>Color de fondo</translation>
+    </message>
+    <message>
+        <source>Second background color</source>
+        <translation>Segundo color de fondo</translation>
+    </message>
+    <message>
+        <source>Background</source>
+        <translation>Fondo</translation>
+    </message>
+    <message>
+        <source>Device finish</source>
+        <translation>Color de la carcasa</translation>
+    </message>
+    <message>
+        <source>Device model</source>
+        <translation>Modelo del dispositivo</translation>
+    </message>
+    <message>
+        <source>Shadow opacity</source>
+        <translation>Opacidad de la sombra</translation>
+    </message>
+    <message>
+        <source>Shadow</source>
+        <translation>Sombra</translation>
+    </message>
+    <message>
+        <source>Motion</source>
+        <translation>Movimiento</translation>
+    </message>
+    <message>
+        <source>Each pose sets the device at a moment in the video. The motion runs between them.</source>
+        <translation>Cada pose define el dispositivo en un momento del vídeo. El movimiento une las poses.</translation>
+    </message>
+    <message>
+        <source>Pose %1 · %2 s</source>
+        <translation>Pose %1 · %2 s</translation>
+    </message>
+    <message>
+        <source>Add pose</source>
+        <translation>Añadir pose</translation>
+    </message>
+    <message>
+        <source>Remove pose</source>
+        <translation>Quitar pose</translation>
+    </message>
+    <message>
+        <source>Time (seconds)</source>
+        <translation>Tiempo (segundos)</translation>
+    </message>
+    <message>
+        <source>Turn · yaw (degrees)</source>
+        <translation>Giro · guiñada (grados)</translation>
+    </message>
+    <message>
+        <source>Tilt · pitch (degrees)</source>
+        <translation>Inclinación · cabeceo (grados)</translation>
+    </message>
+    <message>
+        <source>Spin · roll (degrees)</source>
+        <translation>Rotación · alabeo (grados)</translation>
+    </message>
+    <message>
+        <source>Scale</source>
+        <translation>Escala</translation>
+    </message>
+    <message>
+        <source>Horizontal position (0–1)</source>
+        <translation>Posición horizontal (0–1)</translation>
+    </message>
+    <message>
+        <source>Vertical position (0–1)</source>
+        <translation>Posición vertical (0–1)</translation>
+    </message>
+    <message>
+        <source>Motion curve</source>
+        <translation>Curva de movimiento</translation>
+    </message>
+    <message>
+        <source>Saving…</source>
+        <translation>Guardando…</translation>
+    </message>
+    <message>
+        <source>Save changes</source>
+        <translation>Guardar cambios</translation>
+    </message>
+    <message>
+        <source>Reload saved scene</source>
+        <translation>Recargar escena guardada</translation>
+    </message>
+    <message>
+        <source>Unsaved changes · save before rendering.</source>
+        <translation>Cambios sin guardar · guarda antes de renderizar.</translation>
+    </message>
+    <message>
+        <source>Preview &amp; export</source>
+        <translation>Vista previa y exportación</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
+        <translation>Previsualiza un fotograma y exporta un MP4 sin sonido. Se guardan una imagen de portada y un registro del renderizado junto al vídeo.</translation>
+    </message>
+    <message>
+        <source>Your rendered preview appears here.</source>
+        <translation>La vista previa renderizada aparece aquí.</translation>
+    </message>
+    <message>
+        <source>This image shows the last completed render.</source>
+        <translation>Esta imagen muestra el último renderizado completado.</translation>
+    </message>
+    <message>
+        <source>Preview time (seconds)</source>
+        <translation>Tiempo de la vista previa (segundos)</translation>
+    </message>
+    <message>
+        <source>Render preview</source>
+        <translation>Renderizar vista previa</translation>
+    </message>
+    <message>
+        <source>Export MP4</source>
+        <translation>Exportar MP4</translation>
+    </message>
+    <message>
+        <source>Show exported video</source>
+        <translation>Mostrar vídeo exportado</translation>
+    </message>
+    <message>
+        <source>Waiting to render…</source>
+        <translation>Esperando para renderizar…</translation>
+    </message>
+    <message>
+        <source>Rendering…</source>
+        <translation>Renderizando…</translation>
+    </message>
+    <message>
+        <source>Render failed.</source>
+        <translation>El renderizado falló.</translation>
+    </message>
+    <message>
+        <source>Render cancelled.</source>
+        <translation>Renderizado cancelado.</translation>
+    </message>
+    <message>
+        <source>Render timed out.</source>
+        <translation>Se agotó el tiempo de renderizado.</translation>
+    </message>
+    <message>
+        <source>Videos (*.mp4 *.mov *.mkv *.webm)</source>
+        <translation>Vídeos (*.mp4 *.mov *.mkv *.webm)</translation>
+    </message>
+    <message>
+        <source>Scenes (*.json)</source>
+        <translation>Escenas (*.json)</translation>
+    </message>
+    <message>
+        <source>PNG image (*.png)</source>
+        <translation>Imagen PNG (*.png)</translation>
+    </message>
+    <message>
+        <source>MP4 video (*.mp4)</source>
+        <translation>Vídeo MP4 (*.mp4)</translation>
+    </message>
+    <message>
+        <source>Discard unsaved changes?</source>
+        <translation>¿Descartar los cambios sin guardar?</translation>
+    </message>
+    <message>
+        <source>Reload the saved scene and replace your draft. The video source stays unchanged.</source>
+        <translation>Recarga la escena guardada para reemplazar el borrador. El vídeo original no cambia.</translation>
+    </message>
+    <message>
+        <source>Keep editing</source>
+        <translation>Seguir editando</translation>
+    </message>
+    <message>
+        <source>Discard and reload</source>
+        <translation>Descartar y recargar</translation>
     </message>
 </context>
 </TS>

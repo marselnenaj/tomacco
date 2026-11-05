@@ -59,6 +59,10 @@ const DESTINATIONS: &[(&str, &[&str])] = &[
     ("release.version", &["path"]),
     ("release.notes", &["directory"]),
     ("runtime.capture", &["path"]),
+    ("demo.scene.create", &["path"]),
+    ("demo.scene.update", &["path"]),
+    ("demo.preview", &["output"]),
+    ("demo.export", &["output"]),
     ("ios.virtual.crash_reports", &["directory"]),
     ("ios.virtual.screenshot", &["path"]),
     ("ios.virtual.record", &["path"]),
@@ -174,6 +178,11 @@ pub fn check(name: &str, arguments: &Value, policy: &str, roots: &Roots) -> Resu
     for key in destinations(name) {
         if let Some(value) = arguments[*key].as_str().filter(|v| !v.trim().is_empty()) {
             roots.check(name, policy, key, value)?;
+            if name == "demo.export" && *key == "output" {
+                for suffix in [".poster.png", ".manifest.json"] {
+                    roots.check(name, policy, key, &format!("{value}{suffix}"))?;
+                }
+            }
         }
     }
     Ok(())
@@ -236,5 +245,50 @@ mod tests {
                 );
             }
         }
+    }
+    #[test]
+    fn demo_scene_and_render_destinations_include_export_sidecars() {
+        let temp = tempfile::tempdir().unwrap();
+        let project = temp.path().join("project");
+        let outside = temp.path().join("outside");
+        std::fs::create_dir_all(&project).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        let scope = roots(&[&project], &[]);
+        for op in [
+            "demo.scene.create",
+            "demo.scene.update",
+            "demo.preview",
+            "demo.export",
+        ] {
+            let key = if op.contains("scene") {
+                "path"
+            } else {
+                "output"
+            };
+            assert!(check(op, &json!({key:project.join("new")}), "safe", &scope).is_ok());
+            assert_eq!(
+                check(op, &json!({key:outside.join("new")}), "safe", &scope)
+                    .unwrap_err()
+                    .code,
+                "path_outside_roots"
+            );
+        }
+        std::fs::write(outside.join("poster.png"), b"existing unrelated poster").unwrap();
+        std::os::unix::fs::symlink(
+            outside.join("poster.png"),
+            project.join("video.mp4.poster.png"),
+        )
+        .unwrap();
+        assert_eq!(
+            check(
+                "demo.export",
+                &json!({"output":project.join("video.mp4")}),
+                "safe",
+                &scope
+            )
+            .unwrap_err()
+            .code,
+            "path_outside_roots"
+        );
     }
 }

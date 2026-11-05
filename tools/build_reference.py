@@ -271,6 +271,7 @@ AREA_NOTES = {
     "apple": "Xcode tools on macOS hosts: build, test, archive, export, simulator.",
     "catalog": "Saved project and device catalogue.",
     "debug": "Debugger sessions: breakpoints, threads, stack, variables.",
+    "demo": "Local recordings into device videos: scenes, preview frames and verified exports.",
     "desktop": "The desktop app's state and window.",
     "device": "Devices of either platform: list, install, capture, logs.",
     "files": "Files inside the allowed roots.",

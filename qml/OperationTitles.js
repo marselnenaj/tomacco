@@ -256,7 +256,15 @@ var titles = {
     "ios.virtual.crash_reports": QT_TRANSLATE_NOOP("Operations", "Save crash reports of virtual iOS device"),
     "ios.virtual.syslog": QT_TRANSLATE_NOOP("Operations", "Log of virtual iOS device"),
     "ios.virtual.screenshot": QT_TRANSLATE_NOOP("Operations", "Screenshot of virtual iOS device"),
-    "ios.virtual.record": QT_TRANSLATE_NOOP("Operations", "Record virtual iOS device screen")
+    "ios.virtual.record": QT_TRANSLATE_NOOP("Operations", "Record virtual iOS device screen"),
+    "demo.capabilities": QT_TRANSLATE_NOOP("Operations", "Inspect Demo Studio capabilities"),
+    "demo.media.inspect": QT_TRANSLATE_NOOP("Operations", "Inspect local demo recording"),
+    "demo.scene.create": QT_TRANSLATE_NOOP("Operations", "Create demo scene"),
+    "demo.scene.get": QT_TRANSLATE_NOOP("Operations", "Read demo scene"),
+    "demo.scene.update": QT_TRANSLATE_NOOP("Operations", "Update demo scene"),
+    "demo.preview": QT_TRANSLATE_NOOP("Operations", "Render demo preview"),
+    "demo.export": QT_TRANSLATE_NOOP("Operations", "Export demo video"),
+    "demo.export.inspect": QT_TRANSLATE_NOOP("Operations", "Validate demo export")
 }
 
 function title(operation) {
