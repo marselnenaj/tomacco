@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>Copiar configuração MCP</translation>
+        <translation type="vanished">Copiar configuração MCP</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  Copie a configuração.</translation>
+        <translation type="vanished">1  Copie a configuração.</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation>2  Cole nas configurações MCP do seu agente.</translation>
+        <translation type="vanished">2  Cole nas configurações MCP do seu agente.</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>Limpar as notificações</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -238,11 +254,11 @@ O modelo determina a tela e a moldura. O Android vem da imagem de sistema escolh
     </message>
     <message>
         <source>Install Android system</source>
-        <translation>Instalar sistema Android</translation>
+        <translation type="vanished">Instalar sistema Android</translation>
     </message>
     <message>
         <source>Installed Android system</source>
-        <translation>Sistema Android instalado</translation>
+        <translation type="vanished">Sistema Android instalado</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
@@ -455,6 +471,170 @@ O modelo determina a tela e a moldura. O Android vem da imagem de sistema escolh
     <message>
         <source>Show every running device&apos;s screen side by side</source>
         <translation>Mostrar a tela de cada dispositivo em execução lado a lado</translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3826,6 +4006,34 @@ O SSH usa suas chaves existentes e a identidade de host conhecida.</translation>
         <source>Start AirPlay</source>
         <translation>Iniciar AirPlay</translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4925,6 +5133,62 @@ O SSH usa suas chaves existentes e a identidade de host conhecida.</translation>
         <source>Set up emulator</source>
         <translation>Configurar emulador</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5309,7 +5573,7 @@ O SSH usa suas chaves existentes e a identidade de host conhecida.</translation>
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>Copiar configuração MCP</translation>
+        <translation type="vanished">Copiar configuração MCP</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -5772,6 +6036,18 @@ O SSH usa suas chaves existentes e a identidade de host conhecida.</translation>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>Transforme uma gravação de tela em um vídeo com um dispositivo 3D.</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All jobs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6118,7 +6394,7 @@ Licenciado sob a GNU General Public License, versão 2 ou posterior.</translatio
     </message>
     <message>
         <source>Copied</source>
-        <translation>Copiado</translation>
+        <translation type="vanished">Copiado</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6130,7 +6406,7 @@ Licenciado sob a GNU General Public License, versão 2 ou posterior.</translatio
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>A configuração MCP está na área de transferência. Cole-a nas configurações MCP do seu agente.</translation>
+        <translation type="vanished">A configuração MCP está na área de transferência. Cole-a nas configurações MCP do seu agente.</translation>
     </message>
 </context>
 <context>
@@ -6812,6 +7088,357 @@ Licenciado sob a GNU General Public License, versão 2 ou posterior.</translatio
     <message>
         <source>Keep preset</source>
         <translation>Manter predefinição</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

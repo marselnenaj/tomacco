@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>MCP-Konfiguration kopieren</translation>
+        <translation type="vanished">MCP-Konfiguration kopieren</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  Konfiguration kopieren.</translation>
+        <translation type="vanished">1  Konfiguration kopieren.</translation>
     </message>
     <message>
-        <source>2  Paste it into your agent's MCP settings.</source>
-        <translation>2  In die MCP-Einstellungen deines Agenten einfügen.</translation>
+        <source>2  Paste it into your agent&apos;s MCP settings.</source>
+        <translation type="vanished">2  In die MCP-Einstellungen deines Agenten einfügen.</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>Benachrichtigungen leeren</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation>1  Wähle deinen Agenten.</translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation>2  Verbinde ihn oder kopiere seine eigene Einstellung.</translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation>Agenten verbinden</translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation>Eintrag für einen anderen MCP-Client kopieren</translation>
     </message>
 </context>
 <context>
@@ -445,11 +461,11 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Geräteliste zeigen</translation>
     </message>
     <message>
-        <source>Show every running device's screen side by side</source>
+        <source>Show every running device&apos;s screen side by side</source>
         <translation>Die Bildschirme aller laufenden Geräte nebeneinander zeigen</translation>
     </message>
     <message>
-        <source>Accept Google's Android SDK licence for this download</source>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
         <translation>Googles Android-SDK-Lizenz für diesen Download akzeptieren</translation>
     </message>
     <message>
@@ -481,7 +497,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Speicher: etwa %1 für den Emulator · %2 frei</translation>
     </message>
     <message>
-        <source>Download about %1 (estimate) · needs Google's SDK licence: %2</source>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
         <translation>Download etwa %1 (Schätzung) · braucht Googles SDK-Lizenz: %2</translation>
     </message>
     <message>
@@ -529,7 +545,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Speicherbelegung wird gelesen…</translation>
     </message>
     <message>
-        <source>Rename and wipe need the emulator's name typed here</source>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
         <translation>Umbenennen und Zurücksetzen brauchen hier den eingetippten Emulatornamen</translation>
     </message>
     <message>
@@ -565,7 +581,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>App-Daten löschen</translation>
     </message>
     <message>
-        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator's model and settings stay.</source>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
         <translation>Löschen entfernt die Apps, ihre Daten und die Snapshots; der nächste Start bootet wie ein neues Gerät. Modell und Einstellungen des Emulators bleiben.</translation>
     </message>
     <message>
@@ -881,15 +897,15 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Tomacco ist bereits in einem anderen Fenster geöffnet; Agenten steuern weiterhin jenes. Um auch dieses Fenster zu steuern, starte es mit --preview-session und einem anderen Namen.</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
         <translation>Das Steuerprogramm von Tomacco (tomaccoctl) konnte nicht gestartet werden. Installiere Tomacco neu oder führe install.py erneut aus.</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) is not working: %1</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
         <translation>Das Steuerprogramm von Tomacco (tomaccoctl) funktioniert nicht: %1</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
         <translation>Das Steuerprogramm von Tomacco (tomaccoctl) wurde nicht gefunden. Installiere Tomacco neu oder führe install.py erneut aus.</translation>
     </message>
     <message>
@@ -1148,7 +1164,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Ein Programm auf diesem Computer, untersucht mit LLDB.</translation>
     </message>
     <message>
-        <source>Take over your agent's session</source>
+        <source>Take over your agent&apos;s session</source>
         <translation>Sitzung deines Agenten übernehmen</translation>
     </message>
     <message>
@@ -1411,7 +1427,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Andocken</translation>
     </message>
     <message>
-        <source>Edge swipes start on the frame or at the screen's edge</source>
+        <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
         <translation>Randgesten beginnen am Rahmen oder am Bildschirmrand</translation>
     </message>
     <message>
@@ -1609,7 +1625,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Das virtuelle iOS-Gerät nimmt ein .app-Bundle für arm64-iOS an.</translation>
     </message>
     <message>
-        <source>Set up the virtual iOS device's profile before adding apps.</source>
+        <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
         <translation>Richte das Profil des virtuellen iOS-Geräts ein, bevor du Apps hinzufügst.</translation>
     </message>
     <message>
@@ -1663,7 +1679,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Gilt ab dem nächsten Start.</translation>
     </message>
     <message>
-        <source>Your own arm64 .app bundles. Each start installs them together with the device's helper tools. Changes apply from the next start.</source>
+        <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
         <translation>Deine eigenen arm64-.app-Bundles. Jeder Start installiert sie zusammen mit den Hilfswerkzeugen des Geräts. Änderungen gelten ab dem nächsten Start.</translation>
     </message>
     <message>
@@ -1747,7 +1763,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Lesen des Controller-Zustands fehlgeschlagen: %1</translation>
     </message>
     <message>
-        <source>For controller development: Apple's original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware's services and its connection to iOS are not verified.</source>
+        <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
         <translation>Für die Controller-Entwicklung: Apples originale Firmware läuft allein auf einem simulierten ARM-Prozessor. Der simulierte Controller beruht noch auf unbestätigten Hardware-Annahmen; die Dienste der Firmware und ihre Anbindung an iOS sind nicht geprüft.</translation>
     </message>
     <message>
@@ -1887,7 +1903,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Pfad zu einem .app-Verzeichnis (arm64)</translation>
     </message>
     <message>
-        <source>Addresses 0x1000000 to 0x11fffff of the firmware's memory. Reading checks the saved copy; the firmware is not run again for it.</source>
+        <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
         <translation>Adressen 0x1000000 bis 0x11fffff im Speicher der Firmware. Das Lesen prüft die gesicherte Kopie; die Firmware wird dafür nicht erneut ausgeführt.</translation>
     </message>
     <message>
@@ -1931,7 +1947,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Bereit für einen Testlauf</translation>
     </message>
     <message>
-        <source>Actual image from the start-up screen · not yet the device's main display</source>
+        <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
         <translation>Echtes Bild vom Startbildschirm · noch nicht das Hauptdisplay des Geräts</translation>
     </message>
     <message>
@@ -1959,7 +1975,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Lauf %1 · %2</translation>
     </message>
     <message>
-        <source>Run iOS, or the iPhone's power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
+        <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
         <translation>Führe iOS oder die Energieverwaltungs-Firmware des iPhones für sich allein direkt unter Linux aus. Jeder Lauf schreibt einen eigenen Bericht; Läufe aus der Kommandozeile oder von Agenten erscheinen auch hier.</translation>
     </message>
     <message>
@@ -1967,7 +1983,7 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>Lauf beendet</translation>
     </message>
     <message>
-        <source>Save a copy of the firmware's memory with the report (2 MiB)</source>
+        <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
         <translation>Kopie des Firmware-Speichers mit dem Bericht sichern (2 MiB)</translation>
     </message>
     <message>
@@ -2249,11 +2265,11 @@ Das Modell bestimmt Display und Rahmen. Android stammt aus dem gewählten System
         <translation>wird beendet …</translation>
     </message>
     <message>
-        <source>the device's helper tools are too old for this (before build 368)</source>
+        <source>the device&apos;s helper tools are too old for this (before build 368)</source>
         <translation>die Hilfswerkzeuge des Geräts sind dafür zu alt (vor Build 368)</translation>
     </message>
     <message>
-        <source>this computer's time zone has no standard name such as Europe/Vienna</source>
+        <source>this computer&apos;s time zone has no standard name such as Europe/Vienna</source>
         <translation>die Zeitzone dieses Rechners hat keinen Standardnamen wie Europe/Vienna</translation>
     </message>
     <message>
@@ -2625,7 +2641,7 @@ F12                        Web-Inspektor</translation>
         <translation>WERKZEUGE</translation>
     </message>
     <message>
-        <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers' resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
+        <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers&apos; resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
         <translation>Die Layout-Vorschau verwendet Chromium. Native Android- und iOS-Apps baust und startest du über den Workspace auf einem Emulator oder verbundenen Gerät. Die Profile enthalten Herstellerauflösungen und angenäherte Gehäuse, Ausschnitte und Safe Areas. CSS env(safe-area-inset-*) und Safari werden hier nicht emuliert.</translation>
     </message>
     <message>
@@ -2685,7 +2701,7 @@ F12                        Web-Inspektor</translation>
         <translation>iOS-SDK noch nicht eingerichtet</translation>
     </message>
     <message>
-        <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple's SDK from Xcode and a separate sign-in for signing.</source>
+        <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple&apos;s SDK from Xcode and a separate sign-in for signing.</source>
         <translation>xtool baut und signiert SwiftPM-Apps für iOS. Dafür werden Apples SDK aus Xcode und eine separate Anmeldung für die Signierung benötigt.</translation>
     </message>
     <message>
@@ -2913,7 +2929,7 @@ xtool setup</translation>
         <translation>Ein iPhone installiert eine signierte .ipa-Datei.</translation>
     </message>
     <message>
-        <source>Apps for the Mac's simulator are installed with Apple's tools.</source>
+        <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
         <translation>Apps für den Simulator auf dem Mac werden mit Apples Werkzeugen installiert.</translation>
     </message>
     <message>
@@ -3156,7 +3172,7 @@ xtool setup</translation>
         <translation>Dateien</translation>
     </message>
     <message>
-        <source>First click into the app's text field. This text is pasted through the device clipboard.</source>
+        <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
         <translation>Klicke vorher in das Textfeld der App. Dieser Text wird über die Geräte-Zwischenablage eingefügt.</translation>
     </message>
     <message>
@@ -3278,7 +3294,7 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Gerät koppeln</translation>
     </message>
     <message>
-        <source>Play the app's sound on this computer</source>
+        <source>Play the app&apos;s sound on this computer</source>
         <translation>App-Ton auf diesem Computer wiedergeben</translation>
     </message>
     <message>
@@ -3609,7 +3625,7 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Aktuelle Datei speichern</translation>
     </message>
     <message>
-        <source>Search the project's source code</source>
+        <source>Search the project&apos;s source code</source>
         <translation>Quellcode des Projekts durchsuchen</translation>
     </message>
     <message>
@@ -3733,7 +3749,7 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Anderer Computer</translation>
     </message>
     <message>
-        <source>Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
+        <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
         <translation>Erscheinungsbild, Sprache, Benachrichtigungen, Updates und die Einstellungen der Geräteansicht, als JSON-Datei. Pfade, Fenstergrößen und Verlauf bleiben auf diesem Computer.</translation>
     </message>
     <message>
@@ -3951,7 +3967,7 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Name, z. B. Testen oder Debuggen</translation>
     </message>
     <message>
-        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone's Screen Mirroring.</source>
+        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
         <translation>AirPlay wird neu gestartet. Wähle danach Tomacco erneut in der Bildschirmsynchronisierung des iPhone.</translation>
     </message>
     <message>
@@ -3985,6 +4001,34 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     <message>
         <source>Start AirPlay</source>
         <translation>AirPlay starten</translation>
+    </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>Ein Agent wartet auf dich: %1</translation>
+    </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP Agent verbinden</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>Anderswo in Benutzung</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>Verbindung wird wiederhergestellt</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>Bildschirmfoto gespeichert</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>Datei zeigen</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>Du bist dran</translation>
     </message>
 </context>
 <context>
@@ -5085,6 +5129,62 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Set up emulator</source>
         <translation>Emulator einrichten</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>Die Person um eine Handlung bitten</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>Fehlerbericht entwerfen</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>Übergaben auflisten</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>Sitzung beobachten</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>Geordnete Eingabefolge</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>Übergabe lesen</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>Die Person ist fertig</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>Zeitgestempelte Gestenspur</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>Auf die Person warten</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>Übergabe zurückziehen</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>Gerät nach Namen finden</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>GPX-Route abspielen</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>GPX-Route lesen</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>Status der Routenwiedergabe</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5469,7 +5569,7 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>MCP-Konfiguration kopieren</translation>
+        <translation type="vanished">MCP-Konfiguration kopieren</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -5704,7 +5804,7 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Alles, was dein Agent kann, als Formular zum Ausfüllen.</translation>
     </message>
     <message>
-        <source>Pause your app and see what it's doing.</source>
+        <source>Pause your app and see what it&apos;s doing.</source>
         <translation>Halte deine App an und sieh, was sie gerade tut.</translation>
     </message>
     <message>
@@ -5716,7 +5816,7 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Sieh, wo die Zeit bleibt, und erkenne Rückschritte.</translation>
     </message>
     <message>
-        <source>Search, edit and save your project's files.</source>
+        <source>Search, edit and save your project&apos;s files.</source>
         <translation>Dateien deines Projekts suchen, bearbeiten und speichern.</translation>
     </message>
     <message>
@@ -5756,7 +5856,7 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <translation>Schließe ein Telefon mit USB-Debugging an oder starte einen Emulator.</translation>
     </message>
     <message>
-        <source>Build or test from the project. Your agent's jobs show up here too, with logs and results.</source>
+        <source>Build or test from the project. Your agent&apos;s jobs show up here too, with logs and results.</source>
         <translation>Baue oder teste im Projekt. Die Aufträge deines Agenten erscheinen auch hier, mit Protokoll und Ergebnis.</translation>
     </message>
     <message>
@@ -5932,6 +6032,18 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>Verwandle eine Bildschirmaufnahme in ein Video mit einem 3D-Gerät.</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation>Agent</translation>
+    </message>
+    <message>
+        <source>All jobs</source>
+        <translation>Alle Jobs</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Coding-Agenten verbinden</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5986,7 +6098,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
 Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translation>
     </message>
     <message>
-        <source>Run the preview's interactive checks</source>
+        <source>Run the preview&apos;s interactive checks</source>
         <translation>Interaktive Prüfungen der Vorschau ausführen</translation>
     </message>
     <message>
@@ -6282,7 +6394,7 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     </message>
     <message>
         <source>Copied</source>
-        <translation>Kopiert</translation>
+        <translation type="vanished">Kopiert</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6294,7 +6406,7 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>Die MCP-Konfiguration ist in der Zwischenablage. Füge sie in die MCP-Einstellungen deines Agenten ein.</translation>
+        <translation type="vanished">Die MCP-Konfiguration ist in der Zwischenablage. Füge sie in die MCP-Einstellungen deines Agenten ein.</translation>
     </message>
 </context>
 <context>
@@ -6958,7 +7070,7 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
         <translation>Plan für %1 (%2) · Vorlagen-Revision %3</translation>
     </message>
     <message>
-        <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen's structure.</source>
+        <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
         <translation>TalkBack schaltet hier den Screenreader am Gerät um und behält deine anderen Bedienungshilfen bei. Ob deine App mit einem Screenreader funktioniert, zeigt das nicht; die Barrierefreiheitsprüfung kontrolliert nur den Aufbau des Bildschirms.</translation>
     </message>
     <message>
@@ -6976,6 +7088,357 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
     <message>
         <source>Keep preset</source>
         <translation>Vorlage behalten</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 Punkte, %2 km, %3 min aufgezeichnet</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 Punkte, %2 km, ohne Zeiten: ein Punkt pro Sekunde</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>Route ändern…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>GPX-Datei wählen…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>Fertig. Die letzte Position bleibt auf dem Emulator.</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>GPX-Route (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>Keine Route gewählt</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pause</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>Pausiert bei %1</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>Spielt eine GPX-Route als Standort des gewählten Emulators ab. Punkte mit Zeit behalten ihr Timing; Punkte ohne Zeit laufen mit einem pro Sekunde.</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>Route abspielen</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>Wiedergabe beendet: %1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>Spielt %1</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>Die Route läuft auf %1. Die vorherige Position ist unbekannt und wird nicht wiederhergestellt.</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>Läuft…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>Route wird gelesen…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>Route wiederholen</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Fortsetzen</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>Routenwiedergabe</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>Die Routenwiedergabe erreicht nur Emulatoren. Ein Telefon nimmt von hier keinen simulierten Standort an.</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>Tempo · 1 ist Echtzeit</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>Wiedergabe startet…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Stopp</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>Gestoppt. Die letzte Position bleibt auf dem Emulator.</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>Der Emulator meldet seine Position nicht, daher ist die Position vor der Wiedergabe unbekannt und wird nicht wiederhergestellt. Setze sie danach bei Bedarf im GPS-Feld des Presets.</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>Punkt %1 von %2</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Coding-Agenten verbinden</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Fertig</translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation>Wähle deinen Agenten. Tomacco zeigt, ob er verbunden ist und welche Einstellung er genau liest.</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation>%1 ist hier nicht installiert. Installiere es zuerst oder kopiere den Text für einen anderen Computer.</translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation>%1 startet Tomacco, wenn es gebraucht wird. Nichts zu tun.</translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation>Von Hand hinzufügen</translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation>Füge das in %1 ein:</translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation>Ein anderer Eintrag ist im Weg</translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation>Erneut prüfen</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>Verbinden</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation>Verbunden</translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation>Verbunden.</translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation>Verbunden. Die vorherige Datei liegt als %1.</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Verbinde…</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>Kopiert</translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation>Befehl kopieren</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>Text kopieren</translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation>Unverändert gelassen</translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation>Suche nach Coding-Agenten…</translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation>Braucht ein Update</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation>Nicht verbunden</translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation>Auf diesem Computer nicht gefunden</translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation>Oder führe das in einem Terminal aus:</translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation>Tomacco entfernen</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation>Entfernt</translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation>Entfernt nur den Eintrag, den das Setup hinzugefügt hat; der Rest der Datei bleibt.</translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation>Das Setup fügt Tomacco den Einstellungen von %1 hinzu und sichert die Datei vorher.</translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation>Das Setup hat zu diesem Agenten nichts gemeldet.</translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation>Setup fehlgeschlagen</translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation>Setup fehlgeschlagen.</translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation>In den Einstellungen von %1 verwendet etwas anderes den Namen. Das Setup lässt es in Ruhe; füge Tomacco von Hand unter einem anderen Namen hinzu.</translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation>Die Agentenliste konnte nicht angefragt werden.</translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation>Diese Datei schreibt Tomacco nicht um. Füge den Text unten selbst ein.</translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation>Diese Version von tomaccoctl kann keine Coding-Agenten auflisten.</translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation>Tomacco konnte nicht erkennen, welches Einstellungsformat %1 liest. Füge den Text unten selbst ein oder starte das Setup im Terminal mit der Version.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation>Der Eintrag von Tomacco ist in %1 ausgeschaltet. Das Setup lässt deine Entscheidung stehen; schalte ihn dort ein.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation>Der Eintrag von Tomacco zeigt auf ein anderes Programm oder ältere Einstellungen. Das Update schreibt nur diesen Eintrag neu und legt eine Sicherung an.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation>Der Eintrag von Tomacco wurde entfernt; der Rest der Datei ist unverändert.</translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation>In den eigenen Einstellungen ausgeschaltet</translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation>Eintrag aktualisieren</translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation>Version unklar</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · ein Agent wartet auf dich</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · ein Agent wartet auf dich (%2 weitere)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>Mach es direkt auf dem Gerät. Tomacco fragt nie nach deinem Code oder Passwort.</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Fertig</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>Fertig: Ich habe es auf dem Gerät erledigt</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID oder Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>Code</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>Berechtigung</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>Kauf</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>Anmeldung</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>Du bist dran am Gerät</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Strg</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>Mehr</translation>
     </message>
 </context>
 </TS>

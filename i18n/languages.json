@@ -22,7 +22,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "ar",
@@ -36,7 +36,7 @@
       "zeroDigit": "0",
       "plural": "arabic",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "bg",
@@ -148,7 +148,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": false,
-      "complete": true
+      "complete": false
     },
     {
       "code": "es-MX",
@@ -162,7 +162,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "et",
@@ -232,7 +232,7 @@
       "zeroDigit": "0",
       "plural": "french",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "ga",
@@ -344,7 +344,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "ja",
@@ -358,7 +358,7 @@
       "zeroDigit": "0",
       "plural": "universal",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "ko",
@@ -428,7 +428,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "no",
@@ -470,7 +470,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "pt-BR",
@@ -484,7 +484,7 @@
       "zeroDigit": "0",
       "plural": "french",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "ro",
@@ -512,7 +512,7 @@
       "zeroDigit": "0",
       "plural": "russian",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "si",
@@ -708,7 +708,7 @@
       "zeroDigit": "0",
       "plural": "universal",
       "omarchy": true,
-      "complete": true
+      "complete": false
     },
     {
       "code": "zh-TW",
@@ -722,7 +722,7 @@
       "zeroDigit": "0",
       "plural": "universal",
       "omarchy": true,
-      "complete": true
+      "complete": false
     }
   ],
   "aliases": {
