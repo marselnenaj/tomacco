@@ -40,7 +40,7 @@ review list, not an error count.
 | ms | Bahasa Melayu (Malay) | ltr | 1 (universal) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
 | nl | Nederlands (Dutch) | ltr | 2 (english) | 1758/1758 | 0 | 1 | 0 | 6/6 | complete |
 | no | Norsk (Norwegian) | ltr | 2 (english) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
-| pl | Polski (Polish) | ltr | 3 (polish) | 536/1758 | 1222 | 0 | 0 | 0/6 | partial |
+| pl | Polski (Polish) | ltr | 3 (polish) | 1758/1758 | 0 | 0 | 0 | 6/6 | complete |
 | pt | Português (Portugal) (Portuguese (Portugal)) | ltr | 2 (english) | 1758/1758 | 0 | 0 | 0 | 6/6 | complete |
 | pt-BR | Português (Brasil) (Portuguese (Brazil)) | ltr | 2 (french) | 1758/1758 | 0 | 0 | 0 | 6/6 | complete |
 | ro | Română (Romanian) | ltr | 3 (romanian) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
@@ -61,6 +61,6 @@ review list, not an error count.
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1758/1758 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1758/1758 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 13 of 50 translated languages: ar, de, es, es-MX, fr, it, ja, nl, pt, pt-BR, ru, zh-CN, zh-TW
+Complete: 14 of 50 translated languages: ar, de, es, es-MX, fr, it, ja, nl, pl, pt, pt-BR, ru, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, da, el, et, fa, fi, fil, ga, he, hi, hr, hu, id, is, ko, lt, lv, ms, no, pl, ro, si, sk, sl, sr, sv, sw, ta, th, tr, uk, ur, uz, vi
+Not complete: bg, bn, ca, cs, da, el, et, fa, fi, fil, ga, he, hi, hr, hu, id, is, ko, lt, lv, ms, no, ro, si, sk, sl, sr, sv, sw, ta, th, tr, uk, ur, uz, vi

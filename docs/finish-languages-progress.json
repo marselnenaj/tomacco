@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-06T16:32:44+00:00",
+  "updated_at": "2026-11-06T16:38:10+00:00",
   "model": "claude-opus-5-5",
   "branch": "finish/omarchy-languages",
   "base_head": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
-  "current_head": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
+  "current_head": "8fb7467e370baf072beab0de58ce0c08c92572a5",
   "current_ui_head": "0f465cb (companion integration/finish-tomacco has no newer commit yet; uncommitted changes there are not imported)",
   "source_digest": "8698f5478352",
   "source_count": 1758,
@@ -17,6 +17,7 @@
     "it",
     "ja",
     "nl",
+    "pl",
     "pt",
     "pt-BR",
     "ru",
@@ -46,7 +47,6 @@
     "lv",
     "ms",
     "no",
-    "pl",
     "ro",
     "si",
     "sk",
@@ -376,14 +376,14 @@
       "registry_complete": false
     },
     "pl": {
-      "finished": 536,
-      "unfinished": 1222,
+      "finished": 1758,
+      "unfinished": 0,
       "stale": 0,
       "problems": [],
       "suspicious": [],
-      "menu_entry": "0/6",
-      "status": "partial",
-      "registry_complete": false
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
     },
     "pt": {
       "finished": 1758,
@@ -582,9 +582,11 @@
       "registry_complete": true
     }
   },
-  "commits": [],
+  "commits": [
+    "8fb7467 i18n: reconcile 13 complete catalogs with the merged sources (1758 texts), translate operation titles for GPX playback and device.resolve, re-index vetted Polish material"
+  ],
   "tests": {
-    "tests/python/test_i18n.py": "18 tests OK (python3 -m unittest, TMPDIR=/tmp)"
+    "tests/python/test_i18n.py": "18 tests OK after pl (python3 -m unittest, TMPDIR=/tmp)"
   },
   "remaining": {
     "bg": 1758,
@@ -609,7 +611,6 @@
     "lv": 1758,
     "ms": 1758,
     "no": 1758,
-    "pl": 1222,
     "ro": 1758,
     "si": 1758,
     "sk": 1758,
@@ -625,7 +626,7 @@
     "uz": 1758,
     "vi": 1758
   },
-  "next_step": "Translate the remaining catalogs tranche by tranche (pl first: 536 vetted strings re-indexed), then refresh against the companion's committed UI head.",
+  "next_step": "Translate the remaining 36 catalogs one complete language per tranche set; refresh against the companion committed UI head when it publishes one.",
   "source_ready": {
     "companion_final_source_checkpoint": null,
     "status": "pending: companion has not published a final-source-ready checkpoint in docs/finish-progress.json"

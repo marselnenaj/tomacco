@@ -450,167 +450,167 @@ Model określa wyświetlacz i obudowę. Android pochodzi z wybranego obrazu syst
     </message>
     <message>
         <source>Accept Google&apos;s Android SDK licence for this download</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaakceptuj licencję Android SDK od Google dla tego pobierania</translation>
     </message>
     <message>
         <source>Android system image</source>
-        <translation type="unfinished"></translation>
+        <translation>Obraz systemu Android</translation>
     </message>
     <message>
         <source>App data removed · %1 freed · the next start boots like a new device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dane aplikacji usunięte · zwolniono %1 · następne uruchomienie będzie jak na nowym urządzeniu</translation>
     </message>
     <message>
         <source>Cannot start: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie można uruchomić: %1</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdzanie…</translation>
     </message>
     <message>
         <source>Copying device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiowanie urządzenia…</translation>
     </message>
     <message>
         <source>Copying…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiowanie…</translation>
     </message>
     <message>
         <source>Disk: about %1 for the emulator · %2 free</source>
-        <translation type="unfinished"></translation>
+        <translation>Dysk: około %1 na emulator · wolne %2</translation>
     </message>
     <message>
         <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobieranie około %1 (szacunkowo) · wymaga licencji SDK od Google: %2</translation>
     </message>
     <message>
         <source>Download and create</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobierz i utwórz</translation>
     </message>
     <message>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>Duplikuj</translation>
     </message>
     <message>
         <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Duplikowanie kopiuje emulator wraz z aplikacjami i danymi pod nową nazwą, jako zadanie, które możesz anulować. Zmiana nazwy naprawdę zmienia nazwę emulatora przez Android SDK; pseudonim przechodzi razem z nim. Sam pseudonim ustawisz przyciskiem z ołówkiem.</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Duplikuj, zmień nazwę lub wyczyść ten emulator</translation>
     </message>
     <message>
         <source>Letters, digits, - and _</source>
-        <translation type="unfinished"></translation>
+        <translation>Litery, cyfry, - i _</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>Zarządzaj</translation>
     </message>
     <message>
         <source>Manage emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Zarządzaj emulatorem</translation>
     </message>
     <message>
         <source>New name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nowa nazwa</translation>
     </message>
     <message>
         <source>On disk: %1 · a wipe frees %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Na dysku: %1 · wyczyszczenie zwolni %2</translation>
     </message>
     <message>
         <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz zainstalowany obraz albo wpisz inny pakiet: zostanie pobrany w pierwszym kroku. Tomacco tworzy emulatory telefonów, urządzeń składanych i tabletów.</translation>
     </message>
     <message>
         <source>Reading disk usage…</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytywanie zajętości dysku…</translation>
     </message>
     <message>
         <source>Rename and wipe need the emulator&apos;s name typed here</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmiana nazwy i czyszczenie wymagają wpisania tutaj nazwy emulatora</translation>
     </message>
     <message>
         <source>Renamed to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmieniono nazwę na %1</translation>
     </message>
     <message>
         <source>Renaming…</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmienianie nazwy…</translation>
     </message>
     <message>
         <source>Start the emulator when it is ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom emulator, gdy będzie gotowy</translation>
     </message>
     <message>
         <source>Steps: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kroki: %1</translation>
     </message>
     <message>
         <source>System image installed · no download</source>
-        <translation type="unfinished"></translation>
+        <translation>Obraz systemu zainstalowany · bez pobierania</translation>
     </message>
     <message>
         <source>TV, Wear, Automotive and XR images are not supported yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Obrazy TV, Wear, Automotive i XR nie są jeszcze obsługiwane</translation>
     </message>
     <message>
         <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator jest włączony lub istnieją jego pliki blokady. Najpierw go wyłącz; nic tutaj nie zmienia działającego emulatora.</translation>
     </message>
     <message>
         <source>Wipe app data</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyczyść dane aplikacji</translation>
     </message>
     <message>
         <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Czyszczenie usuwa aplikacje, ich dane i migawki; następne uruchomienie będzie jak na nowym urządzeniu. Model i ustawienia emulatora pozostają.</translation>
     </message>
     <message>
         <source>Wiping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Czyszczenie…</translation>
     </message>
     <message>
         <source>already accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>już zaakceptowana</translation>
     </message>
     <message>
         <source>apply model</source>
-        <translation type="unfinished"></translation>
+        <translation>zastosuj model</translation>
     </message>
     <message>
         <source>create</source>
-        <translation type="unfinished"></translation>
+        <translation>utwórz</translation>
     </message>
     <message>
         <source>install image</source>
-        <translation type="unfinished"></translation>
+        <translation>zainstaluj obraz</translation>
     </message>
     <message>
         <source>is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>brakuje</translation>
     </message>
     <message>
         <source>not enough free space</source>
-        <translation type="unfinished"></translation>
+        <translation>za mało wolnego miejsca</translation>
     </message>
     <message>
         <source>not yet accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>jeszcze niezaakceptowana</translation>
     </message>
     <message>
         <source>start</source>
-        <translation type="unfinished"></translation>
+        <translation>uruchom</translation>
     </message>
     <message>
         <source>the Android SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK</translation>
     </message>
     <message>
         <source>the name is taken</source>
-        <translation type="unfinished"></translation>
+        <translation>nazwa jest zajęta</translation>
     </message>
 </context>
 <context>
@@ -2374,43 +2374,43 @@ Model określa wyświetlacz i obudowę. Android pochodzi z wybranego obrazu syst
     <name>Main</name>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu zapisany i skopiowany · %1</translation>
     </message>
     <message>
         <source>%1 panel pixels</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pikseli panelu</translation>
     </message>
     <message numerus="yes">
         <source>%n model(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n model</numerusform>
+            <numerusform>%n modele</numerusform>
+            <numerusform>%n modeli</numerusform>
         </translation>
     </message>
     <message>
         <source>Apple download ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobieranie od Apple ↗</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstecz</translation>
     </message>
     <message>
         <source>CASE</source>
-        <translation type="unfinished"></translation>
+        <translation>OBUDOWA</translation>
     </message>
     <message>
         <source>Choose a web build</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz kompilację webową</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamknij</translation>
     </message>
     <message>
         <source>Copy setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj konfigurację</translation>
     </message>
     <message>
         <source>Ctrl+L                  Address
@@ -2419,4807 +2419,4820 @@ Ctrl+Shift+R         Rotate
 Ctrl+Shift+S         Screenshot
 F11 / Esc              Full screen / back
 F12                        Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L                  Adres
+Ctrl+R                  Odśwież
+Ctrl+Shift+R         Obróć
+Ctrl+Shift+S         Zrzut ekranu
+F11 / Esc              Pełny ekran / wstecz
+F12                        Inspektor sieci</translation>
     </message>
     <message>
         <source>Ctrl+L  Address     Ctrl+Shift+R  Rotate     F11  Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L  Adres     Ctrl+Shift+R  Obróć     F11  Pełny ekran</translation>
     </message>
     <message>
         <source>Custom</source>
         <comment>device category</comment>
-        <translation type="unfinished"></translation>
+        <translation>Własne</translation>
     </message>
     <message>
         <source>Custom size</source>
-        <translation type="unfinished"></translation>
+        <translation>Własny rozmiar</translation>
     </message>
     <message>
         <source>DISPLAY</source>
-        <translation type="unfinished"></translation>
+        <translation>WYŚWIETLACZ</translation>
     </message>
     <message>
         <source>Developer tools · F12</source>
-        <translation type="unfinished"></translation>
+        <translation>Narzędzia deweloperskie · F12</translation>
     </message>
     <message>
         <source>Device catalog updated</source>
-        <translation type="unfinished"></translation>
+        <translation>Katalog urządzeń zaktualizowany</translation>
     </message>
     <message>
         <source>Device profiles (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Profile urządzeń (*.json)</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj</translation>
     </message>
     <message>
         <source>Export device profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj profil urządzenia</translation>
     </message>
     <message>
         <source>Fit</source>
-        <translation type="unfinished"></translation>
+        <translation>Dopasuj</translation>
     </message>
     <message>
         <source>Fold</source>
-        <translation type="unfinished"></translation>
+        <translation>Złóż</translation>
     </message>
     <message>
         <source>Folded · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Złożony · %1</translation>
     </message>
     <message>
         <source>Folded · Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Złożony · poziomo</translation>
     </message>
     <message>
         <source>Folded · Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Złożony · pionowo</translation>
     </message>
     <message>
         <source>Full screen · F11</source>
-        <translation type="unfinished"></translation>
+        <translation>Pełny ekran · F11</translation>
     </message>
     <message>
         <source>Got it</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozumiem</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj</translation>
     </message>
     <message>
         <source>Import device profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj profile urządzeń</translation>
     </message>
     <message>
         <source>Inner · Under-display camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Wewnętrzny · aparat pod ekranem</translation>
     </message>
     <message>
         <source>Interactive demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktywne demo</translation>
     </message>
     <message>
         <source>Keyboard shortcuts and tips</source>
-        <translation type="unfinished"></translation>
+        <translation>Skróty klawiszowe i wskazówki</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Poziomo</translation>
     </message>
     <message>
         <source>Landscape</source>
         <comment>orientation button</comment>
-        <translation type="unfinished"></translation>
+        <translation>Poziomo</translation>
     </message>
     <message>
         <source>Load a local web build with index.html</source>
-        <translation type="unfinished"></translation>
+        <translation>Wczytaj lokalną kompilację webową z index.html</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Wczytywanie…</translation>
     </message>
     <message>
         <source>Model specifications ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Specyfikacja modelu ↗</translation>
     </message>
     <message>
         <source>Native build tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Natywne narzędzia kompilacji</translation>
     </message>
     <message>
         <source>No matching model</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak pasującego modelu</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz folder</translation>
     </message>
     <message>
         <source>Open · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwarty · %1</translation>
     </message>
     <message>
         <source>Open · Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwarty · poziomo</translation>
     </message>
     <message>
         <source>Open · Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwarty · pionowo</translation>
     </message>
     <message>
         <source>Outer · Round front camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Zewnętrzny · okrągły przedni aparat</translation>
     </message>
     <message>
         <source>Tomacco · Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco · Inspektor sieci</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Pionowo</translation>
     </message>
     <message>
         <source>Portrait</source>
         <comment>orientation button</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pionowo</translation>
     </message>
     <message>
         <source>QUICK OPEN</source>
-        <translation type="unfinished"></translation>
+        <translation>SZYBKIE OTWIERANIE</translation>
     </message>
     <message>
         <source>Reload · Ctrl+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Odśwież · Ctrl+R</translation>
     </message>
     <message>
         <source>Rotate · Ctrl+Shift+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Obróć · Ctrl+Shift+R</translation>
     </message>
     <message>
         <source>Safe area</source>
-        <translation type="unfinished"></translation>
+        <translation>Obszar bezpieczny</translation>
     </message>
     <message>
         <source>Save device as PNG · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz urządzenie jako PNG · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Screenshot could not be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się zapisać zrzutu ekranu.</translation>
     </message>
     <message>
         <source>Screenshot saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu zapisany · %1</translation>
     </message>
     <message>
         <source>Search Android devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj urządzeń z Androidem…</translation>
     </message>
     <message>
         <source>Search Apple devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj urządzeń Apple…</translation>
     </message>
     <message>
         <source>Search custom devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj własnych urządzeń…</translation>
     </message>
     <message>
         <source>Send layout hints to the app; the background always stays edge-to-edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Wysyłaj wskazówki układu do aplikacji; tło zawsze sięga krawędzi</translation>
     </message>
     <message>
         <source>Show safe area</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż obszar bezpieczny</translation>
     </message>
     <message>
         <source>TOOLS</source>
-        <translation type="unfinished"></translation>
+        <translation>NARZĘDZIA</translation>
     </message>
     <message>
         <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers&apos; resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podgląd układu korzysta z Chromium. Natywne aplikacje na Androida i iOS kompilujesz i uruchamiasz z obszaru roboczego na emulatorze lub podłączonym urządzeniu. Profile zawierają rozdzielczości producentów oraz przybliżone obudowy, wycięcia i obszary bezpieczne. CSS env(safe-area-inset-*) i Safari nie są tu emulowane.</translation>
     </message>
     <message>
         <source>The web preview works independently of this. Credentials are entered only in the interactive xtool setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podgląd sieciowy działa niezależnie od tego. Dane logowania wpisuje się tylko w interaktywnej konfiguracji xtool.</translation>
     </message>
     <message>
         <source>The workspace has unsaved changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Obszar roboczy ma niezapisane zmiany.</translation>
     </message>
     <message>
         <source>Unfold</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozłóż</translation>
     </message>
     <message>
         <source>Unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieosiągalny</translation>
     </message>
     <message>
         <source>VIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>WIDOK</translation>
     </message>
     <message>
         <source>View at 100 %</source>
-        <translation type="unfinished"></translation>
+        <translation>Widok w 100 %</translation>
     </message>
     <message>
         <source>View build tools →</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż narzędzia kompilacji →</translation>
     </message>
     <message>
         <source>Web app connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacja webowa połączona</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Podgląd sieciowy</translation>
     </message>
     <message>
         <source>Workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Obszar roboczy</translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation type="unfinished"></translation>
+        <translation>Powiększ</translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation type="unfinished"></translation>
+        <translation>Pomniejsz</translation>
     </message>
     <message>
         <source>iOS SDK not set up yet</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS SDK nie jest jeszcze skonfigurowany</translation>
     </message>
     <message>
         <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple&apos;s SDK from Xcode and a separate sign-in for signing.</source>
-        <translation type="unfinished"></translation>
+        <translation>xtool kompiluje i podpisuje aplikacje SwiftPM na iOS. Wymaga to SDK Apple z Xcode i osobnego logowania do podpisywania.</translation>
     </message>
     <message>
         <source>xtool sdk install /path/to/Xcode.xip
 xtool setup</source>
-        <translation type="unfinished"></translation>
+        <translation>xtool sdk install /ścieżka/do/Xcode.xip
+xtool setup</translation>
     </message>
     <message>
         <source>Safe area metadata</source>
-        <translation type="unfinished"></translation>
+        <translation>Metadane obszaru bezpiecznego</translation>
     </message>
     <message>
         <source>System bars</source>
-        <translation type="unfinished"></translation>
+        <translation>Paski systemowe</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Dźwięk</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>Własne</translation>
     </message>
     <message>
         <source>Fast 3G</source>
-        <translation type="unfinished"></translation>
+        <translation>Szybkie 3G</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Sieć</translation>
     </message>
     <message>
         <source>No throttling</source>
-        <translation type="unfinished"></translation>
+        <translation>Bez ograniczania</translation>
     </message>
     <message>
         <source>Offline</source>
-        <translation type="unfinished"></translation>
+        <translation>Offline</translation>
     </message>
     <message>
         <source>Page color scheme</source>
-        <translation type="unfinished"></translation>
+        <translation>Schemat kolorów strony</translation>
     </message>
     <message>
         <source>Reduce motion</source>
-        <translation type="unfinished"></translation>
+        <translation>Ogranicz ruch</translation>
     </message>
     <message>
         <source>Slow 3G</source>
-        <translation type="unfinished"></translation>
+        <translation>Wolne 3G</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Systemowy</translation>
     </message>
     <message>
         <source>The page sees prefers-reduced-motion: reduce</source>
-        <translation type="unfinished"></translation>
+        <translation>Strona widzi prefers-reduced-motion: reduce</translation>
     </message>
     <message>
         <source>System bar color</source>
-        <translation type="unfinished"></translation>
+        <translation>Kolor pasków systemowych</translation>
     </message>
     <message>
         <source>Auto</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatycznie</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Jasny</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Ciemny</translation>
     </message>
     <message>
         <source>Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Inspektor sieci</translation>
     </message>
     <message>
         <source>Builds &amp; devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilacje i urządzenia</translation>
     </message>
     <message>
         <source>Screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzuty ekranu</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie na żywo</translation>
     </message>
     <message>
         <source>Chromium preview. Frames are approximate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podgląd w Chromium. Ramki są przybliżone.</translation>
     </message>
     <message>
         <source>Your web app, on every phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Twoja aplikacja webowa na każdym telefonie.</translation>
     </message>
     <message>
         <source>Open it by URL, or load a finished build as a folder. Switch phone, color and orientation without reloading.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz ją przez URL albo wczytaj gotową kompilację jako folder. Zmieniaj telefon, kolor i orientację bez przeładowania.</translation>
     </message>
     <message>
         <source>Unsaved changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Niezapisane zmiany</translation>
     </message>
 </context>
 <context>
     <name>NativeView</name>
     <message>
         <source>Click the text field in the app first</source>
-        <translation type="unfinished"></translation>
+        <translation>Najpierw kliknij pole tekstowe w aplikacji</translation>
     </message>
     <message>
         <source>Connection to the runtime ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Połączenie ze środowiskiem uruchomieniowym zostało zakończone</translation>
     </message>
     <message>
         <source>Frame resolution outside the limits</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozdzielczość klatki poza limitami</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Wprowadzanie nie powiodło się</translation>
     </message>
     <message>
         <source>Invalid video packet size</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieprawidłowy rozmiar pakietu wideo</translation>
     </message>
     <message>
         <source>Not enough memory for the video frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Za mało pamięci na klatkę wideo</translation>
     </message>
     <message>
         <source>The H.264 data could not be read</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie można odczytać danych H.264</translation>
     </message>
     <message>
         <source>The input was not confirmed</source>
-        <translation type="unfinished"></translation>
+        <translation>Wprowadzenie nie zostało potwierdzone</translation>
     </message>
     <message>
         <source>The runtime response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Odpowiedź środowiska uruchomieniowego jest za duża</translation>
     </message>
     <message>
         <source>The video decoder could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie można zainicjować dekodera wideo</translation>
     </message>
     <message>
         <source>The video frame could not be converted</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie można przekonwertować klatki wideo</translation>
     </message>
     <message>
         <source>Too many pending inputs</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbyt wiele oczekujących wprowadzeń</translation>
     </message>
     <message>
         <source>Video decoder not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Dekoder wideo niedostępny</translation>
     </message>
 </context>
 <context>
     <name>NativeWorkspace</name>
     <message>
         <source>Interface size</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozmiar interfejsu</translation>
     </message>
     <message>
         <source>Larger interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Większy interfejs</translation>
     </message>
     <message>
         <source>Smaller interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Mniejszy interfejs</translation>
     </message>
     <message>
         <source>Reset interface size</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywróć rozmiar interfejsu</translation>
     </message>
     <message>
         <source>Text, controls and spacing in Tomacco. Device zoom and screenshots keep their own size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekst, kontrolki i odstępy w Tomacco. Powiększenie urządzenia i zrzuty ekranu zachowują własny rozmiar.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywróć</translation>
     </message>
     <message>
         <source>Drop to open %1 as the project</source>
-        <translation type="unfinished"></translation>
+        <translation>Upuść, aby otworzyć %1 jako projekt</translation>
     </message>
     <message>
         <source>Open recent project %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz ostatni projekt %1</translation>
     </message>
     <message>
         <source>Connect a device to take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz urządzenie, aby zrobić zrzut ekranu.</translation>
     </message>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu zapisany i skopiowany · %1</translation>
     </message>
     <message>
         <source>Save and copy a device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz i skopiuj zrzut ekranu urządzenia</translation>
     </message>
     <message>
         <source>Save and copy a screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz i skopiuj zrzut ekranu</translation>
     </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Najpierw wybierz urządzenie, a potem upuść na nie aplikację.</translation>
     </message>
     <message>
         <source>Android devices install .apk files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenia z Androidem instalują pliki .apk.</translation>
     </message>
     <message>
         <source>An iPhone installs one signed .ipa file.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone instaluje jeden podpisany plik .ipa.</translation>
     </message>
     <message>
         <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacje dla symulatora na Macu instaluje się narzędziami Apple.</translation>
     </message>
     <message>
         <source>Installing %1 on %2…</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalowanie %1 na %2…</translation>
     </message>
     <message>
         <source>Installing · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalowanie · postęp w sekcji Kompilacje i zadania</translation>
     </message>
     <message numerus="yes">
         <source>%n tool(s) available to agents through the CLI and MCP</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n narzędzie dostępne dla agentów przez CLI i MCP</numerusform>
+            <numerusform>%n narzędzia dostępne dla agentów przez CLI i MCP</numerusform>
+            <numerusform>%n narzędzi dostępnych dla agentów przez CLI i MCP</numerusform>
         </translation>
     </message>
     <message>
         <source>A job is already running for this project. You can open or stop it under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dla tego projektu działa już zadanie. Możesz je otworzyć lub zatrzymać w sekcji Kompilacje i zadania.</translation>
     </message>
     <message>
         <source>AUTOMATION</source>
-        <translation type="unfinished"></translation>
+        <translation>AUTOMATYZACJA</translation>
     </message>
     <message>
         <source>About Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>O Tomacco</translation>
     </message>
     <message>
         <source>About Tomacco · version, license and source code</source>
-        <translation type="unfinished"></translation>
+        <translation>O Tomacco · wersja, licencja i kod źródłowy</translation>
     </message>
     <message>
         <source>Agent API not ready</source>
-        <translation type="unfinished"></translation>
+        <translation>API agenta nie jest gotowe</translation>
     </message>
     <message>
         <source>Agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Agenci</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie pliki (*)</translation>
     </message>
     <message>
         <source>Android is starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Android się uruchamia…</translation>
     </message>
     <message>
         <source>App launch: %1. Details under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchomienie aplikacji: %1. Szczegóły w sekcji Kompilacje i zadania.</translation>
     </message>
     <message>
         <source>App launched</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacja uruchomiona</translation>
     </message>
     <message>
         <source>App running on %1 · end the session before switching targets</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacja działa na %1 · zakończ sesję przed zmianą celu</translation>
     </message>
     <message>
         <source>App running · apply changes with Hot Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacja działa · zastosuj zmiany przez Hot Reload</translation>
     </message>
     <message>
         <source>Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK Apple</translation>
     </message>
     <message>
         <source>Apple sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Logowanie do Apple</translation>
     </message>
     <message>
         <source>Apple sign-in opened in the local terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Logowanie do Apple otwarte w lokalnym terminalu</translation>
     </message>
     <message>
         <source>Applying changes to the running app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Stosowanie zmian w działającej aplikacji…</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstecz</translation>
     </message>
     <message>
         <source>Build running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilacja trwa…</translation>
     </message>
     <message>
         <source>Build, run and test native Android and iOS apps on Linux, by hand or with your agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiluj, uruchamiaj i testuj natywne aplikacje na Androida i iOS w Linuksie, ręcznie lub z agentami.</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilacje i zadania</translation>
     </message>
     <message>
         <source>Capture saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Przechwycenie zapisane · %1</translation>
     </message>
     <message>
         <source>Case color</source>
-        <translation type="unfinished"></translation>
+        <translation>Kolor obudowy</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź ponownie</translation>
     </message>
     <message>
         <source>Choose a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz Maca</translation>
     </message>
     <message>
         <source>Choose a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz urządzenie</translation>
     </message>
     <message>
         <source>Choose ‘Sign in to Apple’ and finish signing in in the local terminal.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz „Zaloguj się do Apple” i dokończ logowanie w lokalnym terminalu.</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Kolor</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz Maca</translation>
     </message>
     <message>
         <source>Connect an iPhone or iPad via USB and confirm ‘Trust This Computer’.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz iPhone’a lub iPada przez USB i potwierdź „Zaufaj temu komputerowi”.</translation>
     </message>
     <message>
         <source>Connect the Apple simulator to Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz symulator Apple z Linuksem</translation>
     </message>
     <message>
         <source>Connect the unlocked iPhone. The usbmuxd service must be available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz odblokowanego iPhone’a. Usługa usbmuxd musi być dostępna.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Połączono</translation>
     </message>
     <message>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Łączenie</translation>
     </message>
     <message>
         <source>Connecting the picture…</source>
-        <translation type="unfinished"></translation>
+        <translation>Łączenie obrazu…</translation>
     </message>
     <message>
         <source>Not mirroring</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak dublowania</translation>
     </message>
     <message>
         <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Na iPhonie otwórz Centrum sterowania, stuknij Dublowanie ekranu i wybierz %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Łączenie…</translation>
     </message>
     <message>
         <source>Connection name, e.g. build-mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa połączenia, np. build-mac</translation>
     </message>
     <message>
         <source>Control program</source>
-        <translation type="unfinished"></translation>
+        <translation>Program sterujący</translation>
     </message>
     <message>
         <source>Control program unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>Program sterujący niedostępny</translation>
     </message>
     <message>
         <source>Copy companion command</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj polecenie companion</translation>
     </message>
     <message>
         <source>Copy context</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj kontekst</translation>
     </message>
     <message>
         <source>DEVELOPMENT</source>
-        <translation type="unfinished"></translation>
+        <translation>PROGRAMOWANIE</translation>
     </message>
     <message>
         <source>Detach the device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Odłącz urządzenie do osobnego okna</translation>
     </message>
     <message>
         <source>Device pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>Parowanie urządzenia</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenia</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozłącz</translation>
     </message>
     <message>
         <source>Dismiss notice</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamknij komunikat</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dok</translation>
     </message>
     <message>
         <source>Download SDK from Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobierz SDK od Apple</translation>
     </message>
     <message>
         <source>Download control package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobierz pakiet sterujący</translation>
     </message>
     <message>
         <source>Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobierz archiwum Xcode od Apple, a potem wybierz „Importuj SDK”. Przetwarzanie odbywa się w Linuksie.</translation>
     </message>
     <message>
         <source>Ending the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kończenie sesji…</translation>
     </message>
     <message>
         <source>Enter text</source>
-        <translation type="unfinished"></translation>
+        <translation>Wpisz tekst</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Pliki</translation>
     </message>
     <message>
         <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
-        <translation type="unfinished"></translation>
+        <translation>Najpierw kliknij pole tekstowe aplikacji. Ten tekst jest wklejany przez schowek urządzenia.</translation>
     </message>
     <message>
         <source>First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included.</source>
-        <translation type="unfinished"></translation>
+        <translation>Najpierw kliknij wybrane pole tekstowe w aplikacji. Cała jego dostępna wartość zostanie zastąpiona, łącznie z polskimi znakami i emoji.</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Ramka</translation>
     </message>
     <message>
         <source>Import SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj SDK</translation>
     </message>
     <message>
         <source>Import the Apple SDK from Xcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj SDK Apple z Xcode</translation>
     </message>
     <message>
         <source>Insert text</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstaw tekst</translation>
     </message>
     <message>
         <source>Install libimobiledevice for device pairing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj libimobiledevice do parowania urządzeń.</translation>
     </message>
     <message>
         <source>Install libusbmuxd for the USB connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj libusbmuxd do połączenia USB.</translation>
     </message>
     <message>
         <source>Install the Swift toolchain that matches your Apple SDK.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj zestaw narzędzi Swift zgodny z twoim SDK Apple.</translation>
     </message>
     <message>
         <source>Install xtool for Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj xtool dla Linuksa.</translation>
     </message>
     <message>
         <source>Installed WebDriverAgent bundle ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator pakietu zainstalowanego WebDriverAgent</translation>
     </message>
     <message>
         <source>Interface language; System follows the desktop language</source>
-        <translation type="unfinished"></translation>
+        <translation>Język interfejsu; Systemowy podąża za językiem pulpitu</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Język</translation>
     </message>
     <message>
         <source>Sponsor</source>
-        <translation type="unfinished"></translation>
+        <translation>Wesprzyj</translation>
     </message>
     <message>
         <source>Legal notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacje prawne</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Licencja</translation>
     </message>
     <message>
         <source>Linux builds your SwiftPM/xtool app. The connected iPhone runs it. Set up the Apple SDK and signing here once.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux kompiluje twoją aplikację SwiftPM/xtool. Podłączony iPhone ją uruchamia. Raz skonfiguruj tutaj SDK Apple i podpisywanie.</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie na żywo</translation>
     </message>
     <message>
         <source>Load developer image</source>
-        <translation type="unfinished"></translation>
+        <translation>Wczytaj obraz deweloperski</translation>
     </message>
     <message>
         <source>Mac terminal: brew install facebook/fb/idb
 SSH uses your existing keys and the known host identity.</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminal Maca: brew install facebook/fb/idb
+SSH używa twoich istniejących kluczy i znanej tożsamości hosta.</translation>
     </message>
     <message>
         <source>No iOS simulator runtime is installed on this Mac yet. Install one in Xcode → Settings → Components.</source>
-        <translation type="unfinished"></translation>
+        <translation>Na tym Macu nie ma jeszcze środowiska uruchomieniowego symulatora iOS. Zainstaluj je w Xcode → Ustawienia → Komponenty.</translation>
     </message>
     <message>
         <source>No project open</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak otwartego projektu</translation>
     </message>
     <message>
         <source>No project yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeszcze bez projektu</translation>
     </message>
     <message>
         <source>Not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Niedostępne</translation>
     </message>
     <message>
         <source>Open a project folder · Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz folder projektu · Ctrl+O</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz zadanie</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz projekt</translation>
     </message>
     <message>
         <source>Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Przegląd</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Osobne okno</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sparuj urządzenie</translation>
     </message>
     <message>
         <source>Play the app&apos;s sound on this computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwarzaj dźwięk aplikacji na tym komputerze</translation>
     </message>
     <message>
         <source>Tomacco is free software under the GNU General Public License. Source: GPL-2.0-or-later. Distributed binaries: GPL-3.0-or-later, because they include Apache-2.0 components. It comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco to wolne oprogramowanie na licencji GNU General Public License. Kod źródłowy: GPL-2.0-or-later. Rozpowszechniane pliki binarne: GPL-3.0-or-later, ponieważ zawierają komponenty Apache-2.0. Nie ma ABSOLUTNIE ŻADNEJ GWARANCJI.</translation>
     </message>
     <message>
         <source>Project and runtime context copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Skopiowano kontekst projektu i środowiska uruchomieniowego</translation>
     </message>
     <message>
         <source>Project busy</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt zajęty</translation>
     </message>
     <message>
         <source>Project directory on the Mac, e.g. /Users/me/Projects/app</source>
-        <translation type="unfinished"></translation>
+        <translation>Katalog projektu na Macu, np. /Users/me/Projects/app</translation>
     </message>
     <message>
         <source>Project format</source>
-        <translation type="unfinished"></translation>
+        <translation>Format projektu</translation>
     </message>
     <message>
         <source>Reference frame recognized from the display size; the frame geometry is approximated</source>
-        <translation type="unfinished"></translation>
+        <translation>Ramka referencyjna rozpoznana z rozmiaru wyświetlacza; geometria ramki jest przybliżona</translation>
     </message>
     <message>
         <source>Replace text field</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastąp pole tekstowe</translation>
     </message>
     <message>
         <source>Reused the running session</source>
-        <translation type="unfinished"></translation>
+        <translation>Ponownie użyto działającej sesji</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Obróć</translation>
     </message>
     <message>
         <source>Run app</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom aplikację</translation>
     </message>
     <message>
         <source>SSH target, e.g. user@mac.local</source>
-        <translation type="unfinished"></translation>
+        <translation>Cel SSH, np. user@mac.local</translation>
     </message>
     <message>
         <source>Save &amp; load simulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisuj i wczytuj symulatory</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj</translation>
     </message>
     <message>
         <source>Search for devices again</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyszukaj urządzenia ponownie</translation>
     </message>
     <message>
         <source>Search navigation and all tools · Ctrl+K</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj w nawigacji i wszystkich narzędziach · Ctrl+K</translation>
     </message>
     <message>
         <source>Session ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesja zakończona</translation>
     </message>
     <message>
         <source>Session ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesja zakończona · %1</translation>
     </message>
     <message>
         <source>Set up Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj Maca</translation>
     </message>
     <message>
         <source>Set up another Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj inny model Androida</translation>
     </message>
     <message>
         <source>Set up go-ios for the iPhone developer services.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj go-ios dla usług deweloperskich iPhone’a.</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj iPhone’a</translation>
     </message>
     <message>
         <source>Setup started · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfiguracja rozpoczęta · postęp w sekcji Kompilacje i zadania</translation>
     </message>
     <message>
         <source>Show installed apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż zainstalowane aplikacje</translation>
     </message>
     <message>
         <source>Show the device frame; Android provides the real status bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż ramkę urządzenia; Android dostarcza prawdziwy pasek stanu</translation>
     </message>
     <message>
         <source>Sign &amp; install control</source>
-        <translation type="unfinished"></translation>
+        <translation>Podpisz i zainstaluj sterowanie</translation>
     </message>
     <message>
         <source>Sign in to Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaloguj się do Apple</translation>
     </message>
     <message>
         <source>Signing can change the bundle ID. Then enter the ID of the installed WebDriverAgent runner. A modern local iOS emulator is not included at present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podpisywanie może zmienić identyfikator pakietu. Wtedy wpisz identyfikator zainstalowanego runnera WebDriverAgent. Nowoczesny lokalny emulator iOS nie jest obecnie dołączony.</translation>
     </message>
     <message>
         <source>Simulator on a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Symulator na Macu</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Dźwięk</translation>
     </message>
     <message>
         <source>Sound error</source>
-        <translation type="unfinished"></translation>
+        <translation>Błąd dźwięku</translation>
     </message>
     <message>
         <source>Sound…</source>
-        <translation type="unfinished"></translation>
+        <translation>Dźwięk…</translation>
     </message>
     <message>
         <source>Source code ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod źródłowy ↗</translation>
     </message>
     <message>
         <source>Start iOS tunnel</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom tunel iOS</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj</translation>
     </message>
     <message>
         <source>Stop forwarding sound; restore output on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj przekazywanie dźwięku; przywróć wyjście na urządzeniu</translation>
     </message>
     <message>
         <source>Switch workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Przełącz obszar roboczy</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Systemowy</translation>
     </message>
     <message>
         <source>Text…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekst…</translation>
     </message>
     <message>
         <source>The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac potrzebuje Xcode ze środowiskiem symulatora iOS, dostępu SSH i idb_companion. Działa twój własny Mac lub wynajęty.</translation>
     </message>
     <message>
         <source>The desktop and its control program come from different versions. Install both from the same build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pulpit i jego program sterujący pochodzą z różnych wersji. Zainstaluj oba z tej samej kompilacji.</translation>
     </message>
     <message>
         <source>The device did not become ready in time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie nie było gotowe na czas.</translation>
     </message>
     <message>
         <source>The runtime is still starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Środowisko uruchomieniowe wciąż się uruchamia…</translation>
     </message>
     <message>
         <source>Third-party components keep their own licenses: THIRD_PARTY_NOTICES.md lists them, and docs/legal.md has further legal notes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Komponenty zewnętrzne mają własne licencje: wymienia je THIRD_PARTY_NOTICES.md, a docs/legal.md zawiera dalsze informacje prawne.</translation>
     </message>
     <message>
         <source>Release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacje o wydaniu</translation>
     </message>
     <message>
         <source>Third-party notices</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacje o komponentach zewnętrznych</translation>
     </message>
     <message>
         <source>This Linux build path needs a SwiftPM/xtool project. Flutter and Xcode projects are not converted automatically yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta ścieżka kompilacji w Linuksie wymaga projektu SwiftPM/xtool. Projekty Flutter i Xcode nie są jeszcze konwertowane automatycznie.</translation>
     </message>
     <message>
         <source>Turn on Developer Mode on the iPhone and confirm the pairing. The Apple sign-in opens a local terminal; passwords are not entered in Tomacco or MCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Włącz tryb dewelopera na iPhonie i potwierdź parowanie. Logowanie do Apple otwiera lokalny terminal; hasła nie są wpisywane w Tomacco ani w MCP.</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Testy UI</translation>
     </message>
     <message>
         <source>USB connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Połączenie USB</translation>
     </message>
     <message>
         <source>USB picture transfer</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesyłanie obrazu przez USB</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Wersja %1</translation>
     </message>
     <message>
         <source>View the sound forwarding error</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż błąd przekazywania dźwięku</translation>
     </message>
     <message>
         <source>WORKSPACE</source>
-        <translation type="unfinished"></translation>
+        <translation>OBSZAR ROBOCZY</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Podgląd sieciowy</translation>
     </message>
     <message>
         <source>Xcode archive (*.xip)</source>
-        <translation type="unfinished"></translation>
+        <translation>Archiwum Xcode (*.xip)</translation>
     </message>
     <message>
         <source>iPhone development without a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Programowanie na iPhone’a bez Maca</translation>
     </message>
     <message>
         <source>iPhone services</source>
-        <translation type="unfinished"></translation>
+        <translation>Usługi iPhone’a</translation>
     </message>
     <message>
         <source>iPhone via USB</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone przez USB</translation>
     </message>
     <message>
         <source>Command</source>
-        <translation type="unfinished"></translation>
+        <translation>Polecenie</translation>
     </message>
     <message>
         <source>Hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryj aktywność</translation>
     </message>
     <message>
         <source>Show activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż aktywność</translation>
     </message>
     <message>
         <source>Switch to light appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Przełącz na jasny wygląd</translation>
     </message>
     <message>
         <source>Switch to dark appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Przełącz na ciemny wygląd</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienia</translation>
     </message>
     <message>
         <source>Keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Skróty klawiszowe</translation>
     </message>
     <message>
         <source>Booting</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchamianie</translation>
     </message>
     <message>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Na żywo</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Niepowodzenie</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozłączono</translation>
     </message>
     <message>
         <source>No device</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak urządzenia</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktywność</translation>
     </message>
     <message>
         <source>Jobs and agent calls · Ctrl+J</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadania i wywołania agentów · Ctrl+J</translation>
     </message>
     <message>
         <source>Appearance and language · Ctrl+,</source>
-        <translation type="unfinished"></translation>
+        <translation>Wygląd i język · Ctrl+,</translation>
     </message>
     <message numerus="yes">
         <source>%n job(s) running</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n zadanie działa</numerusform>
+            <numerusform>%n zadania działają</numerusform>
+            <numerusform>%n zadań działa</numerusform>
         </translation>
     </message>
     <message>
         <source>Ctrl+K search · F1 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+K wyszukiwanie · F1 skróty</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Wygląd</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Ciemny</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Jasny</translation>
     </message>
     <message>
         <source>Search views, commands and tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj widoków, poleceń i narzędzi</translation>
     </message>
     <message>
         <source>Show or hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż lub ukryj aktywność</translation>
     </message>
     <message>
         <source>Save the current file</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz bieżący plik</translation>
     </message>
     <message>
         <source>Search the project&apos;s source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeszukaj kod źródłowy projektu</translation>
     </message>
     <message>
         <source>Full screen · web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Pełny ekran · podgląd sieciowy</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Building and starting your app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilowanie i uruchamianie aplikacji…</translation>
     </message>
     <message>
         <source>Copy what your agent needs: this project and the live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Skopiuj, czego potrzebuje twój agent: ten projekt i urządzenie na żywo</translation>
     </message>
     <message>
         <source>Ready for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Gotowe dla agentów</translation>
     </message>
     <message>
         <source>Your device is in its own window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Twoje urządzenie jest w osobnym oknie.</translation>
     </message>
     <message>
         <source>Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeciągaj je za obudowę. Ctrl+kółko zmienia rozmiar. Zamknij je, aby je przywrócić.</translation>
     </message>
     <message>
         <source>Bring it back</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywróć je</translation>
     </message>
     <message>
         <source>Plug in your iPhone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz iPhone’a.</translation>
     </message>
     <message>
         <source>Connect a Mac.</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz Maca.</translation>
     </message>
     <message>
         <source>Give your agent a phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Daj swojemu agentowi telefon.</translation>
     </message>
     <message>
         <source>Plug it in and unlock it. Build Swift apps on Linux and control them from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz go i odblokuj. Kompiluj aplikacje w Swift w Linuksie i steruj nimi stąd.</translation>
     </message>
     <message>
         <source>The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.</source>
-        <translation type="unfinished"></translation>
+        <translation>Symulator Apple wymaga Maca z Xcode. Twojego lub wynajętego, przez SSH.</translation>
     </message>
     <message>
         <source>It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiluje, uruchamia, przeklikuje i debuguje aplikacje na iOS i Androida. W Linuksie. Bez Maca.</translation>
     </message>
     <message>
         <source>Connect %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz %1</translation>
     </message>
     <message>
         <source>Add a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj urządzenie</translation>
     </message>
     <message>
         <source>Open a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz projekt</translation>
     </message>
     <message>
         <source>Completed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukończono po %1</translation>
     </message>
     <message>
         <source>Failed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Niepowodzenie po %1</translation>
     </message>
     <message>
         <source>Timed out after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Przekroczono czas po %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Powiadomienia</translation>
     </message>
     <message>
         <source>When a job ends in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Gdy zadanie zakończy się w tle</translation>
     </message>
     <message>
         <source>Touches and coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Dotknięcia i współrzędne</translation>
     </message>
     <message>
         <source>Hide touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryj dotknięcia i współrzędne wskaźnika</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates, for writing UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż dotknięcia i współrzędne wskaźnika, do pisania testów UI</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż dotknięcia i współrzędne wskaźnika</translation>
     </message>
     <message>
         <source>Another computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Inny komputer</translation>
     </message>
     <message>
         <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wygląd, język, powiadomienia, aktualizacje i wybory widoku urządzenia jako plik JSON. Ścieżki, rozmiary okien i historia pozostają na tym komputerze.</translation>
     </message>
     <message>
         <source>Export settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj ustawienia…</translation>
     </message>
     <message>
         <source>Import settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj ustawienia…</translation>
     </message>
     <message>
         <source>Export settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj ustawienia</translation>
     </message>
     <message>
         <source>Import settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj ustawienia</translation>
     </message>
     <message>
         <source>Tomacco settings (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienia Tomacco (*.json)</translation>
     </message>
     <message>
         <source>Settings saved to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienia zapisano w %1</translation>
     </message>
     <message numerus="yes">
         <source>%n setting(s) imported</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Zaimportowano %n ustawienie</numerusform>
+            <numerusform>Zaimportowano %n ustawienia</numerusform>
+            <numerusform>Zaimportowano %n ustawień</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n ignored</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n pominięte</numerusform>
+            <numerusform>%n pominięte</numerusform>
+            <numerusform>%n pominiętych</numerusform>
         </translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Dostępne jest Tomacco %1</translation>
     </message>
     <message>
         <source>Open Tomacco to see what&apos;s new and install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz Tomacco, aby zobaczyć nowości i je zainstalować.</translation>
     </message>
     <message>
         <source>Tomacco could not be started again. Close it and open it from the application menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się ponownie uruchomić Tomacco. Zamknij je i otwórz z menu aplikacji.</translation>
     </message>
     <message>
         <source>What&apos;s new in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Co nowego w %1</translation>
     </message>
     <message>
         <source>Tomacco is now version %1. The release notes list what changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ma teraz wersję %1. Informacje o wydaniu opisują zmiany.</translation>
     </message>
     <message>
         <source>On GitHub ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Na GitHubie ↗</translation>
     </message>
     <message>
         <source>Get started</source>
-        <translation type="unfinished"></translation>
+        <translation>Zacznij</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz swojego agenta programistycznego</translation>
     </message>
     <message>
         <source>Connect an Android device to record its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz urządzenie z Androidem, aby nagrać jego ekran.</translation>
     </message>
     <message>
         <source>Stop recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj nagrywanie</translation>
     </message>
     <message>
         <source>Record the screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj ekran</translation>
     </message>
     <message>
         <source>Stop and save the recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj i zapisz nagranie · %1 s</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 3 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj ekran do wideo, maksymalnie 3 minuty</translation>
     </message>
     <message>
         <source>Hide the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryj dziennik obok urządzenia</translation>
     </message>
     <message>
         <source>Show the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż dziennik obok urządzenia</translation>
     </message>
     <message>
         <source>Split view</source>
-        <translation type="unfinished"></translation>
+        <translation>Widok podzielony</translation>
     </message>
     <message>
         <source>Log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik obok urządzenia</translation>
     </message>
     <message>
         <source>Show the device&apos;s or a job&apos;s log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż dziennik urządzenia lub zadania obok urządzenia</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktywność agenta</translation>
     </message>
     <message>
         <source>Session log, e.g. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik sesji, np. %1</translation>
     </message>
     <message>
         <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustaw TOMACCO_SESSION_LOG na ten plik w ustawieniach MCP swojego agenta, a panel aktywności wyświetli każdą wywołaną operację z czasem trwania i wynikiem.</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Spróbuj ponownie</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Co zrobić: %1</translation>
     </message>
     <message>
         <source>Open the update settings to install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz ustawienia aktualizacji, aby ją zainstalować.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstalowano wersję %1. Uruchom ponownie, aby jej używać.</translation>
     </message>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualizacje</translation>
     </message>
     <message>
         <source>Cancelled after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Anulowano po %1</translation>
     </message>
     <message>
         <source>Save the current layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz bieżący układ</translation>
     </message>
     <message>
         <source>Window layouts</source>
-        <translation type="unfinished"></translation>
+        <translation>Układy okien</translation>
     </message>
     <message>
         <source>Use window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Użyj układu okien %1</translation>
     </message>
     <message>
         <source>At most %1 window layouts are kept. Delete one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Przechowywanych jest najwyżej %1 układów okien. Najpierw usuń jeden.</translation>
     </message>
     <message>
         <source>Window layout “%1” saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Układ okien „%1” zapisany</translation>
     </message>
     <message>
         <source>Window layout “%1”</source>
-        <translation type="unfinished"></translation>
+        <translation>Układ okien „%1”</translation>
     </message>
     <message>
         <source>Search settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj w ustawieniach</translation>
     </message>
     <message>
         <source>No setting matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Żadne ustawienie nie pasuje do „%1”.</translation>
     </message>
     <message>
         <source>Use the Omarchy theme&apos;s accent</source>
-        <translation type="unfinished"></translation>
+        <translation>Używaj koloru akcentu z motywu Omarchy</translation>
     </message>
     <message>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Motyw</translation>
     </message>
     <message>
         <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
-        <translation type="unfinished"></translation>
+        <translation>Akcent motywu %1 jest słabo czytelny na tym tle, więc Tomacco zachowuje własny.</translation>
     </message>
     <message>
         <source>Accent from the Omarchy theme %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Akcent z motywu Omarchy %1.</translation>
     </message>
     <message>
         <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Układ zapamiętuje otwarty widok, panel aktywności, dziennik obok urządzenia i jego szerokość, okna urządzeń oraz rozmiar okna.</translation>
     </message>
     <message>
         <source>Use</source>
-        <translation type="unfinished"></translation>
+        <translation>Użyj</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń</translation>
     </message>
     <message>
         <source>Delete window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń układ okien %1</translation>
     </message>
     <message>
         <source>Name, e.g. testing or debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa, np. testy lub debugowanie</translation>
     </message>
     <message>
         <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ponowne uruchamianie AirPlay. Następnie wybierz ponownie Tomacco w Dublowaniu ekranu na iPhonie.</translation>
     </message>
     <message>
         <source>iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone przez Wi-Fi</translation>
     </message>
     <message>
         <source>Waiting for a new iPhone picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na nowy obraz z iPhone’a</translation>
     </message>
     <message>
         <source>Ready for your iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Gotowe na twojego iPhone’a</translation>
     </message>
     <message>
         <source>Connect your iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz iPhone’a przez Wi-Fi</translation>
     </message>
     <message>
         <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeśli obraz się nie pojawi, zatrzymaj Dublowanie ekranu na iPhonie i ponownie wybierz Tomacco. Uruchom ponownie AirPlay poniżej, jeśli odbiornik przestał odpowiadać.</translation>
     </message>
     <message>
         <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz Centrum sterowania na iPhonie, wybierz Dublowanie ekranu, a potem Tomacco. Oba urządzenia muszą być w tej samej sieci.</translation>
     </message>
     <message>
         <source>Restart AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom ponownie AirPlay</translation>
     </message>
     <message>
         <source>Start AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom AirPlay</translation>
     </message>
     <message>
         <source>An agent is waiting for you: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Agent czeka na ciebie: %1</translation>
     </message>
     <message>
         <source>In use elsewhere</source>
-        <translation type="unfinished"></translation>
+        <translation>Używane gdzie indziej</translation>
     </message>
     <message>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Ponowne łączenie</translation>
     </message>
     <message>
         <source>Screenshot saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu zapisany</translation>
     </message>
     <message>
         <source>Show file</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż plik</translation>
     </message>
     <message>
         <source>Your turn</source>
-        <translation type="unfinished"></translation>
+        <translation>Twoja kolej</translation>
     </message>
 </context>
 <context>
     <name>Operations</name>
     <message>
         <source>Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź aktualizacje</translation>
     </message>
     <message>
         <source>Install update</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj aktualizację</translation>
     </message>
     <message>
         <source>Update status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan aktualizacji</translation>
     </message>
     <message>
         <source>Roll back update</source>
-        <translation type="unfinished"></translation>
+        <translation>Wycofaj aktualizację</translation>
     </message>
     <message>
         <source>Analyze performance profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Analizuj profil wydajności</translation>
     </message>
     <message>
         <source>Android emulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulatory Androida</translation>
     </message>
     <message>
         <source>Android over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Android przez Wi-Fi</translation>
     </message>
     <message>
         <source>App data files</source>
-        <translation type="unfinished"></translation>
+        <translation>Pliki danych aplikacji</translation>
     </message>
     <message>
         <source>App permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Uprawnienie aplikacji</translation>
     </message>
     <message>
         <source>Apple devices on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenia Apple na Macu</translation>
     </message>
     <message>
         <source>Browser console</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsola przeglądarki</translation>
     </message>
     <message>
         <source>Page errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Błędy strony</translation>
     </message>
     <message>
         <source>Build &amp; run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiluj i uruchom na urządzeniu</translation>
     </message>
     <message>
         <source>Watch and rerun app</source>
-        <translation type="unfinished"></translation>
+        <translation>Obserwuj i ponownie uruchamiaj aplikację</translation>
     </message>
     <message>
         <source>Build iOS graphics compiler plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>Skompiluj wtyczkę kompilatora grafiki iOS</translation>
     </message>
     <message>
         <source>Build native iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Skompiluj natywną aplikację iOS</translation>
     </message>
     <message>
         <source>Build native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Skompiluj natywne narzędzia gościa iOS</translation>
     </message>
     <message>
         <source>Cancel job</source>
-        <translation type="unfinished"></translation>
+        <translation>Anuluj zadanie</translation>
     </message>
     <message>
         <source>Capture Android profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Przechwyć profil Androida</translation>
     </message>
     <message>
         <source>Capture device matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>Przechwyć macierz urządzeń</translation>
     </message>
     <message>
         <source>Capture preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Przechwyć podgląd</translation>
     </message>
     <message>
         <source>Check Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź Maca</translation>
     </message>
     <message>
         <source>Check PMP execution</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź wykonywanie PMP</translation>
     </message>
     <message>
         <source>Check iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź emulator iOS</translation>
     </message>
     <message>
         <source>Check iPhone development on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź programowanie na iPhone’a w Linuksie</translation>
     </message>
     <message>
         <source>Check layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź układ</translation>
     </message>
     <message>
         <source>Check performance budget</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź budżet wydajności</translation>
     </message>
     <message>
         <source>Run Macrobenchmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom Macrobenchmark</translation>
     </message>
     <message>
         <source>Read Macrobenchmark results</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj wyniki Macrobenchmark</translation>
     </message>
     <message>
         <source>Generate Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Wygeneruj Baseline Profile</translation>
     </message>
     <message>
         <source>Read Baseline Profile rules</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj reguły Baseline Profile</translation>
     </message>
     <message>
         <source>Install Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj Baseline Profile</translation>
     </message>
     <message>
         <source>Compare startup with and without Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Porównaj uruchamianie z Baseline Profile i bez niego</translation>
     </message>
     <message>
         <source>Compare performance reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Porównaj raporty wydajności</translation>
     </message>
     <message>
         <source>Measure app startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmierz uruchamianie aplikacji</translation>
     </message>
     <message>
         <source>Measure frame rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmierz renderowanie klatek</translation>
     </message>
     <message>
         <source>Measure app memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmierz pamięć aplikacji</translation>
     </message>
     <message>
         <source>Measure CPU and battery use</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmierz użycie procesora i baterii</translation>
     </message>
     <message>
         <source>Check toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź zestaw narzędzi</translation>
     </message>
     <message>
         <source>What this computer can do</source>
-        <translation type="unfinished"></translation>
+        <translation>Co potrafi ten komputer</translation>
     </message>
     <message>
         <source>Click element</source>
-        <translation type="unfinished"></translation>
+        <translation>Kliknij element</translation>
     </message>
     <message>
         <source>Commit Google Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatwierdź zmianę w Google Play</translation>
     </message>
     <message>
         <source>Compile / test Swift</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiluj / testuj Swift</translation>
     </message>
     <message>
         <source>Configure preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj podgląd</translation>
     </message>
     <message>
         <source>Configure project</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj projekt</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz Maca</translation>
     </message>
     <message>
         <source>Connect Swift to the Android NDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz Swift z Android NDK</translation>
     </message>
     <message>
         <source>Connect dev server</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz serwer deweloperski</translation>
     </message>
     <message>
         <source>Connect native runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz natywne środowisko uruchomieniowe</translation>
     </message>
     <message>
         <source>Control Apple Simulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Steruj symulatorem Apple</translation>
     </message>
     <message>
         <source>Control app</source>
-        <translation type="unfinished"></translation>
+        <translation>Steruj aplikacją</translation>
     </message>
     <message>
         <source>Control debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Steruj debugerem</translation>
     </message>
     <message>
         <source>Control emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Steruj emulatorem</translation>
     </message>
     <message>
         <source>Control iPhone on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Steruj iPhone’em na Macu</translation>
     </message>
     <message>
         <source>Control native iOS guest programs</source>
-        <translation type="unfinished"></translation>
+        <translation>Steruj natywnymi programami gościa iOS</translation>
     </message>
     <message>
         <source>Create emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz emulator</translation>
     </message>
     <message>
         <source>Create iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz archiwum iOS</translation>
     </message>
     <message>
         <source>Create project</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz projekt</translation>
     </message>
     <message>
         <source>Create project folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz folder projektu</translation>
     </message>
     <message>
         <source>Create signing key</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz klucz podpisu</translation>
     </message>
     <message>
         <source>Debug sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesje debugowania</translation>
     </message>
     <message>
         <source>Debugger events</source>
-        <translation type="unfinished"></translation>
+        <translation>Zdarzenia debugera</translation>
     </message>
     <message>
         <source>Debugger status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan debugera</translation>
     </message>
     <message>
         <source>Desktop status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan pulpitu</translation>
     </message>
     <message>
         <source>Device catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Katalog urządzeń</translation>
     </message>
     <message>
         <source>Device image for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Obraz urządzenia dla agentów</translation>
     </message>
     <message>
         <source>Device information</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacje o urządzeniu</translation>
     </message>
     <message>
         <source>Device logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Dzienniki urządzenia</translation>
     </message>
     <message>
         <source>Device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu urządzenia</translation>
     </message>
     <message>
         <source>Device settings for tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienia urządzenia do testów</translation>
     </message>
     <message>
         <source>Discard Google Play draft</source>
-        <translation type="unfinished"></translation>
+        <translation>Odrzuć wersję roboczą Google Play</translation>
     </message>
     <message>
         <source>Disconnect runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Odłącz środowisko uruchomieniowe</translation>
     </message>
     <message>
         <source>Display orientation and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Orientacja i rozmiar wyświetlacza</translation>
     </message>
     <message>
         <source>Download Mac artifact</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobierz artefakt z Maca</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Oblicz wyrażenie</translation>
     </message>
     <message>
         <source>Examine iOS kernel boot</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbadaj rozruch jądra iOS</translation>
     </message>
     <message>
         <source>Export and fetch IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj i pobierz IPA</translation>
     </message>
     <message>
         <source>Export model</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj model</translation>
     </message>
     <message>
         <source>Fetch result of an iOS guest job</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobierz wynik zadania gościa iOS</translation>
     </message>
     <message>
         <source>Fill in form</source>
-        <translation type="unfinished"></translation>
+        <translation>Wypełnij formularz</translation>
     </message>
     <message>
         <source>Find Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź element Androida</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź urządzenia</translation>
     </message>
     <message>
         <source>Send a command to a job</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyślij polecenie do zadania</translation>
     </message>
     <message>
         <source>Inspect APK or AAB</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbadaj APK lub AAB</translation>
     </message>
     <message>
         <source>Report APK or AAB size</source>
-        <translation type="unfinished"></translation>
+        <translation>Raport rozmiaru APK lub AAB</translation>
     </message>
     <message>
         <source>Emulator sensors</source>
-        <translation type="unfinished"></translation>
+        <translation>Czujniki emulatora</translation>
     </message>
     <message>
         <source>App Links</source>
-        <translation type="unfinished"></translation>
+        <translation>App Links</translation>
     </message>
     <message>
         <source>Network capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Przechwytywanie ruchu sieciowego</translation>
     </message>
     <message>
         <source>Install iOS toolkit</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj zestaw narzędzi iOS</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Powiadomienia</translation>
     </message>
     <message>
         <source>Prepare Flutter for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj Fluttera dla iOS</translation>
     </message>
     <message>
         <source>Build Flutter app for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Skompiluj aplikację Flutter dla iOS</translation>
     </message>
     <message>
         <source>iPhone crash reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Raporty awarii iPhone’a</translation>
     </message>
     <message>
         <source>Record iPhone screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj ekran iPhone’a</translation>
     </message>
     <message>
         <source>iPhone app files</source>
-        <translation type="unfinished"></translation>
+        <translation>Pliki aplikacji na iPhonie</translation>
     </message>
     <message>
         <source>iPhone readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>Gotowość iPhone’a</translation>
     </message>
     <message>
         <source>iPhone signing overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Przegląd podpisywania iPhone’a</translation>
     </message>
     <message>
         <source>Read crash report</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj raport awarii</translation>
     </message>
     <message>
         <source>Inspect iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbadaj aplikację iOS</translation>
     </message>
     <message>
         <source>Prepare for App Store</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj do App Store</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj projekt Xcode</translation>
     </message>
     <message>
         <source>Find built iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź skompilowaną aplikację iOS</translation>
     </message>
     <message>
         <source>Import Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj SDK Apple</translation>
     </message>
     <message>
         <source>Import models</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj modele</translation>
     </message>
     <message>
         <source>Import original iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj oryginalny system iOS</translation>
     </message>
     <message>
         <source>Inspect DOM</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbadaj DOM</translation>
     </message>
     <message>
         <source>Install SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj pakiety SDK</translation>
     </message>
     <message>
         <source>Install Swift SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj Swift SDK</translation>
     </message>
     <message>
         <source>Install app</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj aplikację</translation>
     </message>
     <message>
         <source>Install iOS cryptex files</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj pliki cryptex iOS</translation>
     </message>
     <message>
         <source>Install native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj natywne narzędzia gościa iOS</translation>
     </message>
     <message>
         <source>Instruments recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagranie Instruments</translation>
     </message>
     <message>
         <source>Job status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan zadania</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadania</translation>
     </message>
     <message>
         <source>Live logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Dzienniki na żywo</translation>
     </message>
     <message>
         <source>Load agent context</source>
-        <translation type="unfinished"></translation>
+        <translation>Wczytaj kontekst agenta</translation>
     </message>
     <message>
         <source>Mac workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Obszary robocze Maca</translation>
     </message>
     <message>
         <source>Native accessibility tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Natywne drzewo dostępności</translation>
     </message>
     <message>
         <source>Native capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Natywne przechwytywanie</translation>
     </message>
     <message>
         <source>Native input</source>
-        <translation type="unfinished"></translation>
+        <translation>Natywne wprowadzanie</translation>
     </message>
     <message>
         <source>Native sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesje natywne</translation>
     </message>
     <message>
         <source>Open Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz Tomacco</translation>
     </message>
     <message>
         <source>Open URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz URL</translation>
     </message>
     <message>
         <source>Open deep link</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz deep link</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz projekt</translation>
     </message>
     <message>
         <source>Open source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz plik źródłowy</translation>
     </message>
     <message>
         <source>Operate Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Obsłuż element Androida</translation>
     </message>
     <message>
         <source>Operate running virtual iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Obsłuż działający wirtualny iOS</translation>
     </message>
     <message>
         <source>Performance report</source>
-        <translation type="unfinished"></translation>
+        <translation>Raport wydajności</translation>
     </message>
     <message>
         <source>Plan Swift build</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaplanuj kompilację Swift</translation>
     </message>
     <message>
         <source>Prepare Google Play release</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj wydanie w Google Play</translation>
     </message>
     <message>
         <source>Prepare PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj firmware PMP</translation>
     </message>
     <message>
         <source>Prepare iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj system testowy iOS</translation>
     </message>
     <message>
         <source>Prepare iPhone control</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj sterowanie iPhone’em</translation>
     </message>
     <message>
         <source>Prepare virtual iOS restore runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj środowisko przywracania wirtualnego iOS</translation>
     </message>
     <message>
         <source>Preview sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesje podglądu</translation>
     </message>
     <message>
         <source>Preview status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan podglądu</translation>
     </message>
     <message>
         <source>Read PMP memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj pamięć PMP</translation>
     </message>
     <message>
         <source>Read UI tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj drzewo UI</translation>
     </message>
     <message>
         <source>Read Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj projekt Xcode</translation>
     </message>
     <message>
         <source>Read call stack</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj stos wywołań</translation>
     </message>
     <message>
         <source>Read iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj przebieg testowy iOS</translation>
     </message>
     <message>
         <source>Read model from device</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj model z urządzenia</translation>
     </message>
     <message>
         <source>Read threads</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj wątki</translation>
     </message>
     <message>
         <source>Read variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj zmienne</translation>
     </message>
     <message>
         <source>Read workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj obszary robocze</translation>
     </message>
     <message>
         <source>Record display</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj wyświetlacz</translation>
     </message>
     <message>
         <source>Reload catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Wczytaj katalog ponownie</translation>
     </message>
     <message>
         <source>Reload page</source>
-        <translation type="unfinished"></translation>
+        <translation>Odśwież stronę</translation>
     </message>
     <message>
         <source>Remove custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń własny model</translation>
     </message>
     <message>
         <source>Remove workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń obszar roboczy</translation>
     </message>
     <message>
         <source>Restore virtual iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywróć wirtualny system iOS</translation>
     </message>
     <message>
         <source>Run JavaScript</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom JavaScript</translation>
     </message>
     <message>
         <source>Run PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom firmware PMP</translation>
     </message>
     <message>
         <source>Run XCTest / XCUITest</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom XCTest / XCUITest</translation>
     </message>
     <message>
         <source>Run iOS guest command</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom polecenie gościa iOS</translation>
     </message>
     <message>
         <source>Run native tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom testy natywne</translation>
     </message>
     <message>
         <source>Record UI test</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj test UI</translation>
     </message>
     <message>
         <source>Mark tappable elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Oznacz elementy do stuknięcia</translation>
     </message>
     <message>
         <source>Tap a mark</source>
-        <translation type="unfinished"></translation>
+        <translation>Stuknij znacznik</translation>
     </message>
     <message>
         <source>Read UI tree as text</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj drzewo UI jako tekst</translation>
     </message>
     <message>
         <source>Read text on screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj tekst na ekranie</translation>
     </message>
     <message>
         <source>Compare two screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Porównaj dwa ekrany</translation>
     </message>
     <message>
         <source>Wait for text or a steady screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Czekaj na tekst lub stabilny ekran</translation>
     </message>
     <message>
         <source>Export a screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj ekran</translation>
     </message>
     <message>
         <source>Export screens of several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj ekrany kilku urządzeń</translation>
     </message>
     <message>
         <source>Check UI test scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź scenariusz testu UI</translation>
     </message>
     <message>
         <source>Set up Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj wprowadzanie tekstu na Androidzie</translation>
     </message>
     <message>
         <source>Check Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź wprowadzanie tekstu na Androidzie</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyczyść stare zadania i raporty</translation>
     </message>
     <message>
         <source>Write a bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz pakiet raportu o błędzie</translation>
     </message>
     <message>
         <source>Read test results</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj wyniki testów</translation>
     </message>
     <message>
         <source>Read code coverage</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj pokrycie kodu</translation>
     </message>
     <message>
         <source>Write HTML test report</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz raport testów HTML</translation>
     </message>
     <message>
         <source>Test pass-rate history</source>
-        <translation type="unfinished"></translation>
+        <translation>Historia odsetka zaliczonych testów</translation>
     </message>
     <message>
         <source>Select affected tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz testy, których dotyczy zmiana</translation>
     </message>
     <message>
         <source>Review screenshot baselines</source>
-        <translation type="unfinished"></translation>
+        <translation>Przejrzyj wzorcowe zrzuty ekranu</translation>
     </message>
     <message>
         <source>Find app crashes</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź awarie aplikacji</translation>
     </message>
     <message>
         <source>Check Android accessibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź dostępność na Androidzie</translation>
     </message>
     <message>
         <source>Compare with baseline image</source>
-        <translation type="unfinished"></translation>
+        <translation>Porównaj z obrazem wzorcowym</translation>
     </message>
     <message>
         <source>Run on Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom na Macu</translation>
     </message>
     <message>
         <source>Run steps in order</source>
-        <translation type="unfinished"></translation>
+        <translation>Wykonaj kroki po kolei</translation>
     </message>
     <message>
         <source>Run on every Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom na każdym urządzeniu z Androidem</translation>
     </message>
     <message>
         <source>Run workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom obszar roboczy</translation>
     </message>
     <message>
         <source>Runtime status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan środowiska uruchomieniowego</translation>
     </message>
     <message>
         <source>SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakiety SDK</translation>
     </message>
     <message>
         <source>Save source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz plik źródłowy</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz obszar roboczy</translation>
     </message>
     <message>
         <source>Search project</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeszukaj projekt</translation>
     </message>
     <message>
         <source>Set app version</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustaw wersję aplikacji</translation>
     </message>
     <message>
         <source>Check Android release readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź gotowość wydania na Androida</translation>
     </message>
     <message>
         <source>Write Play release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Napisz informacje o wydaniu w Play</translation>
     </message>
     <message>
         <source>Set breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustaw punkty przerwania</translation>
     </message>
     <message>
         <source>Set emulator display</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustaw wyświetlacz emulatora</translation>
     </message>
     <message>
         <source>Set emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustaw wydajność emulatora</translation>
     </message>
     <message>
         <source>Set up iPhone connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj połączenie z iPhone’em</translation>
     </message>
     <message>
         <source>Set up toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj zestaw narzędzi</translation>
     </message>
     <message>
         <source>Set up virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj wirtualne urządzenie iOS</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienia</translation>
     </message>
     <message>
         <source>Show Android live</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż Androida na żywo</translation>
     </message>
     <message>
         <source>Show iPhone apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż aplikacje na iPhonie</translation>
     </message>
     <message>
         <source>Show project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż pliki projektu</translation>
     </message>
     <message>
         <source>Sign Android release</source>
-        <translation type="unfinished"></translation>
+        <translation>Podpisz wydanie na Androida</translation>
     </message>
     <message>
         <source>Start Android activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom aktywność Androida</translation>
     </message>
     <message>
         <source>Start build / test</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozpocznij kompilację / test</translation>
     </message>
     <message>
         <source>Start debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom debuger</translation>
     </message>
     <message>
         <source>Start emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom emulator</translation>
     </message>
     <message>
         <source>Start iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozpocznij przebieg testowy iOS</translation>
     </message>
     <message>
         <source>Start virtual iOS USB access</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom dostęp USB do wirtualnego iOS</translation>
     </message>
     <message>
         <source>Start virtual iOS platform</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom platformę wirtualnego iOS</translation>
     </message>
     <message>
         <source>Start virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom wirtualne urządzenie iOS</translation>
     </message>
     <message>
         <source>Stop virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj wirtualne urządzenie iOS</translation>
     </message>
     <message>
         <source>Unlock virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Odblokuj wirtualne urządzenie iOS</translation>
     </message>
     <message>
         <source>Install app on running virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj aplikację na działającym wirtualnym urządzeniu iOS</translation>
     </message>
     <message>
         <source>Debug process on virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Debuguj proces na wirtualnym urządzeniu iOS</translation>
     </message>
     <message>
         <source>Screenshot of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Apps of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacje wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Save crash reports of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz raporty awarii wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Clean up virtual iOS device disk copies</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyczyść kopie dyskowe wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Record virtual iOS device screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj ekran wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Stream device audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesyłaj dźwięk urządzenia</translation>
     </message>
     <message>
         <source>Swift toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Zestaw narzędzi Swift</translation>
     </message>
     <message>
         <source>Tap / swipe / input</source>
-        <translation type="unfinished"></translation>
+        <translation>Stuknięcie / przesunięcie / wprowadzanie</translation>
     </message>
     <message>
         <source>Transfer project to Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Przenieś projekt na Maca</translation>
     </message>
     <message>
         <source>Upload App Store build</source>
-        <translation type="unfinished"></translation>
+        <translation>Prześlij kompilację do App Store</translation>
     </message>
     <message>
         <source>Verify release signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Zweryfikuj podpis wydania</translation>
     </message>
     <message>
         <source>Check signing keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź klucze podpisu</translation>
     </message>
     <message>
         <source>View build plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż plan kompilacji</translation>
     </message>
     <message>
         <source>Check dependency updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź aktualizacje zależności</translation>
     </message>
     <message>
         <source>Analyze project code</source>
-        <translation type="unfinished"></translation>
+        <translation>Analizuj kod projektu</translation>
     </message>
     <message>
         <source>Virtual iOS device: status</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualne urządzenie iOS: stan</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj wirtualne urządzenie iOS</translation>
     </message>
     <message>
         <source>Check this machine for the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź ten komputer pod kątem wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Check the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź wirtualne urządzenie iOS</translation>
     </message>
     <message>
         <source>Wait for job</source>
-        <translation type="unfinished"></translation>
+        <translation>Czekaj na zadanie</translation>
     </message>
     <message>
         <source>Job timeline</source>
-        <translation type="unfinished"></translation>
+        <translation>Oś czasu zadania</translation>
     </message>
     <message>
         <source>Wait for rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Czekaj na renderowanie</translation>
     </message>
     <message>
         <source>Name or pin a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwij lub przypnij urządzenie</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi by QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruj przez Wi-Fi kodem QR</translation>
     </message>
     <message>
         <source>Android screen preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Podgląd ekranu Androida</translation>
     </message>
     <message>
         <source>Capture store screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Przechwyć zrzuty ekranu do sklepu</translation>
     </message>
     <message>
         <source>Saved states of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisane stany wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Save state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz stan wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Delete saved state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń zapisany stan wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Start virtual iOS device from saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom wirtualne urządzenie iOS z zapisanego stanu</translation>
     </message>
     <message>
         <source>Profiles of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Profile wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Log of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik wirtualnego urządzenia iOS</translation>
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>Zasady agenta</translation>
     </message>
     <message>
         <source>Audit log</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik audytu</translation>
     </message>
     <message>
         <source>Read a saved result</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj zapisany wynik</translation>
     </message>
     <message>
         <source>Inspect Demo Studio capabilities</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbadaj możliwości Demo Studio</translation>
     </message>
     <message>
         <source>Inspect local demo recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbadaj lokalne nagranie demo</translation>
     </message>
     <message>
         <source>Create demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz scenę demo</translation>
     </message>
     <message>
         <source>Read demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj scenę demo</translation>
     </message>
     <message>
         <source>Update demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaktualizuj scenę demo</translation>
     </message>
     <message>
         <source>Render demo preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyrenderuj podgląd demo</translation>
     </message>
     <message>
         <source>Export demo video</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj wideo demo</translation>
     </message>
     <message>
         <source>Validate demo export</source>
-        <translation type="unfinished"></translation>
+        <translation>Zweryfikuj eksport demo</translation>
     </message>
     <message>
         <source>QA environment settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienia środowiska QA</translation>
     </message>
     <message>
         <source>List QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetl środowiska QA</translation>
     </message>
     <message>
         <source>Read QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj środowisko QA</translation>
     </message>
     <message>
         <source>Save QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz środowisko QA</translation>
     </message>
     <message>
         <source>Delete QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń środowisko QA</translation>
     </message>
     <message>
         <source>Export QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj środowisko QA</translation>
     </message>
     <message>
         <source>Import QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj środowisko QA</translation>
     </message>
     <message>
         <source>Read QA environment of device</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj środowisko QA urządzenia</translation>
     </message>
     <message>
         <source>Plan QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaplanuj środowisko QA</translation>
     </message>
     <message>
         <source>Apply QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastosuj środowisko QA</translation>
     </message>
     <message>
         <source>Restore device settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywróć ustawienia urządzenia</translation>
     </message>
     <message>
         <source>List restore points</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetl punkty przywracania</translation>
     </message>
     <message>
         <source>Emulator disk usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Zajętość dysku przez emulatory</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Duplikuj, zmień nazwę lub wyczyść emulator</translation>
     </message>
     <message>
         <source>Plan emulator setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaplanuj konfigurację emulatora</translation>
     </message>
     <message>
         <source>Set up emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj emulator</translation>
     </message>
     <message>
         <source>Ask the person to act</source>
-        <translation type="unfinished"></translation>
+        <translation>Poproś osobę o działanie</translation>
     </message>
     <message>
         <source>Draft a bug report</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj raport o błędzie</translation>
     </message>
     <message>
         <source>List handoffs</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetl przekazania</translation>
     </message>
     <message>
         <source>Observe a session</source>
-        <translation type="unfinished"></translation>
+        <translation>Obserwuj sesję</translation>
     </message>
     <message>
         <source>Ordered input batch</source>
-        <translation type="unfinished"></translation>
+        <translation>Uporządkowana partia wprowadzeń</translation>
     </message>
     <message>
         <source>Read a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj przekazanie</translation>
     </message>
     <message>
         <source>The person is done</source>
-        <translation type="unfinished"></translation>
+        <translation>Osoba skończyła</translation>
     </message>
     <message>
         <source>Timestamped gesture trace</source>
-        <translation type="unfinished"></translation>
+        <translation>Ślad gestów ze znacznikami czasu</translation>
     </message>
     <message>
         <source>Wait for the person</source>
-        <translation type="unfinished"></translation>
+        <translation>Czekaj na osobę</translation>
     </message>
     <message>
         <source>Withdraw a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Wycofaj przekazanie</translation>
     </message>
     <message>
         <source>Find a device by name</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź urządzenie po nazwie</translation>
     </message>
     <message>
         <source>Play a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwórz trasę GPX</translation>
     </message>
     <message>
         <source>Read a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj trasę GPX</translation>
     </message>
     <message>
         <source>Route playback status</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan odtwarzania trasy</translation>
     </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
     <message>
         <source>% maximum increase</source>
-        <translation type="unfinished"></translation>
+        <translation>% maksymalnego wzrostu</translation>
     </message>
     <message>
         <source>Analyze</source>
-        <translation type="unfinished"></translation>
+        <translation>Analizuj</translation>
     </message>
     <message>
         <source>Application ID · e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator aplikacji · np. com.example.app</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz plik</translation>
     </message>
     <message>
         <source>Compare</source>
-        <translation type="unfinished"></translation>
+        <translation>Porównaj</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Czas trwania (sekundy)</translation>
     </message>
     <message>
         <source>Frame time</source>
-        <translation type="unfinished"></translation>
+        <translation>Czas klatki</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Pamięć</translation>
     </message>
     <message>
         <source>Path to the Perfetto trace (.pftrace)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ścieżka do śladu Perfetto (.pftrace)</translation>
     </message>
     <message>
         <source>Previous JSON report</source>
-        <translation type="unfinished"></translation>
+        <translation>Poprzedni raport JSON</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj</translation>
     </message>
     <message>
         <source>Save JSON report as…</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz raport JSON jako…</translation>
     </message>
     <message>
         <source>not available</source>
-        <translation type="unfinished"></translation>
+        <translation>niedostępne</translation>
     </message>
     <message>
         <source>Record a trace</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj ślad</translation>
     </message>
     <message>
         <source>Use your app while it records. You get its CPU time, memory and frame times.</source>
-        <translation type="unfinished"></translation>
+        <translation>Używaj aplikacji podczas nagrywania. Otrzymasz jej czas procesora, pamięć i czasy klatek.</translation>
     </message>
     <message>
         <source>Pick a phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Najpierw wybierz telefon w sekcji Urządzenia.</translation>
     </message>
     <message>
         <source>Catch regressions</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłapuj regresje</translation>
     </message>
 </context>
 <context>
     <name>ReleaseWorkspace</name>
     <message>
         <source>APK / AAB to sign</source>
-        <translation type="unfinished"></translation>
+        <translation>APK / AAB do podpisania</translation>
     </message>
     <message>
         <source>Build iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>Skompiluj archiwum iOS</translation>
     </message>
     <message>
         <source>Commit Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatwierdź zmianę w Play</translation>
     </message>
     <message>
         <source>Create new keystore</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz nowy magazyn kluczy</translation>
     </message>
     <message>
         <source>Export IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj IPA</translation>
     </message>
     <message>
         <source>Key alias</source>
-        <translation type="unfinished"></translation>
+        <translation>Alias klucza</translation>
     </message>
     <message>
         <source>New signed output file</source>
-        <translation type="unfinished"></translation>
+        <translation>Nowy podpisany plik wyjściowy</translation>
     </message>
     <message>
         <source>Prepare Play upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj przesłanie do Play</translation>
     </message>
     <message>
         <source>Protected password file · readable by its owner only</source>
-        <translation type="unfinished"></translation>
+        <translation>Chroniony plik hasła · czytelny tylko dla właściciela</translation>
     </message>
     <message>
         <source>Set in the open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustaw w otwartym projekcie</translation>
     </message>
     <message>
         <source>Sign &amp; verify</source>
-        <translation type="unfinished"></translation>
+        <translation>Podpisz i zweryfikuj</translation>
     </message>
     <message>
         <source>Verify signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Zweryfikuj podpis</translation>
     </message>
     <message>
         <source>Version &amp; build number</source>
-        <translation type="unfinished"></translation>
+        <translation>Wersja i numer kompilacji</translation>
     </message>
     <message>
         <source>Sign your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Podpisz swoją aplikację</translation>
     </message>
     <message>
         <source>Your keys stay on this computer. Nothing is released until the check passes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Twoje klucze zostają na tym komputerze. Nic nie zostanie wydane, dopóki sprawdzenie nie przejdzie.</translation>
     </message>
     <message>
         <source>Google Play needs an authorized service account. Apple needs a Mac with Xcode and your signing keys.</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Play wymaga autoryzowanego konta usługi. Apple wymaga Maca z Xcode i twoich kluczy podpisu.</translation>
     </message>
     <message>
         <source>Build number</source>
-        <translation type="unfinished"></translation>
+        <translation>Numer kompilacji</translation>
     </message>
 </context>
 <context>
     <name>StageLogPane</name>
     <message>
         <source>Device log</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik urządzenia</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik zadania</translation>
     </message>
     <message>
         <source>Open under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz w sekcji Kompilacje i zadania</translation>
     </message>
     <message>
         <source>Hide the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryj dziennik</translation>
     </message>
     <message>
         <source>No device is live.</source>
-        <translation type="unfinished"></translation>
+        <translation>Żadne urządzenie nie działa na żywo.</translation>
     </message>
     <message>
         <source>Connect a device and its log runs here, beside its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz urządzenie, a jego dziennik będzie się wyświetlać tutaj, obok ekranu.</translation>
     </message>
     <message>
         <source>No job yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeszcze żadnego zadania.</translation>
     </message>
     <message>
         <source>Run your app or start a build, and its log follows here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom aplikację lub rozpocznij kompilację, a jej dziennik pojawi się tutaj.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na wiersze dziennika…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Spróbuj ponownie</translation>
     </message>
     <message>
         <source>App launch</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchomienie aplikacji</translation>
     </message>
 </context>
 <context>
     <name>StudioDialog</name>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastosuj</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamknij</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished"></translation>
+        <translation>Odrzuć</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywróć</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Tak</translation>
     </message>
 </context>
 <context>
     <name>TestWorkspace</name>
     <message>
         <source>Accessibility description · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>Opis dostępności · dokładny</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz</translation>
     </message>
     <message>
         <source>Device IDs separated by commas; empty = selected device</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikatory urządzeń rozdzielone przecinkami; puste = wybrane urządzenie</translation>
     </message>
     <message>
         <source>Enter a text, resource ID or description</source>
-        <translation type="unfinished"></translation>
+        <translation>Wpisz tekst, identyfikator zasobu lub opis</translation>
     </message>
     <message>
         <source>Fill in</source>
-        <translation type="unfinished"></translation>
+        <translation>Wypełnij</translation>
     </message>
     <message>
         <source>Find &amp; wait</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź i czekaj</translation>
     </message>
     <message>
         <source>Input text</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekst do wpisania</translation>
     </message>
     <message>
         <source>JSON scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Scenariusz JSON</translation>
     </message>
     <message>
         <source>Long press</source>
-        <translation type="unfinished"></translation>
+        <translation>Długie naciśnięcie</translation>
     </message>
     <message>
         <source>New, empty directory for JUnit, JSON and screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Nowy, pusty katalog na JUnit, JSON i zrzuty ekranu</translation>
     </message>
     <message>
         <source>Resource ID · e.g. app.example:id/submit</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator zasobu · np. app.example:id/submit</translation>
     </message>
     <message>
         <source>Start scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom scenariusz</translation>
     </message>
     <message>
         <source>Tap</source>
-        <translation type="unfinished"></translation>
+        <translation>Stuknij</translation>
     </message>
     <message>
         <source>Visible text · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>Widoczny tekst · dokładny</translation>
     </message>
     <message>
         <source>Test your Android app</source>
-        <translation type="unfinished"></translation>
+        <translation>Testuj swoją aplikację na Androida</translation>
     </message>
     <message>
         <source>Pick an emulator or phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Najpierw wybierz emulator lub telefon w sekcji Urządzenia.</translation>
     </message>
     <message>
         <source>Set up text input on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj wprowadzanie tekstu na urządzeniu</translation>
     </message>
     <message>
         <source>Run on several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom na kilku urządzeniach</translation>
     </message>
     <message>
         <source>JUnit results and the failure screenshot stay, even when a step fails.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyniki JUnit i zrzut ekranu błędu zostają, nawet gdy krok się nie powiedzie.</translation>
     </message>
 </context>
 <context>
     <name>Workspace</name>
     <message>
         <source>%1 is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>Brakuje %1</translation>
     </message>
     <message>
         <source>A job is already running for this project. Use the running session or end it first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dla tego projektu działa już zadanie. Użyj działającej sesji lub najpierw ją zakończ.</translation>
     </message>
     <message>
         <source>Agents &amp; tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Agenci i narzędzia</translation>
     </message>
     <message>
         <source>App running</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacja działa</translation>
     </message>
     <message>
         <source>App session running</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesja aplikacji trwa</translation>
     </message>
     <message>
         <source>Application ID, e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator aplikacji, np. com.example.app</translation>
     </message>
     <message>
         <source>Build &amp; run</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiluj i uruchom</translation>
     </message>
     <message>
         <source>Building</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilowanie</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompilacje i zadania</translation>
     </message>
     <message>
         <source>Calibrate model</source>
-        <translation type="unfinished"></translation>
+        <translation>Kalibruj model</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Check code</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź kod</translation>
     </message>
     <message>
         <source>Choose a smartphone or emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz smartfon lub emulator</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz folder</translation>
     </message>
     <message>
         <source>Choose project</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz projekt</translation>
     </message>
     <message>
         <source>Completed</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukończono</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfiguracja</translation>
     </message>
     <message>
         <source>Connect via Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz przez Wi-Fi</translation>
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj konfigurację MCP</translation>
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj ścieżkę</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenia</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Zakończono</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Niepowodzenie</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Pliki</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź urządzenia</translation>
     </message>
     <message>
         <source>Go to project</source>
-        <translation type="unfinished"></translation>
+        <translation>Przejdź do projektu</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacje</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj</translation>
     </message>
     <message>
         <source>Install APK</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj APK</translation>
     </message>
     <message>
         <source>Install IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj IPA</translation>
     </message>
     <message>
         <source>Install app on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj aplikację na urządzeniu</translation>
     </message>
     <message>
         <source>Job running</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadanie trwa</translation>
     </message>
     <message>
         <source>Job started · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadanie rozpoczęte · %1</translation>
     </message>
     <message>
         <source>Load saved workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Wczytaj zapisany obszar roboczy</translation>
     </message>
     <message>
         <source>Manage devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Zarządzaj urządzeniami</translation>
     </message>
     <message>
         <source>Mobile apps (*.apk *.ipa)</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacje mobilne (*.apk *.ipa)</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation type="unfinished"></translation>
+        <translation>Nowy projekt</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie</translation>
     </message>
     <message>
         <source>No devices connected. Enable USB debugging or trust on the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak podłączonych urządzeń. Włącz debugowanie USB lub zaufaj komputerowi na urządzeniu.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz</translation>
     </message>
     <message>
         <source>Open a project, connect a device and start a build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz projekt, podłącz urządzenie i rozpocznij kompilację.</translation>
     </message>
     <message>
         <source>Open files</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz pliki</translation>
     </message>
     <message>
         <source>Open live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz urządzenie na żywo</translation>
     </message>
     <message>
         <source>Package format</source>
-        <translation type="unfinished"></translation>
+        <translation>Format pakietu</translation>
     </message>
     <message>
         <source>Path to your Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>Ścieżka do projektu Swift, Kotlin lub Flutter</translation>
     </message>
     <message>
         <source>Platform</source>
-        <translation type="unfinished"></translation>
+        <translation>Platforma</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt</translation>
     </message>
     <message>
         <source>Ready · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Gotowe · %1</translation>
     </message>
     <message>
         <source>Result</source>
-        <translation type="unfinished"></translation>
+        <translation>Wynik</translation>
     </message>
     <message>
         <source>Reused running job · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ponownie użyto działającego zadania · %1</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom</translation>
     </message>
     <message>
         <source>Run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom na urządzeniu</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Działa</translation>
     </message>
     <message>
         <source>Running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Trwa…</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>Ścieżki SDK i narzędzi</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz</translation>
     </message>
     <message>
         <source>Save device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz zrzut ekranu urządzenia</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz obszar roboczy</translation>
     </message>
     <message>
         <source>Search tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj narzędzi…</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj iPhone’a</translation>
     </message>
     <message>
         <source>Sign build</source>
-        <translation type="unfinished"></translation>
+        <translation>Podpisz kompilację</translation>
     </message>
     <message>
         <source>Signing &amp; release</source>
-        <translation type="unfinished"></translation>
+        <translation>Podpisywanie i wydanie</translation>
     </message>
     <message>
         <source>Start with a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Zacznij od projektu</translation>
     </message>
     <message>
         <source>Stopping</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymywanie</translation>
     </message>
     <message>
         <source>Streaming sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Przesyłanie dźwięku</translation>
     </message>
     <message>
         <source>Timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Przekroczono czas</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Testy UI</translation>
     </message>
     <message>
         <source>Waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie</translation>
     </message>
     <message>
         <source>Waiting for project</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na projekt</translation>
     </message>
     <message>
         <source>Workspace name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa obszaru roboczego</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Tak</translation>
     </message>
     <message>
         <source>Your next build starts here</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutaj zacznie się twoja następna kompilacja</translation>
     </message>
     <message>
         <source>Choose a job to read its log.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz zadanie, aby odczytać jego dziennik.</translation>
     </message>
     <message>
         <source>Open your app, build it and run it on a device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz aplikację, skompiluj ją i uruchom na urządzeniu.</translation>
     </message>
     <message>
         <source>Phones and emulators, ready to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telefony i emulatory gotowe do uruchomienia twojej aplikacji.</translation>
     </message>
     <message>
         <source>Every build and agent job, with its logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Każda kompilacja i zadanie agenta, z dziennikami i wynikami.</translation>
     </message>
     <message>
         <source>Everything your agent can do, as a form you can fill in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystko, co potrafi twój agent, jako formularz do wypełnienia.</translation>
     </message>
     <message>
         <source>Pause your app and see what it&apos;s doing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstrzymaj aplikację i zobacz, co robi.</translation>
     </message>
     <message>
         <source>Find anything in your running app and tap it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź cokolwiek w działającej aplikacji i stuknij to.</translation>
     </message>
     <message>
         <source>See where the time goes and catch regressions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobacz, gdzie ucieka czas, i wyłapuj regresje.</translation>
     </message>
     <message>
         <source>Search, edit and save your project&apos;s files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeszukuj, edytuj i zapisuj pliki projektu.</translation>
     </message>
     <message>
         <source>Sign it, version it and ship it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podpisz ją, nadaj wersję i wydaj.</translation>
     </message>
     <message>
         <source>Build</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiluj</translation>
     </message>
     <message>
         <source>Show build steps</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż kroki kompilacji</translation>
     </message>
     <message>
         <source>Plug in a phone or start an emulator under Devices.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz telefon lub uruchom emulator w sekcji Urządzenia.</translation>
     </message>
     <message>
         <source>Remember this project, platform and device together.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapamiętaj razem ten projekt, platformę i urządzenie.</translation>
     </message>
     <message>
         <source>No iPhone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeszcze bez iPhone’a.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeszcze bez telefonu.</translation>
     </message>
     <message>
         <source>Plug it in, unlock it and trust this computer. Setup takes you through the rest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz go, odblokuj i zaufaj temu komputerowi. Konfiguracja przeprowadzi cię przez resztę.</translation>
     </message>
     <message>
         <source>Plug in a phone with USB debugging on, or start an emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz telefon z włączonym debugowaniem USB lub uruchom emulator.</translation>
     </message>
     <message>
         <source>Build or test from the project. Your agent&apos;s jobs show up here too, with logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiluj lub testuj z projektu. Zadania twojego agenta też się tu pojawiają, z dziennikami i wynikami.</translation>
     </message>
     <message>
         <source>Your agent can call every one of these over MCP or the command line.</source>
-        <translation type="unfinished"></translation>
+        <translation>Twój agent może wywołać każde z nich przez MCP lub wiersz poleceń.</translation>
     </message>
     <message>
         <source>The result shows up here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wynik pojawi się tutaj.</translation>
     </message>
     <message>
         <source>Filter the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtruj dziennik</translation>
     </message>
     <message>
         <source>All lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie wiersze</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ostrzeżenia</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Błędy</translation>
     </message>
     <message numerus="yes">
         <source>%n line(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n wiersz</numerusform>
+            <numerusform>%n wiersze</numerusform>
+            <numerusform>%n wierszy</numerusform>
         </translation>
     </message>
     <message>
         <source>Copy these lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj te wiersze</translation>
     </message>
     <message>
         <source>Copy log</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj dziennik</translation>
     </message>
     <message>
         <source>No line of this log matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Żaden wiersz tego dziennika nie pasuje.</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>%1 min %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 min %2 s</translation>
     </message>
     <message>
         <source>%1 h %2 min</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 h %2 min</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie</translation>
     </message>
     <message>
         <source>Nothing running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nic nie działa.</translation>
     </message>
     <message>
         <source>No failed job.</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak nieudanych zadań.</translation>
     </message>
     <message>
         <source>Open log file</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz plik dziennika</translation>
     </message>
     <message>
         <source>Run again</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom ponownie</translation>
     </message>
     <message>
         <source>Run again · only for jobs this window started</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom ponownie · tylko dla zadań uruchomionych z tego okna</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Działające</translation>
     </message>
     <message>
         <source>Failed</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nieudane</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadania</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Narzędzia</translation>
     </message>
     <message>
         <source>Log of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik %1</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik zadania</translation>
     </message>
     <message>
         <source>Live log</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik na żywo</translation>
     </message>
     <message>
         <source>%1 must be a number</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 musi być liczbą</translation>
     </message>
     <message>
         <source>%1 is out of range: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 jest poza zakresem: %2</translation>
     </message>
     <message>
         <source>Command copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Polecenie skopiowane</translation>
     </message>
     <message>
         <source>This tool changes or removes something and cannot be undone. Run it?</source>
-        <translation type="unfinished"></translation>
+        <translation>To narzędzie coś zmienia lub usuwa i nie da się tego cofnąć. Uruchomić je?</translation>
     </message>
     <message>
         <source>Run anyway</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom mimo to</translation>
     </message>
     <message>
         <source>Asks before it runs: this tool changes or removes something</source>
-        <translation type="unfinished"></translation>
+        <translation>Pyta przed uruchomieniem: to narzędzie coś zmienia lub usuwa</translation>
     </message>
     <message>
         <source>Copy as command</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj jako polecenie</translation>
     </message>
     <message>
         <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
-        <translation type="unfinished"></translation>
+        <translation>Skopiuj to wywołanie jako polecenie tomaccoctl do terminala lub skryptu</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Spróbuj ponownie</translation>
     </message>
     <message>
         <source>Dismiss</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamknij</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Co zrobić: %1</translation>
     </message>
     <message>
         <source>No tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeszcze brak narzędzi.</translation>
     </message>
     <message>
         <source>The control program has not listed its tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Program sterujący nie wyświetlił jeszcze swoich narzędzi.</translation>
     </message>
     <message>
         <source>No tool matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Żadne narzędzie nie pasuje do „%1”.</translation>
     </message>
     <message>
         <source>Demo Studio</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo Studio</translation>
     </message>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamień nagranie ekranu w wideo z urządzeniem 3D.</translation>
     </message>
     <message>
         <source>All jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie zadania</translation>
     </message>
 </context>
 <context>
     <name>main</name>
     <message>
         <source>Device profile ID from tomaccoctl call catalog.list</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator profilu urządzenia z tomaccoctl call catalog.list</translation>
     </message>
     <message>
         <source>Duo display: closed or open</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetlacz Duo: zamknięty lub otwarty</translation>
     </message>
     <message>
         <source>Invalid orientation or fold position.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Nieprawidłowa orientacja lub pozycja złożenia.
+</translation>
     </message>
     <message>
         <source>Name of the agent preview session</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa sesji podglądu agenta</translation>
     </message>
     <message>
         <source>No web build with index.html found.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Nie znaleziono kompilacji webowej z index.html.
+</translation>
     </message>
     <message>
         <source>Open a local web build</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz lokalną kompilację webową</translation>
     </message>
     <message>
         <source>Open a project in the native workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz projekt w natywnym obszarze roboczym</translation>
     </message>
     <message>
         <source>Open a web address at startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz adres internetowy przy uruchomieniu</translation>
     </message>
     <message>
         <source>Orientation: portrait or landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Orientacja: portrait (pionowo) lub landscape (poziomo)</translation>
     </message>
     <message>
         <source>Tomacco: build, run and test native Android and iOS apps on Linux.
 Licensed under the GNU General Public License, version 2 or later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco: kompiluj, uruchamiaj i testuj natywne aplikacje na Androida i iOS w Linuksie.
+Na licencji GNU General Public License w wersji 2 lub nowszej.</translation>
     </message>
     <message>
         <source>Run the preview&apos;s interactive checks</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom interaktywne kontrole podglądu</translation>
     </message>
     <message>
         <source>Save the window as a PNG for visual review and quit</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz okno jako PNG do przeglądu wizualnego i zakończ</translation>
     </message>
     <message>
         <source>Show only the detached device window; the main window stays hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż tylko odłączone okno urządzenia; główne okno pozostaje ukryte</translation>
     </message>
     <message>
         <source>Unknown device profile.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Nieznany profil urządzenia.
+</translation>
     </message>
     <message>
         <source>Show the live session with this ID, from tomaccoctl call runtime.list</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż sesję na żywo o tym identyfikatorze, z tomaccoctl call runtime.list</translation>
     </message>
     <message>
         <source>Invalid session ID.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Nieprawidłowy identyfikator sesji.
+</translation>
     </message>
     <message>
         <source>Unknown workspace. See --help for the available workspaces.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Nieznany obszar roboczy. Dostępne obszary robocze opisuje --help.
+</translation>
     </message>
     <message>
         <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo or preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz obszar roboczy: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo lub preview</translation>
     </message>
 </context>
 <context>
     <name>UpdateModel</name>
     <message>
         <source>Updated · restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaktualizowano · uruchom ponownie</translation>
     </message>
     <message>
         <source>Installing update</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalowanie aktualizacji</translation>
     </message>
     <message>
         <source>Update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualizuj do %1</translation>
     </message>
     <message>
         <source>Version %1 is up to date.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wersja %1 jest aktualna.</translation>
     </message>
     <message>
         <source>Version %1 is available. You have %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dostępna jest wersja %1. Masz %2.</translation>
     </message>
     <message>
         <source>No release is available yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie ma jeszcze dostępnego wydania.</translation>
     </message>
     <message>
         <source>Version %1 has no package for this system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wersja %1 nie ma pakietu dla tego systemu.</translation>
     </message>
     <message>
         <source>GitHub could not be reached. This computer may be offline.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się połączyć z GitHubem. Ten komputer może być offline.</translation>
     </message>
     <message>
         <source>The check failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdzenie nie powiodło się: %1</translation>
     </message>
     <message>
         <source>Version %1. Not checked yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wersja %1. Jeszcze nie sprawdzono.</translation>
     </message>
     <message>
         <source>Updates are turned off for this build or by the environment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualizacje są wyłączone dla tej kompilacji lub przez środowisko.</translation>
     </message>
     <message>
         <source>This copy runs from a source checkout. Update it with Git and a new build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta kopia działa z kodu źródłowego. Aktualizuj ją przez Git i nową kompilację.</translation>
     </message>
     <message>
         <source>This copy belongs to a system package. Update it with your package manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta kopia należy do pakietu systemowego. Aktualizuj ją menedżerem pakietów.</translation>
     </message>
     <message>
         <source>The installation cannot be written, so it cannot be updated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalacji nie można zapisać, więc nie da się jej tu zaktualizować.</translation>
     </message>
     <message>
         <source>This copy was not installed by its installer, so it is left alone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta kopia nie została zainstalowana przez swój instalator, więc pozostaje nietknięta.</translation>
     </message>
     <message>
         <source>This build has no release signing key, so it cannot verify or install updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ta kompilacja nie ma klucza podpisu wydań, więc nie może weryfikować ani instalować aktualizacji.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstalowano wersję %1. Uruchom ponownie, aby jej używać.</translation>
     </message>
     <message>
         <source>Downloading, verifying and installing the update.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobieranie, weryfikowanie i instalowanie aktualizacji.</translation>
     </message>
     <message>
         <source>An update was interrupted. It is undone before the next installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualizacja została przerwana. Zostanie cofnięta przed następną instalacją.</translation>
     </message>
     <message>
         <source>The last installation failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ostatnia instalacja nie powiodła się: %1</translation>
     </message>
     <message>
         <source>Installing has to wait until jobs, device sessions and the virtual iOS device have ended.</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalacja musi poczekać, aż zakończą się zadania, sesje urządzeń i wirtualne urządzenie iOS.</translation>
     </message>
 </context>
 <context>
     <name>UpdateNotice</name>
     <message>
         <source>Open the update settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz ustawienia aktualizacji</translation>
     </message>
 </context>
 <context>
     <name>UpdateSection</name>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktualizacje</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłączone</translation>
     </message>
     <message>
         <source>Notify</source>
-        <translation type="unfinished"></translation>
+        <translation>Powiadamiaj</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatycznie</translation>
     </message>
     <message>
         <source>Check now</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź teraz</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Co nowego ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj</translation>
     </message>
     <message>
         <source>Restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom ponownie</translation>
     </message>
     <message>
         <source>Roll back</source>
-        <translation type="unfinished"></translation>
+        <translation>Wycofaj</translation>
     </message>
     <message>
         <source>Channel</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanał</translation>
     </message>
     <message>
         <source>Stable</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabilny</translation>
     </message>
     <message>
         <source>Pre-release</source>
-        <translation type="unfinished"></translation>
+        <translation>Przedpremierowy</translation>
     </message>
     <message>
         <source>Also offers test versions before their release. They can have more bugs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Oferuje też wersje testowe przed ich wydaniem. Mogą zawierać więcej błędów.</translation>
     </message>
     <message>
         <source>Offers only finished releases.</source>
-        <translation type="unfinished"></translation>
+        <translation>Oferuje tylko gotowe wydania.</translation>
     </message>
     <message>
         <source>Off: nothing is sent unless you check now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłączone: nic nie jest wysyłane, dopóki nie sprawdzisz ręcznie.</translation>
     </message>
     <message>
         <source>Notify: checks GitHub once a day and shows a new version at the top of the window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Powiadamiaj: sprawdza GitHuba raz dziennie i pokazuje nową wersję u góry okna.</translation>
     </message>
     <message>
         <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatycznie: dodatkowo sama ją instaluje, gdy nic nie działa, i proponuje ponowne uruchomienie.</translation>
     </message>
 </context>
 <context>
     <name>AppDropArea</name>
     <message>
         <source>Drop to install on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Upuść, aby zainstalować na %1</translation>
     </message>
 </context>
 <context>
     <name>DeviceHero</name>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Ostatnie</translation>
     </message>
 </context>
 <context>
     <name>UpdateBanner</name>
     <message>
         <source>Updated to %1 · Restart to use it</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaktualizowano do %1 · uruchom ponownie, aby używać</translation>
     </message>
     <message>
         <source>Installing Tomacco %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalowanie Tomacco %1…</translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Dostępne jest Tomacco %1</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Co nowego ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj</translation>
     </message>
     <message>
         <source>Restart now</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom ponownie teraz</translation>
     </message>
     <message>
         <source>Later</source>
-        <translation type="unfinished"></translation>
+        <translation>Później</translation>
     </message>
 </context>
 <context>
     <name>OnboardingSheet</name>
     <message>
         <source>Welcome to Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Witaj w Tomacco</translation>
     </message>
     <message>
         <source>This system lacks libraries the desktop needs. Your agent can still use Tomacco through tomaccoctl.</source>
-        <translation type="unfinished"></translation>
+        <translation>W tym systemie brakuje bibliotek potrzebnych pulpitowi. Twój agent nadal może korzystać z Tomacco przez tomaccoctl.</translation>
     </message>
     <message>
         <source>Install Java (JDK 17 or newer) and Gradle to build Android apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj Javę (JDK 17 lub nowszy) i Gradle, aby kompilować aplikacje na Androida.</translation>
     </message>
     <message>
         <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zainstaluj Android SDK i emulator. Pobierze to około 5 GB.</translation>
     </message>
     <message>
         <source>Set up iOS builds. This needs an Apple account.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj kompilacje iOS. Wymaga to konta Apple.</translation>
     </message>
     <message>
         <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opcjonalnie: wirtualny iPhone. Wymaga własnego obrazu przywracania iPhone’a, około 100 GiB miejsca na dysku i karty graficznej z 16 GiB.</translation>
     </message>
     <message>
         <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco pozwala twojemu agentowi programistycznemu kompilować, uruchamiać i testować aplikacje na Androida i iOS na tym komputerze.</translation>
     </message>
     <message>
         <source>Checking this computer…</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdzanie tego komputera…</translation>
     </message>
     <message>
         <source>What is left to set up:</source>
-        <translation type="unfinished"></translation>
+        <translation>Co zostało do skonfigurowania:</translation>
     </message>
     <message>
         <source>Everything for Android and iOS builds is in place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystko do kompilacji na Androida i iOS jest gotowe.</translation>
     </message>
     <message>
         <source>Your agent can do these steps for you. Connect it, then ask it to set Tomacco up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Twój agent może wykonać te kroki za ciebie. Połącz go, a potem poproś o skonfigurowanie Tomacco.</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Skopiowano</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz swojego agenta programistycznego</translation>
     </message>
     <message>
         <source>Skip</source>
-        <translation type="unfinished"></translation>
+        <translation>Pomiń</translation>
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfiguracja MCP jest w schowku. Wklej ją do ustawień MCP swojego agenta.</translation>
     </message>
 </context>
 <context>
     <name>ScreenRecorder</name>
     <message>
         <source>Starting the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozpoczynanie nagrywania…</translation>
     </message>
     <message>
         <source>Saving the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisywanie nagrania…</translation>
     </message>
     <message>
         <source>Recording saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagranie zapisane · %1</translation>
     </message>
     <message>
         <source>The recording did not finish · details under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagrywanie się nie zakończyło · szczegóły w sekcji Kompilacje i zadania</translation>
     </message>
     <message>
         <source>Recording · press again to stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagrywanie · naciśnij ponownie, aby zatrzymać</translation>
     </message>
 </context>
 <context>
     <name>DeviceGrid</name>
     <message>
         <source>Waiting for the screen…</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na ekran…</translation>
     </message>
     <message>
         <source>No device running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Żadne urządzenie nie działa.</translation>
     </message>
     <message>
         <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom emulator lub podłącz telefon z włączonym debugowaniem USB; każde urządzenie pojawi się tu ze swoim ekranem.</translation>
     </message>
 </context>
 <context>
     <name>DeviceLogPane</name>
     <message>
         <source>App ID, all apps when empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator aplikacji, puste = wszystkie aplikacje</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Informacje</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ostrzeżenia</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Błędy</translation>
     </message>
     <message>
         <source>Find in the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź w dzienniku</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Wznów</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstrzymaj</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyczyść</translation>
     </message>
     <message>
         <source>Clear the lines shown</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyczyść wyświetlane wiersze</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstrzymano</translation>
     </message>
     <message>
         <source>No line contains this text.</source>
-        <translation type="unfinished"></translation>
+        <translation>Żaden wiersz nie zawiera tego tekstu.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na wiersze dziennika…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Spróbuj ponownie</translation>
     </message>
 </context>
 <context>
     <name>ApprovalDialog</name>
     <message>
         <source>Allow this agent action?</source>
-        <translation type="unfinished"></translation>
+        <translation>Zezwolić na tę akcję agenta?</translation>
     </message>
     <message>
         <source>An agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Agent</translation>
     </message>
     <message>
         <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 prosi o uruchomienie %2 (%3). Tomacco oznacza to jako destrukcyjne: może usunąć lub nadpisać dane.</translation>
     </message>
     <message>
         <source>Its arguments, with secrets masked:</source>
-        <translation type="unfinished"></translation>
+        <translation>Jej argumenty, z ukrytymi sekretami:</translation>
     </message>
     <message>
         <source>Arguments</source>
-        <translation type="unfinished"></translation>
+        <translation>Argumenty</translation>
     </message>
     <message>
         <source>Seconds left before it is denied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sekundy do odmowy: %1</translation>
     </message>
     <message>
         <source>Deny</source>
-        <translation type="unfinished"></translation>
+        <translation>Odmów</translation>
     </message>
     <message>
         <source>Approve</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatwierdź</translation>
     </message>
 </context>
 <context>
     <name>DemoWorkspace</name>
     <message>
         <source>Save your changes before opening another scene.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz zmiany przed otwarciem innej sceny.</translation>
     </message>
     <message>
         <source>App demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo aplikacji</translation>
     </message>
     <message>
         <source>Enter a valid number.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wpisz prawidłową liczbę.</translation>
     </message>
     <message>
         <source>Choose a different time for the new pose.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz inny czas dla nowej pozy.</translation>
     </message>
     <message>
         <source>Save changes before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz zmiany przed renderowaniem.</translation>
     </message>
     <message>
         <source>Render complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderowanie zakończone.</translation>
     </message>
     <message>
         <source>Rendering did not complete. Your scene is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderowanie się nie zakończyło. Twoja scena jest bez zmian.</translation>
     </message>
     <message>
         <source>Your draft has changes. Reload explicitly to replace it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Twoja wersja robocza ma zmiany. Wczytaj ponownie wprost, aby ją zastąpić.</translation>
     </message>
     <message>
         <source>Scene opened.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scena otwarta.</translation>
     </message>
     <message>
         <source>Changes saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmiany zapisane.</translation>
     </message>
     <message>
         <source>Saved. Your newer edits are still unsaved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisano. Twoje nowsze zmiany nie są jeszcze zapisane.</translation>
     </message>
     <message>
         <source>The render job could not be followed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie można śledzić zadania renderowania.</translation>
     </message>
     <message>
         <source>A recording, made into a demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagranie zamienione w demo</translation>
     </message>
     <message>
         <source>Choose a local video, place it in a device and set its motion. Your source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz lokalne wideo, umieść je w urządzeniu i ustaw jego ruch. Twój plik źródłowy pozostaje bez zmian.</translation>
     </message>
     <message>
         <source>Source video</source>
-        <translation type="unfinished"></translation>
+        <translation>Wideo źródłowe</translation>
     </message>
     <message>
         <source>Choose video</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz wideo</translation>
     </message>
     <message>
         <source>Inspect video</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbadaj wideo</translation>
     </message>
     <message>
         <source>Scene file (.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Plik sceny (.json)</translation>
     </message>
     <message>
         <source>Choose scene path</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz ścieżkę sceny</translation>
     </message>
     <message>
         <source>Scene title</source>
-        <translation type="unfinished"></translation>
+        <translation>Tytuł sceny</translation>
     </message>
     <message>
         <source>Create scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz scenę</translation>
     </message>
     <message>
         <source>Open scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz scenę</translation>
     </message>
     <message>
         <source>The video renderer is not ready. Check the rendering tools under Agents &amp; tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderer wideo nie jest gotowy. Sprawdź narzędzia renderowania w sekcji Agenci i narzędzia.</translation>
     </message>
     <message>
         <source>Scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Scena</translation>
     </message>
     <message>
         <source>Keep the original recording or crop its time. Canvas size changes the exported video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zachowaj oryginalne nagranie lub przytnij jego czas. Rozmiar płótna zmienia eksportowane wideo.</translation>
     </message>
     <message>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>Tytuł</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Czas trwania (sekundy)</translation>
     </message>
     <message>
         <source>Canvas width</source>
-        <translation type="unfinished"></translation>
+        <translation>Szerokość płótna</translation>
     </message>
     <message>
         <source>Canvas height</source>
-        <translation type="unfinished"></translation>
+        <translation>Wysokość płótna</translation>
     </message>
     <message>
         <source>Frames per second</source>
-        <translation type="unfinished"></translation>
+        <translation>Klatki na sekundę</translation>
     </message>
     <message>
         <source>Clip start (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Początek klipu (sekundy)</translation>
     </message>
     <message>
         <source>Background color</source>
-        <translation type="unfinished"></translation>
+        <translation>Kolor tła</translation>
     </message>
     <message>
         <source>Second background color</source>
-        <translation type="unfinished"></translation>
+        <translation>Drugi kolor tła</translation>
     </message>
     <message>
         <source>Background</source>
-        <translation type="unfinished"></translation>
+        <translation>Tło</translation>
     </message>
     <message>
         <source>Device finish</source>
-        <translation type="unfinished"></translation>
+        <translation>Wykończenie urządzenia</translation>
     </message>
     <message>
         <source>Device model</source>
-        <translation type="unfinished"></translation>
+        <translation>Model urządzenia</translation>
     </message>
     <message>
         <source>Shadow opacity</source>
-        <translation type="unfinished"></translation>
+        <translation>Krycie cienia</translation>
     </message>
     <message>
         <source>Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Cień</translation>
     </message>
     <message>
         <source>Motion</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruch</translation>
     </message>
     <message>
         <source>Each pose sets the device at a moment in the video. The motion runs between them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Każda poza ustawia urządzenie w danym momencie wideo. Ruch przebiega między nimi.</translation>
     </message>
     <message>
         <source>Pose %1 · %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Poza %1 · %2 s</translation>
     </message>
     <message>
         <source>Add pose</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj pozę</translation>
     </message>
     <message>
         <source>Remove pose</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń pozę</translation>
     </message>
     <message>
         <source>Time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Czas (sekundy)</translation>
     </message>
     <message>
         <source>Turn · yaw (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Obrót · odchylenie (stopnie)</translation>
     </message>
     <message>
         <source>Tilt · pitch (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pochylenie · nachylenie (stopnie)</translation>
     </message>
     <message>
         <source>Spin · roll (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Skręt · przechylenie (stopnie)</translation>
     </message>
     <message>
         <source>Scale</source>
-        <translation type="unfinished"></translation>
+        <translation>Skala</translation>
     </message>
     <message>
         <source>Horizontal position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pozycja pozioma (0–1)</translation>
     </message>
     <message>
         <source>Vertical position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pozycja pionowa (0–1)</translation>
     </message>
     <message>
         <source>Motion curve</source>
-        <translation type="unfinished"></translation>
+        <translation>Krzywa ruchu</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisywanie…</translation>
     </message>
     <message>
         <source>Save changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz zmiany</translation>
     </message>
     <message>
         <source>Reload saved scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Wczytaj ponownie zapisaną scenę</translation>
     </message>
     <message>
         <source>Unsaved changes · save before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>Niezapisane zmiany · zapisz przed renderowaniem.</translation>
     </message>
     <message>
         <source>Preview &amp; export</source>
-        <translation type="unfinished"></translation>
+        <translation>Podgląd i eksport</translation>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podejrzyj jedną klatkę, a potem wyeksportuj nieme MP4. Obok zapisywane są plakat i zapis renderowania.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutaj pojawi się wyrenderowany podgląd.</translation>
     </message>
     <message>
         <source>This image shows the last completed render.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ten obraz pokazuje ostatnie zakończone renderowanie.</translation>
     </message>
     <message>
         <source>Preview time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Czas podglądu (sekundy)</translation>
     </message>
     <message>
         <source>Render preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyrenderuj podgląd</translation>
     </message>
     <message>
         <source>Export MP4</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj MP4</translation>
     </message>
     <message>
         <source>Show exported video</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż wyeksportowane wideo</translation>
     </message>
     <message>
         <source>Waiting to render…</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na renderowanie…</translation>
     </message>
     <message>
         <source>Rendering…</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderowanie…</translation>
     </message>
     <message>
         <source>Render failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderowanie nie powiodło się.</translation>
     </message>
     <message>
         <source>Render cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderowanie anulowane.</translation>
     </message>
     <message>
         <source>Render timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Przekroczono czas renderowania.</translation>
     </message>
     <message>
         <source>Videos (*.mp4 *.mov *.mkv *.webm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Filmy (*.mp4 *.mov *.mkv *.webm)</translation>
     </message>
     <message>
         <source>Scenes (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Sceny (*.json)</translation>
     </message>
     <message>
         <source>PNG image (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>Obraz PNG (*.png)</translation>
     </message>
     <message>
         <source>MP4 video (*.mp4)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wideo MP4 (*.mp4)</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Odrzucić niezapisane zmiany?</translation>
     </message>
     <message>
         <source>Reload the saved scene and replace your draft. The video source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wczytaj ponownie zapisaną scenę i zastąp wersję roboczą. Źródło wideo pozostaje bez zmian.</translation>
     </message>
     <message>
         <source>Keep editing</source>
-        <translation type="unfinished"></translation>
+        <translation>Edytuj dalej</translation>
     </message>
     <message>
         <source>Discard and reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Odrzuć i wczytaj ponownie</translation>
     </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>
     <message>
         <source>Dark mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Tryb ciemny</translation>
     </message>
     <message>
         <source>Font size</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozmiar czcionki</translation>
     </message>
     <message>
         <source>Animations</source>
-        <translation type="unfinished"></translation>
+        <translation>Animacje</translation>
     </message>
     <message>
         <source>Airplane mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Tryb samolotowy</translation>
     </message>
     <message>
         <source>App language</source>
-        <translation type="unfinished"></translation>
+        <translation>Język aplikacji</translation>
     </message>
     <message>
         <source>GPS location</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokalizacja GPS</translation>
     </message>
     <message>
         <source>TalkBack</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack</translation>
     </message>
     <message>
         <source>On</source>
-        <translation type="unfinished"></translation>
+        <translation>Włączone</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłączone</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatycznie</translation>
     </message>
     <message>
         <source>Device language</source>
-        <translation type="unfinished"></translation>
+        <translation>Język urządzenia</translation>
     </message>
     <message>
         <source>Will change</source>
-        <translation type="unfinished"></translation>
+        <translation>Zostanie zmienione</translation>
     </message>
     <message>
         <source>Already set</source>
-        <translation type="unfinished"></translation>
+        <translation>Już ustawione</translation>
     </message>
     <message>
         <source>Not supported here</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutaj nieobsługiwane</translation>
     </message>
     <message>
         <source>Applied and read back</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastosowano i odczytano</translation>
     </message>
     <message>
         <source>Applied, not read back</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastosowano, nie odczytano</translation>
     </message>
     <message>
         <source>Android did not apply it</source>
-        <translation type="unfinished"></translation>
+        <translation>Android tego nie zastosował</translation>
     </message>
     <message>
         <source>Restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywrócono</translation>
     </message>
     <message>
         <source>Cannot be restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie można przywrócić</translation>
     </message>
     <message>
         <source>Not restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie przywrócono</translation>
     </message>
     <message>
         <source>Preset saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienie wstępne zapisane.</translation>
     </message>
     <message>
         <source>Preset updated to revision %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienie wstępne zaktualizowane do wersji %1.</translation>
     </message>
     <message>
         <source>Preset deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienie wstępne usunięte.</translation>
     </message>
     <message>
         <source>Preset exported to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienie wstępne wyeksportowane do %1.</translation>
     </message>
     <message>
         <source>Plan ready. This device does not support: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan gotowy. To urządzenie nie obsługuje: %1.</translation>
     </message>
     <message>
         <source>Plan ready. Nothing has changed on the device yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan gotowy. Na urządzeniu nic się jeszcze nie zmieniło.</translation>
     </message>
     <message>
         <source>Applied and read back. You can restore the previous settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastosowano i odczytano. Możesz przywrócić poprzednie ustawienia.</translation>
     </message>
     <message>
         <source>Previous settings restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Poprzednie ustawienia przywrócone.</translation>
     </message>
     <message>
         <source>QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>Środowiska QA</translation>
     </message>
     <message>
         <source>Save a combination of theme, font size, animations, airplane mode, app language, GPS and TalkBack under a name, then apply it to one device you choose.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz pod nazwą połączenie motywu, rozmiaru czcionki, animacji, trybu samolotowego, języka aplikacji, GPS i TalkBack, a potem zastosuj je na wybranym urządzeniu.</translation>
     </message>
     <message>
         <source>New preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Nowe ustawienie wstępne</translation>
     </message>
     <message>
         <source>ID · e.g. dark-large-text</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator · np. dark-large-text</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa</translation>
     </message>
     <message>
         <source>Leave as it is</source>
-        <translation type="unfinished"></translation>
+        <translation>Pozostaw bez zmian</translation>
     </message>
     <message>
         <source>Set</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustaw</translation>
     </message>
     <message>
         <source>Latitude, longitude</source>
-        <translation type="unfinished"></translation>
+        <translation>Szerokość, długość geograficzna</translation>
     </message>
     <message>
         <source>0.5 to 2</source>
-        <translation type="unfinished"></translation>
+        <translation>Od 0,5 do 2</translation>
     </message>
     <message>
         <source>Language tags · e.g. de-DE</source>
-        <translation type="unfinished"></translation>
+        <translation>Tagi języka · np. pl-PL</translation>
     </message>
     <message>
         <source>GPS works on emulators only and cannot be read back or restored. App language needs Android 13; airplane mode needs Android 11.</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS działa tylko na emulatorach i nie można go odczytać ani przywrócić. Język aplikacji wymaga Androida 13; tryb samolotowy wymaga Androida 11.</translation>
     </message>
     <message>
         <source>Save preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz ustawienie wstępne</translation>
     </message>
     <message>
         <source>Import…</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj…</translation>
     </message>
     <message>
         <source>Export…</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuj…</translation>
     </message>
     <message>
         <source>Delete preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń ustawienie wstępne</translation>
     </message>
     <message numerus="yes">
         <source>%n preset file(s) could not be read and are not listed.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Nie można odczytać %n pliku ustawień wstępnych, więc nie jest wyświetlany.</numerusform>
+            <numerusform>Nie można odczytać %n plików ustawień wstępnych, więc nie są wyświetlane.</numerusform>
+            <numerusform>Nie można odczytać %n plików ustawień wstępnych, więc nie są wyświetlane.</numerusform>
         </translation>
     </message>
     <message>
         <source>Apply to a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastosuj na urządzeniu</translation>
     </message>
     <message>
         <source>Choose the device here. Tomacco reads it first, shows what would change, and applies only that plan to that device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz tutaj urządzenie. Tomacco najpierw je odczytuje, pokazuje, co by się zmieniło, i stosuje na nim tylko ten plan.</translation>
     </message>
     <message>
         <source>Choose the target device</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz urządzenie docelowe</translation>
     </message>
     <message>
         <source>App ID for the app language · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator aplikacji dla języka aplikacji · opcjonalnie</translation>
     </message>
     <message>
         <source>Read device</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj urządzenie</translation>
     </message>
     <message>
         <source>Plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaplanuj</translation>
     </message>
     <message>
         <source>Apply plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastosuj plan</translation>
     </message>
     <message>
         <source>Restore previous settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywróć poprzednie ustawienia</translation>
     </message>
     <message>
         <source>Skip the settings this device does not support</source>
-        <translation type="unfinished"></translation>
+        <translation>Pomiń ustawienia, których to urządzenie nie obsługuje</translation>
     </message>
     <message>
         <source>Plan for %1 (%2) · preset revision %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Plan dla %1 (%2) · wersja ustawienia wstępnego %3</translation>
     </message>
     <message>
         <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack włącza tutaj czytnik ekranu na urządzeniu i zachowuje twoje pozostałe usługi ułatwień dostępu. Nie dowodzi to, że twoja aplikacja działa z czytnikiem ekranu; audyt dostępności sprawdza tylko strukturę ekranu.</translation>
     </message>
     <message>
         <source>QA environment (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Środowisko QA (*.json)</translation>
     </message>
     <message>
         <source>Delete this preset?</source>
-        <translation type="unfinished"></translation>
+        <translation>Usunąć to ustawienie wstępne?</translation>
     </message>
     <message>
         <source>The preset is removed from this computer. Devices keep their settings, and restore points stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienie wstępne zostanie usunięte z tego komputera. Urządzenia zachowają swoje ustawienia, a punkty przywracania pozostaną.</translation>
     </message>
     <message>
         <source>Keep preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Zachowaj ustawienie wstępne</translation>
     </message>
     <message>
         <source>%1 points, %2 km, %3 min recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 punktów, %2 km, nagrano %3 min</translation>
     </message>
     <message>
         <source>%1 points, %2 km, no times: one point per second</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 punktów, %2 km, bez czasów: jeden punkt na sekundę</translation>
     </message>
     <message>
         <source>Change route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmień trasę…</translation>
     </message>
     <message>
         <source>Choose a GPX file…</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz plik GPX…</translation>
     </message>
     <message>
         <source>Finished. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zakończono. Ostatnia pozycja pozostaje na emulatorze.</translation>
     </message>
     <message>
         <source>GPX route (*.gpx)</source>
-        <translation type="unfinished"></translation>
+        <translation>Trasa GPX (*.gpx)</translation>
     </message>
     <message>
         <source>No route chosen</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie wybrano trasy</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstrzymaj</translation>
     </message>
     <message>
         <source>Paused at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstrzymano przy %1</translation>
     </message>
     <message>
         <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwarza trasę GPX jako lokalizację wybranego emulatora. Punkty z czasem zachowują swój rytm; punkty bez czasu są odtwarzane po jednym na sekundę.</translation>
     </message>
     <message>
         <source>Play route</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwórz trasę</translation>
     </message>
     <message>
         <source>Playback ended: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwarzanie zakończone: %1</translation>
     </message>
     <message>
         <source>Playing %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwarzanie %1</translation>
     </message>
     <message>
         <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwarzanie trasy na %1. Poprzednia pozycja jest nieznana i nie zostanie przywrócona.</translation>
     </message>
     <message>
         <source>Playing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwarzanie…</translation>
     </message>
     <message>
         <source>Reading the route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytywanie trasy…</translation>
     </message>
     <message>
         <source>Repeat the route</source>
-        <translation type="unfinished"></translation>
+        <translation>Powtarzaj trasę</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Wznów</translation>
     </message>
     <message>
         <source>Route playback</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwarzanie trasy</translation>
     </message>
     <message>
         <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Odtwarzanie trasy działa tylko na emulatorach. Telefon nie otrzymuje stąd symulowanej lokalizacji.</translation>
     </message>
     <message>
         <source>Speed · 1 is real time</source>
-        <translation type="unfinished"></translation>
+        <translation>Prędkość · 1 to czas rzeczywisty</translation>
     </message>
     <message>
         <source>Starting playback…</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozpoczynanie odtwarzania…</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj</translation>
     </message>
     <message>
         <source>Stopped. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymano. Ostatnia pozycja pozostaje na emulatorze.</translation>
     </message>
     <message>
         <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator nie zgłasza swojej pozycji, więc pozycja sprzed odtwarzania jest nieznana i nie zostanie przywrócona. W razie potrzeby ustaw ją potem w polu GPS ustawienia wstępnego.</translation>
     </message>
     <message>
         <source>point %1 of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>punkt %1 z %2</translation>
     </message>
 </context>
 <context>
     <name>HandoffBanner</name>
     <message>
         <source>%1 · an agent is waiting for you</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · agent czeka na ciebie</translation>
     </message>
     <message>
         <source>%1 · an agent is waiting for you (%2 more)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · agent czeka na ciebie (jeszcze %2)</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrób to na samym urządzeniu. Tomacco nigdy nie pyta o twój kod ani hasło.</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Gotowe</translation>
     </message>
     <message>
         <source>Done: I did it on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Gotowe: zrobiłem to na urządzeniu</translation>
     </message>
 </context>
 <context>
     <name>HandoffModel</name>
     <message>
         <source>Face ID or Touch ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Face ID lub Touch ID</translation>
     </message>
     <message>
         <source>Passcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod dostępu</translation>
     </message>
     <message>
         <source>Permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Uprawnienie</translation>
     </message>
     <message>
         <source>Purchase</source>
-        <translation type="unfinished"></translation>
+        <translation>Zakup</translation>
     </message>
     <message>
         <source>Sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Logowanie</translation>
     </message>
     <message>
         <source>Your turn on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Twoja kolej na urządzeniu</translation>
     </message>
 </context>
 <context>
     <name>MobileNav</name>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>More</source>
         <comment>navigation</comment>
-        <translation type="unfinished"></translation>
+        <translation>Więcej</translation>
     </message>
 </context>
 </TS>

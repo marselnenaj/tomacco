@@ -456,7 +456,7 @@
       "zeroDigit": "0",
       "plural": "polish",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "pt",
