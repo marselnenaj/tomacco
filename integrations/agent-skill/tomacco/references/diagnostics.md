@@ -2,7 +2,7 @@
 
 # `diagnostics` operations
 
-1 operation. Generated from `assets/operations.json`; [all references](index.md).
+2 operations. Generated from `assets/operations.json`; [all references](index.md).
 
 ### diagnostics.bundle
 
@@ -19,4 +19,25 @@ Write one .tar.gz for a bug report on this computer; nothing is sent anywhere. I
 
 ```sh
 tomaccoctl call diagnostics.bundle
+```
+
+### diagnostics.report_draft
+
+Draft a bug report. writes.
+
+Write a bug report the person can read before anything leaves this computer: a directory with issue.md (title, environment, steps, expected, what happened, excerpts of the jobs that did not succeed, the attachments with their digests), the attachments (the redacted diagnostics.bundle and the job log tails) and redaction-receipt.json, which counts the secrets of known shapes that were masked, whether the home directory became ~, the device serials and UDIDs replaced by stable placeholders, and which absolute paths remain to look at. Nothing is posted or uploaded, and issue_url carries only the title, never the body or an attachment. Masking recognises known shapes only: the person reads the draft before sharing it.
+
+- `title` string, required (non-empty, up to 120 characters): What went wrong, in one line
+- `steps` string (up to 4000 characters; default ""): How to reproduce it, as the person would type it
+- `expected` string (up to 2000 characters; default "")
+- `actual` string (up to 2000 characters; default "")
+- `directory` string (non-empty): Absolute path of the directory to write; new or empty. By default a new one under diagnostics/ in the data directory
+- `jobs` integer (0 to 20; default 3): How many recent jobs that did not succeed to excerpt and attach
+- `log_kb` integer (1 to 1024; default 16): How much of the end of each job's log to attach
+- `bundle` boolean (default true): Also write the diagnostics.bundle archive as an attachment
+- `anonymize_home` boolean (default true): Show the home directory as ~
+- `device_ids` string (one of mask, keep; default "mask"): mask replaces device serials and UDIDs by [device-N]; keep leaves them
+
+```sh
+tomaccoctl call diagnostics.report_draft '{"title":"<title>"}'
 ```

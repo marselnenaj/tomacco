@@ -263,7 +263,7 @@ AREA_NOTES = {
     "general": "Machine readiness, setup and diagnostics.",
     "agent": "The policy this agent session runs under.",
     "audit": "Log of operations that changed something.",
-    "diagnostics": "Bug-report bundle with secrets masked.",
+    "diagnostics": "Bug-report bundle and a reviewable report draft, secrets masked, sent nowhere.",
     "result": "Read a large result a call stored.",
     "storage": "Free disk space by pruning Tomacco's caches.",
     "workflow": "Run up to 20 operations in order in one call.",

@@ -3,7 +3,7 @@
   "workspace": "/home/maslos/Work/tomacco-agent-platform",
   "branch": "feat/agent-platform",
   "base_commit": "bdd708c40719e755ad6b71a5c6969aa2797d20a5",
-  "updated": "2026-11-06T11:13:06Z",
+  "updated": "2026-11-06T11:19:18Z",
   "status": "in_progress",
   "hardware_constraint": "No physical device, USB, ADB, Fastboot, SSH, network or runtime probes while the Pixel is being flashed. Everything below is verified offline only: unit tests, loopback fakes and the env-gated fixture runtime. Physical iPhone (WDA), Android, AirPlay and Simulator paths are code-reviewed and contract-tested, not hardware-qualified.",
   "capability_gap_table": [
@@ -77,7 +77,7 @@
       "capability": "Reviewable bug-report draft",
       "before": "diagnostics.bundle writes a redacted tar.gz",
       "target": "diagnostics.report_draft: issue.md, attachment metadata, redaction receipt, nothing sent",
-      "state": "planned"
+      "state": "implemented (diagnostics.report_draft), unit + CLI tests; nothing posted"
     },
     {
       "capability": "Mirror polish: reconnect/ownership, screenshot affordance, states",
@@ -151,7 +151,7 @@
       "id": "C2",
       "case": "report draft masks secrets and home, lists attachments with digests and a redaction receipt, sends nothing",
       "how": "native/diagnostics.rs unit test",
-      "state": "planned"
+      "state": "passing offline"
     }
   ],
   "completed": [
@@ -159,14 +159,16 @@
     "Slice B: runtime.actions ordered batch with focus wait, postconditions, applied/skipped report, deadline, frame guard",
     "Slice C: benchmark runner + reconnect fix",
     "Slice D: human handoff (backend, desktop banner, docs)",
-    "Slice E/F: device.resolve, GPX inspect/play/status with desktop route playback"
+    "Slice E/F: device.resolve, GPX inspect/play/status with desktop route playback",
+    "Slice G: diagnostics.report_draft with redaction receipt"
   ],
   "implemented": [
     "Slice A: runtime.observe, input_capabilities, runtime.gesture, pinch (WDA two pointers, scrcpy two pointers), screen.* on a session with WDA XML conversion, mark_stale on rotation, WDA point-size cache invalidated by MJPEG frame size, OCR content cache, env-gated fixture runtime",
     "Slice B: runtime.actions ordered batch with focus wait, postconditions, applied/skipped report, deadline, frame guard",
     "Slice C: benchmark runner + reconnect fix",
     "Slice D: human handoff (backend, desktop banner, docs)",
-    "Slice E/F: device.resolve, GPX inspect/play/status with desktop route playback"
+    "Slice E/F: device.resolve, GPX inspect/play/status with desktop route playback",
+    "Slice G: diagnostics.report_draft with redaction receipt"
   ],
   "tested": [
     "cargo test: 669+ unit tests incl. runtime::fixture, screen_tree::wda_tests, screen::tests (stale geometry), runtime::iphone loopback (cache, pinch, trace, context), screen_ocr cache, runtime::actions",
@@ -177,12 +179,11 @@
     "Every physical-device path (WDA activeAppInfo/keyboard/active element, scrcpy pointer-id multitouch, dumpsys parsing on a real device, AirPlay HID, Simulator companion) until hardware clearance"
   ],
   "remaining": [
-    "Bug-report draft (diagnostics.report_draft)",
-    "Mirror polish (reconnect/ownership states, screenshot affordance, zoom/pan, safe-area mapping)",
+    "Mirror polish (explicit session states, screenshot reveal affordance)",
     "Roadmap items kept: TV/Wear profiles, Demo Studio next phases, offline AirPlay reliability",
     "Hardware qualification of every transport path once cleared"
   ],
-  "next_step": "Slice G: diagnostics.report_draft; then Slice H mirror polish",
+  "next_step": "Slice H: explicit session states (waiting for the person, reconnecting, in use elsewhere, unsupported) and a screenshot reveal affordance in the desktop",
   "changed_files": [
     "native/runtime.rs",
     "native/runtime/fixture.rs",
@@ -429,6 +430,10 @@
     {
       "context": "Operations",
       "source": "Find a device by name"
+    },
+    {
+      "context": "Operations",
+      "source": "Draft a bug report"
     }
   ],
   "cross_lane_notes": [

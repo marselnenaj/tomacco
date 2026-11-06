@@ -49,6 +49,7 @@ var titles = {
     "result.read": QT_TRANSLATE_NOOP("Operations", "Read a saved result"),
     "storage.prune": QT_TRANSLATE_NOOP("Operations", "Clean up old jobs and reports"),
     "diagnostics.bundle": QT_TRANSLATE_NOOP("Operations", "Write a bug report bundle"),
+    "diagnostics.report_draft": QT_TRANSLATE_NOOP("Operations", "Draft a bug report"),
     "device.list": QT_TRANSLATE_NOOP("Operations", "Find devices"),
     "device.info": QT_TRANSLATE_NOOP("Operations", "Device information"),
     "device.label": QT_TRANSLATE_NOOP("Operations", "Name or pin a device"),

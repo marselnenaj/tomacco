@@ -303,6 +303,18 @@ and that they should read it before sharing it.
 tomaccoctl report /absolute/tomacco-report.tar.gz
 ```
 
+`diagnostics.report_draft` goes one step further and writes what a person would paste into an issue, to read first: a
+directory with `issue.md` (the `title`, the environment, the `steps`, what was `expected` and what `actual`ly happened,
+excerpts of the jobs that did not succeed and the attachments with their digests), the attachments (the bundle above and
+the job log tails) and `redaction-receipt.json`, which says how many secrets of known shapes were masked, that the home
+directory became `~`, how many device serials and UDIDs became `[device-N]` placeholders, and which absolute paths remain
+for the person to look at. Nothing is posted or uploaded; `issue_url` opens a new issue with the title only, never the body
+or an attachment. Tell the user where the draft is and that they decide what to share.
+
+```sh
+tomaccoctl call diagnostics.report_draft '{"title":"Build fails after the SDK update","steps":"Open the project, run project.run","actual":"job failed"}'
+```
+
 ### Session log and replay
 
 Set `TOMACCO_SESSION_LOG` to an absolute file path, in the shell or in the `env` of your MCP client's server entry, and every

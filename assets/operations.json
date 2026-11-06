@@ -1996,6 +1996,86 @@
     }
   },
   {
+    "name": "diagnostics.report_draft",
+    "title": "Draft a bug report",
+    "description": "Write a bug report the person can read before anything leaves this computer: a directory with issue.md (title, environment, steps, expected, what happened, excerpts of the jobs that did not succeed, the attachments with their digests), the attachments (the redacted diagnostics.bundle and the job log tails) and redaction-receipt.json, which counts the secrets of known shapes that were masked, whether the home directory became ~, the device serials and UDIDs replaced by stable placeholders, and which absolute paths remain to look at. Nothing is posted or uploaded, and issue_url carries only the title, never the body or an attachment. Masking recognises known shapes only: the person reads the draft before sharing it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "What went wrong, in one line"
+        },
+        "steps": {
+          "type": "string",
+          "maxLength": 4000,
+          "default": "",
+          "description": "How to reproduce it, as the person would type it"
+        },
+        "expected": {
+          "type": "string",
+          "maxLength": 2000,
+          "default": ""
+        },
+        "actual": {
+          "type": "string",
+          "maxLength": 2000,
+          "default": ""
+        },
+        "directory": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the directory to write; new or empty. By default a new one under diagnostics/ in the data directory"
+        },
+        "jobs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20,
+          "default": 3,
+          "description": "How many recent jobs that did not succeed to excerpt and attach"
+        },
+        "log_kb": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024,
+          "default": 16,
+          "description": "How much of the end of each job's log to attach"
+        },
+        "bundle": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also write the diagnostics.bundle archive as an attachment"
+        },
+        "anonymize_home": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the home directory as ~"
+        },
+        "device_ids": {
+          "type": "string",
+          "enum": [
+            "mask",
+            "keep"
+          ],
+          "default": "mask",
+          "description": "mask replaces device serials and UDIDs by [device-N]; keep leaves them"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "device.list",
     "title": "Find devices",
     "description": "Discover connected Android and iOS devices. Diagnostics distinguish missing tools from no device.",

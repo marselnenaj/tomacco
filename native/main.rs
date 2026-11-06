@@ -67,6 +67,7 @@ mod release_notes;
 mod release_version;
 mod releases;
 mod remote;
+mod report_draft;
 mod runtime;
 mod screen;
 mod screen_export;

@@ -37,7 +37,7 @@ fn read_text(path: &str) -> String {
         .unwrap_or_default()
 }
 
-fn host() -> Value {
+pub(crate) fn host() -> Value {
     let os = read_text("/etc/os-release")
         .lines()
         .find_map(|line| line.strip_prefix("PRETTY_NAME="))

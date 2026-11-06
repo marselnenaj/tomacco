@@ -2,7 +2,7 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 287 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 288 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
@@ -160,6 +160,7 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | Operation | Title | Annotation |
 | --- | --- | --- |
 | [`diagnostics.bundle`](diagnostics.md#diagnosticsbundle) | Write a bug report bundle | writes |
+| [`diagnostics.report_draft`](diagnostics.md#diagnosticsreport_draft) | Draft a bug report | writes |
 
 ## [files](files.md)
 

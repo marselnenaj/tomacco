@@ -110,6 +110,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "result.read" => crate::guard::result_read(&a),
         "storage.prune" => crate::storage::handle(&a),
         "diagnostics.bundle" => crate::diagnostics::bundle(&a),
+        "diagnostics.report_draft" => crate::report_draft::draft(&a),
         "project.inspect" => projects::inspect(s(&a, "path")),
         "project.configure" => projects::configure(&a),
         "project.create" => projects::create(&a),

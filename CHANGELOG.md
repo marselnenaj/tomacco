@@ -26,6 +26,10 @@ operations and their JSON results.
   `fixture:NAME` connects a scripted device for tests and the benchmark runner, labelled
   `evidence: fixture` everywhere.
 
+- **Reviewable bug-report draft.** `diagnostics.report_draft` writes issue.md, the redacted
+  bundle and log tails, and a redaction receipt (secrets masked, home replaced, device ids
+  replaced by placeholders, absolute paths left to look at). Nothing is posted; `issue_url` carries
+  the title only.
 - **GPX routes.** `gpx.inspect` reads a route (no DOCTYPE or entities, bounded size and points)
   and says how it would play; `gpx.play` plays it on an Android emulator's location as a job with
   speed, interval, loop, `job.send` pause/resume/stop and `gpx.status`; other transports answer
