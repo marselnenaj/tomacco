@@ -10,7 +10,11 @@ ApplicationWindow {
     id: root
     objectName: "studioWindow"
     width: 1380; height: 970
-    minimumWidth: 560; minimumHeight: 480
+    // The desktop floor, unless the screen itself is smaller: on a phone the
+    // window may be as narrow as the display, and the workspace lays itself
+    // out for that width (NativeWorkspace.phone, Workspace.phone).
+    minimumWidth: Math.min(Theme.px(560),Screen.desktopAvailableWidth>0?Screen.desktopAvailableWidth:Theme.px(560))
+    minimumHeight: Math.min(Theme.px(480),Screen.desktopAvailableHeight>0?Screen.desktopAvailableHeight:Theme.px(480))
     // In device-only mode the detached device is the whole app. Closing this
     // window while a device is detached keeps that device window and turns the
     // app into device-only mode; closing the device window then ends the app.

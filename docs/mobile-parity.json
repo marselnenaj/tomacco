@@ -1,0 +1,3361 @@
+{
+ "$schema": "tomacco-mobile-parity/1",
+ "target": "Omarchy Mobile, Linux aarch64 (Pixel; hardware profile unknown until the device block is lifted)",
+ "legend": {
+  "local": "runs on the phone itself",
+  "remote": "runs only on an explicitly chosen host (remote.*); the app offers the host choice, never a silent fallback",
+  "conditional": "runs on the phone when the listed requirement is met; the app shows the requirement and the host option",
+  "unavailable": "cannot run anywhere reachable from the phone"
+ },
+ "counts": {
+  "local": 175,
+  "remote": 62,
+  "conditional": 37,
+  "unavailable": 0
+ },
+ "operations": [
+  {
+   "operation": "doctor",
+   "title": "Check toolchain",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "capabilities",
+   "title": "What this computer can do",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "desktop.status",
+   "title": "Desktop status",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "desktop.open",
+   "title": "Open Tomacco",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "settings.get",
+   "title": "Settings",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "settings.configure",
+   "title": "Set up toolchain",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "catalog.list",
+   "title": "Device catalog",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "catalog.import",
+   "title": "Import models",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "catalog.export",
+   "title": "Export model",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "catalog.remove",
+   "title": "Remove custom model",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.inspect",
+   "title": "Open project",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.configure",
+   "title": "Configure project",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.create",
+   "title": "Create project",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.plan",
+   "title": "View build plan",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.execute",
+   "title": "Start build / test",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.run",
+   "title": "Build & run on device",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.watch",
+   "title": "Watch and rerun app",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.dependency_updates",
+   "title": "Check dependency updates",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.analyze",
+   "title": "Analyze project code",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.import_xcode",
+   "title": "Import Xcode project",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Parses an Xcode project into a SwiftPM layout; file work only.",
+   "next_test": "project.import_xcode on the fixture project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "project.app",
+   "title": "Find built iOS app",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "job.list",
+   "title": "Jobs",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "job.get",
+   "title": "Job status",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "job.logs",
+   "title": "Live logs",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "job.wait",
+   "title": "Wait for job",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "job.events",
+   "title": "Job timeline",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "job.cancel",
+   "title": "Cancel job",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "job.send",
+   "title": "Send a command to a job",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "agent.policy",
+   "title": "Agent policy",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "audit.list",
+   "title": "Audit log",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "result.read",
+   "title": "Read a saved result",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "workflow.run",
+   "title": "Run steps in order",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "storage.prune",
+   "title": "Clean up old jobs and reports",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "diagnostics.bundle",
+   "title": "Write a bug report bundle",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.list",
+   "title": "Find devices",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.info",
+   "title": "Device information",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.label",
+   "title": "Name or pin a device",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.install",
+   "title": "Install app",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.app",
+   "title": "Control app",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.screenshot",
+   "title": "Device screenshot",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.capture",
+   "title": "Device image for agents",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.screen",
+   "title": "Android screen preview",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "screen.marks",
+   "title": "Mark tappable elements",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "screen.tap",
+   "title": "Tap a mark",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "screen.tree",
+   "title": "Read UI tree as text",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "screen.ocr",
+   "title": "Read text on screen",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "screen.diff",
+   "title": "Compare two screens",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "screen.wait",
+   "title": "Wait for text or a steady screen",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "screen.export",
+   "title": "Export a screen",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "screen.export_batch",
+   "title": "Export screens of several devices",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.store_screenshots",
+   "title": "Capture store screenshots",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.logs",
+   "title": "Device logs",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.input",
+   "title": "Tap / swipe / input",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.hierarchy",
+   "title": "Read UI tree",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.launch",
+   "title": "Start Android activity",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.record",
+   "title": "Record display",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.mirror",
+   "title": "Show Android live",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.deep_link",
+   "title": "Open deep link",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.performance",
+   "title": "Performance report",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.ports",
+   "title": "Connect dev server",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.permission",
+   "title": "App permission",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.settings",
+   "title": "Device settings for tests",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.display",
+   "title": "Display orientation and size",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.notifications",
+   "title": "Notifications",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.app_files",
+   "title": "App data files",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.each",
+   "title": "Run on every Android device",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.connect",
+   "title": "Android over Wi-Fi",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.pair",
+   "title": "Pair over Wi-Fi by QR code",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.calibrate",
+   "title": "Read model from device",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.sdk_packages",
+   "title": "SDK packages",
+   "phone": "local",
+   "requires": [
+    "Android cmdline-tools for linux (arm64 JDK)",
+    "explicit download consent"
+   ],
+   "evidence": "sdkmanager and avdmanager are Java tools; the SDK's platform-tools ship linux-aarch64 builds. Downloads are large and ask first.",
+   "next_test": "android.sdk_packages on the device with TOMACCO_HOME in a temp dir; verify arm64 platform-tools are picked.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.sdk_install",
+   "title": "Install SDK packages",
+   "phone": "local",
+   "requires": [
+    "Android cmdline-tools for linux (arm64 JDK)",
+    "explicit download consent"
+   ],
+   "evidence": "sdkmanager and avdmanager are Java tools; the SDK's platform-tools ship linux-aarch64 builds. Downloads are large and ask first.",
+   "next_test": "android.sdk_packages on the device with TOMACCO_HOME in a temp dir; verify arm64 platform-tools are picked.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avds",
+   "title": "Android emulators",
+   "phone": "local",
+   "requires": [
+    "Android cmdline-tools for linux (arm64 JDK)",
+    "explicit download consent"
+   ],
+   "evidence": "sdkmanager and avdmanager are Java tools; the SDK's platform-tools ship linux-aarch64 builds. Downloads are large and ask first.",
+   "next_test": "android.sdk_packages on the device with TOMACCO_HOME in a temp dir; verify arm64 platform-tools are picked.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avd_create",
+   "title": "Create emulator",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avd_profile",
+   "title": "Set emulator display",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avd_configure",
+   "title": "Set emulator performance",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avd_start",
+   "title": "Start emulator",
+   "phone": "remote",
+   "requires": [
+    "KVM",
+    "host with Android emulator"
+   ],
+   "evidence": "The Android emulator needs KVM; Omarchy Mobile on the Pixel exposes none (doctor reports kvm readiness). AVD files can still be created and managed locally.",
+   "next_test": "doctor on the device: kvm=false; then remote.run android.avd_start against a chosen host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avd_usage",
+   "title": "Emulator disk usage",
+   "phone": "remote",
+   "requires": [
+    "KVM",
+    "host with Android emulator"
+   ],
+   "evidence": "The Android emulator needs KVM; Omarchy Mobile on the Pixel exposes none (doctor reports kvm readiness). AVD files can still be created and managed locally.",
+   "next_test": "doctor on the device: kvm=false; then remote.run android.avd_start against a chosen host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avd_manage",
+   "title": "Duplicate, rename or wipe emulator",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avd_plan",
+   "title": "Plan emulator setup",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.avd_setup",
+   "title": "Set up emulator",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.emulator",
+   "title": "Control emulator",
+   "phone": "remote",
+   "requires": [
+    "KVM",
+    "host with Android emulator"
+   ],
+   "evidence": "The Android emulator needs KVM; Omarchy Mobile on the Pixel exposes none (doctor reports kvm readiness). AVD files can still be created and managed locally.",
+   "next_test": "doctor on the device: kvm=false; then remote.run android.avd_start against a chosen host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.package_inspect",
+   "title": "Inspect APK or AAB",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.size_report",
+   "title": "Report APK or AAB size",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.sensors",
+   "title": "Emulator sensors",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.app_links",
+   "title": "App Links",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.network_capture",
+   "title": "Network capture",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.capabilities",
+   "title": "QA environment settings",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.preset.list",
+   "title": "List QA environments",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.preset.get",
+   "title": "Read QA environment",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.preset.save",
+   "title": "Save QA environment",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.preset.delete",
+   "title": "Delete QA environment",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.preset.export",
+   "title": "Export QA environment",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.preset.import",
+   "title": "Import QA environment",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.inspect",
+   "title": "Read QA environment of device",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.plan",
+   "title": "Plan QA environment",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.apply",
+   "title": "Apply QA environment",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.restore",
+   "title": "Restore device settings",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "android.environment.restores",
+   "title": "List restore points",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "USB OTG or Wi-Fi pairing to the target phone"
+   ],
+   "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
+   "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.sdk_install",
+   "title": "Import Apple SDK",
+   "phone": "remote",
+   "requires": [
+    "xtool and an Apple SDK on a host",
+    "Apple account for signing"
+   ],
+   "evidence": "xtool's Swift-for-iOS toolchain is published for x86_64 Linux; no aarch64 Linux build is qualified here. Signing needs Apple credentials entered on the host.",
+   "next_test": "swift.status on a host; remote.run ios.sdk_install with the person's Xcode.xip.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.toolkit_install",
+   "title": "Install iOS toolkit",
+   "phone": "remote",
+   "requires": [
+    "xtool and an Apple SDK on a host",
+    "Apple account for signing"
+   ],
+   "evidence": "xtool's Swift-for-iOS toolchain is published for x86_64 Linux; no aarch64 Linux build is qualified here. Signing needs Apple credentials entered on the host.",
+   "next_test": "swift.status on a host; remote.run ios.sdk_install with the person's Xcode.xip.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.flutter_setup",
+   "title": "Prepare Flutter for iOS",
+   "phone": "remote",
+   "requires": [
+    "xtool and an Apple SDK on a host",
+    "Apple account for signing"
+   ],
+   "evidence": "xtool's Swift-for-iOS toolchain is published for x86_64 Linux; no aarch64 Linux build is qualified here. Signing needs Apple credentials entered on the host.",
+   "next_test": "swift.status on a host; remote.run ios.sdk_install with the person's Xcode.xip.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.flutter_build",
+   "title": "Build Flutter app for iOS",
+   "phone": "remote",
+   "requires": [
+    "xtool and an Apple SDK on a host",
+    "Apple account for signing"
+   ],
+   "evidence": "xtool's Swift-for-iOS toolchain is published for x86_64 Linux; no aarch64 Linux build is qualified here. Signing needs Apple credentials entered on the host.",
+   "next_test": "swift.status on a host; remote.run ios.sdk_install with the person's Xcode.xip.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.crash_symbolicate",
+   "title": "Read crash report",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Pure file parsing in the Rust control program.",
+   "next_test": "ios.ipa_inspect on a fixture IPA from tests/fixtures.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.ipa_inspect",
+   "title": "Inspect iOS app",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Pure file parsing in the Rust control program.",
+   "next_test": "ios.ipa_inspect on a fixture IPA from tests/fixtures.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.store_ship",
+   "title": "Prepare for App Store",
+   "phone": "remote",
+   "requires": [
+    "xtool and an Apple SDK on a host",
+    "Apple account for signing"
+   ],
+   "evidence": "xtool's Swift-for-iOS toolchain is published for x86_64 Linux; no aarch64 Linux build is qualified here. Signing needs Apple credentials entered on the host.",
+   "next_test": "swift.status on a host; remote.run ios.sdk_install with the person's Xcode.xip.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "swift.status",
+   "title": "Swift toolchain",
+   "phone": "conditional",
+   "requires": [
+    "Swift toolchain for aarch64 Linux (swift.org ships one)",
+    "Swift Android SDK"
+   ],
+   "evidence": "swift.org publishes aarch64 Linux toolchains; the Android SDK for Swift is architecture-independent. Not yet installed or tested on Omarchy Mobile.",
+   "next_test": "swift.status on the device after installing the aarch64 toolchain; swift.plan for a sample package.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "swift.android_configure",
+   "title": "Connect Swift to the Android NDK",
+   "phone": "conditional",
+   "requires": [
+    "Swift toolchain for aarch64 Linux (swift.org ships one)",
+    "Swift Android SDK"
+   ],
+   "evidence": "swift.org publishes aarch64 Linux toolchains; the Android SDK for Swift is architecture-independent. Not yet installed or tested on Omarchy Mobile.",
+   "next_test": "swift.status on the device after installing the aarch64 toolchain; swift.plan for a sample package.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "swift.sdk_install",
+   "title": "Install Swift SDK",
+   "phone": "conditional",
+   "requires": [
+    "Swift toolchain for aarch64 Linux (swift.org ships one)",
+    "Swift Android SDK"
+   ],
+   "evidence": "swift.org publishes aarch64 Linux toolchains; the Android SDK for Swift is architecture-independent. Not yet installed or tested on Omarchy Mobile.",
+   "next_test": "swift.status on the device after installing the aarch64 toolchain; swift.plan for a sample package.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "swift.plan",
+   "title": "Plan Swift build",
+   "phone": "conditional",
+   "requires": [
+    "Swift toolchain for aarch64 Linux (swift.org ships one)",
+    "Swift Android SDK"
+   ],
+   "evidence": "swift.org publishes aarch64 Linux toolchains; the Android SDK for Swift is architecture-independent. Not yet installed or tested on Omarchy Mobile.",
+   "next_test": "swift.status on the device after installing the aarch64 toolchain; swift.plan for a sample package.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "swift.execute",
+   "title": "Compile / test Swift",
+   "phone": "conditional",
+   "requires": [
+    "Swift toolchain for aarch64 Linux (swift.org ships one)",
+    "Swift Android SDK"
+   ],
+   "evidence": "swift.org publishes aarch64 Linux toolchains; the Android SDK for Swift is architecture-independent. Not yet installed or tested on Omarchy Mobile.",
+   "next_test": "swift.status on the device after installing the aarch64 toolchain; swift.plan for a sample package.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "remote.list",
+   "title": "Mac workspaces",
+   "phone": "local",
+   "requires": [
+    "ssh key",
+    "explicit connect by the person"
+   ],
+   "evidence": "remote.* is the host transport itself (native/remote.rs). Connections are explicit; no discovery, no auto-connect.",
+   "next_test": "remote.check against a fake sshd fixture; no real host during the hardware block.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "remote.configure",
+   "title": "Connect Mac",
+   "phone": "local",
+   "requires": [
+    "ssh key",
+    "explicit connect by the person"
+   ],
+   "evidence": "remote.* is the host transport itself (native/remote.rs). Connections are explicit; no discovery, no auto-connect.",
+   "next_test": "remote.check against a fake sshd fixture; no real host during the hardware block.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "remote.check",
+   "title": "Check Mac",
+   "phone": "local",
+   "requires": [
+    "ssh key",
+    "explicit connect by the person"
+   ],
+   "evidence": "remote.* is the host transport itself (native/remote.rs). Connections are explicit; no discovery, no auto-connect.",
+   "next_test": "remote.check against a fake sshd fixture; no real host during the hardware block.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "remote.sync",
+   "title": "Transfer project to Mac",
+   "phone": "local",
+   "requires": [
+    "ssh key",
+    "explicit connect by the person"
+   ],
+   "evidence": "remote.* is the host transport itself (native/remote.rs). Connections are explicit; no discovery, no auto-connect.",
+   "next_test": "remote.check against a fake sshd fixture; no real host during the hardware block.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "remote.run",
+   "title": "Run on Mac",
+   "phone": "local",
+   "requires": [
+    "ssh key",
+    "explicit connect by the person"
+   ],
+   "evidence": "remote.* is the host transport itself (native/remote.rs). Connections are explicit; no discovery, no auto-connect.",
+   "next_test": "remote.check against a fake sshd fixture; no real host during the hardware block.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "remote.fetch",
+   "title": "Download Mac artifact",
+   "phone": "local",
+   "requires": [
+    "ssh key",
+    "explicit connect by the person"
+   ],
+   "evidence": "remote.* is the host transport itself (native/remote.rs). Connections are explicit; no discovery, no auto-connect.",
+   "next_test": "remote.check against a fake sshd fixture; no real host during the hardware block.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.sessions",
+   "title": "Preview sessions",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.state",
+   "title": "Preview status",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.navigate",
+   "title": "Open URL",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.configure",
+   "title": "Configure preview",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.evaluate",
+   "title": "Run JavaScript",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.capture",
+   "title": "Capture preview",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.inspect",
+   "title": "Inspect DOM",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.console",
+   "title": "Browser console",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.errors",
+   "title": "Page errors",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.click",
+   "title": "Click element",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.fill",
+   "title": "Fill in form",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.reload",
+   "title": "Reload page",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.catalog_reload",
+   "title": "Reload catalog",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.audit",
+   "title": "Check layout",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.ready",
+   "title": "Wait for rendering",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "preview.matrix",
+   "title": "Capture device matrix",
+   "phone": "conditional",
+   "requires": [
+    "Qt WebEngine for linux_arm64 (Qt ships it; packaging/portable/Dockerfile.aarch64 downloads it)",
+    "GL or software rendering"
+   ],
+   "evidence": "The web preview is a QtWebEngineQuick view; Qt provides aarch64 binaries, but Chromium on the Pixel's GPU/Wayland stack is unqualified and memory-heavy. The build must make WebEngine optional so the rest of the app runs without it.",
+   "next_test": "Run the aarch64 build with and without the WebEngine plugin; the preview section shows an 'unavailable' state when absent.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.find",
+   "title": "Find Android element",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.action",
+   "title": "Operate Android element",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.run",
+   "title": "Run native tests",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.record",
+   "title": "Record UI test",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.lint",
+   "title": "Check UI test scenario",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.visual_diff",
+   "title": "Compare with baseline image",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.accessibility",
+   "title": "Check Android accessibility",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.crashes",
+   "title": "Find app crashes",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.results",
+   "title": "Read test results",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.coverage",
+   "title": "Read code coverage",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.report",
+   "title": "Write HTML test report",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.history",
+   "title": "Test pass-rate history",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.impact",
+   "title": "Select affected tests",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.baselines",
+   "title": "Review screenshot baselines",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.start",
+   "title": "Start debugger",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.list",
+   "title": "Debug sessions",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.state",
+   "title": "Debugger status",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.events",
+   "title": "Debugger events",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.breakpoints",
+   "title": "Set breakpoints",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.threads",
+   "title": "Read threads",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.stack",
+   "title": "Read call stack",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.variables",
+   "title": "Read variables",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.evaluate",
+   "title": "Evaluate expression",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "debug.control",
+   "title": "Control debugger",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.capture",
+   "title": "Capture Android profile",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.analyze",
+   "title": "Analyze performance profile",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.compare",
+   "title": "Compare performance reports",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.startup",
+   "title": "Measure app startup",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.frames",
+   "title": "Measure frame rendering",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.memory",
+   "title": "Measure app memory",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.usage",
+   "title": "Measure CPU and battery use",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.budget",
+   "title": "Check performance budget",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.macrobenchmark",
+   "title": "Run Macrobenchmark",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.benchmark_results",
+   "title": "Read Macrobenchmark results",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.baseline_profile",
+   "title": "Generate Baseline Profile",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.baseline_rules",
+   "title": "Read Baseline Profile rules",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.baseline_install",
+   "title": "Install Baseline Profile",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "profile.baseline_compare",
+   "title": "Compare startup with and without Baseline Profile",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "workspace.list",
+   "title": "Read workspaces",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "workspace.save",
+   "title": "Save workspace",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "workspace.remove",
+   "title": "Remove workspace",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "workspace.context",
+   "title": "Load agent context",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "workspace.execute",
+   "title": "Run workspace",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "files.list",
+   "title": "Show project files",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "files.read",
+   "title": "Open source file",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "files.write",
+   "title": "Save source file",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "files.mkdir",
+   "title": "Create project folder",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "files.search",
+   "title": "Search project",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "release.keystore",
+   "title": "Create signing key",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "release.sign",
+   "title": "Sign Android release",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "release.verify",
+   "title": "Verify release signature",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "release.signing_health",
+   "title": "Check signing keys",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "release.version",
+   "title": "Set app version",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "release.notes",
+   "title": "Write Play release notes",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "release.checklist",
+   "title": "Check Android release readiness",
+   "phone": "local",
+   "requires": [
+    "Gradle/JDK 21 arm64 for Android builds",
+    "Flutter arm64 for Flutter projects"
+   ],
+   "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
+   "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.devices",
+   "title": "Apple devices on the Mac",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.project",
+   "title": "Read Xcode project",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.build",
+   "title": "Build native iOS app",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.test",
+   "title": "Run XCTest / XCUITest",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.archive",
+   "title": "Create iOS archive",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.export",
+   "title": "Export and fetch IPA",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.simulator",
+   "title": "Control Apple Simulator",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.device",
+   "title": "Control iPhone on the Mac",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.profile",
+   "title": "Instruments recording",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "apple.store",
+   "title": "Upload App Store build",
+   "phone": "remote",
+   "requires": [
+    "host with xtool/Apple SDK or a Mac"
+   ],
+   "evidence": "apple.* wraps xtool and Apple device tooling; see ios.sdk_install.",
+   "next_test": "remote.run apple.devices on a configured host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "play.prepare",
+   "title": "Prepare Google Play release",
+   "phone": "local",
+   "requires": [
+    "network",
+    "Play service account on the person's side"
+   ],
+   "evidence": "HTTP API calls from the control program; each upload asks first.",
+   "next_test": "play.prepare against the mocked endpoint in tests.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "play.commit",
+   "title": "Commit Google Play change",
+   "phone": "local",
+   "requires": [
+    "network",
+    "Play service account on the person's side"
+   ],
+   "evidence": "HTTP API calls from the control program; each upload asks first.",
+   "next_test": "play.prepare against the mocked endpoint in tests.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "play.abort",
+   "title": "Discard Google Play draft",
+   "phone": "local",
+   "requires": [
+    "network",
+    "Play service account on the person's side"
+   ],
+   "evidence": "HTTP API calls from the control program; each upload asks first.",
+   "next_test": "play.prepare against the mocked endpoint in tests.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.setup",
+   "title": "Set up Android text input",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "testing.instrumentation",
+   "title": "Check Android text input",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.start",
+   "title": "Connect native runtime",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.list",
+   "title": "Native sessions",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.audio",
+   "title": "Stream device audio",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.state",
+   "title": "Runtime status",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.stop",
+   "title": "Disconnect runtime",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.input",
+   "title": "Native input",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.capture",
+   "title": "Native capture",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.hierarchy",
+   "title": "Native accessibility tree",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.doctor",
+   "title": "Check iPhone development on Linux",
+   "phone": "conditional",
+   "requires": [
+    "usbmuxd and libimobiledevice on the phone",
+    "USB OTG cable"
+   ],
+   "evidence": "USB iPhone operations use libimobiledevice, which builds for aarch64 Linux, but no Omarchy Mobile package set is qualified yet.",
+   "next_test": "ios.doctor on the device with an iPhone on USB OTG; otherwise offer the host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.prepare",
+   "title": "Set up iPhone connection",
+   "phone": "conditional",
+   "requires": [
+    "usbmuxd and libimobiledevice on the phone",
+    "USB OTG cable"
+   ],
+   "evidence": "USB iPhone operations use libimobiledevice, which builds for aarch64 Linux, but no Omarchy Mobile package set is qualified yet.",
+   "next_test": "ios.doctor on the device with an iPhone on USB OTG; otherwise offer the host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.device_status",
+   "title": "iPhone readiness",
+   "phone": "conditional",
+   "requires": [
+    "usbmuxd and libimobiledevice on the phone",
+    "USB OTG cable"
+   ],
+   "evidence": "USB iPhone operations use libimobiledevice, which builds for aarch64 Linux, but no Omarchy Mobile package set is qualified yet.",
+   "next_test": "ios.doctor on the device with an iPhone on USB OTG; otherwise offer the host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.wda_prepare",
+   "title": "Prepare iPhone control",
+   "phone": "conditional",
+   "requires": [
+    "usbmuxd and libimobiledevice on the phone",
+    "USB OTG cable"
+   ],
+   "evidence": "USB iPhone operations use libimobiledevice, which builds for aarch64 Linux, but no Omarchy Mobile package set is qualified yet.",
+   "next_test": "ios.doctor on the device with an iPhone on USB OTG; otherwise offer the host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.apps",
+   "title": "Show iPhone apps",
+   "phone": "conditional",
+   "requires": [
+    "usbmuxd and libimobiledevice on the phone",
+    "USB OTG cable"
+   ],
+   "evidence": "USB iPhone operations use libimobiledevice, which builds for aarch64 Linux, but no Omarchy Mobile package set is qualified yet.",
+   "next_test": "ios.doctor on the device with an iPhone on USB OTG; otherwise offer the host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.app_files",
+   "title": "iPhone app files",
+   "phone": "conditional",
+   "requires": [
+    "usbmuxd and libimobiledevice on the phone",
+    "USB OTG cable"
+   ],
+   "evidence": "USB iPhone operations use libimobiledevice, which builds for aarch64 Linux, but no Omarchy Mobile package set is qualified yet.",
+   "next_test": "ios.doctor on the device with an iPhone on USB OTG; otherwise offer the host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.record",
+   "title": "Record iPhone screen",
+   "phone": "conditional",
+   "requires": [
+    "usbmuxd and libimobiledevice on the phone",
+    "USB OTG cable"
+   ],
+   "evidence": "USB iPhone operations use libimobiledevice, which builds for aarch64 Linux, but no Omarchy Mobile package set is qualified yet.",
+   "next_test": "ios.doctor on the device with an iPhone on USB OTG; otherwise offer the host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.crash_reports",
+   "title": "iPhone crash reports",
+   "phone": "conditional",
+   "requires": [
+    "usbmuxd and libimobiledevice on the phone",
+    "USB OTG cable"
+   ],
+   "evidence": "USB iPhone operations use libimobiledevice, which builds for aarch64 Linux, but no Omarchy Mobile package set is qualified yet.",
+   "next_test": "ios.doctor on the device with an iPhone on USB OTG; otherwise offer the host.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.signing",
+   "title": "iPhone signing overview",
+   "phone": "remote",
+   "requires": [
+    "xtool and an Apple SDK on a host",
+    "Apple account for signing"
+   ],
+   "evidence": "xtool's Swift-for-iOS toolchain is published for x86_64 Linux; no aarch64 Linux build is qualified here. Signing needs Apple credentials entered on the host.",
+   "next_test": "swift.status on a host; remote.run ios.sdk_install with the person's Xcode.xip.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.inspect",
+   "title": "Check iOS emulator",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.probe",
+   "title": "Examine iOS kernel boot",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.exec",
+   "title": "Run iOS guest command",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.restore",
+   "title": "Restore virtual iOS system",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.usb_bridge",
+   "title": "Start virtual iOS USB access",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.paravirtual",
+   "title": "Start virtual iOS platform",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.control",
+   "title": "Operate running virtual iOS",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.build_gpu_plugin",
+   "title": "Build iOS graphics compiler plugin",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.prepare_userland",
+   "title": "Import original iOS system",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.prepare_restore",
+   "title": "Prepare virtual iOS restore runtime",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.build_guest_tools",
+   "title": "Build native iOS guest tools",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.prepare_guest_tools",
+   "title": "Install native iOS guest tools",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.guest",
+   "title": "Control native iOS guest programs",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.guest_result",
+   "title": "Fetch result of an iOS guest job",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.prepare_cryptexes",
+   "title": "Install iOS cryptex files",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.prepare_research",
+   "title": "Prepare iOS test system",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.prepare_pmp",
+   "title": "Prepare PMP firmware",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.inspect_pmp",
+   "title": "Check PMP execution",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.pmp",
+   "title": "Run PMP firmware",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.research",
+   "title": "Start iOS test run",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.report",
+   "title": "Read iOS test run",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.emulator.memory",
+   "title": "Read PMP memory",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.status",
+   "title": "Virtual iOS device: status",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.host_check",
+   "title": "Check this machine for the virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.doctor",
+   "title": "Check the virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.setup",
+   "title": "Set up the virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.configure",
+   "title": "Set up virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.profiles",
+   "title": "Profiles of virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.apps",
+   "title": "Apps of virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.start",
+   "title": "Start virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.stop",
+   "title": "Stop virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.unlock",
+   "title": "Unlock virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.cleanup",
+   "title": "Clean up virtual iOS device disk copies",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.states",
+   "title": "Saved states of virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.state_save",
+   "title": "Save state of virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.state_delete",
+   "title": "Delete saved state of virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.state_use",
+   "title": "Start virtual iOS device from saved state",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.deploy",
+   "title": "Install app on running virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.debug",
+   "title": "Debug process on virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.crash_reports",
+   "title": "Save crash reports of virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.syslog",
+   "title": "Log of virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.screenshot",
+   "title": "Screenshot of virtual iOS device",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "ios.virtual.record",
+   "title": "Record virtual iOS device screen",
+   "phone": "remote",
+   "requires": [
+    "x86_64 host with KVM",
+    "the person's own iOS image and SDK"
+   ],
+   "evidence": "The virtual iPhone is an x86_64 research runtime (tools/ios_*; packaging builds it for x86_64 only). Experimental, not shipped for aarch64.",
+   "next_test": "remote.configure a host, then ios.virtual.status through remote.run; the phone shows the host's state read-only until connected.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "update.check",
+   "title": "Check for updates",
+   "phone": "local",
+   "requires": [
+    "the aarch64 portable package"
+   ],
+   "evidence": "tools/build_portable.py builds Linux-aarch64-portable.tar.gz; update.check must pick the aarch64 asset.",
+   "next_test": "update.check with a fixture release index that lists both architectures.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "update.apply",
+   "title": "Install update",
+   "phone": "local",
+   "requires": [
+    "the aarch64 portable package"
+   ],
+   "evidence": "tools/build_portable.py builds Linux-aarch64-portable.tar.gz; update.check must pick the aarch64 asset.",
+   "next_test": "update.check with a fixture release index that lists both architectures.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "update.status",
+   "title": "Update status",
+   "phone": "local",
+   "requires": [
+    "the aarch64 portable package"
+   ],
+   "evidence": "tools/build_portable.py builds Linux-aarch64-portable.tar.gz; update.check must pick the aarch64 asset.",
+   "next_test": "update.check with a fixture release index that lists both architectures.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "update.rollback",
+   "title": "Roll back update",
+   "phone": "local",
+   "requires": [
+    "the aarch64 portable package"
+   ],
+   "evidence": "tools/build_portable.py builds Linux-aarch64-portable.tar.gz; update.check must pick the aarch64 asset.",
+   "next_test": "update.check with a fixture release index that lists both architectures.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "demo.capabilities",
+   "title": "Inspect Demo Studio capabilities",
+   "phone": "local",
+   "requires": [
+    "software H.264 encoder (slow)",
+    "storage for clips"
+   ],
+   "evidence": "Demo Studio renders offscreen with Qt and encodes H.264 (MVP: one clip, silent MP4). No hardware encoder is assumed; the app shows the slower software path and the host option.",
+   "next_test": "demo.export of a 5 s clip on the device; record wall time and thermal state.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "demo.media.inspect",
+   "title": "Inspect local demo recording",
+   "phone": "local",
+   "requires": [
+    "software H.264 encoder (slow)",
+    "storage for clips"
+   ],
+   "evidence": "Demo Studio renders offscreen with Qt and encodes H.264 (MVP: one clip, silent MP4). No hardware encoder is assumed; the app shows the slower software path and the host option.",
+   "next_test": "demo.export of a 5 s clip on the device; record wall time and thermal state.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "demo.scene.create",
+   "title": "Create demo scene",
+   "phone": "local",
+   "requires": [
+    "software H.264 encoder (slow)",
+    "storage for clips"
+   ],
+   "evidence": "Demo Studio renders offscreen with Qt and encodes H.264 (MVP: one clip, silent MP4). No hardware encoder is assumed; the app shows the slower software path and the host option.",
+   "next_test": "demo.export of a 5 s clip on the device; record wall time and thermal state.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "demo.scene.get",
+   "title": "Read demo scene",
+   "phone": "local",
+   "requires": [
+    "software H.264 encoder (slow)",
+    "storage for clips"
+   ],
+   "evidence": "Demo Studio renders offscreen with Qt and encodes H.264 (MVP: one clip, silent MP4). No hardware encoder is assumed; the app shows the slower software path and the host option.",
+   "next_test": "demo.export of a 5 s clip on the device; record wall time and thermal state.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "demo.scene.update",
+   "title": "Update demo scene",
+   "phone": "local",
+   "requires": [
+    "software H.264 encoder (slow)",
+    "storage for clips"
+   ],
+   "evidence": "Demo Studio renders offscreen with Qt and encodes H.264 (MVP: one clip, silent MP4). No hardware encoder is assumed; the app shows the slower software path and the host option.",
+   "next_test": "demo.export of a 5 s clip on the device; record wall time and thermal state.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "demo.preview",
+   "title": "Render demo preview",
+   "phone": "local",
+   "requires": [
+    "software H.264 encoder (slow)",
+    "storage for clips"
+   ],
+   "evidence": "Demo Studio renders offscreen with Qt and encodes H.264 (MVP: one clip, silent MP4). No hardware encoder is assumed; the app shows the slower software path and the host option.",
+   "next_test": "demo.export of a 5 s clip on the device; record wall time and thermal state.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "demo.export",
+   "title": "Export demo video",
+   "phone": "local",
+   "requires": [
+    "software H.264 encoder (slow)",
+    "storage for clips"
+   ],
+   "evidence": "Demo Studio renders offscreen with Qt and encodes H.264 (MVP: one clip, silent MP4). No hardware encoder is assumed; the app shows the slower software path and the host option.",
+   "next_test": "demo.export of a 5 s clip on the device; record wall time and thermal state.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "demo.export.inspect",
+   "title": "Validate demo export",
+   "phone": "local",
+   "requires": [
+    "software H.264 encoder (slow)",
+    "storage for clips"
+   ],
+   "evidence": "Demo Studio renders offscreen with Qt and encodes H.264 (MVP: one clip, silent MP4). No hardware encoder is assumed; the app shows the slower software path and the host option.",
+   "next_test": "demo.export of a 5 s clip on the device; record wall time and thermal state.",
+   "verified_on_pixel": false
+  }
+ ],
+ "ui_routes": [
+  {
+   "route": "project",
+   "phone": "local",
+   "screen": "Bogen 04/05",
+   "qml": "Workspace.qml projectOverview"
+  },
+  {
+   "route": "devices",
+   "phone": "local",
+   "screen": "Bogen 09/11",
+   "qml": "Workspace.qml devicesPage, AndroidDevices.qml"
+  },
+  {
+   "route": "live device",
+   "phone": "local",
+   "screen": "Bogen 10",
+   "qml": "NativeWorkspace.qml"
+  },
+  {
+   "route": "jobs",
+   "phone": "local",
+   "screen": "Bogen 12/13",
+   "qml": "Workspace.qml jobs"
+  },
+  {
+   "route": "tools",
+   "phone": "local",
+   "screen": "Bogen 14/15",
+   "qml": "Workspace.qml tools, ApprovalDialog.qml"
+  },
+  {
+   "route": "debug",
+   "phone": "local",
+   "screen": "Bogen 18",
+   "qml": "DebugWorkspace.qml"
+  },
+  {
+   "route": "testing",
+   "phone": "local",
+   "screen": "Bogen 16",
+   "qml": "TestWorkspace.qml, EnvironmentPanel.qml"
+  },
+  {
+   "route": "profiling",
+   "phone": "local",
+   "screen": "Bogen 17",
+   "qml": "ProfileWorkspace.qml"
+  },
+  {
+   "route": "files",
+   "phone": "local",
+   "screen": "Bogen 06/07/08",
+   "qml": "FileWorkspace.qml"
+  },
+  {
+   "route": "release",
+   "phone": "local",
+   "screen": "Bogen 21",
+   "qml": "ReleaseWorkspace.qml"
+  },
+  {
+   "route": "demo",
+   "phone": "local",
+   "screen": "Bogen 20",
+   "qml": "DemoWorkspace.qml"
+  },
+  {
+   "route": "preview (web)",
+   "phone": "conditional",
+   "screen": "Bogen 23 (Mehr)",
+   "qml": "Main.qml preview column; needs optional WebEngine"
+  },
+  {
+   "route": "ios-research (virtual iPhone)",
+   "phone": "remote",
+   "screen": "Bogen 23 (Mehr)",
+   "qml": "IosResearch.qml"
+  },
+  {
+   "route": "settings",
+   "phone": "local",
+   "screen": "Bogen 22",
+   "qml": "NativeWorkspace.qml settings sheets"
+  }
+ ]
+}

@@ -88,6 +88,21 @@ QtObject {
     readonly property int panelWidth: px(Tokens.sizes.panel)
     readonly property int iconSize: px(Tokens.sizes.icon)
 
+    // Phone roles: only phone-wide layouts (NativeWorkspace.phone) use them.
+    readonly property int mobileFontMicro: px(Tokens.mobileType.micro)
+    readonly property int mobileFontMeta: px(Tokens.mobileType.meta)
+    readonly property int mobileFontSmall: px(Tokens.mobileType.small)
+    readonly property int mobileFontBody: px(Tokens.mobileType.body)
+    readonly property int mobileFontLead: px(Tokens.mobileType.lead)
+    readonly property int mobileFontTitle: px(Tokens.mobileType.title)
+    readonly property int mobileFontDisplay: px(Tokens.mobileType.display)
+    readonly property int mobileTouch: px(Tokens.mobileSizes.touch)
+    readonly property int mobileControl: px(Tokens.mobileSizes.control)
+    readonly property int mobileBar: px(Tokens.mobileSizes.bar)
+    readonly property int mobileNav: px(Tokens.mobileSizes.nav)
+    readonly property int mobileRow: px(Tokens.mobileSizes.row)
+    readonly property int mobileGutter: px(Tokens.mobileSizes.gutter)
+
     // The hint exists from Qt 6.12; older versions have no preference to follow.
     readonly property bool reducedMotion: {
         const hints=Qt.styleHints.accessibility

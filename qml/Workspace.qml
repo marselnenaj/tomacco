@@ -320,6 +320,8 @@ Rectangle {
     } }
     // Split views run edge to edge under no page heading; the rail already says where you are.
     readonly property bool fullBleed: ["files","jobs","tools"].indexOf(section)>=0
+    // A phone-wide panel: the band is short, split views show the list or the detail, not both.
+    readonly property bool phone: width<Theme.px(600)
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -327,7 +329,7 @@ Rectangle {
             id: band
             Layout.fillWidth: true
             visible: !panel.fullBleed
-            roomy: panel.height>=Theme.px(680) && !(panel.section==="debug" && !!debugPage.item && debugPage.item.active)
+            roomy: panel.height>=Theme.px(680) && !panel.phone && !(panel.section==="debug" && !!debugPage.item && debugPage.item.active)
             title: panel.sections[panel.currentIndex].title
             lead: panel.sections[panel.currentIndex].description
             tone: panel.sections[panel.currentIndex].tone || "inverse"
@@ -501,6 +503,10 @@ Rectangle {
                 anchors.fill: parent; visible: panel.jobs.length>0
                 spacing: 0
                 ColumnLayout {
+                  objectName: "jobListColumn"
+                  // On a phone the list fills the width and gives way to the chosen job.
+                  visible: !panel.phone || !panel.selectedJob
+                  Layout.fillWidth: panel.phone
                   Layout.preferredWidth: panel.width<Theme.px(760)?Theme.px(216):Theme.px(296); Layout.fillHeight: true; spacing: 0
                   StudioSegmented {
                     objectName: "jobFilter"; Layout.fillWidth: true; Layout.margins: Theme.gapSm
@@ -548,12 +554,15 @@ Rectangle {
                     ScrollBar.vertical: StudioScrollBar {}
                   }
                 }
-                Rectangle { Layout.fillHeight: true; Layout.preferredWidth: 1; color: Theme.subtle }
+                Rectangle { visible: !panel.phone; Layout.fillHeight: true; Layout.preferredWidth: 1; color: Theme.subtle }
                 ColumnLayout {
                     id:jobDetails;Layout.minimumWidth:0
+                    visible: !panel.phone || !!panel.selectedJob
                     Layout.fillWidth: true; Layout.fillHeight: true; spacing: 0
                     RowLayout {
-                        Layout.fillWidth: true; Layout.preferredHeight: Theme.barHeight; Layout.leftMargin: Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
+                        Layout.fillWidth: true; Layout.preferredHeight: Theme.barHeight; Layout.leftMargin: panel.phone?Theme.gapXs:Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
+                        // Back to the list on a phone; the job stays selected for the strip and the log poll stops with it.
+                        StudioButton { objectName: "jobBack"; visible: panel.phone; iconName: "back"; quiet: true; text: qsTr("All jobs"); displayText: ""; tip: text; onClicked: panel.selectedJob="" }
                         Text { Layout.fillWidth: true; text: panel.activeJob.label || ""; color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.Medium; elide: Text.ElideRight }
                         StudioButton { text: "Hot Reload"; quiet: true; iconName: "refresh"; visible: panel.activeJob.state==="running" && panel.activeJob.interactive===true && ["ready","session"].indexOf(panel.activeJob.phase)>=0; onClicked: panel.request("job.send",{job_id:panel.selectedJob,command:"reload"}) }
                         StudioButton { text: "Details"; quiet: true; enabled: panel.selectedJob.length>0; onClicked: { panel.request("job.get",{job_id:panel.selectedJob}); panel.currentIndex=3 } }
