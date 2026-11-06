@@ -678,6 +678,10 @@ Rectangle {
     readonly property bool compact: width<Theme.px(1120)
     readonly property bool shortWindow: height<Theme.px(620)
     readonly property bool railWide: width>=Theme.px(1360)
+    // Below this the window is a phone: the rail gives way to a bottom navigation
+    // and pages stack. Measured in logical pixels after the UI scale, so a 393 px
+    // phone at 100 % and a 1440 px window at 200 % behave alike.
+    readonly property bool phone: width<Theme.px(600)
     // Below this the device bar's actions are icons and the bar's name goes.
     readonly property bool tight: width<Theme.px(760)
     // In a narrow window the activity panel takes the whole stage while it is open.
@@ -842,8 +846,9 @@ Rectangle {
         UpdateBanner {Layout.fillWidth:true;Layout.preferredHeight:implicitHeight;model:updates}
         RowLayout {
             Layout.fillWidth:true;Layout.fillHeight:true;spacing:0
-            // The rail: icons in a narrow window, icons, names and keys in a wide one.
+            // The rail: icons in a narrow window, icons, names and keys in a wide one. On a phone it is the bottom navigation below.
             Rectangle {
+                visible:!view.phone
                 Layout.preferredWidth:view.railWide?Theme.railWideWidth:Theme.railWidth;Layout.fillHeight:true;color:Theme.surface
                 ColumnLayout {
                     anchors.fill:parent;anchors.margins:Theme.gapSm;spacing:Theme.gapXs
@@ -1155,6 +1160,8 @@ Rectangle {
                 }
             }
         }
+        // The phone's bottom navigation: four destinations and the rest behind More.
+        MobileNav {objectName:"mobileNav";Layout.fillWidth:true;visible:view.phone;navigation:view.navigation;current:view.currentSection;onNavigate:section=>view.navigate(section)}
         Rectangle {
             Layout.fillWidth:true;Layout.preferredHeight:view.notice?noticeLabel.implicitHeight+Theme.gapMd*2:0;visible:!!view.notice;color:view.failed?Theme.dangerSurface:Theme.elevated
             Rectangle {width:Theme.gapXxs;height:parent.height;color:view.failed?Theme.danger:Theme.accent}

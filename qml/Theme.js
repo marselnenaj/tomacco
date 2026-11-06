@@ -132,6 +132,12 @@ var radii = {none: 0, small: 2, medium: 3, large: 4}
 // Heights of the shell and its controls, in pixels.
 var sizes = {control: 32, controlSmall: 26, row: 32, bar: 44, status: 24, rail: 48, railWide: 184, panel: 296, icon: 16}
 
+// Phone roles (NativeWorkspace.phone, Bogen app-mobile-* tokens): readable at
+// arm's length, 48 px touch targets. They scale with the interface size like
+// the desktop roles and never touch device geometry or captured pixels.
+var mobileType = {micro: 12, meta: 13, small: 14, body: 16, lead: 18, title: 22, display: 30}
+var mobileSizes = {touch: 48, control: 44, bar: 56, nav: 64, row: 56, gutter: 16}
+
 // Durations in milliseconds; Theme.qml makes them 0 when reduced motion is asked for.
 var motion = {fast: 90, slow: 220}
 

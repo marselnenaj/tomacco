@@ -82,7 +82,7 @@ target_compile_definitions(tomacco PRIVATE TOMACCO_VERSION="${PROJECT_VERSION}")
 set(TOMACCO_QML_RESOURCES
     qml/StudioScrollView.qml qml/StudioScrollBar.qml qml/AppDropArea.qml qml/AppFiles.js qml/LogFilter.js qml/Fuzzy.js qml/DropOverlay.qml
     qml/NativeDeviceFrame.qml qml/DeviceWindow.qml qml/NativeProfiles.js qml/AndroidDevices.qml qml/IosResearch.qml qml/IosGuestView.qml qml/ScreenRecorder.qml qml/DeviceGrid.qml qml/DeviceLogPane.qml qml/StageLogPane.qml
-    qml/qmldir qml/Theme.qml qml/Theme.js qml/ActivityPanel.qml qml/StudioHeading.qml qml/StudioBand.qml qml/BrandMark.qml qml/DeviceHero.qml qml/StudioStatus.qml qml/StudioSection.qml qml/StudioPanel.qml qml/StudioEmptyState.qml qml/StudioSegmented.qml qml/StudioSpinBox.qml qml/StudioCodeView.qml qml/OperationTitles.js qml/ColorNames.js qml/StudioIcon.qml qml/StudioTextField.qml qml/StudioComboBox.qml qml/StudioCheckBox.qml qml/StudioDialog.qml qml/CommandPalette.qml qml/Main.qml qml/StudioButton.qml qml/Device.qml qml/Workspace.qml qml/NativeWorkspace.qml qml/DebugWorkspace.qml qml/TestWorkspace.qml qml/ProfileWorkspace.qml qml/FileWorkspace.qml qml/ReleaseWorkspace.qml qml/DemoWorkspace.qml qml/EnvironmentPanel.qml qml/PreviewAutomation.qml qml/PreviewProtocol.qml qml/SystemStatus.qml qml/UpdateModel.qml qml/UpdateSection.qml qml/UpdateNotice.qml qml/UpdateBanner.qml qml/OnboardingSheet.qml qml/ApprovalDialog.qml qml/NotificationCentre.qml
+    qml/qmldir qml/Theme.qml qml/Theme.js qml/ActivityPanel.qml qml/StudioHeading.qml qml/StudioBand.qml qml/BrandMark.qml qml/DeviceHero.qml qml/StudioStatus.qml qml/StudioSection.qml qml/StudioPanel.qml qml/StudioEmptyState.qml qml/StudioSegmented.qml qml/StudioSpinBox.qml qml/StudioCodeView.qml qml/OperationTitles.js qml/ColorNames.js qml/StudioIcon.qml qml/StudioTextField.qml qml/StudioComboBox.qml qml/StudioCheckBox.qml qml/StudioDialog.qml qml/CommandPalette.qml qml/Main.qml qml/StudioButton.qml qml/Device.qml qml/Workspace.qml qml/NativeWorkspace.qml qml/DebugWorkspace.qml qml/TestWorkspace.qml qml/ProfileWorkspace.qml qml/FileWorkspace.qml qml/ReleaseWorkspace.qml qml/DemoWorkspace.qml qml/EnvironmentPanel.qml qml/PreviewAutomation.qml qml/PreviewProtocol.qml qml/SystemStatus.qml qml/UpdateModel.qml qml/UpdateSection.qml qml/UpdateNotice.qml qml/UpdateBanner.qml qml/OnboardingSheet.qml qml/ApprovalDialog.qml qml/NotificationCentre.qml qml/MobileNav.qml qml/MobileRow.qml
     assets/models.json assets/demo.html assets/page-errors.js assets/icon.svg assets/logo.svg assets/fonts/archivo-var.ttf assets/fonts/jetbrains-mono-var.ttf)
 qt_add_resources(tomacco resources PREFIX / FILES ${TOMACCO_QML_RESOURCES})
 # Interface translations. English is the source language: its file only
@@ -203,6 +203,18 @@ if(BUILD_TESTING)
     target_link_libraries(test-environment-panel PRIVATE Qt6::Test Qt6::Quick Qt6::QuickControls2)
     add_test(NAME environment-panel COMMAND test-environment-panel)
     set_tests_properties(environment-panel PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic")
+    qt_add_executable(test-mobile-nav tests/mobile_nav_test.cpp)
+    set_target_properties(test-mobile-nav PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
+    target_compile_definitions(test-mobile-nav PRIVATE TOMACCO_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(test-mobile-nav PRIVATE Qt6::Test Qt6::Quick Qt6::QuickControls2)
+    add_test(NAME mobile-nav COMMAND test-mobile-nav)
+    set_tests_properties(mobile-nav PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic")
+    qt_add_executable(test-mobile-row tests/mobile_row_test.cpp)
+    set_target_properties(test-mobile-row PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
+    target_compile_definitions(test-mobile-row PRIVATE TOMACCO_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(test-mobile-row PRIVATE Qt6::Test Qt6::Quick Qt6::QuickControls2)
+    add_test(NAME mobile-row COMMAND test-mobile-row)
+    set_tests_properties(mobile-row PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic")
     qt_add_executable(test-desktop-ui tests/desktop_ui_test.cpp src/backend.cpp src/backend.h src/control.cpp src/control.h src/nativeview.cpp src/nativeview.h)
     set_target_properties(test-desktop-ui PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
     add_dependencies(test-desktop-ui tomacco-core)
