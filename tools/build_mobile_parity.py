@@ -93,6 +93,22 @@ RULES: list[tuple[tuple[str, ...], dict]] = [
         "phone": "local", "requires": ["adb (arm64)", "a paired device"],
         "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
         "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device."}),
+    (("gpx.inspect",), {
+        "phone": "local", "requires": [],
+        "evidence": "Parses a GPX file in the Rust control program (points, bounds, distance, timing); no device is touched.",
+        "next_test": "gpx.inspect on the GPX fixtures in tests with TOMACCO_HOME in a temp dir on the device."}),
+    (("gpx.play", "gpx.status"), {
+        "phone": "remote", "requires": ["Android emulator on a host with KVM", "explicit host choice"],
+        "evidence": "Route playback sends geo fixes to an Android emulator console; the emulator needs KVM, which the Pixel does not expose. Physical Android phones and iPhones are not supported by gpx.play at all.",
+        "next_test": "remote.run gpx.play against a chosen host's emulator with a fixture route; gpx.status reports the last fix."}),
+    (("handoff.",), {
+        "phone": "local", "requires": ["the person present at the device being handed over"],
+        "evidence": "Handoffs are durable records in the control program; only the person can complete one (handoff_person_only). The phone shows the waiting handoff banner and its Done/Cancel actions; it never completes on an agent's behalf.",
+        "next_test": "handoff.request then handoff.list/wait on the device with TOMACCO_HOME in a temp dir; complete from the phone banner."}),
+    (("diagnostics.report_draft",), {
+        "phone": "local", "requires": ["storage for the report directory"],
+        "evidence": "Writes a local, reviewable report directory (issue.md and redacted attachments); nothing leaves the device.",
+        "next_test": "diagnostics.report_draft on the device; inspect the directory before anything is shared."}),
     (("project.import_xcode",), {
         "phone": "local", "requires": [],
         "evidence": "Parses an Xcode project into a SwiftPM layout; file work only.",

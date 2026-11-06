@@ -439,7 +439,14 @@ class SetupAgents(unittest.TestCase):
                     listed = [tool["name"] for tool in tools]
                     mode = env.get("TOMACCO_MCP_TOOLS", "full")
                     if mode == "grouped":
-                        self.assertLessEqual(len(tools), 31)
+                        # One tool per area (the name before the first dot, else
+                        # "general", as native/mcp_tools.rs area()) plus schema, and
+                        # within the xAI API's 350 tools a request that Grok CLI
+                        # forwards them to (docs/agent-clients.md).
+                        areas = {name.split(".", 1)[0] if "." in name else "general" for name in OPERATIONS}
+                        self.assertEqual(sorted(listed), sorted(areas | {"schema"}))
+                        self.assertLessEqual(len(tools), 350)
+                        self.assertLess(len(tools), len(OPERATIONS))
                         offered = sorted(name for tool in tools if tool["name"] != "schema"
                                          for name in tool["inputSchema"]["properties"]["operation"]["enum"])
                         self.assertEqual(offered, sorted(OPERATIONS))

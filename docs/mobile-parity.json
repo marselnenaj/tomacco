@@ -8,9 +8,9 @@
   "unavailable": "cannot run anywhere reachable from the phone"
  },
  "counts": {
-  "local": 175,
-  "remote": 62,
-  "conditional": 37,
+  "local": 184,
+  "remote": 64,
+  "conditional": 40,
   "unavailable": 0
  },
  "operations": [
@@ -396,6 +396,72 @@
    "verified_on_pixel": false
   },
   {
+   "operation": "handoff.request",
+   "title": "Ask the person to act",
+   "phone": "local",
+   "requires": [
+    "the person present at the device being handed over"
+   ],
+   "evidence": "Handoffs are durable records in the control program; only the person can complete one (handoff_person_only). The phone shows the waiting handoff banner and its Done/Cancel actions; it never completes on an agent's behalf.",
+   "next_test": "handoff.request then handoff.list/wait on the device with TOMACCO_HOME in a temp dir; complete from the phone banner.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "handoff.get",
+   "title": "Read a handoff",
+   "phone": "local",
+   "requires": [
+    "the person present at the device being handed over"
+   ],
+   "evidence": "Handoffs are durable records in the control program; only the person can complete one (handoff_person_only). The phone shows the waiting handoff banner and its Done/Cancel actions; it never completes on an agent's behalf.",
+   "next_test": "handoff.request then handoff.list/wait on the device with TOMACCO_HOME in a temp dir; complete from the phone banner.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "handoff.list",
+   "title": "List handoffs",
+   "phone": "local",
+   "requires": [
+    "the person present at the device being handed over"
+   ],
+   "evidence": "Handoffs are durable records in the control program; only the person can complete one (handoff_person_only). The phone shows the waiting handoff banner and its Done/Cancel actions; it never completes on an agent's behalf.",
+   "next_test": "handoff.request then handoff.list/wait on the device with TOMACCO_HOME in a temp dir; complete from the phone banner.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "handoff.wait",
+   "title": "Wait for the person",
+   "phone": "local",
+   "requires": [
+    "the person present at the device being handed over"
+   ],
+   "evidence": "Handoffs are durable records in the control program; only the person can complete one (handoff_person_only). The phone shows the waiting handoff banner and its Done/Cancel actions; it never completes on an agent's behalf.",
+   "next_test": "handoff.request then handoff.list/wait on the device with TOMACCO_HOME in a temp dir; complete from the phone banner.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "handoff.complete",
+   "title": "The person is done",
+   "phone": "local",
+   "requires": [
+    "the person present at the device being handed over"
+   ],
+   "evidence": "Handoffs are durable records in the control program; only the person can complete one (handoff_person_only). The phone shows the waiting handoff banner and its Done/Cancel actions; it never completes on an agent's behalf.",
+   "next_test": "handoff.request then handoff.list/wait on the device with TOMACCO_HOME in a temp dir; complete from the phone banner.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "handoff.cancel",
+   "title": "Withdraw a handoff",
+   "phone": "local",
+   "requires": [
+    "the person present at the device being handed over"
+   ],
+   "evidence": "Handoffs are durable records in the control program; only the person can complete one (handoff_person_only). The phone shows the waiting handoff banner and its Done/Cancel actions; it never completes on an agent's behalf.",
+   "next_test": "handoff.request then handoff.list/wait on the device with TOMACCO_HOME in a temp dir; complete from the phone banner.",
+   "verified_on_pixel": false
+  },
+  {
    "operation": "storage.prune",
    "title": "Clean up old jobs and reports",
    "phone": "local",
@@ -417,6 +483,17 @@
    ],
    "evidence": "Projects, files, jobs, release signing (keytool/apksigner are Java) and settings live in the control program; iOS build actions inside project.execute route to a host through the same explicit host choice.",
    "next_test": "project.inspect, project.execute build (android, debug) and release.sign on the device with a sample project.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "diagnostics.report_draft",
+   "title": "Draft a bug report",
+   "phone": "local",
+   "requires": [
+    "storage for the report directory"
+   ],
+   "evidence": "Writes a local, reviewable report directory (issue.md and redacted attachments); nothing leaves the device.",
+   "next_test": "diagnostics.report_draft on the device; inspect the directory before anything is shared.",
    "verified_on_pixel": false
   },
   {
@@ -446,6 +523,18 @@
   {
    "operation": "device.label",
    "title": "Name or pin a device",
+   "phone": "local",
+   "requires": [
+    "adb (arm64)",
+    "a paired device"
+   ],
+   "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
+   "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.resolve",
+   "title": "Find a device by name",
    "phone": "local",
    "requires": [
     "adb (arm64)",
@@ -1185,6 +1274,39 @@
    ],
    "evidence": "Every android.* operation talks to a device over adb; adb has linux-aarch64 builds. Mirroring (android.mirror) decodes H.264 in software through the LGPL FFmpeg build.",
    "next_test": "device.list and android.screen with a paired phone; measure mirror frame rate on the Pixel.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "gpx.inspect",
+   "title": "Read a GPX route",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Parses a GPX file in the Rust control program (points, bounds, distance, timing); no device is touched.",
+   "next_test": "gpx.inspect on the GPX fixtures in tests with TOMACCO_HOME in a temp dir on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "gpx.play",
+   "title": "Play a GPX route",
+   "phone": "remote",
+   "requires": [
+    "Android emulator on a host with KVM",
+    "explicit host choice"
+   ],
+   "evidence": "Route playback sends geo fixes to an Android emulator console; the emulator needs KVM, which the Pixel does not expose. Physical Android phones and iPhones are not supported by gpx.play at all.",
+   "next_test": "remote.run gpx.play against a chosen host's emulator with a fixture route; gpx.status reports the last fix.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "gpx.status",
+   "title": "Route playback status",
+   "phone": "remote",
+   "requires": [
+    "Android emulator on a host with KVM",
+    "explicit host choice"
+   ],
+   "evidence": "Route playback sends geo fixes to an Android emulator console; the emulator needs KVM, which the Pixel does not expose. Physical Android phones and iPhones are not supported by gpx.play at all.",
+   "next_test": "remote.run gpx.play against a chosen host's emulator with a fixture route; gpx.status reports the last fix.",
    "verified_on_pixel": false
   },
   {
@@ -2499,6 +2621,39 @@
   {
    "operation": "runtime.hierarchy",
    "title": "Native accessibility tree",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.observe",
+   "title": "Observe a session",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.gesture",
+   "title": "Timestamped gesture trace",
+   "phone": "conditional",
+   "requires": [
+    "a running Android device or emulator session"
+   ],
+   "evidence": "runtime.* drives a live device session (native/runtime.rs); with a USB/Wi-Fi phone it is local, with an emulator it follows the emulator's host.",
+   "next_test": "runtime.start with a paired phone on the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "runtime.actions",
+   "title": "Ordered input batch",
    "phone": "conditional",
    "requires": [
     "a running Android device or emulator session"

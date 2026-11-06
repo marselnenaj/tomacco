@@ -87,7 +87,7 @@ def command_lines(path):
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
 # The guide's placeholders, replaced by a value of the shape an agent passes.
-PLACEHOLDERS = {"JOB_ID": JOB_ID, "BUILD_JOB": JOB_ID, "START_JOB": JOB_ID, "GUEST_JOB": JOB_ID, "SESSION_ID": JOB_ID}
+PLACEHOLDERS = {"JOB_ID": JOB_ID, "BUILD_JOB": JOB_ID, "START_JOB": JOB_ID, "GUEST_JOB": JOB_ID, "SESSION_ID": JOB_ID, "HANDOFF_ID": JOB_ID}
 
 
 def example(value):
