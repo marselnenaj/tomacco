@@ -2,7 +2,7 @@
 
 # Error codes
 
-515 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
+522 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
 
 | Code | Meaning | Remedy |
 | --- | --- | --- |
@@ -92,9 +92,11 @@
 | `desktop_start_failed` | Desktop exited during startup. | Read … |
 | `desktop_start_timeout` | Desktop has not opened its control socket. | Read … |
 | `desktop_unsaved` | The running Tomacco desktop (…) is not the installed version …, and it has unsaved files. | Save or discard them in that window and close it, then open Tomacco again. |
+| `device_ambiguous` | More than one connected device matches the name at the same level, and none was chosen. | Use the device's ID from device.list, or give one a nickname with device.label. |
 | `device_busy` | This iPhone already has an active native session. | Wait for the job or session using it to end (job.list), or stop it if the person agrees, then try again. |
 | `device_debug_busy` | An existing debugger owns this Android device; use or disconnect that session first. | Wait for the job or session using it to end (job.list), or stop it if the person agrees, then try again. |
 | `device_failed` | Failed on … | Read the message and the job's log (job.logs); fix the cause and try again. |
+| `device_not_found` | No connected device has this name, nickname, AVD or ID. | device.list shows the connected devices with their names and IDs. |
 | `device_required` | Several iPhones are connected; pass device. | Pass device with an ID from device.list. |
 | `display_unavailable` | The device did not report its density. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `display_unknown` | … reported no screen size and density. | Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up. |
@@ -134,6 +136,10 @@
 | `frame_missing` | The debugger could not start, attach or answer. | Read the stack before reading frame variables. |
 | `frame_stale` | The screen's size or orientation differs from the frame the batch was planned on; nothing was sent. | Observe again with runtime.observe and plan the steps on the new frame. |
 | `git_failed` | git could not list the changed files for testing.impact. | Run it in a Git working tree, or pass the changed files explicitly. |
+| `gpx_invalid` | The GPX file is not well-formed, has no usable points, has a point out of range or an unreadable time, or declares a DOCTYPE or entity. | Check the file with gpx.inspect; remove DOCTYPE and entity declarations, which GPX does not need. |
+| `gpx_not_playback` | The job is not a route playback started by gpx.play. | Pass the job ID gpx.play answered. |
+| `gpx_too_large` | The GPX file is over 16 MiB or has more than 200,000 points. | Split the route or thin its points before playing it. |
+| `gpx_unsupported` | Route playback reaches Android emulators only; a physical Android device or an iPhone has no location transport wired here. | Play the route on an emulator (emulator-NNNN from device.list). |
 | `guest_diagnostic_failed` | The virtual iOS device or its research engine refused the request or stopped answering. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `guest_observation_timeout` | The guest did not complete both platform observations. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `guest_script_failed` | Guest script exited with … | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
@@ -325,6 +331,7 @@
 | `not_foldable` | A posture was set on an emulator whose AVD has no hinge. | Use a foldable profile (one with openWidth) in android.avd_create or android.avd_profile. |
 | `not_interactive` | This job has no interactive session. | Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up. |
 | `not_ios_emulator_job` | The virtual iOS device or its research engine refused the request or stopped answering. | Select an iOS emulator job. |
+| `not_pausable` | The job has no running step that takes pause and resume. | Only a route playback started by gpx.play pauses and resumes; job.cancel ends any job. |
 | `not_stoppable` | This job has no running step that stop ends early. | job.cancel ends any job, without keeping its result. |
 | `nothing_to_analyze` | No analyser applies: the project has no pubspec.yaml, and no eslint or tsc (with tsconfig.json) in node_modules/.bin. | Install eslint or typescript as a dev dependency, or open a Dart or Flutter project. |
 | `nothing_to_check` | No versioned dependency or plugin in the versions catalog or build files. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |

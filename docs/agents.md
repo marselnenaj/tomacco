@@ -89,14 +89,14 @@ The server also offers three prompts, short recipes a client can show as command
 
 ### A shorter tool list
 
-The full tool list is every operation with its whole schema, 321,785 bytes of `tools/list` response in this
+The full tool list is every operation with its whole schema, 366,216 bytes of `tools/list` response in this
 version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env` of the client's server entry:
 
 | Value | Tools | `tools/list` response |
 | --- | --- | --- |
-| `full` (the default) | One per operation, with every description. | 321,785 bytes |
-| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 157,922 bytes |
-| `grouped` | One per area, such as `android` or `job`: 31 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 33,148 bytes |
+| `full` (the default) | One per operation, with every description. | 366,216 bytes |
+| `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 184,497 bytes |
+| `grouped` | One per area, such as `android` or `job`: 32 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 37,530 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
@@ -320,6 +320,26 @@ masked (`redacted`). `--dry-run` lists what it would call without calling anythi
 TOMACCO_SESSION_LOG=/absolute/session.jsonl tomaccoctl call project.run '{"path":"/absolute/MyApp","platform":"android","device":"emulator-5554"}'
 tomaccoctl replay /absolute/session.jsonl --dry-run
 tomaccoctl replay /absolute/session.jsonl
+```
+
+## GPX routes on an emulator
+
+`gpx.inspect` reads a GPX file and says what is in it before anything moves: the points (track points, else route points, else
+waypoints), counts, bounds, distance, and duration and speed where the points carry times. Untimed points are played in document
+order at `interval_ms`; timed points wait the recorded time between them; both are divided by `speed`. A DOCTYPE or entity
+declaration is refused (GPX needs none, and an external entity could read files or reach the network), and so are files over 16 MiB
+and routes over 200,000 points. `gpx.play` sends the route to an Android emulator's location as a durable job, one `geo fix` per
+point through the emulator console; `job.send` with `pause` and `resume` holds and continues it, `stop` ends it keeping the last fix,
+`job.cancel` ends it too, and `gpx.status` reads the last fix sent. `loop` starts again at the end. The emulator does not report its
+fix, so the location before playback is unknown and is not restored: `baseline.known` is false, and `android.emulator` with
+`location` sets one afterwards if needed. A physical Android device or an iPhone answers `gpx_unsupported`: nothing is wired to set
+their location, and nothing here pretends otherwise. The desktop's QA environments view has the same playback with a file picker.
+
+```sh
+tomaccoctl call gpx.inspect '{"path":"/absolute/ride.gpx","device":"emulator-5554"}'
+tomaccoctl call gpx.play '{"device":"emulator-5554","path":"/absolute/ride.gpx","speed":4}'
+tomaccoctl call job.send '{"job_id":"JOB_ID","command":"pause"}'
+tomaccoctl call gpx.status '{"job_id":"JOB_ID"}'
 ```
 
 ## Human handoff
@@ -834,6 +854,11 @@ stale-frame rejection. Until it can run on hardware every result it writes says 
 virtual iPhone, the USB iPhone, AirPlay, Android and the desktop as `pending` in `hardware_matrix`; the committed
 [fixture run](agent-platform-benchmark-fixture.json) is the control plane's own cost over a scripted device. It is not a comparison with
 any other product: that needs the same device, app, build and settings on one host, measured alike, which has not been done.
+
+**Devices by name.** `device.resolve` finds the device a person means by its nickname, model name, AVD or ID, after folding
+curly apostrophes and quotes, dashes and spaces (emoji and letters stay): an exact match wins, a match that ignores letter case
+counts next, a prefix or part of the name last and only when it is the only one. Two candidates at one level answer
+`device_ambiguous` with both; nothing is picked by a guess, so a destructive call never lands on the wrong phone.
 
 **Stopping and starting again.** `runtime.stop` now waits (up to five seconds) until the session's worker has ended and answers
 `stopped: true`, so a `runtime.start` right after it connects a new session instead of waiting on the old one; a session that ends while

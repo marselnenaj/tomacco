@@ -343,6 +343,10 @@
     "cause": "The running Tomacco desktop (…) is not the installed version …, and it has unsaved files.",
     "remedy": "Save or discard them in that window and close it, then open Tomacco again."
   },
+  "device_ambiguous": {
+    "cause": "More than one connected device matches the name at the same level, and none was chosen.",
+    "remedy": "Use the device's ID from device.list, or give one a nickname with device.label."
+  },
   "device_busy": {
     "cause": "This iPhone already has an active native session.",
     "remedy": "Wait for the job or session using it to end (job.list), or stop it if the person agrees, then try again."
@@ -354,6 +358,10 @@
   "device_failed": {
     "cause": "Failed on …",
     "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
+  },
+  "device_not_found": {
+    "cause": "No connected device has this name, nickname, AVD or ID.",
+    "remedy": "device.list shows the connected devices with their names and IDs."
   },
   "device_required": {
     "cause": "Several iPhones are connected; pass device.",
@@ -510,6 +518,22 @@
   "git_failed": {
     "cause": "git could not list the changed files for testing.impact.",
     "remedy": "Run it in a Git working tree, or pass the changed files explicitly."
+  },
+  "gpx_invalid": {
+    "cause": "The GPX file is not well-formed, has no usable points, has a point out of range or an unreadable time, or declares a DOCTYPE or entity.",
+    "remedy": "Check the file with gpx.inspect; remove DOCTYPE and entity declarations, which GPX does not need."
+  },
+  "gpx_not_playback": {
+    "cause": "The job is not a route playback started by gpx.play.",
+    "remedy": "Pass the job ID gpx.play answered."
+  },
+  "gpx_too_large": {
+    "cause": "The GPX file is over 16 MiB or has more than 200,000 points.",
+    "remedy": "Split the route or thin its points before playing it."
+  },
+  "gpx_unsupported": {
+    "cause": "Route playback reaches Android emulators only; a physical Android device or an iPhone has no location transport wired here.",
+    "remedy": "Play the route on an emulator (emulator-NNNN from device.list)."
   },
   "guest_diagnostic_failed": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
@@ -1274,6 +1298,10 @@
   "not_ios_emulator_job": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
     "remedy": "Select an iOS emulator job."
+  },
+  "not_pausable": {
+    "cause": "The job has no running step that takes pause and resume.",
+    "remedy": "Only a route playback started by gpx.play pauses and resumes; job.cancel ends any job."
   },
   "not_stoppable": {
     "cause": "This job has no running step that stop ends early.",

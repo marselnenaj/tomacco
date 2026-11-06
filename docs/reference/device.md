@@ -2,7 +2,7 @@
 
 # `device` operations
 
-8 operations. Generated from `assets/operations.json`; [all areas](README.md).
+9 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### device.list
 
@@ -53,6 +53,23 @@ Annotations: writes, idempotent, closed world.
 
 ```sh
 tomaccoctl call device.label '{"device":"<device>"}'
+```
+
+### device.resolve
+
+**Find a device by name**
+
+The device a person means by name: its nickname, model name, AVD or ID, compared after folding curly apostrophes and quotes, dashes and spaces (emoji and letters stay). An exact match wins; one that ignores letter case counts next; a prefix or part of the name counts last and only when it is the only one. Two candidates at the same level answer device_ambiguous with both, never a guess, and no match answers device_not_found with the connected devices. Reads device.list, so it takes a few seconds.
+
+Annotations: read-only, idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `name` | string | yes |  | non-empty, up to 200 characters; The name as the person said it |
+| `platform` | string |  | `"all"` | one of `all`, `android`, `ios` |
+
+```sh
+tomaccoctl call device.resolve '{"name":"<name>"}'
 ```
 
 ### device.install

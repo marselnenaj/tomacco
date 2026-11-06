@@ -3,7 +3,7 @@
   "workspace": "/home/maslos/Work/tomacco-agent-platform",
   "branch": "feat/agent-platform",
   "base_commit": "bdd708c40719e755ad6b71a5c6969aa2797d20a5",
-  "updated": "2026-11-06T10:58:43Z",
+  "updated": "2026-11-06T11:13:06Z",
   "status": "in_progress",
   "hardware_constraint": "No physical device, USB, ADB, Fastboot, SSH, network or runtime probes while the Pixel is being flashed. Everything below is verified offline only: unit tests, loopback fakes and the env-gated fixture runtime. Physical iPhone (WDA), Android, AirPlay and Simulator paths are code-reviewed and contract-tested, not hardware-qualified.",
   "capability_gap_table": [
@@ -53,25 +53,25 @@
       "capability": "Benchmark runner with measured boundaries",
       "before": "tests/benchmark_control_plane.py measures schema/catalog/jobs only",
       "target": "tools/benchmark_agent_loop.py over the fixture runtime, >=100 trials per case, p50/p95, failures kept, hardware matrix pending",
-      "state": "planned"
+      "state": "implemented; fixture run committed as docs/agent-platform-benchmark-fixture.json (control plane only); hardware matrix pending"
     },
     {
       "capability": "Human handoff",
       "before": "approval dialog for destructive MCP calls only",
       "target": "handoff.* durable request/status/wait/complete/cancel, desktop banner, fresh observation on resume",
-      "state": "planned"
+      "state": "implemented, tested offline (Rust, Python CLI+MCP, QML banner test); desktop-ui 109 tests pass with the banner wired"
     },
     {
       "capability": "Unicode device name resolution",
       "before": "operations take ids; nicknames are display only",
       "target": "device.resolve: NFC + apostrophe folding, exact first, ambiguity error, never a fuzzy pick",
-      "state": "planned"
+      "state": "implemented (device.resolve), unit-tested; device.list itself needs adb/libimobiledevice"
     },
     {
       "capability": "GPX route playback",
       "before": "android.emulator location sets one fix",
       "target": "gpx.validate / gpx.preview / gpx.play job with speed, loop, pause, resume, cancel on emulators; other transports answer unsupported",
-      "state": "planned"
+      "state": "implemented (gpx.inspect/play/status, job.send pause/resume/stop, desktop section), tested on a fake emulator console; emulator-only, no restore of the unknown previous fix"
     },
     {
       "capability": "Reviewable bug-report draft",
@@ -127,25 +127,25 @@
       "id": "A7",
       "case": "benchmark runner writes p50/p95 per case with evidence=fixture and keeps failed trials",
       "how": "tools/benchmark_agent_loop.py --trials 100",
-      "state": "planned"
+      "state": "passing offline"
     },
     {
       "id": "B1",
       "case": "handoff request survives a new process, completes only through an explicit person action, resume answers a fresh observation",
       "how": "tests/python/test_handoff.py + QML test",
-      "state": "planned"
+      "state": "passing offline"
     },
     {
       "id": "B2",
       "case": "device.resolve: curly apostrophe and emoji names match exactly; two candidates answer device_ambiguous",
       "how": "native/devices.rs unit test",
-      "state": "planned"
+      "state": "passing offline"
     },
     {
       "id": "C1",
       "case": "gpx.validate rejects external entities and oversized files; preview orders untimed points; play job pauses, resumes, loops and cancels on a fake console",
       "how": "native/gpx.rs unit tests + tests/python",
-      "state": "planned"
+      "state": "passing offline"
     },
     {
       "id": "C2",
@@ -156,11 +156,17 @@
   ],
   "completed": [
     "Slice A: runtime.observe, input_capabilities, runtime.gesture, pinch (WDA two pointers, scrcpy two pointers), screen.* on a session with WDA XML conversion, mark_stale on rotation, WDA point-size cache invalidated by MJPEG frame size, OCR content cache, env-gated fixture runtime",
-    "Slice B: runtime.actions ordered batch with focus wait, postconditions, applied/skipped report, deadline, frame guard"
+    "Slice B: runtime.actions ordered batch with focus wait, postconditions, applied/skipped report, deadline, frame guard",
+    "Slice C: benchmark runner + reconnect fix",
+    "Slice D: human handoff (backend, desktop banner, docs)",
+    "Slice E/F: device.resolve, GPX inspect/play/status with desktop route playback"
   ],
   "implemented": [
     "Slice A: runtime.observe, input_capabilities, runtime.gesture, pinch (WDA two pointers, scrcpy two pointers), screen.* on a session with WDA XML conversion, mark_stale on rotation, WDA point-size cache invalidated by MJPEG frame size, OCR content cache, env-gated fixture runtime",
-    "Slice B: runtime.actions ordered batch with focus wait, postconditions, applied/skipped report, deadline, frame guard"
+    "Slice B: runtime.actions ordered batch with focus wait, postconditions, applied/skipped report, deadline, frame guard",
+    "Slice C: benchmark runner + reconnect fix",
+    "Slice D: human handoff (backend, desktop banner, docs)",
+    "Slice E/F: device.resolve, GPX inspect/play/status with desktop route playback"
   ],
   "tested": [
     "cargo test: 669+ unit tests incl. runtime::fixture, screen_tree::wda_tests, screen::tests (stale geometry), runtime::iphone loopback (cache, pinch, trace, context), screen_ocr cache, runtime::actions",
@@ -171,15 +177,12 @@
     "Every physical-device path (WDA activeAppInfo/keyboard/active element, scrcpy pointer-id multitouch, dumpsys parsing on a real device, AirPlay HID, Simulator companion) until hardware clearance"
   ],
   "remaining": [
-    "Benchmark runner (Slice C)",
-    "Human handoff (Slice D)",
-    "device.resolve Unicode names",
-    "GPX playback",
-    "Bug-report draft",
+    "Bug-report draft (diagnostics.report_draft)",
     "Mirror polish (reconnect/ownership states, screenshot affordance, zoom/pan, safe-area mapping)",
-    "Roadmap items kept: TV/Wear profiles, Demo Studio next phases, offline AirPlay reliability"
+    "Roadmap items kept: TV/Wear profiles, Demo Studio next phases, offline AirPlay reliability",
+    "Hardware qualification of every transport path once cleared"
   ],
-  "next_step": "Slice C: tools/benchmark_agent_loop.py over the fixture runtime with p50/p95, failure retention and a pending hardware matrix",
+  "next_step": "Slice G: diagnostics.report_draft; then Slice H mirror polish",
   "changed_files": [
     "native/runtime.rs",
     "native/runtime/fixture.rs",
@@ -306,6 +309,126 @@
     {
       "context": "Operations",
       "source": "Withdraw a handoff"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "%n point(s), %1 km, %2 min recorded"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "%n point(s), %1 km, no times: one point per second"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Change route…"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Choose a GPX file…"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Finished. The last position stays on the emulator."
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "GPX route (*.gpx)"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "No route chosen"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Pause"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Paused at %1"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Play a GPX route on the chosen emulator's location. Timed points keep their timing; untimed points play one per second."
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Play route"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Playback ended: %1"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Playing %1"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Playing the route on %1. The previous position is not known and will not be restored."
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Playing…"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Reading the route…"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Repeat the route"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Resume"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Route playback"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Route playback reaches emulators only. A phone takes no mock location from here."
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Speed · 1 is real time"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Starting playback…"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Stop"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "Stopped. The last position stays on the emulator."
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset's GPS field afterwards if you need it."
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "point %1 of %2"
+    },
+    {
+      "context": "Operations",
+      "source": "Read a GPX route"
+    },
+    {
+      "context": "Operations",
+      "source": "Play a GPX route"
+    },
+    {
+      "context": "Operations",
+      "source": "Route playback status"
+    },
+    {
+      "context": "Operations",
+      "source": "Find a device by name"
     }
   ],
   "cross_lane_notes": [

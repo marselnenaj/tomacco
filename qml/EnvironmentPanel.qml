@@ -27,6 +27,15 @@ ColumnLayout {
     property bool failed: false
     property int busy: 0
     property var requests: ({})
+    // Route playback (gpx.*): the chosen file, what gpx.inspect said, the playback job and its last fix.
+    property string routePath: ""
+    property var route: null
+    property var routeJob: null
+    property var routeProgress: null
+    property string routeNotice: ""
+    readonly property bool routePlaying: !!routeJob && ["queued","running"].indexOf(routeJob.state)>=0
+    readonly property bool routePaused: routePlaying && !!routeProgress && routeProgress.state==="paused"
+    readonly property bool routeTargetIsEmulator: hasTarget && device.indexOf("emulator-")===0
     readonly property var targets: (workspace.devices || []).filter(d=>d.platform==="android" && d.state==="device")
     readonly property bool hasTarget: targets.some(d=>d.id===device)
     readonly property bool planIsCurrent: !!plan && plan.device===device && plan.preset.id===presetId && plan.preset.revision===revision
@@ -81,6 +90,26 @@ ColumnLayout {
     }
     function apply() { if(planIsCurrent)call("android.environment.apply",{plan_id:plan.plan_id,device:plan.device,allow_partial:partial.checked}) }
     function restore() { if(applied && applied.restore_id)call("android.environment.restore",{restore_id:applied.restore_id,device:applied.device}) }
+    function inspectRoute(path) { routePath=path;route=null;routeJob=null;routeProgress=null;routeNotice="";if(path)call("gpx.inspect",hasTarget?{path:path,device:device}:{path:path}) }
+    function playRoute() {
+        if(!routePath || !routeTargetIsEmulator)return
+        routeJob=null;routeProgress=null
+        call("gpx.play",{device:device,path:routePath,speed:Number(routeSpeed.text)>0?Number(routeSpeed.text):1,loop:routeLoop.checked})
+    }
+    function routeSend(command) { if(routeJob)call("job.send",{job_id:routeJob.id,command:command}) }
+    function pollRoute() { if(routeJob){call("gpx.status",{job_id:routeJob.id});call("job.get",{job_id:routeJob.id})} }
+    function routeStateText() {
+        if(!routeJob)return ""
+        if(routeJob.state==="queued")return qsTr("Starting playback…")
+        if(routeJob.state==="running") {
+            if(!routeProgress || routeProgress.index===null)return qsTr("Playing…")
+            const where=qsTr("point %1 of %2").arg(Number(routeProgress.index)+1).arg(routeProgress.total)
+            return routeProgress.state==="paused"?qsTr("Paused at %1").arg(where):qsTr("Playing %1").arg(where)
+        }
+        if(routeJob.state==="succeeded")return routeProgress && routeProgress.state==="stopped"?qsTr("Stopped. The last position stays on the emulator."):qsTr("Finished. The last position stays on the emulator.")
+        return qsTr("Playback ended: %1").arg(routeJob.state)
+    }
+    Timer {interval:1000;repeat:true;running:view.routePlaying;onTriggered:view.pollRoute()}
     Connections {
         target: Agent
         function onApiFinished(id,op,response) {
@@ -100,6 +129,10 @@ ColumnLayout {
             if(op==="android.environment.plan") {view.plan=r;view.message(r.unsupported.length?qsTr("Plan ready. This device does not support: %1.").arg(r.unsupported.map(view.label).join(", ")):qsTr("Plan ready. Nothing has changed on the device yet."),false)}
             if(op==="android.environment.apply") {view.applied=r;view.plan=null;view.message(qsTr("Applied and read back. You can restore the previous settings."),false)}
             if(op==="android.environment.restore") {view.restored=r;view.applied=null;view.message(qsTr("Previous settings restored."),false)}
+            if(op==="gpx.inspect") {view.route=r;view.routeNotice=r.timing.timed?qsTr("%n point(s), %1 km, %2 min recorded","",r.points).arg((r.distance_m/1000).toFixed(2)).arg((r.duration_s/60).toFixed(1)):qsTr("%n point(s), %1 km, no times: one point per second","",r.points).arg((r.distance_m/1000).toFixed(2))}
+            if(op==="gpx.play") {view.routeJob=r.job;view.routeProgress=null;view.message(qsTr("Playing the route on %1. The previous position is not known and will not be restored.").arg(r.device),false)}
+            if(op==="gpx.status") view.routeProgress=r.progress
+            if(op==="job.get" && view.routeJob && r.id===view.routeJob.id) view.routeJob=r
         }
     }
     Component.onCompleted: refresh()
@@ -194,6 +227,25 @@ ColumnLayout {
             delegate: Row3 {required property var modelData;readonly property var read:view.inspected.fields[modelData.key];name:modelData.label;first:read.supported?view.show(read.value):"";second:read.supported?(read.restorable?"":view.statusText("not_restorable")):view.statusText("unsupported")+" · "+read.reason;warn:!read.supported}}
         Caption {objectName:"environmentTalkBackNote";text:qsTr("TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen's structure.")}
     }
+    StudioPanel {
+        Layout.fillWidth:true;title:qsTr("Route playback")
+        lead:qsTr("Play a GPX route on the chosen emulator's location. Timed points keep their timing; untimed points play one per second.")
+        GridLayout {Layout.fillWidth:true;columns:view.width>=Theme.px(560)?2:1;columnSpacing:Theme.gapSm;rowSpacing:Theme.gapSm
+            StudioButton {objectName:"routeChoose";text:view.routePath?qsTr("Change route…"):qsTr("Choose a GPX file…");Layout.maximumWidth:parent.width;onClicked:routeDialog.open()}
+            Text {objectName:"routeSummary";Layout.fillWidth:true;Layout.minimumWidth:0;text:view.route?(view.route.name?view.route.name+" · ":"")+view.routeNotice:view.routePath?qsTr("Reading the route…"):qsTr("No route chosen");color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
+            StudioTextField {id:routeSpeed;objectName:"routeSpeed";Layout.fillWidth:true;Layout.minimumWidth:0;text:"1";placeholderText:qsTr("Speed · 1 is real time")}
+            StudioCheckBox {id:routeLoop;objectName:"routeLoop";Layout.fillWidth:true;Layout.minimumWidth:0;text:qsTr("Repeat the route")}
+        }
+        Caption {visible:view.hasTarget && !view.routeTargetIsEmulator;text:qsTr("Route playback reaches emulators only. A phone takes no mock location from here.")}
+        Flow {Layout.fillWidth:true;spacing:Theme.gapSm
+            StudioButton {objectName:"routePlay";text:qsTr("Play route");accent:true;width:Math.min(parent.width,implicitWidth);enabled:!!view.route && view.routeTargetIsEmulator && !view.routePlaying && view.busy===0;onClicked:view.playRoute()}
+            StudioButton {objectName:"routePause";text:view.routePaused?qsTr("Resume"):qsTr("Pause");width:Math.min(parent.width,implicitWidth);enabled:view.routePlaying && !!view.routeProgress;onClicked:view.routeSend(view.routePaused?"resume":"pause")}
+            StudioButton {objectName:"routeStop";text:qsTr("Stop");danger:true;width:Math.min(parent.width,implicitWidth);enabled:view.routePlaying;onClicked:view.routeSend("stop")}
+        }
+        Caption {objectName:"routeState";visible:!!view.routeJob;text:view.routeStateText()}
+        Caption {text:qsTr("The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset's GPS field afterwards if you need it.")}
+    }
+    FileDialog {id:routeDialog;nameFilters:[qsTr("GPX route (*.gpx)")];onAccepted:view.inspectRoute(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     FileDialog {id:importDialog;nameFilters:[qsTr("QA environment (*.json)")];onAccepted:view.importFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     FileDialog {id:exportDialog;fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("QA environment (*.json)")];onAccepted:view.exportTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     StudioDialog {id:deleteDialog;objectName:"environmentDeleteDialog";title:qsTr("Delete this preset?");modal:true;parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min((parent?parent.width:view.width)-Theme.gapLg,Theme.px(480));contentItem:ColumnLayout {

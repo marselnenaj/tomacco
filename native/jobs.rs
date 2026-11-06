@@ -735,6 +735,27 @@ pub fn send(id: &str, command: &str) -> Result {
         })?;
         return Ok(json!({"id":id,"sent":command}));
     }
+    if matches!(command, "pause" | "resume") {
+        // A playback (gpx.play) takes pause and resume on its standard input.
+        if s(&row.value, "state") != "running"
+            || !plan["steps"]
+                .as_array()
+                .is_some_and(|a| a.iter().any(|s| b(s, "pausable")))
+        {
+            return Err(Error::new(
+                "not_pausable",
+                "This job has no running step that pauses and resumes",
+            )
+            .remedy("Only a route playback started by gpx.play takes pause and resume"));
+        }
+        retrying(Instant::now() + READ_RETRY, || {
+            Ok(db.execute(
+                "INSERT INTO inputs(job,text) VALUES(?,?)",
+                params![id, command],
+            )?)
+        })?;
+        return Ok(json!({"id":id,"sent":command}));
+    }
     if s(&row.value, "state") != "running"
         || !plan["steps"]
             .as_array()
@@ -1352,6 +1373,10 @@ fn execute_worker(db: &Connection, id: &str, spec: &Value) -> Result<(String, i3
                         other => other?,
                     };
                     for (input, text) in inputs {
+                        // A stop request is for the stoppable check below, not the process's input.
+                        if text == STOP_INPUT {
+                            continue;
+                        }
                         if let Some(stdin) = proc.0.stdin.as_mut() {
                             let message = if machine {
                                 if app_id.is_empty() {

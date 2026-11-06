@@ -154,6 +154,85 @@ pub fn listing(platform: &str) -> Result {
     Ok(json!({"devices":devices,"diagnostics":diagnostics}))
 }
 
+/// A device name as people type it: curly and typographic apostrophes and
+/// quotes become plain ones, every kind of space one space, and the ends are
+/// trimmed. Emoji and letters stay as they are.
+pub fn fold_name(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    let mut space = true;
+    for c in value.chars() {
+        let c = match c {
+            '\u{2018}' | '\u{2019}' | '\u{201a}' | '\u{201b}' | '\u{2032}' | '\u{02bc}' | '\u{ff07}' | '`' => '\'',
+            '\u{201c}' | '\u{201d}' | '\u{201e}' | '\u{201f}' | '\u{2033}' | '\u{ff02}' => '"',
+            '\u{2010}' | '\u{2011}' | '\u{2012}' | '\u{2013}' | '\u{2014}' | '\u{2212}' => '-',
+            c if c.is_whitespace() || c == '\u{200b}' || c == '\u{feff}' => ' ',
+            c => c,
+        };
+        if c == ' ' {
+            if !space {
+                out.push(' ');
+            }
+            space = true;
+        } else {
+            out.push(c);
+            space = false;
+        }
+    }
+    out.trim_end().to_string()
+}
+
+/// The device a person means by name: its nickname, its model name, its AVD
+/// or its ID, compared after `fold_name`. An exact match wins; a match that
+/// ignores letter case counts next; one that is a prefix or contains the
+/// name counts last and only when it is the only one. Two candidates at the
+/// same level answer `device_ambiguous` with both, never a guess.
+pub fn resolve_name(entries: &[Value], name: &str) -> Result {
+    let wanted = fold_name(name);
+    if wanted.is_empty() {
+        return Err(Error::new("invalid_argument", "name is the device's name, nickname, AVD or ID"));
+    }
+    let names = |entry: &Value| -> Vec<String> {
+        ["nickname", "name", "original_name", "avd", "id"]
+            .iter()
+            .filter_map(|key| entry[key].as_str())
+            .filter(|v| !v.is_empty())
+            .map(fold_name)
+            .collect()
+    };
+    let lower = wanted.to_lowercase();
+    let tiers: [(&str, Box<dyn Fn(&str) -> bool>); 3] = [
+        ("exact", Box::new(|v: &str| v == wanted)),
+        ("case_insensitive", Box::new(|v: &str| v.to_lowercase() == lower)),
+        ("partial", Box::new(|v: &str| {
+            let v = v.to_lowercase();
+            v.starts_with(&lower) || v.contains(&lower)
+        })),
+    ];
+    for (how, matches) in &tiers {
+        let found: Vec<&Value> = entries
+            .iter()
+            .filter(|entry| names(entry).iter().any(|v| matches(v)))
+            .collect();
+        match found.len() {
+            0 => continue,
+            1 => {
+                return Ok(json!({"device":found[0],"id":found[0]["id"],"platform":found[0]["platform"],"matched":how,"name":name}));
+            }
+            _ => {
+                return Err(Error::new(
+                    "device_ambiguous",
+                    format!("{} devices match {name:?} ({how}); nothing was chosen", found.len()),
+                )
+                .remedy("Use the device's ID from device.list, or give one a nickname with device.label")
+                .details(json!({"name":name,"matched":how,"candidates":found.iter().map(|e| json!({"id":e["id"],"name":e["name"],"platform":e["platform"],"state":e["state"]})).collect::<Vec<_>>()})));
+            }
+        }
+    }
+    Err(Error::new("device_not_found", format!("No connected device is called {name:?}"))
+        .remedy("device.list shows the connected devices with their names and IDs")
+        .details(json!({"name":name,"candidates":entries.iter().map(|e| json!({"id":e["id"],"name":e["name"]})).collect::<Vec<_>>()})))
+}
+
 /// Where nicknames and pins are kept: by AVD name for an emulator, whose
 /// serial changes with its port, otherwise by serial or UDID.
 fn label_key(entry: &Value) -> String {
@@ -541,6 +620,13 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "device.list" => listing(platform),
         "device.info" => info(platform, device),
         "device.label" => label(a),
+        "device.resolve" => {
+            let listed = listing(if platform.is_empty() { "all" } else { platform })?;
+            let entries = listed["devices"].as_array().cloned().unwrap_or_default();
+            let mut result = resolve_name(&entries, s(a, "name"))?;
+            result["diagnostics"] = listed["diagnostics"].clone();
+            Ok(result)
+        }
         "device.install" => {
             identifier(device, "device ID", None)?;
             let files = strings(&a["paths"])
@@ -1995,6 +2081,32 @@ mod tests {
             (HARDWARE_CHOSEN, "yes"),
         ]);
         assert!(host_hardware(&chosen, None, (Some(1536), Some(1))).is_empty());
+    }
+
+    #[test]
+    fn names_resolve_exactly_first_and_never_by_a_guess() {
+        let devices = vec![
+            json!({"id":"emulator-5554","platform":"android","state":"device","name":"Ana\u{2019}s Pixel \u{1F4F1}","nickname":"Ana\u{2019}s Pixel \u{1F4F1}","original_name":"sdk gphone64","avd":"Pixel_9"}),
+            json!({"id":"emulator-5556","platform":"android","state":"device","name":"Pixel Tablet"}),
+            json!({"id":"00008110-001A","platform":"ios","state":"connected","name":"iPhone"}),
+            json!({"id":"R5CT","platform":"android","state":"device","name":"pixel tablet"}),
+        ];
+        // A straight apostrophe finds the curly one, and the emoji stays part of the name.
+        let found = resolve_name(&devices, "Ana's Pixel \u{1F4F1}").unwrap();
+        assert_eq!((found["id"].as_str(), found["matched"].as_str()), (Some("emulator-5554"), Some("exact")));
+        assert_eq!(resolve_name(&devices, "  Pixel_9 ").unwrap()["id"], "emulator-5554");
+        assert_eq!(resolve_name(&devices, "iphone").unwrap()["matched"], "case_insensitive");
+        // Exact beats case-insensitive: two tablets differ only by case, and the exact one wins.
+        assert_eq!(resolve_name(&devices, "Pixel Tablet").unwrap()["id"], "emulator-5556");
+        let error = resolve_name(&devices, "PIXEL TABLET").unwrap_err();
+        assert_eq!(error.code, "device_ambiguous");
+        assert_eq!(error.details.unwrap()["candidates"].as_array().unwrap().len(), 2);
+        assert_eq!(resolve_name(&devices, "Pixel").unwrap_err().code, "device_ambiguous");
+        assert_eq!(resolve_name(&devices, "Tablet").unwrap_err().code, "device_ambiguous");
+        assert_eq!(resolve_name(&devices, "iPh").unwrap()["matched"], "partial");
+        assert_eq!(resolve_name(&devices, "Galaxy").unwrap_err().code, "device_not_found");
+        assert_eq!(resolve_name(&devices, "   ").unwrap_err().code, "invalid_argument");
+        assert_eq!(fold_name("  Ana\u{2019}s\u{00a0} \u{201c}Phone\u{201d} \u{2013} 2 "), "Ana's \"Phone\" - 2");
     }
 
     #[test]

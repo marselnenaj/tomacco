@@ -1462,7 +1462,7 @@
   {
     "name": "job.send",
     "title": "Send a command to a job",
-    "description": "Send reload (Hot Reload), restart (Hot Restart) or quit to a running Flutter session; reload or restart to a React Native or Expo debug run from project.run, which asks its Metro server on port 8081 to reload the app through Metro's /reload endpoint and returns Metro's HTTP status; or stop to a running recording (android.record, ios.virtual.record): it ends early and keeps the video recorded so far.",
+    "description": "Send reload (Hot Reload), restart (Hot Restart) or quit to a running Flutter session; reload or restart to a React Native or Expo debug run from project.run, which asks its Metro server on port 8081 to reload the app through Metro's /reload endpoint and returns Metro's HTTP status; or stop to a running recording (android.record, ios.virtual.record): it ends early and keeps the video recorded so far. A route playback (gpx.play) takes pause and resume; stop ends it keeping the last fix.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1477,7 +1477,9 @@
             "reload",
             "restart",
             "quit",
-            "stop"
+            "stop",
+            "pause",
+            "resume"
           ],
           "default": "reload"
         }
@@ -2087,6 +2089,41 @@
       "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false
+    }
+  },
+  {
+    "name": "device.resolve",
+    "title": "Find a device by name",
+    "description": "The device a person means by name: its nickname, model name, AVD or ID, compared after folding curly apostrophes and quotes, dashes and spaces (emoji and letters stay). An exact match wins; one that ignores letter case counts next; a prefix or part of the name counts last and only when it is the only one. Two candidates at the same level answer device_ambiguous with both, never a guess, and no match answers device_not_found with the connected devices. Reads device.list, so it takes a few seconds.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The name as the person said it"
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "all",
+            "android",
+            "ios"
+          ],
+          "default": "all"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
     }
   },
   {
@@ -5187,6 +5224,118 @@
         }
       },
       "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "gpx.inspect",
+    "title": "Read a GPX route",
+    "description": "Read a GPX file and say what is in it before playing it: the points (track points, else route points, else waypoints), counts, bounds, distance, duration and average speed where the points carry times, how untimed points are played (document order at a fixed interval), and which devices playback reaches. A DOCTYPE or entity declaration is refused, files over 16 MiB and routes over 200,000 points too. With device it says whether that device takes a route.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the .gpx file"
+        },
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A device to check playback support for"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "gpx.play",
+    "title": "Play a GPX route",
+    "description": "Play a route on an Android emulator's location as a durable job: each point goes to the emulator console as a geo fix, timed points wait the recorded time between them divided by speed, untimed points wait interval_ms divided by speed, loop starts again at the end. job.send with pause and resume holds and continues playback, job.send stop ends it keeping the last fix, job.cancel ends it too; gpx.status reads where it is. The emulator does not report its fix, so the location before playback is unknown and is not restored (baseline.known false). A physical Android device or an iPhone answers gpx_unsupported: nothing is wired to set their location.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Emulator serial from device.list, such as emulator-5554"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute path of the .gpx file"
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 100,
+          "default": 1,
+          "description": "Playback speed multiplier"
+        },
+        "interval_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 60000,
+          "default": 1000,
+          "description": "Time between untimed points before speed"
+        },
+        "loop": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start again at the end until stopped"
+        },
+        "start_index": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200000,
+          "default": 0,
+          "description": "The point to start at"
+        }
+      },
+      "required": [
+        "device",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "gpx.status",
+    "title": "Route playback status",
+    "description": "Where a playback started by gpx.play is: the job's state and the last fix sent (index, total, lap, latitude, longitude), or paused, stopped or finished.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The job gpx.play answered"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
       "additionalProperties": false
     },
     "annotations": {

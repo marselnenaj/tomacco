@@ -117,6 +117,49 @@ private slots:
         invoke("makePlan");agent.finish(agent.calls.last(),plan());page->setProperty("device","emulator-5554");QCoreApplication::processEvents();
         QVERIFY(!page->property("planIsCurrent").toBool());QVERIFY(!enabled("environmentApply"));
     }
+    void a_route_is_read_first_played_on_the_chosen_emulator_only_and_paused_resumed_stopped(){
+        loadPreset();
+        QVERIFY(!enabled("routePlay"));
+        invoke("inspectRoute","/tmp/ride.gpx");
+        auto call=agent.calls.last();QCOMPARE(call.op,QString("gpx.inspect"));QCOMPARE(call.args["path"].toString(),QString("/tmp/ride.gpx"));QVERIFY(!call.args.contains("device"));
+        agent.finish(call,{{"name","Ring"},{"points",4},{"distance_m",270.5},{"duration_s",60.0},{"timing",QVariantMap{{"timed",true},{"ordering","time"}}}});
+        QVERIFY(object("routeSummary")->property("text").toString().contains("Ring"));
+        QVERIFY(object("routeSummary")->property("text").toString().contains("0.27 km"));
+        // No emulator chosen: nothing plays.
+        QVERIFY(!enabled("routePlay"));
+        target();
+        QTest::qWait(10);
+        QVERIFY2(enabled("routePlay"),qPrintable(QString("route=%1 emulator=%2 playing=%3 busy=%4").arg(page->property("route").isValid()).arg(page->property("routeTargetIsEmulator").toBool()).arg(page->property("routePlaying").toBool()).arg(page->property("busy").toInt())));
+        object("routeSpeed")->setProperty("text","4");object("routeLoop")->setProperty("checked",true);QCoreApplication::processEvents();
+        invoke("playRoute");call=agent.calls.last();
+        QCOMPARE(call.op,QString("gpx.play"));QCOMPARE(call.args["device"].toString(),QString("emulator-5556"));QCOMPARE(call.args["path"].toString(),QString("/tmp/ride.gpx"));
+        QCOMPARE(call.args["speed"].toDouble(),4.0);QCOMPARE(call.args["loop"].toBool(),true);
+        agent.finish(call,{{"job",QVariantMap{{"id","0123456789abcdef0123456789abcdef"},{"state","running"}}},{"device","emulator-5556"},{"baseline",QVariantMap{{"known",false}}}});
+        QVERIFY(page->property("routePlaying").toBool());QVERIFY(!enabled("routePlay"));QVERIFY(enabled("routeStop"));QVERIFY(!enabled("routePause"));
+        QVERIFY(object("environmentNotice")->property("text").toString().contains("will not be restored"));
+        invoke("pollRoute");
+        auto status=agent.calls[agent.calls.size()-2];QCOMPARE(status.op,QString("gpx.status"));QCOMPARE(status.args["job_id"].toString(),QString("0123456789abcdef0123456789abcdef"));
+        agent.finish(status,{{"job_id","0123456789abcdef0123456789abcdef"},{"progress",QVariantMap{{"state","playing"},{"index",1},{"total",4}}}});
+        agent.finish(agent.calls.last(),{{"id","0123456789abcdef0123456789abcdef"},{"state","running"}});
+        QVERIFY(enabled("routePause"));QVERIFY(object("routeState")->property("text").toString().contains("2 of 4"));
+        invoke("routeSend","pause");call=agent.calls.last();QCOMPARE(call.op,QString("job.send"));QCOMPARE(call.args["command"].toString(),QString("pause"));
+        agent.finish(call,{{"sent","pause"}});
+        invoke("pollRoute");status=agent.calls[agent.calls.size()-2];agent.finish(status,{{"progress",QVariantMap{{"state","paused"},{"index",1},{"total",4}}}});
+        agent.finish(agent.calls.last(),{{"id","0123456789abcdef0123456789abcdef"},{"state","running"}});
+        QVERIFY(page->property("routePaused").toBool());QCOMPARE(object("routePause")->property("text").toString(),QString("Resume"));
+        invoke("routeSend","resume");QCOMPARE(agent.calls.last().args["command"].toString(),QString("resume"));
+        agent.finish(agent.calls.last(),{{"sent","resume"}});
+        invoke("routeSend","stop");QCOMPARE(agent.calls.last().args["command"].toString(),QString("stop"));
+        agent.finish(agent.calls.last(),{{"sent","stop"}});
+        invoke("pollRoute");
+        agent.finish(agent.calls[agent.calls.size()-2],{{"progress",QVariantMap{{"state","stopped"},{"index",2},{"total",4}}}});
+        agent.finish(agent.calls.last(),{{"id","0123456789abcdef0123456789abcdef"},{"state","succeeded"}});
+        QVERIFY(!page->property("routePlaying").toBool());QVERIFY(enabled("routePlay"));
+        QVERIFY(object("routeState")->property("text").toString().contains("Stopped"));
+        // A phone as the target: playback is refused before any call.
+        page->setProperty("device","R5CT");QCoreApplication::processEvents();
+        QVERIFY(!page->property("routeTargetIsEmulator").toBool());
+    }
     void responsive_layout_data(){QTest::addColumn<int>("width");QTest::addColumn<int>("scale");for(int s:{100,175,200})for(int w:{1380,960,560})QTest::newRow(qPrintable(QString("%1-%2").arg(w).arg(s)))<<w<<s;}
     void responsive_layout(){
         QFETCH(int,width);QFETCH(int,scale);loadPreset();target();invoke("makePlan");agent.finish(agent.calls.last(),plan({"talkback"}));

@@ -114,14 +114,14 @@ tomaccoctl call job.cancel '{"job_id":"<job_id>"}'
 
 **Send a command to a job**
 
-Send reload (Hot Reload), restart (Hot Restart) or quit to a running Flutter session; reload or restart to a React Native or Expo debug run from project.run, which asks its Metro server on port 8081 to reload the app through Metro's /reload endpoint and returns Metro's HTTP status; or stop to a running recording (android.record, ios.virtual.record): it ends early and keeps the video recorded so far.
+Send reload (Hot Reload), restart (Hot Restart) or quit to a running Flutter session; reload or restart to a React Native or Expo debug run from project.run, which asks its Metro server on port 8081 to reload the app through Metro's /reload endpoint and returns Metro's HTTP status; or stop to a running recording (android.record, ios.virtual.record): it ends early and keeps the video recorded so far. A route playback (gpx.play) takes pause and resume; stop ends it keeping the last fix.
 
 Annotations: writes, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `job_id` | string | yes |  |  |
-| `command` | string |  | `"reload"` | one of `reload`, `restart`, `quit`, `stop` |
+| `command` | string |  | `"reload"` | one of `reload`, `restart`, `quit`, `stop`, `pause`, `resume` |
 
 ```sh
 tomaccoctl call job.send '{"job_id":"<job_id>"}'

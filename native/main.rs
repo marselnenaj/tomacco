@@ -31,6 +31,7 @@ mod diagnostics;
 mod download;
 mod environment;
 mod files;
+mod gpx;
 mod gradle_model;
 mod guard;
 mod handoff;
@@ -513,6 +514,13 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
             update::worker(
                 args.get(1)
                     .ok_or_else(|| Error::new("invalid_request", "Missing update request"))?,
+            )?;
+            return Ok(0);
+        }
+        Some("_gpx_play") => {
+            gpx::worker(
+                args.get(1)
+                    .ok_or_else(|| Error::new("invalid_request", "Missing playback request"))?,
             )?;
             return Ok(0);
         }

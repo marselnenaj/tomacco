@@ -26,6 +26,14 @@ operations and their JSON results.
   `fixture:NAME` connects a scripted device for tests and the benchmark runner, labelled
   `evidence: fixture` everywhere.
 
+- **GPX routes.** `gpx.inspect` reads a route (no DOCTYPE or entities, bounded size and points)
+  and says how it would play; `gpx.play` plays it on an Android emulator's location as a job with
+  speed, interval, loop, `job.send` pause/resume/stop and `gpx.status`; other transports answer
+  `gpx_unsupported`, and the unknown previous fix is never claimed restored. The desktop's QA
+  environments view plays routes too.
+- **Devices by name.** `device.resolve` finds a device by nickname, name, AVD or ID with
+  apostrophes, quotes and spaces folded; an exact match wins and two candidates answer
+  `device_ambiguous` instead of a guess.
 - **Human handoff.** `handoff.request`, `handoff.wait`, `handoff.list`, `handoff.get`,
   `handoff.cancel` and the person's `handoff.complete` hand the device to the person for Face ID,
   a passcode, a sign-in, a purchase or a permission. Requests are files that outlive the agent,
