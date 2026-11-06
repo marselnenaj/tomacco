@@ -67,7 +67,15 @@ Rectangle {
     property string notice: ""
     // The request behind a failure on the notice line, to try again; any other notice drops it.
     property var noticeRetry: null
-    onNoticeChanged: noticeRetry=null
+    // The file a notice is about (a saved screenshot), offered to show; any other notice drops it.
+    property string noticeFile: ""
+    // What runtime.start answered when another session or process holds the device.
+    property string ownerConflict: ""
+    onNoticeChanged: {noticeRetry=null;noticeFile=""}
+    function noteSavedFile(path,copied) {
+        notice=(copied?qsTr("Screenshot saved and copied · %1"):qsTr("Capture saved · %1")).arg(path);failed=false;noticeFile=path
+        notifications.add("device","ok",qsTr("Screenshot saved"),path,{})
+    }
     function retryNotice() {
         const again=noticeRetry
         if(!again)return
@@ -478,7 +486,7 @@ Rectangle {
         if(platform==="ios" && appleTarget==="device")args.runner_bundle_id=runnerBundle
         request("runtime.start",args)
     }
-    function attach(session) {live=session;frameFinish=0;platform=session.platform;if(session.platform==="ios")appleTarget=session.remote?"simulator":"device";target=session.device;if(session.remote)remote=session.remote;display.session=session;notice="";connecting=false;if(session.platform==="android" && session.status==="connected" && forwardAudio && !liveAudio.configured && !liveAudio.error && !audioPending)requestAudio(true);if(pendingLaunch && pendingLaunch.platform===session.platform && pendingLaunch.device===session.device)startPendingLaunch()}
+    function attach(session) {live=session;ownerConflict="";frameFinish=0;platform=session.platform;if(session.platform==="ios")appleTarget=session.remote?"simulator":"device";target=session.device;if(session.remote)remote=session.remote;display.session=session;notice="";connecting=false;if(session.platform==="android" && session.status==="connected" && forwardAudio && !liveAudio.configured && !liveAudio.error && !audioPending)requestAudio(true);if(pendingLaunch && pendingLaunch.platform===session.platform && pendingLaunch.device===session.device)startPendingLaunch()}
     function restartAirplay() {
         if(!airplaySelected || connecting)return
         if(live.session && ["starting","connected"].indexOf(live.status)>=0) {
@@ -527,7 +535,7 @@ Rectangle {
         // An AirPlay mirror is decoded only here: the picture comes from this view.
         if(live.transport==="wifi/airplay") {
             const path=Studio.screenshotPath(live.device)
-            if(display.saveFrame(path)){notice=(Studio.copyImage(path)?qsTr("Screenshot saved and copied · %1"):qsTr("Capture saved · %1")).arg(path);failed=false}
+            if(display.saveFrame(path))noteSavedFile(path,Studio.copyImage(path))
             else{notice=qsTr("Connect a device to take a screenshot.");failed=true}
             return
         }
@@ -565,7 +573,7 @@ Rectangle {
     onPlatformChanged: {if(platform!=="ios")cancelAirplayRestart();syncWorkspaceTarget();reconcileTarget();if(platform==="ios" && appleTarget==="simulator")loadApple()}
     onAppleTargetChanged: {if(appleTarget!=="device")cancelAirplayRestart();reconcileTarget();if(appleTarget==="simulator")loadApple()}
     onTargetsChanged: reconcileTarget()
-    onTargetChanged: {if(target!=="airplay")cancelAirplayRestart();syncWorkspaceTarget()}
+    onTargetChanged: {ownerConflict="";if(target!=="airplay")cancelAirplayRestart();syncWorkspaceTarget()}
     Component.onCompleted: {refresh();showCliError();Qt.callLater(startupSheets)}
     function showCliError() {if(Agent.cliError){notice=Agent.cliError;failed=true}}
     Connections {target:Agent;function onCliChanged() {view.showCliError()}}
@@ -587,6 +595,7 @@ Rectangle {
                 if(c.airplayRestart){view.airplayRestartSession="";view.connecting=false}
                 if(op==="project.run")view.launchPending=false
                 if(op==="runtime.start")view.connecting=false
+                if(op==="runtime.start" && ["device_busy","runtime_configuration_conflict","workspace_busy"].indexOf(response.error.code)>=0)view.ownerConflict=response.error.message
                 if(!c.quiet){view.notice=response.error.message+(response.error.remedy?"\n"+qsTr("What to do: %1").arg(response.error.remedy):"");view.failed=true;view.noticeRetry={op:op,args:JSON.parse(c.signature)}}
                 // An awaited device is retried a few times, then given up with this reason.
                 if(op==="runtime.start" && view.pendingWanted && response.error.code!=="runtime_start_timeout") {
@@ -679,7 +688,7 @@ Rectangle {
             }
             if(op==="workspace.context") {view.preferredTarget="";if(r.workspace.device)workspace.rememberForProject({platform:r.workspace.platform || "android",device:r.workspace.device},r.project.path);workspace.openProject(r.project.path);view.platform=r.workspace.platform || "android";view.target=r.workspace.device || ""}
             if(op==="device.install"){workspace.rememberJob(r,op,JSON.parse(c.signature));if(r.id)workspace.selectJob(r);view.notice=qsTr("Installing · progress under Builds & jobs");view.failed=false}
-            if(op==="runtime.capture"){view.notice=(Studio.copyImage(r.path)?qsTr("Screenshot saved and copied · %1"):qsTr("Capture saved · %1")).arg(r.path);view.failed=false}
+            if(op==="runtime.capture")view.noteSavedFile(r.path,Studio.copyImage(r.path))
         }
     }
     readonly property alias workspaceHost: workspaceHost
@@ -793,13 +802,18 @@ Rectangle {
         return true
     }
     // One word for what the device is doing, used wherever its state shows.
+    // A handoff waiting for the person on this session (or on no session in particular).
+    readonly property bool handoffWaiting: handoffs.waiting.some(h=>!h.session || h.session===live.session)
     readonly property string deviceState: pending ? ((pendingAvd && !pendingTarget) ? "booting" : "connecting")
+        : (display.state==="live" && handoffWaiting) ? "handoff"
         : display.state==="live" ? "live"
+        : (connecting && !!live.session && ["failed","disconnected"].indexOf(live.status)>=0) ? "reconnecting"
         : (connecting || display.state==="connecting") ? "connecting"
+        : (!!ownerConflict && !live.session) ? "busy_elsewhere"
         : (live.status==="failed" || !!display.error) ? "failed"
         : live.session ? "ended" : "idle"
-    readonly property string deviceStateLabel: ({booting:qsTr("Booting"),connecting:qsTr("Connecting"),live:qsTr("Live"),failed:qsTr("Failed"),ended:qsTr("Disconnected"),idle:qsTr("No device")})[deviceState]
-    readonly property string deviceTone: ({booting:"busy",connecting:"busy",live:"live",failed:"failed",ended:"warn",idle:"idle"})[deviceState]
+    readonly property string deviceStateLabel: ({booting:qsTr("Booting"),connecting:qsTr("Connecting"),reconnecting:qsTr("Reconnecting"),live:qsTr("Live"),handoff:qsTr("Your turn"),busy_elsewhere:qsTr("In use elsewhere"),failed:qsTr("Failed"),ended:qsTr("Disconnected"),idle:qsTr("No device")})[deviceState]
+    readonly property string deviceTone: ({booting:"busy",connecting:"busy",reconnecting:"busy",live:"live",handoff:"busy",busy_elsewhere:"warn",failed:"failed",ended:"warn",idle:"idle"})[deviceState]
     readonly property string deviceName: pending ? pendingLabel : display.state==="live" ? (frameProfile.name || liveDevice.name || live.name || live.device || "") : ((targets.find(d=>d.id===target) || {}).name || "")
     readonly property string deviceMetrics: display.state!=="live" ? "" : display.sourceSize.width+"×"+display.sourceSize.height+(display.framesPerSecond>0?" · "+Math.round(display.framesPerSecond)+" fps":"")
     readonly property var runningJobs: workspace.jobs.filter(x=>["queued","running"].indexOf(x.state)>=0)
@@ -1170,6 +1184,7 @@ Rectangle {
             RowLayout {anchors.fill:parent;anchors.leftMargin:Theme.gapLg;anchors.rightMargin:Theme.gapSm;spacing:Theme.gapSm
                 Text {id:noticeLabel;Layout.fillWidth:true;text:view.notice;color:view.failed?Theme.danger:Theme.text;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;maximumLineCount:4;elide:Text.ElideRight}
                 StudioButton {objectName:"noticeRetry";text:qsTr("Try again");iconName:"refresh";visible:view.failed && !!view.noticeRetry;onClicked:view.retryNotice()}
+                StudioButton {objectName:"noticeShowFile";text:qsTr("Show file");iconName:"files";quiet:true;visible:!view.failed && !!view.noticeFile;onClicked:Studio.revealFile(view.noticeFile)}
                 StudioButton {text:qsTr("Open job");quiet:true;visible:!!view.launchJob;onClicked:workspace.showTab("jobs")}
                 StudioButton {iconName:"close";quiet:true;tip:qsTr("Dismiss notice");onClicked:view.notice=""}
             }

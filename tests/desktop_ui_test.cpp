@@ -4731,6 +4731,47 @@ for line in sys.stdin:
         pane->setProperty("launchJob",QString());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void session_states_say_who_holds_the_device_and_a_saved_screenshot_can_be_shown() {
+        // The status word names the states an agent or a person has to act on: the device held
+        // elsewhere, a reconnect under way, a handoff waiting for the person; and a saved
+        // screenshot's notice offers to show the file, once, until another notice replaces it.
+        open("runtime");window->resize(1380,970);QTest::qWait(50);
+        auto *view=object("nativeWorkspace");QVERIFY(view);
+        view->setProperty("autoAttach",false);
+        QCOMPARE(view->property("deviceState").toString(),QString("idle"));
+        view->setProperty("ownerConflict","This iPhone already has an active native session");
+        QCOMPARE(view->property("deviceState").toString(),QString("busy_elsewhere"));
+        QCOMPARE(view->property("deviceStateLabel").toString(),QString("In use elsewhere"));
+        QCOMPARE(view->property("deviceTone").toString(),QString("warn"));
+        // Choosing another device drops the conflict.
+        view->setProperty("target","other-device");
+        QCOMPARE(view->property("ownerConflict").toString(),QString());
+        QCOMPARE(view->property("deviceState").toString(),QString("idle"));
+        // A session that ended while a new start runs is a reconnect, not a plain connect.
+        view->setProperty("live",QVariantMap{{"session","0123456789abcdef0123456789abcdef"},{"status","disconnected"},{"platform","android"},{"device","other-device"}});
+        view->setProperty("connecting",true);
+        QCOMPARE(view->property("deviceState").toString(),QString("reconnecting"));
+        QCOMPARE(view->property("deviceStateLabel").toString(),QString("Reconnecting"));
+        view->setProperty("connecting",false);
+        // A handoff waiting on this session is the person's turn (the word shows once the display is live).
+        auto *handoffs=view->findChild<QObject*>("handoffModel");QVERIFY(handoffs);
+        QVERIFY(!view->property("handoffWaiting").toBool());
+        handoffs->setProperty("waiting",QVariantList{QVariantMap{{"id","fedcba9876543210fedcba9876543210"},{"session","0123456789abcdef0123456789abcdef"},{"kind","purchase"},{"reason","Confirm"}}});
+        QVERIFY(view->property("handoffWaiting").toBool());
+        auto *banner=item("handoffBanner");QVERIFY(banner);QVERIFY(banner->isVisible());
+        QVERIFY(item("handoffBannerTitle")->property("text").toString().contains("Purchase"));
+        handoffs->setProperty("waiting",QVariantList{});
+        QVERIFY(!banner->isVisible());
+        // A saved screenshot: the notice names the file and offers to show it; a later notice does not.
+        auto *show=item("noticeShowFile");QVERIFY(show);QVERIFY(!show->isVisible());
+        QVERIFY(QMetaObject::invokeMethod(view,"noteSavedFile",Q_ARG(QVariant,"/tmp/shots/one.png"),Q_ARG(QVariant,true)));
+        QVERIFY(view->property("notice").toString().contains("/tmp/shots/one.png"));
+        QCOMPARE(view->property("noticeFile").toString(),QString("/tmp/shots/one.png"));
+        QTRY_VERIFY(show->isVisible());
+        view->setProperty("notice","Something else");
+        QCOMPARE(view->property("noticeFile").toString(),QString());
+        QTRY_VERIFY(!show->isVisible());
+    }
     void touches_and_coordinates_show_on_the_live_device() {
         // Switched on, the device view marks a press and names the pointer's device pixel and
         // fraction; the press still reaches the device. Off, nothing is drawn.

@@ -26,6 +26,9 @@ operations and their JSON results.
   `fixture:NAME` connects a scripted device for tests and the benchmark runner, labelled
   `evidence: fixture` everywhere.
 
+- **Session states in the desktop.** The status word under the live device says
+  **Reconnecting**, **In use elsewhere** and **Your turn** (a handoff waits for the person) besides
+  Connecting, Live, Failed and Disconnected, and a saved screenshot's notice offers **Show file**.
 - **Reviewable bug-report draft.** `diagnostics.report_draft` writes issue.md, the redacted
   bundle and log tails, and a redaction receipt (secrets masked, home replaced, device ids
   replaced by placeholders, absolute paths left to look at). Nothing is posted; `issue_url` carries

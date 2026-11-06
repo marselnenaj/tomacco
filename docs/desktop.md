@@ -207,6 +207,13 @@ request once more; the close button hides the band. The notice line under the li
 device does the same for the device view's requests, and the live log under Devices
 and the log beside the device offer **Try again** when their log cannot be read.
 
+The status word under the live device names what is going on instead of waiting silently:
+**Connecting**, **Reconnecting** (a session ended and a new start runs), **In use elsewhere** (another
+session or process holds the device; choosing another device clears it), **Your turn** (an agent
+handed the device to you and the banner at the top waits for **Done**), **Live**, **Failed** and
+**Disconnected**. A saved screenshot's notice names the file and offers **Show file**; there is no
+sound, and the picture is also on the clipboard.
+
 Views without anything to show say what is missing and offer the next step: **Files**
 without a project offers **Choose folder**; **Agents & tools** says when the control
 program has listed no tools, with its reason and **Try again**, and when the search

@@ -3,8 +3,8 @@
   "workspace": "/home/maslos/Work/tomacco-agent-platform",
   "branch": "feat/agent-platform",
   "base_commit": "bdd708c40719e755ad6b71a5c6969aa2797d20a5",
-  "updated": "2026-11-06T11:19:18Z",
-  "status": "in_progress",
+  "updated": "2026-11-06T11:28:10Z",
+  "status": "slices A-H implemented and offline-tested; hardware qualification pending",
   "hardware_constraint": "No physical device, USB, ADB, Fastboot, SSH, network or runtime probes while the Pixel is being flashed. Everything below is verified offline only: unit tests, loopback fakes and the env-gated fixture runtime. Physical iPhone (WDA), Android, AirPlay and Simulator paths are code-reviewed and contract-tested, not hardware-qualified.",
   "capability_gap_table": [
     {
@@ -83,7 +83,7 @@
       "capability": "Mirror polish: reconnect/ownership, screenshot affordance, states",
       "before": "notice text and a retry for AirPlay",
       "target": "explicit waiting-for-person / reconnecting / owner conflict / unsupported / paused / failed states where the backend reports them",
-      "state": "planned"
+      "state": "implemented in part: explicit states (reconnecting, in use elsewhere, your turn), screenshot Show file; zoom stays clamped to the screen (content never under toolbars); delivered fps already measured by the view; no sound option (not linked); safe-area mapping unchanged"
     }
   ],
   "acceptance_matrix": [
@@ -160,7 +160,8 @@
     "Slice C: benchmark runner + reconnect fix",
     "Slice D: human handoff (backend, desktop banner, docs)",
     "Slice E/F: device.resolve, GPX inspect/play/status with desktop route playback",
-    "Slice G: diagnostics.report_draft with redaction receipt"
+    "Slice G: diagnostics.report_draft with redaction receipt",
+    "Slice H: session states and screenshot Show file in the desktop, UI contract for the mobile lane"
   ],
   "implemented": [
     "Slice A: runtime.observe, input_capabilities, runtime.gesture, pinch (WDA two pointers, scrcpy two pointers), screen.* on a session with WDA XML conversion, mark_stale on rotation, WDA point-size cache invalidated by MJPEG frame size, OCR content cache, env-gated fixture runtime",
@@ -168,59 +169,99 @@
     "Slice C: benchmark runner + reconnect fix",
     "Slice D: human handoff (backend, desktop banner, docs)",
     "Slice E/F: device.resolve, GPX inspect/play/status with desktop route playback",
-    "Slice G: diagnostics.report_draft with redaction receipt"
+    "Slice G: diagnostics.report_draft with redaction receipt",
+    "Slice H: session states and screenshot Show file in the desktop, UI contract for the mobile lane"
   ],
   "tested": [
-    "cargo test: 669+ unit tests incl. runtime::fixture, screen_tree::wda_tests, screen::tests (stale geometry), runtime::iphone loopback (cache, pinch, trace, context), screen_ocr cache, runtime::actions",
-    "tests/python/test_agent_runtime.py (6) and test_agent_actions.py (7) end to end on the fixture runtime with transport traps",
-    "tests/python docs/reference/skill consistency tests"
+    "cargo test --offline --locked: 677 unit tests + 2 update_e2e, 0 failed",
+    "desktop-ui (Qt offscreen): 110 passed incl. the new session-state test; environment-panel: 16 passed incl. route playback; handoff-banner: 14 passed",
+    "tests/python: test_agent_runtime (7), test_agent_actions (7), test_handoff (2), test_gpx (2), test_report_draft (1), docs/reference/skill/consistency/links tests: 50 OK (1 skipped)",
+    "tools/benchmark_agent_loop.py: 8 cases, 100 trials where eligible, 0 failed trials, fixture evidence only (docs/agent-platform-benchmark-fixture.json)"
   ],
   "unverified": [
-    "Every physical-device path (WDA activeAppInfo/keyboard/active element, scrcpy pointer-id multitouch, dumpsys parsing on a real device, AirPlay HID, Simulator companion) until hardware clearance"
+    "Every physical-device path: WDA activeAppInfo/keyboard/active element, two-pointer pinch over W3C actions, MJPEG size invalidation on a real rotation; scrcpy pointer-id multitouch and dumpsys parsing on a real device; emulator console geo fix from a real emulator; AirPlay HID; Simulator companion. Loopback fakes and the fixture runtime stand in until hardware is cleared.",
+    "tests/python/test_i18n.py fails on exactly the new strings and operation titles until the i18n lane adds them to the catalogues (list below)."
   ],
   "remaining": [
-    "Mirror polish (explicit session states, screenshot reveal affordance)",
-    "Roadmap items kept: TV/Wear profiles, Demo Studio next phases, offline AirPlay reliability",
-    "Hardware qualification of every transport path once cleared"
+    "Hardware qualification of every transport path once the Pixel/MacBook clearance is given, then the benchmark on real devices (hardware_matrix)",
+    "Automatic detection of passcode/biometric prompts (optional, deliberately not built; explicit handoff.request works)",
+    "Location playback on physical Android (mock-location app) and iPhone (developer location service): not wired, answers gpx_unsupported",
+    "OCR worker reuse (Tesseract process per read remains; the content cache covers unchanged frames only)",
+    "Roadmap items kept and untouched: TV/Wear qualified profiles and controls, Demo Studio next phases, offline AirPlay reliability",
+    "Translations of the new strings (i18n lane), Bogen mirror of the handoff band and route section (mobile lane)"
   ],
-  "next_step": "Slice H: explicit session states (waiting for the person, reconnecting, in use elsewhere, unsupported) and a screenshot reveal affordance in the desktop",
+  "next_step": "Root reconciles feat/agent-platform with the mobile and i18n lanes; after hardware clearance run tools/benchmark_agent_loop.py with --device on a real session and qualify WDA pinch/observe, scrcpy multitouch and emulator geo fix.",
   "changed_files": [
-    "native/runtime.rs",
-    "native/runtime/fixture.rs",
-    "native/runtime/actions.rs",
-    "native/runtime/android.rs",
-    "native/runtime/iphone.rs",
-    "native/runtime/ios.rs",
-    "native/runtime/airplay.rs",
-    "native/screen.rs",
-    "native/screen_tree.rs",
-    "native/screen_ocr.rs",
-    "native/screen_export.rs",
-    "native/ios_emulator/ui_testing.rs",
-    "assets/operations.json",
-    "assets/errors.json",
-    "docs/agents.md",
-    "docs/reference/*",
-    "integrations/agent-skill/tomacco/references/*",
-    "integrations/agent-skill/tomacco/SKILL.md",
-    "README.md",
-    "docs/agent-patterns.md",
     "CHANGELOG.md",
+    "CMakeLists.txt",
+    "README.md",
+    "assets/errors.json",
+    "assets/operations.json",
+    "docs/agent-patterns.md",
+    "docs/agent-platform-benchmark-fixture.json",
+    "docs/agent-platform-ui-contract.md",
+    "docs/agents.md",
+    "docs/desktop.md",
+    "docs/reference/*",
+    "integrations/agent-skill/tomacco/SKILL.md",
+    "integrations/agent-skill/tomacco/references/*",
+    "native/api.rs",
+    "native/devices.rs",
+    "native/diagnostics.rs",
+    "native/gpx.rs",
+    "native/handoff.rs",
+    "native/ios_emulator/ui_testing.rs",
+    "native/jobs.rs",
+    "native/main.rs",
+    "native/mcp_tools.rs",
+    "native/report_draft.rs",
+    "native/runtime.rs",
+    "native/runtime/actions.rs",
+    "native/runtime/airplay.rs",
+    "native/runtime/android.rs",
+    "native/runtime/fixture.rs",
+    "native/runtime/ios.rs",
+    "native/runtime/iphone.rs",
+    "native/screen.rs",
+    "native/screen_export.rs",
+    "native/screen_ocr.rs",
+    "native/screen_tree.rs",
+    "qml/EnvironmentPanel.qml",
+    "qml/HandoffBanner.qml",
+    "qml/HandoffModel.qml",
+    "qml/NativeWorkspace.qml",
+    "qml/OperationTitles.js",
+    "tests/desktop_ui_test.cpp",
+    "tests/environment_panel_test.cpp",
+    "tests/handoff_banner_test.cpp",
     "tests/python/agent_fixture.py",
+    "tests/python/test_agent_actions.py",
     "tests/python/test_agent_runtime.py",
-    "tests/python/test_agent_actions.py"
+    "tests/python/test_gpx.py",
+    "tests/python/test_handoff.py",
+    "tests/python/test_report_draft.py",
+    "tools/benchmark_agent_loop.py",
+    "tools/build_reference.py"
   ],
   "commits": [
-    "1253efc Agent observation: runtime.observe, screens on a session, gesture contract and fixture runtime"
+    "1253efc Agent observation: runtime.observe, screens on a session, gesture contract and fixture runtime",
+    "e0af238 Add runtime.actions",
+    "119fd6a Add the agent-loop benchmark runner and make runtime.stop wait for its worker",
+    "9e31fe4 Add human handoff",
+    "391c39d Add GPX route playback, device.resolve and a stop that reaches interactive playback jobs",
+    "9281bd1 Add diagnostics.report_draft",
+    "(next) Desktop session states, screenshot Show file and the UI contract"
   ],
   "test_commands": [
     "CARGO_TARGET_DIR=$PWD/target TMPDIR=/tmp cargo test --offline --locked",
-    "cd tests/python && TOMACCOCTL=$PWD/../../target/debug/tomaccoctl python3 -m unittest test_agent_runtime test_agent_actions test_docs_reference test_agent_skill test_docs_consistency test_docs_links",
-    "python3 tools/build_reference.py"
+    "cd tests/python && TOMACCOCTL=$PWD/../../target/debug/tomaccoctl python3 -m unittest test_agent_runtime test_agent_actions test_handoff test_gpx test_report_draft test_docs_reference test_agent_skill test_docs_consistency test_docs_links",
+    "cmake -S . -B build -DBUILD_TESTING=ON -DCARGO_EXECUTABLE=$HOME/.cargo/bin/cargo && cmake --build build --target test-desktop-ui test-environment-panel test-handoff-banner && (cd build && QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software QT_QUICK_CONTROLS_STYLE=Basic QT_QPA_PLATFORMTHEME=generic TOMACCO_UPDATES=off ./test-desktop-ui && ./test-environment-panel && ./test-handoff-banner)",
+    "TOMACCOCTL=$PWD/target/debug/tomaccoctl python3 tools/benchmark_agent_loop.py --trials 100 --output qa/agent-loop.json",
+    "python3 tools/build_reference.py --check"
   ],
   "receipts": [
-    "cargo test: 669 passed, 0 failed (unit) + 2 (update_e2e) after Slice A",
-    "test_agent_runtime: 6 OK; test_agent_actions: 7 OK (one uses the installed tesseract)"
+    "Receipts could not be written into /home/maslos/Work/tomacco-devicemcp-handoff-20261106 from the sandbox (read-only there); this file and docs/agent-platform-benchmark-fixture.json are the task-level receipts on the branch.",
+    "Transport traps: every test box puts failing stand-ins for adb, iproxy, go-ios, uxplay, scrcpy, idevice*, xtool, emulator, ssh on PATH and asserts none was called (except the GPX test, whose adb stand-in records console commands)."
   ],
   "i18n_strings_for_reconciliation": [
     {
@@ -310,14 +351,6 @@
     {
       "context": "Operations",
       "source": "Withdraw a handoff"
-    },
-    {
-      "context": "EnvironmentPanel",
-      "source": "%n point(s), %1 km, %2 min recorded"
-    },
-    {
-      "context": "EnvironmentPanel",
-      "source": "%n point(s), %1 km, no times: one point per second"
     },
     {
       "context": "EnvironmentPanel",
@@ -434,6 +467,34 @@
     {
       "context": "Operations",
       "source": "Draft a bug report"
+    },
+    {
+      "context": "NativeWorkspace",
+      "source": "Your turn"
+    },
+    {
+      "context": "NativeWorkspace",
+      "source": "Reconnecting"
+    },
+    {
+      "context": "NativeWorkspace",
+      "source": "In use elsewhere"
+    },
+    {
+      "context": "NativeWorkspace",
+      "source": "Show file"
+    },
+    {
+      "context": "NativeWorkspace",
+      "source": "Screenshot saved"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "%1 points, %2 km, %3 min recorded"
+    },
+    {
+      "context": "EnvironmentPanel",
+      "source": "%1 points, %2 km, no times: one point per second"
     }
   ],
   "cross_lane_notes": [

@@ -129,7 +129,7 @@ ColumnLayout {
             if(op==="android.environment.plan") {view.plan=r;view.message(r.unsupported.length?qsTr("Plan ready. This device does not support: %1.").arg(r.unsupported.map(view.label).join(", ")):qsTr("Plan ready. Nothing has changed on the device yet."),false)}
             if(op==="android.environment.apply") {view.applied=r;view.plan=null;view.message(qsTr("Applied and read back. You can restore the previous settings."),false)}
             if(op==="android.environment.restore") {view.restored=r;view.applied=null;view.message(qsTr("Previous settings restored."),false)}
-            if(op==="gpx.inspect") {view.route=r;view.routeNotice=r.timing.timed?qsTr("%n point(s), %1 km, %2 min recorded","",r.points).arg((r.distance_m/1000).toFixed(2)).arg((r.duration_s/60).toFixed(1)):qsTr("%n point(s), %1 km, no times: one point per second","",r.points).arg((r.distance_m/1000).toFixed(2))}
+            if(op==="gpx.inspect") {view.route=r;view.routeNotice=r.timing.timed?qsTr("%1 points, %2 km, %3 min recorded").arg(r.points).arg((r.distance_m/1000).toFixed(2)).arg((r.duration_s/60).toFixed(1)):qsTr("%1 points, %2 km, no times: one point per second").arg(r.points).arg((r.distance_m/1000).toFixed(2))}
             if(op==="gpx.play") {view.routeJob=r.job;view.routeProgress=null;view.message(qsTr("Playing the route on %1. The previous position is not known and will not be restored.").arg(r.device),false)}
             if(op==="gpx.status") view.routeProgress=r.progress
             if(op==="job.get" && view.routeJob && r.id===view.routeJob.id) view.routeJob=r
